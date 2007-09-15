@@ -41,7 +41,7 @@ typedef enum
 {
     UseSameProcess  = 1,
     UseMainProcess  = 2,
-    UseSlaveProcess = 3,
+    UseSlaveProcess = 4,
     UseAnyContext   = 7
 } create_context;
 
@@ -174,6 +174,7 @@ typedef struct channel_info
 
 CHANNEL_INFO *Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc);
 void Pipe_FreeChannel(CHANNEL_INFO *pci);
+MUX_RESULT Pipe_SendCallPacketAndWait(int nChannel, QUEUE_INFO *pqi);
 
 // The following is part of what is called 'Custom Marshaling'.
 //
@@ -181,9 +182,9 @@ interface mux_IMarshal : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid) = 0;
-    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx) = 0;
-    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv) = 0;
-    virtual MUX_RESULT ReleaseMarshalData(char *pBuffer) = 0;
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx) = 0;
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv) = 0;
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi) = 0;
     virtual MUX_RESULT DisconnectObject(void) = 0;
 };
 

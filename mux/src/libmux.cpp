@@ -596,6 +596,8 @@ static void ModuleUnload(MODULE_INFO *pModule)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv)
 {
+    MUX_RESULT mr = MUX_S_OK;
+
     if (  (UseSameProcess & ctx)
        || (  g_ProcessContext == IsMainProcess
           && (UseMainProcess & ctx))
@@ -609,7 +611,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
             {
                 if (NULL == pModule->fpGetClassObject)
                 {
-                    return MUX_E_CLASSNOTAVAILABLE;
+                    mr = MUX_E_CLASSNOTAVAILABLE;
                 }
             }
             else if (!pModule->bLoaded)
@@ -617,32 +619,61 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                 ModuleLoad(pModule);
                 if (!pModule->bLoaded)
                 {
-                    return MUX_E_CLASSNOTAVAILABLE;
+                    mr =  MUX_E_CLASSNOTAVAILABLE;
                 }
             }
 
-            mux_IClassFactory *pIClassFactory = NULL;
-            MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
-            if (  MUX_SUCCEEDED(mr)
-               && NULL != pIClassFactory)
+            if (MUX_SUCCEEDED(mr))
             {
-                mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
-                pIClassFactory->Release();
+                mux_IClassFactory *pIClassFactory = NULL;
+                MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
+                if (  MUX_SUCCEEDED(mr)
+                   && NULL != pIClassFactory)
+                {
+                    mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
+                    pIClassFactory->Release();
+                }
             }
-            return mr;
         }
     }
+#ifdef STUB_SLAVE
     else
     {
-        // TODO: Implement the out-of-proc case.
+        // Out-of-Proc.
         //
-        // 1. Send cid, pUnknownOuter, and iid to special endpoint '1' on the other side.
-        // 2. Block in pipepump() routine waiting for a proxy cid and marshal packet.
-        // 3. Open IMarhsal interface on local proxy and pass it the marshal packet.
-        // 4. Proxy returns interface pointer which we can then return to our caller.
+        // 1. Send cid and iid to a priori endpoint on the other side and
+        //    block until the other side responds with a return frame.
         //
+        QUEUE_INFO qiFrame;
+
+        Pipe_InitializeQueueInfo(&qiFrame);
+        Pipe_AppendBytes(&qiFrame, sizeof(cid), (UINT8*)(&cid));
+        Pipe_AppendBytes(&qiFrame, sizeof(iid), (UINT8*)(&iid));
+
+        mr = Pipe_SendCallPacketAndWait(0, &qiFrame);
+
+        if (MUX_SUCCEEDED(mr))
+        {
+            MUX_CID cidProxy = 0;
+            size_t nWanted = sizeof(cidProxy);
+            if (  Pipe_GetBytes(&qiFrame, &nWanted, (UINT8*)(&cidProxy))
+               && sizeof(cidProxy) == nWanted)
+            {
+                // Open an IMarshal interface on the given proxy and pass it the marshal packet.
+                //
+                mux_IMarshal *pIMarshal = NULL;
+                mr = mux_CreateInstance(cidProxy, NULL, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    mr = pIMarshal->UnmarshalInterface(&qiFrame, iid, ppv);
+                    pIMarshal->Release();
+                }
+            }
+        }
+        Pipe_EmptyQueue(&qiFrame);
     }
-    return MUX_E_CLASSNOTAVAILABLE;
+#endif // STUB_SLAVE
+    return mr;
 }
 
 /*! \brief Register class ids and factory implemented by the process binary.
@@ -727,7 +758,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS
         {
             ; // Nothing.
         }
-        
+
         if (NULL == pNewClasses)
         {
             return MUX_E_OUTOFMEMORY;
@@ -845,7 +876,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFA
         {
             ; // Nothing.
         }
-        
+
         if (NULL == pNewInterfaces)
         {
             return MUX_E_OUTOFMEMORY;
@@ -1156,6 +1187,12 @@ void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p)
                     pBlock->pBuffer = pBlock->aBuffer;
                     pBlock->nBuffer = 0;
                 }
+                else
+                {
+                    // TODO: Out of memory.
+                    //
+                    return;
+                }
 
                 // Append the newly allocated block to the end of the queue.
                 //
@@ -1175,21 +1212,21 @@ void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p)
             {
                 pBlock = pqi->pTail;
             }
-        }
 
-        // Allocate space out of last QUEUE_BLOCK
-        //
-        char  *pFree = pBlock->pBuffer + pBlock->nBuffer;
-        size_t nFree = QUEUE_BLOCK_SIZE - pBlock->nBuffer - (pBlock->pBuffer - pBlock->aBuffer);
-        size_t nCopy = nFree;
-        if (n < nCopy)
-        {
-            nCopy = n;
-        }
+            // Allocate space out of last QUEUE_BLOCK
+            //
+            char  *pFree = pBlock->pBuffer + pBlock->nBuffer;
+            size_t nFree = QUEUE_BLOCK_SIZE - pBlock->nBuffer - (pBlock->pBuffer - pBlock->aBuffer);
+            size_t nCopy = nFree;
+            if (n < nCopy)
+            {
+                nCopy = n;
+            }
 
-        memcpy(pFree, p, nCopy);
-        n -= nCopy;
-        pBlock->nBuffer += nCopy;
+            memcpy(pFree, p, nCopy);
+            n -= nCopy;
+            pBlock->nBuffer += nCopy;
+        }
     }
 }
 
@@ -1298,4 +1335,9 @@ bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch)
         return true;
     }
     return false;
+}
+
+MUX_RESULT Pipe_SendCallPacketAndWait(int nChannel, QUEUE_INFO *pqi)
+{
+    return -(__LINE__);
 }

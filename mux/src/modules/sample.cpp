@@ -344,6 +344,30 @@ MUX_RESULT CSampleFactory::LockServer(bool bLock)
 void CSample::startup(void)
 {
     m_pILog->log_printf("Sample module sees CSample::startup event." ENDLINE);
+
+#if 1
+    ISum *pISum = NULL;
+    MUX_RESULT mr = mux_CreateInstance(CID_Sum, NULL, UseSlaveProcess, IID_ISum, (void **)&pISum);
+    if (MUX_SUCCEEDED(mr))
+    {
+        int sum;
+        mr = pISum->Add(1,1, &sum);
+        if (MUX_SUCCEEDED(mr))
+        {
+            m_pILog->log_printf("ISum::Add(1,1) is %d." ENDLINE, sum);
+        }
+        else
+        {
+            m_pILog->log_printf("Call to pISum->Add() failed with %d." ENDLINE, mr);
+        }
+        pISum->Release();
+        pISum = NULL;
+    }
+    else
+    {
+        m_pILog->log_printf("CreateInstance returned %d." ENDLINE, mr);
+    }
+#endif
 }
 
 // This is called prior to the game syncronizing its own state to its own
@@ -517,19 +541,19 @@ MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_C
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSumProxy::MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSumProxy::UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv)
+MUX_RESULT CSumProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
     // TODO: Given a marshal packet from the remote component, we should be able to connect and provide a proxy ISum.
     //
     return QueryInterface(riid, ppv);
 }
 
-MUX_RESULT CSumProxy::ReleaseMarshalData(char *pBuffer)
+MUX_RESULT CSumProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
     return MUX_S_OK;
 }

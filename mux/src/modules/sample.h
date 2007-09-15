@@ -11,11 +11,13 @@
 #ifdef WIN32
 const MUX_CID CID_Sample        = 0x0000000265E759EFi64;
 const MUX_CID CID_SumProxy      = 0x00000002FA46961Ei64;
+const MUX_CID CID_Sum           = 0x0000000214D47B2Ai64;
 const MUX_IID IID_ISample       = 0x00000002462F47F3i64;
 const MUX_IID IID_ISum          = 0x00000002BAB94F6Di64;
 #else
 const MUX_CID CID_Sample        = 0x0000000265E759EFull;
 const MUX_CID CID_SumProxy      = 0x00000002FA46961Eull;
+const MUX_CID CID_Sum           = 0x0000000214D47B2Aull;
 const MUX_IID IID_ISample       = 0x00000002462F47F3ull;
 const MUX_IID IID_ISum          = 0x00000002BAB94F6Dull;
 #endif
@@ -105,9 +107,9 @@ public:
     // mux_IMarshal
     //
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx);
-    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv);
-    virtual MUX_RESULT ReleaseMarshalData(char *pBuffer);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
     virtual MUX_RESULT DisconnectObject(void);
 
     // ISumProxy
