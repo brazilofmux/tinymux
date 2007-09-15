@@ -1148,16 +1148,19 @@ extern "C" bool DCL_EXPORT DCL_API mux_ReceiveData(size_t nBuffer, const void *p
     return false;
 }
 
+#ifdef STUB_SLAVE
+
 void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
 {
     pqi->pHead = NULL;
     pqi->pTail = NULL;
+    pqi->nBytes = 0;
 }
 
-void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p)
+void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
 {
     if (  0 != n
-       || NULL != p)
+       && NULL != p)
     {
         // Continue copying data to the end of the queue until it is all consumed.
         //
@@ -1226,7 +1229,29 @@ void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p)
             memcpy(pFree, p, nCopy);
             n -= nCopy;
             pBlock->nBuffer += nCopy;
+            pqi->nBytes += nCopy;
         }
+    }
+}
+
+void Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn)
+{
+    if (  NULL != pqiOut
+       && NULL != pqiIn)
+    {
+        QUEUE_BLOCK *pBlock = pqiIn->pHead;
+        while (NULL != pBlock)
+        {
+            Pipe_AppendBytes(pqiOut, pBlock->nBuffer, pBlock->pBuffer);
+
+            QUEUE_BLOCK *qBlock = pBlock->pNext;
+            delete pBlock;
+            pBlock = qBlock;
+        }
+
+        pqiIn->pHead = NULL;
+        pqiIn->pTail = NULL;
+        pqiIn->nBytes = 0;
     }
 }
 
@@ -1247,6 +1272,7 @@ void Pipe_EmptyQueue(QUEUE_INFO *pqi)
 
         pqi->pHead = NULL;
         pqi->pTail = NULL;
+        pqi->nBytes = 0;
     }
 }
 
@@ -1278,6 +1304,7 @@ bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
             ach[0] = pBlock->pBuffer[0];
             pBlock->pBuffer++;
             pBlock->nBuffer--;
+            pqi->nBytes--;
 
             return true;
         }
@@ -1285,8 +1312,10 @@ bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
     return false;
 }
 
-bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch)
+bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
 {
+    UINT8 *pch = (UINT8 *)pv;
+
     size_t nCopied = 0;
     QUEUE_BLOCK *pBlock;
 
@@ -1325,6 +1354,7 @@ bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch)
 
                 pBlock->pBuffer += nCopy;
                 pBlock->nBuffer -= nCopy;
+                pqi->nBytes -= nCopy;
                 nWantedBytes -= nCopy;
                 pch += nCopy;
                 nCopied += nCopy;
@@ -1337,7 +1367,29 @@ bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch)
     return false;
 }
 
-MUX_RESULT Pipe_SendCallPacketAndWait(int nChannel, QUEUE_INFO *pqi)
+size_t Pipe_QueueLength(QUEUE_INFO *pqi)
 {
-    return -(__LINE__);
+    size_t n = 0;
+    if (NULL != pqi)
+    {
+        n = pqi->nBytes;
+    }
+    return n;
 }
+
+extern QUEUE_INFO Queue_Out;
+extern QUEUE_INFO Queue_In;
+
+MUX_RESULT Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
+{
+    UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+    Pipe_AppendBytes(&Queue_Out, sizeof(CallMagic), CallMagic);
+    Pipe_AppendBytes(&Queue_Out, sizeof(nLength), &nLength);
+    Pipe_AppendBytes(&Queue_Out, sizeof(nChannel), &nChannel);
+    Pipe_AppendQueue(&Queue_Out, pqiFrame);
+    Pipe_AppendBytes(&Queue_Out, sizeof(EndMagic), EndMagic);
+    //Pipe_SendReceive(nChannel, pqiFrame);
+    return MUX_S_OK;
+}
+
+#endif // STUB_SLAVE

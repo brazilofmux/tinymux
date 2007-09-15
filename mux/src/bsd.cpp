@@ -37,6 +37,8 @@
 
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
 #include "libmux.h"
+QUEUE_INFO Queue_Out;
+QUEUE_INFO Queue_In;
 #endif
 
 #ifdef SOLARIS
