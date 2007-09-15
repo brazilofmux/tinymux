@@ -1086,7 +1086,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
 
 static char *hook_name(char *pCommand, int key)
 {
-    char *keylet;
+    const char *keylet;
     switch (key)
     {
     case HOOK_AFAIL:

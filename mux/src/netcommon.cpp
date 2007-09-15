@@ -206,7 +206,7 @@ void raw_notify_newline(dbref player)
  * raw_broadcast: Send message to players who have indicated flags
  */
 
-void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
+void DCL_CDECL raw_broadcast(int inflags, const char *fmt, ...)
 {
     if (!fmt || !*fmt)
     {
@@ -798,8 +798,8 @@ static void announce_connect(dbref player, DESC *d)
     //
     s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
 
-    char *pRoomAnnounceFmt;
-    char *pMonitorAnnounceFmt;
+    const char *pRoomAnnounceFmt;
+    const char *pMonitorAnnounceFmt;
     if (num < 2)
     {
         pRoomAnnounceFmt = "%s has connected.";

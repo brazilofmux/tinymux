@@ -523,7 +523,7 @@ void CleanUpSQLSlaveProcess(void)
 
 void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
 {
-    char *pFailedFunc = 0;
+    const char *pFailedFunc = NULL;
     int sv[2];
     int i;
     int maxfds;
@@ -649,7 +649,7 @@ failure:
 
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
-    char *pFailedFunc = 0;
+    const char *pFailedFunc = 0;
     int sv[2];
     int i;
     int maxfds;
