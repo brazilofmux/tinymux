@@ -2218,9 +2218,9 @@ static void info(int fmt, int flags, int ver)
     Log.WriteString(T("\n"));
 }
 
-static UTF8 *standalone_infile = NULL;
-static UTF8 *standalone_outfile = NULL;
-static UTF8 *standalone_basename = NULL;
+static const UTF8 *standalone_infile = NULL;
+static const UTF8 *standalone_outfile = NULL;
+static const UTF8 *standalone_basename = NULL;
 static bool standalone_check = false;
 static bool standalone_load = false;
 static bool standalone_unload = false;
@@ -2457,7 +2457,7 @@ long DebugTotalMemory = 0;
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
-static UTF8 *conffile = NULL;
+static const UTF8 *conffile = NULL;
 static bool bVersion = false;
 static const UTF8 *pErrorBasename = T("");
 static bool bServerOption = false;

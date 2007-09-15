@@ -254,7 +254,7 @@ struct confdata
     UTF8    *status_file;       /* Where to write arg to @shutdown */
     UTF8    *uncompress;        /* program to run to uncompress */
     UTF8    *wizmotd_file;      /* display this file on login to wizards */
-    UTF8    *pid_file;          // file for communicating process id back to ./Startmux
+    const UTF8 *pid_file;       // file for communicating process id back to ./Startmux
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */
     CLinearTimeDelta max_cmdsecs;  /* Upper Limit for real time taken by command */
