@@ -2139,9 +2139,9 @@ static void info(int fmt, int flags, int ver)
     Log.WriteString("\n");
 }
 
-static char *standalone_infile = NULL;
-static char *standalone_outfile = NULL;
-static char *standalone_basename = NULL;
+static const char *standalone_infile = NULL;
+static const char *standalone_outfile = NULL;
+static const char *standalone_basename = NULL;
 static bool standalone_check = false;
 static bool standalone_load = false;
 static bool standalone_unload = false;
@@ -2376,9 +2376,9 @@ long DebugTotalMemory = 0;
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
-static char *conffile = NULL;
+static const char *conffile = NULL;
 static bool bVersion = false;
-static char *pErrorBasename = "";
+static const char *pErrorBasename = "";
 static bool bServerOption = false;
 
 #ifdef MEMORY_BASED

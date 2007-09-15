@@ -237,7 +237,7 @@ struct confdata
     char    *status_file;       /* Where to write arg to @shutdown */
     char    *uncompress;        /* program to run to uncompress */
     char    *wizmotd_file;      /* display this file on login to wizards */
-    char    *pid_file;          // file for communicating process id back to ./Startmux
+    const char *pid_file;       // file for communicating process id back to ./Startmux
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */
     CLinearTimeDelta max_cmdsecs;  /* Upper Limit for real time taken by command */
