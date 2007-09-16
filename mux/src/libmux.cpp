@@ -677,6 +677,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                     pIMarshal->Release();
                 }
             }
+            else
+            {
+                mr =  MUX_E_CLASSNOTAVAILABLE;
+            }
         }
         Pipe_EmptyQueue(&qiFrame);
     }
@@ -1133,7 +1137,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
         else
         {
             g_fpPipePump = NULL;
-            g_pQueue_In = NULL;
+            g_pQueue_In  = NULL;
             g_pQueue_Out = NULL;
         }
 #else
@@ -1317,8 +1321,8 @@ bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
     {
         // Advance over empty blocks.
         //
-        while (  0 == pBlock->nBuffer
-              && NULL != pBlock->pNext)
+        while (  NULL != pBlock
+              && 0 == pBlock->nBuffer)
         {
             pqi->pHead = pBlock->pNext;
             if (NULL == pqi->pHead)
@@ -1422,7 +1426,11 @@ typedef enum
 //
 int           iState = 0;
 FrameType     eType = eUnknown;
-UINT32        nLength = 0;
+union LENGTH
+{
+    UINT32 n;
+    UINT8 ch[4];
+} Length = { 0 };
 UINT32        nChannel = 0;
 size_t        nLengthRemaining = 0;
 
@@ -1536,20 +1544,20 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
             break;
 
         case 5: // Length0
-            nLength = ((UINT32)ch) << 24;
+            Length.ch[0] = ch;
             break;
 
         case 6: // Length1
-            nLength = nLength | (((UINT32)ch) << 16);
+            Length.ch[1] = ch;
             break;
 
         case 7: // Length2
-            nLength = nLength | (((UINT32)ch) << 8);
+            Length.ch[2] = ch;
             break;
 
         case 8: // Length3
-            nLength = nLength | ((UINT32)ch);
-            nLengthRemaining = nLength;
+            Length.ch[3] = ch;
+            nLengthRemaining = Length.n;
 
             // We've been told how long to expect the packet to be.
             //
@@ -1578,25 +1586,18 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
             // Something went wrong. Re-initialize all the decoding variables.
             //
             eType   = eUnknown;
-            nLength = 0;
+            Length.n = 0;
             nChannel = 0;
             Pipe_EmptyQueue(pqiFrame);
             break;
 
         case 13: // Accept
-            if (4 <= nLength)
+            if (4 <= Length.n)
             {
-                UINT8 ach[4];
-                if (  Pipe_GetByte(pqiFrame, &ach[0])
-                   && Pipe_GetByte(pqiFrame, &ach[1])
-                   && Pipe_GetByte(pqiFrame, &ach[2])
-                   && Pipe_GetByte(pqiFrame, &ach[3]))
+                size_t nWanted = sizeof(nChannel);
+                if (  Pipe_GetBytes(pqiFrame, &nWanted, &nChannel)
+                   && nWanted == sizeof(nChannel))
                 {
-                    nChannel = ((UINT32)ach[0]) << 24
-                             | ((UINT32)ach[1]) << 16
-                             | ((UINT32)ach[2]) << 8
-                             | ((UINT32)ch);
-
                     if (  0 <= nChannel
                        && nChannel < nChannels)
                     {
@@ -1607,10 +1608,10 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
                             {
                                 // Send Queue_Frame back to sender.
                                 //
-                                UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+                                UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
 
                                 Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
-                                Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
+                                Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
                                 Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
                                 Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
                                 Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
@@ -1621,9 +1622,8 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
                             if (nChannel == nReturnChannel)
                             {
                                 eType    = eUnknown;
-                                nLength  = 0;
+                                Length.n = 0;
                                 nChannel = 0;
-
                                 return true;
                             }
                             else
@@ -1648,7 +1648,7 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
             // channel did not exist, or the call completed successfully.
             //
             eType    = eUnknown;
-            nLength  = 0;
+            Length.n = 0;
             nChannel = 0;
             Pipe_EmptyQueue(pqiFrame);
             break;

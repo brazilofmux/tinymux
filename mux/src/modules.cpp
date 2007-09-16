@@ -77,12 +77,19 @@ QUEUE_INFO Queue_In;
 QUEUE_INFO Queue_Out;
 #endif
 
+MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    Pipe_EmptyQueue(pqi);
+    return MUX_E_NOTIMPLEMENTED;
+}
+
 void init_modules(void)
 {
 #ifdef STUB_SLAVE
     Pipe_InitializeQueueInfo(&Queue_In);
     Pipe_InitializeQueueInfo(&Queue_Out);
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, pipepump, &Queue_In, &Queue_Out);
+    Pipe_InitializeChannelZero(Channel0_Call, NULL, NULL);
 #else
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, NULL, NULL, NULL);
 #endif

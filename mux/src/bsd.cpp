@@ -2049,7 +2049,7 @@ extern "C" void DCL_API pipepump(void)
 
     mudstate.debug_cmd = T("< pipepump >");
 
-    while (  !mudstate.shutdown_flag
+    if (  !mudstate.shutdown_flag
           && !IS_INVALID_SOCKET(stubslave_socket))
     {
         FD_ZERO(&input_set);
@@ -2087,7 +2087,7 @@ extern "C" void DCL_API pipepump(void)
             {
                 log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
             }
-            continue;
+            return;
         }
 
         // Get data from from stubslave.
