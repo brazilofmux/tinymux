@@ -179,7 +179,7 @@ void          Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn);
 bool          Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame);
 void          Pipe_EmptyQueue(QUEUE_INFO *pqi);
 void          Pipe_FreeChannel(CHANNEL_INFO *pci);
-bool          Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0]);
+bool          Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1]);
 bool          Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pch);
 void          Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0);
 void          Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);

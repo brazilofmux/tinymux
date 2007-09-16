@@ -75,14 +75,13 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 #ifdef STUB_SLAVE
 QUEUE_INFO Queue_In;
 QUEUE_INFO Queue_Out;
-#endif
 
 MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     Pipe_EmptyQueue(pqi);
-    return -(__LINE__);
-    //return MUX_E_NOTIMPLEMENTED;
+    return MUX_E_NOTIMPLEMENTED;
 }
+#endif
 
 void init_modules(void)
 {
