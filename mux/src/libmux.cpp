@@ -644,8 +644,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
             }
         }
     }
-#ifdef STUB_SLAVE
-    else
+    else if (NULL != g_fpPipePump)
     {
         // Out-of-Proc.
         //
@@ -684,7 +683,6 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         }
         Pipe_EmptyQueue(&qiFrame);
     }
-#endif // STUB_SLAVE
     return mr;
 }
 
@@ -1112,23 +1110,16 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
     if (IsUninitialized == g_ProcessContext)
     {
         g_ProcessContext = ctx;
-#if defined(STUB_SLAVE)
         if (  NULL != fpPipePump
            && NULL != pQueue_In
            && NULL != pQueue_Out)
         {
-            // Save pipepump callback. We need to design in a FIFO write
-            // callback to netmux.  netmux should provide incoming and
-            // outgoing streams.  The pipepump, write, and read packet
-            // handlers need to talk to each other in terms of call-level.
-            // pipepump will block until a certain call-level is handled by a
-            // return. The read packet handler should return the current call
-            // level so that pipepump can determine whether that level has
-            // been achieved.
+            // Save pipepump callback and two queues.  Hosting process should
+            // service queues when pipepump is called.
             //
             // The module library should deal with packets, call levels, and
-            // disconnection clean. The main program (stub or netmux) can
-            // handle file descriptors, process spawning, and errors.
+            // clean disconnections.  The main program (stubslave or netmux)
+            // can handle file descriptors, process spawning, and errors.
             //
             g_fpPipePump = fpPipePump;
             g_pQueue_In  = pQueue_In;
@@ -1140,11 +1131,6 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
             g_pQueue_In  = NULL;
             g_pQueue_Out = NULL;
         }
-#else
-        UNUSED_PARAMETER(fpPipePump);
-        UNUSED_PARAMETER(pQueue_In);
-        UNUSED_PARAMETER(pQueue_Out);
-#endif
         return MUX_S_OK;
     }
     else
@@ -1158,8 +1144,6 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
     g_ProcessContext = IsUninitialized;
     return MUX_S_OK;
 }
-
-#ifdef STUB_SLAVE
 
 #define CHANNELS_FIRST 100
 
@@ -1703,5 +1687,3 @@ MUX_RESULT Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
     Pipe_SendReceive(nChannel, pqiFrame);
     return MUX_S_OK;
 }
-
-#endif // STUB_SLAVE
