@@ -121,6 +121,7 @@ public:
     virtual ~CSumProxy();
 
 private:
+    UINT32 m_nChannel;
     UINT32 m_cRef;
 };
 

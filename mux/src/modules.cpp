@@ -80,7 +80,8 @@ QUEUE_INFO Queue_Out;
 MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     Pipe_EmptyQueue(pqi);
-    return MUX_E_NOTIMPLEMENTED;
+    return -(__LINE__);
+    //return MUX_E_NOTIMPLEMENTED;
 }
 
 void init_modules(void)

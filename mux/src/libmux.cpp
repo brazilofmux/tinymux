@@ -1186,6 +1186,26 @@ void Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
         nChannels = 1;
     }
 }
+
+// TODO: Hacky, buggy, and broken.
+//
+CHANNEL_INFO *Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
+{
+    if (nChannelsAllocated <= nChannels)
+    {
+        return NULL;
+    }
+
+    aChannels[nChannels].nChannel   = nChannels;
+    aChannels[nChannels].pfCall     = pfCall;
+    aChannels[nChannels].pfMsg      = pfMsg;
+    aChannels[nChannels].pfDisc     = pfDisc;
+    aChannels[nChannels].pInterface = NULL;
+    nChannels++;
+
+    return &aChannels[nChannels-1];
+}
+
 void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
 {
     pqi->pHead = NULL;
@@ -1598,47 +1618,51 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
                 if (  Pipe_GetBytes(pqiFrame, &nWanted, &nChannel)
                    && nWanted == sizeof(nChannel))
                 {
-                    if (  0 <= nChannel
-                       && nChannel < nChannels)
+                    if (eReturn == eType)
                     {
-                        switch (eType)
+                        if (nChannel == nReturnChannel)
                         {
-                        case eCall:
-                            aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+                            eType    = eUnknown;
+                            Length.n = 0;
+                            nChannel = 0;
+                            return true;
+                        }
+                        else
+                        {
+                            // TODO: Bad.
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (  0 <= nChannel
+                           && nChannel < nChannels)
+                        {
+                            switch (eType)
                             {
-                                // Send Queue_Frame back to sender.
-                                //
-                                UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
-
-                                Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
-                                Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
-                                Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
-                                Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
-                                Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
+                            case eCall:
+                                aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+                                {
+                                    // Send Queue_Frame back to sender.
+                                    //
+                                    UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+    
+                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
+                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
+                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
+                                    Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
+                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
+                                }
+                                break;
+    
+                            case eMessage:
+                                aChannels[nChannel].pfMsg(&aChannels[nChannel], pqiFrame);
+                                break;
+    
+                            case eDisconnect:
+                                aChannels[nChannel].pfDisc(&aChannels[nChannel], pqiFrame);
+                                break;
                             }
-                            break;
-
-                        case eReturn:
-                            if (nChannel == nReturnChannel)
-                            {
-                                eType    = eUnknown;
-                                Length.n = 0;
-                                nChannel = 0;
-                                return true;
-                            }
-                            else
-                            {
-                                // TODO: Bad.
-                            }
-                            break;
-
-                        case eMessage:
-                            aChannels[nChannel].pfMsg(&aChannels[nChannel], pqiFrame);
-                            break;
-
-                        case eDisconnect:
-                            aChannels[nChannel].pfDisc(&aChannels[nChannel], pqiFrame);
-                            break;
                         }
                     }
                 }

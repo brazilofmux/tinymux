@@ -548,9 +548,15 @@ MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_co
 
 MUX_RESULT CSumProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
-    // TODO: Given a marshal packet from the remote component, we should be able to connect and provide a proxy ISum.
+    // Use the channel number in the marshal packet from the remote component to support a proxy ISum.
     //
-    return QueryInterface(riid, ppv);
+    size_t nWanted = sizeof(m_nChannel);
+    if (  Pipe_GetBytes(pqi, &nWanted, &m_nChannel)
+       && nWanted == sizeof(m_nChannel))
+    {
+        return QueryInterface(riid, ppv);
+    }
+    return MUX_E_NOINTERFACE;
 }
 
 MUX_RESULT CSumProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
@@ -565,9 +571,45 @@ MUX_RESULT CSumProxy::DisconnectObject(void)
 
 MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
 {
-    // TODO: Communicate with the remote component to service this request.
+    MUX_RESULT mr = MUX_S_OK;
+    // Communicate with the remote component to service this request.
     //
-    return MUX_E_NOTIMPLEMENTED;
+    QUEUE_INFO qiFrame;
+
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    struct FRAME
+    {
+        UINT32 iMethod;
+        int    a;
+        int    b;
+    } CallFrame;
+    CallFrame.iMethod = 3;
+    CallFrame.a       = a;
+    CallFrame.b       = b;
+    Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
+
+    mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            int sum;
+        } ReturnFrame;
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            *sum = ReturnFrame.sum;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 // Factory for SumProxy component which is not directly accessible.
