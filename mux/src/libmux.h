@@ -3,15 +3,22 @@
  *
  * $Id$
  *
- * To support loadable modules, we implement a poor man's COM. There is no
- * support for appartments, remote servers, registry.  There is no RPC or
- * sockets, and most-likely, no opportunity to use any existing RPC tools for
- * building interfaces either.
+ * To support loadable modules, we implement a poor man's COM.  There is no
+ * support for appartments or remote servers.  The registry is constructed by
+ * libmux as each module is loaded, but it exists only for as long as a
+ * process with libmux is running.
  *
- * There is currently no support for out of process servers or marshalling.
+ * Most-likely, there is no opportunity to use any existing RPC or IDL tools
+ * for building these interfaces.
  *
- * There is no support for multiple threads, but methods are expected to be
- * re-entrant.
+ * There is support for spawning a stubslave process which can then load
+ * modules out-of-proc.  There is a primative poor man's RPC for communicating
+ * with stubslave across a pipe and marhshaling across interfaces and
+ * arguments.  Custom Marshaling works, and Standard Marshaling is planned.
+ *
+ * While there is no support for multiple threads, methods are expected to be
+ * re-entrant.  Don't be surprised if your call to another process results
+ * in your being called again and again.
  */
 
 #ifndef LIBMUX_H
