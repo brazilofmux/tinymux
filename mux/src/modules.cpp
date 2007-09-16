@@ -72,12 +72,19 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     return mr;
 }
 
+#ifdef STUB_SLAVE
+QUEUE_INFO Queue_In;
+QUEUE_INFO Queue_Out;
+#endif
+
 void init_modules(void)
 {
 #ifdef STUB_SLAVE
-    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, pipepump);
+    Pipe_InitializeQueueInfo(&Queue_In);
+    Pipe_InitializeQueueInfo(&Queue_Out);
+    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, pipepump, &Queue_In, &Queue_Out);
 #else
-    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, NULL);
+    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, NULL, NULL, NULL);
 #endif
     if (MUX_SUCCEEDED(mr))
     {
