@@ -191,7 +191,6 @@ extern "C" void       DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi);
 extern "C" void       DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci);
 extern "C" bool       DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1]);
 extern "C" bool       DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pch);
-extern "C" void       DCL_EXPORT DCL_API Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0);
 extern "C" void       DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
 extern "C" size_t     DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqi);
