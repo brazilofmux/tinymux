@@ -24,6 +24,8 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
+#include "table.h"
+
 UTF8 *DCL_CDECL tprintf(const char *fmt,...)
 {
     static UTF8 buff[LBUF_SIZE];
@@ -2833,3 +2835,224 @@ bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
     }
     return false;
 }
+
+static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_name)
+{
+    dbref target = NOTHING;
+    bool global_only = false;
+    size_t len = 0;
+    CHashTable* htab = &mudstate.reference_htab;
+    mux_string refstr(reference_name);
+
+    if(!reference_name || !*reference_name)
+    {
+        global_only = true;
+        refstr.prepend('_');
+    }
+    else
+    {
+        global_only = false;
+
+        if(0 == mux_stricmp(reference_name, T("me")))
+        {
+            target = executor;
+        }
+        else
+        {
+            target = lookup_player(executor, reference_name, 1);
+            if(NOTHING == target)
+            {
+                raw_notify(executor, T("No such player."));
+                return;
+            }
+
+            if(!Controls(executor, target))
+            {
+                raw_notify(executor, NOPERM_MESSAGE);
+                return;
+            }
+        }
+    }
+
+    //  Listing: 
+    //    - if global_only is true, list all references that begin with _
+    //    - Otherwise, list all references whose owner is target
+    //
+    reference_entry *htab_entry;
+    bool match_found = false;
+
+    for(htab_entry = (struct reference_entry *) hash_firstentry(htab);
+            NULL != htab_entry; 
+            htab_entry = (struct reference_entry *) hash_nextentry(htab))
+    {
+        if( (true == global_only && '_' == htab_entry->name[0]) ||
+                target == htab_entry->owner)
+        {
+            if(!Good_obj(htab_entry->target))
+            {
+                continue;
+            }
+
+            if(false == match_found)
+            {
+                match_found = true;
+                raw_notify(executor, tprintf("%-12s %-20s %-20s", 
+                            T("Reference"), T("Target"), T("Owner")));
+                raw_notify(executor, 
+                        T("-------------------------------------------------------"));
+            }
+
+            UTF8 *object_buf = 
+                unparse_object(executor, htab_entry->target, false);
+
+            raw_notify(executor, tprintf("%-12s %-20s %-20s", htab_entry->name,
+                        object_buf, Moniker(htab_entry->owner)));
+
+            free_lbuf(object_buf);
+
+        }
+    }
+
+    if(false == match_found)
+    {
+        raw_notify(executor, T("GAME: No references found."));
+    }
+    else
+    {
+        raw_notify(executor, 
+                T("---------------- End of Reference List ----------------"));
+    }
+}
+
+
+void do_reference(dbref executor, dbref caller, dbref enactor, int eval, 
+        int key, int nargs, UTF8 *reference_name, UTF8 *object_name, 
+        const UTF8 *cargs[], int ncargs)
+{
+
+    dbref target = NOTHING;
+    CHashTable* htab = &mudstate.reference_htab;
+    dbref *np;
+    mux_string refstr(reference_name);
+    UTF8 tbuf[LBUF_SIZE];
+    size_t tbuf_len = 0;
+
+
+    if(key & REFERENCE_LIST)
+    {
+        ListReferences(executor, reference_name, object_name);
+        return;
+    }
+
+    /* References can only be set on objects the executor can examine */
+    if(object_name && *object_name)
+    {
+        target = match_thing_quiet(executor, object_name);
+
+        if(!Good_obj(target))
+        {
+            notify(executor, NOMATCH_MESSAGE);
+            return;
+        }
+        if(!Examinable(executor, target))
+        {
+            notify(executor, NOPERM_MESSAGE);
+            return;
+        }
+
+    }
+    else
+    {
+        target = NOTHING;
+    }
+
+    if(*reference_name == '_')
+    {
+        if(!Wizard(executor))
+        {
+            notify(executor, NOPERM_MESSAGE);
+            return;
+        }
+    }
+    else
+    {
+        refstr.append('.');
+        refstr.append(executor);
+    }
+
+    refstr.export_TextPlain(tbuf);
+    utf8_strlen(tbuf, tbuf_len);
+ 
+    struct reference_entry *result;
+
+    result = (reference_entry *) hashfindLEN(tbuf,
+            tbuf_len, &mudstate.reference_htab);
+
+    if(NULL != result)
+    {
+        if(NOTHING == target)
+        {
+            MEMFREE(result);
+            hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
+            raw_notify(executor, T("Reference cleared."));
+        }
+        else if(result->target == target)
+        {
+            // Reference already exists
+            //
+            raw_notify(executor, T("That reference already exists."));
+        }
+        else
+        {
+            // Replace the existing reference
+            //
+            MEMFREE(result);
+            hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
+            try 
+            {
+                result = (reference_entry *) MEMALLOC(sizeof(result));
+            }
+            catch(...)
+            {
+                ; // Nothing;
+            }
+
+            if(NULL != result)
+            {
+                result->target = target;
+                result->owner = executor;
+                mux_strncpy(result->name, reference_name, SBUF_SIZE - 1);
+                hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
+                raw_notify(executor, T("Reference updated."));
+            }
+        }
+        return;
+    }
+
+    // The reference was not found.  It may be new or may never have existed
+    //
+    if(NOTHING == target)
+    {
+        raw_notify(executor, T("No such reference to clear."));
+        return;
+    }
+
+    try 
+    {
+        result = (reference_entry *) MEMALLOC(sizeof(reference_entry));
+    }
+    catch(...)
+    {
+        ; // Nothing
+    }
+
+    if(NULL != result)
+    {
+        result->target = target;
+        result->owner = executor;
+        mux_strncpy(result->name, reference_name, SBUF_SIZE - 1);
+        hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
+        raw_notify(executor, T("Reference added."));
+    }
+}
+

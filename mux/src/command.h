@@ -112,6 +112,7 @@ CMD_TWO_ARG(do_quota);          /* Set or display quotas */
 CMD_NO_ARG(do_readcache);       /* Reread text file cache */
 CMD_NO_ARG(do_restart);         /* Restart the game. */
 CMD_NO_ARG(do_backup);          /* Backup the database and restart */
+CMD_TWO_ARG(do_reference);
 CMD_ONE_ARG(do_say);            /* Messages to all */
 CMD_NO_ARG(do_score);           /* Display my wealth */
 CMD_ONE_ARG(do_search);         /* Search for objs matching criteria */

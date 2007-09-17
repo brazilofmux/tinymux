@@ -441,6 +441,7 @@ struct statedata
     CHashTable parent_htab;     /* Parent $-command exclusion */
     CHashTable player_htab;     /* Player name->number hashtable */
     CHashTable powers_htab;     /* Powers hashtable */
+    CHashTable reference_htab;  /* @reference hashtable */
     CHashTable ufunc_htab;      /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
 
