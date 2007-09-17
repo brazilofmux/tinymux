@@ -1145,61 +1145,136 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
     return MUX_S_OK;
 }
 
-#define CHANNELS_FIRST 100
-
-extern "C" void DCL_EXPORT DCL_API Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
+extern "C" void DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
 {
+    pqi->pHead = NULL;
+    pqi->pTail = NULL;
+    pqi->nBytes = 0;
+}
+
+static void FreeChannel(UINT32 nChannel)
+{
+    aChannels[nChannel].bAllocated = false;
+    aChannels[nChannel].nChannel   = nChannel;
+    aChannels[nChannel].pfCall     = NULL;
+    aChannels[nChannel].pfMsg      = NULL;
+    aChannels[nChannel].pfDisc     = NULL;
+    aChannels[nChannel].pInterface = NULL;
+}
+
+static bool GrowChannels(void)
+{
+    int nNew = GrowByFactor(nChannels+1);
+    CHANNEL_INFO *pNew = NULL;
     try
     {
-        aChannels = new CHANNEL_INFO[CHANNELS_FIRST];
+        pNew = new CHANNEL_INFO[nNew];
     }
     catch (...)
     {
         ; // Nothing.
     }
 
-    if (NULL != aChannels)
+    if (NULL != pNew)
     {
-        nChannelsAllocated      = CHANNELS_FIRST;
-        aChannels[0].nChannel   = 0;
+        int i;
+        if (NULL != aChannels)
+        {
+            for (i = 0; i < nChannels; i++)
+            {
+                pNew[i] = aChannels[i];
+            }
+            delete aChannels;
+            aChannels = NULL;
+        }
+        else
+        {
+            // Initialized Channel 0 as always allocated.
+            //
+            pNew[0].bAllocated = true;
+            pNew[0].nChannel   = 0;
+            pNew[0].pfCall     = NULL;
+            pNew[0].pfMsg      = NULL;
+            pNew[0].pfDisc     = NULL;
+            pNew[0].pInterface = NULL;
+            nChannels = 1;
+        }
+
+        aChannels = pNew;
+        pNew = NULL;
+        for (i = nChannels; i < nNew; i++)
+        {
+            FreeChannel(i);
+        }
+        nChannels = nNew;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static UINT32 AllocateChannel(void)
+{
+    if (  NULL == aChannels
+       && !GrowChannels())
+    {
+        return CHANNEL_INVALID;
+    }
+
+    for (;;)
+    {
+        for (int i = 0; i < nChannels; i++)
+        {
+            if (!aChannels[i].bAllocated)
+            {
+                aChannels[i].bAllocated = true;
+                return i;
+            }
+        }
+
+        if (!GrowChannels())
+        {
+            return CHANNEL_INVALID;
+        }
+    }
+}
+
+extern "C" void DCL_EXPORT DCL_API Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
+{
+    if (  NULL != aChannels
+       || GrowChannels())
+    {
         aChannels[0].pfCall     = pfCall0;
         aChannels[0].pfMsg      = pfMsg0;
         aChannels[0].pfDisc     = pfDisc0;
         aChannels[0].pInterface = NULL;
-
-        nChannels = 1;
     }
 }
 
-// TODO: Hacky, buggy, and broken.
-//
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
 {
-    if (nChannelsAllocated <= nChannels)
-    {
-        return NULL;
-    }
+    UINT32 n = AllocateChannel();
 
-    aChannels[nChannels].nChannel   = nChannels;
-    aChannels[nChannels].pfCall     = pfCall;
-    aChannels[nChannels].pfMsg      = pfMsg;
-    aChannels[nChannels].pfDisc     = pfDisc;
-    aChannels[nChannels].pInterface = NULL;
-    nChannels++;
+    aChannels[n].pfCall     = pfCall;
+    aChannels[n].pfMsg      = pfMsg;
+    aChannels[n].pfDisc     = pfDisc;
+    aChannels[n].pInterface = NULL;
 
-    return &aChannels[nChannels-1];
+    return &aChannels[n];
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
 {
-    // TODO.
-}
-
-extern "C" void DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
-{
-    pqi->pHead = NULL;
-    pqi->pTail = NULL;
-    pqi->nBytes = 0;
+    UINT32 n;
+    if (  NULL != pci
+       && pci == &aChannels[n = pci->nChannel]
+       && n != 0
+       && aChannels[n].bAllocated)
+    {
+        FreeChannel(n);
+    }
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
@@ -1619,12 +1694,14 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                         else
                         {
                             // TODO: Bad.
+                            //
                             break;
                         }
                     }
                     else
                     {
-                        if (nChannel < nChannels)
+                        if (  nChannel < nChannels
+                           && aChannels[nChannel].bAllocated)
                         {
                             switch (eType)
                             {
@@ -1669,7 +1746,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
     return false;
 }
 
-void Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
+static void Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
 {
     for (;;)
     {

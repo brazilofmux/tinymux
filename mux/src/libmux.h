@@ -79,6 +79,7 @@ const MUX_IID mux_IID_IRpcProxyBuffer   = 0x0000000100000013i64;
 const MUX_IID mux_IID_IRpcStubBuffer    = 0x0000000100000014i64;
 const MUX_IID mux_IID_IPSFactoryBuffer  = 0x0000000100000015i64;
 const MUX_IID mux_IID_IMarshal          = 0x0000000100000016i64;
+const UINT32  CHANNEL_INVALID           = 0xFFFFFFFFi64;
 #else
 const MUX_IID mux_IID_IUnknown          = 0x0000000100000010ull;
 const MUX_IID mux_IID_IClassFactory     = 0x0000000100000011ull;
@@ -87,6 +88,7 @@ const MUX_IID mux_IID_IRpcProxyBuffer   = 0x0000000100000013ull;
 const MUX_IID mux_IID_IRpcStubBuffer    = 0x0000000100000014ull;
 const MUX_IID mux_IID_IPSFactoryBuffer  = 0x0000000100000015ull;
 const MUX_IID mux_IID_IMarshal          = 0x0000000100000016ull;
+const UINT32  CHANNEL_INVALID           = 0xFFFFFFFFull;
 #endif
 
 #define interface class
@@ -173,6 +175,7 @@ typedef MUX_RESULT FDISC(struct channel_info *pci, QUEUE_INFO *pqi);
 
 typedef struct channel_info
 {
+     bool      bAllocated;
      UINT32    nChannel;
      FCALL    *pfCall;
      FMSG     *pfMsg;
