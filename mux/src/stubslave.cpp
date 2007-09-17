@@ -16,55 +16,48 @@
 
 QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
-QUEUE_INFO    Queue_Frame;
-
-void Stub_ShoveChars(int fdServer)
-{
-    for (;;)
-    {
-        UINT8 arg[QUEUE_BLOCK_SIZE];
-        int len = read(fdServer, arg, sizeof(arg));
-        if (len == 0)
-        {
-            break;
-        }
-
-        if (len < 0)
-        {
-            if (EINTR == errno)
-            {
-                errno = 0;
-                continue;
-            }
-            break;
-        }
-
-        Pipe_AppendBytes(&Queue_In, len, arg);
-        Pipe_DecodeFrames(0xFFFFFFFFUL, &Queue_Frame);
-        
-        size_t nWanted = sizeof(arg);
-        while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
-              && 0 < nWanted)
-        {
-            write(1, arg, nWanted);
-        }
-    }
-}
 
 void Stub_PipePump(void)
 {
+    static UINT8 arg[QUEUE_BLOCK_SIZE];
+    size_t nWanted = sizeof(arg);
+    while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
+          && 0 < nWanted)
+    {
+        write(1, arg, nWanted);
+        nWanted = sizeof(arg);
+    }
+
+    int len = read(0, arg, sizeof(arg));
+    if (0 < len)
+    {
+        Pipe_AppendBytes(&Queue_In, len, arg);
+    }
+}
+
+bool bStubSlaveShutdown = false;
+
+void Stub_ShoveChars(void)
+{
+    QUEUE_INFO Queue_Frame;
+    Pipe_InitializeQueueInfo(&Queue_Frame);
+
+    while (!bStubSlaveShutdown)
+    {
+        Stub_PipePump();
+        Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Frame);
+    }
 }
 
 int main(int argc, char *argv[])
 {
     Pipe_InitializeQueueInfo(&Queue_In);
     Pipe_InitializeQueueInfo(&Queue_Out);
-    Pipe_InitializeQueueInfo(&Queue_Frame);
 
     mux_InitModuleLibrary(IsSlaveProcess, Stub_PipePump, &Queue_In, &Queue_Out);
     mux_AddModule(T("sum"), T("./bin/sum.so"));
-    
-    Stub_ShoveChars(0);
+
+    Stub_ShoveChars();
     mux_FinalizeModuleLibrary();
     return 0;
 }
