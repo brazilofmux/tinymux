@@ -88,8 +88,8 @@ QUEUE_INFO *g_pQueue_In  = NULL;
 QUEUE_INFO *g_pQueue_Out = NULL;
 
 CHANNEL_INFO *aChannels = NULL;
-int           nChannels = 0;
-int           nChannelsAllocated = 0;
+size_t        nChannels = 0;
+size_t        nChannelsAllocated = 0;
 
 static process_context g_ProcessContext = IsUninitialized;
 
@@ -1147,7 +1147,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 
 #define CHANNELS_FIRST 100
 
-void Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
+extern "C" void DCL_EXPORT DCL_API Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
 {
     try
     {
@@ -1173,7 +1173,7 @@ void Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
 
 // TODO: Hacky, buggy, and broken.
 //
-CHANNEL_INFO *Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
+extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
 {
     if (nChannelsAllocated <= nChannels)
     {
@@ -1190,14 +1190,19 @@ CHANNEL_INFO *Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
     return &aChannels[nChannels-1];
 }
 
-void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
+extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
+{
+    // TODO.
+}
+
+extern "C" void DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
 {
     pqi->pHead = NULL;
     pqi->pTail = NULL;
     pqi->nBytes = 0;
 }
 
-void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
+extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
 {
     if (  0 != n
        && NULL != p)
@@ -1274,7 +1279,7 @@ void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
     }
 }
 
-void Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn)
+extern "C" void DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn)
 {
     if (  NULL != pqiOut
        && NULL != pqiIn)
@@ -1295,7 +1300,7 @@ void Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn)
     }
 }
 
-void Pipe_EmptyQueue(QUEUE_INFO *pqi)
+extern "C" void DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi)
 {
     if (NULL != pqi)
     {
@@ -1316,7 +1321,7 @@ void Pipe_EmptyQueue(QUEUE_INFO *pqi)
     }
 }
 
-bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
+extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1])
 {
     QUEUE_BLOCK *pBlock;
 
@@ -1352,7 +1357,7 @@ bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
     return false;
 }
 
-bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
+extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
 {
     UINT8 *pch = (UINT8 *)pv;
 
@@ -1407,7 +1412,7 @@ bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
     return false;
 }
 
-size_t Pipe_QueueLength(QUEUE_INFO *pqi)
+extern "C" size_t DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi)
 {
     size_t n = 0;
     if (NULL != pqi)
@@ -1499,7 +1504,7 @@ const UINT8 decoder_stt[23][21] =
 
 // Decode bytes out of Queue_In to Queue_Frame.
 //
-bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
 {
     UINT8 buffer[QUEUE_BLOCK_SIZE];
 
@@ -1619,8 +1624,7 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
                     }
                     else
                     {
-                        if (  0 <= nChannel
-                           && nChannel < nChannels)
+                        if (nChannel < nChannels)
                         {
                             switch (eType)
                             {
@@ -1662,6 +1666,7 @@ bool Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame)
             break;
         }
     }
+    return false;
 }
 
 void Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
@@ -1676,7 +1681,7 @@ void Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
     }
 }
 
-MUX_RESULT Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
 {
     UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(CallMagic), CallMagic);
