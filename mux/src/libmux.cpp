@@ -1706,8 +1706,10 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                             switch (eType)
                             {
                             case eCall:
-                                aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+                                if (NULL != aChannels[nChannel].pfCall)
                                 {
+                                    aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+
                                     // Send Queue_Frame back to sender.
                                     //
                                     UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
@@ -1721,11 +1723,17 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                                 break;
     
                             case eMessage:
-                                aChannels[nChannel].pfMsg(&aChannels[nChannel], pqiFrame);
+                                if (NULL != aChannels[nChannel].pfMsg)
+                                {
+                                    aChannels[nChannel].pfMsg(&aChannels[nChannel], pqiFrame);
+                                }
                                 break;
     
                             case eDisconnect:
-                                aChannels[nChannel].pfDisc(&aChannels[nChannel], pqiFrame);
+                                if (NULL != aChannels[nChannel].pfDisc)
+                                {
+                                    aChannels[nChannel].pfDisc(&aChannels[nChannel], pqiFrame);
+                                }
                                 break;
                             }
                         }
