@@ -1851,7 +1851,10 @@ void shovechars(int nPorts, PortInfo aPorts[])
         if (!IS_INVALID_SOCKET(stubslave_socket))
         {
             FD_SET(stubslave_socket, &input_set);
-            FD_SET(stubslave_socket, &output_set);
+            if (0 < Pipe_QueueLength(&Queue_Out))
+            {
+                FD_SET(stubslave_socket, &output_set);
+            }
         }
 #endif // STUB_SLAVE
 
