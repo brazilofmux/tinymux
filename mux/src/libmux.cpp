@@ -675,7 +675,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                     //
                     MUX_CID cidProxy = 0;
                     nWanted = sizeof(cidProxy);
-                    if (  Pipe_GetBytes(&qiFrame, &nWanted, (UINT8*)(&cidProxy))
+                    if (  Pipe_GetBytes(&qiFrame, &nWanted, &cidProxy)
                        && sizeof(cidProxy) == nWanted)
                     {
                         // Open an IMarshal interface on the given proxy and pass it the marshal packet.
@@ -697,12 +697,41 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                 {
                     // Interface was Standard Marshaled.
                     //
-                    //QQQ
-                    mr = MUX_E_NOTIMPLEMENTED;
+                    MUX_CID cidProxyStub = 0;
+                    nWanted = sizeof(cidProxyStub);
+                    if (  Pipe_GetBytes(&qiFrame, &nWanted, &cidProxyStub)
+                       && sizeof(cidProxyStub) == nWanted)
+                    {
+                        UINT32 nChannel = 0;
+                        nWanted = sizeof(nChannel);
+                        if (  Pipe_GetBytes(&qiFrame, &nWanted, &nChannel)
+                           && sizeof(nChannel) == nWanted)
+                        {
+                            // Open an IPSFactoryBuffer interface on the given Proxy/Stub component and create a proxy.
+                            //
+                            mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
+                            mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
+                            if (MUX_SUCCEEDED(mr))
+                            {
+                                //QQQ
+                                // Call CreateProxy, construct a private CRpcChannelBuffer using nChannel, and associate the two.
+                                //
+                                mr = MUX_E_NOTIMPLEMENTED;
+                            }
+                        }
+                        else
+                        {
+                            mr =  MUX_E_CLASSNOTAVAILABLE;
+                        }
+                    }
+                    else
+                    {
+                        mr =  MUX_E_CLASSNOTAVAILABLE;
+                    }
                 }
                 else
                 {
-                    mr = MUX_E_UNEXPECTED;
+                    mr = MUX_E_INVALIDARG;
                 }
             }
             else
