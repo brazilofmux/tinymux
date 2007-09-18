@@ -206,7 +206,7 @@ extern "C"
     typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(MUX_CID cid, MUX_IID iid, void **ppv);
 }
 
-// All components must be registered.  Currently, only the id is required.
+// All components must be registered.  Currently, only the MUX_CID is required.
 //
 typedef struct
 {
@@ -214,8 +214,8 @@ typedef struct
 } CLASS_INFO;
 
 // It is not required that all interfaces be registered.  However, if an
-// interface needs to be marshalled, it must have an associated proxy-stub
-// component and therefore must be registered.
+// interface needs to be marshalled using Standard Marshaling, it must have an
+// associated proxy-stub component and therefore must be registered.
 //
 typedef struct
 {
