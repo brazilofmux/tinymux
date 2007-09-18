@@ -3039,7 +3039,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                     while (r != q)
                     {
                         while (  r != q
-                              && ';' != *r)
+                              && ';' != r[0])
                         {
                             r++;
                         }
@@ -3099,7 +3099,13 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                         {
                             utf8_safe_chr(s, aBuffer, &pBuffer);
                         }
-                        p = r + 1;
+
+                        while (  r != q
+                              && ';' == r[0])
+                        {
+                            r++;
+                        }
+                        p = r;
                     }
 
                     // Eat trailing terminator.
