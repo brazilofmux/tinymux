@@ -169,11 +169,11 @@ MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     UNUSED_PARAMETER(pqi);
 
-    ISum *pISum = static_cast<ISum *>(pci->pInterface);
-    if (NULL == pISum)
+    if (NULL == pci->pInterface)
     {
         return MUX_E_NOINTERFACE;
     }
+    ISum *pISum = static_cast<ISum *>(pci->pInterface);
 
     mux_IMarshal *pIMarshal = NULL;
     MUX_RESULT mr = pISum->QueryInterface(mux_IID_IMarshal, (void **)&pIMarshal);
