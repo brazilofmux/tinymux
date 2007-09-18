@@ -2496,7 +2496,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 else
                 {
                     notify_except2_rlevel(loc, player, player, thing,
-                        tprintf("%s %s", Name(player), buff));
+                        tprintf("%s %s", Moniker(player), buff));
                 }
 #else
                 if (aflags & AF_NONAME)
@@ -2506,7 +2506,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 else
                 {
                     notify_except2(loc, player, player, thing,
-                        tprintf("%s %s", Name(player), buff));
+                        tprintf("%s %s", Moniker(player), buff));
                 }
 #endif // REALITY_LVLS
             }
@@ -2521,7 +2521,8 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             }
             else
             {
-                notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+                notify_except2_rlevel(loc, player, player, thing, 
+                        tprintf("%s %s", Moniker(player), odef));
             }
 #else
             if (ctrl_flags & VERB_NONAME)
@@ -2530,7 +2531,8 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             }
             else
             {
-                notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+                notify_except2(loc, player, player, thing, 
+                        tprintf("%s %s", Moniker(player), odef));
             }
 #endif // REALITY_LVLS
         }
