@@ -1545,12 +1545,11 @@ union LENGTH
 UINT32        nChannel = 0;
 size_t        nLengthRemaining = 0;
 
-// CallMagic   0xC39B71F9 - 17, 14,  9, 20
-// ReturnMagic 0x35972DD0 -  7, 13,  6, 18
-// MsgMagic    0xF69E1836 - 19, 15,  3,  8
-// DiscMagic   0x960AA381 - 12,  1, 16, 10
-// EndMagic    0x27118B26 -  5,  2, 11,  4
-//
+const UINT8 CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };  // 17, 14,  9, 20
+const UINT8 ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };  //  7, 13,  6, 18
+const UINT8 MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };  // 19, 15,  3,  8
+const UINT8 DiscMagic[4]   = { 0x96, 0x0A, 0xA3, 0x81 };  // 12,  1, 16, 10
+const UINT8 EndMagic[4]    = { 0x27, 0x11, 0x8B, 0x26 };  //  5,  2, 11,  4
 
 const UINT8 decoder_itt[256] =
 {

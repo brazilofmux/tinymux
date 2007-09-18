@@ -28,12 +28,6 @@ typedef int MUX_RESULT;
 typedef UINT64 MUX_CID;
 typedef UINT64 MUX_IID;
 
-const UINT8 CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };
-const UINT8 ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };
-const UINT8 MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };
-const UINT8 DiscMagic[4]   = { 0x96, 0x0A, 0xA3, 0x81 };
-const UINT8 EndMagic[4]    = { 0x27, 0x11, 0x8B, 0x26 };
-
 #define MUX_S_OK                 (0)
 #define MUX_S_FALSE              (1)
 #define MUX_E_FAIL              (-1)
