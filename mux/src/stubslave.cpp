@@ -127,6 +127,10 @@ MUX_RESULT CStubSlave::QueryInterface(MUX_IID iid, void **ppv)
     {
         *ppv = static_cast<mux_ISlaveControl *>(this);
     }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
     else
     {
         *ppv = NULL;
@@ -153,7 +157,225 @@ UINT32 CStubSlave::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CStubSlave::Foo(void)
+MUX_RESULT CStubSlave::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
+{
+    UNUSED_PARAMETER(ctx);
+
+    if (NULL == pcid)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    else if (  IID_ISlaveControl == riid
+            && CrossProcess == ctx)
+    {
+        // We only support cross-process at the moment.
+        //
+        *pcid = CID_StubSlaveProxy;
+        return MUX_S_OK;
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    UNUSED_PARAMETER(pqi);
+
+    // Get our interface pointer from the channel.
+    //
+    mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
+    pci->pInterface = NULL;
+
+    // Tear down our side of the communication.  Our callback functions will
+    // no longer be called.
+    //
+    Pipe_FreeChannel(pci);
+
+    if (NULL != pIUnknown)
+    {
+        pIUnknown->Release();
+        return MUX_S_OK;
+    }
+    else
+    {
+        return MUX_E_NOINTERFACE;
+    }
+}
+
+MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    mux_ISlaveControl *pISlaveControl = static_cast<mux_ISlaveControl *>(pci->pInterface);
+    if (NULL == pISlaveControl)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    UINT32 iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&iMethod)
+       || nWanted != sizeof(iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // The IUnknown methods (0, 1, and 2) do not make it across, so we don't
+    // attempt to handle them here.  Instead, when the reference count on
+    // CStubSlaveProxy goes to zero, it drops the connection and destroys itself.
+    // We see that as a call to CStubSlave_Disconnect.
+    //
+    switch (iMethod)
+    {
+    case 3: // MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8/UTF16 aFileName[]);
+        {
+        }
+        break;
+
+    case 4: // MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+        {
+        }
+        break;
+
+    case 5: // MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+        {
+        }
+        break;
+
+    case 6: // MUX_RESULT ModuleMaintenance(void);
+        {
+        }
+        break;
+#if 0
+    case 3:  // Add()
+        {
+            int a;
+            nWanted = sizeof(a);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&a)
+               || nWanted != sizeof(a))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            int b;
+            nWanted = sizeof(b);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&b)
+               || nWanted != sizeof(b))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            int sum = 0;
+            pISum->Add(a, b, &sum);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(sum), (UINT8 *)&sum);
+            return MUX_S_OK;
+        }
+        break;
+#endif
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+{
+    // Parameter validation and initialization.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+    if (NULL == pqi)
+    {
+        mr = MUX_E_INVALIDARG;
+    }
+    else if (IID_ISlaveControl != riid)
+    {
+        mr = MUX_E_FAIL;
+    }
+    else if (CrossProcess != ctx)
+    {
+        mr = MUX_E_NOTIMPLEMENTED;
+    }
+    else
+    {
+        mux_ISlaveControl *pISlaveControl = NULL;
+        mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        if (MUX_SUCCEEDED(mr))
+        {
+            // Construct a packet sufficient to allow the proxy to communicate with us.
+            //
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStubSlave_Call, NULL, CStubSlave_Disconnect);
+            if (NULL != pChannel)
+            {
+                pChannel->pInterface = pISlaveControl;
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                mr =  MUX_S_OK;
+            }
+            else
+            {
+                pISlaveControl->Release();
+                pISlaveControl = NULL;
+                mr = MUX_E_OUTOFMEMORY;
+            }
+        }
+    }
+    return mr;
+}
+
+MUX_RESULT CStubSlave::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave::ReleaseMarshalData(QUEUE_INFO *pqi)
+{
+    // Since the Marshal Data is like an extra reference on an object, if the
+    // Marshaled Data is never unmarshalled, libmux should use this function
+    // to release the reference to the component.  This is only implemented on
+    // the server side -- not the proxy.
+    //
+    UINT32 nChannel;
+    size_t nWanted = sizeof(nChannel);
+    if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
+       && sizeof(nChannel) == nWanted)
+    {
+        CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
+        if (NULL != pChannel)
+        {
+            CStubSlave_Disconnect(pChannel, pqi);
+        }
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CStubSlave::DisconnectObject(void)
+{
+    // This is called when the hosting process is about to go down to give the
+    // component a chance to notify its proxy that it is about to shut down.
+    // This is only implemented on the server side -- not the proxy.
+    //
+    // TODO: There isn't a mechanism for sending such a notification, yet.
+    //
+    return MUX_S_OK;
+}
+
+
+#ifdef WIN32
+MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+#else
+MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+#endif // WIN32
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave::RemoveModule(const UTF8 aModuleName[])
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlave::ModuleMaintenance(void)
 {
 }
 

@@ -19,6 +19,7 @@ const MUX_IID IID_ISlaveControl         = 0x0000000250C158E9i64;
 const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Ei64;
 const MUX_IID IID_ILog                  = 0x000000028B9DC13Ai64;
 const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812i64;
+const MUX_CID CID_StubSlaveProxy        = 0x00000002D2453099i64;
 const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Fi64;
 #else
 const MUX_CID CID_Log                   = 0x000000020CE18E7Aull;
@@ -27,6 +28,7 @@ const MUX_IID IID_ISlaveControl         = 0x0000000250C158E9ull;
 const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Eull;
 const MUX_IID IID_ILog                  = 0x000000028B9DC13Aull;
 const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812ull;
+const MUX_CID CID_StubSlaveProxy        = 0x00000002D2453099ull;
 const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Full;
 #endif
 
@@ -238,10 +240,17 @@ private:
 interface mux_ISlaveControl : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Foo(void) = 0;
+#ifdef WIN32
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]) = 0;
+#else
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]) = 0;
+#endif // WIN32
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]) = 0;
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo) = 0;
+    virtual MUX_RESULT ModuleMaintenance(void) = 0;
 };
 
-class CStubSlave : public mux_ISlaveControl
+class CStubSlave : public mux_ISlaveControl, public mux_IMarshal
 {
 public:
     // mux_IUnknown
@@ -250,9 +259,24 @@ public:
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
     // mux_ISlaveControl
     //
-    virtual MUX_RESULT Foo(void);
+#ifdef WIN32
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#else
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // WIN32
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+    virtual MUX_RESULT ModuleMaintenance(void);
 
     CStubSlave(void);
     virtual ~CStubSlave();
