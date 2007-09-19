@@ -43,6 +43,7 @@ typedef UINT64 MUX_IID;
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
+#define MUX_RESULT_TO_EXIT_STATUS(x) (MUX_SUCCEEDED(x)?0:(((int)(x))<255?(-(int)(x)):255))
 
 typedef enum
 {
