@@ -335,10 +335,12 @@ public:
     virtual MUX_RESULT ModuleMaintenance(void);
 
     CStubSlaveProxy(void);
+    MUX_RESULT FinalConstruct(void);
     virtual ~CStubSlaveProxy();
 
 private:
     UINT32 m_cRef;
+    UINT32 m_nChannel;
 };
 
 class CStubSlaveProxyFactory : public mux_IClassFactory

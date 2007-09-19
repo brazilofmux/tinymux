@@ -18,11 +18,12 @@
 #include "libmux.h"
 #include "modules.h"
 
-#define NUM_CLASSES 2
+#define NUM_CLASSES 3
 static CLASS_INFO netmux_classes[NUM_CLASSES] =
 {
     { CID_Log                },
-    { CID_ServerEventsSource }
+    { CID_ServerEventsSource },
+    { CID_StubSlaveProxy     }
 };
 
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
@@ -68,6 +69,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pServerEventsSourceFactory->QueryInterface(iid, ppv);
         pServerEventsSourceFactory->Release();
+    }
+    else if (CID_StubSlaveProxy == cid)
+    {
+        CStubSlaveProxyFactory *pStubSlaveProxyFactory = NULL;
+        try
+        {
+            pStubSlaveProxyFactory = new CStubSlaveProxyFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == pStubSlaveProxyFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pStubSlaveProxyFactory->QueryInterface(iid, ppv);
+        pStubSlaveProxyFactory->Release();
     }
     return mr;
 }
@@ -512,6 +533,265 @@ MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOute
 }
 
 MUX_RESULT CServerEventsSourceFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// StubSlaveProxy component which is not directly accessible.
+//
+CStubSlaveProxy::CStubSlaveProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID)
+{
+}
+
+MUX_RESULT CStubSlaveProxy::FinalConstruct(void)
+{
+    return MUX_S_OK;
+}
+
+CStubSlaveProxy::~CStubSlaveProxy()
+{
+}
+
+MUX_RESULT CStubSlaveProxy::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_ISlaveControl *>(this);
+    }
+    else if (IID_ISlaveControl == iid)
+    {
+        *ppv = static_cast<mux_ISlaveControl *>(this);
+    }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CStubSlaveProxy::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CStubSlaveProxy::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        // The last reference to the proxy was released, we need to clean up
+        // the connection as well.
+        //
+        QUEUE_INFO qiFrame;
+        Pipe_InitializeQueueInfo(&qiFrame);
+        (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+        m_nChannel = CHANNEL_INVALID;
+        Pipe_EmptyQueue(&qiFrame);
+
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
+{
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+{
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlaveProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
+{
+    // Use the channel number in the marshal packet from the remote component
+    // to support a proxy mux_ISlaveControl.
+    //
+    size_t nWanted = sizeof(m_nChannel);
+    if (  Pipe_GetBytes(pqi, &nWanted, &m_nChannel)
+       && nWanted == sizeof(m_nChannel))
+    {
+        return QueryInterface(riid, ppv);
+    }
+    return MUX_E_NOINTERFACE;
+}
+
+MUX_RESULT CStubSlaveProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
+{
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlaveProxy::DisconnectObject(void)
+{
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+#ifdef WIN32
+MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+#else
+MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+#endif // WIN32
+{
+    // Communicate with the remote component to service this request.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+#if 0
+    struct FRAME
+    {
+        UINT32 iMethod;
+        int    a;
+        int    b;
+    } CallFrame;
+    CallFrame.iMethod = 3;
+    CallFrame.a       = a;
+    CallFrame.b       = b;
+    Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
+
+    mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            int sum;
+        } ReturnFrame;
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            *sum = ReturnFrame.sum;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+#endif
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CStubSlaveProxy::RemoveModule(const UTF8 aModuleName[])
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStubSlaveProxy::ModuleMaintenance(void)
+{
+}
+
+// Factory for StubSlaveProxy component which is not directly accessible.
+//
+CStubSlaveProxyFactory::CStubSlaveProxyFactory(void) : m_cRef(1)
+{
+}
+
+CStubSlaveProxyFactory::~CStubSlaveProxyFactory()
+{
+}
+
+MUX_RESULT CStubSlaveProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CStubSlaveProxyFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CStubSlaveProxyFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CStubSlaveProxyFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CStubSlaveProxy *pStubSlaveProxy = NULL;
+    try
+    {
+        pStubSlaveProxy = new CStubSlaveProxy;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    MUX_RESULT mr;
+    if (NULL == pStubSlaveProxy)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+    else
+    {
+        mr = pStubSlaveProxy->FinalConstruct();
+        if (MUX_FAILED(mr))
+        {
+            pStubSlaveProxy->Release();
+            return mr;
+        }
+    }
+
+    mr = pStubSlaveProxy->QueryInterface(iid, ppv);
+    pStubSlaveProxy->Release();
+    return mr;
+}
+
+MUX_RESULT CStubSlaveProxyFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
