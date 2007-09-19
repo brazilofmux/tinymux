@@ -102,7 +102,8 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
-// The following is part of what is called 'Standard Marshaling'.
+// The following is part of what is called 'Standard Marshaling'.  Since this
+// is only partially implemented, the related interfaces are subject to change.
 //
 typedef struct
 {
