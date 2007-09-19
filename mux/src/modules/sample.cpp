@@ -530,6 +530,15 @@ UINT32 CSumProxy::Release(void)
     m_cRef--;
     if (0 == m_cRef)
     {
+        // The last reference to the proxy was released, we need to clean up
+        // the connection as well.
+        //
+        QUEUE_INFO qiFrame;
+        Pipe_InitializeQueueInfo(&qiFrame);
+        (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+        m_nChannel = CHANNEL_INVALID;
+        Pipe_EmptyQueue(&qiFrame);
+
         delete this;
         return 0;
     }
@@ -538,17 +547,22 @@ UINT32 CSumProxy::Release(void)
 
 MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
+    // This should only be called on the component side.
+    //
     return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
+    // This should only be called on the component side.
+    //
     return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CSumProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
-    // Use the channel number in the marshal packet from the remote component to support a proxy ISum.
+    // Use the channel number in the marshal packet from the remote component
+    // to support a proxy ISum.
     //
     size_t nWanted = sizeof(m_nChannel);
     if (  Pipe_GetBytes(pqi, &nWanted, &m_nChannel)
@@ -561,19 +575,16 @@ MUX_RESULT CSumProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **p
 
 MUX_RESULT CSumProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
-    return MUX_S_OK;
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CSumProxy::DisconnectObject(void)
 {
-    MUX_RESULT mr = MUX_S_OK;
-
-    QUEUE_INFO qiFrame;
-    Pipe_InitializeQueueInfo(&qiFrame);
-    mr = Pipe_SendDiscPacket(m_nChannel, &qiFrame);
-    m_nChannel = CHANNEL_INVALID;
-    Pipe_EmptyQueue(&qiFrame);
-    return mr;
+    // This should only be called on the component side.
+    //
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CSumProxy::Add(int a, int b, int *sum)

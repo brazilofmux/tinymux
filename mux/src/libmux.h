@@ -179,18 +179,19 @@ typedef struct channel_info
 } CHANNEL_INFO, *PCHANNEL_INFO;
 
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc);
-extern "C" void       DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p);
-extern "C" void       DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn);
-extern "C" bool       DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame);
-extern "C" void       DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi);
-extern "C" void       DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci);
-extern "C" bool       DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1]);
-extern "C" bool       DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pch);
-extern "C" void       DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
-extern "C" size_t     DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqi);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqi);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" void          DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p);
+extern "C" void          DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn);
+extern "C" bool          DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame);
+extern "C" void          DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi);
+extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel);
+extern "C" void          DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci);
+extern "C" bool          DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1]);
+extern "C" bool          DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pch);
+extern "C" void          DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
+extern "C" size_t        DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqi);
 
 // The following is part of what is called 'Custom Marshaling'.
 //

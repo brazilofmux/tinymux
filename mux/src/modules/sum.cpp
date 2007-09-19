@@ -77,7 +77,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // Sum component which is not directly accessible.
 //
-CSum::CSum(void) : m_cRef(1), m_pChannel(NULL)
+CSum::CSum(void) : m_cRef(1)
 {
     g_cComponents++;
 }
@@ -154,35 +154,29 @@ MUX_RESULT CSum::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *p
     return MUX_E_NOTIMPLEMENTED;
 }
 
-typedef struct
-{
-    int a;
-    int b;
-} PKTADDCALL;
-
-typedef struct
-{
-    int sum;
-} PKTADDRETURN;
-
 MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     UNUSED_PARAMETER(pqi);
 
-    if (NULL == pci->pInterface)
+    // Get our interface pointer from the channel.
+    //
+    mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
+    pci->pInterface = NULL;
+
+    // Tear down our side of the communication.  Our callback functions will
+    // no longer be called.
+    //
+    Pipe_FreeChannel(pci);
+
+    if (NULL != pIUnknown)
+    {
+        pIUnknown->Release();
+        return MUX_S_OK;
+    }
+    else
     {
         return MUX_E_NOINTERFACE;
     }
-    ISum *pISum = static_cast<ISum *>(pci->pInterface);
-
-    mux_IMarshal *pIMarshal = NULL;
-    MUX_RESULT mr = pISum->QueryInterface(mux_IID_IMarshal, (void **)&pIMarshal);
-    if (MUX_SUCCEEDED(mr))
-    {
-        mr = pIMarshal->DisconnectObject();
-        pIMarshal->Release();
-    }
-    return mr;
 }
 
 MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
@@ -263,11 +257,11 @@ MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
             //
-            m_pChannel = Pipe_AllocateChannel(CSum_Call, NULL, CSum_Disconnect);
-            if (NULL != m_pChannel)
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CSum_Call, NULL, CSum_Disconnect);
+            if (NULL != pChannel)
             {
-                m_pChannel->pInterface = pISum;
-                Pipe_AppendBytes(pqi, sizeof(m_pChannel->nChannel), (UTF8*)(&m_pChannel->nChannel));
+                pChannel->pInterface = pISum;
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
                 mr =  MUX_S_OK;
             }
             else
@@ -283,28 +277,38 @@ MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context
 
 MUX_RESULT CSum::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
-    return MUX_E_UNEXPECTED;
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CSum::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
+    // Since the Marshal Data is like an extra reference on an object, if the
+    // Marshaled Data is never unmarshalled, libmux should use this function
+    // to release the reference to the component.  This is only implemented on
+    // the server side -- not the proxy.
+    //
+    UINT32 nChannel;
+    size_t nWanted = sizeof(nChannel);
+    if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
+       && sizeof(nChannel) == nWanted)
+    {
+        CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
+        if (NULL != pChannel)
+        {
+            CSum_Disconnect(pChannel, pqi);
+        }
+    }
     return MUX_S_OK;
 }
 
 MUX_RESULT CSum::DisconnectObject(void)
 {
-    // Get our interface pointer from the channel.
+    // This is called when the hosting process is about to go down to give the
+    // component a chance to notify its proxy that it is about to shut down.
+    // This is only implemented on the server side -- not the proxy.
     //
-    ISum *pISum = static_cast<ISum *>(m_pChannel->pInterface);
-    m_pChannel->pInterface = NULL;
-
-    // Tear down our side of the communication.  Our callback functions will
-    // no longer be called.
+    // TODO: There isn't a mechanism for sending such a notification, yet.
     //
-    Pipe_FreeChannel(m_pChannel);
-    m_pChannel = NULL;
-
-    pISum->Release();
     return MUX_S_OK;
 }
 

@@ -1484,6 +1484,20 @@ extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
     }
 }
 
+extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel)
+{
+    CHANNEL_INFO *pChannel;
+    if (  nChannel < nChannels
+       && (pChannel = &aChannels[nChannel])->bAllocated)
+    {
+        return pChannel;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
 extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
 {
     if (  0 != n

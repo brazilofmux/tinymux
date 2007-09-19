@@ -51,7 +51,6 @@ public:
 
 private:
     UINT32        m_cRef;
-    CHANNEL_INFO *m_pChannel;
 };
 
 class CSumFactory : public mux_IClassFactory
