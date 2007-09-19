@@ -189,6 +189,8 @@ extern "C" bool       DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *
 extern "C" void       DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
 extern "C" size_t     DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqi);
 
 // The following is part of what is called 'Custom Marshaling'.
 //

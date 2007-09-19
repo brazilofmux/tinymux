@@ -481,7 +481,7 @@ void CSample::data_free(dbref object)
 
 // SumProxy component which is not directly accessible.
 //
-CSumProxy::CSumProxy(void) : m_cRef(1)
+CSumProxy::CSumProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID)
 {
     g_cComponents++;
 }
@@ -566,16 +566,23 @@ MUX_RESULT CSumProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 
 MUX_RESULT CSumProxy::DisconnectObject(void)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+    mr = Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+    m_nChannel = CHANNEL_INVALID;
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
 {
-    MUX_RESULT mr = MUX_S_OK;
     // Communicate with the remote component to service this request.
     //
-    QUEUE_INFO qiFrame;
+    MUX_RESULT mr = MUX_S_OK;
 
+    QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
     struct FRAME
