@@ -341,6 +341,7 @@ public:
 private:
     UINT32 m_cRef;
     UINT32 m_nChannel;
+    UTF8  *m_pModuleName;
 };
 
 class CStubSlaveProxyFactory : public mux_IClassFactory

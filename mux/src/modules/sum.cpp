@@ -189,7 +189,7 @@ MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
     UINT32 iMethod;
     size_t nWanted = sizeof(iMethod);
-    if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&iMethod)
+    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
     {
         return MUX_E_INVALIDARG;
@@ -204,27 +204,28 @@ MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     {
     case 3:  // Add()
         {
-            int a;
-            nWanted = sizeof(a);
-            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&a)
-               || nWanted != sizeof(a))
+            struct FRAME
+            {
+                int a;
+                int b;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
             {
                 return MUX_E_INVALIDARG;
             }
 
-            int b;
-            nWanted = sizeof(b);
-            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&b)
-               || nWanted != sizeof(b))
+            struct RETURN
             {
-                return MUX_E_INVALIDARG;
-            }
+                int  sum;
+            } ReturnFrame = { 0 };
 
-            int sum = 0;
-            pISum->Add(a, b, &sum);
+            pISum->Add(CallFrame.a, CallFrame.b, &ReturnFrame.sum);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(sum), (UINT8 *)&sum);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
             return MUX_S_OK;
         }
         break;

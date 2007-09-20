@@ -94,11 +94,7 @@ int main(int argc, char *argv[])
         mr = mux_RegisterClassObjects(NUM_CLASSES, stubslave_classes, stubslave_GetClassObject);
         if (MUX_SUCCEEDED(mr))
         {
-            mr = mux_AddModule(T("sum"), T("./bin/sum.so"));
-            if (MUX_SUCCEEDED(mr))
-            {
-                Stub_ShoveChars();
-            }
+            Stub_ShoveChars();
             mr = mux_RevokeClassObjects(NUM_CLASSES, stubslave_classes);
         }
         mr = mux_FinalizeModuleLibrary();
@@ -211,11 +207,13 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
     UINT32 iMethod;
     size_t nWanted = sizeof(iMethod);
-    if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&iMethod)
+    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
     {
         return MUX_E_INVALIDARG;
     }
+
+    MUX_RESULT mr = MUX_S_OK;
 
     // The IUnknown methods (0, 1, and 2) do not make it across, so we don't
     // attempt to handle them here.  Instead, when the reference count on
@@ -226,51 +224,186 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     {
     case 3: // MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8/UTF16 aFileName[]);
         {
+            struct FRAME
+            {
+                size_t nModuleName;
+                size_t nFileName;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            UTF8  *pModuleName = NULL;
+#ifdef WIN32
+            UTF16 *pFileName = NULL;
+#else
+            UTF8  *pFileName = NULL;
+#endif
+
+            try
+            {
+                pModuleName = new UTF8[CallFrame.nModuleName];
+#ifdef WIN32
+                pFileName   = new UTF16[CallFrame.nFileName];
+#else
+                pFileName   = new UTF8[CallFrame.nFileName];
+#endif
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (  NULL != pModuleName
+               && NULL != pFileName)
+            {
+                nWanted = CallFrame.nModuleName;
+                if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
+                   && nWanted == sizeof(CallFrame.nModuleName))
+                {
+                    nWanted = CallFrame.nFileName;
+                    if (  Pipe_GetBytes(pqi, &nWanted, pFileName)
+                       && nWanted == sizeof(CallFrame.nFileName))
+                    {
+                        struct RETURN
+                        {
+                            MUX_RESULT mr;
+                        } ReturnFrame;
+
+                        ReturnFrame.mr = mux_AddModule(pModuleName, pFileName);
+
+                        Pipe_EmptyQueue(pqi);
+                        Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+                        mr = MUX_S_OK;
+                    }
+                }
+            }
+            else
+            {
+                mr = MUX_E_OUTOFMEMORY;
+            }
+
+            if (NULL != pModuleName)
+            {
+                delete pModuleName;
+                pModuleName = NULL;
+            }
+            if (NULL != pFileName)
+            {
+                delete pFileName;
+                pFileName = NULL;
+            }
         }
         break;
 
     case 4: // MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
         {
+            struct FRAME
+            {
+                size_t nModuleName;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            UTF8  *pModuleName = NULL;
+
+            try
+            {
+                pModuleName = new UTF8[CallFrame.nModuleName];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (NULL != pModuleName)
+            {
+                nWanted = CallFrame.nModuleName;
+                if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
+                   && nWanted == sizeof(CallFrame.nModuleName))
+                {
+                    struct RETURN
+                    {
+                        MUX_RESULT mr;
+                    } ReturnFrame;
+
+                    ReturnFrame.mr = mux_RemoveModule(pModuleName);
+
+                    Pipe_EmptyQueue(pqi);
+                    Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+                    mr = MUX_S_OK;
+                }
+            }
+            else
+            {
+                mr = MUX_E_OUTOFMEMORY;
+            }
+
+            if (NULL != pModuleName)
+            {
+                delete pModuleName;
+                pModuleName = NULL;
+            }
         }
         break;
 
     case 5: // MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
         {
+            struct FRAME
+            {
+                int iModule;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            struct RETURN
+            {
+                size_t     nName;
+                bool       bLoaded;
+                MUX_RESULT mr;
+            } ReturnFrame;
+
+            MUX_MODULE_INFO ModuleInfo;
+            ReturnFrame.mr = mux_ModuleInfo(CallFrame.iModule, &ModuleInfo);
+            ReturnFrame.bLoaded = ModuleInfo.bLoaded;
+            ReturnFrame.nName   = strlen((const char *)ModuleInfo.pName)+1;
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+            Pipe_AppendBytes(pqi, ReturnFrame.nName, ModuleInfo.pName);
+            
+            mr = MUX_S_OK;
         }
         break;
 
     case 6: // MUX_RESULT ModuleMaintenance(void);
         {
-        }
-        break;
-#if 0
-    case 3:  // Add()
-        {
-            int a;
-            nWanted = sizeof(a);
-            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&a)
-               || nWanted != sizeof(a))
+            struct RETURN
             {
-                return MUX_E_INVALIDARG;
-            }
+                MUX_RESULT mr;
+            } ReturnFrame;
 
-            int b;
-            nWanted = sizeof(b);
-            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&b)
-               || nWanted != sizeof(b))
-            {
-                return MUX_E_INVALIDARG;
-            }
-
-            int sum = 0;
-            pISum->Add(a, b, &sum);
+            ReturnFrame.mr = mux_ModuleMaintenance();
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(sum), (UINT8 *)&sum);
-            return MUX_S_OK;
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+            mr = MUX_S_OK;
         }
         break;
-#endif
     }
     return MUX_E_NOTIMPLEMENTED;
 }
