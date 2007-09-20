@@ -391,98 +391,64 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         return NULL;
     }
 
-    // Build the non-ANSI version so that we can parse for semicolons
-    // safely.
-    //
-    UTF8 *pStripped = strip_color(pName);
-    UTF8 *pBuf = Buf;
-    safe_mb_str(pStripped, Buf, &pBuf);
-    *pBuf = '\0';
+    mux_strncpy(Buf, pName, mux_strlen(pName));
 
-    size_t nBuf = pBuf - Buf;
-    pBuf = Buf;
+    // Sanitize the input before processing
+    MUX_STRTOK_STATE tts;
+    mux_strtok_src(&tts, Buf);
+    mux_strtok_ctl(&tts, T(";"));
 
+    UTF8 *ptr;
+    mux_string clean_names;
     bool bHaveDisplay = false;
-
-    UTF8 *pOut = Out;
-
-    for (; nBuf;)
+    for(ptr = mux_strtok_parse(&tts); ptr; ptr = mux_strtok_parse(&tts))
     {
-        // Build (q,n) as the next segment.  Leave the the remaining segments as
-        // (pBuf,nBuf).
-        //
-        UTF8 *q = (UTF8 *)strchr((char *)pBuf, ';');
-        size_t n;
-        if (q)
-        {
-            *q = '\0';
-            n = q - pBuf;
-            q = pBuf;
-            pBuf += n + 1;
-            nBuf -= n + 1;
-        }
-        else
-        {
-            n = nBuf;
-            q = pBuf;
-            pBuf += nBuf;
-            nBuf = 0;
-        }
+        mux_string working_name;
+        bool valid = false;
+        size_t len = 0;
 
-        if (bHaveDisplay)
+        if(false == bHaveDisplay) // Allow ANSI
         {
-            // We already have the displayable name. We don't allow ANSI in
-            // any segment but the first, so we can pull them directly from
-            // the stripped buffer.
-            //
-            size_t nN;
-            bool   bN;
-            UTF8  *pN = MakeCanonicalObjectName(q, &nN, &bN);
-            if (  bN
-               && nN < static_cast<size_t>(MBUF_SIZE - (pOut - Out) - 1))
+
+            clean_names.prepend(MakeCanonicalObjectName(trim_spaces(ptr),
+                        &len, &valid));
+
+            if(false == valid)
             {
-                safe_mb_chr(';', Out, &pOut);
-                safe_mb_str(pN, Out, &pOut);
+                *pnName = 0;
+                *pbValid = true;
+                return Buf;
             }
-        }
-        else
-        {
-            // We don't have the displayable name, yet. We know where the next
-            // semicolon occurs, so we limit the visible width of the
-            // truncation to that.  We should be picking up all the visible
-            // characters leading up to the semicolon, but not including the
-            // semi-colon.
-            //
-            mux_field fldLen = StripTabsAndTruncate( pName, Out, MBUF_SIZE-1,
-                                                     static_cast<LBUF_OFFSET>(n));
 
-            // vw should always be equal to n, but we'll just make sure.
-            //
-            if (fldLen.m_column == n)
+            bHaveDisplay = true;
+        }
+        else // No ANSI allowed
+        {
+            working_name = mux_string(
+                    MakeCanonicalObjectName(trim_spaces(strip_color(ptr)), 
+                        &len, &valid));
+
+            if(true == valid)
             {
-                size_t nN;
-                bool   bN;
-                UTF8  *pN = MakeCanonicalObjectName(Out, &nN, &bN);
-                if (  bN
-                   && nN <= MBUF_SIZE - 1)
-                {
-                    safe_mb_str(pN, Out, &pOut);
-                    bHaveDisplay = true;
-                }
+                clean_names.append(T(";"));
+                clean_names.append(working_name);
             }
         }
     }
-    if (bHaveDisplay)
+
+
+    if(false == bHaveDisplay)
     {
-        *pnName = pOut - Out;
-        *pbValid = true;
-        *pOut = '\0';
-        return Out;
+        *pbValid = bHaveDisplay;
+        *pnName = 0;
+        return Buf;
     }
-    else
-    {
-        return NULL;
-    }
+
+    *pbValid = bHaveDisplay;
+    clean_names.export_TextColor(Buf);
+    *pnName = mux_strlen(Buf);
+
+    return Buf;
 }
 
 // The following function validates the player name. ANSI is not
