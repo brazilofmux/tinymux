@@ -1840,10 +1840,12 @@ static CF_HAND(cf_module)
         {
             mr = mux_RemoveModule(str+1);
         }
+#if defined(STUB_SLAVE)
         else
         {
             mr = mudstate.pISlaveControl->RemoveModule(str+1);
         }
+#endif // STUB_SLAVE
     }
     else
     {
@@ -1860,11 +1862,12 @@ static CF_HAND(cf_module)
         {
             mr = mux_AddModule(str, filename);
         }
+#if defined(STUB_SLAVE)
         else
         {
             mr = mudstate.pISlaveControl->AddModule(str, filename);
         }
-
+#endif // STUB_SLAVE
         free_lbuf(buffer);
     }
 
