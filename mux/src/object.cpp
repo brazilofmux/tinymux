@@ -14,10 +14,6 @@
 #include "command.h"
 #include "mguests.h"
 #include "powers.h"
-#if defined(HAVE_DLOPEN) || defined(WIN32)
-#include "libmux.h"
-#include "modules.h"
-#endif
 
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
@@ -1831,6 +1827,12 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
     scheduler.Shrink();
 #if defined(HAVE_DLOPEN) || defined(WIN32)
     mux_ModuleMaintenance();
+#if defined(STUB_SLAVE)
+    if (NULL != mudstate.pISlaveControl)
+    {
+        mudstate.pISlaveControl->ModuleMaintenance();
+    }
+#endif
 #endif
 
     // Allow the local extensions to do data checks.

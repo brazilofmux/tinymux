@@ -263,11 +263,11 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             {
                 nWanted = CallFrame.nModuleName;
                 if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
-                   && nWanted == sizeof(CallFrame.nModuleName))
+                   && nWanted == CallFrame.nModuleName)
                 {
                     nWanted = CallFrame.nFileName;
                     if (  Pipe_GetBytes(pqi, &nWanted, pFileName)
-                       && nWanted == sizeof(CallFrame.nFileName))
+                       && nWanted == CallFrame.nFileName)
                     {
                         struct RETURN
                         {
@@ -329,7 +329,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             {
                 nWanted = CallFrame.nModuleName;
                 if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
-                   && nWanted == sizeof(CallFrame.nModuleName))
+                   && nWanted == CallFrame.nModuleName)
                 {
                     struct RETURN
                     {
@@ -379,10 +379,20 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
             MUX_MODULE_INFO ModuleInfo;
             ReturnFrame.mr = mux_ModuleInfo(CallFrame.iModule, &ModuleInfo);
-            ReturnFrame.bLoaded = ModuleInfo.bLoaded;
-            ReturnFrame.nName   = strlen((const char *)ModuleInfo.pName)+1;
 
             Pipe_EmptyQueue(pqi);
+            if (  MUX_SUCCEEDED(ReturnFrame.mr)
+               && MUX_S_FALSE != ReturnFrame.mr)
+            {
+                ReturnFrame.bLoaded = ModuleInfo.bLoaded;
+                ReturnFrame.nName   = strlen((const char *)ModuleInfo.pName)+1;
+            }
+            else
+            {
+                ReturnFrame.bLoaded = false;
+                ReturnFrame.nName   = 0;
+            }
+
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
             Pipe_AppendBytes(pqi, ReturnFrame.nName, ModuleInfo.pName);
             
@@ -405,7 +415,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         }
         break;
     }
-    return MUX_E_NOTIMPLEMENTED;
+    return mr;
 }
 
 MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)

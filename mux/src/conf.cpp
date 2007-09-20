@@ -15,7 +15,6 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
-#include "libmux.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.
@@ -372,6 +371,9 @@ void cf_init(void)
     mudstate.aHelpDesc = NULL;
     mudstate.mHelpDesc = 0;
     mudstate.nHelpDesc = 0;
+#if defined(STUB_SLAVE)
+    mudstate.pISlaveControl = NULL;
+#endif // STUB_SLAVE
 }
 
 // ---------------------------------------------------------------------------
@@ -1784,13 +1786,64 @@ static CF_HAND(cf_module)
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
-    UNUSED_PARAMETER(player);
-    UNUSED_PARAMETER(cmd);
+
+    MUX_STRTOK_STATE tts;
+    mux_strtok_src(&tts, str);
+    mux_strtok_ctl(&tts, T(" \t"));
+    UTF8 *modname = mux_strtok_parse(&tts);
+    UTF8 *modtype = mux_strtok_parse(&tts);
+
+    enum MODTYPE
+    {
+        eInProc = 0,
+        eLocal
+    } eType;
+
+    if (NULL == modname)
+    {
+        cf_log_syntax(player, cmd, "Module name is missing.");
+        return -1;
+    }
+
+    if (NULL == modtype)
+    {
+        eType = eInProc;
+    }
+    else if (strcmp((char *)modtype, "inproc") == 0)
+    {
+        eType = eInProc;
+    }
+    else if (strcmp((char *)modtype, "local") == 0)
+    {
+        eType = eLocal;
+    }
+
+#if defined(STUB_SLAVE)
+    if (  NULL == mudstate.pISlaveControl
+       && eLocal == eType)
+    {
+        cf_log_syntax(player, cmd, "No StubSlave management interface available.");
+        return -1;
+    }
+#else // STUB_SLAVE
+    if (eLocal == eType)
+    {
+        cf_log_syntax(player, cmd, "StubSlave is not enabled.");
+        return -1;
+    }
+#endif // STUB_SLAVE
 
     MUX_RESULT mr;
     if ('!' == str[0])
     {
-        mr = mux_RemoveModule(str+1);
+        if (eInProc == eType)
+        {
+            mr = mux_RemoveModule(str+1);
+        }
+        else
+        {
+            mr = mudstate.pISlaveControl->RemoveModule(str+1);
+        }
     }
     else
     {
@@ -1803,11 +1856,15 @@ static CF_HAND(cf_module)
         mux_sprintf(buffer, LBUF_SIZE, "./bin/%s.so", str);
         UTF8 *filename = buffer;
 #endif
-        mr = mux_AddModule(str, filename);
-#if defined(STUB_SLAVE)
-        // TODO: Send instructions to stubslave to add the same module.
-        //
-#endif
+        if (eInProc == eType)
+        {
+            mr = mux_AddModule(str, filename);
+        }
+        else
+        {
+            mr = mudstate.pISlaveControl->AddModule(str, filename);
+        }
+
         free_lbuf(buffer);
     }
 

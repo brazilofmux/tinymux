@@ -596,15 +596,18 @@ MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
+    UINT32 iMethod = 3;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
     struct FRAME
     {
-        UINT32 iMethod;
         int    a;
         int    b;
     } CallFrame;
-    CallFrame.iMethod = 3;
+
     CallFrame.a       = a;
     CallFrame.b       = b;
+
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
 
     mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
@@ -615,6 +618,7 @@ MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
         {
             int sum;
         } ReturnFrame;
+
         size_t nWanted = sizeof(ReturnFrame);
         if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
            && nWanted == sizeof(ReturnFrame))

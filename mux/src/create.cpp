@@ -15,10 +15,6 @@
 #include "attrs.h"
 #include "command.h"
 #include "powers.h"
-#if defined(HAVE_DLOPEN) || defined(WIN32)
-#include "libmux.h"
-#include "modules.h"
-#endif
 
 // ---------------------------------------------------------------------------
 // parse_linkable_room: Get a location to link to.

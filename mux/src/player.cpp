@@ -19,10 +19,6 @@
 #include "interface.h"
 #include "powers.h"
 #include "sha1.h"
-#if defined(HAVE_DLOPEN) || defined(WIN32)
-#include "libmux.h"
-#include "modules.h"
-#endif
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.

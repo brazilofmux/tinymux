@@ -15,9 +15,6 @@
 
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
-#include "libmux.h"
-#include "modules.h"
-
 #define NUM_CLASSES 3
 static CLASS_INFO netmux_classes[NUM_CLASSES] =
 {
@@ -112,22 +109,52 @@ void init_modules(void)
         mr = mux_RegisterClassObjects(NUM_CLASSES, netmux_classes, netmux_GetClassObject);
     }
 
-    if (MUX_FAILED(mr))
+    if (MUX_SUCCEEDED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Failed to register netmux modules (%d).", mr);
+        log_printf("Registered netmux modules.");
         ENDLOG;
+
+#if defined(STUB_SLAVE)
+        if (NULL != mudstate.pISlaveControl)
+        {
+            mudstate.pISlaveControl->Release();
+            mudstate.pISlaveControl = NULL;
+        }
+
+        mr = mux_CreateInstance(CID_StubSlave, NULL, UseSlaveProcess, IID_ISlaveControl, (void **)&mudstate.pISlaveControl);
+        if (MUX_SUCCEEDED(mr))
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_printf("Opened interface for StubSlave management.");
+            ENDLOG;
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_printf("Failed to open interface for StubSlave management (%d).", mr);
+            ENDLOG;
+        }
+#endif // STUB_SLAVE
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Registered netmux modules.", mr);
+        log_printf("Failed to register netmux modules (%d).", mr);
         ENDLOG;
     }
 }
 
 void final_modules(void)
 {
+#if defined(STUB_SLAVE)
+    if (NULL != mudstate.pISlaveControl)
+    {
+        mudstate.pISlaveControl->Release();
+        mudstate.pISlaveControl = NULL;
+    }
+#endif // STUB_SLAVE
+
     MUX_RESULT mr = mux_RevokeClassObjects(NUM_CLASSES, netmux_classes);
     if (MUX_FAILED(mr))
     {
@@ -786,33 +813,42 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
                 m_pModuleName = NULL;
             }
 
-            try
+            if (0 < ReturnFrame.nName)
             {
-                m_pModuleName = new UTF8[ReturnFrame.nName];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-
-            if (NULL != m_pModuleName)
-            {
-                size_t nWanted= ReturnFrame.nName;
-                if (  Pipe_GetBytes(&qiFrame, &nWanted, m_pModuleName)
-                   && nWanted == ReturnFrame.nName)
+                try
                 {
-                    pModuleInfo->bLoaded = ReturnFrame.bLoaded;
-                    pModuleInfo->pName   = m_pModuleName;
-                    mr = ReturnFrame.mr;
+                    m_pModuleName = new UTF8[ReturnFrame.nName];
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+    
+                if (NULL != m_pModuleName)
+                {
+                    size_t nWanted = ReturnFrame.nName;
+                    if (  Pipe_GetBytes(&qiFrame, &nWanted, m_pModuleName)
+                       && nWanted == ReturnFrame.nName)
+                    {
+                        pModuleInfo->bLoaded = ReturnFrame.bLoaded;
+                        pModuleInfo->pName   = m_pModuleName;
+                        mr = ReturnFrame.mr;
+                    }
+                    else
+                    {
+                        mr = MUX_E_FAIL;
+                    }
                 }
                 else
                 {
-                    mr = MUX_E_FAIL;
+                    mr = MUX_E_OUTOFMEMORY;
                 }
             }
             else
             {
-                mr = MUX_E_OUTOFMEMORY;
+                pModuleInfo->bLoaded = ReturnFrame.bLoaded;
+                pModuleInfo->pName   = NULL;
+                mr = ReturnFrame.mr;
             }
         }
         else

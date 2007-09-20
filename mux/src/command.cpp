@@ -22,7 +22,6 @@
 #include "powers.h"
 #include "vattr.h"
 #include "pcre.h"
-#include "libmux.h"
 
 // Switch tables for the various commands.
 //
@@ -3613,6 +3612,24 @@ static void list_modules(dbref executor)
 
         raw_notify(executor, tprintf("%s (%s)", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
     }
+
+#ifdef STUB_SLAVE
+    if (NULL != mudstate.pISlaveControl)
+    {
+        for (i = 0; ; i++)
+        {
+            MUX_MODULE_INFO ModuleInfo;
+            MUX_RESULT mr = mudstate.pISlaveControl->ModuleInfo(i, &ModuleInfo);
+            if (  MUX_FAILED(mr)
+               || MUX_S_FALSE == mr)
+            {
+                break;
+            }
+    
+            raw_notify(executor, tprintf("%s (%s) by stubslave", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+        }
+    }
+#endif
 #else
     raw_notify(executor, T("Modules not enabled."));
 #endif

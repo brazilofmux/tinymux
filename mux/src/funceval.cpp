@@ -27,10 +27,6 @@
 #include "mail.h"
 #include "misc.h"
 #include "pcre.h"
-#if defined(HAVE_DLOPEN) || defined(WIN32)
-#include "libmux.h"
-#include "modules.h"
-#endif
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS

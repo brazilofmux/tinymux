@@ -10,6 +10,10 @@
 
 #include "db.h"
 #include "match.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
 #include "mudconf.h"
 #include "svdrand.h"
 

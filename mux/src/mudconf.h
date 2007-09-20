@@ -413,6 +413,10 @@ struct statedata
     SITE    *suspect_list;      /* Sites that are suspect */
     SITE    *access_list;       /* Access states for sites */
 
+#if defined(STUB_SLAVE)
+    mux_ISlaveControl *pISlaveControl;  // Management interface for StubSlave process.
+#endif // STUB_SLAVE
+
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */
     CLinearTimeAbsolute dump_counter;   /* Countdown to next db dump */
@@ -437,9 +441,6 @@ struct statedata
     CHashTable parent_htab;     /* Parent $-command exclusion */
     CHashTable player_htab;     /* Player name->number hashtable */
     CHashTable powers_htab;     /* Powers hashtable */
-#ifdef PARSE_TREES
-    CHashTable tree_htab;       /* Parse trees for evaluation */
-#endif // PARSE_TREES
     CHashTable ufunc_htab;      /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
 

@@ -1928,7 +1928,11 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                             case eCall:
                                 if (NULL != aChannels[nChannel].pfCall)
                                 {
-                                    aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+                                    MUX_RESULT mr = aChannels[nChannel].pfCall(&aChannels[nChannel], pqiFrame);
+                                    if (MUX_FAILED(mr))
+                                    {
+                                        Pipe_EmptyQueue(pqiFrame);
+                                    }
 
                                     // Send Queue_Frame back to sender.
                                     //
