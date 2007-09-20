@@ -1,0 +1,47 @@
+To convert a TM3 flatfile to MUX2.
+
+You need to run the tm3tomux.sh converter.
+
+The first thing you need is a TM3 flatfile.
+Please follow the directions included with the TM3 distribution
+on how to achieve this.
+
+To convert:  tm3tomux.sh TM3FLATFILENAME WHATYOUWANTMUXTOBE
+
+So, if your tm3 flatfile was named 'netmush.flat' you could do:
+
+./tm3tomux.sh netmush.flat netmush.converted
+
+As you can see, the name of the mux flatfile can be anything you want.
+
+To load the mux flatfile into the mux2 distribution/db, please follow
+directions on how to load a flatfile into the db (provided with MUX2)
+I belive the syntax would be (for the example above):
+		 db_load netmush.converted
+
+
+The logfile that is written when errors are found are more for your
+own review.  This does not mean the flatfile did not convert.  This
+does not mean the flatfile will not work in MUX.  This only lists
+attributes that were not able to be converted.  These will be
+@locks or internal attributes that TM3 uses that MUX2 does not use.
+The attribute (and it's contents) will be shown so that you may 
+implement other measures to duplicate the functionality.
+
+The only attribute you do not have to worry about are attributes
+that are labeled 'INTERNAL'.  These attributes are used expressly
+for TM3 only, behind the scenes in it's hardcode,  and serve no 
+purpose in MUX2 and should not effect the conversion.  These will
+be prepended with 'WARNING' and meant only for improved detail.
+
+
+-----------------------------------------------------
+Known limitations:
+
+Currently, there isn't function/command checks for the TinyMUSH 3.1
+feature sets/additions.  This will be readilly available shortly.
+
+With any modified database for TM3 that isn't using the 'standard'
+or 'default' installation, the converter may not work.  If this
+ever becomes an issue, let the author know and he will make
+every step to hand-modify the program to handle your needs.
