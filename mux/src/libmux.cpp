@@ -1323,6 +1323,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, M
     {
         Pipe_EmptyQueue(pqi);
     }
+    return mr;
 }
 
 

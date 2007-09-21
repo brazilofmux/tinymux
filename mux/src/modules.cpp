@@ -693,7 +693,7 @@ MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFile
 
     CallFrame.nModuleName = strlen((const char *)aModuleName)+1;
 #ifdef WIN32
-    CallFrame.nFileName   = (wcslen(FileName)+1)*sizeof(UTF16);
+    CallFrame.nFileName   = (wcslen(aFileName)+1)*sizeof(UTF16);
 #else
     CallFrame.nFileName   = (strlen((const char *)aFileName)+1)*sizeof(UTF8);
 #endif
