@@ -90,6 +90,7 @@ struct confdata
     dbref   global_error_obj;   // Object that is used to generate error messages.
     dbref   guest_char;         // player num of prototype GUEST character.
     dbref   guest_nuker;        // Wiz who nukes the GUEST characters.
+    dbref   help_executor;      // Dbref of exec object for eval'd helpfiles
     dbref   hook_obj;           // Object with @hook data.
     dbref   master_room;        // Room containing default cmds/exits/etc.
     dbref   player_parent;      // Default parent for new player objects

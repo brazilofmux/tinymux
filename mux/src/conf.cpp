@@ -298,6 +298,7 @@ void cf_init(void)
     mudconf.destroy_going_now = false;
     mudconf.nStackLimit = 10000;
     mudconf.hook_obj = NOTHING;
+    mudconf.help_executor = NOTHING;
     mudconf.global_error_obj = NOTHING;
     mudconf.cache_pages = 40;
     mudconf.mail_per_hour = 50;
@@ -1643,7 +1644,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bRaw)
     pDesc->CommandName = StringClone(pCmdName);
     pDesc->ht = NULL;
     pDesc->pBaseFilename = StringClone(pBase);
-    pDesc->bEval = !bRaw;
+    pDesc->bEval = bRaw;
 
     // Build up Command Entry.
     //
@@ -1696,7 +1697,7 @@ static CF_HAND(cf_helpfile)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    return add_helpfile(player, cmd, str, false);
+    return add_helpfile(player, cmd, str, true);
 }
 
 static CF_HAND(cf_raw_helpfile)
@@ -1705,7 +1706,7 @@ static CF_HAND(cf_raw_helpfile)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    return add_helpfile(player, cmd, str, true);
+    return add_helpfile(player, cmd, str, false);
 }
 
 // @hook: run softcode before or after running a hardcode command, or softcode access.
@@ -2084,6 +2085,7 @@ static CONFPARM conftable[] =
     {T("have_comsys"),               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_comsys,     NULL,               0},
     {T("have_mailer"),               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_mailer,     NULL,               0},
     {T("have_zones"),                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},
+    {T("help_executor"),             cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.help_executor,          NULL,               0},
     {T("helpfile"),                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {T("hook_cmd"),                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
     {T("hook_obj"),                  cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
