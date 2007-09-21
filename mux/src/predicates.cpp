@@ -393,58 +393,73 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 
     mux_strncpy(Buf, pName, mux_strlen(pName));
 
-    // Sanitize the input before processing
+    // Sanitize the input before processing.
+    //
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, Buf);
     mux_strtok_ctl(&tts, T(";"));
 
+    // Break the exitname down into semi-colon-separated segments.  The first
+    // segment can contain color as it is used for showing the exit, but the
+    // remaining segments are stripped of color.  A valid exitname requires
+    // at least one (display) segment.
+    //
     UTF8 *ptr;
     mux_string clean_names;
     bool bHaveDisplay = false;
-    for(ptr = mux_strtok_parse(&tts); ptr; ptr = mux_strtok_parse(&tts))
+    for (ptr = mux_strtok_parse(&tts); ptr; ptr = mux_strtok_parse(&tts))
     {
-        mux_string working_name;
         bool valid = false;
         size_t len = 0;
 
-        if(false == bHaveDisplay) // Allow ANSI
+        UTF8 *pTrimmedSegment = NULL;
+        if (bHaveDisplay)
         {
+            // No color allowed in segments after the first one.
+            //
+            UTF8 *pNoColor = strip_color(ptr);
+            pTrimmedSegment = trim_spaces(pNoColor);
+        }
+        else
+        {
+            // Color allowed in first segment.
+            //
+            pTrimmedSegment = trim_spaces(ptr);
+        }
 
-            clean_names.prepend(MakeCanonicalObjectName(trim_spaces(ptr),
-                        &len, &valid));
-
-            if(false == valid)
+        // Ignore segments which contained nothing but spaces.
+        //
+        if ('\0' != pTrimmedSegment[0])
+        {
+            UTF8 *pValidSegment = MakeCanonicalObjectName(pTrimmedSegment, &len, &valid);
+            if (!valid)
             {
                 *pnName = 0;
                 *pbValid = true;
                 return Buf;
             }
 
-            bHaveDisplay = true;
-        }
-        else // No ANSI allowed
-        {
-            working_name = mux_string(
-                    MakeCanonicalObjectName(trim_spaces(strip_color(ptr)), 
-                        &len, &valid));
-
-            if(true == valid)
+            if (bHaveDisplay)
             {
                 clean_names.append(T(";"));
-                clean_names.append(working_name);
+                clean_names.append(mux_string(pValidSegment));
+            }
+            else
+            {
+                clean_names.prepend(pValidSegment);
+                bHaveDisplay = true;
             }
         }
     }
 
 
-    if(false == bHaveDisplay)
+    *pbValid = bHaveDisplay;
+    if (!bHaveDisplay)
     {
-        *pbValid = bHaveDisplay;
         *pnName = 0;
         return Buf;
     }
 
-    *pbValid = bHaveDisplay;
     clean_names.export_TextColor(Buf);
     *pnName = mux_strlen(Buf);
 
@@ -2487,7 +2502,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             }
             else
             {
-                notify_except2_rlevel(loc, player, player, thing, 
+                notify_except2_rlevel(loc, player, player, thing,
                         tprintf("%s %s", Moniker(player), odef));
             }
 #else
@@ -2497,7 +2512,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             }
             else
             {
-                notify_except2(loc, player, player, thing, 
+                notify_except2(loc, player, player, thing,
                         tprintf("%s %s", Moniker(player), odef));
             }
 #endif // REALITY_LVLS
@@ -2842,7 +2857,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
         }
     }
 
-    //  Listing: 
+    //  Listing:
     //    - if global_only is true, list all references that begin with _
     //    - Otherwise, list all references whose owner is target
     //
@@ -2850,7 +2865,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     bool match_found = false;
 
     for(htab_entry = (struct reference_entry *) hash_firstentry(htab);
-            NULL != htab_entry; 
+            NULL != htab_entry;
             htab_entry = (struct reference_entry *) hash_nextentry(htab))
     {
         if( (true == global_only && '_' == htab_entry->name[0]) ||
@@ -2864,13 +2879,13 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
             if(false == match_found)
             {
                 match_found = true;
-                raw_notify(executor, tprintf("%-12s %-20s %-20s", 
+                raw_notify(executor, tprintf("%-12s %-20s %-20s",
                             T("Reference"), T("Target"), T("Owner")));
-                raw_notify(executor, 
+                raw_notify(executor,
                         T("-------------------------------------------------------"));
             }
 
-            UTF8 *object_buf = 
+            UTF8 *object_buf =
                 unparse_object(executor, htab_entry->target, false);
 
             raw_notify(executor, tprintf("%-12s %-20s %-20s", htab_entry->name,
@@ -2887,14 +2902,14 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     }
     else
     {
-        raw_notify(executor, 
+        raw_notify(executor,
                 T("---------------- End of Reference List ----------------"));
     }
 }
 
 
-void do_reference(dbref executor, dbref caller, dbref enactor, int eval, 
-        int key, int nargs, UTF8 *reference_name, UTF8 *object_name, 
+void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
+        int key, int nargs, UTF8 *reference_name, UTF8 *object_name,
         const UTF8 *cargs[], int ncargs)
 {
 
@@ -2950,7 +2965,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
 
     refstr.export_TextPlain(tbuf);
     utf8_strlen(tbuf, tbuf_len);
- 
+
     struct reference_entry *result;
 
     result = (reference_entry *) hashfindLEN(tbuf,
@@ -2976,7 +2991,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
             //
             MEMFREE(result);
             hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
-            try 
+            try
             {
                 result = (reference_entry *) MEMALLOC(sizeof(result));
             }
@@ -3005,7 +3020,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
         return;
     }
 
-    try 
+    try
     {
         result = (reference_entry *) MEMALLOC(sizeof(reference_entry));
     }
@@ -3014,7 +3029,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
         ; // Nothing
     }
 
-    if(NULL != result)
+    if (NULL != result)
     {
         result->target = target;
         result->owner = executor;
