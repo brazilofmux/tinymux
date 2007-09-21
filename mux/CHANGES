@@ -21,7 +21,9 @@ Major changes that may affect performance and require softcode tweaks:
     configuration options.  This is enabled with --enable-ssl.
  -- Add Telnet option STARTTLS to support secure connections.
     This is enabled with --enable-ssl.
- -- Added infrastructure for dynamically-loadable modules.
+ -- Added infrastructure for dynamically-loadable modules that can be
+    provided by netmux, loaded by netmux, provided by a separate
+    slavestub, or loaded by slavestub.
 
 
 Feature Additions:
@@ -76,6 +78,9 @@ Feature Additions:
     IServerEventsSink so modules can catch server events.
  -- Add crash_message configuration option (Issue 223).
  -- Add channel @saystring and @speechmod (Issue 67).
+ -- Add lastcreate() per Issue #187.
+ -- Add @adestroy per Issue #34.
+ -- Add name references -- @reference per Issue 202.
 
 
 Bug Fixes:
@@ -152,6 +157,15 @@ Bug Fixes:
  -- Fix LOG_DIR across @restarts (Issue 46).
  -- Drop dependency on QueryPerformanceCounter() (Issue 369).
  -- Fix channel timestamps (Issue 370).
+ -- The flag_access configuration handler would SIGSEGV if a flagname
+    was given without a list of permissions.
+ -- The power_alias and flag_alias configuration handlers would
+    SIGSEGV if flagname and alias were not both given.
+ -- Fix 2.7 regression in command/argument splitting in do_command
+    for logged out commands.
+ -- Fix conversion of ANSI sequences containing semi-colons.
+ -- Use moniker in did_it() to show moniker with osucc and odrop.
+ -- Fix corruption issue with MakeCanonicalExitName() using UTF-8.
 
 
 Performance Enhancements:
@@ -196,3 +210,4 @@ Miscellaneous:
  -- Raised the default function invocation limit to 25,000 and the
     default function recursion limit to 500 (Issue 357).
  -- Add alias @haven for @reject.
+ -- Update inzone and zwho help topic.
