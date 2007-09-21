@@ -3447,52 +3447,49 @@ Related Topics: @name.
   COMMAND: @reference <reference_name> = [<target>]
            @reference/list [<player>]
 
-  A name reference (nref) is a mapping between a unique name and a 
-  dbref.  Two types of nref's are possible - global and personal.  Global
-  references always start with an underscore '_' character and can be used
-  by any object on the game.   Personal nrefs can only be used by the player
-  who added the reference.
+  A name reference (nref) is a mapping between a unique name and a dbref.
+  Two types of nref's are possible - global and personal.  Global references
+  always start with an underscore '_' character and can be used by any object
+  on the game.  Personal nrefs can only be used by the player who added the
+  reference.
 
-  A reference is defined by '@reference <name>=<object>'.   If <name> begins
+  A reference is defined by '@reference <name>=<object>'.  If <name> begins
   with an underscore, it is globally defined.  Only Wizards can add global
-  nrefs.   Furthermore, you may only define references for objects you can
+  nrefs.  Furthermore, you may only define references for objects you can
   examine.
 
-  Name references can be used nearly anywhere a dbref can be specified. For
+  Name references can be used nearly anywhere a dbref can be specified.  For
   example, if you have defined a personal nref called 'myobj', which maps to
   #200, via '@reference myobj=#200', you can use '#_myobj' in place of the
-  dbref.   To examine the object, you can use 'examine #_myobj' rather than
+  dbref.  To examine the object, you can use 'examine #_myobj' rather than
   'examine #200'.  Note: global references start with the underscore.  A
-  global reference of '_OOC' can be looked up via '#__OOC'.   
+  global reference of '_OOC' can be looked up via '#__OOC'.
 
-  { 'help @reference2' for more }
+{ 'help @reference2' for more }
 
 & @REFERENCE2
 @REFERENCE2
-  
+
   There is no limit to the number of name references an object may have.
-  Resolving name references is less efficient than resolving a dbref.
-  The length of names for references is currently limited to 64 characters.
+  Resolving name references is less efficient than resolving a dbref.  The
+  length of names for references is currently limited to 64 characters.
 
-  References are not persistent between restarts.   Therefore, any 
-  references that you wish to be permanently defined should be placed in
-  a @startup.    
+  References are not persistent between restarts.  Therefore, any references
+  that you wish to be permanently defined should be placed in a @startup.
 
-  Global references can be listed using '@reference/list'.   You can list
-  your own references using '@reference/list me'.   Furthermore, you can
-  list the references of any player you control by using 
-  '@reference/list <player>'.
+  Global references can be listed using '@reference/list'.  You can list your
+  own references using '@reference/list me'.  Furthermore, you can list the
+  references of any player you control by using '@reference/list <player>'.
 
   Example:
-
-  > @create Data
-  Data created as object #58
-  > @va Data = Test
-  Set.
-  > @reference myobj = Data
-  Referenced.
-  > say [get(#_myobj/VA)]
-  You say, "Test"
+    > @create Data
+    Data created as object #58
+    > @va Data = Test
+    Set.
+    > @reference myobj = Data
+    Referenced.
+    > say [get(#_myobj/VA)]
+    You say, "Test"
 
 & @REMIT
 @REMIT
@@ -5177,7 +5174,7 @@ CHANNEL OBJECT
   The receive lock for a channel is an enter @lock on the channel object.
   The description of a channel is the @desc of the channel object.
 
-  If the channel object has @speechmod or @saystring set, those settings 
+  If the channel object has @speechmod or @saystring set, those settings
   will override the player settings.
 
   Related Topics: @comjoin, @comleave, @comoff, @comon, @ccreate, @create,
@@ -5409,9 +5406,9 @@ COMMANDS
   @link        @list        @listmotd    @lock        @mail        @mvattr
   @name        @nemit       @notify      @npemit      @oemit       @open
   @parent      @password    @pemit       @power       @program     @ps
-  @quitprogram @quota       @reference   @remit       @robot       @search      
-  @set         @stats       @sweep       @switch      @teleport    @timecheck   
-  @trigger     @unlink      @unlock      @verb        @vrml_url    @wait        
+  @quitprogram @quota       @reference   @remit       @robot       @search
+  @set         @stats       @sweep       @switch      @teleport    @timecheck
+  @trigger     @unlink      @unlock      @verb        @vrml_url    @wait
   @wipe
 
 { 'help commands2' for more }
@@ -7198,18 +7195,18 @@ FUNCTION LIST (continued)
     IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
     INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
-    ITER()      LADD()      LAND()      LAST()      LASTCREATE() 
-    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     
-    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LISTRLEVELS() 
-    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCALIZE()  
-    LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()   
-    LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()       
-    LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     
-    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()   
-    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      
-    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()       
-    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    
+    ITER()      LADD()      LAND()      LAST()      LASTCREATE()
+    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
+    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LISTRLEVELS()
+    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCALIZE()
+    LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()
+    LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
+    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
+    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
+    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
     ORD()       ORFLAGS()
 
 ("help function list3" for more)
@@ -8444,7 +8441,7 @@ LASTCREATE()
   specified, the dbref of the executor is used.   The optional argument,
   <type>, returns the dbref of the last created object of the given type.
   Type may be 'r', 'e', 't', or 'p' for room, exit, thing, or player,
-  respectively. 
+  respectively.
 
   Examples:
     > say lastcreate(me)
