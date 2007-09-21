@@ -2827,7 +2827,8 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     CHashTable* htab = &mudstate.reference_htab;
     mux_string refstr(reference_name);
 
-    if(!reference_name || !*reference_name)
+    if (  NULL == reference_name
+       || '\0' == reference_name[0])
     {
         global_only = true;
         refstr.prepend('_');
@@ -2836,20 +2837,20 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     {
         global_only = false;
 
-        if(0 == mux_stricmp(reference_name, T("me")))
+        if (0 == mux_stricmp(reference_name, T("me")))
         {
             target = executor;
         }
         else
         {
             target = lookup_player(executor, reference_name, 1);
-            if(NOTHING == target)
+            if (NOTHING == target)
             {
                 raw_notify(executor, T("No such player."));
                 return;
             }
 
-            if(!Controls(executor, target))
+            if (!Controls(executor, target))
             {
                 raw_notify(executor, NOPERM_MESSAGE);
                 return;
@@ -2864,19 +2865,20 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     reference_entry *htab_entry;
     bool match_found = false;
 
-    for(htab_entry = (struct reference_entry *) hash_firstentry(htab);
-            NULL != htab_entry;
-            htab_entry = (struct reference_entry *) hash_nextentry(htab))
+    for (  htab_entry = (struct reference_entry *) hash_firstentry(htab);
+           NULL != htab_entry;
+           htab_entry = (struct reference_entry *) hash_nextentry(htab))
     {
-        if( (true == global_only && '_' == htab_entry->name[0]) ||
-                target == htab_entry->owner)
+        if ( (  global_only
+             && '_' == htab_entry->name[0])
+           || target == htab_entry->owner)
         {
-            if(!Good_obj(htab_entry->target))
+            if (!Good_obj(htab_entry->target))
             {
                 continue;
             }
 
-            if(false == match_found)
+            if (!match_found)
             {
                 match_found = true;
                 raw_notify(executor, tprintf("%-12s %-20s %-20s",
@@ -2896,7 +2898,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
         }
     }
 
-    if(false == match_found)
+    if (!match_found)
     {
         raw_notify(executor, T("GAME: No references found."));
     }
@@ -2907,12 +2909,10 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     }
 }
 
-
 void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
         int key, int nargs, UTF8 *reference_name, UTF8 *object_name,
         const UTF8 *cargs[], int ncargs)
 {
-
     dbref target = NOTHING;
     CHashTable* htab = &mudstate.reference_htab;
     dbref *np;
@@ -2920,24 +2920,24 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
     UTF8 tbuf[LBUF_SIZE];
     size_t tbuf_len = 0;
 
-
-    if(key & REFERENCE_LIST)
+    if (key & REFERENCE_LIST)
     {
         ListReferences(executor, reference_name, object_name);
         return;
     }
 
     /* References can only be set on objects the executor can examine */
-    if(object_name && *object_name)
+    if (  NULL !=object_name
+       && '\0' != object_name[0])
     {
         target = match_thing_quiet(executor, object_name);
 
-        if(!Good_obj(target))
+        if (!Good_obj(target))
         {
             notify(executor, NOMATCH_MESSAGE);
             return;
         }
-        if(!Examinable(executor, target))
+        if (!Examinable(executor, target))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
@@ -2949,9 +2949,9 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
         target = NOTHING;
     }
 
-    if(*reference_name == '_')
+    if (reference_name[0] == '_')
     {
-        if(!Wizard(executor))
+        if (!Wizard(executor))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
@@ -2971,15 +2971,15 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
     result = (reference_entry *) hashfindLEN(tbuf,
             tbuf_len, &mudstate.reference_htab);
 
-    if(NULL != result)
+    if (NULL != result)
     {
-        if(NOTHING == target)
+        if (NOTHING == target)
         {
             MEMFREE(result);
             hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
             raw_notify(executor, T("Reference cleared."));
         }
-        else if(result->target == target)
+        else if (result->target == target)
         {
             // Reference already exists
             //
@@ -3000,7 +3000,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
                 ; // Nothing;
             }
 
-            if(NULL != result)
+            if (NULL != result)
             {
                 result->target = target;
                 result->owner = executor;
@@ -3014,7 +3014,7 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
 
     // The reference was not found.  It may be new or may never have existed
     //
-    if(NOTHING == target)
+    if (NOTHING == target)
     {
         raw_notify(executor, T("No such reference to clear."));
         return;
@@ -3038,4 +3038,3 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
         raw_notify(executor, T("Reference added."));
     }
 }
-
