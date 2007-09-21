@@ -2796,6 +2796,19 @@ HAVE_ZONES
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
+& HELP_EXECUTOR
+HELP_EXECUTOR
+
+  CONFIG PARAMETER: help_executor <dbref>
+  DEFAULT: -1 (NOTHING)
+
+  Specifies the enactor for evaluation of text displayed for commands set by
+  the helpfile configuration option.   If not set, the enacting object dbref
+  is used instead.   For ease of use, the dbref of the actual enactor is
+  passed as %0.
+
+  Related Topics:  helpfile
+
 & HELPFILE
 HELPFILE
 
