@@ -641,7 +641,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
             if (MUX_SUCCEEDED(mr))
             {
                 mux_IClassFactory *pIClassFactory = NULL;
-                MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
+                mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
                 if (  MUX_SUCCEEDED(mr)
                    && NULL != pIClassFactory)
                 {
@@ -649,6 +649,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                     pIClassFactory->Release();
                 }
             }
+        }
+        else
+        {
+            mr =  MUX_E_CLASSNOTAVAILABLE;
         }
     }
     else if (NULL != g_fpPipePump)
