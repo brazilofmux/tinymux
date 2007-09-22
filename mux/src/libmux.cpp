@@ -748,6 +748,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         }
         Pipe_EmptyQueue(&qiFrame);
     }
+    else
+    {
+        mr =  MUX_E_CLASSNOTAVAILABLE;
+    }
     return mr;
 }
 

@@ -2915,7 +2915,6 @@ void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
 {
     dbref target = NOTHING;
     CHashTable* htab = &mudstate.reference_htab;
-    dbref *np;
     mux_string refstr(reference_name);
     UTF8 tbuf[LBUF_SIZE];
     size_t tbuf_len = 0;
