@@ -19,6 +19,7 @@ game/bin/sum.dll
 game/bin/win64/netmux.exe
 game/bin/win64/libmux.dll
 game/bin/win64/sample.dll
+game/bin/win64/sum.dll
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
