@@ -172,8 +172,10 @@ has been compiled and run successfully 'out of the box' on the following
 platforms:
 
 AIX 4.3
+CentOS 6.x
 Cygwin
-Debian 2.1, 2.2, Sarge, Etch
+Debian 2.1, 2.2, Woody, Sarge, Etch, Lenny, Sid
+Fedora Core 1-7
 FreeBSD (32 and 64-bit)
 IRIX (Some versions)
 Linux Kernels 2.0.35 - 2.6.18
@@ -181,10 +183,10 @@ Mac OS X.
 Mandrake 6.0, 7.0
 OpenBSD
 QNX
-RedHat 5.1, 5.2, 6.0
+RedHat 5.1, 5.2, 6.0-9.0, Fedora Core 1-7
 Slackware 3.6, 4.0, 7.0, 10.0
-Solaris 2.4, 2.5, 2.6, 5.1
-SuSE 6.2, 9.3
+Solaris 2.4, 2.5, 2.6, 5.1, 9, 10.
+SuSE 6.2, 9.3-10.2
 Ubuntu 5.10
 
 If you get TinyMUX 2.7 working on another platform, please let us know
