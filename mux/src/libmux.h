@@ -243,7 +243,7 @@ typedef struct
     bool       bLoaded;
 } MUX_MODULE_INFO;
 
-typedef void PipePump(void);
+typedef MUX_RESULT PipePump(void);
 
 // APIs intended only for use by main program (netmux or stubslave).
 //

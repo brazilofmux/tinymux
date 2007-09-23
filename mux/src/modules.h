@@ -248,6 +248,7 @@ public:
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]) = 0;
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo) = 0;
     virtual MUX_RESULT ModuleMaintenance(void) = 0;
+    virtual MUX_RESULT ShutdownSlave(void) = 0;
 };
 
 class CStubSlave : public mux_ISlaveControl, public mux_IMarshal
@@ -277,6 +278,7 @@ public:
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
     virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
 
     CStubSlave(void);
     virtual ~CStubSlave();
@@ -333,6 +335,7 @@ public:
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
     virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
 
     CStubSlaveProxy(void);
     MUX_RESULT FinalConstruct(void);

@@ -23,25 +23,38 @@ static CLASS_INFO stubslave_classes[NUM_CLASSES] =
     { CID_StubSlave }
 };
 
-void Stub_PipePump(void)
+bool bStubSlaveShutdown = false;
+
+extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
 {
     static UINT8 arg[QUEUE_BLOCK_SIZE];
     size_t nWanted = sizeof(arg);
     while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
           && 0 < nWanted)
     {
-        write(1, arg, nWanted);
+        if (write(1, arg, nWanted) < 0)
+        {
+            return MUX_E_FAIL;
+        }
         nWanted = sizeof(arg);
     }
 
-    int len = read(0, arg, sizeof(arg));
-    if (0 < len)
+    // If we are shutting down, don't wait for any more input from the pipe.
+    //
+    if (!bStubSlaveShutdown)
     {
-        Pipe_AppendBytes(&Queue_In, len, arg);
+        int len = read(0, arg, sizeof(arg));
+        if (0 < len)
+        {
+            Pipe_AppendBytes(&Queue_In, len, arg);
+        }
+        else if (len < 0)
+        {
+            return MUX_E_FAIL;
+        }
     }
+    return MUX_S_OK;
 }
-
-bool bStubSlaveShutdown = false;
 
 void Stub_ShoveChars(void)
 {
@@ -53,6 +66,7 @@ void Stub_ShoveChars(void)
         Stub_PipePump();
         Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Frame);
     }
+    Stub_PipePump();
 }
 
 extern "C" MUX_RESULT DCL_API stubslave_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
@@ -274,7 +288,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                             MUX_RESULT mr;
                         } ReturnFrame;
 
-                        ReturnFrame.mr = mux_AddModule(pModuleName, pFileName);
+                        ReturnFrame.mr = pISlaveControl->AddModule(pModuleName, pFileName);
 
                         Pipe_EmptyQueue(pqi);
                         Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
@@ -336,7 +350,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                         MUX_RESULT mr;
                     } ReturnFrame;
 
-                    ReturnFrame.mr = mux_RemoveModule(pModuleName);
+                    ReturnFrame.mr = pISlaveControl->RemoveModule(pModuleName);
 
                     Pipe_EmptyQueue(pqi);
                     Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
@@ -378,7 +392,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             } ReturnFrame;
 
             MUX_MODULE_INFO ModuleInfo;
-            ReturnFrame.mr = mux_ModuleInfo(CallFrame.iModule, &ModuleInfo);
+            ReturnFrame.mr = pISlaveControl->ModuleInfo(CallFrame.iModule, &ModuleInfo);
 
             Pipe_EmptyQueue(pqi);
             if (  MUX_SUCCEEDED(ReturnFrame.mr)
@@ -407,7 +421,22 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 MUX_RESULT mr;
             } ReturnFrame;
 
-            ReturnFrame.mr = mux_ModuleMaintenance();
+            ReturnFrame.mr = pISlaveControl->ModuleMaintenance();
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+            mr = MUX_S_OK;
+        }
+        break;
+
+    case 7: // MUX_RESULT ShutdownSlave(void);
+        {
+            struct RETURN
+            {
+                MUX_RESULT mr;
+            } ReturnFrame;
+
+            ReturnFrame.mr = pISlaveControl->ShutdownSlave();
 
             Pipe_EmptyQueue(pqi);
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
@@ -505,21 +534,28 @@ MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF16 aFileName
 MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // WIN32
 {
-    return MUX_E_NOTIMPLEMENTED;
+    return mux_AddModule(aModuleName, aFileName);
 }
 
 MUX_RESULT CStubSlave::RemoveModule(const UTF8 aModuleName[])
 {
-    return MUX_E_NOTIMPLEMENTED;
+    return mux_RemoveModule(aModuleName);
 }
 
 MUX_RESULT CStubSlave::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    return mux_ModuleInfo(iModule, pModuleInfo);
 }
 
 MUX_RESULT CStubSlave::ModuleMaintenance(void)
 {
+    return mux_ModuleMaintenance();
+}
+
+MUX_RESULT CStubSlave::ShutdownSlave(void)
+{
+    bStubSlaveShutdown = true;
+    return MUX_S_OK;
 }
 
 // Factory for CStubSlave component which is not directly accessible.

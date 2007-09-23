@@ -36,7 +36,7 @@ extern CRITICAL_SECTION csDescriptorList;
 
 #ifdef STUB_SLAVE
 void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
-extern "C" void DCL_API pipepump(void);
+extern "C" MUX_RESULT DCL_API pipepump(void);
 #endif // STUB_SLAVE
 
 extern NAMETAB sigactions_nametab[];

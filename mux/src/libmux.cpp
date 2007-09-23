@@ -1987,16 +1987,19 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
     return false;
 }
 
-static void Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
+static MUX_RESULT Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
 {
+    MUX_RESULT mr = MUX_S_OK;
     for (;;)
     {
-        g_fpPipePump();
-        if (Pipe_DecodeFrames(nChannel, pqi))
+        mr = g_fpPipePump();
+        if (  MUX_FAILED(mr)
+           || Pipe_DecodeFrames(nChannel, pqi))
         {
             break;
         }
     }
+    return mr;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
@@ -2007,8 +2010,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChan
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
-    Pipe_SendReceive(nChannel, pqiFrame);
-    return MUX_S_OK;
+    return Pipe_SendReceive(nChannel, pqiFrame);
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqiFrame)
