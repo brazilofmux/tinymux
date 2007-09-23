@@ -476,11 +476,17 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue);
 void atr_add_raw(dbref, int, const UTF8 *);
 void atr_add(dbref, int, const UTF8 *, dbref, int);
 void atr_set_flags(dbref, int, int);
+
+// The atr_get family only looks up attributes on the object itself (not parents)
+//
 const UTF8 *atr_get_raw_LEN(dbref, int, size_t *);
 const UTF8 *atr_get_raw(dbref, int);
 UTF8 *atr_get_LEN(dbref, int, dbref *, int *, size_t *);
 UTF8 *atr_get_real(const UTF8 *tag, dbref, int, dbref *, int *, const UTF8 *, const int);
 #define atr_get(g,t,a,o,f) atr_get_real((UTF8 *)g,t,a,o,f, (UTF8 *)__FILE__, __LINE__)
+
+// The atr_pget family looks up attributes on the object or parent (if set)
+//
 UTF8 *atr_pget_LEN(dbref, int, dbref *, int *, size_t *);
 UTF8 *atr_pget_real(dbref, int, dbref *, int *, const UTF8 *, const int);
 #define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, (UTF8 *)__FILE__, __LINE__)
