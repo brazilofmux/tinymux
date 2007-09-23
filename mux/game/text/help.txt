@@ -510,6 +510,23 @@ Related Topics: @name.
 
   Related Topics: give, @cost, @opay, @pay.
 
+& @APARENT
+
+  COMMAND:  @aparent <object> = <command list>
+  Attribute: Aparent
+
+  Sets the actions to be taken when another object is parented to <object>.
+  The action list is executed with the permission of <object>.   Several
+  arguments are passed during evaluation:
+
+  %0 - dbref of the child being added or removed
+  %1 - 0 or 1 indicating if the parent is being removed (1) or added (0)
+  %2 - dbref of the object issuing the @parent command 
+
+  The @aparent attribute is not inherited or copied during @clone.
+
+  Related Topics:  @parent
+
 & @ARFAIL
 @ARFAIL
 
@@ -5421,21 +5438,21 @@ COMMANDS (continued)
   @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
   @adrop       @aefail      @aenter      @afail       @agfail      @ahear
   @akill       @alead       @aleave      @alfail      @alias       @amail
-  @amhear      @amove       @apay        @arfail      @asuccess    @atfail
-  @atofail     @atport      @aufail      @ause        @away        @charges
-  @color       @comjoin     @comleave    @comoff      @comon       @conformat
-  @cost        @daily       @descformat  @describe    @dfail       @drop
-  @ealias      @efail       @enter       @exitformat  @exitto      @fail
-  @filter      @forwardlist @gfail       @idesc       @idle        @idletimeout
-  @infilter    @inprefix    @kill        @lalias      @lead        @leave
-  @lfail       @listen      @mailsucc    @mfail       @moniker     @move
-  @nameformat  @odescribe   @odfail      @odrop       @oefail      @oenter
-  @ofail       @ogfail      @okill       @olead       @oleave      @olfail
-  @omove       @opay        @orfail      @osuccess    @otfail      @otofail
-  @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
-  @pay         @prefix      @queuemax    @reject      @rfail       @runout
-  @saystring   @sex         @signature   @speechmod   @startup     @success
-  @tfail       @tofail      @tport       @ufail       @use
+  @amhear      @amove       @aparent     @apay        @arfail      @asuccess    
+  @atfail      @atofail     @atport      @aufail      @ause        @away        
+  @charges     @color       @comjoin     @comleave    @comoff      @comon       
+  @conformat   @cost        @daily       @descformat  @describe    @dfail       
+  @drop        @ealias      @efail       @enter       @exitformat  @exitto      
+  @fail        @filter      @forwardlist @gfail       @idesc       @idle        
+  @idletimeout @infilter    @inprefix    @kill        @lalias      @lead        
+  @leave       @lfail       @listen      @mailsucc    @mfail       @moniker     
+  @move        @nameformat  @odescribe   @odfail      @odrop       @oefail      
+  @oenter      @ofail       @ogfail      @okill       @olead       @oleave      
+  @olfail      @omove       @opay        @orfail      @osuccess    @otfail      
+  @otofail     @otport      @oufail      @ouse        @oxenter     @oxleave     
+  @oxtport     @pay         @prefix      @queuemax    @reject      @rfail       
+  @runout      @saystring   @sex         @signature   @speechmod   @startup     
+  @success     @tfail       @tofail      @tport       @ufail       @use
 
 & COMP()
 COMP()
