@@ -23,7 +23,7 @@
 #define MAX_TITLE_LEN   200
 
 //! \def Maximum length for an alias to a channel
-#define MAX_ALIAS_LEN   5
+#define MAX_ALIAS_LEN   15
 
 //! \def Actual size of a channel alias
 #define ALIAS_SIZE      (MAX_ALIAS_LEN+1)
