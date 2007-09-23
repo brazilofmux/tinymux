@@ -443,6 +443,9 @@ void do_parent
     UNUSED_PARAMETER(ncargs);
 
     dbref thing, parent, curr;
+
+    dbref previous_parent = NOTHING;
+
     int lev;
 
     // Get victim.
@@ -497,10 +500,55 @@ void do_parent
     }
     else
     {
+        // save the previous parent for @aparent handling 
+        previous_parent = db[thing].parent;
+
         parent = NOTHING;
     }
 
     s_Parent(thing, parent);
+
+    // Parent is set appropriately, handle the @aparent
+    //
+    bool bRemoveParent =  (NOTHING == parent) ? true : false; 
+
+    // Determine the appropriate executor
+    //
+    dbref parent_executor = bRemoveParent ? previous_parent : parent;
+
+    int aowner;
+    int aflags;
+
+    // A_APARENT is not inheritable
+    //
+    UTF8* action = atr_get("do_parent.517", parent_executor, A_APARENT, 
+            &aowner, &aflags);
+
+    if(action && '\0' != action[0])
+    {
+        int xnargs = 3;
+        const UTF8 *xargs[3];
+
+        // setup the appropriate stack arguments
+        //
+        UTF8 child[SBUF_SIZE];
+        UTF8 remove[SBUF_SIZE];
+        UTF8 original_enactor[SBUF_SIZE];
+
+        xargs[0] = child;
+        xargs[1] = remove;
+        xargs[2] = original_enactor;
+
+        mux_sprintf(child, SBUF_SIZE, "#%d", thing);
+        mux_sprintf(remove, SBUF_SIZE, "%d", bRemoveParent ? 1 : 0);
+        mux_sprintf(original_enactor, SBUF_SIZE, "#%d", executor);
+
+        did_it(parent_executor, parent_executor, 0, NULL, 0, NULL,
+                A_APARENT, 0, xargs, xnargs);
+    }
+    free_lbuf(action);
+
+
     if (!Quiet(thing) && !Quiet(executor))
     {
         if (parent == NOTHING)
