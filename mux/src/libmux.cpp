@@ -51,7 +51,8 @@ typedef enum MODULESTATE
     eModuleInitialized = 1,
     eModuleRegistering,
     eModuleRegistered,
-    eModuleUnregistering
+    eModuleUnregistering,
+    eModuleUnloadable
 } ModuleState;
 
 typedef struct mod_info
@@ -462,6 +463,7 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         pModule->pFileName = CopyUTF8(aFileName);
 #endif // WIN32
         pModule->bLoaded = false;
+        pModule->eState  = eModuleInitialized;
 
         if (  NULL != pModule->pModuleName
            && NULL != pModule->pFileName)
@@ -570,9 +572,10 @@ static void ModuleRemove(MODULE_INFO *pModule)
 
 static void ModuleLoad(MODULE_INFO *pModule)
 {
-    if (pModule->bLoaded)
+    if (  pModule->bLoaded
+       || eModuleUnloadable == pModule->eState)
     {
-        // Module is already in loaded state.
+        // Module is already in loaded state or it is unloadable.
         //
         return;
     }
@@ -584,6 +587,7 @@ static void ModuleLoad(MODULE_INFO *pModule)
         pModule->fpCanUnloadNow   = (FPCANUNLOADNOW *)MOD_SYM(pModule->hInst, "mux_CanUnloadNow");
         pModule->fpRegister       = (FPREGISTER *)MOD_SYM(pModule->hInst, "mux_Register");
         pModule->fpUnregister     = (FPUNREGISTER *)MOD_SYM(pModule->hInst, "mux_Unregister");
+
         if (  NULL != pModule->fpGetClassObject
            && NULL != pModule->fpCanUnloadNow
            && NULL != pModule->fpRegister
@@ -593,8 +597,17 @@ static void ModuleLoad(MODULE_INFO *pModule)
         }
         else
         {
+            pModule->fpGetClassObject = NULL;
+            pModule->fpCanUnloadNow   = NULL;
+            pModule->fpRegister       = NULL;
+            pModule->fpUnregister     = NULL;
             MOD_CLOSE(pModule->hInst);
+            pModule->eState = eModuleUnloadable;
         }
+    }
+    else
+    {
+        pModule->eState = eModuleUnloadable;
     }
 }
 
@@ -917,7 +930,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_I
 {
     if (eLibraryDown == g_LibraryState)
     {
-        return MUX_E_UNEXPECTED;
+        return MUX_E_NOTREADY;
     }
 
     if (  nci <= 0
@@ -1065,7 +1078,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
         return MUX_E_NOTREADY;
     }
 
-    MUX_RESULT mr;
+    MUX_RESULT mr = MUX_S_OK;
     if (NULL == g_pModule)
     {
         // Create new MODULE_INFO.
@@ -1078,9 +1091,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
             ModuleLoad(pModule);
             if (pModule->bLoaded)
             {
+                pModule->eState = eModuleRegistering;
                 g_pModule = pModule;
                 mr = pModule->fpRegister();
                 g_pModule = NULL;
+                pModule->eState = eModuleRegistered;
             }
             else
             {
@@ -1095,6 +1110,66 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     else
     {
         mr = MUX_E_NOTREADY;
+    }
+    return mr;
+}
+
+static MUX_RESULT RemoveModule(MODULE_INFO *pModule)
+{
+    MUX_RESULT mr = MUX_S_OK;
+
+    if (NULL != pModule)
+    {
+        // First, aim for an unregistered state.
+        //
+        if (eModuleRegistered == pModule->eState)
+        {
+            // It is possible for a module to be registered without it
+            // necessarily being loaded, but we can't ask it to revoke its
+            // class registrations without loading it.
+            //
+            if (!pModule->bLoaded)
+            {
+                ModuleLoad(pModule);
+            }
+
+            if (pModule->bLoaded)
+            {
+                // Ask module to revoke its classes.
+                //
+                pModule->eState = eModuleUnregistering;
+                g_pModule = pModule;
+                mr = pModule->fpUnregister();
+                g_pModule = NULL;
+                pModule->eState = eModuleInitialized;
+            }
+            else
+            {
+                // Without being able to load the module, we're stuck.
+                //
+                pModule->eState = eModuleUnloadable;
+            }
+        }
+
+        // Next, aim for an unloaded state.
+        //
+        if (pModule->bLoaded)
+        {
+            // Attempt to unload module.
+            //
+            mr = pModule->fpCanUnloadNow();
+            if (  MUX_SUCCEEDED(mr)
+               && MUX_S_FALSE != mr)
+            {
+                ModuleUnload(pModule);
+                ModuleRemove(pModule);
+                mr = MUX_S_OK;
+            }
+        }
+    }
+    else
+    {
+        mr = MUX_E_INVALIDARG;
     }
     return mr;
 }
@@ -1114,51 +1189,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
         return MUX_E_NOTREADY;
     }
 
-    MUX_RESULT mr;
+    MUX_RESULT mr MUX_S_OK;
     if (NULL == g_pModule)
     {
         MODULE_INFO *pModule = ModuleFindFromName(aModuleName);
         if (NULL != pModule)
         {
-            // It is possible for a module to be registered without it
-            // necessarily being loaded, but we can't ask it to revoke its
-            // class registrations without loading it.
-            //
-            if (!pModule->bLoaded)
-            {
-                ModuleLoad(pModule);
-            }
-
-            if (pModule->bLoaded)
-            {
-                // Ask module to revoke its classes.
-                //
-                g_pModule = pModule;
-                mr = pModule->fpUnregister();
-                g_pModule = NULL;
-
-                if (MUX_SUCCEEDED(mr))
-                {
-                    // Attempt to unload module.
-                    //
-                    mr = pModule->fpCanUnloadNow();
-                    if (  MUX_SUCCEEDED(mr)
-                       && MUX_S_FALSE != mr)
-                    {
-                        ModuleUnload(pModule);
-                        ModuleRemove(pModule);
-                        mr = MUX_S_OK;
-                    }
-                }
-            }
-            else
-            {
-                mr = MUX_E_FAIL;
-            }
-        }
-        else
-        {
-            mr = MUX_E_NOTFOUND;
+            mr = RemoveModule(pModule);
         }
     }
     else
@@ -1281,11 +1318,65 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 {
+    MUX_RESULT mr = MUX_S_OK;
+
     if (eLibraryInitialized == g_LibraryState)
     {
         g_LibraryState   = eLibraryGoingDown;
 
-        // TODO: Put unregistration handling here.
+        // Give each module a chance to unregister.
+        //
+        MODULE_INFO *pModule = NULL;
+        bool bFound = false;
+        do
+        {
+            // Find a module in the eModuleRegistered state.  The list we use
+            // is only valid until we call RemoveModule().
+            //
+            bFound = false;
+            pModule = g_pModuleList;
+            while (NULL != pModule)
+            {
+                if (eModuleRegistered == pModule->eState)
+                {
+                    bFound = true;
+                    mr = RemoveModule(pModule);
+                    break;
+                }
+                pModule = pModule->pNext;
+            }
+        } while (bFound);
+
+        // Attempt to unload the remaining modules politely.
+        //
+        pModule = g_pModuleList;
+        while (NULL != pModule)
+        {
+            if (pModule->bLoaded)
+            {
+                mr = pModule->fpCanUnloadNow();
+                if (  MUX_SUCCEEDED(mr)
+                   && MUX_S_FALSE != mr)
+                {
+                    ModuleUnload(pModule);
+                }
+            }
+            pModule = pModule->pNext;
+        }
+
+        // If anything is left on the list, there is a bug in someone's code.
+        // The server will shortly either shutdown or restart.  To avoid
+        // leaking a handle, we will unload the module impolitely.
+        //
+        pModule = g_pModuleList;
+        while (NULL != pModule)
+        {
+            if (pModule->bLoaded)
+            {
+                ModuleUnload(pModule);
+            }
+            pModule = pModule->pNext;
+        }
 
         g_LibraryState   = eLibraryDown;
         g_ProcessContext = IsUninitialized;
@@ -2018,7 +2109,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                                     // Send Queue_Frame back to sender.
                                     //
                                     UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
-    
+
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
@@ -2026,14 +2117,14 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
                                 }
                                 break;
-    
+
                             case eMessage:
                                 if (NULL != aChannels[nChannel].pfMsg)
                                 {
                                     aChannels[nChannel].pfMsg(&aChannels[nChannel], pqiFrame);
                                 }
                                 break;
-    
+
                             case eDisconnect:
                                 if (NULL != aChannels[nChannel].pfDisc)
                                 {

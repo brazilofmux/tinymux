@@ -1289,6 +1289,7 @@ void do_shutdown
             p->pSink->presync_database();
             p = p->pNext;
         }
+        final_modules();
 #endif
 
         // Close the attribute text db and dump the header db.
@@ -3376,8 +3377,6 @@ int DCL_CDECL main(int argc, char *argv[])
         p->pSink->shutdown();
         p = p->pNext;
     }
-#endif
-#if defined(HAVE_DLOPEN) || defined(WIN32)
     final_modules();
 #endif
     CLOSE;

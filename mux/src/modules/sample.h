@@ -25,7 +25,7 @@ const MUX_IID IID_ISum          = 0x00000002BAB94F6Dull;
 interface ISample : public mux_IUnknown
 {
 public:
-    virtual int Add(int a, int b) = 0;
+    virtual void Unregistering(void) = 0;
 };
 
 class CSample : public ISample, public mux_IServerEventsSink
@@ -58,7 +58,7 @@ public:
 
     // ISample
     //
-    virtual int Add(int a, int b);
+    virtual void Unregistering(void);
 
     CSample(void);
     MUX_RESULT FinalConstruct(void);

@@ -1557,6 +1557,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
         p->pSink->presync_database();
         p = p->pNext;
     }
+    final_modules();
 #endif
 
 #ifndef MEMORY_BASED

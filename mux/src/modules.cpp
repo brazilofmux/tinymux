@@ -487,8 +487,10 @@ MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink
     // Add the pointer to the list.
     //
     p->pNext = g_pServerEventsSinkListHead;
+    pIServerEventsSink->AddRef();
     p->pSink = pIServerEventsSink;
-    p->pSink->AddRef();
+    pIServerEventsSink->AddRef();
+    m_pSink = pIServerEventsSink;
     g_pServerEventsSinkListHead = p;
 
     return MUX_S_OK;

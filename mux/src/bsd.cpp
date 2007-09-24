@@ -1964,9 +1964,12 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 }
             }
 
-            if (CheckOutput(stubslave_socket))
+            if (!IS_INVALID_SOCKET(stubslave_socket))
             {
-                StubSlaveWrite();
+                if (CheckOutput(stubslave_socket))
+                {
+                    StubSlaveWrite();
+                }
             }
         }
 #endif // STUB_SLAVE
@@ -2099,10 +2102,13 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
             ; // Nothing.
         }
     }
-
-    if (CheckOutput(stubslave_socket))
+    
+    if (!IS_INVALID_SOCKET(stubslave_socket))
     {
-        StubSlaveWrite();
+        if (CheckOutput(stubslave_socket))
+        {
+            StubSlaveWrite();
+        }
     }
     return MUX_S_OK;
 }
@@ -4786,6 +4792,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                 p = p->pNext;
             }
         }
+        final_modules();
 #endif
 #ifndef MEMORY_BASED
         al_store();

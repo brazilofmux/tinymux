@@ -123,6 +123,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
     //
     if (NULL != g_pISample)
     {
+        g_pISample->Unregistering();
         g_pISample->Release();
         g_pISample = NULL;
     }
@@ -236,9 +237,16 @@ UINT32 CSample::Release(void)
     return m_cRef;
 }
 
-int CSample::Add(int a, int b)
+void CSample::Unregistering(void)
 {
-    return a + b;
+    // The ServerEventsSource and we are holding references to each other.
+    // We need to release our reference before he will release his.
+    //
+    if (NULL != m_pIServerEventsControl)
+    {
+        m_pIServerEventsControl->Release();
+        m_pIServerEventsControl = NULL;
+    }
 }
 
 // Factory for Sample component which is not directly accessible.
