@@ -39,6 +39,21 @@ const UINT8 chCustom   = 0;
 const UINT8 chStandard = 1;
 #endif // ENABLE_STD_MARSHALER
 
+typedef enum LIBRARYSTATE
+{
+    eLibraryDown = 1,
+    eLibraryInitialized,
+    eLibraryGoingDown
+} LibraryState;
+
+typedef enum MODULESTATE
+{
+    eModuleInitialized = 1,
+    eModuleRegistering,
+    eModuleRegistered,
+    eModuleUnregistering
+} ModuleState;
+
 typedef struct mod_info
 {
     struct mod_info  *pNext;
@@ -54,6 +69,7 @@ typedef struct mod_info
     UTF8             *pFileName;
 #endif
     bool             bLoaded;
+    ModuleState      eState;
 } MODULE_INFO;
 
 typedef struct
@@ -88,14 +104,15 @@ static int                  g_nInterfaces = 0;
 static int                  g_nInterfacesAllocated = 0;
 static INTERFACE_INFO      *g_pInterfaces = NULL;
 
-PipePump   *g_fpPipePump = NULL;
-QUEUE_INFO *g_pQueue_In  = NULL;
-QUEUE_INFO *g_pQueue_Out = NULL;
+static PipePump   *g_fpPipePump = NULL;
+static QUEUE_INFO *g_pQueue_In  = NULL;
+static QUEUE_INFO *g_pQueue_Out = NULL;
 
-CHANNEL_INFO *aChannels = NULL;
-size_t        nChannels = 0;
-size_t        nChannelsAllocated = 0;
+static CHANNEL_INFO *aChannels = NULL;
+static size_t        nChannels = 0;
+static size_t        nChannelsAllocated = 0;
 
+static LibraryState    g_LibraryState   = eLibraryDown;
 static process_context g_ProcessContext = IsUninitialized;
 
 // TODO: The uniqueness tests are probably too strong.  It may be desireable
@@ -609,12 +626,17 @@ static void ModuleUnload(MODULE_INFO *pModule)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv)
 {
+    if (eLibraryInitialized != g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     MUX_RESULT mr = MUX_S_OK;
 
     if (  (UseSameProcess & ctx)
-       || (  g_ProcessContext == IsMainProcess
+       || (  IsMainProcess == g_ProcessContext
           && (UseMainProcess & ctx))
-       || (  g_ProcessContext == IsSlaveProcess
+       || (  IsSlaveProcess == g_ProcessContext
           && (UseSlaveProcess & ctx)))
     {
         // In-proc component.
@@ -774,6 +796,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *fpGetClassObject)
 {
+    if (eLibraryInitialized != g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     if (  nci <= 0
        || NULL == aci)
     {
@@ -888,6 +915,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[])
 {
+    if (eLibraryDown == g_LibraryState)
+    {
+        return MUX_E_UNEXPECTED;
+    }
+
     if (  nci <= 0
        || NULL == aci)
     {
@@ -938,6 +970,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_I
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFACE_INFO aii[])
 {
+    if (eLibraryInitialized != g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     if (  nii <= 0
        || NULL == aii)
     {
@@ -990,6 +1027,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFA
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE_INFO aii[])
 {
+    if (eLibraryDown == g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     if (  nii <= 0
        || NULL == aii)
     {
@@ -1018,6 +1060,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // WIN32
 {
+    if (eLibraryInitialized != g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     MUX_RESULT mr;
     if (NULL == g_pModule)
     {
@@ -1062,6 +1109,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName[])
 {
+    if (eLibraryDown == g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     MUX_RESULT mr;
     if (NULL == g_pModule)
     {
@@ -1129,6 +1181,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
+    if (eLibraryDown == g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     if (iModule < 0)
     {
         return MUX_E_INVALIDARG;
@@ -1159,6 +1216,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 {
+    if (eLibraryInitialized != g_LibraryState)
+    {
+        return MUX_E_NOTREADY;
+    }
+
     // We can query each loaded module and unload the ones that are unloadable.
     //
     MODULE_INFO *pModule = g_pModuleList;
@@ -1182,9 +1244,11 @@ static bool GrowChannels(void);
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx, PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out)
 {
-    if (IsUninitialized == g_ProcessContext)
+    if (eLibraryDown == g_LibraryState)
     {
         g_ProcessContext = ctx;
+        g_LibraryState = eLibraryInitialized;
+
         if (  NULL != fpPipePump
            && NULL != pQueue_In
            && NULL != pQueue_Out
@@ -1217,7 +1281,15 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 {
-    g_ProcessContext = IsUninitialized;
+    if (eLibraryInitialized == g_LibraryState)
+    {
+        g_LibraryState   = eLibraryGoingDown;
+
+        // TODO: Put unregistration handling here.
+
+        g_LibraryState   = eLibraryDown;
+        g_ProcessContext = IsUninitialized;
+    }
     return MUX_S_OK;
 }
 
