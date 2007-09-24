@@ -4648,7 +4648,6 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                 {
                     // The Stub slave process ended unexpectedly.
                     //
-                    CleanUpStubSlaveSocket();
                     stubslave_pid = 0;
 
                     LogStatBuf(stat_buf, "STUB");

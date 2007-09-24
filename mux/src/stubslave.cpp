@@ -61,9 +61,11 @@ void Stub_ShoveChars(void)
     QUEUE_INFO Queue_Frame;
     Pipe_InitializeQueueInfo(&Queue_Frame);
 
-    while (!bStubSlaveShutdown)
+    MUX_RESULT mr = MUX_S_OK;
+    while (  !bStubSlaveShutdown
+          && MUX_SUCCEEDED(mr))
     {
-        Stub_PipePump();
+        mr = Stub_PipePump();
         Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Frame);
     }
     Stub_PipePump();
