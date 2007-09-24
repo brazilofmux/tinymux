@@ -3387,7 +3387,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif
 #ifdef STUB_SLAVE
     CleanUpStubSlaveSocket();
-    CleanUpStubSlaveProcess();
+    WaitOnStubSlaveProcess();
 #endif
 
     // Go ahead and explicitly free the memory for these things so

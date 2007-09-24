@@ -25,7 +25,7 @@ void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
 #ifdef STUB_SLAVE
 void CleanUpStubSlaveSocket(void);
-void CleanUpStubSlaveProcess(void);
+void WaitOnStubSlaveProcess(void);
 #endif // STUB_SLAVE
 #ifdef SSL_ENABLED
 void CleanUpSSLConnections(void);

@@ -527,11 +527,10 @@ void CleanUpStubSlaveSocket(void)
     }
 }
 
-void CleanUpStubSlaveProcess(void)
+void WaitOnStubSlaveProcess(void)
 {
     if (stubslave_pid > 0)
     {
-        kill(stubslave_pid, SIGKILL);
         waitpid(stubslave_pid, NULL, 0);
     }
     stubslave_pid = 0;
@@ -563,7 +562,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
 #endif // HAVE_GETDTABLESIZE
 
     CleanUpStubSlaveSocket();
-    CleanUpStubSlaveProcess();
+    WaitOnStubSlaveProcess();
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
     {
@@ -649,15 +648,11 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
     log_text(T("Stub slave started on fd "));
     log_number(stubslave_socket);
     ENDLOG;
-
-    // TODO: Send instructions to stubslave to add the existing list of
-    // modules.
-    //
     return;
 
 failure:
 
-    CleanUpStubSlaveProcess();
+    WaitOnStubSlaveProcess();
     STARTLOG(LOG_ALWAYS, "NET", "STUB");
     log_text(T(pFailedFunc));
     log_number(errno);
@@ -832,7 +827,7 @@ static int StubSlaveRead(void)
             return -1;
         }
         CleanUpStubSlaveSocket();
-        CleanUpStubSlaveProcess();
+        WaitOnStubSlaveProcess();
 
         STARTLOG(LOG_ALWAYS, "NET", "STUB");
         log_text(T("read() of stubslave failed. Stubslave stopped."));
@@ -867,7 +862,7 @@ static int StubSlaveWrite(void)
                 return -1;
             }
             CleanUpStubSlaveSocket();
-            CleanUpStubSlaveProcess();
+            WaitOnStubSlaveProcess();
 
             STARTLOG(LOG_ALWAYS, "NET", "STUB");
             log_text(T("write() of stubslave failed. Stubslave stopped."));
