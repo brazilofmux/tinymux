@@ -1817,6 +1817,23 @@ void shovechars(int nPorts, PortInfo aPorts[])
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
+#ifdef STUB_SLAVE
+        // Listen for replies from the stubslave socket.
+        //
+        if (!IS_INVALID_SOCKET(stubslave_socket))
+        {
+            Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Out);
+            if (!IS_INVALID_SOCKET(stubslave_socket))
+            {
+                FD_SET(stubslave_socket, &input_set);
+                if (0 < Pipe_QueueLength(&Queue_Out))
+                {
+                    FD_SET(stubslave_socket, &output_set);
+                }
+            }
+        }
+#endif // STUB_SLAVE
+
         // Listen for new connections if there are free descriptors.
         //
         if (ndescriptors < avail_descriptors)
@@ -1833,19 +1850,6 @@ void shovechars(int nPorts, PortInfo aPorts[])
         {
             FD_SET(slave_socket, &input_set);
         }
-
-#ifdef STUB_SLAVE
-        // Listen for replies from the stubslave socket.
-        //
-        if (!IS_INVALID_SOCKET(stubslave_socket))
-        {
-            FD_SET(stubslave_socket, &input_set);
-            if (0 < Pipe_QueueLength(&Queue_Out))
-            {
-                FD_SET(stubslave_socket, &output_set);
-            }
-        }
-#endif // STUB_SLAVE
 
         // Mark sockets that we want to test for change in status.
         //
