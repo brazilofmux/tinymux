@@ -389,7 +389,7 @@ public:
 interface mux_IQueryControl : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword);
+    virtual MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword) = 0;
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink) = 0;
     virtual MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery) = 0;
 };
