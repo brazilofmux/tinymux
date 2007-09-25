@@ -98,7 +98,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // QueryServer component which is not directly accessible.
 //
-CQueryServer::CQueryServer(void) : m_cRef(1)
+CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
 {
     g_cComponents++;
 }
@@ -111,6 +111,12 @@ MUX_RESULT CQueryServer::FinalConstruct(void)
 
 CQueryServer::~CQueryServer()
 {
+    if (NULL != m_pIQuerySink)
+    {
+        m_pIQuerySink->Release();
+        m_pIQuerySink = NULL;
+    }
+
     g_cComponents--;
 }
 
@@ -386,6 +392,14 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return MUX_E_NOTIMPLEMENTED;
 }
 
+MUX_RESULT CQueryControl_Msg(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    // The same as CQueryControl_Call except that the caller is no longer
+    // available to receive the ReturnFrame.
+    //
+    return CQueryControl_Call(pci, pqi);
+}
+
 MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
     // Parameter validation and initialization.
@@ -411,7 +425,7 @@ MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
             //
-            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryControl_Call, NULL, CQueryControl_Disconnect);
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryControl_Call, CQueryControl_Msg, CQueryControl_Disconnect);
             if (NULL != pChannel)
             {
                 pChannel->pInterface = pIQueryControl;
@@ -466,27 +480,41 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
     return MUX_S_OK;
 }
 
-MUX_RESULT CQueryServer::Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword)
+MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
+    // TODO: Use these as necessary to make a connection to MySQL.
+    //
     return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
 {
+    if (NULL != m_pIQuerySink)
+    {
+        m_pIQuerySink->Release();
+        m_pIQuerySink = NULL;
+    }
+
     if (NULL == pIQuerySink)
     {
         return MUX_E_INVALIDARG;
     }
 
-#if 0
-    *pSum = a + b;
-#endif
+    m_pIQuerySink = pIQuerySink;
     return MUX_S_OK;
 }
 
-MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery)
+MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    if (NULL != m_pIQuerySink)
+    {
+        sleep(2);
+        return m_pIQuerySink->Result(iQueryHandle, T("Yeah, I'm here."));
+    }
+    else
+    {
+        return MUX_E_NOTREADY;
+    }
 }
 
 // Factory for CQueryServer component which is not directly accessible.
@@ -694,9 +722,51 @@ MUX_RESULT CQuerySinkProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, UTF8 *pResultSet)
+MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // Communicate with the remote component to service this request.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    UINT32 iMethod = 3;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
+    struct FRAME
+    {
+        size_t iQueryHandle;
+        size_t nResultSet;
+    } CallFrame;
+
+    CallFrame.nResultSet = (strlen((char *)pResultSet)+1)*sizeof(UTF8);
+
+    Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nResultSet, pResultSet);
+
+    mr = Pipe_SendMsgPacket(m_nChannel, &qiFrame);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            MUX_RESULT mr;
+        } ReturnFrame;
+
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            mr = ReturnFrame.mr;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 // Factory for QuerySinkProxy component which is not directly accessible.

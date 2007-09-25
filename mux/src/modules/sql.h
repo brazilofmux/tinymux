@@ -27,16 +27,17 @@ public:
 
     // mux_IQueryControl
     //
-    virtual MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword);
+    virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery);
+    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
 
     CQueryServer(void);
     MUX_RESULT FinalConstruct(void);
     virtual ~CQueryServer();
 
 private:
-    UINT32 m_cRef;
+    UINT32          m_cRef;
+    mux_IQuerySink *m_pIQuerySink;
 };
 
 class CQueryServerFactory : public mux_IClassFactory
@@ -79,7 +80,7 @@ public:
 
     // mux_IQuerySink
     //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet);
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet);
 
     CQuerySinkProxy(void);
     MUX_RESULT FinalConstruct(void);

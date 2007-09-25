@@ -383,15 +383,15 @@ private:
 interface mux_IQuerySink : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet) = 0;
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet) = 0;
 };
 
 interface mux_IQueryControl : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword) = 0;
+    virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword) = 0;
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink) = 0;
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery) = 0;
+    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery) = 0;
 };
 
 class CQueryClient : public mux_IQuerySink, public mux_IMarshal
@@ -413,7 +413,7 @@ public:
 
     // mux_IQuerySink
     //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet);
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet);
 
     CQueryClient(void);
     MUX_RESULT FinalConstruct(void);
@@ -463,9 +463,9 @@ public:
 
     // mux_IQueryControl
     //
-    virtual MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword);
+    virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery);
+    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
 
     CQueryControlProxy(void);
     MUX_RESULT FinalConstruct(void);

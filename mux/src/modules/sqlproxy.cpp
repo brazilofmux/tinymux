@@ -183,7 +183,7 @@ MUX_RESULT CQueryControlProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQueryControlProxy::Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword)
+MUX_RESULT CQueryControlProxy::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
     // Communicate with the remote component to service this request.
     //
@@ -278,7 +278,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
     return mr;
 }
 
-MUX_RESULT CQueryControlProxy::Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery)
+MUX_RESULT CQueryControlProxy::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
     // Communicate with the remote component to service this request.
     //

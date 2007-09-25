@@ -1147,7 +1147,7 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     //
     switch (iMethod)
     {
-    case 3:  // MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet)
+    case 3:  // MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
         {
             struct FRAME
             {
@@ -1320,11 +1320,14 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 }
 
 
-MUX_RESULT CQueryClient::Result(UINT32 iQueryHandle, UTF8 *pResultSet)
+MUX_RESULT CQueryClient::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
 {
     // TODO: Use iQueryHandle to lookup the dbref/attr pair to @trigger within a context of pResultSet.
     //
-    return MUX_E_NOTIMPLEMENTED;
+    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+    log_printf("ResultSet is %s", pResultSet);
+    ENDLOG;
+    return MUX_S_OK;;
 }
 
 // Factory for CQueryClient component which is not directly accessible.
