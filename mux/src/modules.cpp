@@ -856,7 +856,7 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
                 {
                     ; // Nothing.
                 }
-    
+
                 if (NULL != m_pModuleName)
                 {
                     size_t nWanted = ReturnFrame.nName;
@@ -1124,31 +1124,6 @@ MUX_RESULT CQueryClient::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MU
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
-{
-    UNUSED_PARAMETER(pqi);
-
-    // Get our interface pointer from the channel.
-    //
-    mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
-    pci->pInterface = NULL;
-
-    // Tear down our side of the communication.  Our callback functions will
-    // no longer be called.
-    //
-    Pipe_FreeChannel(pci);
-
-    if (NULL != pIUnknown)
-    {
-        pIUnknown->Release();
-        return MUX_S_OK;
-    }
-    else
-    {
-        return MUX_E_NOINTERFACE;
-    }
-}
-
 MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     mux_IQuerySink *pIQuerySink = static_cast<mux_IQuerySink *>(pci->pInterface);
@@ -1180,43 +1155,45 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 size_t nResultSet;
             } CallFrame;
 
-            nWanted = sizeof(CallFrame);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
-               || nWanted != sizeof(CallFrame))
-            {
-                return MUX_E_INVALIDARG;
-            }
-
             struct RETURN
             {
                 MUX_RESULT mr;
             } ReturnFrame = { MUX_S_OK };
 
-            UTF8 *pResultSet = NULL;
-            try
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
             {
-                pResultSet = new UTF8[CallFrame.nResultSet];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-
-            if (NULL == pResultSet)
-            {
-                ReturnFrame.mr = MUX_E_OUTOFMEMORY;
+                ReturnFrame.mr = MUX_E_INVALIDARG;
             }
             else
             {
-                nWanted = CallFrame.nResultSet;
-                if (  Pipe_GetBytes(pqi, &nWanted, pResultSet)
-                   && nWanted == CallFrame.nResultSet)
+                UTF8 *pResultSet = NULL;
+                try
                 {
-                    ReturnFrame.mr = pIQuerySink->Result(CallFrame.iQueryHandle, pResultSet);
+                    pResultSet = new UTF8[CallFrame.nResultSet];
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+
+                if (NULL == pResultSet)
+                {
+                    ReturnFrame.mr = MUX_E_OUTOFMEMORY;
                 }
                 else
                 {
-                    return MUX_E_INVALIDARG;
+                    nWanted = CallFrame.nResultSet;
+                    if (  Pipe_GetBytes(pqi, &nWanted, pResultSet)
+                       && nWanted == CallFrame.nResultSet)
+                    {
+                        ReturnFrame.mr = pIQuerySink->Result(CallFrame.iQueryHandle, pResultSet);
+                    }
+                    else
+                    {
+                        ReturnFrame.mr = MUX_E_INVALIDARG;
+                    }
                 }
             }
 
@@ -1227,6 +1204,39 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         break;
     }
     return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CQueryClient_Msg(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    // The same as CQueryClient_Call except that the caller is no longer
+    // available to receive the ReturnFrame.
+    //
+    return CQueryClient_Call(pci, pqi);
+}
+
+MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    UNUSED_PARAMETER(pqi);
+
+    // Get our interface pointer from the channel.
+    //
+    mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
+    pci->pInterface = NULL;
+
+    // Tear down our side of the communication.  Our callback functions will
+    // no longer be called.
+    //
+    Pipe_FreeChannel(pci);
+
+    if (NULL != pIUnknown)
+    {
+        pIUnknown->Release();
+        return MUX_S_OK;
+    }
+    else
+    {
+        return MUX_E_NOINTERFACE;
+    }
 }
 
 MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
@@ -1254,7 +1264,7 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
             //
-            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryClient_Call, NULL, CQueryClient_Disconnect);
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryClient_Call, CQueryClient_Msg, CQueryClient_Disconnect);
             if (NULL != pChannel)
             {
                 pChannel->pInterface = pIQuerySink;
@@ -1312,6 +1322,8 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 
 MUX_RESULT CQueryClient::Result(UINT32 iQueryHandle, UTF8 *pResultSet)
 {
+    // TODO: Use iQueryHandle to lookup the dbref/attr pair to @trigger within a context of pResultSet.
+    //
     return MUX_E_NOTIMPLEMENTED;
 }
 

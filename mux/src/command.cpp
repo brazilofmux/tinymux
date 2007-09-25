@@ -145,13 +145,11 @@ static NAMETAB dolist_sw[] =
     {(UTF8 *) NULL,             0,          0,  0}
 };
 
-#ifdef QUERY_SLAVE
 static NAMETAB query_sw[] =
 {
     {T("sql"),             1,  CA_PUBLIC,  QUERY_SQL},
     {(UTF8 *) NULL,             0,          0,  0}
 };
-#endif // QUERY_SLAVE
 
 static NAMETAB drop_sw[] =
 {
@@ -733,9 +731,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@pemit"),       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@power"),       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           0, do_power},
     {T("@program"),     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
-#ifdef QUERY_SLAVE
     {T("@query"),       query_sw,   CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_query},
-#endif
     {T("@quota"),       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
     {T("@reference"),    reference_sw,       CA_PUBLIC,                  
     0,  CS_TWO_ARG|CS_INTERP, 0, do_reference},

@@ -268,7 +268,6 @@ static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
     Task_RunQueueEntry(point, 0);
 }
 
-#ifdef QUERY_SLAVE
 void Task_SQLTimeout(void *pExpired, int iUnused)
 {
     // A SQL Query has timed out.
@@ -276,7 +275,6 @@ void Task_SQLTimeout(void *pExpired, int iUnused)
     BQUE *point = (BQUE *)pExpired;
     Task_RunQueueEntry(point, 0);
 }
-#endif // QUERY_SLAVE
 
 static dbref Halt_Player_Target;
 static dbref Halt_Object_Target;
@@ -287,9 +285,7 @@ static dbref Halt_Entries_Run;
 static int CallBack_HaltQueue(PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
-#ifdef QUERY_SLAVE
        || p->fpTask == Task_SQLTimeout
-#endif // QUERY_SLAVE
        || p->fpTask == Task_SemaphoreTimeout)
     {
         // This is a @wait, timed Semaphore Task, or timed SQL Query.
@@ -915,7 +911,6 @@ void wait_que
     }
 }
 
-#ifdef QUERY_SLAVE
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
 //
@@ -931,7 +926,7 @@ void sql_que
     int      attr,
     UTF8    *command,
     int      nargs,
-    UTF8    *args[],
+    const UTF8 *args[],
     reg_ref *sargs[]
 )
 {
@@ -970,7 +965,6 @@ void sql_que
     }
     scheduler.DeferTask(tmp->waittime, iPriority, Task_SQLTimeout, tmp, 0);
 }
-#endif // QUERY_SLAVE
 
 // ---------------------------------------------------------------------------
 // do_wait: Command interface to wait_que
@@ -1093,7 +1087,6 @@ void do_wait
     }
 }
 
-#ifdef QUERY_SLAVE
 // ---------------------------------------------------------------------------
 // do_query: Command interface to sql_que
 //
@@ -1104,12 +1097,14 @@ void do_query
     dbref enactor,
     int   eval,
     int   key,
+    int   nargs,
     UTF8 *dbref_attr,
     UTF8 *dbname_query,
-    UTF8 *cargs[],
+    const UTF8 *cargs[],
     int   ncargs
 )
 {
+    UNUSED_PARAMETER(nargs);
     if (key & QUERY_SQL)
     {
         // SQL Query.
@@ -1148,7 +1143,6 @@ void do_query
         notify_quiet(executor, T("At least one query option is required."));
     }
 }
-#endif // QUERY_SLAVE
 
 static CLinearTimeAbsolute Show_lsaNow;
 static int Total_SystemTasks;
@@ -1162,10 +1156,8 @@ static int Show_Key;
 static dbref Show_Player;
 static int Show_bFirstLine;
 
-#ifdef QUERY_SLAVE
 int Total_SQLTimeout;
 int Shown_SQLTimeout;
-#endif // QUERY_SLAVE
 
 static int CallBack_ShowDispatches(PTASK_RECORD p)
 {
@@ -1309,7 +1301,6 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-#ifdef QUERY_SLAVE
 int CallBack_ShowSQLQueries(PTASK_RECORD p)
 {
     if (p->fpTask != Task_SQLTimeout)
@@ -1335,7 +1326,6 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
     }
     return IU_NEXT_TASK;
 }
-#endif
 
 // ---------------------------------------------------------------------------
 // do_ps: tell executor what commands they have pending in the queue
@@ -1421,10 +1411,8 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
     scheduler.TraverseOrdered(CallBack_ShowWait);
     Show_bFirstLine = true;
     scheduler.TraverseOrdered(CallBack_ShowSemaphore);
-#ifdef QUERY_SLAVE
     Show_bFirstLine = true;
     scheduler.TraverseOrdered(CallBack_ShowSQLQueries);
-#endif // QUERY_SLAVE
     if (Wizard(executor))
     {
         notify(executor, T("----- System Queue -----"));
@@ -1434,16 +1422,10 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
     // Display stats.
     //
     bufp = alloc_mbuf("do_ps");
-#ifdef QUERY_SLAVE
     mux_sprintf(bufp, MBUF_SIZE, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d",
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout,
         Shown_SQLTimeout, Total_SQLTimeout);
-#else
-    mux_sprintf(bufp, MBUF_SIZE, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d",
-        Shown_RunQueueEntry, Total_RunQueueEntry,
-        Shown_SemaphoreTimeout, Total_SemaphoreTimeout);
-#endif // QUERY_SLAVE
     notify(executor, bufp);
     if (Wizard(executor))
     {
@@ -1457,9 +1439,7 @@ static CLinearTimeDelta ltdWarp;
 static int CallBack_Warp(PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
-#ifdef QUERY_SLAVE
        || p->fpTask == Task_SQLTimeout
-#endif // QUERY_SLAVE
        || p->fpTask == Task_SemaphoreTimeout)
     {
         BQUE *point = (BQUE *)(p->arg_voidptr);
