@@ -1799,7 +1799,7 @@ static CF_HAND(cf_module)
     {
         eInProc = 0,
         eLocal
-    } eType;
+    } eType = eInProc;
 
     if (NULL == modname)
     {
@@ -1820,6 +1820,11 @@ static CF_HAND(cf_module)
     {
         eType = eLocal;
     }
+    else
+    {
+        cf_log_syntax(player, cmd, "load type is invalid.");
+        return -1;
+    }
 
 #if defined(STUB_SLAVE)
     if (  NULL == mudstate.pISlaveControl
@@ -1836,7 +1841,7 @@ static CF_HAND(cf_module)
     }
 #endif // STUB_SLAVE
 
-    MUX_RESULT mr;
+    MUX_RESULT mr = MUX_S_OK;
     if ('!' == str[0])
     {
         if (eInProc == eType)
@@ -1876,6 +1881,7 @@ static CF_HAND(cf_module)
 
     if (MUX_FAILED(mr))
     {
+        cf_log_notfound(player, cmd, T("Module"), str);
         return -1;
     }
     else

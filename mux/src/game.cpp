@@ -3214,7 +3214,17 @@ int DCL_CDECL main(int argc, char *argv[])
         {
             mudstate.pIQueryControl->Release();
             mudstate.pIQueryControl = NULL;
+
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_text(T("Couldn't connect to Query Server."));
+            ENDLOG;
         }
+    }
+    else
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_text(T("Couldn't create interface to Query Server."));
+        ENDLOG;
     }
 #endif
 #if defined(INLINESQL)
