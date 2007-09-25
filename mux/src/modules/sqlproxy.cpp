@@ -185,17 +185,130 @@ MUX_RESULT CQueryControlProxy::DisconnectObject(void)
 
 MUX_RESULT CQueryControlProxy::Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // Communicate with the remote component to service this request.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    UINT32 iMethod = 3;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
+    struct FRAME
+    {
+        size_t nServer;
+        size_t nDatabase;
+        size_t nUser;
+        size_t nPassword;
+    } CallFrame;
+
+    CallFrame.nServer   = (strlen((char *)pServer)+1)*sizeof(UTF8);
+    CallFrame.nDatabase = (strlen((char *)pDatabase)+1)*sizeof(UTF8);
+    CallFrame.nUser     = (strlen((char *)pUser)+1)*sizeof(UTF8);
+    CallFrame.nPassword = (strlen((char *)pPassword)+1)*sizeof(UTF8);
+
+    Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nServer, pServer);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nDatabase, pDatabase);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nUser, pUser);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nPassword, pPassword);
+
+    mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            MUX_RESULT mr;
+        } ReturnFrame;
+
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            mr = ReturnFrame.mr;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // Communicate with the remote component to service this request.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    UINT32 iMethod = 4;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
+    mr = mux_MarshalInterface(&qiFrame, IID_IQuerySink, pIQuerySink, CrossProcess);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+
+        if (MUX_SUCCEEDED(mr))
+        {
+            struct RETURN
+            {
+                MUX_RESULT mr;
+            } ReturnFrame;
+    
+            size_t nWanted = sizeof(ReturnFrame);
+            if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+               && nWanted == sizeof(ReturnFrame))
+            {
+                mr = ReturnFrame.mr;
+            }
+            else
+            {
+                mr = MUX_E_FAIL;
+            }
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 MUX_RESULT CQueryControlProxy::Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // Communicate with the remote component to service this request.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    UINT32 iMethod = 5;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
+    struct FRAME
+    {
+        UINT32 iQueryHandle;
+        size_t nDatabaseName;
+        size_t nQuery;
+    } CallFrame;
+
+    CallFrame.iQueryHandle  = iQueryHandle;
+    CallFrame.nDatabaseName = (strlen((char *)pDatabaseName)+1)*sizeof(UTF8);
+    CallFrame.nQuery        = (strlen((char *)pQuery)+1)*sizeof(UTF8);
+
+    Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nDatabaseName, pDatabaseName);
+    Pipe_AppendBytes(&qiFrame, CallFrame.nQuery, pQuery);
+
+    mr = Pipe_SendMsgPacket(m_nChannel, &qiFrame);
+
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
 }
 
 // Factory for QueryControlProxy component which is not directly accessible.

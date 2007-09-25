@@ -707,84 +707,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
 
         if (MUX_SUCCEEDED(mr))
         {
-            UINT8 chMethod;
-            size_t nWanted = sizeof(chMethod);
-            if (  Pipe_GetBytes(&qiFrame, &nWanted, (UINT8*)(&chMethod))
-               && sizeof(chMethod) == nWanted)
-            {
-                if (chCustom == chMethod)
-                {
-                    // Interface was Custom Marshaled.
-                    //
-                    MUX_CID cidProxy = 0;
-                    nWanted = sizeof(cidProxy);
-                    if (  Pipe_GetBytes(&qiFrame, &nWanted, &cidProxy)
-                       && sizeof(cidProxy) == nWanted)
-                    {
-                        // Open an IMarshal interface on the given proxy and pass it the marshal packet.
-                        //
-                        mux_IMarshal *pIMarshal = NULL;
-                        mr = mux_CreateInstance(cidProxy, NULL, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
-                        if (MUX_SUCCEEDED(mr))
-                        {
-                            mr = pIMarshal->UnmarshalInterface(&qiFrame, iid, ppv);
-                            pIMarshal->Release();
-                        }
-                    }
-                    else
-                    {
-                        mr =  MUX_E_CLASSNOTAVAILABLE;
-                    }
-                }
-#ifdef ENABLE_STD_MARSHALER
-                else if (chStandard == chMethod)
-                {
-                    // Interface was Standard Marshaled.
-                    //
-                    MUX_CID cidProxyStub = 0;
-                    nWanted = sizeof(cidProxyStub);
-                    if (  Pipe_GetBytes(&qiFrame, &nWanted, &cidProxyStub)
-                       && sizeof(cidProxyStub) == nWanted)
-                    {
-                        UINT32 nChannel = 0;
-                        nWanted = sizeof(nChannel);
-                        if (  Pipe_GetBytes(&qiFrame, &nWanted, &nChannel)
-                           && sizeof(nChannel) == nWanted)
-                        {
-                            // Open an IPSFactoryBuffer interface on the given Proxy/Stub component and create a proxy.
-                            //
-                            mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
-                            mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
-                            if (MUX_SUCCEEDED(mr))
-                            {
-                                // TODO: Call CreateProxy, construct a private
-                                // CRpcChannelBuffer using nChannel, and
-                                // associate the two.
-                                //
-                                mr = MUX_E_NOTIMPLEMENTED;
-                            }
-                        }
-                        else
-                        {
-                            mr =  MUX_E_CLASSNOTAVAILABLE;
-                        }
-                    }
-                    else
-                    {
-                        mr =  MUX_E_CLASSNOTAVAILABLE;
-                    }
-                }
-#endif // ENABLE_STD_MARSHALER
-                else
-                {
-                    mr = MUX_E_INVALIDARG;
-                }
-            }
-            else
-            {
-                mr =  MUX_E_CLASSNOTAVAILABLE;
-            }
+            mr = mux_UnmarshalInterface(&qiFrame, iid, ppv);
         }
+
         Pipe_EmptyQueue(&qiFrame);
     }
     else
@@ -1497,6 +1422,89 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, M
     return mr;
 }
 
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
+{
+    MUX_RESULT mr = MUX_S_OK;
+
+    UINT8 chMethod;
+    size_t nWanted = sizeof(chMethod);
+    if (  Pipe_GetBytes(pqi, &nWanted, (UINT8*)(&chMethod))
+       && sizeof(chMethod) == nWanted)
+    {
+        if (chCustom == chMethod)
+        {
+            // Interface was Custom Marshaled.
+            //
+            MUX_CID cidProxy = 0;
+            nWanted = sizeof(cidProxy);
+            if (  Pipe_GetBytes(pqi, &nWanted, &cidProxy)
+               && sizeof(cidProxy) == nWanted)
+            {
+                // Open an IMarshal interface on the given proxy and pass it the marshal packet.
+                //
+                mux_IMarshal *pIMarshal = NULL;
+                mr = mux_CreateInstance(cidProxy, NULL, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    mr = pIMarshal->UnmarshalInterface(pqi, riid, ppv);
+                    pIMarshal->Release();
+                }
+            }
+            else
+            {
+                mr =  MUX_E_CLASSNOTAVAILABLE;
+            }
+        }
+#ifdef ENABLE_STD_MARSHALER
+        else if (chStandard == chMethod)
+        {
+            // Interface was Standard Marshaled.
+            //
+            MUX_CID cidProxyStub = 0;
+            nWanted = sizeof(cidProxyStub);
+            if (  Pipe_GetBytes(pqi, &nWanted, &cidProxyStub)
+               && sizeof(cidProxyStub) == nWanted)
+            {
+                UINT32 nChannel = 0;
+                nWanted = sizeof(nChannel);
+                if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
+                   && sizeof(nChannel) == nWanted)
+                {
+                    // Open an IPSFactoryBuffer interface on the given Proxy/Stub component and create a proxy.
+                    //
+                    mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
+                    mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
+                    if (MUX_SUCCEEDED(mr))
+                    {
+                        // TODO: Call CreateProxy, construct a private
+                        // CRpcChannelBuffer using nChannel, and
+                        // associate the two.
+                        //
+                        mr = MUX_E_NOTIMPLEMENTED;
+                    }
+                }
+                else
+                {
+                    mr =  MUX_E_CLASSNOTAVAILABLE;
+                }
+            }
+            else
+            {
+                mr =  MUX_E_CLASSNOTAVAILABLE;
+            }
+        }
+#endif // ENABLE_STD_MARSHALER
+        else
+        {
+            mr = MUX_E_INVALIDARG;
+        }
+    }
+    else
+    {
+        mr =  MUX_E_CLASSNOTAVAILABLE;
+    }
+    return mr;
+}
 
 static MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {

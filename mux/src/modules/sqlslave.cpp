@@ -221,13 +221,14 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     //
     switch (iMethod)
     {
-    case 3:  // MUX_RESULT Advise(mux_IQueryControl *pIQueryControl)
+    case 3:  // MUX_RESULT Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword);
         {
-#if 0
             struct FRAME
             {
-                int a;
-                int b;
+                size_t nServer;
+                size_t nDatabase;
+                size_t nUser;
+                size_t nPassword;
             } CallFrame;
 
             nWanted = sizeof(CallFrame);
@@ -237,16 +238,147 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 return MUX_E_INVALIDARG;
             }
 
+            UTF8 *pServer = NULL;
+            UTF8 *pDatabase = NULL;
+            UTF8 *pUser = NULL;
+            UTF8 *pPassword = NULL;
+            try
+            {
+                pServer   = new UTF8[CallFrame.nServer];
+                pDatabase = new UTF8[CallFrame.nDatabase];
+                pUser     = new UTF8[CallFrame.nUser];
+                pPassword = new UTF8[CallFrame.nPassword];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
             struct RETURN
             {
-                int  sum;
-            } ReturnFrame = { 0 };
+                MUX_RESULT mr;
+            } ReturnFrame = { MUX_S_OK };
 
-            pIQueryControl->Add(CallFrame.a, CallFrame.b, &ReturnFrame.sum);
+            if (  NULL != pServer
+               && NULL != pDatabase
+               && NULL != pUser
+               && NULL != pPassword)
+            {
+                ReturnFrame.mr = pIQueryControl->Connect(pServer, pDatabase, pUser, pPassword);
+            }
+            else
+            {
+                ReturnFrame.mr = MUX_E_OUTOFMEMORY;
+            }
+
+            if (NULL != pServer)
+            {
+                delete pServer;
+                pServer = NULL;
+            }
+
+            if (NULL != pDatabase)
+            {
+                delete pDatabase;
+                pDatabase = NULL;
+            }
+
+            if (NULL != pUser)
+            {
+                delete pUser;
+                pUser = NULL;
+            }
+
+            if (NULL != pPassword)
+            {
+                delete pPassword;
+                pPassword = NULL;
+            }
 
             Pipe_EmptyQueue(pqi);
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
-#endif
+            return MUX_S_OK;
+        }
+        break;
+
+    case 4:  // MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
+        {
+            struct RETURN
+            {
+                MUX_RESULT mr;
+            } ReturnFrame = { MUX_S_OK };
+
+            mux_IQuerySink *pIQuerySink = NULL;
+            ReturnFrame.mr = mux_UnmarshalInterface(pqi, IID_IQuerySink, (void **)&pIQuerySink);
+
+            if (MUX_SUCCEEDED(ReturnFrame.mr))
+            {
+                ReturnFrame.mr = pIQueryControl->Advise(pIQuerySink);
+            }
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+            return MUX_S_OK;
+        }
+        break;
+ 
+    case 5:  // MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery);
+        {
+            struct FRAME
+            {
+                UINT32 iQueryHandle;
+                size_t nDatabaseName;
+                size_t nQuery;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            UTF8 *pDatabaseName = NULL;
+            UTF8 *pQuery = NULL;
+            try
+            {
+                pDatabaseName = new UTF8[CallFrame.nDatabaseName];
+                pQuery        = new UTF8[CallFrame.nQuery];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            struct RETURN
+            {
+                MUX_RESULT mr;
+            } ReturnFrame = { MUX_S_OK };
+
+            if (  NULL != pDatabaseName
+               && NULL != pQuery)
+            {
+                ReturnFrame.mr = pIQueryControl->Query(CallFrame.iQueryHandle, pDatabaseName, pQuery);
+            }
+            else
+            {
+                ReturnFrame.mr = MUX_E_OUTOFMEMORY;
+            }
+
+            if (NULL != pDatabaseName)
+            {
+                delete pDatabaseName;
+                pDatabaseName = NULL;
+            }
+
+            if (NULL != pQuery)
+            {
+                delete pQuery;
+                pQuery = NULL;
+            }
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
             return MUX_S_OK;
         }
         break;
