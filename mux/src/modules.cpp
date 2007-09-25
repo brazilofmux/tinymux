@@ -1174,11 +1174,10 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     {
     case 3:  // MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet)
         {
-#if 0
             struct FRAME
             {
-                int a;
-                int b;
+                UINT32 iQueryHandle;
+                size_t nResultSet;
             } CallFrame;
 
             nWanted = sizeof(CallFrame);
@@ -1190,15 +1189,40 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
             struct RETURN
             {
-                int  sum;
-            } ReturnFrame = { 0 };
+                MUX_RESULT mr;
+            } ReturnFrame = { MUX_S_OK };
 
-            pISum->Add(CallFrame.a, CallFrame.b, &ReturnFrame.sum);
+            UTF8 *pResultSet = NULL;
+            try
+            {
+                pResultSet = new UTF8[CallFrame.nResultSet];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (NULL == pResultSet)
+            {
+                ReturnFrame.mr = MUX_E_OUTOFMEMORY;
+            }
+            else
+            {
+                nWanted = CallFrame.nResultSet;
+                if (  Pipe_GetBytes(pqi, &nWanted, pResultSet)
+                   && nWanted == CallFrame.nResultSet)
+                {
+                    ReturnFrame.mr = pIQuerySink->Result(CallFrame.iQueryHandle, pResultSet);
+                }
+                else
+                {
+                    return MUX_E_INVALIDARG;
+                }
+            }
 
             Pipe_EmptyQueue(pqi);
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
             return MUX_S_OK;
-#endif
         }
         break;
     }
