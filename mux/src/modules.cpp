@@ -15,12 +15,13 @@
 
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
-#define NUM_CLASSES 3
+#define NUM_CLASSES 4
 static CLASS_INFO netmux_classes[NUM_CLASSES] =
 {
     { CID_Log                },
     { CID_ServerEventsSource },
-    { CID_StubSlaveProxy     }
+    { CID_StubSlaveProxy     },
+    { CID_QueryClient        }
 };
 
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
@@ -86,6 +87,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pStubSlaveProxyFactory->QueryInterface(iid, ppv);
         pStubSlaveProxyFactory->Release();
+    }
+    else if (CID_QueryClient == cid)
+    {
+        CQueryClientFactory *pQueryClientFactory = NULL;
+        try
+        {
+            pQueryClientFactory = new CQueryClientFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == pQueryClientFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pQueryClientFactory->QueryInterface(iid, ppv);
+        pQueryClientFactory->Release();
     }
     return mr;
 }
@@ -1033,6 +1054,319 @@ MUX_RESULT CStubSlaveProxyFactory::CreateInstance(mux_IUnknown *pUnknownOuter, M
 }
 
 MUX_RESULT CStubSlaveProxyFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// CQueryClient component which is not directly accessible.
+//
+CQueryClient::CQueryClient(void) : m_cRef(1)
+{
+}
+
+CQueryClient::~CQueryClient()
+{
+}
+
+MUX_RESULT CQueryClient::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else if (IID_IQuerySink == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CQueryClient::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CQueryClient::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CQueryClient::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
+{
+    UNUSED_PARAMETER(ctx);
+
+    if (NULL == pcid)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    else if (  IID_IQuerySink == riid
+            && CrossProcess == ctx)
+    {
+        // We only support cross-process at the moment.
+        //
+        *pcid = CID_QuerySinkProxy;
+        return MUX_S_OK;
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    UNUSED_PARAMETER(pqi);
+
+    // Get our interface pointer from the channel.
+    //
+    mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
+    pci->pInterface = NULL;
+
+    // Tear down our side of the communication.  Our callback functions will
+    // no longer be called.
+    //
+    Pipe_FreeChannel(pci);
+
+    if (NULL != pIUnknown)
+    {
+        pIUnknown->Release();
+        return MUX_S_OK;
+    }
+    else
+    {
+        return MUX_E_NOINTERFACE;
+    }
+}
+
+MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    mux_IQuerySink *pIQuerySink = static_cast<mux_IQuerySink *>(pci->pInterface);
+    if (NULL == pIQuerySink)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    UINT32 iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
+       || nWanted != sizeof(iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // The IUnknown methods (0, 1, and 2) do not make it across, so we don't
+    // attempt to handle them here.  Instead, when the reference count on
+    // CQueryClientProxy goes to zero, it drops the connection and destroys itself.
+    // We see that as a call to CQueryClient_Disconnect.
+    //
+    switch (iMethod)
+    {
+    case 3:  // MUX_RESULT Result(UINT32 iQueryHandle, UTF8 *pResultSet)
+        {
+#if 0
+            struct FRAME
+            {
+                int a;
+                int b;
+            } CallFrame;
+
+            nWanted = sizeof(CallFrame);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &CallFrame)
+               || nWanted != sizeof(CallFrame))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            struct RETURN
+            {
+                int  sum;
+            } ReturnFrame = { 0 };
+
+            pISum->Add(CallFrame.a, CallFrame.b, &ReturnFrame.sum);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+            return MUX_S_OK;
+#endif
+        }
+        break;
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+{
+    // Parameter validation and initialization.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+    if (NULL == pqi)
+    {
+        mr = MUX_E_INVALIDARG;
+    }
+    else if (IID_IQuerySink != riid)
+    {
+        mr = MUX_E_FAIL;
+    }
+    else if (CrossProcess != ctx)
+    {
+        mr = MUX_E_NOTIMPLEMENTED;
+    }
+    else
+    {
+        mux_IQuerySink *pIQuerySink = NULL;
+        mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        if (MUX_SUCCEEDED(mr))
+        {
+            // Construct a packet sufficient to allow the proxy to communicate with us.
+            //
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryClient_Call, NULL, CQueryClient_Disconnect);
+            if (NULL != pChannel)
+            {
+                pChannel->pInterface = pIQuerySink;
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                mr =  MUX_S_OK;
+            }
+            else
+            {
+                pIQuerySink->Release();
+                pIQuerySink = NULL;
+                mr = MUX_E_OUTOFMEMORY;
+            }
+        }
+    }
+    return mr;
+}
+
+MUX_RESULT CQueryClient::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CQueryClient::ReleaseMarshalData(QUEUE_INFO *pqi)
+{
+    // Since the Marshal Data is like an extra reference on an object, if the
+    // Marshaled Data is never unmarshalled, libmux should use this function
+    // to release the reference to the component.  This is only implemented on
+    // the server side -- not the proxy.
+    //
+    UINT32 nChannel;
+    size_t nWanted = sizeof(nChannel);
+    if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
+       && sizeof(nChannel) == nWanted)
+    {
+        CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
+        if (NULL != pChannel)
+        {
+            CQueryClient_Disconnect(pChannel, pqi);
+        }
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CQueryClient::DisconnectObject(void)
+{
+    // This is called when the hosting process is about to go down to give the
+    // component a chance to notify its proxy that it is about to shut down.
+    // This is only implemented on the server side -- not the proxy.
+    //
+    // TODO: There isn't a mechanism for sending such a notification, yet.
+    //
+    return MUX_S_OK;
+}
+
+
+MUX_RESULT CQueryClient::Result(UINT32 iQueryHandle, UTF8 *pResultSet)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+// Factory for CQueryClient component which is not directly accessible.
+//
+CQueryClientFactory::CQueryClientFactory(void) : m_cRef(1)
+{
+}
+
+CQueryClientFactory::~CQueryClientFactory()
+{
+}
+
+MUX_RESULT CQueryClientFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CQueryClientFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CQueryClientFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CQueryClientFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CQueryClient *pLog = NULL;
+    try
+    {
+        pLog = new CQueryClient;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pLog)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pLog->QueryInterface(iid, ppv);
+    pLog->Release();
+    return mr;
+}
+
+MUX_RESULT CQueryClientFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

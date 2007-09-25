@@ -1,0 +1,10 @@
+# Microsoft Developer Studio Generated Dependency File, included by sqlslave.mak
+
+.\sqlslave.cpp : \
+	"..\autoconf.h"\
+	"..\config.h"\
+	"..\copyright.h"\
+	"..\libmux.h"\
+	"..\modules.h"\
+	".\sql.h"\
+	

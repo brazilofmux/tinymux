@@ -1,4 +1,4 @@
-all: sample.so sum.so
+all: sample.so sum.so sqlproxy.so sqlslave.so
 
 sample.so: sample.cpp sample.h ../autoconf.h ../config.h ../libmux.h ../modules.h
 	( if [ -f sample.so ]; then mv -f sample.so sample.so~ ; fi )
@@ -10,8 +10,18 @@ sum.so: sum.cpp sum.h ../autoconf.h ../config.h ../libmux.h ../modules.h
 	g++ @MODULE_CPPFLAGS@ -o sum.so sum.cpp -L.. @MUX_LIBS@
 	( if [ -f sum.so ]; then cd ../../game/bin ; rm -f sum.so ; ln -s ../../src/modules/sum.so sum.so ; fi )
 
+sqlproxy.so: sqlproxy.cpp sql.h ../autoconf.h ../config.h ../libmux.h ../modules.h
+	( if [ -f sqlproxy.so ]; then mv -f sqlproxy.so sqlproxy.so~ ; fi )
+	g++ @MODULE_CPPFLAGS@ -o sqlproxy.so sqlproxy.cpp -L.. @MUX_LIBS@
+	( if [ -f sqlproxy.so ]; then cd ../../game/bin ; rm -f sqlproxy.so ; ln -s ../../src/modules/sqlproxy.so sqlproxy.so ; fi )
+
+sqlslave.so: sqlslave.cpp sql.h ../autoconf.h ../config.h ../libmux.h ../modules.h
+	( if [ -f sqlslave.so ]; then mv -f sqlslave.so sqlslave.so~ ; fi )
+	g++ @MODULE_CPPFLAGS@ -o sqlslave.so sqlslave.cpp -L.. @MUX_LIBS@
+	( if [ -f sqlslave.so ]; then cd ../../game/bin ; rm -f sqlslave.so ; ln -s ../../src/modules/sqlslave.so sqlslave.so ; fi )
+
 clean:
-	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~
 
 realclean:
-	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so sample.so~ sum.so sum.so~ autoconf.h
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so sample.so~ sum.so sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~ autoconf.h
