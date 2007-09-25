@@ -3210,13 +3210,45 @@ int DCL_CDECL main(int argc, char *argv[])
     if (MUX_SUCCEEDED(mr))
     {
         mr = mudstate.pIQueryControl->Connect(mudconf.sql_server, mudconf.sql_database, mudconf.sql_user, mudconf.sql_password);
-        if (MUX_FAILED(mr))
+        if (MUX_SUCCEEDED(mr))
+        {
+            mux_IQuerySink *pIQuerySink = NULL;
+            mr = mux_CreateInstance(CID_QueryClient, NULL, UseSameProcess, IID_IQuerySink, (void **)&pIQuerySink);
+            if (MUX_SUCCEEDED(mr))
+            {
+                mr = mudstate.pIQueryControl->Advise(pIQuerySink);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    pIQuerySink->Release();
+                    pIQuerySink = NULL;
+                }
+                else
+                {
+                    mudstate.pIQueryControl->Release();
+                    mudstate.pIQueryControl = NULL;
+
+                    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+                    log_printf("Couldn't connect sink to server (%d).", mr);
+                    ENDLOG;
+                }
+            }
+            else
+            {
+                mudstate.pIQueryControl->Release();
+                mudstate.pIQueryControl = NULL;
+
+                STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+                log_printf("Couldn't create Query Sink (%d).", mr);
+                ENDLOG;
+            }
+        }
+        else
         {
             mudstate.pIQueryControl->Release();
             mudstate.pIQueryControl = NULL;
 
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_text(T("Couldn't connect to Query Server."));
+            log_printf("Couldn't connect to Query Server (%d).", mr);
             ENDLOG;
         }
     }

@@ -1079,6 +1079,10 @@ MUX_RESULT CQueryClient::QueryInterface(MUX_IID iid, void **ppv)
     {
         *ppv = static_cast<mux_IQuerySink *>(this);
     }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
     else
     {
         *ppv = NULL;

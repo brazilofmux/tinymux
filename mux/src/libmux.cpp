@@ -669,7 +669,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
                 ModuleLoad(pModule);
                 if (!pModule->bLoaded)
                 {
-                    mr =  MUX_E_CLASSNOTAVAILABLE;
+                    mr = MUX_E_CLASSNOTAVAILABLE;
                 }
             }
 
@@ -687,7 +687,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         }
         else
         {
-            mr =  MUX_E_CLASSNOTAVAILABLE;
+            mr = MUX_E_CLASSNOTAVAILABLE;
         }
     }
     else if (NULL != g_fpPipePump)
@@ -714,7 +714,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
     }
     else
     {
-        mr =  MUX_E_CLASSNOTAVAILABLE;
+        mr = MUX_E_CLASSNOTAVAILABLE;
     }
     return mr;
 }
@@ -1452,7 +1452,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
             }
             else
             {
-                mr =  MUX_E_CLASSNOTAVAILABLE;
+                mr = MUX_E_CLASSNOTAVAILABLE;
             }
         }
 #ifdef ENABLE_STD_MARSHALER
@@ -1485,12 +1485,12 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
                 }
                 else
                 {
-                    mr =  MUX_E_CLASSNOTAVAILABLE;
+                    mr = MUX_E_CLASSNOTAVAILABLE;
                 }
             }
             else
             {
-                mr =  MUX_E_CLASSNOTAVAILABLE;
+                mr = MUX_E_CLASSNOTAVAILABLE;
             }
         }
 #endif // ENABLE_STD_MARSHALER
@@ -1501,7 +1501,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
     }
     else
     {
-        mr =  MUX_E_CLASSNOTAVAILABLE;
+        mr = MUX_E_CLASSNOTAVAILABLE;
     }
     return mr;
 }

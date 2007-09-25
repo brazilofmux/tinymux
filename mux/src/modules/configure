@@ -4819,10 +4819,10 @@ _ACEOF
 
     case "$host" in
     *darwin*) MODULE_EXT="so"
-              MODULE_CPPFLAGS="-bundle"
+              MODULE_CPPFLAGS="-bundle -O -g"
               ;;
     *)        MODULE_EXT="so"
-              MODULE_CPPFLAGS="-shared -fPIC"
+              MODULE_CPPFLAGS="-shared -fPIC -O -g"
               ;;
     esac
     MUX_LIBS="-lmux"
