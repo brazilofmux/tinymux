@@ -7884,11 +7884,13 @@ IDLE()
 
   Related Topics: WHO, conn(), lwho().
 
+& IF()
 & IFELSE()
+IF()
 IFELSE()
 
-  FUNCTION: ifelse(<expression>,<true string>,<false string>)
-                if(<expression>,<true string>[,<false string>])
+  FUNCTION:     if(<expression>,<true string>[,<false string>])
+            ifelse(<expression>,<true string>,<false string>)
 
   This function returns <true string> if BOOLEAN <expression> is TRUE,
   <false string> otherwise. Much more efficient than an equivalent switch().
