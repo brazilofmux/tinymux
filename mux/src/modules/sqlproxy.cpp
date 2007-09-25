@@ -119,6 +119,11 @@ MUX_RESULT CQueryControlProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
+MUX_RESULT CQueryControlProxy::Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
 MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
 {
     return MUX_E_NOTIMPLEMENTED;

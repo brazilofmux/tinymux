@@ -334,6 +334,11 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
     return MUX_S_OK;
 }
 
+MUX_RESULT CQueryServer::Connect(UTF8 *pServer, UTF8 *pDatabase, UTF8 *pUser, UTF8 *pPassword)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
 {
     if (NULL == pIQuerySink)

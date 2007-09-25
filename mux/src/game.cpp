@@ -3205,6 +3205,18 @@ int DCL_CDECL main(int argc, char *argv[])
     mudconf.log_dir = StringClone(pErrorBasename);
     cf_read();
 
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    MUX_RESULT mr = mux_CreateInstance(CID_QueryServer, NULL, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mudstate.pIQueryControl->Connect(mudconf.sql_server, mudconf.sql_database, mudconf.sql_user, mudconf.sql_password);
+        if (MUX_FAILED(mr))
+        {
+            mudstate.pIQueryControl->Release();
+            mudstate.pIQueryControl = NULL;
+        }
+    }
+#endif
 #if defined(INLINESQL)
     init_sql();
 #endif // INLINESQL
@@ -3299,6 +3311,7 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.fwdlist_htab);
     hashreset(&mudstate.desc_htab);
     hashreset(&mudstate.reference_htab);
+    hashreset(&mudstate.pointers_htab);
 
     ValidateConfigurationDbrefs();
     process_preload();

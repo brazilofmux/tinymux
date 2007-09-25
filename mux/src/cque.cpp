@@ -270,7 +270,7 @@ static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
 
 void Task_SQLTimeout(void *pExpired, int iUnused)
 {
-    // A SQL Query has timed out.
+    // A SQL Query has timed out.  Actually, this isn't supported.
     //
     BQUE *point = (BQUE *)pExpired;
     Task_RunQueueEntry(point, 0);
@@ -911,6 +911,38 @@ void wait_que
     }
 }
 
+UINT32 AllocateHandle(void *pv_arg)
+{
+    UINT32 i;
+    void **ppv = NULL;
+    do
+    {
+        i = mudstate.next_handle++;
+        ppv = (void **)hashfindLEN(&i, sizeof(i), &mudstate.pointers_htab);
+    } while (NULL != ppv);
+    hashaddLEN(&i, sizeof(i), &pv_arg, &mudstate.pointers_htab);
+    return i;
+}
+
+bool IsHandleValid(UINT32 iHandle, void **ppv_arg)
+{
+    void **ppv = (void **)hashfindLEN(&iHandle, sizeof(iHandle), &mudstate.pointers_htab);
+    if (NULL == ppv)
+    {
+        return false;
+    }
+    else
+    {
+        *ppv_arg = *ppv;
+        return true;
+    }
+}
+
+void ReleaseHandle(UINT32 iHandle)
+{
+    hashdeleteLEN(&iHandle, sizeof(iHandle), &mudstate.pointers_htab);
+}
+
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
 //
@@ -920,23 +952,26 @@ void sql_que
     dbref    caller,
     dbref    enactor,
     int      eval,
-    bool     bTimed,
-    CLinearTimeAbsolute &ltaWhen,
     dbref    thing,
     int      attr,
-    UTF8    *command,
+    UTF8    *dbname,
+    UTF8    *query,
     int      nargs,
     const UTF8 *args[],
     reg_ref *sargs[]
 )
 {
-    if (!(mudconf.control_flags & CF_INTERP))
+    if (  !(mudconf.control_flags & CF_INTERP)
+       || NULL == mudstate.pIQueryControl)
     {
         return;
     }
 
+    // The query is passed in for display in @ps.  The real command is
+    // understood to be @trigger <thing>/<attr>.
+    //
     BQUE *tmp = setup_que(executor, caller, enactor, eval,
-        command,
+        query,
         nargs, args,
         sargs);
 
@@ -945,25 +980,18 @@ void sql_que
         return;
     }
 
-    tmp->IsTimed = bTimed;
-    tmp->waittime = ltaWhen;
+    tmp->IsTimed = false;
+    tmp->waittime = CLinearTimeAbsolute();
     tmp->sem = thing;
     tmp->attr = attr;
 
-    int iPriority;
-    if (!tmp->IsTimed)
+    UINT32 iQueryHandle = AllocateHandle(tmp);
+    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
+    MUX_RESULT mr = mudstate.pIQueryControl->Query(iQueryHandle, dbname, query);
+    if (MUX_FAILED(mr))
     {
-        // In this case, the timeout task below will never run,
-        // but it allows us to manage all semaphores together in
-        // the same data structure.
-        //
-        iPriority = PRIORITY_SUSPEND;
+        scheduler.CancelTask(Task_SQLTimeout, tmp, 0);
     }
-    else
-    {
-        iPriority = PRIORITY_OBJECT;
-    }
-    scheduler.DeferTask(tmp->waittime, iPriority, Task_SQLTimeout, tmp, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -1105,6 +1133,13 @@ void do_query
 )
 {
     UNUSED_PARAMETER(nargs);
+
+    if (NULL == mudstate.pIQueryControl)
+    {
+        notify_quiet(executor, T("Query server is not available."));
+        return;
+    }
+
     if (key & QUERY_SQL)
     {
         // SQL Query.
@@ -1112,8 +1147,8 @@ void do_query
         dbref thing;
         ATTR *pattr;
 
-        if (!( parse_attrib(executor, dbref_attr, &thing, &pattr)
-            && pattr))
+        if (!(  parse_attrib(executor, dbref_attr, &thing, &pattr)
+             && NULL != pattr))
         {
             notify_quiet(executor, T("No match."));
             return;
@@ -1137,6 +1172,9 @@ void do_query
         STARTLOG(LOG_ALWAYS, "CMD", "QUERY");
         Log.tinyprintf("Thing=#%d, Attr=%s, dbname=%s, query=%s", thing, pattr->name, pDBName, pQuery);
         ENDLOG;
+
+        sql_que(executor, caller, enactor, eval, thing, pattr->number,
+            pDBName, pQuery, ncargs, cargs, mudstate.global_regs);
     }
     else
     {

@@ -114,7 +114,7 @@ void cf_init(void)
 #if defined(FIRANMUX)
     mux_strncpy(mudconf.immobile_msg, T("You have been set immobile."), sizeof(mudconf.immobile_msg)-1);
 #endif // FIRANMUX
-#if defined(INLINESQL)
+#if defined(INLINESQL) || defined(HAVE_DLOPEN) || defined(WIN32)
     mudconf.sql_server[0]   = '\0';
     mudconf.sql_user[0]     = '\0';
     mudconf.sql_password[0] = '\0';
@@ -374,6 +374,8 @@ void cf_init(void)
 #if defined(STUB_SLAVE)
     mudstate.pISlaveControl = NULL;
 #endif // STUB_SLAVE
+    mudstate.pIQueryControl = NULL;
+    mudstate.next_handle = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -1813,7 +1815,8 @@ static CF_HAND(cf_module)
     {
         eType = eInProc;
     }
-    else if (strcmp((char *)modtype, "local") == 0)
+    else if (  strcmp((char *)modtype, "local") == 0
+            || strcmp((char *)modtype, "slave") == 0)
     {
         eType = eLocal;
     }
