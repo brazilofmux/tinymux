@@ -457,6 +457,69 @@ MUX_RESULT CQueryServerFactory::LockServer(bool bLock)
 
 // QuerySinkProxy component which is not directly accessible.
 //
+CQuerySinkProxy::CQuerySinkProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID)
+{
+    g_cComponents++;
+}
+
+MUX_RESULT CQuerySinkProxy::FinalConstruct(void)
+{
+    return MUX_S_OK;
+}
+
+CQuerySinkProxy::~CQuerySinkProxy()
+{
+    g_cComponents--;
+}
+
+MUX_RESULT CQuerySinkProxy::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else if (IID_IQuerySink == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CQuerySinkProxy::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CQuerySinkProxy::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        // The last reference to the proxy was released, we need to clean up
+        // the connection as well.
+        //
+        QUEUE_INFO qiFrame;
+        Pipe_InitializeQueueInfo(&qiFrame);
+        (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+        m_nChannel = CHANNEL_INVALID;
+        Pipe_EmptyQueue(&qiFrame);
+
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
 MUX_RESULT CQuerySinkProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
     // This should only be called on the component side.
