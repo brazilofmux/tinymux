@@ -1562,7 +1562,7 @@ static CF_HAND(cf_site)
 // cf_helpfile, cf_raw_helpfile: Add help files and their corresponding
 // command.
 //
-static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bRaw)
+static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
 {
     // Parse the two arguments.
     //
@@ -1644,7 +1644,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bRaw)
     pDesc->CommandName = StringClone(pCmdName);
     pDesc->ht = NULL;
     pDesc->pBaseFilename = StringClone(pBase);
-    pDesc->bEval = bRaw;
+    pDesc->bEval = bEval;
 
     // Build up Command Entry.
     //

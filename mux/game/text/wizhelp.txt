@@ -1825,8 +1825,8 @@ CONFIG PARAMETERS (continued)
 
   good_name  guest_char_num  guest_file  guest_nuker  guest_prefix  guest_site
   guests_channel guests_channel_alias  have_comsys  have_mailer  have_zones
-  helpfile  hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout
-  idle_wiz_dark  immobile_message  include  indent_desc  initial_size
+  help_executor  helpfile  hook_cmd  hook_obj  hostnames  idle_interval
+  idle_timeout  idle_wiz_dark  immobile_message  include  indent_desc  initial_size
   input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit
   lag_maximum  lbuf_size  link_cost  list_access  lock_recursion_limit  log
   log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
@@ -2802,12 +2802,11 @@ HELP_EXECUTOR
   CONFIG PARAMETER: help_executor <dbref>
   DEFAULT: -1 (NOTHING)
 
-  Specifies the enactor for evaluation of text displayed for commands set by
-  the helpfile configuration option.   If not set, the enacting object dbref
-  is used instead.   For ease of use, the dbref of the actual enactor is
-  passed as %0.
+  Specifies the executor for evaluation of text displayed for commands set by
+  the helpfile configuration option.  By default, the executor is the enacting
+  object.
 
-  Related Topics:  helpfile
+  Related Topics: helpfile
 
 & HELPFILE
 HELPFILE
