@@ -1826,21 +1826,21 @@ CONFIG PARAMETERS (continued)
   good_name  guest_char_num  guest_file  guest_nuker  guest_prefix  guest_site
   guests_channel guests_channel_alias  have_comsys  have_mailer  have_zones
   help_executor  helpfile  hook_cmd  hook_obj  hostnames  idle_interval
-  idle_timeout  idle_wiz_dark  immobile_message  include  indent_desc  initial_size
-  input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit
-  lag_maximum  lbuf_size  link_cost  list_access  lock_recursion_limit  log
-  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
-  machine_command_cost  mail_database  mail_ehlo  mail_expiration
-  mail_per_hour  mail_sendaddr  mail_sendname  mail_server  mail_subject
-  master_room  match_own_commands  max_cache_size  max_players  min_guests
-  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
-  newuser_file  nositemon_site  notify_recursion_limit  number_guests
-  open_cost  output_database  output_limit  page_cost  paranoid_allocate
-  parent_recursion_limit  paycheck  pcreate_per_hour  pemit_any_object
-  pemit_far_players  permit_site  player_flags  player_parent  player_listen
-  player_match_own_commands  player_name_spaces  player_queue_limit
-  player_quota  player_starting_home  player_starting_room  port
-  postdump_message  power_alias  public_channel  public_channel_alias
+  idle_timeout  idle_wiz_dark  immobile_message  include  indent_desc
+  initial_size  input_database  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
+  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
+  mail_expiration  mail_per_hour  mail_sendaddr  mail_sendname  mail_server
+  mail_subject  master_room  match_own_commands  max_cache_size  max_players
+  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
+  mud_name  newuser_file  nositemon_site  notify_recursion_limit
+  number_guests  open_cost  output_database  output_limit  page_cost
+  paranoid_allocate  parent_recursion_limit  paycheck  pcreate_per_hour
+  pemit_any_object  pemit_far_players  permit_site  player_flags
+  player_parent  player_listen  player_match_own_commands  player_name_spaces
+  player_queue_limit  player_quota  player_starting_home  player_starting_room
+  port  postdump_message  power_alias  public_channel  public_channel_alias
   public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
   quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
 
