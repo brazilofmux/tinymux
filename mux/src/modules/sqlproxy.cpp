@@ -261,7 +261,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
             {
                 MUX_RESULT mr;
             } ReturnFrame;
-    
+
             size_t nWanted = sizeof(ReturnFrame);
             if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
                && nWanted == sizeof(ReturnFrame))

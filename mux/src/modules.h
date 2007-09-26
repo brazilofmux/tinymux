@@ -161,7 +161,7 @@ public:
     // been saved but prior to the logfiles being closed.
     //
     virtual void shutdown(void) = 0;
-    
+
     // Called after the database consistency check is completed.   Add
     // checks for local data consistency here.
     //

@@ -411,7 +411,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
             Pipe_AppendBytes(pqi, ReturnFrame.nName, ModuleInfo.pName);
-            
+
             mr = MUX_S_OK;
         }
         break;

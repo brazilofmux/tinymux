@@ -3826,7 +3826,7 @@ FUNCTION(fun_entrances)
     {
         for (p = fargs[1]; *p; p++)
         {
-            switch(*p)
+            switch (*p)
             {
             case 'a':
             case 'A':
@@ -4820,16 +4820,20 @@ static FUNCTION(fun_txlevel)
     {
         lev = TxLevel(it);
         levelbuff[0]='\0';
-        for(i = 0; i < mudconf.no_levels; ++i)
-            if((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+        for (i = 0; i < mudconf.no_levels; ++i)
+        {
+            if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
                 strcat((char *)levelbuff, (char *)mudconf.reality_level[i].name);
                 strcat((char *)levelbuff, " ");
             }
+        }
         safe_tprintf_str(buff, bufc, "%s", levelbuff);
     }
     else
+    {
         safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+    }
 }
 #endif // REALITY_LVLS
 

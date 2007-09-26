@@ -24,7 +24,7 @@ RLEVEL RxLevel(dbref thing)
     if (  NULL == buff
        || strlen((char *)buff) != 17)
     {
-        switch(Typeof(thing))
+        switch (Typeof(thing))
         {
         case TYPE_ROOM:
             return(mudconf.def_room_rx);
@@ -55,7 +55,7 @@ RLEVEL TxLevel(dbref thing)
     if (  NULL == buff
        || strlen((char *)buff) != 17)
     {
-        switch(Typeof(thing))
+        switch (Typeof(thing))
         {
         case TYPE_ROOM:
             return(mudconf.def_room_tx);

@@ -733,8 +733,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@program"),     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
     {T("@query"),       query_sw,   CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_query},
     {T("@quota"),       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
-    {T("@reference"),    reference_sw,       CA_PUBLIC,                  
-    0,  CS_TWO_ARG|CS_INTERP, 0, do_reference},
+    {T("@reference"),   reference_sw, CA_PUBLIC,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_reference},
     {T("@robot"),       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
 #ifdef REALITY_LVLS
     {T("@rxlevel"),     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
@@ -3629,7 +3628,7 @@ static void list_modules(dbref executor)
             {
                 break;
             }
-    
+
             raw_notify(executor, tprintf("%s (%s) by stubslave", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
         }
     }

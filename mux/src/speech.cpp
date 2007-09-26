@@ -1469,7 +1469,7 @@ void do_pemit_whisper
 
         case ':':
             ++message;
-            notify(executor, tprintf("%s senses \"%s %s\"", 
+            notify(executor, tprintf("%s senses \"%s %s\"",
                 Moniker(executor), Moniker(aPlayers[0]), message));
             break;
 
@@ -1494,7 +1494,7 @@ void do_pemit_whisper
                 {
                     bFirst = false;
                 }
-                else if (nPlayers-1 == i) 
+                else if (nPlayers-1 == i)
                 {
                     if (2 == nPlayers)
                     {
@@ -1517,12 +1517,12 @@ void do_pemit_whisper
         switch (chPoseType)
         {
         case ';':
-            notify(executor, tprintf("%s sense \"%s%s\"", 
+            notify(executor, tprintf("%s sense \"%s%s\"",
                 aFriendly, Moniker(aPlayers[0]), message));
             break;
 
         case ':':
-            notify(executor, tprintf("%s sense \"%s %s\"", 
+            notify(executor, tprintf("%s sense \"%s %s\"",
                 aFriendly, Moniker(aPlayers[0]), message));
             break;
 
@@ -1539,7 +1539,7 @@ void do_pemit_whisper
     {
         if (Good_obj(aPlayers[i]))
         {
-            do_pemit_single(executor, key, false, pemit_flags, 
+            do_pemit_single(executor, key, false, pemit_flags,
                 tprintf("#%d", aPlayers[i]), chPoseType, message);
         }
     }
