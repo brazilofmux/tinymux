@@ -16,10 +16,14 @@ game/bin/netmux.exe
 game/bin/libmux.dll
 game/bin/sample.dll
 game/bin/sum.dll
+game/bin/sqlproxy.dll
+game/bin/sqlslave.dll
 game/bin/win64/netmux.exe
 game/bin/win64/libmux.dll
 game/bin/win64/sample.dll
 game/bin/win64/sum.dll
+game/bin/win64/sqlproxy.dll
+game/bin/win64/sqlslave.dll
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat

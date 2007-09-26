@@ -102,6 +102,9 @@ src/modules/sample.cpp
 src/modules/sample.h
 src/modules/sum.cpp
 src/modules/sum.h
+src/modules/sql.h
+src/modules/sqlproxy.cpp
+src/modules/sqlslave.cpp
 src/modules.cpp
 src/modules.h
 src/move.cpp
