@@ -263,8 +263,8 @@ static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
     // A semaphore has timed out.
     //
     BQUE *point = (BQUE *)pExpired;
-    add_to(point->sem, -1, point->attr);
-    point->sem = NOTHING;
+    add_to(point->u.s.sem, -1, point->u.s.attr);
+    point->u.s.sem = NOTHING;
     Task_RunQueueEntry(point, 0);
 }
 
@@ -316,7 +316,7 @@ static int CallBack_HaltQueue(PTASK_RECORD p)
             Halt_Entries_Run++;
             if (p->fpTask == Task_SemaphoreTimeout)
             {
-                add_to(point->sem, -1, point->attr);
+                add_to(point->u.s.sem, -1, point->u.s.attr);
             }
 
             for (int i = 0; i < MAX_GLOBAL_REGS; i++)
@@ -458,8 +458,8 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
         // This represents a semaphore.
         //
         BQUE *point = (BQUE *)(p->arg_voidptr);
-        if (  point->sem == Notify_Sem
-           && (  point->attr == Notify_Attr
+        if (  point->u.s.sem == Notify_Sem
+           && (  point->u.s.attr == Notify_Attr
               || !Notify_Attr))
         {
             Notify_Num_Done++;
@@ -524,8 +524,8 @@ static int CallBack_NotifySemaphoreFirst(PTASK_RECORD p)
         // This represents a semaphore.
         //
         BQUE *point = (BQUE *)(p->arg_voidptr);
-        if (  point->sem == Notify_Sem
-           && (  point->attr == Notify_Attr
+        if (  point->u.s.sem == Notify_Sem
+           && (  point->u.s.attr == Notify_Attr
               || !Notify_Attr))
         {
             Notify_Num_Done++;
@@ -827,8 +827,8 @@ static BQUE *setup_que
     //
     tmp->executor = executor;
     tmp->IsTimed = false;
-    tmp->sem = NOTHING;
-    tmp->attr = 0;
+    tmp->u.s.sem = NOTHING;
+    tmp->u.s.attr = 0;
     tmp->enactor = enactor;
     tmp->caller = caller;
     tmp->eval = eval;
@@ -882,8 +882,8 @@ void wait_que
 
     tmp->IsTimed = bTimed;
     tmp->waittime = ltaWhen;
-    tmp->sem = sem;
-    tmp->attr = attr;
+    tmp->u.s.sem = sem;
+    tmp->u.s.attr = attr;
 
     if (sem == NOTHING)
     {
@@ -913,6 +913,54 @@ void wait_que
     }
 }
 
+      bool   QueryComplete_bDone   = false;
+      UINT32 QueryComplete_hQuery  = 0;
+const UTF8  *QueryComplete_pResult = NULL;
+
+static int CallBack_QueryComplete(PTASK_RECORD p)
+{
+    if (QueryComplete_bDone)
+    {
+        return IU_DONE;
+    }
+
+    if (Task_SQLTimeout == p->fpTask)
+    {
+        // This represents a query.
+        //
+        BQUE *point = (BQUE *)(p->arg_voidptr);
+        if (point->u.hQuery == QueryComplete_hQuery)
+        {
+            p->iPriority = PRIORITY_OBJECT;
+            p->ltaWhen.GetUTC();
+            p->fpTask    = Task_RunQueueEntry;
+
+            point->u.s.sem   = NOTHING;
+            point->u.s.attr  = 0;
+
+            QueryComplete_bDone = true;
+            return IU_UPDATE_TASK;
+        }
+    }
+    return IU_NEXT_TASK;
+}
+
+// This can be called as a side-effect of talking with the stubslave.
+// Therefore, we only want to raise the priority of the corresponding take
+// from SUSPENDED to OBJECT.
+//
+void query_complete(UINT32 hQuery, const UTF8 *pResult)
+{
+    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+    log_printf("ResultSet is '%s'", pResult);
+    ENDLOG;
+
+    QueryComplete_bDone   = false;
+    QueryComplete_hQuery  = hQuery;
+    QueryComplete_pResult = pResult;
+    scheduler.TraverseUnordered(CallBack_QueryComplete);
+}
+
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
 //
@@ -939,11 +987,16 @@ void sql_que
         return;
     }
 
-    // The query is passed in for display in @ps.  The real command is
-    // understood to be @trigger <thing>/<attr>.
-    //
+    ATTR *pattr = atr_num(attr);
+    if (NULL == pattr)
+    {
+        return;
+    }
+
+    UTF8 mbuf[MBUF_SIZE];
+    mux_sprintf(mbuf, MBUF_SIZE, "@trigger #%d/%s", thing, pattr->name);
     BQUE *tmp = setup_que(executor, caller, enactor, eval,
-        query,
+        mbuf,
         nargs, args,
         sargs);
 
@@ -952,14 +1005,14 @@ void sql_que
         return;
     }
 
-    tmp->IsTimed = false;
-    tmp->waittime = CLinearTimeAbsolute();
-    tmp->sem = thing;
-    tmp->attr = attr;
+    UINT32 hQuery = next_handle++;
 
-    next_handle++;
-    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, next_handle);
-    MUX_RESULT mr = mudstate.pIQueryControl->Query(next_handle, dbname, query);
+    tmp->IsTimed  = false;
+    tmp->waittime = CLinearTimeAbsolute();
+    tmp->u.hQuery = hQuery;
+
+    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
+    MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
     if (MUX_FAILED(mr))
     {
         scheduler.CancelTask(Task_SQLTimeout, tmp, next_handle);
@@ -1219,19 +1272,19 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
 static void ShowPsLine(BQUE *tmp)
 {
     UTF8 *bufp = unparse_object(Show_Player, tmp->executor, false);
-    if (tmp->IsTimed && (Good_obj(tmp->sem)))
+    if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf("[#%d/%d]%s:%s", tmp->sem, ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf("[#%d/%d]%s:%s", tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (tmp->IsTimed)
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
         notify(Show_Player, tprintf("[%d]%s:%s", ltd.ReturnSeconds(), bufp, tmp->comm));
     }
-    else if (Good_obj(tmp->sem))
+    else if (Good_obj(tmp->u.s.sem))
     {
-        notify(Show_Player, tprintf("[#%d]%s:%s", tmp->sem, bufp, tmp->comm));
+        notify(Show_Player, tprintf("[#%d]%s:%s", tmp->u.s.sem, bufp, tmp->comm));
     }
     else
     {

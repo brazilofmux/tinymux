@@ -31,8 +31,15 @@ struct bque
     dbref   caller;                 // caller.
     dbref   enactor;                // enactor causing command (for %N)
     int     eval;
-    dbref   sem;                    // blocking semaphore
-    int     attr;                   // blocking attribute
+    union
+    {
+        struct
+        {
+            dbref   sem;            // blocking semaphore
+            int     attr;           // blocking attribute
+        } s;
+        UINT32 hQuery;
+    } u;
     int     nargs;                  // How many args I have
     UTF8    *text;                  // buffer for comm, env, and scr text
     UTF8    *comm;                  // command
