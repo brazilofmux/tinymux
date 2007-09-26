@@ -321,6 +321,10 @@ Bug Fixes:
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
  -- Drop dependency on QueryPerformanceCounter() (Issue 369).
+ -- The flag_access configuration handler would SIGSEGV if a flagname
+    was given without a list of permissions.
+ -- The power_alias and flag_alias configuration handlers would
+    SIGSEGV if flagname and alias were not both given.
 
 
 Performance Enhancements:

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.25 2006/10/02 02:43:41 sdennis Exp $
+// $Id: flags.cpp,v 1.26 2007/09/14 15:49:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -952,7 +952,10 @@ CF_HAND(cf_flag_access)
     char *fstr = mux_strtok_parse(&tts);
     char *permstr = mux_strtok_parse(&tts);
 
-    if (!fstr || !*fstr)
+    if (  NULL == fstr
+       || '\0' == fstr[0]
+       || NULL == permstr
+       || '\0' == permstr[0])
     {
         return -1;
     }
