@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  April 2004
+Last Update:  September 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,6 +57,9 @@ Feature Additions:
  -- Added support to page for quoting names.  Add double quotes around
     any player name that contains spaces to avoid the space in their
     name from acting as a delimiter.
+ -- Updated PCRE to version 4.3.
+ -- Added support for MEMORY_BASED to the ./Backup script.
+ -- Accept flatfile v2 from TinyMUX 2.6.
 
 
 Bug Fixes:
@@ -234,6 +237,82 @@ Bug Fixes:
  -- Removed '%' as a valid attribute name character.
  -- Fixed MEMORY_BASED build.
  -- Allow @dolist to accept the /notify and /delimit flags together.
+ -- Fixed udefault() argument evaluation.
+ -- Fixes the way accents are encoded and parsed in mail.db and
+    flatfiles.  This is an important fix.  Backups of your database are
+    not affected, however, without this fix, your server will probably
+    not parse your backups correctly if they contain accent characters.
+ -- Added missing #undef HAVE_FCNTL_H to autoconf.h.in for Solaris build.
+ -- Re-implementation of udefault() functions failed to properly parse
+    <attr> as if it were <me/attr>.
+ -- Fixed bug in MIX() where '&mixit me=(%0|%1);think mix(mixit,0 1,1)'
+    gives '(0|1)' instead of '(0|1) (1|)'.  It wasn't determining the
+    length of the first list correctly.
+ -- Protect the server against @maliases with more than 100 members when
+    the mail.db comes from a previous versions of MUX.
+ -- Guest creation did not properly strip attributions from previous
+    connections.
+ -- With a particularly nasty ANSI @moniker, the WHO must trim the
+    visual width of the colorful name down.  This point needed to be
+    increased a little.
+ -- @dbck started fixing quotas in MUX 2.3, but this is too expensive
+    to do routinely.
+ -- Move initialization of time code further up so that the logging
+    code creates the right timestamp.
+ -- Locks failed to evaluate properly after a dbref within the lock was
+    @destroy.
+ -- Fix unlikely but reproducible case of hanging @dump/@backup.
+ -- Fixed the automatic adding of guests to the Public channel.
+ -- Fixed SIGSEGV in AFTER() with accent characters in the pattern.
+ -- Fixed uninitialized variable problem with an empty ladd().  It
+    returned the result of the last operation.
+ -- Fix crashing bug in @clist/full with a heavily ANSI-ied owner name.
+ -- VDIM() referenced uninitialized memory.  Borrowed the correct
+    implementaiton from WORDS() since the two are nearly identical.
+    Found and fixed by Alierak.
+ -- Fixed @dump/flat coruption bug. When the main process and the
+    forked, @dumping process are both actively querying the text value
+    database, the sequence of lseek/read and lseek/write options
+    intermix.  Since the file position state is shared between the
+    child and parent process, it was possible for one process to read
+    or write the wrote CHash page.  Instead of using lseek/read and
+    lseek/write, MUX now either uses pread() and pwrite() or does not
+    fork a child to performs the @dump/flat.
+ -- Fix an off-by-one command quota bug.  After 100 times of trying
+    to queue too many commands, players are left unable to queue even a
+    single command without auto-@halting themselves.
+ -- Fix minor helpfile typoes, ommissions, and clarificiations.
+ -- Fix build errors with GCC 4.0+ that have cropped up in the last 3
+    months.
+ -- Fixed COLUMNS() from double-evaluating its 1st and 3rd arguments.
+    Bug from TinyMUX 1.x. Reported by Ashen-Shugar.
+ -- Fixed GET() and friends could not access a VISUAL attribute on a
+    parent without the child object also being set VISUAL.
+ -- Document OpenLock.
+ -- Guests now copy attributes from the proto-Guest (defined by
+    guest_char_num).
+ -- Fir %v parsing.
+ -- Backport fix from 2.4 for unlikely but reproducible case of hanging
+    @dump/@backup.
+ -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
+ -- Fix @hook for goto command. Being unable to move also affected the
+    ability to use other commands. Reported by K hall.
+ -- Issue 71: mix() doesn't include a function-invocation test.
+ -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
+    Alierak.
+ -- %v accepts accented characters (Issue 91).  Found by Alierak.
+ -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
+    found and fixed by Alierak.
+ -- Backpatch @timewarp/queue <secs> fixes from TinyMUX 2.6 (Issues 167
+    and 172).
+ -- Prevent @ccreate from creating channels with duplicate names (Issue
+    206).
+ -- Updated configure, configure.guess, and configure.sub.
+ -- Fixed color leak in object names for @find, examine, inventory, and
+    look when length of ANSI sequence exceeded 200 byte (Issue 184).
+    Reported by K Hall.  Not a crashing issue.
+ -- Fix two configuration tests related to IEEE floating-point that
+    broke with gcc 4.1.2.
 
 
 Performance Enhancements:
@@ -249,6 +328,7 @@ Cosmetic Changes:
  -- Alierak fix for typos in NOTES.
  -- Spell 'separate' correctly in the help files and the source code.
  -- Improved grammer of the emit the sender sees from the page command.
+ -- Help files freshened.
 
 
 Miscellaneous:
@@ -258,3 +338,6 @@ Miscellaneous:
  -- Updated CONVERSION.
  -- Remove vestigial code related to old-style variable function
     arguments and autoconf.h.in clean up in general.
+ -- Added ATTACK notes.
+ -- Documented pass_locks @power.
+ -- ./configure built with autoconf 2.59

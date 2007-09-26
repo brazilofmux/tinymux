@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.5 2003/12/06 01:57:32 sdennis Exp $
+// $Id: timeutil.h,v 1.6 2005/09/27 12:14:39 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -26,6 +26,8 @@ typedef struct
     unsigned short iMicrosecond; // Microseconds less than a Millisecond.
     unsigned short iNanosecond;  // Nanoseconds less than a Microsecond.
 } FIELDEDTIME;
+
+class CLinearTimeDelta;
 
 class CLinearTimeAbsolute
 {

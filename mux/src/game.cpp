@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.35 2004/04/01 22:00:42 sdennis Exp $
+// $Id: game.cpp,v 1.41 2006/03/12 22:46:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1408,14 +1408,17 @@ void dump_database(void)
 void fork_and_dump(int key)
 {
 #ifndef WIN32
+    static volatile bool bRequestAccepted = false;
+
     // fork_and_dump is never called with mudstate.dumping true, but we'll
-    // ensure assertion now.
+    // ensure that assertion now.
     //
-    if (mudstate.dumping)
+    if (  bRequestAccepted
+       || mudstate.dumping)
     {
         return;
     }
-    mudstate.dumping = true;
+    bRequestAccepted = true;
 #endif
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
@@ -1475,11 +1478,24 @@ void fork_and_dump(int key)
 #ifndef WIN32
     int child = 0;
     bool bChildExists = false;
-#endif
+    mudstate.dumping = true;
+    mudstate.dumped  = 0;
+    bool bAttemptFork = mudconf.fork_dump;
+#if !defined(HAVE_PREAD) \
+ || !defined(HAVE_PWRITE)
+    if (key & DUMP_FLATFILE)
+    {
+        // Don't attempt a fork()'ed @dump/flat without pread()/pwrite()
+        // support.
+        //
+        bAttemptFork = false;
+    }
+#endif // !HAVE_PREAD !HAVE_PWRITE
+#endif // WIN32
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
 #ifndef WIN32
-        if (mudconf.fork_dump)
+        if (bAttemptFork)
         {
             child = fork();
         }
@@ -1504,26 +1520,28 @@ void fork_and_dump(int key)
         {
             log_perror("DMP", "FORK", NULL, "fork()");
         }
-        else if (child != mudstate.dumper)
+        else
         {
             mudstate.dumper = child;
-            bChildExists = true;
-        }
-        else if (child == mudstate.dumper)
-        {
-            // The child process executed and exited before fork() returned to
-            // the parent.  Without a process id, the parent's SIGCHLD handler
-            // cannot be certain that the pid of the exiting process matches
-            // the pid of this child.
-            //
-            // However, at the this point in the code, we can be sure.  But,
-            // there's nothing much left to do:
-            //
-            // There is no child (bChildExists == false), we aren't dumping
-            // (mudstate.dumping == false) and there is no outstanding dumper
-            // process (mudstate.dumper == 0).
-            //
-            // See SIGCHLD handler in bsd.cpp.
+            if (mudstate.dumper == mudstate.dumped)
+            {
+                // The child process executed and exited before fork() returned
+                // to the parent process.  Without a process id, the parent's
+                // SIGCHLD handler could not be certain that the pid of the
+                // exiting process would match the pid of this child.
+                //
+                // At the this point, we can be sure, however, there's
+                // nothing much left to do.
+                //
+                // See SIGCHLD handler in bsd.cpp.
+                //
+                mudstate.dumper = 0;
+                mudstate.dumped = 0;
+            }
+            else
+            {
+                bChildExists = true;
+            }
         }
 #endif
     }
@@ -1536,9 +1554,10 @@ void fork_and_dump(int key)
         // need to dump the structure or a flatfile; or, the child has finished
         // dumping already.
         //
-        mudstate.dumping = false;
         mudstate.dumper = 0;
+        mudstate.dumping = false;
     }
+    bRequestAccepted = false;
 #endif
 
     if (*mudconf.postdump_msg)
@@ -2296,16 +2315,16 @@ int DCL_CDECL main(int argc, char *argv[])
 
     mudstate.bStandAlone = false;
 
+    FLOAT_Initialize();
+    TIME_Initialize();
+    SeedRandomNumberGenerator();
+
     Log.SetBasename(pErrorBasename);
     Log.StartLogging();
     game_pid = getpid();
     write_pidfile(pidfile);
 
     BuildSignalNamesTable();
-
-    FLOAT_Initialize();
-    TIME_Initialize();
-    SeedRandomNumberGenerator();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;

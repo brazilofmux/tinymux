@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.39 2004/04/07 04:37:37 sdennis Exp $
+// $Id: conf.cpp,v 1.41 2006/03/12 22:46:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -101,6 +101,7 @@ void cf_init(void)
     mudconf.fork_dump = true;
     mudstate.dumping  = false;
     mudstate.dumper   = 0;
+    mudstate.dumped   = 0;
 #endif
     mudconf.have_comsys = true;
     mudconf.have_mailer = true;
@@ -1948,7 +1949,7 @@ void do_admin
 // ---------------------------------------------------------------------------
 // cf_read: Read in config parameters from named file
 //
-struct
+static struct
 {
     char **pFilename;
     char *pSuffix;

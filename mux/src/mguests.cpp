@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.10 2004/03/08 04:37:40 sdennis Exp $
+// $Id: mguests.cpp,v 1.14 2006/01/31 00:21:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,6 +15,7 @@
 #include "attrs.h"
 #include "mguests.h"
 #include "powers.h"
+#include "comsys.h"
 
 #define GUEST_HYSTERESIS 20
 
@@ -154,6 +155,13 @@ const char *CGuests::Create(DESC *d)
                 s_Name(guest_player, name);
                 add_player_name(guest_player, Name(guest_player));
             }
+            else
+            {
+                // Release comsys and @mail state.
+                //
+                ReleaseAllResources(guest_player);
+                AddToGuestChannel(guest_player);
+            }
 
             // Reset the flags back to the default.
             //
@@ -180,7 +188,7 @@ const char *CGuests::Create(DESC *d)
 
             // Copy them back.
             //
-            atr_cpy(guest_player, mudconf.guest_char);
+            atr_cpy(guest_player, mudconf.guest_char, true);
             return Name(guest_player);
         }
     }
@@ -292,7 +300,7 @@ dbref CGuests::MakeGuestChar(void)
     // Make the player.
     //
     const char *pmsg;
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, true, &pmsg);
+    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //
@@ -305,6 +313,7 @@ dbref CGuests::MakeGuestChar(void)
     // Lets make the player a guest, move it into the starting room,
     // don't let it be a wizard, and setup other basics.
     //
+    AddToGuestChannel(player);
     s_Guest(player);
     move_object(player, mudconf.start_room);
     db[player].fs.word[FLAG_WORD1] &= ~WIZARD;
@@ -314,7 +323,7 @@ dbref CGuests::MakeGuestChar(void)
 
     // Copy the attributes.
     //
-    atr_cpy(player, mudconf.guest_char);
+    atr_cpy(player, mudconf.guest_char, true);
 
     // Lock em!
     //
@@ -351,8 +360,10 @@ void CGuests::DestroyGuestChar(dbref guest)
 void CGuests::WipeAttrs(dbref guest)
 {
     olist_push();
+
     int attr;
-    for (attr = olist_first(); attr != NOTHING; attr = olist_next())
+    char *as;
+    for (attr = atr_head(guest, &as); attr; attr = atr_next(&as))
     {
         ATTR *ap = atr_num(attr);
         if (ap)
@@ -411,6 +422,15 @@ void CGuests::ListAll(dbref player)
     free_lbuf(LastSite);
     notify(player, tprintf("-----------------------------  Total Guests: %-3d -----------------------------", nGuests));
     free_lbuf(buff);
+}
+
+void CGuests::AddToGuestChannel(dbref player)
+{
+    if (mudconf.guests_channel[0] != '\0')
+    {
+        do_addcom(player, player, player, 0, 2,
+            "g", mudconf.guests_channel);
+    }
 }
 
 char CGuests::name[50];

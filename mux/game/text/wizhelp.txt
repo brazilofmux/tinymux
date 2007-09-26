@@ -135,10 +135,10 @@
 
   This file is tarred and gziped. It includes the game flatfile, and the
   mail and comsys databases. It does not include any of the text files, the
-  .conf files or the mux.config file. Those would need to be backed up 
+  .conf files or the mux.config file. Those would need to be backed up
   separately.
 
-  Related Topics: 
+  Related Topics:
 
 & @BOOT
 @BOOT
@@ -454,7 +454,7 @@
 @HOOK
 
   Command: @hook[/<switch(s)>] [<command/attribute>]
-  
+
   This command will set up 'hooks' to be applied to various commands or
   attributes.  You may specify multiple hooks on items.  The HOOK_OBJ is
   an @admin param that specifies the hook object.  The following hooks exist:
@@ -485,7 +485,7 @@
                       somehow block by a @hook/permit or @icmd/disable.
                       The HOOK_OBJ attribute is af_<command>.
 
-         /clear     - When used in junction with any of the above switches, 
+         /clear     - When used in junction with any of the above switches,
                       will clear the hook from being applied.
 
          /list      - This lists the current commands/attributes with hooks.
@@ -497,7 +497,7 @@
 
   Examples of @hook are as follows:
 
-    > @hook/before look 
+    > @hook/before look
     @hook: new mask for 'look' -> before
     > @hook/after look
     @hook: new mask for 'look' -> before after
@@ -1059,7 +1059,7 @@
   COMMAND: @log <file>=<message>
 
   This logs the message (without timestamp) to the named file. Pathnames
-  are stripped, and the file resides in 'mux2.1/game/logs' under the name
+  are stripped, and the file resides in 'game/logs' under the name
   'M-<file>.log'.
 
   The file must already exist for the @log request to succeed, and can only
@@ -1347,7 +1347,7 @@ ACCESS
   Specifying a permission adds it to the list of permissions required; to
   remove a permission prefix it with a ! character.
 
-  Related Topics: PERMISSIONS, @list.
+  Related Topics: @list, logout_cmd_access, PERMISSIONS.
 
 & ALIAS
 ALIAS
@@ -1413,9 +1413,24 @@ ATTRIBUTE PERMISSIONS
 
   The following attribute flags are available:
 
-    const dark deleted god hidden ignore is_lock locked no_command no_inherit
-    private visual wizard.
-
+    const      - No one can change the attribute after the server starts.
+    dark       - Attribute is not shown or readable to anyone but #1, but
+                 anyone can potentially change it.
+    deleted    - Attribute should be ignored.  It is not included in the
+                 @dump.  Not recommended.  This appears to be a manual way to
+                 accomplish @dbclean.
+    god        - Only #1 can change the attribute.
+    hidden     - Only WIZARDS can see it.  Dark to mortals.
+    ignore     - Don't create a @ command for it.  Not recommended.
+    internal   - Don't show even to #1.  Internal server bookkeeping.
+    is_lock    - Attribute is a lock.  Not recommended.
+    locked     - Attribute is locked.
+    no_command - Don't process $-commands from this attribute.
+    no_inherit - Not inherited by child objects.
+    private    - Players other than owner can't see it.
+    regexp     - Do a regexp rather than wildcard match.
+    visual     - Anyone can see.
+    wizard     - Only WIZARDS can change it.
 
   NOTE: There is a simple way to create attributes that are both 'wizard'
   and 'hidden'. Prefix the attribute name with an underscore (_) and the
@@ -1486,6 +1501,9 @@ BADSITE_FILE
   sites that have been blocked from accessing the server.  The connection
   is closed immediately after the file is sent.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: forbid_site, permit_site.
 
 & BAD_NAME
@@ -1519,6 +1537,9 @@ CACHE_NAMES
 
   Whether or not to use object name caches.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics:
 
 & CACHE_PAGES
@@ -1527,16 +1548,22 @@ CACHE_PAGES
   CONFIG PARAMETER: cache_pages <num>
   DEFAULT: 40
 
-  Specifies the size of the hashpage cache.  This is the lowest-level
-  caching (not counting the operating system's caching).  Don't set
-  this too low (e.g., less than 10) or the server's performance will
-  degrade dramatically.
+  Specifies the size of the hashpage cache.  This configuration option cannot
+  be changed after the server starts.  It can only be changed via the
+  configuration file.
 
-  The most effective type of caching occurs one level higher
-  (see max_cache_size), however for larger games, it may be necessary to
-  increase cache_pages somewhat.  Estimate that you will need one page
-  per active player.  So, the default of 40 is tuned to perform well
-  for up to 100 players.
+  The most effective type of caching occurs one level higher (see
+  max_cache_size), however for larger games, it is necessary to increase
+  cache_pages as well (which caches at a lower level).
+
+  Recommendations:
+
+   -- Have at least 10 hash pages or the server itself will thrash the cache.
+
+   -- Have one cache page for every active player, or simple paging will
+      thrash the cache.
+
+  The default of 40 will perform well up to 100 players.
 
   Related Topics: cache_pages, max_cache_size.
 
@@ -1629,12 +1656,13 @@ COMMANDS
   @addcommand    @admin         @apply_marked  @attribute     @backup
   @boot          @chown         @chownall      @clone         @cut
   @dbck          @dbclean       @delcommand    @destroy       @disable
-  @doing         @dump          @enable        @fixdb         @function
-  @halt          @icmd          @kick          @list          @listcommands
-  @list_file     @listmotd      @lock          @log           @mark
-  @mark_all      @motd          @newpassword   @pcreate       @poor
-  @ps            @quota         @readcache     @restart       @shutdown
-  @startslave    @timecheck     @timewarp      @toad          @wall
+  @doing         @dump          @enable        @fixdb         @flag
+  @function      @halt          @hook          @icmd          @kick
+  @list          @listcommands  @list_file     @listmotd      @lock
+  @log           @mark          @mark_all      @motd          @newpassword
+  @pcreate       @poor          @ps            @quota         @readcache
+  @restart       @shutdown      @startslave    @timecheck     @timewarp
+  @toad          @wall
 
   @allowance     @comment       @timeout
 
@@ -1687,6 +1715,9 @@ COMPRESS_PROGRAM
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: compression, uncompress_program.
 
 & COMSYS_DATABASE
@@ -1696,10 +1727,12 @@ COMSYS_DATABASE
   DEFAULT: comsys.db
 
   Specifies the file that comsystem and macro information is stored in.
-  This database is loaded at startup if either have_comsys or have_macros
-  are on.
+  This database is loaded at startup if have_comsys is on.
 
-  Related Topics: have_comsys, have_macros.
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: have_comsys.
 
 & CONFIG PARAMETERS
 CONFIG PARAMETERS
@@ -1768,12 +1801,15 @@ CONFIG_ACCESS
   CONFIG PARAMETER: config_access <param> [!]<privilege> [[!]<privilege>]...
 
   Changes the privileges needed to change the specified configuration
-  parameter.  The value 'disabled' indicates that the parameter may only
-  be specified in the configuration file at startup.  Setting privileges
-  to anything other than disabled or god is meaningless unless the
-  restriction on the @admin command is weakened.
+  parameter.  The value 'disabled' indicates that the parameter may only be
+  specified in the configuration file at startup.
 
-  Related Topics: @admin, @list config_permissions, PERMISSIONS.
+  The privilege of the @admin command is controlled separately via the
+  access directive.  It is therefore ineffective to reduce the privilege of a
+  configuration option without also reducing the privilege of @admin to at
+  least the same level.
+
+  Related Topics: access, @admin, @list config_permissions, PERMISSIONS.
 
 & CONNECT_FILE
 CONNECT_FILE
@@ -1785,6 +1821,9 @@ CONNECT_FILE
   to the MUX if registration is not enabled.  This file normally contains
   help on how to connect to or create a character, as well as the WHO and QUIT
   commands.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: connect_reg_file
 
@@ -1799,6 +1838,9 @@ CONNECT_REG_FILE
   help on how to get a character (usually by sending e-mail to one of the
   wizards), how to connect to an existing character, as well as the WHO and
   QUIT commands.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: connect_file
 
@@ -1827,10 +1869,13 @@ CRASH_DATABASE
   detects an internal error and is about to crash. The file is generated
   in flatfile format with attribute values included.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & CREATE_MAX_COST
 CREATE_MAX_COST
 
-  CONFIG DIRECTIVE: create_max_cost <amount>
+  CONFIG PARAMETER: create_max_cost <amount>
   DEFAULT: 505
 
   Specifies the maximum amount of money that is used in calculating the value
@@ -1842,7 +1887,7 @@ CREATE_MAX_COST
 & CREATE_MIN_COST
 CREATE_MIN_COST
 
-  CONFIG DIRECTIVE: create_min_cost <amount>
+  CONFIG PARAMETER: create_min_cost <amount>
   DEFAULT: 10
 
   Specifies the minimum (and default) cost for creating an object.
@@ -1852,7 +1897,7 @@ CREATE_MIN_COST
 & DARK_SLEEPERS
 DARK_SLEEPERS
 
-  CONFIG DIRECTIVE: dark_sleepers <yes/no>
+  CONFIG PARAMETER: dark_sleepers <yes/no>
   DEFAULT: yes
 
   Indicates whether or not disconnected players are to be considered 'dark',
@@ -1868,7 +1913,7 @@ DEBUG FEATURES
 & DEFAULT_HOME
 DEFAULT_HOME
 
-  CONFIG DIRECTIVE: default_home <location>
+  CONFIG PARAMETER: default_home <location>
   DEFAULT: (player_starting_home)
 
   Sets the home location for objects which have an invalid home (whether
@@ -1928,6 +1973,9 @@ DOWN_FILE
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when logins are disabled.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @disable, down_motd_message.
 
@@ -2140,6 +2188,9 @@ FIXED_HOME_MESSAGE
   Specifies the string that is sent to a player when they try to go home
   while they are set with the FIXED flag.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: fixed_tel_message.
 
 & FIXED_TEL_MESSAGE
@@ -2150,6 +2201,9 @@ FIXED_TEL_MESSAGE
 
   Specifies the string that is sent to a player when they try to teleport
   while they are set with the FIXED flag.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: fixed_home_message.
 
@@ -2214,7 +2268,7 @@ FORBID_SITE
   prevent access from troublemaking sites.  The default is for all sites to
   be allowed to connect, none forbidden.
 
-  Related Topics: badsite_file, permit_site, register_site, guest_site, 
+  Related Topics: badsite_file, permit_site, register_site, guest_site,
                   SITE LISTS, SITE NOTATION,
 
 & FORK_DUMP
@@ -2239,6 +2293,9 @@ FULL_FILE
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when the number of connected players
   is not less than the number of players allowed by the max_players directive.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: full_motd_message, max_players.
 
@@ -2314,6 +2371,9 @@ GAME_DIR_FILE
   It is read into memory at startup and re-written during page splits in the
   'pages' portion of the database.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: game_pag_file
 
 & GAME_PAG_FILE
@@ -2325,6 +2385,9 @@ GAME_PAG_FILE
   the CHashFile attribute database. Unlike the 'directory' portion, this
   portion cannot be replaced. Attribute values themselves are stored in this
   file.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: game_dir_file
 
@@ -2351,7 +2414,7 @@ GIVE
 & GLOBAL_ERROR_OBJ
 GLOBAL_ERROR_OBJ
 
-  CONFIG DIRECTIVE: global_error_obj <dbref>
+  CONFIG PARAMETER: global_error_obj <dbref>
   DEFAULT: -1
 
   Specifies the object that it looks for, to evaluate an attribute
@@ -2416,6 +2479,14 @@ GUEST_CHAR_NUM
   restrictions can be changed with the access config parameter using the
   no_guest permission.
 
+  This configuration parameter is the main on/off switch for the MUX guest
+  system, so in that respect it corresponds to the have_comsys and have_mailer
+  configuration options.  The guest system in MUX is effectively disabled
+  until this configuration parameter is set.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_prefix, guest_nuker, number_guests, access,
                   min_guests, guest_site.
 
@@ -2427,6 +2498,9 @@ GUEST_FILE
 
   Specifies the file that is to be shown to people connecting to the
   guest character in place of the motd file.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: guest_char_num.
 
@@ -2452,6 +2526,9 @@ GUEST_PREFIX
   when the guest is created. This will also be what is used to connect to
   the guests on your system.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_char_num, number_guests, min_guests, guest_site.
 
 & GUEST_SITE
@@ -2459,7 +2536,7 @@ GUEST_SITE
 
   CONFIG PARAMETER: guest_site <site>
 
-  Indicates that connections to guests form this site should be rejected.
+  Indicates that connections to guests from this site should be rejected.
   Players will be able to connect normally and create if set.
 
   Related Topics: badsite_file, permit_site, register_site, forbid_site,
@@ -2474,7 +2551,10 @@ HAVE_COMSYS
 
   Specifies whether or not the comsystem should be active.
 
-  Related Topics: comsys_database, have_macros.
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: comsys_database.
 
 & HAVE_MAILER
 HAVE_MAILER
@@ -2483,6 +2563,9 @@ HAVE_MAILER
   DEFAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: mail_database
 
@@ -2496,21 +2579,33 @@ HAVE_ZONES
   and disconnects, zone commands, and the control aspects will all be
   disabled.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & HELPFILE
 HELPFILE
 
   CONFIG PARAMETER: helpfile <command> <pathname>
   DEFAULT: None
 
-  This configuration directive associates the in-game command, <command>,
-  with a set of help topics contained in the file <pathname>.txt.
+  This configuration directive associates the in-game command, <command>, with
+  a set of help topics contained in the file <pathname>.txt.  By default,
+  <command> has 'public' permissions, but this can be further restricted with
+  the 'access' configuration directive.
 
-  By default, this help command has 'public' permissions, but this can be
-  restricted with the 'access' configuration directive.
+  The associated <command> will have one of the following forms:
 
-  By default, the server does not setup any help files (including help,
-  wizhelp, and news).  It is therefore recommended that your configuration
-  file contain the following lines:
+    <command> <topic>
+    <command> <topic wildcard pattern>
+
+  Unlike raw_helpfile, the associated helpfile <command> evaluates the <topic>
+  before giving the result to the player.  To avoid this evaluation, use the
+  raw_helpfile configuration directive instead.
+
+  The default configuration file contains the following lines already, but
+  the base server does not setup any help files (including help, wizhelp, or
+  news).  Therefore, make sure that your older configuration files contain
+  at least the following lines:
 
     raw_helpfile help text/help
     raw_helpfile wizhelp text/wizhelp
@@ -2520,7 +2615,8 @@ HELPFILE
   the three above lines must occur before alias.conf is included.
 
   To prevent access to arbitrary files after the server has started, this
-  directive cannot be used by via @admin after the server has started.
+  configuration directive cannot be used by via @admin after the server has
+  started.
 
   Examples:
      helpfile wiznews text/wiznews
@@ -2534,7 +2630,7 @@ HOOK SETUP
   Hooks are set up by following the shown methods.
   1)  You must first create and setup a hook object to store the data.
       Once you have @created the object, the object needs to be defined
-      with the 'HOOK_OBJ' admin parameter.  This may be placed in the 
+      with the 'HOOK_OBJ' admin parameter.  This may be placed in the
       .conf file or done via @admin.
 
   2)  You must set up hooks for the commands/attributes you wish to use.
@@ -2543,7 +2639,7 @@ HOOK SETUP
       You may use the @hook command, or use the hook_cmd admin parameter
       to place in a .conf file.
 
-  3)  The PERMIT and IGNORE config params are 'enabled' if they return 
+  3)  The PERMIT and IGNORE config params are 'enabled' if they return
       anything but a 'NULL' or a '1'.
 
   4)  The IGSWITCH config parameter is a toggle only.
@@ -2567,7 +2663,6 @@ HOOK SETUP (continued)
   > &p_look #1234=[gt(match(v(is-forbidden),%#),0)]
   > &is-ignored #1234=#5 #8 #9 #12   (this gets 'Huh? (type 'help' for help)')
   > &is-forbidden #1234=#6 #10 #15   (this gets 'Permission denied.')
-  > @set #1234=sidefx                (needed to use side-effects like pemit())
 
   Now you can do one of two things:
   > @hook/before look
@@ -2578,46 +2673,53 @@ HOOK SETUP (continued)
   > @admin hook_cmd look before after ignore permit
 
   There, your hook object is all set up.  If you want it to last through
-  reboots, you need to either put the @hook's in a @startup, or add the 
+  reboots, you need to either put the @hook's in a @startup, or add the
   hook_cmd to the .conf file.  You probably want the hook_cmd :)
- 
+
   Related Topics: @hook, hook_cmd, hook_obj.
 
 & HOOK_CMD
 HOOK_CMD
 
-  Config parameter: hook_cmd <command> <hooks/!hooks>
+  CONFIG PARAMETER: hook_cmd <command> <hooks/!hooks>
+
   This admin parameter allows you to specify multiple hooks for commands
-  or attributes in the .conf file or online via @admin.  This is an 
+  or attributes in the .conf file or online via @admin.  This is an
   alternative way to applying hooks besides the @hook command.
+
   The following hooks exist:
-         - before      set up functionality BEFORE a command executes.
-         - after       set up functionality AFTER a command executes.
-         - permit      establish functionary lock of attribute/command.
-         - ignore      establish ignore inheritance of attribute/command.
-         - igswitch    specifies if command bypasses failed /switch notices.
+
+    - before      set up functionality BEFORE a command executes.
+    - after       set up functionality AFTER a command executes.
+    - permit      establish functionary lock of attribute/command.
+    - ignore      establish ignore inheritance of attribute/command.
+    - igswitch    specifies if command bypasses failed /switch notices.
 
   For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
+  hook setup.
 
-  Related Topics: @hook, hook_obj, HOOK SETUP.
+  Related Topics: @hook, hook_obj, hook setup.
 
 & HOOK_OBJ
 HOOK_OBJ
 
-  Config parameter: hook_obj <dbref>.  Default: -1
+  CONFIG PARAMETER: hook_obj <dbref>
+  Default: (none)
+
   Specifies the valid dbref# that the hook information is stored.  All
-  hooks are in the form <prefix>_<command/attribute>.  
+  hooks are in the form <prefix>_<command/attribute>.
+
   Attributes are stored in the form:
-          I_<command> - ignore configuration
-          P_<command> - permit configuration
-          A_<command> - after configuration
-          B_<command> - before configuration
+
+      I_<command> - ignore configuration
+      P_<command> - permit configuration
+      A_<command> - after configuration
+      B_<command> - before configuration
 
   For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
+  hook setup.
 
-  Related Topics: @hook, hook_cmd, HOOK SETUP.
+  Related Topics: @hook, hook_cmd, hook setup.
 
 & HOSTNAMES
 HOSTNAMES
@@ -2710,6 +2812,9 @@ INITIAL_SIZE
   space for the database in large chunks, the size of which depends on
   this parameter.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & INPUT_DATABASE
 INPUT_DATABASE
 
@@ -2719,6 +2824,9 @@ INPUT_DATABASE
   Specifies the name of the database file that is read in at startup.
   This file is used only as an input file, the parameter output_database
   controls where updated copies of the database are written.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: crash_database, output_database
 
@@ -2766,8 +2874,8 @@ KILL_MIN_COST
 & LAG_MAXIMUM
 LAG_MAXIMUM
 
-  CONFIG DIRECTIVE: lag_maximum <seconds>
-  DEFAULT: 120
+  CONFIG PARAMETER: lag_maximum <seconds>
+  DEFAULT: 120.000
 
   Controls when to log expensive commands.  Any command taking longer than
   <seconds> is logged.  Note that the resolution of <seconds> is 100ns
@@ -2810,6 +2918,9 @@ LOCK_RECURSION_LIMIT
   using indirect locks.  If more than this many levels are used, the lock
   fails and the user gets an error message.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & LOG
 LOG
 
@@ -2834,6 +2945,7 @@ LOG
     shouts         - Record uses of the @wall command.
     startup        - Record information about game startup.
     suspect        - Record commands entered by players flagged SUSPECT.
+    time_usage     - Record @timecheck output.
     wizard         - Record uses of dangerous commands like @toad.
 
   Related Topics: log_options.
@@ -2841,7 +2953,31 @@ LOG
 & LOGGING
 LOGGING
 
-  This topic intentionally left blank.
+  There are two separate forms of logging.  Firstly, server-related logging is
+  controlled with the two configuration parameters: 'log_options' and 'log'.
+  Secondly, softcode may use the @log command to send arbitrary text to
+  arbitrary log files.  The former style of logging automatically breaks into
+  500KB chunks.  The latter style does not.
+
+  In the first style, the log_options parameter controls the information that
+  is written along with the message in the logfile.  By default, log_options
+  is configured to write the timestamp of the log message and the location of
+  referenced players and objects.
+
+  The log_options parameter controls what type of information is written to
+  the logfile.  Many different types of log information can be stored.  By
+  default, log_options is configured to record the following events:  bugs,
+  security, network, logins, checkpoints, config_changes, shouts, startup,
+  wizard, suspect_commands, problems, and create.  See 'wizhelp log' for
+  specifics on the information stored by these event types.
+
+  Of note, the log configuration option of 'all_commands' can be used to
+  monitor every command issued by every player on the game when strange
+  activity is occuring.   Doing so, however, may raise privacy concerns.
+  Use with caution.  If a single individual is in question, use of the
+  SUSPECT flag and suspect_commands event logging is suggested.
+
+  Related Topics: log, log_options, @log, @list logging.
 
 & LOGOUT_CMD_ACCESS
 LOGOUT_CMD_ACCESS
@@ -3024,6 +3160,9 @@ MIN_GUESTS
   These guests will not be nuked on @dbck's but will instead be recycled.
   Use this to set how many guests you normally have on.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: number_guests, guest_char_num, guest_prefix, guest_site.
 
 & MONEY_NAME_PLURAL
@@ -3058,6 +3197,9 @@ MOTD_FILE
   Specifies the name of the file to be shown to players immediately after they
   connect to their characters.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @readcache, newuser_file, motd_message.
 
 & MOTD_MESSAGE
@@ -3089,6 +3231,9 @@ NEWUSER_FILE
   create their characters, in place of the MOTD file.  This file should
   contain information about the basic commands and how to get help.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @readcache, motd_file.
 
 & NOSITEMON_SITE
@@ -3119,6 +3264,9 @@ NUMBER_GUESTS
 
   How many guests should we allow at any one time?
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_char_num, guest_nuker, guest_prefix.
 
 & OPEN_COST
@@ -3142,6 +3290,9 @@ OUTPUT_DATABASE
   Specifies the file to which the database is to be written when writing
   checkpoint dumps or writing the final dump after receiving a @shutdown
   command.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @dump, @shutdown, checkpoint_database, input_database.
 
@@ -3508,6 +3659,9 @@ QUIT_FILE
   Specifies the name of the file that is displayed to users after they QUIT
   but before the network connection is closed.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: QUIT, @readcache.
 
 & QUOTAS
@@ -3533,6 +3687,9 @@ RAW_HELPFILE
   This is similiar to the 'helpfile' configuration directive, except that
   the help topics contained in <pathname> are not evaluted by the parser
   before being shown to the player.
+
+  To prevent access to arbitrary files after the server has started, this
+  directive cannot be used by via @admin after the server has started.
 
   Related Topics: helpfile
 
@@ -3569,6 +3726,9 @@ REGISTER_CREATE_FILE
   Specifies the name of the file that is shown to players who attempt to
   create a new character when registration is in force from their site.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @list_file, @readcache, register_site.
 
 & REGISTER_SITE
@@ -3579,7 +3739,7 @@ REGISTER_SITE
   Indicates that registration is to be enforced for sites whose address
   matches the specified <site>.
 
-  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION, 
+  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION,
                   SITE LISTS, SITE NOTATION.
 
 & REGISTRATION
@@ -3661,6 +3821,9 @@ RUN_STARTUP
 
   Controls whether the @startup attribute is automatically executed at
   database load time.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & SACRIFICE_ADJUST
 SACRIFICE_ADJUST
@@ -3807,6 +3970,19 @@ SIGNAL_ACTION
                 For a description of the restart process, see @restart.
      exit     - Log the error, and exit, hopefully with a core file.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+& SIGNALS
+SIGNALS
+
+  From a shell, the following signals can be sent to the server:
+
+    SIGUSR1  - Server will restart (see @restart).
+    SIGUSR2  - Server will drop a flatfile (see @dump/flat).
+    SIGHUP   - Server will perform a normal dump (see @dump).
+    SIGTERM  - Server will shutodnw (see @shutdown).
+
 & SITE LISTS
 SITE LISTS
 
@@ -3839,13 +4015,13 @@ SITE LISTS
 SITE LISTS (continued)
 
   Example:  Restricting Access
- 
+
   register_site  135.246.4.40 255.255.255.255  <- Allow this site w/reg
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
   forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
- 
+
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
   not allowed access.  People connecting from 135.246.4.40 and 195.3.17.1
@@ -3990,6 +4166,9 @@ STATUS_FILE
   auto-restart script to decide whether or not to bring the MUX back up,
   for instance.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & SUSPECT
 SUSPECT
 
@@ -3999,8 +4178,8 @@ SUSPECT
   and attempted kills to be reported to all connected wizards.
   This flag is only visible and settable by wizards.
 
-& SUSPECT_FILE
-SUSPECT_FILE
+& SUSPECT_SITE
+SUSPECT_SITE
 
   CONFIG PARAMETER: suspect_site <site>
 
@@ -4109,13 +4288,13 @@ THING_QUOTA
 & TIMESLICE
 TIMESLICE
 
-  CONFIG PARAMETER: timeslice <amount>
+  CONFIG PARAMETER: timeslice <milliseconds>
   DEFAULT: 1000
 
-  Specifies the interval at which connected users' command quotas are
-  increased.  Each command a user types in (commands executed by machines do
-  not count) decreases that user's quota by 1, and the user's commands are
-  only executed if the quota is greater than zero.
+  Specifies the interval (in milliseconds) at which connected users' command
+  quotas are increased.  Each command a user types in (commands executed by
+  machines do not count) decreases that user's quota by 1, and the user's
+  commands are only executed if the quota is greater than zero.
 
   Related Topics: command_quota_incr, command_quota_max.
 
@@ -4162,7 +4341,7 @@ TOPICS
 
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
-  PERMISSIONS        SEARCH CRITERIA    SITE LISTS
+  PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LISTS
 
 & TRACE_OUTPUT_LIMIT
 TRACE_OUTPUT_LIMIT
@@ -4213,6 +4392,9 @@ UNCOMPRESS_PROGRAM
   Specifies the program to be run to uncompress compressed database files when
   reading them in at startup.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: compress_program, compression.
 
 & UNOWNED_SAFE
@@ -4242,6 +4424,9 @@ USE_HTTP
   DEFAULT: no
 
   Indicates whether or not http access is allowed.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & WAIT_COST
 WAIT_COST
@@ -4304,6 +4489,9 @@ WIZARD_MOTD_FILE
   read in to a cache when the game is started and whenever a @readcache
   command is executed.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @readcache, wizard_motd_message.
 
 & WIZARD_MOTD_MESSAGE
@@ -4332,7 +4520,7 @@ WIZHELP
 & ZONE_RECURSION_LIMIT
 ZONE_RECURSION_LIMIT
 
-  CONFIG DIRECTIVE: zone_recursion_limit <num>
+  CONFIG PARAMETER: zone_recursion_limit <num>
   DEFAULT: 20
 
   This directive specifies how far back to check a zone tree for control and

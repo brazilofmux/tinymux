@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.26 2003/08/14 19:05:20 sdennis Exp $
+// $Id: bsd.cpp,v 1.28 2006/03/12 22:46:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -55,7 +55,7 @@ void SiteMonSend(int, const char *, DESC *, const char *);
 
 // First version of Windows NT TCP/IP routines written by Nick Gammon
 // <nick@gammon.com.au>, and were throughly reviewed, re-written and debugged
-// by Stephen Dennis <sdennis@svdltd.com>.
+// by Stephen Dennis <brazilofmux@gmail.com>.
 //
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
@@ -2772,6 +2772,7 @@ void log_signal(int iSignal)
     ENDLOG;
 }
 
+#ifndef WIN32
 void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
@@ -2780,6 +2781,25 @@ void log_signal_ignore(int iSignal)
     log_text(" because server just came up.");
     ENDLOG;
 }
+
+void LogStatBuf(int stat_buf, const char *Name)
+{
+    STARTLOG(LOG_ALWAYS, "NET", Name);
+    if (WIFEXITED(stat_buf))
+    {
+        Log.tinyprintf("process exited unexpectedly with exit status %d.", WEXITSTATUS(stat_buf));
+    }
+    else if (WIFSIGNALED(stat_buf))
+    {
+        Log.tinyprintf("process was terminated with signal %s.", SignalDesc(WTERMSIG(stat_buf)));
+    }
+    else
+    {
+        log_text("process ended unexpectedly.");
+    }
+    ENDLOG;
+}
+#endif // WIN32
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
@@ -2822,36 +2842,50 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         while ((child = waitpid(0, &stat_buf, WNOHANG)) > 0)
         {
-            if (  mudconf.fork_dump
-               && mudstate.dumping
-               && (  WIFEXITED(stat_buf)
-                  || WIFSIGNALED(stat_buf)))
+            if (  WIFEXITED(stat_buf)
+               || WIFSIGNALED(stat_buf))
             {
-                if (child == mudstate.dumper)
+                if (child == slave_pid)
                 {
-                    // The dumping process finished.
-                    //
-                    mudstate.dumper  = 0;
-                    mudstate.dumping = false;
-                }
-                else if (child == slave_pid)
-                {
-                    // The reverse-DNS slave process ended (unexpectedly)
-                    // during a forked dump.
+                    // The reverse-DNS slave process ended unexpectedly.
                     //
                     CleanUpSlaveSocket();
                     slave_pid = 0;
+
+                    LogStatBuf(stat_buf, "SLAVE");
+
+                    continue;
                 }
-                else if (mudstate.dumper == 0)
+                else if (  mudconf.fork_dump
+                        && mudstate.dumping)
                 {
-                    // The dumping process finished before we could
-                    // determine its process id.  The new process can
-                    // complete before the fork() call returns.
-                    //
-                    mudstate.dumper = child;
+                    mudstate.dumped = child;
+                    if (mudstate.dumper == mudstate.dumped)
+                    {
+                        // The dumping process finished.
+                        //
+                        mudstate.dumper  = 0;
+                        mudstate.dumped  = 0;
+                    }
+                    else
+                    {
+                        // The dumping process finished before we could
+                        // obtain its process id from fork().
+                        //
+                    }
                     mudstate.dumping = false;
+
+                    continue;
                 }
             }
+
+            log_signal(sig);
+            LogStatBuf(stat_buf, "UKNWN");
+
+            STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
+                mudstate.dumper, child, slave_pid);
+            ENDLOG;
         }
         break;
 

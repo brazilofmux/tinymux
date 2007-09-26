@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.56 2004/03/12 19:45:05 sdennis Exp $
+// $Id: stringutil.cpp,v 1.60 2006/09/12 00:01:06 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -49,6 +49,29 @@ const bool mux_isdigit[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 5
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+const bool mux_isazAZ[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
@@ -1207,8 +1230,9 @@ int ANSI_TruncateToField
 char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill)
 {
     char *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
+    int nAvailable = SBUF_SIZE - nMaxVisualWidth;
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pString, SBUF_SIZE,
+    int nLen = ANSI_TruncateToField(pString, nAvailable,
         pStringModified, nMaxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     for (int i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
     {
@@ -2521,10 +2545,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         nSize = 50;
     }
+
     if (bNegative)
     {
         *q++ = '-';
     }
+
     if (iDecimalPoint == 9999)
     {
         // Inf or NaN
@@ -2536,6 +2562,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         // Zero
         //
+        if (bNegative)
+        {
+            // If we laid down a minus sign, we should remove it.
+            //
+            q--;
+        }
         *q++ = '0';
         if (  bRounded
            && 0 < nRequest)
@@ -3199,13 +3231,13 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhs->m_d[pPat[k]] = nPat - k - 1;
+        bmhs->m_d[(unsigned char)pPat[k]] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
-    bmhs->m_d[chLastPat] = BMH_LARGE;
+    bmhs->m_d[(unsigned char)chLastPat] = BMH_LARGE;
 }
 
 int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)

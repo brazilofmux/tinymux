@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.35 2004/03/12 19:45:05 sdennis Exp $
+// $Id: stringutil.h,v 1.36 2006/09/12 00:01:06 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -11,6 +11,7 @@
 
 extern const bool mux_isprint[256];
 extern const bool mux_isdigit[256];
+extern const bool mux_isazAZ[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
 extern const bool mux_islower[256];
@@ -28,6 +29,7 @@ extern const unsigned char mux_StripAccents[256];
 
 #define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
+#define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower(x) (mux_islower[(unsigned char)(x)])

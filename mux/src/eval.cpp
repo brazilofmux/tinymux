@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.22 2003/03/13 15:59:55 jake Exp $
+// $Id: eval.cpp,v 1.24 2006/09/12 00:01:06 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1604,7 +1604,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Variable attribute.
                         //
                         pdstr++;
-                        if (mux_isalpha(*pdstr))
+                        if (mux_isazAZ(*pdstr))
                         {
                             i = A_VA + mux_toupper(*pdstr) - 'A';
                             size_t nAttrGotten;
@@ -1621,7 +1621,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                                 nBufferAvailable -= nAttrGotten;
                             }
                         }
-                        else if (ch == '\0')
+                        else if (*pdstr == '\0')
                         {
                             pdstr--;
                         }

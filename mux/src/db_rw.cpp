@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.12 2003/02/17 02:34:21 sdennis Exp $
+// $Id: db_rw.cpp,v 1.13 2006/09/05 23:43:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -620,6 +620,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     g_flags = g_version & ~V_MASK;
 
                     g_version &= V_MASK;
+                    if (  g_version < MIN_SUPPORTED_VERSION
+                       || MAX_SUPPORTED_VERSION < g_version)
+                    {
+                        Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
+                        return -1;
+                    }
                 }
             }
             else if (ch == 'S')

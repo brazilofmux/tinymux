@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.78 2004/04/06 18:47:33 sdennis Exp $
+// $Id: functions.cpp,v 1.84 2006/01/03 01:10:39 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -173,7 +173,7 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 
     // Advance over trailing spaces.
     //
-    for (; *pEnd == ' ' && pEnd > pBegin; pEnd--)
+    for (; pEnd > pBegin && *pEnd == ' '; pEnd--)
     {
         // Nothing
     }
@@ -202,7 +202,7 @@ char *trim_space_sep(char *str, char sep)
     {
         // Nothing
     }
-    for (p--; *p == ' ' && p > str; p--)
+    for (p--; p > str && *p == ' '; p--)
     {
         // Nothing
     }
@@ -1414,16 +1414,20 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     {
         free_lbuf(pRefAttrib);
     }
+
     if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
     }
+
     if (!attr)
     {
         return;
     }
-    if (!See_attr(executor, thing, attr))
+
+    if (  (attr->flags & AF_IS_LOCK)
+       || !bCanReadAttr(executor, thing, attr, true))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3230,16 +3234,20 @@ static double NearestPretty(double R)
 static double AddDoubles(int n, double pd[])
 {
     qsort(pd, n, sizeof(double), f_comp_abs);
-    double sum = pd[0];
-    double sum_err = 0.0;
-    int i;
-    for (i = 1; i < n; i++)
+    double sum = 0.0;
+    if (0 < n)
     {
-        double addend_err;
-        double addend = AddWithError(addend_err, sum_err, pd[i]);
-        double sum1_err;
-        double sum1 = AddWithError(sum1_err, sum, addend);
-        sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+        sum = pd[0];
+        double sum_err = 0.0;
+        int i;
+        for (i = 1; i < n; i++)
+        {
+            double addend_err;
+            double addend = AddWithError(addend_err, sum_err, pd[i]);
+            double sum1_err;
+            double sum1 = AddWithError(sum1_err, sum, addend);
+            sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+        }
     }
     return NearestPretty(sum);
 }
@@ -4083,7 +4091,7 @@ FUNCTION(fun_vunit)
 FUNCTION(fun_vdim)
 {
     char sep;
-    if (fargs == 0)
+    if (nfargs == 0)
     {
         safe_chr('0', buff, bufc);
     }
@@ -6829,7 +6837,7 @@ FUNCTION(fun_case)
     //
     for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
     {
-        if (!string_compare(fargs[i], mbuff))
+        if (!strcmp(fargs[i], mbuff))
         {
             str = fargs[i+1];
             mux_exec(buff, bufc, executor, caller, enactor,
@@ -8404,7 +8412,7 @@ int tf1_width_table[4][3] =
     { 86399, 863999999,   INT_MAX, }
 };
 
-struct
+static struct
 {
     char *specs[4];
     int  div[3];

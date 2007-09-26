@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.20 2004/03/08 04:37:40 sdennis Exp $
+// $Id: player.cpp,v 1.21 2004/09/21 06:33:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -525,6 +525,15 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
     return player;
 }
 
+void AddToPublicChannel(dbref player)
+{
+    if (mudconf.public_channel[0] != '\0')
+    {
+        do_addcom(player, player, player, 0, 2, "pub",
+            mudconf.public_channel);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * create_player: Create a new player.
  */
@@ -535,7 +544,6 @@ dbref create_player
     char *password,
     dbref creator,
     bool isrobot,
-    bool isguest,
     const char **pmsg
 )
 {
@@ -562,21 +570,6 @@ dbref create_player
 
     // Initialize everything.
     //
-    if (isguest)
-    {
-        if (*mudconf.guests_channel)
-        {
-            do_addcom(player, player, player, 0, 2, "g", mudconf.guests_channel);
-        }
-    }
-    else
-    {
-        if (*mudconf.public_channel)
-        {
-            do_addcom(player, player, player, 0, 2, "pub", mudconf.public_channel);
-        }
-    }
-
     ChangePassword(player, pbuf);
     s_Home(player, start_home());
     free_lbuf(pbuf);

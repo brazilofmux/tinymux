@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.19 2004/03/17 20:30:08 sdennis Exp $
+// $Id: svdhash.cpp,v 1.20 2005/08/06 17:39:28 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1076,12 +1076,16 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     int cnt = 60;
     for ( ; cnt; sleep(1), cnt--)
     {
+#ifdef HAVE_PWRITE
+        int cc = pwrite(hFile, m_pPage, m_nPageSize, oWhere);
+#else
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
             Log.tinyprintf("CHashPage::Write - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = write(hFile, m_pPage, m_nPageSize);
+#endif // HAVE_PWRITE
         if ((int)m_nPageSize != cc)
         {
             if (cc == -1)
@@ -1112,12 +1116,16 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     int cnt = 60;
     for ( ; cnt; sleep(1), cnt--)
     {
+#ifdef HAVE_PREAD
+        int cc = pread(hFile, m_pPage, m_nPageSize, oWhere);
+#else
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
             Log.tinyprintf("CHashPage::Read - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = read(hFile, m_pPage, m_nPageSize);
+#endif // HAVE_PREAD
         if ((int)m_nPageSize != cc)
         {
             if (cc == -1)
@@ -1280,8 +1288,12 @@ void CHashFile::WriteDirectory(void)
 {
     if (m_hDirFile == INVALID_HANDLE_VALUE) return;
 
+#ifdef HAVE_PWRITE
+    pwrite(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
+#else
     lseek(m_hDirFile, 0, SEEK_SET);
     write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+#endif // HAVE_PWRITE
     //SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
     fsync(m_hDirFile);
@@ -1443,8 +1455,12 @@ bool CHashFile::ReadDirectory(void)
     DWORD nRead;
     ReadFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nRead, 0);
 #else // WIN32
+#ifdef HAVE_PREAD
+    pread(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
+#else
     lseek(m_hDirFile, 0, SEEK_SET);
     read(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+#endif // HAVE_PREAD
 #endif // WIN32
     return true;
 }
@@ -1808,8 +1824,12 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         DWORD nWritten;
         WriteFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nWritten, 0);
 #else // WIN32
+#ifdef HAVE_PWRITE
+        pwrite(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
+#else
         lseek(m_hDirFile, 0, SEEK_SET);
         write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+#endif // HAVE_PWRITE
 #endif // WIN32
 
 #ifdef DO_COMMIT

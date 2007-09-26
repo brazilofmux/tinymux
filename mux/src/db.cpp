@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.36 2004/04/01 22:00:41 sdennis Exp $
+// $Id: db.cpp,v 1.41 2006/09/05 23:43:37 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -16,6 +16,7 @@
 #include "interface.h"
 #include "powers.h"
 #include "vattr.h"
+#include "ansi.h"
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
@@ -2094,7 +2095,7 @@ void atr_free(dbref thing)
  * atr_cpy: Copy all attributes from one object to another.  
  */
 
-void atr_cpy(dbref dest, dbref source)
+void atr_cpy(dbref dest, dbref source, bool bInternal)
 {
     int attr, aflags;
     dbref aowner;
@@ -2116,7 +2117,8 @@ void atr_cpy(dbref dest, dbref source)
         if (attr && at)
         {
             if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
-               && (  God(owner) 
+               && (  bInternal
+                  || God(owner) 
                   || (  !God(dest) 
                      && !(aflags & AF_LOCK) 
                      && (  (  Controls(owner, dest) 
@@ -2466,7 +2468,7 @@ void db_make_minimal(void)
     //
     load_player_names();
     const char *pmsg;
-    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, false, &pmsg);
+    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, &pmsg);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
@@ -2510,17 +2512,21 @@ void putref(FILE *f, dbref ref)
 // Code 1 - CR (0x0D)
 // Code 2 - '"' (0x22)
 // Code 3 - '\\' (0x5C)
+// Code 4 - 'e'  (0x65) or 'E' (0x45)
+// Code 5 - 'n'  (0x6E) or 'N' (0x4E)
+// Code 6 - 'r'  (0x72) or 'R' (0x52)
+// Code 7 - 't'  (0x74) or 'T' (0x54)
 //
-static const char xlat_table[256] =
+static const unsigned char decode_table[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0,
+    0, 0, 6, 0, 7, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
+    0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0,
+    0, 0, 6, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2538,15 +2544,19 @@ static const char xlat_table[256] =
 // Action 0 - Emit X.
 // Action 1 - Get a Buffer.
 // Action 2 - Emit X. Move to START state.
-// Action 3 - Move to ESC state.
-// Action 4 - Terminate parse.
+// Action 3 - Terminate parse.
+// Action 4 - Move to ESC state.
+// Action 5 - Emit ESC (0x1B). Move to START state.
+// Action 6 - Emit LF  (0x0A). Move to START state.
+// Action 7 - Emit CR  (0x0D). Move to START state.
+// Action 8 - Emit TAB (0x09). Move to START state.
 //
 
-static const int action_table[2][4] =
+static const int action_table[2][8] =
 {
-//   Any '\0' "   backslash
-    { 0,  1,  3,  4 }, // STATE_START
-    { 2,  1,  2,  2 }  // STATE_ESC
+//   Any  '\0' '"'  '\\' 'e'  'n'  'r'  't'
+    { 0,   1,   3,   4,   0,   0,   0,   0}, // STATE_START
+    { 2,   1,   2,   2,   5,   6,   7,   8}  // STATE_HAVE_ESC
 };
 
 char *getstring_noalloc(FILE *f, int new_strings)
@@ -2578,23 +2588,23 @@ char *getstring_noalloc(FILE *f, int new_strings)
             //
             for (;;)
             {
-                int ch = *pInput++;
+                char ch = *pInput++;
                 if (iState == STATE_START)
                 {
-                    if (xlat_table[ch] == 0)
+                    if (decode_table[(unsigned char)ch] == 0)
                     {
-                        // As long as xlat_table[*p] is 0, just keep copying the characters.
+                        // As long as decode_table[*p] is 0, just keep copying the characters.
                         //
                         char *p = pOutput;
                         do
                         {
                             *pOutput++ = ch;
                             ch = *pInput++;
-                        } while (xlat_table[ch] == 0);
+                        } while (decode_table[(unsigned char)ch] == 0);
                         nOutput = pOutput - p;
                     }
                 }
-                int iAction = action_table[iState][xlat_table[ch]];
+                int iAction = action_table[iState][decode_table[(unsigned char)ch]];
                 if (iAction <= 2)
                 {
                     if (iAction == 1)
@@ -2620,12 +2630,36 @@ char *getstring_noalloc(FILE *f, int new_strings)
                     *pOutput = 0;
                     return buf;
                 }
-                else
+                else if (iAction == 4)
                 {
-                    // iAction == 4
                     // Move to ESC state.
                     //
                     iState = STATE_HAVE_ESC;
+                }
+                else if (iAction == 5)
+                {
+                    *pOutput++ = ESC_CHAR;
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else if (iAction == 6)
+                {
+                    *pOutput++ = '\n';
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else if (iAction == 7)
+                {
+                    *pOutput++ = '\r';
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else
+                {
+                    // if (iAction == 8)
+                    *pOutput++ = '\t';
+                    nOutput++;
+                    iState = STATE_START;
                 }
             }
 
@@ -2680,6 +2714,31 @@ char *getstring_noalloc(FILE *f, int new_strings)
     }
 }
 
+// Code 0 - Any byte.
+// Code 1 - NUL (0x00)
+// Code 2 - '"' (0x22)
+// Code 3 - '\\' (0x5C)
+//
+static const unsigned char encode_table[256] =
+{
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 void putstring(FILE *f, const char *pRaw)
 {
     static char aBuffer[2*LBUF_SIZE+4];
@@ -2695,7 +2754,7 @@ void putstring(FILE *f, const char *pRaw)
         for (;;)
         {
             char ch;
-            while ((ch = xlat_table[*pRaw]) == 0)
+            while ((ch = encode_table[(unsigned char)*pRaw]) == 0)
             {
                 *pBuffer++ = *pRaw++;
             }

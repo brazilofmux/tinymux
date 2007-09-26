@@ -1,5 +1,5 @@
 TinyMUX 2.3: NOTES
-Last Update: January 2003
+Last Update: April 2004
 
 This is a list of information that never seems to be handy enough when you 
 need it.
@@ -26,12 +26,8 @@ Handy Stuff:
  
  - Read 'wizhelp config parameters' when you get the MUX started. If you 
    are porting from PennMUSH, for example, where the master room is set 
-   as #2, you would have to place the config parameter 'master_room 2' in 
+   as #2, you would have to place the config parameter 'master_room #2' in 
    your configuration file.
- 
- - Database numbers in GAMENAME.conf should NEVER have '#' in front of
-   them, only the number itself is necessary.  '#' actually comments out 
-   what follows it and makes it invisible to the game.
  
  - If you had a mail database previously, remember to adjust 
    mail_expiration accordingly, or else ALL @mail older than the default 
@@ -57,14 +53,14 @@ Changes to dbconvert:
      This converts flatfiled database to binary for use by the server and 
      would be done with dbconvert thus:
      
-     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
    
    - './db_unload netmux netmux.db.new netmux.flat'
      
      This converts binary data to flatfile for would be done with dbconvert 
      thus:
      
-     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
 
 
 On Flatfiles:
@@ -84,6 +80,7 @@ On Flatfiles:
    this isn't the place for beginners or the faint of heart.  As always, 
    store backups in a remote location. 
  
+
 On Making Backups:
 ~~~~~~~~~~~~~~~~~
  - MUX 2.3 includes a backup script.  It produces a flatfile with the

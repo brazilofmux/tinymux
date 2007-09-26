@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.9 2004/03/08 17:56:12 sdennis Exp $
+// $Id: cque.cpp,v 1.13 2006/11/04 00:22:59 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -212,10 +212,10 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                 }
             }
         }
-        MEMFREE(point->text);
-        point->text = NULL;
-        free_qentry(point);
     }
+    MEMFREE(point->text);
+    point->text = NULL;
+    free_qentry(point);
 
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
@@ -653,6 +653,8 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     a = QueueMax(Owner(executor));
     if (a_Queue(Owner(executor), 1) > a)
     {
+        a_Queue(Owner(executor), -1);
+
         notify(Owner(executor),
             "Run away objects: too many commands queued.  Halted.");
         halt_que(Owner(executor), NOTHING);
@@ -1215,6 +1217,7 @@ int CallBack_Warp(PTASK_RECORD p)
         if (point->IsTimed)
         {
             point->waittime -= ltdWarp;
+            p->ltaWhen -= ltdWarp;
             return IU_UPDATE_TASK;
         }
     }
@@ -1249,7 +1252,6 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     else if (key == QUEUE_WARP)
     {
         int iWarp = mux_atol(arg);
-        CLinearTimeDelta ltdWarp;
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {

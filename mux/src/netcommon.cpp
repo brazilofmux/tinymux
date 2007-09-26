@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.30 2004/04/01 22:00:42 sdennis Exp $
+// $Id: netcommon.cpp,v 1.32 2004/09/21 06:33:03 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1296,7 +1296,7 @@ void check_events(void)
 #define MAX_TRIMMED_NAME_LENGTH 16
 static const char *trimmed_name(dbref player, int *pvw)
 {
-    static char cbuff[4*MAX_TRIMMED_NAME_LENGTH+1];
+    static char cbuff[MBUF_SIZE];
 
     size_t nName = ANSI_TruncateToField(
                      Moniker(player),
@@ -2089,7 +2089,7 @@ static bool check_connect(DESC *d, char *msg)
         else
         {
             const char *pmsg;
-            player = create_player(user, password, NOTHING, false, false, &pmsg);
+            player = create_player(user, password, NOTHING, false, &pmsg);
             if (player == NOTHING)
             {
                 queue_write(d, pmsg);
@@ -2103,6 +2103,7 @@ static bool check_connect(DESC *d, char *msg)
             }
             else
             {
+                AddToPublicChannel(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 sprintf(buff, "[%d/%s] Created ", d->descriptor, d->addr);

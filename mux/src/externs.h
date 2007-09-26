@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.22 2004/03/08 04:37:40 sdennis Exp $
+// $Id: externs.h,v 1.25 2006/01/31 00:21:08 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -141,7 +141,8 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern dbref create_player(char *, char *, dbref, bool, bool, const char **pmsg);
+extern dbref create_player(char *name, char *pass, dbref executor, bool isrobot, const char **pmsg);
+extern void AddToPublicChannel(dbref player);
 extern bool add_player_name(dbref, const char *);
 extern bool delete_player_name(dbref, const char *);
 extern dbref lookup_player(dbref, char *, bool);
@@ -207,14 +208,12 @@ extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);
 extern char *split_token(char **sp, char sep);
 
-#ifdef HAVE_IEEE_FP_FORMAT
 #define IEEE_MAKE_NAN  1
 #define IEEE_MAKE_IND  2
 #define IEEE_MAKE_PINF 3
 #define IEEE_MAKE_NINF 4
 
 double MakeSpecialFloat(int iWhich);
-#endif // HAVE_IEEE_FP_FORMAT
 
 /* From unparse.cpp */
 extern char *unparse_boolexp(dbref, BOOLEXP *);
@@ -266,7 +265,7 @@ extern void atr_pop(void);
 extern int  atr_head(dbref, char **);
 extern int  atr_next(char **);
 extern int  init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages);
-extern void atr_cpy(dbref dest, dbref source);
+extern void atr_cpy(dbref dest, dbref source, bool bInternal);
 extern void atr_chown(dbref);
 extern void atr_clr(dbref, int);
 extern void atr_add_raw_LEN(dbref, int, const char *, int);

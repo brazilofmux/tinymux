@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.10 2003/07/28 05:00:36 sdennis Exp $
+// $Id: config.h,v 1.11 2006/09/05 23:43:37 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -33,6 +33,9 @@
 
 #define UNLOAD_VERSION  1
 #define UNLOAD_FLAGS    (MANDFLAGS)
+
+#define MIN_SUPPORTED_VERSION 1
+#define MAX_SUPPORTED_VERSION 2
 
 /* magic lock cookies */
 #define NOT_TOKEN   '!'

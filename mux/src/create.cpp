@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.7 2004/04/06 05:23:24 sdennis Exp $
+// $Id: create.cpp,v 1.9 2006/01/31 00:21:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -677,9 +677,13 @@ void do_clone
     //
     atr_free(clone);
     if (key & CLONE_PARENT)
+    {
         s_Parent(clone, thing);
+    }
     else
-        atr_cpy(clone, thing);
+    {
+        atr_cpy(clone, thing, false);
+    }
 
     // Reset the name, since we cleared the attributes.
     //
@@ -786,12 +790,13 @@ void do_pcreate
 {
     const char *pmsg;
     bool isrobot = (key == PCRE_ROBOT);
-    dbref newplayer = create_player(name, pass, executor, isrobot, false, &pmsg);
+    dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
         notify_quiet(executor, tprintf("Failure creating '%s'.  %s", name, pmsg));
         return;
     }
+    AddToPublicChannel(newplayer);
     if (isrobot)
     {
         move_object(newplayer, Location(executor));
