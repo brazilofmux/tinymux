@@ -6732,7 +6732,7 @@ FDEPTH()
   FUNCTION: fdepth()
 
   This function returns the current state of the function recursion
-  counter.  Softcode can use this result to guage its distance from the
+  counter.  Softcode can use this result to gauge its distance from the
   configured function recursion limit.
 
   Related Topics: fcount(), function_recursion_limit in wizhelp
@@ -7437,7 +7437,7 @@ GRABALL()
   FUNCTION: graball(<list>, <pattern>[, <idelim>[, <odelim>]])
 
   This function matches <pattern> against each word in <list>, returning
-  the all words that match.  If no words match, then an empty string is
+  all the words that match.  If no words match, then an empty string is
   returned.  The match is not case-sensitive, and wildcard characters
   are permitted in <pattern>.  <idelim> may be used to specify the <list>
   delimiter other than a space.  <odelim> is the output delimiter.
