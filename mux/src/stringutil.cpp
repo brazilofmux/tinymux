@@ -2868,7 +2868,6 @@ UTF16 *ConvertToUTF16(UTF32 ch)
         buffer[0] = (UTF16)((ch >> halfShift) + UNI_SUR_HIGH_START);
         buffer[1] = (UTF16)((ch & halfMask) + UNI_SUR_LOW_START);
         buffer[2] = 0x0000;
-        
     }
     else
     {
@@ -2954,7 +2953,7 @@ size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch)
         //
         return 1;
     }
-    else if (ch <= UNI_SUR_HIGH_END) 
+    else if (ch <= UNI_SUR_HIGH_END)
     {
         UTF32 ch2 = pString[1];
         if (  UNI_SUR_LOW_START <= ch2

@@ -1321,7 +1321,7 @@ static void BuildChannelMessage
     UTF8 *saystring = NULL;
     UTF8 *newPose = NULL;
 
-    switch(pPose[0])
+    switch (pPose[0])
     {
     case ':':
         pPose++;

@@ -102,7 +102,7 @@ static int mux_fpclass(double result)
     } u;
 
     u.d = result;
-  
+
     if ((u.i64 & IEEE_MASK_EXPONENT) == 0)
     {
         if (u.i64 & IEEE_MASK_MANTISSA)

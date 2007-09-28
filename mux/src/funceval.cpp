@@ -2996,17 +2996,17 @@ FUNCTION(fun_lastcreate)
         case 'r':
             iObjectPosition = 0;
             break;
-    
+
         case 'T':
         case 't':
             iObjectPosition = 1;
             break;
-    
+
         case 'E':
         case 'e':
             iObjectPosition = 2;
             break;
-    
+
         case 'P':
         case 'p':
             iObjectPosition = 3;

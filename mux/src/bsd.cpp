@@ -2101,7 +2101,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
             ; // Nothing.
         }
     }
-    
+
     if (!IS_INVALID_SOCKET(stubslave_socket))
     {
         if (CheckOutput(stubslave_socket))
