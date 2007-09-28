@@ -48,6 +48,7 @@ ATTR AttrTable[] =
     {T("Aahear"),      A_AAHEAR,   AF_ODARK | AF_NOPROG},
     {T("Aclone"),      A_ACLONE,   AF_ODARK | AF_NOPROG},
     {T("Aconnect"),    A_ACONNECT, AF_ODARK | AF_NOPROG},
+    {T("ACreate"),     A_ACREATE,  AF_MDARK | AF_WIZARD | AF_NOCLONE | AF_NOPROG},
     {T("Adesc"),       A_ADESC,    AF_ODARK | AF_NOPROG},
     {T("ADestroy"),    A_ADESTROY, AF_MDARK | AF_WIZARD | AF_NOCLONE | AF_NOPROG},
     {T("Adfail"),      A_ADFAIL,   AF_ODARK | AF_NOPROG},

@@ -634,6 +634,8 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // do_create: Make a new object.
 //
@@ -824,10 +826,12 @@ void do_clone
     }
     clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
 
+
     if (clone == NOTHING)
     {
         return;
     }
+
 
     // Copy in the new data.
     //
@@ -1034,7 +1038,7 @@ static bool can_destroy_player(dbref player, dbref victim)
     return true;
 }
 
-static void ProcessMasterRoomADestroy(dbref thing)
+static void ProcessMasterRoomADestroy(dbref destroyer, dbref thing)
 {
     int nxargs = 2;
     const UTF8 *xargs[2];
@@ -1080,7 +1084,7 @@ static void ProcessMasterRoomADestroy(dbref thing)
                 UTF8 buf[SBUF_SIZE];
                 mux_sprintf(buf, SBUF_SIZE, "#%d", thing);
                 xargs[0] = buf;
-                wait_que(master_room_obj, master_room_obj, master_room_obj,
+                wait_que(master_room_obj, destroyer, destroyer,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0, act, nxargs,
                         (const UTF8 **) xargs, mudstate.global_regs);
 
@@ -1252,7 +1256,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         }
     }
 
-    ProcessMasterRoomADestroy(thing);
+    ProcessMasterRoomADestroy(executor, thing);
 
     if (bInstant)
     {

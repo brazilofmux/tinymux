@@ -240,6 +240,66 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
     atr_add_raw(player, A_NEWOBJS, tbuf);
 }
 
+
+// Handle @acreate on master room objects
+//
+static void ProcessMasterRoomACreate(dbref creator, dbref thing)
+{
+    int nxargs = 2;
+    const UTF8 *xargs[2];
+
+    switch (Typeof(thing))
+    {
+    case TYPE_ROOM:
+        xargs[1] = T("ROOM");
+        break;
+
+    case TYPE_EXIT:
+        xargs[1] = T("EXIT");
+        break;
+
+    case TYPE_PLAYER:
+        xargs[1] = T("PLAYER");
+        break;
+
+    case TYPE_THING:
+        xargs[1] = T("THING");
+        break;
+
+    default:
+        xargs[1] = T("#-1");
+        break;
+    }
+
+    dbref master_room_obj = -1;
+    DOLIST(master_room_obj, Contents(mudconf.master_room))
+    {
+        if (thing == master_room_obj)
+        {
+            break;
+        }
+
+        if (Controls(master_room_obj, thing))
+        {
+            int aowner, aflags;
+            UTF8* act = atr_pget(master_room_obj, A_ACREATE, &aowner, &aflags);
+            if ('\0' != act[0])
+            {
+                CLinearTimeAbsolute lta;
+                UTF8 buf[SBUF_SIZE];
+                mux_sprintf(buf, SBUF_SIZE, "#%d", thing);
+                xargs[0] = buf;
+                wait_que(master_room_obj, creator, creator,
+                        AttrTrace(aflags, 0), false, lta, NOTHING, 0, act, nxargs,
+                        (const UTF8 **) xargs, mudstate.global_regs);
+
+            }
+            free_lbuf(act);
+        }
+    }
+}
+
+
 /*
  * ---------------------------------------------------------------------------
  * * create_obj: Create an object of the indicated type IF the player can
@@ -477,7 +537,9 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     if (Good_obj(player))
     {
         update_newobjects(player, obj, objtype);
+        ProcessMasterRoomACreate(player, obj);
     }
+
 
     return obj;
 }
