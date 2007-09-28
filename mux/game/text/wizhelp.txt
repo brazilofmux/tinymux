@@ -60,6 +60,20 @@
 
   Related Topics: @delcommand, @listcommands.
 
+& @ACREATE
+@ACREATE
+
+  COMMAND: @acreate <object>=<commands> 
+
+  Sets the @acreate attribute on <object>.   @acreate is only valid
+  for objects within the master room.   Upon creation of any object,
+  the @acreate attribute on all relevant objects in the master room is
+  invoked.   Arguments passed are %# as the dbref of the creator,
+  %0 dbref of the object created, and %1 with the type of the object
+  created.
+
+  Related Topics: @adestroy
+
 & @ADESTROY
 @ADESTROY
 
@@ -77,6 +91,8 @@
 
   Note: The destroyed object may already be GARBAGE upon execution of the
   ADESTROY.
+
+  Related Topics: @acreate
 
 & @ADMIN
 @ADMIN
@@ -1724,17 +1740,17 @@ COMMANDS
   DOING          examine        give           SESSION        slay
   WHO            wizhelp
 
-  @addcommand    @adestroy      @admin         @allowance     @apply_marked
-  @attribute     @backup        @boot          @chown         @chownall
-  @clone         @comment       @cut           @dbck          @dbclean
-  @delcommand    @destroy       @disable       @doing         @dump
-  @enable        @fixdb         @flag          @function      @halt
-  @hook          @icmd          @kick          @list          @listcommands
-  @list_file     @listmotd      @lock          @log           @mark
-  @mark_all      @motd          @newpassword   @pcreate       @poor
-  @ps            @quota         @readcache     @restart       @shutdown
-  @startslave    @timecheck     @timeout       @timewarp      @toad
-  @wall
+  @addcommand    @acreate       @adestroy      @admin         @allowance     
+  @apply_marked  @attribute     @backup        @boot          @chown         
+  @chownall      @clone         @comment       @cut           @dbck          
+  @dbclean       @delcommand    @destroy       @disable       @doing         
+  @dump          @enable        @fixdb         @flag          @function      
+  @halt          @hook          @icmd          @kick          @list          
+  @listcommands  @list_file     @listmotd      @lock          @log           
+  @mark          @mark_all      @motd          @newpassword   @pcreate       
+  @poor          @ps            @quota         @readcache     @restart       
+  @shutdown      @startslave    @timecheck     @timeout       @timewarp      
+  @toad          @wall
 
 
 & COMMAND_QUOTA_INCREMENT
