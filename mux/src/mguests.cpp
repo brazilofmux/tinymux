@@ -326,9 +326,11 @@ dbref CGuests::MakeGuestChar(void)
     s_Guest(player);
     move_object(player, mudconf.start_room);
 
-    // Copy flags from guest prototype.
+    // Copy flags from guest prototype and restore the player type.
     //
-    db[player].fs = db[mudconf.guest_char].fs;
+    FLAGSET f = db[mudconf.guest_char].fs;
+    f.word[FLAG_WORD1] |= TYPE_PLAYER;
+    db[player].fs = f;
 
     // Strip flags.
     //
