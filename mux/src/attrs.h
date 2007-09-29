@@ -213,10 +213,11 @@
 #define A_LMAIL     225 // Lock who may @mail you
 #define A_LOPEN     226 // Lock for controlling OPEN_OK locations
 #define A_LASTWHISPER 227 // Last set of people whispered to
-#define A_ADESTROY   228  // @adestroy attribute
-#define A_APARENT    229  // @aparent attribute
+#define A_ADESTROY  228  // @adestroy attribute
+#define A_APARENT   229  // @aparent attribute
+#define A_ACREATE   230  // @acreate attribute
 
-// 230 - 235 unused
+// 231 - 235 unused
 
 #if defined(FIRANMUX)
 #define A_COLOR      236 /* Color of name of object in look commands */
