@@ -11101,6 +11101,16 @@ REPLACE()
 
   Related Topics: extract(), insert(), ldelete().
 
+& REPORT
+REPORT
+
+  COMMAND: report
+
+  Display an aggregation or census of player objects divided into 8 hour
+  segments based on LAST connection attribute.
+
+  Related Topics:
+
 & REST()
 REST()
 
