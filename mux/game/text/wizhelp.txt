@@ -643,9 +643,9 @@
     allocations         attr_permissions    attributes          bad_names
     buffers             commands            costs               db_stats
     default_flags       flags               functions           globals
-    guests              hashstats           logging             options
-    permissions         powers              process             site_info
-    switches            user_attributes
+    guests              hashstats           logging             modules
+    options             permissions         powers              process
+    site_info           switches            user_attributes
 
   Type wizhelp @list <option> for help with a particular option.
 
@@ -899,6 +899,17 @@
     timestamp      - Prefix log entries by a timestamp.
 
   Related Topics: log, log_options.
+
+& @LIST MODULES
+@LIST MODULES
+
+  COMMAND: @list modules
+
+  Lists all modules known to the server along with their loaded state and
+  whether they were loaded by the server itself or loaded by a slave process
+  at the server's request.
+
+  Related Topics: @admin.
 
 & @LIST OPTIONS
 @LIST OPTIONS
@@ -1833,8 +1844,8 @@ CONFIG PARAMETERS (continued)
   look_obey_terse  machine_command_cost  mail_database  mail_ehlo
   mail_expiration  mail_per_hour  mail_sendaddr  mail_sendname  mail_server
   mail_subject  master_room  match_own_commands  max_cache_size  max_players
-  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
-  mud_name  newuser_file  nositemon_site  notify_recursion_limit
+  min_guests  module  money_name_plural  money_name_singular  motd_file
+  motd_message  mud_name  newuser_file  nositemon_site  notify_recursion_limit
   number_guests  open_cost  output_database  output_limit  page_cost
   paranoid_allocate  parent_recursion_limit  paycheck  pcreate_per_hour
   pemit_any_object  pemit_far_players  permit_site  player_flags
@@ -3520,6 +3531,30 @@ MIN_GUESTS
   can only be changed via the configuration file.
 
   Related Topics: number_guests, guest_char_num, guest_prefix, guest_site.
+
+& MODULE
+MODULE
+
+  CONFIG PARAMETER: module [!]<name> [<options>]
+  DEFAULT: N/A
+
+  Load or (if prefixed with '!') unload external module.  The module's
+  filename is derived from the module <name>, but varies slightly from
+  platform to platform.  On Unix and OS X, the filename ends with .so, but on
+  Windows, the filename ends with .dll.
+
+  By default, the server loads the module directly, but <options> may be any
+  of the following:
+
+    inproc - load the module into the server's process directly (default).
+    local  - load the module in a separate slave process.
+    slave  - load the module in a separate slave process.
+
+  Other <options> may be added later to support loading on a separate thread
+  with the same process or the spawning and control of multiple slave
+  processes or to control the method of communication used.
+
+  Related Topics: @list modules.
 
 & MONEY_NAME_PLURAL
 MONEY_NAME_PLURAL
