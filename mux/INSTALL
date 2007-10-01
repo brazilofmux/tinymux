@@ -1,5 +1,6 @@
 TinyMUX 2.7: INSTALL
-Last Update: December 2006
+Last Update: September 2006
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Please note that there are two sets of instructions included in this
 file.  Please skip to 'Instructions for Existing Games' for how to
@@ -12,11 +13,17 @@ Instructions for New Installations:
 
 1.  cd src/ to the source directory.  Run './configure'.
 
-    This will customize autoconf.h and Makefile for your system.  Add
-    the option '--enable-wodrealms' to enable WOD Realms (See
-    docs/REALMS).  Add '--enable-memorybased' to enable Memory-Based
-    database handling (as opposed to the default disk-based database
-    handling.  See docs/MEMORY).
+    This will customize autoconf.h and Makefile for your system.  Optional packages
+    are documented separately and enabled with the following configuration options:
+
+      --enable-firanmux     For use by FiranMUX.  Not recommended generally.
+      --enable-memorybased  See docs/MEMORY.
+      --enable-realitylvls  See REALITY and REALITY.SETUP.
+      --enable-stubslave    See MODULES.
+      --enable-wodrealms    See docs/REALMS.
+      --enable-inlinesql    Enables inline MySQL support.
+      --enable-ssl          See SSL.
+      --enable-deprecated   Enables deprecated features.
     
 2.  Edit the Configuration section of the Makefile.  This is usually 
     not needed. Most likely, all you will need to change are any C++ 
@@ -50,6 +57,7 @@ Instructions for New Installations:
 
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
+
  - dbconvert is the means by which the binary game data is converted to 
    flatfile format and back again.  The db_load and db_unload scripts 
    simplify the process for the user. 
@@ -73,6 +81,7 @@ Changes to dbconvert:
 
 Instructions for Existing Games:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 [NOTE: It is HIGHLY recommended that you preserve a previous setup if 
 you can, to make conversion a bit less painful.  If you had one while 
 converting, make sure the conversion process has completed successfully 

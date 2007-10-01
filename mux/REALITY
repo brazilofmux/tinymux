@@ -1,4 +1,4 @@
-# Add -DREALITY_LVLS to the Makefile or ./configure --enable-realitylvls to enable
+# ./configure --enable-realitylvls to enable
 # 'Real' needs to be '1'
 # This is an example file only to be added to the netmux.conf file
 # Format: reality_level <8 char name> <hex-byte-mask> <optional-desc: DESC default>
