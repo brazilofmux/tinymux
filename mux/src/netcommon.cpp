@@ -1979,6 +1979,9 @@ static const UTF8 *DumpInfoTable[] =
 #if defined(REALITY_LVLS)
     T("REALITY_LVLS"),
 #endif
+#if defined(STUB_SLAVE)
+    T("STUB_SLAVE"),
+#endif
 #if defined(WOD_REALMS)
     T("WOD_REALMS"),
 #endif
