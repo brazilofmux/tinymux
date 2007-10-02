@@ -1340,7 +1340,9 @@ static MUX_RESULT CStd_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx)
 {
+#ifdef ENABLE_STD_MARSHALER
     int i;
+#endif
     MUX_RESULT mr = MUX_S_OK;
 
     mux_IMarshal *pIMarshal = NULL;
@@ -1563,7 +1565,7 @@ static void FreeChannel(UINT32 nChannel)
 
 static bool GrowChannels(void)
 {
-    int nNew = GrowByFactor(nChannels+1);
+    size_t nNew = GrowByFactor(nChannels+1);
     CHANNEL_INFO *pNew = NULL;
     try
     {
@@ -1576,7 +1578,7 @@ static bool GrowChannels(void)
 
     if (NULL != pNew)
     {
-        int i;
+        size_t i;
         if (NULL != aChannels)
         {
             for (i = 0; i < nChannels; i++)
@@ -2116,7 +2118,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEU
 
                                     // Send Queue_Frame back to sender.
                                     //
-                                    UINT32 nReturn = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+                                    UINT32 nReturn = (UINT32)(sizeof(nChannel) + Pipe_QueueLength(pqiFrame));
 
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
