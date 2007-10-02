@@ -110,8 +110,8 @@ static QUEUE_INFO *g_pQueue_In  = NULL;
 static QUEUE_INFO *g_pQueue_Out = NULL;
 
 static CHANNEL_INFO *aChannels = NULL;
-static size_t        nChannels = 0;
-static size_t        nChannelsAllocated = 0;
+static UINT32        nChannels = 0;
+static UINT32        nChannelsAllocated = 0;
 
 static LibraryState    g_LibraryState   = eLibraryDown;
 static process_context g_ProcessContext = IsUninitialized;
@@ -284,7 +284,7 @@ static MODULE_INFO *ModuleFindFromFileName(const UTF8 aFileName[])
 
 #define MINIMUM_SIZE 8
 
-static int GrowByFactor(int i)
+static UINT32 GrowByFactor(UINT32 i)
 {
     if (i < MINIMUM_SIZE)
     {
@@ -795,7 +795,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS
     //
     if (g_nClassesAllocated < g_nClasses + nci)
     {
-        int nAllocate = GrowByFactor(g_nClasses + nci);
+        UINT32 nAllocate = GrowByFactor(g_nClasses + nci);
 
         CLASS_INFO_PRIVATE *pNewClasses = NULL;
         try
@@ -1565,7 +1565,7 @@ static void FreeChannel(UINT32 nChannel)
 
 static bool GrowChannels(void)
 {
-    size_t nNew = GrowByFactor(nChannels+1);
+    UINT32 nNew = GrowByFactor(nChannels+1);
     CHANNEL_INFO *pNew = NULL;
     try
     {
@@ -1578,7 +1578,7 @@ static bool GrowChannels(void)
 
     if (NULL != pNew)
     {
-        size_t i;
+        UINT32 i;
         if (NULL != aChannels)
         {
             for (i = 0; i < nChannels; i++)
@@ -1626,7 +1626,7 @@ static UINT32 AllocateChannel(void)
 
     for (;;)
     {
-        for (int i = 0; i < nChannels; i++)
+        for (UINT32 i = 0; i < nChannels; i++)
         {
             if (!aChannels[i].bAllocated)
             {
@@ -2177,7 +2177,7 @@ static MUX_RESULT Pipe_SendReceive(UINT32 nChannel, QUEUE_INFO *pqi)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+    UINT32 nLength = (UINT32)(sizeof(nChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(CallMagic), CallMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
@@ -2188,7 +2188,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChan
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+    UINT32 nLength = (UINT32)(sizeof(nChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(MsgMagic), MsgMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
@@ -2199,7 +2199,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUE
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = sizeof(nChannel) + Pipe_QueueLength(pqiFrame);
+    UINT32 nLength = (UINT32)(sizeof(nChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(DiscMagic), DiscMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
