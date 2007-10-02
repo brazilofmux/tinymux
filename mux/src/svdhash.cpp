@@ -2396,16 +2396,47 @@ CHashTable::CHashTable(void)
 
 void CHashTable::Init(void)
 {
-    m_nDir = 2;
-    m_nDirDepth = 1;
-    m_pDir = new pCHashPage[m_nDir];
+    m_nDir = 0;
+    m_nPages = 0;
+    m_nDirDepth = 0;
+    m_pDir = NULL;
+
+    m_nEntries = 0;
+    m_nDeletions = 0;
+    m_nScans = 0;
+    m_nHits = 0;
+    m_nChecks = 0;
+    m_nMaxScan = 0;
+
+    UINT32 nDirRequest = 2;
+    try
+    {
+        m_pDir = new pCHashPage[nDirRequest];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
     if (m_pDir)
     {
-        m_pDir[1] = m_pDir[0] = new CHashPage;
+        m_nDir = nDirRequest;
+        m_pDir[1] = m_pDir[0] = NULL;
+        try
+        {
+            m_pDir[1] = m_pDir[0] = new CHashPage;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
         if (m_pDir[0])
         {
             if (m_pDir[0]->Allocate(HT_SIZEOF_PAGE))
             {
+                m_nPages = 1;
+                m_nDirDepth = 1;
                 m_pDir[0]->Empty(0, 0UL, 100);
             }
             else
@@ -2415,14 +2446,6 @@ void CHashTable::Init(void)
             }
         }
     }
-
-    m_nPages = 1;
-    m_nEntries = 0;
-    m_nDeletions = 0;
-    m_nScans = 0;
-    m_nHits = 0;
-    m_nChecks = 0;
-    m_nMaxScan = 0;
 }
 
 void CHashTable::ResetStats(void)
