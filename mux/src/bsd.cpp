@@ -1001,7 +1001,7 @@ int initialize_ssl()
 
     if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
-        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
         log_text(mudconf.ssl_certificate_file);
         ENDLOG;
@@ -1013,7 +1013,7 @@ int initialize_ssl()
     }
     if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
-        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
         log_text(mudconf.ssl_certificate_file);
         ENDLOG;
@@ -1024,14 +1024,14 @@ int initialize_ssl()
         return 0;
     }
 
-    SSL_CTX_set_default_passwd_cb(ssl_ctx,pem_passwd_callback);
-    SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx,(void *)mudconf.ssl_certificate_password);
-    SSL_CTX_set_default_passwd_cb(tls_ctx,pem_passwd_callback);
-    SSL_CTX_set_default_passwd_cb_userdata(tls_ctx,(void *)mudconf.ssl_certificate_password);
+    SSL_CTX_set_default_passwd_cb(ssl_ctx, pem_passwd_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void *)mudconf.ssl_certificate_password);
+    SSL_CTX_set_default_passwd_cb(tls_ctx, pem_passwd_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(tls_ctx, (void *)mudconf.ssl_certificate_password);
 
-    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM))
+    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx, (char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM))
     {
-        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Unable to load SSL private key: "));
         log_text(mudconf.ssl_certificate_key);
         ENDLOG;
@@ -1046,7 +1046,7 @@ int initialize_ssl()
      * We'll use the SSL ctx for that. */
     if (!SSL_CTX_check_private_key(ssl_ctx))
     {
-        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Key, certificate or password does not match."));
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
@@ -1055,15 +1055,15 @@ int initialize_ssl()
     }
 
 
-    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
-    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
+    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-    SSL_CTX_set_mode(tls_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
-    SSL_CTX_set_mode(tls_ctx,SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(tls_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+    SSL_CTX_set_mode(tls_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(tls_ctx, SSL_MODE_AUTO_RETRY);
+    SSL_CTX_set_mode(tls_ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-    STARTLOG(LOG_ALWAYS,"NET","SSL");
+    STARTLOG(LOG_ALWAYS, "NET", "SSL");
     log_text(T("initialize_ssl: SSL engine initialized successfully."));
     ENDLOG;
 
@@ -1092,7 +1092,7 @@ void CleanUpSSLConnections()
     {
         if (d->ssl_session)
         {
-            shutdownsock(d,R_RESTART);
+            shutdownsock(d, R_RESTART);
         }
     }
 }
@@ -1106,12 +1106,12 @@ int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
 #ifdef SSL_ENABLED
     if (d->ssl_session)
     {
-        result = SSL_write(d->ssl_session,buffer,nBytes);
+        result = SSL_write(d->ssl_session, buffer, nBytes);
     }
     else
 #endif
     {
-        result = SOCKET_WRITE(d->descriptor,buffer,nBytes,flags);
+        result = SOCKET_WRITE(d->descriptor, buffer, nBytes, flags);
     }
 
     return result;
@@ -1124,12 +1124,12 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 #ifdef SSL_ENABLED
     if (d->ssl_session)
     {
-        result = SSL_read(d->ssl_session,buffer,nBytes);
+        result = SSL_read(d->ssl_session, buffer, nBytes);
     }
     else
 #endif
     {
-        result = SOCKET_READ(d->descriptor,buffer,nBytes,flags);
+        result = SOCKET_READ(d->descriptor, buffer, nBytes, flags);
     }
 
     return result;
@@ -2245,10 +2245,10 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             if (ssl_result != 1)
             {
                 // Something errored out.  We'll have to drop.
-                int ssl_err = SSL_get_error(ssl_session,ssl_result);
+                int ssl_err = SSL_get_error(ssl_session, ssl_result);
 
                 SSL_free(ssl_session);
-                STARTLOG(LOG_ALWAYS,"NET","SSL");
+                STARTLOG(LOG_ALWAYS, "NET", "SSL");
                 log_text(T("SSL negotiation failed: "));
                 ENDLOG;
                 shutdown(newsock, SD_BOTH);
@@ -2770,8 +2770,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
-    memset(d->nvt_him_state,OPTION_NO,256);
-    memset(d->nvt_us_state,OPTION_NO,256);
+    memset(d->nvt_him_state, OPTION_NO, 256);
+    memset(d->nvt_us_state, OPTION_NO, 256);
     d->ttype = NULL;
     d->encoding = CHARSET_LATIN1;
     d->height = 24;
@@ -2986,7 +2986,7 @@ void process_output_unix(void *dvoid, int bHandleShutdown)
                 int iSocketError;
                 if (d->ssl_session)
                 {
-                   iSocketError = SSL_get_error(d->ssl_session,cnt);
+                   iSocketError = SSL_get_error(d->ssl_session, cnt);
                 }
                 else
                 {
@@ -3113,7 +3113,6 @@ static const int nvt_input_action_table[8][14] =
     {   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
 };
 
-
 /*! \brief Transmit a Telnet SB sequence for the given option.
  *
  * \param d         Player connection context.
@@ -3145,43 +3144,49 @@ static void SendSb
     DESC *d,
     unsigned char chOption,
     unsigned char chRequest,
-    char *pPayload,
-    unsigned int iPayloadLength
+    char  *pPayload,
+    size_t nPayload
 )
 {
-    unsigned int finalLength = 0;
-    unsigned int loop;
+    size_t nMaximum = 6 + 2*nPayload;
 
-    char * escapedPayload = (char *)malloc(iPayloadLength * 2);
-    memset(escapedPayload, 0, iPayloadLength * 2);
-
-    char * payloadPointer = escapedPayload;
-
-    for (loop = 0; loop < iPayloadLength; loop++)
+    char buffer[100];
+    char *pSB = buffer;
+    if (sizeof(buffer) < nMaximum)
     {
-        if (NVT_IAC == *(pPayload + loop))
+        pSB = (char *)MEMALLOC(nMaximum);
+        if (NULL == pSB)
         {
-            *payloadPointer++ = NVT_IAC;
-            finalLength++;
+            return;
         }
-        *payloadPointer++ = *(pPayload + loop);
-        finalLength++;
     }
 
-    unsigned int length = finalLength + 5;
-    char *pSB = (char *)malloc(length);
     pSB[0] = NVT_IAC;
     pSB[1] = NVT_SB;
     pSB[2] = chOption;
     pSB[3] = chRequest;
-    memcpy(&pSB[4], escapedPayload, finalLength);
-    pSB[length - 2] = NVT_IAC;
-    pSB[length - 1] = NVT_SE;
-    queue_write_LEN(d, pSB, length);
-    free(pSB);
-    free(escapedPayload);
-}
 
+    char *p = &pSB[4];
+
+    for (size_t loop = 0; loop < nPayload; loop++)
+    {
+        if (NVT_IAC == pPayload[loop])
+        {
+            *(p++) = NVT_IAC;
+        }
+        *(p++) = pPayload[loop];
+    }
+    *(p++) = NVT_IAC;
+    *(p++) = NVT_SE;
+
+    size_t length = p - pSB;
+    queue_write_LEN(d, pSB, length);
+
+    if (pSB != buffer)
+    {
+        MEMFREE(pSB);
+    }
+}
 
 /*! \brief Transmit a Telnet WILL sequence for the given option.
  *
@@ -3316,7 +3321,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             // Request environment variables.
             //
             char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
-            SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
+            SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
         else if (TELNET_CHARSET == chOption)
         {
@@ -3324,7 +3329,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         }
         else if (TELNET_STARTTLS == chOption)
         {
-            SendSb(d,TELNET_STARTTLS,TELNETSB_FOLLOWS);
+            SendSb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
         }
     }
 }
@@ -4024,8 +4029,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     UTF8 varname[1024];
                                     UTF8 varval[1024];
 
-                                    memset(varname,0,1024);
-                                    memset(varval,0,1024);
+                                    memset(varname, 0, 1024);
+                                    memset(varval, 0, 1024);
 
                                     memcpy(varname, pVarname, pVarval - pVarname - 1);
                                     memcpy(varval, pVarval, envPtr - pVarval);
