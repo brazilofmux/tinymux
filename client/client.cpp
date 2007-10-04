@@ -2,6 +2,15 @@
 #include <ncursesw/ncurses.h>
 #include <locale.h>
 
+// TODO:
+//
+// Create two sub-windows, one for output and one for input.
+// Add sockets.
+// Add telnet negotiation.
+// Add conversions to and from wint_t to UTF-8.
+// Add SSL
+// Add configure.in
+//
 int main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
