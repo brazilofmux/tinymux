@@ -38,24 +38,14 @@ int main(int argc, char *argv[])
     refresh();
 
     WINDOW *g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
-    if (NULL == g_scrOutput)
-    {
-        endwin();
-        fprintf(stderr, "Could not create output window.\r\n");
-        return 1;
-    }
     WINDOW *g_scrStatus  = newwin(1, COLS, LINES-3, 0);
-    if (NULL == g_scrStatus)
-    {
-        endwin();
-        fprintf(stderr, "Could not create status window.\r\n");
-        return 1;
-    }
     WINDOW *g_scrInput   = newwin(2, COLS, LINES-2, 0);
-    if (NULL == g_scrInput)
+    if (  NULL == g_scrOutput
+       || NULL == g_scrStatus
+       || NULL == g_scrInput)
     {
         endwin();
-        fprintf(stderr, "Could not create input window.\r\n");
+        fprintf(stderr, "Could not create a window.\r\n");
         return 1;
     }
 
@@ -65,19 +55,10 @@ int main(int argc, char *argv[])
 
     for (;;)
     {
-        if (ERR == wnoutrefresh(g_scrOutput))
-        {
-            break;
-        }
-        if (ERR == wnoutrefresh(g_scrStatus))
-        {
-            break;
-        }
-        if (ERR == wnoutrefresh(g_scrInput))
-        {
-            break;
-        }
-        if (ERR == doupdate())
+        if (  ERR == wnoutrefresh(g_scrOutput)
+           || ERR == wnoutrefresh(g_scrStatus)
+           || ERR == wnoutrefresh(g_scrInput)
+           || ERR == doupdate())
         {
             break;
         }
