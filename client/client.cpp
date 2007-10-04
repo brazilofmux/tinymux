@@ -4,46 +4,99 @@
 
 // TODO:
 //
-// Create two sub-windows, one for output and one for input.
 // Add sockets.
 // Add telnet negotiation.
 // Add conversions to and from wint_t to UTF-8.
 // Add SSL
 // Add configure.in
 //
+
+WINDOW *g_scrOutput  = NULL;
+WINDOW *g_scrStatus  = NULL;
+WINDOW *g_scrInput   = NULL;
+
 int main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
 
     initscr();
+    if (  COLS < 10
+       || LINES < 10)
+    {
+        // Too small.
+        //
+        endwin();
+        fprintf(stderr, "Window is less than 10x10.\r\n");
+        return 1;
+    }
+
     raw();
-    keypad(stdscr, TRUE);
     cbreak();
     noecho();
     nonl();
     intrflush(stdscr, FALSE);
-    printw("Hello World !!!");
+    refresh();
+
+    WINDOW *g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
+    if (NULL == g_scrOutput)
+    {
+        endwin();
+        fprintf(stderr, "Could not create output window.\r\n");
+        return 1;
+    }
+    WINDOW *g_scrStatus  = newwin(1, COLS, LINES-3, 0);
+    if (NULL == g_scrStatus)
+    {
+        endwin();
+        fprintf(stderr, "Could not create status window.\r\n");
+        return 1;
+    }
+    WINDOW *g_scrInput   = newwin(2, COLS, LINES-2, 0);
+    if (NULL == g_scrInput)
+    {
+        endwin();
+        fprintf(stderr, "Could not create input window.\r\n");
+        return 1;
+    }
+
+    keypad(g_scrInput, TRUE);
+
+    waddstr(g_scrOutput, "Hello World !!!");
 
     for (;;)
     {
-        refresh();
+        if (ERR == wnoutrefresh(g_scrOutput))
+        {
+            break;
+        }
+        if (ERR == wnoutrefresh(g_scrStatus))
+        {
+            break;
+        }
+        if (ERR == wnoutrefresh(g_scrInput))
+        {
+            break;
+        }
+        if (ERR == doupdate())
+        {
+            break;
+        }
+
         wint_t chin;
         wchar_t chtemp[2];
         cchar_t chout;
         int cc = get_wch(&chin);
-        char buffer[100];
         if (KEY_CODE_YES == cc)
         {
             // Function key pressed.
-            sprintf(buffer, "[0x%08X]", chin);
-            printw(buffer);
+            //
+            wprintw(g_scrOutput, "[0x%08X]", chin);
         }
         else if (OK == cc)
         {
             // Normal character.
             //
-            sprintf(buffer, "(0x%08X)", chin);
-            printw(buffer);
+            wprintw(g_scrOutput, "(0x%08X)", chin);
             if ('n' == chin)
             {
                 break;
@@ -53,7 +106,12 @@ int main(int argc, char *argv[])
             chtemp[1] = L'\0';
             if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
             {
-                if  (ERR == add_wch(&chout))
+                if  (ERR == wadd_wch(g_scrOutput, &chout))
+                {
+                    break;
+                }
+
+                if  (ERR == wadd_wch(g_scrInput, &chout))
                 {
                     break;
                 }
