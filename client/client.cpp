@@ -9,18 +9,19 @@
 // Add conversions to and from wint_t to UTF-8.
 // Add SSL
 // Add configure.in
+// Add scrollback in output window.
 //
 
 WINDOW *g_scrOutput  = NULL;
 WINDOW *g_scrStatus  = NULL;
 WINDOW *g_scrInput   = NULL;
 
-
 void UpdateStatusWindow(void)
 {
     wchar_t wchSpace[2] = { L' ', L'\0' };
     cchar_t cchSpace;
     (void)setcchar(&cchSpace, wchSpace, A_UNDERLINE, 0, NULL);
+    wmove(g_scrStatus, 0, 0);
     int n = COLS;
     while (n--)
     {
@@ -33,6 +34,8 @@ int main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     initscr();
+    keypad(stdscr, TRUE);
+
     if (  COLS < 10
        || LINES < 10)
     {
@@ -44,10 +47,10 @@ int main(int argc, char *argv[])
     }
 
     raw();
-    cbreak();
     noecho();
     nonl();
     intrflush(stdscr, FALSE);
+    timeout(50);
     refresh();
 
     g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
@@ -61,8 +64,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Could not create a window.\r\n");
         return 1;
     }
-
-    keypad(g_scrInput, TRUE);
 
     wchar_t chtemp[2] = { L'\0', L'\0' };
 
@@ -105,10 +106,6 @@ int main(int argc, char *argv[])
                 (void)wadd_wch(g_scrOutput, &chout);
                 (void)wadd_wch(g_scrInput, &chout);
             }
-        }
-        else
-        {
-            break;
         }
     }
     endwin();
