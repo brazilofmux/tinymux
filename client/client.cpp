@@ -15,6 +15,8 @@ WINDOW *g_scrOutput  = NULL;
 WINDOW *g_scrStatus  = NULL;
 WINDOW *g_scrInput   = NULL;
 
+cchar_t chLine;
+
 int main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
@@ -51,7 +53,17 @@ int main(int argc, char *argv[])
 
     keypad(g_scrInput, TRUE);
 
+    wchar_t chtemp[2] = { L'\0', L'\0' };
+    chtemp[0] = ' ';
+    (void)setcchar(&chLine, chtemp, A_UNDERLINE, 0, NULL);
+
     waddstr(g_scrOutput, "Hello World !!!");
+
+    int n = COLS;
+    while (n--)
+    {
+        (void)wadd_wch(g_scrStatus, &chLine);
+    }
 
     for (;;)
     {
@@ -64,7 +76,6 @@ int main(int argc, char *argv[])
         }
 
         wint_t chin;
-        wchar_t chtemp[2];
         cchar_t chout;
         int cc = get_wch(&chin);
         if (KEY_CODE_YES == cc)
@@ -84,18 +95,10 @@ int main(int argc, char *argv[])
             }
           
             chtemp[0] = chin;
-            chtemp[1] = L'\0';
             if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
             {
-                if  (ERR == wadd_wch(g_scrOutput, &chout))
-                {
-                    break;
-                }
-
-                if  (ERR == wadd_wch(g_scrInput, &chout))
-                {
-                    break;
-                }
+                (void)wadd_wch(g_scrOutput, &chout);
+                (void)wadd_wch(g_scrInput, &chout);
             }
         }
         else
