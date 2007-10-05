@@ -100,7 +100,20 @@ int main(int argc, char *argv[])
         {
             // Function key pressed.
             //
-            wprintw(g_scrOutput, "[0x%08X]", chin);
+            if (KEY_BACKSPACE == chin)
+            {
+                if (0 < nBuffer)
+                {
+                    nBuffer--;
+                }
+                int y, x;
+                getyx(g_scrInput, y, x);
+                mvwdelch(g_scrInput, y, x-1);
+            }
+            else
+            {
+                wprintw(g_scrOutput, "[0x%08X]", chin);
+            }
         }
         else if (OK == cc)
         {
@@ -168,11 +181,6 @@ int main(int argc, char *argv[])
                         (void)wadd_wch(g_scrInput, &chout);
                     }
                 }
-            }
-
-            if ('n' == chin)
-            {
-                break;
             }
         }
     }
