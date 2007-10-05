@@ -15,7 +15,18 @@ WINDOW *g_scrOutput  = NULL;
 WINDOW *g_scrStatus  = NULL;
 WINDOW *g_scrInput   = NULL;
 
-cchar_t chLine;
+
+void UpdateStatusWindow(void)
+{
+    wchar_t wchSpace[2] = { L' ', L'\0' };
+    cchar_t cchSpace;
+    (void)setcchar(&cchSpace, wchSpace, A_UNDERLINE, 0, NULL);
+    int n = COLS;
+    while (n--)
+    {
+        (void)wadd_wch(g_scrStatus, &cchSpace);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -39,9 +50,9 @@ int main(int argc, char *argv[])
     intrflush(stdscr, FALSE);
     refresh();
 
-    WINDOW *g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
-    WINDOW *g_scrStatus  = newwin(1, COLS, LINES-3, 0);
-    WINDOW *g_scrInput   = newwin(2, COLS, LINES-2, 0);
+    g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
+    g_scrStatus  = newwin(1, COLS, LINES-3, 0);
+    g_scrInput   = newwin(2, COLS, LINES-2, 0);
     if (  NULL == g_scrOutput
        || NULL == g_scrStatus
        || NULL == g_scrInput)
@@ -54,16 +65,10 @@ int main(int argc, char *argv[])
     keypad(g_scrInput, TRUE);
 
     wchar_t chtemp[2] = { L'\0', L'\0' };
-    chtemp[0] = ' ';
-    (void)setcchar(&chLine, chtemp, A_UNDERLINE, 0, NULL);
 
     waddstr(g_scrOutput, "Hello World !!!");
 
-    int n = COLS;
-    while (n--)
-    {
-        (void)wadd_wch(g_scrStatus, &chLine);
-    }
+    UpdateStatusWindow();
 
     for (;;)
     {
