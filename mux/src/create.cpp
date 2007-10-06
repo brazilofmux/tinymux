@@ -634,8 +634,6 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-
-
 // ---------------------------------------------------------------------------
 // do_create: Make a new object.
 //
@@ -826,12 +824,10 @@ void do_clone
     }
     clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
 
-
     if (clone == NOTHING)
     {
         return;
     }
-
 
     // Copy in the new data.
     //

@@ -240,7 +240,6 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
     atr_add_raw(player, A_NEWOBJS, tbuf);
 }
 
-
 // Handle @acreate on master room objects
 //
 static void ProcessMasterRoomACreate(dbref creator, dbref thing)
@@ -298,7 +297,6 @@ static void ProcessMasterRoomACreate(dbref creator, dbref thing)
         }
     }
 }
-
 
 /*
  * ---------------------------------------------------------------------------
@@ -539,7 +537,6 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         update_newobjects(player, obj, objtype);
         ProcessMasterRoomACreate(player, obj);
     }
-
 
     return obj;
 }
