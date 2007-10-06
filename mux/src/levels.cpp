@@ -261,24 +261,33 @@ RLEVEL find_rlevel(UTF8 *name)
 
 void do_rxlevel
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
     dbref enactor,
-    int   nargs,
+    int   eval,
     int   key,
+    int   nargs,
     UTF8 *object,
-    UTF8 *arg
+    UTF8 *arg,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!arg || !*arg)
     {
-        notify_quiet(player, T("I don't know what you want to set!"));
+        notify_quiet(executor, T("I don't know what you want to set!"));
         return;
     }
 
     // Find thing.
     //
-    dbref thing = match_controlled(player, object);
+    dbref thing = match_controlled(executor, object);
     if (NOTHING == thing)
     {
         return;
@@ -316,11 +325,11 @@ void do_rxlevel
         {
             if (negate)
             {
-                notify(player, T("You must specify a reality level to clear."));
+                notify(executor, T("You must specify a reality level to clear."));
             }
             else
             {
-                notify(player, T("You must specify a reality level to set."));
+                notify(executor, T("You must specify a reality level to set."));
             }
             return;
         }
@@ -328,18 +337,18 @@ void do_rxlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, T("No such reality level."));
+            notify(executor, T("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, T("Cleared."));
+            notify(executor, T("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(player, T("Set."));
+            notify(executor, T("Set."));
         }
     }
 
@@ -351,26 +360,36 @@ void do_rxlevel
     free_lbuf(buff);
 }
 
+
 void do_txlevel
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
     dbref enactor,
-    int nargs,
-    int key,
+    int   eval,
+    int   key,
+    int   nargs,
     UTF8 *object,
-    UTF8 *arg
+    UTF8 *arg,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!arg || !*arg)
     {
-        notify_quiet(player, T("I don't know what you want to set!"));
+        notify_quiet(executor, T("I don't know what you want to set!"));
         return;
     }
 
     // Find thing.
     //
-    dbref thing = match_controlled(player, object);
+    dbref thing = match_controlled(executor, object);
     if (NOTHING == thing)
     {
         return;
@@ -408,11 +427,11 @@ void do_txlevel
         {
             if (negate)
             {
-                notify(player, T("You must specify a reality level to clear."));
+                notify(executor, T("You must specify a reality level to clear."));
             }
             else
             {
-                notify(player, T("You must specify a reality level to set."));
+                notify(executor, T("You must specify a reality level to set."));
             }
             return;
         }
@@ -420,18 +439,18 @@ void do_txlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, T("No such reality level."));
+            notify(executor, T("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, T("Cleared."));
+            notify(executor, T("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(player, T("Set."));
+            notify(executor, T("Set."));
         }
     }
 
