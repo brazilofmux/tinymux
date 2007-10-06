@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  September 2007
+Last Update:  October 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,6 +81,18 @@ Feature Additions:
  -- Add lastcreate() per Issue #187.
  -- Add @adestroy per Issue #34.
  -- Add name references -- @reference per Issue 202.
+ -- Add @aparent per Issue #17.
+ -- Add @acreate per Issue #389.
+ -- Add @list modules.
+ -- Add module configuration option.
+ -- Add help_executor configuration option per Issue #31.
+ -- Increase maximum comsys alias length from 5 to 15.
+ -- Add CQueryServer, CQueryClient, IQueryControl, and IQuerySink to
+    support AsyncSQL.
+ -- Add more library and module checking to libmux.
+ -- Add mux_UnmarshalInterface() call to libmux.
+ -- Add ShutdownSlave method to ISlaveControl.
+ -- Add sqlslave and sqlproxy modules for AsyncSQL.
 
 
 Bug Fixes:
@@ -166,6 +178,8 @@ Bug Fixes:
  -- Fix conversion of ANSI sequences containing semi-colons.
  -- Use moniker in did_it() to show moniker with osucc and odrop.
  -- Fix corruption issue with MakeCanonicalExitName() using UTF-8.
+ -- Fix unchecked malloc() in SendSb().
+ -- Object type of guest wiped with type from guest_char (Issue 390).
 
 
 Performance Enhancements:
@@ -211,3 +225,9 @@ Miscellaneous:
     default function recursion limit to 500 (Issue 357).
  -- Add alias @haven for @reject.
  -- Update inzone and zwho help topic.
+ -- Update list of supported platforms.
+ -- Updated @teleport help topic.
+ -- Updated fdepth() help topic.
+ -- Updated graball() help topic.
+ -- Updated if()/ifelse() help topic.
+ -- Updated report help topic.
