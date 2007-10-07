@@ -14,20 +14,223 @@
 // Add scrollback in output window.
 //
 
-WINDOW *g_scrOutput  = NULL;
-WINDOW *g_scrStatus  = NULL;
-WINDOW *g_scrInput   = NULL;
+class Output;
+class Status;
 
-void UpdateStatusWindow(void)
+class Input
+{
+public:
+    Input(int lines, int columns, int yOrigin, int xOrigin, Output *pOut);
+    bool Valid(void);
+    int  Refresh(void);
+    void AppendCharacter(wchar_t chin);
+    void Backspace(void);
+    bool EndOfLine(void);
+
+private:
+    WINDOW *m_w;
+    int     m_lines;
+    int     m_columns;
+    wchar_t m_aBuffer[4000];
+    size_t  m_nBuffer;
+    Output *m_pOut;
+};
+
+class Output
+{
+public:
+    Output(int lines, int columns, int yOrigin, int xOrigin);
+    bool Valid(void);
+    int  Refresh(void);
+    void AppendLine(size_t nLine, const wchar_t *pLine);
+    void AppendLine(const wchar_t *pLine);
+
+private:
+    WINDOW *m_w;
+    int     m_lines;
+    int     m_columns;
+};
+
+class Status
+{
+public:
+    Status(int lines, int columns, int yOrigin, int xOrigin);
+    bool Valid(void);
+    void Update(void);
+    int  Refresh(void);
+
+private:
+    WINDOW *m_w;
+    int     m_lines;
+    int     m_columns;
+};
+
+Input::Input(int lines, int columns, int yOrigin, int xOrigin, Output *pOut)
+{
+    m_nBuffer = 0;
+    m_pOut  = NULL;
+    m_w = newwin(lines, columns, yOrigin, xOrigin);
+    if (NULL != m_w)
+    {
+        m_lines   = lines;
+        m_columns = columns;
+        m_pOut = pOut;
+
+        idlok(m_w, TRUE);
+        scrollok(m_w, TRUE);
+    }
+}
+
+bool Input::Valid(void)
+{
+    return (NULL != m_w);
+}
+
+int Input::Refresh(void)
+{
+    return wnoutrefresh(m_w);
+}
+
+void Input::Backspace(void)
+{
+    if (0 < m_nBuffer)
+    {
+        m_nBuffer--;
+    }
+
+    int y, x;
+    getyx(m_w, y, x);
+    mvwdelch(m_w, y, x-1);
+}
+
+bool Input::EndOfLine(void)
+{
+    m_aBuffer[m_nBuffer] = L'\0';
+    if (wcscasecmp(L"/quit", m_aBuffer) == 0)
+    {
+        return true;
+    }
+
+    // Send line to output window.
+    //
+    m_pOut->AppendLine(m_nBuffer, m_aBuffer);
+    m_nBuffer = 0;
+
+    int x, y;
+    getyx(m_w, y, x);
+    if (m_lines-1 == y)
+    {
+        scroll(m_w);
+        wmove(m_w, m_lines-1, 0);
+    }
+    else
+    {
+        wmove(m_w, y+1, 0);
+    }
+
+    return false;
+}
+
+void Input::AppendCharacter(wchar_t chin)
+{
+    wchar_t chtemp[2] = { L'\0', L'\0' };
+
+    if (m_nBuffer < sizeof(m_aBuffer))
+    {
+        m_aBuffer[m_nBuffer++] = chin;
+
+        cchar_t chout;
+        chtemp[0] = chin;
+        if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
+        {
+            (void)wadd_wch(m_w, &chout);
+        }
+    }
+}
+
+Output::Output(int lines, int columns, int yOrigin, int xOrigin)
+{
+    m_w  = newwin(lines, columns, yOrigin, xOrigin);
+    if (NULL != m_w)
+    {
+        m_lines   = lines;
+        m_columns = columns;
+        idlok(m_w, TRUE);
+        scrollok(m_w, TRUE);
+    }
+}
+
+bool Output::Valid(void)
+{
+    return (NULL != m_w);
+}
+
+int Output::Refresh(void)
+{
+    return wnoutrefresh(m_w);
+}
+
+void Output::AppendLine(size_t nLine, const wchar_t *pLine)
+{
+    int y, x;
+    getyx(m_w, y, x);
+    if (m_lines-1 == y)
+    {
+        scroll(m_w);
+        wmove(m_w, m_lines-1, 0);
+    }
+    else
+    {
+        wmove(m_w, y+1, 0);
+    }
+
+    wchar_t chtemp[2] = { L'\0', L'\0' };
+    for (int i = 0; i < nLine && L'\0' != pLine[i]; i++)
+    {
+        cchar_t chout;
+        chtemp[0] = pLine[i];
+        if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
+        {
+            (void)wadd_wch(m_w, &chout);
+        }
+    }
+}
+
+void Output::AppendLine(const wchar_t *pLine)
+{
+    AppendLine(wcslen(pLine), pLine);
+}
+
+Status::Status(int lines, int columns, int yOrigin, int xOrigin)
+{
+    m_w = newwin(lines, columns, yOrigin, xOrigin);
+    if (NULL != m_w)
+    {
+        m_lines   = lines;
+        m_columns = columns;
+    }
+}
+
+bool Status::Valid(void)
+{
+    return (NULL != m_w);
+}
+
+int Status::Refresh(void)
+{
+    return wnoutrefresh(m_w);
+}
+
+void Status::Update(void)
 {
     wchar_t wchSpace[2] = { L' ', L'\0' };
     cchar_t cchSpace;
     (void)setcchar(&cchSpace, wchSpace, A_UNDERLINE, 0, NULL);
-    wmove(g_scrStatus, 0, 0);
+    wmove(m_w, 0, 0);
     int n = COLS;
     while (n--)
     {
-        (void)wadd_wch(g_scrStatus, &cchSpace);
+        (void)wadd_wch(m_w, &cchSpace);
     }
 }
 
@@ -57,37 +260,30 @@ int main(int argc, char *argv[])
     timeout(50);
     refresh();
 
-    g_scrOutput  = newwin(LINES - 3, COLS, 0, 0);
-    g_scrStatus  = newwin(1, COLS, LINES-3, 0);
-    g_scrInput   = newwin(2, COLS, LINES-2, 0);
-    if (  NULL == g_scrOutput
-       || NULL == g_scrStatus
-       || NULL == g_scrInput)
+    Output output(LINES-3, COLS, 0, 0);
+    Status status(1, COLS, LINES-3, 0);
+    Input  input(2, COLS, LINES-2, 0, &output);
+    
+    if (  !output.Valid()
+       || !status.Valid()
+       || !input.Valid())
     {
         endwin();
         fprintf(stderr, "Could not create a window.\r\n");
         return 1;
     }
-    idlok(g_scrOutput, TRUE);
-    scrollok(g_scrOutput, TRUE);
-    idlok(g_scrInput, TRUE);
-    scrollok(g_scrInput, TRUE);
 
     wchar_t chtemp[2] = { L'\0', L'\0' };
 
-    waddstr(g_scrOutput, "Hello World !!!");
-    wmove(g_scrOutput, 1, 0);
+    output.AppendLine(L"Hello, World.");
 
-    UpdateStatusWindow();
-
-    wchar_t aBuffer[8000];
-    size_t  nBuffer = 0;
+    status.Update();
 
     for (;;)
     {
-        if (  ERR == wnoutrefresh(g_scrOutput)
-           || ERR == wnoutrefresh(g_scrStatus)
-           || ERR == wnoutrefresh(g_scrInput)
+        if (  ERR == output.Refresh()
+           || ERR == status.Refresh()
+           || ERR == input.Refresh()
            || ERR == doupdate())
         {
             break;
@@ -102,17 +298,13 @@ int main(int argc, char *argv[])
             //
             if (KEY_BACKSPACE == chin)
             {
-                if (0 < nBuffer)
-                {
-                    nBuffer--;
-                }
-                int y, x;
-                getyx(g_scrInput, y, x);
-                mvwdelch(g_scrInput, y, x-1);
+                input.Backspace();
             }
             else
             {
-                wprintw(g_scrOutput, "[0x%08X]", chin);
+                wchar_t buffer[100];
+                swprintf(buffer, sizeof(buffer), L"[0x%08X]", chin);
+                output.AppendLine(buffer);
             }
         }
         else if (OK == cc)
@@ -125,45 +317,9 @@ int main(int argc, char *argv[])
                 //
                 if (L'\r' == chin)
                 {
-                    aBuffer[nBuffer] = L'\0';
-                    if (wcscasecmp(L"/quit", aBuffer) == 0)
+                    if (input.EndOfLine())
                     {
                         break;
-                    }
-
-                    // Send line to output window.
-                    //
-                    for (int i = 0; i < nBuffer; i++)
-                    {
-                        chtemp[0] = aBuffer[i];
-                        if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
-                        {
-                            (void)wadd_wch(g_scrOutput, &chout);
-                        }
-                    }
-                    int y, x;
-                    getyx(g_scrOutput, y, x);
-                    if (LINES-3 == y)
-                    {
-                        scroll(g_scrOutput);
-                        wmove(g_scrOutput, LINES-3, 0);
-                    }
-                    else
-                    {
-                        wmove(g_scrOutput, y+1, 0);
-                    }
-
-                    nBuffer = 0;
-
-                    getyx(g_scrInput, y, x);
-                    if (1 == y)
-                    {
-                        scroll(g_scrInput);
-                        wmove(g_scrInput, 1, 0);
-                    }
-                    else
-                    {
-                        wmove(g_scrInput, y+1, 0);
                     }
                 }
             }
@@ -171,16 +327,7 @@ int main(int argc, char *argv[])
             {
                 // Printable character.
                 //
-                if (nBuffer < sizeof(aBuffer))
-                {
-                    aBuffer[nBuffer++] = chin;
-
-                    chtemp[0] = chin;
-                    if (OK == setcchar(&chout, chtemp, A_NORMAL, 0, NULL))
-                    {
-                        (void)wadd_wch(g_scrInput, &chout);
-                    }
-                }
+                input.AppendCharacter(chin);
             }
         }
     }
