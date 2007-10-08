@@ -1261,13 +1261,22 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
+
             // Copy and skip first character for CS_LEADIN, to
             // prevent the \ prefix command from escaping part of
             // its argument.
             //
             if (cmdp->callseq & CS_LEADIN)
             {
-                *bp++ = *str++;
+                UTF8 ch = *str++;
+                *bp++ = ch;
+
+                if (  mudconf.space_compress
+                   && ';' == ch
+                   && str[0] == ' ')
+                {
+                    *bp++ = *str++;
+                }
             }
             mux_exec(str, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
                 eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
