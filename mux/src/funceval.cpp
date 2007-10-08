@@ -3033,8 +3033,9 @@ FUNCTION(fun_lastcreate)
 
     int i;
     UTF8* ptr;
-    for (ptr = mux_strtok_parse(&tts), i = 0; ptr && i < 5;
-         ptr = mux_strtok_parse(&tts), i++)
+    for ( ptr = mux_strtok_parse(&tts), i = 0;
+          NULL != ptr && i < 5;
+          ptr = mux_strtok_parse(&tts), i++)
     {
         if (i == iObjectPosition)
         {

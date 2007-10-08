@@ -206,8 +206,9 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
         mux_strtok_ctl(&tts, T(" "));
 
         UTF8* ptr;
-        for (ptr = mux_strtok_parse(&tts), i = 0; ptr;
-             ptr = mux_strtok_parse(&tts), i++)
+        for ( ptr = mux_strtok_parse(&tts), i = 0;
+              NULL != ptr && i < 4;
+              ptr = mux_strtok_parse(&tts), i++)
         {
             object_list[i] = mux_atol(ptr);
         }
