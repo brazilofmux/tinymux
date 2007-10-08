@@ -50,8 +50,8 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
 
 typedef struct stack MUX_STACK;
 struct stack
- {
-    char *data;
+{
+    UTF8      *data;
     MUX_STACK *next;
 };
 
