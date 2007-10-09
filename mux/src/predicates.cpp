@@ -2441,7 +2441,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
         }
         free_lbuf(d);
     }
-    if (what < 0 && def)
+    else if (what < 0 && def)
     {
         notify(player, def);
     }

@@ -202,11 +202,11 @@ UTF8 *rxlevel_description(dbref player, dbref target)
     RLEVEL rl = RxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
     {
-        if (  (rl & mudconf.reality_level[i].value)
-           == mudconf.reality_level[i].value)
+        confdata::rlevel_def *rldef = &mudconf.reality_level[i];
+        if ((rl & rldef->value) == rldef->value)
         {
             safe_mb_chr(' ', buff, &bp);
-            safe_mb_str(mudconf.reality_level[i].name, buff, &bp);
+            safe_mb_str(rldef->name, buff, &bp);
         }
     }
 
@@ -233,11 +233,11 @@ UTF8 *txlevel_description(dbref player, dbref target)
     RLEVEL tl = TxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
     {
-        if (  (tl & mudconf.reality_level[i].value)
-           == mudconf.reality_level[i].value)
+        confdata::rlevel_def *rldef = &mudconf.reality_level[i];
+        if ((tl & rldef->value) == rldef->value)
         {
             safe_mb_chr(' ', buff, &bp);
-            safe_mb_str(mudconf.reality_level[i].name, buff, &bp);
+            safe_mb_str(rldef->name, buff, &bp);
         }
     }
 
@@ -251,9 +251,10 @@ RLEVEL find_rlevel(UTF8 *name)
 {
     for (int i = 0; i < mudconf.no_levels; i++)
     {
-        if (mux_stricmp(name, mudconf.reality_level[i].name) == 0)
+        confdata::rlevel_def *rldef = &mudconf.reality_level[i];
+        if (mux_stricmp(name, rldef->name) == 0)
         {
-            return mudconf.reality_level[i].value;
+            return rldef->value;
         }
     }
     return 0;
@@ -521,6 +522,86 @@ DESC_INFO *desclist_match(dbref player, dbref thing)
     return &descbuffer;
 }
 
+UTF8 *get_rlevel_desc
+(
+    dbref player,
+    dbref thing
+)
+{
+    dbref aowner;
+    int aflags;
+    UTF8 *buff = alloc_lbuf("get_rlevel_desc.");
+    UTF8 *bp = buff;;
+    reg_ref **preserve = NULL;
+    bool need_pres = false;
+    bool bFirst = true;
+
+    // Get description list.
+    //
+    DESC_INFO *desclist = desclist_match(player, thing);
+    bool found_a_desc = false;
+    for (int i = 0; i < desclist->n; i++)
+    {
+        UTF8 *d = atr_pget(thing, desclist->descs[i], &aowner, &aflags);
+        if ('\0' != d[0])
+        {
+            found_a_desc = true;
+            if (!need_pres)
+            {
+                need_pres = true;
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
+            }
+
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
+                NULL, 0);
+
+            if (!bFirst)
+            {
+                safe_str(T("\r\n"), buff, &bp);
+            }
+            else
+            {
+                bFirst = false;
+            }
+        }
+        free_lbuf(d);
+    }
+
+    if (!found_a_desc)
+    {
+        UTF8 *d = atr_pget(thing, A_DESC, &aowner, &aflags);
+        if ('\0' != d[0])
+        {
+            found_a_desc = true;
+            if (!need_pres)
+            {
+                need_pres = true;
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
+            }
+
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
+                NULL, 0);
+            *bp = '\0';
+        }
+        free_lbuf(d);
+    }
+
+    // If we preserved the state of the global registers, restore them.
+    //
+    if (need_pres)
+    {
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
+    }
+
+    *bp = '\0';
+    return buff;
+}
+
 /* ---------------------------------------------------------------------------
  * did_it_rlevel: Have player do something to/with thing, watching the
  * attributes. 'what' is actually ignored, the desclist match being used
@@ -540,8 +621,13 @@ void did_it_rlevel
     int   nargs
 )
 {
-    UTF8 *d, *buff, *act, *charges, *bp, *str;
-    dbref loc, aowner;
+    if (MuxAlarm.bAlarmed)
+    {
+        return;
+    }
+
+    UTF8 *d, *buff, *act, *charges, *bp;
+    dbref aowner;
     int num, aflags;
     int i;
     bool found_a_desc;
@@ -571,7 +657,7 @@ void did_it_rlevel
                 d = atr_pget(thing, desclist->descs[i], &aowner, &aflags);
             }
 
-            if (*d)
+            if ('\0' != d[0])
             {
                 // No need for the 'def' message.
                 //
@@ -610,7 +696,7 @@ void did_it_rlevel
             // A_DESC or A_HTDESC... the worst case we look for it twice.
             //
             d = atr_pget(thing, what, &aowner, &aflags);
-            if (*d)
+            if ('\0' != d[0])
             {
                 // No need for the 'def' message
                 //
@@ -675,9 +761,9 @@ void did_it_rlevel
        free_lbuf(d);
     }
 
-
     // Message to neighbors.
     //
+    dbref loc;
     if (  0 < owhat
        && Has_location(player)
        && Good_obj(loc = Location(player)))
