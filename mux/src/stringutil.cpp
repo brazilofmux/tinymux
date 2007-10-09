@@ -6629,10 +6629,14 @@ void mux_string::transform
         iSetEnd = sToSet.m_iLast;
     }
     size_t nUTF = 0;
-    for (mux_cursor i = CursorMin; i < iSetEnd; cursor_next(i))
+
+    mux_cursor iFromSet, iToSet;
+    sFromSet.cursor_start(iFromSet);
+    sToSet.cursor_start(iToSet);
+    do
     {
-        cFrom = sFromSet.m_autf[i.m_byte];
-        cTo = sToSet.m_autf[i.m_byte];
+        cFrom = sFromSet.m_autf[iFromSet.m_byte];
+        cTo = sToSet.m_autf[iToSet.m_byte];
         if (  mux_isprint_ascii(cFrom)
            && mux_isprint_ascii(cTo))
         {
@@ -6642,7 +6646,9 @@ void mux_string::transform
         {
             nUTF++;
         }
-    }
+    } while (  sFromSet.cursor_next(iFromSet)
+            && sToSet.cursor_next(iToSet));
+
     // TODO: transform_UTF8
     //
     //if (0 == nUTF)
