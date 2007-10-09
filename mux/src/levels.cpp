@@ -478,36 +478,47 @@ void decompile_rlevels(dbref player, dbref thing, UTF8 *thingname)
     free_mbuf(buf);
 }
 
-int *desclist_match(dbref player, dbref thing)
+#define NUM_DESC 33
+typedef struct DESC_INFO
 {
-    static int descbuffer[33];
+    int n;
+    int descs[NUM_DESC];
+} DESC_INFO;
 
-    descbuffer[0] = 1;
+DESC_INFO *desclist_match(dbref player, dbref thing)
+{
+    static DESC_INFO descbuffer;
+
+    descbuffer.n = 0;
     RLEVEL match = RxLevel(player) & TxLevel(thing);
     for (int i = 0; i < mudconf.no_levels; i++)
     {
-        if (  (match & mudconf.reality_level[i].value)
-           == mudconf.reality_level[i].value)
+        confdata::rlevel_def *rldef = &mudconf.reality_level[i];
+        if ((match & rldef->value) == rldef->value)
         {
-            ATTR *at = atr_str(mudconf.reality_level[i].attr);
-            if (at)
+            ATTR *at = atr_str(rldef->attr);
+            if (NULL != at)
             {
-                int j;
-                for (j = 1; j < descbuffer[0]; j++)
+                bool bFound = false;
+                for (int j = 0; j < descbuffer.n; j++)
                 {
-                    if (at->number == descbuffer[j])
+                    if (at->number == descbuffer.descs[j])
                     {
+                        bFound = true;
                         break;
                     }
                 }
-                if (j == descbuffer[0])
+
+                if (  !bFound
+                   && descbuffer.n < NUM_DESC-1)
                 {
-                    descbuffer[descbuffer[0]++] = at->number;
+                    descbuffer.descs[descbuffer.n] = at->number;
+                    descbuffer.n++;
                 }
             }
         }
     }
-    return descbuffer;
+    return &descbuffer;
 }
 
 /* ---------------------------------------------------------------------------
@@ -532,38 +543,39 @@ void did_it_rlevel
     UTF8 *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
     int num, aflags;
-    int i, *desclist, found_a_desc;
+    int i;
+    bool found_a_desc;
 
     reg_ref **preserve = NULL;
     bool need_pres = false;
 
     // Message to player.
     //
-    if (what > 0)
+    if (0 < what)
     {
         // Get description list.
         //
-        desclist = desclist_match(player, thing);
-        found_a_desc = 0;
-        for (i = 1; i < desclist[0]; i++)
+        DESC_INFO *desclist = desclist_match(player, thing);
+        found_a_desc = false;
+        for (i = 0; i < desclist->n; i++)
         {
             // Ok, if it's A_DESC, we need to check against A_IDESC.
             //
             if (  A_IDESC == what
-               && A_DESC == desclist[i])
+               && A_DESC == desclist->descs[i])
             {
                 d = atr_pget(thing, A_IDESC, &aowner, &aflags);
             }
             else
             {
-                d = atr_pget(thing, desclist[i], &aowner, &aflags);
+                d = atr_pget(thing, desclist->descs[i], &aowner, &aflags);
             }
 
             if (*d)
             {
                 // No need for the 'def' message.
                 //
-                found_a_desc = 1;
+                found_a_desc = true;
                 if (!need_pres)
                 {
                     need_pres = true;
@@ -576,7 +588,7 @@ void did_it_rlevel
                     args, nargs);
                 *bp = '\0';
 
-                if (  A_HTDESC == desclist[i]
+                if (  A_HTDESC == desclist->descs[i]
                    && Html(player))
                 {
                     safe_str(T("\r\n"), buff, &bp);
@@ -602,7 +614,7 @@ void did_it_rlevel
             {
                 // No need for the 'def' message
                 //
-                found_a_desc = 1;
+                found_a_desc = true;
                 if (!need_pres)
                 {
                     need_pres = true;
