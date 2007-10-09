@@ -28,7 +28,8 @@ RLEVEL   find_rlevel(UTF8 *);
 UTF8 *get_rlevel_desc
 (
     dbref player,
-    dbref thing
+    dbref thing,
+    int  *piDescUsed
 );
 
 void did_it_rlevel

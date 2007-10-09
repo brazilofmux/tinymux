@@ -525,7 +525,8 @@ DESC_INFO *desclist_match(dbref player, dbref thing)
 UTF8 *get_rlevel_desc
 (
     dbref player,
-    dbref thing
+    dbref thing,
+    int  *piDescUsed
 )
 {
     dbref aowner;
@@ -564,6 +565,7 @@ UTF8 *get_rlevel_desc
             else
             {
                 bFirst = false;
+                *piDescUsed = desclist->descs[i];
             }
         }
         free_lbuf(d);
@@ -586,6 +588,8 @@ UTF8 *get_rlevel_desc
                 AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                 NULL, 0);
             *bp = '\0';
+
+            *piDescUsed = A_DESC;
         }
         free_lbuf(d);
     }

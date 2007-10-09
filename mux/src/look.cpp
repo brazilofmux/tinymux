@@ -1029,15 +1029,16 @@ static bool show_a_desc(dbref player, dbref loc)
         UTF8 *FormatOutput = alloc_lbuf("look_description.FO");
         UTF8 *tPtr = FormatOutput;
 
-        ATTR *cattr = atr_num(iDescDefault);
-
         int   aflags2 = 0;
+        int   iDescUsed = iDescDefault;
 #ifdef REALITY_LVLS
-        UTF8 *tbuf1 = get_rlevel_desc(player, loc);
+        UTF8 *tbuf1 = get_rlevel_desc(player, loc, &iDescUsed);
 #else
         dbref aowner2;
         UTF8 *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
 #endif
+        ATTR *cattr = atr_num(iDescUsed);
+
         UTF8 *temp = alloc_lbuf("look_description.ET");
         UTF8 *bp = temp;
         mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
