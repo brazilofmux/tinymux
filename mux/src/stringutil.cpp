@@ -6327,6 +6327,7 @@ void mux_string::replace_Chars
 
 bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
 {
+    return false;
 }
 
 /*! \brief Reverses the string.
