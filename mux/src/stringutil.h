@@ -846,8 +846,17 @@ public:
     void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
-    mux_cursor length_cursor(void) const;
-    size_t length(void) const;
+
+    inline mux_cursor length_cursor(void) const
+    {
+        return m_iLast;
+    }
+
+    inline size_t length(void) const
+    {
+        return m_iLast.m_byte;
+    }
+
     void prepend(dbref num);
     void prepend(INT64 iInt);
     void prepend(long lLong);

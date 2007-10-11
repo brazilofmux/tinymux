@@ -4406,23 +4406,25 @@ static FUNCTION(fun_secure)
     mux_string *sStr = new mux_string(fargs[0]);
     mux_cursor nLen = sStr->length_cursor();
 
-    mux_string *sTo = new mux_string(T(" "));
-    UTF8 ch;
-
-    for (mux_cursor i = CursorMin; i < nLen; sStr->cursor_next(i))
+    mux_cursor i = CursorMin;
+    if (i < nLen)
     {
-        ch = sStr->export_Char(i.m_byte);
-        if (mux_issecure(ch))
+        mux_string *sTo = new mux_string(T(" "));
+        do
         {
-            mux_cursor nReplace(utf8_FirstByte[ch], 1);
-            sStr->replace_Chars(*sTo, i, nReplace);
-        }
+            UTF8 ch = sStr->export_Char(i.m_byte);
+            if (mux_issecure(ch))
+            {
+                mux_cursor nReplace(utf8_FirstByte[ch], 1);
+                sStr->replace_Chars(*sTo, i, nReplace);
+            }
+        } while (sStr->cursor_next(i));
+        delete sTo;
     }
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     *bufc += sStr->export_TextColor(*bufc, CursorMin, nLen, nMax);
 
-    delete sTo;
     delete sStr;
 }
 

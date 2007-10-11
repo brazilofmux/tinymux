@@ -6144,17 +6144,6 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     }
 }
 
-mux_cursor mux_string::length_cursor(void) const
-{
-    return m_iLast;
-}
-
-size_t mux_string::length(void) const
-{
-    return m_iLast.m_byte;
-}
-
-
 void mux_string::prepend(dbref num)
 {
     mux_string *sStore = new mux_string(*this);
