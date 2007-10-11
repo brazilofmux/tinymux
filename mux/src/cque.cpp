@@ -929,7 +929,7 @@ void sql_que
     reg_ref *sargs[]
 )
 {
-    static UINT32 iQueryHandle = 0;
+    static UINT32 next_handle = 0;
 
     if (  !(mudconf.control_flags & CF_INTERP)
        || NULL == mudstate.pIQueryControl)
@@ -955,12 +955,12 @@ void sql_que
     tmp->sem = thing;
     tmp->attr = attr;
 
-    iQueryHandle++;
-    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, iQueryHandle);
-    MUX_RESULT mr = mudstate.pIQueryControl->Query(iQueryHandle, dbname, query);
+    next_handle++;
+    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, next_handle);
+    MUX_RESULT mr = mudstate.pIQueryControl->Query(next_handle, dbname, query);
     if (MUX_FAILED(mr))
     {
-        scheduler.CancelTask(Task_SQLTimeout, tmp, iQueryHandle);
+        scheduler.CancelTask(Task_SQLTimeout, tmp, next_handle);
     }
 }
 
