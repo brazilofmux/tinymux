@@ -431,7 +431,6 @@ struct statedata
 #if !defined(MEMORY_BASED)
     CHashTable acache_htab;     // Attribute Cache
 #endif // MEMORY_BASED
-    CHashTable scratch_htab;    /* Multi-purpose scratch hash table */
     CHashTable attr_name_htab;  /* Attribute names hashtable */
     CHashTable channel_htab;    /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
@@ -447,6 +446,7 @@ struct statedata
     CHashTable reference_htab;  /* @reference hashtable */
     CHashTable ufunc_htab;      /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
+    CHashTable scratch_htab;    /* Multi-purpose scratch hash table */
 
     CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.
     CBitField bfNoCommands;     // Cache knowledge that there are no $-Commands.
