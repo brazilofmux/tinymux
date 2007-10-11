@@ -6597,41 +6597,28 @@ void mux_string::transform
     {
         return;
     }
-    else if (m_iLast.m_point < nStart + nLen)
-    {
-        nLen = m_iLast.m_point - nStart;
-    }
 
     if (  sFromSet.isAscii()
        && sToSet.isAscii())
     {
-        // Set up table.
+        // Since both sets use only ASCII characters, we can special case this
+        // request.  First, we build a table that maps all possible ASCII
+        // characters to their requested replacement, and then we use it.
         //
-        static unsigned char asciiTable[SCHAR_MAX+1];
+        unsigned char asciiTable[SCHAR_MAX+1];
         for (unsigned char c = 0; c <= SCHAR_MAX; c++)
         {
             asciiTable[c] = c;
         }
     
-        unsigned char cFrom, cTo;
-        mux_cursor iSetEnd = sFromSet.m_iLast;
-        if (sToSet.m_iLast < iSetEnd)
-        {
-            iSetEnd = sToSet.m_iLast;
-        }
-
         mux_cursor iFromSet, iToSet;
         sFromSet.cursor_start(iFromSet);
         sToSet.cursor_start(iToSet);
         do
         {
-            cFrom = sFromSet.m_autf[iFromSet.m_byte];
-            cTo = sToSet.m_autf[iToSet.m_byte];
-            if (  mux_isprint_ascii(cFrom)
-               && mux_isprint_ascii(cTo))
-            {
-                asciiTable[cFrom] = cTo;
-            }
+            UTF8 cFrom = sFromSet.m_autf[iFromSet.m_byte];
+            UTF8 cTo = sToSet.m_autf[iToSet.m_byte];
+            asciiTable[cFrom] = cTo;
         } while (  sFromSet.cursor_next(iFromSet)
                 && sToSet.cursor_next(iToSet));
 
@@ -6651,21 +6638,17 @@ void mux_string::transform_Ascii
     size_t nLen
 )
 {
-    if (m_iLast.m_byte <= nStart)
+    mux_cursor i;
+    if (cursor_from_point(i, nStart))
     {
-        return;
-    }
-    else if (m_iLast.m_byte - nStart < nLen)
-    {
-        nLen = m_iLast.m_byte - nStart;
-    }
-
-    for (size_t i = nStart; i < nStart + nLen; i++)
-    {
-        if (mux_isprint_ascii(m_autf[i]))
+        do
         {
-            m_autf[i] = asciiTable[m_autf[i]];
-        }
+            if (mux_isprint_ascii(m_autf[i.m_byte]))
+            {
+                m_autf[i.m_byte] = asciiTable[m_autf[i.m_byte]];
+            }
+        } while (  cursor_next(i)
+                && i.m_point < nStart+nLen);
     }
 }
 

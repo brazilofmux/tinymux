@@ -806,7 +806,7 @@ void do_addcommand
     {
         mux_string *sName = new mux_string(name);
         sName->strip(T("\r\n\t "));
-        sName->transform_Ascii(mux_tolower_ascii);
+        sName->LowerCase();
         sName->export_TextPlain(pName);
         delete sName;
     }
