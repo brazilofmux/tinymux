@@ -376,7 +376,6 @@ void cf_init(void)
     mudstate.pISlaveControl = NULL;
 #endif // STUB_SLAVE
     mudstate.pIQueryControl = NULL;
-    mudstate.next_handle = 0;
 }
 
 // ---------------------------------------------------------------------------
