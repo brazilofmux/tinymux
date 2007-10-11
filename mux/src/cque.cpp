@@ -911,38 +911,6 @@ void wait_que
     }
 }
 
-UINT32 AllocateHandle(void *pv_arg)
-{
-    UINT32 i;
-    void **ppv = NULL;
-    do
-    {
-        i = mudstate.next_handle++;
-        ppv = (void **)hashfindLEN(&i, sizeof(i), &mudstate.pointers_htab);
-    } while (NULL != ppv);
-    hashaddLEN(&i, sizeof(i), &pv_arg, &mudstate.pointers_htab);
-    return i;
-}
-
-bool IsHandleValid(UINT32 iHandle, void **ppv_arg)
-{
-    void **ppv = (void **)hashfindLEN(&iHandle, sizeof(iHandle), &mudstate.pointers_htab);
-    if (NULL == ppv)
-    {
-        return false;
-    }
-    else
-    {
-        *ppv_arg = *ppv;
-        return true;
-    }
-}
-
-void ReleaseHandle(UINT32 iHandle)
-{
-    hashdeleteLEN(&iHandle, sizeof(iHandle), &mudstate.pointers_htab);
-}
-
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
 //
@@ -961,6 +929,8 @@ void sql_que
     reg_ref *sargs[]
 )
 {
+    static UINT32 iQueryHandle = 0;
+
     if (  !(mudconf.control_flags & CF_INTERP)
        || NULL == mudstate.pIQueryControl)
     {
@@ -985,12 +955,12 @@ void sql_que
     tmp->sem = thing;
     tmp->attr = attr;
 
-    UINT32 iQueryHandle = AllocateHandle(tmp);
-    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
+    iQueryHandle++;
+    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, iQueryHandle);
     MUX_RESULT mr = mudstate.pIQueryControl->Query(iQueryHandle, dbname, query);
     if (MUX_FAILED(mr))
     {
-        scheduler.CancelTask(Task_SQLTimeout, tmp, 0);
+        scheduler.CancelTask(Task_SQLTimeout, tmp, iQueryHandle);
     }
 }
 

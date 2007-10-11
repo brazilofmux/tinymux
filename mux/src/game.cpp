@@ -3353,7 +3353,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.fwdlist_htab);
     hashreset(&mudstate.desc_htab);
     hashreset(&mudstate.reference_htab);
-    hashreset(&mudstate.pointers_htab);
 
     ValidateConfigurationDbrefs();
     process_preload();

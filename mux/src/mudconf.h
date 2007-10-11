@@ -448,7 +448,6 @@ struct statedata
     CHashTable reference_htab;  /* @reference hashtable */
     CHashTable ufunc_htab;      /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
-    CHashTable pointers_htab;   /* Provides opaque handles for pointer */
 
     CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.
     CBitField bfNoCommands;     // Cache knowledge that there are no $-Commands.
