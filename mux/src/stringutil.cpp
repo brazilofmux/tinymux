@@ -6604,61 +6604,55 @@ void mux_string::transform
     size_t nLen
 )
 {
-    static unsigned char asciiTable[SCHAR_MAX+1];
-
-    if (m_iLast.m_byte <= nStart)
+    if (m_iLast.m_point <= nStart)
     {
         return;
     }
-    else if (m_iLast.m_byte < nStart + nLen)
+    else if (m_iLast.m_point < nStart + nLen)
     {
-        nLen = m_iLast.m_byte - nStart;
+        nLen = m_iLast.m_point - nStart;
     }
 
-    // Set up table.
-    //
-    for (unsigned char c = 0; c <= SCHAR_MAX; c++)
+    if (  sFromSet.isAscii()
+       && sToSet.isAscii())
     {
-        asciiTable[c] = c;
-    }
-
-    unsigned char cFrom, cTo;
-    mux_cursor iSetEnd = sFromSet.m_iLast;
-    if (sToSet.m_iLast < iSetEnd)
-    {
-        iSetEnd = sToSet.m_iLast;
-    }
-    size_t nUTF = 0;
-
-    mux_cursor iFromSet, iToSet;
-    sFromSet.cursor_start(iFromSet);
-    sToSet.cursor_start(iToSet);
-    do
-    {
-        cFrom = sFromSet.m_autf[iFromSet.m_byte];
-        cTo = sToSet.m_autf[iToSet.m_byte];
-        if (  mux_isprint_ascii(cFrom)
-           && mux_isprint_ascii(cTo))
+        // Set up table.
+        //
+        static unsigned char asciiTable[SCHAR_MAX+1];
+        for (unsigned char c = 0; c <= SCHAR_MAX; c++)
         {
-            asciiTable[cFrom] = cTo;
+            asciiTable[c] = c;
         }
-        else
+    
+        unsigned char cFrom, cTo;
+        mux_cursor iSetEnd = sFromSet.m_iLast;
+        if (sToSet.m_iLast < iSetEnd)
         {
-            nUTF++;
+            iSetEnd = sToSet.m_iLast;
         }
-    } while (  sFromSet.cursor_next(iFromSet)
-            && sToSet.cursor_next(iToSet));
 
-    // TODO: transform_UTF8
-    //
-    //if (0 == nUTF)
-    //{
+        mux_cursor iFromSet, iToSet;
+        sFromSet.cursor_start(iFromSet);
+        sToSet.cursor_start(iToSet);
+        do
+        {
+            cFrom = sFromSet.m_autf[iFromSet.m_byte];
+            cTo = sToSet.m_autf[iToSet.m_byte];
+            if (  mux_isprint_ascii(cFrom)
+               && mux_isprint_ascii(cTo))
+            {
+                asciiTable[cFrom] = cTo;
+            }
+        } while (  sFromSet.cursor_next(iFromSet)
+                && sToSet.cursor_next(iToSet));
+
         transform_Ascii(asciiTable, nStart, nLen);
-    //}
-    //else
-    //{
-    //    transform_UTF8(sFromSet, sToSet, asciiTable, nUTF, nStart, nLen);
-    //}
+    }
+    else
+    {
+        // TODO: transform_UTF8
+        //
+    }
 }
 
 void mux_string::transform_Ascii

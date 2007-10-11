@@ -788,7 +788,16 @@ public:
     mux_string(const mux_string &sStr);
     mux_string(const UTF8 *pStr);
     ~mux_string(void);
+
     void Validate(void) const;
+
+    inline bool isAscii(void)
+    {
+        // If every byte corresponds to a point, then all the bytes must be ASCII.
+        //
+        return (m_iLast.m_byte == m_iLast.m_point);
+    }
+
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
