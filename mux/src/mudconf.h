@@ -432,6 +432,7 @@ struct statedata
 #if !defined(MEMORY_BASED)
     CHashTable acache_htab;     // Attribute Cache
 #endif // MEMORY_BASED
+    CHashTable scratch_htab;    /* Multi-purpose scratch hash table */
     CHashTable attr_name_htab;  /* Attribute names hashtable */
     CHashTable channel_htab;    /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */

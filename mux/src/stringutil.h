@@ -864,6 +864,7 @@ public:
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
     void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
+    bool replace_Point(const UTF8 *p, mux_cursor &i);
     void reverse(void);
     bool search
     (

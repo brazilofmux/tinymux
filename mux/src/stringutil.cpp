@@ -6325,6 +6325,10 @@ void mux_string::replace_Chars
     m_autf[m_iLast.m_byte] = '\0';
 }
 
+bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
+{
+}
+
 /*! \brief Reverses the string.
  *
  * \return         None.
@@ -6605,7 +6609,7 @@ void mux_string::transform
         // request.  First, we build a table that maps all possible ASCII
         // characters to their requested replacement, and then we use it.
         //
-        unsigned char asciiTable[SCHAR_MAX+1];
+        UTF8 asciiTable[SCHAR_MAX+1];
         for (unsigned char c = 0; c <= SCHAR_MAX; c++)
         {
             asciiTable[c] = c;
@@ -6626,14 +6630,45 @@ void mux_string::transform
     }
     else
     {
-        // TODO: transform_UTF8
+        // This is the more general case.  We use a hash table for mapping.
         //
+        hashreset(&mudstate.scratch_htab);
+
+        mux_cursor iFromSet, iToSet;
+        sFromSet.cursor_start(iFromSet);
+        sToSet.cursor_start(iToSet);
+        do
+        {
+            size_t nFrom = utf8_FirstByte[sFromSet.m_autf[iFromSet.m_byte]];
+            hashdeleteLEN(&sFromSet.m_autf[iFromSet.m_byte], nFrom, &mudstate.scratch_htab);
+            hashaddLEN(&sFromSet.m_autf[iFromSet.m_byte], nFrom, &sToSet.m_autf[iToSet.m_byte], &mudstate.scratch_htab);
+
+        } while (  sFromSet.cursor_next(iFromSet)
+                && sToSet.cursor_next(iToSet));
+
+        mux_cursor i;
+        if (cursor_from_point(i, nStart))
+        {
+            do
+            {
+                size_t n = utf8_FirstByte[m_autf[i.m_byte]];
+                UTF8 *p = static_cast<UTF8*>(hashfindLEN(&m_autf[i.m_byte], n, &mudstate.scratch_htab));
+                if (  NULL != p
+                   && !replace_Point(p, i))
+                {
+                    break;
+                }
+            } while (  cursor_next(i)
+                    && i.m_point < nStart+nLen);
+        }
+
+        hashreset(&mudstate.scratch_htab);
     }
 }
 
 void mux_string::transform_Ascii
 (
-    const unsigned char asciiTable[SCHAR_MAX+1],
+    const UTF8 asciiTable[SCHAR_MAX+1],
     size_t nStart,
     size_t nLen
 )
