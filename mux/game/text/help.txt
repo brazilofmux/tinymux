@@ -5217,6 +5217,21 @@ CHANNELS()
 
   Related Topics: comalias(), comtitle(), cwho()
 
+& CHANOBJ()
+CHANOBJ()
+
+  FUNCTION: chanobj(<channel name>)
+
+  This function returns the channel object for the given <channel name>.  As
+  with all comsys commands, <channel name> is case sensitive.   If the 
+  channel name matches a comsys channel with a channel object set, the dbref
+  of the object is return.  If the channel has no channel object, #-1 is
+  returned.  
+
+  The chanobj() function is restricted to wizards by default.
+
+  Related Topics: comalias(), comtitle(), cwho(), CHANNEL OBJECT, @cset
+
 & CHILDREN()
 CHILDREN()
 
@@ -5496,7 +5511,8 @@ COMSYS COMMANDS AND FUNCTIONS
   Administrative Commands:  @cboot, @ccharge, @cchown, @ccreate, @cdestroy,
                             @cemit, @clist, @coflags, @cpflags, @cset, @cwho
 
-  Functions:                channels(), comalias(), comtitle(), cwho()
+  Functions:                channels(), chanobj(), comalias(), comtitle(), 
+                            cwho()
 
   General Information:      channel object, comsys examples
 
@@ -7092,7 +7108,7 @@ FUNCTION CLASSES
                              INC ISIGN ISUB MOD MUL PACK POWER RAND REMAINDER
                              SHA1 SHL SHR SIGN SUB SUCCESSES SQRT UNPACK
 
-  Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
+  Comsystem Information:     CHANNELS CHANOBJ COMALIAS COMTITLE CWHO 
 
   Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILJ MAILFROM
                              MAILSIZE MAILSUBJ NEARBY NEXT NUM RLOC ROOM
@@ -7186,44 +7202,44 @@ FUNCTION LIST
     APOSS()     ART()       ASIN()      ATAN()      ATTRCNT()   BAND()
     BEEP()      BEFORE()    BITTYPE()   BNAND()     BOR()       BXOR()
     CAND()      CANDBOOL()  CANSEE()    CAPSTR()    CASE()      CAT()
-    CEIL()      CENTER()    CHANNELS()  CHILDREN()  CHOOSE()    CHR()
-    CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()  CON()
-    CONFIG()    CONN()      CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()
-    CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COR()
-    CORBOOL()   COS()       CPAD()      CRC32()     CREATE()    CTIME()
-    CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
-    DESTROY()   DIE()       DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()
-    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()
-    ELOCK()     EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()
-    ESCAPE()    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()
-    EXTRACT()   FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()
-    FOLD()
+    CEIL()      CENTER()    CHANNELS()  CHANOBJ()   CHILDREN()  CHOOSE()    
+    CHR()       CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()  
+    CON()       CONFIG()    CONN()      CONNLAST()  CONNLEFT()  CONNMAX()   
+    CONNNUM()   CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  
+    COR()       CORBOOL()   COS()       CPAD()      CRC32()     CREATE()    
+    CTIME()     CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()   
+    DELETE()    DESTROY()   DIE()       DIGITTIME() DIST2D()    DIST3D()    
+    DISTRIBUTE()DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      
+    ELEMENTS()  ELOCK()     EMIT()      ENCRYPT()   ENTRANCES() EQ()        
+    ERROR()     ESCAPE()    ETIMEFMT()  EVAL()      EXIT()      EXP()       
+    EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()    FDIV()      FILTER()    
+    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  
+    FMOD()      FOLD()      FOREACH()   FULLNAME() 
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
-    GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
-    HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
-    HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
-    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITER()
-    LADD()      LAND()      LAST()      LASTCREATE()LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()
-    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-    LOG()       LOR()       LPAD()      LPARENT()   LPORTS()    LPOS()
-    LRAND()     LROOMS()    LT()        LTE()       LWHO()      MAIL()
-    MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
+    GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()     
+    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  
+    HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()    HOME()      
+    HOST()      IABS()      IADD()      IDIV()      IDLE()      IF()        
+    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()    
+    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()     
+    ISUB()      ISWORD()    ITEMIZE()   ITER()      LADD()      LAND()      
+    LAST()      LASTCREATE()LATTR()     LATTRCMDS() LATTRP()    LCMDS()     
+    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()      
+    LIST()      LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()      
+    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()       
+    LPAD()      LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAILSIZE()  
+    MAILJ()     MAILSUBJ()  MAP()       MATCH()     MATCHALL()  MAX()       
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()       
+    MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()       
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()       
+    NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     
+    OR()        ORBOOL()    ORD()       ORFLAGS()
 
 ("help function list3" for more)
 
