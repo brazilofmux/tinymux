@@ -116,6 +116,7 @@ void functions_add(FUN funlist[]);
 XFUNCTION(fun_channels);
 XFUNCTION(fun_comalias);
 XFUNCTION(fun_comtitle);
+XFUNCTION(fun_chanobj);
 // In funceval.cpp
 XFUNCTION(fun_alphamax);
 XFUNCTION(fun_alphamin);

@@ -10052,6 +10052,7 @@ static FUN builtin_function_list[] =
     {T("CEMIT"),       fun_cemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("CENTER"),      fun_center,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CHANNELS"),    fun_channels,   MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {T("CHANOBJ"),     fun_chanobj,    MAX_ARG, 1,       1,         0, CA_WIZARD},
     {T("CHILDREN"),    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CHOOSE"),      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CHR"),         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
