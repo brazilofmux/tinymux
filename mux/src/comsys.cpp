@@ -4018,26 +4018,26 @@ FUNCTION(fun_channels)
 
 FUNCTION(fun_chanobj)
 {
-    struct channel *ch = select_channel(fargs[0]);
-
     if (!mudconf.have_comsys)
     {
         safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
         return;
     }
 
-    if(!ch)
+    struct channel *ch = select_channel(fargs[0]);
+    if (NULL == ch)
     {
         safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
     dbref obj = ch->chan_obj;
-    if(Good_obj(obj))
+    if (Good_obj(obj))
     {
         safe_str(tprintf("#%d", obj), buff, bufc);
-        return;
     }
-
-    safe_str(T("#-1"), buff, bufc);
+    else
+    {
+        safe_str(T("#-1"), buff, bufc);
+    }
  }
