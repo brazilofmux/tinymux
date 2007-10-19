@@ -180,6 +180,12 @@ Bug Fixes:
  -- Fix corruption issue with MakeCanonicalExitName() using UTF-8.
  -- Fix unchecked malloc() in SendSb().
  -- Object type of guest wiped with type from guest_char (Issue 390).
+ -- Fix out-of-bounds array access while updating newobjs (Issue 396).
+ -- Fixed endless loop in mux_string::transform() via tr().
+ -- Fix regression from Issue 219 so that '; test' produces
+    '<name> test' (Issue 351).
+ -- Fix --enable-deprecated build (Issue 397).
+ -- Pass reality level descriptions through @descformat (Issue 59).
 
 
 Performance Enhancements:
