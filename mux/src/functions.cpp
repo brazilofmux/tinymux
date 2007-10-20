@@ -4111,10 +4111,10 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
     // If passed a null string return an empty string, except that we
     // are allowed to append to a null string.
     //
-    if (  (  !sList
-          || 0 == sList->length())
-       && (  flag != IF_INSERT
-          || iWord != 1))
+    if (  NULL == sList
+       || (  0 == sList->length()
+          && (  flag != IF_INSERT
+             || iWord != 1)))
     {
         return;
     }
