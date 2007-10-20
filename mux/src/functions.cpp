@@ -4020,13 +4020,22 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    mux_string *sPat = NULL;
+    mux_string *sStr = NULL;
+    try
+    {
+        sPat = new mux_string(fargs[0]);
+        sStr = new mux_string(fargs[1]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
     mux_cursor nPat;
-    mux_string *sPat = new mux_string(fargs[0]);
-    mux_string *sStr = new mux_string(fargs[1]);
-
-    bool bSucceeded = sStr->search(*sPat, &nPat);
-
-    if (bSucceeded)
+    if (  NULL != sStr
+       && NULL != sPat
+       && sStr->search(*sPat, &nPat))
     {
         safe_ltoa(static_cast<long>(nPat.m_point + 1), buff, bufc);
     }
@@ -4237,12 +4246,25 @@ static FUNCTION(fun_replace)
         return;
     }
 
-    mux_string *sList = new mux_string(fargs[0]);
-    mux_string *sWord = new mux_string(fargs[2]);
-
+    mux_string *sList = NULL;
+    mux_string *sWord = NULL;
+    try
+    {
+        sList = new mux_string(fargs[0]);
+        sWord = new mux_string(fargs[2]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
     // Replace a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, &sep, IF_REPLACE);
+    if (  NULL != sList
+       && NULL != sWord)
+    {
+        do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, &sep, IF_REPLACE);
+    }
 
     delete sList;
     delete sWord;
@@ -5840,7 +5862,7 @@ static FUNCTION(fun_before)
     // Sanity-check arg1 and arg2.
     //
     UTF8 *bp = fargs[0];
-    if (nfargs > 1)
+    if (1 < nfargs)
     {
         sPat->import(fargs[1]);
         nPat = sPat->length();
@@ -5991,37 +6013,48 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = new mux_string(fargs[0]);
-    mux_string *sStrB = new mux_string(fargs[1]);
-
-    // Do length checks first.
-    //
-    size_t nLen = sStrA->length();
-    if (nLen != sStrB->length())
+    mux_string *sStrA = NULL;
+    mux_string *sStrB = NULL;
+    try
     {
-        safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
-        delete sStrA;
-        delete sStrB;
-        return;
+        sStrA = new mux_string(fargs[0]);
+        sStrB = new mux_string(fargs[1]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
     }
 
-    // Find the character to look for. null character is considered a
-    // space.
-    //
-    const UTF8 cFill = *fargs[2] ? *fargs[2] : ' ';
-
-    for (size_t i = 0; i < nLen; i++)
+    if (  NULL != sStrA
+       && NULL != sStrB)
     {
-        if (sStrA->export_Char(i) == cFill)
+        // Do length checks first.
+        //
+        size_t nLen = sStrA->length();
+        if (nLen != sStrB->length())
         {
-            sStrA->set_Char(i, sStrB->export_Char(i));
-            sStrA->set_Color(i, sStrB->export_Color(i));
+            safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+        }
+        else
+        {
+            // Find the character to look for.  Null character is considered a
+            // space.
+            //
+            const UTF8 cFill = *fargs[2] ? *fargs[2] : ' ';
+
+            for (size_t i = 0; i < nLen; i++)
+            {
+                if (sStrA->export_Char(i) == cFill)
+                {
+                    sStrA->set_Char(i, sStrB->export_Char(i));
+                    sStrA->set_Color(i, sStrB->export_Color(i));
+                }
+            }
+
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            *bufc += sStrA->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
         }
     }
-
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStrA->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
     delete sStrA;
     delete sStrB;
 }
@@ -6970,13 +7003,29 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr  = new mux_string(fargs[0]);
-    mux_string *sFrom = new mux_string(fargs[1]);
-    mux_string *sTo   = new mux_string(fargs[2]);
+    mux_string *sStr  = NULL;
+    mux_string *sFrom = NULL;
+    mux_string *sTo   = NULL;
 
-    sStr->edit(*sFrom, *sTo);
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+    try
+    {
+        sStr  = new mux_string(fargs[0]);
+        sFrom = new mux_string(fargs[1]);
+        sTo   = new mux_string(fargs[2]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (  NULL != sStr
+       && NULL != sFrom
+       && NULL != sTo)
+    {
+        sStr->edit(*sFrom, *sTo);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+    }
 
     delete sStr;
     delete sFrom;
@@ -8224,7 +8273,21 @@ static void centerjustcombo
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
+
     mux_cursor nStr = sStr->length_cursor();
 
     // If there's no need to pad, then we are done.
@@ -8244,7 +8307,22 @@ static void centerjustcombo
 
     // Determine string to pad with.
     //
-    mux_string *sPad = new mux_string;
+    mux_string *sPad = NULL;
+    try
+    {
+        sPad = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sPad)
+    {
+        delete sStr;
+        return;
+    }
+
     if (nfargs == 3 && *fargs[2])
     {
         sPad->import(fargs[2]);
@@ -9973,39 +10051,58 @@ static FUNCTION(fun_tr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    size_t nStr = sStr->length();
-
-    if (0 == nStr)
+    mux_string *sStr = NULL;
+    try
     {
-        // Nothing to do.
-        //
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL != sStr)
+    {
+        size_t nStr = sStr->length();
+        if (0 != nStr)
+        {
+            // Process character ranges.
+            //
+            mux_string *sFrom = NULL;
+            mux_string *sTo = NULL;
+            try
+            {
+                sFrom = new mux_string(fargs[1]);
+                sTo   = new mux_string(fargs[2]);
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (  NULL != sFrom
+               && NULL != sTo)
+            {
+                size_t nFrom = transform_range(*sFrom);
+                size_t nTo = transform_range(*sTo);
+
+                if (nFrom != nTo)
+                {
+                    safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+                }
+                else
+                {
+                    sStr->transform(*sFrom, *sTo);
+                    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+                }
+            }
+
+            delete sFrom;
+            delete sTo;
+        }
         delete sStr;
-        return;
     }
-
-    // Process character ranges.
-    //
-    mux_string *sFrom = new mux_string(fargs[1]);
-    size_t nFrom = transform_range(*sFrom);
-
-    mux_string *sTo = new mux_string(fargs[2]);
-    size_t nTo = transform_range(*sTo);
-
-    if (nFrom != nTo)
-    {
-        safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
-    }
-    else
-    {
-        sStr->transform(*sFrom, *sTo);
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-    }
-
-    delete sStr;
-    delete sFrom;
-    delete sTo;
 }
 
 // ----------------------------------------------------------------------------
