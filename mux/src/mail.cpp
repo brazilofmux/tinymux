@@ -5136,7 +5136,7 @@ void do_folder
 
     default:
         if (  NULL == arg1
-           && '\0' == *arg1)
+           || '\0' == arg1[0])
         {
             DoListMailBrief(executor);
         }
