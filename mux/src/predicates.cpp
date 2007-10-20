@@ -2820,11 +2820,10 @@ bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
     return false;
 }
 
-static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_name)
+static void ListReferences(dbref executor, UTF8 *reference_name)
 {
     dbref target = NOTHING;
     bool global_only = false;
-    size_t len = 0;
     CHashTable* htab = &mudstate.reference_htab;
     mux_string refstr(reference_name);
 
@@ -2910,19 +2909,35 @@ static void ListReferences(dbref executor, UTF8 *reference_name, UTF8 *object_na
     }
 }
 
-void do_reference(dbref executor, dbref caller, dbref enactor, int eval,
-        int key, int nargs, UTF8 *reference_name, UTF8 *object_name,
-        const UTF8 *cargs[], int ncargs)
+void do_reference
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   eval,
+    int   key,
+    int   nargs,
+    UTF8 *reference_name,
+    UTF8 *object_name,
+    const UTF8 *cargs[],
+    int   ncargs
+)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(cargs);
+
     dbref target = NOTHING;
-    CHashTable* htab = &mudstate.reference_htab;
     mux_string refstr(reference_name);
     UTF8 tbuf[LBUF_SIZE];
     size_t tbuf_len = 0;
 
     if (key & REFERENCE_LIST)
     {
-        ListReferences(executor, reference_name, object_name);
+        ListReferences(executor, reference_name);
         return;
     }
 

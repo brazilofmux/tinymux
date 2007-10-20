@@ -2488,11 +2488,11 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
             local_connect(player, 0, num_con);
 #if defined(HAVE_DLOPEN) || defined(WIN32)
-            ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (NULL != p)
+            ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
+            while (NULL != pNode)
             {
-                p->pSink->connect(player, 0, num_con);
-                p = p->pNext;
+                pNode->pSink->connect(player, 0, num_con);
+                pNode = pNode->pNext;
             }
 #endif
 
@@ -2593,11 +2593,11 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 //
                 local_connect(player, 1, 0);
 #if defined(HAVE_DLOPEN) || defined(WIN32)
-                ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-                while (NULL != p)
+                ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
+                while (NULL != pNode)
                 {
-                    p->pSink->connect(player, 1, 0);
-                    p = p->pNext;
+                    pNode->pSink->connect(player, 1, 0);
+                    pNode = pNode->pNext;
                 }
 #endif
             }

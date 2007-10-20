@@ -444,8 +444,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (g_version <= 2)
                 {
-                    size_t nBuffer;
-                    tstr = ConvertToUTF8((char *)tstr, &nBuffer);
+                    size_t nUnused;
+                    tstr = ConvertToUTF8((char *)tstr, &nUnused);
                 }
 
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
@@ -561,8 +561,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
                 if (g_version <= 2)
                 {
-                    size_t nBuffer;
-                    tstr = ConvertToUTF8((char *)tstr, &nBuffer);
+                    size_t nUsed;
+                    tstr = ConvertToUTF8((char *)tstr, &nUsed);
                 }
                 buff = alloc_mbuf("dbread.s_Name");
                 StripTabsAndTruncate(tstr, buff, MBUF_SIZE-1, MBUF_SIZE-1);

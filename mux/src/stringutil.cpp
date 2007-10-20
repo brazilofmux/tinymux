@@ -5329,9 +5329,9 @@ void mux_string::append_TextPlain(const UTF8 *pStr)
         // call to realloc_m_pcs().
         //
         realloc_m_pcs(j.m_point);
-        for (size_t i = m_iLast.m_point; i < j.m_point; i++)
+        for (size_t k = m_iLast.m_point; k < j.m_point; k++)
         {
-            m_pcs[i] = CS_NORMAL;
+            m_pcs[k] = CS_NORMAL;
         }
     }
 

@@ -1542,8 +1542,8 @@ void SendChannelMessage
     if (Good_obj(obj))
     {
         dbref aowner;
-        int aflags;
-        int logmax = DFLT_MAX_LOG;
+        int   aflags;
+        int   logmax = DFLT_MAX_LOG;
         UTF8 *maxbuf;
         ATTR *pattr = atr_str(T("MAX_LOG"));
         if (  pattr
@@ -1566,9 +1566,7 @@ void SendChannelMessage
             int atr = mkattr(GOD, p);
             if (0 < atr)
             {
-                dbref aowner;
-                int aflags;
-                ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
+                pattr = atr_str(T("LOG_TIMESTAMPS"));
                 if (  pattr
                    && atr_get_info(obj, pattr->number, &aowner, &aflags))
                 {

@@ -3655,20 +3655,20 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     // Convert this latin1 character to the internal UTF-8 form.
                     //
-                    const UTF8 *q = latin1_utf8(ch);
-                    UTF8 n = utf8_FirstByte[q[0]];
+                    const UTF8 *pUTF = latin1_utf8(ch);
+                    UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
-                    if (p + n < pend)
+                    if (p + nUTF < pend)
                     {
-                        nInputBytes += n;
-                        while (n--)
+                        nInputBytes += nUTF;
+                        while (nUTF--)
                         {
-                            *p++ = *q++;
+                            *p++ = *pUTF++;
                         }
                     }
                     else
                     {
-                        nLostBytes += n;
+                        nLostBytes += nUTF;
                     }
                 }
             }

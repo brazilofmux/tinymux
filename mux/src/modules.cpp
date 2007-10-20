@@ -675,7 +675,7 @@ MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
 
 MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
-    UNUSED_PARAMETER(pqdi);
+    UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
     UNUSED_PARAMETER(ctx);
 
@@ -700,6 +700,8 @@ MUX_RESULT CStubSlaveProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, vo
 
 MUX_RESULT CStubSlaveProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
+    UNUSED_PARAMETER(pqi);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -867,7 +869,7 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
 
                 if (NULL != m_pModuleName)
                 {
-                    size_t nWanted = ReturnFrame.nName;
+                    nWanted = ReturnFrame.nName;
                     if (  Pipe_GetBytes(&qiFrame, &nWanted, m_pModuleName)
                        && nWanted == ReturnFrame.nName)
                     {
