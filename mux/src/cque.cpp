@@ -270,6 +270,8 @@ static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
 
 void Task_SQLTimeout(void *pExpired, int iUnused)
 {
+    UNUSED_PARAMETER(iUnused);
+
     // A SQL Query has timed out.  Actually, this isn't supported.
     //
     BQUE *point = (BQUE *)pExpired;

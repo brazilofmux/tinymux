@@ -278,6 +278,10 @@ MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context
 
 MUX_RESULT CSum::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ppv);
+
     return MUX_E_NOTIMPLEMENTED;
 }
 

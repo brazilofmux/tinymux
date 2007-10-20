@@ -416,6 +416,8 @@ void CSample::presync_database_sigsegv(void)
 //
 void CSample::dump_database(int dump_type)
 {
+    UNUSED_PARAMETER(dump_type);
+
     m_pILog->log_printf("Sample module sees CSample::dump_database event." ENDLINE);
 }
 
@@ -453,6 +455,10 @@ void CSample::dbck(void)
 //
 void CSample::connect(dbref player, int isnew, int num)
 {
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(isnew);
+    UNUSED_PARAMETER(num);
+
     m_pILog->log_printf("Sample module sees CSample::connect event." ENDLINE);
 }
 
@@ -462,6 +468,9 @@ void CSample::connect(dbref player, int isnew, int num)
 //
 void CSample::disconnect(dbref player, int num)
 {
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(num);
+
     m_pILog->log_printf("Sample module sees CSample::disconnect event." ENDLINE);
 }
 
@@ -469,6 +478,8 @@ void CSample::disconnect(dbref player, int num)
 //
 void CSample::data_create(dbref object)
 {
+    UNUSED_PARAMETER(object);
+
     m_pILog->log_printf("Sample module sees CSample::data_create event." ENDLINE);
 }
 
@@ -477,6 +488,9 @@ void CSample::data_create(dbref object)
 //
 void CSample::data_clone(dbref clone, dbref source)
 {
+    UNUSED_PARAMETER(clone);
+    UNUSED_PARAMETER(source);
+
     m_pILog->log_printf("Sample module sees CSample::data_clone event." ENDLINE);
 }
 
@@ -484,6 +498,8 @@ void CSample::data_clone(dbref clone, dbref source)
 //
 void CSample::data_free(dbref object)
 {
+    UNUSED_PARAMETER(object);
+
     m_pILog->log_printf("Sample module sees CSample::data_free event." ENDLINE);
 }
 
@@ -555,6 +571,10 @@ UINT32 CSumProxy::Release(void)
 
 MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+    UNUSED_PARAMETER(pcid);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -562,6 +582,10 @@ MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_C
 
 MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -583,6 +607,8 @@ MUX_RESULT CSumProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **p
 
 MUX_RESULT CSumProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
+    UNUSED_PARAMETER(pqi);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;

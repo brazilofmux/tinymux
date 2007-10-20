@@ -664,6 +664,10 @@ UINT32 CStubSlaveProxy::Release(void)
 
 MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+    UNUSED_PARAMETER(pcid);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -671,6 +675,10 @@ MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
 
 MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
+    UNUSED_PARAMETER(pqdi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -1288,6 +1296,10 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
 
 MUX_RESULT CQueryClient::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ppv);
+
     return MUX_E_NOTIMPLEMENTED;
 }
 
@@ -1326,6 +1338,8 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 
 MUX_RESULT CQueryClient::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
 {
+    UNUSED_PARAMETER(iQueryHandle);
+
     // TODO: Use iQueryHandle to lookup the dbref/attr pair to @trigger within a context of pResultSet.
     //
     STARTLOG(LOG_ALWAYS, "INI", "LOAD");

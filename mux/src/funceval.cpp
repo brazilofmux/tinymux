@@ -2959,6 +2959,9 @@ FUNCTION(fun_lastcreate)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(cargs);
 
     // Determine the target by name, or use the executor if no name is given.
     //

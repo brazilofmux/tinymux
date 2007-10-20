@@ -317,25 +317,25 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
                 if (NULL != pServer)
                 {
-                    delete pServer;
+                    delete [] pServer;
                     pServer = NULL;
                 }
 
                 if (NULL != pDatabase)
                 {
-                    delete pDatabase;
+                    delete [] pDatabase;
                     pDatabase = NULL;
                 }
 
                 if (NULL != pUser)
                 {
-                    delete pUser;
+                    delete [] pUser;
                     pUser = NULL;
                 }
 
                 if (NULL != pPassword)
                 {
-                    delete pPassword;
+                    delete [] pPassword;
                     pPassword = NULL;
                 }
             }
@@ -431,13 +431,13 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
                 if (NULL != pDatabaseName)
                 {
-                    delete pDatabaseName;
+                    delete [] pDatabaseName;
                     pDatabaseName = NULL;
                 }
 
                 if (NULL != pQuery)
                 {
-                    delete pQuery;
+                    delete [] pQuery;
                     pQuery = NULL;
                 }
             }
@@ -503,6 +503,10 @@ MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
 
 MUX_RESULT CQueryServer::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ppv);
+
     return MUX_E_NOTIMPLEMENTED;
 }
 
@@ -540,6 +544,11 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
 
 MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
+    UNUSED_PARAMETER(pServer);
+    UNUSED_PARAMETER(pDatabase);
+    UNUSED_PARAMETER(pUser);
+    UNUSED_PARAMETER(pPassword);
+
     // TODO: Use these as necessary to make a connection to MySQL.
     //
     return MUX_S_OK;
@@ -564,6 +573,9 @@ MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
 
 MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
+    UNUSED_PARAMETER(pQuery);
+    UNUSED_PARAMETER(pDatabaseName);
+
     if (NULL != m_pIQuerySink)
     {
         return m_pIQuerySink->Result(iQueryHandle, T("Yeah, I'm here."));
@@ -739,6 +751,10 @@ UINT32 CQuerySinkProxy::Release(void)
 }
 MUX_RESULT CQuerySinkProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+    UNUSED_PARAMETER(pcid);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -746,6 +762,10 @@ MUX_RESULT CQuerySinkProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
 
 MUX_RESULT CQuerySinkProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -767,6 +787,8 @@ MUX_RESULT CQuerySinkProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, vo
 
 MUX_RESULT CQuerySinkProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
+    UNUSED_PARAMETER(pqi);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -781,6 +803,8 @@ MUX_RESULT CQuerySinkProxy::DisconnectObject(void)
 
 MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
 {
+    UNUSED_PARAMETER(iQueryHandle);
+
     // Communicate with the remote component to service this request.
     //
     MUX_RESULT mr = MUX_S_OK;

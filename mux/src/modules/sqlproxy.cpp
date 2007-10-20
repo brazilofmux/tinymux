@@ -143,6 +143,10 @@ UINT32 CQueryControlProxy::Release(void)
 
 MUX_RESULT CQueryControlProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+    UNUSED_PARAMETER(pcid);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -150,6 +154,10 @@ MUX_RESULT CQueryControlProxy::GetUnmarshalClass(MUX_IID riid, marshal_context c
 
 MUX_RESULT CQueryControlProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
 {
+    UNUSED_PARAMETER(pqi);
+    UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(ctx);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
@@ -171,6 +179,8 @@ MUX_RESULT CQueryControlProxy::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid,
 
 MUX_RESULT CQueryControlProxy::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
+    UNUSED_PARAMETER(pqi);
+
     // This should only be called on the component side.
     //
     return MUX_E_NOTIMPLEMENTED;
