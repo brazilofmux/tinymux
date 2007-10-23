@@ -861,8 +861,10 @@ static CF_HAND(cf_name)
         if (!hashfindLEN(pCased, nCased, (CHashTable *) vp)) {
             hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
             hashdeleteLEN(Buffer, bCased, (CHashTable *) vp);
-        }
-        return 0;
+			return 0;
+        } else {
+			return -1;
+		}
     }
 
     return -1;
