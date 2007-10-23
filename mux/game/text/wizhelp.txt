@@ -2557,7 +2557,15 @@ FUNCTION_ALIAS
 
   Defines <alias> as a synonym for the function <funcname>.
 
-  Related Topics: alias, flag_alias.
+  Related Topics: alias, flag_alias, function_name.
+
+& FUNCTION_NAME
+FUNCTION_NAME
+  CONFIG PARAMETER: function_name <oldname> <newname>
+
+  Renames function <oldname> to <newname>.
+
+  Related Topics: function_alias
 
 & FUNCTION_INVOCATION_LIMIT
 FUNCTION_INVOCATION_LIMIT
