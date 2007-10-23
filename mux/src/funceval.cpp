@@ -3318,7 +3318,7 @@ FUNCTION(fun_foreach)
     size_t nStr = sStr->length();
     LBUF_OFFSET i = 0, nBytes = 0;
 
-    if (nfargs == 4)
+    if (nfargs == 4 && *fargs[2] && *fargs[3])
     {
         bool flag = false;
         UTF8 prev = '\0';
