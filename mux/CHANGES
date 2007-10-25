@@ -186,6 +186,7 @@ Bug Fixes:
     '<name> test' (Issue 351).
  -- Fix --enable-deprecated build (Issue 397).
  -- Pass reality level descriptions through @descformat (Issue 59).
+ -- Fix regression (r1355) which allowed an endless loop (Issue 403).
 
 
 Performance Enhancements:
