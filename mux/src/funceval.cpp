@@ -3328,6 +3328,7 @@ FUNCTION(fun_foreach)
               && !MuxAlarm.bAlarmed)
         {
             nBytes = sStr->export_Char_UTF8(i, cbuf);
+            i = i + nBytes;
 
             if (flag)
             {
@@ -3358,7 +3359,6 @@ FUNCTION(fun_foreach)
             mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
             prev = cbuf[0];
-            i = i + nBytes;
         }
     }
     else
