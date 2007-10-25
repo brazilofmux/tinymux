@@ -93,6 +93,7 @@ Feature Additions:
  -- Add mux_UnmarshalInterface() call to libmux.
  -- Add ShutdownSlave method to ISlaveControl.
  -- Add sqlslave and sqlproxy modules for AsyncSQL.
+ -- Add chanobj() per issue 401.
 
 
 Bug Fixes:
