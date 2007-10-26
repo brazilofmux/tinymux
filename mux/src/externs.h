@@ -603,6 +603,7 @@ extern int anum_alc_top;
 #define HOOK_AFAIL      32  /* AFAIL hook */
 #define HOOK_CLEAR      64  /* CLEAR hook */
 #define HOOK_LIST       128 /* LIST hooks */
+#define HOOK_ARGS       256 /* ARGS hooks */
 #define ICMD_DISABLE    0
 #define ICMD_IGNORE     1
 #define ICMD_ON         2

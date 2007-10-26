@@ -527,18 +527,30 @@
                       falls through and is handled by softcode.  This allows
                       you to softcode switches to built-in commands.
 
+{ 'wizhelp @hook2' for more }
+
+& @HOOK2
+@HOOK (continued)
+
          /fail      - Set up a FAIL hook which executes if the command is
                       somehow block by a @hook/permit or @icmd/disable.
                       The HOOK_OBJ attribute is af_<command>.
+
+         /args      - Set up a ARGS hook which will execute once per
+                      argument passed to a built-in command. %0 is the first
+                      argument, %1 is the second argument, %2 is the
+                      argument in a list, %3 is which argument (starting
+                      at 0 with list arguments starting at 2), and %4 is the
+                      list of switches passed verbatim.
 
          /clear     - When used in junction with any of the above switches,
                       will clear the hook from being applied.
 
          /list      - This lists the current commands/attributes with hooks.
 
-{ 'wizhelp @hook2' for examples}
+{ 'wizhelp @hook3' for examples}
 
-& @HOOK2
+& @HOOK3
 @HOOK (continued)
 
   Examples of @hook are as follows:
