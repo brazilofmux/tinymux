@@ -166,7 +166,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
 #if 0
 void dispatch_CleanChannels(void *pUnused, int iUnused)
 {
-    UTF8 *cmdsave = mudstate.debug_cmd;
+    const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< cleanchannels >");
     do_cleanupchannels();
 
