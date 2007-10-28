@@ -1973,6 +1973,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                         size_t nLen;
                                         atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
                                         safe_copy_buf(mux_scratch, nLen, buff, bufc);
+                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                     }
                                 }
                                 iStr += n;

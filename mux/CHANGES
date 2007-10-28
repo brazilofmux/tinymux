@@ -188,9 +188,10 @@ Bug Fixes:
  -- Fix --enable-deprecated build (Issue 397).
  -- Pass reality level descriptions through @descformat (Issue 59).
  -- Fix regression (r1355) which allowed an endless loop (Issue 403).
+ -- Fix buffer overflow with %=<> substitution (Issue 406).
 
 
-Performance Enhancements:
+Performanc  Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
     Issue 238 comments).  Thanks Alierak.
