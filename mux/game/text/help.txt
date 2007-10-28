@@ -1059,8 +1059,8 @@ Related Topics: @name.
 & @COMON
 @COMON
 
-  COMMAND:   @comoff <object> = <message>
-  ATTRIBUTE: Comoff
+  COMMAND:   @comon <object> = <message>
+  ATTRIBUTE: Comon
 
   Sets the message that is shown to the player who turns on the channel
   corresponding to <object>.
