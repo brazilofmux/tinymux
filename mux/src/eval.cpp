@@ -1053,11 +1053,11 @@ static const unsigned char isSpecial_L2[256] =
 {
      18,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x00-0x0F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
-      0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
+      0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0, 22,  0,  0,  0,  0, // 0x20-0x2F
       1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0, 21,  0,  0, // 0x30-0x3F
-     20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0, 22,  9,147,140,144, // 0x40-0x4F
+     20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0, 23,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
-     20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0, 22,  9, 19, 12, 16, // 0x60-0x6F
+     20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0, 23,  9, 19, 12, 16, // 0x60-0x6F
      15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x90-0x9F
@@ -1933,54 +1933,84 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (iCode == 21)
+                    else if (iCode <= 22)
                     {
-                        // 3D
-                        // =
-                        //
-                        // %=<attr> like v(attr).
-                        //
-                        n = 1;
-                        if ('<' == pStr[iStr + n])
-                        {
-                            n++;
+						if (iCode == 21)
+						{
+							// 3D
+							// =
+							//
+							// %=<attr> like v(attr).
+							//
+							n = 1;
+							if ('<' == pStr[iStr + n])
+							{
+								n++;
 
-                            while (  '\0' != pStr[iStr + n]
-                                  && '>' != pStr[iStr + n])
-                            {
-                                n++;
-                            }
-                            if (nStr < iStr + n)
-                            {
-                                n = nStr - iStr;
-                            }
-                            if ('>' == pStr[iStr + n])
-                            {
-                                // Adjust for the =< at the beginning.
-                                //
-                                iStr += 2;
-                                n -= 2;
+								while (  '\0' != pStr[iStr + n]
+									  && '>' != pStr[iStr + n])
+								{
+									n++;
+								}
+								if (nStr < iStr + n)
+								{
+									n = nStr - iStr;
+								}
+								if ('>' == pStr[iStr + n])
+								{
+									// Adjust for the =< at the beginning.
+									//
+									iStr += 2;
+									n -= 2;
 
-                                memcpy(mux_scratch, pStr + iStr, n);
-                                mux_scratch[n] = '\0';
+									memcpy(mux_scratch, pStr + iStr, n);
+									mux_scratch[n] = '\0';
 
-                                if (mux_isattrnameinitial(mux_scratch))
-                                {
-                                    ATTR *ap = atr_str(mux_scratch);
-                                    if (  ap
-                                       && See_attr(executor, executor, ap))
-                                    {
-                                        size_t nLen;
-                                        atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
-                                        safe_copy_buf(mux_scratch, nLen, buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    }
-                                }
-                                iStr += n;
-                            }
-                        }
+									if (mux_isdigit(*mux_scratch)) {
+										// This hideous thing converts 3-digit non-negative integers to
+										// a longs without loops and with at most one multiply.
+										i=mux_isdigit(mux_scratch[1])
+											?(mux_isdigit(mux_scratch[2])
+												?(mux_isdigit(mux_scratch[3])
+													?MAX_ARG
+													:10*TableATOI(mux_scratch[0]-'0',mux_scratch[1]-'0')
+														+mux_scratch[2]-'0')
+												:TableATOI(mux_scratch[0]-'0',mux_scratch[1]-'0'))
+											:mux_scratch[0]-'0';
+										if (i<ncargs && cargs[i])
+										{
+											safe_str(cargs[i], buff, bufc);
+											nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+										}
+									}
+									else if (mux_isattrnameinitial(mux_scratch))
+									{
+										ATTR *ap = atr_str(mux_scratch);
+										if (  ap
+										   && See_attr(executor, executor, ap))
+										{
+											size_t nLen;
+											atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
+											safe_copy_buf(mux_scratch, nLen, buff, bufc);
+											nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+										}
+									}
+									iStr += n;
+								}
+							}
+						}
+						else
+						{
+							// 2B
+							// +
+							//
+							// Ncargs substitution
+							//
+							safe_i64toa(ncargs,buff,bufc);
+							nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+						}
                     }
-                    else if (iCode == 22)
+                    else if (iCode == 23)
                     {
                         // 4B or 6B
                         // k or K

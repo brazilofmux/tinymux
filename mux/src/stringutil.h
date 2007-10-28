@@ -30,6 +30,7 @@ extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
 extern const unsigned char mux_toupper_ascii[256];
 extern const unsigned char mux_tolower_ascii[256];
+extern const UTF8 TableATOI[16][10];
 
 #define UTF8_SIZE1     1
 #define UTF8_SIZE2     2
@@ -54,6 +55,7 @@ extern const UTF8 *latin1_utf8[256];
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
 #define mux_toupper_ascii(x) (mux_toupper_ascii[(unsigned char)(x)])
 #define mux_tolower_ascii(x) (mux_tolower_ascii[(unsigned char)(x)])
+#define TableATOI(x,y) (TableATOI[(unsigned char)(x)][(unsigned char)(y)])
 
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
