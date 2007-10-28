@@ -1861,6 +1861,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                                         if (See_attr(executor, executor, ap))
                                         {
                                             safe_copy_buf(tbuf, nLen, buff, bufc);
+                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                         }
                                         free_lbuf(tbuf);
                                     }
