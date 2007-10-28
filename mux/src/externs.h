@@ -14,7 +14,7 @@
 // From bsd.cpp.
 //
 void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-void close_sockets(bool emergency, char *message);
+void close_sockets(bool emergency, const char *message);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
 #ifdef QUERY_SLAVE
@@ -34,7 +34,7 @@ extern NAMETAB sigactions_nametab[];
 
 // From conf.cpp
 //
-void cf_log_notfound(dbref, char *, const char *, char *);
+void cf_log_notfound(dbref, const char *, const char *, const char *);
 int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
 void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
 void ValidateConfigurationDbrefs(void);
@@ -188,7 +188,7 @@ extern const char *ColorTable[256];
 
 #if defined(FIRANMUX)
 char *linewrap_desc(char *);
-char *linewrap_general(char *, int, char *, char *);
+char *linewrap_general(char *, int, const char *, const char *);
 #endif // FIRANMUX
 
 /* From game.cpp */
@@ -312,7 +312,7 @@ void  destroy_obj(dbref);
 void  empty_obj(dbref);
 
 /* From player.cpp */
-dbref create_player(char *name, char *pass, dbref executor, bool isrobot, const char **pmsg);
+dbref create_player(const char *name, const char *pass, dbref executor, bool isrobot, const char **pmsg);
 void AddToPublicChannel(dbref player);
 bool add_player_name(dbref, const char *);
 bool delete_player_name(dbref, const char *);

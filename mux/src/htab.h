@@ -14,7 +14,7 @@
 typedef struct name_table NAMETAB;
 struct name_table
 {
-    char    *name;
+    const char *name;
     int minlen;
     int perm;
     int flag;
@@ -78,7 +78,7 @@ extern NAMETAB powers_nametab[];
 
 extern bool search_nametab(dbref, NAMETAB *, char *, int *);
 extern NAMETAB *find_nametab_ent(dbref, NAMETAB *, char *);
-extern void display_nametab(dbref, NAMETAB *, char *, bool);
+extern void display_nametab(dbref, NAMETAB *, const char *, bool);
 extern void interp_nametab(dbref, NAMETAB *, int, const char *, const char *, const char *);
 extern void listset_nametab(dbref, NAMETAB *, int, char *, bool);
 

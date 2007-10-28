@@ -1313,10 +1313,10 @@ void do_shutdown
 typedef struct
 {
     char **ppszOutputBase;
-    char szOutputSuffix[14];
+    const char szOutputSuffix[14];
     bool bUseTemporary;
     int  fType;
-    char *pszErrorMessage;
+    const char *pszErrorMessage;
 } DUMP_PROCEDURE;
 
 static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =

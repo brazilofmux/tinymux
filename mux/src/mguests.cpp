@@ -311,7 +311,7 @@ dbref CGuests::MakeGuestChar(void)
     // Make the player.
     //
     const char *pmsg;
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
+    player = create_player(name, (char *)GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //
@@ -355,8 +355,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), "=me");
-    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), "=me");
+    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), (char *)"=me");
+    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), (char *)"=me");
 
     // return em!
     //

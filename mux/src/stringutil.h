@@ -57,10 +57,10 @@ typedef struct
 } MUX_STRTOK_STATE;
 
 void mux_strtok_src(MUX_STRTOK_STATE *tts, char *pString);
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl);
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const char *pControl);
 char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
 char *mux_strtok_parse(MUX_STRTOK_STATE *tts);
-char *RemoveSetOfCharacters(char *pString, char *pSetToRemove);
+char *RemoveSetOfCharacters(char *pString, const char *pSetToRemove);
 
 size_t mux_ltoa(long val, char *buf);
 char *mux_ltoa_t(long val);
@@ -125,7 +125,7 @@ char *strip_ansi(const char *szString, size_t *pnString = 0);
 char *strip_accents(const char *szString, size_t *pnString = 0);
 char *normal_to_white(const char *);
 char *munge_space(const char *);
-char *trim_spaces(char *);
+char *trim_spaces(const char *);
 char *grabto(char **, char);
 int  string_compare(const char *, const char *);
 int  string_prefix(const char *, const char *);
@@ -142,7 +142,7 @@ char *replace_tokens
 int prefix_match(const char *, const char *);
 char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 #endif // 0
-bool minmatch(char *str, char *target, int min);
+bool minmatch(const char *str, const char *target, int min);
 char *StringCloneLen(const char *str, size_t nStr);
 char *StringClone(const char *str);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
@@ -171,8 +171,8 @@ void ItemToList_Init(ITL *pContext, char *arg_buff, char **arg_bufc,
     char arg_chPrefix = 0, char arg_chSep = ' ');
 bool ItemToList_AddInteger(ITL *pContext, int i);
 bool ItemToList_AddInteger64(ITL *pContext, INT64 i);
-bool ItemToList_AddString(ITL *pContext, char *pStr);
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
+bool ItemToList_AddString(ITL *pContext, const char *pStr);
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const char *pStr);
 void ItemToList_Final(ITL *pContext);
 
 size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va);

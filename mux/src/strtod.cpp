@@ -2578,7 +2578,7 @@ static char *rv_alloc(unsigned int i)
     return dtoa_result;
 }
 
-static char *nrv_alloc(char *s, char **rve, int n)
+static char *nrv_alloc(const char *s, char **rve, int n)
 {
     char *rv, *t;
 

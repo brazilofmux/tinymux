@@ -565,7 +565,7 @@ static char *get_channel_from_alias(dbref player, char *alias)
     }
     else
     {
-        return "";
+        return (char *)"";
     }
 }
 
@@ -935,7 +935,7 @@ static void BuildChannelMessage
     {
     case ':':
         pPose++;
-        newPose = modSpeech(user->who, pPose, true, "channel/pose");
+        newPose = modSpeech(user->who, pPose, true, (char *)"channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -951,7 +951,7 @@ static void BuildChannelMessage
 
     case ';':
         pPose++;
-        newPose = modSpeech(user->who, pPose, true, "channel/pose");
+        newPose = modSpeech(user->who, pPose, true, (char *)"channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -964,12 +964,12 @@ static void BuildChannelMessage
         break;
 
     default:
-        newPose = modSpeech(user->who, pPose, true, "channel");
+        newPose = modSpeech(user->who, pPose, true, (char *)"channel");
         if (newPose)
         {
             pPose = newPose;
         }
-        saystring = modSpeech(user->who, pPose, false, "channel");
+        saystring = modSpeech(user->who, pPose, false, (char *)"channel");
         if (saystring)
         {
             safe_chr(' ', *messNormal, &mnptr);
@@ -1251,7 +1251,7 @@ void do_joinchannel(dbref player, struct channel *ch)
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-            ":has joined this channel.", &messNormal, &messNoComtitle);
+            (char *)":has joined this channel.", &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -1265,7 +1265,7 @@ void do_leavechannel(dbref player, struct channel *ch)
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-            ":has left this channel.", &messNormal, &messNoComtitle);
+            (char *)":has left this channel.", &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
     user->bUserIsOn = false;
@@ -1728,7 +1728,7 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
                     {
                         char *messNormal, *messNoComtitle;
                         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                                            ch->header, user, ":has left this channel.",
+                                            ch->header, user, (char *)":has left this channel.",
                                             &messNormal, &messNoComtitle);
                         SendChannelMessage(player, ch, messNormal, messNoComtitle);
                     }
@@ -2337,7 +2337,7 @@ static void do_comdisconnectraw_notify(dbref player, char *chan)
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-            ":has disconnected.", &messNormal, &messNoComtitle);
+            (char *)":has disconnected.", &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -2355,7 +2355,7 @@ static void do_comconnectraw_notify(dbref player, char *chan)
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-            ":has connected.", &messNormal, &messNoComtitle);
+            (char *)":has connected.", &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -2786,7 +2786,7 @@ void do_chopen
         return;
     }
 
-    char *msg = NULL;
+    const char *msg = NULL;
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
@@ -2941,9 +2941,9 @@ void do_chboot
         char *mess1, *mess1nct;
         char *mess2, *mess2nct;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                            ":boots", &mess1, &mess1nct);
+                            (char *)":boots", &mess1, &mess1nct);
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu,
-                            ":off the channel.", &mess2, &mess2nct);
+                            (char *)":off the channel.", &mess2, &mess2nct);
         char *messNormal = alloc_lbuf("do_chboot.messnormal");
         char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
         char *mnp = messNormal;

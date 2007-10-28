@@ -21,7 +21,7 @@
 //
 typedef struct confparm
 {
-    char *pname;            // parm name
+    const char *pname;      // parm name
     int (*interpreter)(int *vp, char *str, void *pExtra, UINT32 nExtra,
                        dbref player, char *cmd); // routine to interp parameter
     int flags;              // control flags
@@ -355,7 +355,7 @@ void cf_init(void)
 // ---------------------------------------------------------------------------
 // cf_log_notfound: Log a 'parameter not found' error.
 //
-void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing)
+void cf_log_notfound(dbref player, const char *cmd, const char *thingname, const char *thing)
 {
     if (mudstate.bReadingConfiguration)
     {
@@ -1625,7 +1625,7 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
         // of the command weren't dynamically allocated.  This might leak
         // memory.
         //
-        char *p = cmdp->cmdname;
+        const char *p = cmdp->cmdname;
         hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
         hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
 
@@ -2254,7 +2254,7 @@ void do_admin
 static struct
 {
     char **pFilename;
-    char *pSuffix;
+    const char *pSuffix;
 } DefaultSuffixes[]
 =
 {
@@ -2270,7 +2270,7 @@ int cf_read(void)
     int retval;
 
     mudstate.bReadingConfiguration = true;
-    retval = cf_include(NULL, mudconf.config_file, (void *)0, 0, 0, "init");
+    retval = cf_include(NULL, mudconf.config_file, (void *)0, 0, 0, (char *)"init");
     mudstate.bReadingConfiguration = false;
 
     // Fill in missing DB file names.
@@ -2284,7 +2284,7 @@ int cf_read(void)
             // The filename is an empty string so we should construct
             // a default filename.
             //
-            char *pSuffix = DefaultSuffixes[i].pSuffix;
+            const char *pSuffix = DefaultSuffixes[i].pSuffix;
             size_t nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
             ISOUTOFMEMORY(buff);

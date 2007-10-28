@@ -485,7 +485,7 @@ void init_flagtab(void)
     char *nbuf = alloc_sbuf("init_flagtab");
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
-        fp->flagname = fp->pOrigName;
+        fp->flagname = (char *)fp->pOrigName;
         mux_strncpy(nbuf, fp->pOrigName, SBUF_SIZE-1);
         mux_strlwr(nbuf);
         if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.flags_htab))
@@ -569,7 +569,7 @@ char *MakeCanonicalFlagName
     }
 }
 
-static FLAGNAMEENT *find_flag(char *flagname)
+static FLAGNAMEENT *find_flag(const char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
@@ -756,7 +756,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
  * * has_flag: does object have flag visible to player?
  */
 
-bool has_flag(dbref player, dbref it, char *flagname)
+bool has_flag(dbref player, dbref it, const char *flagname)
 {
     FLAGNAMEENT *fp = find_flag(flagname);
     if (!fp)
@@ -1317,7 +1317,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
                    && mux_stricmp(lookup->flagname, pCheckedAlias) == 0)
                 {
                     MEMFREE(lookup->flagname);
-                    lookup->flagname = lookup->pOrigName;
+                    lookup->flagname = (char *)lookup->pOrigName;
                     hashdeleteLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
                     notify(executor, tprintf("Flag name '%s' removed from the hash table.", pCheckedAlias));
                 }

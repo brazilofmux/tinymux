@@ -1571,7 +1571,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
     return;
 }
 
-static int cmdtest(dbref player, char *cmd)
+static int cmdtest(dbref player, const char *cmd)
 {
     char *buff1, *pt1, *pt2;
     dbref aowner;
@@ -1606,7 +1606,7 @@ static int cmdtest(dbref player, char *cmd)
     return rval;
 }
 
-static int zonecmdtest(dbref player, char *cmd)
+static int zonecmdtest(dbref player, const char *cmd)
 {
     if (!Good_obj(player) || God(player))
     {
@@ -1633,7 +1633,7 @@ static int zonecmdtest(dbref player, char *cmd)
 }
 
 static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
-             char *pCommand)
+             const char *pCommand)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1673,7 +1673,7 @@ static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     return 0;
 }
 
-static void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
+static void hook_fail(dbref executor, CMDENT *cmdp, const char *pCommand)
 {
     UNUSED_PARAMETER(pCommand);
 
@@ -1707,7 +1707,8 @@ char *process_command
     static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
-    char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str, check2[2];
+    char *p, *q, *arg, *pSlash, *bp, *str, check2[2];
+    const char *cmdsave;
     int aflags, i;
     dbref exit, aowner;
     CMDENT *cmdp;
@@ -1959,7 +1960,7 @@ char *process_command
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
-            do_move(executor, caller, enactor, eval, 0, "home");
+            do_move(executor, caller, enactor, eval, 0, (char *)"home");
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -4166,7 +4167,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
     {
         key = loc_set;
     }
-    char *message = "";
+    const char *message = "";
     buff1 = alloc_lbuf("do_icmd");
     for (x = 0; x < nargs; x++)
     {

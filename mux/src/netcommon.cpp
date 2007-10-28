@@ -1945,7 +1945,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
 
     // Make sure there can be no embedded newlines from %r
     //
-    static char *Empty = "";
+    static char *Empty = (char *)"";
     char *szValidDoing = Empty;
     bool bValidDoing;
     size_t nValidDoing = 0;
@@ -2068,7 +2068,7 @@ void init_logout_cmdtab(void)
 static void failconn(const char *logcode, const char *logtype, const char *logreason,
                      DESC *d, int disconnect_reason,
                      dbref player, int filecache, char *motd_msg, char *command,
-                     char *user, char *password, char *cmdsave)
+                     char *user, char *password, const char *cmdsave)
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     char *buff = alloc_mbuf("failconn.LOG");
@@ -2112,7 +2112,7 @@ static bool check_connect(DESC *d, char *msg)
     const char *p;
     bool isGuest = false;
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< check_connect >";
 
     // Hide the password length from SESSION.
@@ -2505,7 +2505,7 @@ static void do_logged_out_internal(DESC *d, int key, char *arg)
 
 void do_command(DESC *d, char *command)
 {
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
 
     if (d->flags & DS_CONNECTED)
@@ -2686,7 +2686,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
 {
-    logged_out1(executor, caller, enactor, 0, key, "");
+    logged_out1(executor, caller, enactor, 0, key, (char *)"");
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)

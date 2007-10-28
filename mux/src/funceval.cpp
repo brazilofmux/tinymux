@@ -289,7 +289,7 @@ FUNCTION(fun_zone)
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 
-static bool check_command(dbref player, char *name, char *buff, char **bufc)
+static bool check_command(dbref player, const char *name, char *buff, char **bufc)
 {
     CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
     if (cmdp)
@@ -812,7 +812,7 @@ static char *crypt_code(char *code, char *text, bool type)
     if (  !text
        || text[0] == '\0')
     {
-        return "";
+        return (char *)"";
     }
     if (  !code
        || code[0] == '\0')

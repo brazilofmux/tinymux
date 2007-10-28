@@ -350,7 +350,7 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
  * * display_nametab: Print out the names of the entries in a name table.
  */
 
-void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_none)
+void display_nametab(dbref player, NAMETAB *ntab, const char *prefix, bool list_if_none)
 {
     NAMETAB *nt;
     bool got_one = false;

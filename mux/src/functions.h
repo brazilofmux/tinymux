@@ -10,7 +10,7 @@
 
 typedef struct tagFun
 {
-    char *name;     // function name
+    const char *name;  // function name
     void (*fun)(char *buff, char **bufc, dbref executor, dbref caller,
         dbref enactor, int eval, char *fargs[], int nfargs, char *cargs[],
         int ncargs);  // handler

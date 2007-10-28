@@ -1324,7 +1324,7 @@ char *normal_to_white(const char *szString)
 typedef struct
 {
     int len;
-    char *p;
+    const char *p;
 } LITERAL_STRING_STRUCT;
 
 #define NUM_MU_SUBS 14
@@ -1522,10 +1522,10 @@ char *munge_space(const char *string)
 /* ---------------------------------------------------------------------------
  * trim_spaces: Remove leading and trailing spaces.
  */
-char *trim_spaces(char *string)
+char *trim_spaces(const char *string)
 {
     char *buffer = alloc_lbuf("trim_spaces");
-    char *p = string;
+    const char *p = string;
     char *q = buffer;
 
     if (p)
@@ -1875,7 +1875,7 @@ int prefix_match(const char *s1, const char *s2)
 }
 #endif // 0
 
-bool minmatch(char *str, char *target, int min)
+bool minmatch(const char *str, const char *target, int min)
 {
     while (*str && *target
           && (mux_tolower(*str) == mux_tolower(*target)))
@@ -2909,7 +2909,7 @@ void mux_strtok_src(MUX_STRTOK_STATE *tts, char *arg_pString)
     tts->pString = arg_pString;
 }
 
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl)
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const char *pControl)
 {
     if (!tts || !pControl) return;
 
@@ -3006,7 +3006,7 @@ char *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 // This function will filter out any characters in the the set from
 // the string.
 //
-char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
+char *RemoveSetOfCharacters(char *pString, const char *pSetToRemove)
 {
     static char Buffer[LBUF_SIZE];
     char *pBuffer = Buffer;
@@ -3106,7 +3106,7 @@ bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
     return true;
 }
 
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const char *pStr)
 {
     size_t nLen = nStr;
     if (  !pContext->bFirst
@@ -3143,7 +3143,7 @@ bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
     return true;
 }
 
-bool ItemToList_AddString(ITL *pContext, char *pStr)
+bool ItemToList_AddString(ITL *pContext, const char *pStr)
 {
     size_t nStr = strlen(pStr);
     return ItemToList_AddStringLEN(pContext, nStr, pStr);
@@ -3605,7 +3605,7 @@ CF_HAND(cf_art_rule)
 
 #if defined(FIRANMUX)
 
-char *linewrap_general(char *strret, int field, char *left, char *right)
+char *linewrap_general(char *strret, int field, const char *left, const char *right)
 {
     int tabsets[] =
     {

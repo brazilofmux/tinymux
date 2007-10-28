@@ -3468,7 +3468,7 @@ typedef enum
 
 static struct lconSubsetTable
 {
-    char      *name;
+    const char *name;
     lconSubset subset;
 }
 SubsetTable[] =
@@ -5768,7 +5768,7 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *mp;
+    const char *mp;
     size_t mlen;
 
     // Sanity-check arg1 and arg2.
@@ -5816,7 +5816,8 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *mp, *ip;
+    const char *mp;
+    char *ip;
     size_t mlen;
 
     // Sanity-check arg1 and arg2.
@@ -8736,7 +8737,7 @@ static FUNCTION(fun_wrap)
 
     // ARG 7: Output separator. Default: line break.
     //
-    char *pOSep = "\r\n";
+    const char *pOSep = "\r\n";
     if (  nfargs >= 7
        && fargs[6][0])
     {
@@ -8826,7 +8827,7 @@ typedef struct
     int  iBase;
     char chLetter;
     int  nName;
-    char *pName;
+    const char *pName;
 
 } RADIX_ENTRY;
 

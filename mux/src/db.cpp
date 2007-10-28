@@ -219,7 +219,7 @@ ATTR AttrTable[] =
     {NULL,          0,          0}
 };
 
-char *aszSpecialDBRefNames[1-NOPERM] =
+const char *aszSpecialDBRefNames[1-NOPERM] =
 {
     "", "*NOTHING*", "*AMBIGUOUS*", "*HOME*", "*NOPERMISSION*"
 };
@@ -1170,7 +1170,7 @@ void init_attrtab(void)
  * atr_str: Look up an attribute by name.
  */
 
-ATTR *atr_str(char *s)
+ATTR *atr_str(const char *s)
 {
     // Make attribute name canonical.
     //
@@ -1380,7 +1380,7 @@ bool ThrottleMail(dbref executor)
  * mkattr: Lookup attribute by name, creating if needed.
  */
 
-int mkattr(dbref executor, char *buff)
+int mkattr(dbref executor, const char *buff)
 {
     ATTR *ap = atr_str(buff);
     if (!ap)
@@ -2201,7 +2201,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
  * get_atr,atr_get_raw, atr_get_str, atr_get: Get an attribute from the database.
  */
 
-int get_atr(char *name)
+int get_atr(const char *name)
 {
     ATTR *ap = atr_str(name);
 

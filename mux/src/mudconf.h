@@ -378,8 +378,8 @@ struct statedata
     char    short_ver[64];      /* Short version number (for INFO) */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     char    version[128];       /* MUX version string */
-    char    *curr_cmd;          /* The current command */
-    char    *debug_cmd;         // The command we are executing (if any).
+    const char *curr_cmd;       // The current command.
+    const char *debug_cmd;      // The command we are executing (if any).
     char    *mod_alist;         /* Attribute list for modifying */
     char    *pout;              /* The output of the pipe used in %| */
     char    *poutbufc;          /* Buffer position for poutnew */

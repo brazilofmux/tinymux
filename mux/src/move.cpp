@@ -403,7 +403,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 {
     dbref curr;
     int count;
-    char *failmsg;
+    const char *failmsg;
 
     dbref src = Location(thing);
     if ((dest != HOME) && Good_obj(src))

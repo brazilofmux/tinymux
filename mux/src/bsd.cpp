@@ -1740,7 +1740,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     int len;
 #endif // !WIN32
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< new_connection >";
     addr_len = sizeof(struct sockaddr);
 
@@ -2394,7 +2394,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     DESC *d = (DESC *)dvoid;
     int cnt;
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_output >";
 
     TBLOCK *tb = d->output_head;
@@ -2501,7 +2501,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         return;
     }
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_output >";
 
     TBLOCK *tb = d->output_head;
@@ -2561,7 +2561,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_output >";
 
     TBLOCK *tb = d->output_head;
@@ -3375,7 +3375,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
 bool process_input(DESC *d)
 {
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_input >";
 
     char buf[LBUF_SIZE];
@@ -3400,7 +3400,7 @@ bool process_input(DESC *d)
     return true;
 }
 
-void close_sockets(bool emergency, char *message)
+void close_sockets(bool emergency, const char *message)
 {
     DESC *d, *dnext;
 

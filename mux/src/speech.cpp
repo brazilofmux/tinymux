@@ -211,18 +211,18 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         }
     }
 
-    char *command = "";
+    char *command = (char *)"";
     if (SAY_SAY == key)
     {
-        command = "say";
+        command = (char *)"say";
     }
     else if (SAY_POSE == key || SAY_POSE_NOSPC == key)
     {
-        command = "pose";
+        command = (char *)"pose";
     }
     else if (SAY_EMIT == key)
     {
-        command = "@emit";
+        command = (char *)"@emit";
     }
 
     // Parse speechmod if present.
@@ -358,7 +358,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     // Parse speechmod if present.
     //
-    char *messageNew = modSpeech(executor, message, true, "@wall");
+    char *messageNew = modSpeech(executor, message, true, (char *)"@wall");
     if (messageNew)
     {
         message = messageNew;
@@ -937,7 +937,7 @@ void do_page
         pageMode = 0;
     }
 
-    char *newMessage = modSpeech(executor, pMessage, true, "page");
+    char *newMessage = modSpeech(executor, pMessage, true, (char *)"page");
     if (newMessage)
     {
         pMessage = newMessage;
@@ -1030,7 +1030,7 @@ void do_page
 
 static void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
 {
-    char *newMessage = modSpeech(player, message, true, "whisper");
+    char *newMessage = modSpeech(player, message, true, (char *)"whisper");
     if (newMessage)
     {
         message = newMessage;
@@ -1204,7 +1204,7 @@ void do_pemit_single
                 message++;
 
             default:
-                newMessage = modSpeech(player, message, true, "whisper");
+                newMessage = modSpeech(player, message, true, (char *)"whisper");
                 if (newMessage)
                 {
                     message = newMessage;
@@ -1237,7 +1237,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            newMessage = modSpeech(target, message, true, "@fsay");
+            newMessage = modSpeech(target, message, true, (char *)"@fsay");
             if (newMessage)
             {
                 message = newMessage;
@@ -1245,7 +1245,7 @@ void do_pemit_single
             notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
-                saystring = modSpeech(target, message, false, "@fsay");
+                saystring = modSpeech(target, message, false, (char *)"@fsay");
                 if (saystring)
                 {
                     p = tprintf("%s %s \"%s\"", Moniker(target),
@@ -1270,7 +1270,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE:
-            newMessage = modSpeech(target, message, true, "@fpose");
+            newMessage = modSpeech(target, message, true, (char *)"@fpose");
             if (newMessage)
             {
                 message = newMessage;
@@ -1284,7 +1284,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE_NS:
-            newMessage = modSpeech(target, message, true, "@fpose");
+            newMessage = modSpeech(target, message, true, (char *)"@fpose");
             if (newMessage)
             {
                 message = newMessage;

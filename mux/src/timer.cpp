@@ -23,7 +23,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_DBCHECK)
     {
-        char *cmdsave = mudstate.debug_cmd;
+        const char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dbck >";
         do_dbck(NOTHING, NOTHING, NOTHING, 0);
         Guest.CleanUp();
@@ -54,7 +54,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_CHECKPOINT)
     {
-        char *cmdsave = mudstate.debug_cmd;
+        const char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dump >";
 #ifndef WIN32
         if (mudstate.dumping)
@@ -93,7 +93,7 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_IDLECHECK)
     {
-        char *cmdsave = mudstate.debug_cmd;
+        const char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< idlecheck >";
         check_idle();
         mudstate.debug_cmd = cmdsave;
@@ -118,7 +118,7 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_EVENTCHECK)
     {
-        char *cmdsave = mudstate.debug_cmd;
+        const char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< eventcheck >";
         check_events();
         mudstate.debug_cmd = cmdsave;
@@ -139,7 +139,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< cachetick >";
 
     CLinearTimeDelta ltd = 0;
@@ -163,7 +163,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
 #if 0
 void dispatch_CleanChannels(void *pUnused, int iUnused)
 {
-    char *cmdsave = mudstate.debug_cmd;
+    const char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< cleanchannels >";
     do_cleanupchannels();
 

@@ -316,7 +316,7 @@ void do_log
     }
 
     char *pFullName = NULL;
-    char *pMessage = "";
+    const char *pMessage = "";
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");

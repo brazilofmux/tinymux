@@ -206,7 +206,7 @@ int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
 extern bool ParseDate(CLinearTimeAbsolute &lta, char *pDateString, bool *pbZoneSpecified);
 extern bool isLeapYear(long iYear);
 extern const char *monthtab[12];
-extern char *DayOfWeekString[7];
+extern const char *DayOfWeekString[7];
 extern int iMod(int x, int y);
 
 #endif // TIMEUTIL_H

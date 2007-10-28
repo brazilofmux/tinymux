@@ -23,7 +23,7 @@
                       ((l) < mudconf.parent_nest_lim)); \
                      (p)=Parent(p), (l)++)
 
-int get_atr(char *name);
+int get_atr(const char *name);
 
 typedef struct attr ATTR;
 struct attr
@@ -54,7 +54,7 @@ struct stack
 };
 
 extern ATTR *atr_num(int anum);
-extern ATTR *atr_str(char *s);
+extern ATTR *atr_str(const char *s);
 
 extern ATTR AttrTable[];
 
@@ -123,7 +123,7 @@ struct boolexp
 #define AMBIGUOUS   (-2)    /* multiple possibilities, for matchers */
 #define HOME        (-3)    /* virtual room, represents mover's home */
 #define NOPERM      (-4)    /* Error status, no permission */
-extern char *aszSpecialDBRefNames[1-NOPERM];
+extern const char *aszSpecialDBRefNames[1-NOPERM];
 
 typedef struct object OBJ;
 struct object
@@ -237,7 +237,7 @@ dbref    parse_dbref(const char *);
 bool ThrottleMail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);
 bool ThrottlePlayerCreate(void);
-int  mkattr(dbref executor, char *);
+int  mkattr(dbref executor, const char *);
 void al_store(void);
 void db_grow(dbref);
 void db_free(void);

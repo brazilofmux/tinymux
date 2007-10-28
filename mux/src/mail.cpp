@@ -449,7 +449,7 @@ static char *get_folder_name(dbref player, int fld)
             return p;
         }
     }
-    p = "unnamed";
+    p = (char *)"unnamed";
     return p;
 }
 
@@ -537,7 +537,7 @@ static int parse_folder(dbref player, char *folder_string)
 #define MAIL_INVALID_SPEC   5
 #define MAIL_INVALID_PLAYER_OR_USING_MALIAS 6
 
-static char *mailmsg[] =
+static const char *mailmsg[] =
 {
     "MAIL: Invalid message range",
     "MAIL: Invalid message number",
@@ -1346,9 +1346,9 @@ static char *make_namelist(dbref player, char *arg)
 static struct tag_mailstatusentry
 {
     int nMask;
-    char *pYes;
+    const char *pYes;
     int   nYes;
-    char *pNo;
+    const char *pNo;
     int   nNo;
 }
 aMailStatusTable[NUM_MAILSTATUSTABLE] =

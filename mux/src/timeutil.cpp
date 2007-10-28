@@ -722,7 +722,7 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
 // However, the year may be larger than 4 characters.
 //
 
-char *DayOfWeekString[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+const char *DayOfWeekString[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static const char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 const char *monthtab[12] =
 {
@@ -2795,7 +2795,7 @@ static void ClassifyNumericToken(PD_Node *pNode)
 
 typedef struct
 {
-    char        *szText;
+    const char   *szText;
     unsigned int uCouldBe;
     int          iValue;
 } PD_TEXT_ENTRY;

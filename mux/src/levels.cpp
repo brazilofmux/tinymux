@@ -649,7 +649,6 @@ void did_it_rlevel
        free_lbuf(d);
     }
 
-
     // Message to neighbors.
     //
     if (  0 < owhat

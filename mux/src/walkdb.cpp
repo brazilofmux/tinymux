@@ -420,7 +420,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
     char *pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
     {
-        pname = "me";
+        pname = (char *)"me";
     }
     else
     {
@@ -438,12 +438,12 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
         else
         {
             searchtype = pname;
-            pname = "";
+            pname = (char *)"";
         }
     }
     else
     {
-        searchtype = "";
+        searchtype = (char *)"";
     }
 
     // If the player name is quoted, strip the quotes.

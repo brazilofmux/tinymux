@@ -544,8 +544,8 @@ void AddToPublicChannel(dbref player)
 
 dbref create_player
 (
-    char *name,
-    char *password,
+    const char *name,
+    const char *password,
     dbref creator,
     bool isrobot,
     const char **pmsg
