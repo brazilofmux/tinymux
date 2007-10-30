@@ -1764,6 +1764,7 @@ static NAMETAB hook_names[] =
     {T("ignore"),     3, 0, HOOK_IGNORE},
     {T("igswitch"),   3, 0, HOOK_IGSWITCH},
     {T("permit"),     3, 0, HOOK_PERMIT},
+    {T("args"),       3, 0, HOOK_ARGS},
     {(UTF8 *)NULL,         0, 0, 0}
 };
 
