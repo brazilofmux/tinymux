@@ -306,13 +306,7 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
             }
             else
             {
-                dtemp->encoding = CHARSET_LATIN1;
-            }
-
-            if (  reset
-               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
-            {
-                SendCharsetRequest(dtemp);
+                dtemp->encoding = dtemp->negotiated_encoding;
             }
         }
         return true;
@@ -344,13 +338,7 @@ static bool fh_ascii(dbref target, dbref player, FLAG flag, int fflags, bool res
             if (!reset)
                 dtemp->encoding = CHARSET_ASCII;
             else
-                dtemp->encoding = CHARSET_LATIN1;
-
-            if (  reset
-               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
-            {
-                SendCharsetRequest(dtemp);
-            }
+                dtemp->encoding = dtemp->negotiated_encoding;
         }
     }
 
