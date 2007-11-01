@@ -2505,6 +2505,8 @@ void shutdownsock(DESC *d, int reason)
         d->host_info = AccessFlag | SuspectFlag;
         d->input_tot = d->input_size;
         d->output_tot = 0;
+        d->encoding = d->negotiated_encoding;
+
         welcome_user(d);
     }
     else
@@ -2774,6 +2776,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     memset(d->nvt_us_state, OPTION_NO, 256);
     d->ttype = NULL;
     d->encoding = CHARSET_LATIN1;
+    d->negotiated_encoding = CHARSET_LATIN1;
     d->height = 24;
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
@@ -4063,6 +4066,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             // to be initialized.
                                             //
                                             d->encoding = CHARSET_UTF8;
+                                            d->negotiated_encoding = CHARSET_UTF8;
                                             d->raw_codepoint_state = CL_PRINT_START_STATE;
                                         }
                                     }
@@ -4099,16 +4103,19 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 // needs to be initialized.
                                 //
                                 d->encoding = CHARSET_UTF8;
+                                d->negotiated_encoding = CHARSET_UTF8;
                                 d->raw_codepoint_state = CL_PRINT_START_STATE;
                             }
                         }
                         else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
                         {
                             d->encoding = CHARSET_LATIN1;
+                            d->negotiated_encoding = CHARSET_LATIN1;
                         }
                         else if (0 == strncmp((char *)pCharset, "US-ASCII", m-2))
                         {
                             d->encoding = CHARSET_ASCII;
+                            d->negotiated_encoding = CHARSET_ASCII;
                         }
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])
@@ -4119,6 +4126,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         // accents.
                         //
                         d->encoding = CHARSET_ASCII;
+                        d->negotiated_encoding = CHARSET_ASCII;
                     }
                 }
             }

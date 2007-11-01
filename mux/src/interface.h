@@ -211,6 +211,7 @@ struct descriptor_data
   int nvt_us_state[256];
   UTF8 *ttype;
   int encoding;
+  int negotiated_encoding;
   int width;
   int height;
   int quota;
