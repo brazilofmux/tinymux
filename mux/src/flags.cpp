@@ -564,7 +564,7 @@ void init_flagtab(void)
 {
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
-        fp->flagname = fp->pOrigName;
+        fp->flagname = (UTF8 *)fp->pOrigName;
         if (!hashfindLEN(fp->flagname, strlen((char *)fp->flagname), &mudstate.flags_htab))
         {
             hashaddLEN(fp->flagname, strlen((char *)fp->flagname), fp, &mudstate.flags_htab);
@@ -1381,7 +1381,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                    && mux_stricmp(lookup->flagname, pCheckedAlias) == 0)
                 {
                     MEMFREE(lookup->flagname);
-                    lookup->flagname = lookup->pOrigName;
+                    lookup->flagname = (UTF8 *)lookup->pOrigName;
                     hashdeleteLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
                     notify(executor, tprintf("Flag name '%s' removed from the hash table.", pCheckedAlias));
                 }

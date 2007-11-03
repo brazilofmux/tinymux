@@ -143,7 +143,7 @@ typedef struct flag_bit_entry
 
 typedef struct flag_name_entry
 {
-    UTF8 *pOrigName;  // Original name of flag.
+    const UTF8 *pOrigName;  // Original name of flag.
     bool bPositive;         // Flag sense.
     FLAGBITENT *fbe;        // Which bit is this associated with?
     UTF8 *flagname;         // Name of the flag.
@@ -155,7 +155,8 @@ extern FLAGNAMEENT gen_flag_names[];
  * OBJENT: Fundamental object types
  */
 
-typedef struct object_entry {
+typedef struct object_entry
+{
     const UTF8 *name;
     char    lett;
     int perm;
