@@ -9961,7 +9961,7 @@ static FUNCTION(fun_accent)
     }
 }
 
-size_t transform_range(mux_string &sStr)
+void transform_range(mux_string &sStr)
 {
     // Look for a-z type character ranges. Dashes that don't have another
     // character on each end of them are treated literally.
@@ -10038,7 +10038,6 @@ size_t transform_range(mux_string &sStr)
     }
 
     delete sTemp;
-    return sStr.length();
 }
 
 static FUNCTION(fun_tr)
@@ -10083,10 +10082,10 @@ static FUNCTION(fun_tr)
             if (  NULL != sFrom
                && NULL != sTo)
             {
-                size_t nFrom = transform_range(*sFrom);
-                size_t nTo = transform_range(*sTo);
+                transform_range(*sFrom);
+                transform_range(*sTo);
 
-                if (nFrom != nTo)
+                if (sFrom->length_cursor().m_point != sTo->length_cursor().m_point)
                 {
                     safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
                 }

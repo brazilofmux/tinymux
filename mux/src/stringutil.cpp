@@ -6327,7 +6327,37 @@ void mux_string::replace_Chars
 
 bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
 {
-    return false;
+    size_t n = utf8_FirstByte[m_autf[i.m_byte]];
+    size_t m = utf8_FirstByte[p[0]];
+
+    if (n != m)
+    {
+        if (  m < n
+           && sizeof(m_autf) <= m_iLast.m_byte + m - n)
+        {
+            // We need to truncat the trailing point to make room for an expansion.
+            //
+            cursor_prev(m_iLast);
+            m_autf[m_iLast.m_byte] = '\0';
+        }
+
+        if (i.m_byte + n  < m_iLast.m_byte)
+        {
+            size_t nBytesMove = m_iLast.m_byte - (i.m_byte + n);
+            UTF8 *pFrom = m_autf + i.m_byte + n;
+            UTF8 *pTo   = m_autf + i.m_byte + m;
+            memmove(pTo, pFrom, nBytesMove);
+
+            m_iLast.m_byte += m - n;
+            m_autf[m_iLast.m_byte] = '\0';
+        }
+    }
+
+    for (size_t j = 0; j < m; j++)
+    {
+        m_autf[i.m_byte + j] = p[j];
+    }
+    return true;
 }
 
 /*! \brief Reverses the string.
