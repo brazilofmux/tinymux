@@ -1935,80 +1935,84 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     }
                     else if (iCode <= 22)
                     {
-						if (iCode == 21)
-						{
-							// 3D
-							// =
-							//
-							// %=<attr> like v(attr).
-							//
-							n = 1;
-							if ('<' == pStr[iStr + n])
-							{
-								n++;
+                        if (iCode == 21)
+                        {
+                            // 3D
+                            // =
+                            //
+                            // %=<attr> like v(attr).
+                            //
+                            n = 1;
+                            if ('<' == pStr[iStr + n])
+                            {
+                                n++;
 
-								while (  '\0' != pStr[iStr + n]
-									  && '>' != pStr[iStr + n])
-								{
-									n++;
-								}
-								if (nStr < iStr + n)
-								{
-									n = nStr - iStr;
-								}
-								if ('>' == pStr[iStr + n])
-								{
-									// Adjust for the =< at the beginning.
-									//
-									iStr += 2;
-									n -= 2;
+                                while (  '\0' != pStr[iStr + n]
+                                      && '>' != pStr[iStr + n])
+                                {
+                                    n++;
+                                }
+                                if (nStr < iStr + n)
+                                {
+                                    n = nStr - iStr;
+                                }
+                                if ('>' == pStr[iStr + n])
+                                {
+                                    // Adjust for the =< at the beginning.
+                                    //
+                                    iStr += 2;
+                                    n -= 2;
 
-									memcpy(mux_scratch, pStr + iStr, n);
-									mux_scratch[n] = '\0';
+                                    memcpy(mux_scratch, pStr + iStr, n);
+                                    mux_scratch[n] = '\0';
 
-									if (mux_isdigit(*mux_scratch)) {
-										// This hideous thing converts 3-digit non-negative integers to
-										// a longs without loops and with at most one multiply.
-										i=mux_isdigit(mux_scratch[1])
-											?(mux_isdigit(mux_scratch[2])
-												?(mux_isdigit(mux_scratch[3])
-													?MAX_ARG
-													:10*TableATOI(mux_scratch[0]-'0',mux_scratch[1]-'0')
-														+mux_scratch[2]-'0')
-												:TableATOI(mux_scratch[0]-'0',mux_scratch[1]-'0'))
-											:mux_scratch[0]-'0';
-										if (i<ncargs && cargs[i])
-										{
-											safe_str(cargs[i], buff, bufc);
-											nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-										}
-									}
-									else if (mux_isattrnameinitial(mux_scratch))
-									{
-										ATTR *ap = atr_str(mux_scratch);
-										if (  ap
-										   && See_attr(executor, executor, ap))
-										{
-											size_t nLen;
-											atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
-											safe_copy_buf(mux_scratch, nLen, buff, bufc);
-											nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-										}
-									}
-									iStr += n;
-								}
-							}
-						}
-						else
-						{
-							// 2B
-							// +
-							//
-							// Ncargs substitution
-							//
-							safe_i64toa(ncargs,buff,bufc);
-							nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-						}
+                                    if (mux_isdigit(mux_scratch[0]))
+                                    {
+                                        // This hideous thing converts 3-digit non-negative integers to
+                                        // a longs without loops and with at most one multiply.
+                                        //
+                                        i = mux_isdigit(mux_scratch[1])
+                                          ? (  mux_isdigit(mux_scratch[2])
+                                            ?  (  mux_isdigit(mux_scratch[3])
+                                               ?  MAX_ARG
+                                               :  (  10*TableATOI(mux_scratch[0]-'0', mux_scratch[1]-'0')
+                                                  +  mux_scratch[2]-'0'))
+                                            :  TableATOI(mux_scratch[0]-'0', mux_scratch[1]-'0'))
+                                          : (mux_scratch[0]-'0');
+
+                                        if (  i < ncargs
+                                           && NULL != cargs[i])
+                                        {
+                                            safe_str(cargs[i], buff, bufc);
+                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                        }
+                                    }
+                                    else if (mux_isattrnameinitial(mux_scratch))
+                                    {
+                                        ATTR *ap = atr_str(mux_scratch);
+                                        if (  ap
+                                           && See_attr(executor, executor, ap))
+                                        {
+                                            size_t nLen;
+                                            atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
+                                            safe_copy_buf(mux_scratch, nLen, buff, bufc);
+                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                        }
+                                    }
+                                    iStr += n;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // 2B
+                            // +
+                            //
+                            // Ncargs substitution
+                            //
+                            safe_i64toa(ncargs, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
                     }
                     else if (iCode == 23)
                     {

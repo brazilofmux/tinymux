@@ -271,7 +271,7 @@ static NAMETAB hook_sw[] =
     {T("igswitch"),        3,     CA_GOD,  HOOK_IGSWITCH},
     {T("list"),            3,     CA_GOD,  HOOK_LIST},
     {T("permit"),          3,     CA_GOD,  HOOK_PERMIT},
-	{T("args"),            3,     CA_GOD,  HOOK_ARGS},
+    {T("args"),            3,     CA_GOD,  HOOK_ARGS},
     {(UTF8 *)NULL,              0,          0,  0}
 };
 
@@ -1020,9 +1020,9 @@ static UTF8 *hook_name(const UTF8 *pCommand, int key)
     case HOOK_PERMIT:
         keylet = "P";
         break;
-	case HOOK_ARGS:
-		keylet = "R";
-		break;
+    case HOOK_ARGS:
+        keylet = "R";
+        break;
     default:
         return NULL;
     }
@@ -1083,7 +1083,7 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
     return retval;
 }
 
-void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF8* args[], int nargs,UTF8* sw)
+void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF8* args[], int nargs, UTF8* sw)
 {
     ATTR *hk_attr = atr_str(hook_name(cmdp->cmdname, HOOK_ARGS));
     if (hk_attr)
@@ -1098,55 +1098,64 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_global_regs(preserve);
             UTF8 *buff, *bufc;
-			UTF8* inargs[5];
-			if (arg1) {
-				inargs[0]=alloc_lbuf("process_hook_args.1103");
-				mux_strncpy(inargs[0],arg1,LBUF_SIZE-1);
-			} else {
-				inargs[0]=(UTF8*)"";
-			}
-			
-			if (arg2) {
-				inargs[1]=alloc_lbuf("process_hook_args.1110");
-				mux_strncpy(inargs[1],arg2,LBUF_SIZE-1);
-			} else {
-				inargs[1]=(UTF8*)"";
-			}
+            UTF8* inargs[5];
+            if (arg1)
+            {
+                inargs[0] = alloc_lbuf("process_hook_args.1103");
+                mux_strncpy(inargs[0], arg1, LBUF_SIZE-1);
+            }
+            else
+            {
+                inargs[0] = (UTF8*)"";
+            }
 
-			inargs[2]=(UTF8*)"";
-			inargs[4]=sw;
+            if (arg2)
+            {
+                inargs[1] = alloc_lbuf("process_hook_args.1110");
+                mux_strncpy(inargs[1], arg2, LBUF_SIZE-1);
+            }
+            else
+            {
+                inargs[1] = (UTF8*)"";
+            }
 
-			if (arg1) {
-				bufc = arg1;
-				inargs[3]=(UTF8*)"0";
-            	mux_exec(atext, LBUF_SIZE-1, arg1, &bufc, mudconf.hook_obj, executor,
-                     	executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
-			}
+            inargs[2] = (UTF8*)"";
+            inargs[4] = sw;
 
-			if (arg2) {
-				bufc = arg2;
-				inargs[3]=(UTF8*)"1";
-            	mux_exec(atext, LBUF_SIZE-1, arg2, &bufc, mudconf.hook_obj, executor,
-                     	executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
-			}
+            if (arg1)
+            {
+                bufc = arg1;
+                inargs[3] = (UTF8*)"0";
+                mux_exec(atext, LBUF_SIZE-1, arg1, &bufc, mudconf.hook_obj, executor,
+                         executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
+            }
 
-			if (nargs) {
-				inargs[2] = alloc_lbuf("process_hook_args.1135");
-				UTF8 qbuff[I64BUF_SIZE];
-				inargs[3]=qbuff;
-				for (int i=0;i<nargs;i++)
-				{
-					mux_i64toa(i+2,qbuff);
-					bufc = args[i];
-					mux_strncpy(inargs[2],args[i],LBUF_SIZE-1);
-					mux_exec(atext, LBUF_SIZE-1, args[i], &bufc, mudconf.hook_obj, executor,
-							executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
-				}
-				free_lbuf(inargs[2]);
-			}
+            if (arg2)
+            {
+                bufc = arg2;
+                inargs[3] = (UTF8*)"1";
+                mux_exec(atext, LBUF_SIZE-1, arg2, &bufc, mudconf.hook_obj, executor,
+                         executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
+            }
 
-			if (arg2) free_lbuf(inargs[1]);
-			if (arg1) free_lbuf(inargs[0]);
+            if (nargs)
+            {
+                inargs[2] = alloc_lbuf("process_hook_args.1135");
+                UTF8 qbuff[I64BUF_SIZE];
+                inargs[3] = qbuff;
+                for (int i = 0; i < nargs; i++)
+                {
+                    mux_i64toa(i+2, qbuff);
+                    bufc = args[i];
+                    mux_strncpy(inargs[2], args[i], LBUF_SIZE-1);
+                    mux_exec(atext, LBUF_SIZE-1, args[i], &bufc, mudconf.hook_obj, executor,
+                            executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
+                }
+                free_lbuf(inargs[2]);
+            }
+
+            if (arg2) free_lbuf(inargs[1]);
+            if (arg1) free_lbuf(inargs[0]);
 
             *bufc = '\0';
             restore_global_regs(preserve);
@@ -1198,7 +1207,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
     UTF8 *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0;
     UTF8 *args[MAX_ARG];
-	UTF8* sw=switchp;
+    UTF8* sw = switchp;
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
     ADDENT *add;
@@ -1330,7 +1339,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         //
         if (cmdp->callseq & CS_UNPARSE)
         {
-			// Add HOOK_ARGS before uncommenting
+            // Add HOOK_ARGS before uncommenting
             (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, unp_command);
             break;
         }
@@ -1480,8 +1489,8 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         }
         else
         {
-			if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
-				process_hook_args(executor,cmdp,buf1,NULL,NULL,0,sw);
+            if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
+                process_hook_args(executor, cmdp, buf1, NULL, NULL, 0, sw);
             (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
                 enactor, eval, key, buf1, cargs, ncargs);
         }
@@ -1533,8 +1542,8 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                 eval|interp|EV_STRIP_LS|EV_STRIP_TS, args, MAX_ARG, cargs,
                 ncargs, &nargs);
 
-			if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
-				process_hook_args(executor,cmdp,buf1,NULL,args,nargs,sw);
+            if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
+                process_hook_args(executor, cmdp, buf1, NULL, args, nargs, sw);
             (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, caller,
                 enactor, eval, key, buf1, args, nargs, cargs, ncargs);
 
@@ -1565,8 +1574,8 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                 buf2 = parse_to(&arg, '\0', eval|interp|EV_STRIP_LS|EV_STRIP_TS|EV_TOP);
             }
 
-			if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
-				process_hook_args(executor,cmdp,nargs2>=1?buf1:NULL,nargs2>=2?buf2:NULL,NULL,0,sw);
+            if ((cmdp->hookmask & HOOK_ARGS) && bGoodHookObj)
+                process_hook_args(executor, cmdp, nargs2>=1?buf1:NULL, nargs2>=2?buf2:NULL, NULL, 0, sw);
             (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, caller,
                 enactor, eval, key, nargs2, buf1, buf2, cargs, ncargs);
 
@@ -1617,7 +1626,7 @@ static int cmdtest(dbref player, const UTF8 *cmd)
                 rval = 2;
             break;
         }
-        pt1 = (const UTF8 *)strchr((const char *)pt2+1,' ');
+        pt1 = (const UTF8 *)strchr((const char *)pt2+1, ' ');
         if (pt1 && *pt1)
         {
             while (mux_isspace(*pt1))
@@ -3425,7 +3434,7 @@ static void list_options(dbref player)
     raw_notify(player, buff);
 
     mux_sprintf(buff, MBUF_SIZE, "Scheduling: Timeslice...%s  Max_Quota...%d  Increment...%d",
-        mudconf.timeslice.ReturnSecondsString(3),mudconf.cmd_quota_max,
+        mudconf.timeslice.ReturnSecondsString(3), mudconf.cmd_quota_max,
         mudconf.cmd_quota_incr);
     raw_notify(player, buff);
 
@@ -4029,7 +4038,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             atrpt = atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
-                notify(player,T("Location CmdCheck attribute is:"));
+                notify(player, T("Location CmdCheck attribute is:"));
                 notify(player, atrpt);
             }
             else
@@ -4071,7 +4080,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     atrpt = atr_get("do_icmd.4102", zone, A_CMDCHECK, &aowner, &aflags);
                     if (*atrpt)
                     {
-                        notify(player,tprintf("%c     z-- At %s(#%d) :",
+                        notify(player, tprintf("%c     z-- At %s(#%d) :",
                             '*', Name(zone), zone));
                         notify(player, atrpt);
                         bFound = true;
@@ -4343,11 +4352,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 message = T("Bad command");
             }
-            notify(player, tprintf("@icmd:%s %s.",(loc_set == -1) ? T("") : T(" Location -"), message));
+            notify(player, tprintf("@icmd:%s %s.", (loc_set == -1) ? T("") : T(" Location -"), message));
         }
     }
     free_lbuf(buff1);
-    notify(player,T("@icmd: Done."));
+    notify(player, T("@icmd: Done."));
 }
 
 // do_train: show someone else in the same room what code you're entering and the result
@@ -4446,8 +4455,8 @@ static void show_hook(UTF8 *bf, UTF8 *bfptr, int key)
         safe_str(T("igswitch "), bf, &bfptr);
     if (key & HOOK_AFAIL)
         safe_str(T("afail "), bf, &bfptr);
-	if (key & HOOK_ARGS)
-		safe_str(T("args "), bf, &bfptr);
+    if (key & HOOK_ARGS)
+        safe_str(T("args "), bf, &bfptr);
     *bfptr = '\0';
 }
 

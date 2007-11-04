@@ -842,7 +842,10 @@ static CF_HAND(cf_name)
     UTF8 *oldname = mux_strtok_parse(&tts);
     UTF8 *newname = mux_strtok_parse(&tts);
 
-    if (oldname)
+    if (  NULL != oldname
+       && '\0' != oldname[0]
+       && NULL != newname
+       && '\0' != newname[0])
     {
         size_t nCased;
         UTF8 *pCased = mux_strupr(oldname, nCased);
@@ -853,20 +856,17 @@ static CF_HAND(cf_name)
             return -1;
         }
 
+        size_t bCased = nCased;
         UTF8 Buffer[LBUF_SIZE];
-        size_t bCased;
-        mux_strncpy(Buffer,pCased,LBUF_SIZE-1);
-        bCased=nCased;
+        mux_strncpy(Buffer, pCased, LBUF_SIZE-1);
         pCased = mux_strupr(newname, nCased);
-        if (!hashfindLEN(pCased, nCased, (CHashTable *) vp)) {
+        if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
+        {
             hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
             hashdeleteLEN(Buffer, bCased, (CHashTable *) vp);
-			return 0;
-        } else {
-			return -1;
-		}
+            return 0;
+        }
     }
-
     return -1;
 }
 
