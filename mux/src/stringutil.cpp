@@ -6335,9 +6335,12 @@ bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
         if (  m < n
            && sizeof(m_autf) <= m_iLast.m_byte + m - n)
         {
-            // We need to truncat the trailing point to make room for an expansion.
+            // We need to truncate the trailing point to make room for an expansion.
             //
-            cursor_prev(m_iLast);
+            do
+            {
+                cursor_prev(m_iLast);
+            } while (sizeof(m_autf) <= m_iLast.m_byte + m - n);
             m_autf[m_iLast.m_byte] = '\0';
         }
 

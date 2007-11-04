@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  October 2007
+Last Update:  November 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,7 +160,7 @@ Bug Fixes:
  -- ConvertToUTF8() converted code points above 0x10000 incorrectly.
  -- Allow %=<name> to support single-letter attribute names and
     document. Issue 341.
- -- Fixed escape() which used #92 instead of backslash (Issue 353).
+ -- Fix escape() which used #92 instead of backslash (Issue 353).
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
  -- Fix special characters in names with @decompile (Issue 292).
@@ -189,6 +189,7 @@ Bug Fixes:
  -- Pass reality level descriptions through @descformat (Issue 59).
  -- Fix regression (r1355) which allowed an endless loop (Issue 403).
  -- Fix buffer overflow with %=<> substitution (Issue 406).
+ -- Fix TR() to support UTF-8 sequences (Issue 305).
 
 
 Performanc  Enhancements:
