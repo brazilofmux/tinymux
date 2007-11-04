@@ -1853,7 +1853,7 @@ CONFIG PARAMETERS
   exit_parent  exit_quota  fascist_teleport  find_money_chance
   fixed_home_message  fixed_tel_message  flag_access  flag_alias  flag_name
   float_precision forbid_site  fork_dump  full_file  full_motd_message
-  function_access  function_alias  function_invocation_limit
+  function_access  function_alias  function_name  function_invocation_limit
   function_recursion_limit  game_dir_file  game_pag_file  global_error_obj
 
 { 'wizhelp config parameters2' for more }

@@ -94,6 +94,12 @@ Feature Additions:
  -- Add ShutdownSlave method to ISlaveControl.
  -- Add sqlslave and sqlproxy modules for AsyncSQL.
  -- Add chanobj() per issue 401.
+ -- Add function_name configuration option to rename hardcoded
+    functions.
+ -- Add @hook/args to allow arguments to be hooked.
+ -- Extend %=<> subtitution to take integer values which allow
+    softcode access to all 100 arguments.
+ -- Add %+ substitution to return number of arguments.
 
 
 Bug Fixes:
