@@ -1,5 +1,5 @@
 TinyMUX 2.7:  README (Win32/64-based)
-Last Updated: December 2006
+Last Updated: November 2007
 
 Herein are extra notes for the Win32/64 distribution.  These notes do not
 apply well to the Unix distribution.
@@ -39,6 +39,8 @@ to use Cygwin to compile TinyMUX 2.7.
 Regarding JAR from ARJ Software, this archiving tool produces the smallest
 files. It's available via http://www.arjsoftware.com/jar.htm.
 
+Vista doesn't seem to like cscript //h:cscript, so you will need to use
+cscript directly to launch startmux.wsf.
 
 To use a binary distribution:
 
@@ -54,11 +56,17 @@ To use a binary distribution:
 
    Unpack the mux-2.7.0.1.win32.bin.zip using WinZip.
 
-2. cd mux2.7/game
+2. The pre-built binaries for 32-bit are already placed in mux2.7/game/bin and
+   ready to go.  64-bit binaries are provided in mux2.7/game/bin/win64, but to
+   use those, you need to be using a 64-bit version of Windows, and you need
+   to copy them up one directory level into mux2.7/game/bin.  64-bit versions
+   of Windows can use either.
 
-3. Possibly edit netmux.conf and mux.config to tweak the configuration.
+3. cd mux2.7/game
 
-4. Start the server with the following:
+4. Possibly edit netmux.conf and mux.config to tweak the configuration.
+
+5. Start the server with the following:
 
        cscript startmux.wsf
 
@@ -82,11 +90,18 @@ To use a source distribution:
 
    Unpack the mux-2.7.0.1.win32.src.zip using WinZip.
 
-2. Start Visual C++ and open the workspace file (mux2.7/src/netmux.dsw).
+2. Start Visual C++ and open the workspace file (mux2.7/src/netmux.dsw).  Your
+   version of Visual Studio may want to convert this workspace file into a
+   'solution' file and also convert all the project files.  Let it do this,
+   and then remember to work with the solution file thereafter.
 
-3. Within Visual C++, Do a batch build in order to produce netmux.exe.  The
+3. Within Visual C++, do a batch build in order to produce netmux.exe.  The
    non-debug version will be placed in mux2.7/src/bin_release and must be
-   copied over to mux2.7/game/bin.
+   copied over to mux2.7/game/bin.  It will also build a libmux.dll file which
+   must also be copied over to mux2.7/game/bin.  Starting with 2.7, it will
+   also build several modules under mux2.7/src/modules/bin_release.  If you
+   intend to use these, they must also be copied into the mux2.7/game/bin
+   directory.
 
 4. Start the server with the following:
 
@@ -96,7 +111,6 @@ To use a source distribution:
 
        cscript //h:cscript        (once per system)
        startmux
-
 
 
 To load an existing database:
