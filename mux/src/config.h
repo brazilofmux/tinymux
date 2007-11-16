@@ -10,6 +10,228 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+/* ---------------------------------------------------------------------------
+ * Setup section:
+ *
+ * Load system-dependent header files.
+ */
+
+#if !defined(STDC_HEADERS)
+#error MUX requires standard headers.
+#endif
+
+#if defined(WIN32)
+
+#define _WIN32_WINNT 0x0400
+#define FD_SETSIZE      512
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winsock2.h>
+
+#include <malloc.h>
+#include <crtdbg.h>
+#include <share.h>
+
+#include <io.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <process.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <fcntl.h>
+
+#else // !WIN32
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif // HAVE_UNISTD_H
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <limits.h>
+
+#ifdef NEED_MEMORY_H
+#include <memory.h>
+#endif
+
+#include <string.h>
+
+#ifdef NEED_INDEX_DCL
+#define index           strchr
+#define rindex          strrchr
+#define bcopy(s,d,n)    memmove(d,s,n)
+#endif
+
+#ifdef TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#endif
+
+#if defined(HAVE_SETRLIMIT) || defined(HAVE_GETRUSAGE)
+#include <sys/resource.h>
+#ifdef NEED_GETRUSAGE_DCL
+extern int      getrusage(int, struct rusage *);
+#endif
+#ifdef NEED_GETRLIMIT_DCL
+extern int      getrlimit(int, struct rlimit *);
+extern int      setrlimit(int, struct rlimit *);
+#endif
+#endif
+
+#ifdef HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef NEED_GETTIMEOFDAY_DCL
+extern int gettimeofday(struct timeval *, struct timezone *);
+#endif
+#endif
+
+#ifdef HAVE_GETDTABLESIZE
+extern int getdtablesize(void);
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
+#ifdef HAVE_GETPAGESIZE
+
+#ifdef NEED_GETPAGESIZE_DECL
+extern int getpagesize(void);
+#endif // NEED_GETPAGESIZE_DECL
+
+#else // HAVE_GETPAGESIZE
+
+#ifdef _SC_PAGESIZE
+#define getpagesize() sysconf(_SC_PAGESIZE)
+#else // _SC_PAGESIZE
+
+#include <sys/param.h>
+
+#ifdef EXEC_PAGESIZE
+#define getpagesize() EXEC_PAGESIZE
+#else // EXEC_PAGESIZE
+#ifdef NBPG
+#ifndef CLSIZE
+#define CLSIZE 1
+#endif // CLSIZE
+#define getpagesize() NBPG * CLSIZE
+#else // NBPG
+#ifdef PAGESIZE
+#define getpagesize() PAGESIZE
+#else // PAGESIZE
+#ifdef NBPC
+#define getpagesize() NBPC
+#else // NBPC
+#define getpagesize() 0
+#endif // NBPC
+#endif // PAGESIZE
+#endif // NBPG
+#endif // EXEC_PAGESIZE
+
+#endif // _SC_PAGESIZE
+#endif // HAVE_GETPAGESIZE
+
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#else
+extern int errno;
+#endif
+
+// Assure that malloc, realloc, and free are defined.
+//
+#if !defined(MALLOC_IN_STDLIB_H)
+#if   defined(HAVE_MALLOC_H)
+#include <malloc.h>
+#elif defined(NEED_MALLOC_DCL)
+extern char *malloc(int);
+extern char *realloc(char *, int);
+extern int   free(char *);
+#endif
+#endif
+
+#ifdef NEED_SYS_ERRLIST_DCL
+extern char *sys_errlist[];
+#endif
+
+#include <sys/types.h>
+#include <stdio.h>
+#include <sys/fcntl.h>
+
+#ifdef NEED_SPRINTF_DCL
+extern char *sprintf(char *, const char *, ...);
+#endif
+
+#ifndef EXTENDED_STDIO_DCLS
+extern int    fprintf(FILE *, const char *, ...);
+extern int    printf(const char *, ...);
+extern int    sscanf(const char *, const char *, ...);
+extern int    close(int);
+extern int    fclose(FILE *);
+extern int    fflush(FILE *);
+extern int    fgetc(FILE *);
+extern int    fputc(int, FILE *);
+extern int    fputs(const char *, FILE *);
+extern int    fread(void *, size_t, size_t, FILE *);
+extern int    fseek(FILE *, long, int);
+extern int    fwrite(void *, size_t, size_t, FILE *);
+extern pid_t  getpid(void);
+extern int    pclose(FILE *);
+extern int    rename(char *, char *);
+extern time_t time(time_t *);
+extern int    ungetc(int, FILE *);
+extern int    unlink(const char *);
+#endif
+
+#include <sys/socket.h>
+#ifndef EXTENDED_SOCKET_DCLS
+extern int    accept(int, struct sockaddr *, int *);
+extern int    bind(int, struct sockaddr *, int);
+extern int    listen(int, int);
+extern int    sendto(int, void *, int, unsigned int,
+                    struct sockaddr *, int);
+extern int    setsockopt(int, int, int, void *, int);
+extern int    shutdown(int, int);
+extern int    socket(int, int, int);
+extern int    select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+#endif
+
+#endif // WIN32
+
+typedef int   dbref;
+typedef int   FLAG;
+typedef int   POWER;
+#ifdef REALITY_LVLS
+typedef unsigned int RLEVEL;
+#endif // REALITY_LVLS
+typedef char  boolexp_type;
+
+#define UNUSED_PARAMETER(x) ((void)(x))
+
 /* Compile time options */
 
 #define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */

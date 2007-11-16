@@ -1,209 +1,376 @@
-/*! \file autoconf.h
- * \brief System-dependent configuration information
- *
- * $Id$
- *
- * This file contains preset configuration for Windows users.
- * Normally you would need to run ./configure to generate this file
- * from autoconf.h.in.
- */
+/* autoconf.h.in.  Generated from configure.in by autoheader.  */
 
-#ifndef AUTOCONF_H
-#define AUTOCONF_H
-
-#include "copyright.h"
-
-#define _WIN32_WINNT 0x0400
-#define FD_SETSIZE      512
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-
-#include <malloc.h>
-#include <crtdbg.h>
-#include <share.h>
-
-/* ---------------------------------------------------------------------------
- * Configuration section:
- *
- * These defines are written by the configure script.
- * Change them if need be
- */
-
-/* Define if we have stdlib.h et al */
-#define STDC_HEADERS
-/* Define if we have unistd.h */
-#undef HAVE_UNISTD_H
-/* Define if we have memory.h and need it to get memcmp et al */
-#undef NEED_MEMORY_H
-/* signal() return type */
-#define RETSIGTYPE void
-/* Define if struct tm is not in time.h */
-#undef TM_IN_SYS_TIME
-/* Define if struct tm has a timezone member */
-#undef HAVE_TM_ZONE
-/* Define if tzname[] exists */
-#undef HAVE_TZNAME
-/* Define if setrlimit exists */
-#undef HAVE_SETRLIMIT
-/* Define if getrusage exists */
-#undef HAVE_GETRUSAGE
-/* Define if getdtablesize exists */
-#undef HAVE_GETDTABLESIZE
-/* Define if getpagesize exists */
-#undef HAVE_GETPAGESIZE
-/* Define if gettimeofday exists */
-#undef HAVE_GETTIMEOFDAY
-/* Define if usleep exists */
-#undef HAVE_USLEEP
-/* Define if nanosleep exists */
-#undef HAVE_NANOSLEEP
-/* Define if setitimer exists */
-#undef HAVE_SETITIMER
-/* Define if localtime_r exists */
-#undef HAVE_LOCALTIME_R
-/* Define if sys_siglist[] exists */
-#undef SYS_SIGLIST_DECLARED
-/* Define if sys_signame[] exists */
-#undef HAVE_SYS_SIGNAME
-/* Define if index/rindex/mem??? are defined in string.h */
-#undef INDEX_IN_STRING_H
-/* Define if malloc/realloc/free are defined in stdlib.h */
-#define MALLOC_IN_STDLIB_H
-/* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow */
-#undef SIGNAL_SIGCHLD_BRAINDAMAGE
-/* Define if errno.h exists */
-#define HAVE_ERRNO_H
-/* Define if sys/select.h exists */
-#undef HAVE_SYS_SELECT_H
-/* Define if sys/rusage.h exists */
-#undef HAVE_SYS_RUSAGE_H
-/* Define if Big Endian */
-#undef WORDS_BIGENDIAN
-/* Define if Little Endian */
-#define WORDS_LITTLEENDIAN 1
-/* Define if Unknown Endian */
-#undef WORDS_UNKNOWN
-/* Define if const is broken */
-#undef const
-/* sizeof(short) */
-#define SIZEOF_SHORT 2
-/* sizeof(unsigned short) */
-#define SIZEOF_UNSIGNED_SHORT 2
-/* sizeof(int) */
-#define SIZEOF_INT 4
-/* sizeof(unsigned int) */
-#define SIZEOF_UNSIGNED_INT 4
-/* sizeof(long) */
-#define SIZEOF_LONG 4
-/* sizeof(unsigned long) */
-#define SIZEOF_UNSIGNED_LONG 4
-/* Define if unaligned short access is allowed. */
-#define CAN_UNALIGN_SHORT
 /* Define if unaligned int access is allowed. */
 #define CAN_UNALIGN_INT
+
 /* Define if unaligned long access is allowed. */
 #define CAN_UNALIGN_LONG
+
 /* Define if unaligned long long access is allowed. */
 #define CAN_UNALIGN_LONGLONG
-/* Define if inline keyword is broken or nonstandard */
-#undef inline
-/* Define if we need to redef index/bcopy et al to their SYSV counterparts */
-#undef NEED_INDEX_DCL
-/* Define if we need to declare malloc et al */
-#undef NEED_MALLOC_DCL
-/* Define if you need to declare vsprintf yourself */
-#undef NEED_VSPRINTF_DCL
-/* Define if you need to declare sys_errlist yourself */
-#undef NEED_SYS_ERRLIST_DCL
-/* Define if you need to declare _sys_errlist yourself */
-#undef NEED_SYS__ERRLIST_DCL
-/* Define if you need to declare sprintf yourself */
-#undef NEED_SPRINTF_DCL
-/* Define if you need to declare getrlimit yourself */
-#undef NEED_GETRLIMIT_DCL
-/* Define if you need to declare getrusage yourself */
-#undef NEED_GETRUSAGE_DCL
-/* Define if struct linger is defined */
-#define HAVE_LINGER
-/* Define if signal handlers have a struct sigcontext as their third arg */
-#undef HAVE_STRUCT_SIGCONTEXT
-/* Define if stdio.h defines lots of extra functions */
-#define EXTENDED_STDIO_DCLS
-/* Define if sys/socket.h defines lots of extra functions */
+
+/* Define if unaligned short access is allowed. */
+#define CAN_UNALIGN_SHORT
+
+/* Define if sys/socket.h defines lots of extra functions. */
 #undef EXTENDED_SOCKET_DCLS
-/* Define if socklen_t is defined */
-#undef SOCKLEN_T_DCL
-/* Define if we may safely include both time.h and sys/time.h */
-#undef TIME_WITH_SYS_TIME
-/* Define if sys/time.h exists */
-#undef HAVE_SYS_TIME_H
-/* Define if you need to declare gettimeofday yourself */
-#undef NEED_GETTIMEOFDAY_DCL
-/* Define if you need to declare getpagesize yourself */
-#undef NEED_GETPAGESIZE_DCL
-/* Define if you have IEEE floating-point formatted numbers */
-#define HAVE_IEEE_FP_FORMAT 1
-/* Define if your IEEE floating-point library can generate NaN */
-#define HAVE_IEEE_FP_SNAN 1
-/* Define if your platform computes the integer quotient as the smallest */
-/* integer greater than or or equal to the algebraic quotient. For       */
-/* example, -9/5 gives -1                                                */
-#define SMALLEST_INT_GTE_NEG_QUOTIENT 1
-/* Define if the character special file /dev/urandom is present */
-#undef HAVE_DEV_URANDOM
-/* Define if fpu_config.h is available. */
-#undef HAVE_FPU_CONTROL_H
-/* Define if ieeefp.h is available. */
-#undef HAVE_IEEEFP_H
-/* Define if ieeefp.h is useable. */
-#undef IEEEFP_H_USEABLE
-/* Define if fenv.h is available. */
-#undef HAVE_FENV_H
-/* Define if fegetprec is available. */
-#undef HAVE_FEGETPREC
-/* Define if fesetprec is available. */
-#undef HAVE_FESETPREC
-/* Define if your system has the in_addr_t type */
-#undef HAVE_IN_ADDR_T
-/* Define if crypt library exists */
-#undef HAVE_LIBCRYPT
-/* Define if crypt exists */
+
+/* Define if stdio.h defines lots of extra functions. */
+#define EXTENDED_STDIO_DCLS
+
+/* Define to 1 if you have the `crypt' function. */
 #undef HAVE_CRYPT
-/* Define if dlopen exists */
+
+/* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SYS_SIGLIST
+
+/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
+   */
+#undef HAVE_DECL_TZNAME
+
+/* Define if the character special file /dev/urandom is present. */
+#undef HAVE_DEV_URANDOM
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define if dlopen exists. */
 #undef HAVE_DLOPEN
 
-/* ---------------------------------------------------------------------------
- * Setup section:
- *
- * Load system-dependent header files.
- */
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#undef HAVE_DOPRNT
 
-#if !defined(STDC_HEADERS)
-#error MUX requires standard headers.
+/* Define to 1 if you have the <errno.h> header file. */
+#define HAVE_ERRNO_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define if fegetprec is available. */
+#undef HAVE_FEGETPREC
+
+/* Define to 1 if you have the <fenv.h> header file. */
+#undef HAVE_FENV_H
+
+/* Define if fesetprec is available. */
+#undef HAVE_FESETPREC
+
+/* Define to 1 if you have the <fpu_control.h> header file. */
+#undef HAVE_FPU_CONTROL_H
+
+/* Define to 1 if you have the `getdtablesize' function. */
+#undef HAVE_GETDTABLESIZE
+
+/* Define to 1 if you have the `gethostbyaddr' function. */
+#undef HAVE_GETHOSTBYADDR
+
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <ieeefp.h> header file. */
+#undef HAVE_IEEEFP_H
+
+/* Define if you have IEEE floating-point formatted numbers. */
+#define HAVE_IEEE_FP_FORMAT 1
+
+/* Define if your IEEE floating-point library can generate NaN. */
+#define HAVE_IEEE_FP_SNAN 1
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define if your system has the in_addr_t type. */
+#undef HAVE_IN_ADDR_T
+
+/* Define to 1 if you have the `crypt' library (-lcrypt). */
+#undef HAVE_LIBCRYPT
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `inet' library (-linet). */
+#undef HAVE_LIBINET
+
+/* Define to 1 if you have the `intl' library (-lintl). */
+#undef HAVE_LIBINTL
+
+/* Define to 1 if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `resolv' library (-lresolv). */
+#undef HAVE_LIBRESOLV
+
+/* Define to 1 if you have the `seq' library (-lseq). */
+#undef HAVE_LIBSEQ
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `sun' library (-lsun). */
+#undef HAVE_LIBSUN
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define if struct linger is defined. */
+#define HAVE_LINGER
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
+/* Define if pread exists. */
+#undef HAVE_PREAD
+
+/* Define if pwrite exists. */
+#undef HAVE_PWRITE
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have the `setitimer' function. */
+#undef HAVE_SETITIMER
+
+/* Define to 1 if you have the `setrlimit' function. */
+#undef HAVE_SETRLIMIT
+
+/* Define to 1 if you have the `socket' function. */
+#undef HAVE_SOCKET
+
+/* Define to 1 if you have the `srandom' function. */
+#undef HAVE_SRANDOM
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strftime' function. */
+#undef HAVE_STRFTIME
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if signal handlers have a struct sigcontext as their third arg. */
+#undef HAVE_STRUCT_SIGCONTEXT
+
+/* Define to 1 if `tm_zone' is member of `struct tm'. */
+#undef HAVE_STRUCT_TM_TM_ZONE
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define if sys_signame[] exists. */
+#undef HAVE_SYS_SIGNAME
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
+   `HAVE_STRUCT_TM_TM_ZONE' instead. */
+#undef HAVE_TM_ZONE
+
+/* Define to 1 if you don't have `tm_zone' but do have the external array
+   `tzname'. */
+#undef HAVE_TZNAME
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `usleep' function. */
+#undef HAVE_USLEEP
+
+/* Define to 1 if you have the `vprintf' function. */
+#undef HAVE_VPRINTF
+
+/* Define is ieeefp.h is useable. */
+#undef IEEEFP_H_USEABLE
+
+/* Define if platform computes integer quotient as the largest integer less
+   than or equal to the algebraic quotient. */
+#undef LARGEST_INT_LTE_NEG_QUOTIENT
+
+/* Define if malloc/realloc/free are defined in stdlib.h. */
+#define MALLOC_IN_STDLIB_H
+
+/* Define if you need to declare getpagesize yourself. */
+#undef NEED_GETPAGESIZE_DCL
+
+/* Define if you need to declare getrlimit yourself. */
+#undef NEED_GETRLIMIT_DCL
+
+/* Define if you need to declare getrusage yourself. */
+#undef NEED_GETRUSAGE_DCL
+
+/* Define if you need to declare gettimeofday yourself. */
+#undef NEED_GETTIMEOFDAY_DCL
+
+/* Define if we need to redefine index/bcopy et. al. to their SYSV
+   counterparts. */
+#undef NEED_INDEX_DCL
+
+/* Define if we need to declare malloc et. al. */
+#undef NEED_MALLOC_DCL
+
+/* Define if you need to declare sprintf yourself. */
+#undef NEED_SPRINTF_DCL
+
+/* Define if you need to declare sys_errlist yourself. */
+#undef NEED_SYS_ERRLIST_DCL
+
+/* Define if you need to declare vsprintf yourself. */
+#undef NEED_VSPRINTF_DCL
+
+/* Define if you do not have IEEE floating-point formatted numbers. */
+#undef NO_IEEE_FP_FORMAT
+
+/* Define if your IEEE floating-point library can not generate NaN. */
+#undef NO_IEEE_FP_SNAN
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#define RETSIGTYPE void
+
+/* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow. */
+#undef SIGNAL_SIGCHLD_BRAINDAMAGE
+
+/* The size of `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+
+/* The size of `long', as computed by sizeof. */
+#define SIZEOF_LONG 4
+
+/* The size of `short', as computed by sizeof. */
+#define SIZEOF_SHORT 2
+
+/* The size of `unsigned int', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_INT 4
+
+/* The size of `unsigned long', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_LONG 4
+
+/* The size of `unsigned short', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_SHORT 2
+
+/* Define if platform computes integer quotient as the smallest integer
+   greater than or equal to the algebraic quotient. */
+#define SMALLEST_INT_GTE_NEG_QUOTIENT 1
+
+/* Define if socklen_t is defined. */
+#undef SOCKLEN_T_DCL
+
+/* Define to 1 if you have the ANSI C header files. */
+#define STDC_HEADERS
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Define if Big Endian. */
+#undef WORDS_BIGENDIAN
+
+/* Define if Little Endian. */
+#define WORDS_LITTLEENDIAN 1
+
+/* Define if Unknown Endian. */
+#undef WORDS_UNKNOWN
+
+/* Define to 1 if on AIX 3.
+   System headers sometimes define this.
+   We just want to avoid a redefinition error message.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
 #endif
 
-#include <io.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <process.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <stdio.h>
-#include <fcntl.h>
+/* Define to 1 if on MINIX. */
+#undef _MINIX
 
-typedef int     dbref;
-typedef int     FLAG;
-typedef int     POWER;
-#ifdef REALITY_LVLS
-typedef unsigned int RLEVEL;
-#endif // REALITY_LVLS
-typedef char    boolexp_type;
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
 
-#define UNUSED_PARAMETER(x) ((void)(x))
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
 
-#endif // AUTOCONF_H
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
 
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t

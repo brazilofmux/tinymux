@@ -576,7 +576,6 @@ PACKAGE_VERSION=
 PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
-ac_unique_file="../mudconf.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -4813,8 +4812,9 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
 
-    cat >>confdefs.h <<\_ACEOF
-#define HAVE_DLOPEN 1
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DLOPEN
 _ACEOF
 
     case "$host" in
