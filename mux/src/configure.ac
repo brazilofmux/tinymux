@@ -207,24 +207,35 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(DEPRECATED)
 
-AC_CANONICAL_HOST
-AC_PROG_CC
+# Checks for programs.
+#
 AC_PROG_CXX
 AC_PROG_CXXCPP
+AC_PROG_CC
 AC_PROG_CPP
+AC_CANONICAL_HOST
 case "$host" in
 *irix*) LIBS="-lm" ;;
 esac
 AC_ISC_POSIX
 AC_AIX
 AC_MINIX
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h)
-AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
-AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
-AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
+
+# Checks for libraries.
+#
+AC_CHECK_LIB(crypt, main)
+AC_CHECK_LIB(resolv, main)
+AC_CHECK_LIB(sun, getpwnam)
+AC_CHECK_LIB(seq, main)
+AC_CHECK_LIB(intl, main)
+AC_CHECK_LIB(nsl, main)
+if test $ac_cv_func_gethostbyaddr = no; then
+    AC_CHECK_LIB(inet, main)
+fi
+if test $ac_cv_func_socket = no; then
+    AC_CHECK_LIB(socket, main)
+fi
+AC_CHECK_LIB(m, main)
 AC_MSG_CHECKING(for dlopen)
 AC_CHECK_LIB(dl,dlopen)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -252,17 +263,24 @@ AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CPPFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
 AC_SUBST(MUX_LIBS)
+
+# Checks for header files.
+#
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h)
+AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
+AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
+AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
 AS_MESSAGE([checking for sys_errlist decl...])
 if test $ac_cv_header_errno_h = no; then
-	AC_DEFINE([NEED_SYS_ERRLIST_DCL], [], [Define if you need to declare sys_errlist yourself.])
+    AC_DEFINE([NEED_SYS_ERRLIST_DCL], [], [Define if you need to declare sys_errlist yourself.])
 else
-	AC_EGREP_HEADER(sys_errlist,errno.h, ,AC_EGREP_HEADER(sys_errlist,stdio.h,,AC_DEFINE(NEED_SYS_ERRLIST_DCL)))
+    AC_EGREP_HEADER(sys_errlist,errno.h, ,AC_EGREP_HEADER(sys_errlist,stdio.h,,AC_DEFINE(NEED_SYS_ERRLIST_DCL)))
 fi
-AC_CHECK_LIB(crypt, main)
-AC_FUNC_STRFTIME
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getpagesize getrusage gettimeofday)
-AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep)
+
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE([NEED_GETPAGESIZE_DCL], [], [Define if you need to declare getpagesize yourself.]))
 if test $ac_cv_header_ieeefp_h = yes; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -276,22 +294,17 @@ if test $ac_cv_header_ieeefp_h = yes; then
     }
     ]])],[AC_DEFINE([IEEEFP_H_USEABLE], [], [Define is ieeefp.h is useable.])],[])
 fi
+
 if test $ac_cv_header_fenv_h = yes; then
-	AC_EGREP_HEADER(fesetprec,fenv.h,AC_DEFINE([HAVE_FESETPREC], [], [Define if fesetprec is available.]))
-	AC_EGREP_HEADER(fegetprec,fenv.h,AC_DEFINE([HAVE_FEGETPREC], [], [Define if fegetprec is available.]))
+    AC_EGREP_HEADER(fesetprec,fenv.h,AC_DEFINE([HAVE_FESETPREC], [], [Define if fesetprec is available.]))
+    AC_EGREP_HEADER(fegetprec,fenv.h,AC_DEFINE([HAVE_FEGETPREC], [], [Define if fegetprec is available.]))
 fi
 
-AC_TYPE_OFF_T
-AC_TYPE_PID_T
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],[[struct sigcontext scp;]])],[AC_DEFINE([HAVE_STRUCT_SIGCONTEXT], [], [Define if signal handlers have a struct sigcontext as their third arg.])],[])
-AC_HEADER_SYS_WAIT
-AC_STRUCT_TM
-AC_STRUCT_TIMEZONE
 AS_MESSAGE([checking for extended string dcls...])
 AC_EGREP_HEADER(rindex,string.h, ,AC_DEFINE([NEED_INDEX_DCL], [], [Define if we need to redefine index/bcopy et. al. to their SYSV counterparts.]))
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],[[struct sigcontext scp;]])],[AC_DEFINE([HAVE_STRUCT_SIGCONTEXT], [], [Define if signal handlers have a struct sigcontext as their third arg.])],[])
+
 AS_MESSAGE([checking for malloc dcl...])
 querymalloc=no
 AC_EGREP_HEADER(realloc,stdlib.h,AC_DEFINE([MALLOC_IN_STDLIB_H], [], [Define if malloc/realloc/free are defined in stdlib.h.]),querymalloc=yes)
@@ -308,9 +321,6 @@ AS_MESSAGE([checking for extended stdio dcls...])
 AC_EGREP_HEADER(fread,stdio.h,AC_DEFINE([EXTENDED_STDIO_DCLS], [], [Define if stdio.h defines lots of extra functions.]))
 AS_MESSAGE([checking for extended socket dcls...])
 AC_EGREP_HEADER(setsockopt,sys/socket.h,AC_DEFINE([EXTENDED_SOCKET_DCLS], [], [Define if sys/socket.h defines lots of extra functions.]))
-AS_MESSAGE([checking for socklen_t dcls...])
-AC_EGREP_HEADER(socklen_t,sys/socket.h,AC_DEFINE([SOCKLEN_T_DCL], [], [Define if socklen_t is defined.]))
-
 AS_MESSAGE([checking for gettimeofday dcl...])
 if test $ac_cv_header_time = yes && test $ac_cv_header_sys_time_h = yes ; then
 AC_EGREP_HEADER(gettimeofday,[time.h>
@@ -321,6 +331,67 @@ else
 AC_EGREP_HEADER(gettimeofday,time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
 fi
 
+# Checks for typedefs, structures, and compiler characteristics.
+#
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+AC_STRUCT_TIMEZONE
+AC_C_CONST
+AC_C_INLINE
+AC_CHECK_SIZEOF(short,2)
+AC_CHECK_SIZEOF(unsigned short,2)
+AC_CHECK_SIZEOF(int,4)
+AC_CHECK_SIZEOF(unsigned int,4)
+AC_CHECK_SIZEOF(long,4)
+AC_CHECK_SIZEOF(unsigned long,4)
+AS_MESSAGE([checking for socklen_t dcls...])
+AC_EGREP_HEADER(socklen_t,sys/socket.h,AC_DEFINE([SOCKLEN_T_DCL], [], [Define if socklen_t is defined.]))
+AC_CHECK_DECLS([sys_siglist],[],[],[#include <signal.h>
+/* NetBSD declares sys_siglist in unistd.h.  */
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+])
+AC_MSG_CHECKING(for sys_signame decl)
+AC_EGREP_HEADER(sys_signame,signal.h,AC_DEFINE([HAVE_SYS_SIGNAME], [], [Define if sys_signame[] exists.]) AC_MSG_RESULT(yes),AC_MSG_RESULT(no))
+AS_MESSAGE([checking for getrusage dcl...])
+AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE([NEED_GETRUSAGE_DCL], [], [Define if you need to declare getrusage yourself.]))
+AS_MESSAGE([checking for getrlimit dcl...])
+AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE([NEED_GETRLIMIT_DCL], [], [Define if you need to declare getrlimit yourself.]))
+AC_C_BIGENDIAN(AC_DEFINE([WORDS_BIGENDIAN], [], [Define if Big Endian.]),AC_DEFINE([WORDS_LITTLEENDIAN], [], [Define if Little Endian.]),AC_DEFINE([WORDS_UNKNOWN], [], [Define if Unknown Endian.]))
+AC_MSG_CHECKING([for in_addr_t])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T], [], [Define if your system has the in_addr_t type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+
+# Checks for library functions.
+#
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getpagesize getrusage gettimeofday)
+AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep)
+AS_MESSAGE([checking for pread and pwrite...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+main() { pwrite(0, "abc", 3, 0); exit(0); }]])],[pwrite_works=yes],[pwrite_works=no],[])
+
+if test $pwrite_works = yes; then
+  AC_DEFINE([HAVE_PREAD], [], [Define if pread exists.])
+  AC_DEFINE([HAVE_PWRITE], [], [Define if pwrite exists.])
+fi
+
+# Platform behaviors
+#
 AS_MESSAGE([checking for signal SIGCHLD braindamage...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <signal.h>
@@ -356,15 +427,6 @@ int main(int argc, char *argv[])
 }
 ]])],[],[AC_DEFINE([SIGNAL_SIGCHLD_BRAINDAMAGE], [], [Define if calling signal with SIGCHLD when handling SIGCHLD blows chow.])],[AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE)])
 
-AC_CHECK_DECLS([sys_siglist],[],[],[#include <signal.h>
-/* NetBSD declares sys_siglist in unistd.h.  */
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-])
-
-AC_MSG_CHECKING(for sys_signame decl)
-AC_EGREP_HEADER(sys_signame,signal.h,AC_DEFINE([HAVE_SYS_SIGNAME], [], [Define if sys_signame[] exists.]) AC_MSG_RESULT(yes),AC_MSG_RESULT(no))
 AS_MESSAGE([checking for IEEE floating-point format...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
@@ -421,19 +483,7 @@ int main(int argc, char *argv[])
    return 1;
 }
 ]])],[AC_DEFINE([SMALLEST_INT_GTE_NEG_QUOTIENT], [], [Define if platform computes integer quotient as the smallest integer greater than or equal to the algebraic quotient.])],[AC_DEFINE([LARGEST_INT_LTE_NEG_QUOTIENT], [], [Define if platform computes integer quotient as the largest integer less than or equal to the algebraic quotient.])],[AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT)])
-AS_MESSAGE([checking for getrusage dcl...])
-AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE([NEED_GETRUSAGE_DCL], [], [Define if you need to declare getrusage yourself.]))
-AS_MESSAGE([checking for getrlimit dcl...])
-AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE([NEED_GETRLIMIT_DCL], [], [Define if you need to declare getrlimit yourself.]))
-AC_C_CONST
-AC_C_INLINE
-AC_C_BIGENDIAN(AC_DEFINE([WORDS_BIGENDIAN], [], [Define if Big Endian.]),AC_DEFINE([WORDS_LITTLEENDIAN], [], [Define if Little Endian.]),AC_DEFINE([WORDS_UNKNOWN], [], [Define if Unknown Endian.]))
-AC_CHECK_SIZEOF(short,2)
-AC_CHECK_SIZEOF(unsigned short,2)
-AC_CHECK_SIZEOF(int,4)
-AC_CHECK_SIZEOF(unsigned int,4)
-AC_CHECK_SIZEOF(long,4)
-AC_CHECK_SIZEOF(unsigned long,4)
+
 AS_MESSAGE([checking whether unaligned 'short' access is permitted...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
@@ -475,45 +525,12 @@ int main(int argc, char *argv[])
 }
 ]])],[AC_DEFINE([CAN_UNALIGN_LONGLONG], [], [Define if unaligned long long access is allowed.])],[],[])
 
-AS_MESSAGE([checking for pread and pwrite...])
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-main() { pwrite(0, "abc", 3, 0); exit(0); }]])],[pwrite_works=yes],[pwrite_works=no],[])
-
-if test $pwrite_works = yes; then
-  AC_DEFINE([HAVE_PREAD], [], [Define if pread exists.])
-  AC_DEFINE([HAVE_PWRITE], [], [Define if pwrite exists.])
-fi
-
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>]],[[struct linger ling; ling.l_onoff = 1;]])],[AC_DEFINE([HAVE_LINGER], [], [Define if struct linger is defined.])],[])
-AC_CHECK_LIB(resolv, main)
-AC_CHECK_LIB(sun, getpwnam)
-AC_CHECK_LIB(seq, main)
-AC_CHECK_LIB(intl, main)
-AC_CHECK_LIB(nsl, main)
-if test $ac_cv_func_gethostbyaddr = no; then
-	AC_CHECK_LIB(inet, main)
-fi
-if test $ac_cv_func_socket = no; then
-	AC_CHECK_LIB(socket, main)
-fi
-AC_CHECK_LIB(m, main)
 AS_MESSAGE([checking for /dev/urandom...])
 if test -c /dev/urandom; then
   AC_DEFINE([HAVE_DEV_URANDOM], [], [Define if the character special file /dev/urandom is present.])
 fi
-AC_MSG_CHECKING([for in_addr_t])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
-#include <stdlib.h>
-#include <stddef.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif]],[[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T], [], [Define if your system has the in_addr_t type.])
-   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
