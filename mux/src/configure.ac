@@ -1,7 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
+
 AC_PREREQ(2.61)
-AC_INIT([mux],[2.7],[tinymux@googlegroups.com])
-AC_CONFIG_SRCDIR([game.cpp])
+AC_INIT(TinyMUX, 2.7, tinymux@googlegroups.com)
+AC_CONFIG_SRCDIR([sample.cpp])
 AC_CONFIG_HEADER([autoconf.h])
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
@@ -281,9 +282,12 @@ if test $ac_cv_header_fenv_h = yes; then
 	AC_EGREP_HEADER(fesetprec,fenv.h,AC_DEFINE([HAVE_FESETPREC], [], [Define if fesetprec is available.]))
 	AC_EGREP_HEADER(fegetprec,fenv.h,AC_DEFINE([HAVE_FEGETPREC], [], [Define if fegetprec is available.]))
 fi
+
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],[[struct sigcontext scp;]])],[AC_DEFINE([HAVE_STRUCT_SIGCONTEXT], [], [Define if signal handlers have a struct sigcontext as their third arg.])],[])
 AC_HEADER_SYS_WAIT
 AC_STRUCT_TM
