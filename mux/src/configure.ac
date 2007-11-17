@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
+AC_PREREQ(2.61)
 AC_CONFIG_HEADER(autoconf.h)
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
