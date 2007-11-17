@@ -19,10 +19,6 @@
 #include "config.h"
 #include "externs.h"
 
-// for tzset() and localtime()
-//
-#include <time.h>
-
 CMuxAlarm MuxAlarm;
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
@@ -1862,7 +1858,9 @@ void TIME_Initialize(void)
     }
     bTimeInitialized = true;
 
+#ifdef HAVE_TZSET
     mux_tzset();
+#endif // HAVE_TZSET
 
     test_time_t();
     ltdIntervalMinimum = time_1w;

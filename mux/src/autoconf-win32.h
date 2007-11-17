@@ -86,10 +86,10 @@
 /* #undef HAVE_IEEEFP_H */
 
 /* Define if you have IEEE floating-point formatted numbers. */
-#define HAVE_IEEE_FP_FORMAT 
+#define HAVE_IEEE_FP_FORMAT
 
 /* Define if your IEEE floating-point library can generate NaN. */
-#define HAVE_IEEE_FP_SNAN 
+#define HAVE_IEEE_FP_SNAN
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
@@ -248,6 +248,9 @@
    `tzname'. */
 /* #undef HAVE_TZNAME */
 
+/* Define to 1 if you have the `tzset' function. */
+#define HAVE_TZSET 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
 
@@ -350,7 +353,7 @@
 
 /* Define if platform computes integer quotient as the smallest integer
    greater than or equal to the algebraic quotient. */
-#define SMALLEST_INT_GTE_NEG_QUOTIENT 
+#define SMALLEST_INT_GTE_NEG_QUOTIENT
 
 /* Define if socklen_t is defined. */
 /* #undef SOCKLEN_T_DCL */
@@ -368,7 +371,7 @@
 /* #undef WORDS_BIGENDIAN */
 
 /* Define if Little Endian. */
-#define WORDS_LITTLEENDIAN 
+#define WORDS_LITTLEENDIAN
 
 /* Define if Unknown Endian. */
 /* #undef WORDS_UNKNOWN */

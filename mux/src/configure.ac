@@ -261,10 +261,8 @@ fi
 AC_CHECK_LIB(crypt, main)
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(setrlimit getrusage srandom)
-AC_CHECK_FUNCS(getdtablesize socket gethostbyaddr)
-AC_CHECK_FUNCS(gettimeofday select socket localtime_r)
-AC_CHECK_FUNCS(getpagesize usleep nanosleep setitimer crypt)
+AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr getpagesize getrusage gettimeofday)
+AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep)
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE([NEED_GETPAGESIZE_DCL], [], [Define if you need to declare getpagesize yourself.]))
 if test $ac_cv_header_ieeefp_h = yes; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
