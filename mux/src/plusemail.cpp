@@ -436,21 +436,19 @@ static int mod_email_sock_readline(SOCKET sock, UTF8 *buffer, int maxlen)
 //
 static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *sock)
 {
-    struct hostent *conhost;
-    struct sockaddr_in name;
-    int addr_len;
-
-    conhost = gethostbyname((char *)conhostname);
-    if (0 == conhost)
+#ifdef HAVE_GETHOSTBYNAME
+    struct hostent *conhost = gethostbyname((char *)conhostname);
+    if (NULL == conhost)
     {
         return -1;
     }
 
+    struct sockaddr_in name;
     name.sin_port = htons(port);
     name.sin_family = AF_INET;
     memcpy((char *)&name.sin_addr, (char *)conhost->h_addr, conhost->h_length);
     SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
-    addr_len = sizeof(name);
+    int addr_len = sizeof(name);
 
     if (connect(mysock, (struct sockaddr *)&name, addr_len) == -1)
     {
@@ -460,6 +458,9 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     *sock = mysock;
 
     return 0;
+#else
+    return -1;
+#endif // HAVE_GETHOSTBYNAME
 }
 
 static int mod_email_sock_close(SOCKET sock)

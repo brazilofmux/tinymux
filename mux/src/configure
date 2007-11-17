@@ -6234,7 +6234,8 @@ done
 
 
 
-for ac_func in crypt getdtablesize gethostbyaddr getpagesize getrusage gettimeofday
+
+for ac_func in crypt getdtablesize gethostbyaddr gethostbyname getpagesize getrusage gettimeofday
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { echo "$as_me:$LINENO: checking for $ac_func" >&5

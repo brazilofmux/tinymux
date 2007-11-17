@@ -101,12 +101,16 @@ int query(char *ip, char *orig_arg)
         return -1;
     }
     const char *pHName = ip;
+
+#ifdef HAVE_GETHOSTBYADDR
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
     if (  hp
        && strlen(hp->h_name) < MAX_STRING)
     {
         pHName = hp->h_name;
     }
+#endif // HAVE_GETHOSTBYADDR
+
     p = stpcpy(buf, ip);
     *p++ = ' ';
     p = stpcpy(p, pHName);
@@ -129,8 +133,10 @@ int query(char *ip, char *orig_arg)
     *port_pair++ = 0;
     *comma = ',';
 
+#ifdef HAVE_GETHOSTBYNAME
     hp = gethostbyname(arg);
     if (hp == NULL)
+#endif // HAVE_GETHOSTBYNAME
     {
         static struct hostent def;
         static struct in_addr defaddr;

@@ -71,7 +71,10 @@
 /* #undef HAVE_GETDTABLESIZE */
 
 /* Define to 1 if you have the `gethostbyaddr' function. */
-/* #undef HAVE_GETHOSTBYADDR */
+#define HAVE_GETHOSTBYADDR 1
+
+/* Define to 1 if you have the `gethostbyname' function. */
+#define HAVE_GETHOSTBYNAME 1
 
 /* Define to 1 if you have the `getpagesize' function. */
 /* #undef HAVE_GETPAGESIZE */
