@@ -1,4 +1,4 @@
-/* autoconf.h.in.  Generated from configure.in by autoheader.  */
+/* autoconf.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if unaligned int access is allowed. */
 #define CAN_UNALIGN_INT

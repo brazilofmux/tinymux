@@ -53,7 +53,7 @@ src/config.guess
 src/config.h
 src/config.sub
 src/configure
-src/configure.in
+src/configure.ac
 src/copyright.h
 src/cque.cpp
 src/create.cpp
@@ -97,7 +97,7 @@ src/modules/autoconf.h.in
 src/modules/config.guess
 src/modules/config.sub
 src/modules/configure
-src/modules/configure.in
+src/modules/configure.ac
 src/modules/install-sh
 src/modules/sample.cpp
 src/modules/sample.h

@@ -1,4 +1,4 @@
-/* autoconf.h.in.  Generated from configure.in by autoheader.  */
+/* autoconf.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if unaligned int access is allowed. */
 #undef CAN_UNALIGN_INT
@@ -276,7 +276,7 @@
 /* Define if you do not have IEEE floating-point formatted numbers. */
 #undef NO_IEEE_FP_FORMAT
 
-/* Define if your IEEE floating-point library can not generate NaN. */
+/* Define if your IEEE floating-point library cannot generate NaN. */
 #undef NO_IEEE_FP_SNAN
 
 /* Define to the address where bug reports for this package should be sent. */
