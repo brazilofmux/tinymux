@@ -14,7 +14,7 @@
 #define CAN_UNALIGN_SHORT
 
 /* Define if sys/socket.h defines lots of extra functions. */
-/* #undef EXTENDED_SOCKET_DCLS */
+#define EXTENDED_SOCKET_DCLS
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 /* #undef HAVE_ARPA_INET_H */
@@ -50,7 +50,7 @@
 #define HAVE_ERRNO_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-/* #undef HAVE_FCNTL_H */
+#define HAVE_FCNTL_H 1
 
 /* Define if fegetprec is available. */
 /* #undef HAVE_FEGETPREC */
@@ -229,7 +229,7 @@
 /* #undef HAVE_SYS_SOCKET_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-/* #undef HAVE_SYS_STAT_H */
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 /* #undef HAVE_SYS_TIME_H */
