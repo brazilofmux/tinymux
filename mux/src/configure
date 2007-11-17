@@ -578,7 +578,7 @@ PACKAGE_VERSION='2.7'
 PACKAGE_STRING='TinyMUX 2.7'
 PACKAGE_BUGREPORT='tinymux@googlegroups.com'
 
-ac_unique_file="sample.cpp"
+ac_unique_file="game.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
