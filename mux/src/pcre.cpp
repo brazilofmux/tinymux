@@ -62,7 +62,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#ifdef HAVE_STDDEF_H
 #include <stddef.h>
+#endif // HAVE_STDDEF_H
 
 /* We need to have types that specify unsigned 16-bit and 32-bit integers. We
 cannot determine these outside the compilation (e.g. by running a program as

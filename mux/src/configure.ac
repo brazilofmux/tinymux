@@ -221,10 +221,10 @@ AC_MINIX
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(unistd.h memory.h string.h errno.h malloc.h sys/select.h)
-AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h)
-AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h)
-AC_CHECK_HEADERS([netinet/in.h])
+AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h)
+AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
+AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
+AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
 AC_MSG_CHECKING(for dlopen)
 AC_CHECK_LIB(dl,dlopen)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[

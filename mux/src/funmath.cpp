@@ -10,7 +10,9 @@
 #include "config.h"
 #include "externs.h"
 
+#ifdef HAVE_FLOAT_H
 #include <float.h>
+#endif // HAVE_FLOAT_H
 #include <limits.h>
 #include <math.h>
 

@@ -28,23 +28,11 @@
 #include <windows.h>
 #include <winsock2.h>
 
-#include <malloc.h>
-#include <crtdbg.h>
 #include <share.h>
-
 #include <io.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <limits.h>
 #include <process.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <stdio.h>
-#include <fcntl.h>
 
-#else // !WIN32
+#endif // WIN32
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -130,7 +118,9 @@ extern int getpagesize(void);
 #define getpagesize() sysconf(_SC_PAGESIZE)
 #else // _SC_PAGESIZE
 
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif // HAVE_SYS_PARAM_H
 
 #ifdef EXEC_PAGESIZE
 #define getpagesize() EXEC_PAGESIZE
@@ -167,6 +157,9 @@ extern int errno;
 #if !defined(MALLOC_IN_STDLIB_H)
 #if   defined(HAVE_MALLOC_H)
 #include <malloc.h>
+#ifdef WIN32
+#include <crtdbg.h>
+#endif // WIN32
 #elif defined(NEED_MALLOC_DCL)
 extern char *malloc(int);
 extern char *realloc(char *, int);
@@ -178,9 +171,15 @@ extern int   free(char *);
 extern char *sys_errlist[];
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif // HAVE_SYS_TYPES_H
+
 #include <stdio.h>
+
+#ifdef HAVE_SYS_FCNTL_H
 #include <sys/fcntl.h>
+#endif // HAVE_SYS_FCNTL_H
 
 #ifdef NEED_SPRINTF_DCL
 extern char *sprintf(char *, const char *, ...);
@@ -207,20 +206,20 @@ extern int    ungetc(int, FILE *);
 extern int    unlink(const char *);
 #endif
 
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif // HAVE_SYS_SOCKET_H
+
 #ifndef EXTENDED_SOCKET_DCLS
 extern int    accept(int, struct sockaddr *, int *);
 extern int    bind(int, struct sockaddr *, int);
 extern int    listen(int, int);
-extern int    sendto(int, void *, int, unsigned int,
-                    struct sockaddr *, int);
+extern int    sendto(int, void *, int, unsigned int, struct sockaddr *, int);
 extern int    setsockopt(int, int, int, void *, int);
 extern int    shutdown(int, int);
 extern int    socket(int, int, int);
 extern int    select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
-
-#endif // WIN32
 
 typedef int   dbref;
 typedef int   FLAG;

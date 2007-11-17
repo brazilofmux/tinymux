@@ -5031,7 +5031,8 @@ fi
 
 
 
-for ac_header in unistd.h memory.h string.h errno.h malloc.h sys/select.h
+
+for ac_header in unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -5181,7 +5182,9 @@ done
 
 
 
-for ac_header in fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h
+
+
+for ac_header in fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -5328,7 +5331,8 @@ done
 
 
 
-for ac_header in fpu_control.h ieeefp.h fenv.h
+
+for ac_header in fpu_control.h ieeefp.h fenv.h float.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -5473,7 +5477,10 @@ fi
 done
 
 
-for ac_header in netinet/in.h
+
+
+
+for ac_header in netinet/in.h arpa/inet.h netdb.h sys/socket.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then

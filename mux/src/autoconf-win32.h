@@ -16,6 +16,9 @@
 /* Define if sys/socket.h defines lots of extra functions. */
 /* #undef EXTENDED_SOCKET_DCLS */
 
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+/* #undef HAVE_ARPA_INET_H */
+
 /* Define if stdio.h defines lots of extra functions. */
 #define EXTENDED_STDIO_DCLS
 
@@ -57,6 +60,9 @@
 
 /* Define if fesetprec is available. */
 /* #undef HAVE_FESETPREC */
+
+/* Define to 1 if you have the <float.h> header file. */
+/* #undef HAVE_FLOAT_H */
 
 /* Define to 1 if you have the <fpu_control.h> header file. */
 /* #undef HAVE_FPU_CONTROL_H */
@@ -142,6 +148,9 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
+/* Define to 1 if you have the <netdb.h> header file. */
+/* #undef HAVE_NETDB_H */
+
 /* Define to 1 if you have the <netinet/in.h> header file. */
 /* #undef HAVE_NETINET_IN_H */
 
@@ -165,6 +174,9 @@
 
 /* Define to 1 if you have the `srandom' function. */
 /* #undef HAVE_SRANDOM */
+
+/* Define to 1 if you have the <stddef.h> header file. */
+/* #undef HAVE_STDDEF_H */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #undef HAVE_STDINT_H */
@@ -191,6 +203,9 @@
    */
 /* #undef HAVE_SYS_DIR_H */
 
+/* Define to 1 if you have the <sys/fcntl.h> header file. */
+/* #undef HAVE_SYS_FCNTL_H */
+
 /* Define to 1 if you have the <sys/file.h> header file. */
 /* #undef HAVE_SYS_FILE_H */
 
@@ -201,11 +216,17 @@
    */
 /* #undef HAVE_SYS_NDIR_H */
 
+/* Define to 1 if you have the <sys/param.h> header file. */
+/* #undef HAVE_SYS_PARAM_H */
+
 /* Define to 1 if you have the <sys/select.h> header file. */
 /* #undef HAVE_SYS_SELECT_H */
 
 /* Define if sys_signame[] exists. */
 /* #undef HAVE_SYS_SIGNAME */
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+/* #undef HAVE_SYS_SOCKET_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 /* #undef HAVE_SYS_STAT_H */

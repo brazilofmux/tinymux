@@ -16,9 +16,9 @@
 typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
 typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
 typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
-#else // WIN32
-#include <sys/stat.h>
-#include <sys/types.h>
+#endif // WIN32
+
+#ifndef WIN32
 #include <fcntl.h>
 #include <unistd.h>
 #endif // WIN32

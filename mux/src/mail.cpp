@@ -13,7 +13,6 @@
 #include "config.h"
 #include "externs.h"
 #include "interface.h"
-#include <sys/types.h>
 
 #include "attrs.h"
 #include "command.h"

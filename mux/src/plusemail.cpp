@@ -19,9 +19,9 @@
 #include "config.h"
 #include "externs.h"
 
-#ifndef WIN32
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
-#endif
+#endif // HAVE_NETDB_H
 
 #include "_build.h"
 

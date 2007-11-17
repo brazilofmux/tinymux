@@ -12,9 +12,9 @@
 #include "htab.h"
 #include "stringutil.h"
 
-#ifndef WIN32
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#endif // !WIN32
+#endif // HAVE_NETINET_IN_H
 
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)

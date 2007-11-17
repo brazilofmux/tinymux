@@ -12,14 +12,18 @@
 
 #include <sys/types.h>
 
-#ifndef WIN32
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif // HAVE_NETINET_IN_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif // HAVE_ARPA_INET_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
+#endif // HAVE_NETDB_H
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif // HAVE_SYS_SELECT_H
-#endif // !WIN32
 
 #ifdef SSL_ENABLED
 #include <openssl/ssl.h>

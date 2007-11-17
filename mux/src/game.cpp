@@ -10,7 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <sys/stat.h>
 #include <signal.h>
 
 #include "attrs.h"

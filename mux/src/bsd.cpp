@@ -12,12 +12,9 @@
 #include "config.h"
 #include "externs.h"
 
-#ifndef WIN32
-#include <sys/file.h>
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#endif // !WIN32
+#endif // HAVE_SYS_IOCTL_H
 
 #ifdef SSL_ENABLED
 #include <openssl/ssl.h>
