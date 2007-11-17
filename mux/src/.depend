@@ -33,16 +33,16 @@ object.o: object.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h 
 predicates.o: predicates.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h interface.h powers.h table.h
 player.o: player.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h comsys.h functions.h interface.h powers.h sha1.h
 player_c.o: player_c.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h
-plusemail.o: plusemail.cpp autoconf.h copyright.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h _build.h
+plusemail.o: plusemail.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copyright.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h _build.h
 powers.o: powers.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h command.h powers.h
 quota.o: quota.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h functions.h powers.h
 rob.o: rob.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h powers.h
-pcre.o: pcre.cpp autoconf.h copyright.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h pcre.h
+pcre.o: pcre.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copyright.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h pcre.h
 set.o: set.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h powers.h
 sha1.o: sha1.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h sha1.h
 speech.o: speech.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h interface.h powers.h
 stringutil.o: stringutil.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h ansi.h pcre.h
-strtod.o: strtod.cpp autoconf.h copyright.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h 
+strtod.o: strtod.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copyright.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h 
 svdrand.o: svdrand.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 svdhash.o: svdhash.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 timer.o: timer.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h command.h mguests.h interface.h 
@@ -53,5 +53,5 @@ walkdb.o: walkdb.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h 
 wild.o: wild.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h file_c.h interface.h powers.h
 unsplit.o: unsplit.cpp copyright.h 
-slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
+slave.o: slave.cpp autoconf.h config.h slave.h 
 stubslave.o: stubslave.cpp copyright.h autoconf.h config.h libmux.h modules.h
