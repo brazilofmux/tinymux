@@ -61,6 +61,9 @@
 /* Define if fesetprec is available. */
 /* #undef HAVE_FESETPREC */
 
+/* Define to 1 if you have the `fork' function. */
+/* #undef HAVE_FORK */
+
 /* Define to 1 if you have the <float.h> header file. */
 /* #undef HAVE_FLOAT_H */
 
@@ -257,8 +260,20 @@
 /* Define to 1 if you have the `usleep' function. */
 /* #undef HAVE_USLEEP */
 
+/* Define to 1 if you have the `vfork' function. */
+/* #undef HAVE_VFORK */
+
+/* Define to 1 if you have the <vfork.h> header file. */
+/* #undef HAVE_VFORK_H */
+
 /* Define to 1 if you have the `vprintf' function. */
 /* #undef HAVE_VPRINTF */
+
+/* Define to 1 if `fork' works. */
+/* #undef HAVE_WORKING_FORK */
+
+/* Define to 1 if `vfork' works. */
+/* #undef HAVE_WORKING_VFORK */
 
 /* Define is ieeefp.h is useable. */
 /* #undef IEEEFP_H_USEABLE */
@@ -410,3 +425,6 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+/* Define as `fork' if `vfork' does not work. */
+/* #undef vfork */
