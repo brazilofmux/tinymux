@@ -533,4 +533,5 @@ if test -c /dev/urandom; then
 fi
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_SUBDIRS([modules])
 AC_OUTPUT
