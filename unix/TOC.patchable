@@ -109,9 +109,6 @@ src/sha1.h
 src/slave.cpp
 src/slave.h
 src/speech.cpp
-src/sqlshared.cpp
-src/sqlshared.h
-src/sqlslave.cpp
 src/stringutil.cpp
 src/strtod.cpp
 src/stringutil.h

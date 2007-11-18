@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  October 2007
+Last Update:  November 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -346,3 +346,4 @@ Miscellaneous:
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
  -- Increase MAX_ALIASES_PER_PLAYER from 50 to 100.
  -- Fix gcc constant string warnings.
+ -- Remove unfinished sqlshared.cpp, sqlshare.h, and sqlslave.cpp.

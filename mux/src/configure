@@ -655,8 +655,6 @@ REALITY_SRC
 REALITY_OBJ
 WOD_REALMS
 MEMORY_BASED
-QUERY_SLAVE
-SQLSLAVE
 FIRANMUX
 FIRANLIBS
 FIRANMUX_CONVERT
@@ -1275,7 +1273,6 @@ Optional Features:
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
   --enable-memorybased    enable Memory-Based Database (default is NO)
-  --enable-queryslave     enable Query Slave (default is NO)
   --enable-firanmux       enable Firan MUX (default is NO)
   --enable-firanmuxconvert
                           enable Firan MUX Conversion (default is NO)
@@ -1791,31 +1788,6 @@ else
 echo "${ECHO_T}no" >&6; }
 
 fi
-
-
-
-{ echo "$as_me:$LINENO: checking whether to enable Query Slave" >&5
-echo $ECHO_N "checking whether to enable Query Slave... $ECHO_C" >&6; }
-# Check whether --enable-queryslave was given.
-if test "${enable_queryslave+set}" = set; then
-  enableval=$enable_queryslave;
-    if test "x$enableval" = "xno"; then
-      { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-    else
-      QUERY_SLAVE="-DQUERY_SLAVE"
-      SQLSLAVE="sqlslave"
-      { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-    fi
-
-else
-
-    { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
-
 
 
 
@@ -12157,8 +12129,6 @@ REALITY_SRC!$REALITY_SRC$ac_delim
 REALITY_OBJ!$REALITY_OBJ$ac_delim
 WOD_REALMS!$WOD_REALMS$ac_delim
 MEMORY_BASED!$MEMORY_BASED$ac_delim
-QUERY_SLAVE!$QUERY_SLAVE$ac_delim
-SQLSLAVE!$SQLSLAVE$ac_delim
 FIRANMUX!$FIRANMUX$ac_delim
 FIRANLIBS!$FIRANLIBS$ac_delim
 FIRANMUX_CONVERT!$FIRANMUX_CONVERT$ac_delim
@@ -12190,7 +12160,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 73; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 71; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
