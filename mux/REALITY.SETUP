@@ -67,13 +67,6 @@ These 8 directives define the default reality levels of newly created objects.
 They can be set in the config file or with the @admin command.  Like above,
 <value> must be a decimal number.
 
-    wiz_always_real <0|1>
-
-If this parameter is set to 1 then wizards (and immortals on Rhost) will see
-everything and will be visible to everyone. Their effective Rx and Tx levels
-will always be 0xFFFFFFFF. Also settable in the config file and with the
-@admin command.
-
 Commands:
 
 Two wiz-only commands are used to set the reality levels of an object.
