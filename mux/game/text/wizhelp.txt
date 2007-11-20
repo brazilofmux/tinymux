@@ -1898,7 +1898,7 @@ CONFIG PARAMETERS (continued)
   terse_shows_move_messages  thing_flags  thing_parent  thing_quota  timeslice
   toad_recipient  trace_output_limit  trace_topdown  trust_site
   uncompress_program  unowned_safe  use_http  user_attr_access
-  user_attr_per_hour  wait_cost  wiz_always_real wizard_motd_file
+  user_attr_per_hour  wait_cost  wizard_motd_file
   wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
@@ -4204,7 +4204,7 @@ REALITY LEVELS
 
   Related topics: @rxlevel, @txlevel, def_player_rx, def_player_tx,
                  def_thing_rx, def_thing_tx, def_room_rx, def_room_tx,
-                 wiz_always_real, reality_level, CANSEE()
+                 reality_level, CANSEE()
 
 & REALITY_LEVEL
 REALITY_LEVEL
@@ -5139,18 +5139,6 @@ WIZHELP
   typically of use only to wizards and/or the game maintainer.
 
   Related Topics: the source code.
-
-& WIZ_ALWAYS_REAL
-WIZ_ALWAYS_REAL
-
-  CONFIG PARAMETER: wiz_always_real <0/1>
-  DEFAULT: 0
-
-  If 1, then players flagged royalty and above are always real for
-  everything and everything is real for them.
-
-  NOTE: This feature is not available unless reality levels was enabled at
-  compile-time.
 
 & ZONE_RECURSION_LIMIT
 ZONE_RECURSION_LIMIT
