@@ -6259,6 +6259,13 @@ void mux_string::realloc_m_pcs(size_t ncs)
     }
 }
 
+/*! \brief Replaces a substring within a string with another.
+ *
+ * \param sTo      Replacement string.
+ * \param iStart   Cursor to start of substring to replace.
+ * \param nLen     Length of substring to replace.
+ */
+
 void mux_string::replace_Chars
 (
     const mux_string &sTo,
@@ -6272,9 +6279,16 @@ void mux_string::replace_Chars
 
     if (nLen != nTo)
     {
+        // Since the substring size is not the same size as the replacement
+        // string size, we need to move things around.
+        //
         nMove = m_iLast - (iStart + nLen);
         if (CursorMax < m_iLast + nTo - nLen)
         {
+            // The resulting string would be too large, so we need to trim
+            // either the move or the copy part -- depending on how much
+            // needs to be trimmed.
+            //
             if (CursorMax < iStart + nTo)
             {
                 while (  sTo.cursor_prev(nCopy)
@@ -6293,30 +6307,55 @@ void mux_string::replace_Chars
             }
         }
 
+        mux_cursor iLast = iStart + nCopy + nMove;
+
+        // Move text if necessary.
+        //
         if (CursorMin < nMove)
         {
             memmove(m_autf + iStart.m_byte + nCopy.m_byte,
                     m_autf + iStart.m_byte + nLen.m_byte, nMove.m_byte * sizeof(m_autf[0]));
         }
-        m_iLast = iStart + nCopy + nMove;
 
+        // Update color if necessary to be consistent with the move.
+        //
         if (0 != m_ncs)
         {
-            realloc_m_pcs(m_iLast.m_point);
+            realloc_m_pcs(iLast.m_point);
+
+            // If there is a move operation, the color also needs to be moved.
+            // A copy on the end of the string without a move may require some
+            // color state to be initialized.
+            //
             if (CursorMin < nMove)
             {
                 memmove(m_pcs + iStart.m_point + nCopy.m_point,
                         m_pcs + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_pcs[0]));
             }
+            else if (CursorMin < nCopy)
+            {
+                // Propagate the last color state out further.
+                //
+                for (int i = m_iLast.m_point; i < iLast.m_point; i++)
+                {
+                    m_pcs[i] = m_pcs[m_iLast.m_point-1];
+                }
+            }
         }
         else if (0 != sTo.m_ncs)
         {
-            realloc_m_pcs(m_iLast.m_point);
+            realloc_m_pcs(iLast.m_point);
         }
+
+        m_iLast = iLast;
     }
 
+    // Copy replacement text over substring.
+    //
     memcpy(m_autf + iStart.m_byte, sTo.m_autf, nCopy.m_byte * sizeof(m_autf[0]));
 
+    // If the replacement string contains color, replace the color as well.
+    //
     if (0 != sTo.m_ncs)
     {
         memcpy(m_pcs + iStart.m_point, sTo.m_pcs, nCopy.m_point * sizeof(m_pcs[0]));
