@@ -5569,18 +5569,23 @@ CONVTIME()
   By default, this function converts a time string (of format
   [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
   count of seconds since Jan 01 00:00:00 1970 UTC not including leap
-  secs. Where Ddd, if given, is the day of the week. Mmm is the month
+  secs where Ddd, if given, is the day of the week, Mmm is the month
   name, DD is the day of the month, HH is the hour in 24-hour time,
   MM is the minutes, SS is the seconds, and YYYY is the year.
 
-  Keep in mind that the year may not be exactly four characters and
-  it can also be negative. This server provides a proleptic Gregorian
+  Keep in mind that the year may not be exactly four characters, and
+  it can also be negative.  This server provides a proleptic Gregorian
   calendar with a range of supported years between 27257 BC and
   30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
-  given as -27256. This follows the astronomical conventions.
+  given as -27256.  This follows the astronomical conventions.
 
   Note: The time string can also be freeform and this function will
   attempt to parse.
+
+{ 'help convtime2' for more }
+
+& CONVTIME2
+CONVTIME() (continued)
 
   If a second argument is given, it is the <zonename>:
 
@@ -5595,6 +5600,11 @@ CONVTIME()
 
   <precision> determines the number of fractional seconds shown.
   By default, no fractional seconds are shown.
+
+{ 'help convtime3' for more }
+
+& CONVTIME3
+CONVTIME() (continued)
 
   Examples:
     > say time()
@@ -6341,7 +6351,7 @@ EXAMINE
 { 'help examine2' for more }
 
 & EXAMINE2
-EXAMINE2
+EXAMINE (continued)
 
   If you specify a wildcarded attribute name, then only those attributes
   that match are shown.  So, 'exam me/v?' will show all your attributes that
@@ -10384,7 +10394,7 @@ PEMIT()
   a non-player dbref. This function is provided in case the old behavior
   of pmatch() is still required.
 
-  See: pmatch()
+  Related Topics: pmatch()
 
 & PI()
 PI()
