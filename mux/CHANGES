@@ -198,7 +198,7 @@ Bug Fixes:
  -- Fix TR() to support UTF-8 sequences (Issue 305).
 
 
-Performanc  Enhancements:
+Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
     Issue 238 comments).  Thanks Alierak.
