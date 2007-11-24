@@ -778,7 +778,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                     }
                     else
                     {
-                        notify(player, mailmsg[MAIL_INVALID_SPEC]);
+                        raw_notify(player, mailmsg[MAIL_INVALID_SPEC]);
                         return false;
                     }
                     break;
@@ -1470,7 +1470,7 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                 safe_str(MessageFetch(mp->number), buff, &bp);
                 *bp = '\0';
 
-                notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, (UTF8 *)DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
 
@@ -1480,7 +1480,7 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                 UTF8 szSubjectBuffer[MBUF_SIZE];
                 StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
-                notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
+                raw_notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
                                i, szFromName,
                                mp->time,
                                (Connected(mp->from) &&
@@ -1491,9 +1491,9 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                                szSubjectBuffer));
                 free_lbuf(names);
                 free_lbuf(status);
-                notify(player, (UTF8 *)DASH_LINE);
-                notify(player, buff);
-                notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, buff);
+                raw_notify(player, (UTF8 *)DASH_LINE);
                 if (Unread(mp))
                 {
                     // Mark message as read.
@@ -1558,7 +1558,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
        || !*msglist)
     {
         trimmed_name(target, szFromName, 25, 25, 0);
-        notify(player, tprintf("--------------------   MAIL: %s   ------------------", szFromName));
+        raw_notify(player, tprintf("--------------------   MAIL: %s   ------------------", szFromName));
         MailList ml(target);
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
@@ -1570,14 +1570,14 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                 StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
                 size_t nSize = MessageFetchSize(mp->number);
-                notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
+                raw_notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                                status_chars(mp),
                                i, nSize,
                                szFromName,
                                szSubjectBuffer));
             }
         }
-        notify(player, (UTF8 *)DASH_LINE);
+        raw_notify(player, (UTF8 *)DASH_LINE);
     }
     else
     {
@@ -1601,8 +1601,8 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                     StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
-                    notify(player, (UTF8 *)DASH_LINE);
-                    notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
+                    raw_notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
                                    i, szFromName,
                                    mp->time,
                                    (Connected(mp->from) &&
@@ -1610,9 +1610,9 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                                    " (Conn)" : "      ", 0,
                                    status, szSubjectBuffer));
                     free_lbuf(status);
-                    notify(player, (UTF8 *)DASH_LINE);
-                    notify(player, str);
-                    notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, str);
+                    raw_notify(player, (UTF8 *)DASH_LINE);
                 }
             }
         }
@@ -1713,7 +1713,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
     UTF8 *time;
     UTF8 szSubjectBuffer[MBUF_SIZE];
 
-    notify(player,
+    raw_notify(player,
         tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder));
 
     MailList ml(player);
@@ -1735,12 +1735,12 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
                 {
                     StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
 
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
+                    raw_notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                         status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
                 }
                 else
                 {
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %s At: %s %s",
+                    raw_notify(player, tprintf("[%s] %-3d (%4d) From: %s At: %s %s",
                         status_chars(mp), i, nSize, szFromName, time,
                             ((Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player))) ? "Conn" : " ")));
                 }
@@ -1748,7 +1748,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
             }
         }
     }
-    notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, (UTF8 *)DASH_LINE);
 
     if (folder != original_folder)
     {
@@ -1823,13 +1823,13 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             m = get_malias(player, head, &nResult);
             if (nResult == GMA_NOTFOUND)
             {
-                notify(player,
+                raw_notify(player,
                         tprintf("MAIL: Alias '%s' does not exist.", head));
                 return NULL;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
-                notify(player,
+                raw_notify(player,
                         tprintf("MAIL: '%s' is a badly-formed alias.", head));
                 return NULL;
             }
@@ -1847,7 +1847,7 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             }
             else
             {
-                notify(player, tprintf("MAIL: '%s' does not exist.", head));
+                raw_notify(player, tprintf("MAIL: '%s' does not exist.", head));
                 return NULL;
             }
         }
@@ -1864,7 +1864,7 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
 
     if (nRecip <= 0)
     {
-        notify(player, T("MAIL: No players specified."));
+        raw_notify(player, T("MAIL: No players specified."));
         return NULL;
     }
     else
@@ -2209,16 +2209,16 @@ static void mail_return(dbref player, dbref target)
             FIELDEDTIME ft;
             ltaNow.ReturnFields(&ft);
 
-            notify_with_cause_ooc(player, target, tprintf("MAIL: Reject message from %s: %s",
+            raw_notify(player, tprintf("MAIL: Reject message from %s: %s",
                 Moniker(target), str2));
-            notify_with_cause_ooc(target, player, tprintf("[%d:%02d] MAIL: Reject message sent to %s.",
+            raw_notify(target, tprintf("[%d:%02d] MAIL: Reject message sent to %s.",
                 ft.iHour, ft.iMinute, Moniker(player)));
         }
         free_lbuf(str2);
     }
     else
     {
-        notify_with_cause_ooc(player, target, tprintf("Sorry, %s is not accepting mail.", Moniker(target)));
+        raw_notify(player, tprintf("Sorry, %s is not accepting mail.", Moniker(target)));
     }
     free_lbuf(str);
 }
@@ -4010,23 +4010,23 @@ static void do_mail_quick(dbref player, UTF8 *arg1, UTF8 *arg2)
 {
     if (!arg1 || !*arg1)
     {
-        notify(player, T("MAIL: I don't know who you want to mail."));
+        raw_notify(player, T("MAIL: I don't know who you want to mail."));
         return;
     }
     if (!arg2 || !*arg2)
     {
-        notify(player, T("MAIL: No message."));
+        raw_notify(player, T("MAIL: No message."));
         return;
     }
     if (Flags2(player) & PLAYER_MAILS)
     {
-        notify(player, T("MAIL: Mail message already in progress."));
+        raw_notify(player, T("MAIL: Mail message already in progress."));
         return;
     }
     if (  !Wizard(player)
        && ThrottleMail(player))
     {
-        notify(player, T("MAIL: Too much @mail sent recently."));
+        raw_notify(player, T("MAIL: Too much @mail sent recently."));
         return;
     }
     UTF8 *bufDest = alloc_lbuf("do_mail_quick");
@@ -4037,7 +4037,7 @@ static void do_mail_quick(dbref player, UTF8 *arg1, UTF8 *arg2)
 
     if (!bpSubject)
     {
-        notify(player, T("MAIL: No subject."));
+        raw_notify(player, T("MAIL: No subject."));
         free_lbuf(bufDest);
         return;
     }
@@ -4255,12 +4255,12 @@ static void do_mail_proof(dbref player)
     UTF8 szFromName[MBUF_SIZE];
     trimmed_name(player, szFromName, 16, 16, 0);
 
-    notify(player, (UTF8 *)DASH_LINE);
-    notify(player, tprintf("From:  %s  Subject: %s\nTo: %s",
+    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, tprintf("From:  %s  Subject: %s\nTo: %s",
             szFromName, szSubjectBuffer, names));
-    notify(player, (UTF8 *)DASH_LINE);
-    notify(player, pMailMsg);
-    notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, pMailMsg);
+    raw_notify(player, (UTF8 *)DASH_LINE);
     free_lbuf(pMailMsg);
     free_lbuf(names);
     free_lbuf(mailto);
@@ -5039,7 +5039,7 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
     UTF8 *time;
     UTF8 szSubjectBuffer[MBUF_SIZE];
 
-    notify(player,
+    raw_notify(player,
         tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder_num));
 
     MailList ml(player);
@@ -5060,14 +5060,14 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
                 StripTabsAndTruncate(mp->subject, szSubjectBuffer,
                         MBUF_SIZE-1, 25);
 
-                notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
+                raw_notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                             status_chars(mp), i, nSize, szFromName,
                             szSubjectBuffer));
                 free_lbuf(time);
             }
         }
     }
-    notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, (UTF8 *)DASH_LINE);
 
     set_player_folder(player, original_folder);
 
