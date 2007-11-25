@@ -10,8 +10,7 @@ VPATH = @srcdir@
 BIN = ../game/bin
 CC = @CC@
 CXX = @CXX@
-#CXXCPP = @CXXCPP@  # This is broken in autoconf.  Sigh.
-CXXCPP = $(CXX) -E
+CXXCPP = @CXXCPP@
 LIBS = @LIBS@ @FIRANLIBS@
 
 .SUFFIXES: .cpp
