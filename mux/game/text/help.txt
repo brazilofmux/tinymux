@@ -9539,6 +9539,11 @@ MOD()
 
     floordiv(x,y)*y + mod(x,y) ==> x
 
+{ 'help mod2' for more }
+
+& MOD2
+MOD() (continued)
+
   For positive y, mod(x,y) always returns a positive number less than
   y. For negative y, mod(x,y) always returns a negative number greater
   than y.
