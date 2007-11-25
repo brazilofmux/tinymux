@@ -4951,7 +4951,6 @@ _ACEOF
 
 fi
 
-if test $ac_cv_func_gethostbyaddr = no; then
 
 { echo "$as_me:$LINENO: checking for main in -linet" >&5
 echo $ECHO_N "checking for main in -linet... $ECHO_C" >&6; }
@@ -5017,8 +5016,6 @@ _ACEOF
 
 fi
 
-fi
-if test $ac_cv_func_socket = no; then
 
 { echo "$as_me:$LINENO: checking for main in -lsocket" >&5
 echo $ECHO_N "checking for main in -lsocket... $ECHO_C" >&6; }
@@ -5084,7 +5081,6 @@ _ACEOF
 
 fi
 
-fi
 
 { echo "$as_me:$LINENO: checking for main in -lm" >&5
 echo $ECHO_N "checking for main in -lm... $ECHO_C" >&6; }

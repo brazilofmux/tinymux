@@ -229,12 +229,8 @@ AC_CHECK_LIB(sun, getpwnam)
 AC_CHECK_LIB(seq, main)
 AC_CHECK_LIB(intl, main)
 AC_CHECK_LIB(nsl, main)
-if test $ac_cv_func_gethostbyaddr = no; then
-    AC_CHECK_LIB(inet, main)
-fi
-if test $ac_cv_func_socket = no; then
-    AC_CHECK_LIB(socket, main)
-fi
+AC_CHECK_LIB(inet, main)
+AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(m, main)
 AC_MSG_CHECKING(for dlopen)
 AC_CHECK_LIB(dl,dlopen)
