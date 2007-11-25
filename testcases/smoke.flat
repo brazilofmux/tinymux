@@ -1,0 +1,63 @@
++X996099
++S2
++N256
+-R1
+!0
+"Limbo"
+-1
+-1
+1
+-1
+-1
+-1
+1
+-1
+0
+0
+0
+0
+0
+0
+<
+!1
+"Wizard"
+0
+-1
+-1
+-1
+0
+-1
+1
+-1
+1000
+4194323
+0
+0
+0
+0
+>218
+"Sat Nov 24 18:57:55.090983 2007"
+>219
+"Sat Nov 24 18:59:09.910879 2007"
+>30
+"Sat Nov 24 18:58:02.907294 2007"
+>49
+"20"
+>38
+"20"
+>5
+"$SHA1$wtVwj8XZSq8F$axAGFQXH1pMBuP3MgiFJ2q26mgM="
+>88
+"sdennis@localhost"
+>144
+"127.0.0.1"
+>84
+"#1;localhost;Sat Nov 24 18:58:02.907472 2007;;;;;;;0;0;;;;;;;"
+>19
+"@log smoke=Starting SmokeMUX;@log smoke=Ending SmokeMUX;@shutdown"
+>222
+"Shutdown"
+>224
+"70 70 70 1 1195959553"
+<
+***END OF DUMP***

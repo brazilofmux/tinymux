@@ -1,0 +1,12 @@
+#
+# smoke.mux - Automated testing infrastructure.
+# $Id$
+#
+@startup me=
+  @log smoke=Starting SmokeMUX;
+  @log smoke=Ending SmokeMUX;
+  @shutdown
+-
+#
+# End of smoke.mux
+#
