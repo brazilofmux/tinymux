@@ -21,26 +21,15 @@
 # Finally, the last batch of cases will attempt to cover general-case date
 # string parser.
 #
-@set test_convtime_fn=COMMANDS
+@create test_convtime_fn
 -
-@set test_convtime_fn=SAFE
--
-@desc test_convtime_fn=
-  This object contains test cases for the convtime() function. It eases 
-  the demonstration of consistent behavior across builds and 
-  platforms.
--
-&version test_convtime_fn=
-  $Id: convtime_fn.mux,v 1.8 2006/07/28 07:12:28 sdennis Exp $
--
-&cmd.testconvtime test_convtime_fn=
-  $test convtime:@dolist lattr(me/tr.tc*)=@trig me/##=%#
+@set test_convtime_fn=INHERIT
 -
 #
 # Beginning of Test Cases
 #
 &tr.tc000 test_convtime_fn=
-  @pemit %0=Begining convtime() test cases.
+  @log smoke=Begining convtime() test cases.
 -
 #
 # Test Case #1 - Leaving the timezone code paths out of the mix, test that
@@ -66,10 +55,10 @@
         9FE8D9AAA0AB16874BD7216A1C691186575C31CF
       )=
   {
-    @pemit %0=TC001: Every day in 2006 suceeded.
+    @log smoke=TC001: Every day in 2006 suceeded.
   },
   {
-    @pemit %0=TC001: At least one day in 2006 failed (%q0).
+    @log smoke=TC001: At least one day in 2006 failed (%q0).
   }
 -
 #
@@ -96,10 +85,10 @@
         BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6
       )=
   {
-    @pemit %0=TC002: Every day in 1970 suceeded.
+    @log smoke=TC002: Every day in 1970 suceeded.
   },
   {
-    @pemit %0=TC002: At least one day in 1970 failed (%q0).
+    @log smoke=TC002: At least one day in 1970 failed (%q0).
   }
 -
 #
@@ -126,10 +115,10 @@
         095DE0A215B35BEC232FB806D3743EE3FB597AF4
       )=
   {
-    @pemit %0=TC003: Every day in 1969 suceeded.
+    @log smoke=TC003: Every day in 1969 suceeded.
   },
   {
-    @pemit %0=TC003: At least one day in 1969 failed (%q0).
+    @log smoke=TC003: At least one day in 1969 failed (%q0).
   }
 -
 #
@@ -156,10 +145,10 @@
         CF81EFE3EFA928E4D36D3574F2094A0D25274681
       )=
   {
-    @pemit %0=TC004: Every day in 1601 suceeded.
+    @log smoke=TC004: Every day in 1601 suceeded.
   },
   {
-    @pemit %0=TC004: At least one day in 1601 failed (%q0).
+    @log smoke=TC004: At least one day in 1601 failed (%q0).
   }
 -
 #
@@ -186,10 +175,10 @@
         603B4DF3A3F0289928666DEDC9ACC952A9E400A4
       )=
   {
-    @pemit %0=TC005: Every day in 1600 suceeded.
+    @log smoke=TC005: Every day in 1600 suceeded.
   },
   {
-    @pemit %0=TC005: At least one day in 1600 failed (%q0).
+    @log smoke=TC005: At least one day in 1600 failed (%q0).
   }
 -
 #
@@ -216,10 +205,10 @@
         D62426344636E8D947A7153C1E5F682104853197
       )=
   {
-    @pemit %0=TC006: Every day in 1 A.D. suceeded.
+    @log smoke=TC006: Every day in 1 A.D. suceeded.
   },
   {
-    @pemit %0=TC006: At least one day in 1 A.D failed (%q0).
+    @log smoke=TC006: At least one day in 1 A.D. failed (%q0).
   }
 -
 #
@@ -246,13 +235,18 @@
         F82F361B6C7D954AA4D86F964C10342E89D08F9F
       )=
   {
-    @pemit %0=TC007: Every day in 1 B.C. suceeded.
+    @log smoke=TC007: Every day in 1 B.C. suceeded.
   },
   {
-    @pemit %0=TC007: At least one day in 1 B.C.failed (%q0).
-  }
+    @log smoke=TC007: At least one day in 1 B.C. failed (%q0).
+  };
+  @trig me/tr.done
 -
-&tr.tc999 test_convtime_fn=
+&tr.done test_convtime_fn=
+  @log smoke=End convtime() test cases.;
+  @notify smoke
+-
+drop test_convtime_fn
 -
 #
 # End of Test Cases

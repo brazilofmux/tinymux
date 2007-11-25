@@ -2,10 +2,21 @@
 # smoke.mux - Automated testing infrastructure.
 # $Id$
 #
-@startup me=
+@create smoke
+-
+@set smoke=INHERIT
+-
+@startup smoke=
   @log smoke=Starting SmokeMUX;
-  @log smoke=Ending SmokeMUX;
-  @shutdown
+  @drain me;
+  @dolist lattr(test_convtime_fn/tr.tc*)=@trig test_convtime_fn/##;
+  @wait me=
+  {
+    @log smoke=Ending SmokeMUX;
+    @shutdown
+  }
+-
+drop smoke
 -
 #
 # End of smoke.mux

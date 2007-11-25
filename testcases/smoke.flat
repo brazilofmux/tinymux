@@ -1,12 +1,30 @@
 +X996099
-+S2
-+N256
++S4
++N265
 -R1
++A256
+"1:TR.TC000"
++A257
+"1:TR.TC001"
++A258
+"1:TR.TC002"
++A259
+"1:TR.TC003"
++A260
+"1:TR.TC004"
++A261
+"1:TR.TC005"
++A262
+"1:TR.TC006"
++A263
+"1:TR.TC007"
++A264
+"1:TR.DONE"
 !0
 "Limbo"
 -1
 -1
-1
+3
 -1
 -1
 -1
@@ -30,34 +48,96 @@
 1
 -1
 1000
-4194323
+19
 0
 0
 0
 0
 >218
-"Sat Nov 24 18:57:55.090983 2007"
+"Sun Nov 25 00:19:14.29978 2007"
 >219
-"Sat Nov 24 18:59:09.910879 2007"
+"Sun Nov 25 00:19:14.29978 2007"
 >30
-"Sat Nov 24 18:58:02.907294 2007"
+"Sun Nov 25 00:19:24.349078 2007"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$wtVwj8XZSq8F$axAGFQXH1pMBuP3MgiFJ2q26mgM="
+"$SHA1$UWepZ+LLE01n$JBOFq4/h85PYejev9TYesbVaE0I="
 >88
 "sdennis@localhost"
 >144
 "127.0.0.1"
 >84
-"#1;localhost;Sat Nov 24 18:58:02.907472 2007;;;;;;;0;0;;;;;;;"
->19
-"@log smoke=Starting SmokeMUX;@log smoke=Ending SmokeMUX;@shutdown"
+"#1;localhost;Sun Nov 25 00:19:24.349259 2007;;;;;;;0;0;;;;;;;"
+>213
+"-1 3 -1 -1 3"
 >222
 "Shutdown"
 >224
-"70 70 70 1 1195959553"
+"77 77 77 1 1195978842"
+<
+!2
+"test_convtime_fn"
+0
+-1
+-1
+-1
+0
+1
+1
+-1
+1
+33554433
+0
+0
+0
+0
+>218
+"Sun Nov 25 00:19:46.91094 2007"
+>219
+"Sun Nov 25 00:20:06.909209 2007"
+>256
+"@log smoke=Begining convtime() test cases."
+>257
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 2006,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 2006,utc))] )),9FE8D9AAA0AB16874BD7216A1C691186575C31CF)={@log smoke=TC001: Every day in 2006 suceeded.},{@log smoke=TC001: At least one day in 2006 failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1970,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1970,utc))] )),BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6)={@log smoke=TC002: Every day in 1970 suceeded.},{@log smoke=TC002: At least one day in 1970 failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1969,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1969,utc))] )),095DE0A215B35BEC232FB806D3743EE3FB597AF4)={@log smoke=TC003: Every day in 1969 suceeded.},{@log smoke=TC003: At least one day in 1969 failed (%q0).}"
+>260
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1601,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1601,utc))] )),CF81EFE3EFA928E4D36D3574F2094A0D25274681)={@log smoke=TC004: Every day in 1601 suceeded.},{@log smoke=TC004: At least one day in 1601 failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1600,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1600,utc))] )),603B4DF3A3F0289928666DEDC9ACC952A9E400A4)={@log smoke=TC005: Every day in 1600 suceeded.},{@log smoke=TC005: At least one day in 1600 failed (%q0).}"
+>262
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1,utc))] )),D62426344636E8D947A7153C1E5F682104853197)={@log smoke=TC006: Every day in 1 A.D. suceeded.},{@log smoke=TC006: At least one day in 1 A.D. failed (%q0).}"
+>263
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 0,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 0,utc))] )),F82F361B6C7D954AA4D86F964C10342E89D08F9F)={@log smoke=TC007: Every day in 1 B.C. suceeded.},{@log smoke=TC007: At least one day in 1 B.C. failed (%q0).};@trig me/tr.done"
+>264
+"@log smoke=End convtime() test cases.;@notify smoke"
+<
+!3
+"smoke"
+0
+-1
+-1
+-1
+0
+2
+1
+-1
+1
+37748737
+0
+0
+0
+0
+>218
+"Sun Nov 25 00:20:29.543898 2007"
+>219
+"Sun Nov 25 00:20:33.544337 2007"
+>19
+"@log smoke=Starting SmokeMUX;@drain me;@dolist lattr(test_convtime_fn/tr.tc*)=@trig test_convtime_fn/##;@wait me={@log smoke=Ending SmokeMUX;@shutdown}"
 <
 ***END OF DUMP***

@@ -50,7 +50,7 @@ fi
 #
 mkdir $DATA
 if [ ! -r logs ]; then
-    cho "Creating logs directory."
+    echo "Creating logs directory."
     mkdir logs
 fi
 cp ../../testcases/smoke.flat $DATA/$INPUT_DB
