@@ -4848,7 +4848,7 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat)
     {
         bmhs->m_d[mux_toupper_ascii(pPat[k])] = nPat - k - 1;
         bmhs->m_d[mux_tolower_ascii(pPat[k])] = nPat - k - 1;
-        if (pPat[k] == chLastPat)
+        if (mux_toupper_ascii(pPat[k]) == mux_toupper_ascii(chLastPat))
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
