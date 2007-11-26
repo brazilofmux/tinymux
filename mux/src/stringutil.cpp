@@ -3439,7 +3439,7 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
     {
         bmhs->m_d[mux_toupper(pPat[k])] = nPat - k - 1;
         bmhs->m_d[mux_tolower(pPat[k])] = nPat - k - 1;
-        if (pPat[k] == chLastPat)
+        if (mux_toupper(pPat[k]) == mux_toupper(chLastPat))
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
