@@ -306,6 +306,8 @@ Bug Fixes:
  -- If guest_char was a THING instead of a PLAYER, copying the flagset
     of the guest_char wiped the object type (Issue 390).
  -- Fix buffer overflow with %=<> substitution (Issue 406).
+ -- @notify/quiet behaved like @notify/all (Issue 426).  Reported by
+    Barton.
 
 
 Performance Enhancements:
