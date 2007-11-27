@@ -198,6 +198,15 @@ Bug Fixes:
  -- Fix TR() to support UTF-8 sequences (Issue 305).
  -- @notify/quiet behaved like @notify/all (Issue 426).  Reported by
     Barton.
+ -- Fix bug in mux_string::replace_Char() that left some color state
+    uninitialized (Issue 424).  Reported by Loki.
+ -- Fix comma handling in SGP places code for join, ojoin, depart, and
+    odepart (Issue 391).
+ -- Change all notify() to raw_notify() in mail.cpp (Issue 314).
+ -- Remove references to unimplemented wiz_always_real (Issue 398).
+ -- grepi() failed to find patterns composed of both upper-case and
+    lower-case versions of the same letter (Issue 425).
+ -- @notify/quiet behaved like @notify/all (Issue 426).
 
 
 Performance Enhancements:
@@ -250,3 +259,4 @@ Miscellaneous:
  -- Updated if()/ifelse() help topic.
  -- Updated report help topic.
  -- Updated @comon help topic.
+ -- Rework autoconf.h, configure.ac, Makefile.in, and friends.
