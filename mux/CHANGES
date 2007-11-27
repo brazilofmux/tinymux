@@ -196,6 +196,8 @@ Bug Fixes:
  -- Fix regression (r1355) which allowed an endless loop (Issue 403).
  -- Fix buffer overflow with %=<> substitution (Issue 406).
  -- Fix TR() to support UTF-8 sequences (Issue 305).
+ -- @notify/quiet behaved like @notify/all (Issue 426).  Reported by
+    Barton.
 
 
 Performance Enhancements:
