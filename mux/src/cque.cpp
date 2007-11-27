@@ -463,7 +463,7 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
               || !Notify_Attr))
         {
             Notify_Num_Done++;
-            if (Notify_Key == NFY_DRAIN)
+            if (NFY_DRAIN == (Notify_Key & NFY_MASK))
             {
                 // Discard the command
                 //
@@ -507,14 +507,13 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-// NFY_NFY or NFY_QUIET
+// NFY_NFY
 //
-static int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
+static int CallBack_NotifySemaphoreFirst(PTASK_RECORD p)
 {
     // If we've notified enough, exit.
     //
-    if (  (  NFY_NFY == Notify_Key
-          || NFY_QUIET == Notify_Key)
+    if (  NFY_NFY == (Notify_Key & NFY_MASK)
        && Notify_Num_Done >= Notify_Num_Max)
     {
         return IU_DONE;
@@ -572,10 +571,9 @@ int nfy_que(dbref sem, int attr, int key, int count)
         Notify_Sem     = sem;
         Notify_Attr    = attr;
         Notify_Num_Max = count;
-        if (  key == NFY_NFY
-           || key == NFY_QUIET)
+        if (NFY_NFY == (key & NFY_MASK))
         {
-            scheduler.TraverseOrdered(CallBack_NotifySemaphoreFirstOrQuiet);
+            scheduler.TraverseOrdered(CallBack_NotifySemaphoreFirst);
         }
         else
         {
@@ -585,8 +583,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
 
     // Update the sem waiters count.
     //
-    if (  NFY_NFY == key
-       || NFY_QUIET == key)
+    if (NFY_NFY == (key & NFY_MASK))
     {
         add_to(sem, -count, attr);
     }
@@ -674,10 +671,11 @@ void do_notify
         if (0 < loccount)
         {
             nfy_que(thing, atr, key, loccount);
-            if (  (!(Quiet(executor) || Quiet(thing)))
-               && key != NFY_QUIET)
+            if (  !Quiet(executor)
+               && !Quiet(thing)
+               && !(key & NFY_QUIET))
             {
-                if (key == NFY_DRAIN)
+                if (NFY_DRAIN == (key & NFY_MASK))
                 {
                     notify_quiet(executor, T("Drained."));
                 }

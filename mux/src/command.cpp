@@ -410,7 +410,7 @@ static NAMETAB notify_sw[] =
 {
     {T("all"),             1,  CA_PUBLIC,  NFY_NFYALL},
     {T("first"),           1,  CA_PUBLIC,  NFY_NFY},
-    {T("quiet"),           1,  CA_PUBLIC,  NFY_QUIET},
+    {T("quiet"),           1,  CA_PUBLIC,  NFY_QUIET|SW_MULTIPLE},
     {(UTF8 *) NULL,             0,          0,  0}
 };
 

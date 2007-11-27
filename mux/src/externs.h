@@ -671,7 +671,8 @@ extern int anum_alc_top;
 #define NFY_NFY         0   /* Notify first waiting command */
 #define NFY_NFYALL      1   /* Notify all waiting commands */
 #define NFY_DRAIN       2   /* Delete waiting commands */
-#define NFY_QUIET       3   /* Suppress "Notified." message */
+#define NFY_MASK        3   // Lower two bits form non-SW_MULTIPLE part.
+#define NFY_QUIET       4   /* Suppress "Notified." message */
 #define OPEN_LOCATION   0   /* Open exit in my location */
 #define OPEN_INVENTORY  1   /* Open exit in me */
 #define PCRE_PLAYER     1   /* create new player */
