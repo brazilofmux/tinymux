@@ -513,7 +513,8 @@ static int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
 {
     // If we've notified enough, exit.
     //
-    if (  Notify_Key == NFY_NFY
+    if (  (  NFY_NFY == Notify_Key
+          || NFY_QUIET == Notify_Key)
        && Notify_Num_Done >= Notify_Num_Max)
     {
         return IU_DONE;
@@ -584,7 +585,8 @@ int nfy_que(dbref sem, int attr, int key, int count)
 
     // Update the sem waiters count.
     //
-    if (key == NFY_NFY)
+    if (  NFY_NFY == key
+       || NFY_QUIET == key)
     {
         add_to(sem, -count, attr);
     }

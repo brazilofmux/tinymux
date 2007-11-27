@@ -457,7 +457,12 @@ static int CompareWhen(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
     {
         return 1;
     }
-    return 0;
+    else
+    {
+        // Must subtract so that ticket rollover is handled properly.
+        //
+        return  (pTaskA->m_Ticket) - (pTaskB->m_Ticket);
+    }
 }
 
 void CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
