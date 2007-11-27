@@ -306,6 +306,10 @@ Bug Fixes:
  -- If guest_char was a THING instead of a PLAYER, copying the flagset
     of the guest_char wiped the object type (Issue 390).
  -- Fix buffer overflow with %=<> substitution (Issue 406).
+ -- Fix comma handling in SGP places code for join, ojoin, depart, and
+    odepart.
+ -- grepi() failed to find patterns composed of both upper-case and
+    lower-case versions of the same letter (Issue 425).
  -- @notify/quiet behaved like @notify/all (Issue 426).  Reported by
     Barton.
 
