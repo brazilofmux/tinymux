@@ -10167,10 +10167,13 @@ MYOPIC
 & NAME()
 NAME()
 
-  FUNCTION: name(<dbref>)
+  FUNCTION: name(<dbref>[,<newname>])
 
   This function returns the name of the indicated object.  When called with
   an exit it returns the only the first alias.
+
+  If function side effects are allowed, this function, given two arguments,
+  acts just like @name <object>=<new name>.
 
   Related Topics: fullname().
 
@@ -10640,10 +10643,13 @@ PARENT ROOMS
 & PARENT()
 PARENT()
 
-  FUNCTION: parent(<obj>)
+  FUNCTION: parent(<obj>[,<new parent>])
 
   Returns the parent of <obj>.  Returns #-1 if <obj> cannot be found or
   if you do not own <obj> and it is not set VISUAL.
+
+  If function side effects are allowed, this function, given two arguments,
+  acts just like @parent <object>=<new parent>.
 
   Example:
     > say parent(me)
@@ -13440,8 +13446,6 @@ TRIGGER()
   This invokes an action list stored in an attribute on an object.  The
   triggering object becomes the enactor and the positional parameters %0
   through %9 are set to the supplied parameters.
-
-  This function is only available if FIRANMUX is enabled.
 
   Related Topics: @trigger
 
