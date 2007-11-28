@@ -2338,24 +2338,35 @@ static FUNCTION(fun_parent)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref it = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(it))
+    if (1 < nfargs)
     {
-        safe_match_result(it, buff, bufc);
-        return;
-    }
-    if (  Examinable(executor, it)
-       || it == enactor)
-    {
-        safe_tprintf_str(buff, bufc, "#%d", Parent(it));
+        if (check_command(executor, T("@parent"), buff, bufc))
+        {
+            return;
+        }
+        do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
+                NULL, 0);
     }
     else
     {
-        safe_noperm(buff, bufc);
+        dbref it = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(it))
+        {
+            safe_match_result(it, buff, bufc);
+            return;
+        }
+        if (  Examinable(executor, it)
+           || it == enactor)
+        {
+            safe_tprintf_str(buff, bufc, "#%d", Parent(it));
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+        }
     }
 }
 
@@ -3008,36 +3019,50 @@ static FUNCTION(fun_name)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref it = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(it))
+    if (1 < nfargs)
     {
-        safe_match_result(it, buff, bufc);
-        return;
-    }
-    if (!mudconf.read_rem_name)
-    {
-        if (  !nearby_or_control(executor, it)
-           && !isPlayer(it)
-           && !Long_Fingers(executor))
+        if (  !fargs[0]
+           || !fargs[1]
+           || check_command(executor, T("@name"), buff, bufc))
         {
-            safe_str(T("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
             return;
         }
+        do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
+                NULL, 0);
     }
-    UTF8 *temp = *bufc;
-    safe_str(Name(it), buff, bufc);
-    if (isExit(it))
+    else
     {
-        UTF8 *s;
-        for (s = temp; (s != *bufc) && (*s != ';'); s++)
+        dbref it = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(it))
         {
-            // Do nothing
-            //
-            ;
+            safe_match_result(it, buff, bufc);
+            return;
         }
-        if (*s == ';')
+        if (!mudconf.read_rem_name)
         {
-            *bufc = s;
+            if (  !nearby_or_control(executor, it)
+               && !isPlayer(it)
+               && !Long_Fingers(executor))
+            {
+                safe_str(T("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
+                return;
+            }
+        }
+        UTF8 *temp = *bufc;
+        safe_str(Name(it), buff, bufc);
+        if (isExit(it))
+        {
+            UTF8 *s;
+            for (s = temp; (s != *bufc) && (*s != ';'); s++)
+            {
+                // Do nothing
+                //
+                ;
+            }
+            if (*s == ';')
+            {
+                *bufc = s;
+            }
         }
     }
 }
@@ -4257,7 +4282,7 @@ static FUNCTION(fun_replace)
     {
         ; // Nothing.
     }
-    
+
     // Replace a word at position X of a list.
     //
     if (  NULL != sList
@@ -10338,7 +10363,7 @@ static FUN builtin_function_list[] =
     {T("MUDNAME"),     fun_mudname,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("MUL"),         fun_mul,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("MUNGE"),       fun_munge,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
-    {T("NAME"),        fun_name,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("NAME"),        fun_name,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("NEARBY"),      fun_nearby,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("NEQ"),         fun_neq,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("NEXT"),        fun_next,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -10355,7 +10380,7 @@ static FUN builtin_function_list[] =
     {T("ORFLAGS"),     fun_orflags,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("OWNER"),       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("PACK"),        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("PARENT"),      fun_parent,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("PARENT"),      fun_parent,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("PARSE"),       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
 #ifdef DEPRECATED
     {T("PEEK"),        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
@@ -10422,7 +10447,6 @@ static FUN builtin_function_list[] =
     {T("SETR"),        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {T("SETNAME"),     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {T("TRIGGER"),     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
 #endif // FIRANMUX
     {T("SETUNION"),    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SHA1"),        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
@@ -10473,6 +10497,7 @@ static FUN builtin_function_list[] =
     {T("TIMEFMT"),     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("TR"),          fun_tr,         MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("TRANSLATE"),   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("TRIGGER"),     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("TRIM"),        fun_trim,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("TRUNC"),       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
