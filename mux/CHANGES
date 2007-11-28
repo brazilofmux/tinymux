@@ -79,6 +79,7 @@ Feature Additions:
  -- Added /no_name switch to @verb (Issue 221).
  -- Added stripped_flags configuration option (Issue 200).  This
     affects guests, @chown, @chownall, and @clone.
+ -- Do not display MOTD/WIZMOTD unless @motd/@wizmotd is set.
 
 
 Bug Fixes:
