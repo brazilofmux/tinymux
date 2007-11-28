@@ -101,6 +101,8 @@ Feature Additions:
     softcode access to all 100 arguments.
  -- Add %+ substitution to return number of arguments.
  -- Allow @notify/all/quiet (Issue 427).
+ -- Add wipe() (Issue 421).
+ -- Do not display MOTD/WIZMOTD unless @motd/@wizmotd is set.
 
 
 Bug Fixes:
