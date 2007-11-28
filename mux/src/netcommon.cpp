@@ -770,13 +770,19 @@ static void announce_connect(dbref player, DESC *d)
         s_Html(player);
     }
 
-    raw_notify( player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
-                ANSI_NORMAL, mudconf.motd_msg));
+    if ('\0' != mudconf.motd_msg[0])
+    {
+        raw_notify( player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
+                    ANSI_NORMAL, mudconf.motd_msg));
+    }
 
     if (Wizard(player))
     {
-        raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
-            ANSI_NORMAL, mudconf.wizmotd_msg));
+        if ('\0' != mudconf.wizmotd_msg[0])
+        {
+            raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
+                       ANSI_NORMAL, mudconf.wizmotd_msg));
+        }
 
         if (!(mudconf.control_flags & CF_LOGIN))
         {
