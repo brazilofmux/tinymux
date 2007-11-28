@@ -233,8 +233,6 @@ typedef char  boolexp_type;
 
 /* Compile time options */
 
-#define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */
-
 #define PLAYER_NAME_LIMIT   22  /* Max length for player names */
 #define NUM_ENV_VARS        10  /* Number of env vars (%0 et al) */
 #define MAX_ARG             100 /* max # args from command processor */

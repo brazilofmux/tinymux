@@ -256,7 +256,6 @@ FUNCTION(fun_zone)
     }
 }
 
-#ifdef SIDE_EFFECT_FUNCTIONS
 
 bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc)
 {
@@ -817,7 +816,6 @@ FUNCTION(fun_set)
     //
     flag_set(thing, executor, fargs[1], 0);
 }
-#endif
 
 // Generate a substitution array.
 //
