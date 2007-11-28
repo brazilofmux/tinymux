@@ -218,6 +218,7 @@ XFUNCTION(fun_cemit);
 XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
+XFUNCTION(fun_wipe);
 #if defined(FIRANMUX)
 XFUNCTION(fun_setparent);
 XFUNCTION(fun_setname);

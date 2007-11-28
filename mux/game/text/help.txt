@@ -7276,8 +7276,8 @@ FUNCTION LIST (continued)
     U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
     VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
     VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -14051,6 +14051,18 @@ WIDTH()
     You say, "122"
 
   Related Topics: height().
+
+& WIPE()
+WIPE()
+
+  FUNCTION: wipe(<obj>[/wildattr])
+
+  The wipe() function will remove all matching attributes specified by
+  a wildcard, or, if no attribute is specified, remove all attributes of
+  the specified object.  This function works like @wipe and follows all
+  permissions and restrictions of the matching command.
+
+  See Also: @wipe, @set, &, set()
 
 & WIZARD
 WIZARD

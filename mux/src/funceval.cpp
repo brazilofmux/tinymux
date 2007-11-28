@@ -336,6 +336,19 @@ FUNCTION(fun_trigger)
 }
 #endif // FIRANMUX
 
+FUNCTION(fun_wipe)
+{
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@wipe"), buff, bufc))
+    {
+        return;
+    }
+    do_wipe(executor, caller, enactor, eval, 0, fargs[0], NULL, 0);
+}
+
 FUNCTION(fun_tel)
 {
     UNUSED_PARAMETER(cargs);

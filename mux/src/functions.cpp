@@ -10498,6 +10498,7 @@ static FUN builtin_function_list[] =
     {T("VUNIT"),       fun_vunit,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("WHERE"),       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WIDTH"),       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("WIPE"),        fun_wipe,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WORDPOS"),     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("WORDS"),       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("WRAP"),        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
