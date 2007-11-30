@@ -5,12 +5,13 @@ It was downloaded from http://www.tinymux.com/
 
 Copyright:
 
-Upstream Author: Stephen Dennis <sdennis@svdltd.com>
+Upstream Author: Stephen Dennis <brazilofmux@gmail.com>
 
 License:
 
- MUX Source Code (version 2.0 through 2.3).
- Copyright (C) 1999-2003 by Solid Vertical Domains, Ltd.
+ MUX Source Code (version 2.0 through 2.6).
+ Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.
+ Copyright (C) 2005-2006 Stephen Dennis
  Contact: Stephen Dennis
 
  TinyMUX Source Code (versions 1.0 through 1.6)
@@ -48,7 +49,7 @@ License:
  and (2) distributions including binary code include the above copyright
  notice and this paragraph in its entirety in the documentation or other
  materials provided with the distribution.  The names of the copyright
- holders may not be used to endorse or promote products derived from 
+ holders may not be used to endorse or promote products derived from
  this software without specific prior written permission.
 
  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
@@ -57,7 +58,7 @@ License:
 
 
 
- TinyMUX 2.2 Copyright: The Artistic License
+ TinyMUX 2.6 Copyright: The Artistic License
 
  Preamble
 
@@ -162,7 +163,7 @@ License:
  WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
- The author may be reached via email at sdennis@svdltd.com.
+ The author may be reached via email at brazilofmux@gmail.com.
 
 
 
