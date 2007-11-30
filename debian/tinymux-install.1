@@ -1,0 +1,56 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH TINYMUX-INSTALL 1 "October 25, 2004"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+tinymux-install \- installer for the tinymux flavor mush server
+.SH SYNOPSIS
+.B tinymux\-install
+.RI [OPTION]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B tinymux-install
+command.
+It was written for the Debian distribution because the original program
+does not have a manual page.
+.PP
+.Btinymux-install
+is a program that installs the tinymux server in the user directory
+from which it is ran. It provides all necessary data and configuration
+files for each user account it is setup for, as well as the restart
+script needed to initiate an instance of the tinymux server process.
+.PP
+.Btinymux-install
+itself should only be run once per user to install the necessary files
+and links. All updating of the tinymux server should be done on a
+global level by the system administrator.
+.SH OPTIONS
+These programs follow the usual GNU command line syntax, with long
+options starting with two dashes (`\-').
+A summary of options is included below.
+.TP
+.B \-h, \-\-help
+display this help and exit
+.TP
+.B \-v, \-\-version
+output version information and exit
+.SH AUTHOR
+This manual page was written by Ervin Hearn III <noltar@korongil.net>,
+for the Debian GNU/Linux system (but may be used by others).
+.br
+.SH SEE ALSO
+.BR tinymux (6)

@@ -1,0 +1,53 @@
+tinymux (2.4.3.31-1etch1) stable-security; urgency=high
+
+  * Non-maintainer upload by The Security Team.
+  * Fixed a potential buffer overflow involving math operations.
+    [CVE-2007-1655]
+
+ -- Steve Kemp <skx@debian.org>  Mon,  18 Jun 2007 12:17:35 +0000
+
+tinymux (2.4.3.31-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Ervin Hearn III <noltar@korongil.net>  Sat,  7 Oct 2006 11:33:07 -0400
+
+tinymux (2.4.2.27-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Ervin Hearn III <noltar@korongil.net>  Mon,  6 Feb 2006 02:55:44 -0500
+
+tinymux (2.3.5.25-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Ervin Hearn III <noltar@korongil.net>  Sat, 17 Dec 2005 13:20:58 -0500
+
+tinymux (2.3.5.24-2) unstable; urgency=low
+
+  * Added missing class declaration for CLinearTimeDelta (patch by
+    Andreas Jochens) and removed #ifdef check for IEEE floating point
+    check (patch from upstream). Tinymux now builds from source with
+    newer gcc/g++ versions. Closes: #323106
+
+ -- Ervin Hearn III <noltar@korongil.net>  Sat,  1 Oct 2005 19:46:04 -0400
+
+tinymux (2.3.5.24-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Ervin Hearn III <noltar@korongil.net>  Wed, 17 Aug 2005 02:54:15 -0400
+
+tinymux (2.3.4.23-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Ervin Hearn III <noltar@korongil.net>  Tue, 18 Jan 2005 14:26:24 -0500
+
+tinymux (2.3.3.22-1) unstable; urgency=low
+
+  * Initial Release. (closes: #281283)
+
+ -- Ervin Hearn III <noltar@korongil.net>  Mon, 25 Oct 2004 19:14:38 -0400
+

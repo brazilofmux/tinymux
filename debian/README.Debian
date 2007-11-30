@@ -1,0 +1,78 @@
+tinymux for Debian
+--------------
+
+* This tinymux is installed globally. Individual user accounts are setup
+  by running `tinymux-install' from the desired top-level directory for the
+  account. A tinymux game/ directory will be created for the user.
+
+ -- Ervin Hearn III <noltar@korongil.net>, Mon, 25 Oct 2004 19:14:38
+
+Notes from the TinyMUX INSTALL file:
+-  When starting from a MUX from scratch, do the following:
+
+      - cd to the game directory. 'cd ../game'
+      - Make your configuration file, as described in docs/CONFIGURATION
+      - Type './Startmux'.  TinyMUX 2.3 automatically creates a minimal
+        DB if one does not exist in the game/data directory.
+      - Log into the game as player wizard 'connect wizard potrzebie',
+        and shut it down again.
+
+-  Edit the .txt files in game/text to your liking.  In particular
+    connect.txt and motd.txt.
+
+-  Start up TinyMUX 2.3 by running './Startmux' again.
+
+-  @ccreate a channel named 'Public', and a channel named 'Guests' from
+    within the MUX. Created players will automatically be joined to
+    'Public'with alias 'pub', guests will automatically join 'Guests' with
+    alias 'g'.
+
+
+Changes to dbconvert:
+~~~~~~~~~~~~~~~~~~~~
+ - dbconvert is the means by which the binary game data is converted to
+   flatfile format and back again.  The db_load and db_unload scripts
+   simplify the process for the user.
+
+ - The syntax of the scripts is:
+
+   - './db_load netmux netmux.flat netmux.db'
+
+     This converts flatfiled database to binary for use by the server and
+     would be done with dbconvert thus:
+
+     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
+
+   - './db_unload netmux netmux.db.new netmux.flat'
+
+     This converts binary data to flatfile for would be done with dbconvert
+     thus:
+
+     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
+
+
+Instructions for Existing Games:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[NOTE: It is HIGHLY recommended that you preserve a previous setup if
+you can, to make conversion a bit less painful.  If you had one while
+converting, make sure the conversion process has completed successfully
+before you delete your old distribution.  We cannot stress enough to
+you the importance of protecting your data throughout any conversion
+or upgrade.]
+ 
+-   - Put databases in game/data.
+
+    - Put text files in game/text.
+
+    - The scripts db_load, db_unload, and db_check may be found in the
+      game/data directory.
+
+    - If you changed the GAMENAME in mux.config, be sure to change
+      the filenames in GAMENAME.conf as well.
+
+    - If you had a mail database previously, adjust mail_expiration
+      accordingly, BEFORE you restart the game, or else ALL @mail older
+      than the default value of 14 days will be deleted.
+
+-   Start TinyMUX 2.3 by running './Startmux'.
+

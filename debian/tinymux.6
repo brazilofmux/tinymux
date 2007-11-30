@@ -1,0 +1,122 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH TINYMUX 6 "October 25, 2004"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+tinymux \- The TinyMUX mush server
+.SH DESCRIPTION
+This manual page documents briefly the
+.B tinymux
+mush server.
+It was written for the Debian distribution because the original program
+does not have a manual page.
+.PP
+This is the
+.B TinyMUX
+flavor of mud servers of the MUSH branch. It provides a number of
+robust features to enable players to extend the virtual world. This
+is done by building new rooms and objects, and utilizing its internal
+programming language, MUSHcode.
+.PP
+.B TinyMUX
+doesn't provide the superset of features available in other MUSH
+flavors, but those it does implement provide a stable and robust
+environment that performs as well as or better than that of its peers.
+.SH CREDITS
+TinyMUX 2.3 is derived from TinyMUX 1.6. It is maintained by Stephen Dennis
+(Brazil@BrazilMUX) and would not exist without the generous contributions of
+many individuals. Ideas for features, occasionally code, documentation,
+project support, bug hunting, came from many places, including TinyMUSH,
+ChaoticMUX, RhostMUSH, and PennMUSH.
+.PP
+We would like to thank the following people:
+.HP
+\- Barbarella@Pacifica for making it fun, for proving to me that MU'ing is a
+Good Thing (tm), for pulling me into hosting and server work. Without the
+choices she made, MUX 2.0 would never have happened.
+.HP
+\- David Passmore for his long time care and maintenance of TinyMUX.
+.HP
+\- Andrew Molitor, for the radix compression library, and some wonderful
+utilities.
+.HP
+\- Soruk from AuroraMUSH for his long time contributions toward making and
+keeping TinyMUX Linux compatible, as well as the sample config file found in
+CONFIGURATION.
+.HP
+\- T. Alexander Popiel for help with conceptual issues in general and
+specifically with the parser.
+.HP
+\- Steven Legowik (BEM@Erisian.net) for Makefile, cross-platform work, and
+modifications to Backup.
+.HP
+\- Virginia Legowik (Audumla) and Lilith@Sandbox for committed readme and
+helpfile work. For infrastructure support with web sites and mailing lists.
+For making a team.
+.HP
+\- Ashen\-Shugar and RhostMUSH for their bug reports and support.
+.HP
+\- Robby Griffyn and ChaoticMUX for bug reports.
+.HP
+\- Lew Newby (Dragon) for his stress-testing, cross-platform builds, and bug
+reports.
+.HP
+\- MacGuvyer @ Pacifica for a Unix patch for WoD-realms which led to porting
+all of MUX 2.0 back to Unix.
+.HP
+\- Nick Gammon for the initial prototype of NT IO Completion ports.
+.HP
+\- Judge Dredd@Pacifica for specification of WOD_REALMS.
+.HP
+\- The large body of people who reported bugs or made useful suggestions along
+the way:
+.RS
+Aranor, Asia, Audumla, Barbarella@Pacifica, BEM, Carmilla@Pacifica,
+Chimera@Umbral Shards, Corum, Dark City@Pacifica, D'ceit@Santo Domini,
+Dreamscape@Pacifica, Dune@Pacifica, Emma@Pacifica, Evan@Pacifica,
+Farscape@Pacifica, Father Jethis@Pacifica, Geoffrey Gerrietts,
+Godzilla@Pacifica, Hackers@Pacifica, Highlander@Pacifica, 
+Hitchhiker's Guide@Pacifica, Ian@everywhere, Idoru@Pacifica, 
+Incubus@Santo Domini, Jake, Jarod@Pacifica,
+Johnny Mnemonic@Pacfica, Judge Dredd@Pacifica, Lucifer, Lydia Leong,
+Macross@Pacifica, McGuyver@Pacifica, Meglos@Myrka,
+Mephistopheles@Santo Domini, Michael@Pacifica, Morgan, Myrddin,
+Neuromancer@Pacifica, Orpheus@Pacifica, Rimnal@Myrka, Robert G. Fisher,
+Robin@Pacifica, Sailor Moon@Pacifica, Seraphim@Tokyo By Night,
+Sesha@Granite, Six@Pacifica, Sixth Sense@Pacifica, Snow Crash@Pacifica,
+Soylent Green@Pacifica, Squeeky-Bobo, Trek@Pacifica,
+Twelve Monkeys@Pacifica, Valkryn@Pacifica, Vass@Pacifica, Vurt@Pacifica,
+Xandar.
+.RE
+.HP
+\- Many other people who may go unnamed. Dozens of people have contributed to
+development of the TinyMUX family of servers, and we would like to thank them
+for their hard work.
+.SH AUTHOR
+tinymux was written by Stephen Dennis (Brazil)
+.PP
+This manual page was written by Ervin Hearn III <noltar@korongil.net>,
+for the Debian GNU/Linux system (but may be used by others).
+.SH SEE ALSO
+.BR tinymux\-install (1)
+.br
+.HP
+.B http://www.tinymux.com/
+The primary TinyMUX server webpage.
+.br
+.HP
+.B http://www.godlike.com/mushman/
+Amberyl's MUSH Manual, outdated but still useful.

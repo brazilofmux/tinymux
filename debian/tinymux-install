@@ -1,0 +1,277 @@
+#!/bin/sh
+#  Program: mux-install
+#  Version: 0.0.1
+#  Author: Ervin Hearn III (Noltar) <noltar@korongil.net>
+#  Date: Thu, 11 Sep 2003 18:04:43 -0400.
+#  Copyright:
+#
+#    This program is free software; you can redistribute it and/or modify it
+#    under the terms of the "Artistic License" which comes with Debian.
+#
+#    THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+#    WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES
+#    OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#    On Debian GNU/Linux systems, the complete text of the Artistic License
+#    can be found in `/usr/share/common-licenses/Artistic'.
+#
+#  Description:
+#
+#    This program installs the tinymux server for the user in the directory
+#    from which it is ran. It provides all configuration, data, and script
+#    files necessary for the user to initiate and run an instance of the
+#    tinymux server process, netmux.
+#
+#  History:
+#   0.0.1  Initial Release.
+
+NAME=tinymux-install
+VERSION=0.0.1
+PKGDIR=`pwd`/tinymux
+DSTDIR=$PKGDIR/game
+SRCDIR=/usr/lib/tinymux/game
+SHRDIR=/usr/share/tinymux/game
+DWNDIR=''
+
+
+################################################################
+#
+# 0. Check options
+
+case "$1" in
+  '')
+
+    ################################################################
+    #
+    # 1. Install tinymux
+    #
+
+    #
+    # 1.2 Helpers
+    #
+
+    mkdstlns()
+    {
+      while [ $1 ]; do
+      ln -s $SRCDIR/$1
+      shift
+      done
+    }
+
+    mklns()
+    {
+      while [ $1 ]; do
+      ln -s $SRCDIR/$DWNDIR/$1
+      shift
+      done
+    }
+
+    mkshrlns()
+    {
+      while [ $1 ]; do
+      ln -s $SHRDIR/$DWNDIR/$1
+      shift
+      done
+    }
+
+    mkcps()
+    {
+      while [ $1 ]; do 
+      cp $SRCDIR/$DWNDIR/$1 .
+      shift
+      done
+     }
+
+    mkshrcps()
+    {
+      while [ $1 ]; do 
+      cp $SHRDIR/$DWNDIR/$1 .
+      shift
+      done
+     }
+
+     mkcdir()
+     {
+       cd $DSTDIR
+       mkdir -p $1
+       cd $1
+       DWNDIR=$1
+     }
+
+     echo -n "Installing tinymux in $DSTDIR"
+
+     #
+     # 1.3 Create main tinymux directory
+     #
+
+     mkdir $PKGDIR
+     cd $PKGDIR
+
+     echo -n "."
+
+     #
+     # 1.4 Do sanity check for existing tinymux installations
+     #
+
+     if test -f ./$NAME; then
+
+       echo "It's not good idea to install tinymux in the current directory."
+       echo "You should read 'man $NAME' and run it in a different directory."
+       exit
+
+     fi
+
+     if test -f ./src/tools/$NAME; then
+
+       echo "If you want to use this script, you need to install tinymux globally"
+       echo "as root first, and then run this script. If you don't have the"
+       echo "necessary access, you should install tinymux normally from the source"
+       echo "or ask your system administrator about installing it globally."
+       exit
+
+     fi
+
+     if test -f ./game/Startmux; then
+
+       echo "You should only run this once to install tinymux locally."
+       echo "All upgrades and modifications to the server itself are done"
+       echo "globally. Check with your system administrator if you are having"
+       echo "problems. If something is wrong with your configuration files,"
+       echo "create a new directory and run '$NAME' in that and copy"
+       echo "you're modified files over."
+       exit
+
+     fi
+
+     echo -n "."
+
+     # 1.5 Setup game directory
+
+     #
+     # 1.5.1 Create base game directory
+     #
+
+     mkdir $DSTDIR
+     cd $DSTDIR
+     mkshrcps *.conf mux.config _backupflat.sh Backup Startmux
+
+     echo -n "."
+
+     #
+     # 1.5.2 Make sure Startmux is executable by the user
+     #
+
+     chmod u+x Startmux
+
+     echo -n "."
+
+     #
+     # 1.5.3 Link binaries
+     #
+
+     mkcdir bin
+     mklns netmux slave
+     ln -s $SRCDIR/$DWNDIR/netmux dbconvert
+
+     echo -n "."
+
+     # 1.6 Setup data directory
+
+     #
+     # 1.6.1 Create data directory
+     #
+
+     mkcdir data
+     mkshrcps db_check db_load db_unload netmux.db
+
+     echo -n "."
+
+     #
+     # 1.6.2 Make sure db scripts are executable by the user
+     #
+
+     chmod u+x db_check db_load db_unload
+
+     echo -n "."
+
+     # 1.7 Setup text files
+
+     #
+     # 1.7.1 Create text directory
+     #
+
+     mkcdir text
+     mkshrlns badsite.txt connect.txt create_reg.txt down.txt full.txt guest.txt \
+     	help.txt motd.txt news.txt newuser.txt plushelp.txt quit.txt \
+        register.txt staffhelp.txt wizhelp.txt wizmotd.txt wiznews.txt
+
+     echo "Done"
+     echo "** Be sure to change the 'port' entry in tinymux/game/netmux.conf to the"
+     echo "** one either assigned by your system admin or currently available on"
+     echo "** the system. For detailed information about greater configuration,"
+     echo "** see /usr/share/docs/tinymux/CONFIGURATION."
+     echo "**"
+     echo "** After configuring the tinymux to your liking, run the ./Startmux script"
+     echo "** to start the tinymux. Then log into the tinymux as the player wizard with:"
+     echo " "
+     echo "   connect wizard potrzebie"
+     echo " "
+     echo "** and change the password to something safe. Finally, fully shutdown"
+     echo "** the tinymux and restart it."
+    ;;
+  -v|--version)
+
+    ################################################################
+    #
+    # 1. Display version information
+    #
+    
+    echo "$NAME $VERSION  Copyright (C) 2003 Ervin Hearn III"
+    echo "This program is free software; you can redistribute it and/or modify it"
+    echo "under the terms of the \"Artistic License\" which comes with Debian."
+    echo " "
+    echo "THIS PACKAGE IS PROVIDED \"AS IS\" AND WITHOUT ANY EXPRESS OR IMPLIED"
+    echo "WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES"
+    echo "OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE."
+    echo " "
+    echo "On Debian GNU/Linux systems, the complete text of the Artistic License"
+    echo "can be found in '/usr/share/common-licenses/Artistic'."
+    echo " "
+    echo "Report bugs to <noltar@korongil.net>."
+    exit 1
+    ;;
+  *)
+
+    ################################################################
+    #
+    # 1. Display help information
+    #
+    
+    echo "$NAME $VERSION  Copyright (C) 2003 Ervin Hearn III"
+    echo "This program is free software; you can redistribute it and/or modify it"
+    echo "under the terms of the \"Artistic License\" which comes with Debian."
+    echo " "
+    echo "THIS PACKAGE IS PROVIDED \"AS IS\" AND WITHOUT ANY EXPRESS OR IMPLIED"
+    echo "WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES"
+    echo "OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE."
+    echo " "
+    echo "On Debian GNU/Linux systems, the complete text of the Artistic License"
+    echo "can be found in '/usr/share/common-licenses/Artistic'."
+    echo " "
+    echo "Usage: $NAME [OPTION]"
+    echo " "
+    echo "Installs tinymux in the current directory for the user."
+    echo " "
+    echo "This program follows the usual GNU command line syntax, with long"
+    echo "options starting with two dashes ('-')."
+    echo " "
+    echo "Options:"
+    echo "  -h, --help        display this help and exit"
+    echo "  -v, --version     output version information and exit"
+    echo " "
+    echo "Report bugs to <noltar@korongil.net>."
+    exit 1
+    ;;
+esac
+
+exit 0
