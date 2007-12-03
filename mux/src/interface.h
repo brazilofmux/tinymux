@@ -129,13 +129,14 @@ struct prog_data
 
 // Telnet Options
 //
-#define TELNET_SGA  '\x03'
-#define TELNET_EOR  '\x19'
-#define TELNET_NAWS '\x1F'
-#define TELNET_TTYPE '\x18'
-#define TELNET_OLDENV '\x24'
-#define TELNET_ENV '\x27'
-#define TELNET_CHARSET '\x2A'
+#define TELNET_BINARY   '\x00'
+#define TELNET_SGA      '\x03'
+#define TELNET_EOR      '\x19'
+#define TELNET_NAWS     '\x1F'
+#define TELNET_TTYPE    '\x18'
+#define TELNET_OLDENV   '\x24'
+#define TELNET_ENV      '\x27'
+#define TELNET_CHARSET  '\x2A'
 #define TELNET_STARTTLS '\x2E'
 
 // Telnet Option Negotiation States

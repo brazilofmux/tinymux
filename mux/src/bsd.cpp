@@ -3332,6 +3332,17 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         {
             SendSb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
         }
+        else if (TELNET_BINARY == chOption)
+        {
+            EnableUs(d, TELNET_BINARY);
+        }
+    }
+    else if (OPTION_NO == iHimState)
+    {
+        if (TELNET_BINARY == chOption)
+        {
+            DisableUs(d, TELNET_BINARY);
+        }
     }
 }
 
@@ -3377,6 +3388,7 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
        || TELNET_EOR     == chOption
        || TELNET_SGA     == chOption
        || TELNET_ENV     == chOption
+       || TELNET_BINARY  == chOption
 #ifdef SSL_ENABLED
        || TELNET_STARTTLS== chOption
 #endif
@@ -3401,7 +3413,8 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
 
 static bool DesiredUsOption(DESC *d, unsigned char chOption)
 {
-    if (  TELNET_EOR  == chOption
+    if (  TELNET_EOR    == chOption
+       || TELNET_BINARY == chOption
        || (  TELNET_SGA == chOption
           && OPTION_YES == UsState(d, TELNET_EOR)))
     {
@@ -3557,7 +3570,9 @@ void TelnetSetup(DESC *d)
     EnableHim(d, TELNET_CHARSET);
 #ifdef SSL_ENABLED
     if (!d->ssl_session)
+    {
         EnableHim(d, TELNET_STARTTLS);
+    }
 #endif
 }
 
@@ -3909,8 +3924,6 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 16:
             // Action 16 - Respond to IAC WONT X
             //
-            // Ignore.
-            //
             switch (HimState(d, ch))
             {
             case OPTION_NO:
@@ -4066,6 +4079,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             d->encoding = CHARSET_UTF8;
                                             d->negotiated_encoding = CHARSET_UTF8;
                                             d->raw_codepoint_state = CL_PRINT_START_STATE;
+
+                                            EnableUs(d, TELNET_BINARY);
+                                            EnableHim(d, TELNET_BINARY);
                                         }
                                     }
 
@@ -4103,17 +4119,26 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 d->encoding = CHARSET_UTF8;
                                 d->negotiated_encoding = CHARSET_UTF8;
                                 d->raw_codepoint_state = CL_PRINT_START_STATE;
+
+                                EnableUs(d, TELNET_BINARY);
+                                EnableHim(d, TELNET_BINARY);
                             }
                         }
                         else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
                         {
                             d->encoding = CHARSET_LATIN1;
                             d->negotiated_encoding = CHARSET_LATIN1;
+
+                            EnableUs(d, TELNET_BINARY);
+                            EnableHim(d, TELNET_BINARY);
                         }
                         else if (0 == strncmp((char *)pCharset, "US-ASCII", m-2))
                         {
                             d->encoding = CHARSET_ASCII;
                             d->negotiated_encoding = CHARSET_ASCII;
+
+                            DisableUs(d, TELNET_BINARY);
+                            DisableHim(d, TELNET_BINARY);
                         }
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])
@@ -4125,6 +4150,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         //
                         d->encoding = CHARSET_ASCII;
                         d->negotiated_encoding = CHARSET_ASCII;
+
+                        DisableUs(d, TELNET_BINARY);
+                        DisableHim(d, TELNET_BINARY);
                     }
                 }
             }
