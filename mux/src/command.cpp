@@ -1097,7 +1097,7 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             reg_ref **preserve = NULL;
             preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_global_regs(preserve);
-            UTF8 *buff, *bufc;
+            UTF8 *bufc;
             UTF8* inargs[5];
             if (arg1)
             {
