@@ -6687,7 +6687,7 @@ void mux_string::transform
         {
             asciiTable[c] = c;
         }
-    
+
         mux_cursor iFromSet, iToSet;
         sFromSet.cursor_start(iFromSet);
         sToSet.cursor_start(iToSet);
