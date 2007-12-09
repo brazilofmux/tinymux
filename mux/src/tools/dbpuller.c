@@ -306,10 +306,21 @@ int main(int argc, char **argv)
                     ch = *pt2;
                     switch (ch)
                     {
-                    case 'n': ch = '\n'; break;
-                    case 'r': ch = '\r'; break;
-                    case 'e': ch = ESC_CHAR; break;
-                    case 't': ch = '\t'; break;
+                    case 'n':
+                        ch = '\n';
+                        break;
+
+                    case 'r':
+                        ch = '\r';
+                        break;
+
+                    case 'e':
+                        ch = ESC_CHAR;
+                        break;
+
+                    case 't':
+                        ch = '\t';
+                        break;
                     }
                 }
                 else
