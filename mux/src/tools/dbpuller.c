@@ -41,19 +41,23 @@ stricmp(char *buf1, char *buf2)
         p1++;
         p2++;
     }
+
     if (  '\0' == *p1
        && '\0' == *p2)
     {
         return 0;
     }
+
     if ('\0' == *p1)
     {
         return -1;
     }
+
     if ('\0' == *p2)
     {
         return 1;
     }
+
     if (*p1 < *p2)
     {
         return -1;
@@ -80,6 +84,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "ERROR: Unable to open %s for reading.", argv[1]);
         exit(1);
     }
+
     pt1 = argv[2];
     while ('\0' != *pt1)
     {
@@ -105,14 +110,17 @@ int main(int argc, char **argv)
     {
         strncpy(s_attrib, argv[3], SBUFSIZE-1);
     }
+
     spt2=malloc(MALSIZE);
     memset(spt2, '\0', MALSIZE);
     memset(s_attr, '\0', sizeof(s_attr));
     memset(s_attrval, '\0', sizeof(s_attr));
+
     while (!feof(f_muxflat))
     {
         fgets(spt2, (MALSIZE-2), f_muxflat);
         pt2 = spt2;
+
         if (i_chk)
         {
             i_chk = 0;
@@ -121,6 +129,7 @@ int main(int argc, char **argv)
             s_attr[strlen(s_attr)-2]='\0';
             fprintf(f_mymuxfile, "%s %d \n", s_attr, atoi(s_attrval));
         }
+
         if (  3 < strlen(pt2)
            && '+' == *pt2
            && 'A' == *(pt2+1)
@@ -129,6 +138,7 @@ int main(int argc, char **argv)
             i_chk = 1;
             sprintf(s_attrval, "%s", pt2+2);
         }
+
         if ('!' == *pt2)
         {
             break;
@@ -179,6 +189,7 @@ int main(int argc, char **argv)
         free(spt2);
         exit(1);
     }
+
     memset(spt2, '\0', MALSIZE);
     spt3=malloc(MALSIZE);
     memset(spt3, '\0', MALSIZE);
@@ -186,6 +197,7 @@ int main(int argc, char **argv)
     fseek(f_muxflat, 0L, SEEK_SET);
     fprintf(stderr, "Step 1: Quering for dbref #%d\n", atoi(argv[2]));
     i_chk = 0;
+
     while (!feof(f_muxflat))
     {
         fgets(spt2, (MALSIZE-2), f_muxflat);
@@ -194,12 +206,14 @@ int main(int argc, char **argv)
             i_pullname = 0;
             fprintf(f_muxout, "@@ %s\n", spt2);
         }
+
         pt2 = spt2;
         if (  '<' == *pt2
            && i_chk)
         {
             break;
         }
+
         if (  '!' == *pt2
            && atoi(pt2+1) == atoi(argv[2]))
         {
@@ -207,6 +221,7 @@ int main(int argc, char **argv)
             i_pullname = 1;
             continue;
         }
+
         if (  i_chk
            && '>' == *pt2
            && isdigit(*(pt2+1)))
@@ -226,6 +241,7 @@ int main(int argc, char **argv)
                     break;
                 }
             }
+
             if ('\0' == s_finattr[0])
             {
                 fseek(f_mymuxfile, 0L, SEEK_SET);
@@ -239,11 +255,13 @@ int main(int argc, char **argv)
                     }
                 }
             }
+
             if ('\0' == s_finattr[0])
             {
                 fprintf(stderr, "ERROR: Unknown error in attribute handler.");
                 exit(1);
             }
+
             fseek(f_muxlock, 0L, SEEK_SET);
             i_lck = 0;
             while (!feof(f_muxlock))
@@ -255,6 +273,7 @@ int main(int argc, char **argv)
                     break;
                 }
             }
+
             if (  '\0' == *s_attrib
                || !stricmp(s_finattr, s_attrib)
                || strstr(s_finattr, s_attrib))
@@ -280,6 +299,7 @@ int main(int argc, char **argv)
             {
                 pt2++;
             }
+
             if ('\001' == *pt2)
             {
                 while (  '\0' != *pt2
