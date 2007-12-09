@@ -128,7 +128,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 
     if (key == SAY_PREFIX)
     {
-        switch (*message)
+        switch (message[0])
         {
         case '"':
             message++;
@@ -151,6 +151,21 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         case ';':
             message++;
             key = SAY_POSE_NOSPC;
+            break;
+
+        case 0xE2:
+            if (  0x80 == message[1]
+               && 0x9C == message[2])
+            {
+                // U+201C - Unicode version of opening double quote.
+                //
+                message += 3;
+                key = SAY_SAY;
+            }
+            else
+            {
+                key = SAY_EMIT;
+            }
             break;
 
         case '\\':

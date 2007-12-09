@@ -918,7 +918,7 @@ void do_addcommand
 
     // We reset the one letter commands here so you can overload them.
     //
-    set_prefix_cmds();
+    cache_prefix_cmds();
     notify(player, tprintf("Command %s added.", pName));
 }
 
@@ -1103,7 +1103,7 @@ void do_delcommand
             old->cmdname = NULL;
             MEMFREE(old);
             old = NULL;
-            set_prefix_cmds();
+            cache_prefix_cmds();
             notify(player, T("Done."));
         }
         else
@@ -1159,7 +1159,7 @@ void do_delcommand
                         MEMFREE(nextp);
                         nextp = NULL;
                     }
-                    set_prefix_cmds();
+                    cache_prefix_cmds();
                     notify(player, T("Done."));
                     return;
                 }

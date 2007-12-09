@@ -772,8 +772,6 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {(UTF8 *)NULL,          NULL,       0,                                    0,  0,              0, NULL}
 };
 
-static CMDENT *prefix_cmds[256];
-
 static CMDENT *goto_cmdp;
 
 void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
@@ -891,10 +889,12 @@ void init_cmdtab(void)
     commands_two_arg_add(command_table_two_arg);
     commands_two_arg_argv_add(command_table_two_arg_argv);
 
-    set_prefix_cmds();
+    cache_prefix_cmds();
 
     goto_cmdp = (CMDENT *) hashfindLEN((char *)"goto", strlen("goto"), &mudstate.command_htab);
 }
+
+static CMDENT *g_prefix_cmds[256];
 
 /*! \brief Fills in the table of single-character prefix commands.
  *
@@ -904,14 +904,14 @@ void init_cmdtab(void)
  *
  * \return         None.
  */
-void set_prefix_cmds()
+void cache_prefix_cmds(void)
 {
     for (int i = 0; i < 256; i++)
     {
-        prefix_cmds[i] = NULL;
+        g_prefix_cmds[i] = NULL;
     }
 
-#define SET_PREFIX_CMD(s) prefix_cmds[(unsigned char)(s)[0]] = \
+#define SET_PREFIX_CMD(s) g_prefix_cmds[(unsigned char)(s)[0]] = \
         (CMDENT *) hashfindLEN((char *)(s), 1, &mudstate.command_htab)
     SET_PREFIX_CMD("\"");
     SET_PREFIX_CMD(":");
@@ -922,6 +922,55 @@ void set_prefix_cmds()
     SET_PREFIX_CMD("-");
     SET_PREFIX_CMD("~");
 #undef SET_PREFIX_CMD
+}
+
+bool DCL_INLINE is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd)
+{
+    if (NULL != pCommand)
+    {
+        CMDENT *pcmd = g_prefix_cmds[(unsigned char)pCommand[0]];
+        if (NULL != pcmd)
+        {
+            if (NULL != pnPrefix)
+            {
+                *pnPrefix = 1;
+            }
+            if (NULL != ppcmd)
+            {
+                *ppcmd = pcmd;
+            }
+            return true;
+        }
+        else if (  0xE2 == pCommand[0]
+                && 0x80 == pCommand[1]
+                && 0x9C == pCommand[2])
+        {
+            // U+201C is a Unicode quote typically sent instead of ASCII double quote.
+            //
+            pcmd = g_prefix_cmds[(unsigned char)'"'];
+            if (NULL != pcmd)
+            {
+                if (NULL != pnPrefix)
+                {
+                    *pnPrefix = 3;
+                }
+                if (NULL != ppcmd)
+                {
+                    *ppcmd = pcmd;
+                }
+                return true;
+            }
+        }
+    }
+    if (NULL != pnPrefix)
+    {
+        *pnPrefix = 0;
+    }
+    if (NULL != ppcmd)
+    {
+        *ppcmd = NULL;
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -1355,7 +1404,8 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             // prevent the \ prefix command from escaping part of
             // its argument.
             //
-            if (cmdp->callseq & CS_LEADIN)
+            if (  (cmdp->callseq & CS_LEADIN)
+               && UTF8_SIZE1 == utf8_FirstByte[(unsigned char)str[0]])
             {
                 UTF8 ch = *str++;
                 *bp++ = ch;
@@ -1364,6 +1414,9 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                    && ';' == ch
                    && str[0] == ' ')
                 {
+                    // Skip following space to prevent the parser from space
+                    // compressing it.
+                    //
                     *bp++ = *str++;
                 }
             }
@@ -1804,19 +1857,21 @@ UTF8 *process_command
     // most frequently executed commands, and they can never be the
     // HOME command.
     //
-    UTF8 i = (UTF8)pCommand[0];
-    UTF8 check2[2] = {'\0', '\0'};
     int cval = 0;
     int hval = 0;
     bool bGoodHookObj = (Good_obj(mudconf.hook_obj) && !Going(mudconf.hook_obj));
-    if (  '\0' != i
-       && NULL != prefix_cmds[i])
+
+    size_t nPrefix = 0;
+    CMDENT *cmdp = NULL;
+    if (is_prefix_cmd(pCommand, &nPrefix, &cmdp))
     {
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
         //
-        check2[0] = i;
+        UTF8 check2[UTF8_SIZE4+1];
+        memcpy(check2, pCommand, nPrefix);
+        check2[nPrefix] = '\0';
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, check2);
@@ -1836,16 +1891,16 @@ UTF8 *process_command
         }
 
         hval = 0;
-        if (  prefix_cmds[i]->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+        if (  cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
            && bGoodHookObj)
         {
-            if (  prefix_cmds[i]->hookmask & HOOK_IGNORE
-               && !process_hook(executor, prefix_cmds[i], HOOK_IGNORE, true))
+            if (  cmdp->hookmask & HOOK_IGNORE
+               && !process_hook(executor, cmdp, HOOK_IGNORE, true))
             {
                 hval = 2;
             }
-            else if (  prefix_cmds[i]->hookmask & HOOK_PERMIT
-                    && !process_hook(executor, prefix_cmds[i], HOOK_PERMIT, true))
+            else if (  cmdp->hookmask & HOOK_PERMIT
+                    && !process_hook(executor, cmdp, HOOK_PERMIT, true))
             {
                 hval = 1;
             }
@@ -1857,10 +1912,10 @@ UTF8 *process_command
             if (  cval == 1
                || hval == 1)
             {
-                if (  prefix_cmds[i]->hookmask & HOOK_AFAIL
+                if (  cmdp->hookmask & HOOK_AFAIL
                    && bGoodHookObj)
                 {
-                    process_hook(executor, prefix_cmds[i], HOOK_AFAIL, false);
+                    process_hook(executor, cmdp, HOOK_AFAIL, false);
                 }
                 else
                 {
@@ -1869,7 +1924,7 @@ UTF8 *process_command
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
-            process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
+            process_cmdent(cmdp, NULL, executor, caller, enactor,
                 eval, interactive, pCommand, pCommand, args, nargs);
             if (mudstate.bStackLimitReached)
             {
@@ -2097,7 +2152,7 @@ UTF8 *process_command
 
     // Check for a builtin command (or an alias of a builtin command)
     //
-    CMDENT *cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
+    cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
 
     /* If command is checked to ignore NONMATCHING switches, fall through */
     if (cmdp)

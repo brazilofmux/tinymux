@@ -134,7 +134,7 @@ int get_gender(dbref);
 void mux_exec(const UTF8 *pdstr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
               dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
-DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
+void DCL_INLINE BufAddRef(lbuf_ref *lbufref)
 {
     if (NULL != lbufref)
     {
@@ -142,7 +142,7 @@ DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
     }
 }
 
-DCL_INLINE void BufRelease(lbuf_ref *lbufref)
+void DCL_INLINE BufRelease(lbuf_ref *lbufref)
 {
     if (NULL != lbufref)
     {
@@ -156,7 +156,7 @@ DCL_INLINE void BufRelease(lbuf_ref *lbufref)
     }
 }
 
-DCL_INLINE void RegAddRef(reg_ref *regref)
+void DCL_INLINE RegAddRef(reg_ref *regref)
 {
     if (NULL != regref)
     {
@@ -164,7 +164,7 @@ DCL_INLINE void RegAddRef(reg_ref *regref)
     }
 }
 
-DCL_INLINE void RegRelease(reg_ref *regref)
+void DCL_INLINE RegRelease(reg_ref *regref)
 {
     if (NULL != regref)
     {
@@ -438,7 +438,7 @@ bool quick_wild(const UTF8 *, const UTF8 *);
 
 /* From command.cpp */
 bool check_access(dbref player, int mask);
-void set_prefix_cmds(void);
+void cache_prefix_cmds(void);
 UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     UTF8 *, const UTF8 *[], int);
 size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
