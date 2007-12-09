@@ -65,12 +65,12 @@ int main(int argc, char **argv)
           s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
     int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
 
-    if ( argc < 3 )
+    if (argc < 3)
     {
         fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\r\n", argv[0]);
         exit(1);
     }
-    if ( (f_muxflat = fopen(argv[1], "r")) == NULL )
+    if ((f_muxflat = fopen(argv[1], "r")) == NULL)
     {
         fprintf(stderr, "ERROR: Unable to open %s for reading.", argv[1]);
         exit(1);
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     pt1 = argv[2];
     while (*pt1)
     {
-        if ( !isdigit(*pt1) )
+        if (!isdigit(*pt1))
         {
             fprintf(stderr, "ERROR: Dbref# must be an integer (no # preceeding) [optional attribute-name]\r\n");
             fclose(f_muxflat);
@@ -86,14 +86,14 @@ int main(int argc, char **argv)
         }
         pt1++;
     }
-    if ( (f_mymuxfile = fopen("mymuxfile.dat", "w")) == NULL )
+    if ((f_mymuxfile = fopen("mymuxfile.dat", "w")) == NULL)
     {
         fprintf(stderr, "ERROR: Unable to open output file for attribute header information (mymuxfile.dat)\r\n");
         fclose(f_muxflat);
         exit(1);
     }
     memset(s_attrib, '\0', sizeof(s_attrib));
-    if ( (argc >= 4) && *argv[3] )
+    if ((argc >= 4) && *argv[3])
     {
         strncpy(s_attrib, argv[3], SBUFSIZE-1);
     }
@@ -101,11 +101,11 @@ int main(int argc, char **argv)
     memset(spt2, '\0', MALSIZE);
     memset(s_attr, '\0', sizeof(s_attr));
     memset(s_attrval, '\0', sizeof(s_attr));
-    while ( !feof(f_muxflat) )
+    while (!feof(f_muxflat))
     {
         fgets(spt2, (MALSIZE-2), f_muxflat);
         pt2 = spt2;
-        if ( i_chk )
+        if (i_chk)
         {
             i_chk = 0;
             strtok(pt2, ":");
@@ -113,25 +113,25 @@ int main(int argc, char **argv)
             s_attr[strlen(s_attr)-2]='\0';
             fprintf(f_mymuxfile, "%s %d \r\n", s_attr, atoi(s_attrval));
         }
-        if ( (strlen(pt2) > 3) && (*pt2 == '+') && (*(pt2+1) == 'A') && isdigit(*(pt2+2)) )
+        if ((strlen(pt2) > 3) && (*pt2 == '+') && (*(pt2+1) == 'A') && isdigit(*(pt2+2)))
         {
             i_chk = 1;
             sprintf(s_attrval, "%s", pt2+2);
         }
-        if ( *pt2 == '!' )
+        if (*pt2 == '!')
         {
             break;
         }
     }
     fclose(f_mymuxfile);
-    if ( (f_mymuxfile = fopen("mymuxfile.dat", "r")) == NULL )
+    if ((f_mymuxfile = fopen("mymuxfile.dat", "r")) == NULL)
     {
         fclose(f_muxflat);
         fprintf(stderr, "ERROR: Unable to open attribute header information (mymuxfile.dat)\r\n");
         free(spt2);
         exit(1);
     }
-    if ( (f_muxattrs = fopen("muxattrs.dat", "r")) == NULL )
+    if ((f_muxattrs = fopen("muxattrs.dat", "r")) == NULL)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     }
     memset(s_filename, '\0', sizeof(s_filename));
     sprintf(s_filename, "muxout_%d.txt", atoi(argv[2]));
-    if ( (f_muxout = fopen(s_filename, "w")) == NULL )
+    if ((f_muxout = fopen(s_filename, "w")) == NULL)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
         free(spt2);
         exit(1);
     }
-    if ( (f_muxlock = fopen("muxlocks.dat", "r")) == NULL )
+    if ((f_muxlock = fopen("muxlocks.dat", "r")) == NULL)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
@@ -167,26 +167,26 @@ int main(int argc, char **argv)
     fseek(f_muxflat, 0L, SEEK_SET);
     fprintf(stderr, "Step 1: Quering for dbref #%d\n", atoi(argv[2]));
     i_chk = 0;
-    while ( !feof(f_muxflat) )
+    while (!feof(f_muxflat))
     {
         fgets(spt2, (MALSIZE-2), f_muxflat);
-        if ( i_pullname )
+        if (i_pullname)
         {
             i_pullname = 0;
             fprintf(f_muxout, "@@ %s\n", spt2);
         }
         pt2 = spt2;
-        if ( (*pt2 == '<') && i_chk )
+        if ((*pt2 == '<') && i_chk)
         {
             break;
         }
-        if ( *pt2 == '!' && (atoi(pt2+1) == atoi(argv[2])) )
+        if (*pt2 == '!' && (atoi(pt2+1) == atoi(argv[2])))
         {
             i_chk = 1;
             i_pullname = 1;
             continue;
         }
-        if ( i_chk && *pt2 == '>' && isdigit(*(pt2+1)) )
+        if (i_chk && *pt2 == '>' && isdigit(*(pt2+1)))
         {
             i_chk = 2;
             i_atrcntr++;
@@ -194,52 +194,52 @@ int main(int argc, char **argv)
             memset(spt2, '\0', MALSIZE);
             memset(s_finattr, '\0', sizeof(s_finattr));
             fseek(f_muxattrs, 0L, SEEK_SET);
-            while ( !feof(f_muxattrs) )
+            while (!feof(f_muxattrs))
             {
                 fgets(spt2, (MALSIZE-2), f_muxattrs);
-                if ( strstr(spt2, s_attrval) != NULL )
+                if (strstr(spt2, s_attrval) != NULL)
                 {
                     strcpy(s_finattr, (char *)strtok(spt2, " "));
                     break;
                 }
             }
-            if ( strlen(s_finattr) == 0 )
+            if (strlen(s_finattr) == 0)
             {
                 fseek(f_mymuxfile, 0L, SEEK_SET);
-                while ( !feof(f_mymuxfile) )
+                while (!feof(f_mymuxfile))
                 {
                     fgets(spt2, (MALSIZE-2), f_mymuxfile);
-                    if ( strstr(spt2, s_attrval) != NULL )
+                    if (strstr(spt2, s_attrval) != NULL)
                     {
                         strcpy(s_finattr, (char *)strtok(spt2, " "));
                         break;
                     }
                 }
             }
-            if ( strlen(s_finattr) == 0 )
+            if (strlen(s_finattr) == 0)
             {
                 fprintf(stderr, "ERROR: Unknown error in attribute handler.");
                 exit(1);
             }
             fseek(f_muxlock, 0L, SEEK_SET);
             i_lck = 0;
-            while ( !feof(f_muxlock) )
+            while (!feof(f_muxlock))
             {
                 fgets(spt2, (MALSIZE-2), f_muxlock);
-                if ( strstr(spt2, s_attrval) != NULL )
+                if (strstr(spt2, s_attrval) != NULL)
                 {
                     i_lck = 1;
                     break;
                 }
             }
-            if ( !*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib) )
+            if (!*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib))
             {
                 i_atrcntr2++;
-                if ( i_lck )
+                if (i_lck)
                 {
                     fprintf(f_muxout, "@lock/%s #%s=", s_finattr, argv[2]);
                 }
-                else if ( atoi(s_attrval) < 256 )
+                else if (atoi(s_attrval) < 256)
                 {
                     fprintf(f_muxout, "@%s #%s=", s_finattr, argv[2]);
                 }
@@ -249,20 +249,20 @@ int main(int argc, char **argv)
                 }
             }
         }
-        else if ( i_chk == 2)
+        else if (i_chk == 2)
         {
-            if ( *pt2 == '"' )
+            if (*pt2 == '"')
             {
                 pt2++;
             }
-            if ( *pt2 == '\001' )
+            if (*pt2 == '\001')
             {
-                while ( *pt2 && *pt2 != ':' )
+                while (*pt2 && *pt2 != ':')
                 {
                     pt2++;
                 }
                 pt2++;
-                while ( *pt2 && *pt2 != ':' )
+                while (*pt2 && *pt2 != ':')
                 {
                     pt2++;
                 }
@@ -327,17 +327,17 @@ int main(int argc, char **argv)
                  pt3++;
                  *pt3 = '\0';
             }
-            if ( *spt3 == '\r' && (strlen(spt3) <= 2) )
+            if (*spt3 == '\r' && (strlen(spt3) <= 2))
             {
                  strcpy(spt3, "%r");
             }
-            if ( !*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib) )
+            if (!*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib))
             {
                 fprintf(f_muxout, "%s", spt3);
             }
         }
     }
-    if ( !*s_attrib )
+    if (!*s_attrib)
     {
         fprintf(stderr, "Step 2: Writing %d attributes\n", i_atrcntr);
     }
