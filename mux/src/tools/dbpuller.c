@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
     if (argc < 3)
     {
-        fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\r\n", argv[0]);
+        fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\n", argv[0]);
         exit(1);
     }
     if (NULL == (f_muxflat = fopen(argv[1], "r")))
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
     {
         if (!isdigit(*pt1))
         {
-            fprintf(stderr, "ERROR: Dbref# must be an integer (no # preceeding) [optional attribute-name]\r\n");
+            fprintf(stderr, "ERROR: Dbref# must be an integer (no # preceeding) [optional attribute-name]\n");
             fclose(f_muxflat);
             exit(1);
         }
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     }
     if (NULL == (f_mymuxfile = fopen("mymuxfile.dat", "w")))
     {
-        fprintf(stderr, "ERROR: Unable to open output file for attribute header information (mymuxfile.dat)\r\n");
+        fprintf(stderr, "ERROR: Unable to open output file for attribute header information (mymuxfile.dat)\n");
         fclose(f_muxflat);
         exit(1);
     }
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
             strtok(pt2, ":");
             sprintf(s_attr, "%s", strtok(NULL, ":"));
             s_attr[strlen(s_attr)-2]='\0';
-            fprintf(f_mymuxfile, "%s %d \r\n", s_attr, atoi(s_attrval));
+            fprintf(f_mymuxfile, "%s %d \n", s_attr, atoi(s_attrval));
         }
         if (  3 < strlen(pt2)
            && '+' == *pt2
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     if (NULL == (f_mymuxfile = fopen("mymuxfile.dat", "r")))
     {
         fclose(f_muxflat);
-        fprintf(stderr, "ERROR: Unable to open attribute header information (mymuxfile.dat)\r\n");
+        fprintf(stderr, "ERROR: Unable to open attribute header information (mymuxfile.dat)\n");
         free(spt2);
         exit(1);
     }
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
-        fprintf(stderr, "ERROR: Unable to open attribute header information (muxattrs.dat)\r\n");
+        fprintf(stderr, "ERROR: Unable to open attribute header information (muxattrs.dat)\n");
         free(spt2);
         exit(1);
     }
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
         fclose(f_muxflat);
         fclose(f_mymuxfile);
         fclose(f_muxattrs);
-        fprintf(stderr, "ERROR: Unable to open output file (%s)\r\n", s_filename);
+        fprintf(stderr, "ERROR: Unable to open output file (%s)\n", s_filename);
         free(spt2);
         exit(1);
     }
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
         fclose(f_mymuxfile);
         fclose(f_muxattrs);
         fclose(f_muxout);
-        fprintf(stderr, "ERROR: Unable to open mux lock file (muxlocks.dat)\r\n");
+        fprintf(stderr, "ERROR: Unable to open mux lock file (muxlocks.dat)\n");
         free(spt2);
         exit(1);
     }
