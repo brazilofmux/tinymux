@@ -34,12 +34,15 @@ stricmp(char *buf1, char *buf2)
 
     p1 = buf1;
     p2 = buf2;
-    while ((*p1 != '\0') && (*p2 != '\0') && (tolower(*p1) == tolower(*p2)))
+    while (  *p1 != '\0'
+          && *p2 != '\0'
+          && tolower(*p1) == tolower(*p2))
     {
         p1++;
         p2++;
     }
-    if ((*p1 == '\0') && (*p2 == '\0'))
+    if (  *p1 == '\0'
+       && *p2 == '\0')
     {
         return 0;
     }
@@ -93,7 +96,8 @@ int main(int argc, char **argv)
         exit(1);
     }
     memset(s_attrib, '\0', sizeof(s_attrib));
-    if ((argc >= 4) && *argv[3])
+    if (  argc >= 4
+       && *argv[3])
     {
         strncpy(s_attrib, argv[3], SBUFSIZE-1);
     }
@@ -113,7 +117,10 @@ int main(int argc, char **argv)
             s_attr[strlen(s_attr)-2]='\0';
             fprintf(f_mymuxfile, "%s %d \r\n", s_attr, atoi(s_attrval));
         }
-        if ((strlen(pt2) > 3) && (*pt2 == '+') && (*(pt2+1) == 'A') && isdigit(*(pt2+2)))
+        if (  strlen(pt2) > 3
+           && *pt2 == '+'
+           && *(pt2+1) == 'A'
+           && isdigit(*(pt2+2)))
         {
             i_chk = 1;
             sprintf(s_attrval, "%s", pt2+2);
@@ -176,17 +183,21 @@ int main(int argc, char **argv)
             fprintf(f_muxout, "@@ %s\n", spt2);
         }
         pt2 = spt2;
-        if ((*pt2 == '<') && i_chk)
+        if (  *pt2 == '<'
+           && i_chk)
         {
             break;
         }
-        if (*pt2 == '!' && (atoi(pt2+1) == atoi(argv[2])))
+        if (  *pt2 == '!'
+           && atoi(pt2+1) == atoi(argv[2]))
         {
             i_chk = 1;
             i_pullname = 1;
             continue;
         }
-        if (i_chk && *pt2 == '>' && isdigit(*(pt2+1)))
+        if (  i_chk
+           && *pt2 == '>'
+           && isdigit(*(pt2+1)))
         {
             i_chk = 2;
             i_atrcntr++;
@@ -232,7 +243,9 @@ int main(int argc, char **argv)
                     break;
                 }
             }
-            if (!*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib))
+            if (  !*s_attrib
+               || !stricmp(s_finattr, s_attrib)
+               || strstr(s_finattr, s_attrib))
             {
                 i_atrcntr2++;
                 if (i_lck)
@@ -257,12 +270,14 @@ int main(int argc, char **argv)
             }
             if (*pt2 == '\001')
             {
-                while (*pt2 && *pt2 != ':')
+                while (  *pt2
+                      && *pt2 != ':')
                 {
                     pt2++;
                 }
                 pt2++;
-                while (*pt2 && *pt2 != ':')
+                while (  *pt2
+                      && *pt2 != ':')
                 {
                     pt2++;
                 }
@@ -327,11 +342,14 @@ int main(int argc, char **argv)
                  pt3++;
                  *pt3 = '\0';
             }
-            if (*spt3 == '\r' && (strlen(spt3) <= 2))
+            if (  *spt3 == '\r'
+               && strlen(spt3) <= 2)
             {
                  strcpy(spt3, "%r");
             }
-            if (!*s_attrib || !stricmp(s_finattr, s_attrib) || strstr(s_finattr, s_attrib))
+            if (  !*s_attrib
+               || !stricmp(s_finattr, s_attrib)
+               || strstr(s_finattr, s_attrib))
             {
                 fprintf(f_muxout, "%s", spt3);
             }
