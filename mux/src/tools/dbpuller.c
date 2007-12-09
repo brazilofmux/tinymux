@@ -226,7 +226,7 @@ int main(int argc, char **argv)
                     break;
                 }
             }
-            if (0 == strlen(s_finattr))
+            if ('\0' == s_finattr[0])
             {
                 fseek(f_mymuxfile, 0L, SEEK_SET);
                 while (!feof(f_mymuxfile))
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            if (strlen(s_finattr) == 0)
+            if ('\0' == s_finattr[0])
             {
                 fprintf(stderr, "ERROR: Unknown error in attribute handler.");
                 exit(1);
