@@ -73,7 +73,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\n", argv[0]);
         exit(1);
     }
-    if (NULL == (f_muxflat = fopen(argv[1], "r")))
+
+    f_muxflat = fopen(argv[1], "r");
+    if (NULL == f_muxflat)
     {
         fprintf(stderr, "ERROR: Unable to open %s for reading.", argv[1]);
         exit(1);
@@ -89,7 +91,9 @@ int main(int argc, char **argv)
         }
         pt1++;
     }
-    if (NULL == (f_mymuxfile = fopen("mymuxfile.dat", "w")))
+
+    f_mymuxfile = fopen("mymuxfile.dat", "w");
+    if (NULL == f_mymuxfile)
     {
         fprintf(stderr, "ERROR: Unable to open output file for attribute header information (mymuxfile.dat)\n");
         fclose(f_muxflat);
@@ -131,14 +135,18 @@ int main(int argc, char **argv)
         }
     }
     fclose(f_mymuxfile);
-    if (NULL == (f_mymuxfile = fopen("mymuxfile.dat", "r")))
+
+    f_mymuxfile = fopen("mymuxfile.dat", "r");
+    if (NULL == f_mymuxfile)
     {
         fclose(f_muxflat);
         fprintf(stderr, "ERROR: Unable to open attribute header information (mymuxfile.dat)\n");
         free(spt2);
         exit(1);
     }
-    if (NULL == (f_muxattrs = fopen("muxattrs.dat", "r")))
+
+    f_muxattrs = fopen("muxattrs.dat", "r");
+    if (NULL == f_muxattrs)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
@@ -148,7 +156,9 @@ int main(int argc, char **argv)
     }
     memset(s_filename, '\0', sizeof(s_filename));
     sprintf(s_filename, "muxout_%d.txt", atoi(argv[2]));
-    if (NULL == (f_muxout = fopen(s_filename, "w")))
+
+    f_muxout = fopen(s_filename, "w");
+    if (NULL == f_muxout)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
@@ -157,7 +167,9 @@ int main(int argc, char **argv)
         free(spt2);
         exit(1);
     }
-    if (NULL == (f_muxlock = fopen("muxlocks.dat", "r")))
+
+    f_muxlock = fopen("muxlocks.dat", "r");
+    if (NULL == f_muxlock)
     {
         fclose(f_muxflat);
         fclose(f_mymuxfile);
