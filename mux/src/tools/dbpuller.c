@@ -49,13 +49,13 @@ stricmp(char *buf1, char *buf2)
     return 1;
 }
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     FILE *f_muxflat, *f_mymuxfile, *f_muxattrs, *f_muxout, *f_muxlock;
     char *pt1, *spt2, *spt3, *pt2, *pt3, s_attrib[SBUFSIZE], s_filename[80],
           s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
     int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
-    
+
     if ( argc < 3 ) {
         fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\r\n", argv[0]);
         exit(1);
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
                      break;
 
                 default:
-                     *pt3 = ch; 
+                     *pt3 = ch;
                      pt3++;
                      break;
                 }
