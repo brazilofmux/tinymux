@@ -385,6 +385,123 @@ int main(int argc, char **argv)
                         break;
                     }
                 }
+                else if ('\xEF' == ch)
+                {
+                    if ('\x94' == g_line[i])
+                    {
+                        if ('\x80' == g_line[i+1])
+                        {
+                            ch = COLOR_RESET;
+                            i += 2;
+                        }
+                        else if ('\x81' == g_line[i+1])
+                        {
+                            ch = COLOR_INTENSE;
+                            i += 2;
+                        }
+                        else if ('\x84' == g_line[i+1])
+                        {
+                            ch = COLOR_UNDERLINE;
+                            i += 2;
+                        }
+                        else if ('\x85' == g_line[i+1])
+                        {
+                            ch = COLOR_BLINK;
+                            i += 2;
+                        }
+                        else if ('\x87' == g_line[i+1])
+                        {
+                            ch = COLOR_INVERSE;
+                            i += 2;
+                        }
+                    }
+                    else if ('\x98' == g_line[i])
+                    {
+                        if ('\x80' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_BLACK;
+                            i += 2;
+                        }
+                        else if ('\x81' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_RED;
+                            i += 2;
+                        }
+                        else if ('\x82' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_GREEN;
+                            i += 2;
+                        }
+                        else if ('\x83' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_YELLOW;
+                            i += 2;
+                        }
+                        else if ('\x84' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_BLUE;
+                            i += 2;
+                        }
+                        else if ('\x85' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_MAGENTA;
+                            i += 2;
+                        }
+                        else if ('\x86' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_CYAN;
+                            i += 2;
+                        }
+                        else if ('\x87' == g_line[i+1])
+                        {
+                            ch = COLOR_FG_WHITE;
+                            i += 2;
+                        }
+                    }
+                    else if ('\x9C' == g_line[i])
+                    {
+                        if ('\x80' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_BLACK;
+                            i += 2;
+                        }
+                        else if ('\x81' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_RED;
+                            i += 2;
+                        }
+                        else if ('\x82' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_GREEN;
+                            i += 2;
+                        }
+                        else if ('\x83' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_YELLOW;
+                            i += 2;
+                        }
+                        else if ('\x84' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_BLUE;
+                            i += 2;
+                        }
+                        else if ('\x85' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_MAGENTA;
+                            i += 2;
+                        }
+                        else if ('\x86' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_CYAN;
+                            i += 2;
+                        }
+                        else if ('\x87' == g_line[i+1])
+                        {
+                            ch = COLOR_BG_WHITE;
+                            i += 2;
+                        }
+                    }
+                }
 
                 if (ESC_CHAR == ch)
                 {
