@@ -28,6 +28,28 @@
 #define SBUFSIZE 65
 #define ESC_CHAR '\033'
 
+#define COLOR_RESET      256
+#define COLOR_INTENSE    257
+#define COLOR_UNDERLINE  258
+#define COLOR_BLINK      259
+#define COLOR_INVERSE    260
+#define COLOR_FG_BLACK   261
+#define COLOR_FG_RED     262
+#define COLOR_FG_GREEN   263
+#define COLOR_FG_YELLOW  264
+#define COLOR_FG_BLUE    265
+#define COLOR_FG_MAGENTA 266
+#define COLOR_FG_CYAN    267
+#define COLOR_FG_WHITE   268
+#define COLOR_BG_BLACK   269
+#define COLOR_BG_RED     270
+#define COLOR_BG_GREEN   271
+#define COLOR_BG_YELLOW  272
+#define COLOR_BG_BLUE    273
+#define COLOR_BG_MAGENTA 274
+#define COLOR_BG_CYAN    275
+#define COLOR_BG_WHITE   276
+
 int stricmp(const char *buf1, const char *buf2)
 {
     const char *p1 = buf1;
@@ -336,8 +358,140 @@ int main(int argc, char **argv)
                     }
                 }
 
+                if (ESC_CHAR == ch)
+                {
+                    if (  '[' == g_line[i]
+                       && '\0' != g_line[i+1]
+                       && 'm' == g_line[i+2])
+                    {
+                        if ('0' == g_line[i+1])
+                        {
+                            ch = COLOR_RESET;
+                        }
+                        else if ('1' == g_line[i+1])
+                        {
+                            ch = COLOR_INTENSE;
+                        }
+                        else if ('4' == g_line[i+1])
+                        {
+                            ch = COLOR_UNDERLINE;
+                        }
+                        else if ('5' == g_line[i+1])
+                        {
+                            ch = COLOR_BLINK;
+                        }
+                        else if ('7' == g_line[i+1])
+                        {
+                            ch = COLOR_INVERSE;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                        i += 3;
+                    }
+                    else if (  '[' == g_line[i]
+                            && '\0' != g_line[i+1]
+                            && '\0' != g_line[i+2]
+                            && 'm' == g_line[i+3])
+                    {
+                        if ('3' == g_line[i+1])
+                        {
+                            if ('0' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_BLACK;
+                            }
+                            else if ('1' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_RED;
+                            }
+                            else if ('2' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_GREEN;
+                            }
+                            else if ('3' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_YELLOW;
+                            }
+                            else if ('4' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_BLUE;
+                            }
+                            else if ('5' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_MAGENTA;
+                            }
+                            else if ('6' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_CYAN;
+                            }
+                            else if ('7' == g_line[i+2])
+                            {
+                                ch = COLOR_FG_WHITE;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        else if ('4' == g_line[i+1])
+                        {
+                            if ('0' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_BLACK;
+                            }
+                            else if ('1' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_RED;
+                            }
+                            else if ('2' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_GREEN;
+                            }
+                            else if ('3' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_YELLOW;
+                            }
+                            else if ('4' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_BLUE;
+                            }
+                            else if ('5' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_MAGENTA;
+                            }
+                            else if ('6' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_CYAN;
+                            }
+                            else if ('7' == g_line[i+2])
+                            {
+                                ch = COLOR_BG_WHITE;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                        i += 4;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
                 switch (ch)
                 {
+                default:
+                     *pt3 = ch;
+                     pt3++;
+                     break;
+
                 case '\t':
                      *pt3 = '%';
                      pt3++;
@@ -355,10 +509,194 @@ int main(int argc, char **argv)
                 case '\r':
                      break;
 
-                default:
-                     *pt3 = ch;
+                case COLOR_RESET:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'n';
                      pt3++;
                      break;
+
+                case COLOR_INTENSE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'h';
+                     pt3++;
+                     break;
+
+                case COLOR_UNDERLINE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'u';
+                     pt3++;
+                     break;
+
+                case COLOR_BLINK:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'f';
+                     pt3++;
+                     break;
+
+                case COLOR_INVERSE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'i';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_BLACK:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_RED:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'r';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_GREEN:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'g';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_YELLOW:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'y';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_BLUE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'b';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_MAGENTA:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'm';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_CYAN:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'c';
+                     pt3++;
+                     break;
+
+                case COLOR_FG_WHITE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'w';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_BLACK:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'X';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_RED:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'R';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_GREEN:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'G';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_YELLOW:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'Y';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_BLUE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'B';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_MAGENTA:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'M';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_CYAN:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'C';
+                     pt3++;
+                     break;
+
+                case COLOR_BG_WHITE:
+                     *pt3 = '%';
+                     pt3++;
+                     *pt3 = 'x';
+                     pt3++;
+                     *pt3 = 'W';
+                      pt3++;
+                      break;
                 }
             }
             *pt3 = '\0';
