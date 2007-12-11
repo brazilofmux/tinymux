@@ -69,9 +69,10 @@ char g_line[MALSIZE];
 int main(int argc, char **argv)
 {
     FILE *f_muxflat, *f_mymuxfile, *f_muxattrs, *f_muxout, *f_muxlock;
-    char *pt1, *spt3, *pt3, s_attrib[SBUFSIZE], s_filename[80],
+    char *spt3, *pt3, s_attrib[SBUFSIZE], s_filename[80],
           s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
     int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
+    int i;
 
     if (argc < 3)
     {
@@ -86,16 +87,14 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    pt1 = argv[2];
-    while ('\0' != *pt1)
+    for (i = 0; argv[2][i]; i++)
     {
-        if (!isdigit(*pt1))
+        if (!isdigit(argv[2][i]))
         {
             fprintf(stderr, "ERROR: Dbref# must be an integer (no # preceeding) [optional attribute-name]\n");
             fclose(f_muxflat);
             exit(1);
         }
-        pt1++;
     }
 
     f_mymuxfile = fopen("mymuxfile.dat", "w");
