@@ -21,12 +21,27 @@
 #include <string.h>
 #include <ctype.h>
 
-/* Standard MUX 2.x definitions */
-/* This should be over twice the size of the LBUF.  If it's not, it'll misbehave */
-#define MALSIZE 16535
-/* This should be SBUF_SIZE + 1. If it's not, it'll coredump*/
-#define SBUFSIZE 65
+// The following should match LBUF_SIZE and SBUF_SIZE in alloc.h
+//
+#define LBUF_SIZE 8000
+#define SBUF_SIZE 64
 #define ESC_CHAR '\033'
+
+// As buffers are written to a flatfile, some characters are escaped. The
+// worst-case contents of an lbuf can be twice as long as what is allowed within
+// the game.  Further, there are four additional characters plus trailing null.
+//
+// "            ==> 1
+// Encoded LBUF ==> 2*LBUF_SIZE
+// "\r\n\0      ==> 4
+// 
+#define MALSIZE_IN (2*LBUF_SIZE+5)
+
+// 3-byte color code points turn into 3-byte %x-subs.
+// 5-byte ANSI sequences also turn into 3-byte %x-subs.
+// There is some punctuation and the attribute name in front.
+//
+#define MALSIZE_OUT (2*LBUF_SIZE + SBUF_SIZE + 6)
 
 #define COLOR_RESET      256
 #define COLOR_INTENSE    257
@@ -86,7 +101,7 @@ int stricmp(const char *buf1, const char *buf2)
     return 1;
 }
 
-char g_line[MALSIZE];
+char g_line[MALSIZE_IN];
 
 int main(int argc, char **argv)
 {
@@ -97,11 +112,11 @@ int main(int argc, char **argv)
     FILE *f_muxlock    = NULL;
     char *spt3;
     char *pt3;
-    char s_attrib[SBUFSIZE];
+    char s_attrib[SBUF_SIZE+1];
     char s_filename[80];
-    char s_attrval[SBUFSIZE];
-    char s_attr[SBUFSIZE];
-    char s_finattr[SBUFSIZE];
+    char s_attrval[SBUF_SIZE+1];
+    char s_attr[SBUF_SIZE+1];
+    char s_finattr[SBUF_SIZE+1];
     int i_chk = 0;
     int i_lck = 1;
     int i_atrcntr = 0;
@@ -143,7 +158,7 @@ int main(int argc, char **argv)
     if (  4 <= argc
        && '\0' != *argv[3])
     {
-        strncpy(s_attrib, argv[3], SBUFSIZE-1);
+        strncpy(s_attrib, argv[3], SBUF_SIZE);
     }
 
     memset(s_attr, '\0', sizeof(s_attr));
@@ -218,8 +233,8 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    spt3 = malloc(MALSIZE);
-    memset(spt3, '\0', MALSIZE);
+    spt3 = malloc(MALSIZE_OUT);
+    memset(spt3, '\0', MALSIZE_OUT);
     pt3 = spt3;
     fseek(f_muxflat, 0L, SEEK_SET);
     fprintf(stderr, "Step 1: Quering for dbref #%d\n", atoi(argv[2]));
@@ -342,7 +357,7 @@ int main(int argc, char **argv)
                 }
                 i++;
             }
-            memset(spt3, '\0', MALSIZE);
+            memset(spt3, '\0', MALSIZE_OUT);
             pt3 = spt3;
             while (  '\0' != g_line[i]
                   && '"'  != g_line[i])
