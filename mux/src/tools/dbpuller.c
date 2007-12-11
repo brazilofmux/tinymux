@@ -28,12 +28,11 @@
 #define SBUFSIZE 65
 #define ESC_CHAR '\033'
 
-stricmp(char *buf1, char *buf2)
+int stricmp(const char *buf1, const char *buf2)
 {
-    char *p1, *p2;
+    const char *p1 = buf1;
+    const char *p2 = buf2;
 
-    p1 = buf1;
-    p2 = buf2;
     while (  '\0' != *p1
           && '\0' != *p2
           && tolower(*p1) == tolower(*p2))
