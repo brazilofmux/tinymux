@@ -309,13 +309,13 @@ int main(int argc, char **argv)
             }
             memset(spt3, '\0', MALSIZE);
             pt3 = spt3;
-            while ('\0' != g_line[i])
+            while (  '\0' != g_line[i]
+                  && '"'  != g_line[i])
             {
-                char ch;
-                if ('\\' == g_line[i])
+                int ch = g_line[i++];
+                if ('\\' == ch)
                 {
-                    i++;
-                    ch = g_line[i];
+                    ch = g_line[i++];
                     switch (ch)
                     {
                     case 'n':
@@ -335,15 +335,6 @@ int main(int argc, char **argv)
                         break;
                     }
                 }
-                else
-                {
-                    ch = g_line[i];
-                    if ('"' == ch)
-                    {
-                         break;
-                    }
-                }
-                i++;
 
                 switch (ch)
                 {
@@ -371,22 +362,12 @@ int main(int argc, char **argv)
                 }
             }
             *pt3 = '\0';
-            if (2 < strlen(spt3))
-            {
-                 *pt3 = '\n';
-                 pt3++;
-                 *pt3 = '\0';
-            }
-            if (  '\r' == *spt3
-               && strlen(spt3) <= 2)
-            {
-                 strcpy(spt3, "%r");
-            }
+
             if (  '\0' == *s_attrib
                || !stricmp(s_finattr, s_attrib)
                || strstr(s_finattr, s_attrib))
             {
-                fprintf(f_muxout, "%s", spt3);
+                fprintf(f_muxout, "%s\n", spt3);
             }
         }
     }
