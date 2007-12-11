@@ -3,8 +3,8 @@
  *
  * $Id$
  *
- * Db puller - used to pull data from a MUX flatfile and dump it
- * into a file in \@decompile format.
+ * Db puller - used to pull data from a TinyMUX flatfile and dump it into a
+ * file in \@decompile format.
  *
  * \version 1.01
  * \author Ashen-Shugar (08/16/2005)
@@ -90,10 +90,23 @@ char g_line[MALSIZE];
 
 int main(int argc, char **argv)
 {
-    FILE *f_muxflat, *f_mymuxfile, *f_muxattrs, *f_muxout, *f_muxlock;
-    char *spt3, *pt3, s_attrib[SBUFSIZE], s_filename[80],
-          s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
-    int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
+    FILE *f_muxflat    = NULL;
+    FILE *f_mymuxfile = NULL;
+    FILE *f_muxattrs  = NULL;
+    FILE *f_muxout     = NULL;
+    FILE *f_muxlock    = NULL;
+    char *spt3;
+    char *pt3;
+    char s_attrib[SBUFSIZE];
+    char s_filename[80];
+    char s_attrval[SBUFSIZE];
+    char s_attr[SBUFSIZE];
+    char s_finattr[SBUFSIZE];
+    int i_chk = 0;
+    int i_lck = 1;
+    int i_atrcntr = 0;
+    int i_atrcntr2 = 0;
+    int i_pullname = 0;
     int i;
 
     if (argc < 3)
@@ -105,7 +118,7 @@ int main(int argc, char **argv)
     f_muxflat = fopen(argv[1], "r");
     if (NULL == f_muxflat)
     {
-        fprintf(stderr, "ERROR: Unable to open %s for reading.", argv[1]);
+        fprintf(stderr, "ERROR: Unable to open %s for reading.\n", argv[1]);
         exit(1);
     }
 
@@ -695,8 +708,8 @@ int main(int argc, char **argv)
                      *pt3 = 'x';
                      pt3++;
                      *pt3 = 'W';
-                      pt3++;
-                      break;
+                     pt3++;
+                     break;
                 }
             }
             *pt3 = '\0';
