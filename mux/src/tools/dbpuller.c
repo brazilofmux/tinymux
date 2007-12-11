@@ -65,10 +65,12 @@ stricmp(char *buf1, char *buf2)
     return 1;
 }
 
+char g_line[MALSIZE];
+
 int main(int argc, char **argv)
 {
     FILE *f_muxflat, *f_mymuxfile, *f_muxattrs, *f_muxout, *f_muxlock;
-    char *pt1, *spt2, *spt3, *pt2, *pt3, s_attrib[SBUFSIZE], s_filename[80],
+    char *pt1, *spt3, *pt3, s_attrib[SBUFSIZE], s_filename[80],
           s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
     int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
 
@@ -111,35 +113,32 @@ int main(int argc, char **argv)
         strncpy(s_attrib, argv[3], SBUFSIZE-1);
     }
 
-    spt2=malloc(MALSIZE);
-    memset(spt2, '\0', MALSIZE);
     memset(s_attr, '\0', sizeof(s_attr));
     memset(s_attrval, '\0', sizeof(s_attr));
 
     while (!feof(f_muxflat))
     {
-        fgets(spt2, (MALSIZE-2), f_muxflat);
-        pt2 = spt2;
+        fgets(g_line, sizeof(g_line), f_muxflat);
 
         if (i_chk)
         {
             i_chk = 0;
-            strtok(pt2, ":");
+            strtok(g_line, ":");
             sprintf(s_attr, "%s", strtok(NULL, ":"));
             s_attr[strlen(s_attr)-2]='\0';
             fprintf(f_mymuxfile, "%s %d \n", s_attr, atoi(s_attrval));
         }
 
-        if (  3 < strlen(pt2)
-           && '+' == *pt2
-           && 'A' == *(pt2+1)
-           && isdigit(*(pt2+2)))
+        if (  3 < strlen(g_line)
+           && '+' == g_line[0]
+           && 'A' == g_line[1]
+           && isdigit(g_line[2]))
         {
             i_chk = 1;
-            sprintf(s_attrval, "%s", pt2+2);
+            sprintf(s_attrval, "%s", &g_line[2]);
         }
 
-        if ('!' == *pt2)
+        if ('!' == g_line[0])
         {
             break;
         }
@@ -151,7 +150,6 @@ int main(int argc, char **argv)
     {
         fclose(f_muxflat);
         fprintf(stderr, "ERROR: Unable to open attribute header information (mymuxfile.dat)\n");
-        free(spt2);
         exit(1);
     }
 
@@ -161,7 +159,6 @@ int main(int argc, char **argv)
         fclose(f_muxflat);
         fclose(f_mymuxfile);
         fprintf(stderr, "ERROR: Unable to open attribute header information (muxattrs.dat)\n");
-        free(spt2);
         exit(1);
     }
     memset(s_filename, '\0', sizeof(s_filename));
@@ -174,7 +171,6 @@ int main(int argc, char **argv)
         fclose(f_mymuxfile);
         fclose(f_muxattrs);
         fprintf(stderr, "ERROR: Unable to open output file (%s)\n", s_filename);
-        free(spt2);
         exit(1);
     }
 
@@ -186,12 +182,10 @@ int main(int argc, char **argv)
         fclose(f_muxattrs);
         fclose(f_muxout);
         fprintf(stderr, "ERROR: Unable to open mux lock file (muxlocks.dat)\n");
-        free(spt2);
         exit(1);
     }
 
-    memset(spt2, '\0', MALSIZE);
-    spt3=malloc(MALSIZE);
+    spt3 = malloc(MALSIZE);
     memset(spt3, '\0', MALSIZE);
     pt3 = spt3;
     fseek(f_muxflat, 0L, SEEK_SET);
@@ -200,22 +194,21 @@ int main(int argc, char **argv)
 
     while (!feof(f_muxflat))
     {
-        fgets(spt2, (MALSIZE-2), f_muxflat);
+        fgets(g_line, sizeof(g_line), f_muxflat);
         if (i_pullname)
         {
             i_pullname = 0;
-            fprintf(f_muxout, "@@ %s\n", spt2);
+            fprintf(f_muxout, "@@ %s\n", g_line);
         }
 
-        pt2 = spt2;
-        if (  '<' == *pt2
+        if (  '<' == g_line[0]
            && i_chk)
         {
             break;
         }
 
-        if (  '!' == *pt2
-           && atoi(pt2+1) == atoi(argv[2]))
+        if (  '!' == g_line[0]
+           && (atoi(&g_line[1]) == atoi(argv[2])))
         {
             i_chk = 1;
             i_pullname = 1;
@@ -223,21 +216,20 @@ int main(int argc, char **argv)
         }
 
         if (  i_chk
-           && '>' == *pt2
-           && isdigit(*(pt2+1)))
+           && '>' == g_line[0]
+           && isdigit(g_line[1]))
         {
             i_chk = 2;
             i_atrcntr++;
-            sprintf(s_attrval, " %d ", atoi(pt2+1));
-            memset(spt2, '\0', MALSIZE);
+            sprintf(s_attrval, " %d ", atoi(&g_line[1]));
             memset(s_finattr, '\0', sizeof(s_finattr));
             fseek(f_muxattrs, 0L, SEEK_SET);
             while (!feof(f_muxattrs))
             {
-                fgets(spt2, (MALSIZE-2), f_muxattrs);
-                if (NULL != strstr(spt2, s_attrval))
+                fgets(g_line, sizeof(g_line), f_muxattrs);
+                if (strstr(g_line, s_attrval) != NULL)
                 {
-                    strcpy(s_finattr, (char *)strtok(spt2, " "));
+                    strcpy(s_finattr, (char *)strtok(g_line, " "));
                     break;
                 }
             }
@@ -247,10 +239,10 @@ int main(int argc, char **argv)
                 fseek(f_mymuxfile, 0L, SEEK_SET);
                 while (!feof(f_mymuxfile))
                 {
-                    fgets(spt2, (MALSIZE-2), f_mymuxfile);
-                    if (NULL != strstr(spt2, s_attrval))
+                    fgets(g_line, sizeof(g_line), f_mymuxfile);
+                    if (strstr(g_line, s_attrval) != NULL)
                     {
-                        strcpy(s_finattr, (char *)strtok(spt2, " "));
+                        strcpy(s_finattr, (char *)strtok(g_line, " "));
                         break;
                     }
                 }
@@ -264,10 +256,11 @@ int main(int argc, char **argv)
 
             fseek(f_muxlock, 0L, SEEK_SET);
             i_lck = 0;
+
             while (!feof(f_muxlock))
             {
-                fgets(spt2, (MALSIZE-2), f_muxlock);
-                if (NULL != strstr(spt2, s_attrval))
+                fgets(g_line, sizeof(g_line), f_muxlock);
+                if (NULL != strstr(g_line, s_attrval))
                 {
                     i_lck = 1;
                     break;
@@ -295,35 +288,36 @@ int main(int argc, char **argv)
         }
         else if (2 == i_chk)
         {
-            if ('"' == *pt2)
+            int i = 0;
+            if ('"' == g_line[i])
             {
-                pt2++;
+                i++;
             }
 
-            if ('\001' == *pt2)
+            if ('\001' == g_line[i])
             {
-                while (  '\0' != *pt2
-                      && ':'  != *pt2)
+                while (  '\0' != g_line[i]
+                      && ':'  != g_line[i])
                 {
-                    pt2++;
+                    i++;
                 }
-                pt2++;
-                while (  '\0' != *pt2
-                      && ':'  != *pt2)
+                i++;
+                while (  '\0' != g_line[i]
+                      && ':'  != g_line[i])
                 {
-                    pt2++;
+                    i++;
                 }
-                pt2++;
+                i++;
             }
             memset(spt3, '\0', MALSIZE);
             pt3 = spt3;
-            while ('\0' != *pt2)
+            while ('\0' != g_line[i])
             {
                 char ch;
-                if ('\\' == *pt2)
+                if ('\\' == g_line[i])
                 {
-                    pt2++;
-                    ch = *pt2;
+                    i++;
+                    ch = g_line[i];
                     switch (ch)
                     {
                     case 'n':
@@ -345,13 +339,13 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    ch = *pt2;
+                    ch = g_line[i];
                     if ('"' == ch)
                     {
                          break;
                     }
                 }
-                pt2++;
+                i++;
 
                 switch (ch)
                 {
@@ -398,6 +392,7 @@ int main(int argc, char **argv)
             }
         }
     }
+
     if ('\0' == *s_attrib)
     {
         fprintf(stderr, "Step 2: Writing %d attributes\n", i_atrcntr);
@@ -411,7 +406,6 @@ int main(int argc, char **argv)
     fclose(f_muxattrs);
     fclose(f_mymuxfile);
     fclose(f_muxflat);
-    free(spt2);
     free(spt3);
     fprintf(stderr, "Step 3: Completed (file is: %s).\n", s_filename);
     return 0;
