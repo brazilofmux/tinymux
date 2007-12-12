@@ -208,14 +208,16 @@ void do_name
             free_lbuf(buff);
             return;
         }
-        else if (  string_compare(buff, Name(thing))
-                && lookup_player(NOTHING, buff, false) != NOTHING)
+        else
         {
-            // string_compare allows changing foo to Foo, etc.
-            //
-            notify_quiet(executor, T("That name is already in use."));
-            free_lbuf(buff);
-            return;
+            dbref jwho = lookup_player(NOTHING, buff, false);
+            if (  jwho != NOTHING
+               && jwho != thing)
+            {
+                notify_quiet(executor, T("That name is already in use."));
+                free_lbuf(buff);
+                return;
+            }
         }
 
         // Everything ok, notify.
