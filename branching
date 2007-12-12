@@ -1,18 +1,38 @@
 Grand Branching Scheme
 
+1. Introduction.
 
-Generally, neither the number of developers nor the rate of change is so high
-as to justify a highly-organized branching regime.  Also, a significant part
-of the quality assurance feedback originates externally, so it is not
-practical to assume a highly-organized QA function either.
+In the past, a single trunk branch with tagged builds was sufficient to
+accomodate the flow of changes from the active developers.  Every developer
+commited their changes directly into the main trunk.  CVS branching was
+error-prone and the clean-up risk was too high, so the project just didn't use
+that feature of CVS.
 
-Since TinyMUX is developed for Win32 and various flavors of Unix, it isn't
-possible to know whether code that compiles and runs on one platform will
-necessarily compile and run on another.  On the other hand, not all developers
-have access to all platforms and are unable to completely verify their changes.
+With one branch, a single person tends to be the gate-keeper.  Patches flow to
+this person, and changes made directly to the repository are at risk of being
+reverted.
 
-Nevertheless, it makes sense to describe the Grand Unified Scheme for
-Branching, and then argue why it can be collapsed and special-cased.
+In thinking about what branching scheme best fits our needs, we are guided by
+the following requirements:
+
+ - A significant part of the quality assurance feedback originates externally,
+   so it is not practical to assume a highly-organized internal QA function.
+
+ - Internal QA consists primarily of code inspection by other developers.
+   Changes coming from other developers should be combined/compacted to make
+   inspection easier.
+
+ - Since TinyMUX is developed for Win32 and various flavors of Unix, it isn't
+   possible to know whether code that compiles and runs on one platform will
+   necessarily compile and run on another.  In fact, not all developers have
+   access to all platforms and are unable to completely verify their changes.
+
+ - Most volunteer developers are intermitantly active.
+
+
+2. Branch Organization.
+
+To meet these requirements, we have choosen the following branching scheme:
 
 
         ----2.7.0---2.7.1
@@ -31,22 +51,30 @@ trunk   \
                     \  dev_firan
                      -----------
                       \
-                       \  dev_ronan
+                       \  dev_jake
                         -----------
+                         \
+                          \  dev_ronan
+                           -----------
 
-In the Grand Scheme, the trunk is never released, and the only changes allowed
-are merges from other branches.  It's useful to first classify branches
-besides the trunk into development-side branches and release-side branches.
-The development-side branches can be organized into a promotion tree like so:
+In the Grand Scheme, the trunk is used only for alpha releases, and the only
+changes allowed are merges from other branches.  For beta and maintenance
+work, releases are made from release-side branches described later.
+
+2.1. Developer-Side Branches.
+
+It's useful to first classify branches besides the trunk into development-side
+branches and release-side branches.  The development-side branches can be
+organized into a promotion tree like so:
 
               trunk
                 |
                 |
                dev
                 |
-                |------------------------------------
-                |            |           |          |
-             dev_alierak  dev_brazil  dev_firan  dev_ronan
+                |----------------------------------------------
+                |            |           |          |         |
+             dev_alierak  dev_brazil  dev_firan  dev_jake  dev_ronan
 
 
 An individual developer (e.g., brazil) would make changes in branch dev_brazil,
@@ -63,6 +91,8 @@ from dev are merged into the trunk.  Likewise, changes brought into dev are
 periodically merged down into dev_alierak, dev_brazil, dev_firan, and
 dev_ronan.
 
+2.2. Release-Side Branches.
+
 The other class of branches are the release-side branches. Periodically, a
 release branch is created from the trunk.  Packaging considerations may
 require certain minor changes.  Maintenance of a release can be supported with
@@ -70,25 +100,23 @@ bug fixes.  Each release branch may require a slightly different fix, but
 typically the fix from the most-recently released branch is merged back into
 the trunk, and propagated back down the dev tree.
 
+
+3. Concluding Remarks.
+
 Of course, with all this merging up and down the tree, there is always the
 potential for merge conflicts, and these would need to be resolved manually.
 Any change to the code should be made in exactly one branch and then allowed
 to propagate to everywhere else along with the other changes.
 
-Rather than associate each leaf branch directly with a developer, it is also
-possible to create an arbitrary number.  Each developer can then pick for
-themselves which leaf they will work in.  This approach would tend to scale
-better.
+Rather than associate each leaf branch directly with a developer, it would
+have been possible to create an arbitrary number.  Each developer could then
+pick for themselves which leaf they would work in.  This approach would have
+scaled better.  As it is, newer developers are working in branches named after
+older, now-idle developers.
 
-At the moment, however, instead of a Grand Scheme, we have only the main
-trunk, and tagged builds. Every developer commits their changes directly into
-the main trunk.
-
-In the current scheme, a single person is the gate-keeper.  Patches flow to
-this person, and changes made to the repository are at risk of being reverted.
-In a more developed branching scheme, control of work is formalized in the
-Issue database, and no changes (no matter how mudane) are made unless there is
-an Issue that cover and approves it (no matter how mudane).  Furthermore,
-instead of a single gate-keeper, each leaf branch can have its own
-gate-keeper, impose its own rules, fulfil its internal QA function in its own
-way.
+We are now using a combination of SVN and GIT with much better support for
+branching.  Control of work is formalized in the Issue database, and no
+changes (no matter how mudane) are made unless there is an Issue that covers
+and approves it (no matter how mudane).  Furthermore, instead of a single
+gate-keeper, each leaf branch can have its own gate-keeper, impose their own
+rules, fulfil their own internal QA function in their own way.
