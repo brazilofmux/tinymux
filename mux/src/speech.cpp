@@ -1477,15 +1477,13 @@ void do_pemit_whisper
         switch (chPoseType)
         {
         case ';':
-            ++message;
             notify(executor, tprintf("%s senses \"%s%s\"",
-                Moniker(executor), Moniker(aPlayers[0]), message));
+                Moniker(executor), Moniker(aPlayers[0]), &message[1]));
             break;
 
         case ':':
-            ++message;
             notify(executor, tprintf("%s senses \"%s %s\"",
-                Moniker(executor), Moniker(aPlayers[0]), message));
+                Moniker(executor), Moniker(aPlayers[0]), &message[1]));
             break;
 
         default:
@@ -1533,12 +1531,12 @@ void do_pemit_whisper
         {
         case ';':
             notify(executor, tprintf("%s sense \"%s%s\"",
-                aFriendly, Moniker(aPlayers[0]), message));
+                aFriendly, Moniker(aPlayers[0]), &message[1]));
             break;
 
         case ':':
             notify(executor, tprintf("%s sense \"%s %s\"",
-                aFriendly, Moniker(aPlayers[0]), message));
+                aFriendly, Moniker(aPlayers[0]), &message[1]));
             break;
 
         default:
