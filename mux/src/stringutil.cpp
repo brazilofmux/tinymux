@@ -2636,29 +2636,6 @@ UTF8 *replace_tokens
     return result;
 }
 
-#if 0
-// Returns the number of identical characters in the two strings.
-//
-int prefix_match(const UTF8 *s1, const UTF8 *s2)
-{
-    int count = 0;
-
-    while (*s1 && *s2
-          && (mux_tolower_ascii(*s1) == mux_tolower_ascii(*s2)))
-    {
-        s1++, s2++, count++;
-    }
-
-    // If the whole string matched, count the null.  (Yes really.)
-    //
-    if (!*s1 && !*s2)
-    {
-        count++;
-    }
-    return count;
-}
-#endif // 0
-
 bool minmatch(const UTF8 *str, const UTF8 *target, int min)
 {
     while (*str && *target

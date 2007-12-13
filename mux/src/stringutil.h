@@ -451,7 +451,6 @@ UTF8 *replace_tokens
     const UTF8 *pSwitch
 );
 #if 0
-int prefix_match(const UTF8 *, const UTF8 *);
 char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
 #endif // 0
 bool minmatch(const UTF8 *str, const UTF8 *target, int min);
