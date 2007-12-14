@@ -1137,12 +1137,47 @@ CF_HAND(cf_flag_access)
         log_text(T("Cannot change access for flag: "));
         log_text(fp->flagname);
         ENDLOG;
+
+        notify(player, 
+                T("Special flags cannot be modified with flag_access."));
+
         return -1;
+    }
+
+    bool negate = false;
+
+    if(*permstr == '!')
+    {
+        negate = true;
+        ++permstr;
     }
 
     if (!strcmp((char *)permstr, "any"))
     {
         fbe->handler = fh_any;
+    }
+    else if (!strcmp((char *)permstr, "dark"))
+    {
+        if(false == negate)
+        {
+            fbe->listperm |= CA_GOD;
+        }
+        else
+        {
+            fbe->listperm &= ~CA_GOD;
+        }
+    }
+    else if (!strcmp((char *)permstr, "hidden"))
+    {
+        if(false == negate)
+        {
+            fbe->listperm |= CA_WIZARD;
+        }
+        else
+        {
+            fbe->listperm &= ~CA_WIZARD;
+
+        }
     }
     else if (!strcmp((char *)permstr, "royalty"))
     {
