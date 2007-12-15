@@ -4283,23 +4283,38 @@ size_t TruncateToBuffer
         //
         int iCode;
         while (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
-              && COLOR_NOTCOLOR != (iCode = mux_color(p))))
+              && COLOR_NOTCOLOR != (iCode = mux_color(p)))
         {
             csCurrent = UpdateColorState(csCurrent, iCode);
             p += utf8_FirstByte[p[0]];
         }
 
-        // Parse a run of text.
+        // Parse a run of text.  A run of text is always ended by '\0' and
+        // sometimes by '\xEF' since all color code points start with '\xEF'.
         //
         size_t nTextRun = 0;
         const UTF8 *pTextRun = p;
-        while (  '\0' != p[0]
-              && (  UTF8_SIZE3 != utf8_FirstByte[p[0]]
-                 || COLOR_NOTCOLOR == mux_color(p)))
+        for (;;)
         {
-            size_t nPoint = utf8_FirstByte[p[0]];
-            nTextRun += nPoint;
-            p += nPoint;
+            const UTF8 *pEF = (UTF8 *)strchr((char *)p, '\xEF');
+            if (NULL == pEF)
+            {
+                size_t n = strlen((char *)pTextRun);
+                nTextRun += n;
+                p += n;
+                break;
+            }
+            else
+            {
+                nTextRun += pEF - p;
+                p = pEF;
+                if (COLOR_NOTCOLOR != mux_color(p))
+                {
+                    break;
+                }
+                nTextRun += UTF8_SIZE3;
+                p += UTF8_SIZE3;
+            }
         }
 
         // We have either reached a color code point or end of the string.
