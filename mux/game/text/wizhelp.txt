@@ -2442,15 +2442,15 @@ FLAG_ACCESS
 
   CONFIG PARAMETER: flag_access <flag name> <access>
 
-  Changes who can set or see a flag. For set capability, <access> can be:
+  Changes who can set or see a flag.  For set capability, <access> can be:
 
   any             - Anyone can set this flag.
   god             - Only God can set this flag.
   privileged      - Only God can set this flag on players, but non-robot
-                    players can set it on objects of other types, if
-                    they themselves have the flag.
-  restrict_player - Only Wizards can set this flag on players, but
-                    mortals can set the flag on objects of other types.
+                    players can set it on objects of other types, if they
+                    themselves have the flag.
+  restrict_player - Only Wizards can set this flag on players, but mortals can
+                    set the flag on objects of other types.
   royalty         - Only Royalty, Wizards, and God can set this flag.
   staff           - Only Staff, Royalty, Wizards, and God can set this flag.
   wizard          - Only Wizards and God can set this flag.
@@ -2460,9 +2460,9 @@ FLAG_ACCESS
   hidden          - Only Wizards and God can see this flag.
   dark            - Only God can see this flag.
 
-  There are some flags whose access/visibility permissions cannot be 
-  changed, since they are handled in a special way. This includes the DARK,
-  and AUDIBLE flags.
+  There are some flags whose access/visibility permissions cannot be changed,
+  since they are handled in a special way.  This includes the DARK, and
+  AUDIBLE flags.
 
 & FLAG_ALIAS
 FLAG_ALIAS

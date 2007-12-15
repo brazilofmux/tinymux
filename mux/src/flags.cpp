@@ -1138,18 +1138,17 @@ CF_HAND(cf_flag_access)
         log_text(fp->flagname);
         ENDLOG;
 
-        notify(player, 
-                T("Special flags cannot be modified with flag_access."));
+        notify(player, T("Special flags cannot be modified with flag_access."));
 
         return -1;
     }
 
     bool negate = false;
 
-    if(*permstr == '!')
+    if ('!' == *permstr)
     {
         negate = true;
-        ++permstr;
+        permstr++;
     }
 
     if (!strcmp((char *)permstr, "any"))
@@ -1158,25 +1157,24 @@ CF_HAND(cf_flag_access)
     }
     else if (!strcmp((char *)permstr, "dark"))
     {
-        if(false == negate)
+        if (negate)
         {
-            fbe->listperm |= CA_GOD;
+            fbe->listperm &= ~CA_GOD;
         }
         else
         {
-            fbe->listperm &= ~CA_GOD;
+            fbe->listperm |= CA_GOD;
         }
     }
     else if (!strcmp((char *)permstr, "hidden"))
     {
-        if(false == negate)
+        if (negate)
         {
-            fbe->listperm |= CA_WIZARD;
+            fbe->listperm &= ~CA_WIZARD;
         }
         else
         {
-            fbe->listperm &= ~CA_WIZARD;
-
+            fbe->listperm |= CA_WIZARD;
         }
     }
     else if (!strcmp((char *)permstr, "royalty"))
