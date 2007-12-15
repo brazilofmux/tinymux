@@ -4218,6 +4218,35 @@ mux_field StripTabsAndTruncate
     return fldOutput;
 }
 
+// TruncateToBuffer()
+//
+// pString is parsed into alternating runs of text and color.  These runs are
+// then encoded into the given buffer with proper truncation.  Every run of
+// text will be of the same color.  The color is collapsed into the minimal
+// expression necessary to change from the color of the last run of text to
+// the color of the next run of text.  The initial color state and last color
+// state are both CS_NORMAL.
+//
+// Parsing runs of text: As long as mux_color() returns COLOR_NOTCOLOR, we are
+// in a run of text.
+//
+// Parsing runs of color: As long as mux_color() returns something besides
+// COLOR_NOTCOLOR, we are in a run of color code points and use
+// UpdateColorState() to merge the color code point into the current color
+// state.
+//
+// It is sometimes not necessary to parse the entire string. Once we truncate
+// a run of text, we know that no runs of text after the truncated one will
+// fit either.
+//
+// The initial state is { CS_NORMAL, "" }.  In turn, new runs of text,
+// { CS(i), TEXT(i) } are encoded.  To encode { CS(i+1), TEXT(i+1) } on the
+// end of { CS(i), TEXT(i) }, we use ColorTransitionBinary(CS(i), CS(i+1), ...)
+// and ColorBinaryNormal(CS(i+1), ...) to determine the two transitions.  If
+// there isn't enough room remaining in the buffer for these transitions,
+// TEXT(i+1), TEXT(i+1) is truncated until there is room.  If TEXT(i+1) is
+// truncated to zero, neither color transition nor any of TEXT(i+1) is used.
+//
 size_t TruncateToBuffer
 (
     const UTF8 *pString,
@@ -4239,63 +4268,95 @@ size_t TruncateToBuffer
         return nOutput;
     }
 
-    mux_cursor curPos = CursorMin;
+    size_t nNormal;
+    const UTF8 *pNormal;
 
-    const UTF8 *pTransition = NULL, *pNormal = NULL;
-    size_t nNormal = 0, nTransition = 0;
-    ColorState csCurrent = CS_NORMAL, csNext = CS_NORMAL;
-    bool bChange = false;
+    ColorState csLast       = CS_NORMAL;
+    ColorState csCurrent    = CS_NORMAL;
 
-    while ('\0' != pString[curPos.m_byte])
+    const UTF8 *p = pString;
+    bool bTruncated = false;
+    while (  '\0' != p[0]
+          && !bTruncated)
     {
-        int iCode = mux_color(pString + curPos.m_byte);
-        size_t nPoint = utf8_FirstByte[pString[curPos.m_byte]];
-        mux_cursor curPoint(nPoint, 1);
-        if (COLOR_NOTCOLOR != iCode)
+        // Parse a run of color code points.
+        //
+        int iCode;
+        while (  '\0' != p[0]
+              && (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
+                 && COLOR_NOTCOLOR != (iCode = mux_color(p))))
         {
-            csNext = UpdateColorState(csNext, iCode);
-            bChange = true;
+            csCurrent = UpdateColorState(csCurrent, iCode);
+            p += utf8_FirstByte[p[0]];
         }
-        else
+
+        // Parse a run of text.
+        //
+        size_t nTextRun = 0;
+        const UTF8 *pTextRun = p;
+        while (  '\0' != p[0]
+              && (  UTF8_SIZE3 != utf8_FirstByte[p[0]]
+                 || COLOR_NOTCOLOR == mux_color(p)))
         {
-            if (bChange)
+            size_t nPoint = utf8_FirstByte[p[0]];
+            nTextRun += nPoint;
+            p += nPoint;
+        }
+
+        // We have either reached a color code point or end of the string.
+        // We have seen { csCurrent, (nTextRun, pTextRun) }.  Before we parse
+        // further, we need to encode this into the destination buffer.
+        // There is a color transition, then a possibly truncated run of text
+        // followed by another color transition to CS_NORMAL.  We won't lay
+        // anything down unless there is room for at least one character of
+        // the text.
+        //
+        if (0 < nTextRun)
+        {
+            // Calculate the two transitions.
+            //
+            size_t nTransition;
+            const UTF8 *pTransition = ColorTransitionBinary(csLast, csCurrent, &nTransition);
+            pNormal = ColorBinaryNormal(csCurrent, &nNormal);
+
+            if (nOutput + nTransition + utf8_FirstByte[pTextRun[0]] + nNormal <= nBuffer)
             {
-                pTransition = ColorTransitionBinary(csCurrent, csNext, &nTransition);
-                pNormal = ColorBinaryNormal(csNext, &nNormal);
-            }
-            else
-            {
-                nTransition = 0;
-            }
-            if (nOutput + nTransition + nPoint + nNormal <= nBuffer)
-            {
+                // Lay down the initial color transition.
+                //
                 if (0 < nTransition)
                 {
                     memcpy(pBuffer + nOutput, pTransition, nTransition);
-                    csCurrent = csNext;
                     nOutput += nTransition;
+                    csLast = csCurrent;
                 }
-                bChange = false;
 
-                for (size_t j = 0; j < nPoint; j++)
+                if (  nBuffer < nOutput + nTextRun + nNormal
+                   && nOutput + nNormal <= nBuffer)
                 {
-                    pBuffer[nOutput + j] = pString[curPos.m_byte + j];
+                    // We need to truncate the text.
+                    //
+                    nTextRun = nBuffer - (nOutput + nNormal);
+                    while (  0 < nTextRun
+                          && UTF8_CONTINUE <= utf8_FirstByte[pTextRun[nTextRun]])
+                    {
+                        nTextRun--;
+                    }
+                    bTruncated = true;
                 }
-                nOutput += nPoint;
-            }
-            else
-            {
-                break;
+
+                // Lay down text.
+                //
+                memcpy(pBuffer + nOutput, pTextRun, nTextRun);
+                nOutput += nTextRun;
+
+                // We have left room for the transition to CS_NORMAL, but it
+                //  isn't laid down.
+                //
             }
         }
-        curPos += curPoint;
     }
 
-    if (bChange)
-    {
-        pNormal = ColorBinaryNormal(csCurrent, &nNormal);
-    }
-
+    pNormal = ColorBinaryNormal(csCurrent, &nNormal);
     if (  0 < nNormal
        && nOutput + nNormal <= nBuffer)
     {
