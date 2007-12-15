@@ -4271,8 +4271,8 @@ size_t TruncateToBuffer
     size_t nNormal;
     const UTF8 *pNormal;
 
-    ColorState csLast       = CS_NORMAL;
-    ColorState csCurrent    = CS_NORMAL;
+    ColorState csLast    = CS_NORMAL;
+    ColorState csCurrent = CS_NORMAL;
 
     const UTF8 *p = pString;
     bool bTruncated = false;
@@ -4282,9 +4282,8 @@ size_t TruncateToBuffer
         // Parse a run of color code points.
         //
         int iCode;
-        while (  '\0' != p[0]
-              && (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
-                 && COLOR_NOTCOLOR != (iCode = mux_color(p))))
+        while (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
+              && COLOR_NOTCOLOR != (iCode = mux_color(p))))
         {
             csCurrent = UpdateColorState(csCurrent, iCode);
             p += utf8_FirstByte[p[0]];
