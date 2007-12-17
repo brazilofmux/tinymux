@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  November 2007
+Last Update:  December 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,6 +103,10 @@ Feature Additions:
  -- Allow @notify/all/quiet (Issue 427).
  -- Add wipe() (Issue 421).
  -- Do not display MOTD/WIZMOTD unless @motd/@wizmotd is set.
+ -- Add support for BINARY telnet option.
+ -- Accept U+201C as the Unicode version of double quote command.
+ -- Update dbpuller to recognize raw ANSI sequences and raw color code
+    points and turn into %x-subsitutions.
 
 
 Bug Fixes:
@@ -210,6 +214,9 @@ Bug Fixes:
  -- grepi() failed to find patterns composed of both upper-case and
     lower-case versions of the same letter (Issue 425).
  -- @notify/quiet behaved like @notify/all (Issue 426).
+ -- Fix @name to handle re-@naming between different UTF-8 cases
+    (Issue 333).
+ -- Fix off-by-one error in whisper (Issue 436).
 
 
 Performance Enhancements:
@@ -231,6 +238,7 @@ Performance Enhancements:
  -- Various things made const and/or consolidated.
  -- Merge fun_wrap and linewrap_general.
  -- Update sortby algorithm to minimize comparisons (Issue 22).
+ -- Improve speed of TruncateToBuffer (Issue 433).
 
 
 Cosmetic Changes:
