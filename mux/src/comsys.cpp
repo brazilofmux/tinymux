@@ -4016,6 +4016,14 @@ FUNCTION(fun_channels)
 
 FUNCTION(fun_chanobj)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_comsys)
     {
         safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
