@@ -3425,6 +3425,20 @@ Related Topics: @name.
 
   Related Topics: config(), player_queue_limit in wizhelp, @wait.
 
+& @QUERY
+@QUERY
+
+  COMMAND: @query[/<method>] [<dbref>/<attribute>]=[<dbname>]/<query>
+
+  Performs an asyncronous query of external (possibly remote) data.  When the
+  query completes, <attribute> on <dbref> is @triggered with the result.
+
+  Methods include:
+
+    sql - Use SQL.
+
+  Related Topics: sql().
+
 & @QUITPROGRAM
 @QUITPROGRAM
 
@@ -5440,10 +5454,10 @@ COMMANDS
   @fsay        @halt        @htdesc      @if          @last        @link
   @list        @listmotd    @lock        @mail        @mvattr      @name
   @nemit       @notify      @npemit      @oemit       @open        @parent
-  @password    @pemit       @power       @program     @ps          @quitprogram
-  @quota       @reference   @remit       @robot       @search      @set
-  @stats       @sweep       @switch      @teleport    @trigger     @unlink
-  @unlock      @verb        @vrml_url    @wait        @wipe
+  @password    @pemit       @power       @program     @ps          @query
+  @quitprogram @quota       @reference   @remit       @robot       @search
+  @set         @stats       @sweep       @switch      @teleport    @trigger
+  @unlink      @unlock      @verb        @vrml_url    @wait        @wipe
 
 { 'help commands2' for more }
 
@@ -12542,7 +12556,7 @@ SQL()
 
   The function is only available if the INLINESQL feature is enabled.
 
-  Related Topics:
+  Related Topics: @query
 
 & SQRT()
 SQRT()
