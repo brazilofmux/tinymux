@@ -1466,6 +1466,8 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
     Shown_RunQueueEntry = 0;
     Total_SemaphoreTimeout = 0;
     Shown_SemaphoreTimeout = 0;
+    Total_SQLTimeout = 0;
+    Shown_SQLTimeout = 0;
     Show_Player_Target = executor_targ;
     Show_Object_Target = obj_targ;
     Show_Key = key;
