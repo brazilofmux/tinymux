@@ -105,6 +105,8 @@ Feature Additions:
  -- Do not display MOTD/WIZMOTD unless @motd/@wizmotd is set.
  -- Add support for BINARY telnet option.
  -- Accept U+201C as the Unicode version of double quote command.
+ -- Add dark and hidden permissions to flag_access parameter to make
+    the flag #1 viewable or wizard-only, respectively.
  -- Update dbpuller to recognize raw ANSI sequences and raw color code
     points and turn into %x-subsitutions.
 
