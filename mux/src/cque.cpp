@@ -952,7 +952,7 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
 void query_complete(UINT32 hQuery, const UTF8 *pResult)
 {
     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-    log_printf("ResultSet is '%s'", pResult);
+    log_printf("ResultSet for %d is '%s'", hQuery, pResult);
     ENDLOG;
 
     QueryComplete_bDone   = false;

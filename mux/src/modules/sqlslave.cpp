@@ -817,10 +817,11 @@ MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
 
     struct FRAME
     {
-        size_t iQueryHandle;
+        UINT32 iQueryHandle;
         size_t nResultSet;
     } CallFrame;
 
+    CallFrame.iQueryHandle = iQueryHandle;
     CallFrame.nResultSet = (strlen((char *)pResultSet)+1)*sizeof(UTF8);
 
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
