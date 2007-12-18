@@ -9,6 +9,8 @@
 #include "../config.h"
 #include "../libmux.h"
 #include "../modules.h"
+#include <mysql.h>
+#define _SQLSLAVE
 #include "sql.h"
 
 static INT32 g_cComponents  = 0;
@@ -98,7 +100,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // QueryServer component which is not directly accessible.
 //
-CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
+CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL), m_database(NULL)
 {
     g_cComponents++;
 }
@@ -578,12 +580,75 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
 
     if (NULL != m_pIQuerySink)
     {
-        return m_pIQuerySink->Result(iQueryHandle, T("Yeah, I'm here."));
+        if (  NULL != m_database
+           && mysql_ping(m_database) == 0
+           && mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) == 0)
+        {
+            char *buffer = NULL;
+            try
+            {
+                buffer = new char[8000];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (NULL == buffer)
+            {
+                m_pIQuerySink->Result(iQueryHandle, T("#-1 OUT OF MEMORY"));
+                return MUX_E_OUTOFMEMORY;
+            }
+
+            MYSQL_RES *result = mysql_store_result(m_database);
+            if (NULL == result)
+            {
+                delete [] buffer;
+                m_pIQuerySink->Result(iQueryHandle, T("#-1 FAIL"));
+                return MUX_E_FAIL;
+            }
+
+            int num_fields = mysql_num_fields(result);
+
+            // BUGBUG: Buffer can overflow.
+            //
+            char *p = buffer;
+            MYSQL_ROW row = mysql_fetch_row(result);
+            while (row)
+            {
+                int loop;
+                for (loop = 0; loop < num_fields; loop++)
+                {
+                    if (loop)
+                    {
+                        *p++ = ' ';
+                    }
+                    size_t n = strlen(row[loop]);
+                    memcpy(p, row[loop], n);
+                    p += n;
+                }
+                row = mysql_fetch_row(result);
+                if (row)
+                {
+                    *p++ = ' ';
+                }
+            }
+            mysql_free_result(result);
+            result = NULL;
+
+            *p = '\0';
+
+            MUX_RESULT mr = m_pIQuerySink->Result(iQueryHandle, (UTF8 *)buffer);
+            delete [] buffer;
+            return mr;
+        }
+        else
+        {
+            m_pIQuerySink->Result(iQueryHandle, T("#-1 NOT READY"));
+            return MUX_E_NOTREADY;
+        }
     }
-    else
-    {
-        return MUX_E_NOTREADY;
-    }
+    return MUX_E_NOTREADY;
 }
 
 // Factory for CQueryServer component which is not directly accessible.

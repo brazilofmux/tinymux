@@ -1216,10 +1216,6 @@ void do_query
             return;
         }
 
-        STARTLOG(LOG_ALWAYS, "CMD", "QUERY");
-        Log.tinyprintf("Thing=#%d, Attr=%s, dbname=%s, query=%s", thing, pattr->name, pDBName, pQuery);
-        ENDLOG;
-
         sql_que(executor, caller, enactor, eval, thing, pattr->number,
             pDBName, pQuery, ncargs, cargs, mudstate.global_regs);
     }
