@@ -38,13 +38,16 @@ struct bque
             dbref   sem;            // blocking semaphore
             int     attr;           // blocking attribute
         } s;
-        UINT32 hQuery;
+        UINT32 hQuery;              // blocking query
     } u;
     int     nargs;                  // How many args I have
     UTF8    *text;                  // buffer for comm, env, and scr text
     UTF8    *comm;                  // command
     UTF8    *env[NUM_ENV_VARS];     // environment vars
     reg_ref *scr[MAX_GLOBAL_REGS];  // temp vars
+#if defined(STUB_SLAVE)
+    reg_ref *ResultsSet;            // Results Set
+#endif // STUB_SLAVE
     bool    IsTimed;                // Is there a waittime time on this entry?
 };
 

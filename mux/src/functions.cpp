@@ -8568,6 +8568,25 @@ static FUNCTION(fun_r)
     }
 }
 
+#if defined(STUB_SLAVE)
+static FUNCTION(fun_rstest)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (mudstate.ResultsSet)
+    {
+        safe_copy_buf(mudstate.ResultsSet->reg_ptr,
+            mudstate.ResultsSet->reg_len, buff, bufc);
+    }
+}
+#endif // STUB_SLAVE
+
 /* ---------------------------------------------------------------------------
  * isdbref: is the argument a valid dbref?
  */
@@ -10429,6 +10448,9 @@ static FUN builtin_function_list[] =
     {T("ROOM"),        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ROUND"),       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("RPAD"),        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+#if defined(STUB_SLAVE)
+    {T("RSTEST"),      fun_rstest,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+#endif
 #ifdef REALITY_LVLS
     {T("RXLEVEL"),     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS

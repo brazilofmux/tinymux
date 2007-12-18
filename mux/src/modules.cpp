@@ -1339,7 +1339,9 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 
 MUX_RESULT CQueryClient::Result(UINT32 hQuery, const UTF8 *pResult)
 {
+#if defined(STUB_SLAVE)
     query_complete(hQuery, pResult);
+#endif // STUB_SLAVE
     return MUX_S_OK;
 }
 

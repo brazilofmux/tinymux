@@ -2722,6 +2722,14 @@ void do_command(DESC *d, UTF8 *command)
             }
         }
 
+#if defined(STUB_SLAVE)
+        if (NULL != mudstate.ResultsSet)
+        {
+            RegRelease(mudstate.ResultsSet);
+            mudstate.ResultsSet = NULL;
+        }
+#endif // STUB_SLAVE
+
         CLinearTimeAbsolute ltaBegin;
         ltaBegin.GetUTC();
         MuxAlarm.Set(mudconf.max_cmdsecs);

@@ -114,6 +114,15 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                 point->scr[i] = NULL;
             }
 
+#if defined(STUB_SLAVE)
+            if (NULL != mudstate.ResultsSet)
+            {
+                RegRelease(mudstate.ResultsSet);
+                mudstate.ResultsSet = NULL;
+            }
+            mudstate.ResultsSet = point->ResultsSet;
+#endif // STUB_SLAVE
+
             UTF8 *command = point->comm;
 
             mux_assert(!mudstate.inpipe);
@@ -236,6 +245,14 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
             mudstate.global_regs[i] = NULL;
         }
     }
+
+#if defined(STUB_SLAVE)
+    if (NULL != mudstate.ResultsSet)
+    {
+        RegRelease(mudstate.ResultsSet);
+        mudstate.ResultsSet = NULL;
+    }
+#endif // STUB_SLAVE
 
     MEMFREE(point->text);
     point->text = NULL;
@@ -823,6 +840,14 @@ static BQUE *setup_que
         }
     }
 
+#if defined(STUB_SLAVE)
+    tmp->ResultsSet = mudstate.ResultsSet;
+    if (NULL != mudstate.ResultsSet)
+    {
+        RegAddRef(mudstate.ResultsSet);
+    }
+#endif // STUB_SLAVE
+
     // Load the rest of the queue block.
     //
     tmp->executor = executor;
@@ -913,6 +938,7 @@ void wait_que
     }
 }
 
+#if defined(STUB_SLAVE)
       bool   QueryComplete_bDone   = false;
       UINT32 QueryComplete_hQuery  = 0;
 const UTF8  *QueryComplete_pResult = NULL;
@@ -937,6 +963,7 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
 
             point->u.s.sem   = NOTHING;
             point->u.s.attr  = 0;
+            RegAssign(&point->ResultsSet, strlen((char *)QueryComplete_pResult), QueryComplete_pResult);
 
             QueryComplete_bDone = true;
             return IU_UPDATE_TASK;
@@ -960,6 +987,7 @@ void query_complete(UINT32 hQuery, const UTF8 *pResult)
     QueryComplete_pResult = pResult;
     scheduler.TraverseUnordered(CallBack_QueryComplete);
 }
+#endif // STUB_SLAVE
 
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
