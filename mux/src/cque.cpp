@@ -1007,8 +1007,6 @@ void sql_que
 
     UINT32 hQuery = next_handle++;
 
-    tmp->IsTimed  = false;
-    tmp->waittime = CLinearTimeAbsolute();
     tmp->u.hQuery = hQuery;
 
     scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
