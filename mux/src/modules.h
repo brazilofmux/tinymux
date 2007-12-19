@@ -500,5 +500,17 @@ private:
 extern void init_modules(void);
 extern void final_modules(void);
 
+class CResultsSet
+{
+public:
+    CResultsSet(QUEUE_INFO *pqi);
+    ~CResultsSet(void);
+    UINT32 Release(void);
+    UINT32 AddRef(void);
+
+private:
+    UINT32 m_cRef;
+};
+
 #endif
 #endif // MODULES_H

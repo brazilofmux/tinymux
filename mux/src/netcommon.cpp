@@ -2723,10 +2723,10 @@ void do_command(DESC *d, UTF8 *command)
         }
 
 #if defined(STUB_SLAVE)
-        if (NULL != mudstate.ResultsSet)
+        if (NULL != mudstate.pResultsSet)
         {
-            RegRelease(mudstate.ResultsSet);
-            mudstate.ResultsSet = NULL;
+            mudstate.pResultsSet->Release();
+            mudstate.pResultsSet = NULL;
         }
 #endif // STUB_SLAVE
 

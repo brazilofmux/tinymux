@@ -8579,10 +8579,9 @@ static FUNCTION(fun_rstest)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (mudstate.ResultsSet)
+    if (mudstate.pResultsSet)
     {
-        safe_copy_buf(mudstate.ResultsSet->reg_ptr,
-            mudstate.ResultsSet->reg_len, buff, bufc);
+        safe_str(T("It's here"), buff, bufc);
     }
 }
 #endif // STUB_SLAVE

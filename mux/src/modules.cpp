@@ -1314,7 +1314,21 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 MUX_RESULT CQueryClient::Result(UINT32 hQuery, UINT32 iError, QUEUE_INFO *pqiResultsSet)
 {
 #if defined(STUB_SLAVE)
-    query_complete(hQuery, T("Something"));
+    CResultsSet *prs = NULL;
+    try
+    {
+        prs = new CResultsSet(pqiResultsSet);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    query_complete(hQuery, iError, prs);
+    prs->Release();
+#else
+    UNUSED_PARAMETER(hQuery);
+    UNUSED_PARAMETER(iError);
+    UNUSED_PARAMETER(pqiResultsSet);
 #endif // STUB_SLAVE
     return MUX_S_OK;
 }
@@ -1398,6 +1412,32 @@ MUX_RESULT CQueryClientFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
+}
+
+CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1)
+{
+    UNUSED_PARAMETER(pqi);
+}
+
+CResultsSet::~CResultsSet(void)
+{
+}
+
+UINT32 CResultsSet::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+UINT32 CResultsSet::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
 }
 
 #endif

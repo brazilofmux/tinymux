@@ -416,7 +416,7 @@ struct statedata
 
 #if defined(STUB_SLAVE)
     mux_ISlaveControl *pISlaveControl;  // Management interface for StubSlave process.
-    reg_ref *ResultsSet;        // Interim ResultsSet.
+    CResultsSet *pResultsSet;           // Interim ResultsSet.
 #endif // STUB_SLAVE
     mux_IQueryControl *pIQueryControl;
 

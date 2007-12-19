@@ -365,7 +365,7 @@ void cf_init(void)
         mudstate.global_regs[i] = NULL;
     }
 #if defined(STUB_SLAVE)
-    mudstate.ResultsSet = NULL;
+    mudstate.pResultsSet = NULL;
 #endif // STUB_SLAVE
     mudstate.nObjEvalNest = 0;
     mudstate.in_loop = 0;

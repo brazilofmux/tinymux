@@ -119,7 +119,7 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
-void query_complete(UINT32 hQuery, const UTF8 *pResult);
+void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
