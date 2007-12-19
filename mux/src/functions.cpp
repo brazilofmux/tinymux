@@ -8607,6 +8607,27 @@ static FUNCTION(fun_rserror)
     }
 }
 
+static FUNCTION(fun_rsrelease)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (mudstate.pResultsSet)
+    {
+        mudstate.pResultsSet->Release();
+        mudstate.pResultsSet = NULL;
+    }
+    else
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+    }
+}
+
 static FUNCTION(fun_rsrows)
 {
     UNUSED_PARAMETER(executor);
@@ -10520,6 +10541,7 @@ static FUN builtin_function_list[] =
     {T("RPAD"),        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #if defined(STUB_SLAVE)
     {T("RSERROR"),     fun_rserror,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("RSRELEASE"),   fun_rsrelease,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSROWS"),      fun_rsrows,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSTEST"),      fun_rstest,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
