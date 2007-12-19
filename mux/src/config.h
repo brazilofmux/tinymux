@@ -496,6 +496,7 @@ typedef UINT32 in_addr_t;
 #endif
 
 typedef UINT8  UTF8;
+typedef UINT8 *PUTF8;
 #ifdef WIN32
 typedef wchar_t UTF16;
 #else

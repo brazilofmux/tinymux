@@ -520,6 +520,7 @@ private:
     bool   m_bLoaded;
     UINT32 m_iError;
     size_t m_nRows;
+    PUTF8 *m_pRows;
 };
 
 #define QS_SUCCESS         (0)

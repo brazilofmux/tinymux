@@ -1418,6 +1418,7 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
      m_nBlob(0), m_bLoaded(false), m_iError(QS_SUCCESS), m_nRows(0)
 {
     m_pBlob = NULL;
+    m_pRows = NULL;
     size_t nWanted = sizeof(m_nFields);
     if (  Pipe_GetBytes(pqi, &nWanted, &m_nFields)
        && nWanted == sizeof(m_nFields))
@@ -1439,7 +1440,8 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                 }
 
                 nWanted = m_nBlob;
-                if (  !Pipe_GetBytes(pqi, &nWanted, m_pBlob)
+                if (  NULL == m_pBlob
+                   || !Pipe_GetBytes(pqi, &nWanted, m_pBlob)
                    || nWanted != m_nBlob)
                 {
                     bError = true;
@@ -1452,7 +1454,35 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                 if (  Pipe_GetBytes(pqi, &nWanted, &m_nRows)
                    && nWanted == m_nBlob)
                 {
-                    m_bLoaded = true;
+                    try
+                    {
+                        m_pRows = new PUTF8[m_nRows];
+                    }
+                    catch (...)
+                    {
+                        ; // Nothing.
+                    }
+
+                    if (NULL != m_pRows)
+                    {
+                        int i, j;
+                        UTF8 *p = m_pBlob;
+                        for (i = 0; i < m_nRows && p < m_pBlob + m_nBlob; i++)
+                        {
+                            m_pRows[i] = p;
+                            for (j = 0; i < m_nFields && p < m_pBlob + m_nBlob; i++)
+                            {
+                                size_t n;
+                                memcpy(&n, p, sizeof(size_t));
+                                p += sizeof(size_t) + n;
+                            }
+                        }
+
+                        if (p == m_pBlob + m_nBlob)
+                        {
+                            m_bLoaded = true;
+                        }
+                    }
                 }
             }
         }
@@ -1485,6 +1515,12 @@ CResultsSet::~CResultsSet(void)
     {
         delete [] m_pBlob;
         m_pBlob = NULL;
+    }
+
+    if (NULL != m_pRows)
+    {
+        delete [] m_pRows;
+        m_pRows = NULL;
     }
 }
 
