@@ -8569,6 +8569,26 @@ static FUNCTION(fun_r)
 }
 
 #if defined(STUB_SLAVE)
+static FUNCTION(fun_rsrows)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (mudstate.pResultsSet)
+    {
+        safe_str(mux_ltoa_t(mudstate.pResultsSet->GetRowCount()), buff, bufc);
+    }
+    else
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+    }
+}
+
 static FUNCTION(fun_rstest)
 {
     UNUSED_PARAMETER(executor);
@@ -10461,6 +10481,7 @@ static FUN builtin_function_list[] =
     {T("ROUND"),       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("RPAD"),        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #if defined(STUB_SLAVE)
+    {T("RSROWS"),      fun_rsrows,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSTEST"),      fun_rstest,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
 #ifdef REALITY_LVLS
