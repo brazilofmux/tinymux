@@ -609,24 +609,28 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
     MYSQL_RES *result = NULL;
     MYSQL_ROW  row;
 
-    int num_fields = 0;
+    int nFields = 0;
     if (iError == QS_SUCCESS)
     {
+        size_t nRows = 0;
         result = mysql_store_result(m_database);
         if (NULL == result)
         {
-            Pipe_AppendBytes(&qiResultsSet, sizeof(num_fields), &num_fields);
+            Pipe_AppendBytes(&qiResultsSet, sizeof(nFields), &nFields);
+            Pipe_AppendBytes(&qiResultsSet, sizeof(nRows), &nRows);
         }
         else
         {
-            num_fields = mysql_num_fields(result);
-            Pipe_AppendBytes(&qiResultsSet, sizeof(num_fields), &num_fields);
+            nFields = mysql_num_fields(result);
+            Pipe_AppendBytes(&qiResultsSet, sizeof(nFields), &nFields);
 
             row = mysql_fetch_row(result);
             while (row)
             {
+                nRows++;
+
                 int loop;
-                for (loop = 0; loop < num_fields; loop++)
+                for (loop = 0; loop < nFields; loop++)
                 {
                     size_t n = strlen(row[loop])+1;
                     Pipe_AppendBytes(&qiResultsSet, sizeof(n), &n);
@@ -635,6 +639,7 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
                 row = mysql_fetch_row(result);
             }
             mysql_free_result(result);
+            Pipe_AppendBytes(&qiResultsSet, sizeof(nRows), &nRows);
         }
     }
 

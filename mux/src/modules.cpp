@@ -1414,7 +1414,8 @@ MUX_RESULT CQueryClientFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
-CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0), m_nBlob(0), m_bLoaded(false), m_iError(QS_SUCCESS)
+CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
+     m_nBlob(0), m_bLoaded(false), m_iError(QS_SUCCESS), m_nRows(0)
 {
     m_pBlob = NULL;
     size_t nWanted = sizeof(m_nFields);
@@ -1422,20 +1423,38 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0), m_nBlob(0),
        && nWanted == sizeof(m_nFields))
     {
         m_nBlob = Pipe_QueueLength(pqi);
-        try
+        if (sizeof(m_nRows) < m_nBlob)
         {
-            m_pBlob = new UTF8[m_nBlob];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+            bool bError = false;
+            m_nBlob -= sizeof(m_nRows);
+            if (0 < m_nBlob)
+            {
+                try
+                {
+                    m_pBlob = new UTF8[m_nBlob];
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
 
-        nWanted = m_nBlob;
-        if (  Pipe_GetBytes(pqi, &nWanted, m_pBlob)
-           && nWanted == m_nBlob)
-        {
-            m_bLoaded = true;
+                nWanted = m_nBlob;
+                if (  !Pipe_GetBytes(pqi, &nWanted, m_pBlob)
+                   || nWanted != m_nBlob)
+                {
+                    bError = true;
+                }
+            }
+
+            if (!bError)
+            {
+                nWanted = sizeof(m_nRows);
+                if (  Pipe_GetBytes(pqi, &nWanted, &m_nRows)
+                   && nWanted == m_nBlob)
+                {
+                    m_bLoaded = true;
+                }
+            }
         }
     }
 }
@@ -1453,6 +1472,11 @@ void CResultsSet::SetError(UINT32 iError)
 UINT32 CResultsSet::GetError(void)
 {
     return m_iError;
+}
+
+size_t CResultsSet::GetRowCount(void)
+{
+    return m_nRows;
 }
 
 CResultsSet::~CResultsSet(void)

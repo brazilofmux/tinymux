@@ -8590,7 +8590,11 @@ static FUNCTION(fun_rstest)
         {
             safe_str(T(", but it isn't loaded."), buff, bufc);
         }
+        safe_str(T(" (Error "), buff, bufc);
         safe_str(mux_ltoa_t(mudstate.pResultsSet->GetError()), buff, bufc);
+        safe_str(T(") (Rows "), buff, bufc);
+        safe_str(mux_ltoa_t(mudstate.pResultsSet->GetRowCount()), buff, bufc);
+        safe_str(T(")"), buff, bufc);
     }
 }
 #endif // STUB_SLAVE

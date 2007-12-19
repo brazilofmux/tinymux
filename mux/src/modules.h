@@ -510,6 +510,7 @@ public:
     bool   isLoaded(void);
     void   SetError(UINT32 iError);
     UINT32 GetError(void);
+    size_t GetRowCount(void);
 
 private:
     UINT32 m_cRef;
@@ -518,6 +519,7 @@ private:
     UTF8  *m_pBlob;
     bool   m_bLoaded;
     UINT32 m_iError;
+    size_t m_nRows;
 };
 
 #define QS_SUCCESS         (0)

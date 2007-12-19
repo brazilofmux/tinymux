@@ -417,7 +417,7 @@ struct statedata
 #if defined(STUB_SLAVE)
     mux_ISlaveControl *pISlaveControl;  // Management interface for StubSlave process.
     CResultsSet *pResultsSet;           // ResultsSet from @query.
-    int iRow;                           // Current Row.
+    size_t iRow;                        // Current Row.
 #endif // STUB_SLAVE
     mux_IQueryControl *pIQueryControl;
 
