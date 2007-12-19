@@ -115,6 +115,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
             }
 
 #if defined(STUB_SLAVE)
+            mudstate.iRow = 0;
             if (NULL != mudstate.pResultsSet)
             {
                 mudstate.pResultsSet->Release();
@@ -248,6 +249,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
     }
 
 #if defined(STUB_SLAVE)
+    mudstate.iRow = 0;
     if (NULL != mudstate.pResultsSet)
     {
         mudstate.pResultsSet->Release();
@@ -842,6 +844,7 @@ static BQUE *setup_que
     }
 
 #if defined(STUB_SLAVE)
+    tmp->iRow = mudstate.iRow;
     tmp->pResultsSet = mudstate.pResultsSet;
     if (NULL != mudstate.pResultsSet)
     {
@@ -966,6 +969,7 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
             point->u.s.attr   = 0;
             QueryComplete_prsResultsSet->AddRef();
             point->pResultsSet = QueryComplete_prsResultsSet;
+            point->iRow = 0;
 
             QueryComplete_bDone = true;
             return IU_UPDATE_TASK;
