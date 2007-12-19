@@ -2399,29 +2399,29 @@ static void init_sql(void)
 
         if (mush_database)
         {
-           if (mysql_real_connect(mush_database,
-                      (char *)mudconf.sql_server, (char *)mudconf.sql_user,
-                      (char *)mudconf.sql_password,
-                      (char *)mudconf.sql_database, 0, NULL, 0))
-           {
-               STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text(T("Connected to MySQL"));
-               ENDLOG;
-           }
-           else
-           {
-               STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text(T("Unable to connect"));
-               ENDLOG;
-               mysql_close(mush_database);
-               mush_database = NULL;
-           }
+            if (mysql_real_connect(mush_database,
+                       (char *)mudconf.sql_server, (char *)mudconf.sql_user,
+                       (char *)mudconf.sql_password,
+                       (char *)mudconf.sql_database, 0, NULL, 0))
+            {
+                STARTLOG(LOG_STARTUP,"SQL","CONN");
+                log_text(T("Connected to MySQL"));
+                ENDLOG;
+            }
+            else
+            {
+                STARTLOG(LOG_STARTUP,"SQL","CONN");
+                log_text(T("Unable to connect"));
+                ENDLOG;
+                mysql_close(mush_database);
+                mush_database = NULL;
+            }
         }
         else
         {
-           STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text(T("MySQL Library unavailable"));
-           ENDLOG;
+            STARTLOG(LOG_STARTUP,"SQL","CONN");
+            log_text(T("MySQL Library unavailable"));
+            ENDLOG;
         }
     }
 }

@@ -546,14 +546,20 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
 
 MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
-    UNUSED_PARAMETER(pServer);
-    UNUSED_PARAMETER(pDatabase);
-    UNUSED_PARAMETER(pUser);
-    UNUSED_PARAMETER(pPassword);
+    if ('\0' != pServer[0])
+    {
+        m_database = mysql_init(NULL);
 
-    // TODO: Use these as necessary to make a connection to MySQL.
-    //
-    return MUX_S_OK;
+        if (NULL != m_database)
+        {
+            if (mysql_real_connect(m_database, (char *)pServer, (char *)pUser,
+                 (char *)pPassword, (char *)pDatabase, 0, NULL, 0) == 0)
+            {
+                mysql_close(m_database);
+                m_database = NULL;
+            }
+        }
+    }
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
