@@ -8647,35 +8647,6 @@ static FUNCTION(fun_rsrows)
         safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
-
-static FUNCTION(fun_rstest)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    if (mudstate.pResultsSet)
-    {
-        safe_str(T("It's here"), buff, bufc);
-        if (mudstate.pResultsSet->isLoaded())
-        {
-            safe_str(T(", and it's loaded."), buff, bufc);
-        }
-        else
-        {
-            safe_str(T(", but it isn't loaded."), buff, bufc);
-        }
-        safe_str(T(" (Error "), buff, bufc);
-        safe_str(mux_ltoa_t(mudstate.pResultsSet->GetError()), buff, bufc);
-        safe_str(T(") (Rows "), buff, bufc);
-        safe_str(mux_ltoa_t(mudstate.pResultsSet->GetRowCount()), buff, bufc);
-        safe_str(T(")"), buff, bufc);
-    }
-}
 #endif // STUB_SLAVE
 
 /* ---------------------------------------------------------------------------
@@ -10543,7 +10514,6 @@ static FUN builtin_function_list[] =
     {T("RSERROR"),     fun_rserror,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSRELEASE"),   fun_rsrelease,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSROWS"),      fun_rsrows,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {T("RSTEST"),      fun_rstest,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
 #ifdef REALITY_LVLS
     {T("RXLEVEL"),     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
