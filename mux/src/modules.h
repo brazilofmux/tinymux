@@ -507,10 +507,23 @@ public:
     ~CResultsSet(void);
     UINT32 Release(void);
     UINT32 AddRef(void);
+    bool   isLoaded(void);
+    void   SetError(UINT32 iError);
+    UINT32 GetError(void);
 
 private:
     UINT32 m_cRef;
+    UINT32 m_nFields;
+    size_t m_nBlob;
+    UTF8  *m_pBlob;
+    bool   m_bLoaded;
+    UINT32 m_iError;
 };
+
+#define QS_SUCCESS         (0)
+#define QS_NO_SESSION      (1)
+#define QS_SQL_UNAVAILABLE (2)
+#define QS_QUERY_ERROR     (3)
 
 #endif
 #endif // MODULES_H

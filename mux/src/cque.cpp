@@ -980,6 +980,11 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
 //
 void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prsResultsSet)
 {
+    if (NULL != prsResultsSet)
+    {
+        prsResultsSet->SetError(iError);
+    }
+
     QueryComplete_bDone   = false;
     QueryComplete_hQuery  = hQuery;
     QueryComplete_prsResultsSet = prsResultsSet;

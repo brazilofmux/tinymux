@@ -573,11 +573,6 @@ MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
     return MUX_S_OK;
 }
 
-#define QS_SUCCESS         (0)
-#define QS_NO_SESSION      (1)
-#define QS_SQL_UNAVAILABLE (2)
-#define QS_QUERY_ERROR     (3)
-
 MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
     UNUSED_PARAMETER(pDatabaseName);

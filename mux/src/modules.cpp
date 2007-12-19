@@ -1414,13 +1414,54 @@ MUX_RESULT CQueryClientFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
-CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1)
+CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0), m_nBlob(0), m_bLoaded(false), m_iError(QS_SUCCESS)
 {
-    UNUSED_PARAMETER(pqi);
+    m_pBlob = NULL;
+    size_t nWanted = sizeof(m_nFields);
+    if (  Pipe_GetBytes(pqi, &nWanted, &m_nFields)
+       && nWanted == sizeof(m_nFields))
+    {
+        m_nBlob = Pipe_QueueLength(pqi);
+        try
+        {
+            m_pBlob = new UTF8[m_nBlob];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        nWanted = m_nBlob;
+        if (  Pipe_GetBytes(pqi, &nWanted, m_pBlob)
+           && nWanted == m_nBlob)
+        {
+            m_bLoaded = true;
+        }
+    }
+}
+
+bool CResultsSet::isLoaded(void)
+{
+    return m_bLoaded;
+}
+
+void CResultsSet::SetError(UINT32 iError)
+{
+    m_iError = iError;
+}
+
+UINT32 CResultsSet::GetError(void)
+{
+    return m_iError;
 }
 
 CResultsSet::~CResultsSet(void)
 {
+    if (NULL != m_pBlob)
+    {
+        delete [] m_pBlob;
+        m_pBlob = NULL;
+    }
 }
 
 UINT32 CResultsSet::Release(void)

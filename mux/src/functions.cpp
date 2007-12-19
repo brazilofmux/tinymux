@@ -8582,6 +8582,15 @@ static FUNCTION(fun_rstest)
     if (mudstate.pResultsSet)
     {
         safe_str(T("It's here"), buff, bufc);
+        if (mudstate.pResultsSet->isLoaded())
+        {
+            safe_str(T(", and it's loaded."), buff, bufc);
+        }
+        else
+        {
+            safe_str(T(", but it isn't loaded."), buff, bufc);
+        }
+        safe_str(mux_ltoa_t(mudstate.pResultsSet->GetError()), buff, bufc);
     }
 }
 #endif // STUB_SLAVE
