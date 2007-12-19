@@ -652,6 +652,8 @@ LIBS
 build_alias
 host_alias
 target_alias
+SQL_INCLUDE
+SQL_LIBPATH
 CXX
 CXXFLAGS
 LDFLAGS
@@ -677,6 +679,7 @@ EGREP
 MODULE_EXT
 MODULE_CPPFLAGS
 MUX_LIBS
+SQL_LIBS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1264,6 +1267,13 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-mysql-include=PATH
+                          set the include path for SQL header files
+  --with-mysql-libs=PATH  set the library path for SQL library files
+
 Some influential environment variables:
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
@@ -1710,6 +1720,46 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_config_headers="$ac_config_headers autoconf.h"
+
+
+{ echo "$as_me:$LINENO: checking for location of SQL header files" >&5
+echo $ECHO_N "checking for location of SQL header files... $ECHO_C" >&6; }
+
+# Check whether --with-mysql-include was given.
+if test "${with_mysql_include+set}" = set; then
+  withval=$with_mysql_include;
+      SQL_INCLUDE="-I$withval"
+      { echo "$as_me:$LINENO: result: $withval" >&5
+echo "${ECHO_T}$withval" >&6; }
+
+else
+
+      SQL_INCLUDE="-I/usr/include/mysql"
+      { echo "$as_me:$LINENO: result: /usr/include/mysql" >&5
+echo "${ECHO_T}/usr/include/mysql" >&6; }
+
+fi
+
+
+
+{ echo "$as_me:$LINENO: checking for location of SQL library files" >&5
+echo $ECHO_N "checking for location of SQL library files... $ECHO_C" >&6; }
+
+# Check whether --with-mysql-libs was given.
+if test "${with_mysql_libs+set}" = set; then
+  withval=$with_mysql_libs;
+      SQL_LIBPATH="-L$withval"
+      { echo "$as_me:$LINENO: result: $withval" >&5
+echo "${ECHO_T}$withval" >&6; }
+
+else
+
+      SQL_LIBPATH="-L/usr/lib/mysql"
+      { echo "$as_me:$LINENO: result: /usr/lib/mysql" >&5
+echo "${ECHO_T}/usr/lib/mysql" >&6; }
+
+fi
+
 
 
 # Checks for programs.
@@ -4375,6 +4425,7 @@ _ACEOF
               ;;
     esac
     MUX_LIBS="-lmux"
+    SQL_LIBS="-lmysqlclient -lz"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -4385,6 +4436,7 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
 
 
 
@@ -5522,6 +5574,8 @@ LIBS!$LIBS$ac_delim
 build_alias!$build_alias$ac_delim
 host_alias!$host_alias$ac_delim
 target_alias!$target_alias$ac_delim
+SQL_INCLUDE!$SQL_INCLUDE$ac_delim
+SQL_LIBPATH!$SQL_LIBPATH$ac_delim
 CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 LDFLAGS!$LDFLAGS$ac_delim
@@ -5547,11 +5601,12 @@ EGREP!$EGREP$ac_delim
 MODULE_EXT!$MODULE_EXT$ac_delim
 MODULE_CPPFLAGS!$MODULE_CPPFLAGS$ac_delim
 MUX_LIBS!$MUX_LIBS$ac_delim
+SQL_LIBS!$SQL_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 64; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 67; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

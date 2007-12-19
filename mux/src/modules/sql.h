@@ -83,7 +83,7 @@ public:
 
     // mux_IQuerySink
     //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet);
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
 
     CQuerySinkProxy(void);
     MUX_RESULT FinalConstruct(void);

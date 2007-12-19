@@ -1166,7 +1166,7 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             struct FRAME
             {
                 UINT32 iQueryHandle;
-                size_t nResultSet;
+                UINT32 iError;
             } CallFrame;
 
             struct RETURN
@@ -1182,33 +1182,7 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             }
             else
             {
-                UTF8 *pResultSet = NULL;
-                try
-                {
-                    pResultSet = new UTF8[CallFrame.nResultSet];
-                }
-                catch (...)
-                {
-                    ; // Nothing.
-                }
-
-                if (NULL == pResultSet)
-                {
-                    ReturnFrame.mr = MUX_E_OUTOFMEMORY;
-                }
-                else
-                {
-                    nWanted = CallFrame.nResultSet;
-                    if (  Pipe_GetBytes(pqi, &nWanted, pResultSet)
-                       && nWanted == CallFrame.nResultSet)
-                    {
-                        ReturnFrame.mr = pIQuerySink->Result(CallFrame.iQueryHandle, pResultSet);
-                    }
-                    else
-                    {
-                        ReturnFrame.mr = MUX_E_INVALIDARG;
-                    }
-                }
+                ReturnFrame.mr = pIQuerySink->Result(CallFrame.iQueryHandle, CallFrame.iError, pqi);
             }
 
             Pipe_EmptyQueue(pqi);
@@ -1337,10 +1311,10 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
     return MUX_S_OK;
 }
 
-MUX_RESULT CQueryClient::Result(UINT32 hQuery, const UTF8 *pResult)
+MUX_RESULT CQueryClient::Result(UINT32 hQuery, UINT32 iError, QUEUE_INFO *pqiResultsSet)
 {
 #if defined(STUB_SLAVE)
-    query_complete(hQuery, pResult);
+    query_complete(hQuery, T("Something"));
 #endif // STUB_SLAVE
     return MUX_S_OK;
 }

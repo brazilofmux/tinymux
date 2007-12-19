@@ -17,7 +17,7 @@ sqlproxy.so: sqlproxy.cpp sql.h ../autoconf.h ../config.h ../libmux.h ../modules
 
 sqlslave.so: sqlslave.cpp sql.h ../autoconf.h ../config.h ../libmux.h ../modules.h
 	( if [ -f sqlslave.so ]; then mv -f sqlslave.so sqlslave.so~ ; fi )
-	g++ @MODULE_CPPFLAGS@ -o sqlslave.so sqlslave.cpp -L.. @MUX_LIBS@
+	g++ @MODULE_CPPFLAGS@ @SQL_INCLUDE@ -o sqlslave.so sqlslave.cpp -L.. @SQL_LIBPATH@ @MUX_LIBS@ @SQL_LIBS@
 	( if [ -f sqlslave.so ]; then cd ../../game/bin ; rm -f sqlslave.so ; ln -s ../../src/modules/sqlslave.so sqlslave.so ; fi )
 
 clean:

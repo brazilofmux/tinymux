@@ -573,82 +573,73 @@ MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
     return MUX_S_OK;
 }
 
+#define QS_SUCCESS         (0)
+#define QS_NO_SESSION      (1)
+#define QS_SQL_UNAVAILABLE (2)
+#define QS_QUERY_ERROR     (3)
+
 MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
-    UNUSED_PARAMETER(pQuery);
     UNUSED_PARAMETER(pDatabaseName);
 
-    if (NULL != m_pIQuerySink)
+    if (NULL == m_pIQuerySink)
     {
-        if (  NULL != m_database
-           && mysql_ping(m_database) == 0
-           && mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) == 0)
+        return MUX_E_NOTREADY;
+    }
+
+    UINT32 iError = QS_SUCCESS;
+
+    QUEUE_INFO qiResultsSet;
+    Pipe_InitializeQueueInfo(&qiResultsSet);
+
+    if (NULL == m_database)
+    {
+        iError = QS_NO_SESSION;
+    }
+    else if (mysql_ping(m_database) != 0)
+    {
+        iError = QS_SQL_UNAVAILABLE;
+    }
+    else if (mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) != 0)
+    {
+        iError = QS_QUERY_ERROR;
+    }
+
+    MYSQL_RES *result = NULL;
+    MYSQL_ROW  row;
+
+    int num_fields = 0;
+    if (iError == QS_SUCCESS)
+    {
+        result = mysql_store_result(m_database);
+        if (NULL == result)
         {
-            char *buffer = NULL;
-            try
-            {
-                buffer = new char[8000];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
+            Pipe_AppendBytes(&qiResultsSet, sizeof(num_fields), &num_fields);
+        }
+        else
+        {
+            num_fields = mysql_num_fields(result);
+            Pipe_AppendBytes(&qiResultsSet, sizeof(num_fields), &num_fields);
 
-            if (NULL == buffer)
-            {
-                m_pIQuerySink->Result(iQueryHandle, T("#-1 OUT OF MEMORY"));
-                return MUX_E_OUTOFMEMORY;
-            }
-
-            MYSQL_RES *result = mysql_store_result(m_database);
-            if (NULL == result)
-            {
-                delete [] buffer;
-                m_pIQuerySink->Result(iQueryHandle, T("#-1 FAIL"));
-                return MUX_E_FAIL;
-            }
-
-            int num_fields = mysql_num_fields(result);
-
-            // BUGBUG: Buffer can overflow.
-            //
-            char *p = buffer;
-            MYSQL_ROW row = mysql_fetch_row(result);
+            row = mysql_fetch_row(result);
             while (row)
             {
                 int loop;
                 for (loop = 0; loop < num_fields; loop++)
                 {
-                    if (loop)
-                    {
-                        *p++ = ' ';
-                    }
-                    size_t n = strlen(row[loop]);
-                    memcpy(p, row[loop], n);
-                    p += n;
+                    size_t n = strlen(row[loop])+1;
+                    Pipe_AppendBytes(&qiResultsSet, sizeof(n), &n);
+                    Pipe_AppendBytes(&qiResultsSet, n, &row[loop]);
                 }
                 row = mysql_fetch_row(result);
-                if (row)
-                {
-                    *p++ = ' ';
-                }
             }
             mysql_free_result(result);
-            result = NULL;
-
-            *p = '\0';
-
-            MUX_RESULT mr = m_pIQuerySink->Result(iQueryHandle, (UTF8 *)buffer);
-            delete [] buffer;
-            return mr;
-        }
-        else
-        {
-            m_pIQuerySink->Result(iQueryHandle, T("#-1 NOT READY"));
-            return MUX_E_NOTREADY;
         }
     }
-    return MUX_E_NOTREADY;
+
+    MUX_RESULT mr = m_pIQuerySink->Result(iQueryHandle, iError, &qiResultsSet);
+    Pipe_EmptyQueue(&qiResultsSet);
+    return mr;
 }
 
 // Factory for CQueryServer component which is not directly accessible.
@@ -866,7 +857,7 @@ MUX_RESULT CQuerySinkProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
+MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet)
 {
     UNUSED_PARAMETER(iQueryHandle);
 
@@ -883,14 +874,14 @@ MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
     struct FRAME
     {
         UINT32 iQueryHandle;
-        size_t nResultSet;
+        UINT32 iError;
     } CallFrame;
 
     CallFrame.iQueryHandle = iQueryHandle;
-    CallFrame.nResultSet = (strlen((char *)pResultSet)+1)*sizeof(UTF8);
+    CallFrame.iError = iError;
 
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
-    Pipe_AppendBytes(&qiFrame, CallFrame.nResultSet, pResultSet);
+    Pipe_AppendQueue(&qiFrame, pqiResultsSet);
 
     mr = Pipe_SendMsgPacket(m_nChannel, &qiFrame);
 
