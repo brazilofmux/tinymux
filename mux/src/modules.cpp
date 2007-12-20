@@ -1423,11 +1423,12 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
     if (  Pipe_GetBytes(pqi, &nWanted, &m_nFields)
        && nWanted == sizeof(m_nFields))
     {
+        size_t nRows;
         m_nBlob = Pipe_QueueLength(pqi);
-        if (sizeof(m_nRows) < m_nBlob)
+        if (sizeof(nRows) < m_nBlob)
         {
             bool bError = false;
-            m_nBlob -= sizeof(m_nRows);
+            m_nBlob -= sizeof(nRows);
             if (0 < m_nBlob)
             {
                 try
@@ -1450,10 +1451,11 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
 
             if (!bError)
             {
-                nWanted = sizeof(m_nRows);
-                if (  Pipe_GetBytes(pqi, &nWanted, &m_nRows)
-                   && nWanted == m_nBlob)
+                nWanted = sizeof(nRows);
+                if (  Pipe_GetBytes(pqi, &nWanted, &nRows)
+                   && nWanted == sizeof(nRows))
                 {
+                    m_nRows = static_cast<int>(nRows);
                     try
                     {
                         m_pRows = new PUTF8[m_nRows];
@@ -1470,7 +1472,7 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                         for (i = 0; i < m_nRows && p < m_pBlob + m_nBlob; i++)
                         {
                             m_pRows[i] = p;
-                            for (j = 0; i < m_nFields && p < m_pBlob + m_nBlob; i++)
+                            for (j = 0; j < m_nFields && p < m_pBlob + m_nBlob; j++)
                             {
                                 size_t n;
                                 memcpy(&n, p, sizeof(size_t));
@@ -1504,9 +1506,44 @@ UINT32 CResultsSet::GetError(void)
     return m_iError;
 }
 
-size_t CResultsSet::GetRowCount(void)
+int CResultsSet::GetRowCount(void)
 {
     return m_nRows;
+}
+
+const UTF8 *CResultsSet::FirstField(int iRow)
+{
+    if (  0 <= iRow
+       && iRow < m_nRows
+       && NULL != m_pRows
+       && 0 < m_nFields)
+    {
+        m_pCurrentField = m_pRows[iRow];
+        m_iCurrentField = 1;
+    }
+    else
+    {
+        m_pCurrentField = NULL;
+        m_iCurrentField = 1;
+    }
+    return m_pCurrentField;
+}
+
+const UTF8 *CResultsSet::NextField(void)
+{
+    const UTF8 *pField = NULL;
+    if (  NULL != m_pCurrentField
+       && 0 < m_nFields
+       && m_iCurrentField < m_nFields)
+    {
+        size_t n;
+
+        m_iCurrentField++;
+        memcpy(&n, m_pCurrentField, sizeof(size_t));
+        m_pCurrentField += sizeof(size_t) + n;
+        pField = m_pCurrentField;
+    }
+    return pField;
 }
 
 CResultsSet::~CResultsSet(void)

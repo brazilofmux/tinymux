@@ -6763,6 +6763,8 @@ FUNCTION(fun_distribute)
  * TinyMUSH 3.1's sql() call. */
 FUNCTION(fun_sql)
 {
+    UNUSED_PARAMETER(nfargs);
+
     if (!mush_database)
     {
         safe_str(T("#-1 NO DATABASE"), buff, bufc);
@@ -6836,10 +6838,10 @@ FUNCTION(fun_sql)
         {
             print_sep(&sepRow, buff, bufc);
         }
-     }
+    }
 
-     free_lbuf(curr);
-     mysql_free_result(result);
+    free_lbuf(curr);
+    mysql_free_result(result);
 }
 
 #endif // INLINESQL
@@ -8647,6 +8649,226 @@ static FUNCTION(fun_rsrows)
         safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
+
+static FUNCTION(fun_rsnext)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (mudstate.pResultsSet)
+    {
+        int nRows;
+        int i = mudstate.iRow + 1;
+        if (  i < 0
+           || (nRows = mudstate.pResultsSet->GetRowCount()) <= i)
+        {
+            safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        }
+        else
+        {
+            mudstate.iRow = i;
+            safe_str(mux_ltoa_t(i), buff, bufc);
+        }
+    }
+    else
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+    }
+}
+
+static FUNCTION(fun_rsprev)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (mudstate.pResultsSet)
+    {
+        int nRows;
+        int i = mudstate.iRow - 1;
+        if (  i < 0
+           || (nRows = mudstate.pResultsSet->GetRowCount()) <= i)
+        {
+            safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        }
+        else
+        {
+            mudstate.iRow = i;
+            safe_str(mux_ltoa_t(i), buff, bufc);
+        }
+    }
+    else
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+    }
+}
+
+FUNCTION(fun_rsrec)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (NULL == mudstate.pResultsSet)
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        return;
+    }
+
+    int nRows;
+    if (  mudstate.iRow < 0
+       || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
+    {
+        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+    }
+
+    SEP sepColumn;
+    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
+
+    bool bFirst = true;
+    const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
+    while (NULL != pField)
+    {
+        if (!bFirst)
+        {
+            print_sep(&sepColumn, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+        const UTF8 *pStr = pField + sizeof(size_t);
+        safe_str(pStr, buff, bufc);
+        pField = mudstate.pResultsSet->NextField();
+    }
+}
+
+FUNCTION(fun_rsrecnext)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!mudstate.pResultsSet)
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        return;
+    }
+
+    SEP sepColumn;
+    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
+
+    int nRows;
+    if (  mudstate.iRow < 0
+       || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
+    {
+        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        return;
+    }
+
+    bool bFirst = true;
+    const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
+    while (NULL != pField)
+    {
+        if (!bFirst)
+        {
+            print_sep(&sepColumn, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+        const UTF8 *pStr = pField + sizeof(size_t);
+        safe_str(pStr, buff, bufc);
+        pField = mudstate.pResultsSet->NextField();
+    }
+
+    int i = mudstate.iRow + 1;
+    if (  -1 <= i
+       && i <= nRows)
+    {
+        mudstate.iRow = i;
+    }
+}
+
+FUNCTION(fun_rsrecprev)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!mudstate.pResultsSet)
+    {
+        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        return;
+    }
+
+    SEP sepColumn;
+    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
+
+    int nRows;
+    if (  mudstate.iRow < 0
+       || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
+    {
+        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        return;
+    }
+
+    bool bFirst = true;
+    const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
+    while (NULL != pField)
+    {
+        if (!bFirst)
+        {
+            print_sep(&sepColumn, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+        const UTF8 *pStr = pField + sizeof(size_t);
+        safe_str(pStr, buff, bufc);
+        pField = mudstate.pResultsSet->NextField();
+    }
+
+    int i = mudstate.iRow + 1;
+    if (  -1 <= i
+       && i <= nRows)
+    {
+        mudstate.iRow = i;
+    }
+}
+
 #endif // STUB_SLAVE
 
 /* ---------------------------------------------------------------------------
@@ -10512,8 +10734,13 @@ static FUN builtin_function_list[] =
     {T("RPAD"),        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #if defined(STUB_SLAVE)
     {T("RSERROR"),     fun_rserror,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("RSNEXT"),      fun_rsnext,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("RSRECNEXT"),   fun_rsrecnext,  MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {T("RSPREV"),      fun_rsprev,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("RSRECPREV"),   fun_rsrecprev,  MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("RSRELEASE"),   fun_rsrelease,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RSROWS"),      fun_rsrows,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("RSREC"),       fun_rsrec,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
 #endif
 #ifdef REALITY_LVLS
     {T("RXLEVEL"),     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},

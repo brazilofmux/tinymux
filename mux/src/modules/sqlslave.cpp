@@ -634,7 +634,7 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
                 {
                     size_t n = strlen(row[loop])+1;
                     Pipe_AppendBytes(&qiResultsSet, sizeof(n), &n);
-                    Pipe_AppendBytes(&qiResultsSet, n, &row[loop]);
+                    Pipe_AppendBytes(&qiResultsSet, n, row[loop]);
                 }
                 row = mysql_fetch_row(result);
             }

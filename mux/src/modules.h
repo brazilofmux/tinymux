@@ -510,7 +510,9 @@ public:
     bool   isLoaded(void);
     void   SetError(UINT32 iError);
     UINT32 GetError(void);
-    size_t GetRowCount(void);
+    int    GetRowCount(void);
+    const UTF8 *FirstField(int iRow);
+    const UTF8 *NextField(void);
 
 private:
     UINT32 m_cRef;
@@ -519,14 +521,19 @@ private:
     UTF8  *m_pBlob;
     bool   m_bLoaded;
     UINT32 m_iError;
-    size_t m_nRows;
+    int    m_nRows;
     PUTF8 *m_pRows;
+
+    const UTF8 *m_pCurrentField;
+    int         m_iCurrentField;
 };
 
 #define QS_SUCCESS         (0)
 #define QS_NO_SESSION      (1)
 #define QS_SQL_UNAVAILABLE (2)
 #define QS_QUERY_ERROR     (3)
+
+#define RS_TOP             (0)
 
 #endif
 #endif // MODULES_H

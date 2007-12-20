@@ -2723,7 +2723,7 @@ void do_command(DESC *d, UTF8 *command)
         }
 
 #if defined(STUB_SLAVE)
-        mudstate.iRow = 0;
+        mudstate.iRow = RS_TOP;
         if (NULL != mudstate.pResultsSet)
         {
             mudstate.pResultsSet->Release();
