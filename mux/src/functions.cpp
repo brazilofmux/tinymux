@@ -8736,7 +8736,7 @@ FUNCTION(fun_rsrec)
     }
 
     SEP sepColumn;
-    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(1, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -8776,7 +8776,7 @@ FUNCTION(fun_rsrecnext)
     }
 
     SEP sepColumn;
-    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(1, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -8831,7 +8831,7 @@ FUNCTION(fun_rsrecprev)
     }
 
     SEP sepColumn;
-    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(1, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
