@@ -287,8 +287,8 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 
 int main(int argc, char *argv[])
 {
-    char *pPrefix;
-    char *pFilename;
+    const char *pPrefix;
+    const char *pFilename;
     if (argc < 3)
     {
 #if 0

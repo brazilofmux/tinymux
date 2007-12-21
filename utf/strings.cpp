@@ -627,8 +627,8 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 
 int main(int argc, char *argv[])
 {
-    char *pPrefix = NULL;
-    char *pFilename = NULL;
+    const char *pPrefix = NULL;
+    const char *pFilename = NULL;
 
     if (argc < 3)
     {
