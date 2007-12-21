@@ -9,9 +9,45 @@
 #include "../config.h"
 #include "../libmux.h"
 #include "../modules.h"
+#if defined(HAVE_MYSQL_H)
 #include <mysql.h>
-#define _SQLSLAVE
+#endif // HAVE_MYSQL_H
 #include "sql.h"
+
+class CQueryServer : public mux_IQueryControl, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_IQueryControl
+    //
+    virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
+    virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
+    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
+
+    CQueryServer(void);
+    MUX_RESULT FinalConstruct(void);
+    virtual ~CQueryServer();
+
+private:
+    UINT32          m_cRef;
+    mux_IQuerySink *m_pIQuerySink;
+#if defined(HAVE_MYSQL)
+    MYSQL          *m_database;
+#endif // HAVE_MYSQL
+};
 
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
@@ -100,8 +136,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // QueryServer component which is not directly accessible.
 //
-CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL), m_database(NULL)
+CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
 {
+#if defined(HAVE_MYSQL)
+    m_database = NULL;
+#endif // HAVE_MYSQL
     g_cComponents++;
 }
 
@@ -546,6 +585,7 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
 
 MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
+#if defined(HAVE_MYSQL)
     if ('\0' != pServer[0])
     {
         m_database = mysql_init(NULL);
@@ -560,6 +600,12 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
             }
         }
     }
+#else // HAVE_MYSQL
+    UNUSED_PARAMETER(pServer);
+    UNUSED_PARAMETER(pDatabase);
+    UNUSED_PARAMETER(pUser);
+    UNUSED_PARAMETER(pPassword);
+#endif // HAVE_MYSQL
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
@@ -593,6 +639,7 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
     QUEUE_INFO qiResultsSet;
     Pipe_InitializeQueueInfo(&qiResultsSet);
 
+#if defined(HAVE_MYSQL)
     if (NULL == m_database)
     {
         iError = QS_NO_SESSION;
@@ -642,6 +689,9 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
             Pipe_AppendBytes(&qiResultsSet, sizeof(nRows), &nRows);
         }
     }
+#else // HAVE_MYSQL
+    iError = QS_NO_SESSION;
+#endif // HAVE_MYSQL
 
     MUX_RESULT mr = m_pIQuerySink->Result(iQueryHandle, iError, &qiResultsSet);
     Pipe_EmptyQueue(&qiResultsSet);
