@@ -26,6 +26,7 @@ do
     cp $ChangesDir/$i $NewDir\_src/$i
 done
 cp $ChangesDir/src/autoconf-win32.h $NewDir\_src/src/autoconf.h
+cp $ChangesDir/src/modules/autoconf-win32.h $NewDir\_src/src/modules/autoconf.h
 for i in $removeFiles;
 do
     if [ -e $NewDir\_src/$i ]; then
