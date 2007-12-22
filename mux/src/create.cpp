@@ -793,9 +793,11 @@ void do_clone
             cost = OBJECT_DEPOSIT((mudconf.clone_copy_cost) ?
                           Pennies(thing) : 1);
             break;
+
         case TYPE_ROOM:
             cost = mudconf.digcost;
             break;
+
         case TYPE_EXIT:
 
             if (!Controls(executor, loc))
@@ -812,7 +814,21 @@ void do_clone
     //
     bool bValid;
     size_t nValidName;
-    UTF8 *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
+    UTF8 *pValidName = NULL;
+    switch (Typeof(thing))
+    {
+    case TYPE_THING:
+        pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid, mudconf.thing_name_charset);
+        break;
+
+    case TYPE_ROOM:
+        pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid, mudconf.room_name_charset);
+        break;
+
+    case TYPE_EXIT:
+        pValidName = MakeCanonicalExitName(arg2, &nValidName, &bValid);
+        break;
+    }
     const UTF8 *clone_name;
     if (bValid)
     {

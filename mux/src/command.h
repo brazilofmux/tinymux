@@ -238,6 +238,7 @@ extern NAMETAB lock_sw[];
 extern NAMETAB logoptions_nametab[];
 extern NAMETAB logdata_nametab[];
 extern NAMETAB list_names[];
+extern NAMETAB charset_nametab[];
 
 /* Command handler call conventions */
 
@@ -314,4 +315,5 @@ extern NAMETAB list_names[];
 #define SW_NOEVAL     0x20000000  /* Don't parse args before calling */
                                   /* handler (typically via a switch */
                                   /* alias) */
+
 #endif // !__COMMAND_H

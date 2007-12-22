@@ -305,11 +305,39 @@ void giveto(dbref who, int pennies)
     s_Pennies(who, Pennies(who) + pennies);
 }
 
+// Every character in the name must be allowed by one of the character sets mentioned.
+// If no character sets are mentions, everything is allowed.
+//
+bool IsRestricted(size_t nName, const UTF8 *pName, int charset)
+{
+    if (0 == charset)
+    {
+        return false;
+    }
+
+    while ('\0' != pName[0])
+    {
+        bool bAllowed = false;
+        if (  (ALLOW_CHARSET_ASCII & charset)
+           && (0x80 & pName[0]) == 0)
+        {
+            bAllowed = true;
+        }
+
+        if (!bAllowed)
+        {
+            return true;
+        }
+        pName = utf8_NextCodePoint(pName);
+    }
+    return false;
+}
+
 // The following function validates that the object names (which will be
 // used for things and rooms, but not for players or exits) and generates
 // a canonical form of that name (with optimized ANSI).
 //
-UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, int charset)
 {
     static UTF8 Buf[MBUF_SIZE];
 
@@ -367,6 +395,11 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     if (  (nStripped == 2 && memcmp("me", pStripped, 2) == 0)
        || (nStripped == 4 && (  memcmp("home", pStripped, 4) == 0
                              || memcmp("here", pStripped, 4) == 0)))
+    {
+        return NULL;
+    }
+
+    if (IsRestricted(fldLen.m_byte, Buf, charset))
     {
         return NULL;
     }
@@ -431,7 +464,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         //
         if ('\0' != pTrimmedSegment[0])
         {
-            UTF8 *pValidSegment = MakeCanonicalObjectName(pTrimmedSegment, &len, &valid);
+            UTF8 *pValidSegment = MakeCanonicalObjectName(pTrimmedSegment, &len, &valid, mudconf.exit_name_charset);
             if (!valid)
             {
                 *pnName = 0;
@@ -462,6 +495,12 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 
     clean_names.export_TextColor(Buf);
     *pnName = mux_strlen(Buf);
+
+    if (IsRestricted(*pnName, Buf, mudconf.exit_name_charset))
+    {
+        *pnName = 0;
+        return Buf;
+    }
 
     return Buf;
 }
@@ -531,6 +570,11 @@ bool ValidatePlayerName(const UTF8 *pName)
     if (  (nName == 2 && memcmp("me", pName, 2) == 0)
        || (nName == 4 && (  memcmp("home", pName, 4) == 0
                          || memcmp("here", pName, 4) == 0)))
+    {
+        return false;
+    }
+
+    if (IsRestricted(nName, pName, mudconf.player_name_charset))
     {
         return false;
     }

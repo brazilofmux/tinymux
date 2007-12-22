@@ -325,7 +325,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         quota = mudconf.room_quota;
         f = mudconf.room_flags;
         target_parent = mudconf.room_parent;
-        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
+        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname, mudconf.room_name_charset);
         tname = T("a room");
         break;
 
@@ -339,7 +339,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         f = mudconf.thing_flags;
         target_parent = mudconf.thing_parent;
         value = OBJECT_ENDOWMENT(cost);
-        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
+        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname, mudconf.thing_name_charset);
         tname = T("a thing");
         break;
 

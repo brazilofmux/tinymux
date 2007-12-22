@@ -30,39 +30,39 @@ static NAMETAB attrib_sw[] =
     {T("access"),          1,  CA_GOD,     ATTRIB_ACCESS},
     {T("delete"),          1,  CA_GOD,     ATTRIB_DELETE},
     {T("rename"),          1,  CA_GOD,     ATTRIB_RENAME},
-    {(UTF8 *) NULL,             0,       0,     0}
+    {(UTF8 *) NULL,        0,       0,     0}
 };
 
 static NAMETAB boot_sw[] =
 {
     {T("port"),            1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
     {T("quiet"),           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB cboot_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  CBOOT_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB comtitle_sw[] =
 {
     {T("off"),             2,  CA_PUBLIC,  COMTITLE_OFF},
     {T("on"),              2,  CA_PUBLIC,  COMTITLE_ON},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB cemit_sw[] =
 {
     {T("noheader"),        1,  CA_PUBLIC,  CEMIT_NOHEADER},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB chown_sw[] =
 {
     {T("nostrip"),         1,  CA_PUBLIC,  CHOWN_NOSTRIP},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB clone_sw[] =
@@ -74,14 +74,14 @@ static NAMETAB clone_sw[] =
     {T("nostrip"),         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
     {T("parent"),          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
     {T("preserve"),        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB clist_sw[] =
 {
     {T("full"),            0,  CA_PUBLIC,  CLIST_FULL},
     {T("headers"),         0,  CA_PUBLIC,  CLIST_HEADERS},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB cset_sw[] =
@@ -99,32 +99,32 @@ static NAMETAB cset_sw[] =
     {T("quiet"),           1,  CA_PUBLIC,  CSET_QUIET},
     {T("spoof"),           1,  CA_PUBLIC,  CSET_SPOOF},
     {T("timestamp_logs"),  1,  CA_PUBLIC,  CSET_LOG_TIME},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB dbck_sw[] =
 {
     {T("full"),            1,  CA_WIZARD,  DBCK_FULL},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB decomp_sw[] =
 {
     {T("dbref"),           1,  CA_PUBLIC,  DECOMP_DBREF},
-    {(UTF8 *) NULL,             0,           0, 0}
+    {(UTF8 *) NULL,        0,           0, 0}
 };
 
 static NAMETAB destroy_sw[] =
 {
     {T("instant"),         4,  CA_PUBLIC,  DEST_INSTANT|SW_MULTIPLE},
     {T("override"),        8,  CA_PUBLIC,  DEST_OVERRIDE|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB dig_sw[] =
 {
     {T("teleport"),        1,  CA_PUBLIC,  DIG_TELEPORT},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB doing_sw[] =
@@ -134,7 +134,7 @@ static NAMETAB doing_sw[] =
     {T("poll"),            1,  CA_PUBLIC,  DOING_POLL},
     {T("quiet"),           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
     {T("unique"),          1,  CA_PUBLIC,  DOING_UNIQUE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB dolist_sw[] =
@@ -142,19 +142,19 @@ static NAMETAB dolist_sw[] =
     {T("delimit"),         1,  CA_PUBLIC,  DOLIST_DELIMIT},
     {T("notify"),          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
     {T("space"),           1,  CA_PUBLIC,  DOLIST_SPACE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB query_sw[] =
 {
     {T("sql"),             1,  CA_PUBLIC,  QUERY_SQL},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB drop_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  DROP_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB dump_sw[] =
@@ -162,7 +162,7 @@ static NAMETAB dump_sw[] =
     {T("flatfile"),        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
     {T("structure"),       1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
     {T("text"),            1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB emit_sw[] =
@@ -170,13 +170,13 @@ static NAMETAB emit_sw[] =
     {T("here"),            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
     {T("html"),            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
     {T("room"),            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB enter_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB examine_sw[] =
@@ -185,14 +185,14 @@ static NAMETAB examine_sw[] =
     {T("debug"),           1,  CA_WIZARD,  EXAM_DEBUG},
     {T("full"),            1,  CA_PUBLIC,  EXAM_LONG},
     {T("parent"),          1,  CA_PUBLIC,  EXAM_PARENT},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB femit_sw[] =
 {
     {T("here"),            1,  CA_PUBLIC,  PEMIT_HERE|SW_MULTIPLE},
     {T("room"),            1,  CA_PUBLIC,  PEMIT_ROOM|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB fixdb_sw[] =
@@ -204,28 +204,28 @@ static NAMETAB fixdb_sw[] =
     {T("owner"),           1,     CA_GOD,  FIXDB_OWNER},
     {T("pennies"),         1,     CA_GOD,  FIXDB_PENNIES},
     {T("rename"),          1,     CA_GOD,  FIXDB_NAME},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB flag_sw[] =
 {
     {T("remove"),          1,     CA_GOD,  FLAG_REMOVE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB folder_sw[] =
 {
-    {T("file"),             1,    CA_PUBLIC, FOLDER_FILE},
-    {T("list"),             1,    CA_PUBLIC, FOLDER_LIST},
-    {T("read"),             1,    CA_PUBLIC, FOLDER_READ},
-    {T("set"),              1,    CA_PUBLIC, FOLDER_SET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {T("file"),            1,    CA_PUBLIC, FOLDER_FILE},
+    {T("list"),            1,    CA_PUBLIC, FOLDER_LIST},
+    {T("read"),            1,    CA_PUBLIC, FOLDER_READ},
+    {T("set"),             1,    CA_PUBLIC, FOLDER_SET},
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 static NAMETAB fpose_sw[] =
 {
     {T("default"),         1,  CA_PUBLIC,  0},
     {T("nospace"),         1,  CA_PUBLIC,  SAY_NOSPACE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB function_sw[] =
@@ -234,31 +234,31 @@ static NAMETAB function_sw[] =
     {T("list"),            1,  CA_WIZARD,  FN_LIST},
     {T("preserve"),        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
     {T("privileged"),      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB get_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  GET_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB give_sw[] =
 {
     {T("quiet"),           1,  CA_WIZARD,  GIVE_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB goto_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB halt_sw[] =
 {
     {T("all"),             1,  CA_PUBLIC,  HALT_ALL},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB hook_sw[] =
@@ -272,7 +272,7 @@ static NAMETAB hook_sw[] =
     {T("list"),            3,     CA_GOD,  HOOK_LIST},
     {T("permit"),          3,     CA_GOD,  HOOK_PERMIT},
     {T("args"),            3,     CA_GOD,  HOOK_ARGS},
-    {(UTF8 *)NULL,              0,          0,  0}
+    {(UTF8 *)NULL,         0,          0,  0}
 };
 
 static NAMETAB icmd_sw[] =
@@ -288,19 +288,19 @@ static NAMETAB icmd_sw[] =
     {T("lallroom"),        2,     CA_GOD,  ICMD_LALLROOM},
     {T("off"),             2,     CA_GOD,  ICMD_OFF},
     {T("on"),              2,     CA_GOD,  ICMD_ON},
-    {(UTF8 *)NULL,              0,          0,  0}
+    {(UTF8 *)NULL,         0,          0,  0}
 };
 
 static NAMETAB leave_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB listmotd_sw[] =
 {
     {T("brief"),           1,  CA_WIZARD,  MOTD_BRIEF},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 NAMETAB lock_sw[] =
@@ -322,13 +322,13 @@ NAMETAB lock_sw[] =
     {T("tportlock"),       2,  CA_PUBLIC,  A_LTPORT},
     {T("uselock"),         1,  CA_PUBLIC,  A_LUSE},
     {T("userlock"),        4,  CA_PUBLIC,  A_LUSER},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB look_sw[] =
 {
     {T("outside"),         1,  CA_PUBLIC,  LOOK_OUTSIDE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB mail_sw[] =
@@ -365,7 +365,7 @@ static NAMETAB mail_sw[] =
     {T("unclear"),         3,  CA_PUBLIC,  MAIL_UNCLEAR},
     {T("untag"),           3,  CA_PUBLIC,  MAIL_UNTAG},
     {T("urgent"),          2,  CA_PUBLIC,  MAIL_URGENT},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB malias_sw[] =
@@ -378,21 +378,21 @@ static NAMETAB malias_sw[] =
     {T("remove"),          1,  CA_PUBLIC,  MALIAS_REMOVE},
     {T("rename"),          1,  CA_PUBLIC,  MALIAS_RENAME},
     {T("status"),          1,  CA_PUBLIC,  MALIAS_STATUS},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB mark_sw[] =
 {
     {T("clear"),           1,  CA_PUBLIC,  MARK_CLEAR},
     {T("set"),             1,  CA_PUBLIC,  MARK_SET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB markall_sw[] =
 {
     {T("clear"),           1,  CA_PUBLIC,  MARK_CLEAR},
     {T("set"),             1,  CA_PUBLIC,  MARK_SET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB motd_sw[] =
@@ -403,7 +403,7 @@ static NAMETAB motd_sw[] =
     {T("full"),            1,  CA_WIZARD,  MOTD_FULL},
     {T("list"),            1,  CA_PUBLIC,  MOTD_LIST},
     {T("wizard"),          1,  CA_WIZARD,  MOTD_WIZ},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB notify_sw[] =
@@ -411,20 +411,20 @@ static NAMETAB notify_sw[] =
     {T("all"),             1,  CA_PUBLIC,  NFY_NFYALL},
     {T("first"),           1,  CA_PUBLIC,  NFY_NFY},
     {T("quiet"),           1,  CA_PUBLIC,  NFY_QUIET|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB open_sw[] =
 {
     {T("inventory"),       1,  CA_PUBLIC,  OPEN_INVENTORY},
     {T("location"),        1,  CA_PUBLIC,  OPEN_LOCATION},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB page_sw[] =
 {
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB pemit_sw[] =
@@ -435,7 +435,7 @@ static NAMETAB pemit_sw[] =
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {T("object"),          1,  CA_PUBLIC,  0},
     {T("silent"),          1,  CA_PUBLIC,  0},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB pose_sw[] =
@@ -443,7 +443,7 @@ static NAMETAB pose_sw[] =
     {T("default"),         1,  CA_PUBLIC,  0},
     {T("noeval"),          3,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {T("nospace"),         3,  CA_PUBLIC,  SAY_NOSPACE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB ps_sw[] =
@@ -452,7 +452,7 @@ static NAMETAB ps_sw[] =
     {T("brief"),           1,  CA_PUBLIC,  PS_BRIEF},
     {T("long"),            1,  CA_PUBLIC,  PS_LONG},
     {T("summary"),         1,  CA_PUBLIC,  PS_SUMM},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB quota_sw[] =
@@ -462,25 +462,25 @@ static NAMETAB quota_sw[] =
     {T("remaining"),       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
     {T("set"),             1,  CA_WIZARD,  QUOTA_SET},
     {T("total"),           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB reference_sw[] =
 {
-    {T("list"),           1,  CA_PUBLIC,  REFERENCE_LIST},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {T("list"),            1,  CA_PUBLIC,  REFERENCE_LIST},
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB say_sw[] =
 {
     {T("noeval"),          1,  CA_PUBLIC,  SAY_NOEVAL|SW_NOEVAL|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB set_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  SET_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB stats_sw[] =
@@ -488,7 +488,7 @@ static NAMETAB stats_sw[] =
     {T("all"),             1,  CA_PUBLIC,  STAT_ALL},
     {T("me"),              1,  CA_PUBLIC,  STAT_ME},
     {T("player"),          1,  CA_PUBLIC,  STAT_PLAYER},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB sweep_sw[] =
@@ -500,7 +500,7 @@ static NAMETAB sweep_sw[] =
     {T("inventory"),       1,  CA_PUBLIC,  SWEEP_ME|SW_MULTIPLE},
     {T("listeners"),       1,  CA_PUBLIC,  SWEEP_LISTEN|SW_MULTIPLE},
     {T("players"),         1,  CA_PUBLIC,  SWEEP_PLAYER|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB switch_sw[] =
@@ -509,7 +509,7 @@ static NAMETAB switch_sw[] =
     {T("default"),         1,  CA_PUBLIC,  SWITCH_DEFAULT},
     {T("first"),           1,  CA_PUBLIC,  SWITCH_ONE},
     {T("notify"),          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB teleport_sw[] =
@@ -517,7 +517,7 @@ static NAMETAB teleport_sw[] =
     {T("list"),            1,  CA_PUBLIC,  TELEPORT_LIST|SW_MULTIPLE},
     {T("loud"),            1,  CA_PUBLIC,  TELEPORT_DEFAULT},
     {T("quiet"),           1,  CA_PUBLIC,  TELEPORT_QUIET},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB timecheck_sw[] =
@@ -525,32 +525,32 @@ static NAMETAB timecheck_sw[] =
     {T("log"),             1,  CA_WIZARD,  TIMECHK_LOG | SW_MULTIPLE},
     {T("reset"),           1,  CA_WIZARD,  TIMECHK_RESET | SW_MULTIPLE},
     {T("screen"),          1,  CA_WIZARD,  TIMECHK_SCREEN | SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB toad_sw[] =
 {
     {T("no_chown"),        1,  CA_WIZARD,  TOAD_NO_CHOWN|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB trig_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  TRIG_QUIET},
     {T("notify"),          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 static NAMETAB wait_sw[] =
 {
     {T("until"),           1,  CA_PUBLIC,   WAIT_UNTIL},
-    {(UTF8 *) NULL,             0,          0,   0}
+    {(UTF8 *) NULL,        0,          0,   0}
 };
 
 static NAMETAB verb_sw[] =
 {
     {T("no_name"),         3,  CA_PUBLIC,   VERB_NONAME},
-    {(UTF8 *) NULL,             0,          0,   0}
+    {(UTF8 *) NULL,        0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
@@ -560,7 +560,7 @@ static NAMETAB wall_sw[] =
     {T("no_prefix"),       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
     {T("pose"),            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
     {T("wizard"),          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,   0}
+    {(UTF8 *) NULL,        0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
@@ -570,7 +570,7 @@ static NAMETAB warp_sw[] =
     {T("events"),          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
     {T("idle"),            1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
     {T("queue"),           1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
-    {(UTF8 *) NULL,             0,          0,  0}
+    {(UTF8 *) NULL,        0,          0,  0}
 };
 
 
@@ -4765,3 +4765,9 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
     }
 }
+
+NAMETAB charset_nametab[] =
+{
+    {T("ascii"),           5,       0,     ALLOW_CHARSET_ASCII|SW_MULTIPLE},
+    {(UTF8 *) NULL,        0,       0,     0}
+};

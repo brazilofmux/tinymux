@@ -13802,11 +13802,13 @@ VALID()
      comalias    Validates comsys alias.
      doing       Validates @doing string.
      exitname    Validates exit name.
-     name        Validates object name.
-     password    Validates for password rules.
-     playername  Validates player name for @name and @alias.
      malias      Validates @malias name.
      maliasdesc  Validates @malias description.
+     name        Validates object name (same as thingname).
+     password    Validates for password rules.
+     playername  Validates player name for @name and @alias.
+     roomname    Validates room name.
+     thingname   Validates thing name.
 
   Valid() does not check the database for existence and it does not guarantee
   that an attempt to use such an object will succeed. It only looks at

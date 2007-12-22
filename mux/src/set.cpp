@@ -252,9 +252,13 @@ void do_name
         {
             pValidName = MakeCanonicalExitName(newname, &nValidName, &bValid);
         }
+        else if (isThing(thing))
+        {
+            pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid, mudconf.thing_name_charset);
+        }
         else
         {
-            pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid);
+            pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid, mudconf.room_name_charset);
         }
 
         if (!bValid)

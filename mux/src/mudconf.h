@@ -134,6 +134,11 @@ struct confdata
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.
+    int     attr_name_charset;  // Charset restrictions for attribute names.
+    int     exit_name_charset;  // Charset restrictions for exit names.
+    int     player_name_charset; // Charset restrictions for player names.
+    int     room_name_charset;  // Charset restrictions for room names.
+    int     thing_name_charset; // Charset restrictions for thing names.
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
     struct  rlevel_def

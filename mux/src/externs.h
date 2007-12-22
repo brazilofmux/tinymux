@@ -348,7 +348,8 @@ void add_quota(dbref, int);
 bool canpayfees(dbref, dbref, int, int);
 void giveto(dbref,int);
 bool payfor(dbref,int);
-UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid);
+bool IsRestricted(size_t nName, const UTF8 *pName, int charset);
+UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, int charset);
 UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 bool ValidatePlayerName(const UTF8 *pName);
 bool ok_password(const UTF8 *szPassword, const UTF8 **pmsg);
@@ -767,6 +768,10 @@ extern int anum_alc_top;
 #define TWARP_EVENTS    32  /* Warp the events checking interval */
 #define VERB_NONAME     1   // Do not preprend name to odefault.
 #define WAIT_UNTIL      1   // Absolute UTC seconds instead of delta.
+
+/* Character Set Restrictions */
+
+#define ALLOW_CHARSET_ASCII 1
 
 /* Hush codes for movement messages */
 

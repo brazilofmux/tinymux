@@ -1076,7 +1076,7 @@ void do_fixdb
         {
             size_t nTmp;
             bool bValid;
-            pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
+            pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid, 0);
             if (!bValid)
             {
                 notify(executor, T("That is not a reasonable name."));
@@ -1172,6 +1172,13 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
             return Buffer;
         }
         pName = utf8_NextCodePoint(pName);
+    }
+
+    if (IsRestricted(p - Buffer, pName, mudconf.attr_name_charset))
+    {
+        *pnName = 0;
+        *pbValid = false;
+        return Buffer;
     }
 
     // Length of truncated result.

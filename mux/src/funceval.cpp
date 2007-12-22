@@ -4092,9 +4092,14 @@ FUNCTION(fun_valid)
         size_t vw;
         MakeCanonicalMailAliasDesc(fargs[1], &nValidName, &bValid, &vw);
     }
-    else if (!mux_stricmp(fargs[0], T("name")))
+    else if (  !mux_stricmp(fargs[0], T("name"))
+            || !mux_stricmp(fargs[0], T("thingname")))
     {
-        MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
+        MakeCanonicalObjectName(fargs[1], &nValidName, &bValid, mudconf.thing_name_charset);
+    }
+    else if (!mux_stricmp(fargs[0], T("roomname")))
+    {
+        MakeCanonicalObjectName(fargs[1], &nValidName, &bValid, mudconf.room_name_charset);
     }
     else if (!mux_stricmp(fargs[0], T("password")))
     {
