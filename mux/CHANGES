@@ -313,6 +313,9 @@ Bug Fixes:
     lower-case versions of the same letter (Issue 425).
  -- @notify/quiet behaved like @notify/all (Issue 426).  Reported by
     Barton.
+ -- Improve ValidateConfigurationDbrefs() to prevent
+    player_starting_room and similar dbref configuration options from
+    refering to NOTHING (Issue 441).
 
 
 Performance Enhancements:
