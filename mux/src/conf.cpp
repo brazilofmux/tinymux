@@ -2205,18 +2205,13 @@ void ValidateConfigurationDbrefs(void)
     } Table[] =
     {
         { &mudconf.default_home,     NOTHING },
-        { &mudconf.exit_parent,      NOTHING },
         { &mudconf.global_error_obj, NOTHING },
         { &mudconf.guest_char,       NOTHING },
         { &mudconf.guest_nuker,      GOD     },
-        { &mudconf.help_executor,    NOTHING },
         { &mudconf.hook_obj,         NOTHING },
         { &mudconf.master_room,      NOTHING },
-        { &mudconf.player_parent,    NOTHING },
         { &mudconf.start_home,       NOTHING },
         { &mudconf.start_room,       0       },
-        { &mudconf.room_parent,      NOTHING },
-        { &mudconf.thing_parent,     NOTHING },
         { &mudconf.toad_recipient,   GOD     },
         { NULL,                      NOTHING }
     };
