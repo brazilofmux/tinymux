@@ -109,6 +109,12 @@ Feature Additions:
     the flag #1 viewable or wizard-only, respectively.
  -- Update dbpuller to recognize raw ANSI sequences and raw color code
     points and turn into %x-subsitutions.
+ -- Add @query, rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
+    rsrecnext(), rsrecprev(), and rsrows() to provide access to
+    asyncronous SQL.
+ -- Add attr_name_charset, exit_name_charset, player_name_charset,
+    thing_name_charset, and room_name_charset to optionally restrict
+    the corresponding names to subsets of Unicode.
 
 
 Bug Fixes:
