@@ -3431,13 +3431,15 @@ Related Topics: @name.
   COMMAND: @query[/<method>] [<dbref>/<attribute>]=[<dbname>]/<query>
 
   Performs an asyncronous query of external (possibly remote) data.  When the
-  query completes, <attribute> on <dbref> is @triggered with the result.
+  query completes, <attribute> on <dbref> is @triggered with the result.  For
+  this to work, the server must be compiled with --enable-stubslave.
 
   Methods include:
 
     sql - Use SQL.
 
-  Related Topics: sql().
+  Related Topics: rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrecprev(), rsrows(), sql().
 
 & @QUITPROGRAM
 @QUITPROGRAM
@@ -7189,7 +7191,8 @@ FUNCTION CLASSES (continued)
   Side-Effect Functions:     CREATE DESTROY EMIT LINK OEMIT PEMIT REMIT SET
                              SETNAME SETPARENT TEL TRIGGER
 
-  SQL:                       SQL
+  SQL:                       RSERROR RSNEXT RSPREV RSRELEASE RSREC RSRECNEXT
+                             RSRECPREV RSROWS SQL
 
 { 'help function classes4' for more }
 
@@ -11663,6 +11666,93 @@ RLOC()
   same as loc(<object>).
 
   Related Topics: loc(), where().
+
+& RSERROR()
+RSERROR()
+
+  FUNCTION: RSERROR()
+
+  Within a @query completion @trigger, this returns the error condition of the
+  query.
+
+  Related Topics: @query, rsnext(), rsprev(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrecprev(), rsrows(), sql().
+
+& RSNEXT()
+RSNEXT()
+
+  FUNCTION: RSNEXT()
+
+  Within a @query completion @trigger, this positions the cursor to next row
+  within the results set.
+
+  Related Topics: @query, rserror(), rsprev(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrecprev(), rsrows(), sql().
+
+& RSPREV()
+RSPREV()
+
+  FUNCTION: RSPREV()
+
+  Within a @query completion @trigger, this positions the cursor to previous
+  row within the results set.
+
+  Related Topics: @query, rserror(), rsnext(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrecprev(), rsrows(), sql().
+
+& RSRELEASE()
+RSRELEASE()
+
+  FUNCTION: RSRELEASE()
+
+  This intentionally releases the memory for any results set.
+
+  Related Topics: @query, rserror(), rsnext(), rsprev(), rsrec(), rsrecnext(),
+                  rsrecprev(), rsrows(), sql().
+
+& RSREC()
+RSREC()
+
+  FUNCTION: RSREC()
+
+  Within a @query completion @trigger, this returns the current row of the
+  results set.
+
+  Related Topics: @query, rserror(), rsnext(), rsprev(), rsrelease(),
+                  rsrecnext(), rsrecprev(), rsrows(), sql().
+
+& RSRECNEXT()
+RSRECNEXT()
+
+  FUNCTION: RSRECNEXT()
+
+  Within a @query completion @trigger, this returns the current row of the
+  results set and positions the cursor to the next row.
+
+  Related Topics: @query, rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
+                  rsrecprev(), rsrows(), sql().
+
+& RSRECPREV()
+RSRECPREV()
+
+  FUNCTION: RSRECPREV()
+
+  Within a @query completion @trigger, this returns the current row of the
+  results set and positions the cursor to the previous row.
+
+  Related Topics: @query, rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrows(), sql().
+
+& RSROWS()
+RSROWS()
+
+  FUNCTION: RSROWS()
+
+  Within a @query completion @trigger, this returns number of rows in the
+  resulting results set.
+
+  Related Topics: @query, rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
+                  rsrecnext(), rsrecprev(), sql().
 
 & ROBBERY
 ROBBERY
