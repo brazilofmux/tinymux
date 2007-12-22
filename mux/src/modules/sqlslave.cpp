@@ -9,6 +9,7 @@
 #include "../config.h"
 #include "../libmux.h"
 #include "../modules.h"
+#include "autoconf.h"
 #if defined(HAVE_MYSQL_H)
 #include <mysql.h>
 #endif // HAVE_MYSQL_H
@@ -157,6 +158,14 @@ CQueryServer::~CQueryServer()
         m_pIQuerySink->Release();
         m_pIQuerySink = NULL;
     }
+
+#if defined(HAVE_MYSQL)
+    if (NULL != m_database)
+    {
+        mysql_close(m_database);
+        m_database = NULL;
+    }
+#endif // HAVE_MYSQL
 
     g_cComponents--;
 }

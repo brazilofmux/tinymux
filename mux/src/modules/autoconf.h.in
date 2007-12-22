@@ -22,7 +22,7 @@
 /* Define if mysql exists. */
 #undef HAVE_MYSQL
 
-/* Define to 1 if you have the <mysql.h> header file. */
+/* Define if mysql.h exists. */
 #undef HAVE_MYSQL_H
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
