@@ -2427,24 +2427,36 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
 //
 void ValidateConfigurationDbrefs(void)
 {
-    static dbref *Table[] =
+    static struct
     {
-        &mudconf.default_home,
-        &mudconf.guest_char,
-        &mudconf.guest_nuker,
-        &mudconf.master_room,
-        &mudconf.start_home,
-        &mudconf.start_room,
-        0
+        dbref *ploc;
+        dbref dflt;
+    } Table[] =
+    {
+        { &mudconf.default_home,     NOTHING },
+        { &mudconf.exit_parent,      NOTHING },
+        { &mudconf.global_error_obj, NOTHING },
+        { &mudconf.guest_char,       NOTHING },
+        { &mudconf.guest_nuker,      GOD     },
+        { &mudconf.help_executor,    NOTHING },
+        { &mudconf.hook_obj,         NOTHING },
+        { &mudconf.master_room,      NOTHING },
+        { &mudconf.player_parent,    NOTHING },
+        { &mudconf.start_home,       NOTHING },
+        { &mudconf.start_room,       0       },
+        { &mudconf.room_parent,      NOTHING },
+        { &mudconf.thing_parent,     NOTHING },
+        { &mudconf.toad_recipient,   GOD     },
+        { NULL,                      NOTHING }
     };
 
-    for (int i = 0; Table[i]; i++)
+    for (int i = 0; NULL != Table[i].ploc; i++)
     {
-        if (*Table[i] != NOTHING)
+        if (*Table[i].ploc != Table[i].dflt)
         {
-            if (*Table[i] < 0 || mudstate.db_top <= *Table[i])
+            if (!Good_obj(*Table[i].ploc))
             {
-                *Table[i] = NOTHING;
+                *Table[i].ploc = Table[i].dflt;
             }
         }
     }

@@ -225,6 +225,9 @@ Bug Fixes:
  -- Fix @name to handle re-@naming between different UTF-8 cases
     (Issue 333).
  -- Fix off-by-one error in whisper (Issue 436).
+ -- Improve ValidateConfigurationDbrefs() to prevent
+    player_starting_room and similar dbref configuration options from
+    refering to NOTHING (Issue 441).
 
 
 Performance Enhancements:
