@@ -615,6 +615,7 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
     UNUSED_PARAMETER(pUser);
     UNUSED_PARAMETER(pPassword);
 #endif // HAVE_MYSQL
+    return MUX_S_OK;
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
