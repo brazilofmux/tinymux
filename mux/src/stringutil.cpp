@@ -2765,7 +2765,7 @@ size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
     if (left < nLen)
     {
         nLen = left;
-        nLen = TrimPartialSequence(nLen, *bufc);
+        nLen = TrimPartialSequence(nLen, src);
     }
     memcpy(*bufc, src, nLen);
     *bufc += nLen;
