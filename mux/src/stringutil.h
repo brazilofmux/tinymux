@@ -41,6 +41,7 @@ extern const UTF8 TableATOI[16][10];
 extern const unsigned char utf8_FirstByte[256];
 extern const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
+size_t TrimPartialSequence(size_t n, const UTF8 *p);
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
 #define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
@@ -458,8 +459,7 @@ UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
 UTF8 *StringClone(const UTF8 *str);
 void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
 void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
-size_t safe_copy_buf_ascii(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
-#define safe_copy_buf safe_copy_buf_ascii
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
 size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
 void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 #define utf8_safe_chr safe_chr_utf8

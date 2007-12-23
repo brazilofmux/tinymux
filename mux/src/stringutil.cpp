@@ -1624,6 +1624,27 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString)
     return true;
 }
 
+static int trimoffset[4][4] = 
+{
+    { 0, 1, 1, 1 },
+    { 1, 0, 2, 2 },
+    { 2, 1, 0, 3 },
+    { 3, 2, 1, 0 }
+};
+
+size_t TrimPartialSequence(size_t n, const UTF8 *p)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        int j = utf8_FirstByte[p[n-i-1]];
+        if (j < UTF8_CONTINUE)
+        {
+            return n - trimoffset[i][j-1];
+        }
+    }
+    return n - 4;
+}
+
 /*! \brief Convert UTF8 to latin1 with '?' for all unsupported characters.
  *
  * \param pString   UTF8 string.
@@ -2246,7 +2267,7 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
                 {
                     code = 5;
                 }
-                safe_copy_buf_ascii(MU_Substitutes[code].p,
+                safe_copy_buf(MU_Substitutes[code].p,
                     MU_Substitutes[code].len, szTranslatedString,
                     &pTranslatedString);
             }
@@ -2527,7 +2548,7 @@ UTF8 *replace_string(const UTF8 *old, const UTF8 *new0, const UTF8 *s)
             size_t n = p - s;
             if (n)
             {
-                safe_copy_buf_ascii(s, n, result, &r);
+                safe_copy_buf(s, n, result, &r);
                 s += n;
             }
 
@@ -2589,7 +2610,7 @@ UTF8 *replace_tokens
             size_t n = p - s;
             if (n)
             {
-                safe_copy_buf_ascii(s, n, result, &r);
+                safe_copy_buf(s, n, result, &r);
                 s += n;
             }
 
@@ -2728,12 +2749,13 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
     *bufp = tp;
 }
 
-size_t safe_copy_buf_ascii(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
     {
         nLen = left;
+        nLen = TrimPartialSequence(nLen, *bufc);
     }
     memcpy(*bufc, src, nLen);
     *bufc += nLen;
@@ -3241,7 +3263,7 @@ void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
-    safe_copy_buf_ascii(temp, n, buff, bufc);
+    safe_copy_buf(temp, n, buff, bufc);
 }
 
 size_t mux_i64toa(INT64 val, UTF8 *buf)
@@ -3309,7 +3331,7 @@ void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
-    safe_copy_buf_ascii(temp, n, buff, bufc);
+    safe_copy_buf(temp, n, buff, bufc);
 }
 
 const UTF8 TableATOI[16][10] =
