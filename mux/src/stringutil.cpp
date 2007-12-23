@@ -1632,17 +1632,27 @@ static int trimoffset[4][4] =
     { 3, 2, 1, 0 }
 };
 
+// This function trims the string back to the first valid UTF-8 sequence it
+// finds, but it does not validate the entire string.
+//
 size_t TrimPartialSequence(size_t n, const UTF8 *p)
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < n; i++)
     {
         int j = utf8_FirstByte[p[n-i-1]];
         if (j < UTF8_CONTINUE)
         {
-            return n - trimoffset[i][j-1];
+            if (i < 4)
+            {
+                return n - trimoffset[i][j-1];
+            }
+            else
+            {
+                return n - i + j - 1;
+            }
         }
     }
-    return n - 4;
+    return 0;
 }
 
 /*! \brief Convert UTF8 to latin1 with '?' for all unsupported characters.
