@@ -2347,7 +2347,9 @@ static void send_mail
     }
 
     raw_notify(target,
-            tprintf("MAIL: You have a new message from %s.", Moniker(player)));
+            tprintf("MAIL: You have a new message from %s. Subject: %s", 
+                Moniker(player), subject));
+
     did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, 0, NULL, NOTHING);
 }
 
