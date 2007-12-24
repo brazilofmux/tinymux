@@ -82,13 +82,13 @@ echo "...completed."
 echo "Processing flag table extraction and assigning values for $(wc -l ${1}.flagtmp|cut -f1 -d" ") flags..."|tr -d '\012'
 while read flagname
 do
-   FLAG=$(grep "${flagname} " rhost_flagmapping.dat)
+   FLAG=$(grep "${flagname} " mux_flagmapping.dat)
    if [ -z "${FLAG##* }" -o "${FLAG##* }" = "NONE" ]
    then
       echo "${flagname}" >> ${1}.flag_exception
       continue
    fi
-   CHK=$(grep "${FLAG##* } " rhost_flags.dat)
+   CHK=$(grep "${FLAG##* } " mux_flags.dat)
    if [ ! -z "${CHK}" ]
    then
       echo "${flagname} ${CHK#* }" >> ${1}.flag_id
@@ -142,8 +142,8 @@ do
    then
       continue
    fi
-   CHK=$(grep "^${attrname} " rhost_attrs.dat 2>/dev/null)
-   CHK2=$(grep -ic "^${attrname} " rhost.dat 2>/dev/null)
+   CHK=$(grep "^${attrname} " mux_attrs.dat 2>/dev/null)
+   CHK2=$(grep -ic "^${attrname} " mux.dat 2>/dev/null)
    CHK3=$(echo ${attrname}|cut -c1|tr -d "A-Za-z_~#")
    if [ ! -z "${CHK3}" ]
    then
