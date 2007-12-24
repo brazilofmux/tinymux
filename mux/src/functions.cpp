@@ -6193,15 +6193,19 @@ static FUNCTION(fun_repeat)
                 {
                     nSize = nBufferAvailable;
                 }
+
                 size_t nFullCopies = nSize / len;
                 size_t nPartial = nSize - nFullCopies * len;
+
                 while (nFullCopies--)
                 {
                     memcpy(*bufc, fargs[0], len);
                     *bufc += len;
                 }
+
                 if (nPartial)
                 {
+                    nPartial = TrimPartialSequence(nPartial, fargs[0]);
                     memcpy(*bufc, fargs[0], nPartial);
                     *bufc += nPartial;
                 }

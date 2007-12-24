@@ -41,7 +41,30 @@ extern const UTF8 TableATOI[16][10];
 extern const unsigned char utf8_FirstByte[256];
 extern const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
-inline size_t TrimPartialSequence(size_t n, const UTF8 *p);
+
+// This function trims the string back to the first valid UTF-8 sequence it
+// finds, but it does not validate the entire string.
+//
+extern const int g_trimoffset[4][4];
+inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
+{
+    for (int i = 0; i < n; i++)
+    {
+        int j = utf8_FirstByte[p[n-i-1]];
+        if (j < UTF8_CONTINUE)
+        {
+            if (i < 4)
+            {
+                return n - g_trimoffset[i][j-1];
+            }
+            else
+            {
+                return n - i + j - 1;
+            }
+        }
+    }
+    return 0;
+}
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
 #define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
