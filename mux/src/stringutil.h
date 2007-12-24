@@ -41,7 +41,7 @@ extern const UTF8 TableATOI[16][10];
 extern const unsigned char utf8_FirstByte[256];
 extern const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
-size_t TrimPartialSequence(size_t n, const UTF8 *p);
+inline size_t TrimPartialSequence(size_t n, const UTF8 *p);
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
 #define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
