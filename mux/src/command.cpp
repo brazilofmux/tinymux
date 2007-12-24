@@ -924,7 +924,7 @@ void cache_prefix_cmds(void)
 #undef SET_PREFIX_CMD
 }
 
-bool DCL_INLINE is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd)
+inline bool is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd)
 {
     if (NULL != pCommand)
     {

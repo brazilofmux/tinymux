@@ -98,14 +98,14 @@ INT64 i64Mod(INT64 x, INT64 y)
 
 // Provide SGEQ modulus on a SGEQ platform.
 //
-DCL_INLINE int iRemainder(int x, int y)
+inline int iRemainder(int x, int y)
 {
     return x % y;
 }
 
 // Provide SGEQ division on a SGEQ platform.
 //
-DCL_INLINE int iDivision(int x, int y)
+inline int iDivision(int x, int y)
 {
     return x / y;
 }
@@ -254,7 +254,7 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
 
 // Provide LLEQ modulus on a LLEQ platform.
 //
-int DCL_INLINE iMod(int x, int y)
+inline int iMod(int x, int y)
 {
     return x % y;
 }
@@ -369,12 +369,12 @@ INT64 i64Division(INT64 x, INT64 y)
 
 // Provide a LLEQ division on a LLEQ platform.
 //
-int DCL_INLINE iFloorDivision(int x, int y)
+inline int iFloorDivision(int x, int y)
 {
     return x / y;
 }
 
-INT64 DCL_INLINE i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
+inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 {
     *piMod = x % y;
     return x / y;

@@ -189,15 +189,15 @@ extern void TIME_Initialize(void);
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
 INT64 i64FloorDivision(INT64 x, INT64 y);
-DCL_INLINE INT64 i64Division(INT64 x, INT64 y) { return x / y; }
-DCL_INLINE INT64 i64Remainder(INT64 x, INT64 y) { return x % y; }
+inline INT64 i64Division(INT64 x, INT64 y) { return x / y; }
+inline INT64 i64Remainder(INT64 x, INT64 y) { return x % y; }
 int iFloorDivisionMod(int x, int y, int *piMod);
 #else // SMALLEST_INT_GTE_NEG_QUOTIENT
-DCL_INLINE INT64 i64Mod(INT64 x, INT64 y) { return x % y; }
-DCL_INLINE INT64 i64FloorDivision(INT64 x, INT64 y) { return x / y; }
+inline INT64 i64Mod(INT64 x, INT64 y) { return x % y; }
+inline INT64 i64FloorDivision(INT64 x, INT64 y) { return x / y; }
 INT64 i64Division(INT64 x, INT64 y);
 INT64 i64Remainder(INT64 x, INT64 y);
-int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
+inline int iFloorDivisionMod(int x, int y, int *piMod) \
 {                   \
     *piMod = x % y; \
     return x / y;   \

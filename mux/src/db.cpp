@@ -1859,7 +1859,7 @@ static void al_delete(dbref thing, int attrnum)
     return;
 }
 
-static DCL_INLINE void makekey(dbref thing, int atr, Aname *abuff)
+static inline void makekey(dbref thing, int atr, Aname *abuff)
 {
     abuff->object = thing;
     abuff->attrnum = atr;

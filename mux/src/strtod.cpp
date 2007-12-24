@@ -1364,7 +1364,7 @@ static CONST double tinytens[] = { 1e-16, 1e-32 };
 #endif
 #endif
 
-DCL_INLINE int FltRounds(void)
+inline int FltRounds(void)
 {
     return Flt_Rounds;
 }

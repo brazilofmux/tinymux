@@ -94,7 +94,7 @@ static void mail_db_grow(int newtop)
 // MessageReferenceInc - Increments the reference count for any
 // particular message.
 //
-static DCL_INLINE void MessageReferenceInc(int number)
+static inline void MessageReferenceInc(int number)
 {
     mail_list[number].m_nRefs++;
 }

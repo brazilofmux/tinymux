@@ -135,7 +135,7 @@ int get_gender(dbref);
 void mux_exec(const UTF8 *pdstr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
               dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
-void DCL_INLINE BufAddRef(lbuf_ref *lbufref)
+inline void BufAddRef(lbuf_ref *lbufref)
 {
     if (NULL != lbufref)
     {
@@ -143,7 +143,7 @@ void DCL_INLINE BufAddRef(lbuf_ref *lbufref)
     }
 }
 
-void DCL_INLINE BufRelease(lbuf_ref *lbufref)
+inline void BufRelease(lbuf_ref *lbufref)
 {
     if (NULL != lbufref)
     {
@@ -157,7 +157,7 @@ void DCL_INLINE BufRelease(lbuf_ref *lbufref)
     }
 }
 
-void DCL_INLINE RegAddRef(reg_ref *regref)
+inline void RegAddRef(reg_ref *regref)
 {
     if (NULL != regref)
     {
@@ -165,7 +165,7 @@ void DCL_INLINE RegAddRef(reg_ref *regref)
     }
 }
 
-void DCL_INLINE RegRelease(reg_ref *regref)
+inline void RegRelease(reg_ref *regref)
 {
     if (NULL != regref)
     {

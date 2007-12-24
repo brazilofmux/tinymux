@@ -1451,7 +1451,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 // optimizations are requested (-Qipo). Including this function is a
 // workaround.
 //
-DCL_INLINE bool FD_ISSET_priv(SOCKET fd, fd_set *set)
+inline bool FD_ISSET_priv(SOCKET fd, fd_set *set)
 {
     unsigned int i;
     for (i = 0; i < set->fd_count; i++)
@@ -1464,12 +1464,12 @@ DCL_INLINE bool FD_ISSET_priv(SOCKET fd, fd_set *set)
     return false;
 }
 
-DCL_INLINE void FD_ZERO_priv(fd_set *set)
+inline void FD_ZERO_priv(fd_set *set)
 {
     set->fd_count = 0;
 }
 
-DCL_INLINE void FD_SET_priv(SOCKET fd, fd_set *set)
+inline void FD_SET_priv(SOCKET fd, fd_set *set)
 {
     if (set->fd_count < FD_SETSIZE)
     {

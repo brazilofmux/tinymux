@@ -311,7 +311,6 @@ typedef char  boolexp_type;
 
 #ifdef WIN32
 #define DCL_CDECL  __cdecl
-#define DCL_INLINE __inline
 #define DCL_EXPORT __declspec(dllexport)
 #define DCL_API    __stdcall
 
@@ -360,7 +359,6 @@ typedef unsigned __int64 UINT64;
 #else // WIN32
 
 #define DCL_CDECL
-#define DCL_INLINE inline
 #define DCL_EXPORT
 #define DCL_API
 
