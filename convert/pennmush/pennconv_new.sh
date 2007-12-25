@@ -176,12 +176,12 @@ echo "100% ] Finished."
 echo "A total of $(wc -l ${1}.exception|cut -f1 -d" ") attributes had to be renamed."
 echo "Building flatfile.  This may take a SHORT while.  Please wait..."|tr -d '\012'
 TOTOBJS=$(grep -c "^\![0-9]" $1)
-echo "+V74247" > ${1}_mux.conv
+echo "+X99201" > ${1}_mux.conv
 echo "+S${TOTOBJS}" >> ${1}_mux.conv
 echo "+N${ATRCNTR}" >> ${1}_mux.conv
 while read line1 line2
 do
-   if [ ${line2} -gt 256 ]
+   if [ ${line2} -gt 255 ]
    then
       echo "+A${line2}" >> ${1}_mux.conv
       echo "1:${line1}" >> ${1}_mux.conv
