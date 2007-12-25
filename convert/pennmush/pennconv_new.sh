@@ -176,28 +176,28 @@ echo "100% ] Finished."
 echo "A total of $(wc -l ${1}.exception|cut -f1 -d" ") attributes had to be renamed."
 echo "Building flatfile.  This may take a SHORT while.  Please wait..."|tr -d '\012'
 TOTOBJS=$(grep -c "^\![0-9]" $1)
-echo "+V74247" > ${1}_rhost.conv
-echo "+S${TOTOBJS}" >> ${1}_rhost.conv
-echo "+N${ATRCNTR}" >> ${1}_rhost.conv
+echo "+V74247" > ${1}_mux.conv
+echo "+S${TOTOBJS}" >> ${1}_mux.conv
+echo "+N${ATRCNTR}" >> ${1}_mux.conv
 while read line1 line2
 do
    if [ ${line2} -gt 256 ]
    then
-      echo "+A${line2}" >> ${1}_rhost.conv
-      echo "1:${line1}" >> ${1}_rhost.conv
+      echo "+A${line2}" >> ${1}_mux.conv
+      echo "1:${line1}" >> ${1}_mux.conv
    fi
 done < ${1}.id
 echo "Done."
 echo "Rewriting object data structures.  This will take a long time."
 echo "Please wait..."|tr -d '\012'
-./pennconv_new ${1} rhost ${TOTOBJS}
-cat ${1}.out >> ${1}_rhost.conv
+./pennconv_new ${1} ${TOTOBJS}
+cat ${1}.out >> ${1}_mux.conv
 rm -f ${1}.out
 echo "Finished."
 echo "Correlating error reports."
 echo "Attribute conversion errors..."|tr -d '\012'
 echo "----------------------------------------------------------------------" >> ${1}.err
-echo "Attributes that had to be renamed due to naming conventions in Rhost" >> ${1}.err
+echo "Attributes that had to be renamed due to naming conventions in TinyMUX" >> ${1}.err
 echo "----------------------------------------------------------------------" >> ${1}.err
 while read line1 line2 
 do
@@ -206,11 +206,11 @@ done < ${1}.exception
 echo "Finished."
 echo "Flag conversion errors..."|tr -d '\012'
 echo "----------------------------------------------------------------------" >> ${1}.err
-echo "Flags removed for not having any relation to existing Rhost flags" >> ${1}.err
+echo "Flags removed for not having any relation to existing TinyMUX flags" >> ${1}.err
 echo "----------------------------------------------------------------------" >> ${1}.err
 while read line1
 do
-   echo "Flag ${line1} does not exist within Rhost." >> ${1}.err
+   echo "Flag ${line1} does not exist within TinyMUX." >> ${1}.err
 done < ${1}.flag_exception
 echo "Finished."
 echo "Cleaning up temporary files..."|tr -d '\012'
@@ -221,6 +221,6 @@ rm -f korongil_outdb.id
 echo "finished."
 echo ""
 echo "Error reports are located in: ${1}.err"
-echo "The Rhost compatable flatfile is: ${1}_rhost.conv"
+echo "The TinyMUX compatable flatfile is: ${1}_mux.conv"
 echo ""
 echo "Convertion completed."

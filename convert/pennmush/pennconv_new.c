@@ -111,7 +111,7 @@ StripQuote(char *s_instr, int key)
 }
 
 char *
-convert_flagstorhost(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_instr, int i_type, int i_id)
+convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_instr, int i_type, int i_id)
 {
    char *s_strtok, *s_strtokr, **s_listtmp, empty_flags[LBUF+1];
    char *s_flags1_list[] = {"WIZARD", "VISUAL", "VERBOSE", "TRANSPARENT", "TERSE",
@@ -135,14 +135,14 @@ convert_flagstorhost(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_in
    int i_flags3_list[] = {32768, 0};
    int i_flags4_list[] = {0, 0};
    int i_penntype[] = {1, 2, 4, 8, 16, 32, 65535, 0};
-   int i_rhosttype[] = {0, 1, 2, 3, 5, 0, 7, 0};
+   int i_muxtype[] = {0, 1, 2, 3, 5, 0, 7, 0};
    int i_found;
    int *i_listtmp, *i_listtmp2, i_flags1, i_flags2, i_flags3, i_flags4;
 
    i_flags1 = i_flags2 = i_flags3 = i_flags4 = i_found = 0;
 
    memset(empty_flags, '\0', LBUF+1);
-   for ( i_listtmp = i_penntype, i_listtmp2 = i_rhosttype; i_listtmp && *i_listtmp; i_listtmp++, i_listtmp2++ ) {
+   for ( i_listtmp = i_penntype, i_listtmp2 = i_muxtype; i_listtmp && *i_listtmp; i_listtmp++, i_listtmp2++ ) {
       if ( *i_listtmp == i_type ) {
          i_flags1 = *i_listtmp2;
          break;
@@ -207,7 +207,7 @@ convert_flagstorhost(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_in
 }
 
 void
-convert_powerstorhost(FILE *fd_filein, FILE *fd_fileout, char *s_instr)
+convert_powerstomux(FILE *fd_filein, FILE *fd_fileout, char *s_instr)
 {
    /* For now, just dump empty powers */
    fputs("0\n", fd_fileout); /* Powers 1 */
@@ -318,7 +318,7 @@ process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations,
                         } 
                         i_basictype = 0;
                         if ( isalpha(*(s_resttmp+1)) ) {
-                           /* Rhost can't handle these complex locks - Clear it */
+                           /* MUX can't handle these complex locks - Clear it */
                            fprintf(fd_err, "Unable to convert complex lock on object #%d: %s", i_id, StripQuote(s_restarg,0));
                            i_abortlock = 1;
                            break;
@@ -663,7 +663,7 @@ if ( i_id >= 859 )
 }
 
 void
-ConvertPenntoRhost(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_attrexception, FILE *fd_err, int i_numobjs)
+ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_attrexception, FILE *fd_err, int i_numobjs)
 {
    char *s_i2;
    char *s_instr, *s_firstarg, *s_restarg, *s_toggles, s_created[LBUF+1], s_modified[LBUF+1];
@@ -838,18 +838,18 @@ fprintf(stderr, "Value: %d\n", i_id);
 
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
-      /* Convert flags to rhost */
+      /* Convert flags to MUX */
       if ( s_firstarg && strcmp("flags", s_firstarg) == 0) {
-         s_toggles = convert_flagstorhost(fd_filein, fd_fileout, fd_err, StripQuote(s_restarg,1), i_type, i_id);
+         s_toggles = convert_flagstomux(fd_filein, fd_fileout, fd_err, StripQuote(s_restarg,1), i_type, i_id);
       } else {
          LogError(i_fetchcntr, "flags", s_instr, s_firstarg, s_restarg);
       }
 
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
-      /* Convert powers to rhost */
+      /* Convert powers to MUX */
       if ( s_firstarg && strcmp("powers", s_firstarg) == 0) {
-         convert_powerstorhost(fd_filein, fd_fileout, StripQuote(s_restarg,1));
+         convert_powerstomux(fd_filein, fd_fileout, StripQuote(s_restarg,1));
       } else {
          LogError(i_fetchcntr, "powers", s_instr, s_firstarg, s_restarg);
       }
@@ -893,7 +893,7 @@ fprintf(stderr, "Value: %d\n", i_id);
          fputs("0\n", fd_fileout); /* Toggle 1 */
          fputs("0\n", fd_fileout); /* Toggle 2 */
 
-         /* Store empty zone value for Rhost */
+         /* Store empty zone value for MUX */
          fputs("-1\n", fd_fileout);
 
          for (i = 0; i < DEFINED_LOCKS; i++) {
@@ -917,15 +917,6 @@ fprintf(stderr, "Value: %d\n", i_id);
    }
 }
 
-void
-ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_attrexception, FILE *fd_err, int i_numobjs)
-{
-   char s_instr[LBUF+1], *s_instrptr, *s_firstarg, *s_restarg;
-
-   memset(s_instr, '\0', LBUF+1);
-   s_instrptr = s_firstarg = s_restarg = NULL;
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -941,7 +932,7 @@ main(int argc, char *argv[])
    memset(s_filename, '\0', FNAMESIZE);
 
    if ( (argc < 2) || !*argv[1] ) {
-      fprintf(stderr, "Syntax: %s <penn-database-flatfile> [<mux|rhost>] [<number of objects>]\n", argv[0]);
+      fprintf(stderr, "Syntax: %s <penn-database-flatfile> [<number of objects>]\n", argv[0]);
       exit(1);
    }
 
@@ -979,14 +970,10 @@ main(int argc, char *argv[])
       fclose(fd_attrexception);
       exit(1);
    }
-   if ( (argc > 3) && argv[3] && *argv[3] ) {
-      i_numobjs = atoi(argv[3]);
+   if ( (argc > 2) && argv[2] && *argv[2] ) {
+      i_numobjs = atoi(argv[2]);
    }
-   if ( (argc > 2) && argv[2] && *argv[2] && ((strcmp(argv[2], "mux") == 0) || (strcmp(argv[2], "MUX") == 0)) ) {
-      ConvertPenntoMUX(fd_filein, fd_fileout, fd_attrtonum, fd_attrexception, fd_err, i_numobjs);
-   } else {
-        ConvertPenntoRhost(fd_filein, fd_fileout, fd_attrtonum, fd_attrexception, fd_err, i_numobjs);
-   }
+   ConvertPenntoMUX(fd_filein, fd_fileout, fd_attrtonum, fd_attrexception, fd_err, i_numobjs);
 /*
    if ( fd_filein != NULL)
       fclose(fd_filein);
