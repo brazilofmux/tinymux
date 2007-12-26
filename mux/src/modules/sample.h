@@ -8,19 +8,11 @@
 #ifndef SAMPLE_H
 #define SAMPLE_H
 
-#ifdef WIN32
-const MUX_CID CID_Sample        = 0x0000000265E759EFi64;
-const MUX_CID CID_SumProxy      = 0x00000002FA46961Ei64;
-const MUX_CID CID_Sum           = 0x0000000214D47B2Ai64;
-const MUX_IID IID_ISample       = 0x00000002462F47F3i64;
-const MUX_IID IID_ISum          = 0x00000002BAB94F6Di64;
-#else
-const MUX_CID CID_Sample        = 0x0000000265E759EFull;
-const MUX_CID CID_SumProxy      = 0x00000002FA46961Eull;
-const MUX_CID CID_Sum           = 0x0000000214D47B2Aull;
-const MUX_IID IID_ISample       = 0x00000002462F47F3ull;
-const MUX_IID IID_ISum          = 0x00000002BAB94F6Dull;
-#endif
+const MUX_CID CID_Sample        = UINT64_C(0x0000000265E759EF);
+const MUX_CID CID_SumProxy      = UINT64_C(0x00000002FA46961E);
+const MUX_CID CID_Sum           = UINT64_C(0x0000000214D47B2A);
+const MUX_IID IID_ISample       = UINT64_C(0x00000002462F47F3);
+const MUX_IID IID_ISum          = UINT64_C(0x00000002BAB94F6D);
 
 interface ISample : public mux_IUnknown
 {

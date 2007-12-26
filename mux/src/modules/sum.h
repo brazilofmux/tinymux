@@ -8,15 +8,9 @@
 #ifndef SUM_H
 #define SUM_H
 
-#ifdef WIN32
-const MUX_CID CID_Sum        = 0x0000000214D47B2Ai64;
-const MUX_CID CID_SumProxy   = 0x00000002FA46961Ei64;
-const MUX_IID IID_ISum       = 0x00000002BAB94F6Di64;
-#else
-const MUX_CID CID_Sum        = 0x0000000214D47B2Aull;
-const MUX_CID CID_SumProxy   = 0x00000002FA46961Eull;
-const MUX_IID IID_ISum       = 0x00000002BAB94F6Dull;
-#endif
+const MUX_CID CID_Sum        = UINT64_C(0x0000000214D47B2A);
+const MUX_CID CID_SumProxy   = UINT64_C(0x00000002FA46961E);
+const MUX_IID IID_ISum       = UINT64_C(0x00000002BAB94F6D);
 
 interface ISum : public mux_IUnknown
 {

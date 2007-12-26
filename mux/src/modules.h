@@ -12,37 +12,20 @@
 #define MODULES_H
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
-#ifdef WIN32
-const MUX_CID CID_Log                   = 0x000000020CE18E7Ai64;
-const MUX_CID CID_StubSlave             = 0x00000002267CA586i64;
-const MUX_IID IID_ISlaveControl         = 0x0000000250C158E9i64;
-const MUX_CID CID_QueryControlProxy     = 0x00000002683E889Ai64;
-const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Ei64;
-const MUX_CID CID_QuerySinkProxy        = 0x00000002746B93B9i64;
-const MUX_IID IID_ILog                  = 0x000000028B9DC13Ai64;
-const MUX_CID CID_QueryServer           = 0x000000028FEA49ADi64;
-const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812i64;
-const MUX_IID IID_IQuerySink            = 0x00000002CBBCE24Ei64;
-const MUX_CID CID_StubSlaveProxy        = 0x00000002D2453099i64;
-const MUX_IID IID_IQueryControl         = 0x00000002ECD689FCi64;
-const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Fi64;
-const MUX_IID CID_QueryClient           = 0x00000002F571AB88i64;
-#else
-const MUX_CID CID_Log                   = 0x000000020CE18E7Aull;
-const MUX_CID CID_StubSlave             = 0x00000002267CA586ull;
-const MUX_IID IID_ISlaveControl         = 0x0000000250C158E9ull;
-const MUX_CID CID_QueryControlProxy     = 0x00000002683E889Aull;
-const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Eull;
-const MUX_CID CID_QuerySinkProxy        = 0x00000002746B93B9ull;
-const MUX_IID IID_ILog                  = 0x000000028B9DC13Aull;
-const MUX_CID CID_QueryServer           = 0x000000028FEA49ADull;
-const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812ull;
-const MUX_IID IID_IQuerySink            = 0x00000002CBBCE24Eull;
-const MUX_CID CID_StubSlaveProxy        = 0x00000002D2453099ull;
-const MUX_IID IID_IQueryControl         = 0x00000002ECD689FCull;
-const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Full;
-const MUX_IID CID_QueryClient           = 0x00000002F571AB88ull;
-#endif
+const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
+const MUX_CID CID_StubSlave             = UINT64_C(0x00000002267CA586);
+const MUX_IID IID_ISlaveControl         = UINT64_C(0x0000000250C158E9);
+const MUX_CID CID_QueryControlProxy     = UINT64_C(0x00000002683E889A);
+const MUX_IID IID_IServerEventsControl  = UINT64_C(0x000000026EE5256E);
+const MUX_CID CID_QuerySinkProxy        = UINT64_C(0x00000002746B93B9);
+const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13A);
+const MUX_CID CID_QueryServer           = UINT64_C(0x000000028FEA49AD);
+const MUX_CID CID_ServerEventsSource    = UINT64_C(0x00000002A5080812);
+const MUX_IID IID_IQuerySink            = UINT64_C(0x00000002CBBCE24E);
+const MUX_CID CID_StubSlaveProxy        = UINT64_C(0x00000002D2453099);
+const MUX_IID IID_IQueryControl         = UINT64_C(0x00000002ECD689FC);
+const MUX_IID IID_IServerEventsSink     = UINT64_C(0x00000002F0F2753F);
+const MUX_IID CID_QueryClient           = UINT64_C(0x00000002F571AB88);
 
 interface mux_ILog : public mux_IUnknown
 {

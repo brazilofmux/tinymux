@@ -316,14 +316,13 @@ typedef char  boolexp_type;
 
 typedef __int64          INT64;
 typedef unsigned __int64 UINT64;
-#define INT64_MAX_VALUE  9223372036854775807i64
-#define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
-#define UINT64_MAX_VALUE 0xffffffffffffffffui64
+#define INT64_C(c)       (c ## i64)
+#define UINT64_C(c)      (c ## ui64)
 
 #define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
-#define LOCALTIME_TIME_T_MAX_VALUE 32535215999ui64
+#define LOCALTIME_TIME_T_MAX_VALUE UINT64_c(32535215999)
 #define MUX_ULONG_PTR ULONG_PTR
 #define MUX_PULONG_PTR PULONG_PTR
 #elif (_MSC_VER >= 1200)
@@ -369,9 +368,8 @@ typedef int HANDLE;
 
 typedef long long          INT64;
 typedef unsigned long long UINT64;
-#define INT64_MAX_VALUE  9223372036854775807LL
-#define INT64_MIN_VALUE  (-9223372036854775807LL - 1)
-#define UINT64_MAX_VALUE 0xffffffffffffffffULL
+#define INT64_C(c)       (c ## ll)
+#define UINT64_C(c)      (c ## ull)
 
 typedef int SOCKET;
 #ifdef PATH_MAX
@@ -402,6 +400,10 @@ typedef int SOCKET;
 #define mux_lseek   lseek
 
 #endif // WIN32
+
+#define INT64_MAX_VALUE  INT64_C(9223372036854775807)
+#define INT64_MIN_VALUE  (INT64_C(-9223372036854775807) - 1)
+#define UINT64_MAX_VALUE UINT64_C(0xffffffffffffffff)
 
 #define isTRUE(x) ((x) != 0)
 

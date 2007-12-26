@@ -66,23 +66,13 @@ typedef enum
     IsSlaveProcess   = 2
 } process_context;
 
-#ifdef WIN32
-const MUX_IID mux_IID_IUnknown          = 0x0000000100000010i64;
-const MUX_IID mux_IID_IClassFactory     = 0x0000000100000011i64;
-const MUX_IID mux_IID_IRpcChannelBuffer = 0x0000000100000012i64;
-const MUX_IID mux_IID_IRpcProxyBuffer   = 0x0000000100000013i64;
-const MUX_IID mux_IID_IRpcStubBuffer    = 0x0000000100000014i64;
-const MUX_IID mux_IID_IPSFactoryBuffer  = 0x0000000100000015i64;
-const MUX_IID mux_IID_IMarshal          = 0x0000000100000016i64;
-#else
-const MUX_IID mux_IID_IUnknown          = 0x0000000100000010ull;
-const MUX_IID mux_IID_IClassFactory     = 0x0000000100000011ull;
-const MUX_IID mux_IID_IRpcChannelBuffer = 0x0000000100000012ull;
-const MUX_IID mux_IID_IRpcProxyBuffer   = 0x0000000100000013ull;
-const MUX_IID mux_IID_IRpcStubBuffer    = 0x0000000100000014ull;
-const MUX_IID mux_IID_IPSFactoryBuffer  = 0x0000000100000015ull;
-const MUX_IID mux_IID_IMarshal          = 0x0000000100000016ull;
-#endif
+const MUX_IID mux_IID_IUnknown          = UINT64_C(0x0000000100000010);
+const MUX_IID mux_IID_IClassFactory     = UINT64_C(0x0000000100000011);
+const MUX_IID mux_IID_IRpcChannelBuffer = UINT64_C(0x0000000100000012);
+const MUX_IID mux_IID_IRpcProxyBuffer   = UINT64_C(0x0000000100000013);
+const MUX_IID mux_IID_IRpcStubBuffer    = UINT64_C(0x0000000100000014);
+const MUX_IID mux_IID_IPSFactoryBuffer  = UINT64_C(0x0000000100000015);
+const MUX_IID mux_IID_IMarshal          = UINT64_C(0x0000000100000016);
 
 const UINT32  CHANNEL_INVALID           = 0xFFFFFFFFul;
 
