@@ -1313,7 +1313,7 @@ void do_shutdown
 typedef struct
 {
     char **ppszOutputBase;
-    const char szOutputSuffix[14];
+    const char *szOutputSuffix;
     bool bUseTemporary;
     int  fType;
     const char *pszErrorMessage;
