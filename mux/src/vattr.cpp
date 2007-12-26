@@ -601,7 +601,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
         notify(executor, T("Dumping in progress. Try again later."));
         return;
     }
-#endif HAVE_WORKING_FORK
+#endif // HAVE_WORKING_FORK
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
