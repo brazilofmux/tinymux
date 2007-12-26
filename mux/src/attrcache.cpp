@@ -334,14 +334,14 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     {
         return false;
     }
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
         Log.tinyprintf("cache_put((%d,%d), '%s', %u) while database is write-protected" ENDLINE,
             nam->object, nam->attrnum, value, len);
         return false;
     }
-#endif
+#endif // HAVE_WORKING_FORK
 
     if (len > sizeof(TempRecord.attrText))
     {
@@ -444,14 +444,14 @@ void cache_del(Aname *nam)
         return;
     }
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
         Log.tinyprintf("cache_del((%d,%d)) while database is write-protected" ENDLINE,
             nam->object, nam->attrnum);
         return;
     }
-#endif
+#endif // HAVE_WORKING_FORK
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
     UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);

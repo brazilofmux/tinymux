@@ -421,7 +421,7 @@
 /* #undef off_t */
 
 /* Define to `int' if <sys/types.h> does not define. */
-/* #undef pid_t */
+#define pid_t int
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */

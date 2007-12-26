@@ -970,7 +970,6 @@ extern long DebugTotalFiles;
 extern long DebugTotalSockets;
 
 #ifdef WIN32
-extern int game_pid;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
@@ -980,9 +979,8 @@ typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
 extern FGETPROCESSTIMES *fpGetProcessTimes;
-#else // WIN32
-extern pid_t game_pid;
 #endif // WIN32
+extern pid_t game_pid;
 
 // From timer.cpp
 //

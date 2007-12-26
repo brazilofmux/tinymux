@@ -58,17 +58,16 @@ static int make_nonblocking(SOCKET s);
 
 #ifdef WIN32
 static bool bDescriptorListInit = false;
-int game_pid;
 #else // WIN32
 int maxd = 0;
 pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
-pid_t game_pid;
 #ifdef STUB_SLAVE
 pid_t stubslave_pid = 0;
 int stubslave_socket = INVALID_SOCKET;
 #endif // STUB_SLAVE
 #endif // WIN32
+pid_t game_pid;
 
 #ifdef WIN32
 
