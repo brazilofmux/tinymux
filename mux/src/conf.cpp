@@ -129,13 +129,13 @@ void cf_init(void)
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
     mudconf.name_spaces = true;
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     mudconf.fork_dump = true;
     mudstate.dumping  = false;
     mudstate.dumper   = 0;
     mudstate.dumped   = 0;
     mudstate.write_protect = false;
-#endif
+#endif // HAVE_WORKING_FORK
     mudconf.restrict_home = false;
     mudconf.have_comsys = true;
     mudconf.have_mailer = true;
@@ -2115,9 +2115,9 @@ static CONFPARM conftable[] =
     {T("flag_name"),                 cf_flag_name,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {T("float_precision"),           cf_int,         CA_STATIC, CA_PUBLIC,   &mudconf.float_precision,        NULL,               0},
     {T("forbid_site"),               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     {T("fork_dump"),                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.fork_dump,       NULL,               0},
-#endif
+#endif // HAVE_WORKING_FORK
     {T("full_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.full_file,       NULL, SIZEOF_PATHNAME},
     {T("full_motd_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.fullmotd_msg,     NULL,       GBUF_SIZE},
     {T("function_access"),           cf_func_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},

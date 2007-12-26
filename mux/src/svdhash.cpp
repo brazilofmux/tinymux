@@ -1946,7 +1946,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             return false;
         }
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
         // First, if we are @dumping, then we have a @forked process
         // that is also reading from the file. We must pause and let
         // this reader process finish.
@@ -1965,7 +1965,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
                 MuxAlarm.Sleep(time_1s);
             } while (mudstate.dumping);
         }
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
         // If the depth of this page is already as deep as the directory
         // depth,then we must increase depth of the directory, first.

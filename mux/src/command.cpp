@@ -591,9 +591,9 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {T("@mark_all"),   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
     {T("@readcache"),  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
     {T("@restart"),    NULL,       CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     {T("@startslave"), NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
     {T("@timecheck"),  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
     {T("clearcom"),    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
     {T("info"),        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
@@ -3436,12 +3436,12 @@ static void list_options(dbref player)
         raw_notify(player, T("The buffer pools are checked for consistency on each allocate or free."));
     if (mudconf.cache_names)
         raw_notify(player, T("A separate name cache is used."));
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudconf.fork_dump)
     {
         raw_notify(player, T("Database dumps are performed by a fork()ed process."));
     }
-#endif
+#endif // HAVE_WORKING_FORK
     if (mudconf.max_players >= 0)
         raw_notify(player,
         tprintf("There may be at most %d players logged in at once.",

@@ -59,7 +59,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
     {
         const UTF8 *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = T("< dump >");
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
         if (mudstate.dumping)
         {
             // There is a dump in progress. These usually happen very quickly.
@@ -70,7 +70,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
             nNextTimeInSeconds = 20;
         }
         else
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
         {
             fork_and_dump(0);
         }

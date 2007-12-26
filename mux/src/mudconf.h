@@ -348,14 +348,14 @@ struct statedata
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         // Should interface be shut down?
     bool inpipe;                // Are we collecting output for a pipe?
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     bool          restarting;   // Are we restarting?
     volatile bool dumping;      // Are we dumping?
     volatile pid_t dumper;      // PID of dumping process (as returned by fork()).
     volatile pid_t dumped;      // PID of dumping process (as given by SIGCHLD).
     bool    write_protect;      // Write-protect against modifications to the
                                 // database during dumps.
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
     dbref   curr_enactor;       /* Who initiated the current command */
     dbref   curr_executor;      /* Who is running the current command */

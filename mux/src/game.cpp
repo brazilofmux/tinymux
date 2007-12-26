@@ -38,7 +38,7 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
         notify(executor, T("Dumping in progress. Try again later."));
@@ -1375,7 +1375,7 @@ void dump_database_internal(int dump_type)
     }
 
     bool bPotentialConflicts = false;
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     // If we are already dumping for some reason, and suddenly get a type 1 or
     // type 4 dump, basically don't touch mail and comsys files. The other
     // dump will take care of them as well as can be expected for now, and if
@@ -1387,7 +1387,7 @@ void dump_database_internal(int dump_type)
     {
         bPotentialConflicts = true;
     }
-#endif
+#endif // HAVE_WORKING_FORK
 
     // Call the local dump function only if another dump is not already
     // in progress.
@@ -1546,7 +1546,7 @@ static void dump_database(void)
 
     mudstate.epoch++;
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
@@ -1563,7 +1563,7 @@ static void dump_database(void)
     }
     mudstate.dumping = true;
     mudstate.dumped  = 0;
-#endif
+#endif // HAVE_WORKING_FORK
     buff = alloc_mbuf("dump_database");
     mux_sprintf(buff, MBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
@@ -1599,12 +1599,14 @@ static void dump_database(void)
     ENDLOG;
     free_mbuf(buff);
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     // This doesn't matter. We are about the stop the game. However,
     // leave it in.
     //
     mudstate.dumping = false;
     local_dump_complete_signal();
+#endif // HAVE_WORKING_FORK
+
 #if defined(HAVE_DLOPEN) || defined(WIN32)
     p = g_pServerEventsSinkListHead;
     while (NULL != p)
@@ -1613,12 +1615,11 @@ static void dump_database(void)
         p = p->pNext;
     }
 #endif
-#endif
 }
 
 void fork_and_dump(int key)
 {
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     static volatile bool bRequestAccepted = false;
 
     // fork_and_dump is never called with mudstate.dumping true, but we'll
@@ -1630,7 +1631,7 @@ void fork_and_dump(int key)
         return;
     }
     bRequestAccepted = true;
-#endif
+#endif // HAVE_WORKING_FORK
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
     //
@@ -1694,7 +1695,7 @@ void fork_and_dump(int key)
     pcache_sync();
     SYNC;
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     mudstate.write_protect = true;
     int child = 0;
     bool bChildExists = false;
@@ -1711,10 +1712,11 @@ void fork_and_dump(int key)
         bAttemptFork = false;
     }
 #endif // !HAVE_PREAD !HAVE_PWRITE
-#endif // WIN32
+#endif // HAVE_WORKING_FORK
+
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
         if (bAttemptFork)
         {
             child = fork();
@@ -1725,7 +1727,8 @@ void fork_and_dump(int key)
             // SIG_PROF.
             //
             MuxAlarm.Clear();
-#endif
+#endif // HAVE_WORKING_FORK
+
             if (key & DUMP_STRUCT)
             {
                 dump_database_internal(DUMP_I_NORMAL);
@@ -1734,7 +1737,7 @@ void fork_and_dump(int key)
             {
                 dump_database_internal(DUMP_I_FLAT);
             }
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
             if (mudconf.fork_dump)
             {
                 _exit(0);
@@ -1767,10 +1770,10 @@ void fork_and_dump(int key)
                 bChildExists = true;
             }
         }
-#endif
+#endif // HAVE_WORKING_FORK
     }
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     mudstate.write_protect = false;
     if (!bChildExists)
     {
@@ -1792,7 +1795,7 @@ void fork_and_dump(int key)
 #endif
     }
     bRequestAccepted = false;
-#endif
+#endif // HAVE_WORKING_FORK
 
     if (*mudconf.postdump_msg)
     {
@@ -3194,9 +3197,9 @@ int DCL_CDECL main(int argc, char *argv[])
     // much until they get a notification that the part of loading they depend
     // on is complete.
     //
-#ifdef STUB_SLAVE
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     boot_stubslave(GOD, GOD, GOD, 0);
-#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
     init_modules();
 #endif
 
@@ -3356,10 +3359,10 @@ int DCL_CDECL main(int argc, char *argv[])
     ValidateConfigurationDbrefs();
     process_preload();
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     load_restart_db();
     if (!mudstate.restarting)
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
     {
         if (fclose(stdout) == 0)
         {
@@ -3434,14 +3437,14 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif
     CLOSE;
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
-#endif
 #ifdef STUB_SLAVE
     CleanUpStubSlaveSocket();
     WaitOnStubSlaveProcess();
 #endif
+#endif // HAVE_WORKING_FORK
 
     // Go ahead and explicitly free the memory for these things so
     // that it's easy to spot unintentional memory leaks.

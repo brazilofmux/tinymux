@@ -3548,7 +3548,7 @@ void ReleaseAllResources(dbref obj)
     }
 }
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
 /* ---------------------------------------------------------------------------
  * dump_restart_db: Writes out socket information.
  */
@@ -3910,7 +3910,7 @@ void load_restart_db(void)
     remove("restart.db");
     raw_broadcast(0, "GAME: Restart finished.");
 }
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
 #ifdef WIN32
 

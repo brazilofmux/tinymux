@@ -56,17 +56,6 @@ static DESC *new_connection(PortInfo *Port, int *piError);
 static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
 
-#ifdef WIN32
-static bool bDescriptorListInit = false;
-#else // WIN32
-int maxd = 0;
-pid_t slave_pid = 0;
-int slave_socket = INVALID_SOCKET;
-#ifdef STUB_SLAVE
-pid_t stubslave_pid = 0;
-int stubslave_socket = INVALID_SOCKET;
-#endif // STUB_SLAVE
-#endif // WIN32
 pid_t game_pid;
 
 #ifdef WIN32
@@ -88,6 +77,7 @@ static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeu
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
 static DWORD WINAPI MUDListenThread(LPVOID pVoid);
 static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
+static bool bDescriptorListInit = false;
 
 typedef struct
 {
@@ -486,6 +476,17 @@ static int get_slave_result(void)
 }
 
 #else // WIN32
+
+int maxd = 0;
+
+#if defined(HAVE_WORKING_FORK)
+
+pid_t slave_pid = 0;
+int slave_socket = INVALID_SOCKET;
+#ifdef STUB_SLAVE
+pid_t stubslave_pid = 0;
+int stubslave_socket = INVALID_SOCKET;
+#endif // STUB_SLAVE
 
 void CleanUpSlaveSocket(void)
 {
@@ -978,6 +979,7 @@ Done:
     free_lbuf(host);
     return 0;
 }
+#endif // HAVE_WORKING_FORK
 #endif // WIN32
 
 #ifdef SSL_ENABLED
@@ -1814,7 +1816,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
-#ifdef STUB_SLAVE
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
         // Listen for replies from the stubslave socket.
         //
         if (!IS_INVALID_SOCKET(stubslave_socket))
@@ -1825,7 +1827,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 FD_SET(stubslave_socket, &output_set);
             }
         }
-#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
         // Listen for new connections if there are free descriptors.
         //
@@ -1903,13 +1905,13 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     boot_slave(GOD, GOD, GOD, 0, 0);
                 }
 
-#ifdef STUB_SLAVE
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
                 if (  !IS_INVALID_SOCKET(stubslave_socket)
                    && !ValidSocket(stubslave_socket))
                 {
                     CleanUpStubSlaveSocket();
                 }
-#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
                 for (i = 0; i < nPorts; i++)
                 {
@@ -1943,7 +1945,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
         }
 
-#ifdef STUB_SLAVE
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
         // Get data from stubslave.
         //
         if (!IS_INVALID_SOCKET(stubslave_socket))
@@ -1966,7 +1968,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 }
             }
         }
-#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
         // Check for new connection requests.
         //
@@ -2033,7 +2035,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
     }
 }
 
-#ifdef STUB_SLAVE
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
 extern "C" MUX_RESULT DCL_API pipepump(void)
 {
     fd_set input_set;
@@ -2106,7 +2108,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
     }
     return MUX_S_OK;
 }
-#endif // STUB_SLAVE
+#endif // HAVE_WORKINGFORK && STUB_SLAVE
 
 #endif // WIN32
 
@@ -2199,6 +2201,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             }
         }
 #else // WIN32
+#if defined(HAVE_WORKING_FORK)
         // Make slave request
         //
         if (  !IS_INVALID_SOCKET(slave_socket)
@@ -2219,6 +2222,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             }
             free_lbuf(pBuffL1);
         }
+#endif // HAVE_WORKING_FORK
 #endif // WIN32
 
         STARTLOG(LOG_NET, "NET", "CONN");
@@ -2545,7 +2549,7 @@ void shutdownsock(DESC *d, int reason)
             }
             return;
         }
-#endif
+#endif // WIN32
 
 #ifdef SSL_ENABLED
         if (d->ssl_session)
@@ -4672,6 +4676,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             if (  WIFEXITED(stat_buf)
                || WIFSIGNALED(stat_buf))
             {
+#if defined(HAVE_WORKING_FORK)
                 if (child == slave_pid)
                 {
                     // The reverse-DNS slave process ended unexpectedly.
@@ -4722,6 +4727,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                         p = p->pNext;
                     }
 #endif
+#endif // HAVE_WORKING_FORK
                     continue;
                 }
             }
@@ -4858,6 +4864,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             WSACleanup();
             exit(12345678);
 #else // WIN32
+#if defined(HAVE_WORKING_FORK)
             CleanUpSlaveSocket();
             CleanUpSlaveProcess();
 
@@ -4870,7 +4877,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                 unset_signals();
                 exit(1);
             }
-
+#endif // HAVE_WORKING_FORK
             // We are the reproduced child with a slightly better chance.
             //
             dump_restart_db();

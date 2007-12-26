@@ -595,13 +595,13 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
         notify(executor, T("Dumping in progress. Try again later."));
         return;
     }
-#endif // !WIN32
+#endif HAVE_WORKING_FORK
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //

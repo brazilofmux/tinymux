@@ -228,9 +228,9 @@ int  Pennies(dbref obj);
 void s_Pennies(dbref obj, int howfew);
 void s_PenniesDirect(dbref obj, int howfew);
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
 void load_restart_db(void);
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
 dbref    getref(FILE *);
 void putref(FILE *, dbref);

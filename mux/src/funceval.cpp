@@ -3694,11 +3694,11 @@ FUNCTION(fun_dumping)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-#ifdef WIN32
+#if !defined(HAVE_WORKING_FORK)
     safe_chr('0', buff, bufc);
-#else // WIN32
+#else // HAVE_WORKING_FORK
     safe_bool(mudstate.dumping, buff, bufc);
-#endif // WIN32
+#endif // HAVE_WORKING_FORK
 }
 
 // The following table contains 64 symbols, so this supports -a-

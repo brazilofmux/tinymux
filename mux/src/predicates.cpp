@@ -1561,13 +1561,13 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 
     bool bDenied = false;
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
         notify(executor, T("Dumping. Please try again later."));
         bDenied = true;
     }
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
 
     if (!mudstate.bCanRestart)
@@ -1624,10 +1624,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
 #else // WIN32
 
+#if defined(HAVE_WORKING_FORK)
     dump_restart_db();
-
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
+#endif // HAVE_WORKING_FORK
 
     Log.StopLogging();
 
@@ -1666,12 +1667,12 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-#ifndef WIN32
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
         notify(executor, T("Dumping. Please try again later."));
     }
-#endif // !WIN32
+#endif // HAVE_WORKING_FORK
 
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
