@@ -1839,12 +1839,14 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
         }
 
+#if defined(HAVE_WORKING_FORK)
         // Listen for replies from the slave socket.
         //
         if (!IS_INVALID_SOCKET(slave_socket))
         {
             FD_SET(slave_socket, &input_set);
         }
+#endif // HAVE_WORKING_FORK
 
         // Mark sockets that we want to test for change in status.
         //
@@ -1892,6 +1894,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         shutdownsock(d, R_SOCKDIED);
                     }
                 }
+
+#if defined(HAVE_WORKING_FORK)
                 if (  !IS_INVALID_SOCKET(slave_socket)
                    && !ValidSocket(slave_socket))
                 {
@@ -1905,13 +1909,14 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     boot_slave(GOD, GOD, GOD, 0, 0);
                 }
 
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+#if defined(STUB_SLAVE)
                 if (  !IS_INVALID_SOCKET(stubslave_socket)
                    && !ValidSocket(stubslave_socket))
                 {
                     CleanUpStubSlaveSocket();
                 }
-#endif // HAVE_WORKING_FORK && STUB_SLAVE
+#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK
 
                 for (i = 0; i < nPorts; i++)
                 {
@@ -1934,6 +1939,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             continue;
         }
 
+#if defined(HAVE_WORKING_FORK)
         // Get usernames and hostnames.
         //
         if (  !IS_INVALID_SOCKET(slave_socket)
@@ -1945,7 +1951,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
         }
 
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+#if defined(STUB_SLAVE)
         // Get data from stubslave.
         //
         if (!IS_INVALID_SOCKET(stubslave_socket))
@@ -1968,7 +1974,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 }
             }
         }
-#endif // HAVE_WORKING_FORK && STUB_SLAVE
+#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK
 
         // Check for new connection requests.
         //
@@ -4673,10 +4680,10 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         while ((child = waitpid(0, &stat_buf, WNOHANG)) > 0)
         {
+#if defined(HAVE_WORKING_FORK)
             if (  WIFEXITED(stat_buf)
                || WIFSIGNALED(stat_buf))
             {
-#if defined(HAVE_WORKING_FORK)
                 if (child == slave_pid)
                 {
                     // The reverse-DNS slave process ended unexpectedly.
@@ -4727,14 +4734,15 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                         p = p->pNext;
                     }
 #endif
-#endif // HAVE_WORKING_FORK
                     continue;
                 }
             }
+#endif // HAVE_WORKING_FORK
 
             log_signal(sig);
             LogStatBuf(stat_buf, "UKNWN");
 
+#if defined(HAVE_WORKING_FORK)
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef STUB_SLAVE
             Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, stubslave_pid=%d" ENDLINE,
@@ -4744,6 +4752,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                 mudstate.dumper, child, slave_pid);
 #endif // STUB_SLAVE
             ENDLOG;
+#endif // HAVE_WORKING_FORK
         }
         break;
 
@@ -4877,10 +4886,12 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                 unset_signals();
                 exit(1);
             }
-#endif // HAVE_WORKING_FORK
+
             // We are the reproduced child with a slightly better chance.
             //
             dump_restart_db();
+#endif // HAVE_WORKING_FORK
+
 #ifdef GAME_DOOFERMUX
             execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #else // GAME_DOOFERMUX

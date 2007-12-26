@@ -19,9 +19,9 @@
 
 // From bsd.cpp.
 //
-void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void close_sockets(bool emergency, const UTF8 *message);
 #if defined(HAVE_WORKING_FORK)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
 #ifdef STUB_SLAVE

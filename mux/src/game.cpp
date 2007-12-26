@@ -3378,7 +3378,10 @@ int DCL_CDECL main(int argc, char *argv[])
 #else
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL);
 #endif
+
+#if defined(HAVE_WORKING_FORK)
     boot_slave(GOD, GOD, GOD, 0, 0);
+#endif // HAVE_WORKING_FORK
 
     // All intialization should be complete, allow the local
     // extensions to configure themselves.

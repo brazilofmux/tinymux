@@ -264,8 +264,10 @@ extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
 void process_output_ntio(void *, int);
 #else // WIN32
 extern void shovechars(int nPorts, PortInfo aPorts[]);
-extern void dump_restart_db(void);
 #endif // WIN32
+#if defined(HAVE_WORKING_FORK)
+extern void dump_restart_db(void);
+#endif // HAVE_WORKING_FORK
 extern FTASK *process_output;
 void process_output_unix(void *, int);
 
