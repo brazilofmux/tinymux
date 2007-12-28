@@ -2216,7 +2216,7 @@ static void info(int fmt, int flags, int ver)
         Log.WriteString(T(" AtrKey"));
     if (flags & V_ATRMONEY)
         Log.WriteString(T(" AtrMoney"));
-    Log.WriteString(ENDLINE);
+    Log.WriteString(T(ENDLINE));
 }
 
 static const UTF8 *standalone_infile = NULL;

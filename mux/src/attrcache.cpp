@@ -125,7 +125,7 @@ void cache_cleanup(void)
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
         fclose(TempFiles[i]);
-        char TempFileName[20];
+        UTF8 TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
         RemoveFile(TempFileName);
     }
