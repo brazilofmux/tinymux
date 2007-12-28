@@ -2126,7 +2126,8 @@ static void info(int fmt, int flags, int ver)
     Log.tinyprintf("%s version %d:", cp, ver);
     if ((flags & MANDFLAGS) != MANDFLAGS)
     {
-        Log.WriteString(" Unsupported flags");
+        Log.WriteString(" Unsupported flags" ENDLINE);
+        exit(1);
     }
     if (flags & V_DATABASE)
         Log.WriteString(" Database");
@@ -2136,7 +2137,7 @@ static void info(int fmt, int flags, int ver)
         Log.WriteString(" AtrKey");
     if (flags & V_ATRMONEY)
         Log.WriteString(" AtrMoney");
-    Log.WriteString("\n");
+    Log.WriteString(ENDLINE);
 }
 
 static const char *standalone_infile = NULL;
@@ -2240,8 +2241,14 @@ static void dbconvert(void)
     {
         cache_redirect();
     }
+
     setvbuf(fpIn, NULL, _IOFBF, 16384);
-    db_read(fpIn, &db_format, &db_ver, &db_flags);
+    if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
+    {
+        cache_cleanup();
+        exit(1);
+    }
+
     if (do_redirect)
     {
         cache_pass2();
