@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  November 2007
+Last Update:  December 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,6 +80,7 @@ Feature Additions:
  -- Added stripped_flags configuration option (Issue 200).  This
     affects guests, @chown, @chownall, and @clone.
  -- Do not display MOTD/WIZMOTD unless @motd/@wizmotd is set.
+ -- Add support for loading TinyMUX 2.7 flatfiles, mail, and comsys.
 
 
 Bug Fixes:
