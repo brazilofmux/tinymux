@@ -91,7 +91,7 @@ inline int mux_color(const unsigned char *p)
 #define TR_LATIN1_ACCEPTING_STATES_START (74)
 extern const unsigned char tr_latin1_itt[256];
 extern const unsigned short tr_latin1_stt[74][191];
-const char *ConvertToLatin(const UTF8 *pString);
+char *ConvertToLatin(const UTF8 *pString);
 
 UTF8 *convert_color(const UTF8 *pString);
 

@@ -1580,7 +1580,7 @@ UTF8 *convert_color(const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const char *ConvertToLatin(const UTF8 *pString)
+char *ConvertToLatin(const UTF8 *pString)
 {
     static char buffer[LBUF_SIZE];
     char *q = buffer;
