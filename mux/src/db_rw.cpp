@@ -388,7 +388,19 @@ static bool get_list(FILE *f, dbref i)
                 // Store the attr
                 //
                 size_t nBuffer;
-                char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+                const char *pBuffer;
+                if (3 == g_version)
+                {
+                    size_t nBufferUnicode;
+                    UTF8 *pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+                    pBufferUnicode = convert_color(pBufferUnicode);
+                    pBuffer = ConvertToLatin(pBufferUnicode);
+                    nBuffer = strlen(pBuffer);
+                }
+                else
+                {
+                    pBuffer = getstring_noalloc(f, true, &nBuffer);
+                }
                 atr_add_raw_LEN(i, atr, pBuffer, nBuffer);
             }
             else
@@ -569,6 +581,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     bool size_gotten = false;
     bool nextattr_gotten = false;
 
+    bool convert_values = false;
     bool read_attribs = true;
     bool read_name = true;
     bool read_key = true;
@@ -639,6 +652,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     aflags = mudconf.vattr_flags;
                 }
+
+                if (3 == g_version)
+                {
+                    tstr = ConvertToLatin((UTF8 *)tstr);
+                }
+
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
                 if (bValid)
                 {
@@ -695,26 +714,38 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     header_gotten = true;
                     g_format = F_MUX;
                     g_version = getref(f);
-                    mux_assert((g_version & MANDFLAGS) == MANDFLAGS);
-
-                    // Otherwise extract feature flags
-                    //
-                    if (g_version & V_DATABASE)
-                    {
-                        read_attribs = false;
-                        read_name = !(g_version & V_ATRNAME);
-                    }
-                    read_key = !(g_version & V_ATRKEY);
-                    read_money = !(g_version & V_ATRMONEY);
                     g_flags = g_version & ~V_MASK;
-
                     g_version &= V_MASK;
+
                     if (  g_version < MIN_SUPPORTED_VERSION
                        || MAX_SUPPORTED_VERSION < g_version)
                     {
                         Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
                         return -1;
                     }
+
+                    mux_assert(  (  (  1 == g_version
+                                    || 2 == g_version)
+                                 && (g_flags & MANDFLAGS_V2) == MANDFLAGS_V2)
+                              || (  3 == g_version
+                                 && (g_flags & MANDFLAGS_V3) == MANDFLAGS_V3));
+
+                    // Otherwise extract feature flags
+                    //
+                    if (g_flags & V_DATABASE)
+                    {
+                        if (3 == g_version)
+                        {
+                            // We'll convert the external database from UTF-8
+                            // to Latin-1 at the end.
+                            //
+                            convert_values = true;
+                        }
+                        read_attribs = false;
+                        read_name = !(g_flags & V_ATRNAME);
+                    }
+                    read_key = !(g_flags & V_ATRKEY);
+                    read_money = !(g_flags & V_ATRMONEY);
                 }
             }
             else if (ch == 'S')
@@ -761,6 +792,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             if (read_name)
             {
                 tstr = getstring_noalloc(f, true, &nBuffer);
+                if (3 == g_version)
+                {
+                    tstr = (char *)convert_color((UTF8 *)tstr);
+                    tstr = ConvertToLatin((UTF8 *)tstr);
+                }
                 buff = alloc_lbuf("dbread.s_Name");
                 (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -909,6 +945,37 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         Log.tinyprintf(ENDLINE "Info: +N<next free attr> can be safely adjusted down.");
                     }
                     mudstate.attr_next = max_atr + 1;
+                }
+
+                if (convert_values)
+                {
+                    Log.WriteString("Converting external database to Latin-1 " ENDLINE);
+                    Log.Flush();
+
+                    // Convert every attribute on every object in the external database.
+                    //
+                    dbref iObject;
+                    atr_push();
+                    DO_WHOLE_DB(iObject)
+                    {
+                        char *as;
+                        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+                        {
+                            if (  0 < iAttr
+                               && iAttr <= anum_alc_top)
+                            {
+                                const UTF8 *pUnicode = (const UTF8 *)atr_get_raw(iObject, iAttr);
+                                if (NULL != pUnicode)
+                                {
+                                    pUnicode = convert_color(pUnicode);
+                                    const char *pLatin = ConvertToLatin(pUnicode);
+                                    size_t nLatin = strlen(pLatin);
+                                    atr_add_raw_LEN(iObject, iAttr, pLatin, nLatin);
+                                }
+                            }
+                        }
+                    }
+                    atr_pop();
                 }
 
                 *db_version = g_version;

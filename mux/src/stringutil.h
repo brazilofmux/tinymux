@@ -46,9 +46,54 @@ extern const unsigned char mux_StripAccents[256];
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
 #define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
 
+#define UTF8_SIZE1     1
+#define UTF8_SIZE2     2
+#define UTF8_SIZE3     3
+#define UTF8_SIZE4     4
+#define UTF8_CONTINUE  5
+#define UTF8_ILLEGAL   6
+extern const unsigned char utf8_FirstByte[256];
+#define utf8_NextCodePoint(x)      (x + utf8_FirstByte[(unsigned char)*x])
+
 int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
+
+// utf/tr_Color.txt
+//
+// 517 code points.
+// 5 states, 13 columns, 321 bytes
+//
+#define TR_COLOR_START_STATE (0)
+#define TR_COLOR_ACCEPTING_STATES_START (5)
+extern const unsigned char tr_color_itt[256];
+extern const unsigned char tr_color_stt[5][13];
+
+inline int mux_color(const unsigned char *p)
+{
+    int iState = TR_COLOR_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_color_stt[iState][tr_color_itt[(unsigned char)ch]];
+    } while (iState < TR_COLOR_ACCEPTING_STATES_START);
+    return iState - TR_COLOR_ACCEPTING_STATES_START;
+}
+
+#define COLOR_NOTCOLOR   0
+
+// utf/tr_utf8_latin1.txt
+//
+// 1596 code points.
+// 74 states, 191 columns, 28524 bytes
+//
+#define TR_LATIN1_START_STATE (0)
+#define TR_LATIN1_ACCEPTING_STATES_START (74)
+extern const unsigned char tr_latin1_itt[256];
+extern const unsigned short tr_latin1_stt[74][191];
+const char *ConvertToLatin(const UTF8 *pString);
+
+UTF8 *convert_color(const UTF8 *pString);
 
 typedef struct
 {
