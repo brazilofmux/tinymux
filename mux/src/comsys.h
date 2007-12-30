@@ -71,12 +71,14 @@ bool test_transmit_access(dbref player, struct channel *chan);
 bool test_receive_access(dbref player, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
 void do_comdisconnectchannel(dbref player, char *channel);
-void load_channels(FILE *fp);
+void load_channels_V0123(FILE *fp);
+void load_channels_V4(FILE *fp);
 void purge_comsystem(void);
 void save_channels(FILE *fp);
 void destroy_comsys(comsys_t *c);
 void sort_com_aliases(comsys_t *c);
-void load_comsystem(FILE *fp);
+void load_comsystem_V0123(FILE *fp);
+void load_comsystem_V4(FILE *fp);
 void save_comsystem(FILE *fp);
 void SendChannelMessage
 (
