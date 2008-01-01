@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  December 2007
+Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,6 +228,7 @@ Bug Fixes:
  -- Improve ValidateConfigurationDbrefs() to prevent
     player_starting_room and similar dbref configuration options from
     refering to NOTHING (Issue 441).
+ -- TruncateToBuffer() mis-handled trailing color (Issue 444).
 
 
 Performance Enhancements:

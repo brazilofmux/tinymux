@@ -4316,6 +4316,7 @@ size_t TruncateToBuffer
     ColorState csLast    = CS_NORMAL;
     ColorState csCurrent = CS_NORMAL;
 
+    bool bText = false;
     const UTF8 *p = pString;
     bool bTruncated = false;
     while (  '\0' != p[0]
@@ -4334,6 +4335,7 @@ size_t TruncateToBuffer
         // Parse a run of text.  A run of text is always ended by '\0' and
         // sometimes by '\xEF' since all color code points start with '\xEF'.
         //
+        bool bText = false;
         size_t nTextRun = 0;
         const UTF8 *pTextRun = p;
         for (;;)
@@ -4402,6 +4404,7 @@ size_t TruncateToBuffer
 
                 // Lay down text.
                 //
+                bText = true;
                 memcpy(pBuffer + nOutput, pTextRun, nTextRun);
                 nOutput += nTextRun;
 
@@ -4412,7 +4415,7 @@ size_t TruncateToBuffer
         }
     }
 
-    pNormal = ColorBinaryNormal(csCurrent, &nNormal);
+    pNormal = ColorBinaryNormal((bText)?csCurrent:csLast, &nNormal);
     if (  0 < nNormal
        && nOutput + nNormal <= nBuffer)
     {
