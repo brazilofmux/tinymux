@@ -50,6 +50,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #  define PCRE_DATA_SCOPE     extern
 #endif
 
+#define SUPPORT_UTF8
+
 /* Have to include stdlib.h in order to ensure that size_t is defined;
 it is needed here for malloc. */
 

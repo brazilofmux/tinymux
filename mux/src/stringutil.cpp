@@ -5065,7 +5065,7 @@ CF_HAND(cf_art_rule)
 
     const char *errptr;
     int erroffset;
-    pcre* reNewRegexp = pcre_compile((char *)pCurrent, 0, &errptr, &erroffset, NULL);
+    pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, NULL);
     if (!reNewRegexp)
     {
         cf_log_syntax(player, cmd, "Error processing regexp '%s':.",
