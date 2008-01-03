@@ -1733,13 +1733,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 &aowner, &aflags, &nAttrGotten);
                             if (0 < nAttrGotten)
                             {
-                                if (nAttrGotten > nBufferAvailable)
-                                {
-                                    nAttrGotten = nBufferAvailable;
-                                }
-                                memcpy(*bufc, mux_scratch, nAttrGotten);
-                                *bufc += nAttrGotten;
-                                nBufferAvailable -= nAttrGotten;
+                                safe_copy_buf(mux_scratch, nAttrGotten, buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
                         else if ('\0' == pStr[iStr])
