@@ -6380,13 +6380,13 @@ void mux_string::replace_Chars
         // string size, we need to move things around.
         //
         nMove = m_iLast - (iStart + nLen);
-        if (CursorMax < m_iLast + nTo - nLen)
+        if (LBUF_SIZE - 1 < m_iLast.m_byte + sTo.m_iLast.m_byte - nLen.m_byte)
         {
             // The resulting string would be too large, so we need to trim
             // either the move or the copy part -- depending on how much
             // needs to be trimmed.
             //
-            if (CursorMax < iStart + nTo)
+            if (LBUF_SIZE - 1 < iStart.m_byte + nTo.m_byte)
             {
                 while (  sTo.cursor_prev(nCopy)
                       && CursorMax.m_byte - iStart.m_byte < nCopy.m_byte)
