@@ -5079,8 +5079,8 @@ static void ListMailInFolder(dbref player, UTF8 *folder_name, UTF8 *msglist)
 {
     int folder = 0;
 
-    if (  NULL != folder_name
-       && '\0' != folder_name[0])
+    if (  NULL == folder_name
+       || '\0' == folder_name[0])
     {
         folder = player_folder(player);
     }
