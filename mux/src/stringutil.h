@@ -897,9 +897,14 @@ public:
         return m_iLast;
     }
 
-    inline size_t length(void) const
+    inline size_t length_byte(void) const
     {
         return m_iLast.m_byte;
+    }
+
+    inline size_t length_point(void) const
+    {
+        return m_iLast.m_point;
     }
 
     void prepend(dbref num);
@@ -1130,7 +1135,7 @@ public:
 
 inline bool isEmpty(const mux_string *p)
 {
-    return ((NULL == p) || (0 == p->length()));
+    return ((NULL == p) || (0 == p->length_byte()));
 }
 
 // String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.

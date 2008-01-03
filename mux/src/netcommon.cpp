@@ -124,7 +124,7 @@ void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaC
 /* raw_notify_html() -- raw_notify() without the newline */
 void raw_notify_html(dbref player, const mux_string &sMsg)
 {
-    if (0 == sMsg.length())
+    if (0 == sMsg.length_byte())
     {
         return;
     }
@@ -184,7 +184,7 @@ void raw_notify(dbref player, const UTF8 *msg)
 
 void raw_notify(dbref player, const mux_string &sMsg)
 {
-    if (0 == sMsg.length())
+    if (0 == sMsg.length_byte())
     {
         return;
     }

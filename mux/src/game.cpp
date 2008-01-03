@@ -615,7 +615,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
     // If speaker is invalid or message is empty, just exit.
     //
     if (  !Good_obj(target)
-       || 0 == msg.length())
+       || 0 == msg.length_byte())
     {
         return;
     }

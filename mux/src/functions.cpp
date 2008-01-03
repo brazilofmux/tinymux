@@ -4091,7 +4091,7 @@ static FUNCTION(fun_lpos)
 
     mux_string *sStr = new mux_string(fargs[0]);
 
-    if (0 == sStr->length())
+    if (0 == sStr->length_byte())
     {
         delete sStr;
         return;
@@ -4099,7 +4099,7 @@ static FUNCTION(fun_lpos)
 
     mux_string *sPat = new mux_string(fargs[1]);
 
-    if (0 == sPat->length())
+    if (0 == sPat->length_byte())
     {
         sPat->import(T(" "), 1);
     }
@@ -4146,7 +4146,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
     // are allowed to append to a null string.
     //
     if (  NULL == sList
-       || (  0 == sList->length()
+       || (  0 == sList->length_byte()
           && (  flag != IF_INSERT
              || iWord != 1)))
     {
@@ -4382,7 +4382,7 @@ static FUNCTION(fun_remove)
            && sWord->length_cursor() == iEnd - iStart
            && (  (  bSucceeded
                  && iPos == iStart)
-              || sWord->length() == 0))
+              || 0 == sWord->length_byte()))
         {
             bFound = true;
         }
@@ -4492,7 +4492,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-    size_t nLen = sStr->length();
+    size_t nLen = sStr->length_point();
     UTF8 cChar;
     ColorState csColor;
 
@@ -4501,6 +4501,10 @@ static FUNCTION(fun_escape)
 
     for (size_t i = 0; i < nLen; i++)
     {
+        // BUGBUG: Tests each byte of a UTF-8 sequence for escape which is wrong, but
+        // works. However, units of export_Char is bytes while units of export_Color is
+        // points. So, it's still broken.
+        //
         cChar   = sStr->export_Char(i);
         csColor = sStr->export_Color(i);
         if (  mux_isescape(cChar)
@@ -5890,7 +5894,7 @@ static FUNCTION(fun_before)
     if (1 < nfargs)
     {
         sPat->import(fargs[1]);
-        nPat = sPat->length();
+        nPat = sPat->length_byte();
     }
     else
     {
@@ -6032,6 +6036,8 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    // BUGBUG: Won't allow a UTF-8 sequence in the third argument.
+    //
     if (1 < strlen((char *)fargs[2]))
     {
         safe_str(T("#-1 TOO MANY CHARACTERS"), buff, bufc);
@@ -6055,8 +6061,8 @@ static FUNCTION(fun_merge)
     {
         // Do length checks first.
         //
-        size_t nLen = sStrA->length();
-        if (nLen != sStrB->length())
+        size_t nLen = sStrA->length_point();
+        if (nLen != sStrB->length_point())
         {
             safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
         }
@@ -6065,12 +6071,18 @@ static FUNCTION(fun_merge)
             // Find the character to look for.  Null character is considered a
             // space.
             //
+            // BUGBUG: Wrong.
+            //
             const UTF8 cFill = *fargs[2] ? *fargs[2] : ' ';
 
             for (size_t i = 0; i < nLen; i++)
             {
+                // BUGBUG: Won't compare UTF-8 sequences.
+                //
                 if (sStrA->export_Char(i) == cFill)
                 {
+                    // BUGBUG: set_Char uses byte but set_Color uses point.
+                    //
                     sStrA->set_Char(i, sStrB->export_Char(i));
                     sStrA->set_Color(i, sStrB->export_Color(i));
                 }
@@ -10394,7 +10406,7 @@ static FUNCTION(fun_tr)
 
     if (NULL != sStr)
     {
-        size_t nStr = sStr->length();
+        size_t nStr = sStr->length_byte();
         if (0 != nStr)
         {
             // Process character ranges.

@@ -3327,7 +3327,7 @@ FUNCTION(fun_foreach)
     const UTF8 *bp = cbuf;
     mux_string *sStr = new mux_string(fargs[1]);
     sStr->trim();
-    size_t nStr = sStr->length();
+    size_t nStr = sStr->length_byte();
     LBUF_OFFSET i = 0, nBytes = 0;
 
     if (  4 == nfargs
