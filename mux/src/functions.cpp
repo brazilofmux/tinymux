@@ -4377,6 +4377,7 @@ static FUNCTION(fun_escape)
     char *pString = fargs[0];
     size_t nString = strlen(pString);
 
+    bool bBackslash = false;
     while (nString)
     {
         size_t nTokenLength0;
@@ -4391,9 +4392,10 @@ static FUNCTION(fun_escape)
             while (nTokenLength0--)
             {
                 if (  mux_isescape(*pString)
-                   || pString == fargs[0])
+                   || !bBackslash)
                 {
                     safe_chr('\\', buff, bufc);
+                    bBackslash = true;
                 }
                 safe_chr(*pString, buff, bufc);
                 pString++;
