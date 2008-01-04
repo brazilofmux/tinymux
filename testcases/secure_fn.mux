@@ -15,18 +15,18 @@
   @log smoke=Begining secure() test cases.
 -
 #
-# Test Case #1 - Test that characters [](){};%\$ mixed with ASCII are replaced with spaces.
+# Test Case #1 - Test that characters %$\[](){},; mixed with ASCII are replaced with spaces.
 #
 &tr.tc001 test_secure_fn=
-  @va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\a%$a;
-  @vb me=%[%]%(%)%{%}%;%%%\%$;
+  @va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\a%$a%,a;
+  @vb me=%[%]%(%)%{%}%;%%%\%$%,;
   @if strmatch(
         setr(0,sha1(
             secure(%va)
             [secure(%vb)]
           )
         ),
-        11C8262AE1CC277C48765D3C92EB225B21D669E9
+        46921D8F439E5D25081D6E6810EA42693EB7FBB0
       )=
   {
     @log smoke=TC001: ASCII mix. Succeeded.
@@ -36,18 +36,18 @@
   }
 -
 #
-# Test Case #2 - Test that characters [](){};%\$ mixed with color and ASCII are replaced with spaces.
+# Test Case #2 - Test that characters %$\[](){},; mixed with color and ASCII are replaced with spaces.
 #
 &tr.tc002 test_secure_fn=
-  @va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\%xga%xr%$%xga;
-  @vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\%xr%$%xg;
+  @va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\%xga%xr%$%xga%xr%,%xga;
+  @vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\%xr%$%xg%,%xr;
   @if strmatch(
         setr(0,sha1(
             translate(secure(%va),p)
             [translate(secure(%vb),p)]
           )
         ),
-        D81C50C590F8D4C41E5DE642DABA8C98EC8B5154
+        0432DFA8F9CAB622E397DB9BD462C3516DF8A07F
       )=
   {
     @log smoke=TC002: ASCII-color mix. Succeeded.
@@ -57,20 +57,20 @@
   }
 -
 #
-# Test Case #3 - Test that characters [](){};%\$ mixed with Unicode are replaced with spaces.
+# Test Case #3 - Test that characters %$\[](){},; mixed with Unicode are replaced with spaces.
 #
 &tr.tc003 test_secure_fn=
   @if chr(256)=
   {
-    @va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\[chr(256)]%$[chr(256)];
-    @vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\[chr(10010)]%$[chr(10010)];
+    @va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\[chr(256)]%$[chr(256)]%,[chr(256)];
+    @vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\[chr(10010)]%$[chr(10010)]%,[chr(10010)];
     @if strmatch(
           setr(0,sha1(
               secure(%va)
               [secure(%vb)]
             )
           ),
-          3D295519E39B3FDDF0942D5D583B85A1E716CA1C
+          05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2
         )=
     {
       @log smoke=TC003: Unicode mix. Succeeded.
@@ -84,20 +84,20 @@
   }
 -
 #
-# Test Case #4 - Test that characters [](){};%\$ mixed with color and Unicode are replaced with spaces.
+# Test Case #4 - Test that characters %$\[](){},; mixed with color and Unicode are replaced with spaces.
 #
 &tr.tc004 test_secure_fn=
   @if chr(256)=
   {
-    @va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\%xg[chr(256)]%xr%$%xg[chr(256)];
-    @vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\%xg[chr(10010)]%xr%$%xg[chr(10010)];
+    @va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];
+    @vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];
     @if strmatch(
           setr(0,sha1(
               translate(secure(%va),p)
               [translate(secure(%vb),p)]
             )
           ),
-          0BA1D44F0585C1D496C37DB6B1DD3375D15117CD
+          B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD
         )=
     {
       @log smoke=TC004: Unicode-color mix. Succeeded.
