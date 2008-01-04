@@ -1,5 +1,5 @@
 +X996099
-+S6
++S7
 +N267
 -R1
 +A256
@@ -28,7 +28,7 @@
 "Limbo"
 -1
 -1
-5
+6
 -1
 -1
 -1
@@ -58,29 +58,29 @@
 0
 0
 >218
-"Fri Jan 04 07:51:14.388926 2008"
+"Fri Jan 04 09:38:57.934747 2008"
 >219
-"Fri Jan 04 07:51:14.388926 2008"
+"Fri Jan 04 09:38:57.934747 2008"
 >30
-"Fri Jan 04 07:51:23.145229 2008"
+"Fri Jan 04 09:39:03.820708 2008"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$mv+P+nyc4ldN$WZElLSyOeCBXzPMCJAZqLux+md4="
+"$SHA1$4VM9wMBZNYMu$FnoOqz8POvAPD5jDYq6WBxGeRQs="
 >88
 "sdennis@localhost"
 >144
 "127.0.0.1"
 >84
-"#1;localhost;Fri Jan 04 07:51:23.145406 2008;;;;;;;0;0;;;;;;;"
+"#1;localhost;Fri Jan 04 09:39:03.820877 2008;;;;;;;0;0;;;;;;;"
 >213
-"-1 5 -1 -1 5"
+"-1 6 -1 -1 6"
 >222
 "Shutdown"
 >224
-"4 4 4 1 1199461888"
+"3 3 3 1 1199468347"
 <
 !2
 "test_convtime_fn"
@@ -99,9 +99,9 @@
 0
 0
 >218
-"Fri Jan 04 07:51:25.272728 2008"
+"Fri Jan 04 09:39:05.469176 2008"
 >219
-"Fri Jan 04 07:51:25.314666 2008"
+"Fri Jan 04 09:39:05.469704 2008"
 >256
 "@log smoke=Begining convtime() test cases."
 >257
@@ -122,7 +122,7 @@
 "@log smoke=End convtime() test cases.;@notify smoke"
 <
 !3
-"test_secure_fn"
+"test_escape_fn"
 0
 -1
 -1
@@ -138,24 +138,24 @@
 0
 0
 >218
-"Fri Jan 04 07:51:25.314774 2008"
+"Fri Jan 04 09:39:05.469759 2008"
 >219
-"Fri Jan 04 07:51:25.314948 2008"
+"Fri Jan 04 09:39:05.46998 2008"
 >256
-"@log smoke=Begining secure() test cases."
+"@log smoke=Begining escape() test cases."
 >257
-"@va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\\a%$a%,a;@vb me=%[%]%(%)%{%}%;%%%\\%$%,;@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),46921D8F439E5D25081D6E6810EA42693EB7FBB0)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
+"@va me=a%%a%\\a%[a%]a%{a%}a%;a%,a%(a%)a%^a%$a;@vb me=%%%\\%[%]%{%}%;%,%(%)%^%$;@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),0F46DFE38EA4276DCB859687C581218BFE31555A)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
 >258
-"@va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\\%xga%xr%$%xga%xr%,%xga;@vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\\%xr%$%xg%,%xr;@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),0432DFA8F9CAB622E397DB9BD462C3516DF8A07F)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
+"@va me=%xga%xr%%%xga%xr%\\%xga%xr%[%xga%xr%]%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%,%xga%xr%(%xga%xr%)%xga%xr%^%xga%xr%$%xga;@vb me=%xg%%%xr%\\%xg%[%xr%]%xg%{%xr%}%xg%;%xr%,%xg%(%xr%)%xg%^%xr%$%xg;@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),709E50243D97487BFE0E8EFA1D983C9AD4961A0E)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
 >259
-"@if chr(256)={@va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\\[chr(256)]%$[chr(256)]%,[chr(256)];@vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%$[chr(10010)]%,[chr(10010)];@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
+"@if chr(256)={@va me=[chr(256)]%%[chr(256)]%\\[chr(256)]%[[chr(256)]%][chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%,[chr(256)]%([chr(256)]%)[chr(256)]%^[chr(256)]%$[chr(256)];@vb me=[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%[[chr(10010)]%][chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%,[chr(10010)]%([chr(10010)]%)[chr(10010)]%^[chr(10010)]%$[chr(10010)];@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
 >260
-"@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
+"@if chr(256)={@va me=%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%,%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%^%xg[chr(256)]%xr%$%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%,%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%^%xg[chr(10010)]%xr%$%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),BAB659A1FB7AB53CD72FAC210EAEAEE6BBCAF6FB)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
 >264
-"@log smoke=End secure() test cases.;@notify smoke"
+"@log smoke=End escape() test cases.;@notify smoke"
 <
 !4
-"test_shutdown"
+"test_secure_fn"
 0
 -1
 -1
@@ -171,14 +171,24 @@
 0
 0
 >218
-"Fri Jan 04 07:51:25.314993 2008"
+"Fri Jan 04 09:39:05.470034 2008"
 >219
-"Fri Jan 04 07:51:25.315068 2008"
+"Fri Jan 04 09:39:05.470228 2008"
 >256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+"@log smoke=Begining secure() test cases."
+>257
+"@va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\\a%$a%,a;@vb me=%[%]%(%)%{%}%;%%%\\%$%,;@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),46921D8F439E5D25081D6E6810EA42693EB7FBB0)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
+>258
+"@va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\\%xga%xr%$%xga%xr%,%xga;@vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\\%xr%$%xg%,%xr;@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),0432DFA8F9CAB622E397DB9BD462C3516DF8A07F)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
+>259
+"@if chr(256)={@va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\\[chr(256)]%$[chr(256)]%,[chr(256)];@vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%$[chr(10010)]%,[chr(10010)];@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
+>260
+"@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
+>264
+"@log smoke=End secure() test cases.;@notify smoke"
 <
 !5
-"smoke"
+"test_shutdown"
 0
 -1
 -1
@@ -188,17 +198,40 @@
 1
 -1
 1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 04 09:39:05.470271 2008"
+>219
+"Fri Jan 04 09:39:05.470311 2008"
+>256
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+<
+!6
+"smoke"
+0
+-1
+-1
+-1
+0
+5
+1
+-1
+1
 37750785
 0
 0
 0
 0
 >218
-"Fri Jan 04 07:51:25.315111 2008"
+"Fri Jan 04 09:39:05.470354 2008"
 >219
-"Fri Jan 04 07:51:25.315186 2008"
+"Fri Jan 04 09:39:05.470429 2008"
 >265
-"convtime_fn secure_fn shutdown"
+"escape_fn convtime_fn secure_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >266

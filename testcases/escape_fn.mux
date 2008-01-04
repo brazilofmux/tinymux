@@ -1,0 +1,123 @@
+#
+# escape_fn.mux - Test Cases for escape().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with escape() behaviors.
+#
+@create test_escape_fn
+-
+@set test_escape_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_escape_fn=
+  @log smoke=Begining escape() test cases.
+-
+#
+# Test Case #1 - Test that characters %\[]{};,()^$ mixed with ASCII are replaced with spaces.
+#
+&tr.tc001 test_escape_fn=
+  @va me=a%%a%\a%[a%]a%{a%}a%;a%,a%(a%)a%^a%$a;
+  @vb me=%%%\%[%]%{%}%;%,%(%)%^%$;
+  @if strmatch(
+        setr(0,sha1(
+            escape(%va)
+            [escape(%vb)]
+          )
+        ),
+        0F46DFE38EA4276DCB859687C581218BFE31555A
+      )=
+  {
+    @log smoke=TC001: ASCII mix. Succeeded.
+  },
+  {
+    @log smoke=TC001: ASCII mix. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Test that characters %\[]{};,()^$ mixed with color and ASCII are replaced with spaces.
+#
+&tr.tc002 test_escape_fn=
+  @va me=%xga%xr%%%xga%xr%\%xga%xr%[%xga%xr%]%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%,%xga%xr%(%xga%xr%)%xga%xr%^%xga%xr%$%xga;
+  @vb me=%xg%%%xr%\%xg%[%xr%]%xg%{%xr%}%xg%;%xr%,%xg%(%xr%)%xg%^%xr%$%xg;
+  @if strmatch(
+        setr(0,sha1(
+            translate(escape(%va),p)
+            [translate(escape(%vb),p)]
+          )
+        ),
+        709E50243D97487BFE0E8EFA1D983C9AD4961A0E
+      )=
+  {
+    @log smoke=TC002: ASCII-color mix. Succeeded.
+  },
+  {
+    @log smoke=TC002: ASCII-color mix. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Test that characters %\[]{};,()^$ mixed with Unicode are replaced with spaces.
+#
+&tr.tc003 test_escape_fn=
+  @if chr(256)=
+  {
+    @va me=[chr(256)]%%[chr(256)]%\[chr(256)]%[[chr(256)]%][chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%,[chr(256)]%([chr(256)]%)[chr(256)]%^[chr(256)]%$[chr(256)];
+    @vb me=[chr(10010)]%%[chr(10010)]%\[chr(10010)]%[[chr(10010)]%][chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%,[chr(10010)]%([chr(10010)]%)[chr(10010)]%^[chr(10010)]%$[chr(10010)];
+    @if strmatch(
+          setr(0,sha1(
+              escape(%va)
+              [escape(%vb)]
+            )
+          ),
+          05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2
+        )=
+    {
+      @log smoke=TC003: Unicode mix. Succeeded.
+    },
+    {
+      @log smoke=TC003: Unicode mix. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC003: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #4 - Test that characters %\[]{};,()^$ mixed with color and Unicode are replaced with spaces.
+#
+&tr.tc004 test_escape_fn=
+  @if chr(256)=
+  {
+    @va me=%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%,%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%^%xg[chr(256)]%xr%$%xg[chr(256)];
+    @vb me=%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%,%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%^%xg[chr(10010)]%xr%$%xg[chr(10010)];
+    @if strmatch(
+          setr(0,sha1(
+              translate(escape(%va),p)
+              [translate(escape(%vb),p)]
+            )
+          ),
+          BAB659A1FB7AB53CD72FAC210EAEAEE6BBCAF6FB
+        )=
+    {
+      @log smoke=TC004: Unicode-color mix. Succeeded.
+    },
+    {
+      @log smoke=TC004: Unicode-color mix. Failed (%q0).
+    };
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: Unicode is not supported on this version. Okay.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_escape_fn=
+  @log smoke=End escape() test cases.;
+  @notify smoke
+-
+drop test_escape_fn
+-
+#
+# End of Test Cases
+#
