@@ -1,5 +1,5 @@
 +X996099
-+S5
++S6
 +N267
 -R1
 +A256
@@ -28,7 +28,7 @@
 "Limbo"
 -1
 -1
-4
+5
 -1
 -1
 -1
@@ -58,29 +58,29 @@
 0
 0
 >218
-"Thu Jan 03 17:01:12.197268 2008"
+"Thu Jan 03 18:09:24.772036 2008"
 >219
-"Thu Jan 03 17:01:12.197268 2008"
+"Thu Jan 03 18:09:24.772036 2008"
 >30
-"Thu Jan 03 17:01:19.685645 2008"
+"Thu Jan 03 18:09:52.701814 2008"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$YG3YpchZnYOT$NZD6NkLmX9HuYmLC3LZXCKpSZXo="
+"$SHA1$0rLPME7JdcEh$2tZcW8vsRoF6fjoYZ5I4giwVaBM="
 >88
 "sdennis@localhost"
 >144
 "127.0.0.1"
 >84
-"#1;localhost;Thu Jan 03 17:01:19.685813 2008;;;;;;;0;0;;;;;;;"
+"#1;localhost;Thu Jan 03 18:09:52.701986 2008;;;;;;;0;0;;;;;;;"
 >213
-"-1 4 -1 -1 4"
+"-1 5 -1 -1 5"
 >222
 "Shutdown"
 >224
-"3 3 3 1 1199408483"
+"24 24 24 1 1199412616"
 <
 !2
 "test_convtime_fn"
@@ -99,9 +99,9 @@
 0
 0
 >218
-"Thu Jan 03 17:01:21.249567 2008"
+"Thu Jan 03 18:09:54.217238 2008"
 >219
-"Thu Jan 03 17:01:21.287789 2008"
+"Thu Jan 03 18:09:54.217731 2008"
 >256
 "@log smoke=Begining convtime() test cases."
 >257
@@ -122,7 +122,7 @@
 "@log smoke=End convtime() test cases.;@notify smoke"
 <
 !3
-"test_shutdown"
+"test_secure_fn"
 0
 -1
 -1
@@ -138,14 +138,20 @@
 0
 0
 >218
-"Thu Jan 03 17:01:21.287896 2008"
+"Thu Jan 03 18:09:54.217788 2008"
 >219
-"Thu Jan 03 17:01:21.287949 2008"
+"Thu Jan 03 18:09:54.217891 2008"
 >256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+"@log smoke=Begining secure() test cases."
+>257
+"@va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\\a%$a;@vb me=%[%]%(%)%{%}%;%%%\\%$;@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),11C8262AE1CC277C48765D3C92EB225B21D669E9)={@log smoke=TC001: Characters in the secure set mixed with ASCII are replaced with spaces.},{@log smoke=TC001: Characters in the secure set mixed with ASCII are not replaced with spaces (%q0).}"
+>258
+"@va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\\%xga%xr%$%xga;@vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\\%xr%$%xg;@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),D81C50C590F8D4C41E5DE642DABA8C98EC8B5154)={@log smoke=TC002: Characters in the secure set mixed with color and ASCII are replaced with spaces.},{@log smoke=TC002: Characters in the secure set mixed with color and ASCII are not replaced with spaces (%q0).};@trig me/tr.done"
+>264
+"@log smoke=End secure() test cases.;@notify smoke"
 <
 !4
-"smoke"
+"test_shutdown"
 0
 -1
 -1
@@ -155,17 +161,40 @@
 1
 -1
 1
+33556481
+0
+0
+0
+0
+>218
+"Thu Jan 03 18:09:54.217935 2008"
+>219
+"Thu Jan 03 18:09:54.218009 2008"
+>256
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+<
+!5
+"smoke"
+0
+-1
+-1
+-1
+0
+4
+1
+-1
+1
 37750785
 0
 0
 0
 0
 >218
-"Thu Jan 03 17:01:21.287994 2008"
+"Thu Jan 03 18:09:54.218054 2008"
 >219
-"Thu Jan 03 17:01:21.288107 2008"
+"Thu Jan 03 18:09:54.218169 2008"
 >265
-"convtime_fn shutdown"
+"convtime_fn secure_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >266
