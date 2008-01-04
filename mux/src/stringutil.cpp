@@ -2284,7 +2284,8 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
             if (  0 < code
                && code < NUM_MU_SUBS)
             {
-                if (ch == ' ' && pString[0] == ' ')
+                if (  ' ' == ch
+                   && ' ' == pString[1])
                 {
                     code = 5;
                 }
