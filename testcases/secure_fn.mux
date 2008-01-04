@@ -77,11 +77,38 @@
     },
     {
       @log smoke=TC003: Unicode mix. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC003: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #4 - Test that characters [](){};%\$ mixed with color and Unicode are replaced with spaces.
+#
+&tr.tc004 test_secure_fn=
+  @if chr(256)=
+  {
+    @va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\%xg[chr(256)]%xr%$%xg[chr(256)];
+    @vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\%xg[chr(10010)]%xr%$%xg[chr(10010)];
+    @if strmatch(
+          setr(0,sha1(
+              translate(secure(%va),p)
+              [translate(secure(%vb),p)]
+            )
+          ),
+          0BA1D44F0585C1D496C37DB6B1DD3375D15117CD
+        )=
+    {
+      @log smoke=TC004: Unicode-color mix. Succeeded.
+    },
+    {
+      @log smoke=TC004: Unicode-color mix. Failed (%q0).
     };
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: Unicode is not supported on this version. Okay.;
+    @log smoke=TC004: Unicode is not supported on this version. Okay.;
     @trig me/tr.done
   }
 -
