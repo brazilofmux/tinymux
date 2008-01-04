@@ -23,7 +23,7 @@
 #
 @create test_convtime_fn
 -
-@set test_convtime_fn=INHERIT
+@set test_convtime_fn=INHERIT QUIET
 -
 #
 # Beginning of Test Cases

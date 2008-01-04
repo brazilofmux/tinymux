@@ -4,16 +4,24 @@
 #
 @create smoke
 -
-@set smoke=INHERIT
+@set smoke=INHERIT QUIET
+-
+&suite.list smoke=
+  convtime_fn shutdown
 -
 @startup smoke=
   @log smoke=Starting SmokeMUX;
   @drain me;
-  @dolist lattr(test_convtime_fn/tr.tc*)=@trig test_convtime_fn/##;
+  @dolist v(suite.list)=
+  {
+    @trig me/suite.tr=##
+  };
+  @notify me
+-
+&suite.tr smoke=
   @wait me=
   {
-    @log smoke=Ending SmokeMUX;
-    @shutdown
+    @dolist lattr(test_%0/tr.tc*)=@trig test_%0/##
   }
 -
 drop smoke
