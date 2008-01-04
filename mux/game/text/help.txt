@@ -6266,8 +6266,8 @@ ESCAPE()
   FUNCTION: escape(<string>)
 
   Returns <string> after adding an escape character (\) at the start of the
-  string and also before each of the characters %;[]{}\ that appear in the
-  string.  This prevents strings entered by players from causing undesired
+  string and also before each of the characters %\[]{};,()^$ that appear in
+  the string.  This prevents strings entered by players from causing undesired
   side effects when used, such as making your object perform unintended
   commands or give out information to which you have access.  Note that this
   function is only needed when the resulting string is to be passed through
@@ -11572,7 +11572,7 @@ SECURE()
 
   FUNCTION: secure(<string>)
 
-  Returns <string> after replacing the characters [](){};%\$ with spaces.
+  Returns <string> after replacing the characters %$\[](){},; with spaces.
   This prevents strings entered by players from causing undesired side
   effects when used, such as making your object perform unintended commands
   or give out information to which you have access.  Note that this function
