@@ -1,0 +1,121 @@
+#
+# merge_fn.mux - Test Cases for merge().
+# $Id$
+#
+# Strategy: Exercise a mix of color, ASCII, and Unicode in combination with merge() behaviors.
+#
+@create test_merge_fn
+-
+@set test_merge_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_merge_fn=
+  @log smoke=Begining merge() test cases.
+-
+#
+# Test Case #1 - Verify that examples work.
+#
+&tr.tc001 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(AB--EF,abcdef,-)
+            [merge(AB[space(2)]EF,abcdef,)]
+          )
+        ),
+        39309B3557549C45DC2C3C651D3FFE8AAF59615A
+      )=
+  {
+    @log smoke=TC001: Examples in help. Succeeded.
+  },
+  {
+    @log smoke=TC001: Examples in help. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Test each position of 5 character ASCII string.
+#
+&tr.tc002 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(01234,abcde,0)
+            [merge(01234,abcde,1)]
+            [merge(01234,abcde,2)]
+            [merge(01234,abcde,3)]
+            [merge(01234,abcde,4)]
+            [merge(01234,abcde,5)]
+          )
+        ),
+        409BF3EDACB2E596A5BD26AE207F857EC0069254
+      )=
+  {
+    @log smoke=TC002: Single ASCII substitution in each position. Succeeded.
+  },
+  {
+    @log smoke=TC002: Single ASCII substitution in each position. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Test each position of 5 characters with space/null <character>.
+#
+&tr.tc003 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(%b1234,abcde,%b)
+            [merge(%b1234,abcde,)]
+            [merge(0%b234,abcde,%b)]
+            [merge(0%b234,abcde,)]
+            [merge(01%b34,abcde,%b)]
+            [merge(01%b34,abcde,)]
+            [merge(012%b4,abcde,%b)]
+            [merge(012%b4,abcde,)]
+            [merge(0123%b,abcde,%b)]
+            [merge(0123%b,abcde,)]
+          )
+        ),
+        82150D5D128C74D654BC88DCE416E78BD83D7A5E
+      )=
+  {
+    @log smoke=TC003: ASCII with space/null substitution in each position. Succeeded.
+  },
+  {
+    @log smoke=TC003: ASCII with space/null substitution in each position. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Vary length of run over 5 character ASCII string.
+#
+&tr.tc004 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(01234,abcde,0)
+            [merge(00234,abcde,0)]
+            [merge(00034,abcde,0)]
+            [merge(00004,abcde,0)]
+            [merge(00000,abcde,0)]
+            [merge(10000,abcde,0)]
+            [merge(12000,abcde,0)]
+            [merge(12300,abcde,0)]
+            [merge(12340,abcde,0)]
+          )
+        ),
+        9ABC0A0A8BE449B42B1135D01B718F0E29C07D43
+      )=
+  {
+    @log smoke=TC004: Vary length of run over 5 character ASCII string. Succeeded.
+  },
+  {
+    @log smoke=TC004: Vary length of run over 5 character ASCII string. Failed (%q0).
+  };
+  @trig me/tr.done
+-
+&tr.done test_merge_fn=
+  @log smoke=End merge() test cases.;
+  @notify smoke
+-
+drop test_merge_fn
+-
+#
+# End of Test Cases
+#
