@@ -70,7 +70,7 @@
               [escape(%vb)]
             )
           ),
-          05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2
+          CFFF6871E52E341AA58EF45DCE68192CBE4B95D7
         )=
     {
       @log smoke=TC003: Unicode mix. Succeeded.
@@ -97,7 +97,7 @@
               [translate(escape(%vb),p)]
             )
           ),
-          BAB659A1FB7AB53CD72FAC210EAEAEE6BBCAF6FB
+          580F9823C431602FF47C668D52FB71823C97D591
         )=
     {
       @log smoke=TC004: Unicode-color mix. Succeeded.

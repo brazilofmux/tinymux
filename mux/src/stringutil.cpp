@@ -5280,7 +5280,7 @@ void mux_string::append(long lLong)
  *
  * \param sStr     mux_string from which to extract characters.
  * \param nStart   Beginning of range to extract and apend.
- * \param nLen     Length of range to extract and append.
+ * \param iEnd     End of range.
  * \return         None.
  */
 
@@ -5708,7 +5708,7 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 
 ColorState mux_string::export_Color(size_t n) const
 {
-    if (  m_iLast.m_byte <= n
+    if (  m_iLast.m_point <= n
        || 0 == m_ncs)
     {
         return CS_NORMAL;

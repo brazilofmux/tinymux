@@ -4492,35 +4492,44 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-    size_t nLen = sStr->length_point();
-    UTF8 cChar;
-    ColorState csColor;
-
     mux_string *sOut = new mux_string;
-    size_t iOut = 0;
+    mux_cursor curStr;
+    mux_cursor curOut;
 
-    for (size_t i = 0; i < nLen; i++)
+    bool bBackslash = false;
+    sOut->cursor_start(curOut);
+    if (sStr->cursor_start(curStr))
     {
-        // BUGBUG: Tests each byte of a UTF-8 sequence for escape which is wrong, but
-        // works. However, units of export_Char is bytes while units of export_Color is
-        // points. So, it's still broken.
-        //
-        cChar   = sStr->export_Char(i);
-        csColor = sStr->export_Color(i);
-        if (  mux_isescape(cChar)
-           || 0 == i)
+        for (;;)
         {
-            sOut->append(T("\\"));
-            sOut->set_Color(iOut++, csColor);
+            if (  sStr->IsEscape(curStr)
+               || !bBackslash)
+            {
+                sOut->append(T("\\"));
+                sOut->set_Color(curOut.m_point, sStr->export_Color(curStr.m_point));
+                sOut->cursor_next(curOut);
+                bBackslash = true;
+            }
+
+            mux_cursor next = curStr;
+            if (sStr->cursor_next(next))
+            {
+                sOut->append(*sStr, curStr, next);
+                sOut->cursor_next(curOut);
+                curStr = next;
+            }
+            else
+            {
+                break;
+            }
         }
-        sOut->append_TextPlain(&cChar, 1);
-        sOut->set_Color(iOut++, csColor);
     }
+
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
-    delete sStr;
     delete sOut;
+    delete sStr;
 }
 
 /*
