@@ -12180,11 +12180,27 @@ SESSION
 & SET()
 SET()
 
-  FUNCTION: set(<name>, <string>)
+  FUNCTION: set(<object>, <string>)
 
-  Works the same as @set, <name> and <string> are equivalent to what comes
-  before and after the '=' sign. Returns nothing. This is a side effect
-  function, and should only be used when necessary.
+  Works the same as @set, <object> and <string> are equivalent to what comes
+  before and after the '=' sign.  Returns nothing.
+
+  The following demonstrate how to use set() for setting or clearing a flag,
+  attribute flag, or attribute on an object. As with @set, flags are cleared
+  by using an exclamation mark(!) preceding the flag name for both general and
+  attribute flags.  For attributes, an empty value after the colon (:) will
+  clear the attribute value from the <object>.
+
+    set(<object>, <flag>)
+    set(<object>/<attribute>, <attribute flag>)
+    set(<object>, <attribute>:<value>)
+
+  Examples:
+
+  > think [set(me,foo:Twenty Pink Pigs)]
+  < think [set(me,foo:)]
+  > think [set(me,VERBOSE)]
+  > think [set(me/foo,!VISUAL)]
 
   Related Topics: @set
 
