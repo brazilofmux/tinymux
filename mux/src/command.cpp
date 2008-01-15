@@ -1411,7 +1411,8 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                 *bp++ = ch;
 
                 if (  mudconf.space_compress
-                   && ';' == ch
+                   && (  ';' == ch
+                      || ':' == ch)
                    && str[0] == ' ')
                 {
                     // Skip following space to prevent the parser from space
