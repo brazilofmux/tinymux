@@ -84,11 +84,14 @@ $-COMMANDS
   COMMAND: :<message>
 
   Displays <message> to everyone in your current room, preceded by your name
-  and a space.
+  and a space.  However, if <message> starts with a space, no space is
+  inserted between your name and the pose -- like the ';' command.
 
   Example:
     >:jumps for joy.
     Player jumps for joy.
+    >: 's cat meows.
+    Player's cat meows.
 
   Related Topics: page, pose, say, whisper, ;, ".
 
@@ -98,11 +101,14 @@ $-COMMANDS
   COMMAND: ;<message>
 
   This command is much like the ':' command, except that no space is inserted
-  between your name and the action.
+  between your name and the pose.  However, <message> can start with its own
+  space -- a result similar to using the ':' command.
 
   Example:
     > ;'s watch beeps.
     Player's watch beeps.
+    > ; meows.
+    Player meows.
 
   Warning: This command does not work in command lists run from an attribute
   because the ';' is treated as the command separator.  Use pose/nospace
