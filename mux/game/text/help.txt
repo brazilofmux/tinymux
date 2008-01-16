@@ -1,7 +1,7 @@
 & HELP
 HELP
 
-  This is the MUX online help facility.
+  This is the TinyMUX online help facility.
 
      Notes on help descriptions:
         [text] - Text enclosed in []'s is optional.  The []'s are never typed
@@ -12,17 +12,17 @@ HELP
   -  Syntax of help command:
        help [<command>]
 
-  -  To get a list of MUX topics:
+  -  To get a list of TinyMUX topics:
        help topics
 
   -  To get a list of Comsystem commands:
        help comsys
 
-  -  To get a list of MUX Commands:
+  -  To get a list of TinyMUX Commands:
        help commands      (or @list commands)
 
   Some of the configuration shown in the help.txt might not be the same as
-  the configuration of this MUX. If you notice any errors, contact an Admin.
+  the configuration of this MUX.  If you notice any errors, contact an admin.
 
 & "
 "
@@ -1473,10 +1473,10 @@ Related Topics: @name.
   command 'enter <object>' when you are in the same location as the object.
   The alternate commands are separated by semicolons just like in exit names.
 
-  Entry aliases are checked for after exitnames, builtin MUX commands, and
-  leave aliases for the current location, but before $-commands.  If more than
-  one object has an entry alias that matches a player's command, the one on
-  the object that occurs first in the location contents list is used.
+  Entry aliases are checked after exit names, built-in MUX commands, and leave
+  aliases for the current location, but before $-commands.  If more than one
+  object has an entry alias that matches a player's command, the one on the
+  object that occurs first in the location contents list is used.
 
   This attribute is meaningful for players and things, and will never be
   automatically looked at on rooms or exits.
@@ -1589,7 +1589,7 @@ Related Topics: @name.
   This attribute is meaningful for players, things, and rooms, and will never
   be automatically triggered on exits.
 
-  Example: @enter car = You climb into the car and buckle your seatbelt.
+  Example: @enter car = You climb into the car and buckle your seat belt.
 
   Related Topics: enter, @aenter, @oenter, ENTER_OK.
 
@@ -1653,7 +1653,7 @@ Related Topics: @name.
   Because this can be used to go anywhere, @exitto is a wizard-only
   attribute.
 
-  Even though @exitto take precendence over the static destination of an exit,
+  Even though @exitto take precedence over the static destination of an exit,
   don't forget to @link all exits anyway.  Anyone can @link an unlinked exit
   and therefore 'own' and @destroy it.
 
@@ -2065,7 +2065,7 @@ Related Topics: @name.
   command 'leave' when you are inside a player or a thing.  The alternate
   commands are separated by semicolons just like in exit names.
 
-  Leave aliases are checked for after exitnames and builtin MUX commands, but
+  Leave aliases are checked after exit names and built-in MUX commands but
   before enter aliases and $-commands.
 
   This attribute is meaningful for players and things, and will never be
@@ -2115,7 +2115,7 @@ Related Topics: @name.
   This attribute is meaningful for players, things, and rooms, and will never
   be automatically triggered on exits.
 
-  Example: @leave car = You unbuckle your seatbelt and climb out of the car.
+  Example: @leave car = You unbuckle your seat belt and climb out of the car.
 
   Related Topics: leave, @aleave, @oleave.
 
@@ -2341,7 +2341,7 @@ Related Topics: @name.
 
   Evaluation locks let you evaluate one of your attributes and compare the
   result against a value stored in the lock.  The result must be an exact
-  match (no wildcarding allowed, but uppercase and lowercase are considered
+  match (no wildcard-ing allowed, but upper-case and lower-case are considered
   to be the same).  When evaluating the attribute the enactor substitutions
   (%#/%n/etc) are replaced with information about the player trying to pass
   the lock, and 'me' and %! refer to the locked object or exit.
@@ -3208,7 +3208,7 @@ Related Topics: @name.
   This attribute is meaningful for players, things, and rooms, and will never
   be automatically triggered on exits.
 
-  Example: @oxleave wormhole = steps out of a hyperspatial wormhole.
+  Example: @oxleave wormhole = steps out of a hyper-spatial wormhole.
 
   Related Topics: leave, @aleave, @leave, @oleave.
 
@@ -3413,7 +3413,7 @@ Related Topics: @name.
 
   This attribute sets an upper limit on the number, <number>, of
   outstanding commands in the queue for this <object>.  This attribute
-  is only setable by a Wizard.
+  is only settable by a Wizard.
 
   In fact, the server has three overlapping constraints for developing
   an upper limit per player on the number of outstanding commands in the
@@ -3436,7 +3436,7 @@ Related Topics: @name.
 
   COMMAND: @query[/<method>] [<dbref>/<attribute>]=[<dbname>]/<query>
 
-  Performs an asyncronous query of external (possibly remote) data.  When the
+  Performs an asynchronous query of external (possibly remote) data.  When the
   query completes, <attribute> on <dbref> is @triggered with the result.  For
   this to work, the server must be compiled with --enable-stubslave.
 
@@ -3838,9 +3838,9 @@ Related Topics: @name.
 
   The following switches are available:
 
-    /all    - (default) Perform the actionlists associated with all targets
+    /all    - (default) Perform the action lists associated with all targets
               that match <string>.
-    /first  - Perform only the actionlist associated with the first target
+    /first  - Perform only the action list associated with the first target
               that matches <string>.
     /notify - Queues an '@notify' after all commands in the list.
 
@@ -3983,7 +3983,7 @@ Related Topics: @name.
   The second form clears the locked flag on the indicated attribute of the
   named object.  This allows the attribute to change ownership to the new
   owner automatically when the object is @chowned, and allows the owner
-  of the object to @chown the attribute to themself or to overwrite it.
+  of the object to @chown the attribute to them self or to overwrite it.
   You must own the attribute to be unlocked, but you do not need to own the
   object.
 
@@ -4529,7 +4529,7 @@ APOSS()
 ARBITRARY COMMANDS
 
   You may define commands that are triggered whenever someone enters a command
-  that matches the command template (wildcarding allowed).  These commands
+  that matches the command template (wildcard-ing allowed).  These commands
   are called arbitrary commands, user-defined commands, or $-commands (for how
   they are defined), and they are checked for only after the check for
   single-character commands, exits, and internal commands have been performed
@@ -4537,12 +4537,12 @@ ARBITRARY COMMANDS
   be performed).
 
   You define an arbitrary command by storing a string of the form
-  '$<template>:<commandlist>' in an attribute of an object, then the command
+  '$<template>:<command list>' in an attribute of an object, then the command
   will be available to anyone who carries the object, is in the same room as
   the object, or is inside the object.  Only use user-named attributes and
   VA-VZ for arbitrary commands, as many of the predefined attributes are not
   for arbitrary commands.  <template> is the pattern to check for (it may
-  contain wildcards), and <commandlist> is a semicolon-separated list of
+  contain wildcards), and <command list> is a semicolon-separated list of
   commands to perform.  The text that the wildcard characters matched are
   available in the variables %0 through %9.
 
@@ -4809,10 +4809,10 @@ BAND()
 
   FUNCTION: band(<number>[, <number>[, ...]])
 
-  Arguments must be an integer and are treated as a bitfield.  It performs a
-  bitwise logical AND between these two bitfields and returns the resulting
-  bitfield as an integer which can be further treated as an integer, a
-  bitfield, or a logical boolean depending on your intentions.
+  Arguments must be an integer and are treated as a bit-field.  It performs a
+  bitwise logical AND between these two bit-fields and returns the resulting
+  bit-field as an integer which can be further treated as an integer, a
+  bit-field, or a logical boolean depending on your intentions.
 
      > think band(922,785)
      784
@@ -4922,7 +4922,7 @@ BNAND()
 
   FUNCTION: bnand(<number1>, <number2>)
 
-  Both arguments are an integer that is treated as a bitfield. It
+  Both arguments are an integer that is treated as a bit-field. It
   performs a bitwise logical AND between <number1> and the complement
   of <number2> which has the effect of forcing certain bits in
   <number1> off in the result.
@@ -5005,7 +5005,7 @@ BOR()
 
   FUNCTION: bor(<number>[, <number>[, ...]])
 
-  Arguments must be an integer and are treated as a bitfield.  It performs a
+  Arguments must be an integer and are treated as a bit-field.  It performs a
   bitwise logical OR which has the effect of forcing certain bits on in the
   result.
 
@@ -5030,7 +5030,7 @@ BXOR()
 
   FUNCTION: bxor(<number>[, <number> [, ...]])
 
-  Arguments must be integers and they are treated as a bitfield.  It performs
+  Arguments must be integers and they are treated as a bit-field.  It performs
   a bitwise logical eXclusive-OR which has the effect of toggling certain bits
   on in the result.
 
@@ -5803,7 +5803,7 @@ CONVSECS()
    utc   - indicates that no timezone/DST conversions should be applied.
            When used this way, there is a unique one-to-one relationship
            between an integer and it's corresponding text-string which
-           may be useful for handling other timezones and fictional
+           may be useful for handling other time zones and fictional
            settings.
 
   <precision> determines the number of fractional seconds shown.
@@ -5839,7 +5839,7 @@ CONVTIME()
   30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
   given as -27256.  This follows the astronomical conventions.
 
-  Note: The time string can also be freeform and this function will
+  Note: The time string can also be free form and this function will
   attempt to parse.
 
 { 'help convtime2' for more }
@@ -5855,7 +5855,7 @@ CONVTIME() (continued)
    utc   - indicates that no timezone/DST conversions should be applied.
            When used this way, there is a unique one-to-one relationship
            between an integer and it's corresponding text-string which
-           may be useful for handling other timezones and fictional
+           may be useful for handling other time zones and fictional
            settings.
 
   <precision> determines the number of fractional seconds shown.
@@ -6653,7 +6653,7 @@ EXAMINE
 & EXAMINE2
 EXAMINE (continued)
 
-  If you specify a wildcarded attribute name, then only those attributes
+  If you specify a wildcard-ed attribute name, then only those attributes
   that match are shown.  So, 'exam me/v?' will show all your attributes that
   start with v and are two characters long.
 
@@ -6788,7 +6788,7 @@ FCOUNT()
   Without an <expression>, this function returns the number of function
   invocation since the beginning of the queue cycle.  With an <expression>,
   this function returns the number of function invocations used by the
-  <expression>.  Softcode can use this result to guage its distance from the
+  <expression>.  Softcode can use this result to gauge its distance from the
   configured function invocation limit.
 
   Related Topics: fdepth(), function_invocation_limit in wizhelp
@@ -7318,9 +7318,9 @@ FUNCTIONS
   like [get(me/[get(me/vz)])], which returns the contents of the attribute
   named in the VZ attribute.
 
-  For help on a particular function, type 'help <functionname>'.  You may
+  For help on a particular function, type 'help <function name>'.  You may
   need to include the parentheses with the function name, ie.
-  'help <functionname>()'.  Type 'help function list' or '@list functions'
+  'help <function name>()'.  Type 'help function list' or '@list functions'
   for a list of the available functions.  'help function classes' will show
   a list of the functions broken down into classes.
 
@@ -8002,7 +8002,7 @@ IMMORTAL
 
   Objects set immortal cannot be killed and don't use up money.
   Only settable by wizards.  This is useful when an object's location
-  shouldn't be changed by Joe Player, but you don't want to have to relink it
+  shouldn't be changed by Joe Player, but you don't want to have to re-link it
   to its current location whenever it moves.
 
   Related Topics:
@@ -8821,7 +8821,7 @@ LISTRLEVELS()
 
   FUNCTION: listrlevels()
 
-  Returns all available levels in a space seperated list.  This function
+  Returns all available levels in a space-separated list.  This function
   takes no arguments.
 
   NOTE: This function is not available unless reality levels was enabled at
@@ -9516,7 +9516,7 @@ MAIL-SENDING
   @mail[/switch] <player-list> = <subject>
         This begins a message to all players in <player-list>.  The
         <player list> forms the To: line of the @mail -- the list of primary
-        receipients.
+        recipients.
 
   -<text>
   ~<text>
@@ -9540,7 +9540,7 @@ MAIL-SENDING
 
   @mail/bcc <player-list>
         This adds <player-list> to the current list of recipients.
-        Unlike the primary recipients and the carbon-copy (cc) receipients,
+        Unlike the primary recipients and the carbon-copy (cc) recipients,
         these additions will be hidden from every recipient including each
         other.
 
@@ -9599,7 +9599,7 @@ MAIL-SENDING (continued)
         ********** End of included message from Gordon
 
   You can add additional text above or below the quoted material with
-  the postpend ('-') and prepend ('~') @mail commands. Like, normal
+  the post-pend ('-') and prepend ('~') @mail commands. Like, normal
   outgoing @mail, the reply is finished and sent with '--' on a line
   by itself
 
@@ -9621,9 +9621,9 @@ MAILJ()
             mailj(<player>, <num>)
             mailj()
 
-  First form returns message <num> from executor mailbag.  Second form returns
-  number of messages for <player>.  Third form return message <num> for
-  <player>.  Fourth form returns number of message for executor.
+  First form returns message <num> from the executor's mail bag.  The second
+  form returns number of messages for <player>.  The third form return message
+  <num> for <player>.  The fourth form returns number of message for executor.
 
   The difference between this and mail() is that this returns one number and
   mail() returns three. Also, mail() only accounts for the messages in the
@@ -9639,7 +9639,7 @@ MAILSIZE()
 
   FUNCTION: mailsize(<player>)
 
-  Returns the size of <player>'s mailbag in bytes.
+  Returns the size of <player>'s mail bag in bytes.
 
   This function is only available if FIRANMUX is enabled.
 
@@ -9776,7 +9776,7 @@ MEMBER()
 
   Member takes a list and a word, and returns the position of that word
   within the list.  If the word does not occur in the list, then 0 is
-  returned.  Unlike match(), member() does not check for wildcarding,
+  returned.  Unlike match(), member() does not check for wildcard-ing,
   and the cases of <list> and <word> are significant.  A word is defined as
   a string which has no interior spaces.  So 'hello' would be one word,
   while 'hello there' would be two.
@@ -9987,8 +9987,8 @@ MONITOR
   Objects:
   When set, anytime the object hears something from someone who passes the
   object's use lock, the object's attributes are scanned for attributes
-  of the form '^<pattern>:<commandlist>'.  If the message matches the
-  wildcarded <pattern>, then <commandlist> is executed, substituting %0 for
+  of the form '^<pattern>:<command list>'.  If the message matches the
+  wildcard-ed <pattern>, then <command list> is executed, substituting %0 for
   the text that matched the first wildcard, %1 for the second, and so on.
   All matching attributes are executed, not just the first.
   Parents of MONITOR objects are never checked for ^-patterns.
@@ -10050,7 +10050,7 @@ MOVING
     LEAVE message for the old location, others in the old location receive
     the OLEAVE message, and the old location runs its ALEAVE action list.
     Others in the new location receive the OXENTER message from the old
-    location, and others in the old location receive the message '<yourname>
+    location, and others in the old location receive the message '<your name>
     has left.'
 
 { 'help moving2' for more }
@@ -10088,7 +10088,7 @@ MOVING (continued)
     ENTER message for the new room, others in the new room receive the OENTER
     message, and the new room runs its AENTER action list. Others in the room
     you just left receive the new room's OXLEAVE message, and others in the
-    old location receive the message '<yourname> has arrived.'
+    old location receive the message '<your name> has arrived.'
   - If the old location is a STICKY room and has its drop-to set, see if
     objects in that room should be sent to the drop-to location.  If so,
     do it.
@@ -10249,7 +10249,7 @@ NEXT()
   FUNCTION: next(<thing>)
 
   If thing is an exit in a room, then next will return the next
-  nondark exit in the list of exits for that room.  If thing is an
+  non-dark exit in the list of exits for that room.  If thing is an
   object, then next will return the next object in the inventory list
   that the object is in.  Otherwise, it returns a '#-1' string.
 
@@ -10521,7 +10521,7 @@ PACK()
   The inverse function of pack is unpack. pack and unpack are designed
   to support the base-36 radix conversion used in Myrddin's popular
   Bulletin Board. For this reason, and to support bases: 2, 8, and 16,
-  this conversion is not the radix-64 conversion used in unix-to-unix
+  this conversion is not the radix-64 conversion used in Unix-to-Unix
   copy (uuencode).
 
   Examples:
@@ -10979,7 +10979,7 @@ POWERS LIST (continued)
   monitor           Can set or reset monitor flag.
   pass_locks        Can successfully pass all locks.
   poll              Can set the @poll.
-  prog              Can use @program on players other than themself.
+  prog              Can use @program on players other than them self.
   search            Can @search anyone.
   see_all           Can examine and see attributes like a wizard.
   see_hidden        Can see hidden players and DARK wizards.
@@ -11091,8 +11091,8 @@ R()
   the contents of the specified register. There are thirty-six such
   registers, numbered 0 through 9 and A through Z.  The local
   registers are normally cleared at the start of each command, but are
-  preserved across the commands that compose an actionlist, as well as
-  commands that directly trigger actionlists, such as @switch,
+  preserved across the commands that compose an action list, as well as
+  commands that directly trigger action lists, such as @switch,
   @trigger, and @dolist.
 
   Related Topics: setq(), setr().
@@ -11520,7 +11520,7 @@ RESTARTSECS()
   FUNCTION: restartsecs()
 
   Returns the number of seconds that represents the time since the MUX was
-  restarted or the startup time if no @restart has occured.  The time is
+  restarted or the startup time if no @restart has occurred.  The time is
   measured in the same way as the secs() function.  This is easier and
   more efficient than using convtime(restarttime()).
 
@@ -11591,7 +11591,7 @@ REVWORDS()
   FUNCTION: revwords(<string>[, <idelim>[, <odelim>]])
 
   Reverses the order of the words of <string>.  A word is considered to be
-  any sequence of nonblank characters, separated by blanks, so punctuation
+  any sequence of non-blank characters, separated by blanks, so punctuation
   characters that follow a word are considered part of the word.
 
   <idelim> may be used to specify an input delimiter other than a space.
@@ -11906,7 +11906,7 @@ RXLEVEL()
 
   FUNCTION: rxlevel(<target>)
 
-  Returns a space separated list of <target>'s Rx Levels. You must control
+  Returns a space-separated list of <target>'s Rx Levels. You must control
   <target>.  If no levels are listed, nothing is returned.  If you do not
   control the target, or if the target does not exist, '#-1' is returned.
 
@@ -12061,7 +12061,7 @@ SECS()
 
     local - Returns an integer which corresponds to the current local
             time on the machine running the MUX. This integer is
-            affected by timezones and daylight savings time and is
+            affected by time zones and daylight savings time and is
             therefore primarily useful in conjunction with
             convsecs(..,utc).
 
@@ -12993,7 +12993,7 @@ SUBJ()
 SUBSTITUTIONS
 
   The most basic form of evaluation is a %-substitution.  Even when other
-  forms of evalution are not performed, %-substitutions usually are.  A
+  forms of evaluation are not performed, %-substitutions usually are.  A
   %-substitution is a '%' followed by one or two letters, digits, or symbols.
   If a sequence is understood, it is substituted by a corresponding value.
   If a sequence is not understood, the initial '%' is removed.  In this way,
@@ -13068,7 +13068,7 @@ SUBSTITUTIONS (continued)
   equivalent to [get(%!/name)].  The substitutions forms are more efficient.
   Note that %=<name> supports single-letter attributes names while [v(name)]
   does not. For attribute names longer than one character, %=<name>,
-  [get(%!/name], and v(name) are equilvalent.
+  [get(%!/name], and v(name) are equivalent.
 
   Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 
@@ -13143,7 +13143,7 @@ SWITCHES
   Some commands have command switches associated with them that can be used
   to modify their behavior.  For instance, switches on the @ps command
   control the amount of information displayed, and switches on the @switch
-  command indicate whether to perform all actionlists whose targets match
+  command indicate whether to perform all action lists whose targets match
   the search string, or just the first.
 
   Related Topics: @list.
@@ -13631,7 +13631,7 @@ TXLEVEL()
 
   FUNCTION: txlevel(<target>)
 
-  Returns a space separated list of <target>'s Tx Levels. You must control
+  Returns a space-separated list of <target>'s Tx Levels. You must control
   <target>.  If no levels are listed, nothing is returned.  If you do not
   control the target, or if the target does not exist, '#-1' is returned.
 
@@ -13995,7 +13995,7 @@ VERBOSE
 VERBS
 
   For many verbs there are three attributes that specify messages and actions
-  associated with the verb in addition to the verb's builtin action.
+  associated with the verb in addition to the verb's built-in action.
   The attributes are named Verb, Overb, and Averb.  Verb is the message that
   the enactor sees, Overb is the message that everyone else in the same room
   as the enactor sees, and Averb is a list of commands that are run.
@@ -14060,7 +14060,7 @@ VMAG()
 
   FUNCTION: vmag(<vector>[,<delimiter>]
 
-  Returns the magnitude of a vector using a euclidean distance metric.
+  Returns the magnitude of a vector using a Euclidean distance metric.
   That is, for vector a b c d, it returns sqrt(a^2+b^2+c^2+d^2).
 
   Example:
@@ -14075,7 +14075,7 @@ VMUL()
   FUNCTION: vmul(<vector|num>,<vector|num>[,<delim>][,<output delim>])
 
   Returns the result of either multiplying a vector by a number (scalar
-  multiplication) or an elementwise multiplication of two vectors.
+  multiplication) or an element-wise multiplication of two vectors.
 
   Example:
     > think vmul(1 2 3,2)
