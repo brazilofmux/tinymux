@@ -3,8 +3,8 @@ Grand Branching Scheme
 1. Introduction.
 
 In the past, a single trunk branch with tagged builds was sufficient to
-accomodate the flow of changes from the active developers.  Every developer
-commited their changes directly into the main trunk.  CVS branching was
+accommodate the flow of changes from the active developers.  Every developer
+committed their changes directly into the main trunk.  CVS branching was
 error-prone and the clean-up risk was too high, so the project just didn't use
 that feature of CVS.
 
@@ -27,12 +27,12 @@ the following requirements:
    necessarily compile and run on another.  In fact, not all developers have
    access to all platforms and are unable to completely verify their changes.
 
- - Most volunteer developers are intermitantly active.
+ - Most volunteer developers are intermittently active.
 
 
 2. Branch Organization.
 
-To meet these requirements, we have choosen the following branching scheme:
+To meet these requirements, we have chosen the following branching scheme:
 
 
         ----2.7.0---2.7.1
@@ -77,7 +77,7 @@ organized into a promotion tree like so:
              dev_alierak  dev_brazil  dev_firan  dev_jake  dev_ronan
 
 
-An individual developer (e.g., brazil) would make changes in branch dev_brazil,
+An individual developer (e.g., Brazil) would make changes in branch dev_brazil,
 test their changes on Win32 and some flavors of Unix.  There is still a strong
 desire to see simple changes committed individually -- changes which address
 the code in only one dimension to make it easier for others to code review the
@@ -116,7 +116,7 @@ older, now-idle developers.
 
 We are now using a combination of SVN and GIT with much better support for
 branching.  Control of work is formalized in the Issue database, and no
-changes (no matter how mudane) are made unless there is an Issue that covers
-and approves it (no matter how mudane).  Furthermore, instead of a single
+changes (no matter how mundane) are made unless there is an Issue that covers
+and approves it (no matter how mundane).  Furthermore, instead of a single
 gate-keeper, each leaf branch can have its own gate-keeper, impose their own
-rules, fulfil their own internal QA function in their own way.
+rules, fulfill their own internal QA function in their own way.
