@@ -6,7 +6,7 @@
 OldBuild=25
 OldVersion=2.6.4.$OldBuild
 NewBuild=26
-NewVersion=2.6.4.$NewBuild
+NewVersion=2.6.5.$NewBuild
 
 ChangesDir=mux
 ReferenceDir=mux2.6_$OldBuild
