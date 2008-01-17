@@ -5,7 +5,7 @@ This file will explain how to configure for the two memory options of TinyMUX
 as well as the procedure for converting between them.
 
 The default build procedure creates a disk-based server.  TinyMUX is also able
-to run in a memory-based mode and this version of MUX continues to support
+to run in a memory-based mode and this version of TinyMUX continues to support
 that style.  However, to create a memory-based server, you need to enable it
 at a specific time in the build process.
 
@@ -65,7 +65,7 @@ However, assuming that your flatfile is good and true:
   5. 'cd ../game/data'
   6. './db_load GAMENAME GAMENAME.db.new GAMENAME.db'
      ('./db_load netmux netmux.db.new netmux.db' is typical).
-  
+
 At this point, GAMENAME.dir and GAMENAME.pag files should have been created.
 Verify that your .conf file has 'game_pag_file=./data/GAMENAME.pag' and
 'game_dir_file=./data/GAMENAME.dir'.

@@ -1,5 +1,5 @@
 TinyMUX 2.6:  SQL
-Last Update:  November 2006
+Last Update:  January 2008
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When enabling the Firan support (by doing ./configure --enable-firan) in
@@ -47,7 +47,7 @@ consider.
       sql_password <MySQL password>
 
 
-3) Start the game and check the log file. You should two entries like the
+3) Start the game and check the log file.  You should two entries like the
    following:
 
       SQL/CONN : Connecting: <database>@<address> as <user>

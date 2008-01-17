@@ -5,12 +5,12 @@ Notes on MUX's local.cpp extensions
 -----------------------------------
 
 The local.cpp file contains several functions to enable the extension of the
-server source code (aka hardcode).  These functions provide an interface to
+server source code (AKA hardcode).  These functions provide an interface to
 reduce the need to implement changes within the server code itself.
 
-Developers should be familiar with the MUX source prior to utilizing the
-local api.   Utilizing the local extensions is just like modifying the
-server source code and can cause instability if done improperly.
+Developers should be familiar with the TinyMUX source prior to utilizing the
+local API.  Utilizing the local extensions is just like modifying the server
+source code and can cause instability if done improperly.
 =============================================================================
 
 API Description
@@ -45,7 +45,7 @@ Function: local_shutdown()
 
  local_shutdown is called after the game database has been saved but the
  logfiles remain open.  It can be utilized to perform any cleanup prior
- to the process being terminated.   Database saves need not occur within
+ to the process being terminated.  Database saves need not occur within
  local_shutdown since local_dump_database is called prior to it.
 
 Function: local_dbck()
@@ -57,7 +57,7 @@ Function:  local_connect(dbref player, int isnew, int num)
 
  local_connect is called when a player connects to the game.  The
  argument isnew is set to 1 if the player object was just created,
- or 0 if it was pre-existing.   The number of current connections
+ or 0 if it was pre-existing.  The number of current connections
  is passed via the num argument where any value >1 indicates multiple
  connections.
 
@@ -91,12 +91,12 @@ Function:  local_data_free(dbref object)
 
 Periodic Processing
 
-The MUX local implementation does not provide a function implementing the
+The TinyMUX local implementation does not provide a function implementing the
 functionality of PennMUSH's local_timer() 1 second cycle callback.  Instead,
-developers should make use of the MUX scheduler to instantiate periodic or
-one-shot timers.   The scheduler accepts a function pointer to execute at
-the designated timeframe.   Regularly occuring timers must re-schedule
-themselves during the callback execution.
+developers should make use of the TinyMUX scheduler to instantiate periodic or
+one-shot timers.  The scheduler accepts a function pointer to execute at the
+designated timeframe.  Regularly occuring timers must re-schedule themselves
+during the callback execution.
 
 The function format required by the sceduler is:
 

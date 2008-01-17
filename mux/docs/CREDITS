@@ -8,21 +8,21 @@ came from many places, including TinyMUSH, ChaoticMUX, RhostMUSH, and
 PennMUSH.
 
 We would like to thank the following people:
- 
+
 - Barbarella@Pacifica for making it fun, for proving to me that MU'ing is a
   Good Thing (tm), for pulling me into hosting and server work.  Without the
   choices she made, TinyMUX 2.0 would never have happened.
-  
+
 - David Passmore for his long time care and maintenance of TinyMUX.
- 
+
 - Andrew Molitor, for the radix compression library, and some wonderful
   utilities.
 
-- Soruk from AuroraMUSH for his long time contributions toward making 
-  and keeping TinyMUX Linux compatible, as well as the sample config file   
+- Soruk from AuroraMUSH for his long time contributions toward making
+  and keeping TinyMUX Linux compatible, as well as the sample config file
   found in CONFIGURATION.
 
-- T. Alexander Popiel for help with conceptual issues in general and 
+- T. Alexander Popiel for help with conceptual issues in general and
   specifically with the parser.
 
 - Steven Legowik (BEM@Erisian.net) for Makefile, cross-platform work, and
@@ -48,15 +48,15 @@ We would like to thank the following people:
 
 - nails of mushpark for hosting the TinyMUX website, tarballs, and wiki.
 
-- The large body of people who reported bugs or made useful suggestions 
+- The large body of people who reported bugs or made useful suggestions
   along the way:
 
-     Aranor, Asia, Audumla, Barbarella@Pacifica, BEM, Carmilla@Pacifica, 
+     Aranor, Asia, Audumla, Barbarella@Pacifica, BEM, Carmilla@Pacifica,
      Chimera@Umbral Shards, Corum, Dark City@Pacifica, D'ceit@Santo Domini,
      Dreamscape@Pacifica, Dune@Pacifica, Emma@Pacifica, Evan@Pacifica,
      Farscape@Pacifica, Father Jethis@Pacifica, Geoffrey Gerrietts,
-     Godzilla@Pacifica, Hackers@Pacifica, Highlander@Pacifica, 
-     Hitchhiker's Guide@Pacifica, Ian@everywhere, Idoru@Pacifica, 
+     Godzilla@Pacifica, Hackers@Pacifica, Highlander@Pacifica,
+     Hitchhiker's Guide@Pacifica, Ian@everywhere, Idoru@Pacifica,
      Incubus@Santo Domini, Jake, Jarod@Pacifica,
      Johnny Mnemonic@Pacfica, Judge Dredd@Pacifica, Lucifer, Lydia Leong,
      Macross@Pacifica, McGuyver@Pacifica, Meglos@Myrka,
