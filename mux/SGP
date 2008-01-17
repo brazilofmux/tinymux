@@ -34,7 +34,7 @@ The Basics:
     Parent Object (#4) and Places Functions Object (#10) were moved to an
     Auxilary Room (#11).
 
-  - Storage (#3) was created with a random password. Even though only one
+  - Storage (#3) was created with a random password.  Even though only one
     person knows the password, you should change it.  Storage owns most
     game-wide things to keep things uncluttered for staff and to keep
     things working in the face of staff changes.

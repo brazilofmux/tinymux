@@ -9,57 +9,57 @@ the database, what port to listen for connects, and many other things.
 Modifying mux.config:
 ~~~~~~~~~~~~~~~~~~~~
 
-- This file can be left as is.  However, the prime benefit of customization 
-  is in the output of Backup will generate a flatfile that you can easily 
-  recognize as belonging to your game(handy, if you run more than one 
+- This file can be left as is.  However, the prime benefit of customization
+  is in the output of Backup will generate a flatfile that you can easily
+  recognize as belonging to your game(handy, if you run more than one
   game).
-  
+
   - Open 'mux.config' in your editor and look for the line "GAMENAME".
-  
+
   - Change 'netmux' to something short that you will recognize easily.
-  
-  - Save your changes and leave the editor. 
+
+  - Save your changes and leave the editor.
 
 Making a New Configuration File:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- In your game directory, the file that you will need to modify is the one 
+- In your game directory, the file that you will need to modify is the one
   called either 'netmux.conf' or 'GAMENAME.conf'.  'netmux' is the default
-  GAMENAME and can be changed by editting mux.config(see above).  
+  GAMENAME and can be changed by editing mux.config(see above).
 
-- If you choose to change GAMENAME in mux.config, then you will begin by 
-  editting the top portion of the file.
-  - In the lines marked 'input_database', 'output_database', 
+- If you choose to change GAMENAME in mux.config, then you will begin by
+  editing the top portion of the file.
+  - In the lines marked 'input_database', 'output_database',
     'crash_database', 'game_dir_file', and 'game_pag_file', change 'netmux'
     to the same thing you entered in GAMENAME.
 
-- If your mail and comsystem databases are named differently from the 
+- If your mail and comsystem databases are named differently from the
   default, then edit those lines accordingly.
 
 - Change 'port' to the port number your game will be using.
 
-- Change 'mud_name' to what you like.  This can be the formal name of your 
+- Change 'mud_name' to what you like.  This can be the formal name of your
   game.
 
-- Make any other configuration changes you want to make at this time.  They 
-  are added individually, one per line to the file.  Common additions to 
+- Make any other configuration changes you want to make at this time.  They
+  are added individually, one per line to the file.  Common additions to
   this file would be:
 
     money_name_singular <text>     The name of one coin (penny)
     money_name_plural <text>       The name of several coins (pennies)
-    fork_dump no                   Do this if you have little swap 
+    fork_dump no                   Do this if you have little swap
                                    space.
-    paycheck <amount>              Players get this much money each 
+    paycheck <amount>              Players get this much money each
                                    day they connect.
-    paystart <amount>              Players start out with this much 
+    paystart <amount>              Players start out with this much
                                    money.
     payfind <chance>               Each time a player moves, he has a
-                                   1 in <chance> chance of finding a 
+                                   1 in <chance> chance of finding a
                                    penny.
     player_starting_room <roomno>  The room that new players are
                                    created in.
     mail_expiration <number>       Sets the timeout for @mail.(14 days)
-    master_room <dbref>            The number of the room you keep yout 
+    master_room <dbref>            The number of the room you keep your
                                    globals in.
     quotas <yes/no>                Enables quotas. (no)
     starting_quota <number>        How much quota players get. (20)
@@ -76,19 +76,19 @@ Making a New Configuration File:
                                    been idle more than the specified
                                    timeout.
 
-- WIZHELP is a wealth of information regarding the more esotric aspects of 
-  configuration parameters.  There are many more configuration directives 
-  available. Information on individual directives can be obtained with the 
+- WIZHELP is a wealth of information regarding the more esoteric aspects of
+  configuration parameters.  There are many more configuration directives
+  available. Information on individual directives can be obtained with the
   WIZHELP <directive> command within the mush.
 
 
-The following is an example configuration file provided by Soruk @AuroraMUSH 
-to give you an idea of how yours should look.  Many thanks him for his 
-generosity and help with this.  
+The following is an example configuration file provided by Soruk @AuroraMUSH
+to give you an idea of how yours should look.  Many thanks him for his
+generosity and help with this.
 
-Note that not all of these configurations are appropriate for all games at 
-all times.  please read wizhelp for more information.  It has some comments 
-and explanations within it.  Lines preceeded with '#' are ones 'commented 
+Note that not all of these configurations are appropriate for all games at
+all times.  please read wizhelp for more information.  It has some comments
+and explanations within it.  Lines preceded with '#' are ones 'commented
 out' and are not read by the server when it is running.
 
 ===========================================================================

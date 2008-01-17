@@ -45,9 +45,8 @@ Last Update:  April 2007
    If you do not see this line, look for SSL error messages in the log.
    A likely cause is an improper certificate passphrase.
 
-   If MUX 2.7 cannot initialize the SSL engine, the game will still run
-   but the SSL ports will not be opened and the TLS option will be
-   disabled.
+   If TinyMUX 2.7 cannot initialize the SSL engine, the game will still run
+   but the SSL ports will not be opened and the TLS option will be disabled.
 
 6) When users are connected via SSL ports or the TLS extension, their
    terminfo() output will reflect this by adding 'ssl' to the list of

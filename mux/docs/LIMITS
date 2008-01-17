@@ -2,7 +2,7 @@ TinyMUX 2.7:  LIMITS
 Last Update:  December 2006
 
 While some limits of the server depend on the host environment (CPU
-architecture, compiler, and operating system), there are certain univeral
+architecture, compiler, and operating system), there are certain universal
 limits, and we can also describe the typical limits on typical platforms.
 
 
@@ -66,10 +66,10 @@ which corresponds to -922283539200 through 910638979199.  The precision is
 
 MUX does not account for leap seconds.  However, it does take into account
 what is called 'Summer Time' or 'Daylight Savings Time'.  Given that the
-operating system information about Daylight Savings Time is limited, MUX
+operating system information about Daylight Savings Time is limited, TinyMUX
 does not apply DST for times that occur earlier the earliest information
 provided by the operating system.  However, for times that occur after the
-latest information provided by the operating system, MUX maps like years
+latest information provided by the operating system, TinyMUX maps like years
 to like years and borrows DST information from years that are within the
 range supported by the operating system.
 
@@ -83,7 +83,7 @@ Many platforms employ the IEEE floating-point formats. The range of
 floating-point numbers which may be represented is approximately 1e-323
 through 1e+308.
 
-A 'long long' is typically 64-bits and can represent values from 
+A 'long long' is typically 64-bits and can represent values from
 -9223372036854775808 to 9223372036854775807.  This it the internal
 data type used for for mod(), remainder(), floordiv(), pack(), unpack(),
 iadd(), isub(), imul(), and idiv().

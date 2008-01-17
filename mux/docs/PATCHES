@@ -11,7 +11,7 @@ utility.
 
 Keep yourself informed about changes to the server and pay particular
 attention to any serious bugs that may have been corrected by a patch.  The
-Tinymux mailing list is the best way to do this.
+TinyMUX mailing list is the best way to do this.
 
 It is in the best interests of your game to make sure all patches are applied.
 Patches distributed after a server has reached released status typically
@@ -32,7 +32,7 @@ utility works (type 'man patch' inside your shell account or read the
 documentation for dopatch.exe provided with Win32 versions), then we strongly
 advise having someone either walk you through the process or do the work for
 you.  Improper use of patch can cause all kinds of grief that you don't want
-to deal with.  
+to deal with.
 
 Applying a patch:
 ~~~~~~~~~~~~~~~~

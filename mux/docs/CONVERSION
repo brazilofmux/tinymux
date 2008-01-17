@@ -13,7 +13,7 @@ Upgrading An Existing TinyMUX:
    location.
 
  - Compile TinyMUX 2.7 per INSTALL.  Note that TinyMUX 2.7 untars into a
-   seperate directory.
+   separate directory.
 
  - Copy the flatfile to game/data in the TinyMUX 2.7 directory and use
    db_load to convert the database to binary.
@@ -52,7 +52,7 @@ Changes to dbconvert:
 
    - './db_load netmux netmux.flat netmux.db'
 
-     This converts flatfiled database to binary for use by the server and
+     This converts a flatfile database to binary for use by the server and
      would be done with dbconvert thus:
 
      ../bin/dbconvert netmux X < netmux.flat > netmux.db

@@ -102,8 +102,8 @@ levels.  Again, you must control the object.
 A wiz-only function, returns 1 of <obj1> can see <obj2> from a reality levels
 point of view.  It doesn't check if the objects are in the same location, the
 DARK/CLOAKED flags and so on.  Just <obj1>'s Rx level against <obj2>'s Tx
-level.  WARNING: If you are using it on MUX2.0 with /both/ reality levels and
-Wod Realms enabled, the function will perform both checks and the Wod Realms
+level.  WARNING: If you are using it on TinyMUX with /both/ reality levels and
+WoD Realms enabled, the function will perform both checks and the WoD Realms
 version checks against the DARK flag.
 
 Example 1: A simplified Witchcraft setup
@@ -122,15 +122,15 @@ ghosts to pass:
 
     def_exit_rx 3
 
-Note that def_exit_tx isn't set. Why? Because ghosts see the mundane world 
+Note that def_exit_tx isn't set.  Why?  Because ghosts see the mundane world
 anyway, so a spirit character will have:
 
     @txlevel <player>=!Real Ghost
     @rxlevel <player>=Real Ghost
 
-Let's assume 3 players: 
+Let's assume 3 players:
 
-John is a Mundane. He won't see spirits.
+John is a Mundane.  He won't see spirits.
 John's Rx: Real
 John's Tx: Real
 John's @desc: This is John.
@@ -138,7 +138,7 @@ John's &GHOSTDESC: (Not important, since it's never visible)
 Johh's @adesc: %N has looked at you.
 John's @odesc: has looked at John.
 
-Jack is a Gifted. He will sense spirits, but is still made from flesh
+Jack is a Gifted.  He will sense spirits, but is still made from flesh
 and blood so visible to mundanes.
 Jack's Rx: Real Ghost
 Jack's Tx: Real
@@ -147,8 +147,8 @@ Jack's &GHOSTDESC: (Not important, since it's never visible)
 Jack's @adesc: %N has looked at you.
 Jack's @odesc: has looked at Jack.
 
-Frank is a ghost. He will see other spirits as well as mundanes, but won't 
-be visible to mundanes. He can also become visible to everybody.
+Frank is a ghost.  He will see other spirits as well as mundanes, but won't be
+visible to mundanes.  He can also become visible to everybody.
 Frank's Rx: Real Ghost
 Frank's Tx: Ghost
 Frank's @desc: This is Frank, looking human.
@@ -228,14 +228,14 @@ reality_level           All 511
 
 Five levels of Obfuscation, Umbra, Dreaming, Wraiths.  'All' is a handy
 replacement for all levels, useful for wizards and wizobjects that should be
-visible on all levels. Also useful when you want to set an object's levels to
+visible on all levels.  Also useful when you want to set an object's levels to
 something without knowing what he had before.  @rxlevel #276=!All Real !All
 will clear all levels, then the object will gain the Real level.  There is
 more than one Obfuscation level because of the relation between Auspex and
 Obfuscation.  A vampire with Obfuscate 2, should not be visible by one with
 Auspex 1.  However one with Auspex 3 should see another vampire with Obfuscate
-1, 2 /or/ 3.  Obfuscated players can move if they have Obf > 1. Umbral and
-Shadow players should also be able to see most of the exits. So the exits at
+1, 2 /or/ 3.  Obfuscated players can move if they have Obf > 1.  Umbral and
+Shadow players should also be able to see most of the exits.  So the exits at
 creation should have default levels of Real + Obf2 + Obf3 + Obf4 + Obf5 +
 Umbra + Shadow = 1 + 4 + 8 + 16 + 32 + 64 + 256 = 381
 
@@ -243,7 +243,7 @@ Umbra + Shadow = 1 + 4 + 8 + 16 + 32 + 64 + 256 = 381
     def_exit_tx 381
 
 Obf1 is not included since an Obfuscated vampire should not be able to move if
-it only has Obf1.  Therefore they won't see the exits. If you want them to be
+it only has Obf1.  Therefore they won't see the exits.  If you want them to be
 able to see the exits, but not to use them, change the default Tx of the
 exits:
 
@@ -257,28 +257,28 @@ is using the Mask and has Obfuscate 4, but doesn't try to make himself
 invisible will have an RxLevel: Real (as Jack) and a TxLevel: Real Obf4.  He
 will also set his @desc to what the mortals see and &OBFDESC to his real slimy
 desc.  Simply put, he will be visible to mortals, but not with his real desc.
-Aldrin the Gangrel, has Auspex 4 and activates it. Therefore, his TxLevel will
-still be Real, but RxLevel: Real Obf1 Obf2 Obf3 Obf4 (all of them). So he can
+Aldrin the Gangrel, has Auspex 4 and activates it.  Therefore, his TxLevel will
+still be Real, but RxLevel: Real Obf1 Obf2 Obf3 Obf4 (all of them).  So, he can
 see Joe, Jack and Jimmy's both descs.  Joe, on the other hand, won't see Jack
 at all.  He will still see Jimmy, but only Jimmy's @desc, not the OBFDESC.
 
-Frida the Fae... will have RxLevel: Real Fae and TxLevel: Real Fae. @desc set
+Frida the Fae will have RxLevel: Real Fae and TxLevel: Real Fae.  @desc set
 to the mundane desc, &FAEDESC set to the Chimerical desc.  Emily the Enchanted
 will have an RxLevel: Real Fae, but the TxLevel: Real.  No &FAEDESC on her,
 although she'll be able to see it the one on Frida.  Gil the Garou, while
 travelling through the Umbra, will have RxLevel: Umbra and TxLevel: Umbra.
-&UMBRADESC is his friend. He won't see mortals or other characters who are not
+&UMBRADESC is his friend.  He won't see mortals or other characters who are not
 in the Umbra.  Barbie the Bastet, who's only peeking in the Umbra, without
-going there, will have RxLevel: Umbra, TxLevel: Real. Dangerous position since
+going there, will have RxLevel: Umbra, TxLevel: Real.  Dangerous position since
 she can't see the things that see her.  Deanna the Drake, who activates her
-spirit vision, will have RxLevel: Real Umbra and TxLevel: Real. She will see
+spirit vision, will have RxLevel: Real Umbra and TxLevel: Real.  She will see
 characters in Umbra and real world at the same time and perceive the desc
 appropriate to the realm the ohter character is in.  Wanda the Wraith:
-RxLevel: Real Shadow, TxLevel: Shadow. Her @desc would be empty, but the
+RxLevel: Real Shadow, TxLevel: Shadow.  Her @desc would be empty, but the
 &SHADOWDESC should be set.  Marie the Mortal+ Medium: RxLevel: Real Shadow,
 TxLevel: Real
 
-Global code objects that all characters should be able to use: 
+Global code objects that all characters should be able to use:
 RxLevel: All, TxLevel: All
 
 Example 3: Softcode
@@ -289,18 +289,18 @@ sheet here are softcode examples that implement some of the WoD powers.  In a
 real game you would have to use some more checks, of course.
 
 @create Reality Levels Commands (RLS)
-&CMD_OBFON rls=$+obf/on:@switch [setr(0, getstat(%#,Obfuscate))]=0, @pemit 
-%#=You don't have Obfuscate!, {@txlevel %#=!All Obf%q0; @pemit %#=You are 
+&CMD_OBFON rls=$+obf/on:@switch [setr(0, getstat(%#,Obfuscate))]=0, @pemit
+%#=You don't have Obfuscate!, {@txlevel %#=!All Obf%q0; @pemit %#=You are
 now invisible.}
 &CMD_OBFOFF rls=$+obf/off:@txlevel %#=Real; @pemit %#=You are now visible.
 @@ Note: +obf/on clears all TxLevels before setting the appropiate Obf
 @@ This is necesary, because a character might advance from Obf2 to
 @@ Obf3 and he should be visible /only/ on the Obf3 level.
-@@ +obf/off simply sets the Real Tx level, without clearing the Obf. The
-@@ reason is the Mask. Players with Obf3 or higher who use the Mask should
+@@ +obf/off simply sets the Real Tx level, without clearing the Obf.  The
+@@ reason is the Mask.  Players with Obf3 or higher who use the Mask should
 @@ +obf/on, then +obf/off after approval and everything is set.
-&CMD_AUSPEXON rls=$+auspex/on:@switch [setr(0, getstat(%#, Auspex))]=0, 
-@pemit %#=You don't have Auspex!, {@rxlevel %#=[iter(lnum(1, %q0), Obf##)]; 
+&CMD_AUSPEXON rls=$+auspex/on:@switch [setr(0, getstat(%#, Auspex))]=0,
+@pemit %#=You don't have Auspex!, {@rxlevel %#=[iter(lnum(1, %q0), Obf##)];
 @pemit %#=Auspex enabled.}
 &CMD_AUSPEXOFF rls=$+auspex/off:@switch [hasrxlevel(%#, Obf1)]=0, @pemit %#=
 You don't have Auspex enabled!, {@rxlevel %#=[iter(lnum(1, 5), !Obf##)];

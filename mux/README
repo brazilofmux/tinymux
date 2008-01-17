@@ -19,9 +19,9 @@ in our sincerest hopes, provide you with enough information to make that
 possible.  If not, it should be at least an entertaining read....
 
 The TinyMUX 2.7 README and supplemental documentation has been divided into
-multiple files.  For discussion and instructions on how to do various
-things associated with the care and feeding of your MUX, please refer to
-the following files:
+multiple files.  For discussion and instructions on how to do various things
+associated with the care and feeding of your TinyMUX, please refer to the
+following files:
 
   README              General information on the distribution, platforms it
                       has been shown to run under out of the box, how to
@@ -39,9 +39,9 @@ the following files:
 
   docs/BACKUP         A file about the TinyMUX 2.7 Backup script.
 
-  docs/CONFIGURATION  How to set up your MUX, including an explanation of
-                      the common configuration items, as well as how to set
-                      up your game so that your db files so that they are
+  docs/CONFIGURATION  How to set up your TinyMUX, including an explanation of
+                      the common configuration items, as well as how to set up
+                      your game so that your db files so that they are
                       customized for your GAMENAME.
 
   docs/CONVERSION     How to convert a game from another type of server to
@@ -75,12 +75,12 @@ and bug fixes.  NOTES now contains a LOT of small bits of info related
 to running the server, as well as reminders about how to flatfile the
 database for conversions and moving from site to site.
 
-Reminder of changes to dbconvert from MUX 1.x:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reminder of changes to dbconvert from TinyMUX 1.x:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you intend to run with --enable-memorybased, you can ignore this section.
 
- - One of the major and important changes from MUX 1.x is the use of CHash
+ - One of the major and important changes from TinMUX 1.x is the use of CHash
    in the place of GDBM.  You will notice the changes primarily in the way
    dbconvert and the db_unload and db_load scripts work.
 
@@ -107,7 +107,7 @@ If you intend to run with --enable-memorybased, you can ignore this section.
 
 Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Support for other database formats was removed circa TinyMUX 2.1. To import
+Support for other database formats was removed circa TinyMUX 2.1.  To import
 one of the following formats, you must first use dbconvert from TinyMUX 2.0
 before using the resulting flatfile with TinyMUX 2.7.
 
@@ -126,7 +126,7 @@ possible.  As part of the process, we also fixed a lot of the legacy bugs from
 TinyMUX 1.6 and before.  We intend to keep doing it.
 
 As you might expect, the complexion of the bug finds has changed over the
-years. We are finding much fewer crashing/corrupting bugs than before,
+years.  We are finding much fewer crashing/corrupting bugs than before,
 and at the same time, the bugs we find are now more likely to be our own
 than legacy issues.
 
@@ -151,7 +151,7 @@ due to lack of available time, it is ad-hoc.
    might be located or to develop a workaround or fix for the bug.
 
 -- Send mail about it to: brazilofmux@gmail.com
-   If the bug crashes the MUX, try to include the following information
+   If the bug crashes the TinyMUX, try to include the following information
    from running dbx (or gdb) on the resulting core file:
 
      - Output of the 'where' command.
@@ -167,7 +167,7 @@ due to lack of available time, it is ad-hoc.
 Environment:
 ~~~~~~~~~~~
 TinyMUX 2.7 should run on most Unixes with BSD-style sockets and a C++
-compiler that groks function prototypes. It is 64-bit 'clean' code.  It
+compiler that groks function prototypes.  It is 64-bit 'clean' code.  It
 has been compiled and run successfully 'out of the box' on the following
 platforms:
 

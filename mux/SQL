@@ -3,7 +3,7 @@ Last Update:  April 2007
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1) As of the present writing, TinyMUX 2.7's SQL support only encompasses
-   the inline SQL functionality that PennMUSH and TinyMUSH 3.0 have, namely
+   the in-line SQL functionality that PennMUSH and TinyMUSH 3.0 have, namely
    the sql() function.
 
    To enable this functionality, you will need to pass --enable-inlinesql
@@ -25,7 +25,7 @@ Last Update:  April 2007
       sql_password <MySQL password>
 
 
-3) Start the game and check the log file. You should two entries like the
+3) Start the game and check the log file.  You should two entries like the
    following:
 
       SQL/CONN : Connecting: <database>@<address> as <user>

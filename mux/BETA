@@ -20,34 +20,34 @@ can usually be fixed more rapidly than any other type of bug.
 If you port an existing game to this BETA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    - Make frequent backups.  We cannot stress this enough.  The included 
-      Backup script is your friend and should make this process effortless. 
-    
-    - Make complete backups of all of your config, text, mail, and 
+    - Make frequent backups.  We cannot stress this enough.  The included
+      Backup script is your friend and should make this process effortless.
+
+    - Make complete backups of all of your config, text, mail, and
       comsystems.
-    
-    - Store your backups offsite.  This was always prudent anyway.
-    
+
+    - Store your backups off site.  This was always prudent anyway.
+
     - Run your game as usual.
-    
+
     - Report Bugs to brazilofmux@gmail.com following the procedure in README.
 
 
 If you start a new game to this BETA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    - Make frequent backups.  We cannot stress this enough.  The included 
-      Backup script is your friend and should make this process effortless. 
-    
-    - Make complete backups of all of your config, text, mail, and 
+    - Make frequent backups.  We cannot stress this enough.  The included
+      Backup script is your friend and should make this process effortless.
+
+    - Make complete backups of all of your config, text, mail, and
       comsystems.
-    
-    - Store your backups offsite.  This was always prudent anyway.
-    
-    - Keep decompiles of anything really big, unique, or irreplaceable 
-      softcode.  This is good coding practice, anyway.
-    
+
+    - Store your backups off site.  This was always prudent anyway.
+
+    - Keep decompiles of anything really big, unique, or irreplaceable
+      softcode.  This is good coding practice anyway.
+
     - Run your game as usual.
-    
+
     - Report Bugs to brazilofmux@gmail.com following the procedure in README.
 

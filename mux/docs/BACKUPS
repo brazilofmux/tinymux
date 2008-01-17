@@ -37,7 +37,7 @@ game.  Be kind to your site admin--give them something to work with.
 
 No matter how reliable or redundantly backups are performed on the machine
 that your game runs on, it is critical that you also store copies of your
-most recent backups at an offsite location.  Again, we cannot stress this
+most recent backups at an off-site location.  Again, we cannot stress this
 enough.
 
 When you ftp any file that ends in .gz, you must make sure that the file
