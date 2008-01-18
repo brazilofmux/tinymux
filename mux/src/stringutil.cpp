@@ -1658,7 +1658,7 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString)
     return true;
 }
 
-const int g_trimoffset[4][4] = 
+const int g_trimoffset[4][4] =
 {
     { 0, 1, 1, 1 },
     { 1, 0, 2, 2 },
