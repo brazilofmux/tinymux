@@ -696,6 +696,12 @@ static BOOLEXP *parse_boolexp_E(void)
 
 BOOLEXP *parse_boolexp(dbref player, const char *buf, bool internal)
 {
+    if (  NULL == buf
+       || '\0' == buf[0])
+    {
+        return TRUE_BOOLEXP;
+    }
+
     size_t n = strlen(buf);
     if (n > sizeof(parsestore)-1)
     {
@@ -704,11 +710,6 @@ BOOLEXP *parse_boolexp(dbref player, const char *buf, bool internal)
     memcpy(parsestore, buf, n+1);
     parsebuf = parsestore;
     parse_player = player;
-    if (  buf == NULL
-       || *buf == '\0')
-    {
-        return TRUE_BOOLEXP;
-    }
     if (!mudstate.bStandAlone)
     {
         parsing_internal = internal;
