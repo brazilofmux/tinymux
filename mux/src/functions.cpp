@@ -5963,44 +5963,69 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *str, *rep;
-    char c;
-
     // Do length checks first.
     //
-    size_t n0 = strlen(fargs[0]);
-    size_t n1 = strlen(fargs[1]);
+    size_t n0, n1;
+    (void)strip_ansi(fargs[0], &n0);
+    (void)strip_ansi(fargs[1], &n1);
     if (n0 != n1)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         return;
     }
-    if (strlen(fargs[2]) > 1)
+
+    size_t n2;
+    char *pMatch = strip_ansi(fargs[2], &n2);
+    if (1 < n2)
     {
         safe_str("#-1 TOO MANY CHARACTERS", buff, bufc);
         return;
     }
 
-    // Find the character to look for. null character is considered a
-    // space.
+    // If no character is given, space is used.
     //
-    if (!*fargs[2])
+    char c;
+    if (0 == n2)
+    {
         c = ' ';
+    }
     else
-        c = *fargs[2];
+    {
+        c = pMatch[0];
+    }
 
     // Walk strings, copy from the appropriate string.
     //
-    for (str = fargs[0], rep = fargs[1];
-         *str && *rep && ((*bufc - buff) < (LBUF_SIZE-1));
-         str++, rep++, (*bufc)++)
+    struct ANSI_In_Context aicStr;
+    struct ANSI_In_Context aicRep;
+    struct ANSI_Out_Context aoc;
+
+    ANSI_String_In_Init(&aicStr, fargs[0], ANSI_ENDGOAL_NORMAL);
+    ANSI_String_In_Init(&aicRep, fargs[1], ANSI_ENDGOAL_NORMAL);
+
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable,
+        LBUF_SIZE-1, ANSI_ENDGOAL_NORMAL);
+
+    size_t vw;
+    ANSI_String_Skip(&aicStr, 0, &vw);
+    ANSI_String_Skip(&aicRep, 0, &vw);
+    for (size_t i = 0; i < n0; i++)
     {
-        if (*str == c)
-            **bufc = *rep;
+        if (aicStr.m_p[0] == c)
+        {
+            ANSI_String_Copy(&aoc, &aicRep, 1);
+            ANSI_String_Skip(&aicStr, 1, &vw);
+        }
         else
-            **bufc = *str;
+        {
+            ANSI_String_Copy(&aoc, &aicStr, 1);
+            ANSI_String_Skip(&aicRep, 1, &vw);
+        }
     }
-    return;
+
+    size_t nSize = ANSI_String_Finalize(&aoc, &vw);
+    *bufc += nSize;
 }
 
 /* ---------------------------------------------------------------------------
