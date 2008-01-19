@@ -123,7 +123,7 @@
             [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,5),p)]
           )
         ),
-        0000000000000000000000000000000000000000
+        30800E73BF73AF9A50ABA3522E6B31B885E144B3
       )=
   {
     @log smoke=TC005: Single ASCII substitution in each position with color. Succeeded.
@@ -150,7 +150,7 @@
             [translate(merge(%xr0%xg1%xb2%xx3%xy%b,%xca%xmb%xuc%xwd%xhe,),p)]
           )
         ),
-        0000000000000000000000000000000000000000
+        D0BA244816138D92A207C2B8CCFA714F0C884F17
       )=
   {
     @log smoke=TC006: ASCII with space/null substitution in each position with color. Succeeded.
@@ -177,7 +177,7 @@
             [translate(merge(%xr1%xg2%xb3%xx4%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
           )
         ),
-        0000000000000000000000000000000000000000
+        78A17B755290F4C5E2CC05DA3AC66ADEAF3F6C2A
       )=
   {
     @log smoke=TC007: Vary length of run over 5 character ASCII string with color. Succeeded.
