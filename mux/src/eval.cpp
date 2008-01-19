@@ -1807,7 +1807,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         }
                     }
                 }
-                else
+                else if (iCode <= 18)
                 {
                     if (iCode <= 16)
                     {
@@ -1839,7 +1839,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
-                        else
+                        else // if (iCode == 16)
                         {
                             // 4F
                             // O
@@ -1862,7 +1862,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (iCode <= 18)
+                    else
                     {
                         if (iCode == 17)
                         {
@@ -1903,7 +1903,10 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             iStr--;
                         }
                     }
-                    else if (iCode <= 20)
+                }
+                else if (iCode <= 22)
+                {
+                    if (iCode <= 20)
                     {
                         if (iCode == 19)
                         {
@@ -1915,7 +1918,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             safe_str(mudstate.curr_cmd, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
-                        else
+                        else // if (iCode == 20)
                         {
                             // 40
                             // @
@@ -1928,7 +1931,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (iCode <= 22)
+                    else
                     {
                         if (iCode == 21)
                         {
@@ -1998,7 +2001,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 }
                             }
                         }
-                        else
+                        else // if (iCode == 22)
                         {
                             // 2B
                             // +
@@ -2009,7 +2012,10 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (iCode == 23)
+                }
+                else
+                {
+                    // if (iCode == 23)
                     {
                         // 4B or 6B
                         // k or K
