@@ -1066,6 +1066,7 @@ static char *ANSI_TransitionColorEscape
     if (  tmp.bBlink    && !acsNext->bBlink
        || tmp.bHighlite && !acsNext->bHighlite
        || tmp.bInverse  && !acsNext->bInverse
+       || tmp.bUnder    && !acsNext->bUnder
        || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
           && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
