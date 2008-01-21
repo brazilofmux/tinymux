@@ -2708,8 +2708,8 @@ Related Topics: @name.
   COMMAND: @nameformat <object> [=<format>]
 
   By default, when an object is looked at, the object's name is shown.  And,
-  if you can link to the object, its flag letters and dbref are also shown. 
-  
+  if you can link to the object, its flag letters and dbref are also shown.
+
   With @nameformat, you can control exactly what is shown to people who
   use 'look' while inside.  @nameformat is not used when people outside the
   object look at it.
@@ -13858,16 +13858,26 @@ V()
 
   FUNCTION: v(<string>)
 
-  The V function can be used as an alternative for percent (%) substitution
-  and also as a replacement for get(me/<arg>).  If the argument is two
-  characters long or longer and starts with a letter, then the object
-  performing the v() call (and its parent, if necessary) is searched for the
-  named attribute, and its value is returned if possible.  Otherwise, a
-  percent substitution is performed on the argument (so that v(o) is
-  equivalent to %o, for instance).  The percent form (%o in the previous
-  example) is preferred as it is faster, and there are no longer any security
-  problems associated with it.  Note that attributes with single-character
-  names cannot be retrieved with v().
+  Depending on <string>, the V function can be used as an alternative for
+  percent (%) substitution, as a replacement for get(me/<arg>), or as a way to
+  access all arguments (the first ten and beyond).
+
+  If <string> is two characters long or longer and starts with a letter, then
+  the object performing the v() call (and its parent, if necessary) is
+  searched for the named attribute, and its value is returned if possible.
+
+  If <string> is a single letter, a percent substitution is performed on the
+  argument (so that v(o) is equivalent to %o, for instance).  The percent form
+  (%o in the previous example) is preferred as it is faster, and there are no
+  longer any security problems associated with it.  Note that attributes with
+  single-character names cannot be retrieved with v().
+
+  If <string> begins with a digit, it represent an argument number equivalent
+  to %0, %1, ..., %=<99>.
+
+  Note that the %=<> substitution is nearly equivalent to v() except that
+  single letters are treated as an attribute name instead of a percent
+  substitution.
 
   Related Topics: GENDER, SUBSTITUTION, PARENT OBJECTS, get().
 

@@ -2547,41 +2547,54 @@ static FUNCTION(fun_v)
     ATTR *ap;
 
     UTF8 *tbuf = fargs[0];
-    if (  mux_isattrnameinitial(tbuf)
-       && '\0' != *utf8_NextCodePoint(tbuf))
+    if (mux_isattrnameinitial(tbuf))
     {
-        // Fetch an attribute from me. First see if it exists,
-        // returning a null string if it does not.
-        //
-        ap = atr_str(fargs[0]);
-        if (!ap)
+        if ('\0' != *utf8_NextCodePoint(tbuf))
         {
-            return;
+            // Fetch an attribute from me. First see if it exists,
+            // returning a null string if it does not.
+            //
+            ap = atr_str(fargs[0]);
+            if (!ap)
+            {
+                return;
+            }
+    
+            // If we can access it, return it, otherwise return a null
+            // string.
+            //
+            size_t nLen;
+            tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+            if (See_attr(executor, executor, ap))
+            {
+                safe_copy_buf(tbuf, nLen, buff, bufc);
+            }
+            free_lbuf(tbuf);
         }
-
-        // If we can access it, return it, otherwise return a null
-        // string.
-        //
-        size_t nLen;
-        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
-        if (See_attr(executor, executor, ap))
+        else
         {
-            safe_copy_buf(tbuf, nLen, buff, bufc);
+            // Single letter, process as %<arg>
+            //
+            sbuf = alloc_sbuf("fun_v");
+            sbufc = sbuf;
+            safe_sb_chr('%', sbuf, &sbufc);
+            safe_sb_str(fargs[0], sbuf, &sbufc);
+            *sbufc = '\0';
+            mux_exec(sbuf, SBUF_SIZE-1, buff, bufc, executor, caller, enactor, eval|EV_EVAL|EV_FIGNORE,
+                     cargs, ncargs);
+            free_sbuf(sbuf);
         }
-        free_lbuf(tbuf);
         return;
     }
 
-    // Not an attribute, process as %<arg>
+    // Leading digit, process as argument number.
     //
-    sbuf = alloc_sbuf("fun_v");
-    sbufc = sbuf;
-    safe_sb_chr('%', sbuf, &sbufc);
-    safe_sb_str(fargs[0], sbuf, &sbufc);
-    *sbufc = '\0';
-    mux_exec(sbuf, SBUF_SIZE-1, buff, bufc, executor, caller, enactor, eval|EV_EVAL|EV_FIGNORE,
-             cargs, ncargs);
-    free_sbuf(sbuf);
+    int i = mux_atol(fargs[0]);
+    if (  i < ncargs
+       && NULL != cargs[i])
+    {
+        safe_str(cargs[i], buff, bufc);
+    }
 }
 
 /*
