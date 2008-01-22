@@ -1,8 +1,8 @@
-TinyMUX 2.7:  SQL
+TinyMUX 2.8:  SQL
 Last Update:  March 2008
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TinyMUX 2.7 supports both asynchronous and synchronous SQL.  The synchronous/
+TinyMUX 2.8 supports both asynchronous and synchronous SQL.  The synchronous/
 in-line support is similar to that of PennMUSH and TinyMUSH, namely the sql()
 function.  The asynchronous support is unique to TinyMUX at this time and is
 the recommended method for SQL access.

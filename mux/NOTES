@@ -1,5 +1,5 @@
-TinyMUX 2.7: NOTES
-Last Update: December 2006
+TinyMUX 2.8: NOTES
+Last Update: December 2007
 
 This is a list of information that never seems to be handy enough when you
 need it.
@@ -87,7 +87,7 @@ On Flatfiles:
 On Making Backups:
 ~~~~~~~~~~~~~~~~~
 
- - TinyMUX 2.7 includes a backup script.  It produces a flatfile with the
+ - TinyMUX 2.8 includes a backup script.  It produces a flatfile with the
    name GAMENAME.DATE.tar.gz that contains both the mail.db and comsys.db
    which will appear in the game directory.  To make use of the Backup
    script:
