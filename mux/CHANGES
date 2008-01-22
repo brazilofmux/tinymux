@@ -229,6 +229,22 @@ Bug Fixes:
     player_starting_room and similar dbref configuration options from
     refering to NOTHING (Issue 441).
  -- TruncateToBuffer() mis-handled trailing color (Issue 444).
+ -- Enable UTF-8 regular expressions in PCRE.
+ -- ListMailInFolder() improperly handled the default folder.
+ -- Handle unsupported flatfile versions more gracefully.
+ -- Merge() compared byte length instead of code point count
+    (Issue 448).
+ -- %va was truncating UTF-8 sequences improperly (Issue 450).
+ -- The decision to truncate in replace_Chars() should be made on
+    bytes alone.
+ -- Fix translate to not translate isolated spaces to %b (Issue 452).
+ -- Update secure() and escape() help topic to agree with
+    implementation.
+ -- Fix escape()'s Unicode behavior.
+ -- : followed by space to behave like semipose.
+ -- Fix ordering in do_pemit_whisper (Issue 454).
+ -- Fix v() so that v(10) through v(99) works like %=<10> through
+    %=<99>.
 
 
 Performance Enhancements:
@@ -283,3 +299,8 @@ Miscellaneous:
  -- Updated report help topic.
  -- Updated @comon help topic.
  -- Rework autoconf.h, configure.ac, Makefile.in, and friends.
+ -- Provide at least some level of help under set() for usage rather
+    than only refering them to @set.
+ -- Document ancient pose and semipose behavior involving initial
+    spaces
+ -- Document %=<> addition in SUBSTITUTIONS and V() topics.
