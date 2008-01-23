@@ -4336,7 +4336,7 @@ size_t TruncateToBuffer
         // Parse a run of text.  A run of text is always ended by '\0' and
         // sometimes by '\xEF' since all color code points start with '\xEF'.
         //
-        bool bText = false;
+        bText = false;
         size_t nTextRun = 0;
         const UTF8 *pTextRun = p;
         for (;;)
