@@ -1,21 +1,16 @@
 TinyMUX 2.7:  DISTRIBUTIONS
-Last Update:  December 2006
+Last Update:  January 2008
 
 Where you can get TinyMUX 2.7:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TinyMUX 2.7 is developed by Stephen Dennis (brazilofmux@gmail.com) and a small
 group of enthusiastic volunteers.  The server is simultaneously developed on
-Win32 and Unix platforms.  For the latest version and updates, please look
-at any of the following sites:
+Windows and Unix platforms.  For the latest version, updates, and news, please
+look at any of the project websites:
 
-ftp://ftp.tinymux.org/TinyMUX
-http://www.tinymux.org
-
-The TinyMUX 2.7 Website contains the latest news about the server,
-developments, discussions, and help for users.  It is found at:
-
-http://www.tinymux.org
+  ftp://ftp.tinymux.org/TinyMUX
+  http://www.tinymux.org
 
 
 Release Information:
@@ -25,16 +20,40 @@ Server development for TinyMUX is done by the scheme as listed below.
 These numbers will be reflected by the result of typing 'VERSION' on
 the game
 
-2.x.x       Major Release level, where the first number in the series
-            denotes a major change in the way the server works, or such
-            sweeping changes to language that the server will be
-            fundamentally changed.
+2.x.x       Major or potentially major change in project direction such as a
+            new primary maintainer.  For example, David Passmore was
+            responsible for the 1.x series, and Stephen Dennis is responsible
+            for the 2.x series.
 
-2.1.x       Feature Release, where features are added, changed, removed.
+2.1.x       A single release cycle of a set of features.  Typically, there is
+            one every year and the version number corresponds to the year in
+            which the development occurred.  For example,
 
-2.x.1       Bug Release, where bugs are fixed and all previous patchlevels
-            are included in the update
+                  Years       Version
+                1998-2000       2.0
+                   2001         2.1
+                   2002         2.2
+                   2003         2.3
+                   2004         2.4
+                2005-2006       2.6
+                   2007         2.7
+                   2008         2.8
 
-2.x.x.px    Patch to an existing release.  These will be released as code
-            to be applied using the 'patch' utility and will be released
-            on an as needed basis.
+2.x.1       Feature Change.  After Beta has started, the third number
+            indicates a change in the feature set -- usually the addition of
+            features, but it could also be the removal of a feature.  During
+            development, the third number is zero (0).
+
+2.x.x.x     Bug release, build number, or patch to an existing release.  These
+            will be released as needed to fix bugs in a format useable to the
+            'applypatch', 'patch', and 'dopatch' utilities.
+
+
+Typically, development for each release cycle begins in January.  After twelve
+months, it will usually enter a beta period and stay there for three or four
+more months before being released.  Typically, after a year or two, a release
+is obsoleted by a later cycle.  So, usually, there are two or three release
+cycles being developed and supported at the same time.
+
+Every release cycle consists of an uninterrupted series of patches through
+development, beta, release until obsolescence.
