@@ -4647,7 +4647,7 @@ ATAN()
   Examples:
     > say atan(0)
     You say, "0"
-    > say atan(1)
+    > say tan(1)
     You say, "1.5574077246549023"
     > say atan(1.5574077246549023)
     You say, "1"
