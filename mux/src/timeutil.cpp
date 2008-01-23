@@ -1962,6 +1962,12 @@ static void UpdateOffsetTable
     int i
 )
 {
+    if (  i < 0
+       || MAX_OFFSETS <= i)
+    {
+        return;
+    }
+
 Again:
 
     nTouched0++;
