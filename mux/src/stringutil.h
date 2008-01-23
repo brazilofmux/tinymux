@@ -48,7 +48,7 @@ extern const UTF8 *latin1_utf8[256];
 extern const int g_trimoffset[4][4];
 inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 {
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
     {
         int j = utf8_FirstByte[p[n-i-1]];
         if (j < UTF8_CONTINUE)

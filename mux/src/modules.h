@@ -499,7 +499,7 @@ public:
 
 private:
     UINT32 m_cRef;
-    UINT32 m_nFields;
+    int    m_nFields;
     size_t m_nBlob;
     UTF8  *m_pBlob;
     bool   m_bLoaded;
