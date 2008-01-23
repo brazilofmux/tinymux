@@ -1582,8 +1582,15 @@ ATTR_CMD_ACCESS
 ATTR_NAME_CHARSET
 
   CONFIG PARAMETER: attr_name_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: all (Unicode)
 
-    ascii - Restrict attribute names to use ASCII.
+    ascii     - Restrict names to use ASCII.
+    iso8859-1 - Restrict names to use iso8859-1.
+    latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+
+  If no restrictions are made, the Unicode set is used.  If more than one
+  restriction is made, the union of the two are used.  That is, as long as a
+  character appears in any of the character sets, it is allowed.
 
   Related Topics: exit_name_charset, player_name_charset, room_name_charset,
                   thing_name_charset.
@@ -2327,8 +2334,15 @@ EXIT_FLAGS
 EXIT_NAME_CHARSET
 
   CONFIG PARAMETER: exit_name_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: all (Unicode)
 
-    ascii - Restrict exit names to use ASCII.
+    ascii     - Restrict names to use ASCII.
+    iso8859-1 - Restrict names to use iso8859-1.
+    latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+
+  If no restrictions are made, the Unicode set is used.  If more than one
+  restriction is made, the union of the two are used.  That is, as long as a
+  character appears in any of the character sets, it is allowed.
 
   Related Topics: attr_name_charset, player_name_charset, room_name_charset,
                   thing_name_charset.
@@ -3964,8 +3978,15 @@ PLAYER_MATCH_OWN_COMMANDS
 PLAYER_NAME_CHARSET
 
   CONFIG PARAMETER: player_name_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: all (Unicode)
 
-    ascii - Restrict player names to use ASCII.
+    ascii     - Restrict names to use ASCII.
+    iso8859-1 - Restrict names to use iso8859-1.
+    latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+
+  If no restrictions are made, the Unicode set is used.  If more than one
+  restriction is made, the union of the two are used.  That is, as long as a
+  character appears in any of the character sets, it is allowed.
 
   Related Topics: attr_name_charset, exit_name_charset, room_name_charset,
                   thing_name_charset.
@@ -4375,8 +4396,15 @@ ROOM_FLAGS
 ROOM_NAME_CHARSET
 
   CONFIG PARAMETER: room_name_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: all (Unicode)
 
-    ascii - Restrict room names to use ASCII.
+    ascii     - Restrict names to use ASCII.
+    iso8859-1 - Restrict names to use iso8859-1.
+    latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+
+  If no restrictions are made, the Unicode set is used.  If more than one
+  restriction is made, the union of the two are used.  That is, as long as a
+  character appears in any of the character sets, it is allowed.
 
   Related Topics: attr_name_charset, exit_name_charset, player_name_charset,
                   room_name_charset, thing_name_charset.
@@ -4922,8 +4950,15 @@ THING_FLAGS
 THING_NAME_CHARSET
 
   CONFIG PARAMETER: thing_name_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: all (Unicode)
 
-    ascii - Restrict thing names to use ASCII.
+    ascii     - Restrict names to use ASCII.
+    iso8859-1 - Restrict names to use iso8859-1.
+    latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+
+  If no restrictions are made, the Unicode set is used.  If more than one
+  restriction is made, the union of the two are used.  That is, as long as a
+  character appears in any of the character sets, it is allowed.
 
   Related Topics: attr_name_charset, exit_name_charset, player_name_charset,
                   room_name_charset.
