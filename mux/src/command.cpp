@@ -1146,7 +1146,7 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             reg_ref **preserve = NULL;
             preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_global_regs(preserve);
-            UTF8 *bufc;
+            UTF8 *bufc = NULL;
             UTF8* inargs[5];
             if (arg1)
             {
@@ -1206,7 +1206,10 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             if (arg2) free_lbuf(inargs[1]);
             if (arg1) free_lbuf(inargs[0]);
 
-            *bufc = '\0';
+            if (NULL != bufc)
+            {
+                *bufc = '\0';
+            }
             restore_global_regs(preserve);
             PopRegisters(preserve, MAX_GLOBAL_REGS);
         }
