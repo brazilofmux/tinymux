@@ -309,24 +309,24 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner, &aflags,
         &nFolders);
 
-    // Build new record ("%d:%s:%d", fld, uppercase(name), fld);
+    // Build new record ("%d:%s:%d", fld, uppercase(name), fld) upper-casing
+    // the provided folder name.
     //
-    UTF8 *aNew = alloc_lbuf("add_folder_name.new");
-    UTF8 *q = aNew;
-    q += mux_ltoa(fld, q);
-    safe_chr(':', aNew, &q);
-    UTF8 *p = name;
-    while (*p)
-    {
-        safe_chr(mux_toupper_ascii(*p), aNew, &q);
-        p++;
-    }
-    safe_chr(':', aNew, &q);
-    q += mux_ltoa(fld, q);
-    *q = '\0';
-    size_t nNew = q - aNew;
+    mux_string *sRecord = new mux_string;
+    sRecord->append(fld);
+    sRecord->append(T(":"));
+    sRecord->append(name);
+    sRecord->append(T(":"));
+    sRecord->append(fld);
+    sRecord->UpperCase();
 
-    if (nFolders != 0)
+    UTF8 *aNew = alloc_lbuf("add_folder_name.new");
+    sRecord->export_TextPlain(aNew);
+    delete sRecord;
+    size_t nNew = strlen((char *)aNew);
+
+    UTF8 *p, *q;
+    if (0 != nFolders)
     {
         // Build pattern ("%d:", fld)
         //
@@ -391,6 +391,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
         }
         free_lbuf(aPattern);
     }
+
     if (nFolders + 1 + nNew < LBUF_SIZE)
     {
         // It will fit. Append new record.
@@ -464,22 +465,24 @@ static int get_folder_number(dbref player, UTF8 *name)
         &nFolders);
     if (nFolders != 0)
     {
-        UTF8 *aPattern = alloc_lbuf("get_folder_num_pat");
-        UTF8 *q = aPattern;
-        safe_chr(':', aPattern, &q);
-        UTF8 *p = name;
-        while (*p)
-        {
-            safe_chr(mux_toupper_ascii(*p), aPattern, &q);
-            p++;
-        }
-        safe_chr(':', aPattern, &q);
-        *q = '\0';
-        size_t nPattern = q - aPattern;
+        // Convert the folder name provided into upper-case characters.
+        //
+        mux_string *sRecord = new mux_string;
+        sRecord->append(T(":"));
+        sRecord->append(name);
+        sRecord->append(T(":"));
+        sRecord->UpperCase();
+
+        UTF8 *aPattern = alloc_lbuf("add_folder_num_pat");
+        sRecord->export_TextPlain(aPattern);
+        delete sRecord;
+        size_t nPattern = strlen((char *)aPattern);
 
         size_t i;
         bool bSucceeded = BMH_StringSearch(&i, nPattern, aPattern, nFolders, aFolders);
         free_lbuf(aPattern);
+
+        UTF8 *p, *q;
         if (bSucceeded)
         {
             p = aFolders + i + nPattern;
