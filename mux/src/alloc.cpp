@@ -14,38 +14,46 @@
 #include "config.h"
 #include "externs.h"
 
-// Do not use the following structure. It is only used to define the
-// POOLHDR that follows. The fields in the following structure must
-// match POOLHDR in type and order. Doing it this way is a workaround
-// for compilers not supporting #pragma pack(sizeof(INT64)).
-//
-typedef struct pool_header_unaligned
-{
-    unsigned int        magicnum;   // For consistency check
-    size_t              pool_size;  // For consistency check
-    struct pool_header *next;       // Next pool header in chain
-    struct pool_header *nxtfree;    // Next pool header in freelist
-    const UTF8         *buf_tag;    // Debugging/trace tag
-} POOLHDR_UNALIGNED;
+/*! \brief Per-buffer header to manage and organize client allocation.
+ *
+ * The POOLHDR structure preceeds a client area which must be properly
+ * aligned to avoid faults when the client accesses structure members within
+ * in the client area.  64-bit alignment should be sufficient.
+ *
+ * The magicnum and pool_size are chosen when the pool it initialized. next
+ * and nxtfree are managed as buffers are allocated and freed. buf_tag comes
+ * from the client so that buffers can be associated with the places that
+ * allocated them.
+ */
 
-// The following structure is 64-bit aligned. The fields in the
-// following structure must match POOLHDR_UNALIGNED in type and
-// order.
-//
 typedef struct pool_header
 {
     unsigned int        magicnum;   // For consistency check
     size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
-    const UTF8         *buf_tag;    // Debugging/trace tag
-    UTF8  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
+    union
+    {
+        const UTF8     *buf_tag;    // Debugging/trace tag
+        UINT64 align;               // Not used.
+    } u;
 } POOLHDR;
+
+/*! \brief Per-buffer footer to catch buffer overruns.
+ *
+ * The POOLFTR structure helps detect when a client has written beyond the
+ * bounds of the buffer.
+ */
 
 typedef struct pool_footer
 {
     unsigned int magicnum;          // For consistency check
 } POOLFTR;
+
+/*! \brief Per-pool structure containing statistics and list heads.
+ *
+ * The head of the free list and in-use list are contained here.
+ */
 
 typedef struct pooldata
 {
@@ -75,6 +83,17 @@ static const UTF8 *poolnames[] =
     T("Strings")
 };
 
+/*! \brief Initialize a buffer pool.
+ *
+ * This is done once. The client size, magic, and allocation size are chosen
+ * at this time, and the free list and in-use list are initialized to empty.
+ * After this initialization, allocations can be done.
+ *
+ * \param poolnum  An integer uniquely indicating which pool.
+ * \param poolsize The size of the client area this pool supports.
+ * \return         None.
+ */
+
 void pool_init(int poolnum, int poolsize)
 {
     pools[poolnum].pool_client_size = poolsize;
@@ -89,20 +108,37 @@ void pool_init(int poolnum, int poolsize)
     pools[poolnum].num_lost = 0;
 }
 
+/*! \brief Helper function for logging pool errors.
+ *
+ * Rather than have similar code spread throughout the pool manager, this
+ * helper function glosses over access to the logging functions.
+ *
+ * \param logsys   Primary logging tag.
+ * \param logflag  Event class.
+ * \param poolnum  Which pool.
+ * \param tag      Client tag of problem buffer.
+ * \param ph       Pool header address.
+ * \param action   Action that discovered the problem.
+ * \param reason   prose to explain.
+ * \param file     File name of caller.
+ * \param line     Line number of caller.
+ * \return         None.
+ */
+
 static void pool_err
 (
-    const UTF8 *logsys,
-    int         logflag,
-    int         poolnum,
-    const UTF8 *tag,
-    POOLHDR    *ph,
-    const UTF8 *action,
-    const UTF8 *reason,
-    const UTF8 *file,
-    const int   line
+    __in const UTF8 *logsys,
+    int              logflag,
+    int              poolnum,
+    __in const UTF8 *tag,
+    __in POOLHDR    *ph,
+    __in const UTF8 *action,
+    __in const UTF8 *reason,
+    __in const UTF8 *file,
+    const int        line
 )
 {
-    if (mudstate.logging == 0)
+    if (0 == mudstate.logging)
     {
         STARTLOG(logflag, logsys, "ALLOC");
         Log.tinyprintf("%s[%d] (tag %s) %s in %s line %d at %p. (%s)", action,
@@ -110,27 +146,43 @@ static void pool_err
             mudstate.debug_cmd);
         ENDLOG;
     }
-    else if (logflag != LOG_ALLOCATE)
+    else if (LOG_ALLOCATE != logflag)
     {
         Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %p. >***",
             action, pools[poolnum].pool_client_size, tag, reason, file, line, ph);
     }
 }
 
-static void pool_vfy(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
-{
-    POOLHDR *ph, *lastph;
-    POOLFTR *pf;
-    UTF8 *h;
+/*! \brief Validates the buffers in the in-use list.
+ *
+ * This walks the in-use list, validates that all the buffers in the list go
+ * with the pool in which they appear and that all the magic is correct.  If
+ * a buffer is found to be compromised, part of the list is intentionally
+ * leaked rather than risk a crash.
+ *
+ * \param poolnum  Which pool.
+ * \param tag      Client tag of problem buffer.
+ * \param file     File name of caller.
+ * \param line     Line number of caller.
+ * \return         None.
+ */
 
-    lastph = NULL;
+static void pool_vfy
+(
+    int poolnum,
+    __in const UTF8 *tag,
+    __in const UTF8 *file,
+    const int line
+)
+{
+    POOLHDR *lastph = NULL;
     size_t psize = pools[poolnum].pool_client_size;
-    for (ph = pools[poolnum].chain_head; ph; lastph = ph, ph = ph->next)
+    for (POOLHDR *ph = pools[poolnum].chain_head; NULL != ph; lastph = ph, ph = ph->next)
     {
-        h = (UTF8 *)ph;
+        UTF8 *h = (UTF8 *)ph;
         h += sizeof(POOLHDR);
         h += pools[poolnum].pool_client_size;
-        pf = (POOLFTR *) h;
+        POOLFTR *pf = (POOLFTR *) h;
 
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
@@ -142,7 +194,7 @@ static void pool_vfy(int poolnum, const UTF8 *tag, const UTF8 *file, const int l
             // can't continue the scan because the next pointer might
             // be trash too.
             //
-            if (lastph)
+            if (NULL != lastph)
             {
                 lastph->next = NULL;
             }
@@ -155,12 +207,14 @@ static void pool_vfy(int poolnum, const UTF8 *tag, const UTF8 *file, const int l
             //
             return;
         }
+
         if (pf->magicnum != pools[poolnum].poolmagic)
         {
             pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Verify"),
                 T("footer corrupted"), file, line);
             pf->magicnum = pools[poolnum].poolmagic;
         }
+
         if (ph->pool_size != psize)
         {
             pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph,
@@ -252,7 +306,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
         pools[poolnum].max_alloc++;
     }
 
-    ph->buf_tag = tag;
+    ph->u.buf_tag = tag;
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
@@ -352,7 +406,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
         pools[POOL_LBUF].max_alloc++;
     }
 
-    ph->buf_tag = tag;
+    ph->u.buf_tag = tag;
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
@@ -386,13 +440,13 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
         ENDLOG
         return;
     }
-    POOLHDR *ph = ((POOLHDR *)(buf)) - 1;
+    POOLHDR *ph = ((POOLHDR *)buf) - 1;
     POOLFTR *pf = (POOLFTR *)(buf + pools[poolnum].pool_client_size);
     unsigned int *pui = (unsigned int *)buf;
 
     if (mudconf.paranoid_alloc)
     {
-        pool_check(ph->buf_tag, file, line);
+        pool_check(ph->u.buf_tag, file, line);
     }
 
     // Make sure the buffer header is good.  If it isn't, log the error and
@@ -400,7 +454,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
     //
     if (ph->magicnum != pools[poolnum].poolmagic)
     {
-        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->buf_tag, ph, T("Free"),
+        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->u.buf_tag, ph, T("Free"),
                  T("corrupted buffer header"), file, line);
         pools[poolnum].num_lost++;
         pools[poolnum].num_alloc--;
@@ -412,7 +466,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
     //
     if (pf->magicnum != pools[poolnum].poolmagic)
     {
-        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->buf_tag, ph, T("Free"),
+        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->u.buf_tag, ph, T("Free"),
              T("corrupted buffer footer"), file, line);
         pf->magicnum = pools[poolnum].poolmagic;
     }
@@ -421,7 +475,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
     //
     if (ph->pool_size != pools[poolnum].pool_client_size)
     {
-        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->buf_tag, ph, T("Free"),
+        pool_err(T("BUG"), LOG_ALWAYS, poolnum, ph->u.buf_tag, ph, T("Free"),
                  T("Attempt to free into a different pool."), file, line);
         return;
     }
@@ -431,7 +485,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
        && start_log(T("DBG"), T("ALLOC")))
     {
         Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
-            pools[poolnum].pool_client_size, ph->buf_tag, file, line, ph,
+            pools[poolnum].pool_client_size, ph->u.buf_tag, file, line, ph,
             mudstate.debug_cmd);
         end_log();
     }
@@ -441,7 +495,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
     //
     if (*pui == pools[poolnum].poolmagic)
     {
-        pool_err(T("BUG"), LOG_BUGS, poolnum, ph->buf_tag, ph, T("Free"),
+        pool_err(T("BUG"), LOG_BUGS, poolnum, ph->u.buf_tag, ph, T("Free"),
                  T("buffer already freed"), file, line);
     }
     else
@@ -462,13 +516,13 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         ENDLOG
         return;
     }
-    POOLHDR *ph = ((POOLHDR *)(buf)) - 1;
+    POOLHDR *ph = ((POOLHDR *)buf) - 1;
     POOLFTR *pf = (POOLFTR *)(buf + LBUF_SIZE);
     unsigned int *pui = (unsigned int *)buf;
 
     if (mudconf.paranoid_alloc)
     {
-        pool_check(ph->buf_tag, file, line);
+        pool_check(ph->u.buf_tag, file, line);
     }
 
     if (  ph->magicnum != pools[POOL_LBUF].poolmagic
@@ -481,7 +535,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
             // The buffer header is damaged. Log the error and throw away the
             // buffer.
             //
-            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, T("Free"),
+            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                      T("corrupted buffer header"), file, line);
             pools[POOL_LBUF].num_lost++;
             pools[POOL_LBUF].num_alloc--;
@@ -492,7 +546,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         {
             // The buffer footer is damaged.  Don't unlink, just repair.
             //
-            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, T("Free"),
+            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                 T("corrupted buffer footer"), file, line);
             pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
@@ -500,7 +554,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         {
             // We are trying to free someone else's buffer.
             //
-            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, T("Free"),
+            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                 T("Attempt to free into a different pool."), file, line);
             return;
         }
@@ -509,7 +563,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         //
         if (*pui == pools[POOL_LBUF].poolmagic)
         {
-            pool_err(T("BUG"), LOG_BUGS, POOL_LBUF, ph->buf_tag, ph, T("Free"),
+            pool_err(T("BUG"), LOG_BUGS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                 T("buffer already freed"), file, line);
             return;
         }
@@ -520,7 +574,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
        && start_log(T("DBG"), T("ALLOC")))
     {
         Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
-            LBUF_SIZE, ph->buf_tag, file, line, ph, mudstate.debug_cmd);
+            LBUF_SIZE, ph->u.buf_tag, file, line, ph, mudstate.debug_cmd);
         end_log();
     }
 
@@ -551,7 +605,7 @@ static void pool_trace(dbref player, int poolnum, const UTF8 *text)
         unsigned int *ibuf = (unsigned int *)h;
         if (*ibuf != pools[poolnum].poolmagic)
         {
-            notify(player, ph->buf_tag);
+            notify(player, ph->u.buf_tag);
         }
         else
         {
@@ -620,4 +674,3 @@ void pool_reset(void)
         pools[i].max_alloc = pools[i].num_alloc;
     }
 }
-
