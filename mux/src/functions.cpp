@@ -5935,7 +5935,20 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = new mux_string;
+    mux_string *sPat = NULL;
+    try
+    {
+        sPat = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sPat)
+    {
+        return;
+    }
     size_t nPat;
 
     // Sanity-check arg1 and arg2.
