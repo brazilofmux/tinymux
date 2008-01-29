@@ -1654,6 +1654,13 @@ void do_joinchannel(dbref player, struct channel *ch)
             return;
         }
 
+        user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
+        if (NULL == user)
+        {
+            raw_notify(player, OUT_OF_MEMORY);
+            return;
+        }
+
         ch->num_users++;
         if (ch->num_users >= ch->max_users)
         {
@@ -1668,8 +1675,6 @@ void do_joinchannel(dbref player, struct channel *ch)
             MEMFREE(ch->users);
             ch->users = cu;
         }
-        user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-        ISOUTOFMEMORY(user);
 
         for (i = ch->num_users - 1; i > 0 && ch->users[i - 1]->who > player; i--)
         {

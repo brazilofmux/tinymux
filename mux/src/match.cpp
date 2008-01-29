@@ -25,6 +25,7 @@ const UTF8 *OUT_OF_RANGE         = T("#-1 OUT OF RANGE");
 const UTF8 *FUNC_NOT_FOUND       = T("#-1 NOT FOUND");
 const UTF8 *FUNC_AMBIGUOUS       = T("#-2 AMBIGUOUS");
 const UTF8 *FUNC_NOPERM_MESSAGE  = T("#-1 PERMISSION DENIED");
+const UTF8 *OUT_OF_MEMORY        = T("#-1 OUT OF MEMORY");
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.

@@ -869,6 +869,7 @@ extern const UTF8 *OUT_OF_RANGE;
 extern const UTF8 *FUNC_NOT_FOUND;
 extern const UTF8 *FUNC_AMBIGUOUS;
 extern const UTF8 *FUNC_NOPERM_MESSAGE;
+extern const UTF8 *OUT_OF_MEMORY;
 
 #define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p))
 #define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p))
