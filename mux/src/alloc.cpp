@@ -232,7 +232,7 @@ static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
     }
 }
 
-UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
+UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -332,7 +332,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
     return p;
 }
 
-UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
+UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -431,7 +431,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     return p;
 }
 
-void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
+void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int line)
 {
     if (buf == NULL)
     {
@@ -507,7 +507,7 @@ void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
     }
 }
 
-void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
+void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, const int line)
 {
     if (buf == NULL)
     {
@@ -586,7 +586,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
     pools[POOL_LBUF].num_alloc--;
 }
 
-static void pool_trace(dbref player, int poolnum, const UTF8 *text)
+static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
 {
     POOLHDR *ph;
     int numfree = 0;

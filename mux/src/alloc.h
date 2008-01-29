@@ -34,7 +34,7 @@ extern void pool_init(int, int);
 extern UTF8 *pool_alloc(int, __in const UTF8 *, __in const UTF8 *, int);
 extern UTF8 *pool_alloc_lbuf(__in const UTF8 *, __in const UTF8 *, int);
 extern void pool_free(int, __in UTF8 *, __in const UTF8 *, int);
-extern void pool_free_lbuf(__in UTF8 *, __in const UTF8 *, int);
+extern void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *, __in const UTF8 *, int);
 extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
 extern void pool_reset(void);
