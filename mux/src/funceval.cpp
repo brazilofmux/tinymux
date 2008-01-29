@@ -2757,10 +2757,31 @@ FUNCTION(fun_shuffle)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(words);
+
+    if (NULL == words)
+    {
+        delete sIn;
+        return;
+    }
 
     LBUF_OFFSET n = words->find_Words(sep.str);
-    mux_string *sOut = new mux_string;
+    mux_string *sOut = NULL;
+    try
+    {
+        sOut = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sOut)
+    {
+        delete sIn;
+        delete words;
+        return;
+    }
+
     bool bFirst = true;
     LBUF_OFFSET i = 0;
     mux_cursor iStart = CursorMin, iEnd = CursorMin;
