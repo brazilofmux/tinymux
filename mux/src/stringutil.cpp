@@ -4508,7 +4508,8 @@ bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
     }
     p += mux_i64toa(i64, p);
     size_t nLen = p - smbuf;
-    if (nLen > pContext->nBufferAvailable)
+    if (  pContext->nBufferAvailable < nLen
+       || sizeof(smbuf) < nLen)
     {
         // Out of room.
         //
