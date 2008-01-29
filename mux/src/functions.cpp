@@ -4130,7 +4130,20 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
 
     if (0 == sStr->length_byte())
     {
