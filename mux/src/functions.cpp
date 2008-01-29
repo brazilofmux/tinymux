@@ -4532,8 +4532,36 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    mux_string *sOut = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
+
+    mux_string *sOut = NULL;
+    try
+    {
+        sOut = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sOut)
+    {
+        delete sStr;
+        return;
+    }
     mux_cursor curStr;
     mux_cursor curOut;
 
