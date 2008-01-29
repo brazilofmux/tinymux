@@ -123,18 +123,18 @@ class CMuxAlarm
 {
 private:
     bool bAlarmSet;
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     HANDLE hThread;
-#endif
+#endif // WINDOWS_THREADS
 
 public:
     bool bAlarmed;
 
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     volatile HANDLE hSemAlarm;
     volatile DWORD  dwWait;
     ~CMuxAlarm();
-#endif
+#endif // WINDOWS_THREADS
 
     CMuxAlarm(void);
     void Sleep(CLinearTimeDelta ltd);
@@ -143,9 +143,9 @@ public:
     void Set(CLinearTimeDelta ltdDeadline);
     void Clear(void);
 
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     void Signal(void);
-#endif
+#endif // UNIX_SIGNALS
 };
 
 extern CMuxAlarm MuxAlarm;

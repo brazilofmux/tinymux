@@ -698,14 +698,15 @@ void destroy_obj(dbref obj)
     s_Zone(obj, NOTHING);
 
     local_data_free(obj);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+
+#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_free(obj);
         p = p->pNext;
     }
-#endif
+#endif // TINYMUX_MODULES
 }
 
 /*
@@ -1885,27 +1886,27 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
     purge_going();
     make_freelist();
     scheduler.Shrink();
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
     mux_ModuleMaintenance();
 #if defined(STUB_SLAVE)
     if (NULL != mudstate.pISlaveControl)
     {
         mudstate.pISlaveControl->ModuleMaintenance();
     }
-#endif
-#endif
+#endif // STUB_SLAVE
+#endif // TINYMUX_MODULES
 
     // Allow the local extensions to do data checks.
     //
     local_dbck();
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->dbck();
         p = p->pNext;
     }
-#endif
+#endif // TINYMUX_MODULES
 
     if (  !mudstate.bStandAlone
        && executor != NOTHING

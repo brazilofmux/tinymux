@@ -299,12 +299,14 @@ class CLogFile
 {
 private:
     CLinearTimeAbsolute m_ltaStarted;
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     CRITICAL_SECTION csLog;
+#endif // WINDOWS_THREADS
+#if defined(WINDOWS_FILES)
     HANDLE m_hFile;
-#else
+#elif defined(UNIX_FILES)
     int    m_fdFile;
-#endif // WIN32
+#endif // UNIX_FILES
     size_t m_nSize;
     size_t m_nBuffer;
     UTF8 m_aBuffer[SIZEOF_LOG_BUFFER];

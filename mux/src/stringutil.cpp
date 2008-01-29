@@ -4934,7 +4934,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_lis
     // on some systems to indicate how much space it -would- have taken
     // if not limited by the request.
     //
-    // On Win32, it can fill the buffer completely without a
+    // On Windows, it can fill the buffer completely without a
     // null-termination and return -1.
 
     // To favor the Unix case, if there is an output error, but

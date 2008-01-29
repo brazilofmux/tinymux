@@ -13,7 +13,7 @@
 #include "config.h"
 #include "externs.h"
 
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
 
 #define NUM_CLASSES 4
 static CLASS_INFO netmux_classes[NUM_CLASSES] =
@@ -714,11 +714,11 @@ MUX_RESULT CStubSlaveProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
-#else
+#elif defined(UNIX_FILES)
 MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
-#endif // WIN32
+#endif // UNIX_FILES
 {
     // Communicate with the remote component to service this request.
     //
@@ -735,11 +735,11 @@ MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFile
     } CallFrame;
 
     CallFrame.nModuleName = strlen((const char *)aModuleName)+1;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     CallFrame.nFileName   = (wcslen(aFileName)+1)*sizeof(UTF16);
-#else
+#elif defined(UNIX_FILES)
     CallFrame.nFileName   = (strlen((const char *)aFileName)+1)*sizeof(UTF8);
-#endif
+#endif // UNIX_FILES
 
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);

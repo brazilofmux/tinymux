@@ -499,14 +499,14 @@ FUNCTION(fun_create)
         if (thing != NOTHING)
         {
             local_data_create(thing);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
             while (NULL != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
             }
-#endif
+#endif // TINYMUX_MODULES
         }
         break;
 
@@ -523,14 +523,14 @@ FUNCTION(fun_create)
             s_Next(thing, Exits(executor));
             s_Exits(executor, thing);
             local_data_create(thing);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
             while (NULL != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
             }
-#endif
+#endif // TINYMUX_MODULES
         }
         break;
 
@@ -560,14 +560,14 @@ FUNCTION(fun_create)
             move_via_generic(thing, executor, NOTHING, 0);
             s_Home(thing, new_home(executor));
             local_data_create(thing);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
             while (NULL != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
             }
-#endif
+#endif // TINYMUX_MODULES
         }
         break;
     }

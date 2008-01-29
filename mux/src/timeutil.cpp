@@ -1431,7 +1431,7 @@ bool CLinearTimeAbsolute::SetSecondsString(UTF8 *arg_szSeconds)
 
 // OS Dependent Routines:
 //
-#ifdef WIN32
+#if defined(WINDOWS_TIME)
 
 void GetUTCLinearTime(INT64 *plt)
 {
@@ -1505,7 +1505,7 @@ void CMuxAlarm::Clear(void)
     bAlarmSet = false;
 }
 
-#else // !WIN32
+#elif defined(UNIX_TIME)
 
 void GetUTCLinearTime(INT64 *plt)
 {
@@ -1646,7 +1646,7 @@ void CMuxAlarm::Signal(void)
     bAlarmed  = true;
 }
 
-#endif // !WIN32
+#endif // UNIX_TIME
 
 static int YearType(int iYear)
 {
@@ -1746,7 +1746,7 @@ static time_t time_t_smallest(void)
 
 static bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
 {
-#if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
+#if defined(WINDOWS_TIME) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     // 1400 is Visual C++ 2005
     //
     return (_localtime64_s(ptm_arg, pt_arg) == 0);
@@ -1763,7 +1763,7 @@ static bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
     {
         return false;
     }
-#endif // WIN32
+#endif // WINDOWS_TIME
 }
 
 // This determines the valid range of localtime() and finds a 'standard'
@@ -2187,20 +2187,20 @@ static CLinearTimeDelta QueryLocalOffsetAtUTC
     //
     // So, there is locale specific information about DST adjustments
     // that could reasonable be made between 1916 and 1970.
-    // Because Unix supports negative time_t values while Win32 does
+    // Because Unix supports negative time_t values while Windows does
     // not, it can also support that 1916 to 1970 interval with
     // timezone information.
     //
-    // Win32 only supports one timezone rule at a time, or rather
+    // Windows only supports one timezone rule at a time, or rather
     // it doesn't have any historical timezone information, but you
-    // can/must provide it yourself. So, in the Win32 case, unless we
+    // can/must provide it yourself. So, in the Windows case, unless we
     // are willing to provide historical information (from a tzfile
     // perhaps), it will only give us the current timezone rule
     // (the one selected by the control panel or by a TZ environment
     // variable). It projects this rule forwards and backwards.
     //
     // Feel free to fill that gap in yourself with a tzfile file
-    // reader for Win32.
+    // reader for Windows.
     //
     if (lta < ltaLowerBound)
     {

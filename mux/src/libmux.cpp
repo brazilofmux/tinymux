@@ -22,12 +22,12 @@ extern "C"
     typedef MUX_RESULT FPUNREGISTER(void);
 };
 
-#ifdef WIN32
+#if defined(WINDOWS_DYNALIB)
 typedef HINSTANCE MODULE_HANDLE;
 #define MOD_OPEN(m)  LoadLibrary(m)
 #define MOD_SYM(h,s) GetProcAddress(h,s)
 #define MOD_CLOSE(h) FreeLibrary(h)
-#else
+#elif defined(UNIX_DYNALIB)
 typedef void     *MODULE_HANDLE;
 #define MOD_OPEN(m)  dlopen((char *)m, RTLD_LAZY)
 #define MOD_SYM(h,s) dlsym(h,s)
@@ -64,11 +64,11 @@ typedef struct mod_info
     FPUNREGISTER     *fpUnregister;
     MODULE_HANDLE    hInst;
     UTF8             *pModuleName;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     UTF16            *pFileName;
-#else
+#elif defined(UNIX_FILES)
     UTF8             *pFileName;
-#endif
+#endif // UNIX_FILES
     bool             bLoaded;
     ModuleState      eState;
 } MODULE_INFO;
@@ -155,7 +155,7 @@ static UTF8 *CopyUTF8(const UTF8 *pString)
     return p;
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 static UTF16 *CopyUTF16(const UTF16 *pString)
 {
     size_t n = wcslen(pString);
@@ -176,7 +176,7 @@ static UTF16 *CopyUTF16(const UTF16 *pString)
     }
     return p;
 }
-#endif // WIN32
+#endif // WINDOWS_FILES
 
 /*! \brief Find the first class ID not less than the requested class id.
  *
@@ -264,11 +264,11 @@ static MODULE_INFO *ModuleFindFromName(const UTF8 aModuleName[])
  * \return           Corresponding module record or NULL if not found.
  */
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 static MODULE_INFO *ModuleFindFromFileName(const UTF16 aFileName[])
-#else
+#elif defined(UNIX_FILES)
 static MODULE_INFO *ModuleFindFromFileName(const UTF8 aFileName[])
-#endif
+#endif // UNIX_FILES
 {
     MODULE_INFO *pModule = g_pModuleList;
     while (NULL != pModule)
@@ -417,11 +417,11 @@ static void InterfaceRemove(MUX_IID iid)
  *                       duplicate found.
  */
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
-#else
+#elif defined(UNIX_FILES)
 static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
-#endif
+#endif // UNIX_FILES
 {
     // If the module name or file name is already being used, we won't add it
     // again.  This does not handle file-system links, but that will be caught
@@ -457,11 +457,11 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         pModule->fpUnregister = NULL;
         pModule->hInst = NULL;
         pModule->pModuleName = CopyUTF8(aModuleName);
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         pModule->pFileName = CopyUTF16(aFileName);
-#else
+#elif defined(UNIX_FILES)
         pModule->pFileName = CopyUTF8(aFileName);
-#endif // WIN32
+#endif // UNIX_FILES
         pModule->bLoaded = false;
         pModule->eState  = eModuleInitialized;
 
@@ -992,11 +992,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE
  * \return         MUX_RESULT
  */
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
-#else
+#elif defined(UNIX_FILES)
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
-#endif // WIN32
+#endif // UNIX_FILES
 {
     if (eLibraryInitialized != g_LibraryState)
     {

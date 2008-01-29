@@ -24,7 +24,7 @@ bool break_called = false;
 static CLinearTimeDelta GetProcessorUsage(void)
 {
     CLinearTimeDelta ltd;
-#ifdef WIN32
+#if defined(WINDOWS_PROCESSES)
     if (fpGetProcessTimes)
     {
         FILETIME ftCreate;
@@ -35,9 +35,9 @@ static CLinearTimeDelta GetProcessorUsage(void)
         ltd.Set100ns(*(INT64 *)(&ftUser));
         return ltd;
     }
-#endif
+#endif // WINDOWS_PROCESSES
 
-#if !defined(WIN32) && defined(HAVE_GETRUSAGE)
+#if defined(UNIX_PROCESSES) && defined(HAVE_GETRUSAGE)
 
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
@@ -47,7 +47,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
 #else
 
     // Either this Unix doesn't have getrusage or this is a
-    // fall-through case for Win32.
+    // fall-through case for Windows.
     //
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
@@ -1282,7 +1282,7 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf("[%d]Further command quota", ltd.ReturnSeconds()));
     }
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     else if (p->fpTask == Task_FreeDescriptor)
     {
         notify(Show_Player, tprintf("[%d]Delayed descriptor deallocation", ltd.ReturnSeconds()));

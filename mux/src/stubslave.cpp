@@ -9,7 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
 
 #include "libmux.h"
 #include "modules.h"
@@ -254,20 +254,20 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
             }
 
             UTF8  *pModuleName = NULL;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
             UTF16 *pFileName = NULL;
-#else
+#elif defined(UNIX_FILES)
             UTF8  *pFileName = NULL;
-#endif
+#endif // UNIX_FILES
 
             try
             {
                 pModuleName = new UTF8[CallFrame.nModuleName];
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
                 pFileName   = new UTF16[CallFrame.nFileName];
-#else
+#elif defined(UNIX_FILES)
                 pFileName   = new UTF8[CallFrame.nFileName];
-#endif
+#endif // UNIX_FILES
             }
             catch (...)
             {
@@ -530,11 +530,11 @@ MUX_RESULT CStubSlave::DisconnectObject(void)
 }
 
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
-#else
+#elif defined(UNIX_FILES)
 MUX_RESULT CStubSlave::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
-#endif // WIN32
+#endif // UNIX_FILES
 {
     return mux_AddModule(aModuleName, aFileName);
 }
@@ -641,4 +641,4 @@ MUX_RESULT CStubSlaveFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
-#endif
+#endif // TINYMUX_MODULES

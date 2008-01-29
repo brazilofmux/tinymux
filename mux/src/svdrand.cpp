@@ -11,17 +11,13 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef WIN32
+#if defined(WINDOWS_CRYPT)
 #include <wincrypt.h>
 typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
 typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
 typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
-#endif // WIN32
-
-#ifndef WIN32
-#include <fcntl.h>
-#include <unistd.h>
-#endif // WIN32
+bool bCryptoAPI = false;
+#endif // WINDOWS_CRYPT
 
 // Seed the generator.
 //
@@ -34,7 +30,6 @@ static UINT32 genrand(void);
 
 #define NUM_RANDOM_UINT32 1024
 
-bool bCryptoAPI = false;
 static bool bSeeded = false;
 void SeedRandomNumberGenerator(void)
 {
@@ -59,7 +54,7 @@ void SeedRandomNumberGenerator(void)
         }
     }
 #endif // HAVE_DEV_URANDOM
-#ifdef WIN32
+#if defined(WINDOWS_CRYPT)
     // The Cryto API became available on Windows with Win95 OSR2. Using Crypto
     // API as follows lets us to fallback gracefully when running on pre-OSR2
     // Win95.
@@ -102,7 +97,7 @@ void SeedRandomNumberGenerator(void)
         }
         FreeLibrary(hAdvAPI32);
     }
-#endif // WIN32
+#endif // WINDOWS_CRYPT
 
     if (nRandomSystemBytes >= sizeof(UINT32))
     {

@@ -58,7 +58,7 @@ static int make_nonblocking(SOCKET s);
 
 pid_t game_pid;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 
 // First version of Windows NT TCP/IP routines written by Nick Gammon
 // <nick@gammon.com.au>, and were throughly reviewed, re-written and debugged
@@ -475,7 +475,9 @@ static int get_slave_result(void)
     return 1;
 }
 
-#else // WIN32
+#endif // WINDOWS_NETWORKING
+
+#if defined(UNIX_NETWORKING)
 
 int maxd = 0;
 
@@ -656,6 +658,91 @@ failure:
     log_number(errno);
     ENDLOG;
 }
+
+/*! \brief Get results from the Stubslave.
+ *
+ * Any communication from the stub slave passed to the module library.
+ *
+ * There needs to be a FIFO from the stub that is maintained by netmux.  Each
+ * packet from the other side should be passed to mux_ReceiveData separately
+ * because the next packet may be handled by this same routine at a lower call
+ * level.  A packet may contain a call, a return, or a message.  If the packet
+ * is a call or a message, it may result in a remote call to the other side
+ * which will then block waiting on a return from the other side.  Any return
+ * will generally cause us to unblock, however, the returns should be matched
+ * with the calls. Without a match, some sort of error has probably occured.
+ *
+ * Once we have a return, there is a choice as to whether to process the
+ * remaining packets in the incoming FIFO (which should be calls or meessages)
+ * or whether to return and let the top-level shovechars() loop do it.
+ *
+ * This function is potentially highly reentrant, so any data passed to the
+ * module library must first be removed cleanly from the FIFO.
+ *
+ * \return         -1 for failure and 0 for success.
+ */
+
+static int StubSlaveRead(void)
+{
+    char buf[LBUF_SIZE];
+
+    int len = mux_read(stubslave_socket, buf, sizeof(buf));
+    if (len < 0)
+    {
+        int iSocketError = SOCKET_LAST_ERROR;
+        if (  SOCKET_EAGAIN == iSocketError
+           || SOCKET_EWOULDBLOCK == iSocketError)
+        {
+            return -1;
+        }
+        CleanUpStubSlaveSocket();
+        WaitOnStubSlaveProcess();
+
+        STARTLOG(LOG_ALWAYS, "NET", "STUB");
+        log_text(T("read() of stubslave failed. Stubslave stopped."));
+        ENDLOG;
+
+        return -1;
+    }
+    else if (0 == len)
+    {
+        return -1;
+    }
+
+    Pipe_AppendBytes(&Queue_In, len, buf);
+    return 0;
+}
+
+static int StubSlaveWrite(void)
+{
+    char buf[LBUF_SIZE];
+
+    size_t nWanted = sizeof(buf);
+    if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
+       && 0 < nWanted)
+    {
+        int len = mux_write(stubslave_socket, buf, nWanted);
+        if (len < 0)
+        {
+            int iSocketError = SOCKET_LAST_ERROR;
+            if (  SOCKET_EAGAIN == iSocketError
+               || SOCKET_EWOULDBLOCK == iSocketError)
+            {
+                return -1;
+            }
+            CleanUpStubSlaveSocket();
+            WaitOnStubSlaveProcess();
+
+            STARTLOG(LOG_ALWAYS, "NET", "STUB");
+            log_text(T("write() of stubslave failed. Stubslave stopped."));
+            ENDLOG;
+
+            return -1;
+        }
+    }
+    return 0;
+}
+
 #endif // STUB_SLAVE
 
 /*! \brief Lauch reverse-DNS slave process.
@@ -786,94 +873,6 @@ failure:
     ENDLOG;
 }
 
-#ifdef STUB_SLAVE
-
-/*! \brief Get results from the Stubslave.
- *
- * Any communication from the stub slave passed to the module library.
- *
- * There needs to be a FIFO from the stub that is maintained by netmux.  Each
- * packet from the other side should be passed to mux_ReceiveData separately
- * because the next packet may be handled by this same routine at a lower call
- * level.  A packet may contain a call, a return, or a message.  If the packet
- * is a call or a message, it may result in a remote call to the other side
- * which will then block waiting on a return from the other side.  Any return
- * will generally cause us to unblock, however, the returns should be matched
- * with the calls. Without a match, some sort of error has probably occured.
- *
- * Once we have a return, there is a choice as to whether to process the
- * remaining packets in the incoming FIFO (which should be calls or meessages)
- * or whether to return and let the top-level shovechars() loop do it.
- *
- * This function is potentially highly reentrant, so any data passed to the
- * module library must first be removed cleanly from the FIFO.
- *
- * \return         -1 for failure and 0 for success.
- */
-
-static int StubSlaveRead(void)
-{
-    char buf[LBUF_SIZE];
-
-    int len = mux_read(stubslave_socket, buf, sizeof(buf));
-    if (len < 0)
-    {
-        int iSocketError = SOCKET_LAST_ERROR;
-        if (  SOCKET_EAGAIN == iSocketError
-           || SOCKET_EWOULDBLOCK == iSocketError)
-        {
-            return -1;
-        }
-        CleanUpStubSlaveSocket();
-        WaitOnStubSlaveProcess();
-
-        STARTLOG(LOG_ALWAYS, "NET", "STUB");
-        log_text(T("read() of stubslave failed. Stubslave stopped."));
-        ENDLOG;
-
-        return -1;
-    }
-    else if (0 == len)
-    {
-        return -1;
-    }
-
-    Pipe_AppendBytes(&Queue_In, len, buf);
-    return 0;
-}
-
-static int StubSlaveWrite(void)
-{
-    char buf[LBUF_SIZE];
-
-    size_t nWanted = sizeof(buf);
-    if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
-       && 0 < nWanted)
-    {
-        int len = mux_write(stubslave_socket, buf, nWanted);
-        if (len < 0)
-        {
-            int iSocketError = SOCKET_LAST_ERROR;
-            if (  SOCKET_EAGAIN == iSocketError
-               || SOCKET_EWOULDBLOCK == iSocketError)
-            {
-                return -1;
-            }
-            CleanUpStubSlaveSocket();
-            WaitOnStubSlaveProcess();
-
-            STARTLOG(LOG_ALWAYS, "NET", "STUB");
-            log_text(T("write() of stubslave failed. Stubslave stopped."));
-            ENDLOG;
-
-            return -1;
-        }
-    }
-    return 0;
-}
-
-#endif // STUB_SLAVE
-
 // Get a result from the slave
 //
 static int get_slave_result(void)
@@ -979,8 +978,9 @@ Done:
     free_lbuf(host);
     return 0;
 }
+
 #endif // HAVE_WORKING_FORK
-#endif // WIN32
+#endif // UNIX_NETWORKING
 
 #ifdef SSL_ENABLED
 int pem_passwd_callback(char *buf, int size, int rwflag, void *userdata)
@@ -1143,7 +1143,7 @@ static void make_socket(PortInfo *Port)
 
     Port->socket = INVALID_SOCKET;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 
     // If we are running Windows NT we must create a completion port,
     // and start up a listening thread for new connections
@@ -1239,7 +1239,7 @@ static void make_socket(PortInfo *Port)
         Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, Port->port);
         return;
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
@@ -1279,7 +1279,7 @@ static void make_socket(PortInfo *Port)
 #endif
 }
 
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
 
 bool ValidSocket(SOCKET s)
 {
@@ -1291,7 +1291,7 @@ bool ValidSocket(SOCKET s)
     return true;
 }
 
-#endif // WIN32
+#endif // UNIX_NETWORKING
 
 void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL)
 {
@@ -1370,17 +1370,17 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #endif
             make_socket(aPorts+k);
             if (  !IS_INVALID_SOCKET(aPorts[k].socket)
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
                && ValidSocket(aPorts[k].socket)
-#endif // WIN32
+#endif // UNIX_NETWORKING
                )
             {
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
                 if (maxd <= aPorts[k].socket)
                 {
                     maxd = aPorts[k].socket + 1;
                 }
-#endif // WIN32
+#endif // UNIX_NETWORKING
                 (*pnPorts)++;
             }
         }
@@ -1408,17 +1408,17 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                 aPorts[k].ssl = 1;
                 make_socket(aPorts+k);
                 if (  !IS_INVALID_SOCKET(aPorts[k].socket)
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
                    && ValidSocket(aPorts[k].socket)
-#endif // WIN32
+#endif // UNIX_NETWORKING
                    )
                 {
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
                     if (maxd <= aPorts[k].socket)
                     {
                         maxd = aPorts[k].socket + 1;
                     }
-#endif // WIN32
+#endif // UNIX_NETWORKING
                     (*pnPorts)++;
                 }
             }
@@ -1436,14 +1436,15 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #endif
          ))
     {
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
         WSACleanup();
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
         exit(1);
     }
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
+
 // Private version of FD_ISSET:
 //
 // The following routine is only used on Win9x. Ordinarily, FD_ISSET
@@ -1758,7 +1759,9 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     }
 }
 
-#else // WIN32
+#endif // WINDOWS_NETWORKING
+
+#if defined(UNIX_NETWORKING)
 
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
@@ -2117,7 +2120,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 }
 #endif // HAVE_WORKINGFORK && STUB_SLAVE
 
-#endif // WIN32
+#endif // UNIX_NETWORKING
 
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
@@ -2128,9 +2131,9 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #else // SOCKLEN_T_DCL
     int addr_len;
 #endif // SOCKLEN_T_DCL
-#ifndef WIN32
+#if defined(UNIX_NETWORKING)
     int len;
-#endif // !WIN32
+#endif // UNIX_NETWORKING
 
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< new_connection >");
@@ -2176,7 +2179,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     }
     else
     {
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
         // Make slave request
         //
         // Go take control of the stack, but don't bother if it takes
@@ -2207,7 +2210,9 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             }
         }
-#else // WIN32
+#endif // WINDOWS_NETWORKING
+
+#if defined(UNIX_NETWORKING)
 #if defined(HAVE_WORKING_FORK)
         // Make slave request
         //
@@ -2230,7 +2235,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             free_lbuf(pBuffL1);
         }
 #endif // HAVE_WORKING_FORK
-#endif // WIN32
+#endif // UNIX_NETWORKING
 
         STARTLOG(LOG_NET, "NET", "CONN");
         UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
@@ -2521,7 +2526,7 @@ void shutdownsock(DESC *d, int reason)
         //
         scheduler.CancelTask(Task_ProcessCommand, d, 0);
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
         if (bUseCompletionPorts)
         {
             // Don't close down the socket twice.
@@ -2556,7 +2561,7 @@ void shutdownsock(DESC *d, int reason)
             }
             return;
         }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
 #ifdef SSL_ENABLED
         if (d->ssl_session)
@@ -2593,7 +2598,7 @@ void shutdownsock(DESC *d, int reason)
     }
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 static void shutdownsock_brief(DESC *d)
 {
     // don't close down the socket twice
@@ -2651,18 +2656,20 @@ static void shutdownsock_brief(DESC *d)
     }
 
 }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
 int make_nonblocking(SOCKET s)
 {
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     unsigned long on = 1;
     if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
     {
         log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctlsocket"));
         return -1;
     }
-#else // WIN32
+#endif // WINDOWS_NETWORKING
+
+#if defined(UNIX_NETWORKING)
 #if defined(O_NONBLOCK)
     if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
     {
@@ -2689,7 +2696,7 @@ int make_nonblocking(SOCKET s)
         return -1;
     }
 #endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
-#endif // WIN32
+#endif // UNIX_NETWORKING
     return 0;
 }
 
@@ -2718,7 +2725,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
 {
     DESC *d;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
@@ -2726,16 +2733,16 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     {
         EnterCriticalSection(&csDescriptorList);
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
     d = alloc_desc("init_sock");
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     if (bUseCompletionPorts)
     {
         LeaveCriticalSection(&csDescriptorList);
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
     d->descriptor = s;
     d->flags = 0;
@@ -2790,7 +2797,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->address = *a;
     mux_strncpy(d->addr, (UTF8 *)inet_ntoa(a->sin_addr), 50);
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
@@ -2798,7 +2805,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     {
         EnterCriticalSection (&csDescriptorList);
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
     ndescriptors++;
 
@@ -2811,7 +2818,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->prev = &descriptor_list;
     descriptor_list = d;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     // ok to continue now
     //
     if (bUseCompletionPorts)
@@ -2826,13 +2833,13 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
         d->bConnectionDropped = false; // not dropped yet
         d->bCallProcessOutputLater = false;
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
     return d;
 }
 
 FTASK *process_output = NULL;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
@@ -2961,7 +2968,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
@@ -4284,8 +4291,8 @@ void emergency_shutdown(void)
 #endif // _SGI_SOURCE
 
 // The purpose of the following code is support the case where sys_siglist is
-// is not part of the environment. This is the case for some Unix platforms
-// and also for Win32.
+// is not part of the environment.  This is the case for some Unix platforms
+// and also for Windows.
 //
 typedef struct
 {
@@ -4519,7 +4526,7 @@ void BuildSignalNamesTable(void)
             if (tsn->pShortName == NULL)
             {
                 tsn->pShortName = pst->szSignal;
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
                 if (sig == SIGUSR1)
                 {
                     tsn->pLongName = T("Restart server");
@@ -4528,7 +4535,7 @@ void BuildSignalNamesTable(void)
                 {
                     tsn->pLongName = T("Drop flatfile");
                 }
-#endif // WIN32
+#endif // UNIX_SIGNALS
 #ifdef SysSigNames
                 if (  tsn->pLongName == NULL
                    && SysSigNames[sig]
@@ -4577,12 +4584,15 @@ static void check_panicking(int sig)
     if (mudstate.panicking)
     {
         unset_signals();
-#ifdef WIN32
+
+#ifdef WINDOWS_PROCESSES
         UNUSED_PARAMETER(sig);
         abort();
-#else // WIN32
+#endif // WINDOWS_PROCESSES
+
+#ifdef UNIX_PROCESSES
         kill(game_pid, sig);
-#endif // WIN32
+#endif // UNIX_PROCESSES
     }
     mudstate.panicking = true;
 }
@@ -4610,7 +4620,8 @@ static void log_signal(int iSignal)
     ENDLOG;
 }
 
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
+
 static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
@@ -4637,18 +4648,19 @@ void LogStatBuf(int stat_buf, const char *Name)
     }
     ENDLOG;
 }
-#endif
+
+#endif  // UNIX_SIGNALS
 
 static RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     int stat_buf;
     pid_t child;
-#endif // !WIN32
+#endif // UNIX_SIGNALS
 
     switch (sig)
     {
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     case SIGUSR1:
         if (mudstate.bCanRestart)
         {
@@ -4726,14 +4738,14 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                     }
                     mudstate.dumping = false;
                     local_dump_complete_signal();
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
                     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
                     while (NULL != p)
                     {
                         p->pSink->dump_complete_signal();
                         p = p->pNext;
                     }
-#endif
+#endif // TINYMUX_MODULES
                     continue;
                 }
             }
@@ -4777,7 +4789,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         break;
 #endif
 
-#endif // !WIN32
+#endif // UNIX_SIGNALS
 
     case SIGINT:
 
@@ -4786,9 +4798,9 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         log_signal(sig);
         break;
 
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     case SIGQUIT:
-#endif // !WIN32
+#endif // UNIX_SIGNALS
     case SIGTERM:
 #ifdef SIGXCPU
     case SIGXCPU:
@@ -4808,7 +4820,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
     case SIGILL:
     case SIGFPE:
     case SIGSEGV:
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     case SIGTRAP:
 #ifdef SIGXFSZ
     case SIGXFSZ:
@@ -4822,7 +4834,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifdef SIGSYS
     case SIGSYS:
 #endif // SIGSYS
-#endif // !WIN32
+#endif // UNIX_SIGNALS
 
         // Panic save + restart.
         //
@@ -4832,7 +4844,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         report();
 
         local_presync_database_sigsegv();
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
         {
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
             while (NULL != p)
@@ -4842,7 +4854,8 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             }
         }
         final_modules();
-#endif
+#endif // TINYMUX_MODULES
+
 #ifndef MEMORY_BASED
         al_store();
 #endif
@@ -4867,12 +4880,16 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             dump_database_internal(DUMP_I_RESTART);
             SYNC;
             CLOSE;
-#ifdef WIN32
+#if defined(WINDOWS_PROCESSES)
             unset_signals();
             signal(sig, SIG_DFL);
+#if defined(WINDOWS_NETWORKING)
             WSACleanup();
+#endif // WINDOWS_NETWORKING
             exit(12345678);
-#else // WIN32
+#endif // WINDOWS_PROCESSES
+
+#if defined(UNIX_PROCESSES)
 #if defined(HAVE_WORKING_FORK)
             CleanUpSlaveSocket();
             CleanUpSlaveProcess();
@@ -4898,13 +4915,13 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #endif // GAME_DOOFERMUX
             break;
-#endif // WIN32
+#endif // UNIX_PROCESSES
         }
         else
         {
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
             WSACleanup();
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
             unset_signals();
             signal(sig, SIG_DFL);
@@ -4920,9 +4937,9 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         log_signal(sig);
         report();
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
         WSACleanup();
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
         unset_signals();
         signal(sig, SIG_DFL);
@@ -4941,7 +4958,7 @@ NAMETAB sigactions_nametab[] =
 
 void set_signals(void)
 {
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     sigset_t sigs;
 
     // We have to reset our signal mask, because of the possibility
@@ -4954,7 +4971,7 @@ void set_signals(void)
 #undef sigprocmask
     sigfillset(&sigs);
     sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-#endif // !WIN32
+#endif // UNIX_SIGNALS
 
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGTERM, CAST_SIGNAL_FUNC sighandler);
@@ -4963,7 +4980,7 @@ void set_signals(void)
     signal(SIGABRT, CAST_SIGNAL_FUNC sighandler);
     signal(SIGFPE,  SIG_IGN);
 
-#ifndef WIN32
+#if defined(UNIX_SIGNALS)
     signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
     signal(SIGHUP,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGQUIT, CAST_SIGNAL_FUNC sighandler);
@@ -4991,7 +5008,7 @@ void set_signals(void)
 #ifdef SIGSYS
     signal(SIGSYS, CAST_SIGNAL_FUNC sighandler);
 #endif // SIGSYS
-#endif // !WIN32
+#endif // UNIX_SIGNALS
 }
 
 void list_system_resources(dbref player)
@@ -5009,7 +5026,7 @@ void list_system_resources(dbref player)
     notify(player, buffer);
     nTotal += DebugTotalSockets;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     mux_sprintf(buffer, sizeof(buffer), "Total Threads: %ld", DebugTotalThreads);
     notify(player, buffer);
     nTotal += DebugTotalThreads;
@@ -5017,21 +5034,21 @@ void list_system_resources(dbref player)
     mux_sprintf(buffer, sizeof(buffer), "Total Semaphores: %ld", DebugTotalSemaphores);
     notify(player, buffer);
     nTotal += DebugTotalSemaphores;
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
     mux_sprintf(buffer, sizeof(buffer), "Total Handles (sum of above): %d", nTotal);
     notify(player, buffer);
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     for (int i = 0; i < NUM_SLAVE_THREADS; i++)
     {
         mux_sprintf(buffer, sizeof(buffer), "Thread %d at line %u", i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 
 // ---------------------------------------------------------------------------
 // Thread to listen on MUD port - for Windows NT
@@ -5460,7 +5477,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
     }
 }
 
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
 void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {

@@ -176,7 +176,8 @@ struct descriptor_data
   CLinearTimeAbsolute last_time;
 
   SOCKET descriptor;
-#ifdef WIN32
+
+#if defined(WINDOWS_NETWORKING)
   // these are for the Windows NT TCP/IO
 #define SIZEOF_OVERLAPPED_BUFFERS 512
   char input_buffer[SIZEOF_OVERLAPPED_BUFFERS];         // buffer for reading
@@ -185,7 +186,7 @@ struct descriptor_data
   bool bConnectionDropped;        // true if we cannot send to player
   bool bConnectionShutdown;       // true if connection has been shutdown
   bool bCallProcessOutputLater;   // Does the socket need priming for output.
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
   int flags;
   int retries_left;
@@ -258,13 +259,13 @@ extern int mux_socket_read(DESC *d, char* buffer, int nBytes, int flags);
 extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL);
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
 void process_output_ntio(void *, int);
-#else // WIN32
+#elif defined(UNIX_NETWORKING)
 extern void shovechars(int nPorts, PortInfo aPorts[]);
-#endif // WIN32
+#endif // UNIX_NETWORKING
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK

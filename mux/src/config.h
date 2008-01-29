@@ -310,6 +310,20 @@ typedef char  boolexp_type;
 #define I64BUF_SIZE LONGEST_I64
 
 #ifdef WIN32
+
+// Build Options
+//
+#define WINDOWS_NETWORKING
+#define WINDOWS_SIGNALS
+#define WINDOWS_PROCESSES
+#define WINDOWS_FILES
+#define WINDOWS_DYNALIB
+#define WINDOWS_CRYPT
+#define WINDOWS_TIME
+#define WINDOWS_THREADS
+#define WINDOWS_INSTRINSICS
+#define TINYMUX_MODULES
+
 #define DCL_CDECL  __cdecl
 #define DCL_EXPORT __declspec(dllexport)
 #define DCL_API    __stdcall
@@ -355,7 +369,22 @@ typedef unsigned __int64 UINT64;
 #define mux_write   _write
 #define mux_lseek   _lseek
 
+#define ENDLINE "\r\n"
+
 #else // WIN32
+
+// Build Options
+//
+#define UNIX_NETWORKING
+#define UNIX_SIGNALS
+#define UNIX_PROCESSES
+#define UNIX_FILES
+#define UNIX_CRYPT
+#define UNIX_TIME
+#if defined(HAVE_DLOPEN)
+#define UNIX_DYNALIB
+#define TINYMUX_MODULES
+#endif // HAVE_DLOPEN
 
 #define DCL_CDECL
 #define DCL_EXPORT
@@ -398,6 +427,8 @@ typedef int SOCKET;
 #define mux_read    read
 #define mux_write   write
 #define mux_lseek   lseek
+
+#define ENDLINE "\n"
 
 #endif // WIN32
 
@@ -549,11 +580,5 @@ extern "C" unsigned int __intel_cpu_indicator;
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
-
-#ifdef WIN32
-#define ENDLINE "\r\n"
-#else // WIN32
-#define ENDLINE "\n"
-#endif // WIN32
 
 #endif // !CONFIG_H

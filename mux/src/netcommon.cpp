@@ -446,9 +446,9 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
             //
             //   1) It breaks SSL,
             //
-            //   2) We use this feature on the Win32 build to handle
-            //      asyncronous I/O, and for Win32 Async I/O, a program is not
-            //      allowed to read or write to a buffer involved in an
+            //   2) We use this feature on the Windows build to handle
+            //      asyncronous I/O, and for Windows Async I/O, a program is
+            //      not allowed to read or write to a buffer involved in an
             //      asyncronous I/O request, and
             //
             //   3) It is more proper when given an EWOULDBLOCK error to try
@@ -494,7 +494,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
     d->output_size += n;
     d->output_tot += n;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
     // As part of the heuristics for good performance, we may not call
     // process_output now, but if output is not flowing, we mark that output
     // should be kick-started the next time shovechars() is looking at this
@@ -507,7 +507,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
     {
         d->bCallProcessOutputLater = true;
     }
-#endif
+#endif // WINDOWS_NETWORKING
 }
 
 void queue_write(DESC *d, const char *b)
@@ -1343,14 +1343,14 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
     desc_delhash(d);
 
     local_disconnect(player, num);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->disconnect(player, num);
         p = p->pNext;
     }
-#endif
+#endif // TINYMUX_MODULES
 }
 
 int boot_off(dbref player, const UTF8 *message)
@@ -2493,14 +2493,15 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 num_con++;
             }
             local_connect(player, 0, num_con);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+
+#if defined(TINYMUX_MODULES)
             ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
             while (NULL != pNode)
             {
                 pNode->pSink->connect(player, 0, num_con);
                 pNode = pNode->pNext;
             }
-#endif
+#endif // TINYMUX_MODULES
 
             // If stuck in an @prog, show the prompt.
             //
@@ -2598,14 +2599,14 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 // is 0 and indicate the connect is a new character.
                 //
                 local_connect(player, 1, 0);
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
                 ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
                 while (NULL != pNode)
                 {
                     pNode->pSink->connect(player, 1, 0);
                     pNode = pNode->pNext;
                 }
-#endif
+#endif // TINYMUX_MODULES
             }
         }
     }

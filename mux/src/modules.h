@@ -10,7 +10,7 @@
 
 #ifndef MODULES_H
 #define MODULES_H
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
 
 const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
 const MUX_CID CID_StubSlave             = UINT64_C(0x00000002267CA586);
@@ -235,11 +235,11 @@ private:
 interface mux_ISlaveControl : public mux_IUnknown
 {
 public:
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]) = 0;
-#else
+#elif defined(UNIX_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]) = 0;
-#endif // WIN32
+#endif // UNIX_FILES
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]) = 0;
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo) = 0;
     virtual MUX_RESULT ModuleMaintenance(void) = 0;
@@ -265,11 +265,11 @@ public:
 
     // mux_ISlaveControl
     //
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
-#else
+#elif defined(UNIX_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
-#endif // WIN32
+#endif // UNIX_FILES
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
     virtual MUX_RESULT ModuleMaintenance(void);
@@ -322,11 +322,11 @@ public:
 
     // mux_ISlaveControl
     //
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
-#else
+#elif defined(UNIX_FILES)
     virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
-#endif // WIN32
+#endif // UNIX_FILES
     virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
     virtual MUX_RESULT ModuleMaintenance(void);

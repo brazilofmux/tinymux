@@ -3720,26 +3720,17 @@ static void list_process(dbref player)
     }
 #endif // HAVE_GETRUSAGE
 
-#ifdef WIN32
-#ifdef HAVE_GETRUSAGE
-    int maxfds = FD_SETSIZE;
-#endif // HAVE_GETRUSAGE
-#else // WIN32
+#if defined(UNIX_NETWORKING)
 #ifdef HAVE_GETDTABLESIZE
     int maxfds = getdtablesize();
 #else // HAVE_GETDTABLESIZE
     int maxfds = sysconf(_SC_OPEN_MAX);
 #endif // HAVE_GETDTABLESIZE
     int psize = getpagesize();
-#endif // WIN32
-
-    // Go display everything
-    //
-#ifdef WIN32
-    raw_notify(player, tprintf("Process ID:  %10d", game_pid));
-#else // WIN32
     raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", game_pid, psize));
-#endif // WIN32
+#else // UNIX_NETWORKING
+    raw_notify(player, tprintf("Process ID:  %10d", game_pid));
+#endif // UNIX_NETWORKING
 
 #ifdef HAVE_GETRUSAGE
     raw_notify(player, tprintf("Time used:   %10d user   %10d sys",
@@ -3775,7 +3766,7 @@ static void list_process(dbref player)
 //
 static void list_modules(dbref executor)
 {
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
     raw_notify(executor, T("Modules:"));
     int i;
     for (i = 0; ; i++)

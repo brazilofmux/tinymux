@@ -1105,7 +1105,7 @@ void CHashPage::GetRange
 
 #if !defined(MEMORY_BASED)
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
@@ -1156,7 +1156,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     }
 }
 
-#else // WIN32
+#elif defined(UNIX_FILES)
 bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
@@ -1236,7 +1236,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     mudstate.shutdown_flag = true;
     return false;
 }
-#endif // WIN32
+#endif // UNIX_FILES
 
 #endif // MEMORY_BASED
 
@@ -1348,13 +1348,13 @@ CHashFile::CHashFile(void)
 
 void CHashFile::Init(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     m_hDirFile = INVALID_HANDLE_VALUE;
     m_hPageFile = INVALID_HANDLE_VALUE;
-#else
+#elif defined(UNIX_FILES)
     m_hDirFile = MUX_OPEN_INVALID_HANDLE_VALUE;
     m_hPageFile = MUX_OPEN_INVALID_HANDLE_VALUE;
-#endif
+#endif // UNIX_FILES
     m_nDir = 0;
     m_nDirDepth = 0;
     m_pDir = NULL;
@@ -1363,7 +1363,7 @@ void CHashFile::Init(void)
     m_iLastFlushed = 0;
 }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 void CHashFile::WriteDirectory(void)
 {
     if (INVALID_HANDLE_VALUE == m_hDirFile)
@@ -1382,7 +1382,7 @@ void CHashFile::WriteDirectory(void)
     }
 #endif // DO_COMMIT
 }
-#else // WIN32
+#elif defined(UNIX_FILES)
 void CHashFile::WriteDirectory(void)
 {
     if (MUX_OPEN_INVALID_HANDLE_VALUE == m_hDirFile)
@@ -1404,7 +1404,7 @@ void CHashFile::WriteDirectory(void)
     }
 #endif // DO_COMMIT
 }
-#endif // WIN32
+#endif // UNIX_FILES
 
 bool CHashFile::InitializeDirectory(unsigned int n)
 {
@@ -1476,7 +1476,7 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
     CloseAll();
 
     bool bSuccess;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename;
     pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
@@ -1489,16 +1489,16 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
-#endif // WIN32
+#endif // UNIX_FILES
 
     if (!bSuccess)
     {
         return false;
     }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
     if (NULL == pFilename)
     {
@@ -1509,9 +1509,9 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
-#endif // WIN32
+#endif // UNIX_FILES
 
     if (!bSuccess)
     {
@@ -1616,11 +1616,11 @@ bool CHashFile::RebuildDirectory(void)
 
 bool CHashFile::ReadDirectory(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     UINT32 cc = SetFilePointer(m_hDirFile, 0, 0, FILE_END);
-#else // WIN32
+#elif defined(UNIX_FILES)
     UINT32 cc = mux_lseek(m_hDirFile, 0, SEEK_END);
-#endif // WIN32
+#endif // UNIX_FILES
     if (cc == 0xFFFFFFFFUL)
     {
         return false;
@@ -1628,21 +1628,21 @@ bool CHashFile::ReadDirectory(void)
 
     InitializeDirectory(cc / HF_SIZEOF_FILEOFFSET);
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     cc = SetFilePointer(m_hDirFile, 0, 0, FILE_BEGIN);
     DWORD nRead;
     if (!ReadFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nRead, 0))
     {
         return false;
     }
-#else // WIN32
+#elif defined(UNIX_FILES)
 #ifdef HAVE_PREAD
     pread(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
 #else
     mux_lseek(m_hDirFile, 0, SEEK_SET);
     mux_read(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // HAVE_PREAD
-#endif // WIN32
+#endif // UNIX_FILES
     return true;
 }
 
@@ -1680,7 +1680,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     // First let's try to open the page file. This is the more important file.
     //
     bool bSuccess;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename;
     pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
@@ -1693,9 +1693,9 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY);
-#endif // WIN32
+#endif // UNIX_FILES
     if (!bSuccess)
     {
         // The PageFile doesn't exist, so we have'ta create both of them.
@@ -1713,11 +1713,11 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     // the standard creation process. If the size is not a multiple of
     // HF_SIZEOF_PAGE, we need to fail.
     //
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     oEndOfFile = SetFilePointer(m_hPageFile, 0, 0, FILE_END);
-#else // WIN32
+#elif defined(UNIX_FILES)
     oEndOfFile = mux_lseek(m_hPageFile, 0, SEEK_END);
-#endif // WIN32
+#endif // UNIX_FILES
     if (oEndOfFile == 0xFFFFFFFFUL)
     {
         CloseAll();
@@ -1747,7 +1747,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     // file is there. This file is not strictly necessary, we can rebuild it.
     // However, having it helps us to open faster.
     //
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     bSuccess;
     pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
     if (NULL == pFilename)
@@ -1759,21 +1759,21 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY);
-#endif // WIN32
+#endif // UNIX_FILES
     if (!bSuccess)
     {
         // The Directory doesn't exist, so we create it anew, and rebuild the
         // index.
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
         bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
         bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
-#endif // WIN32
+#endif // UNIX_FILES
 
         if (!bSuccess)
         {
@@ -1801,11 +1801,11 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
 
 void CHashFile::Sync(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     if (INVALID_HANDLE_VALUE != m_hPageFile)
-#else
+#elif defined(UNIX_FILES)
     if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hPageFile)
-#endif
+#endif // UNIX_FILES
     {
         cs_syncs++;
         bool bAllFlushed = true;
@@ -1824,38 +1824,38 @@ void CHashFile::Sync(void)
 #ifdef DO_COMMIT
         if (!mudstate.bStandAlone)
         {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
             FlushFileBuffers(m_hPageFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
             fsync(m_hPageFile);
-#endif // WIN32
+#endif // UNIX_FILES
         }
 #endif // DO_COMMIT
     }
 #ifdef DO_COMMIT
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     if (  INVALID_HANDLE_VALUE != m_hDirFile
-#else
+#elif defined(UNIX_FILES)
     if (  MUX_OPEN_INVALID_HANDLE_VALUE != m_hDirFile
-#endif
+#endif // UNIX_FILES
        && !mudstate.bStandAlone)
     {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         FlushFileBuffers(m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
         fsync(m_hDirFile);
-#endif // WIN32
+#endif // UNIX_FILES
     }
 #endif // DO_COMMIT
 }
 
 void CHashFile::CloseAll(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     if (INVALID_HANDLE_VALUE != m_hPageFile)
-#else
+#elif defined(UNIX_FILES)
     if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hPageFile)
-#endif
+#endif // UNIX_FILES
     {
         Sync();
         if (m_pDir)
@@ -1869,24 +1869,24 @@ void CHashFile::CloseAll(void)
             m_hpCacheLookup = NULL;
         }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         CloseHandle(m_hPageFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
         mux_close(m_hPageFile);
-#endif // WIN32
+#endif // UNIX_FILES
     }
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     if (INVALID_HANDLE_VALUE != m_hDirFile)
-#else
+#elif defined(UNIX_FILES)
     if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hDirFile)
-#endif
+#endif // UNIX_FILES
     {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         CloseHandle(m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
         mux_close(m_hDirFile);
-#endif // WIN32
+#endif // UNIX_FILES
     }
     Init();
 }
@@ -2051,37 +2051,37 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #ifdef DO_COMMIT
         if (!mudstate.bStandAlone)
         {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
             FlushFileBuffers(m_hPageFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
             fsync(m_hPageFile);
-#endif // WIN32
+#endif // UNIX_FILES
         }
 #endif // DO_COMMIT
 
         // Write Directory
         //
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         SetFilePointer(m_hDirFile, 0, 0, FILE_BEGIN);
         DWORD nWritten;
         WriteFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nWritten, 0);
-#else // WIN32
+#elif defined(UNIX_FILES)
 #ifdef HAVE_PWRITE
         pwrite(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
 #else
         mux_lseek(m_hDirFile, 0, SEEK_SET);
         mux_write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // HAVE_PWRITE
-#endif // WIN32
+#endif // UNIX_FILES
 
 #ifdef DO_COMMIT
         if (!mudstate.bStandAlone)
         {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
             FlushFileBuffers(m_hDirFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
             fsync(m_hDirFile);
-#endif // WIN32
+#endif // UNIX_FILES
         }
 #endif // DO_COMMIT
     }
@@ -2786,9 +2786,9 @@ void CLogFile::WriteBuffer(size_t nString, const UTF8 *pString)
         return;
     }
 
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     EnterCriticalSection(&csLog);
-#endif // WIN32
+#endif // WINDOWS_THREADS
 
     while (nString > 0)
     {
@@ -2814,9 +2814,9 @@ void CLogFile::WriteBuffer(size_t nString, const UTF8 *pString)
     }
     Flush();
 
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     LeaveCriticalSection(&csLog);
-#endif // WIN32
+#endif // WINDOWS_THREADS
 }
 
 void CLogFile::WriteString(const UTF8 *pString)
@@ -2869,7 +2869,7 @@ bool CLogFile::CreateLogFile(void)
     m_nSize = 0;
 
     bool bSuccess;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
     if (NULL == pFilename)
@@ -2881,9 +2881,9 @@ bool CLogFile::CreateLogFile(void)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
-#endif // WIN32
+#endif // UNIX_FILES
     return bSuccess;
 }
 
@@ -2892,7 +2892,7 @@ void CLogFile::AppendLogFile(void)
     CloseLogFile();
 
     bool bSuccess;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
     if (NULL == pFilename)
@@ -2904,35 +2904,35 @@ void CLogFile::AppendLogFile(void)
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
-#else // WIN32
+#elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY);
-#endif // WIN32
+#endif // UNIX_FILES
 
     if (bSuccess)
     {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         SetFilePointer(m_hFile, 0, 0, FILE_END);
-#else // WIN32
+#elif defined(UNIX_FILES)
         mux_lseek(m_fdFile, 0, SEEK_END);
-#endif // WIN32
+#endif // UNIX_FILES
     }
 }
 
 void CLogFile::CloseLogFile(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     if (INVALID_HANDLE_VALUE != m_hFile)
     {
         CloseHandle(m_hFile);
         m_hFile = INVALID_HANDLE_VALUE;
     }
-#else
+#elif defined(UNIX_FILES)
     if (MUX_OPEN_INVALID_HANDLE_VALUE != m_fdFile)
     {
         mux_close(m_fdFile);
         m_fdFile = MUX_OPEN_INVALID_HANDLE_VALUE;
     }
-#endif
+#endif // UNIX_FILES
 }
 
 #define FILE_SIZE_TRIGGER (512*1024UL)
@@ -2951,12 +2951,12 @@ void CLogFile::Flush(void)
     else
     {
         m_nSize += m_nBuffer;
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
         unsigned long nWritten;
         WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL);
-#else // WIN32
+#elif defined(UNIX_FILES)
         mux_write(m_fdFile, m_aBuffer, m_nBuffer);
-#endif // WIN32
+#endif // UNIX_FILES
 
         if (m_nSize > FILE_SIZE_TRIGGER)
         {
@@ -3026,16 +3026,16 @@ void CLogFile::SetBasename(const UTF8 *pBasename)
 
 CLogFile::CLogFile(void)
 {
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     InitializeCriticalSection(&csLog);
-#endif // WIN32
+#endif // WINDOWS_THREADS
 
     m_ltaStarted.GetLocal();
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
     m_hFile = INVALID_HANDLE_VALUE;
-#else
+#elif defined(UNIX_FILES)
     m_fdFile = MUX_OPEN_INVALID_HANDLE_VALUE;
-#endif
+#endif // UNIX_FILES
     m_nSize = 0;
     m_nBuffer = 0;
     bEnabled = false;
@@ -3073,9 +3073,9 @@ void CLogFile::StopLogging(void)
 CLogFile::~CLogFile(void)
 {
     StopLogging();
-#ifdef WIN32
+#if defined(WINDOWS_THREADS)
     DeleteCriticalSection(&csLog);
-#endif // WIN32
+#endif // WINDOWS_THREADS
 }
 
 #ifdef MEMORY_ACCOUNTING

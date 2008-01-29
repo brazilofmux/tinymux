@@ -22,11 +22,11 @@ void SHA1_Init(SHA1_CONTEXT *p)
     p->nblock = 0;
 }
 
-#ifdef WIN32
+#ifdef WINDOWS_INSTRINSICS
 #define ROTL(d,n) _lrotl(d,n)
-#else // WIN32
+#else // WINDOWS_INSTRINSICS
 #define ROTL(d,n) (((d) << (n)) | ((d) >> (32-(n))))
-#endif // WIN32
+#endif // WINDOWS_INSTRINSICS
 
 #define Ch(x,y,z)      (((x) & (y)) ^ (~(x) & (z)))
 #define Parity(x,y,z)  ((x) ^ (y) ^ (z))

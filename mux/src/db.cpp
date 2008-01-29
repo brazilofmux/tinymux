@@ -3928,7 +3928,7 @@ void load_restart_db(void)
 }
 #endif // HAVE_WORKING_FORK
 
-#ifdef WIN32
+#if defined(WINDOWS_FILES)
 
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
@@ -3981,7 +3981,9 @@ void RemoveFile(UTF8 *name)
     }
 }
 
-#else // WIN32
+#endif // WINDOWS_FILES
+
+#if defined(UNIX_FILES)
 
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
@@ -4000,5 +4002,5 @@ void RemoveFile(UTF8 *name)
 {
     unlink((char *)name);
 }
-#endif // WIN32
+#endif // UNIX_FILES
 

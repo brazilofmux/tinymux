@@ -10,7 +10,7 @@
 
 #include "db.h"
 #include "match.h"
-#if defined(HAVE_DLOPEN) || defined(WIN32)
+#if defined(TINYMUX_MODULES)
 #include "libmux.h"
 #include "modules.h"
 #endif
@@ -34,9 +34,10 @@ extern "C" MUX_RESULT DCL_API pipepump(void);
 #ifdef SSL_ENABLED
 void CleanUpSSLConnections(void);
 #endif
-#ifdef WIN32
+
+#if defined(WINDOWS_NETWORKING)
 extern CRITICAL_SECTION csDescriptorList;
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
 
 extern NAMETAB sigactions_nametab[];
 
@@ -120,9 +121,9 @@ void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
 void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
 
-#ifndef WIN32
+#if defined(UNIX_CRYPT)
 extern "C" char *crypt(const char *inptr, const char *inkey);
-#endif // WIN32
+#endif // UNIX_CRYPT
 extern bool break_called;
 
 /* From eval.cpp */
@@ -958,18 +959,17 @@ extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
 #endif
 extern int      nMainGamePorts;
 
-#ifdef WIN32
-extern bool bUseCompletionPorts;;
-#else // WIN32
+#if defined(UNIX_NETWORKING)
 extern int maxd;
-#endif // WIN32
+#endif // UNIX_NETWORKING
 
 extern unsigned int ndescriptors;
 
 extern long DebugTotalFiles;
 extern long DebugTotalSockets;
 
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
+extern bool bUseCompletionPorts;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
@@ -979,16 +979,17 @@ typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
 extern FGETPROCESSTIMES *fpGetProcessTimes;
-#endif // WIN32
+#endif // WINDOWS_NETWORKING
+
 extern pid_t game_pid;
 
 // From timer.cpp
 //
 void init_timer(void);
-#ifdef WIN32
+#if defined(WINDOWS_NETWORKING)
 void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
 void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
-#endif
+#endif // WINDOWS_NETWORKING
 void dispatch_DatabaseDump(void *pUnused, int iUnused);
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
 void dispatch_IdleCheck(void *pUnused, int iUnused);

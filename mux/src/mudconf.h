@@ -217,12 +217,13 @@ struct confdata
 #ifdef FIRANMUX
     UTF8    immobile_msg[128];  /* Message displayed to immobile players */
 #endif // FIRANMUX
-#if defined(INLINESQL) || defined(HAVE_DLOPEN) || defined(WIN32)
+
+#if defined(INLINESQL) || defined(TINYMUX_MODULES)
     UTF8    sql_server[128];
     UTF8    sql_user[128];
     UTF8    sql_password[128];
     UTF8    sql_database[128];
-#endif // INLINESQL
+#endif // INLINESQL || TINYMUX_MODULES
 
     UTF8    mail_server[128];
     UTF8    mail_ehlo[128];
