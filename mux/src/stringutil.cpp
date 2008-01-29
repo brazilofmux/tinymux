@@ -2943,7 +2943,7 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
     *bufp = buff + TrimPartialSequence(tp - buff, buff);
 }
 
-size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
+size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __in UTF8 *buff, __deref_inout UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
