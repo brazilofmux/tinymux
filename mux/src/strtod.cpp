@@ -788,11 +788,11 @@ static Bigint *p5s;
 static Bigint *pow5mult(Bigint *b, int k)
 {
     Bigint *b1, *p5, *p51;
-    int i;
     static int p05[3] = { 5, 25, 125 };
 
-    i = k & 3;
-    if (i)
+    int i = k & 3;
+    if (  0 < i
+       && i <= 3)
     {
         b = multadd(b, p05[i-1], 0);
     }
