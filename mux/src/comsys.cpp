@@ -1301,21 +1301,23 @@ static void BuildChannelMessage
     {
         dbref aowner;
         int aflags;
-        UTF8* test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
+        UTF8* test_attr = atr_get("BuildChannelMessage.1304", ch_obj,
                 A_SAYSTRING, &aowner, &aflags);
 
         if ('\0' != test_attr[0])
         {
             bChannelSayString = true;
         }
+        free_lbuf(test_attr);
 
-        test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
+        test_attr = atr_get("BuildChannelMessage.1312", ch_obj,
                 A_SPEECHMOD, &aowner, &aflags);
 
         if ('\0' != test_attr[0])
         {
             bChannelSpeechMod = true;
         }
+        free_lbuf(test_attr);
     }
 
     UTF8 *saystring = NULL;
