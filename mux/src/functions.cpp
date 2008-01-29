@@ -4373,7 +4373,21 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    mux_string *sWord = new mux_string(fargs[1]);
+    mux_string *sWord = NULL;
+    try
+    {
+        sWord = new mux_string(fargs[1]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sWord)
+    {
+        return;
+    }
+
     if (sWord->search(sep.str))
     {
         safe_str(T("#-1 CAN ONLY REMOVE ONE ELEMENT"), buff, bufc);
@@ -4381,7 +4395,21 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        delete sWord;
+        return;
+    }
     mux_words *words = NULL;
     try
     {
