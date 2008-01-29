@@ -4491,13 +4491,40 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
     mux_cursor nLen = sStr->length_cursor();
 
     mux_cursor i = CursorMin;
     if (i < nLen)
     {
-        mux_string *sTo = new mux_string(T(" "));
+        mux_string *sTo = NULL;
+        try
+        {
+            sTo = new mux_string(T(" "));
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == sTo)
+        {
+            return;
+        }
+
         do
         {
             UTF8 ch = sStr->export_Char(i.m_byte);
