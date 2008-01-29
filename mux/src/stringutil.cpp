@@ -7208,11 +7208,11 @@ void mux_words::set_Control(const UTF8 *pControlSet)
     memset(m_aControl, false, sizeof(m_aControl));
     while (*pControlSet)
     {
-        if (mux_isprint_ascii(*pControlSet))
+        UTF8 ch = *pControlSet++;
+        if (mux_isprint_ascii(ch))
         {
-            m_aControl[*pControlSet] = true;
+            m_aControl[ch] = true;
         }
-        pControlSet++;
     }
 }
 
