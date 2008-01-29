@@ -4138,7 +4138,22 @@ static FUNCTION(fun_lpos)
         return;
     }
 
-    mux_string *sPat = new mux_string(fargs[1]);
+    mux_string *sPat = NULL;
+    try
+    {
+        sPat = new mux_string(fargs[1]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sPat)
+    {
+        delete sStr;
+        delete sPat;
+        return;
+    }
 
     if (0 == sPat->length_byte())
     {
