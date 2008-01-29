@@ -4476,7 +4476,8 @@ bool ItemToList_AddInteger(ITL *pContext, int i)
     }
     p += mux_ltoa(i, p);
     size_t nLen = p - smbuf;
-    if (nLen > pContext->nBufferAvailable)
+    if (  pContext->nBufferAvailable < nLen
+       || sizeof(smbuf) < nLen)
     {
         // Out of room.
         //
