@@ -419,9 +419,6 @@ static Bigint *Balloc(int k)
 {
     int x;
     Bigint *rv;
-#ifndef Omit_Private_Memory
-    unsigned int len;
-#endif
 
     rv = freelist[k];
     if (rv)
@@ -433,10 +430,10 @@ static Bigint *Balloc(int k)
         x = 1 << k;
 #ifdef Omit_Private_Memory
         rv = (Bigint *)MEMALLOC(sizeof(Bigint) + (x-1)*sizeof(ULong));
-        ISOUTOFMEMORY(rv);
 #else
-        len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
-            /sizeof(double);
+        unsigned int len = (  sizeof(Bigint)
+                           + (x-1)*sizeof(ULong)
+                           + sizeof(double) - 1 ) / sizeof(double);
         size_t privlen = pmem_next - private_mem;
         if (privlen + len <= PRIVATE_mem)
         {
@@ -446,13 +443,20 @@ static Bigint *Balloc(int k)
         else
         {
             rv = (Bigint*)MEMALLOC(len*sizeof(double));
-            ISOUTOFMEMORY(rv);
         }
 #endif
-        rv->k = k;
-        rv->maxwds = x;
+        if (NULL != rv)
+        {
+            rv->k = k;
+            rv->maxwds = x;
+        }
     }
-    rv->sign = rv->wds = 0;
+
+    if (NULL != rv)
+    {
+        rv->sign = rv->wds = 0;
+    }
+    ISOUTOFMEMORY(rv);
     return rv;
 }
 
