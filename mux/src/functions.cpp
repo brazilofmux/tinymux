@@ -4344,8 +4344,36 @@ static FUNCTION(fun_insert)
         return;
     }
 
-    mux_string *sList = new mux_string(fargs[0]);
-    mux_string *sWord = new mux_string(fargs[2]);
+    mux_string *sList = NULL;
+    try
+    {
+        sList = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sList)
+    {
+        return;
+    }
+
+    mux_string *sWord = NULL;
+    try
+    {
+        sWord = new mux_string(fargs[2]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sWord)
+    {
+        delete sList;
+        return;
+    }
 
     // Insert a word at position X of a list.
     //
