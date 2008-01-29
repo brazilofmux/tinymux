@@ -2733,7 +2733,21 @@ FUNCTION(fun_shuffle)
         return;
     }
 
-    mux_string *sIn = new mux_string(fargs[0]);
+    mux_string *sIn = NULL;
+    try
+    {
+        sIn = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sIn)
+    {
+        return;
+    }
+
     mux_words *words = NULL;
     try
     {
