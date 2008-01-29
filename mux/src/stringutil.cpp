@@ -6697,13 +6697,13 @@ void mux_string::strip(const UTF8 *pStripSet, mux_cursor iStart, mux_cursor iEnd
     // Load set of characters to strip.
     //
     memset(strip_table, false, sizeof(strip_table));
-    while (*pStripSet)
+    while ('\0' != *pStripSet)
     {
-        if (mux_isprint_ascii(*pStripSet))
+        UTF8 ch = *pStripSet++;
+        if (mux_isprint_ascii(ch))
         {
-            strip_table[*pStripSet] = true;
+            strip_table[ch] = true;
         }
-        pStripSet++;
     }
     stripWithTable(strip_table, iStart, iEnd);
 }
