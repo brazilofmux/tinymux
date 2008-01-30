@@ -560,7 +560,7 @@ bool ValidatePlayerName(const UTF8 *pName)
     else
     {
         const UTF8 *p = pName;
-        while ('\0' != p)
+        while ('\0' != *p)
         {
             if (!mux_isplayername(p))
             {
