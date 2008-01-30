@@ -2347,7 +2347,8 @@ UTF8 *munge_space(const UTF8 *string)
 }
 
 /* ---------------------------------------------------------------------------
- * trim_spaces: Remove leading and trailing spaces.
+ * trim_spaces: Remove leading and trailing spaces and space-compress internal
+ * spaces.
  */
 UTF8 *trim_spaces(const UTF8 *string)
 {

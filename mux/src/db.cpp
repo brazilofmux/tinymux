@@ -3056,26 +3056,42 @@ void db_make_minimal(void)
 
 dbref parse_dbref(const UTF8 *s)
 {
-    // Enforce completely numeric dbrefs
+    // Skip leading spaces.
     //
+    while (mux_isspace(*s))
+    {
+        s++;
+    }
+
     const UTF8 *p = s;
-    if (p[0])
+    if (mux_isdigit(*p))
     {
-        do
+        // Parse numeric portion.
+        //
+        p++;
+        while (mux_isdigit(*p))
         {
-            if (!mux_isdigit(*p))
-            {
-                return NOTHING;
-            }
             p++;
-        } while (*p);
+        }
+
+        if (  '\0' == *p
+           || mux_isspace(*p))
+        {
+            // Parse trailing spaces.
+            //
+            while (mux_isspace(*p))
+            {
+                p++;
+            }
+
+            if ('\0' == *p)
+            {
+                int x = mux_atol(s);
+                return ((x >= 0) ? x : NOTHING);
+            }
+        }
     }
-    else
-    {
-        return NOTHING;
-    }
-    int x = mux_atol(s);
-    return ((x >= 0) ? x : NOTHING);
+    return NOTHING;
 }
 
 
