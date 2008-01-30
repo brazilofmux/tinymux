@@ -21,8 +21,6 @@
 //
 //      Table->end()
 
-static const UTF8 *Empty = T("");
-
 #define MAX_COLUMNS 255
 #define FIXED_COLUMNS 10
 

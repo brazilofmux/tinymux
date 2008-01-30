@@ -419,7 +419,6 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
 UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
     static UTF8 Buf[MBUF_SIZE];
-    static UTF8 Out[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = false;

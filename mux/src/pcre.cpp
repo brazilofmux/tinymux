@@ -1998,7 +1998,7 @@ Returns:     number of characters placed in the buffer
 static int
 ord2utf8(int cvalue, uschar *buffer)
 {
-register int i, j;
+size_t i, j;
 for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
   if (cvalue <= utf8_table1[i]) break;
 buffer += i;
@@ -5823,7 +5823,7 @@ while ((c = *(++ptr)) != 0)
 #ifdef SUPPORT_UTF8
       if (utf8 && c > 127)
         {
-        int i;
+        size_t i;
         for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
           if (c <= utf8_table1[i]) break;
         length += i;
