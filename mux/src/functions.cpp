@@ -6062,7 +6062,21 @@ static FUNCTION(fun_after)
 
     // Look for the target string.
     //
-    mux_string *sStr = new mux_string(bp);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(bp);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        delete sPat;
+        return;
+    }
     mux_cursor i;
 
     bool bSucceeded = sStr->search(*sPat, &i);
