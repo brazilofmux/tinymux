@@ -11760,14 +11760,6 @@ RSROWS()
   Related Topics: @query, rserror(), rsnext(), rsprev(), rsrelease(), rsrec(),
                   rsrecnext(), rsrecprev(), sql().
 
-& ROBBERY
-ROBBERY
-
-  Robbing is not allowed on this MUX. If you really need money, ask your
-  friendly neighborhood wizard.
-
-  Related Topics: MONEY.
-
 & ROBOT
 ROBOT
 
@@ -13449,11 +13441,11 @@ TOPICS
   ME                       MONEY                    MOVING
   OBJECT TYPES             PARENT OBJECTS           PARENT ROOMS
   PIPING                   POWERS LIST              PUEBLO
-  PUPPETS                  REGEXPS                  ROBBERY
-  SEARCH CLASSES           SEMAPHORES               SPOOFING
-  STACK                    SUBSTITUTIONS            SUCCESS
-  SWITCHES                 USER-DEFINED COMMANDS    VERBS
-  WIZARDS                  ZONES
+  PUPPETS                  REGEXPS                  SEARCH CLASSES
+  SEMAPHORES               SPOOFING                 STACK
+  SUBSTITUTIONS            SUCCESS                  SWITCHES
+  USER-DEFINED COMMANDS    VERBS                    WIZARDS
+  ZONES
 
 & TRACE
 TRACE
