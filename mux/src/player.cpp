@@ -688,7 +688,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (target == NOTHING)
     {
-        notify(executor, T("I couldn't find that player."));
+        notify(executor, T("I couldn\xE2\x80\x99t find that player."));
     }
     else if (!Controls(executor, target))
     {

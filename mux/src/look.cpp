@@ -715,7 +715,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
 
                         case CONTENTS_NESTED:
                             safe_str(Moniker(Location(thing)), html_buff, &html_cp);
-                            safe_str(T("'s "), html_buff, &html_cp);
+                            safe_str(T("\xE2\x80\x99s "), html_buff, &html_cp);
                             safe_str(Moniker(thing), html_buff, &html_cp);
                             break;
 
@@ -1387,7 +1387,7 @@ static void look_here
             if (  isRoom(thing)
                || Opaque(thing))
             {
-                notify_quiet(executor, T("You can't look outside."));
+                notify_quiet(executor, T("You can\xE2\x80\x99t look outside."));
                 return;
             }
             thing = Location(thing);
@@ -2031,7 +2031,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key
     thing = Contents(executor);
     if (thing == NOTHING)
     {
-        notify(executor, T("You aren't carrying anything."));
+        notify(executor, T("You aren\xE2\x80\x99t carrying anything."));
     }
     else
     {
@@ -2110,7 +2110,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        notify(executor, tprintf("You don't have enough %s.",
+        notify(executor, tprintf("You don\xE2\x80\x99t have enough %s.",
             mudconf.many_coins));
         return;
     }
@@ -2452,7 +2452,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
                   && !Examinable(executor, here)))
             {
                 notify_quiet(executor,
-                    T("Sorry, it is dark here and you can't search for bugs"));
+                    T("Sorry, it is dark here and you can\xE2\x80\x99t search for bugs"));
                 sweep_check(executor, sweeploc, what_key, false);
             }
             else

@@ -1052,7 +1052,7 @@ void load_comsys_V4(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn't find Begin CHANNELS." ENDLINE);
+        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE);
         return;
     }
 
@@ -1063,7 +1063,7 @@ void load_comsys_V4(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn't find Begin COMSYS." ENDLINE);
+        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE);
         return;
     }
 }
@@ -1078,7 +1078,7 @@ void load_comsys_V0123(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn't find Begin CHANNELS." ENDLINE);
+        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE);
         return;
     }
 
@@ -1089,7 +1089,7 @@ void load_comsys_V0123(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn't find Begin COMSYS." ENDLINE);
+        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE);
         return;
     }
 }
@@ -1109,7 +1109,7 @@ void load_comsys(UTF8 *filename)
     FILE *fp;
     if (!mux_fopen(&fp, filename, T("rb")))
     {
-        Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
+        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find %s." ENDLINE, filename);
     }
     else
     {
@@ -1118,7 +1118,7 @@ void load_comsys(UTF8 *filename)
         int ch = getc(fp);
         if (EOF == ch)
         {
-            Log.tinyprintf("Error: Couldn't read first byte.");
+            Log.tinyprintf("Error: Couldn\xE2\x80\x99t read first byte.");
         }
         else
         {
@@ -1370,28 +1370,28 @@ static void BuildChannelMessage
         {
             safe_chr(' ', *messNormal, &mnptr);
             safe_str(saystring, *messNormal, &mnptr);
-            safe_str(T(" \""), *messNormal, &mnptr);
+            safe_str(T(" \xE2\x80\x9C"), *messNormal, &mnptr);
         }
         else
         {
-            safe_str(T(" says, \""), *messNormal, &mnptr);
+            safe_str(T(" says, \xE2\x80\x9C"), *messNormal, &mnptr);
         }
         safe_str(pPose, *messNormal, &mnptr);
-        safe_chr('"', *messNormal, &mnptr);
+        safe_str(T("\xE2\x80\x9D"), *messNormal, &mnptr);
         if (!bSpoof)
         {
             if (saystring)
             {
                 safe_chr(' ', *messNoComtitle, &mncptr);
                 safe_str(saystring, *messNoComtitle, &mncptr);
-                safe_str(T(" \""), *messNoComtitle, &mncptr);
+                safe_str(T(" \xE2\x80\x9C"), *messNoComtitle, &mncptr);
             }
             else
             {
-                safe_str(T(" says, \""), *messNoComtitle, &mncptr);
+                safe_str(T(" says, \xE2\x80\x9C"), *messNoComtitle, &mncptr);
             }
             safe_str(pPose, *messNoComtitle, &mncptr);
-            safe_chr('"', *messNoComtitle, &mncptr);
+            safe_str(T("\xE2\x80\x9D"), *messNoComtitle, &mncptr);
         }
         break;
     }
@@ -1483,7 +1483,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     {
         if (!payfor(player, Guest(player) ? 0 : ch->charge))
         {
-            notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
+            notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
             return;
         }
         else
@@ -2583,7 +2583,7 @@ void do_comtitle
             {
                 UTF8 *pValidatedTitleValue = RestrictTitleValue(arg2);
                 do_setnewtitle(executor, ch, pValidatedTitleValue);
-                raw_notify(executor, tprintf("Title set to '%s' on channel %s.",
+                raw_notify(executor, tprintf("Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s.",
                     pValidatedTitleValue, channel));
             }
         }
@@ -3524,7 +3524,7 @@ void do_chboot
     if (  !Controls(executor, ch->charge_who)
        && !Comm_All(executor))
     {
-        raw_notify(executor, T("@cboot: You can't do that!"));
+        raw_notify(executor, T("@cboot: You can\xE2\x80\x99t do that!"));
         return;
     }
     dbref thing = match_thing(executor, victim);

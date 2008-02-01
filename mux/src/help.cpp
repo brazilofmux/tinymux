@@ -138,7 +138,7 @@ static void helpindex_read(int iHelpfile)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         UTF8 *p = alloc_lbuf("helpindex_read.LOG");
-        mux_sprintf(p, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
+        mux_sprintf(p, LBUF_SIZE, "Can\xE2\x80\x99t open %s for reading.", szTextFilename);
         log_text(p);
         free_lbuf(p);
         ENDLOG;
@@ -291,11 +291,11 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, CHashTable *h
 
     if (!matched)
     {
-        notify(executor, tprintf("No entry for '%s'.", topic));
+        notify(executor, tprintf("No entry for \xE2\x80\x98%s\xE2\x80\x99.", topic));
     }
     else
     {
-        notify(executor, tprintf("Here are the entries which match '%s':", topic));
+        notify(executor, tprintf("Here are the entries which match \xE2\x80\x98%s\xE2\x80\x99:", topic));
         *buffp = '\0';
         notify(executor, topic_list);
         free_lbuf(topic_list);
@@ -315,7 +315,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         UTF8 *line = alloc_lbuf("ReportTopic.open");
-        mux_sprintf(line, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
+        mux_sprintf(line, LBUF_SIZE, "Can\xE2\x80\x99t open %s for reading.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;

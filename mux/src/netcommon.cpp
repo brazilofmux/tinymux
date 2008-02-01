@@ -2381,7 +2381,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, (char *)connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Failed connect to '%s'", d->descriptor, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99", d->descriptor, d->addr, user);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2572,7 +2572,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 queue_write(d, "\r\n");
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Create of '%s' failed", d->descriptor, d->addr, user);
+                mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed", d->descriptor, d->addr, user);
                 log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2615,7 +2615,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Failed connect: '%s'", d->descriptor, d->addr, msg);
+        mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99", d->descriptor, d->addr, msg);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -2689,7 +2689,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         {
             UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
-            mux_sprintf(buf, sizeof(buf), "Logged-out command with no handler: '%s'", mudstate.debug_cmd);
+            mux_sprintf(buf, sizeof(buf), "Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99", mudstate.debug_cmd);
             log_text(buf);
             ENDLOG;
         }

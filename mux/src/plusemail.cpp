@@ -489,7 +489,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if (!arg1 || !*arg1)
     {
-        notify(executor, T("@email: I don't know who you want to e-mail!"));
+        notify(executor, T("@email: I don\xE2\x80\x99t know who you want to e-mail!"));
         return;
     }
 

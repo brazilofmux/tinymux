@@ -43,7 +43,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (!list || *list == '\0')
     {
-        notify(executor, T("That's terrific, but what should I do with the list?"));
+        notify(executor, T("That\xE2\x80\x99s terrific, but what should I do with the list?"));
         return;
     }
     UTF8 *objstring, delimiter = ' ';
@@ -104,7 +104,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        buff = tprintf("You don't have enough %s.", mudconf.many_coins);
+        buff = tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins);
         notify_quiet(executor, buff);
         return;
     }
@@ -142,7 +142,7 @@ bool get_stats(dbref player, dbref who, STATS *info)
     //
     if (!payfor(player, mudconf.searchcost))
     {
-        notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
+        notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
         return false;
     }
     info->s_total = 0;
@@ -417,9 +417,9 @@ static void er_mark_disabled(dbref player)
     notify(player,
      T("The mark commands are not allowed while DB cleaning is enabled."));
     notify(player,
-     T("Use the '@disable cleaning' command to disable automatic cleaning."));
+     T("Use the \xE2\x80\x98@disable cleaning\xE2\x80\x99 command to disable automatic cleaning."));
     notify(player,
-     T("Remember to '@unmark_all' before re-enabling automatic cleaning."));
+     T("Remember to \xE2\x80\x98@unmark_all\xE2\x80\x99 before re-enabling automatic cleaning."));
 }
 
 
@@ -463,7 +463,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 
     // If the player name is quoted, strip the quotes.
     //
-    if (*pname == '\"')
+    if (*pname == '"')
     {
         size_t k = strlen((char *)pname) - 1;
         if (pname[k] == '"')
@@ -773,7 +773,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player,
-            tprintf("You don't have enough %s to search. (You need %d)",
+            tprintf("You don\xE2\x80\x99t have enough %s to search. (You need %d)",
                  mudconf.many_coins, mudconf.searchcost));
         return false;
     }

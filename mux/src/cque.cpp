@@ -441,7 +441,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         if (key & HALT_ALL)
         {
-            notify(executor, T("Can't specify a target and /all"));
+            notify(executor, T("Can\xE2\x80\x99t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -1329,9 +1329,9 @@ static void ShowPsLine(BQUE *tmp)
             {
                 safe_str(T("; Arg"), bufp, &bp);
                 safe_chr((UTF8)(i + '0'), bufp, &bp);
-                safe_str(T("='"), bufp, &bp);
+                safe_str(T("=\xE2\x80\x98"), bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
-                safe_chr('\'', bufp, &bp);
+                safe_str(T("\xE2\x80\x99"), bufp, &bp);
             }
         }
         *bp = '\0';
@@ -1467,7 +1467,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
         }
         if (key & PS_ALL)
         {
-            notify(executor, T("Can't specify a target and /all"));
+            notify(executor, T("Can\xE2\x80\x99t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))

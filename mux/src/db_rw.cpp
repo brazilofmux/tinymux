@@ -334,7 +334,7 @@ static bool get_list(FILE *f, dbref i)
             return true;
 
         default:
-            Log.tinyprintf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
+            Log.tinyprintf("Bad character \xE2\x80\x98%c\xE2\x80\x99 when getting attributes on object %d" ENDLINE, c, i);
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
@@ -547,7 +547,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             else
             {
-                Log.tinyprintf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
+                Log.tinyprintf(ENDLINE "Unexpected character \xE2\x80\x98%c\xE2\x80\x99 in MUX header near object #%d, ignored." ENDLINE, ch, i);
                 tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
             }
             break;
@@ -767,7 +767,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
         default:
             if (mux_isprint_ascii(ch))
             {
-                Log.tinyprintf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
+                Log.tinyprintf(ENDLINE "Illegal character \xE2\x80\x98%c\xE2\x80\x99 near object #%d" ENDLINE, ch, i);
             }
             else
             {

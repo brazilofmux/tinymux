@@ -1049,7 +1049,7 @@ void do_fixdb
         {
             if (!ValidatePlayerName(arg2))
             {
-                notify(executor, T("That's not a good name for a player."));
+                notify(executor, T("That\xE2\x80\x99s not a good name for a player."));
                 return;
             }
             pValidName = arg2;

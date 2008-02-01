@@ -216,22 +216,22 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         saystring = modSpeech(executor, messageOrig, false, command);
         if (saystring)
         {
-            notify_saypose(executor, tprintf("%s %s \"%s\"",
+            notify_saypose(executor, tprintf("%s %s \xE2\x80\x9C%s\xE2\x80\x9D",
                 Moniker(executor), saystring, message));
 #ifdef REALITY_LVLS
-            notify_except_rlevel(loc, executor, executor, tprintf("%s %s \"%s\"", Moniker(executor), saystring, message), MSG_SAYPOSE);
+            notify_except_rlevel(loc, executor, executor, tprintf("%s %s \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(executor), saystring, message), MSG_SAYPOSE);
 #else
-            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"", Moniker(executor), saystring, message), MSG_SAYPOSE);
+            notify_except(loc, executor, executor, tprintf("%s %s \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(executor), saystring, message), MSG_SAYPOSE);
 #endif
             free_lbuf(saystring);
         }
         else
         {
-            notify_saypose(executor, tprintf("You say, \"%s\"", message));
+            notify_saypose(executor, tprintf("You say, \xE2\x80\x9C%s\xE2\x80\x9D", message));
 #ifdef REALITY_LVLS
-            notify_except_rlevel(loc, executor, executor, tprintf("%s says, \"%s\"", Moniker(executor), message), MSG_SAYPOSE);
+            notify_except_rlevel(loc, executor, executor, tprintf("%s says, \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(executor), message), MSG_SAYPOSE);
 #else
-            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Moniker(executor), message), MSG_SAYPOSE);
+            notify_except(loc, executor, executor, tprintf("%s says, \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(executor), message), MSG_SAYPOSE);
 #endif
         }
         break;
@@ -371,7 +371,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         loghead = T("ASHOUT");
         logtext1 = T(" ADMIN");
         logsay = T(" yells: ");
-        saystring = T("says, \"");
+        saystring = T("says, \xE2\x80\x9C");
     }
     else if (key & SHOUT_WIZARD)
     {
@@ -379,7 +379,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         loghead = T("BCAST");
         logtext1 = T(" WIZ");
         logsay = T(" broadcasts: ");
-        saystring = T("says, \"");
+        saystring = T("says, \xE2\x80\x9C");
     }
     else
     {
@@ -387,7 +387,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         loghead = T("SHOUT");
         logtext1 = T(" WALL");
         logsay = T(" shouts: ");
-        saystring = T("shouts, \"");
+        saystring = T("shouts, \xE2\x80\x9C");
     }
 
     if (bNoTag)
@@ -425,7 +425,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         bp = buf2;
         safe_str(saystring, buf2, &bp);
         safe_str(message, buf2, &bp);
-        safe_chr('"', buf2, &bp);
+        safe_str(T("\xE2\x80\x9D"), buf2, &bp);
         *bp = '\0';
     }
     p = tprintf("%s%s%s%s", prefix, bEmit ? T("") : Moniker(executor),
@@ -512,7 +512,7 @@ static bool page_check(dbref player, dbref target)
 {
     if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
     {
-        notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
+        notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
     }
     else if (!Connected(target))
     {
@@ -538,13 +538,13 @@ static bool page_check(dbref player, dbref target)
     {
         if (Wizard(player))
         {
-            notify(player, tprintf("Warning: %s can't return your page.",
+            notify(player, tprintf("Warning: %s can\xE2\x80\x99t return your page.",
                 Moniker(target)));
             return true;
         }
         else
         {
-            notify(player, tprintf("Sorry, %s can't return your page.",
+            notify(player, tprintf("Sorry, %s can\xE2\x80\x99t return your page.",
                 Moniker(target)));
             return false;
         }
@@ -623,7 +623,7 @@ void do_page
                 }
                 else
                 {
-                    notify(executor, tprintf("I don't recognize \"%s\".", r));
+                    notify(executor, tprintf("I don\xE2\x80\x99t recognize \xE2\x80\x9C%s\xE2\x80\x9D.", r));
                 }
             }
 
@@ -646,7 +646,7 @@ void do_page
                 }
                 else
                 {
-                    notify(executor, tprintf("I don't recognize \"%s\".", p));
+                    notify(executor, tprintf("I don\xE2\x80\x99t recognize \xE2\x80\x9C%s\xE2\x80\x9D.", p));
                 }
 
                 if (q)
@@ -686,7 +686,7 @@ void do_page
             }
             else
             {
-                notify(executor, tprintf("I don't recognize #%d.", target));
+                notify(executor, tprintf("I don\xE2\x80\x99t recognize #%d.", target));
                 bModified = true;
             }
         }
@@ -917,7 +917,7 @@ void do_page
         }
         safe_tprintf_str(omessage, &omp, "%s pages: %s", Moniker(executor),
             pMessage);
-        safe_tprintf_str(imessage, &imp, "You paged %s with '%s'",
+        safe_tprintf_str(imessage, &imp, "You paged %s with \xE2\x80\x98%s\xE2\x80\x99",
             aFriendly, pMessage);
         break;
     }
@@ -1037,7 +1037,7 @@ void do_pemit_single
         break;
 
     case AMBIGUOUS:
-        notify(player, T("I don't know who you mean!"));
+        notify(player, T("I don\xE2\x80\x99t know who you mean!"));
         break;
 
     default:
@@ -1135,7 +1135,7 @@ void do_pemit_single
                     message = newMessage;
                 }
                 notify_with_cause(target, player,
-                    tprintf("%s whispers \"%s\"", Moniker(player), message));
+                    tprintf("%s whispers \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(player), message));
                 if (newMessage)
                 {
                     free_lbuf(newMessage);
@@ -1165,19 +1165,19 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            notify(target, tprintf("You say, \"%s\"", message));
+            notify(target, tprintf("You say, \xE2\x80\x9C%s\xE2\x80\x9D", message));
             if (loc != NOTHING)
             {
                 saystring = modSpeech(target, message, false, (UTF8 *)"@fsay");
                 if (saystring)
                 {
-                    p = tprintf("%s %s \"%s\"", Moniker(target),
+                    p = tprintf("%s %s \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(target),
                         saystring, message);
                     notify_except(loc, player, target, p, 0);
                 }
                 else
                 {
-                    p = tprintf("%s says, \"%s\"", Moniker(target),
+                    p = tprintf("%s says, \xE2\x80\x9C%s\xE2\x80\x9D", Moniker(target),
                         message);
                     notify_except(loc, player, target, p, 0);
                 }
@@ -1485,17 +1485,17 @@ void do_pemit_whisper
         switch (chPoseType)
         {
         case ';':
-            notify(executor, tprintf("%s senses \"%s%s\"",
+            notify(executor, tprintf("%s senses \xE2\x80\x9C%s%s\xE2\x80\x9D",
                 Moniker(aPlayers[0]), Moniker(executor), &message[1]));
             break;
 
         case ':':
-            notify(executor, tprintf("%s senses \"%s %s\"",
+            notify(executor, tprintf("%s senses \xE2\x80\x9C%s %s\xE2\x80\x9D",
                 Moniker(aPlayers[0]), Moniker(executor), &message[1]));
             break;
 
         default:
-            notify(executor, tprintf("You whisper \"%s\" to %s.", message,
+            notify(executor, tprintf("You whisper \xE2\x80\x9C%s\xE2\x80\x9D to %s.", message,
                 Moniker(aPlayers[0])));
             break;
         }
@@ -1538,17 +1538,17 @@ void do_pemit_whisper
         switch (chPoseType)
         {
         case ';':
-            notify(executor, tprintf("%s sense \"%s%s\"",
+            notify(executor, tprintf("%s sense \xE2\x80\x9C%s%s\xE2\x80\x9D",
                 aFriendly, Moniker(executor), &message[1]));
             break;
 
         case ':':
-            notify(executor, tprintf("%s sense \"%s %s\"",
+            notify(executor, tprintf("%s sense \xE2\x80\x9C%s %s\xE2\x80\x9D",
                 aFriendly, Moniker(executor), &message[1]));
             break;
 
         default:
-            notify(executor, tprintf("You whisper \"%s\" to %s.", message,
+            notify(executor, tprintf("You whisper \xE2\x80\x9C%s\xE2\x80\x9D to %s.", message,
                 aFriendly));
             break;
         }

@@ -1636,7 +1636,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
     }
     if (SBUF_SIZE <= strlen((char *)pBase))
     {
-        cf_log_syntax(player, cmd, "Helpfile '%s' filename too long", pBase);
+        cf_log_syntax(player, cmd, "Helpfile \xE2\x80\x98%s\xE2\x80\x99 filename too long", pBase);
         return -1;
     }
 
@@ -2383,9 +2383,9 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
                     log_name(player);
                     log_text(T(" entered config directive: "));
                     log_text(cp);
-                    log_text(T(" with args '"));
+                    log_text(T(" with args \xE2\x80\x98"));
                     log_text(buff);
-                    log_text(T("'.  Status: "));
+                    log_text(T("\xE2\x80\x99.  Status: "));
                     switch (i)
                     {
                     case 0:

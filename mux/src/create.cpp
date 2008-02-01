@@ -36,13 +36,13 @@ static dbref parse_linkable_room(dbref player, UTF8 *room_name)
     //
     if (!Good_obj(room))
     {
-        notify_quiet(player, T("That's not a valid object."));
+        notify_quiet(player, T("That\xE2\x80\x99s not a valid object."));
         return NOTHING;
     }
     else if (  !Has_contents(room)
             || !Linkable(player, room))
     {
-        notify_quiet(player, T("You can't link to that."));
+        notify_quiet(player, T("You can\xE2\x80\x99t link to that."));
         return NOTHING;
     }
     else
@@ -112,7 +112,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         //
         if (!could_doit(player, loc, A_LLINK))
         {
-            notify_quiet(player, T("You can't link to there."));
+            notify_quiet(player, T("You can\xE2\x80\x99t link to there."));
             return;
         }
 
@@ -121,7 +121,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         if (!payfor(player, mudconf.linkcost))
         {
             notify_quiet(player,
-                tprintf("You don't have enough %s to link.",
+                tprintf("You don\xE2\x80\x99t have enough %s to link.",
                     mudconf.many_coins));
         }
         else
@@ -312,7 +312,7 @@ void do_link
         }
         if (!Has_contents(room))
         {
-            notify_quiet(executor, T("Can't link to an exit."));
+            notify_quiet(executor, T("Can\xE2\x80\x99t link to an exit."));
             break;
         }
         if (  !can_set_home(executor, thing, room)
@@ -322,7 +322,7 @@ void do_link
         }
         else if (room == HOME)
         {
-            notify_quiet(executor, T("Can't set home to home."));
+            notify_quiet(executor, T("Can\xE2\x80\x99t set home to home."));
         }
         else
         {
@@ -494,7 +494,7 @@ void do_parent
         {
             if (curr == thing)
             {
-                notify_quiet(executor, T("You can't have yourself as a parent!"));
+                notify_quiet(executor, T("You can\xE2\x80\x99t have yourself as a parent!"));
                 return;
             }
         }
@@ -667,7 +667,7 @@ void do_create
     else if (  nargs == 2
             && (cost = mux_atol(coststr)) < 0)
     {
-        notify_quiet(executor, T("You can't create an object for less than nothing!"));
+        notify_quiet(executor, T("You can\xE2\x80\x99t create an object for less than nothing!"));
         return;
     }
     dbref thing = create_obj(executor, TYPE_THING, name, cost);
@@ -767,7 +767,7 @@ void do_clone
        && (key & CLONE_FROM_PARENT))
     {
         notify_quiet(executor,
-              tprintf("You don't control %s, ignoring /parent.",
+              tprintf("You don\xE2\x80\x99t control %s, ignoring /parent.",
                   Name(thing)));
         key &= ~CLONE_FROM_PARENT;
     }
@@ -978,7 +978,7 @@ void do_pcreate
     dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
-        notify_quiet(executor, tprintf("Failure creating '%s'.  %s", name, pmsg));
+        notify_quiet(executor, tprintf("Failure creating \xE2\x80\x98%s\xE2\x80\x99.  %s", name, pmsg));
         return;
     }
     AddToPublicChannel(newplayer);
@@ -986,7 +986,7 @@ void do_pcreate
     {
         move_object(newplayer, Location(executor));
         notify_quiet(executor,
-            tprintf("New robot '%s' (#%d) created with password '%s'",
+            tprintf("New robot \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99",
                 name, newplayer, pass));
         notify_quiet(executor, T("Your robot has arrived."));
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
@@ -999,7 +999,7 @@ void do_pcreate
     {
         move_object(newplayer, mudconf.start_room);
         notify_quiet(executor,
-               tprintf("New player '%s' (#%d) created with password '%s'",
+               tprintf("New player \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99",
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
@@ -1044,7 +1044,7 @@ static bool can_destroy_player(dbref player, dbref victim)
     }
     if (RealWizard(victim))
     {
-        notify_quiet(player, T("Even you can't do that!"));
+        notify_quiet(player, T("Even you can\xE2\x80\x99t do that!"));
         return false;
     }
     return true;
@@ -1163,7 +1163,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     //
     if (!destroyable(thing))
     {
-        notify_quiet(executor, T("You can't destroy that!"));
+        notify_quiet(executor, T("You can\xE2\x80\x99t destroy that!"));
         return;
     }
 
@@ -1261,7 +1261,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             {
                 UTF8 *tname = alloc_lbuf("destroy_obj");
                 mux_strncpy(tname, Moniker(ThingOwner), LBUF_SIZE-1);
-                notify(executor, tprintf("Destroyed %s's %s(#%d).",
+                notify(executor, tprintf("Destroyed %s\xE2\x80\x99s %s(#%d).",
                     tname, Moniker(thing), thing));
                 free_lbuf(tname);
             }

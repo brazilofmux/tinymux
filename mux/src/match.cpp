@@ -16,8 +16,8 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-const UTF8 *NOMATCH_MESSAGE      = T("I don't see that here.");
-const UTF8 *AMBIGUOUS_MESSAGE    = T("I don't know which one you mean!");
+const UTF8 *NOMATCH_MESSAGE      = T("I don\xE2\x80\x99t see that here.");
+const UTF8 *AMBIGUOUS_MESSAGE    = T("I don\xE2\x80\x99t know which one you mean!");
 const UTF8 *NOPERM_MESSAGE       = T("Permission denied.");
 const UTF8 *FUNC_FAIL_MESSAGE    = T("#-1");
 const UTF8 *FUNC_NOMATCH_MESSAGE = T("#-1 NO MATCH");

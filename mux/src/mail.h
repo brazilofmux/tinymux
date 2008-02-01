@@ -47,9 +47,6 @@
 
 #define MA_INC      2   /* what interval to increase the malias list */
 
-#define DASH_LINE  \
-  "---------------------------------------------------------------------------"
-
 typedef unsigned int mail_flag;
 
 struct mail

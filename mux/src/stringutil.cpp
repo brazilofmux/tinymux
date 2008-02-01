@@ -5093,7 +5093,7 @@ CF_HAND(cf_art_rule)
     if (!bOkay)
     {
         *pCurrent = '\0';
-        cf_log_syntax(player, cmd, "Invalid article '%s'.", pArticle);
+        cf_log_syntax(player, cmd, "Invalid article \xE2\x80\x98%s\xE2\x80\x99.", pArticle);
         return -1;
     }
 
@@ -5113,7 +5113,7 @@ CF_HAND(cf_art_rule)
     pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, NULL);
     if (!reNewRegexp)
     {
-        cf_log_syntax(player, cmd, "Error processing regexp '%s':.",
+        cf_log_syntax(player, cmd, "Error processing regexp \xE2\x80\x98%s\xE2\x80\x99:.",
               pCurrent, errptr);
         return -1;
     }

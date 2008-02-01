@@ -1921,7 +1921,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         iCache = ReadCache(iFileDir, &cs_whits);
         if (iCache < 0)
         {
-            Log.WriteString(T("CHashFile::Insert - Page wasn't valid." ENDLINE));
+            Log.WriteString(T("CHashFile::Insert - Page wasn\xE2\x80\x99t valid." ENDLINE));
             return false;
         }
 
@@ -2470,7 +2470,7 @@ bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
-            Log.WriteString(T("CHashTable::Insert - Page wasn't valid." ENDLINE));
+            Log.WriteString(T("CHashTable::Insert - Page wasn\xE2\x80\x99t valid." ENDLINE));
             return false;
         }
         UINT32  nStart, nEnd;
@@ -2599,7 +2599,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
     m_hpLast = m_pDir[iTableDir];
     if (!m_hpLast)
     {
-        Log.WriteString(T("CHashTable::Insert - Page wasn't valid." ENDLINE));
+        Log.WriteString(T("CHashTable::Insert - Page wasn\xE2\x80\x99t valid." ENDLINE));
         return HF_FIND_END;
     }
 #ifdef HP_PROTECTION

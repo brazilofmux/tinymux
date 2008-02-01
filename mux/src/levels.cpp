@@ -282,7 +282,7 @@ void do_rxlevel
 
     if (!arg || !*arg)
     {
-        notify_quiet(executor, T("I don't know what you want to set!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know what you want to set!"));
         return;
     }
 
@@ -384,7 +384,7 @@ void do_txlevel
 
     if (!arg || !*arg)
     {
-        notify_quiet(executor, T("I don't know what you want to set!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know what you want to set!"));
         return;
     }
 

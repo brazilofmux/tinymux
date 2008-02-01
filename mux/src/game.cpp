@@ -54,9 +54,9 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
-    log_text(T("Command: '"));
+    log_text(T("Command: \xE2\x80\x98"));
     log_text(mudstate.debug_cmd);
-    log_text(T("'"));
+    log_text(T("\xE2\x80\x99"));
     ENDLOG;
     if (Good_obj(mudstate.curr_executor))
     {
@@ -2286,7 +2286,7 @@ static void dbconvert(void)
     int cc = init_dbfile(dirfile, pagfile, 650);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
-        Log.tinyprintf("Can't open database in (%s, %s) files\n", dirfile, pagfile);
+        Log.tinyprintf("Can\xE2\x80\x99t open database in (%s, %s) files\n", dirfile, pagfile);
         exit(1);
     }
     else if (cc == HF_OPEN_STATUS_OLD)
@@ -3119,7 +3119,7 @@ int DCL_CDECL main(int argc, char *argv[])
         {
             // We can work with or without GetProcessTimes().
             //
-            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE));
+            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that\xE2\x80\x99s OK." ENDLINE));
         }
     }
 
@@ -3237,7 +3237,7 @@ int DCL_CDECL main(int argc, char *argv[])
                     mudstate.pIQueryControl = NULL;
 
                     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                    log_printf("Couldn't connect sink to server (%d).", mr);
+                    log_printf("Couldn\xE2\x80\x99t connect sink to server (%d).", mr);
                     ENDLOG;
                 }
             }
@@ -3247,7 +3247,7 @@ int DCL_CDECL main(int argc, char *argv[])
                 mudstate.pIQueryControl = NULL;
 
                 STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                log_printf("Couldn't create Query Sink (%d).", mr);
+                log_printf("Couldn\xE2\x80\x99t create Query Sink (%d).", mr);
                 ENDLOG;
             }
         }
@@ -3257,14 +3257,14 @@ int DCL_CDECL main(int argc, char *argv[])
             mudstate.pIQueryControl = NULL;
 
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf("Couldn't connect to Query Server (%d).", mr);
+            log_printf("Couldn\xE2\x80\x99t connect to Query Server (%d).", mr);
             ENDLOG;
         }
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text(T("Couldn't create interface to Query Server."));
+        log_text(T("Couldn\xE2\x80\x99t create interface to Query Server."));
         ENDLOG;
     }
 #endif
@@ -3295,7 +3295,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text(T("Couldn't load text database: "));
+        log_text(T("Couldn\xE2\x80\x99t load text database: "));
         log_text(mudconf.game_dir);
         log_text(mudconf.game_pag);
         ENDLOG;
@@ -3336,7 +3336,7 @@ int DCL_CDECL main(int argc, char *argv[])
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
-            log_text(T("Couldn't load: "));
+            log_text(T("Couldn\xE2\x80\x99t load: "));
             log_text(mudconf.indb);
             ENDLOG
             return 2;

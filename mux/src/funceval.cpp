@@ -627,7 +627,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attr
     if (!Good_obj(thing))
     {
         safe_noperm(buff, bufc);
-        notify_quiet(player, T("You shouldn't be rummaging through the garbage."));
+        notify_quiet(player, T("You shouldn\xE2\x80\x99t be rummaging through the garbage."));
         return;
     }
 

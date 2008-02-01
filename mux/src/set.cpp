@@ -116,7 +116,7 @@ void do_chzone
        && !check_zone_handler(executor, thing, true)
        && db[executor].owner != db[thing].owner)
     {
-        notify(executor, T("You don't have the power to shift reality."));
+        notify(executor, T("You don\xE2\x80\x99t have the power to shift reality."));
         return;
     }
 
@@ -204,7 +204,7 @@ void do_name
         if (  !ValidatePlayerName(buff)
            || !badname_check(buff))
         {
-            notify_quiet(executor, T("You can't use that name."));
+            notify_quiet(executor, T("You can\xE2\x80\x99t use that name."));
             free_lbuf(buff);
             return;
         }
@@ -354,7 +354,7 @@ void do_alias
         else if (  !(badname_check(trimalias)
                 && ValidatePlayerName(trimalias)))
         {
-            notify_quiet(executor, T("That's a silly name for a player!"));
+            notify_quiet(executor, T("That\xE2\x80\x99s a silly name for a player!"));
         }
         else
         {
@@ -527,17 +527,17 @@ void do_lock
     switch (thing)
     {
     case NOTHING:
-        notify_quiet(executor, T("I don't see what you want to lock!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t see what you want to lock!"));
         return;
 
     case AMBIGUOUS:
-        notify_quiet(executor, T("I don't know which one you want to lock!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know which one you want to lock!"));
         return;
 
     default:
         if (!Controls(executor, thing))
         {
-            notify_quiet(executor, T("You can't lock that!"));
+            notify_quiet(executor, T("You can\xE2\x80\x99t lock that!"));
             return;
         }
     }
@@ -547,7 +547,7 @@ void do_lock
     struct boolexp *okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {
-        notify_quiet(executor, T("I don't understand that key."));
+        notify_quiet(executor, T("I don\xE2\x80\x99t understand that key."));
     }
     else
     {
@@ -660,7 +660,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don't know which one you mean!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know which one you mean!"));
         break;
 
     default:
@@ -694,7 +694,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 
             default:
 
-                notify_quiet(executor, T("You can't unlink that!"));
+                notify_quiet(executor, T("You can\xE2\x80\x99t unlink that!"));
                 break;
             }
         }
@@ -878,7 +878,7 @@ void do_chown
         bDoit = false;
         if (nOwnerNew == NOTHING)
         {
-            notify_quiet(executor, T("I couldn't find that player."));
+            notify_quiet(executor, T("I couldn\xE2\x80\x99t find that player."));
         }
         else if (  God(thing)
                 && !God(executor))
@@ -959,12 +959,12 @@ void do_chown
     {
     case NOTHING:
 
-        notify_quiet(executor, T("You don't have that!"));
+        notify_quiet(executor, T("You don\xE2\x80\x99t have that!"));
         return;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don't know which you mean!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know which you mean!"));
         return;
     }
     nOwnerOrig = Owner(thing);
@@ -1011,11 +1011,11 @@ void do_chown
     if (  isGarbage(thing)
        && bPlayerControlsThing)
     {
-        notify_quiet(executor, T("You shouldn't be rummaging through the garbage."));
+        notify_quiet(executor, T("You shouldn\xE2\x80\x99t be rummaging through the garbage."));
     }
     else if (nOwnerNew == NOTHING)
     {
-        notify_quiet(executor, T("I couldn't find that player."));
+        notify_quiet(executor, T("I couldn\xE2\x80\x99t find that player."));
     }
     else if (  isPlayer(thing)
             && !God(executor))
@@ -1192,7 +1192,7 @@ void do_set
             if (  !flagname
                || flagname[0] == '\0')
             {
-                notify_quiet(executor, T("I don't know what you want to set!"));
+                notify_quiet(executor, T("I don\xE2\x80\x99t know what you want to set!"));
                 return;
             }
 
@@ -1210,7 +1210,7 @@ void do_set
             int flagvalue;
             if (!search_nametab(executor, indiv_attraccess_nametab, flagname, &flagvalue))
             {
-                notify_quiet(executor, T("You can't set that!"));
+                notify_quiet(executor, T("You can\xE2\x80\x99t set that!"));
                 return;
             }
 
@@ -1287,7 +1287,7 @@ void do_set
         int atr = mkattr(executor, flagname);
         if (atr <= 0)
         {
-            notify_quiet(executor, T("Couldn't create attribute."));
+            notify_quiet(executor, T("Couldn\xE2\x80\x99t create attribute."));
             return;
         }
         pattr = atr_num(atr);
@@ -1349,7 +1349,7 @@ void do_power
     if (  !flag
        || !*flag)
     {
-        notify_quiet(executor, T("I don't know what you want to set!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know what you want to set!"));
         return;
     }
 
@@ -1497,7 +1497,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         int anum = mkattr(executor, args[i]);
         if (anum <= 0)
         {
-            notify_quiet(executor, tprintf("%s: That's not a good name for an attribute.", args[i]));
+            notify_quiet(executor, tprintf("%s: That\xE2\x80\x99s not a good name for an attribute.", args[i]));
             continue;
         }
         ATTR *out_attr = atr_num(anum);
@@ -2073,7 +2073,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     if (!could_doit(executor, thing, A_LUSE))
     {
         did_it(executor, thing, A_UFAIL,
-               T("You can't figure out how to use that."),
+               T("You can\xE2\x80\x99t figure out how to use that."),
                A_OUFAIL, NULL, A_AUFAIL, 0, NULL, 0);
         return;
     }
@@ -2106,7 +2106,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     }
     else
     {
-        notify_quiet(executor, T("You can't figure out how to use that."));
+        notify_quiet(executor, T("You can\xE2\x80\x99t figure out how to use that."));
     }
 }
 
@@ -2162,7 +2162,7 @@ void do_setvattr
 
     if (anum <= 0)
     {
-        notify_quiet(executor, T("That's not a good name for an attribute."));
+        notify_quiet(executor, T("That\xE2\x80\x99s not a good name for an attribute."));
         return;
     }
     do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2, NULL, 0);

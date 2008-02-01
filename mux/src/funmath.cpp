@@ -1534,7 +1534,7 @@ FUNCTION(fun_vunit)
 
         if (res <= 0)
         {
-            safe_str(T("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
+            safe_str(T("#-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
                 buff, bufc);
             delete [] v1;
             return;

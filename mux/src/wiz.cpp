@@ -36,7 +36,7 @@ static void do_teleport_single
     if (  !Good_obj(victim)
        || isRoom(victim))
     {
-        notify_quiet(executor, T("You can't teleport that."));
+        notify_quiet(executor, T("You can\xE2\x80\x99t teleport that."));
         return;
     }
 
@@ -80,7 +80,7 @@ static void do_teleport_single
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don't know which destination you mean!"));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know which destination you mean!"));
         return;
 
     default:
@@ -145,7 +145,7 @@ static void do_teleport_single
                 notify_quiet(executor, NOPERM_MESSAGE);
             }
             did_it(victim, destination,
-                   A_TFAIL, T("You can't teleport there!"),
+                   A_TFAIL, T("You can\xE2\x80\x99t teleport there!"),
                    A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
             return;
         }
@@ -177,7 +177,7 @@ static void do_teleport_single
                 notify_quiet(executor, T("Bad destination."));
             }
             did_it(victim, destination,
-                   A_TFAIL, T("You can't teleport there!"),
+                   A_TFAIL, T("You can\xE2\x80\x99t teleport there!"),
                    A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
             return;
         }
@@ -185,11 +185,11 @@ static void do_teleport_single
         {
             if (Exits(destination) == Location(victim))
             {
-                move_exit(victim, destination, false, T("You can't go that way."), 0);
+                move_exit(victim, destination, false, T("You can\xE2\x80\x99t go that way."), 0);
             }
             else
             {
-                notify_quiet(executor, T("I can't find that exit."));
+                notify_quiet(executor, T("I can\xE2\x80\x99t find that exit."));
             }
         }
     }
@@ -376,7 +376,7 @@ void do_toad
     }
     if (No_Destroy(victim))
     {
-        notify_quiet(executor, T("You can't toad that player."));
+        notify_quiet(executor, T("You can\xE2\x80\x99t toad that player."));
         return;
     }
     if (  nargs == 2
@@ -524,7 +524,7 @@ void do_newpassword
         }
         if (!bCan)
         {
-            notify_quiet(executor, T("You cannot change that player's password."));
+            notify_quiet(executor, T("You cannot change that player\xE2\x80\x99s password."));
             return;
         }
     }
@@ -569,7 +569,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         else
         {
-            notify_quiet(executor, T("That's not a number!"));
+            notify_quiet(executor, T("That\xE2\x80\x99s not a number!"));
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
@@ -814,7 +814,7 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     int flagvalue;
     if (!search_nametab(executor, enable_names, flag, &flagvalue))
     {
-        notify_quiet(executor, T("I don't know about that flag."));
+        notify_quiet(executor, T("I don\xE2\x80\x99t know about that flag."));
     }
     else if (key == GLOB_ENABLE)
     {

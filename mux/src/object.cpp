@@ -388,7 +388,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             okname = ValidatePlayerName(buff);
             if (!okname)
             {
-                notify(player, T("That's a silly name for a player."));
+                notify(player, T("That\xE2\x80\x99s a silly name for a player."));
                 free_lbuf(buff);
                 return NOTHING;
             }
@@ -413,7 +413,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
 
     if (!okname)
     {
-        notify(player, tprintf("That's a silly name for %s!", tname));
+        notify(player, tprintf("That\xE2\x80\x99s a silly name for %s!", tname));
         return NOTHING;
     }
 
@@ -882,7 +882,7 @@ static void purge_going(void)
                     log_text(T(" in "));
                     log_type_and_name(loc);
                 }
-                log_text(T("GOING object doesn't remember it's destroyer. GOING reset."));
+                log_text(T("GOING object doesn\xE2\x80\x99t remember its destroyer. GOING reset."));
                 ENDLOG;
                 db[i].fs.word[FLAG_WORD1] &= ~GOING;
             }

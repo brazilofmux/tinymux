@@ -7461,7 +7461,7 @@ for (;!MuxAlarm.bAlarmed;)
         }
       while (*callpat == OP_ALT);
 
-      DPRINTF(("Recursion didn't match\n"));
+      DPRINTF(("Recursion didn\xE2\x80\x99t match\n"));
       md->recursive = new_recursive.prevrec;
       if (new_recursive.offset_save != stacksave)
         free(new_recursive.offset_save);
