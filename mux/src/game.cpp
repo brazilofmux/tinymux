@@ -862,15 +862,14 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
            && is_audible
            && check_filter(target, sender, A_FILTER, msgPlain))
         {
-            prefix = make_prefix(target, sender, A_PREFIX, NULL);
-            msgFinal->import(prefix);
-            free_lbuf(prefix);
-
-            msgFinal->append(msg);
-
             fp = fwdlist_get(target);
-            if (fp)
+            if (NULL != fp)
             {
+                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                msgFinal->import(prefix);
+                free_lbuf(prefix);
+                msgFinal->append(msg);
+
                 for (i = 0; i < fp->count; i++)
                 {
                     recip = fp->data[i];
