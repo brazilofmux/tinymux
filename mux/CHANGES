@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  January 2007
+Last Update:  February 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -245,6 +245,19 @@ Bug Fixes:
  -- Fix ordering in do_pemit_whisper (Issue 454).
  -- Fix v() so that v(10) through v(99) works like %=<10> through
     %=<99>.
+ -- Fix interaction between @notify and @destroy (Issue 435).
+ -- Fix two lbuf leaks in channel @saystring and @speechmod.
+ -- Free lbuf allocated in do_pemit_whisper() (Issue 471).
+ -- Fix that 'player_name_spaces no' would not validate any player
+    name.
+ -- Fix AUDIBLE with @prefix where color from @prefix appeared
+    elsewhere (Issue 470).
+ -- Fixed VC2005 build warnings that an inner definition was hiding
+    an outer one in TruncateToBuffer().
+ -- Add try/catch around throwing new in fun_scramble(),
+    fun_shuffle(), linewrap_general(), fun_before(), fun_after(),
+    fun_escape(), fun_secure(), fun_remove(), fun_insert(),
+    fun_lpos(), and fun_shuffle().
 
 
 Performance Enhancements:
@@ -267,12 +280,18 @@ Performance Enhancements:
  -- Merge fun_wrap and linewrap_general.
  -- Update sortby algorithm to minimize comparisons (Issue 22).
  -- Improve speed of TruncateToBuffer (Issue 433).
+ -- Don't bother constructing message for forward list if there's no
+    forward list to send it to.
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Added Doxygen file headers (Issue 102).
  -- Prepend channel header to comsys recall lines (Issue 335).
+ -- Re-work DISTRIBUTIONS read-me.
+ -- Add latin-1 and iso8859-1 names to charset configs.  Document
+    default.
+ -- Fix typo in atan() help topic.
 
 
 Miscellaneous:
@@ -304,3 +323,5 @@ Miscellaneous:
  -- Document ancient pose and semipose behavior involving initial
     spaces
  -- Document %=<> addition in SUBSTITUTIONS and V() topics.
+ -- Fix VS 2005 /analyze warnings.
+ -- Fix warnings from gcc 4.2.3 with -Wall.
