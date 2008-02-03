@@ -10995,7 +10995,6 @@ static FUN builtin_function_list[] =
     {T("OWNER"),       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("PACK"),        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("PARENT"),      fun_parent,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("PARSE"),       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
 #ifdef DEPRECATED
     {T("PEEK"),        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
 #endif // DEPRECATED
