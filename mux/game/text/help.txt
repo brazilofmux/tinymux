@@ -1429,7 +1429,7 @@ Related Topics: @name.
     > You say, "1"
     > You say, "2"
 
-  Related Topics: iter(), parse(), @notify, SEMAPHORES.
+  Related Topics: iter(), @notify, SEMAPHORES.
 
 & @DRAIN
 @DRAIN
@@ -7981,7 +7981,7 @@ ILEV()
   of any iterator, ilev() returns -1. The first level is indicated by 0, the
   second by 1, etc.
 
-  Related Topics: iter(), list(), parse().
+  Related Topics: iter(), list().
 
 & IMMOBILE
 IMMOBILE
@@ -8142,7 +8142,7 @@ INUM()
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
-  Related Topics: iter(), ilev(), itext(), parse().
+  Related Topics: iter(), ilev(), itext().
 
 & INVENTORY
 INVENTORY
@@ -8330,9 +8330,12 @@ ITEMIZE()
     You say, "eggs; bacon; & spam"
 
 & ITER()
+& PARSE()
 ITER()
+PARSE()
 
   FUNCTION: iter(<list>,<eval>[,<input delim>[,<output delim>]])
+            parse(<list>,<eval>[,<input delim>[,<output delim>]])
 
   <list> is a <input delim>-separated list of strings (e.g., A B C).  <eval>
   is a string that is to be evaluated once for each item in <list> replacing
@@ -8359,7 +8362,7 @@ ITER()
     > say iter(Was it a cat I saw,[words(##)] #@,s)
     You say, "1 1 4 2 1 3"
 
-  Related Topics: @dolist, ilev(), inum(), itext(), list(), parse(), step()
+  Related Topics: @dolist, ilev(), inum(), itext(), list(), step()
 
 & ITEXT()
 ITEXT()
@@ -8390,7 +8393,7 @@ ITEXT()
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
-  Related Topics: iter(), inum(), ilev(), parse().
+  Related Topics: iter(), inum(), ilev().
 
 & JUMP_OK
 JUMP_OK
@@ -8787,7 +8790,7 @@ LIST()
   the function to be evaluated. Since it does this, it is not hampered by
   the buffer limit.
 
-  Related Topics: iter(), @dolist, parse().
+  Related Topics: iter(), @dolist.
 
 & LISTENING
 LISTENING
@@ -9677,8 +9680,7 @@ MAP()
     > say map(object/add_one,1 2 3 4 5)
     You say, "2 3 4 5 6"
 
-  Related Topics: filter(), fold(), ilev(), iter(), itext(), inum(), parse(),
-                  u().
+  Related Topics: filter(), fold(), ilev(), iter(), itext(), inum(), u().
 
 & MATCH()
 MATCH()
@@ -10712,23 +10714,6 @@ PARENT_OK
   attributes on the object (as well as any parents of the object).
 
   Related Topics: @lock/parent.
-
-& PARSE()
-PARSE()
-
-  FUNCTION: parse(<list>,<eval>[,<input delim>[,<output delim>]])
-
-  This function takes each element of <list>, evaluates <eval> after
-  substituting it for ##, and constructs a list of the results. Input
-  and output delimiters are both space by default.
-
-  Examples:
-    > say parse(1 2 3 4 5,add(##,1))
-    You say, "2 3 4 5 6"
-    > say parse(This|is|a|string|length|test,strlen(##),|)
-    You say, "4 2 1 6 6 4"
-
-  Related Topics: @dolist, iter(), map().
 
 & PEERING
 PEERING
