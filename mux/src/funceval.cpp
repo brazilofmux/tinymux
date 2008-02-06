@@ -2830,14 +2830,10 @@ FUNCTION(fun_shuffle)
 //
 FUNCTION(fun_pickrand)
 {
-    if (  nfargs == 0
-       || fargs[0][0] == '\0')
-    {
-        return;
-    }
-
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    if (  nfargs == 0
+       || fargs[0][0] == '\0'
+       || !OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
