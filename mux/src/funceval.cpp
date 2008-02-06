@@ -2543,20 +2543,23 @@ FUNCTION(fun_elements)
 
     // Turn the first list into an array.
     //
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
     mux_words *words = NULL;
     try
     {
+        sStr  = new mux_string(fargs[0]);
         words = new mux_words(*sStr);
     }
     catch (...)
     {
         ; // Nothing.
     }
-    if (NULL == words)
+
+    if (  NULL == sStr
+       || NULL == words)
     {
-        ISOUTOFMEMORY(words);
         delete sStr;
+        delete words;
         return;
     }
 
@@ -2568,7 +2571,8 @@ FUNCTION(fun_elements)
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
     //
-    do {
+    do
+    {
         UTF8 *r = split_token(&s, &sepSpace);
         int cur = mux_atol(r) - 1;
         if (  0 <= cur
