@@ -3017,26 +3017,24 @@ FUNCTION(fun_last)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
     mux_words *words = NULL;
     try
     {
+        sStr = new mux_string(fargs[0]);
         words = new mux_words(*sStr);
     }
     catch (...)
     {
         ; // Nothing.
     }
-    if (NULL == words)
+
+    if (  NULL != sStr
+       && NULL != words)
     {
-        ISOUTOFMEMORY(words);
-        delete sStr;
-        return;
+        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        words->export_WordColor(nWords-1, buff, bufc);
     }
-
-    LBUF_OFFSET nWords = words->find_Words(sep.str);
-    words->export_WordColor(nWords-1, buff, bufc);
-
     delete sStr;
     delete words;
 }
