@@ -1499,21 +1499,6 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         return 0;
     }
 
-    mux_string *sSpaces = NULL;
-    try
-    {
-        sSpaces = new mux_string(T("        "));
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sSpaces)
-    {
-        return 0;
-    }
-
     mux_cursor nStr = sStr->length_cursor();
     bool bFirst = true, bNewline = false;
     mux_field fldLine, fldTemp, fldPad;
@@ -1550,6 +1535,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         {
             iPos = nStr;
         }
+
         sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
         if (iPos < curEnd)
         {
@@ -1562,8 +1548,25 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
             curNext = curEnd;
             bNewline = false;
         }
+
         while (sStr->search(T("\t"), &curTab, curStr, curEnd))
         {
+            mux_string *sSpaces = NULL;
+            try
+            {
+                sSpaces = new mux_string(T("        "));
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (NULL == sSpaces)
+            {
+                ISOUTOFMEMORY(sSpaces);
+                return 0;
+            }
+
             LBUF_OFFSET nSpaces = 8 - ((curTab.m_point - curStr.m_point) % 8);
             mux_cursor curSpaces(nSpaces, nSpaces);
             sSpaces->truncate(curSpaces);
