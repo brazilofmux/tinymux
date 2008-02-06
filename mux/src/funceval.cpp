@@ -1239,26 +1239,22 @@ FUNCTION(fun_columns)
         return;
     }
 
-    mux_string *sStr = new mux_string(cp);
+    mux_string *sStr = NULL;
     mux_words *words = NULL;
     try
     {
+        sStr = new mux_string(cp);
         words = new mux_words(*sStr);
     }
     catch (...)
     {
         ; // Nothing.
     }
-    if (NULL == words)
-    {
-        ISOUTOFMEMORY(words);
-        delete sStr;
-        return;
-    }
 
-    LBUF_OFFSET nWords = words->find_Words(sep.str);
-
-    if (0 == nWords)
+    LBUF_OFFSET nWords;
+    if (  NULL == sStr
+       || NULL == words
+       || 0 == (nWords = words->find_Words(sep.str)))
     {
         delete sStr;
         delete words;
@@ -1307,6 +1303,7 @@ FUNCTION(fun_columns)
         }
         nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     }
+
     if (bNeedCRLF)
     {
         safe_copy_buf(T("\r\n"), 2, buff, bufc);
