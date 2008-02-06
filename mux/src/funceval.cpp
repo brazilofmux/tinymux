@@ -3401,7 +3401,21 @@ FUNCTION(fun_foreach)
 
     UTF8 cbuf[5] = {'\0', '\0', '\0', '\0', '\0'};
     const UTF8 *bp = cbuf;
-    mux_string *sStr = new mux_string(fargs[1]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[1]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
+
     sStr->trim();
     size_t nStr = sStr->length_byte();
     LBUF_OFFSET i = 0, nBytes = 0;
