@@ -1746,7 +1746,21 @@ FUNCTION(fun_strtrunc)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
+
     mux_cursor nLen = sStr->length_cursor();
 
     if (nLeft < nLen.m_point)
