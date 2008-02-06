@@ -2848,29 +2848,28 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    mux_string *sStr = new mux_string(s);
+    mux_string *sStr = NULL;
     mux_words *words = NULL;
     try
     {
+        sStr = new mux_string(s);
         words = new mux_words(*sStr);
     }
     catch (...)
     {
         ; // Nothing.
     }
-    if (NULL == words)
-    {
-        ISOUTOFMEMORY(words);
-        delete sStr;
-        return;
-    }
 
-    INT32 n = static_cast<INT32>(words->find_Words(sep.str));
-
-    if (0 < n)
+    if (  NULL != sStr
+       && NULL != words)
     {
-        LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
-        words->export_WordColor(w, buff, bufc);
+        INT32 n = static_cast<INT32>(words->find_Words(sep.str));
+
+        if (0 < n)
+        {
+            LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
+            words->export_WordColor(w, buff, bufc);
+        }
     }
     delete sStr;
     delete words;
