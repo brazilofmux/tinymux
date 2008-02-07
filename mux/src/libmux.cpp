@@ -1480,11 +1480,65 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
                     mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
                     if (MUX_SUCCEEDED(mr))
                     {
-                        // TODO: Call CreateProxy, construct a private
-                        // CRpcChannelBuffer using nChannel, and
-                        // associate the two.
-                        //
-                        mr = MUX_E_NOTIMPLEMENTED;
+                        if (NULL == g_ProxyManager)
+                        {
+                            g_ProxyManager = CreateProxyManger();
+                        }
+
+                        if (NULL != g_ProxyManager)
+                        {
+                            mux_IUnknown *pTemp = NULL;
+                            mux_IRpcProxyBuffer *pRpcProxyBuffer = NULL;
+                            mr = pIPSFactoryBuffer->CreateProxy(g_pProxyManager, riid, &pRpcProxyBuffer, (void **)&pTemp);
+                            if (MUX_SUCCEEDED(mr))
+                            {
+                                mux_IRpcChannelBuffer *pRpcChannelBuffer = NULL;
+                                try
+                                {
+                                    pRpcChannelBuffer = new CRpcChannelBuffer(nChannel);
+                                }
+                                catch (...)
+                                {
+                                    ; // Nothing.
+                                }
+
+                                if (NULL != pRpcChannelBuffer}
+                                {
+                                    mr = pRpcProxyBuffer->Connect(pRpcChannelBuffer);
+                                    if (MUX_SUCCEEDED(mr))
+                                    {
+                                        mr = MUX_E_NOTIMPLEMENTED;
+                                    }
+                                    else
+                                    {
+                                        mr = MUX_E_CLASSNOTAVAILABLE;
+                                    }
+                                }
+                                else
+                                {
+                                    mr = MUX_E_OUTOFMEMORY;
+                                }
+
+                                if (MUX_FAILED(mr))
+                                {
+                                    pRpcProxyBuffer->Release();
+                                    pTemp->Release();
+                                }
+                            }
+                            else
+                            {
+                                mr = MUX_E_CLASSNOTAVAILABLE;
+                            }
+                        }
+                        else
+                        {
+                            mr = MUX_E_CLASSNOTAVAILABLE;
+                        }
+                        pIPSFactoryBuffer->Release();
+                    }
+                    else
+                    {
+                        mr = MUX_E_CLASSNOTAVAILABLE;
                     }
                 }
                 else
