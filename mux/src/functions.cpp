@@ -10592,7 +10592,22 @@ void transform_range(mux_string &sStr)
     //
     mux_cursor nPos, nStart;
     UTF8 cBefore, cAfter;
-    mux_string *sTemp = new mux_string;
+
+    mux_string *sTemp = NULL;
+    try
+    {
+        sTemp = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sTemp)
+    {
+        return;
+    }
+
     sTemp->cursor_start(nStart);
     sTemp->cursor_next(nStart);
 
@@ -10724,8 +10739,8 @@ static FUNCTION(fun_tr)
             delete sFrom;
             delete sTo;
         }
-        delete sStr;
     }
+    delete sStr;
 }
 
 // ----------------------------------------------------------------------------
