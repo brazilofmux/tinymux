@@ -3193,20 +3193,23 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = new mux_string(trim_space_sep(fargs[0], &sep));
+    mux_string *sStr = NULL;
     mux_words *words = NULL;
     try
     {
+        sStr = new mux_string(trim_space_sep(fargs[0], &sep));
         words = new mux_words(*sStr);
     }
     catch (...)
     {
         ; // Nothing.
     }
-    if (NULL == words)
+
+    if (  NULL == sStr
+       || NULL == words)
     {
-        ISOUTOFMEMORY(words);
         delete sStr;
+        delete words;
         return;
     }
 
