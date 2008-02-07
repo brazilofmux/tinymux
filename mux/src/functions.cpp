@@ -4472,6 +4472,7 @@ static FUNCTION(fun_remove)
         delete sWord;
         return;
     }
+
     mux_words *words = NULL;
     try
     {
@@ -4481,6 +4482,7 @@ static FUNCTION(fun_remove)
     {
         ; // Nothing.
     }
+
     if (NULL == words)
     {
         delete sWord;
