@@ -3090,7 +3090,7 @@ IMMOBILE_MESSAGE
   Specifies the string that is sent to a player when they try to move
   while their IMMOBILE flag is set.
 
-  This configuration option is only available if FIRANMUX is enabled.
+  This configuration option is only available with --enable-firanmux.
 
   Related Topics: fixed_home_message, fixed_tel_message.
 
@@ -3425,8 +3425,6 @@ MAIL_EHLO
   lookup on the EHLO string, and make some judgement as to whether the sender
   is relaying mail.
 
-  This option is only available if FIRANMUX is enabled.
-
   Related Topics: mail_sendaddr, mail_sendname, mail_server, and mail_subject.
 
 & MAIL_EXPIRATION
@@ -3460,8 +3458,6 @@ MAIL_SENDADDR
 
   Specifies the E-mail address of the sender for outgoing E-mail.
 
-  This option is only available if FIRANMUX is enabled.
-
   Related Topics: mail_ehlo, mail_sendname, mail_server, and mail_subject.
 
 & MAIL_SENDNAME
@@ -3471,8 +3467,6 @@ MAIL_SENDNAME
   DEFAULT: None
 
   Specifies the sender's friendly name for outgoing E-mail.
-
-  This option is only available if FIRANMUX is enabled.
 
   Related Topics: mail_ehlo, mail_sendaddr, mail_server, and mail_subject.
 
@@ -3484,8 +3478,6 @@ MAIL_SERVER
 
   Specifies the host name of the SMTP server for outgoing E-mail.
 
-  This option is only available if FIRANMUX is enabled.
-
   Related Topics: mail_ehlo, mail_sendaddr, mail_sendname, and mail_subject.
 
 & MAIL_SUBJECT
@@ -3495,8 +3487,6 @@ MAIL_SUBJECT
   DEFAULT: None
 
   Specifies the subject line for outgoing E-mail.
-
-  This option is only available if FIRANMUX is enabled.
 
   Related Topics: mail_ehlo, mail_sendaddr, mail_sendname, and mail_server.
 
@@ -3923,9 +3913,9 @@ PERMISSIONS (continued)
 
   Footnotes:
 
-    (1) The dark permission is not available if FIRANMUX is enabled.
-    (2) The no_immutable and no_restricted permissions are only available if
-        FIRANMUX is enabled.
+    (1) The dark permission is not available with --enable-firanmux.
+    (2) The no_immutable and no_restricted permissions are only available with
+        --enable-firanmux.
 
 & PERMIT_SITE
 PERMIT_SITE
@@ -4736,7 +4726,7 @@ SQL_DATABASE
 
   Specifies the name of the SQL database.
 
-  This option is only available if FIRANMUX is enabled.
+  This option is only available with --enable-inlinsql or --enable-stubslave.
 
   Related Topics: sql_user, sql_user, and sql_password.
 
@@ -4748,7 +4738,7 @@ SQL_PASSWORD
 
   Specifies the password for the SQL session.
 
-  This option is only available if FIRANMUX is enabled.
+  This option is only available with --enable-inlinsql or --enable-stubslave.
 
   Related Topics: sql_server, sql_user, and sql_database.
 
@@ -4760,7 +4750,7 @@ SQL_SERVER
 
   Specifies the host name of the SQL server.
 
-  This option is only available if FIRANMUX is enabled.
+  This option is only available with --enable-inlinsql or --enable-stubslave.
 
   Related Topics: sql_user, sql_password, and sql_database.
 
@@ -4772,7 +4762,7 @@ SQL_USER
 
   Specifies the user name for the SQL session.
 
-  This option is only available if FIRANMUX is enabled.
+  This option is only available with --enable-inlinsql or --enable-stubslave.
 
   Related Topics: sql_server, sql_password, and sql_database.
 

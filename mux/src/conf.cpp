@@ -119,13 +119,13 @@ void cf_init(void)
     mudconf.sql_password[0] = '\0';
     mudconf.sql_database[0] = '\0';
 #endif // INLINESQL
-#if defined(FIRANMUX)
+
     mudconf.mail_server[0]  = '\0';
     mudconf.mail_ehlo[0]    = '\0';
     mudconf.mail_sendaddr[0]= '\0';
     mudconf.mail_sendname[0]= '\0';
     mudconf.mail_subject[0] = '\0';
-#endif // FIRANMUX
+
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
     mudconf.name_spaces = true;

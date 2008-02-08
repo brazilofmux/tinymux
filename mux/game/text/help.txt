@@ -392,7 +392,7 @@ $-COMMANDS
 
   Sets the <command list> executed when object is lead.
 
-  This attribute is only available if FIRANMUX is enabled.
+  This attribute is only available with --enable-firanmux.
 
   Related Topics: @lead, @olead.
 
@@ -1084,7 +1084,7 @@ Related Topics: @name.
   Example:
     @color me = hr
 
-  This attribute is only available if FIRANMUX is enabled, and is expected to
+  This attribute is only available with --enable-firanmux, and is expected to
   be deprecated in favor of @moniker.
 
   Related Topics: ansi(), ANSI CODES, @moniker, moniker().
@@ -2093,7 +2093,7 @@ Related Topics: @name.
 
   Sets the <message> seen by the object when it is lead.
 
-  This attribute is only available if FIRANMUX is enabled.
+  This attribute is only available with --enable-firanmux.
 
   Related Topics: @alead, @olead.
 
@@ -2945,7 +2945,7 @@ Related Topics: @name.
 
   Sets the <message> seen by others when <object> is lead.
 
-  This attribute is only available if FIRANMUX is enabled.
+  This attribute is only available with --enable-firanmux.
 
   Related Topics: @lead, @alead.
 
@@ -7991,7 +7991,7 @@ IMMOBILE
   Objects set IMMOBILE cannot move by any means, including using exits,
   entering other objects, being picked up or dropped, or by @teleporting.
 
-  This flag is only available if FIRANMUX is enabled.
+  This flag is only available with --enable-firanmux.
 
   Related Topics:
 
@@ -8733,7 +8733,7 @@ LINEWRAP
   Objects set LINEWRAP show their descriptions in a formatted style using
   code equivalent to that in format().
 
-  This flag is only available if FIRANMUX is enabled.
+  This flag is only available with --enable-firanmux.
 
   Related Topics: format().
 
@@ -9629,7 +9629,7 @@ MAILJ()
   mail() returns three. Also, mail() only accounts for the messages in the
   inbox, while mailj() accounts for all messages in all folders.
 
-  This function is only available if FIRANMUX is enabled and is likely to be
+  This function is only available with --enable-firanmux and is likely to be
   deprecated in favor of mail().
 
   Related Topics: mail()
@@ -9641,7 +9641,7 @@ MAILSIZE()
 
   Returns the size of <player>'s mail bag in bytes.
 
-  This function is only available if FIRANMUX is enabled.
+  This function is only available with --enable-firanmux.
 
   Related Topics:
 
@@ -9654,7 +9654,7 @@ MAILSUBJ()
   First form returns the subject line from the executor's <num>'th mail item.
   Second form returns the subject line from the <player>'s <num>'th mail item.
 
-  This function is only available if FIRANMUX is enabled.
+  This function is only available with --enable-firanmux.
 
   Related Topics: mail(), mailj().
 
@@ -10623,7 +10623,7 @@ PARENT
   that it is present or absent from an object. Softcode is free to use this
   flag for any purpose it sees fit.
 
-  This flag is only available if FIRANMUX is enabled.
+  This flag is only available with --enable-firanmux.
 
   Related Topics:
 
@@ -11058,7 +11058,7 @@ QUELL
   QUELL flag set, they are for all intents and purposes just like a non-Wizard
   character.  This allows a Wizard to turn her wizbit on and off, sorta.
 
-  This flag is only available if FIRANMUX is enabled.
+  This flag is only available with --enable-firanmux.
 
   Related Topics:
 
@@ -11564,7 +11564,7 @@ RESTRICTED
   not be able to set herself un-RESTRICTED!  Fixing this will require the help
   of a fully-powered wizard.  Be careful with this combination.
 
-  This flag is only available if FIRANMUX is enabled.
+  This flag is only available with --enable-firanmux.
 
   Related Topics: no_restricted
 
@@ -12267,7 +12267,7 @@ SETNAME()
   before and after the '=' sign.  Returns nothing.  This is a side effect
   function, and should only be used when necessary.
 
-  This function is only available if FIRANMUX is enabled.
+  This function is only available with --enable-firanmux.
 
   Related Topics: @name
 
@@ -12280,7 +12280,7 @@ SETPARENT()
   comes before and after the '=' sign.  Returns nothing.  This is a side
   effect function, and should only be used when necessary.
 
-  This function is only available if FIRANMUX is enabled.
+  This function is only available with --enable-firanmux.
 
   Related Topics: @parent
 
@@ -13314,8 +13314,8 @@ TEXT()
   If textfiles.conf contains an entry for the file (text/rumors.txt), then you
   can refer to the beer rumor using 'text(text/rumors.txt, beer)'.
 
-  This function is only available if FIRANMUX is enabled and is likely to be
-  deprecated in favor of textfile()..
+  This function is only available with --enable-firanmux and is likely to be
+  deprecated in favor of textfile().
 
   Related Topics: textfile().
 
