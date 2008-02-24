@@ -329,11 +329,11 @@ FUNCTION(fun_ladd)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
         while (  cp
               && n < MAX_WORDS)
         {
-            UTF8 *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, sep);
             g_aDoubles[n++] = mux_atof(curr);
         }
     }
@@ -1120,7 +1120,7 @@ FUNCTION(fun_dist3d)
 static void handle_vectors
 (
     __in UTF8 *vecarg1, __in UTF8 *vecarg2, __inout UTF8 *buff, __deref_inout UTF8 **bufc,
-    __in SEP *psep, __in SEP *posep, int flag
+    __in const SEP &sep, __in const SEP &osep, int flag
 )
 {
     // Return if the list is empty.
@@ -1137,8 +1137,8 @@ static void handle_vectors
 
     // Split the list up, or return if the list is empty.
     //
-    int n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, psep);
-    int m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, psep);
+    int n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, sep);
+    int m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, sep);
 
     // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
@@ -1173,7 +1173,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, mux_atof(v2[i]) + scalar);
             }
@@ -1186,7 +1186,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, mux_atof(v1[i]) + scalar);
             }
@@ -1197,7 +1197,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 double a = mux_atof(v1[i]);
                 double b = mux_atof(v2[i]);
@@ -1217,7 +1217,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, scalar - mux_atof(v2[i]));
             }
@@ -1231,7 +1231,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, mux_atof(v1[i]) - scalar);
             }
@@ -1244,7 +1244,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 double a = mux_atof(v1[i]);
                 double b = mux_atof(v2[i]);
@@ -1265,7 +1265,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, mux_atof(v2[i]) * scalar);
             }
@@ -1277,7 +1277,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 fval(buff, bufc, mux_atof(v1[i]) * scalar);
             }
@@ -1290,7 +1290,7 @@ static void handle_vectors
             {
                 if (i != 0)
                 {
-                    print_sep(posep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 double a = mux_atof(v1[i]);
                 double b = mux_atof(v2[i]);
@@ -1338,9 +1338,9 @@ static void handle_vectors
                 a[1][i] = mux_atof(v2[i]);
             }
             fval(buff, bufc, (a[0][1] * a[1][2]) - (a[0][2] * a[1][1]));
-            print_sep(posep, buff, bufc);
+            print_sep(osep, buff, bufc);
             fval(buff, bufc, (a[0][2] * a[1][0]) - (a[0][0] * a[1][2]));
-            print_sep(posep, buff, bufc);
+            print_sep(osep, buff, bufc);
             fval(buff, bufc, (a[0][0] * a[1][1]) - (a[0][1] * a[1][0]));
         }
         break;
@@ -1368,7 +1368,7 @@ FUNCTION(fun_vadd)
     {
         return;
     }
-    handle_vectors(fargs[0], fargs[1], buff, bufc, &sep, &osep, VADD_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VADD_F);
 }
 
 FUNCTION(fun_vsub)
@@ -1384,7 +1384,7 @@ FUNCTION(fun_vsub)
     {
         return;
     }
-    handle_vectors(fargs[0], fargs[1], buff, bufc, &sep, &osep, VSUB_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VSUB_F);
 }
 
 FUNCTION(fun_vmul)
@@ -1400,7 +1400,7 @@ FUNCTION(fun_vmul)
     {
         return;
     }
-    handle_vectors(fargs[0], fargs[1], buff, bufc, &sep, &osep, VMUL_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VMUL_F);
 }
 
 FUNCTION(fun_vdot)
@@ -1418,7 +1418,7 @@ FUNCTION(fun_vdot)
     {
         return;
     }
-    handle_vectors(fargs[0], fargs[1], buff, bufc, &sep, &osep, VDOT_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VDOT_F);
 }
 
 FUNCTION(fun_vcross)
@@ -1436,7 +1436,7 @@ FUNCTION(fun_vcross)
     {
         return;
     }
-    handle_vectors(fargs[0], fargs[1], buff, bufc, &sep, &osep, VCROSS_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VCROSS_F);
 }
 
 FUNCTION(fun_vmag)
@@ -1466,7 +1466,7 @@ FUNCTION(fun_vmag)
 
     if (NULL != v1)
     {
-        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], &sep);
+        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
 
         // Calculate the magnitude.
         //
@@ -1520,7 +1520,7 @@ FUNCTION(fun_vunit)
 
     if (NULL != v1)
     {
-        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], &sep);
+        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
 
         // Calculate the magnitude.
         //
@@ -1544,7 +1544,7 @@ FUNCTION(fun_vunit)
         {
             if (0 != i)
             {
-                print_sep(&sep, buff, bufc);
+                print_sep(sep, buff, bufc);
             }
 
             mux_FPRestore();
@@ -2759,10 +2759,10 @@ FUNCTION(fun_land)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
         while (cp && bValue)
         {
-            UTF8 *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -2787,10 +2787,10 @@ FUNCTION(fun_lor)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
         while (cp && !bValue)
         {
-            UTF8 *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }

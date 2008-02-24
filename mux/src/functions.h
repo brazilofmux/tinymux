@@ -49,7 +49,7 @@ extern UFUN *ufun_head;
 
 /* Special handling of separators. */
 
-#define print_sep(ps,b,p) safe_copy_buf((ps)->str,(ps)->n,(b),(p))
+#define print_sep(ps,b,p) safe_copy_buf((ps).str,(ps).n,(b),(p))
 
 #define MAX_SEP_LEN 50
 typedef struct
@@ -71,21 +71,21 @@ extern SEP sepSpace;
 
 bool delim_check
 (
-    UTF8 *buff, UTF8 **bufc,
+    __in UTF8 *buff, __deref_inout UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    UTF8 *fargs[], int nfargs,
-    const UTF8 *cargs[], int ncargs,
+    __in UTF8 *fargs[], int nfargs,
+    __in const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 );
 
-void arr2list(__in_ecount(alen) UTF8 *arr[], int alen, __inout UTF8 *list, __deref_inout UTF8 **bufc, __in SEP *psep);
-int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, SEP *psep);
-UTF8 *trim_space_sep(UTF8 *str, SEP *psep);
-UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *psep, size_t *nTrim);
-UTF8 *next_token(UTF8 *str, SEP *psep);
-UTF8 *split_token(UTF8 **sp, SEP *psep);
-int countwords(UTF8 *str, SEP *psep);
+void arr2list(__in_ecount(alen) UTF8 *arr[], int alen, __inout UTF8 *list, __deref_inout UTF8 **bufc, __in const SEP &sep);
+int list2arr(__out_ecount(maxlen) UTF8 *arr[], int maxlen, __in UTF8 *list, __in const SEP &sep);
+UTF8 *trim_space_sep(__in UTF8 *str, __in const SEP &sep);
+UTF8 *trim_space_sep_LEN(__in_ecount(nStr) UTF8 *str, size_t nStr, __in const SEP &sep, __out size_t *nTrim);
+UTF8 *next_token(__deref_inout UTF8 *str, const SEP &sep);
+UTF8 *split_token(__deref_inout UTF8 **sp, const SEP &sep);
+int countwords(__in UTF8 *str, __in const SEP &sep);
 
 bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc);
 
