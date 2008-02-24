@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  January 2007
+Last Update:  February 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -319,6 +319,10 @@ Bug Fixes:
     refering to NOTHING (Issue 441).
  -- Fix escape() to adding leading backslash when string starts with
     color (Issue 453).
+ -- Fix merge() to be ANSI-aware.
+ -- Fix translate(%xua%xn%xyb,p) --> '%xua%xu%xyb' (Issue 461).
+ -- Fix interaction between @notify and @destroy that left non-default
+    semaphores blocked on garbage object (Issue 435).
 
 
 Performance Enhancements:
@@ -338,12 +342,14 @@ Performance Enhancements:
     mail body.
  -- Issue 201: Trim priority queue data structures during @dbck to save
     memory.
+ -- Re-arrange parse_boolexp() to perform simple work first.
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Increased width of certain columns in @list hashstats (Requests,
     Hits, and Checks) and @list allocations (Allocs).
+ -- Fix spelling errors in readme files and respace.
 
 
 Miscellaneous:
