@@ -10,7 +10,7 @@
 
 #define mux_strlen(x)   strlen((const char *)x)
 
-inline bool isEmpty(const UTF8 *p)
+inline bool isEmpty(__in_opt const UTF8 *p)
 {
     return ((NULL == p) || ('\0' == p[0]));
 }
@@ -46,7 +46,7 @@ extern const UTF8 *latin1_utf8[256];
 // finds, but it does not validate the entire string.
 //
 extern const int g_trimoffset[4][4];
-inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
+inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
 {
     for (size_t i = 0; i < n; i++)
     {
@@ -469,7 +469,7 @@ inline int mux_color(const unsigned char *p)
 
 #define mux_haswidth(x) mux_isprint(x)
 
-bool utf8_strlen(const UTF8 *pString, size_t &nString);
+bool utf8_strlen(__in const UTF8 *pString, __out size_t &nString);
 
 typedef struct
 {
@@ -477,25 +477,25 @@ typedef struct
     UTF8 aControl[256];
 } MUX_STRTOK_STATE;
 
-void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *pString);
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl);
-UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
-UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts);
+void mux_strtok_src(__in MUX_STRTOK_STATE *tts, __in UTF8 *pString);
+void mux_strtok_ctl(__in MUX_STRTOK_STATE *tts, __in const UTF8 *pControl);
+UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen);
+UTF8 *mux_strtok_parse(__deref_in MUX_STRTOK_STATE *tts);
 
-size_t mux_ltoa(long val, UTF8 *buf);
+size_t mux_ltoa(long val, __out UTF8 *buf);
 UTF8 *mux_ltoa_t(long val);
-void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
-size_t mux_i64toa(INT64 val, UTF8 *buf);
+void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
+size_t mux_i64toa(INT64 val, __out UTF8 *buf);
 UTF8 *mux_i64toa_t(INT64 val);
-void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc);
-long mux_atol(const UTF8 *pString);
-INT64 mux_atoi64(const UTF8 *pString);
-double mux_atof(const UTF8 *szString, bool bStrict = true);
+void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
+long mux_atol(__in const UTF8 *pString);
+INT64 mux_atoi64(__in const UTF8 *pString);
+double mux_atof(__in const UTF8 *szString, bool bStrict = true);
 UTF8 *mux_ftoa(double r, bool bRounded, int frac);
 
-bool is_integer(const UTF8 *str, int *pDigits = NULL);
-bool is_rational(const UTF8 *str);
-bool is_real(const UTF8 *str);
+bool is_integer(__in const UTF8 *str, __out_opt int *pDigits = NULL);
+bool is_rational(__in const UTF8 *str);
+bool is_real(__in const UTF8 *str);
 
 // Color State
 //
@@ -537,48 +537,48 @@ typedef struct
 
 extern const MUX_COLOR_SET aColors[];
 
-UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
-UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
-UTF8 *munge_space(const UTF8 *);
-UTF8 *trim_spaces(const UTF8 *);
-UTF8 *grabto(UTF8 **, UTF8);
-int  string_compare(const UTF8 *, const UTF8 *);
-int  string_prefix(const UTF8 *, const UTF8 *);
-const UTF8 * string_match(const UTF8 * ,const UTF8 *);
-UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
+UTF8 *convert_color(__in const UTF8 *pString, bool bNoBleed);
+UTF8 *strip_color(__in const UTF8 *pString, __out_opt size_t *pnLength = 0, __out_opt size_t *pnPoints = 0);
+UTF8 *munge_space(__in const UTF8 *);
+UTF8 *trim_spaces(__in const UTF8 *);
+UTF8 *grabto(__deref_inout UTF8 **, UTF8);
+int  string_compare(__in const UTF8 *, __in const UTF8 *);
+int  string_prefix(__in const UTF8 *, __in const UTF8 *);
+const UTF8 *string_match(__in const UTF8 *, __in const UTF8 *);
+UTF8 *replace_string(__in const UTF8 *, __in const UTF8 *, __in const UTF8 *);
 UTF8 *replace_tokens
 (
-    const UTF8 *s,
-    const UTF8 *pBound,
-    const UTF8 *pListPlace,
-    const UTF8 *pSwitch
+    __in const UTF8 *s,
+    __in const UTF8 *pBound,
+    __in const UTF8 *pListPlace,
+    __in const UTF8 *pSwitch
 );
 #if 0
 char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
 #endif // 0
-bool minmatch(const UTF8 *str, const UTF8 *target, int min);
-UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
-UTF8 *StringClone(const UTF8 *str);
-void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
-void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
-size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
-size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
-void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+bool minmatch(__in const UTF8 *str, __in const UTF8 *target, int min);
+UTF8 *StringCloneLen(__in_ecount(nStr) const UTF8 *str, size_t nStr);
+UTF8 *StringClone(__in const UTF8 *str);
+void safe_copy_str(__in const UTF8 *src, __inout_ecount_full(nSizeOfBuffer) UTF8 *buff, __deref_inout UTF8 **bufp, size_t nSizeOfBuffer);
+void safe_copy_str_lbuf(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
+size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
+size_t safe_fill(__inout UTF8 *buff, __deref_inout UTF8 **bufc, UTF8 chFile, size_t nSpaces);
+void safe_chr_utf8(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
 #define utf8_safe_chr safe_chr_utf8
 UTF8 *ConvertToUTF8(UTF32 ch);
-UTF8 *ConvertToUTF8(const char *p, size_t *pn);
+UTF8 *ConvertToUTF8(__in const char *p, size_t *pn);
 UTF16 *ConvertToUTF16(UTF32 ch);
-UTF32 ConvertFromUTF8(const UTF8 *p);
-size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch);
-UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t *pnString);
-UTF8  *ConvertFromUTF16ToUTF8(const UTF16 *pSTring);
-void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer);
-bool matches_exit_from_list(UTF8 *, const UTF8 *);
-UTF8 *translate_string(const UTF8 *, bool);
-int mux_stricmp(const UTF8 *a, const UTF8 *b);
-int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
-UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
-UTF8 *mux_strupr(const UTF8 *a, size_t &n);
+UTF32 ConvertFromUTF8(__in const UTF8 *p);
+size_t ConvertFromUTF16(__out UTF16 *pString, UTF32 &ch);
+UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, __deref_out size_t *pnString);
+UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
+void mux_strncpy(__out_ecount(nSizeOfBuffer-1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer);
+bool matches_exit_from_list(__in const UTF8 *, __in const UTF8 *);
+UTF8 *translate_string(__in const UTF8 *, bool);
+int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b);
+int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n);
+UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n);
+UTF8 *mux_strupr(__in const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
 {

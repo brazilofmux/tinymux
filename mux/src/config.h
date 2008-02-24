@@ -22,6 +22,11 @@
 
 #if defined(WIN32)
 
+#if (_MSC_VER >= 1400)
+// 1400 is Visual C++ 2005
+#include <SpecStrings.h>
+#endif
+
 #define _WIN32_WINNT 0x0400
 #define FD_SETSIZE      512
 #define WIN32_LEAN_AND_MEAN
@@ -33,6 +38,22 @@
 #include <process.h>
 
 #endif // WIN32
+
+#ifndef __specstrings
+#define __deref_in
+#define __deref_in_opt
+#define __deref_in_ecount(n)
+#define __deref_inout
+#define __deref_out
+#define __in
+#define __in_ecount(n)
+#define __in_opt
+#define __inout
+#define __inout_ecount_full(n)
+#define __out
+#define __out_ecount(n)
+#define __out_opt
+#endif
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

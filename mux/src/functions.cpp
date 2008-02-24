@@ -280,7 +280,7 @@ int list2arr(UTF8 *arr[], int maxcount, UTF8 *list, SEP *psep)
     return i;
 }
 
-void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, SEP *psep)
+void arr2list(__in_ecount(alen) UTF8 *arr[], int alen, __inout UTF8 *list, __deref_inout UTF8 **bufc, __in SEP *psep)
 {
     int i;
     for (i = 0; i < alen-1; i++)
@@ -7129,8 +7129,8 @@ FUNCTION(fun_sql)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enactor,
-                    UTF8 *fargs[], int nfargs, SEP *psep, SEP *posep, bool bBool)
+static void filter_handler(__inout UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref enactor,
+                    __in_ecount(nfargs) UTF8 *fargs[], int nfargs, __in SEP *psep, __in SEP *posep, bool bBool)
 {
     UTF8 *atext;
     dbref thing;

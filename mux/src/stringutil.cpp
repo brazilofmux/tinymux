@@ -2943,7 +2943,7 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
     *bufp = buff + TrimPartialSequence(tp - buff, buff);
 }
 
-size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
+size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
@@ -3338,9 +3338,9 @@ void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
     dest[i] = '\0';
 }
 
-bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
+bool matches_exit_from_list(const UTF8 *str, const UTF8 *pattern)
 {
-    UTF8 *s;
+    const UTF8 *s;
 
     while (*pattern)
     {

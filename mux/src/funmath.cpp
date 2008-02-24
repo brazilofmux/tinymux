@@ -1119,8 +1119,8 @@ FUNCTION(fun_dist3d)
 
 static void handle_vectors
 (
-    UTF8 *vecarg1, UTF8 *vecarg2, UTF8 *buff, UTF8 **bufc, SEP *psep,
-    SEP *posep, int flag
+    __in UTF8 *vecarg1, __in UTF8 *vecarg2, __inout UTF8 *buff, __deref_inout UTF8 **bufc,
+    __in SEP *psep, __in SEP *posep, int flag
 )
 {
     // Return if the list is empty.

@@ -79,7 +79,7 @@ bool delim_check
     int sep_arg, SEP *sep, int dflags
 );
 
-void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, SEP *psep);
+void arr2list(__in_ecount(alen) UTF8 *arr[], int alen, __inout UTF8 *list, __deref_inout UTF8 **bufc, __in SEP *psep);
 int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, SEP *psep);
 UTF8 *trim_space_sep(UTF8 *str, SEP *psep);
 UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *psep, size_t *nTrim);
