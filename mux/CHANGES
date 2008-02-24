@@ -115,6 +115,9 @@ Feature Additions:
  -- Add attr_name_charset, exit_name_charset, player_name_charset,
     thing_name_charset, and room_name_charset to optionally restrict
     the corresponding names to subsets of Unicode.
+ -- Add VisibleLock (Issue 332).
+ -- Add substitution (%i) equivalent to itext().
+ -- Ignore leading and trailing spaces in parse_dbref() (Issue 451).
 
 
 Bug Fixes:
@@ -258,6 +261,14 @@ Bug Fixes:
     fun_shuffle(), linewrap_general(), fun_before(), fun_after(),
     fun_escape(), fun_secure(), fun_remove(), fun_insert(),
     fun_lpos(), and fun_shuffle().
+ -- Fix new/delete bug in linewrap_general() introduced in 2.7.1.18.
+ -- @email and sql no longer require --enable-firanmux.  SQL can be
+    turned on with --enable-inlinesql or --enable-stubslave.
+ -- Add try/catch around throwing new in fun_columns(), fun_strtrunc(),
+    fun_elements(), fun_pickrand(), fun_last(), fun_foreach(),
+    fun_extract, fun_revwords(), fun_trim, fun_strip(),
+    transform_range().
+ -- Fix handling of folder name upper-casing (Issue 416).
 
 
 Performance Enhancements:
@@ -321,7 +332,22 @@ Miscellaneous:
  -- Provide at least some level of help under set() for usage rather
     than only refering them to @set.
  -- Document ancient pose and semipose behavior involving initial
-    spaces
+    spaces.
  -- Document %=<> addition in SUBSTITUTIONS and V() topics.
  -- Fix VS 2005 /analyze warnings.
  -- Fix warnings from gcc 4.2.3 with -Wall.
+ -- Remove ROBBERY topic.
+ -- Combine iter() and parse() help topics since they are the same.
+ -- Move parse() to alias.conf.
+ -- Compact code in fun_shuffle().
+ -- Approximately re-balance decision tree for percent substitutions.
+ -- Fix false positive warning from VS2005 in pow5mult().
+ -- Fix false positive warning from VS2005 in Balloc().
+ -- Add condition for size of small buffer to supress false positive
+    VS2005 warning in ItemToList_AddInteger().
+ -- Add condition for size of small buffer to supress false positive
+    VS2005 warning in ItemToList_AddInteger64().
+ -- Supress false positive VS2005 warning in mux_words::set_Control().
+ -- Fix false positive VS2005 warning in mux_string::strip().
+ -- Fix false positive VS2005 warning in do_joinchannel() and let it
+    return Out of Memory to enactor failing the join request gracefully.
