@@ -1313,27 +1313,29 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 
 static MUX_RESULT CStd_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
+    mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
+    if (NULL == pIRpcStubBuffer)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    //return pIRpcStubBuffer->Invoke();
     return MUX_E_NOTIMPLEMENTED;
 }
 
 static MUX_RESULT CStd_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
-    mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pci->pInterface);
-    if (NULL == pIUnknown)
+    mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
+    if (NULL == pIRpcStubBuffer)
     {
         return MUX_E_NOINTERFACE;
     }
 
-    mux_IRpcStubBuffer *pIRpcStubBuffer = NULL;
-    MUX_RESULT mr = pIUnknown->QueryInterface(mux_IID_IRpcStubBuffer, (void **)&pIRpcStubBuffer);
-    if (MUX_SUCCEEDED(mr))
-    {
-        pIRpcStubBuffer->Disconnect();
-        pIRpcStubBuffer->Release();
-        pci->pInterface = NULL;
-        Pipe_FreeChannel(pci);
-    }
-    return mr;
+    pIRpcStubBuffer->Disconnect();
+    pIRpcStubBuffer->Release();
+    pci->pInterface = NULL;
+    Pipe_FreeChannel(pci);
+    return MUX_S_OK;
 }
 
 #endif // ENABLE_STD_MARSHALER
