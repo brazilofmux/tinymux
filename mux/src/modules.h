@@ -10,6 +10,29 @@
 
 #ifndef MODULES_H
 #define MODULES_H
+
+/* Logging options */
+
+#define LOG_ALLCOMMANDS 0x00000001  /* Log all commands */
+#define LOG_ACCOUNTING  0x00000002  /* Write accounting info on logout */
+#define LOG_BADCOMMANDS 0x00000004  /* Log bad commands */
+#define LOG_BUGS        0x00000008  /* Log program bugs found */
+#define LOG_DBSAVES     0x00000010  /* Log database dumps */
+#define LOG_CONFIGMODS  0x00000020  /* Log changes to configuration */
+#define LOG_PCREATES    0x00000040  /* Log character creations */
+#define LOG_KILLS       0x00000080  /* Log KILLs */
+#define LOG_LOGIN       0x00000100  /* Log logins and logouts */
+#define LOG_NET         0x00000200  /* Log net connects and disconnects */
+#define LOG_SECURITY    0x00000400  /* Log security-related events */
+#define LOG_SHOUTS      0x00000800  /* Log shouts */
+#define LOG_STARTUP     0x00001000  /* Log nonfatal errors in startup */
+#define LOG_WIZARD      0x00002000  /* Log dangerous things */
+#define LOG_ALLOCATE    0x00004000  /* Log alloc/free from buffer pools */
+#define LOG_PROBLEMS    0x00008000  /* Log runtime problems */
+#define LOG_SUSPECTCMDS 0x00020000  // Log SUSPECT player keyboard commands.
+#define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
+#define LOG_ALWAYS      0x80000000  /* Always log it */
+
 #if defined(TINYMUX_MODULES)
 
 const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
