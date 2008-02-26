@@ -102,6 +102,22 @@ SOURCE=.\sample.def
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=.\autoconf.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\libmux.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\modules.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\sample.h
 # End Source File
 # End Group

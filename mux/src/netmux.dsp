@@ -397,6 +397,10 @@ SOURCE=.\levels.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\libmux.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\mail.h
 # End Source File
 # Begin Source File
@@ -450,6 +454,10 @@ SOURCE=.\svdhash.h
 # Begin Source File
 
 SOURCE=.\svdrand.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\table.h
 # End Source File
 # Begin Source File
 
