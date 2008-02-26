@@ -33,6 +33,10 @@
 #define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
 #define LOG_ALWAYS      0x80000000  /* Always log it */
 
+/* Evaluation directives */
+
+#define EV_TRACE        0x00200000  /* Request a trace of this call to eval */
+
 #if defined(TINYMUX_MODULES)
 
 const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
@@ -540,6 +544,15 @@ private:
 #define QS_QUERY_ERROR     (3)
 
 #define RS_TOP             (0)
+
+interface mux_IFunction : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Call(__in UTF8 *buff, __deref_inout UTF8 **bufc,
+        dbref executor, dbref caller, dbref enactor, int eval,
+        __in UTF8 *fargs[], int nfargs, __in const UTF8 *cargs[],
+        int ncargs);
+};
 
 #endif
 #endif // MODULES_H

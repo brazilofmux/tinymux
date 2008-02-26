@@ -796,7 +796,6 @@ extern int anum_alc_top;
 #define EV_NO_COMPRESS  0x00040000  /* Don't compress spaces. */
 #define EV_NO_LOCATION  0x00080000  /* Supresses %l */
 #define EV_NOFCHECK     0x00100000  /* Do not evaluate functions! */
-#define EV_TRACE        0x00200000  /* Request a trace of this call to eval */
 
 /* Message forwarding directives */
 
