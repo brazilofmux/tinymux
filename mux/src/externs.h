@@ -374,9 +374,8 @@ struct reference_entry
 {
     dbref owner;
     dbref target;
-    UTF8 name[SBUF_SIZE];
+    UTF8 *name;
 };
-
 
 /* From set.cpp */
 bool parse_attrib(dbref, const UTF8 *, dbref *, ATTR **);

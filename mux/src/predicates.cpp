@@ -2879,25 +2879,17 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
     else
     {
         global_only = false;
-
-        if (0 == mux_stricmp(reference_name, T("me")))
+        target = lookup_player(executor, reference_name, 1);
+        if (!Good_obj(target))
         {
-            target = executor;
+            raw_notify(executor, T("No such player."));
+            return;
         }
-        else
-        {
-            target = lookup_player(executor, reference_name, 1);
-            if (NOTHING == target)
-            {
-                raw_notify(executor, T("No such player."));
-                return;
-            }
 
-            if (!Controls(executor, target))
-            {
-                raw_notify(executor, NOPERM_MESSAGE);
-                return;
-            }
+        if (!Controls(executor, target))
+        {
+            raw_notify(executor, NOPERM_MESSAGE);
+            return;
         }
     }
 
@@ -2912,8 +2904,8 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
            NULL != htab_entry;
            htab_entry = (struct reference_entry *) hash_nextentry(htab))
     {
-        if ( (  global_only
-             && '_' == htab_entry->name[0])
+        if (  (  global_only
+              && '_' == htab_entry->name[0])
            || target == htab_entry->owner)
         {
             if (!Good_obj(htab_entry->target))
@@ -2937,7 +2929,6 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
                         object_buf, Moniker(htab_entry->owner)));
 
             free_lbuf(object_buf);
-
         }
     }
 
@@ -2976,7 +2967,6 @@ void do_reference
     dbref target = NOTHING;
     mux_string refstr(reference_name);
     UTF8 tbuf[LBUF_SIZE];
-    size_t tbuf_len = 0;
 
     if (key & REFERENCE_LIST)
     {
@@ -2984,8 +2974,9 @@ void do_reference
         return;
     }
 
-    /* References can only be set on objects the executor can examine */
-    if (  NULL !=object_name
+    // References can only be set on objects the executor can examine.
+    //
+    if (  NULL != object_name
        && '\0' != object_name[0])
     {
         target = match_thing_quiet(executor, object_name);
@@ -2995,6 +2986,7 @@ void do_reference
             notify(executor, NOMATCH_MESSAGE);
             return;
         }
+
         if (!Examinable(executor, target))
         {
             notify(executor, NOPERM_MESSAGE);
@@ -3007,7 +2999,7 @@ void do_reference
         target = NOTHING;
     }
 
-    if (reference_name[0] == '_')
+    if ('_' == reference_name[0])
     {
         if (!Wizard(executor))
         {
@@ -3017,82 +3009,102 @@ void do_reference
     }
     else
     {
-        refstr.append('.');
+        refstr.append(T("."));
         refstr.append(executor);
     }
 
-    refstr.export_TextPlain(tbuf);
-    utf8_strlen(tbuf, tbuf_len);
+    size_t tbuf_len = refstr.export_TextPlain(tbuf);
+    struct reference_entry *result = (reference_entry *)hashfindLEN(
+        tbuf, tbuf_len, &mudstate.reference_htab);
 
-    struct reference_entry *result;
-
-    result = (reference_entry *) hashfindLEN(tbuf,
-            tbuf_len, &mudstate.reference_htab);
+    enum { Delete, Add, Update, NotFound, Redundant, OutOfMemory } eOperation;
 
     if (NULL != result)
     {
         if (NOTHING == target)
         {
-            MEMFREE(result);
-            hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
-            raw_notify(executor, T("Reference cleared."));
+            eOperation = Delete;
         }
         else if (result->target == target)
         {
-            // Reference already exists
-            //
-            raw_notify(executor, T("That reference already exists."));
+            eOperation = Redundant;
+        }
+        else // if (result->target != target)
+        {
+            eOperation = Update;
+        }
+    }
+    else
+    {
+        if (NOTHING == target)
+        {
+            eOperation = NotFound;
         }
         else
         {
-            // Replace the existing reference
-            //
-            MEMFREE(result);
-            hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
-            try
-            {
-                result = (reference_entry *) MEMALLOC(sizeof(result));
-            }
-            catch(...)
-            {
-                ; // Nothing;
-            }
-
-            if (NULL != result)
-            {
-                result->target = target;
-                result->owner = executor;
-                mux_strncpy(result->name, reference_name, SBUF_SIZE - 1);
-                hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
-                raw_notify(executor, T("Reference updated."));
-            }
+            eOperation = Add;
         }
-        return;
     }
 
-    // The reference was not found.  It may be new or may never have existed
-    //
-    if (NOTHING == target)
+    if (  Delete == eOperation
+       || Update == eOperation)
+    {
+        // Release the existing reference.
+        //
+        MEMFREE(result->name);
+        result->name = NULL;
+        MEMFREE(result);
+        result = NULL;
+        hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
+    }
+
+    if (  Update == eOperation
+       || Add == eOperation)
+    {
+        try
+        {
+            result = (reference_entry *)MEMALLOC(sizeof(result));
+        }
+        catch(...)
+        {
+            ; // Nothing;
+        }
+
+        if (NULL != result)
+        {
+            result->target = target;
+            result->owner = executor;
+            result->name = StringCloneLen(tbuf, tbuf_len);
+            hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
+        }
+        else
+        {
+            eOperation = OutOfMemory;
+        }
+    }
+
+    if (Delete == eOperation)
+    {
+        raw_notify(executor, T("Reference cleared."));
+    }
+    else if (Update == eOperation)
+    {
+        raw_notify(executor, T("Reference updated."));
+    }
+    else if (Redundant == eOperation)
+    {
+        raw_notify(executor, T("That reference already exists."));
+    }
+    else if (NotFound == eOperation)
     {
         raw_notify(executor, T("No such reference to clear."));
-        return;
     }
-
-    try
+    else if (Add == eOperation)
     {
-        result = (reference_entry *) MEMALLOC(sizeof(reference_entry));
-    }
-    catch(...)
-    {
-        ; // Nothing
-    }
-
-    if (NULL != result)
-    {
-        result->target = target;
-        result->owner = executor;
-        mux_strncpy(result->name, reference_name, SBUF_SIZE - 1);
-        hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
         raw_notify(executor, T("Reference added."));
+    }
+    else if (OutOfMemory == eOperation)
+    {
+        raw_notify(executor, OUT_OF_MEMORY);
     }
 }

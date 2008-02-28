@@ -185,46 +185,37 @@ void match_player(void)
 
 // Check for a matching named reference.
 //
-static dbref absolute_named_reference(UTF8* name)
+static dbref absolute_named_reference(UTF8 *name)
 {
     if (  NULL == name
-       || '\0' != name[0])
+       || '\0' == name[0])
     {
         return NOTHING;
     }
 
-    UTF8* reference_name = alloc_sbuf("absolute_named_reference");
-
-    mux_strncpy(reference_name, name, sizeof(SBUF_SIZE));
-
-    if ('_' != reference_name[0])
+    mux_string sRef(name);
+    if ('_' != name[0])
     {
-        mux_string player_ref(name);
-        player_ref.append('.');
-        player_ref.append(md.player);
-        player_ref.export_TextPlain(reference_name);
+        sRef.append(T("."));
+        sRef.append(md.player);
+    }
+
+    UTF8 *pReferenceName = alloc_lbuf("absolute_named_reference");
+    size_t nReferenceName = 0;
+    nReferenceName = sRef.export_TextPlain(pReferenceName);
+
+    struct reference_entry *result = (reference_entry *)hashfindLEN(
+        pReferenceName, nReferenceName, &mudstate.reference_htab);
+    free_lbuf(pReferenceName);
+
+    if (NULL != result)
+    {
+        return result->target;
     }
     else
     {
-        mux_string global_ref(name);
-        global_ref.export_TextPlain(reference_name);
+        return NOTHING;
     }
-
-    size_t len = 0;
-    utf8_strlen(reference_name, len);
-
-    struct reference_entry *result;
-    result = (reference_entry *) hashfindLEN(reference_name, len,
-            &mudstate.reference_htab);
-
-    dbref ref_target = NOTHING;
-    if (NULL != result)
-    {
-        ref_target = result->target;
-    }
-
-    free_sbuf(reference_name);
-    return ref_target;
 }
 
 /*

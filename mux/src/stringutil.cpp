@@ -6038,7 +6038,7 @@ UTF8 *mux_string::export_TextConverted
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into.
  *                 Defaults to LBUF_SIZE-1.
- * \return         None.
+ * \return         length of resulting string in bytes.
  */
 
 LBUF_OFFSET mux_string::export_TextPlain
