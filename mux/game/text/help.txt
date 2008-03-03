@@ -9366,15 +9366,18 @@ MAIL()
             mail()
 
   The first form returns a message corresponding to that mail message number
-  in your MUX mailbox.  This function can be used to forward mail, or as a way
+  in your MUX mailbox.  This function can be used to forward mail or as a way
   to simply transfer mail messages to attributes on an object.
 
-  The second form returns three numbers, corresponding to the number of read,
-  unread, and cleared messages <player> has.  The third form returns
-  <player>'s <mail message #>.  It works like the first form except it applies
-  to another player.  The last form returns the number of messages the
-  evaluating player has.  Only wizards can use the second and third forms of
-  the function on other players.
+  The second form returns three numbers which correspond to the number of
+  read, unread, and cleared messages <player> has, respectively.  Only wizards
+  can use this form on other players.
+
+  The third form returns <player>'s <mail message #>.  It works like the first
+  form except it applies to another player.  Only God can use this form on
+  other players.
+
+  The fourth form returns the number of messages the enacting player has.
 
   Related Topics: @mail, mail-reading.
 
