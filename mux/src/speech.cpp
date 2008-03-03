@@ -919,9 +919,14 @@ void do_page
         break;
 
     case ':':
-        pageMode = 2;
         pMessage++;
-        break;
+        if (' ' != *pMessage)
+        {
+            pageMode = 2;
+            break;
+        }
+
+        // FALL THROUGH
 
     case ';':
         pageMode = 3;
