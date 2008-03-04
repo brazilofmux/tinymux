@@ -6454,6 +6454,11 @@ void mux_string::replace_Chars
 
         m_iLast = iLast;
     }
+    else if (  0 == m_ncs
+            && 0 != sTo.m_ncs)
+    {
+        realloc_m_pcs(m_iLast.m_point);
+    }
 
     // Copy replacement text over substring.
     //
