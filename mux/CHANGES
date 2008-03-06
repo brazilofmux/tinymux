@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  February 2008
+Last Update:  March 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,6 +269,11 @@ Bug Fixes:
     fun_extract, fun_revwords(), fun_trim, fun_strip(),
     transform_range().
  -- Fix handling of folder name upper-casing (Issue 416).
+ -- Fix several problems with @reference (Issue 491).
+ -- Add 'page ...=: ...' case.
+ -- Help does not match behavior of mail(<player>, <number>)
+    (Issue 477).
+ -- Fixed SIGSEGV crashing bug in edit() (Issue 493).
 
 
 Performance Enhancements:
@@ -351,3 +356,4 @@ Miscellaneous:
  -- Fix false positive VS2005 warning in mux_string::strip().
  -- Fix false positive VS2005 warning in do_joinchannel() and let it
     return Out of Memory to enactor failing the join request gracefully.
+ -- Update VS project dependencies.
