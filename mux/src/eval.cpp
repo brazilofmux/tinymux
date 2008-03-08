@@ -1335,13 +1335,21 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             fp = NULL;
             ufp = NULL;
 
-            size_t nFun = pEnd - oldp + 1;
-
-            // _strlwr();
-            //
-            for (size_t iFun = 0; iFun < nFun; iFun++)
+            size_t nFun = 0;
+            if (oldp <= pEnd)
             {
-                mux_scratch[iFun] = mux_toupper_ascii(oldp[iFun]);
+                nFun = pEnd - oldp + 1;
+                if (LBUF_SIZE <= nFun)
+                {
+                    nFun = LBUF_SIZE - 1;
+                }
+
+                // _strlwr();
+                //
+                for (size_t iFun = 0; iFun < nFun; iFun++)
+                {
+                    mux_scratch[iFun] = mux_toupper_ascii(oldp[iFun]);
+                }
             }
             mux_scratch[nFun] = '\0';
 
