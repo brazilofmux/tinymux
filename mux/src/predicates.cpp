@@ -398,7 +398,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
         return NULL;
     }
 
-    if (IsRestricted(fldLen.m_byte, Buf, charset))
+    if (IsRestricted(nStripped, pStripped, charset))
     {
         return NULL;
     }
@@ -489,12 +489,6 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 
     clean_names.export_TextColor(Buf);
     *pnName = mux_strlen(Buf);
-
-    if (IsRestricted(*pnName, Buf, mudconf.exit_name_charset))
-    {
-        *pnName = 0;
-        return Buf;
-    }
 
     return Buf;
 }
