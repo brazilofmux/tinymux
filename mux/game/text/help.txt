@@ -11284,28 +11284,30 @@ REGEXPS (continued)
 
   Related Topics: regexp syntax
 
+& REGMATCHI()
 & REGMATCH()
 REGMATCH()
 REGMATCHI()
 
   FUNCTION: regmatch(<string>,<regexp>[,<register list>])
+            regmatchi(<string>,<regexp>[,<register list>])
 
   This function matches the regular expression <regexp> against the
   entirety of <string>, returning 1 if it matches and 0 if it does not.
-  Normally, the regular expression is case sensitive. The regmatchi()
+  Normally, the regular expression is case sensitive.  The regmatchi()
   version is not.
 
   If <register list> is specified, there is a side-effect: any
   parenthesized substrings within the regular expression will be set
   into the specified local registers, in the order they were specified
-  in the list. <register list> can be a list of one through nine
+  in the list.  <register list> can be a list of one through nine
   numbers or A through Z.  If the specified register is -1, the
   substring is not copied into a register.
 
   For example, if <string> is 'cookies=30', and <regexp> is '(.+)=([0-9]*)'
   (parsed; note that escaping may be necessary), then the 0th substring
   matched is 'cookies=30', the 1st substring is 'cookies', and the 2nd
-  substring is '30'. If <register list> is '0 3 5', then %q0 will become
+  substring is '30'.  If <register list> is '0 3 5', then %q0 will become
   "cookies=30", %q3 will become "cookies", and %q5 will become "30".
   If <register list> was '0 -1 5', then the "cookies" substring would
   simply be discarded.
