@@ -13264,8 +13264,10 @@ TERMINFO()
   Other fields may be added in the future; 'mxp' for clients which support
   that, for instance.
 
-  Players can use terminfo() on their own connections. Using it on
-  other players is restricted to wizards.
+  Players can use terminfo() by <descriptor> on their own connections.
+  Specifying connections via <descriptor> on other's connections is restricted
+  to Wizards.  However, anyone can use it by <player> on anyone else as long
+  as they aren't hidding.
 
 & TERSE
 TERSE
