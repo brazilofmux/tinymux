@@ -112,6 +112,12 @@
 /* Define if your system has the in_addr_t type. */
 /* #undef HAVE_IN_ADDR_T */
 
+/* Define to 1 if you have the `kevent' function. */
+/* #undef HAVE_KEVENT */
+
+/* Define to 1 if you have the `kqueue' function. */
+/* #undef HAVE_KQUEUE */
+
 /* Define to 1 if you have the `crypt' library (-lcrypt). */
 /* #undef HAVE_LIBCRYPT */
 
@@ -217,6 +223,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 /* #undef HAVE_SYS_EPOLL_H */
+
+/* Define to 1 if you have the <sys/event.h> header file. */
+/* #undef HAVE_SYS_EVENT_H */
 
 /* Define to 1 if you have the <sys/fcntl.h> header file. */
 /* #undef HAVE_SYS_FCNTL_H */
