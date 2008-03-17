@@ -46,6 +46,15 @@
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 /* #undef HAVE_DOPRNT */
 
+/* Define to 1 if you have the `epoll_create' function. */
+/* #undef HAVE_EPOLL_CREATE */
+
+/* Define to 1 if you have the `epoll_ctl' function. */
+/* #undef HAVE_EPOLL_CTL */
+
+/* Define to 1 if you have the `epoll_wait' function. */
+/* #undef HAVE_EPOLL_WAIT */
+
 /* Define to 1 if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
 
@@ -205,6 +214,9 @@
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_SYS_DIR_H */
+
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+/* #undef HAVE_SYS_EPOLL_H */
 
 /* Define to 1 if you have the <sys/fcntl.h> header file. */
 /* #undef HAVE_SYS_FCNTL_H */

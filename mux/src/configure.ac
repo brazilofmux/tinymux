@@ -266,7 +266,7 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h)
+AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h sys/epoll.h)
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
 AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
 AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
@@ -375,6 +375,7 @@ AC_FUNC_VPRINTF
 AC_FUNC_FORK
 AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getpagesize getrusage gettimeofday)
 AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep)
+AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait)
 AS_MESSAGE([checking for pread and pwrite...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
