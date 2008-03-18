@@ -959,9 +959,9 @@ extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
 #endif
 extern int      nMainGamePorts;
 
-#if defined(UNIX_NETWORKING)
+#if defined(UNIX_NETWORKING_SELECT)
 extern int maxd;
-#endif // UNIX_NETWORKING
+#endif // UNIX_NETWORKING_SELECT
 
 extern unsigned int ndescriptors;
 

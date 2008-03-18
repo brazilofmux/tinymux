@@ -3655,11 +3655,16 @@ void load_restart_db(void)
             aMainGamePorts[i].port   = getref(f);
             mux_assert(aMainGamePorts[i].port > 0);
             aMainGamePorts[i].socket = getref(f);
+
+#if defined(UNIX_NETWORKING_SELECT)
             if (maxd <= aMainGamePorts[i].socket)
             {
                 maxd = aMainGamePorts[i].socket + 1;
             }
-            if (3 <= version) {
+#endif // UNIX_NETWORKING_SELECT
+
+            if (3 <= version)
+            {
 #ifdef SSL_ENABLED
                 aMainGamePorts[i].ssl = getref(f);
 #else
@@ -3900,10 +3905,13 @@ void load_restart_db(void)
             descriptor_list = d;
         }
 
+#if defined(UNIX_NETWORKING_SELECT)
         if (maxd <= d->descriptor)
         {
             maxd = d->descriptor + 1;
         }
+#endif // UNIX_NETWORKING_SELECT
+
         desc_addhash(d);
         if (isPlayer(d->player))
         {

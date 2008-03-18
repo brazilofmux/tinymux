@@ -21,9 +21,14 @@
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif // HAVE_NETDB_H
-#ifdef HAVE_SYS_SELECT_H
+
+#if defined(UNIX_NETWORKING_EPOLL) && defined(HAVE_SYS_EPOLL_H)
+#include <sys/epoll.h>
+#endif // UNIX_NETWORKING_EPOLL && HAVE_SYS_EPOLL_H
+
+#if defined(UNIX_NETWORKING_SELECT) && defined(HAVE_SYS_SELECT_H)
 #include <sys/select.h>
-#endif // HAVE_SYS_SELECT_H
+#endif // UNIX_NETWORKING_SELECT && HAVE_SYS_SELECT_H
 
 #ifdef SSL_ENABLED
 #include <openssl/ssl.h>
@@ -263,9 +268,9 @@ extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray 
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
 void process_output_ntio(void *, int);
-#elif defined(UNIX_NETWORKING)
-extern void shovechars(int nPorts, PortInfo aPorts[]);
-#endif // UNIX_NETWORKING
+#elif defined(UNIX_NETWORKING_SELECT)
+extern void shovechars_select(int nPorts, PortInfo aPorts[]);
+#endif
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK

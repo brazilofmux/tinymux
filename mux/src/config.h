@@ -407,6 +407,12 @@ typedef unsigned __int64 UINT64;
 #define TINYMUX_MODULES
 #endif // HAVE_DLOPEN
 
+#if defined(HAVE_SYS_SELECT_H) && defined(HAVE_SELECT)
+#define UNIX_NETWORKING_SELECT
+#else
+#error Platform does not provide select().
+#endif
+
 #define DCL_CDECL
 #define DCL_EXPORT
 #define DCL_API

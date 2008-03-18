@@ -3418,8 +3418,8 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         shovechars9x(nMainGamePorts, aMainGamePorts);
     }
-#elif defined(UNIX_NETWORKING)
-    shovechars(nMainGamePorts, aMainGamePorts);
+#elif defined(UNIX_NETWORKING_SELECT)
+    shovechars_select(nMainGamePorts, aMainGamePorts);
 #endif // UNIX_NETWORKING
 
 #ifdef INLINESQL

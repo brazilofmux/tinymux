@@ -479,7 +479,9 @@ static int get_slave_result(void)
 
 #if defined(UNIX_NETWORKING)
 
+#if defined(UNIX_NETWORKING_SELECT)
 int maxd = 0;
+#endif // UNIX_NETWORKING_SELECT
 
 #if defined(HAVE_WORKING_FORK)
 
@@ -852,11 +854,14 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         CleanUpSlaveSocket();
         goto failure;
     }
+
+#if defined(UNIX_NETWORKING_SELECT)
     if (  !IS_INVALID_SOCKET(slave_socket)
        && maxd <= slave_socket)
     {
         maxd = slave_socket + 1;
     }
+#endif // UNIX_NETWORKING_SELECT
 
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
     log_text(T("DNS lookup slave started on fd "));
@@ -1375,12 +1380,12 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #endif // UNIX_NETWORKING
                )
             {
-#if defined(UNIX_NETWORKING)
+#if defined(UNIX_NETWORKING_SELECT)
                 if (maxd <= aPorts[k].socket)
                 {
                     maxd = aPorts[k].socket + 1;
                 }
-#endif // UNIX_NETWORKING
+#endif // UNIX_NETWORKING_SELECT
                 (*pnPorts)++;
             }
         }
@@ -1413,12 +1418,12 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #endif // UNIX_NETWORKING
                    )
                 {
-#if defined(UNIX_NETWORKING)
+#if defined(UNIX_NETWORKING_SELECT)
                     if (maxd <= aPorts[k].socket)
                     {
                         maxd = aPorts[k].socket + 1;
                     }
-#endif // UNIX_NETWORKING
+#endif // UNIX_NETWORKING_SELECT
                     (*pnPorts)++;
                 }
             }
@@ -1488,7 +1493,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
     int found;
     DESC *d, *dnext, *newd;
 
-    mudstate.debug_cmd = T("< shovechars >");
+    mudstate.debug_cmd = T("< shovechars9x >");
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1694,7 +1699,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     UNUSED_PARAMETER(nPorts);
     UNUSED_PARAMETER(aPorts);
 
-    mudstate.debug_cmd = T("< shovechars >");
+    mudstate.debug_cmd = T("< shovecharsNT >");
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
@@ -1763,10 +1768,12 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
 
 #if defined(UNIX_NETWORKING)
 
+#if defined(UNIX_NETWORKING_SELECT)
+
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-void shovechars(int nPorts, PortInfo aPorts[])
+void shovechars_select(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
@@ -1775,7 +1782,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
     int maxfds;
     int i;
 
-    mudstate.debug_cmd = T("< shovechars >");
+    mudstate.debug_cmd = T("< shovechars_select >");
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -2044,6 +2051,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
         }
     }
 }
+
+#endif // UNIX_NETWORKING_SELECT
 
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
 extern "C" MUX_RESULT DCL_API pipepump(void)
