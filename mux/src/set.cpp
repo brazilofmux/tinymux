@@ -322,6 +322,7 @@ void do_alias
         //
         UTF8 *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
         UTF8 *trimalias = trim_spaces(alias);
+        dbref nPlayer;
 
         if (!Controls(executor, thing))
         {
@@ -343,7 +344,8 @@ void do_alias
                 notify_quiet(executor, T("Alias removed."));
             }
         }
-        else if (lookup_player(NOTHING, trimalias, false) != NOTHING)
+        else if (  (nPlayer = lookup_player(NOTHING, trimalias, false)) != NOTHING
+                && nPlayer != thing)
         {
             // Make sure new alias isn't already in use.
             //
