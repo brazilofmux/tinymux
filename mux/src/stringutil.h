@@ -240,7 +240,7 @@ inline bool mux_is8859_1(const unsigned char *p)
 extern const unsigned char cl_8859_2_itt[256];
 extern const unsigned char cl_8859_2_stt[6][21];
 
-inline bool mux_is8859_2(__in const unsigned char *p)
+inline bool mux_is8859_2(const unsigned char *p)
 {
     int iState = CL_8859_2_START_STATE;
     do
