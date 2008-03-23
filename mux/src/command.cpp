@@ -4775,6 +4775,8 @@ NAMETAB charset_nametab[] =
 {
     {T("ascii"),           5,       0,     ALLOW_CHARSET_ASCII},
     {T("latin-1"),         5,       0,     ALLOW_CHARSET_8859_1},
+    {T("latin-2"),         5,       0,     ALLOW_CHARSET_8859_2},
     {T("iso8859-1"),       5,       0,     ALLOW_CHARSET_8859_1},
+    {T("iso8859-2"),       5,       0,     ALLOW_CHARSET_8859_2},
     {(UTF8 *) NULL,        0,       0,     0}
 };

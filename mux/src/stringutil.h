@@ -230,6 +230,27 @@ inline bool mux_is8859_1(const unsigned char *p)
     return ((iState - CL_8859_1_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_8859_2.txt
+//
+// 191 included, 1113921 excluded, 0 errors.
+// 6 states, 21 columns, 382 bytes
+//
+#define CL_8859_2_START_STATE (0)
+#define CL_8859_2_ACCEPTING_STATES_START (6)
+extern const unsigned char cl_8859_2_itt[256];
+extern const unsigned char cl_8859_2_stt[6][21];
+
+inline bool mux_is8859_2(__in const unsigned char *p)
+{
+    int iState = CL_8859_2_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_8859_2_stt[iState][cl_8859_2_itt[(unsigned char)ch]];
+    } while (iState < CL_8859_2_ACCEPTING_STATES_START);
+    return ((iState - CL_8859_2_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
 // utf/tr_utf8_latin1.txt
 //
 // 1596 code points.

@@ -322,6 +322,11 @@ bool IsRestricted(size_t nName, const UTF8 *pName, int charset)
         {
             bAllowed = true;
         }
+        else if (  (ALLOW_CHARSET_8859_2 & charset)
+                && mux_is8859_2(pName))
+        {
+            bAllowed = true;
+        }
 
         if (!bAllowed)
         {

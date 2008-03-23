@@ -1586,7 +1586,9 @@ ATTR_NAME_CHARSET
 
     ascii     - Restrict names to use ASCII.
     iso8859-1 - Restrict names to use iso8859-1.
+    iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
+    latin-2   - Restrict names to use latin-2 (same as iso8859-2).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
