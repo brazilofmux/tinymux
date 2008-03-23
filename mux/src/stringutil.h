@@ -127,13 +127,13 @@ inline bool mux_isprint(const unsigned char *p)
 
 // utf/cl_AttrNameInitial.txt
 //
-// 129 included, 1113983 excluded, 0 errors.
-// 5 states, 10 columns, 306 bytes
+// 177 included, 1113935 excluded, 0 errors.
+// 6 states, 14 columns, 340 bytes
 //
 #define CL_ATTRNAMEINITIAL_START_STATE (0)
-#define CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START (5)
+#define CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START (6)
 extern const unsigned char cl_attrnameinitial_itt[256];
-extern const unsigned char cl_attrnameinitial_stt[5][10];
+extern const unsigned char cl_attrnameinitial_stt[6][14];
 
 inline bool mux_isattrnameinitial(const unsigned char *p)
 {
@@ -148,13 +148,13 @@ inline bool mux_isattrnameinitial(const unsigned char *p)
 
 // utf/cl_AttrName.txt
 //
-// 155 included, 1113957 excluded, 0 errors.
-// 5 states, 10 columns, 306 bytes
+// 203 included, 1113909 excluded, 0 errors.
+// 6 states, 14 columns, 340 bytes
 //
 #define CL_ATTRNAME_START_STATE (0)
-#define CL_ATTRNAME_ACCEPTING_STATES_START (5)
+#define CL_ATTRNAME_ACCEPTING_STATES_START (6)
 extern const unsigned char cl_attrname_itt[256];
-extern const unsigned char cl_attrname_stt[5][10];
+extern const unsigned char cl_attrname_stt[6][14];
 
 inline bool mux_isattrname(const unsigned char *p)
 {
@@ -169,13 +169,13 @@ inline bool mux_isattrname(const unsigned char *p)
 
 // utf/cl_Objectname.txt
 //
-// 209 included, 1113903 excluded, 0 errors.
-// 7 states, 16 columns, 368 bytes
+// 257 included, 1113855 excluded, 0 errors.
+// 8 states, 23 columns, 440 bytes
 //
 #define CL_OBJECTNAME_START_STATE (0)
-#define CL_OBJECTNAME_ACCEPTING_STATES_START (7)
+#define CL_OBJECTNAME_ACCEPTING_STATES_START (8)
 extern const unsigned char cl_objectname_itt[256];
-extern const unsigned char cl_objectname_stt[7][16];
+extern const unsigned char cl_objectname_stt[8][23];
 
 inline bool mux_isobjectname(const unsigned char *p)
 {
@@ -190,13 +190,13 @@ inline bool mux_isobjectname(const unsigned char *p)
 
 // utf/cl_PlayerName.txt
 //
-// 142 included, 1113970 excluded, 0 errors.
-// 5 states, 10 columns, 306 bytes
+// 190 included, 1113922 excluded, 0 errors.
+// 6 states, 14 columns, 340 bytes
 //
 #define CL_PLAYERNAME_START_STATE (0)
-#define CL_PLAYERNAME_ACCEPTING_STATES_START (5)
+#define CL_PLAYERNAME_ACCEPTING_STATES_START (6)
 extern const unsigned char cl_playername_itt[256];
-extern const unsigned char cl_playername_stt[5][10];
+extern const unsigned char cl_playername_stt[6][14];
 
 inline bool mux_isplayername(const unsigned char *p)
 {
