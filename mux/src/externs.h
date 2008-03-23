@@ -771,7 +771,7 @@ extern int anum_alc_top;
 
 #define ALLOW_CHARSET_ASCII  1
 #define ALLOW_CHARSET_8859_1 2
-#define ALLOW_CHARSET_8859_2 3
+#define ALLOW_CHARSET_8859_2 4
 
 /* Hush codes for movement messages */
 
