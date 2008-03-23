@@ -42,7 +42,7 @@ integers: integers.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o strings strings.cpp ConvertUTF.cpp smutil.cpp
 
-stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt
+stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt
 	./classify cl_print cl_Printable.txt > stringutil.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt >> stringutil.txt
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt
@@ -50,6 +50,7 @@ stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.tx
 	./classify cl_playername cl_PlayerName.txt >> stringutil.txt
 	./classify cl_privateuse cl_PrivateUse.txt >> stringutil.txt
 	./classify cl_8859_1 cl_8859_1.txt >> stringutil.txt
+	./classify cl_8859_2 cl_8859_2.txt >> stringutil.txt
 	./integers -d 63 tr_latin1 tr_utf8_latin1.txt >> stringutil.txt
 	./integers -d 63 tr_ascii tr_utf8_ascii.txt >> stringutil.txt
 	./strings -d tr_tolower tr_tolower.txt >> stringutil.txt
