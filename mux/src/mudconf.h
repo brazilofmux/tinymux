@@ -82,7 +82,6 @@ struct confdata
     bool    terse_movemsg;      /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
     bool    trace_topdown;      /* Is TRACE output top-down or bottom-up? */
     bool    use_hostname;       /* true = use machine NAME rather than quad */
-    bool    use_http;           /* Should we allow http access? */
     dbref   default_home;       // HOME when home is inaccessable.
     dbref   global_error_obj;   // Object that is used to generate error messages.
     dbref   guest_char;         // player num of prototype GUEST character.

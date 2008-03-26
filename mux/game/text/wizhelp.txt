@@ -1841,7 +1841,7 @@ CONFIG PARAMETERS (continued)
   status_file  stripped_flags  suspect_site  sweep_dark  switch_default_all
   terse_shows_contents  terse_shows_exits  terse_shows_move_messages
   thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
-  trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
+  trace_topdown  trust_site  uncompress_program  unowned_safe
   user_attr_access  user_attr_per_hour  wait_cost  wiz_always_real
   wizard_motd_file  wizard_motd_message  zone_recursion_limit
 
@@ -4893,17 +4893,6 @@ USER_ATTR_PER_HOUR
   Use of a pre-existing name is not counted towards this limit.
 
   Related Topics: mail_per_hour, pcreate_per_hour
-
-& USE_HTTP
-USE_HTTP
-
-  CONFIG PARAMETER: use_http <yes/no>.
-  DEFAULT: no
-
-  Indicates whether or not http access is allowed.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
 
 & WAIT_COST
 WAIT_COST
