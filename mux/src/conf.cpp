@@ -227,7 +227,6 @@ void cf_init(void)
     mudconf.terse_look      = true;
     mudconf.terse_movemsg   = true;
     mudconf.trace_topdown   = true;
-    mudconf.use_http        = false;
 
     // -- ??? Running SC on a non-SC DB may cause problems.
     //
@@ -2272,7 +2271,6 @@ static CONFPARM conftable[] =
     {T("trust_site"),                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,               0},
     {T("uncompress_program"),        cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.uncompress,      NULL, SIZEOF_PATHNAME},
     {T("unowned_safe"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safe_unowned,    NULL,               0},
-    {T("use_http"),                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
     {T("user_attr_access"),          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
     {T("user_attr_per_hour"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         NULL,               0},
     {T("wait_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               NULL,               0},
