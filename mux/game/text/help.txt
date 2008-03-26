@@ -10123,7 +10123,7 @@ ORFLAGS()
   single letter standing for each flag, like the output of the FLAGS()
   function. A '!' preceding a flag letter means "not flag".
 
-  Thus, ORFLAGS(me,Wr) would return 1 if I were set WIZARD or ROYALTY.
+  Thus, ORFLAGS(me,WZ) would return 1 if I were set WIZARD or ROYALTY.
   ORFLAGS(me,D!c) would return 1 if I were DARK or not CONNECTED.
 
   If a letter does not correspond to any flag, <object> doesn't have
