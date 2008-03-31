@@ -2119,7 +2119,6 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         }
         else if (pStr[iStr] == '{')
         {
-            iStr++;
             // pStr[iStr] == '{'
             //
             // Literal start.  Insert everything up to the terminating '}'
@@ -2127,7 +2126,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             // continue.
             //
             mudstate.nStackNest++;
-            tstr = parse_to_lite(pStr + iStr, '}', '\0', &n, &at_space);
+            tstr = parse_to_lite(pStr + iStr + 1, '}', '\0', &n, &at_space);
             at_space = 0;
             if (NULL == tstr)
             {
@@ -2139,6 +2138,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             }
             else
             {
+                iStr++;
                 mudstate.nStackNest--;
                 if (!(eval & EV_STRIP_CURLY))
                 {
