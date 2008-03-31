@@ -99,6 +99,7 @@ void CGuests::SizeGuests(int nMin)
     }
 
     dbref *newGuests = (dbref *)MEMALLOC(nMin * sizeof(dbref));
+    ISOUTOFMEMORY(newGuests);
     if (Guests)
     {
         memcpy(newGuests, Guests, nGuests * sizeof(dbref));
