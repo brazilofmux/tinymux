@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  March 2008
+Last Update:  April 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,6 +118,11 @@ Feature Additions:
  -- Add VisibleLock (Issue 332).
  -- Add substitution (%i) equivalent to itext().
  -- Ignore leading and trailing spaces in parse_dbref() (Issue 451).
+ -- Allow ISO 8859-2 accented letters in attribute names, object
+    names, and player names.
+ -- Add iso8559-2 and latin-2 charset restrictions.
+ -- Convert vertical quotes to directional quotes and hyphen drawing
+    to en dashes (Issue 473).
 
 
 Bug Fixes:
@@ -274,6 +279,18 @@ Bug Fixes:
  -- Help does not match behavior of mail(<player>, <number>)
     (Issue 477).
  -- Fixed SIGSEGV crashing bug in edit() (Issue 493).
+ -- Fix buffer overwrite bug in eval.cpp (Issue 495).
+ -- Remove incorrect return path from MakeCanonicalExitName().
+ -- Allow color in first exit segment even if exit_name_charset is
+    ASCII (Issue 497).
+ -- The terminfo() topic described permissions incompletely.
+ -- @alias doesn't allow case-only changes (Issue 500).
+ -- Fix typo in orflags() topic (Issue 504).
+ -- Fix parser's handling of open curly braces (Issue 506).
+ -- Test MEMALLOC() return value in mguests.cpp (Issue 505).
+ -- Updated the rsrec, rsrecnext and rsrecprev helpfiles to mention
+    delimiters.  Updated the SQL file to cover both inline and
+    stubslave SQL.
 
 
 Performance Enhancements:
@@ -357,3 +374,5 @@ Miscellaneous:
  -- Fix false positive VS2005 warning in do_joinchannel() and let it
     return Out of Memory to enactor failing the join request gracefully.
  -- Update VS project dependencies.
+ -- Add regmatchi() topic.
+ -- Remove unused use_http configuration option.
