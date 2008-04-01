@@ -973,6 +973,27 @@ static void whisper_pose(dbref player, dbref target, UTF8 *message, bool bSpace)
     }
 }
 
+static dbref FindPemitTarget(dbref player, int key, UTF8 *recipient)
+{
+    dbref target = NOTHING;
+
+    switch (key)
+    {
+    case PEMIT_FSAY:
+    case PEMIT_FPOSE:
+    case PEMIT_FPOSE_NS:
+    case PEMIT_FEMIT:
+        target = match_controlled(player, recipient);
+        break;
+
+    default:
+        init_match(player, recipient, TYPE_PLAYER);
+        match_everything(0);
+        target = match_result();
+    }
+    return target;
+}
+
 void do_pemit_single
 (
     dbref player,
@@ -984,10 +1005,12 @@ void do_pemit_single
     UTF8 *message
 )
 {
-    dbref target, loc;
+    dbref loc;
     UTF8 *buf2, *bp;
     int depth;
     bool ok_to_do = false;
+
+    dbref target = FindPemitTarget(player, key, recipient);
 
     switch (key)
     {
@@ -995,18 +1018,12 @@ void do_pemit_single
     case PEMIT_FPOSE:
     case PEMIT_FPOSE_NS:
     case PEMIT_FEMIT:
-        target = match_controlled(player, recipient);
         if (target == NOTHING)
         {
             return;
         }
         ok_to_do = true;
         break;
-
-    default:
-        init_match(player, recipient, TYPE_PLAYER);
-        match_everything(0);
-        target = match_result();
     }
 
     UTF8 *newMessage = NULL;
@@ -1271,14 +1288,58 @@ void do_pemit_list
         return;
     }
 
-    UTF8 *p;
+    UTF8 *error_message = NULL;
+    UTF8 *error_ptr = NULL;
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
     mux_strtok_ctl(&tts, T(", "));
-    for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+    for (UTF8 *p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
     {
-        do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,
-            message);
+        dbref target = FindPemitTarget(player, key, p);
+
+        if (  NOTHING == target
+           || AMBIGUOUS == target)
+        {
+            if (NULL == error_message)
+            {
+                error_message = alloc_lbuf("do_pemit_list.error");
+                error_ptr = error_message;
+                safe_str(T("Emit error(s): "), error_message, &error_ptr);
+            }
+            else
+            {
+                safe_str(T(", "), error_message, &error_ptr);
+            }
+
+            safe_str(p, error_message, &error_ptr);
+
+            switch(target)
+            {
+            case NOTHING:
+                safe_str(T(" (unknown)"), error_message, &error_ptr);
+                break;
+
+            case AMBIGUOUS:
+                safe_str(T(" (ambiguous)"), error_message, &error_ptr);
+                break;
+            }
+
+        }
+        else
+        {
+            do_pemit_single(player, key, bDoContents, pemit_flags, p,
+                    chPoseType, message);
+        }
+    }
+
+    if (NULL != error_message)
+    {
+        *error_ptr = '\0';
+        notify(player, error_message);
+        free_lbuf(error_message);
+        error_message = NULL;
+        error_ptr = NULL;
     }
 }
 
