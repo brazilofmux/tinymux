@@ -1,12 +1,62 @@
 TinyMUX 2.7:  SQL
-Last Update:  April 2007
+Last Update:  March 2008
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1) As of the present writing, TinyMUX 2.7's SQL support only encompasses
-   the in-line SQL functionality that PennMUSH and TinyMUSH 3.0 have, namely
-   the sql() function.
+TinyMUX 2.7 supports both asynchronous and synchronous SQL.  The synchronous/
+in-line support is similar to that of PennMUSH and TinyMUSH, namely the sql()
+function.  The asynchronous support is unique to TinyMUX at this time and is
+the recommended method for SQL access.
 
-   To enable this functionality, you will need to pass --enable-inlinesql
+
+Asynchronous SQL:
+~~~~~~~~~~~~~~~~
+
+1) To enable this functionality, you will need to pass --enable-stubslave
+   to the configure script.  If your MySQL is not in the default location,
+   (namely, /usr/include/mysql and /usr/lib/mysql), then you will need to
+   tell configure where to find the headers and libraries with the
+   --with-mysql-include and --with-mysql-libs options.  For instance:
+
+   ./configure --enable-stubslave
+               --with-mysql-include=/usr/local/mysql/include
+               --with-mysql-libs=/usr/local/mysql/lib
+
+
+2) Once the game has been compiled you will need to add six configuration
+   options to the .conf file.  You can check the wizhelp file for more
+   information regarding the option.  The six are listed below:
+
+      module sqlproxy
+      module sqlslave local
+      sql_database <name of database>
+      sql_server <localhost or address>
+      sql_user <MySQL username>
+      sql_password <MySQL password>
+
+
+3) Start the game and check the log file.  You should see two entries like
+   the following:
+
+      MUX NET/STUB : Stub slave started on fd 3
+      MUX INI/LOAD : Registered netmux modules.
+      MUX INI/LOAD : Opened interface for StubSlave management.
+
+   To perform MySQL queries you will use the @query command in conjunction
+   with the rsrelease(), rserror(), rsprev(), rsrecnext(), rsrows(),
+   rsrec(), rsnext() and rsrecprev() functions.
+
+
+4) This method will allow SQL queries to occur without blocking the main game
+   process.  If the SQL is on another machine, slow or even has been disabled
+   or crashed then the game will not hang while waiting on the result to be
+   returned.
+
+
+
+In-Line/Synchronous SQL:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+1) To enable this functionality, you will need to pass --enable-inlinesql
    to the configure script.  If your MySQL is not in the default location,
    (namely, /usr/include/mysql and /usr/lib/mysql), then you will need to
    tell configure where to find the headers and libraries with the
@@ -25,8 +75,8 @@ Last Update:  April 2007
       sql_password <MySQL password>
 
 
-3) Start the game and check the log file.  You should two entries like the
-   following:
+3) Start the game and check the log file.  You should see two entries like
+   the following:
 
       SQL/CONN : Connecting: <database>@<address> as <user>
       SQL/CONN : Connected to MySQL
@@ -44,6 +94,6 @@ Last Update:  April 2007
    machine, then there can be a delay in getting the results.  That delay will
    mean the whole game hangs while waiting.
 
-   When using the SQL functionality bear this potential problem in mind.  You
-   should test your game with the SQL functionality first before using it in a
-   live environment.
+   When using the in-line SQL functionality bear this potential problem in mind.
+   You should test your game with the SQL functionality first before using it in
+   a live environment.
