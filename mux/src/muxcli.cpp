@@ -98,7 +98,7 @@ void CLI_Process
         {
             // We have a long option.
             //
-            char *pEqual = strchr(p, '=');
+            const char *pEqual = strchr(p, '=');
             size_t nLen;
             if (pEqual)
             {
