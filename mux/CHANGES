@@ -376,3 +376,4 @@ Miscellaneous:
  -- Update VS project dependencies.
  -- Add regmatchi() topic.
  -- Remove unused use_http configuration option.
+ -- Consolidate error message reporting for @pemit/list (Issue 363).
