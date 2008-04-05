@@ -1,16 +1,20 @@
+# Local copy of ftp://www.unicode.org/
+#
+UNICODE=~/unicode
+
 all: classify integers strings stringutil.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt
 
 UnicodeData.txt:
-	wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
 
 SpecialCasing.txt:
-	wget http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
+	( if [ -f $(UNICODE)/UNIDATA/SpecialCasing.txt ]; then ln -s $(UNICODE)/UNIDATA/SpecialCasing.txt SpecialCasing.txt; else wget http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt; fi )
 
 CaseFolding.txt:
-	wget http://www.unicode.org/Public/UNIDATA/CaseFolding.txt
+	( if [ -f $(UNICODE)/UNIDATA/CaseFolding.txt ]; then ln -s $(UNICODE)/UNIDATA/CaseFolding.txt CaseFolding.txt; else wget http://www.unicode.org/Public/UNIDATA/CaseFolding.txt; fi )
 
 cp1252.txt:
-	wget http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT -O cp1252.txt
+	( if [ -f $(UNICODE)/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT ]; then ln -s $(UNICODE)/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT cp1252.txt; else wget http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT -O cp1252.txt; fi )
 
 UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeMaster.txt
