@@ -282,17 +282,17 @@ typedef struct
 
 // utf/tr_tolower.txt
 //
-// 922 code points.
-// 40 states, 84 columns, 3616 bytes
+// 1023 code points.
+// 46 states, 86 columns, 4212 bytes
 //
 #define TR_TOLOWER_START_STATE (0)
-#define TR_TOLOWER_ACCEPTING_STATES_START (40)
+#define TR_TOLOWER_ACCEPTING_STATES_START (46)
 #define TR_TOLOWER_DEFAULT (0)
 #define TR_TOLOWER_LITERAL_START (1)
-#define TR_TOLOWER_XOR_START (9)
+#define TR_TOLOWER_XOR_START (13)
 extern const unsigned char tr_tolower_itt[256];
-extern const unsigned char tr_tolower_stt[40][84];
-extern const string_desc tr_tolower_ott[91];
+extern const unsigned char tr_tolower_stt[46][86];
+extern const string_desc tr_tolower_ott[97];
 
 inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 {
@@ -317,17 +317,17 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 
 // utf/tr_toupper.txt
 //
-// 931 code points.
-// 43 states, 89 columns, 4083 bytes
+// 1031 code points.
+// 48 states, 90 columns, 4576 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (43)
+#define TR_TOUPPER_ACCEPTING_STATES_START (48)
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (8)
+#define TR_TOUPPER_XOR_START (11)
 extern const unsigned char tr_toupper_itt[256];
-extern const unsigned char tr_toupper_stt[43][89];
-extern const string_desc tr_toupper_ott[98];
+extern const unsigned char tr_toupper_stt[48][90];
+extern const string_desc tr_toupper_ott[103];
 
 inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
@@ -352,17 +352,17 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 
 // utf/tr_totitle.txt
 //
-// 935 code points.
-// 43 states, 89 columns, 4083 bytes
+// 1035 code points.
+// 48 states, 90 columns, 4576 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
-#define TR_TOTITLE_ACCEPTING_STATES_START (43)
+#define TR_TOTITLE_ACCEPTING_STATES_START (48)
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (8)
+#define TR_TOTITLE_XOR_START (11)
 extern const unsigned char tr_totitle_itt[256];
-extern const unsigned char tr_totitle_stt[43][89];
-extern const string_desc tr_totitle_ott[96];
+extern const unsigned char tr_totitle_stt[48][90];
+extern const string_desc tr_totitle_ott[101];
 
 inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
