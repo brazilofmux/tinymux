@@ -505,6 +505,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 {
                     cp[codepoint].SetCategory(CategoryTable[i].cat);
                     bValid = true;
+                    break;
                 }
                 i++;
             }
@@ -536,6 +537,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 {
                     cp[codepoint].SetBiDi(BiDiTable[i].BiDi);
                     bValid = true;
+                    break;
                 }
                 i++;
             }
