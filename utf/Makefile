@@ -2,7 +2,7 @@
 #
 UNICODE=~/unicode
 
-all: classify integers strings stringutil.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt
+all: classify integers strings stringutil.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt buildFiles
 
 UnicodeData.txt:
 	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
@@ -15,6 +15,9 @@ CaseFolding.txt:
 
 cp1252.txt:
 	( if [ -f $(UNICODE)/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT ]; then ln -s $(UNICODE)/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT cp1252.txt; else wget http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT -O cp1252.txt; fi )
+
+8859-1.txt:
+	( if [ -f $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT ]; then ln -s $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT 8859-1.txt; else wget http://www.unicode.org/Public/MAPPINGS/ISO8859/8859-1.TXT -O 8859-1.txt; fi )
 
 UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeMaster.txt
@@ -45,6 +48,9 @@ integers: integers.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 
 strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o strings strings.cpp ConvertUTF.cpp smutil.cpp
+
+buildFiles: buildFiles.cpp smutil.cpp smutil.h
+	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp
 
 stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt
 	./classify cl_print cl_Printable.txt > stringutil.txt
