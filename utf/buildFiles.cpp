@@ -335,8 +335,17 @@ public:
     int  GetDecompositionType(void) { return m_DecompType; };
     char *GetDecompositionTypeName(void);
 
-    void SetDecompositionMapping(int nPoints, UTF32 pts[]) { m_nDecompMapping = nPoints; for (int i = 0; i < nPoints; i++) { m_aDecompMapping[i] = pts[i]; } };
-    int GetDecompositionMapping(UTF32 pts[]) { for (int i = 0; i < m_nDecompMapping; i++) { pts[i] = m_aDecompMapping[i]; } return m_nDecompMapping; };
+    void SetDecompositionMapping(int nPoints, UTF32 pts[]);
+    int GetDecompositionMapping(UTF32 pts[]);
+
+    void SetDecimalDigitValue(int n);
+    bool GetDecimalDigitValue(int *pn);
+
+    void SetDigitValue(int n);
+    bool GetDigitValue(int *pn);
+
+    void SetNumericValue(char *p);
+    bool GetNumericValue(char **p);
 
 private:
     bool  m_bDefined;
@@ -347,7 +356,69 @@ private:
     int   m_DecompType;
     int   m_nDecompMapping;
     UTF32 m_aDecompMapping[10];
+    int   m_nDecimalDigitValue;
+    bool  m_bHaveDecimalDigitValue;
+    int   m_nDigitValue;
+    bool  m_bHaveDigitValue;
+    char *m_pNumericValue;
+    bool  m_bHaveNumericValue;
 };
+
+void CodePoint::SetDecimalDigitValue(int n)
+{
+    m_nDecimalDigitValue = n;
+    m_bHaveDecimalDigitValue = true;
+}
+
+bool CodePoint::GetDecimalDigitValue(int *pn)
+{
+    *pn = m_nDecimalDigitValue;
+    return m_bHaveDecimalDigitValue;
+}
+
+void CodePoint::SetDigitValue(int n)
+{
+    m_nDigitValue = n;
+    m_bHaveDigitValue = true;
+}
+
+bool CodePoint::GetDigitValue(int *pn)
+{
+    *pn = m_nDigitValue;
+    return m_bHaveDigitValue;
+}
+
+void CodePoint::SetNumericValue(char *p)
+{
+    size_t n = strlen(p);
+    m_pNumericValue = new char[n+1];
+    memcpy(m_pNumericValue, p, n+1);
+    m_bHaveNumericValue = true;
+}
+
+bool CodePoint::GetNumericValue(char **p)
+{
+    *p = m_pNumericValue;
+    return m_bHaveNumericValue;
+}
+
+int CodePoint::GetDecompositionMapping(UTF32 pts[])
+{
+    for (int i = 0; i < m_nDecompMapping; i++)
+    {
+        pts[i] = m_aDecompMapping[i];
+    }
+    return m_nDecompMapping;
+}
+
+void CodePoint::SetDecompositionMapping(int nPoints, UTF32 pts[])
+{
+    m_nDecompMapping = nPoints;
+    for (int i = 0; i < nPoints; i++)
+    {
+        m_aDecompMapping[i] = pts[i];
+    }
+}
 
 CodePoint::CodePoint()
 {
@@ -358,6 +429,12 @@ CodePoint::CodePoint()
     m_bidi = BIDI_LEFT_TO_RIGHT; // BUG: The default is not the same for all code point values.
     m_DecompType = DECOMP_TYPE_NONE;
     m_nDecompMapping = 0;
+    m_nDecimalDigitValue = 0;
+    m_bHaveDecimalDigitValue = false;
+    m_nDigitValue = 0;
+    m_bHaveDigitValue = false;
+    m_pNumericValue = NULL;
+    m_bHaveNumericValue = false;
 }
 
 CodePoint::~CodePoint()
@@ -689,6 +766,32 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 exit(0);
             }
         }
+
+        // Decimal Digit Value.
+        //
+        if (  7 <= nFields
+           && '\0' != aFields[6][0])
+        {
+            int cc = mux_atol(aFields[6]);
+            cp[codepoint].SetDecimalDigitValue(cc);
+        }
+
+        // Digit Value.
+        //
+        if (  8 <= nFields
+           && '\0' != aFields[7][0])
+        {
+            int cc = mux_atol(aFields[7]);
+            cp[codepoint].SetDigitValue(cc);
+        }
+
+        // Numeric Value.
+        //
+        if (  9 <= nFields
+           && '\0' != aFields[8][0])
+        {
+            cp[codepoint].SetNumericValue(aFields[8]);
+        }
     }
 }
 
@@ -698,6 +801,9 @@ void UniData::SaveMasterFile(void)
     {
         if (cp[pt].IsDefined())
         {
+            printf("%04X;%s;%s;%d;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+                cp[pt].GetCombiningClass(), cp[pt].GetBiDiName());
+
             char DecompBuffer[1024];
             DecompBuffer[0] = '\0';
 
@@ -730,8 +836,38 @@ void UniData::SaveMasterFile(void)
                     strcat(DecompBuffer, buf);
                 }
             }
-            printf("%04X;%s;%s;%d;%s;%s\n", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
-                cp[pt].GetCombiningClass(), cp[pt].GetBiDiName(), DecompBuffer);
+            printf(";%s", DecompBuffer);
+
+            int n;
+            if (cp[pt].GetDecimalDigitValue(&n))
+            {
+                printf(";%d", n);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            if (cp[pt].GetDigitValue(&n))
+            {
+                printf(";%d", n);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            char *pNumericValue = NULL;
+            if (cp[pt].GetNumericValue(&pNumericValue))
+            {
+                printf(";%s", pNumericValue);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            printf("\n");
         }
     }
 }
@@ -741,7 +877,7 @@ char *CodePoint::GetCategoryName(void)
     int i = 0;
     while (CategoryTable[i].catlet)
     {
-        if ((CategoryTable[i].cat & m_category) == m_category)
+        if (CategoryTable[i].cat == m_category)
         {
             return CategoryTable[i].catlet;
         }
@@ -755,7 +891,7 @@ char *CodePoint::GetBiDiName(void)
     int i = 0;
     while (BiDiTable[i].BiDiLet)
     {
-        if ((BiDiTable[i].BiDi & m_bidi) == m_bidi)
+        if (BiDiTable[i].BiDi == m_bidi)
         {
             return BiDiTable[i].BiDiLet;
         }
@@ -769,7 +905,7 @@ char *CodePoint::GetDecompositionTypeName(void)
     int i = 0;
     while (DecompTypeTable[i].DecompTypeLet)
     {
-        if ((DecompTypeTable[i].DecompType & m_DecompType) == m_DecompType)
+        if (DecompTypeTable[i].DecompType == m_DecompType)
         {
             return DecompTypeTable[i].DecompTypeLet;
         }
