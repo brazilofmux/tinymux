@@ -347,6 +347,9 @@ public:
     void SetNumericValue(char *p);
     bool GetNumericValue(char **p);
 
+    void SetBidiMirrored(bool b) { m_bBidiMirrored = b; };
+    bool GetBidiMirrored(void) { return m_bBidiMirrored; };
+
 private:
     bool  m_bDefined;
     char *m_pDescription;
@@ -362,6 +365,7 @@ private:
     bool  m_bHaveDigitValue;
     char *m_pNumericValue;
     bool  m_bHaveNumericValue;
+    bool  m_bBidiMirrored;
 };
 
 void CodePoint::SetDecimalDigitValue(int n)
@@ -435,6 +439,7 @@ CodePoint::CodePoint()
     m_bHaveDigitValue = false;
     m_pNumericValue = NULL;
     m_bHaveNumericValue = false;
+    m_bBidiMirrored = false;
 }
 
 CodePoint::~CodePoint()
@@ -792,6 +797,26 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         {
             cp[codepoint].SetNumericValue(aFields[8]);
         }
+
+        // Bidi_Mirrored.
+        //
+        if (  10 <= nFields
+           && '\0' != aFields[9][0])
+        {
+            if ('Y' == aFields[9][0])
+            {
+                cp[codepoint].SetBidiMirrored(true);
+            }
+            else if ('N' == aFields[9][0])
+            {
+                cp[codepoint].SetBidiMirrored(false);
+            }
+            else
+            {
+                printf("Bidi_Mirrored '%s'.\n", aFields[9]);
+                exit(0);
+            }
+        }
     }
 }
 
@@ -865,6 +890,15 @@ void UniData::SaveMasterFile(void)
             else
             {
                 printf(";");
+            }
+
+            if (cp[pt].GetBidiMirrored())
+            {
+                printf(";Y");
+            }
+            else
+            {
+                printf(";N");
             }
 
             printf("\n");
