@@ -321,7 +321,7 @@ public:
     char *GetDescription(void) { return m_pDescription; };
 
     void SetCategory(int category) { m_category = category; };
-    int  GetCategory(void);
+    int  GetCategory(void) { return m_category; };
     char *GetCategoryName(void);
 
     void SetCombiningClass(int cc) { m_class = cc; };
@@ -529,6 +529,7 @@ public:
     void SaveTranslateToUpper(void);
     void SaveTranslateToLower(void);
     void SaveTranslateToTitle(void);
+    void SaveClassifyPrivateUse(void);
 
 private:
     CodePoint cp[codepoints+1];
@@ -552,6 +553,7 @@ int main(int argc, char *argv[])
     g_UniData->SaveTranslateToUpper();
     g_UniData->SaveTranslateToLower();
     g_UniData->SaveTranslateToTitle();
+    g_UniData->SaveClassifyPrivateUse();
     return 0;
 }
 
@@ -939,6 +941,7 @@ void UniData::SaveTranslateToUpper()
             }
         }
     }
+    fclose(fp);
 }
 
 void UniData::SaveTranslateToLower()
@@ -961,6 +964,7 @@ void UniData::SaveTranslateToLower()
             }
         }
     }
+    fclose(fp);
 }
 
 void UniData::SaveTranslateToTitle()
@@ -983,6 +987,7 @@ void UniData::SaveTranslateToTitle()
             }
         }
     }
+    fclose(fp);
 }
 
 void UniData::SaveMasterFile(void)
@@ -1123,6 +1128,25 @@ void UniData::SaveMasterFile(void)
             }
 
             fprintf(fp, "\n");
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveClassifyPrivateUse()
+{
+    FILE *fp = fopen("cl_PrivateUse.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (  cp[pt].IsDefined()
+           && (CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE) == cp[pt].GetCategory())
+        {
+            fprintf(fp, "%04X;%s\n", pt, cp[pt].GetDescription());
         }
     }
     fclose(fp);
