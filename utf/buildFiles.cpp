@@ -350,6 +350,9 @@ public:
     void SetBidiMirrored(bool b) { m_bBidiMirrored = b; };
     bool GetBidiMirrored(void) { return m_bBidiMirrored; };
 
+    void SetUnicode1Name(char *p);
+    char *GetUnicode1Name(void) { return m_pUnicode1Name; };
+
 private:
     bool  m_bDefined;
     char *m_pDescription;
@@ -366,6 +369,7 @@ private:
     char *m_pNumericValue;
     bool  m_bHaveNumericValue;
     bool  m_bBidiMirrored;
+    char *m_pUnicode1Name;
 };
 
 void CodePoint::SetDecimalDigitValue(int n)
@@ -440,6 +444,7 @@ CodePoint::CodePoint()
     m_pNumericValue = NULL;
     m_bHaveNumericValue = false;
     m_bBidiMirrored = false;
+    m_pUnicode1Name = NULL;
 }
 
 CodePoint::~CodePoint()
@@ -463,6 +468,18 @@ void CodePoint::SetDescription(char *pDescription)
     m_pDescription = new char[n+1];
     memcpy(m_pDescription, pDescription, n+1);
     m_bDefined = true;
+}
+
+void CodePoint::SetUnicode1Name(char *p)
+{
+    if (NULL != m_pUnicode1Name)
+    {
+        delete [] m_pUnicode1Name;
+        m_pUnicode1Name = NULL;
+    }
+    size_t n = strlen(p);
+    m_pUnicode1Name = new char[n+1];
+    memcpy(m_pUnicode1Name, p, n+1);
 }
 
 class UniData
@@ -817,6 +834,14 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 exit(0);
             }
         }
+
+        // Unicode_1_Name.
+        //
+        if (  11 <= nFields
+           && '\0' != aFields[10][0])
+        {
+            cp[codepoint].SetUnicode1Name(aFields[10]);
+        }
     }
 }
 
@@ -899,6 +924,16 @@ void UniData::SaveMasterFile(void)
             else
             {
                 printf(";N");
+            }
+
+            char *pUnicode1Name = cp[pt].GetUnicode1Name();
+            if (pUnicode1Name)
+            {
+                printf(";%s", pUnicode1Name);
+            }
+            else
+            {
+                printf(";");
             }
 
             printf("\n");
