@@ -140,8 +140,8 @@ const size_t codepoints = 1114109;
 #define SUBCATEGORY_UPPER             0x0000001   // Lu
 #define SUBCATEGORY_LOWER             0x0000002   // Ll
 #define SUBCATEGORY_TITLE             0x0000004   // Lt
-#define SUBCATEGORY_MODIFIER          0x0000004   // Lm
-#define SUBCATEGORY_LET_OTHER         0x0000008   // Lo
+#define SUBCATEGORY_LET_MODIFIER      0x0000008   // Lm
+#define SUBCATEGORY_LET_OTHER         0x0000010   // Lo
 
 #define CATEGORY_MARK                 0x0002000
 #define SUBCATEGORY_NONSPACING        0x0000001   // Mn
@@ -165,7 +165,7 @@ const size_t codepoints = 1114109;
 #define CATEGORY_SYMBOL               0x0010000
 #define SUBCATEGORY_MATH              0x0000001   // Sm
 #define SUBCATEGORY_CURRENCY          0x0000002   // Sc
-#define SUBCATEGORY_MODIFIER          0x0000004   // Sk
+#define SUBCATEGORY_SYM_MODIFIER      0x0000004   // Sk
 #define SUBCATEGORY_SYM_OTHER         0x0000008   // So
 
 #define CATEGORY_SEPARATOR            0x0020000 
@@ -189,7 +189,7 @@ static struct
     { CATEGORY_LETTER|SUBCATEGORY_UPPER,              "Lu" },
     { CATEGORY_LETTER|SUBCATEGORY_LOWER,              "Ll" },
     { CATEGORY_LETTER|SUBCATEGORY_TITLE,              "Lt" },
-    { CATEGORY_LETTER|SUBCATEGORY_MODIFIER,           "Lm" },
+    { CATEGORY_LETTER|SUBCATEGORY_LET_MODIFIER,       "Lm" },
     { CATEGORY_LETTER|SUBCATEGORY_LET_OTHER,          "Lo" },
     { CATEGORY_MARK|SUBCATEGORY_NONSPACING,           "Mn" },
     { CATEGORY_MARK|SUBCATEGORY_SPACING_COMBINING,    "Mc" },
@@ -206,7 +206,7 @@ static struct
     { CATEGORY_PUNCTUATION|SUBCATEGORY_PUNC_OTHER,    "Po" },
     { CATEGORY_SYMBOL|SUBCATEGORY_MATH,               "Sm" },
     { CATEGORY_SYMBOL|SUBCATEGORY_CURRENCY,           "Sc" },
-    { CATEGORY_SYMBOL|SUBCATEGORY_MODIFIER,           "Sk" },
+    { CATEGORY_SYMBOL|SUBCATEGORY_SYM_MODIFIER,       "Sk" },
     { CATEGORY_SYMBOL|SUBCATEGORY_SYM_OTHER,          "So" },
     { CATEGORY_SEPARATOR|SUBCATEGORY_SPACE,           "Zs" },
     { CATEGORY_SEPARATOR|SUBCATEGORY_LINE,            "Zl" },
@@ -356,6 +356,14 @@ public:
     void SetISOComment(char *p);
     char *GetISOComment(void) { return m_pISOComment; };
 
+    void SetSimpleUppercaseMapping(UTF32 ptUpper) { m_SimpleUppercaseMapping = ptUpper; };
+    void SetSimpleLowercaseMapping(UTF32 ptLower) { m_SimpleLowercaseMapping = ptLower; };
+    void SetSimpleTitlecaseMapping(UTF32 ptTitle) { m_SimpleTitlecaseMapping = ptTitle; };
+
+    UTF32 GetSimpleUppercaseMapping(void) { return m_SimpleUppercaseMapping; };
+    UTF32 GetSimpleLowercaseMapping(void) { return m_SimpleLowercaseMapping; };
+    UTF32 GetSimpleTitlecaseMapping(void) { return m_SimpleTitlecaseMapping; };
+
 private:
     bool  m_bDefined;
     char *m_pDescription;
@@ -374,6 +382,9 @@ private:
     bool  m_bBidiMirrored;
     char *m_pUnicode1Name;
     char *m_pISOComment;
+    UTF32 m_SimpleUppercaseMapping;
+    UTF32 m_SimpleLowercaseMapping;
+    UTF32 m_SimpleTitlecaseMapping;
 };
 
 void CodePoint::SetDecimalDigitValue(int n)
@@ -450,6 +461,9 @@ CodePoint::CodePoint()
     m_bBidiMirrored = false;
     m_pUnicode1Name = NULL;
     m_pISOComment = NULL;
+    m_SimpleUppercaseMapping = UNI_EOF;
+    m_SimpleLowercaseMapping = UNI_EOF;
+    m_SimpleTitlecaseMapping = UNI_EOF;
 }
 
 CodePoint::~CodePoint()
@@ -867,6 +881,33 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         {
             cp[codepoint].SetISOComment(aFields[11]);
         }
+
+        // Simple Uppercase Mapping.
+        //
+        if (  13 <= nFields
+           && '\0' != aFields[12][0])
+        {
+            UTF32 pt = DecodeCodePoint(aFields[12]);
+            cp[codepoint].SetSimpleUppercaseMapping(pt);
+        }
+
+        // Simple Lowercase Mapping.
+        //
+        if (  14 <= nFields
+           && '\0' != aFields[13][0])
+        {
+            UTF32 pt = DecodeCodePoint(aFields[13]);
+            cp[codepoint].SetSimpleLowercaseMapping(pt);
+        }
+
+        // Simple Titlecase Mapping.
+        //
+        if (  15 <= nFields
+           && '\0' != aFields[14][0])
+        {
+            UTF32 pt = DecodeCodePoint(aFields[14]);
+            cp[codepoint].SetSimpleTitlecaseMapping(pt);
+        }
     }
 }
 
@@ -965,6 +1006,36 @@ void UniData::SaveMasterFile(void)
             if (pISOComment)
             {
                 printf(";%s", pISOComment);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
+            if (UNI_EOF != ptUpper)
+            {
+                printf(";%04X", ptUpper);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
+            if (UNI_EOF != ptLower)
+            {
+                printf(";%04X", ptLower);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
+            if (UNI_EOF != ptTitle)
+            {
+                printf(";%04X", ptTitle);
             }
             else
             {
