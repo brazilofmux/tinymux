@@ -19,11 +19,8 @@ cp1252.txt:
 8859-1.txt:
 	( if [ -f $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT ]; then ln -s $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT 8859-1.txt; else wget http://www.unicode.org/Public/MAPPINGS/ISO8859/8859-1.TXT -O 8859-1.txt; fi )
 
-UnicodeMaster.txt tr_totitle.txt tr_tolower.txt tr_toupper.txt cl_PrivateUse.txt Decompositions.txt: UnicodeData.txt UnicodeHan.txt buildFiles
+UnicodeMaster.txt tr_totitle.txt tr_tolower.txt tr_toupper.txt cl_PrivateUse.txt Decompositions.txt cl_Printable.txt: UnicodeData.txt UnicodeHan.txt buildFiles StringprepProhibited.txt
 	./buildFiles
-
-cl_Printable.txt: UnicodeMaster.txt StringprepProhibited.txt
-	perl buildStringprepPrintable.pl StringprepProhibited.txt UnicodeMaster.txt > cl_Printable.txt
 
 classify: classify.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o classify classify.cpp ConvertUTF.cpp smutil.cpp
