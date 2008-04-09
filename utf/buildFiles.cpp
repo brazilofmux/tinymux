@@ -124,11 +124,11 @@ long mux_atol(const char *pString)
 
 // Korean Hangul Constants.
 //
-const int SBase = 0xAC00;
-const int LBase = 0x1100;
-const int VBase = 0x1161;
-const int TBase = 0x11A7;
-const int SCount = 11172;
+const UTF32 SBase = 0xAC00;
+const UTF32 LBase = 0x1100;
+const UTF32 VBase = 0x1161;
+const UTF32 TBase = 0x11A7;
+const UTF32 SCount = 11172;
 const int LCount = 19;
 const int VCount = 21;
 const int TCount = 28;
@@ -372,13 +372,15 @@ private:
     int   m_bidi;
     int   m_DecompType;
     int   m_nDecompMapping;
-    UTF32 m_aDecompMapping[10];
+    UTF32 m_aDecompMapping[30];
+
     int   m_nDecimalDigitValue;
     bool  m_bHaveDecimalDigitValue;
     int   m_nDigitValue;
     bool  m_bHaveDigitValue;
     char *m_pNumericValue;
     bool  m_bHaveNumericValue;
+
     bool  m_bBidiMirrored;
     char *m_pUnicode1Name;
     char *m_pISOComment;
@@ -526,7 +528,7 @@ public:
     void SaveMasterFile(void);
 
 private:
-    CodePoint cp[codepoints];
+    CodePoint cp[codepoints+1];
 };
 
 UniData *g_UniData = NULL;
@@ -791,9 +793,9 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 else
                 {
                     int   nPoints;
-                    char *aPoints[10];
-                    UTF32 pts[10];
-                    ParsePoints(pDecomposition_Mapping, 10, nPoints, aPoints);
+                    char *aPoints[30];
+                    UTF32 pts[30];
+                    ParsePoints(pDecomposition_Mapping, 30, nPoints, aPoints);
                     for (int i = 0; i < nPoints; i++)
                     {
                         pts[i] = DecodeCodePoint(aPoints[i]);
@@ -930,7 +932,7 @@ void UniData::SaveMasterFile(void)
                 strcat(DecompBuffer, ">");
             }
 
-            UTF32 pts[10];
+            UTF32 pts[30];
             int nPoints = cp[pt].GetDecompositionMapping(pts);
 
             if (nPoints != 1 || pts[0] != pt)
@@ -1097,7 +1099,6 @@ void UniData::LoadUnicodeHanFile(void)
         char buffer[1024];
         while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
         {
-            bool  bValid = false;
             int   nFields;
             char *aFields[2];
 
@@ -1114,7 +1115,7 @@ void UniData::LoadUnicodeHanFile(void)
                 }
                 else
                 {
-                    pt1 = DecodeCodePoint(aFields[0]);
+                    pt2 = DecodeCodePoint(aFields[0]);
                     pt1 = pt2;
                 }
 
