@@ -1121,6 +1121,11 @@ void UniData::LoadUnicodeHanFile(void)
 
                 for (UTF32 pt = pt1; pt <= pt2; pt++)
                 {
+                    if (cp[pt].IsDefined())
+                    {
+                        continue;
+                    }
+
                     char hex[32];
                     char desc[1024];
 

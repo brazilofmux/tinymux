@@ -19,8 +19,8 @@ cp1252.txt:
 8859-1.txt:
 	( if [ -f $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT ]; then ln -s $(UNICODE)/MAPPINGS/ISO8859/8859-1.TXT 8859-1.txt; else wget http://www.unicode.org/Public/MAPPINGS/ISO8859/8859-1.TXT -O 8859-1.txt; fi )
 
-UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt
-	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeMaster.txt
+UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt buildFiles
+	./buildFiles > UnicodeMaster.txt
 
 Decompositions.txt: UnicodeMaster.txt
 	perl buildDecompositions.pl UnicodeMaster.txt > Decompositions.txt
