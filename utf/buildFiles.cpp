@@ -136,7 +136,7 @@ const int NCount = VCount * TCount;
 
 const size_t codepoints = 1114109;
 
-#define CATEGORY_LETTER               0x0001000 
+#define CATEGORY_LETTER               0x0001000
 #define SUBCATEGORY_UPPER             0x0000001   // Lu
 #define SUBCATEGORY_LOWER             0x0000002   // Ll
 #define SUBCATEGORY_TITLE             0x0000004   // Lt
@@ -168,12 +168,12 @@ const size_t codepoints = 1114109;
 #define SUBCATEGORY_SYM_MODIFIER      0x0000004   // Sk
 #define SUBCATEGORY_SYM_OTHER         0x0000008   // So
 
-#define CATEGORY_SEPARATOR            0x0020000 
+#define CATEGORY_SEPARATOR            0x0020000
 #define SUBCATEGORY_SPACE             0x0000001   // Zs
 #define SUBCATEGORY_LINE              0x0000002   // Zl
 #define SUBCATEGORY_PARAGRAPH         0x0000004   // Zp
 
-#define CATEGORY_OTHER                0x0040000 
+#define CATEGORY_OTHER                0x0040000
 #define SUBCATEGORY_CONTROL           0x0000001   // Cc
 #define SUBCATEGORY_FORMAT            0x0000002   // Cf
 #define SUBCATEGORY_SURROGATE         0x0000004   // Cs
@@ -184,7 +184,7 @@ static struct
 {
     int   cat;
     char *catlet;
-} CategoryTable[] = 
+} CategoryTable[] =
 {
     { CATEGORY_LETTER|SUBCATEGORY_UPPER,              "Lu" },
     { CATEGORY_LETTER|SUBCATEGORY_LOWER,              "Ll" },
@@ -532,6 +532,8 @@ public:
     void LoadUnicodeHanFile(void);
     void LoadProhibited(void);
 
+    void CheckProhibited(void);
+
     void SaveMasterFile(void);
     void SaveTranslateToUpper(void);
     void SaveTranslateToLower(void);
@@ -588,6 +590,8 @@ int main(int argc, char *argv[])
     g_UniData->LoadUnicodeDataFile();
     g_UniData->LoadUnicodeHanFile();
     g_UniData->LoadProhibited();
+
+    g_UniData->CheckProhibited();
 
     g_UniData->SaveMasterFile();
     g_UniData->SaveTranslateToUpper();
@@ -1205,6 +1209,44 @@ void UniData::SaveMasterFile(void)
             }
 
             fprintf(fp, "\n");
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::CheckProhibited(void)
+{
+    FILE *fp = fopen("ProhibitedCheck.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (cp[pt].IsDefined())
+        {
+            bool bShouldProhibit = false;
+            if (  0 != cp[pt].GetCombiningClass()
+               || (cp[pt].GetCategory() & CATEGORY_OTHER))
+            {
+                bShouldProhibit = true;
+            }
+
+            if (bShouldProhibit != cp[pt].IsProhibited())
+            {
+                fprintf(fp, "%04X;%s;%s;%d", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+                    cp[pt].GetCombiningClass());
+
+                if (bShouldProhibit)
+                {
+                    fprintf(fp, " # Should prohibit?\n");
+                }
+                else
+                {
+                    fprintf(fp, " # Should not prohibit?\n");
+                }
+            }
         }
     }
     fclose(fp);
