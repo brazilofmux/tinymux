@@ -1012,10 +1012,13 @@ void UniData::SaveTranslateToUpper()
 
     for (UTF32 pt = 0; pt <= codepoints; pt++)
     {
-        if (cp[pt].IsDefined())
+        if (  cp[pt].IsDefined()
+           && !cp[pt].IsProhibited())
         {
             UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
-            if (UNI_EOF != ptUpper)
+            if (  UNI_EOF != ptUpper
+               && cp[ptUpper].IsDefined()
+               && !cp[ptUpper].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptUpper, cp[pt].GetDescription(), (NULL == p) ? "" : p);
@@ -1035,10 +1038,13 @@ void UniData::SaveTranslateToLower()
 
     for (UTF32 pt = 0; pt <= codepoints; pt++)
     {
-        if (cp[pt].IsDefined())
+        if (  cp[pt].IsDefined()
+           && !cp[pt].IsProhibited())
         {
             UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
-            if (UNI_EOF != ptLower)
+            if (  UNI_EOF != ptLower
+               && cp[ptLower].IsDefined()
+               && !cp[ptLower].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptLower, cp[pt].GetDescription(), (NULL == p) ? "" : p);
@@ -1058,10 +1064,13 @@ void UniData::SaveTranslateToTitle()
 
     for (UTF32 pt = 0; pt <= codepoints; pt++)
     {
-        if (cp[pt].IsDefined())
+        if (  cp[pt].IsDefined()
+           && !cp[pt].IsProhibited())
         {
             UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
-            if (UNI_EOF != ptTitle)
+            if (  UNI_EOF != ptTitle
+               && cp[ptTitle].IsDefined()
+               && !cp[ptTitle].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptTitle, cp[pt].GetDescription(), (NULL == p) ? "" : p);
