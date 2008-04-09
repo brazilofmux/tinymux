@@ -530,12 +530,43 @@ public:
     void SaveTranslateToLower(void);
     void SaveTranslateToTitle(void);
     void SaveClassifyPrivateUse(void);
+    void SaveDecompositions(void);
+
+    void GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[]);
 
 private:
     CodePoint cp[codepoints+1];
 };
 
 UniData *g_UniData = NULL;
+
+void UniData::GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[])
+{
+    if (!cp[pt].IsDefined())
+    {
+        exit(0);
+    }
+
+    if (  DECOMP_TYPE_NONE != cp[pt].GetDecompositionType()
+       && dt != cp[pt].GetDecompositionType())
+    {
+        pts[nPoints++] = pt;
+        return;
+    }
+
+    UTF32 pts2[50];
+    int n = cp[pt].GetDecompositionMapping(pts2);
+    if (n == 1 && pts2[0] == pt)
+    {
+        pts[nPoints++] = pt;
+        return;
+    }
+
+    for (UTF32 i = 0; i < n; i++)
+    {
+        GetDecomposition(pts2[i], dt, nPoints, pts);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -554,6 +585,8 @@ int main(int argc, char *argv[])
     g_UniData->SaveTranslateToLower();
     g_UniData->SaveTranslateToTitle();
     g_UniData->SaveClassifyPrivateUse();
+    g_UniData->SaveDecompositions();
+
     return 0;
 }
 
@@ -919,6 +952,40 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
             cp[codepoint].SetSimpleTitlecaseMapping(pt);
         }
     }
+}
+
+void UniData::SaveDecompositions()
+{
+    FILE *fp = fopen("Decompositions.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (cp[pt].IsDefined())
+        {
+            int   nPoints = 0;
+            UTF32 pts[100];
+            GetDecomposition(pt, DECOMP_TYPE_NONE, nPoints, pts);
+
+            if (nPoints != 1 || pts[0] != pt)
+            {
+                fprintf(fp, "%04X;", pt);
+                for (UTF32 pt2 = 0; pt2 < nPoints; pt2++)
+                {
+                    if (pt2 != 0)
+                    {
+                        fprintf(fp, " ");
+                    }
+                    fprintf(fp, "%04X", pts[pt2]);
+                }
+                fprintf(fp, ";%s\n", cp[pt].GetDescription());
+            }
+        }
+    }
+    fclose(fp);
 }
 
 void UniData::SaveTranslateToUpper()
