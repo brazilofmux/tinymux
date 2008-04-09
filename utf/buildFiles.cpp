@@ -353,6 +353,9 @@ public:
     void SetUnicode1Name(char *p);
     char *GetUnicode1Name(void) { return m_pUnicode1Name; };
 
+    void SetISOComment(char *p);
+    char *GetISOComment(void) { return m_pISOComment; };
+
 private:
     bool  m_bDefined;
     char *m_pDescription;
@@ -370,6 +373,7 @@ private:
     bool  m_bHaveNumericValue;
     bool  m_bBidiMirrored;
     char *m_pUnicode1Name;
+    char *m_pISOComment;
 };
 
 void CodePoint::SetDecimalDigitValue(int n)
@@ -445,6 +449,7 @@ CodePoint::CodePoint()
     m_bHaveNumericValue = false;
     m_bBidiMirrored = false;
     m_pUnicode1Name = NULL;
+    m_pISOComment = NULL;
 }
 
 CodePoint::~CodePoint()
@@ -480,6 +485,18 @@ void CodePoint::SetUnicode1Name(char *p)
     size_t n = strlen(p);
     m_pUnicode1Name = new char[n+1];
     memcpy(m_pUnicode1Name, p, n+1);
+}
+
+void CodePoint::SetISOComment(char *p)
+{
+    if (NULL != m_pISOComment)
+    {
+        delete [] m_pISOComment;
+        m_pISOComment = NULL;
+    }
+    size_t n = strlen(p);
+    m_pISOComment = new char[n+1];
+    memcpy(m_pISOComment, p, n+1);
 }
 
 class UniData
@@ -842,6 +859,14 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         {
             cp[codepoint].SetUnicode1Name(aFields[10]);
         }
+
+        // ISO Comment.
+        //
+        if (  12 <= nFields
+           && '\0' != aFields[11][0])
+        {
+            cp[codepoint].SetISOComment(aFields[11]);
+        }
     }
 }
 
@@ -930,6 +955,16 @@ void UniData::SaveMasterFile(void)
             if (pUnicode1Name)
             {
                 printf(";%s", pUnicode1Name);
+            }
+            else
+            {
+                printf(";");
+            }
+
+            char *pISOComment = cp[pt].GetISOComment();
+            if (pISOComment)
+            {
+                printf(";%s", pISOComment);
             }
             else
             {
