@@ -530,9 +530,8 @@ public:
     void LoadUnicodeDataFile(void);
     void LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[]);
     void LoadUnicodeHanFile(void);
-    void LoadProhibited(void);
 
-    void CheckProhibited(void);
+    void Prohibit(void);
 
     void SaveMasterFile(void);
     void SaveTranslateToUpper(void);
@@ -589,9 +588,8 @@ int main(int argc, char *argv[])
     g_UniData = new UniData;
     g_UniData->LoadUnicodeDataFile();
     g_UniData->LoadUnicodeHanFile();
-    g_UniData->LoadProhibited();
 
-    g_UniData->CheckProhibited();
+    g_UniData->Prohibit();
 
     g_UniData->SaveMasterFile();
     g_UniData->SaveTranslateToUpper();
@@ -1223,14 +1221,8 @@ void UniData::SaveMasterFile(void)
     fclose(fp);
 }
 
-void UniData::CheckProhibited(void)
+void UniData::Prohibit(void)
 {
-    FILE *fp = fopen("ProhibitedCheck.txt", "w+");
-    if (NULL == fp)
-    {
-        return;
-    }
-
     for (UTF32 pt = 0; pt <= codepoints; pt++)
     {
         if (cp[pt].IsDefined())
@@ -1242,23 +1234,25 @@ void UniData::CheckProhibited(void)
                 bShouldProhibit = true;
             }
 
-            if (bShouldProhibit != cp[pt].IsProhibited())
+            if (cp[pt].GetCategory() == (CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE))
             {
-                fprintf(fp, "%04X;%s;%s;%d", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
-                    cp[pt].GetCombiningClass());
+                if (  (  0xE000 <= pt 
+                      && pt <= 0xE0FF)
+                   || ( 0xF8D0 <= pt
+                      && pt <= 0xF8FF))
+                {
+                    // Tengwar and Klingon
+                    //
+                    bShouldProhibit = false;
+                }
+            }
 
-                if (bShouldProhibit)
-                {
-                    fprintf(fp, " # Should prohibit?\n");
-                }
-                else
-                {
-                    fprintf(fp, " # Should not prohibit?\n");
-                }
+            if (bShouldProhibit)
+            {
+                cp[pt].SetProhibited();
             }
         }
     }
-    fclose(fp);
 }
 
 void UniData::SaveClassifyPrintable(void)
@@ -1526,47 +1520,6 @@ void UniData::LoadUnicodeHanFile(void)
                     aFields1[14] = "";
 
                     LoadUnicodeDataLine(pt, nFields1, aFields1);
-                }
-            }
-        }
-        fclose(fp);
-    }
-}
-
-void UniData::LoadProhibited(void)
-{
-    FILE *fp = fopen("StringprepProhibited.txt", "r");
-    if (NULL != fp)
-    {
-        char buffer[1024];
-        while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
-        {
-            int   nFields;
-            char *aFields[2];
-
-            ParseFields(buffer, 2, nFields, aFields);
-            if (1 <= nFields)
-            {
-                UTF32 pt1, pt2;
-                char *p = strchr(aFields[0], '-');
-                if (NULL != p)
-                {
-                    *p++ = '\0';
-                    pt1 = DecodeCodePoint(aFields[0]);
-                    pt2 = DecodeCodePoint(p);
-                }
-                else
-                {
-                    pt2 = DecodeCodePoint(aFields[0]);
-                    pt1 = pt2;
-                }
-
-                for (UTF32 pt = pt1; pt <= pt2; pt++)
-                {
-                    if (cp[pt].IsDefined())
-                    {
-                        cp[pt].SetProhibited();
-                    }
                 }
             }
         }
