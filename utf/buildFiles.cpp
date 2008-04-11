@@ -3,6 +3,8 @@
 #include <memory.h>
 #include <ctype.h>
 #include <string.h>
+#include <errno.h>
+#include <iconv.h>
 
 #include "ConvertUTF.h"
 #include "smutil.h"
@@ -310,6 +312,24 @@ static struct
     { 0, NULL }
 };
 
+#define MAPPING_ASCII      0
+#define MAPPING_ISO_8859_1 1
+#define MAPPING_ISO_8859_2 2
+#define NUM_MAPPINGS       3
+
+static struct
+{
+    char *pName;
+    char *pFilename;
+    int   Type;
+} MappingTypeTable[] =
+{
+    { "ASCII",      "cl_ascii.txt",  MAPPING_ASCII },
+    { "ISO-8859-1", "cl_8859_1.txt", MAPPING_ISO_8859_1 },
+    { "ISO-8859-2", "cl_8859_2.txt", MAPPING_ISO_8859_2 },
+    { NULL, 0 }
+};
+
 class CodePoint
 {
 public:
@@ -368,8 +388,8 @@ public:
     void SetProhibited(void) { m_bProhibited = true; };
     bool IsProhibited(void) { return m_bProhibited; };
 
-    void SetASCII(UTF32 ptASCII) { m_ptASCII = ptASCII; };
-    bool IsASCII(UTF32 &ptASCII) { ptASCII = m_ptASCII; return (m_ptASCII != UNI_EOF); };
+    void SetMapping(int m, unsigned char ch) { m_mappings[m].ch = ch; m_mappings[m].bIs = true; };
+    bool IsMapping(int m, unsigned char &ch) { ch = m_mappings[m].ch; return m_mappings[m].bIs; };
 
 private:
     bool  m_bDefined;
@@ -396,7 +416,12 @@ private:
     UTF32 m_SimpleTitlecaseMapping;
 
     bool  m_bProhibited;
-    UTF32 m_ptASCII;
+
+    struct
+    {
+        bool          bIs;
+        unsigned char ch;
+    } m_mappings[NUM_MAPPINGS];
 };
 
 void CodePoint::SetDecimalDigitValue(int n)
@@ -477,7 +502,11 @@ CodePoint::CodePoint()
     m_SimpleLowercaseMapping = UNI_EOF;
     m_SimpleTitlecaseMapping = UNI_EOF;
     m_bProhibited = false;
-    m_ptASCII = UNI_EOF;
+
+    for (int i = 0; i < NUM_MAPPINGS; i++)
+    {
+        m_mappings[i].bIs = false;
+    }
 }
 
 CodePoint::~CodePoint()
@@ -536,7 +565,8 @@ public:
     void LoadUnicodeDataFile(void);
     void LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[]);
     void LoadUnicodeHanFile(void);
-    void LoadMappingASCII(void);
+
+    void LoadMappings(void);
 
     void Prohibit(void);
 
@@ -544,7 +574,7 @@ public:
     void SaveTranslateToUpper(void);
     void SaveTranslateToLower(void);
     void SaveTranslateToTitle(void);
-    void SaveTranslateToASCII();
+    void SaveMappings();
     void SaveClassifyPrivateUse(void);
     void SaveDecompositions(void);
     void SaveClassifyPrintable(void);
@@ -561,7 +591,7 @@ void UniData::GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[])
 {
     if (!cp[pt].IsDefined())
     {
-        exit(0);
+        exit(1);
     }
 
     if (  DECOMP_TYPE_NONE != cp[pt].GetDecompositionType()
@@ -597,7 +627,8 @@ int main(int argc, char *argv[])
     g_UniData = new UniData;
     g_UniData->LoadUnicodeDataFile();
     g_UniData->LoadUnicodeHanFile();
-    g_UniData->LoadMappingASCII();
+
+    g_UniData->LoadMappings();
 
     g_UniData->Prohibit();
 
@@ -605,7 +636,7 @@ int main(int argc, char *argv[])
     g_UniData->SaveTranslateToUpper();
     g_UniData->SaveTranslateToLower();
     g_UniData->SaveTranslateToTitle();
-    g_UniData->SaveTranslateToASCII();
+    g_UniData->SaveMappings();
     g_UniData->SaveClassifyPrivateUse();
     g_UniData->SaveDecompositions();
     g_UniData->SaveClassifyPrintable();
@@ -767,7 +798,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
             if (!bValid)
             {
                 printf("***ERROR: Invalid Category %s for U+%04X\n", aFields[2], codepoint);
-                exit(0);
+                exit(1);
             }
         }
 
@@ -799,7 +830,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
             if (!bValid)
             {
                 printf("***ERROR: Invalid BiDi %s for U+%04X\n", aFields[4], codepoint);
-                exit(0);
+                exit(1);
             }
         }
 
@@ -882,7 +913,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
             if (!bValid)
             {
                 printf("***ERROR: Invalid Decomposition Type, '%s', or Mapping, '%s', for U+%04X\n", pDecomposition_Type, pDecomposition_Mapping, codepoint);
-                exit(0);
+                exit(1);
             }
         }
 
@@ -928,7 +959,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
             else
             {
                 printf("Bidi_Mirrored '%s'.\n", aFields[9]);
-                exit(0);
+                exit(1);
             }
         }
 
@@ -977,28 +1008,58 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
     }
 }
 
-void UniData::LoadMappingASCII(void)
+void UniData::LoadMappings(void)
 {
-    FILE *fp = fopen("cl_ascii.txt", "r");
-    if (NULL != fp)
+    for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
     {
-        char buffer[1024];
-        while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+        FILE *fp = fopen(MappingTypeTable[iMapping].pFilename, "r");
+        if (NULL != fp)
         {
-            int   nFields;
-            char *aFields[1];
-
-            ParseFields(buffer, 1, nFields, aFields);
-            if (1 == nFields)
+            iconv_t iconvd = iconv_open(MappingTypeTable[iMapping].pName, "UTF-32LE");
+            if (((iconv_t)-1) == iconvd)
             {
-                UTF32 pt = DecodeCodePoint(aFields[0]);
-                if (cp[pt].IsDefined())
+                printf("iconv_open() error for %s.\n", MappingTypeTable[iMapping].pName);
+                exit(1);
+            }
+
+            char buffer[1024];
+            while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+            {
+                int   nFields;
+                char *aFields[1];
+
+                ParseFields(buffer, 1, nFields, aFields);
+                if (1 == nFields)
                 {
-                    cp[pt].SetASCII(pt);
+                    UTF32 pt = DecodeCodePoint(aFields[0]);
+                    if (cp[pt].IsDefined())
+                    {
+                        UTF32 achIn[10];
+                        size_t nIn = 2*sizeof(UTF32);
+                        char *pIn = (char *)achIn;
+
+                        unsigned char achOut[10];
+                        size_t nOut = sizeof(achOut);
+                        char *pOut = (char *)achOut;
+    
+                        achIn[0] = pt;
+                        achIn[1] = 0;
+     
+                        size_t cnt = iconv(iconvd, NULL, NULL, NULL, NULL);
+                        cnt = iconv(iconvd, &pIn, &nIn, &pOut, &nOut);
+                        if (((size_t)-1) == cnt)
+                        {
+                            printf("iconv() error for %s (%u), return %d (errno is %d).\n",
+                                MappingTypeTable[iMapping].pName, pt, cnt, errno);
+                            exit(1);
+                        }
+                        cp[pt].SetMapping(MappingTypeTable[iMapping].Type, achOut[0]);
+                    }
                 }
             }
+            iconv_close(iconvd);
+            fclose(fp);
         }
-        fclose(fp);
     }
 }
 
@@ -1036,44 +1097,49 @@ void UniData::SaveDecompositions()
     fclose(fp);
 }
 
-void UniData::SaveTranslateToASCII()
+void UniData::SaveMappings()
 {
-    FILE *fp = fopen("tr_utf8_ascii2.txt", "w+");
-    if (NULL == fp)
+    for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
     {
-        return;
-    }
-
-    for (UTF32 pt = 0; pt <= codepoints; pt++)
-    {
-        if (cp[pt].IsDefined())
+        char filename[100];
+        sprintf(filename, "%s.out", MappingTypeTable[iMapping].pFilename);
+        FILE *fp = fopen(filename, "w+");
+        if (NULL == fp)
         {
-            int   nPoints = 0;
-            UTF32 pts[100];
-            GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
-
-            UTF32 ptASCII;
-            UTF32 pt2;
-            int cnt = 0;
-            for (pt2 = 0; pt2 < nPoints; pt2++)
+            return;
+        }
+    
+        for (UTF32 pt = 0; pt <= codepoints; pt++)
+        {
+            if (cp[pt].IsDefined())
             {
-                if (cp[pts[pt2]].IsASCII(ptASCII))
+                int   nPoints = 0;
+                UTF32 pts[100];
+                GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
+    
+                unsigned char ch;
+                UTF32 pt2;
+                int cnt = 0;
+                for (pt2 = 0; pt2 < nPoints; pt2++)
                 {
-                    cnt++;
+                    if (cp[pts[pt2]].IsMapping(MappingTypeTable[iMapping].Type, ch))
+                    {
+                        cnt++;
+                    }
+                }
+    
+                if (  1 == cnt
+                   && cp[pts[0]].IsMapping(MappingTypeTable[iMapping].Type, ch))
+                {
+                    char *pUnicode1Name = cp[pt].GetUnicode1Name();
+                    fprintf(fp, "%04X;%u;%s;%s\n", pt, ch,
+                        cp[pt].GetDescription(),
+                        (NULL == pUnicode1Name) ? "" : pUnicode1Name);
                 }
             }
-
-            if (  1 == cnt
-               && cp[pts[0]].IsASCII(ptASCII))
-            {
-                char *pUnicode1Name = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%d;%s;%s\n", pt, ptASCII,
-                    cp[pt].GetDescription(),
-                    (NULL == pUnicode1Name) ? "" : pUnicode1Name);
-            }
         }
+        fclose(fp);
     }
-    fclose(fp);
 }
 
 void UniData::SaveTranslateToUpper()
@@ -1166,7 +1232,7 @@ void UniData::SaveMasterFile(void)
     {
         if (cp[pt].IsDefined())
         {
-            fprintf(fp, "%04X;%s;%s;%d;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+            fprintf(fp, "%04X;%s;%s;%u;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
                 cp[pt].GetCombiningClass(), cp[pt].GetBiDiName());
 
             char DecompBuffer[1024];
@@ -1206,7 +1272,7 @@ void UniData::SaveMasterFile(void)
             int n;
             if (cp[pt].GetDecimalDigitValue(&n))
             {
-                fprintf(fp, ";%d", n);
+                fprintf(fp, ";%u", n);
             }
             else
             {
@@ -1215,7 +1281,7 @@ void UniData::SaveMasterFile(void)
 
             if (cp[pt].GetDigitValue(&n))
             {
-                fprintf(fp, ";%d", n);
+                fprintf(fp, ";%u", n);
             }
             else
             {
@@ -1344,7 +1410,7 @@ void UniData::SaveClassifyPrintable(void)
         if (  cp[pt].IsDefined()
            && !cp[pt].IsProhibited())
         {
-            fprintf(fp, "%04X;%s;%s;%d;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+            fprintf(fp, "%04X;%s;%s;%u;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
                 cp[pt].GetCombiningClass(), cp[pt].GetBiDiName());
 
             char DecompBuffer[1024];
@@ -1384,7 +1450,7 @@ void UniData::SaveClassifyPrintable(void)
             int n;
             if (cp[pt].GetDecimalDigitValue(&n))
             {
-                fprintf(fp, ";%d", n);
+                fprintf(fp, ";%u", n);
             }
             else
             {
@@ -1393,7 +1459,7 @@ void UniData::SaveClassifyPrintable(void)
 
             if (cp[pt].GetDigitValue(&n))
             {
-                fprintf(fp, ";%d", n);
+                fprintf(fp, ";%u", n);
             }
             else
             {
