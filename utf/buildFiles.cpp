@@ -321,12 +321,13 @@ static struct
 {
     char *pName;
     char *pFilename;
+    char *pOutput;
     int   Type;
 } MappingTypeTable[] =
 {
-    { "ASCII",      "cl_ascii.txt",  MAPPING_ASCII },
-    { "ISO-8859-1", "cl_8859_1.txt", MAPPING_ISO_8859_1 },
-    { "ISO-8859-2", "cl_8859_2.txt", MAPPING_ISO_8859_2 },
+    { "ASCII",      "cl_ascii.txt",  "tr_utf8_ascii_out.txt", MAPPING_ASCII },
+    { "ISO-8859-1", "cl_8859_1.txt", "tr_utf8_latin1_out.txt", MAPPING_ISO_8859_1 },
+    { "ISO-8859-2", "cl_8859_2.txt", "tr_utf8_latin2_out.txt", MAPPING_ISO_8859_2 },
     { NULL, 0 }
 };
 
@@ -574,6 +575,7 @@ public:
     void SaveTranslateToUpper(void);
     void SaveTranslateToLower(void);
     void SaveTranslateToTitle(void);
+    void SaveTranslateDecimalValue(void);
     void SaveMappings();
     void SaveClassifyPrivateUse(void);
     void SaveDecompositions(void);
@@ -636,6 +638,7 @@ int main(int argc, char *argv[])
     g_UniData->SaveTranslateToUpper();
     g_UniData->SaveTranslateToLower();
     g_UniData->SaveTranslateToTitle();
+    g_UniData->SaveTranslateDecimalValue();
     g_UniData->SaveMappings();
     g_UniData->SaveClassifyPrivateUse();
     g_UniData->SaveDecompositions();
@@ -1012,54 +1015,39 @@ void UniData::LoadMappings(void)
 {
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
     {
-        FILE *fp = fopen(MappingTypeTable[iMapping].pFilename, "r");
-        if (NULL != fp)
+        iconv_t iconvd = iconv_open(MappingTypeTable[iMapping].pName, "UTF-32LE");
+        if (((iconv_t)-1) == iconvd)
         {
-            iconv_t iconvd = iconv_open(MappingTypeTable[iMapping].pName, "UTF-32LE");
-            if (((iconv_t)-1) == iconvd)
-            {
-                printf("iconv_open() error for %s.\n", MappingTypeTable[iMapping].pName);
-                exit(1);
-            }
+            printf("iconv_open() error for %s.\n", MappingTypeTable[iMapping].pName);
+            exit(1);
+        }
 
-            char buffer[1024];
-            while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+        for (UTF32 pt = 0; pt <= codepoints; pt++)
+        {
+            if (cp[pt].IsDefined())
             {
-                int   nFields;
-                char *aFields[1];
+                UTF32 achIn[10];
+                size_t nIn = 2*sizeof(UTF32);
+                char *pIn = (char *)achIn;
 
-                ParseFields(buffer, 1, nFields, aFields);
-                if (1 == nFields)
+                unsigned char achOut[10];
+                size_t nOut = sizeof(achOut);
+                char *pOut = (char *)achOut;
+
+                achIn[0] = pt;
+                achIn[1] = 0;
+
+                size_t cnt = iconv(iconvd, NULL, NULL, NULL, NULL);
+                cnt = iconv(iconvd, &pIn, &nIn, &pOut, &nOut);
+                if (  ((size_t)-1) != cnt
+                   && '\0' != achOut[0]
+                   && '\0' == achOut[1])
                 {
-                    UTF32 pt = DecodeCodePoint(aFields[0]);
-                    if (cp[pt].IsDefined())
-                    {
-                        UTF32 achIn[10];
-                        size_t nIn = 2*sizeof(UTF32);
-                        char *pIn = (char *)achIn;
-
-                        unsigned char achOut[10];
-                        size_t nOut = sizeof(achOut);
-                        char *pOut = (char *)achOut;
-    
-                        achIn[0] = pt;
-                        achIn[1] = 0;
-     
-                        size_t cnt = iconv(iconvd, NULL, NULL, NULL, NULL);
-                        cnt = iconv(iconvd, &pIn, &nIn, &pOut, &nOut);
-                        if (((size_t)-1) == cnt)
-                        {
-                            printf("iconv() error for %s (%u), return %d (errno is %d).\n",
-                                MappingTypeTable[iMapping].pName, pt, cnt, errno);
-                            exit(1);
-                        }
-                        cp[pt].SetMapping(MappingTypeTable[iMapping].Type, achOut[0]);
-                    }
+                    cp[pt].SetMapping(MappingTypeTable[iMapping].Type, achOut[0]);
                 }
             }
-            iconv_close(iconvd);
-            fclose(fp);
         }
+        iconv_close(iconvd);
     }
 }
 
@@ -1101,9 +1089,7 @@ void UniData::SaveMappings()
 {
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
     {
-        char filename[100];
-        sprintf(filename, "%s.out", MappingTypeTable[iMapping].pFilename);
-        FILE *fp = fopen(filename, "w+");
+        FILE *fp = fopen(MappingTypeTable[iMapping].pOutput, "w+");
         if (NULL == fp)
         {
             return;
@@ -1142,7 +1128,7 @@ void UniData::SaveMappings()
     }
 }
 
-void UniData::SaveTranslateToUpper()
+void UniData::SaveTranslateToUpper(void)
 {
     FILE *fp = fopen("tr_toupper.txt", "w+");
     if (NULL == fp)
@@ -1168,7 +1154,7 @@ void UniData::SaveTranslateToUpper()
     fclose(fp);
 }
 
-void UniData::SaveTranslateToLower()
+void UniData::SaveTranslateToLower(void)
 {
     FILE *fp = fopen("tr_tolower.txt", "w+");
     if (NULL == fp)
@@ -1194,7 +1180,7 @@ void UniData::SaveTranslateToLower()
     fclose(fp);
 }
 
-void UniData::SaveTranslateToTitle()
+void UniData::SaveTranslateToTitle(void)
 {
     FILE *fp = fopen("tr_totitle.txt", "w+");
     if (NULL == fp)
@@ -1214,6 +1200,30 @@ void UniData::SaveTranslateToTitle()
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptTitle, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+            }
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveTranslateDecimalValue(void)
+{
+    FILE *fp = fopen("tr_decimal_value.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (  cp[pt].IsDefined()
+           && !cp[pt].IsProhibited())
+        {
+            int n;
+            if (cp[pt].GetDecimalDigitValue(&n))
+            {
+                char *p = cp[pt].GetUnicode1Name();
+                fprintf(fp, "%04X;%u;%s;%s\n", pt, n, cp[pt].GetDescription(), (NULL == p) ? "" : p);
             }
         }
     }
