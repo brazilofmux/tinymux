@@ -2,8 +2,11 @@ Source: tinymux
 Section: games
 Priority: optional
 Maintainer: Ervin Hearn III <noltar@korongil.net>
-Build-Depends: debhelper (>= 5), binutils(>= 2.17)
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 4.0.0), binutils (>= 2.12.90 )
+Standards-Version: 3.7.3
+Vcs-Svn: http://tinymux.googlecode.com/svn/trunk/
+Vcs-Browser: http://code.google.com/p/tinymux/source/browse/trunk
+Homepage: http://www.tinymux.org/
 
 Package: tinymux
 Architecture: any
