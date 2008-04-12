@@ -1,16 +1,15 @@
-tinymux (2.6.4.25-1) unstable; urgency=low
+tinymux (2.6.5.27-1) unstable; urgency=low
 
   * New upstream release
 
- -- Stephen Dennis <brazilofmux@gmail.com>  Thu, 29 Nov 2007 22:36:42 -0800
+ -- Ervin Hearn III <noltar@korongil.net>  Fri, 11 Apr 2008 23:18:25 -0600
 
-tinymux (2.4.3.31-1etch1) stable-security; urgency=high
+tinymux (2.4.3.31-1.1) unstable; urgency=medium
 
-  * Non-maintainer upload by The Security Team.
-  * Fixed a potential buffer overflow involving math operations.
-    [CVE-2007-1655]
+  * Non-maintainer upload.
+  * Fix buffer overflow CVE-2007-1655. Closes: #417539
 
- -- Steve Kemp <skx@debian.org>  Mon,  18 Jun 2007 12:17:35 +0000
+ -- Andreas Barth <aba@not.so.argh.org>  Sat, 23 Jun 2007 13:49:59 +0000
 
 tinymux (2.4.3.31-1) unstable; urgency=low
 
