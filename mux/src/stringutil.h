@@ -106,13 +106,13 @@ inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 
 // utf/cl_Printable.txt
 //
-// 95311 included, 1018801 excluded, 0 errors.
-// 150 states, 99 columns, 15106 bytes
+// 100312 included, 1013800 excluded, 0 errors.
+// 198 states, 95 columns, 19066 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (150)
+#define CL_PRINT_ACCEPTING_STATES_START (198)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned char cl_print_stt[150][99];
+extern const unsigned char cl_print_stt[198][95];
 
 inline bool mux_isprint(const unsigned char *p)
 {
@@ -253,24 +253,24 @@ inline bool mux_is8859_2(const unsigned char *p)
 
 // utf/tr_utf8_latin1.txt
 //
-// 1596 code points.
-// 74 states, 191 columns, 28524 bytes
+// 2461 code points.
+// 97 states, 193 columns, 37698 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (74)
+#define TR_LATIN1_ACCEPTING_STATES_START (97)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_stt[74][191];
+extern const unsigned short tr_latin1_stt[97][193];
 const char *ConvertToLatin(const UTF8 *pString);
 
 // utf/tr_utf8_ascii.txt
 //
-// 1541 code points.
-// 70 states, 191 columns, 13626 bytes
+// 2424 code points.
+// 95 states, 193 columns, 18591 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (70)
+#define TR_ASCII_ACCEPTING_STATES_START (95)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned char tr_ascii_stt[70][191];
+extern const unsigned char tr_ascii_stt[95][193];
 const char *ConvertToAscii(const UTF8 *pString);
 
 typedef struct
@@ -317,7 +317,7 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 
 // utf/tr_toupper.txt
 //
-// 1031 code points.
+// 1030 code points.
 // 48 states, 90 columns, 4576 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
@@ -327,7 +327,7 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 #define TR_TOUPPER_XOR_START (11)
 extern const unsigned char tr_toupper_itt[256];
 extern const unsigned char tr_toupper_stt[48][90];
-extern const string_desc tr_toupper_ott[103];
+extern const string_desc tr_toupper_ott[102];
 
 inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
@@ -352,7 +352,7 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 
 // utf/tr_totitle.txt
 //
-// 1035 code points.
+// 1034 code points.
 // 48 states, 90 columns, 4576 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
@@ -362,7 +362,7 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 #define TR_TOTITLE_XOR_START (11)
 extern const unsigned char tr_totitle_itt[256];
 extern const unsigned char tr_totitle_stt[48][90];
-extern const string_desc tr_totitle_ott[101];
+extern const string_desc tr_totitle_ott[100];
 
 inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
