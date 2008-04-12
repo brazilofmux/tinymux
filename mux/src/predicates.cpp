@@ -2845,6 +2845,7 @@ void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
+    report();
     Log.Flush();
     if (  !mudstate.bStandAlone
        && mudstate.bCanRestart)
