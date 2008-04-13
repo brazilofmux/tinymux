@@ -100,7 +100,7 @@ UTF32 ReadCodePointAndRelatedCodePoints(FILE *fp, int &nRelatedPoints, UTF32 aRe
     // Field #1 - Associated Code Points.
     //
     int   nPoints;
-    char *aPoints[MAX_POINTS];
+    const char *aPoints[MAX_POINTS];
     ParsePoints(aFields[1], sizeof(aPoints)/sizeof(aPoints[0]), nPoints, aPoints);
     if (nPoints < 1)
     {

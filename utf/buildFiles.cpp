@@ -184,8 +184,8 @@ const size_t codepoints = 1114109;
 
 static struct
 {
-    int   cat;
-    char *catlet;
+    int         cat;
+    const char *catlet;
 } CategoryTable[] =
 {
     { CATEGORY_LETTER|SUBCATEGORY_UPPER,              "Lu" },
@@ -242,8 +242,8 @@ static struct
 
 static struct
 {
-    int   BiDi;
-    char *BiDiLet;
+    int         BiDi;
+    const char *BiDiLet;
 } BiDiTable[] =
 {
     { BIDI_LEFT_TO_RIGHT,              "L"   },
@@ -289,8 +289,8 @@ static struct
 
 static struct
 {
-    int   DecompType;
-    char *DecompTypeLet;
+    int         DecompType;
+    const char *DecompTypeLet;
 } DecompTypeTable[] =
 {
     { DECOMP_TYPE_FONT,                "font"     },
@@ -319,9 +319,9 @@ static struct
 
 static struct
 {
-    char *pName;
-    char *pFilename;
-    char *pOutput;
+    const char *pName;
+    const char *pFilename;
+    const char *pOutput;
     int   Type;
 } MappingTypeTable[] =
 {
@@ -339,23 +339,23 @@ public:
 
     bool IsDefined(void) { return m_bDefined; };
 
-    void SetDescription(char *pDescription);
+    void SetDescription(const char *pDescription);
     char *GetDescription(void) { return m_pDescription; };
 
     void SetCategory(int category) { m_category = category; };
     int  GetCategory(void) { return m_category; };
-    char *GetCategoryName(void);
+    const char *GetCategoryName(void);
 
     void SetCombiningClass(int cc) { m_class = cc; };
     int  GetCombiningClass(void) { return m_class; };
 
     void SetBiDi(int bidi) { m_bidi = bidi; };
     int  GetBiDi(void) { return m_bidi; };
-    char *GetBiDiName(void);
+    const char *GetBiDiName(void);
 
     void SetDecompositionType(int dt) { m_DecompType = dt; };
     int  GetDecompositionType(void) { return m_DecompType; };
-    char *GetDecompositionTypeName(void);
+    const char *GetDecompositionTypeName(void);
 
     void SetDecompositionMapping(int nPoints, UTF32 pts[]);
     int GetDecompositionMapping(UTF32 pts[]);
@@ -366,16 +366,16 @@ public:
     void SetDigitValue(int n);
     bool GetDigitValue(int *pn);
 
-    void SetNumericValue(char *p);
+    void SetNumericValue(const char *p);
     bool GetNumericValue(char **p);
 
     void SetBidiMirrored(bool b) { m_bBidiMirrored = b; };
     bool GetBidiMirrored(void) { return m_bBidiMirrored; };
 
-    void SetUnicode1Name(char *p);
+    void SetUnicode1Name(const char *p);
     char *GetUnicode1Name(void) { return m_pUnicode1Name; };
 
-    void SetISOComment(char *p);
+    void SetISOComment(const char *p);
     char *GetISOComment(void) { return m_pISOComment; };
 
     void SetSimpleUppercaseMapping(UTF32 ptUpper) { m_SimpleUppercaseMapping = ptUpper; };
@@ -449,7 +449,7 @@ bool CodePoint::GetDigitValue(int *pn)
     return m_bHaveDigitValue;
 }
 
-void CodePoint::SetNumericValue(char *p)
+void CodePoint::SetNumericValue(const char *p)
 {
     size_t n = strlen(p);
     m_pNumericValue = new char[n+1];
@@ -520,7 +520,7 @@ CodePoint::~CodePoint()
     m_bDefined = false;
 }
 
-void CodePoint::SetDescription(char *pDescription)
+void CodePoint::SetDescription(const char *pDescription)
 {
     if (NULL != m_pDescription)
     {
@@ -533,7 +533,7 @@ void CodePoint::SetDescription(char *pDescription)
     m_bDefined = true;
 }
 
-void CodePoint::SetUnicode1Name(char *p)
+void CodePoint::SetUnicode1Name(const char *p)
 {
     if (NULL != m_pUnicode1Name)
     {
@@ -545,7 +545,7 @@ void CodePoint::SetUnicode1Name(char *p)
     memcpy(m_pUnicode1Name, p, n+1);
 }
 
-void CodePoint::SetISOComment(char *p)
+void CodePoint::SetISOComment(const char *p)
 {
     if (NULL != m_pISOComment)
     {
@@ -842,8 +842,8 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         if (6 <= nFields)
         {
             bool bValid = false;
-            char *pDecomposition_Mapping = NULL;
-            char *pDecomposition_Type = NULL;
+            const char *pDecomposition_Mapping = NULL;
+            const char *pDecomposition_Type = NULL;
             if ('<' == aFields[5][0])
             {
                char *p = strchr(aFields[5]+1, '>');
@@ -890,8 +890,8 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
                 }
                 else
                 {
-                    int   nPoints;
-                    char *aPoints[30];
+                    int         nPoints;
+                    const char *aPoints[30];
                     UTF32 pts[30];
                     ParsePoints(pDecomposition_Mapping, 30, nPoints, aPoints);
                     for (int i = 0; i < nPoints; i++)
@@ -1570,7 +1570,7 @@ void UniData::SaveClassifyPrivateUse()
     fclose(fp);
 }
 
-char *CodePoint::GetCategoryName(void)
+const char *CodePoint::GetCategoryName(void)
 {
     int i = 0;
     while (CategoryTable[i].catlet)
@@ -1584,7 +1584,7 @@ char *CodePoint::GetCategoryName(void)
     return NULL;
 }
 
-char *CodePoint::GetBiDiName(void)
+const char *CodePoint::GetBiDiName(void)
 {
     int i = 0;
     while (BiDiTable[i].BiDiLet)
@@ -1598,7 +1598,7 @@ char *CodePoint::GetBiDiName(void)
     return NULL;
 }
 
-char *CodePoint::GetDecompositionTypeName(void)
+const char *CodePoint::GetDecompositionTypeName(void)
 {
     int i = 0;
     while (DecompTypeTable[i].DecompTypeLet)
@@ -1657,19 +1657,19 @@ void UniData::LoadUnicodeHanFile(void)
                     char *aFields1[15];
                     aFields1[0] = hex;
                     aFields1[1] = desc;
-                    aFields1[2] = "So";
-                    aFields1[3] = "0";
-                    aFields1[4] = "ON";
-                    aFields1[5] = "";
-                    aFields1[6] = "";
-                    aFields1[7] = "";
-                    aFields1[8] = "";
-                    aFields1[9] = "N";
-                    aFields1[10] = "";
-                    aFields1[11] = "";
-                    aFields1[12] = "";
-                    aFields1[13] = "";
-                    aFields1[14] = "";
+                    aFields1[2] = (char *)"So";
+                    aFields1[3] = (char *)"0";
+                    aFields1[4] = (char *)"ON";
+                    aFields1[5] = (char *)"";
+                    aFields1[6] = (char *)"";
+                    aFields1[7] = (char *)"";
+                    aFields1[8] = (char *)"";
+                    aFields1[9] = (char *)"N";
+                    aFields1[10] = (char *)"";
+                    aFields1[11] = (char *)"";
+                    aFields1[12] = (char *)"";
+                    aFields1[13] = (char *)"";
+                    aFields1[14] = (char *)"";
 
                     LoadUnicodeDataLine(pt, nFields1, aFields1);
                 }
