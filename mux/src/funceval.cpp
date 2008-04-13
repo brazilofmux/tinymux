@@ -333,7 +333,7 @@ FUNCTION(fun_trigger)
     {
         return;
     }
-    do_trigger(executor, caller, enactor, eval, 0, fargs[0], fargs+1, nfargs-1, NULL, 0);
+    do_trigger(executor, caller, enactor, eval, TRIG_QUIET, fargs[0], fargs+1, nfargs-1, NULL, 0);
 }
 
 FUNCTION(fun_wipe)
