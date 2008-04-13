@@ -706,75 +706,78 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 #endif
 }
 
-void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
+void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
 {
     int SizeOfState;
     int SizeOfMachine;
     MinimumMachineSize(&SizeOfState, &SizeOfMachine);
 
-    printf("// %d states, %d columns, %d bytes\n", m_nStates, m_nColumns, SizeOfMachine);
-    printf("//\n");
+    fprintf(fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
+    fprintf(fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
 
     int iAcceptingStatesStart = m_nStates;
 
-    printf("#define %s_START_STATE (0)\n", UpperPrefix);
-    printf("#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
-    printf("\n");
+    fprintf(fpInclude, "#define %s_START_STATE (0)\n", UpperPrefix);
+    fprintf(fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
 
-    printf("const unsigned char %s_itt[256] =\n", LowerPrefix);
-    printf("{\n");
+    fprintf(fpInclude, "extern const unsigned char %s_itt[256];\n", LowerPrefix);
+    fprintf(fpBody, "const unsigned char %s_itt[256] =\n", LowerPrefix);
+    fprintf(fpBody, "{\n");
     int i;
     for (i = 0; i < 256; i++)
     {
         int j = i % 16;
         if (0 == j)
         {
-            printf("    ");
+            fprintf(fpBody, "    ");
         }
 
-        printf(" %3d", m_itt[i]);
+        fprintf(fpBody, " %3d", m_itt[i]);
         if (i < 256-1)
         {
-            printf(",");
+            fprintf(fpBody, ",");
         }
 
         if (7 == j)
         {
-            printf(" ");
+            fprintf(fpBody, " ");
         }
 
         if (15 == j)
         {
-            printf("\n");
+            fprintf(fpBody, "\n");
         }
 
         if (127 == i)
         {
-            printf("\n");
+            fprintf(fpBody, "\n");
         }
     }
-    printf("\n};\n\n");
+    fprintf(fpBody, "\n};\n\n");
 
     switch (SizeOfState)
     {
     case 1:
-        printf("const unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpInclude, "extern const unsigned char %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpBody, "const unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
 
     case 2:
-        printf("const unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpInclude, "extern const unsigned short %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpBody, "const unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
 
     default:
-        printf("const unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpInclude, "extern const unsigned long %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(fpBody, "const unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
     }
-    printf("{\n");
+    fprintf(fpBody, "{\n");
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
 
-        printf("    {");
+        fprintf(fpBody, "    {");
         int j;
         for (j = 0; j < 256; j++)
         {
@@ -806,18 +809,18 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
 
             if (0 != j)
             {
-                printf(",");
+                fprintf(fpBody, ",");
             }
-            printf(" %3d", k);
+            fprintf(fpBody, " %3d", k);
         }
-        printf("}");
+        fprintf(fpBody, "}");
         if (i < m_nStates - 1)
         {
-            printf(",");
+            fprintf(fpBody, ",");
         }
-        printf("\n");
+        fprintf(fpBody, "\n");
     }
-    printf("};\n");
+    fprintf(fpBody, "};\n");
 }
 
 void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)

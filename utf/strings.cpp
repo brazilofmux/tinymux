@@ -321,7 +321,7 @@ void TestTable(FILE *fp)
 
                 if (!bFound)
                 {
-                    printf("Output String not found in Literal Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in Literal Table. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -356,7 +356,7 @@ void TestTable(FILE *fp)
 
                 if (!bFound)
                 {
-                    printf("Output String not found in XOR Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in XOR Table. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -374,7 +374,7 @@ void TestTable(FILE *fp)
     }
 }
 
-void LoadStrings(FILE *fp)
+void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
 {
     int cIncluded = 0;
 
@@ -443,7 +443,7 @@ void LoadStrings(FILE *fp)
 
                 if (!bFound)
                 {
-                    printf("Output String not found in Literal Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in Literal Table. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -479,7 +479,7 @@ void LoadStrings(FILE *fp)
 
                 if (!bFound)
                 {
-                    printf("Output String not found in XOR Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in XOR Table. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -496,19 +496,20 @@ void LoadStrings(FILE *fp)
         }
         nextcode = nextcode2;
     }
-    printf("// %d code points.\n", cIncluded);
+    fprintf(fpBody, "// %d code points.\n", cIncluded);
+    fprintf(fpInclude, "// %d code points.\n", cIncluded);
     fprintf(stderr, "%d code points.\n", cIncluded);
     sm.ReportStatus();
 }
 
-void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
+void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
 {
     BuildOutputTable(fp);
 
     // Construct State Transition Table.
     //
     sm.Init();
-    LoadStrings(fp);
+    LoadStrings(fp, fpBody, fpInclude);
     TestTable(fp);
 
     // Leaving states undefined leads to a smaller table.  On the other hand,
@@ -539,56 +540,60 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     // Output State Transition Table.
     //
     sm.NumberStates();
-    sm.OutputTables(UpperPrefix, LowerPrefix);
+    sm.OutputTables(fpBody, fpInclude, UpperPrefix, LowerPrefix);
 
-    printf("\n");
+    fprintf(fpBody, "\n");
+    fprintf(fpInclude, "\n");
 
     int iLiteralStart = 0;
     int iXorStart = nLiteralTable;
     if (g_bDefault)
     {
-        printf("#define %s_DEFAULT (%d)\n", UpperPrefix, g_iDefaultState);
+        fprintf(fpInclude, "#define %s_DEFAULT (%d)\n", UpperPrefix, g_iDefaultState);
         iLiteralStart++;
         iXorStart++;
     }
-    printf("#define %s_LITERAL_START (%d)\n", UpperPrefix, iLiteralStart);
-    printf("#define %s_XOR_START (%d)\n", UpperPrefix, iXorStart);
+    fprintf(fpInclude, "#define %s_LITERAL_START (%d)\n", UpperPrefix, iLiteralStart);
+    fprintf(fpInclude, "#define %s_XOR_START (%d)\n", UpperPrefix, iXorStart);
 
-    printf("\n");
-    printf("typedef struct\n");
-    printf("{\n");
-    printf("    size_t n_bytes;\n");
-    printf("    size_t n_points;\n");
-    printf("    const UTF8 *p;\n");
-    printf("} string_desc;\n");
-    printf("\n");
+#if 0
+    fprintf(fpInclude, "\n");
+    fprintf(fpInclude, "typedef struct\n");
+    fprintf(fpInclude, "{\n");
+    fprintf(fpInclude, "    size_t n_bytes;\n");
+    fprintf(fpInclude, "    size_t n_points;\n");
+    fprintf(fpInclude, "    const UTF8 *p;\n");
+    fprintf(fpInclude, "} string_desc;\n");
+    fprintf(fpInclude, "\n");
+#endif
 
     int nTotalSize = nLiteralTable + nXorTable;
-    printf("const string_desc %s_ott[%d] =\n", LowerPrefix, nTotalSize);
-    printf("{\n");
+    fprintf(fpInclude, "extern const string_desc %s_ott[%d];\n", LowerPrefix, nTotalSize);
+    fprintf(fpBody, "const string_desc %s_ott[%d] =\n", LowerPrefix, nTotalSize);
+    fprintf(fpBody, "{\n");
     int i;
     for (i = 0; i < nLiteralTable; i++)
     {
         UTF8 *p = aLiteralTable[i].p;
-        printf("    { %2d, %2d, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
+        fprintf(fpBody, "    { %2d, %2d, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
 
-        printf("T(\"");
+        fprintf(fpBody, "T(\"");
         size_t n = aLiteralTable[i].n_bytes;
         while (n--)
         {
-            printf("\\x%02X", *p);
+            fprintf(fpBody, "\\x%02X", *p);
             p++;
         }
 
         if (i != nTotalSize - 1)
         {
-            printf("\") },");
+            fprintf(fpBody, "\") },");
         }
         else
         {
-            printf("\") }");
+            fprintf(fpBody, "\") }");
         }
-        printf(" // %d references\n", aLiteralTable[i].n_refs);
+        fprintf(fpBody, " // %d references\n", aLiteralTable[i].n_refs);
 
         delete aLiteralTable[i].p;
         aLiteralTable[i].p = NULL;
@@ -598,31 +603,31 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     for (i = 0; i < nXorTable; i++)
     {
         UTF8 *p = aXorTable[i].p;
-        printf("    { %2d, %2d, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
+        fprintf(fpBody, "    { %2d, %2d, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
 
-        printf("T(\"");
+        fprintf(fpBody, "T(\"");
         size_t n = aXorTable[i].n_bytes;
         while (n--)
         {
-            printf("\\x%02X", *p);
+            fprintf(fpBody, "\\x%02X", *p);
             p++;
         }
 
         if (i != nXorTable - 1)
         {
-            printf("\") },");
+            fprintf(fpBody, "\") },");
         }
         else
         {
-            printf("\") }");
+            fprintf(fpBody, "\") }");
         }
-        printf(" // %d references\n", aXorTable[i].n_refs);
+        fprintf(fpBody, " // %d references\n", aXorTable[i].n_refs);
 
         delete aXorTable[i].p;
         aXorTable[i].p = NULL;
     }
     nXorTable = 0;
-    printf("};\n");
+    fprintf(fpBody, "};\n");
 }
 
 int main(int argc, char *argv[])
@@ -667,11 +672,18 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    if (NULL == fp)
+    FILE *fpBody = fopen("stringutil.cpp.txt", "a");
+    FILE *fpInclude = fopen("stringutil.h.txt", "a");
+    if (  NULL == fp
+       || NULL == fpBody
+       || NULL == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s\n", pFilename);
+        fprintf(stderr, "Cannot open %s, stringutil.cpp.txt, and stringutil.h.txt.\n", pFilename);
         exit(0);
     }
+
+    fprintf(fpBody, "// utf/%s\n//\n", pFilename);
+    fprintf(fpInclude, "// utf/%s\n//\n", pFilename);
 
     size_t nPrefix = strlen(pPrefix);
     char *pPrefixLower = new char[nPrefix+1];
@@ -693,8 +705,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    BuildAndOutputTable(fp, pPrefixUpper, pPrefixLower);
+    BuildAndOutputTable(fp, fpBody, fpInclude, pPrefixUpper, pPrefixLower);
     //VerifyTables(fp);
 
+    fprintf(fpInclude, "\n");
+    fprintf(fpBody, "\n");
+
     fclose(fp);
+    fclose(fpBody);
+    fclose(fpInclude);
 }

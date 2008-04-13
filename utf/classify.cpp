@@ -138,7 +138,7 @@ void VerifyTables(FILE *fp)
             bool j = ((iState - PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
             if (j != bMember)
             {
-                printf("Input Translation Table and State Transition Table do not work.\n");
+                fprintf(stderr, "Input Translation Table and State Transition Table do not work.\n");
                 exit(0);
             }
         }
@@ -194,7 +194,7 @@ void TestTable(FILE *fp)
     }
 }
 
-void LoadStrings(FILE *fp)
+void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
 {
     int cIncluded = 0;
     int cExcluded = 0;
@@ -248,17 +248,18 @@ void LoadStrings(FILE *fp)
             cErrors++;
         }
     }
-    printf("// %d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
+    fprintf(fpBody, "// %d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
+    fprintf(fpInclude, "// %d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
     fprintf(stderr, "%d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
     sm.ReportStatus();
 }
 
-void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
+void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
 {
     // Construct State Transition Table.
     //
     sm.Init();
-    LoadStrings(fp);
+    LoadStrings(fp, fpBody, fpInclude);
     TestTable(fp);
     sm.SetUndefinedStates(false);
     TestTable(fp);
@@ -282,7 +283,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     // Output State Transition Table.
     //
     sm.NumberStates();
-    sm.OutputTables(UpperPrefix, LowerPrefix);
+    sm.OutputTables(fpBody, fpInclude, UpperPrefix, LowerPrefix);
 }
 
 int main(int argc, char *argv[])
@@ -306,11 +307,18 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    if (NULL == fp)
+    FILE *fpBody = fopen("stringutil.cpp.txt", "a");
+    FILE *fpInclude = fopen("stringutil.h.txt", "a");
+    if (  NULL == fp
+       || NULL == fpBody
+       || NULL == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s\n", pFilename);
+        fprintf(stderr, "Cannot open %s, stringutil.cpp.txt, or stringutil.h.txt.\n", pFilename);
         exit(0);
     }
+
+    fprintf(fpBody, "// utf/%s\n//\n", pFilename);
+    fprintf(fpInclude, "// utf/%s\n//\n", pFilename);
 
     size_t nPrefix = strlen(pPrefix);
     char *pPrefixLower = new char[nPrefix+1];
@@ -331,10 +339,17 @@ int main(int argc, char *argv[])
             pPrefixUpper[i] = static_cast<char>(toupper(pPrefixUpper[i]));
         }
     }
+
 #ifdef VERIFY
     VerifyTables(fp);
 #else
-    BuildAndOutputTable(fp, pPrefixUpper, pPrefixLower);
+    BuildAndOutputTable(fp, fpBody, fpInclude, pPrefixUpper, pPrefixLower);
 #endif
+
+    fprintf(fpInclude, "\n");
+    fprintf(fpBody, "\n");
+
     fclose(fp);
+    fclose(fpBody);
+    fclose(fpInclude);
 }

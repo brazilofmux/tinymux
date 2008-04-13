@@ -31,7 +31,7 @@ public:
     void DetectDuplicateColumns(void);
     void NumberStates(void);
     void MinimumMachineSize(int *pSizeOfState, int *pSizeOfMachine);
-    void OutputTables(char *UpperPrefix, char *LowerPrefix);
+    void OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix);
     void ReportStatus(void);
     void Final(void);
     ~StateMachine();
