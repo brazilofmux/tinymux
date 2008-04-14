@@ -264,7 +264,7 @@ extern const unsigned char tr_color_stt[5][13];
 
 // utf/cl_Printable.txt
 //
-inline bool mux_isprint(__in const unsigned char *p)
+inline bool mux_isprint(const unsigned char *p)
 {
     int iState = CL_PRINT_START_STATE;
     do
@@ -277,7 +277,7 @@ inline bool mux_isprint(__in const unsigned char *p)
 
 // utf/cl_AttrNameInitial.txt
 //
-inline bool mux_isattrnameinitial(__in const unsigned char *p)
+inline bool mux_isattrnameinitial(const unsigned char *p)
 {
     int iState = CL_ATTRNAMEINITIAL_START_STATE;
     do
@@ -290,7 +290,7 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
 
 // utf/cl_AttrName.txt
 //
-inline bool mux_isattrname(__in const unsigned char *p)
+inline bool mux_isattrname(const unsigned char *p)
 {
     int iState = CL_ATTRNAME_START_STATE;
     do
@@ -303,7 +303,7 @@ inline bool mux_isattrname(__in const unsigned char *p)
 
 // utf/cl_Objectname.txt
 //
-inline bool mux_isobjectname(__in const unsigned char *p)
+inline bool mux_isobjectname(const unsigned char *p)
 {
     int iState = CL_OBJECTNAME_START_STATE;
     do
@@ -316,7 +316,7 @@ inline bool mux_isobjectname(__in const unsigned char *p)
 
 // utf/cl_PlayerName.txt
 //
-inline bool mux_isplayername(__in const unsigned char *p)
+inline bool mux_isplayername(const unsigned char *p)
 {
     int iState = CL_PLAYERNAME_START_STATE;
     do
@@ -329,7 +329,7 @@ inline bool mux_isplayername(__in const unsigned char *p)
 
 // utf/cl_8859_1.txt
 //
-inline bool mux_is8859_1(__in const unsigned char *p)
+inline bool mux_is8859_1(const unsigned char *p)
 {
     int iState = CL_8859_1_START_STATE;
     do
@@ -342,7 +342,7 @@ inline bool mux_is8859_1(__in const unsigned char *p)
 
 // utf/cl_8859_2.txt
 //
-inline bool mux_is8859_2(__in const unsigned char *p)
+inline bool mux_is8859_2(const unsigned char *p)
 {
     int iState = CL_8859_2_START_STATE;
     do
@@ -355,15 +355,15 @@ inline bool mux_is8859_2(__in const unsigned char *p)
 
 // utf/tr_utf8_latin1.txt
 //
-const char *ConvertToLatin(__in const UTF8 *pString);
+const char *ConvertToLatin(const UTF8 *pString);
 
 // utf/tr_utf8_ascii.txt
 //
-const char *ConvertToAscii(__in const UTF8 *pString);
+const char *ConvertToAscii(const UTF8 *pString);
 
 // utf/tr_tolower.txt
 //
-inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 {
     int iState = TR_TOLOWER_START_STATE;
     do
@@ -386,7 +386,7 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_toupper.txt
 //
-inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
     int iState = TR_TOUPPER_START_STATE;
     do
@@ -409,7 +409,7 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_totitle.txt
 //
-inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
     int iState = TR_TOTITLE_START_STATE;
     do
@@ -432,7 +432,7 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_Color.txt
 //
-inline int mux_color(__in const unsigned char *p)
+inline int mux_color(const unsigned char *p)
 {
     int iState = TR_COLOR_START_STATE;
     do
