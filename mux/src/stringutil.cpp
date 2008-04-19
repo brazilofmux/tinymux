@@ -6599,6 +6599,13 @@ void mux_string::replace_Chars
         {
             realloc_m_pcs(iLast.m_point);
 
+            // Propagate the last color state out further.
+            //
+            for (int i = m_iLast.m_point; i < iLast.m_point; i++)
+            {
+                m_pcs[i] = m_pcs[m_iLast.m_point-1];
+            }
+
             // If there is a move operation, the color also needs to be moved.
             // A copy on the end of the string without a move may require some
             // color state to be initialized.
@@ -6607,15 +6614,6 @@ void mux_string::replace_Chars
             {
                 memmove(m_pcs + iStart.m_point + nCopy.m_point,
                         m_pcs + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_pcs[0]));
-            }
-            else if (CursorMin < nCopy)
-            {
-                // Propagate the last color state out further.
-                //
-                for (int i = m_iLast.m_point; i < iLast.m_point; i++)
-                {
-                    m_pcs[i] = m_pcs[m_iLast.m_point-1];
-                }
             }
         }
         else if (0 != sTo.m_ncs)
