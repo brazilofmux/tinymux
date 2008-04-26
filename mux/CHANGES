@@ -123,6 +123,7 @@ Feature Additions:
  -- Add iso8559-2 and latin-2 charset restrictions.
  -- Convert vertical quotes to directional quotes and hyphen drawing
     to en dashes (Issue 473).
+ -- Update Unicode tables.
 
 
 Bug Fixes:
@@ -291,6 +292,10 @@ Bug Fixes:
  -- Updated the rsrec, rsrecnext and rsrecprev helpfiles to mention
     delimiters.  Updated the SQL file to cover both inline and
     stubslave SQL.
+ -- Down-convert double-quotes and single-quotes to ASCII vertical
+    quotes (Issue 508).
+ -- Make trigger() act like @trigger/quiet (Issue 507).
+ -- Eliminate cases of uninitialized Color States (Issue 511).
 
 
 Performance Enhancements:
