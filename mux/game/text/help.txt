@@ -6933,7 +6933,7 @@ FLAG LIST
     k - KEEPALIVE  |   l - LIGHT      |   m - MYOPIC     |   n - NO_COMMAND
     p - PUPPET     |   q - TERSE      |   r - ROBOT      |   s - SAFE
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
-    x - SLAVE      |   $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD
+    x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
                    |                  |       UNICODE    |
   ------------------------------------------------------------------------
