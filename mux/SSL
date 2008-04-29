@@ -1,10 +1,11 @@
 TinyMUX 2.8:  SSL
-Last Update:  December 2007
+Last Update:  April 2008
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1) To compile TinyMUX 2.8 with support for SSL and TLS, you will need to
    use the --enable-ssl option.  This option requires OpenSSL 0.9.6 or later,
-   and 0.9.7 is highly recommended if possible.
+   and 0.9.7 is highly recommended if possible.  It may be necessary to append
+   -lcrypto to the SSL_LIBS line in the Makefile.
 
 2) Once the game has been compiled you will need to create an SSL
    certificate.  You can create a self-signed certificate using the
