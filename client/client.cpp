@@ -26,13 +26,15 @@ public:
     void AppendCharacter(wchar_t chin);
     void Backspace(void);
     bool EndOfLine(void);
+    void Redraw(void);
 
 private:
     WINDOW *m_w;
     int     m_lines;
     int     m_columns;
     wchar_t m_aBuffer[4000];
-    size_t  m_nBuffer;
+    size_t  m_nBufferTotal;
+    size_t  m_nBufferToLeft;
     Output *m_pOut;
 };
 
@@ -67,7 +69,8 @@ private:
 
 Input::Input(int lines, int columns, int yOrigin, int xOrigin, Output *pOut)
 {
-    m_nBuffer = 0;
+    m_nBufferTotal = 0;
+    m_nBufferToLeft = 0;
     m_pOut  = NULL;
     m_w = newwin(lines, columns, yOrigin, xOrigin);
     if (NULL != m_w)
@@ -93,19 +96,53 @@ int Input::Refresh(void)
 
 void Input::Backspace(void)
 {
-    if (0 < m_nBuffer)
+    if (0 == m_nBufferToLeft)
     {
-        m_nBuffer--;
+        // There are no characters to left we can remove with a backspace action.
+        //
+        return;
     }
 
-    int y, x;
-    getyx(m_w, y, x);
-    mvwdelch(m_w, y, x-1);
+    if (m_nBufferToLeft == m_nBufferTotal)
+    {
+        // We are positioned at the end of the buffer, so we may be able to
+        // short-cut the erasure.  However, if we are close to the leftmost
+        // column, we leave it to the general case.
+        //
+        int y, x;
+        getyx(m_w, y, x);
+        if (1 < x)
+        {
+            mvwdelch(m_w, y, x-1);
+            m_nBufferTotal--;
+            m_nBufferToLeft--;
+            return;
+        }
+    }
+
+    // General case.
+    //
+    m_nBufferTotal--;
+    for (size_t i = m_nBufferToLeft - 1; i < m_nBufferTotal; i++)
+    {
+        m_aBuffer[i] = m_aBuffer[i+1];
+    }
+    m_nBufferToLeft--;
+
+    Redraw();
+}
+
+void Input::Redraw(void)
+{
+    wmove(m_w, 0, 0);
+    werase(m_w);
+wcwidth(wchar_t)
+    // TODO: Draw the buffer to the window.
 }
 
 bool Input::EndOfLine(void)
 {
-    m_aBuffer[m_nBuffer] = L'\0';
+    m_aBuffer[m_nBufferTotal] = L'\0';
     if (wcscasecmp(L"/quit", m_aBuffer) == 0)
     {
         return true;
@@ -113,8 +150,9 @@ bool Input::EndOfLine(void)
 
     // Send line to output window.
     //
-    m_pOut->AppendLine(m_nBuffer, m_aBuffer);
-    m_nBuffer = 0;
+    m_pOut->AppendLine(m_nBufferTotal, m_aBuffer);
+    m_nBufferTotal = 0;
+    m_nBufferToLeft = 0;
 
     int x, y;
     getyx(m_w, y, x);
@@ -127,7 +165,6 @@ bool Input::EndOfLine(void)
     {
         wmove(m_w, y+1, 0);
     }
-
     return false;
 }
 
@@ -135,9 +172,11 @@ void Input::AppendCharacter(wchar_t chin)
 {
     wchar_t chtemp[2] = { L'\0', L'\0' };
 
-    if (m_nBuffer < sizeof(m_aBuffer))
+    if (m_nBufferTotal < sizeof(m_aBuffer))
     {
-        m_aBuffer[m_nBuffer++] = chin;
+        m_aBuffer[m_nBufferTotal] = chin;
+        m_nBufferTotal++;
+        m_nBufferToLeft++;
 
         cchar_t chout;
         chtemp[0] = chin;
