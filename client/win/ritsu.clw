@@ -9,18 +9,18 @@ NewFileInclude2=#include "ritsu.h"
 ODLFile=ritsu.odl
 LastPage=0
 
-ClassCount=9
+ClassCount=6
 Class1=CRitsuApp
 Class2=CRitsuDoc
 Class3=CRitsuView
 Class4=CMainFrame
-Class7=CChildFrame
-Class9=CAboutDlg
 
-ResourceCount=7
-Resource1=IDD_ABOUTBOX
-Resource2=IDR_MAINFRAME
-Resource3=IDR_RITSUTYPE
+ResourceCount=3
+Resource1=IDR_MAINFRAME
+Resource2=IDR_RITSUTYPE
+Class5=CChildFrame
+Class6=CAboutDlg
+Resource3=IDD_ABOUTBOX
 
 [CLS:CRitsuApp]
 Type=0
@@ -60,15 +60,16 @@ Type=0
 HeaderFile=ritsu.cpp
 ImplementationFile=ritsu.cpp
 Filter=D
+LastObject=IDOK
 
 [DLG:IDD_ABOUTBOX]
 Type=1
+Class=CAboutDlg
 ControlCount=4
 Control1=IDC_STATIC,static,1342177283
-Control2=IDC_STATIC,static,1342308352
+Control2=IDC_STATIC,static,1342308480
 Control3=IDC_STATIC,static,1342308352
 Control4=IDOK,button,1342373889
-Class=CAboutDlg
 
 [MNU:IDR_MAINFRAME]
 Type=1
@@ -80,8 +81,8 @@ Command4=ID_FILE_MRU_FILE1
 Command5=ID_APP_EXIT
 Command6=ID_VIEW_TOOLBAR
 Command7=ID_VIEW_STATUS_BAR
-Command9=ID_APP_ABOUT
-CommandCount=9
+Command8=ID_APP_ABOUT
+CommandCount=8
 
 [TB:IDR_MAINFRAME]
 Type=1
@@ -93,8 +94,8 @@ Command4=ID_EDIT_CUT
 Command5=ID_EDIT_COPY
 Command6=ID_EDIT_PASTE
 Command7=ID_FILE_PRINT
-Command12=ID_APP_ABOUT
-CommandCount=13
+Command8=ID_APP_ABOUT
+CommandCount=8
 
 [MNU:IDR_RITSUTYPE]
 Type=1
@@ -113,14 +114,14 @@ Command11=ID_EDIT_UNDO
 Command12=ID_EDIT_CUT
 Command13=ID_EDIT_COPY
 Command14=ID_EDIT_PASTE
-Command29=ID_VIEW_TOOLBAR
-Command30=ID_VIEW_STATUS_BAR
-Command31=ID_WINDOW_NEW
-Command32=ID_WINDOW_CASCADE
-Command33=ID_WINDOW_TILE_HORZ
-Command34=ID_WINDOW_ARRANGE
-Command36=ID_APP_ABOUT
-CommandCount=36
+Command15=ID_VIEW_TOOLBAR
+Command16=ID_VIEW_STATUS_BAR
+Command17=ID_WINDOW_NEW
+Command18=ID_WINDOW_CASCADE
+Command19=ID_WINDOW_TILE_HORZ
+Command20=ID_WINDOW_ARRANGE
+Command21=ID_APP_ABOUT
+CommandCount=21
 
 [ACL:IDR_MAINFRAME]
 Type=1
@@ -137,8 +138,7 @@ Command9=ID_EDIT_UNDO
 Command10=ID_EDIT_CUT
 Command11=ID_EDIT_COPY
 Command12=ID_EDIT_PASTE
-Command17=ID_NEXT_PANE
-Command18=ID_PREV_PANE
-CommandCount=21
-
+Command13=ID_NEXT_PANE
+Command14=ID_PREV_PANE
+CommandCount=14
 
