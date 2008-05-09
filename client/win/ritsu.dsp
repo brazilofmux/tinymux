@@ -105,6 +105,14 @@ SOURCE=.\stdafx.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\svdhash.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\svdrand.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\timer.cpp
 # End Source File
 # Begin Source File
@@ -138,6 +146,14 @@ SOURCE=.\ritsu.h
 # Begin Source File
 
 SOURCE=.\stdafx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\svdhash.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\svdrand.h
 # End Source File
 # Begin Source File
 

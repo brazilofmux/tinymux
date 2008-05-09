@@ -7,5 +7,7 @@
 #include "config.h"
 #include "timeutil.h"
 #include "externs.h"
+#include "svdrand.h"
+#include "svdhash.h"
 
 #endif // STDAFX_H

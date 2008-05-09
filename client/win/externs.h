@@ -8,6 +8,8 @@
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
+#define LBUF_SIZE 8000
+
 // From timer.cpp
 //
 void init_timer(void);

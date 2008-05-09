@@ -542,6 +542,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 
     TIME_Initialize();
     init_timer();
+    SeedRandomNumberGenerator();
 
     m_pMainFrame = NULL;
     try
