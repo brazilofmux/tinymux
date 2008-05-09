@@ -1,14 +1,34 @@
-// ritsu.cpp : Defines the entry point for the application.
+// ritsu.cpp : Entry point for the application is wWinMain().
 //
-
+//
+// Notes about specific messages:
+//
+// WM_MDIACTIVATE  -  On WINE, when the last child window of an MDICLIENT
+//                    control is closed, WINE does not send the last
+//                    WM_MDIACTIVATE(wParam != child HWND) to deactivate the
+//                    child window.  This is a bug in WINE.
+//
+// WM_NCCREATE     -  This is not necessarily the first message to the window
+//                    procedure. WM_GETMINMAXINFO (and probably others) can be
+//                    sent earlier.  We cannot reliably use lpCreateParams to
+//                    pass a CWindow pointer to be associated with the window
+//                    handle.  IME may be interacting to cause this.
+//
+// WM_NCDESTROY    -  This is guaranteed to be the last message sent to the
+//                    window procedure before the window handle is released.
+//
+// WM_MDICREATE    -  The MDICLIENT control creates the child window. When the
+//                    currently active child window is maximized, MDICLIENT
+//                    sends it a message to restore the existing window before
+//                    creating a new child window.  This behavior thwarts
+//                    attempts to pass and associate CWindow pointers on the
+//                    side as an existing child window will pick up the pointer
+//                    instead of the new child.
+//
 #include "stdafx.h"
 #include "resource.h"
 
 #define MAX_LOADSTRING 100
-
-// This rounds up to the nearest multiple of sizeof(long)
-//
-#define LONGCEIL(x) (((x) + sizeof(long) - 1) & (~(sizeof(long) - 1)))
 
 const int StartChildren = 3000;
 
@@ -38,7 +58,7 @@ public:
     HWND        m_hwnd;
 };
 
-class CMDIControl
+class CMDIControl : public CWindow
 {
 public:
     CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREATESTRUCT *pcs);
@@ -48,12 +68,11 @@ public:
     LRESULT Cascade(void);
     LRESULT IconArrange(void);
 
-    CWindow    *m_pParentWindow;
-    HWND        m_hChildControl;
-
     // Handlers.
     //
     LRESULT     OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam);
+
+    CWindow    *m_pParentWindow;
 };
 
 class CMainFrame : public CWindow
@@ -99,8 +118,6 @@ public:
     WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
-void *GetWindowPointer(HWND hwnd);
-
 class CRitsuApp
 {
 public:
@@ -118,12 +135,15 @@ public:
 
     ~CRitsuApp() {};
 
+#if 0
     // Temporary used during window creation process.  This approach assumes a
     // single thread. MFC does basically the same thing for multiple threads
     // using a Window creation hook and thread-local storage to pass the
     // initial CWindow pointer to the corresponding window procedure.
     //
-    CWindow *m_pTemp;
+    CWindow    *m_pTemp;
+#endif
+    CHashTable  m_mapHandles;
 
     // Application
     //
@@ -140,12 +160,9 @@ public:
 
 typedef struct
 {
-    union
-    {
-        CWindow *pWindow;
-        LONG l[(sizeof(void *) + sizeof(long) - 1)/sizeof(long)];
-    } u;
-} ExtraWindowData;
+    CWindow *pWindow;
+    CWindow *pParentWindow;
+} CreateParams;
 
 // Global Variables:
 //
@@ -168,6 +185,78 @@ int APIENTRY wWinMain
     int ret = g_theApp.Run();
     g_theApp.Finalize();
     return ret;
+}
+
+
+typedef struct
+{
+    HWND     hwnd;
+    CWindow *pWnd;
+} recHandlePtr;
+
+CWindow *GetWindowPointer(HWND hwnd)
+{
+    recHandlePtr rec;
+    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+
+    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
+    while (iDir != HF_FIND_END)
+    {
+        HP_HEAPLENGTH nRecord;
+        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
+
+        if (rec.hwnd == hwnd)
+        {
+            return rec.pWnd;
+        }
+        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
+    }
+    return NULL;
+}
+
+void Attach(HWND hwnd, CWindow *pWnd)
+{
+    recHandlePtr rec;
+    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+
+    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
+    while (iDir != HF_FIND_END)
+    {
+        HP_HEAPLENGTH nRecord;
+        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
+
+        if (rec.hwnd == hwnd)
+        {
+            return;
+        }
+        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
+    }
+
+    rec.hwnd = hwnd;
+    rec.pWnd = pWnd;
+    pWnd->m_hwnd = hwnd;
+    g_theApp.m_mapHandles.Insert((HP_HEAPLENGTH)sizeof(rec), nHash, &rec);
+}
+
+CWindow *Detach(HWND hwnd)
+{
+    recHandlePtr rec;
+    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+
+    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
+    while (iDir != HF_FIND_END)
+    {
+        HP_HEAPLENGTH nRecord;
+        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
+
+        if (rec.hwnd == hwnd)
+        {
+            g_theApp.m_mapHandles.Remove(iDir);
+            return rec.pWnd;
+        }
+        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
+    }
+    return NULL;
 }
 
 // Mesage handler for about box.
@@ -193,7 +282,7 @@ LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 LRESULT CMDIControl::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
 {
-    return DefFrameProc(m_pParentWindow->m_hwnd, m_hChildControl, message, wParam, lParam);
+    return DefFrameProc(m_pParentWindow->m_hwnd, m_hwnd, message, wParam, lParam);
 }
 
 LRESULT CMainFrame::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
@@ -207,6 +296,10 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
     CMainFrame *pWnd = (CMainFrame *)GetWindowPointer(hWnd);
     switch (message)
     {
+    case WM_GETMINMAXINFO:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+        break;
+
     case WM_CREATE:
         {
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
@@ -220,6 +313,46 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
 
     case WM_DESTROY:
         PostQuitMessage(0);
+        break;
+
+    case WM_NCCREATE:
+        {
+            lRes = 0;
+            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
+            if (NULL != pcs)
+            {
+                CreateParams *pcp = (CreateParams *)pcs->lpCreateParams;
+                pWnd = (CMainFrame *)pcp->pWindow;
+                if (NULL != pWnd)
+                {
+                    Attach(hWnd, pcp->pWindow);
+                    if (NULL != pWnd->m_pMDIControl)
+                    {
+                        lRes = pWnd->m_pMDIControl->OnDefaultHandler(message, wParam, lParam);
+                    }
+                    else
+                    {
+                        lRes = pWnd->OnDefaultHandler(message, wParam, lParam);
+                    }
+                }
+            }
+        }
+        break;
+
+    case WM_NCDESTROY:
+        {
+            if (NULL != pWnd->m_pMDIControl)
+            {
+                lRes = pWnd->m_pMDIControl->OnDefaultHandler(message, wParam, lParam);
+            }
+            else
+            {
+                lRes = pWnd->OnDefaultHandler(message, wParam, lParam);
+            }
+            (void)Detach(hWnd);
+            delete pWnd;
+            pWnd = NULL;
+        }
         break;
 
     default:
@@ -328,8 +461,36 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
     case WM_DESTROY:
         lRes = pWnd->OnDestroy();
 
-    default:
+    case WM_NCCREATE:
+        {
+            lRes = 0;
+            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
+            if (NULL != pcs)
+            {
+                MDICREATESTRUCT *pmcs = (MDICREATESTRUCT *)pcs->lpCreateParams;
+                if (NULL != pmcs)
+                {
+                    CreateParams *pcp = (CreateParams *)pmcs->lParam;
+                    if (NULL != pcp->pWindow)
+                    {
+                        Attach(hWnd, pcp->pWindow);
+                        lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
+                    }
+                }
+            }
+        }
+        break;
 
+    case WM_NCDESTROY:
+        {
+            lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
+            (void)Detach(hWnd);
+            delete pWnd;
+            pWnd = NULL;
+        }
+        break;
+    
+    default:
         lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
     }
     return lRes;
@@ -345,7 +506,7 @@ CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREAT
     if (NULL != hChildControl)
     {
         m_pParentWindow = pParentWindow;
-        m_hChildControl = hChildControl;
+        m_hwnd = hChildControl;
     }
 }
 
@@ -365,6 +526,10 @@ CWindow *CMDIControl::CreateNewChild(void)
     {
         // The Child Window sets the m_pParentWindow in its OnCreate().
         //
+        CreateParams cp;
+        cp.pParentWindow = m_pParentWindow;
+        cp.pWindow = pChild;
+
         MDICREATESTRUCT mcs;
         memset(&mcs, 0, sizeof(mcs));
         mcs.szTitle = L"Untitled";
@@ -373,16 +538,17 @@ CWindow *CMDIControl::CreateNewChild(void)
         mcs.x = mcs.cx = CW_USEDEFAULT;
         mcs.y = mcs.cy = CW_USEDEFAULT;
         mcs.style = MDIS_ALLCHILDSTYLES;
-        mcs.lParam = (LPARAM)m_pParentWindow;
+        mcs.lParam = (LPARAM)&cp;
 
-        g_theApp.m_pTemp = pChild;
-        (void)SendMessage(m_hChildControl, WM_MDICREATE, 0, (LPARAM)&mcs);
+        (void)::SendMessage(m_hwnd, WM_MDICREATE, 0, (LPARAM)&mcs);
     }
     return pChild;
 }
 
 LRESULT CMainFrame::OnCreate(CREATESTRUCT *pcs)
 {
+    EnableDisableCloseItem(false);
+
     // Create MDI Child Control.
     //
     CLIENTCREATESTRUCT ccs;
@@ -403,7 +569,6 @@ LRESULT CMainFrame::OnCreate(CREATESTRUCT *pcs)
     if (NULL != pMDIControl)
     {
         m_pMDIControl = pMDIControl;
-        (void)m_pMDIControl->CreateNewChild();
     }
     return 0;
 }
@@ -413,7 +578,11 @@ LRESULT CChildFrame::OnCreate(CREATESTRUCT *pcs)
     MDICREATESTRUCT *pmdics = (MDICREATESTRUCT *)pcs->lpCreateParams;
     if (NULL != pmdics)
     {
-        m_pParentWindow = (CMainFrame *)pmdics->lParam;
+        CreateParams *pcp = (CreateParams *)pmdics->lParam;
+        if (NULL != pcp)
+        {
+            m_pParentWindow = (CMainFrame *)pcp->pParentWindow;
+        }
     }
     (void)m_pParentWindow->IncreaseDecreaseChildCount(true);
     g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
@@ -427,24 +596,24 @@ LRESULT CWindow::SendMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
 CWindow *CMDIControl::GetActive(void)
 {
-    HWND hwnd = (HWND)::SendMessage(m_hChildControl, WM_MDIGETACTIVE, 0, 0);
+    HWND hwnd = (HWND)::SendMessage(m_hwnd, WM_MDIGETACTIVE, 0, 0);
     CWindow *pWnd = (CWindow *)GetWindowPointer(hwnd);
     return pWnd;
 }
 
 LRESULT CMDIControl::Tile(void)
 {
-    return ::SendMessage(m_hChildControl, WM_MDITILE, 0, 0);
+    return ::SendMessage(m_hwnd, WM_MDITILE, 0, 0);
 }
 
 LRESULT CMDIControl::Cascade(void)
 {
-    return ::SendMessage(m_hChildControl, WM_MDICASCADE, 0, 0);
+    return ::SendMessage(m_hwnd, WM_MDICASCADE, 0, 0);
 }
 
 LRESULT CMDIControl::IconArrange(void)
 {
-    return ::SendMessage(m_hChildControl, WM_MDIICONARRANGE, 0, 0);
+    return ::SendMessage(m_hwnd, WM_MDIICONARRANGE, 0, 0);
 }
 
 LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
@@ -531,7 +700,6 @@ CRitsuApp::CRitsuApp()
     m_atmMain    = NULL;
     m_atmChild   = NULL;
     m_pMainFrame = NULL;
-    m_pTemp      = NULL;
     m_szChildClass[0] = L'\0';
     m_szMainClass[0] = L'\0';
 }
@@ -574,7 +742,6 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 
 bool CRitsuApp::Finalize(void)
 {
-    delete m_pMainFrame;
     m_pMainFrame = NULL;
     UnregisterClasses();
     return true;
@@ -640,7 +807,7 @@ WPARAM CRitsuApp::Run(void)
                 {
                     // Translate and dispatch message to Windows Procedure.
                     //
-                    if (  !TranslateMDISysAccel(g_theApp.m_pMainFrame->m_pMDIControl->m_hChildControl, &msg)
+                    if (  !TranslateMDISysAccel(g_theApp.m_pMainFrame->m_pMDIControl->m_hwnd, &msg)
                        && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
                     {
                         TranslateMessage(&msg);
@@ -698,6 +865,9 @@ CMainFrame::CMainFrame()
 
 CMainFrame::~CMainFrame()
 {
+    delete m_pMDIControl;
+    m_pMDIControl = NULL;
+    m_nChildren   = 0;
 }
 
 CChildFrame::CChildFrame()
@@ -722,7 +892,7 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = (WNDPROC)CMainFrame::MainWndProc;
     wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = LONGCEIL(sizeof(ExtraWindowData));
+    wcex.cbWndExtra     = 0;
     wcex.hInstance      = g_theApp.m_hInstance;
     wcex.hIcon          = g_theApp.LoadIcon((LPCTSTR)IDI_RITSU);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
@@ -767,40 +937,19 @@ bool CMainFrame::Create(void)
     int cx = (9*xSize)/10;
     int cy = (9*ySize)/10;
 
-    g_theApp.m_pTemp = this;
+    CreateParams cp;
+    cp.pWindow = this;
+    cp.pParentWindow = NULL;
     HWND hWnd = ::CreateWindowEx(0L, g_theApp.m_szMainClass, szTitle,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         (xSize - cx)/2, (ySize - cy)/2, cx, cy,
-        NULL, NULL, g_theApp.m_hInstance, NULL);
+        NULL, NULL, g_theApp.m_hInstance, &cp);
 
     if (!hWnd)
     {
         return false;
     }
     return true;
-}
-
-void *GetWindowPointer(HWND hwnd)
-{
-    ExtraWindowData ewd;
-    if (NULL == g_theApp.m_pTemp)
-    {
-        for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
-        {
-            ewd.u.l[i] = GetWindowLong(hwnd, i*sizeof(long));
-        }
-    }
-    else
-    {
-        ewd.u.pWindow = g_theApp.m_pTemp;
-        ewd.u.pWindow->m_hwnd = hwnd;
-        g_theApp.m_pTemp = NULL;
-        for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
-        {
-            SetWindowLong(hwnd, i*sizeof(long), ewd.u.l[i]);
-        }
-    }
-    return ewd.u.pWindow;
 }
 
 bool CRitsuApp::UnregisterClasses(void)
