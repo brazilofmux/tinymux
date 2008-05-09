@@ -30,7 +30,7 @@ END_MESSAGE_MAP()
 CChildFrame::CChildFrame()
 {
 	// TODO: add member initialization code here
-	
+    //
 }
 
 CChildFrame::~CChildFrame()
@@ -40,11 +40,15 @@ CChildFrame::~CChildFrame()
 BOOL CChildFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
-	//  the CREATESTRUCT cs
-
-	if( !CMDIChildWnd::PreCreateWindow(cs) )
+	//  the CREATESTRUCT cs.
+    //
+    cs.style = WS_CHILD | WS_VISIBLE | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU
+             | FWS_ADDTOTITLE | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+             | WS_MAXIMIZE;
+	if (!CMDIChildWnd::PreCreateWindow(cs))
+    {
 		return FALSE;
-
+    }
 	return TRUE;
 }
 
