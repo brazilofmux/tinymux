@@ -25,7 +25,7 @@ public:
     ATOM        m_atmChildFrame;
     TCHAR       m_szHello[MAX_LOADSTRING];
     HWND        m_hMainFrame;
-    HWND        m_hChildFrame;
+    HWND        m_hChildControl;
 };
 
 // Global Variables:
@@ -53,11 +53,11 @@ int APIENTRY wWinMain
     HACCEL hAccelTable = LoadAccelerators(hInstance, (LPCTSTR)IDC_RITSU);
     while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
     {
-        if (bRet == -1)
+        if (-1 == bRet)
         {
             break;
         }
-        else if (  !TranslateMDISysAccel(g_theApp.m_hChildFrame, &msg)
+        else if (  !TranslateMDISysAccel(g_theApp.m_hChildControl, &msg)
                 && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
@@ -80,7 +80,7 @@ LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return TRUE;
 
     case WM_COMMAND:
-        if (  IDOK == LOWORD(wParam)
+        if (  IDOK     == LOWORD(wParam)
            || IDCANCEL == LOWORD(wParam))
         {
             EndDialog(hDlg, LOWORD(wParam));
@@ -91,7 +91,7 @@ LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return FALSE;
 }
 
-void CreateNewMDIChild(HWND hChildWnd)
+HWND CreateNewMDIChild(HWND hChildControl)
 {
     MDICREATESTRUCT mcs;
     memset(&mcs, 0, sizeof(mcs));
@@ -102,7 +102,8 @@ void CreateNewMDIChild(HWND hChildWnd)
     mcs.y = mcs.cy = CW_USEDEFAULT;
     mcs.style = MDIS_ALLCHILDSTYLES;
 
-    SendMessage(hChildWnd, WM_MDICREATE, 0, (LPARAM)&mcs);
+    HWND hChildWnd = (HWND)SendMessage(hChildControl, WM_MDICREATE, 0, (LPARAM)&mcs);
+    return hChildWnd;
 }
 
 //
@@ -127,13 +128,15 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             memset(&ccs, 0, sizeof(ccs));
             ccs.hWindowMenu = GetSubMenu(GetMenu(hWnd), 1);
             ccs.idFirstChild = StartChildren;
-            HWND hChildWnd = CreateWindowEx(WS_EX_CLIENTEDGE, _T("MDICLIENT"), NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
-                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWnd, (HMENU)IDM_FILE_NEW, g_theApp.m_hInstance, &ccs);
+            HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("MDICLIENT"), NULL,
+                WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
+                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWnd,
+                (HMENU)IDM_FILE_NEW, g_theApp.m_hInstance, &ccs);
 
-            if (NULL != hChildWnd)
+            if (NULL != hChildControl)
             {
-                g_theApp.m_hChildFrame = hChildWnd;
-                CreateNewMDIChild(g_theApp.m_hChildFrame);
+                g_theApp.m_hChildControl = hChildControl;
+                HWND hChildWnd = CreateNewMDIChild(g_theApp.m_hChildControl);
                 ShowWindow(hChildWnd, SW_SHOW);
             }
         }
@@ -148,12 +151,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             switch (wmId)
             {
             case IDM_FILE_NEW:
-                CreateNewMDIChild(g_theApp.m_hChildFrame);
+                CreateNewMDIChild(g_theApp.m_hChildControl);
                 break;
 
             case IDM_FILE_CLOSE:
                 {
-                    HWND hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE, 0, 0);
+                    HWND hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildControl, WM_MDIGETACTIVE, 0, 0);
                     if (NULL != hWndCurrent)
                     {
                         SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
@@ -170,42 +173,42 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 break;
 
             case IDM_WINDOW_TILE:
-                SendMessage(g_theApp.m_hChildFrame, WM_MDITILE, 0, 0);
+                SendMessage(g_theApp.m_hChildControl, WM_MDITILE, 0, 0);
                 break;
 
             case IDM_WINDOW_CASCADE:
-                SendMessage(g_theApp.m_hChildFrame, WM_MDICASCADE, 0, 0);
+                SendMessage(g_theApp.m_hChildControl, WM_MDICASCADE, 0, 0);
                 break;
 
             case IDM_WINDOW_ARRANGE:
-                SendMessage(g_theApp.m_hChildFrame, WM_MDIICONARRANGE, 0, 0);
+                SendMessage(g_theApp.m_hChildControl, WM_MDIICONARRANGE, 0, 0);
                 break;
 
             case IDM_WINDOW_CLOSE_ALL:
                 {
-                    HWND hWndCurrent;
+                    HWND hWndChild;
 
                     do {
-                        hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE,0,0);
-                        if (NULL != hWndCurrent)
+                        hWndChild = (HWND)SendMessage(g_theApp.m_hChildControl, WM_MDIGETACTIVE,0,0);
+                        if (NULL != hWndChild)
                         {
-                            SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
+                            SendMessage(hWndChild, WM_CLOSE, 0, 0);
                         }
-                    } while (NULL != hWndCurrent);
+                    } while (NULL != hWndChild);
                 }
                 break;
 
             default:
                 if (StartChildren <= wmId)
                 {
-                    return DefFrameProc(hWnd, g_theApp.m_hChildFrame, WM_COMMAND, wParam, lParam);
+                    return DefFrameProc(hWnd, g_theApp.m_hChildControl, WM_COMMAND, wParam, lParam);
                 }
                 else
                 {
-                    HWND hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE, 0, 0);
-                    if (NULL != hWndCurrent)
+                    HWND hWndChild = (HWND)SendMessage(g_theApp.m_hChildControl, WM_MDIGETACTIVE, 0, 0);
+                    if (NULL != hWndChild)
                     {
-                        SendMessage(hWndCurrent, WM_COMMAND, wParam, lParam);
+                        SendMessage(hWndChild, WM_COMMAND, wParam, lParam);
                     }
                 }
             }
@@ -219,7 +222,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
     default:
 
-        return DefFrameProc(hWnd, g_theApp.m_hChildFrame, message, wParam, lParam);
+        return DefFrameProc(hWnd, g_theApp.m_hChildControl, message, wParam, lParam);
    }
    return 0;
 }
@@ -278,7 +281,7 @@ CRitsuApp::CRitsuApp()
 {
     m_hInstance     = NULL;
     m_hMainFrame    = NULL;
-    m_hChildFrame   = NULL;
+    m_hChildControl = NULL;
     m_atmChildFrame = 0;
     m_atmMainFrame  = 0;
 }
