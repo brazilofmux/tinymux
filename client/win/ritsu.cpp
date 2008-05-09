@@ -18,6 +18,7 @@ public:
     CWindow();
     virtual ~CWindow();
     virtual bool Finalize(HINSTANCE hInstance) = 0;
+    virtual bool RegisterClass(void) = 0;
 
     HWND        m_hwnd;
     ATOM        m_atm;
@@ -30,12 +31,17 @@ public:
 
     CMainFrame();
     void Initialize(void);
-    bool RegisterClasses(HINSTANCE hInstance);
+    bool RegisterClass(void);
     bool Create(void);
     void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
     void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
     virtual bool Finalize(HINSTANCE hInstance);
     virtual ~CMainFrame();
+
+    // Handlers.
+    //
+    LRESULT OnCreate(CREATESTRUCT *pcs);
+    LRESULT OnCommand(WPARAM wParam, LPARAM lParam);
 
     // MDI Control
     //
@@ -68,6 +74,7 @@ public:
     bool   Finalize(void);
 
     int LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax);
+    HICON LoadIcon(LPCTSTR lpIconName);
 
     ~CRitsuApp() {};
 
@@ -152,7 +159,6 @@ HWND CreateNewMDIChild(HWND hChildControl)
     HWND hChildWnd = (HWND)SendMessage(hChildControl, WM_MDICREATE, 0, (LPARAM)&mcs);
     return hChildWnd;
 }
-
 //
 //  FUNCTION: MainWndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -165,115 +171,30 @@ HWND CreateNewMDIChild(HWND hChildControl)
 //
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    LRESULT lRes = 0;
     CMainFrame *pWnd = (CMainFrame *)GetWindowPointer(hWnd);
     switch (message)
     {
     case WM_CREATE:
         {
-            // Create MDI Child Control.
-            //
-            CLIENTCREATESTRUCT ccs;
-            memset(&ccs, 0, sizeof(ccs));
-            ccs.hWindowMenu = GetSubMenu(GetMenu(hWnd), 1);
-            ccs.idFirstChild = StartChildren;
-
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
-            HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("mdiclient"), NULL,
-                WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
-                pcs->x, pcs->y, pcs->cx, pcs->cy, hWnd,
-                (HMENU)IDC_MAIN_MDI, g_theApp.m_hInstance, &ccs);
-
-            if (NULL != hChildControl)
-            {
-                pWnd->m_hChildControl = hChildControl;
-                HWND hChildWnd = CreateNewMDIChild(hChildControl);
-            }
+            lRes = pWnd->OnCreate(pcs);
         }
         break;
 
     case WM_COMMAND:
-        {
-            // Parse the menu selections:
-            //
-            int wmId    = LOWORD(wParam);
-            int wmEvent = HIWORD(wParam);
-            switch (wmId)
-            {
-            case IDM_FILE_NEW:
-                CreateNewMDIChild(pWnd->m_hChildControl);
-                break;
-
-            case IDM_FILE_CLOSE:
-                {
-                    HWND hWndCurrent = (HWND)SendMessage(pWnd->m_hChildControl, WM_MDIGETACTIVE, 0, 0);
-                    if (NULL != hWndCurrent)
-                    {
-                        SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
-                    }
-                }
-                break;
-
-            case IDM_ABOUT:
-                DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
-                break;
-
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-
-            case IDM_WINDOW_TILE:
-                SendMessage(pWnd->m_hChildControl, WM_MDITILE, 0, 0);
-                break;
-
-            case IDM_WINDOW_CASCADE:
-                SendMessage(pWnd->m_hChildControl, WM_MDICASCADE, 0, 0);
-                break;
-
-            case IDM_WINDOW_ARRANGE:
-                SendMessage(pWnd->m_hChildControl, WM_MDIICONARRANGE, 0, 0);
-                break;
-
-            case IDM_WINDOW_CLOSE_ALL:
-                {
-                    HWND hWndChild;
-
-                    do {
-                        hWndChild = (HWND)SendMessage(pWnd->m_hChildControl, WM_MDIGETACTIVE,0,0);
-                        if (NULL != hWndChild)
-                        {
-                            SendMessage(hWndChild, WM_CLOSE, 0, 0);
-                        }
-                    } while (NULL != hWndChild);
-                }
-                break;
-
-            default:
-                if (StartChildren <= wmId)
-                {
-                    return DefFrameProc(hWnd, pWnd->m_hChildControl, WM_COMMAND, wParam, lParam);
-                }
-                else
-                {
-                    HWND hWndChild = (HWND)SendMessage(pWnd->m_hChildControl, WM_MDIGETACTIVE, 0, 0);
-                    if (NULL != hWndChild)
-                    {
-                        SendMessage(hWndChild, WM_COMMAND, wParam, lParam);
-                    }
-                }
-            }
-        }
+        lRes = pWnd->OnCommand(wParam, lParam);
         break;
 
     case WM_DESTROY:
-
         PostQuitMessage(0);
         break;
 
     default:
-        return DefFrameProc(hWnd, pWnd->m_hChildControl, message, wParam, lParam);
+        lRes = DefFrameProc(hWnd, pWnd->m_hChildControl, message, wParam, lParam);
         break;
    }
-   return 0;
+   return lRes;
 }
 
 LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -333,6 +254,101 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
    return 0;
 }
 
+LRESULT CMainFrame::OnCreate(CREATESTRUCT *pcs)
+{
+    // Create MDI Child Control.
+    //
+    CLIENTCREATESTRUCT ccs;
+    memset(&ccs, 0, sizeof(ccs));
+    ccs.hWindowMenu = GetSubMenu(GetMenu(m_hwnd), 1);
+    ccs.idFirstChild = StartChildren;
+
+    HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("mdiclient"), NULL,
+        WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
+        pcs->x, pcs->y, pcs->cx, pcs->cy, m_hwnd,
+        (HMENU)IDC_MAIN_MDI, g_theApp.m_hInstance, &ccs);
+
+    if (NULL != hChildControl)
+    {
+        m_hChildControl = hChildControl;
+        HWND hChildWnd = CreateNewMDIChild(hChildControl);
+    }
+    return 0;
+}
+
+LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
+{
+    // Parse the menu selections:
+    //
+    int wmId    = LOWORD(wParam);
+    int wmEvent = HIWORD(wParam);
+    switch (wmId)
+    {
+    case IDM_FILE_NEW:
+        CreateNewMDIChild(m_hChildControl);
+        break;
+
+    case IDM_FILE_CLOSE:
+        {
+            HWND hWndCurrent = (HWND)SendMessage(m_hChildControl, WM_MDIGETACTIVE, 0, 0);
+            if (NULL != hWndCurrent)
+            {
+                SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
+            }
+        }
+        break;
+
+    case IDM_ABOUT:
+        DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)About);
+        break;
+
+    case IDM_EXIT:
+        DestroyWindow(m_hwnd);
+        break;
+
+    case IDM_WINDOW_TILE:
+        SendMessage(m_hChildControl, WM_MDITILE, 0, 0);
+        break;
+
+    case IDM_WINDOW_CASCADE:
+        SendMessage(m_hChildControl, WM_MDICASCADE, 0, 0);
+        break;
+
+    case IDM_WINDOW_ARRANGE:
+        SendMessage(m_hChildControl, WM_MDIICONARRANGE, 0, 0);
+        break;
+
+    case IDM_WINDOW_CLOSE_ALL:
+        {
+            HWND hWndChild;
+
+            do {
+                hWndChild = (HWND)SendMessage(m_hChildControl, WM_MDIGETACTIVE,0,0);
+                if (NULL != hWndChild)
+                {
+                    SendMessage(hWndChild, WM_CLOSE, 0, 0);
+                }
+            } while (NULL != hWndChild);
+        }
+        break;
+
+    default:
+        if (StartChildren <= wmId)
+        {
+            return DefFrameProc(m_hwnd, m_hChildControl, WM_COMMAND, wParam, lParam);
+        }
+        else
+        {
+            HWND hWndChild = (HWND)SendMessage(m_hChildControl, WM_MDIGETACTIVE, 0, 0);
+            if (NULL != hWndChild)
+            {
+                SendMessage(hWndChild, WM_COMMAND, wParam, lParam);
+            }
+        }
+    }
+    return 0;
+}
+
 CRitsuApp::CRitsuApp()
 {
     m_hInstance     = NULL;
@@ -353,7 +369,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     }
 
     if (  NULL == m_pMainFrame
-       || !m_pMainFrame->RegisterClasses(hInstance)
+       || !m_pMainFrame->RegisterClass()
        || !m_pMainFrame->Create())
     {
         return false;
@@ -403,6 +419,11 @@ int CRitsuApp::LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
     return ::LoadString(m_hInstance, uID, lpBuffer, nBufferMax);
 }
 
+HICON CRitsuApp::LoadIcon(LPCTSTR lpIconName)
+{
+    return ::LoadIcon(m_hInstance, lpIconName);
+}
+
 CWindow::CWindow()
 {
     m_hwnd = NULL;
@@ -423,12 +444,10 @@ CMainFrame::~CMainFrame()
 {
 }
 
-bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
+bool CMainFrame::RegisterClass(void)
 {
-    LoadString(hInstance, IDC_MAIN_FRAME, m_szClass, MAX_LOADSTRING);
+    g_theApp.LoadString(IDC_MAIN_FRAME, m_szClass, MAX_LOADSTRING);
 
-    // Register Main Frame Window class.
-    //
     WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -437,13 +456,13 @@ bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
     wcex.lpfnWndProc    = (WNDPROC)MainWndProc;
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = LONGCEIL(sizeof(ExtraWindowData));
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, (LPCTSTR)IDI_RITSU);
+    wcex.hInstance      = g_theApp.m_hInstance;
+    wcex.hIcon          = g_theApp.LoadIcon((LPCTSTR)IDI_RITSU);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = (LPCTSTR)IDC_RITSU;
     wcex.lpszClassName  = m_szClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+    wcex.hIconSm        = g_theApp.LoadIcon((LPCTSTR)IDI_SMALL);
 
     ATOM atm = RegisterClassEx(&wcex);
     if (0 == atm)
@@ -455,10 +474,10 @@ bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
     // Register Child Frame Window class.
     //
     wcex.lpfnWndProc   = (WNDPROC) ChildWndProc;
-    wcex.hIcon         = LoadIcon(hInstance, (LPCTSTR)IDI_BACKSCROLL);
+    wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
     wcex.lpszMenuName  = (LPCTSTR) NULL;
     wcex.lpszClassName = _T("RitsuChildFrame");
-    wcex.hIconSm       = LoadIcon(hInstance, (LPCTSTR)IDI_BACKSCROLL);
+    wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
 
     atm = RegisterClassEx(&wcex);
     if (0 == atm)
