@@ -13,8 +13,8 @@
 class CRitsuDoc : public CDocument
 {
 protected: // create from serialization only
-	CRitsuDoc();
-	DECLARE_DYNCREATE(CRitsuDoc)
+    CRitsuDoc();
+    DECLARE_DYNCREATE(CRitsuDoc)
 
 // Attributes
 public:
@@ -23,38 +23,38 @@ public:
 public:
 
 // Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CRitsuDoc)
-	public:
-	virtual BOOL OnNewDocument();
-	virtual void Serialize(CArchive& ar);
-	//}}AFX_VIRTUAL
+    // ClassWizard generated virtual function overrides
+    //{{AFX_VIRTUAL(CRitsuDoc)
+    public:
+    virtual BOOL OnNewDocument();
+    virtual void Serialize(CArchive& ar);
+    //}}AFX_VIRTUAL
 
 // Implementation
 public:
-	virtual ~CRitsuDoc();
+    virtual ~CRitsuDoc();
 #ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
+    virtual void AssertValid() const;
+    virtual void Dump(CDumpContext& dc) const;
 #endif
 
 protected:
 
 // Generated message map functions
 protected:
-	//{{AFX_MSG(CRitsuDoc)
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
-	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+    //{{AFX_MSG(CRitsuDoc)
+        // NOTE - the ClassWizard will add and remove member functions here.
+        //    DO NOT EDIT what you see in these blocks of generated code !
+    //}}AFX_MSG
+    DECLARE_MESSAGE_MAP()
 
-	// Generated OLE dispatch map functions
-	//{{AFX_DISPATCH(CRitsuDoc)
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
-	//}}AFX_DISPATCH
-	DECLARE_DISPATCH_MAP()
-	DECLARE_INTERFACE_MAP()
+    // Generated OLE dispatch map functions
+    //{{AFX_DISPATCH(CRitsuDoc)
+        // NOTE - the ClassWizard will add and remove member functions here.
+        //    DO NOT EDIT what you see in these blocks of generated code !
+    //}}AFX_DISPATCH
+    DECLARE_DISPATCH_MAP()
+    DECLARE_INTERFACE_MAP()
 };
 
 /////////////////////////////////////////////////////////////////////////////

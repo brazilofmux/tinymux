@@ -18,17 +18,17 @@ static char THIS_FILE[] = __FILE__;
 IMPLEMENT_DYNCREATE(CRitsuDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CRitsuDoc, CDocument)
-	//{{AFX_MSG_MAP(CRitsuDoc)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-		//    DO NOT EDIT what you see in these blocks of generated code!
-	//}}AFX_MSG_MAP
+    //{{AFX_MSG_MAP(CRitsuDoc)
+        // NOTE - the ClassWizard will add and remove mapping macros here.
+        //    DO NOT EDIT what you see in these blocks of generated code!
+    //}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 BEGIN_DISPATCH_MAP(CRitsuDoc, CDocument)
-	//{{AFX_DISPATCH_MAP(CRitsuDoc)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-		//      DO NOT EDIT what you see in these blocks of generated code!
-	//}}AFX_DISPATCH_MAP
+    //{{AFX_DISPATCH_MAP(CRitsuDoc)
+        // NOTE - the ClassWizard will add and remove mapping macros here.
+        //      DO NOT EDIT what you see in these blocks of generated code!
+    //}}AFX_DISPATCH_MAP
 END_DISPATCH_MAP()
 
 // Note: we add support for IID_IRitsu to support typesafe binding
@@ -40,7 +40,7 @@ static const IID IID_IRitsu =
 { 0x9b360243, 0x2e8f, 0x4f7b, { 0x87, 0xa7, 0xd3, 0x1e, 0xe2, 0xf2, 0x9c, 0x9c } };
 
 BEGIN_INTERFACE_MAP(CRitsuDoc, CDocument)
-	INTERFACE_PART(CRitsuDoc, IID_IRitsu, Dispatch)
+    INTERFACE_PART(CRitsuDoc, IID_IRitsu, Dispatch)
 END_INTERFACE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -48,27 +48,27 @@ END_INTERFACE_MAP()
 
 CRitsuDoc::CRitsuDoc()
 {
-	// TODO: add one-time construction code here
+    // TODO: add one-time construction code here
 
-	EnableAutomation();
+    EnableAutomation();
 
-	AfxOleLockApp();
+    AfxOleLockApp();
 }
 
 CRitsuDoc::~CRitsuDoc()
 {
-	AfxOleUnlockApp();
+    AfxOleUnlockApp();
 }
 
 BOOL CRitsuDoc::OnNewDocument()
 {
-	if (!CDocument::OnNewDocument())
-		return FALSE;
+    if (!CDocument::OnNewDocument())
+        return FALSE;
 
-	// TODO: add reinitialization code here
-	// (SDI documents will reuse this document)
+    // TODO: add reinitialization code here
+    // (SDI documents will reuse this document)
 
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -78,14 +78,14 @@ BOOL CRitsuDoc::OnNewDocument()
 
 void CRitsuDoc::Serialize(CArchive& ar)
 {
-	if (ar.IsStoring())
-	{
-		// TODO: add storing code here
-	}
-	else
-	{
-		// TODO: add loading code here
-	}
+    if (ar.IsStoring())
+    {
+        // TODO: add storing code here
+    }
+    else
+    {
+        // TODO: add loading code here
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,12 +94,12 @@ void CRitsuDoc::Serialize(CArchive& ar)
 #ifdef _DEBUG
 void CRitsuDoc::AssertValid() const
 {
-	CDocument::AssertValid();
+    CDocument::AssertValid();
 }
 
 void CRitsuDoc::Dump(CDumpContext& dc) const
 {
-	CDocument::Dump(dc);
+    CDocument::Dump(dc);
 }
 #endif //_DEBUG
 
