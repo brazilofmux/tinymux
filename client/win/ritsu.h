@@ -1,12 +1,66 @@
 
-#if !defined(AFX_RITSU_H__4CEA2261_A4B7_40E9_BEE7_3C7BAEC2BE08__INCLUDED_)
-#define AFX_RITSU_H__4CEA2261_A4B7_40E9_BEE7_3C7BAEC2BE08__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+#if !defined(CRITSUAPP_H)
+#define CRITSUAPP_H
 
 #include "resource.h"
 
+typedef struct
+{
+    CWindow *pWindow;
+    CWindow *pParentWindow;
+} CreateParams;
 
-#endif // !defined(AFX_RITSU_H__4CEA2261_A4B7_40E9_BEE7_3C7BAEC2BE08__INCLUDED_)
+CWindow *GetWindowPointer(HWND hwnd);
+void Attach(HWND hwnd, CWindow *pWnd);
+CWindow *Detach(HWND hwnd);
+
+#define MAX_LOADSTRING 100
+
+class CRitsuApp
+{
+public:
+    static LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam);
+    CRitsuApp();
+
+    bool   Initialize(HINSTANCE hInstance, int nCmdShow);
+    WPARAM Run(void);
+    bool   Finalize(void);
+
+    bool   RegisterClasses(void);
+    bool   UnregisterClasses(void);
+    bool   EnableHook(void);
+    bool   DisableHook(void);
+
+    int    LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax);
+    HICON  LoadIcon(LPCTSTR lpIconName);
+
+    ~CRitsuApp() {};
+
+    // Mechanism for associating CWindow objects allocated by us with the
+    // window handles allocated by the platform.  This approach assumes a
+    // single thread. MFC does basically the same thing for multiple threads.
+    // We use a window creation hook and a thread-local global variable
+    // (CRitsuApp::m_pTemp) to attach the initial CWindow pointer with the
+    // window handle. The CWindow is disassociated and destructed during
+    // WM_NCDESTROY.
+    //
+    CWindow    *m_pTemp;
+    HHOOK       m_hhk;
+    CHashTable  m_mapHandles;
+
+    // Application
+    //
+    HINSTANCE   m_hInstance;
+    ATOM        m_atmMain;
+    ATOM        m_atmChild;
+    WCHAR       m_szMainClass[MAX_LOADSTRING];
+    WCHAR       m_szChildClass[MAX_LOADSTRING];
+
+    // Main Frame.
+    //
+    CMainFrame  *m_pMainFrame;
+};
+
+extern CRitsuApp g_theApp;
+
+#endif // CRITSUAPP_H
