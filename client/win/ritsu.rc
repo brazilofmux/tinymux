@@ -133,6 +133,8 @@ BEGIN
     IDS_RITSU               "Ritsu"
     IDS_MAIN_FRAME          "RitsuMainFrame"
     IDS_SESSION_FRAME       "RitsuSessionFrame"
+    IDS_OUTPUT_FRAME        "RitsuOutputFrame"
+    IDS_INPUT_FRAME         "RitsuInputFrame"
 END
 
 #endif    // English (U.S.) resources
