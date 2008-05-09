@@ -9,7 +9,7 @@ public:
     CMainFrame();
     bool Create(void);
     LRESULT EnableDisableCloseItem(bool bActivate);
-    void IncreaseDecreaseChildCount(bool bIncrease);
+    void IncreaseDecreaseSessionCount(bool bIncrease);
     virtual ~CMainFrame();
 
     // Handlers.

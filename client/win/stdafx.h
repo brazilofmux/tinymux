@@ -16,11 +16,11 @@ class CRitsuApp;
 class CWindow;
 class CMainFrame;
 class CMDIControl;
-class CChildFrame;
+class CSessionFrame;
 
 #include "ritsu.h"
 #include "cwindow.h"
-#include "cchildframe.h"
+#include "csessionframe.h"
 #include "cmdicontrol.h"
 #include "cmainframe.h"
 

@@ -1,12 +1,12 @@
 #include "stdafx.h"
 
-LRESULT CChildFrame::OnDestroy(void)
+LRESULT CSessionFrame::OnDestroy(void)
 {
-    (void)m_pParentWindow->IncreaseDecreaseChildCount(false);
+    (void)m_pParentWindow->IncreaseDecreaseSessionCount(false);
     return 0;
 }
 
-LRESULT CChildFrame::OnPaint(void)
+LRESULT CSessionFrame::OnPaint(void)
 {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(m_hwnd, &ps);
@@ -18,10 +18,10 @@ LRESULT CChildFrame::OnPaint(void)
     return 0;
 }
 
-LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
-    CChildFrame *pWnd = (CChildFrame *)GetWindowPointer(hWnd);
+    CSessionFrame *pWnd = (CSessionFrame *)GetWindowPointer(hWnd);
 
     switch (message)
     {
@@ -57,7 +57,7 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
     return lRes;
 }
 
-LRESULT CChildFrame::OnCreate(CREATESTRUCT *pcs)
+LRESULT CSessionFrame::OnCreate(CREATESTRUCT *pcs)
 {
     MDICREATESTRUCT *pmdics = (MDICREATESTRUCT *)pcs->lpCreateParams;
     if (NULL != pmdics)
@@ -68,17 +68,17 @@ LRESULT CChildFrame::OnCreate(CREATESTRUCT *pcs)
             m_pParentWindow = (CMainFrame *)pcp->pParentWindow;
         }
     }
-    (void)m_pParentWindow->IncreaseDecreaseChildCount(true);
+    (void)m_pParentWindow->IncreaseDecreaseSessionCount(true);
     g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
     return 0;
 }
 
-CChildFrame::CChildFrame()
+CSessionFrame::CSessionFrame()
 {
     m_pParentWindow = NULL;
     m_szHello[0] = L'\0';
 }
 
-CChildFrame::~CChildFrame()
+CSessionFrame::~CSessionFrame()
 {
 }

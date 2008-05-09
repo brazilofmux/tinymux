@@ -56,7 +56,7 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
    return lRes;
 }
 
-void CMainFrame::IncreaseDecreaseChildCount(bool bIncrease)
+void CMainFrame::IncreaseDecreaseSessionCount(bool bIncrease)
 {
     if (bIncrease)
     {

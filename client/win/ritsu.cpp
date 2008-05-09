@@ -60,6 +60,7 @@ typedef struct
 
 CWindow *GetWindowPointer(HWND hwnd)
 {
+    mux_assert(NULL != hwnd);
     recHandlePtr rec;
     UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
 
@@ -71,6 +72,7 @@ CWindow *GetWindowPointer(HWND hwnd)
 
         if (rec.hwnd == hwnd)
         {
+            mux_assert(NULL != rec.pWnd);
             return rec.pWnd;
         }
         iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
@@ -80,6 +82,9 @@ CWindow *GetWindowPointer(HWND hwnd)
 
 void Attach(HWND hwnd, CWindow *pWnd)
 {
+    mux_assert(NULL != hwnd);
+    mux_assert(NULL != pWnd);
+
     recHandlePtr rec;
     UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
 
@@ -104,6 +109,7 @@ void Attach(HWND hwnd, CWindow *pWnd)
 
 CWindow *Detach(HWND hwnd)
 {
+    mux_assert(NULL != hwnd);
     recHandlePtr rec;
     UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
 
@@ -116,6 +122,7 @@ CWindow *Detach(HWND hwnd)
         if (rec.hwnd == hwnd)
         {
             g_theApp.m_mapHandles.Remove(iDir);
+            mux_assert(NULL != rec.pWnd);
             return rec.pWnd;
         }
         iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
@@ -127,11 +134,11 @@ CRitsuApp::CRitsuApp()
 {
     m_hInstance  = NULL;
     m_atmMain    = NULL;
-    m_atmChild   = NULL;
+    m_atmSession = NULL;
     m_pMainFrame = NULL;
     m_hhk        = NULL;
-    m_szChildClass[0] = L'\0';
-    m_szMainClass[0] = L'\0';
+    m_szSessionClass[0] = L'\0';
+    m_szMainClass[0]    = L'\0';
 }
 
 LRESULT CALLBACK CRitsuApp::CBTProc
@@ -146,6 +153,7 @@ LRESULT CALLBACK CRitsuApp::CBTProc
     {
         HWND hwnd = (HWND)wParam;
         CWindow *pWnd = GetWindowPointer(hwnd);
+        mux_assert(NULL == pWnd);
         if (NULL == pWnd)
         {
             Attach(hwnd, g_theApp.m_pTemp);
@@ -326,7 +334,7 @@ HICON CRitsuApp::LoadIcon(LPCTSTR lpIconName)
 bool CRitsuApp::RegisterClasses(void)
 {
     LoadString(IDS_MAIN_FRAME, m_szMainClass, MAX_LOADSTRING);
-    LoadString(IDS_CHILD_FRAME, m_szChildClass, MAX_LOADSTRING);
+    LoadString(IDS_SESSION_FRAME, m_szSessionClass, MAX_LOADSTRING);
 
     WNDCLASSEX wcex;
 
@@ -351,20 +359,20 @@ bool CRitsuApp::RegisterClasses(void)
     }
     m_atmMain = atm;
 
-    // Register Child Frame Window class.
+    // Register Session Frame Window class.
     //
-    wcex.lpfnWndProc   = (WNDPROC)CChildFrame::ChildWndProc;
+    wcex.lpfnWndProc   = (WNDPROC)CSessionFrame::SessionWndProc;
     wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
     wcex.lpszMenuName  = (LPCTSTR) NULL;
-    wcex.lpszClassName = m_szChildClass;
-    wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
+    wcex.lpszClassName = m_szSessionClass;
+    wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_SMALL);
 
     atm = RegisterClassEx(&wcex);
     if (0 == atm)
     {
         return false;
     }
-    m_atmChild = atm;
+    m_atmSession = atm;
     return true;
 }
 
@@ -380,13 +388,13 @@ bool CRitsuApp::UnregisterClasses(void)
         m_atmMain = 0;
     }
 
-    if (0 != m_atmChild)
+    if (0 != m_atmSession)
     {
-        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmChild), m_hInstance))
+        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmSession), m_hInstance))
         {
             b = false;
         }
-        m_atmChild = 0;
+        m_atmSession = 0;
     }
     return b;
 }

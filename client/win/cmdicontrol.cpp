@@ -21,10 +21,10 @@ CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREAT
 
 CWindow *CMDIControl::CreateNewChild(void)
 {
-    CChildFrame *pChild = NULL;
+    CSessionFrame *pChild = NULL;
     try
     {
-        pChild = new CChildFrame;
+        pChild = new CSessionFrame;
     }
     catch (...)
     {
@@ -42,7 +42,7 @@ CWindow *CMDIControl::CreateNewChild(void)
         MDICREATESTRUCT mcs;
         memset(&mcs, 0, sizeof(mcs));
         mcs.szTitle = L"Untitled";
-        mcs.szClass = g_theApp.m_szChildClass;
+        mcs.szClass = g_theApp.m_szSessionClass;
         mcs.hOwner = g_theApp.m_hInstance;
         mcs.x = mcs.cx = CW_USEDEFAULT;
         mcs.y = mcs.cy = CW_USEDEFAULT;
@@ -57,8 +57,12 @@ CWindow *CMDIControl::CreateNewChild(void)
 
 CWindow *CMDIControl::GetActive(void)
 {
+    CWindow *pWnd = NULL;
     HWND hwnd = (HWND)::SendMessage(m_hwnd, WM_MDIGETACTIVE, 0, 0);
-    CWindow *pWnd = (CWindow *)GetWindowPointer(hwnd);
+    if (NULL != hwnd)
+    {
+        pWnd = (CWindow *)GetWindowPointer(hwnd);
+    }
     return pWnd;
 }
 

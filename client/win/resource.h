@@ -23,7 +23,7 @@
 #define IDM_WINDOW_ARRANGE              118
 #define IDM_WINDOW_CLOSE_ALL            119
 #define IDC_MAIN_MDI                    120
-#define IDS_CHILD_FRAME                 122
+#define IDS_SESSION_FRAME               122
 #define IDC_RITSU                       123
 #define IDC_STATIC                      -1
 

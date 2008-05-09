@@ -1,14 +1,14 @@
-#ifndef CCHILDFRAME_H
-#define CCHILDFRAME_H
+#ifndef CSessionFrame_H
+#define CSessionFrame_H
 
 const int StartChildren = 3000;
 
-class CChildFrame : public CWindow
+class CSessionFrame : public CWindow
 {
 public:
-    static LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-    CChildFrame();
-    ~CChildFrame();
+    static LRESULT CALLBACK SessionWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+    CSessionFrame();
+    ~CSessionFrame();
 
     // Handlers.
     //
@@ -23,4 +23,4 @@ public:
     WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
-#endif // CCHILDFRAME_H
+#endif // CSessionFrame_H

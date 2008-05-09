@@ -52,9 +52,9 @@ public:
     //
     HINSTANCE   m_hInstance;
     ATOM        m_atmMain;
-    ATOM        m_atmChild;
+    ATOM        m_atmSession;
     WCHAR       m_szMainClass[MAX_LOADSTRING];
-    WCHAR       m_szChildClass[MAX_LOADSTRING];
+    WCHAR       m_szSessionClass[MAX_LOADSTRING];
 
     // Main Frame.
     //

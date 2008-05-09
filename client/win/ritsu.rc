@@ -86,7 +86,7 @@ CAPTION "About"
 FONT 8, "System"
 BEGIN
     ICON            IDI_RITSU,IDC_MYICON,14,9,16,16
-    LTEXT           "ritsu Version 1.0",IDC_STATIC,49,10,119,8,SS_NOPREFIX
+    LTEXT           "Ritsu Version 1.0",IDC_STATIC,49,10,119,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2008",IDC_STATIC,49,20,119,8
     DEFPUSHBUTTON   "OK",IDOK,195,6,30,11,WS_GROUP
 END
@@ -132,7 +132,7 @@ BEGIN
     IDS_HELLO               "Hello World!"
     IDS_RITSU               "Ritsu"
     IDS_MAIN_FRAME          "RitsuMainFrame"
-    IDS_CHILD_FRAME         "RitsuChildFrame"
+    IDS_SESSION_FRAME       "RitsuSessionFrame"
 END
 
 #endif    // English (U.S.) resources
