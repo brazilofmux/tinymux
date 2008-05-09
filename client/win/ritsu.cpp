@@ -51,14 +51,14 @@ int APIENTRY wWinMain
     MSG msg;
     BOOL bRet;
     HACCEL hAccelTable = LoadAccelerators(hInstance, (LPCTSTR)IDC_RITSU);
-    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
+    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
     {
         if (bRet == -1)
         {
             break;
         }
         else if (  !TranslateMDISysAccel(g_theApp.m_hChildFrame, &msg)
-                && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) 
+                && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -117,7 +117,7 @@ void CreateNewMDIChild(HWND hChildWnd)
 //
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message) 
+    switch (message)
     {
     case WM_CREATE:
         {
@@ -143,8 +143,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
         {
             // Parse the menu selections:
             //
-            int wmId    = LOWORD(wParam); 
-            int wmEvent = HIWORD(wParam); 
+            int wmId    = LOWORD(wParam);
+            int wmEvent = HIWORD(wParam);
             switch (wmId)
             {
             case IDM_FILE_NEW:
@@ -172,19 +172,19 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             case IDM_WINDOW_TILE:
                 SendMessage(g_theApp.m_hChildFrame, WM_MDITILE, 0, 0);
                 break;
-                
+
             case IDM_WINDOW_CASCADE:
                 SendMessage(g_theApp.m_hChildFrame, WM_MDICASCADE, 0, 0);
                 break;
-                
+
             case IDM_WINDOW_ARRANGE:
                 SendMessage(g_theApp.m_hChildFrame, WM_MDIICONARRANGE, 0, 0);
                 break;
-                
+
             case IDM_WINDOW_CLOSE_ALL:
                 {
                     HWND hWndCurrent;
-                    
+
                     do {
                         hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE,0,0);
                         if (NULL != hWndCurrent)
@@ -226,7 +226,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message) 
+    switch (message)
     {
     case WM_CREATE:
         break;
@@ -294,7 +294,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     //
     WNDCLASSEX wcex;
 
-    wcex.cbSize = sizeof(WNDCLASSEX); 
+    wcex.cbSize = sizeof(WNDCLASSEX);
 
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = (WNDPROC)MainWndProc;
@@ -322,11 +322,11 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     wcex.lpszMenuName  = (LPCTSTR) NULL;
     wcex.lpszClassName = _T("RitsuChildFrame");
     wcex.hIconSm       = LoadIcon(hInstance, (LPCTSTR)IDI_BACKSCROLL);
- 
+
     atm = RegisterClassEx(&wcex);
-    if (0 == atm) 
+    if (0 == atm)
     {
-        return false; 
+        return false;
     }
     m_atmChildFrame = atm;
 

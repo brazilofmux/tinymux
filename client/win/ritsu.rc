@@ -40,7 +40,7 @@ IDI_BACKSCROLL          ICON    DISCARDABLE     "res\\backscroll.ico"
 // Menu
 //
 
-IDC_RITSU MENU DISCARDABLE 
+IDC_RITSU MENU DISCARDABLE
 BEGIN
     POPUP "&File"
     BEGIN
@@ -68,7 +68,7 @@ END
 // Accelerator
 //
 
-IDC_RITSU ACCELERATORS MOVEABLE PURE 
+IDC_RITSU ACCELERATORS MOVEABLE PURE
 BEGIN
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
@@ -98,7 +98,7 @@ END
 // TEXTINCLUDE
 //
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -107,13 +107,13 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
 END
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
@@ -126,7 +126,7 @@ END
 // String Table
 //
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE DISCARDABLE
 BEGIN
     IDS_APP_TITLE           "ritsu"
     IDS_HELLO               "Hello World!"
