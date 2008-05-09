@@ -38,8 +38,8 @@ static UINT indicators[] =
 
 CMainFrame::CMainFrame()
 {
-	// TODO: add member initialization code here
-	
+	// TODO: add member initialization code here.
+    //
 }
 
 CMainFrame::~CMainFrame()
@@ -78,11 +78,20 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
-	if( !CMDIFrameWnd::PreCreateWindow(cs) )
-		return FALSE;
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
+    //
+    int xSize = ::GetSystemMetrics(SM_CXSCREEN);
+    int ySize = ::GetSystemMetrics(SM_CYSCREEN);
+    cs.cx = (9*xSize)/10;
+    cs.cy = (9*ySize)/10;
+    cs.x = (xSize - cs.cx)/2;
+    cs.y = (ySize - cs.cy)/2;
 
+	if (!CMDIFrameWnd::PreCreateWindow(cs))
+    {
+		return FALSE;
+    }
 	return TRUE;
 }
 
