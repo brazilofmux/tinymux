@@ -41,6 +41,7 @@ LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM w
 
     case WM_DESTROY:
         lRes = pWnd->OnDestroy();
+        break;
 
     case WM_NCDESTROY:
         {
