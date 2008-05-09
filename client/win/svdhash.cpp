@@ -286,16 +286,6 @@ UINT32 HASH_ProcessBuffer
     return ~ulHash;
 }
 
-UINT32 munge_hash(const UTF8 *pBuffer)
-{
-    UINT32 h = 0;
-    while (*pBuffer)
-    {
-        h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
-    }
-    return h;
-}
-
 #define NUMBER_OF_PRIMES 177
 const int Primes[NUMBER_OF_PRIMES] =
 {
@@ -1564,7 +1554,7 @@ void CHashTable::GetStats
 // --------------------------------------------------------------------------
 // AssertionFailed: A logical assertion has failed.
 //
-bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
+bool AssertionFailed(const WCHAR *SourceFile, unsigned int LineNo)
 {
     abort();
     return false;

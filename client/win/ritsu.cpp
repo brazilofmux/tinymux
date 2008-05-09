@@ -141,8 +141,10 @@ public:
     // Mechanism for associating CWindow objects allocated by us with the
     // window handles allocated by the platform.  This approach assumes a
     // single thread. MFC does basically the same thing for multiple threads.
-    // We use a Window creation hook and a thread-local global variable to
-    // attach the initial CWindow pointer with the window handle.
+    // We use a window creation hook and a thread-local global variable
+    // (CRitsuApp::m_pTemp) to attach the initial CWindow pointer with the
+    // window handle. The CWindow is disassociated and destructed during
+    // WM_NCDESTROY.
     //
     CWindow    *m_pTemp;
     HHOOK       m_hhk;
@@ -668,17 +670,15 @@ LRESULT CALLBACK CRitsuApp::CBTProc
     LPARAM lParam
 )
 {
-    if (HCBT_CREATEWND == nCode)
+    if (  HCBT_CREATEWND == nCode
+       && NULL != g_theApp.m_pTemp)
     {
         HWND hwnd = (HWND)wParam;
-        if (NULL != g_theApp.m_pTemp)
+        CWindow *pWnd = GetWindowPointer(hwnd);
+        if (NULL == pWnd)
         {
-            CWindow *pWnd = GetWindowPointer(hwnd);
-            if (NULL == pWnd)
-            {
-                Attach(hwnd, g_theApp.m_pTemp);
-                g_theApp.m_pTemp = NULL;
-            }
+            Attach(hwnd, g_theApp.m_pTemp);
+            g_theApp.m_pTemp = NULL;
         }
     }
 

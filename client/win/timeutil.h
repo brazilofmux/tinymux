@@ -190,8 +190,7 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
 extern bool isLeapYear(long iYear);
-extern int iMod(int x, int y);
+extern int  iMod(int x, int y);
 
 #endif // TIMEUTIL_H

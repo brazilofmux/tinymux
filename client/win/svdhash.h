@@ -51,8 +51,6 @@ extern UINT32 HASH_ProcessBuffer
     size_t       nBuffer
 );
 
-extern UINT32 munge_hash(const UTF8 *pBuffer);
-
 #if defined(_SGI_SOURCE) || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
 typedef UINT32 UINT_OFFSET;
 #define UINT_OFFSET_MAX_VALUE UINT32_MAX_VALUE

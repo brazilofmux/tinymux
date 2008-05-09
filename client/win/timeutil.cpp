@@ -491,7 +491,7 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
              + FACTOR_100NS_PER_MICROSECOND * tv->tv_usec;
 }
 
-static const UTF8 daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static const unsigned char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 {
