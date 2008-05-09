@@ -7,8 +7,8 @@ bool COutputFrame::Create(CWindow *pParentWindow, int x, int y, int cx, int cy)
     WCHAR szTitle[MAX_LOADSTRING];
     g_theApp.LoadString(IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 
-    x  += ::GetSystemMetrics(SM_CXFRAME);
-    y  += ::GetSystemMetrics(SM_CYFRAME);
+    x  = 0;
+    y  = 0;
     cx -= 2 * ::GetSystemMetrics(SM_CXFRAME);
     cy -= 2 * ::GetSystemMetrics(SM_CYFRAME);
 

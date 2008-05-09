@@ -13,12 +13,11 @@ public:
     // Handlers.
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
+    void    OnSize(UINT nType, int cx, int cy);
     LRESULT OnDestroy(void);
-    LRESULT OnPaint(void);
 
-    // Document stuff.
-    //
-    WCHAR        m_szHello[MAX_LOADSTRING];
+    COutputFrame *m_pOutputWindow;
+    CInputFrame  *m_pInputWindow;
 };
 
 #endif // CSessionFrame_H
