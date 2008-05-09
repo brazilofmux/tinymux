@@ -93,6 +93,22 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=.\cchildframe.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\cmainframe.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\cmdicontrol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\cwindow.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ritsu.cpp
 # End Source File
 # Begin Source File
@@ -129,7 +145,23 @@ SOURCE=.\autoconf.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\cchildframe.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\cmainframe.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\cmdicontrol.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\cwindow.h
 # End Source File
 # Begin Source File
 
