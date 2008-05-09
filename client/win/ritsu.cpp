@@ -12,34 +12,51 @@
 
 const int StartChildren = 3000;
 
-class CMainFrame
+class CWindow
+{
+public:
+    CWindow();
+    virtual ~CWindow();
+    virtual bool Finalize(HINSTANCE hInstance) = 0;
+
+    HWND        m_hwnd;
+    ATOM        m_atm;
+    TCHAR       m_szClass[MAX_LOADSTRING];
+};
+
+class CMainFrame : public CWindow
 {
 public:
 
     CMainFrame();
     void Initialize(void);
     bool RegisterClasses(HINSTANCE hInstance);
-    bool CreateWindows(HINSTANCE hInstance);
-    void SaveWindowPointer(void);
-    void ShowWindow(int nCmdShow) { ::ShowWindow(m_hMainFrame, nCmdShow); }
-    void UpdateWindow(void) { ::UpdateWindow(m_hMainFrame); }
-    bool Finalize(HINSTANCE hInstance);
-    ~CMainFrame();
+    bool Create(void);
+    void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
+    void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
+    virtual bool Finalize(HINSTANCE hInstance);
+    virtual ~CMainFrame();
 
-    TCHAR       m_szMainFrameClass[MAX_LOADSTRING];
-    TCHAR       m_szChildFrameClass[MAX_LOADSTRING];
-
-    ATOM        m_atmMainFrame;
-    ATOM        m_atmChildFrame;
-    HWND        m_hMainFrame;
+    // MDI Control
+    //
     HWND        m_hChildControl;
+
+    // Class and atom for child windows.
+    //
+    TCHAR       m_szChildFrameClass[MAX_LOADSTRING];
+    ATOM        m_atmChildFrame;
 
     // Document stuff.
     //
     TCHAR       m_szHello[MAX_LOADSTRING];
 };
 
-CMainFrame *GetMainFrame(HWND hwnd);
+class CChildFrame : public CWindow
+{
+public:
+};
+
+void *GetWindowPointer(HWND hwnd);
 
 class CRitsuApp
 {
@@ -50,7 +67,14 @@ public:
     WPARAM Run(void);
     bool   Finalize(void);
 
+    int LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax);
+
     ~CRitsuApp() {};
+
+    // Temp (used during window creation).  Using this assumes a single
+    // thread.
+    //
+    CWindow *m_pTemp;
 
     // Application
     //
@@ -65,8 +89,8 @@ typedef struct
 {
     union
     {
-        CMainFrame *p;
-        LONG l[(sizeof(CMainFrame *) + sizeof(long) - 1)/sizeof(long)];
+        CWindow *pWindow;
+        LONG l[(sizeof(void *) + sizeof(long) - 1)/sizeof(long)];
     } u;
 } ExtraWindowData;
 
@@ -87,8 +111,6 @@ int APIENTRY wWinMain
         g_theApp.Finalize();
         return 0;
     }
-    g_theApp.m_pMainFrame->ShowWindow(nCmdShow);
-    g_theApp.m_pMainFrame->UpdateWindow();
 
     int ret = g_theApp.Run();
     g_theApp.Finalize();
@@ -143,12 +165,12 @@ HWND CreateNewMDIChild(HWND hChildControl)
 //
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    CMainFrame *pWnd = GetMainFrame(hWnd);
+    CMainFrame *pWnd = (CMainFrame *)GetWindowPointer(hWnd);
     switch (message)
     {
     case WM_CREATE:
         {
-            // Create Child Frame Window.
+            // Create MDI Child Control.
             //
             CLIENTCREATESTRUCT ccs;
             memset(&ccs, 0, sizeof(ccs));
@@ -156,7 +178,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             ccs.idFirstChild = StartChildren;
 
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
-
             HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("mdiclient"), NULL,
                 WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
                 pcs->x, pcs->y, pcs->cx, pcs->cy, hWnd,
@@ -164,9 +185,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
             if (NULL != hChildControl)
             {
-                g_theApp.m_pMainFrame->m_hChildControl = hChildControl;
+                pWnd->m_hChildControl = hChildControl;
                 HWND hChildWnd = CreateNewMDIChild(hChildControl);
-                ShowWindow(hChildWnd, SW_SHOW);
             }
         }
         break;
@@ -250,14 +270,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
         break;
 
     default:
-        {
-            HWND hChildControl = NULL;
-            if (NULL != pWnd)
-            {
-                hChildControl = pWnd->m_hChildControl;
-            }
-            return DefFrameProc(hWnd, g_theApp.m_pMainFrame->m_hChildControl, message, wParam, lParam);
-        }
+        return DefFrameProc(hWnd, pWnd->m_hChildControl, message, wParam, lParam);
         break;
    }
    return 0;
@@ -265,6 +278,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    CChildFrame *pWnd = (CChildFrame *)GetWindowPointer(hWnd);
+
     switch (message)
     {
     case WM_CREATE:
@@ -275,7 +290,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             HMENU hMenu, hFileMenu;
             UINT EnableFlag;
 
-            hMenu = GetMenu(g_theApp.m_pMainFrame->m_hMainFrame);
+            hMenu = GetMenu(g_theApp.m_pMainFrame->m_hwnd);
             if (hWnd == (HWND)lParam)
             {
                 EnableFlag = MF_ENABLED;
@@ -292,7 +307,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             EnableMenuItem(hFileMenu, IDM_FILE_CLOSE, MF_BYCOMMAND | EnableFlag);
             EnableMenuItem(hFileMenu, IDM_WINDOW_CLOSE_ALL, MF_BYCOMMAND | EnableFlag);
 
-            DrawMenuBar(g_theApp.m_pMainFrame->m_hMainFrame);
+            DrawMenuBar(g_theApp.m_pMainFrame->m_hwnd);
         }
         break;
 
@@ -325,7 +340,7 @@ CRitsuApp::CRitsuApp()
 
 bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 {
-    m_hInstance  = hInstance;
+    m_hInstance = hInstance;
 
     m_pMainFrame = NULL;
     try
@@ -339,18 +354,22 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 
     if (  NULL == m_pMainFrame
        || !m_pMainFrame->RegisterClasses(hInstance)
-       || !m_pMainFrame->CreateWindows(hInstance))
+       || !m_pMainFrame->Create())
     {
         return false;
     }
+
+    m_pMainFrame->ShowWindow(nCmdShow);
+    m_pMainFrame->UpdateWindow();
+
     return true;
 }
 
 bool CRitsuApp::Finalize(void)
 {
-    g_theApp.m_pMainFrame->Finalize(m_hInstance);
-    delete g_theApp.m_pMainFrame;
-    g_theApp.m_pMainFrame = NULL;
+    m_pMainFrame->Finalize(m_hInstance);
+    delete m_pMainFrame;
+    m_pMainFrame = NULL;
     return true;
 }
 
@@ -379,12 +398,25 @@ WPARAM CRitsuApp::Run(void)
     return msg.wParam;
 }
 
+int CRitsuApp::LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
+{
+    return ::LoadString(m_hInstance, uID, lpBuffer, nBufferMax);
+}
+
+CWindow::CWindow()
+{
+    m_hwnd = NULL;
+    m_atm  = NULL;
+}
+
+CWindow::~CWindow()
+{
+}
+
 CMainFrame::CMainFrame()
 {
-    m_hMainFrame    = NULL;
     m_hChildControl = NULL;
     m_atmChildFrame = 0;
-    m_atmMainFrame  = 0;
 }
 
 CMainFrame::~CMainFrame()
@@ -393,7 +425,7 @@ CMainFrame::~CMainFrame()
 
 bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
 {
-    LoadString(hInstance, IDC_MAIN_FRAME, m_szMainFrameClass, MAX_LOADSTRING);
+    LoadString(hInstance, IDC_MAIN_FRAME, m_szClass, MAX_LOADSTRING);
 
     // Register Main Frame Window class.
     //
@@ -410,7 +442,7 @@ bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = (LPCTSTR)IDC_RITSU;
-    wcex.lpszClassName  = m_szMainFrameClass;
+    wcex.lpszClassName  = m_szClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
     ATOM atm = RegisterClassEx(&wcex);
@@ -418,7 +450,7 @@ bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
     {
         return false;
     }
-    m_atmMainFrame = atm;
+    m_atm = atm;
 
     // Register Child Frame Window class.
     //
@@ -437,65 +469,72 @@ bool CMainFrame::RegisterClasses(HINSTANCE hInstance)
     return true;
 }
 
-bool CMainFrame::CreateWindows(HINSTANCE hInstance)
+bool CMainFrame::Create(void)
 {
     // Create Main Frame Window.
     //
     TCHAR szTitle[MAX_LOADSTRING];
-    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadString(hInstance, IDS_HELLO, m_szHello, MAX_LOADSTRING);
+    g_theApp.LoadString(IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
 
     int xSize = ::GetSystemMetrics(SM_CXSCREEN);
     int ySize = ::GetSystemMetrics(SM_CYSCREEN);
     int cx = (9*xSize)/10;
     int cy = (9*ySize)/10;
 
-    HWND hWnd = CreateWindowEx(0L, m_szMainFrameClass, szTitle,
+    g_theApp.m_pTemp = this;
+    HWND hWnd = CreateWindowEx(0L, m_szClass, szTitle,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         (xSize - cx)/2, (ySize - cy)/2, cx, cy,
-        NULL, NULL, hInstance, NULL);
+        NULL, NULL, g_theApp.m_hInstance, NULL);
 
     if (!hWnd)
     {
         return false;
     }
-    m_hMainFrame = hWnd;
-    SaveWindowPointer();
     return true;
 }
 
-void CMainFrame::SaveWindowPointer()
+void *GetWindowPointer(HWND hwnd)
 {
     ExtraWindowData ewd;
-    ewd.u.p = this;
-    for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
+    if (NULL == g_theApp.m_pTemp)
     {
-        SetWindowLong(m_hMainFrame, i*sizeof(long), ewd.u.l[i]);
+        for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
+        {
+            ewd.u.l[i] = GetWindowLong(hwnd, i*sizeof(long));
+        }
     }
+    else
+    {
+        ewd.u.pWindow = g_theApp.m_pTemp;
+        ewd.u.pWindow->m_hwnd = hwnd;
+        g_theApp.m_pTemp = NULL;
+        for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
+        {
+            SetWindowLong(hwnd, i*sizeof(long), ewd.u.l[i]);
+        }
+    }
+    return ewd.u.pWindow;
 }
 
-CMainFrame *GetMainFrame(HWND hwnd)
+bool CWindow::Finalize(HINSTANCE hInstance)
 {
-    ExtraWindowData ewd;
-    for (int i = 0; i < sizeof(ewd.u.l)/sizeof(ewd.u.l[0]); i++)
+    bool b = true;
+    if (0 != m_atm)
     {
-        ewd.u.l[i] = GetWindowLong(hwnd, i*sizeof(long));
+        if (FALSE == UnregisterClass(MAKEINTATOM(m_atm), hInstance))
+        {
+            b = false;
+        }
+        m_atm = 0;
     }
-    return ewd.u.p;
+    return b;
 }
 
 bool CMainFrame::Finalize(HINSTANCE hInstance)
 {
     bool b = true;
-    if (0 != m_atmMainFrame)
-    {
-        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmMainFrame), hInstance))
-        {
-            b = false;
-        }
-        m_atmMainFrame = 0;
-    }
-
     if (0 != m_atmChildFrame)
     {
         if (FALSE == UnregisterClass(MAKEINTATOM(m_atmChildFrame), hInstance))
