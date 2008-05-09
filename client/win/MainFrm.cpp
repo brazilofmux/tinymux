@@ -78,6 +78,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
+    if (!CMDIFrameWnd::PreCreateWindow(cs))
+    {
+        return FALSE;
+    }
+
     // TODO: Modify the Window class or styles here by modifying
     //  the CREATESTRUCT cs
     //
@@ -88,10 +93,6 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
     cs.x = (xSize - cs.cx)/2;
     cs.y = (ySize - cs.cy)/2;
 
-    if (!CMDIFrameWnd::PreCreateWindow(cs))
-    {
-        return FALSE;
-    }
     return TRUE;
 }
 

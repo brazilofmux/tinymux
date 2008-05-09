@@ -10,7 +10,7 @@
 #endif // _MSC_VER > 1000
 
 
-class CRitsuView : public CView
+class CRitsuView : public CEditView
 {
 protected: // create from serialization only
     CRitsuView();

@@ -16,17 +16,17 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CRitsuView
 
-IMPLEMENT_DYNCREATE(CRitsuView, CView)
+IMPLEMENT_DYNCREATE(CRitsuView, CEditView)
 
-BEGIN_MESSAGE_MAP(CRitsuView, CView)
+BEGIN_MESSAGE_MAP(CRitsuView, CEditView)
     //{{AFX_MSG_MAP(CRitsuView)
         // NOTE - the ClassWizard will add and remove mapping macros here.
         //    DO NOT EDIT what you see in these blocks of generated code!
     //}}AFX_MSG_MAP
     // Standard printing commands
-    ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
-    ON_COMMAND(ID_FILE_PRINT_DIRECT, CView::OnFilePrint)
-    ON_COMMAND(ID_FILE_PRINT_PREVIEW, CView::OnFilePrintPreview)
+    ON_COMMAND(ID_FILE_PRINT, CEditView::OnFilePrint)
+    ON_COMMAND(ID_FILE_PRINT_DIRECT, CEditView::OnFilePrint)
+    ON_COMMAND(ID_FILE_PRINT_PREVIEW, CEditView::OnFilePrintPreview)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -44,10 +44,13 @@ CRitsuView::~CRitsuView()
 
 BOOL CRitsuView::PreCreateWindow(CREATESTRUCT& cs)
 {
-    // TODO: Modify the Window class or styles here by modifying
-    //  the CREATESTRUCT cs
+    BOOL bPreCreated = CEditView::PreCreateWindow(cs);
 
-    return CView::PreCreateWindow(cs);
+    // Enable word-wrapping.
+    //
+    cs.style &= ~(ES_AUTOHSCROLL|WS_HSCROLL);
+
+    return bPreCreated;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -65,18 +68,20 @@ void CRitsuView::OnDraw(CDC* pDC)
 
 BOOL CRitsuView::OnPreparePrinting(CPrintInfo* pInfo)
 {
-    // default preparation
-    return DoPreparePrinting(pInfo);
+    // default CEditView preparation
+    return CEditView::OnPreparePrinting(pInfo);
 }
 
-void CRitsuView::OnBeginPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
+void CRitsuView::OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo)
 {
-    // TODO: add extra initialization before printing
+    // Default CEditView begin printing.
+    CEditView::OnBeginPrinting(pDC, pInfo);
 }
 
-void CRitsuView::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
+void CRitsuView::OnEndPrinting(CDC* pDC, CPrintInfo* pInfo)
 {
-    // TODO: add cleanup after printing
+    // Default CEditView end printing
+    CEditView::OnEndPrinting(pDC, pInfo);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,12 +90,12 @@ void CRitsuView::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
 #ifdef _DEBUG
 void CRitsuView::AssertValid() const
 {
-    CView::AssertValid();
+    CEditView::AssertValid();
 }
 
 void CRitsuView::Dump(CDumpContext& dc) const
 {
-    CView::Dump(dc);
+    CEditView::Dump(dc);
 }
 
 CRitsuDoc* CRitsuView::GetDocument() // non-debug version is inline
