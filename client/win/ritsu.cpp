@@ -18,14 +18,21 @@ public:
 
     ~CRitsuApp() {};
 
-//private:
 
+    // Application
+    //
     HINSTANCE   m_hInstance;
+
+    // Main Frame.
+    //
     ATOM        m_atmMainFrame;
     ATOM        m_atmChildFrame;
-    TCHAR       m_szHello[MAX_LOADSTRING];
     HWND        m_hMainFrame;
     HWND        m_hChildControl;
+
+    // Document stuff.
+    //
+    TCHAR       m_szHello[MAX_LOADSTRING];
 };
 
 // Global Variables:
@@ -128,10 +135,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             memset(&ccs, 0, sizeof(ccs));
             ccs.hWindowMenu = GetSubMenu(GetMenu(hWnd), 1);
             ccs.idFirstChild = StartChildren;
-            HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("MDICLIENT"), NULL,
+
+            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
+
+            HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("mdiclient"), NULL,
                 WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
-                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWnd,
-                (HMENU)IDM_FILE_NEW, g_theApp.m_hInstance, &ccs);
+                pcs->x, pcs->y, pcs->cx, pcs->cy, hWnd,
+                (HMENU)IDC_MAIN_MDI, g_theApp.m_hInstance, &ccs);
 
             if (NULL != hChildControl)
             {
@@ -270,6 +280,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             EndPaint(hWnd, &ps);
         }
         break;
+
     default:
 
         return DefMDIChildProc(hWnd, message, wParam, lParam);
@@ -339,8 +350,15 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadString(hInstance, IDS_HELLO, m_szHello, MAX_LOADSTRING);
 
-    HWND hWnd = CreateWindowEx(0L, szMainFrameClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+    int xSize = ::GetSystemMetrics(SM_CXSCREEN);
+    int ySize = ::GetSystemMetrics(SM_CYSCREEN);
+    int cx = (9*xSize)/10;
+    int cy = (9*ySize)/10;
+
+    HWND hWnd = CreateWindowEx(0L, szMainFrameClass, szTitle,
+        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+        (xSize - cx)/2, (ySize - cy)/2, cx, cy,
+        NULL, NULL, hInstance, NULL);
 
     if (!hWnd)
     {

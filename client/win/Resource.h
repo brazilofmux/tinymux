@@ -22,13 +22,14 @@
 #define IDM_WINDOW_CASCADE              117
 #define IDM_WINDOW_ARRANGE              118
 #define IDM_WINDOW_CLOSE_ALL            119
+#define IDC_MAIN_MDI                    120
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        120
+#define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         32775
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
