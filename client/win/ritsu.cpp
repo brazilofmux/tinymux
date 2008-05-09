@@ -65,7 +65,7 @@ public:
 
     // Document stuff.
     //
-    TCHAR        m_szHello[MAX_LOADSTRING];
+    WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
 class CChildFrame : public CWindow
@@ -115,8 +115,8 @@ public:
     HINSTANCE   m_hInstance;
     ATOM        m_atmMain;
     ATOM        m_atmChild;
-    TCHAR       m_szMainClass[MAX_LOADSTRING];
-    TCHAR       m_szChildClass[MAX_LOADSTRING];
+    WCHAR       m_szMainClass[MAX_LOADSTRING];
+    WCHAR       m_szChildClass[MAX_LOADSTRING];
 
     // Main Frame.
     //
@@ -302,7 +302,7 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
 
 CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREATESTRUCT *pcs)
 {
-    HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, _T("mdiclient"), NULL,
+    HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, L"mdiclient", NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
         pcs->x, pcs->y, pcs->cx, pcs->cy, pParentWindow->m_hwnd,
         (HMENU)IDC_MAIN_MDI, g_theApp.m_hInstance, pccs);
@@ -332,8 +332,8 @@ CWindow *CMDIControl::CreateNewChild(void)
         //
         MDICREATESTRUCT mcs;
         memset(&mcs, 0, sizeof(mcs));
-        mcs.szTitle = _T("Untitled");
-        mcs.szClass = _T("RitsuChildFrame");
+        mcs.szTitle = L"Untitled";
+        mcs.szClass = L"RitsuChildFrame";
         mcs.hOwner = g_theApp.m_hInstance;
         mcs.x = mcs.cx = CW_USEDEFAULT;
         mcs.y = mcs.cy = CW_USEDEFAULT;
@@ -534,27 +534,93 @@ bool CRitsuApp::Finalize(void)
 
 WPARAM CRitsuApp::Run(void)
 {
-    // Main message loop.
-    //
-    MSG msg;
-    BOOL bRet;
     HACCEL hAccelTable = LoadAccelerators(m_hInstance, (LPCTSTR)IDC_RITSU);
-    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
-    {
-        if (-1 == bRet)
-        {
-            break;
-        }
-        else if (  !TranslateMDISysAccel(g_theApp.m_pMainFrame->m_pMDIControl->m_hChildControl, &msg)
-                && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
 
+    // Main message loop:
+    //
+    WPARAM iReturn = 0;
+    bool bFinished = false;
+    while (!bFinished)
+    {
+        CLinearTimeAbsolute ltaCurrent;
+        ltaCurrent.GetUTC();
+
+        // Execute background tasks at specifically scheduled times.
+        //
+        scheduler.RunTasks(ltaCurrent);
+        CLinearTimeAbsolute ltaWakeUp;
+        if (!scheduler.WhenNext(&ltaWakeUp))
+        {
+            ltaWakeUp = ltaCurrent + time_30m;
+        }
+        else if (ltaWakeUp < ltaCurrent)
+        {
+            // This is necessary to deal with computer time jumping backwards
+            // which can happen when someone sets or resets the computer clock.
+            //
+            ltaWakeUp = ltaCurrent;
+        }
+
+        CLinearTimeDelta ltdTimeOut = ltaWakeUp - ltaCurrent;
+        DWORD dwTimeout = ltdTimeOut.ReturnMilliseconds();
+
+        DWORD nHandles = 0;
+        DWORD dwObject = MsgWaitForMultipleObjectsEx(nHandles, NULL, dwTimeout, QS_ALLINPUT, 0);
+        if (WAIT_OBJECT_0 + nHandles == dwObject)
+        {
+            for (; !bFinished;)
+            {
+                // There is at least one new message waiting to be processed.
+                //
+                MSG msg;
+                BOOL bGM = GetMessage(&msg, NULL, 0, 0);
+                if (0 == bGM)
+                {
+                    // WM_QUIT message was received. It is time to terminate
+                    // ourselves.
+                    //
+                    iReturn = msg.wParam;
+                    bFinished = true;
+                }
+                else if (-1 == bGM)
+                {
+                    // An unexpected problem occured.
+                    //
+                    bFinished = true;
+                }
+                else
+                {
+                    // Translate and dispatch message to Windows Procedure.
+                    //
+                    if (  !TranslateMDISysAccel(g_theApp.m_pMainFrame->m_pMDIControl->m_hChildControl, &msg)
+                       && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+                    {
+                        TranslateMessage(&msg);
+                        DispatchMessage(&msg);
+                    }
+                }
+
+                // We must process all messages in the queue before making
+                // another MsgWaitForMultipleObjectsEx() call.
+                //
+                if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE|PM_NOYIELD))
+                {
+                    break;
+                }
+            }
+        }
+        else if (WAIT_TIMEOUT != dwObject)
+        {
+            // An unexpected event occured.
+            //
+            bFinished = true;
+        }
+
+        // It's time to perform some background task.
+        //
+    }
     DestroyAcceleratorTable(hAccelTable);
-    return msg.wParam;
+    return iReturn;
 }
 
 int CRitsuApp::LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
@@ -626,7 +692,7 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.lpfnWndProc   = (WNDPROC)CChildFrame::ChildWndProc;
     wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
     wcex.lpszMenuName  = (LPCTSTR) NULL;
-    wcex.lpszClassName = _T("RitsuChildFrame");
+    wcex.lpszClassName = L"RitsuChildFrame";
     wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
 
     atm = RegisterClassEx(&wcex);
@@ -642,7 +708,7 @@ bool CMainFrame::Create(void)
 {
     // Create Main Frame Window.
     //
-    TCHAR szTitle[MAX_LOADSTRING];
+    WCHAR szTitle[MAX_LOADSTRING];
     g_theApp.LoadString(IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
 
