@@ -103,10 +103,30 @@ SOURCE=.\ritsu.rc
 
 SOURCE=.\stdafx.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\timer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\timeutil.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=.\autoconf.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\externs.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\resource.h
@@ -118,6 +138,10 @@ SOURCE=.\ritsu.h
 # Begin Source File
 
 SOURCE=.\stdafx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\timeutil.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
