@@ -1,0 +1,42 @@
+// ritsu.odl : type library source for ritsu.exe
+
+// This file will be processed by the MIDL compiler to produce the
+// type library (ritsu.tlb).
+
+[ uuid(04A1DE07-7A78-4CF9-B981-08A99D7B8699), version(1.0) ]
+library Ritsu
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+
+	//  Primary dispatch interface for CRitsuDoc
+	
+	[ uuid(9B360243-2E8F-4F7B-87A7-D31EE2F29C9C) ]
+	dispinterface IRitsu
+	{
+		properties:
+			// NOTE - ClassWizard will maintain property information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_PROP(CRitsuDoc)
+			//}}AFX_ODL_PROP
+			
+		methods:
+			// NOTE - ClassWizard will maintain method information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_METHOD(CRitsuDoc)
+			//}}AFX_ODL_METHOD
+
+	};
+
+	//  Class information for CRitsuDoc
+	
+	[ uuid(D97C1736-12EC-4347-98C9-0C6BF4768B89) ]
+	coclass Document
+	{
+		[default] dispinterface IRitsu;
+	};
+
+	//{{AFX_APPEND_ODL}}
+	//}}AFX_APPEND_ODL}}
+};
