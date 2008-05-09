@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+
 LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
@@ -231,17 +232,12 @@ CMainFrame::~CMainFrame()
     m_nChildren   = 0;
 }
 
-bool CMainFrame::Create(void)
+bool CMainFrame::Create(int x, int y, int cx, int cy)
 {
     // Create Main Frame Window.
     //
     WCHAR szTitle[MAX_LOADSTRING];
     g_theApp.LoadString(IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-
-    int xSize = ::GetSystemMetrics(SM_CXSCREEN);
-    int ySize = ::GetSystemMetrics(SM_CYSCREEN);
-    int cx = (9*xSize)/10;
-    int cy = (9*ySize)/10;
 
     CreateParams cp;
     cp.pWindow = this;
@@ -249,7 +245,7 @@ bool CMainFrame::Create(void)
     g_theApp.m_pTemp = this;
     HWND hWnd = ::CreateWindowEx(0L, g_theApp.m_szMainClass, szTitle,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-        (xSize - cx)/2, (ySize - cy)/2, cx, cy,
+        x, y, cx, cy,
         NULL, NULL, g_theApp.m_hInstance, &cp);
 
     if (NULL == hWnd)

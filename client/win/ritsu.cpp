@@ -212,7 +212,14 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
         return false;
     }
 
-    if (!m_pMainFrame->Create())
+    int xSize = ::GetSystemMetrics(SM_CXSCREEN);
+    int ySize = ::GetSystemMetrics(SM_CYSCREEN);
+    int cx = (9*xSize)/10;
+    int cy = (9*ySize)/10;
+    int x = (xSize - cx)/2;
+    int y = (ySize - cy)/2;
+    
+    if (!m_pMainFrame->Create(x, y, cx, cy))
     {
         UnregisterClasses();
         return false;

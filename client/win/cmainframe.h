@@ -7,7 +7,7 @@ public:
     static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
     CMainFrame();
-    bool Create(void);
+    bool Create(int x, int y, int cx, int cy);
     LRESULT EnableDisableCloseItem(bool bActivate);
     void IncreaseDecreaseSessionCount(bool bIncrease);
     virtual ~CMainFrame();
