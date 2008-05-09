@@ -78,6 +78,7 @@ public:
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
     LRESULT OnMDIActivate(bool bActivate);
+    LRESULT OnPaint(void);
 
     CWindow  *m_pParentWindow;
 };
@@ -252,6 +253,18 @@ LRESULT CChildFrame::OnMDIActivate(bool bActivate)
     return 0;
 }
 
+LRESULT CChildFrame::OnPaint(void)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(m_hwnd, &ps);
+    RECT rt;
+    GetClientRect(m_hwnd, &rt);
+    FillRect(hdc, &rt, (HBRUSH)(COLOR_WINDOW+1));
+    DrawText(hdc, g_theApp.m_pMainFrame->m_szHello, wcslen(g_theApp.m_pMainFrame->m_szHello), &rt, DT_CENTER);
+    EndPaint(m_hwnd, &ps);
+    return 0;
+}
+
 LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
@@ -276,15 +289,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
         return 1;
 
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            RECT rt;
-            GetClientRect(hWnd, &rt);
-            FillRect(hdc, &rt, (HBRUSH)(COLOR_WINDOW+1));
-            DrawText(hdc, g_theApp.m_pMainFrame->m_szHello, wcslen(g_theApp.m_pMainFrame->m_szHello), &rt, DT_CENTER);
-            EndPaint(hWnd, &ps);
-        }
+        lRes = pWnd->OnPaint();
         break;
 
     default:
