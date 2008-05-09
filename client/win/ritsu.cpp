@@ -45,9 +45,9 @@ public:
 class CMainFrame : public CWindow
 {
 public:
+    static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
     CMainFrame();
-    void Initialize(void);
     bool Create(void);
     void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
     void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
@@ -71,6 +71,7 @@ public:
 class CChildFrame : public CWindow
 {
 public:
+    static LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
     CChildFrame();
     ~CChildFrame();
 
@@ -102,8 +103,10 @@ public:
 
     ~CRitsuApp() {};
 
-    // Temp (used during window creation).  Using this assumes a single
-    // thread.
+    // Temporary used during window creation process.  This approach assumes a
+    // single thread. MFC does basically the same thing for multiple threads
+    // using a Window creation hook and thread-local storage to pass the
+    // initial CWindow pointer to the corresponding window procedure.
     //
     CWindow *m_pTemp;
 
@@ -154,7 +157,7 @@ int APIENTRY wWinMain
 
 // Mesage handler for about box.
 //
-LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -193,7 +196,7 @@ LRESULT CMainFrame::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
 //  WM_DESTROY  - post a quit message and return
 //
 //
-LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
     CMainFrame *pWnd = (CMainFrame *)GetWindowPointer(hWnd);
@@ -265,7 +268,7 @@ LRESULT CChildFrame::OnPaint(void)
     return 0;
 }
 
-LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
     CChildFrame *pWnd = (CChildFrame *)GetWindowPointer(hWnd);
@@ -280,9 +283,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
         break;
 
     case WM_MDIACTIVATE:
-        {
-            lRes = pWnd->OnMDIActivate(hWnd == (HWND)lParam);
-        }
+        lRes = pWnd->OnMDIActivate(hWnd == (HWND)lParam);
         break;
 
     case WM_ERASEBKGND:
@@ -418,7 +419,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
     switch (wmId)
     {
     case IDM_FILE_NEW:
-        m_pMDIControl->CreateNewChild();
+        (void)m_pMDIControl->CreateNewChild();
         break;
 
     case IDM_FILE_CLOSE:
@@ -432,7 +433,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
         break;
 
     case IDM_ABOUT:
-        DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)About);
+        DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)AboutProc);
         break;
 
     case IDM_EXIT:
@@ -484,9 +485,11 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 
 CRitsuApp::CRitsuApp()
 {
-    m_hInstance = NULL;
-    m_atmMain   = NULL;
-    m_atmChild  = NULL;
+    m_hInstance  = NULL;
+    m_atmMain    = NULL;
+    m_atmChild   = NULL;
+    m_pMainFrame = NULL;
+    m_pTemp      = NULL;
 }
 
 bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
@@ -600,7 +603,7 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.cbSize = sizeof(WNDCLASSEX);
 
     wcex.style          = 0; // CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = (WNDPROC)MainWndProc;
+    wcex.lpfnWndProc    = (WNDPROC)CMainFrame::MainWndProc;
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = LONGCEIL(sizeof(ExtraWindowData));
     wcex.hInstance      = g_theApp.m_hInstance;
@@ -620,7 +623,7 @@ bool CRitsuApp::RegisterClasses(void)
 
     // Register Child Frame Window class.
     //
-    wcex.lpfnWndProc   = (WNDPROC) ChildWndProc;
+    wcex.lpfnWndProc   = (WNDPROC)CChildFrame::ChildWndProc;
     wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
     wcex.lpszMenuName  = (LPCTSTR) NULL;
     wcex.lpszClassName = _T("RitsuChildFrame");
