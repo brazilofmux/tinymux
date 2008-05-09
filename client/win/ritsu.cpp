@@ -20,6 +20,7 @@ public:
 
     virtual LRESULT OnCreate(CREATESTRUCT *pcs) = 0;
     LRESULT SendMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    bool DrawMenuBar(void);
 
     HWND        m_hwnd;
 };
@@ -51,6 +52,8 @@ public:
     bool Create(void);
     void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
     void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
+    LRESULT EnableDisableCloseItem(bool bActivate);
+    void IncreaseDecreaseChildCount(bool bIncrease);
     virtual ~CMainFrame();
 
     // Handlers.
@@ -62,6 +65,7 @@ public:
     // MDI Control
     //
     CMDIControl *m_pMDIControl;
+    int          m_nChildren;
 
     // Document stuff.
     //
@@ -79,9 +83,10 @@ public:
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
     LRESULT OnMDIActivate(bool bActivate);
+    LRESULT OnDestroy(void);
     LRESULT OnPaint(void);
 
-    CWindow  *m_pParentWindow;
+    CMainFrame  *m_pParentWindow;
 };
 
 void *GetWindowPointer(HWND hwnd);
@@ -231,9 +236,29 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
    return lRes;
 }
 
-LRESULT CChildFrame::OnMDIActivate(bool bActivate)
+void CMainFrame::IncreaseDecreaseChildCount(bool bIncrease)
 {
-    HMENU hMenu = GetMenu(m_pParentWindow->m_hwnd);
+    if (bIncrease)
+    {
+        if (0 == m_nChildren)
+        {
+            EnableDisableCloseItem(true);
+        }
+        m_nChildren++;
+    }
+    else
+    {
+        m_nChildren--;
+        if (0 == m_nChildren)
+        {
+            EnableDisableCloseItem(false);
+        }
+    }
+}
+
+LRESULT CMainFrame::EnableDisableCloseItem(bool bActivate)
+{
+    HMENU hMenu = GetMenu(m_hwnd);
 
     UINT EnableFlag;
     if (bActivate)
@@ -252,7 +277,23 @@ LRESULT CChildFrame::OnMDIActivate(bool bActivate)
     EnableMenuItem(hFileMenu, IDM_FILE_CLOSE, MF_BYCOMMAND | EnableFlag);
     EnableMenuItem(hFileMenu, IDM_WINDOW_CLOSE_ALL, MF_BYCOMMAND | EnableFlag);
 
-    DrawMenuBar(g_theApp.m_pMainFrame->m_hwnd);
+    DrawMenuBar();
+    return 0;
+}
+
+bool CWindow::DrawMenuBar(void)
+{
+    return (0 == ::DrawMenuBar(m_hwnd));
+}
+
+LRESULT CChildFrame::OnMDIActivate(bool bActivate)
+{
+    return 0;
+}
+
+LRESULT CChildFrame::OnDestroy(void)
+{
+    (void)m_pParentWindow->IncreaseDecreaseChildCount(false);
     return 0;
 }
 
@@ -292,6 +333,9 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
     case WM_PAINT:
         lRes = pWnd->OnPaint();
         break;
+
+    case WM_DESTROY:
+        lRes = pWnd->OnDestroy();
 
     default:
 
@@ -378,8 +422,9 @@ LRESULT CChildFrame::OnCreate(CREATESTRUCT *pcs)
     MDICREATESTRUCT *pmdics = (MDICREATESTRUCT *)pcs->lpCreateParams;
     if (NULL != pmdics)
     {
-        m_pParentWindow = (CWindow *)pmdics->lParam;
+        m_pParentWindow = (CMainFrame *)pmdics->lParam;
     }
+    (void)m_pParentWindow->IncreaseDecreaseChildCount(true);
     return 0;
 }
 
@@ -645,6 +690,7 @@ CWindow::~CWindow()
 CMainFrame::CMainFrame()
 {
     m_pMDIControl = NULL;
+    m_nChildren   = 0;
 }
 
 CMainFrame::~CMainFrame()
