@@ -7,6 +7,10 @@ public:
     CWindow();
     virtual ~CWindow();
 
+    LRESULT DefaultWindowHandler(UINT message, WPARAM wParam, LPARAM lParam);
+    LRESULT DefaultMDIFrameHandler(UINT message, WPARAM wParam, LPARAM lParam);
+    LRESULT DefaultMDIChildHandler(UINT message, WPARAM wParam, LPARAM lParam);
+
     LRESULT SendMessage(UINT message, WPARAM wParam, LPARAM lParam);
     void ShowWindow(int nCmdShow);
     void UpdateWindow(void);
@@ -21,6 +25,7 @@ public:
     );
 
     HWND        m_hwnd;
+    CWindow    *m_pParentWindow;
 };
 
 #endif // CWINDOW_H

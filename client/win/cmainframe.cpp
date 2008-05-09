@@ -1,10 +1,5 @@
 #include "stdafx.h"
 
-LRESULT CMainFrame::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
-{
-    return ::DefWindowProc(m_hwnd, message, wParam, lParam);
-}
-
 LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
@@ -30,11 +25,11 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
         {
             if (NULL != pWnd->m_pMDIControl)
             {
-                lRes = pWnd->m_pMDIControl->OnDefaultHandler(message, wParam, lParam);
+                lRes = pWnd->m_pMDIControl->DefaultMDIFrameHandler(message, wParam, lParam);
             }
             else
             {
-                lRes = pWnd->OnDefaultHandler(message, wParam, lParam);
+                lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
             }
             (void)Detach(hWnd);
             delete pWnd;
@@ -45,11 +40,11 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
     default:
         if (NULL != pWnd->m_pMDIControl)
         {
-            lRes = pWnd->m_pMDIControl->OnDefaultHandler(message, wParam, lParam);
+            lRes = pWnd->m_pMDIControl->DefaultMDIFrameHandler(message, wParam, lParam);
         }
         else
         {
-            lRes = pWnd->OnDefaultHandler(message, wParam, lParam);
+            lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
         }
         break;
    }
@@ -209,7 +204,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
     default:
         if (StartChildren <= wmId)
         {
-            return m_pMDIControl->OnDefaultHandler(WM_COMMAND, wParam, lParam);
+            return m_pMDIControl->DefaultMDIFrameHandler(WM_COMMAND, wParam, lParam);
         }
         else
         {
@@ -257,7 +252,7 @@ bool CMainFrame::Create(void)
         (xSize - cx)/2, (ySize - cy)/2, cx, cy,
         NULL, NULL, g_theApp.m_hInstance, &cp);
 
-    if (!hWnd)
+    if (NULL == hWnd)
     {
         return false;
     }

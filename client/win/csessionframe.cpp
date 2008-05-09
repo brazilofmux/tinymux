@@ -2,7 +2,8 @@
 
 LRESULT CSessionFrame::OnDestroy(void)
 {
-    (void)m_pParentWindow->IncreaseDecreaseSessionCount(false);
+    CMainFrame *pWnd = (CMainFrame *)m_pParentWindow;
+    (void)pWnd->IncreaseDecreaseSessionCount(false);
     return 0;
 }
 
@@ -45,7 +46,7 @@ LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM w
 
     case WM_NCDESTROY:
         {
-            lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
+            lRes = pWnd->DefaultMDIChildHandler(message, wParam, lParam);
             (void)Detach(hWnd);
             delete pWnd;
             pWnd = NULL;
@@ -53,7 +54,7 @@ LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM w
         break;
     
     default:
-        lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
+        lRes = pWnd->DefaultMDIChildHandler(message, wParam, lParam);
     }
     return lRes;
 }
@@ -66,10 +67,11 @@ LRESULT CSessionFrame::OnCreate(CREATESTRUCT *pcs)
         CreateParams *pcp = (CreateParams *)pmdics->lParam;
         if (NULL != pcp)
         {
-            m_pParentWindow = (CMainFrame *)pcp->pParentWindow;
+            m_pParentWindow = pcp->pParentWindow;
+            CMainFrame *pWnd = (CMainFrame *)m_pParentWindow;
+            (void)pWnd->IncreaseDecreaseSessionCount(true);
         }
     }
-    (void)m_pParentWindow->IncreaseDecreaseSessionCount(true);
     g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
     return 0;
 }

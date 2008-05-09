@@ -10,12 +10,6 @@ public:
     LRESULT Tile(void);
     LRESULT Cascade(void);
     LRESULT IconArrange(void);
-
-    // Handlers.
-    //
-    LRESULT     OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam);
-
-    CWindow    *m_pParentWindow;
 };
 
 #endif // CMDICONTROL_H

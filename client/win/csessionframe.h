@@ -16,8 +16,6 @@ public:
     LRESULT OnDestroy(void);
     LRESULT OnPaint(void);
 
-    CMainFrame  *m_pParentWindow;
-
     // Document stuff.
     //
     WCHAR        m_szHello[MAX_LOADSTRING];

@@ -25,9 +25,25 @@ void CWindow::MoveWindow(int x, int y, int cx, int cy, bool bRepaint)
     ::MoveWindow(m_hwnd, x, y, cx, cy, bRepaint ? TRUE : FALSE);
 }
 
+LRESULT CWindow::DefaultWindowHandler(UINT message, WPARAM wParam, LPARAM lParam)
+{
+    return ::DefWindowProc(m_hwnd, message, wParam, lParam);
+}
+
+LRESULT CWindow::DefaultMDIFrameHandler(UINT message, WPARAM wParam, LPARAM lParam)
+{
+    return ::DefFrameProc(m_pParentWindow->m_hwnd, m_hwnd, message, wParam, lParam);
+}
+
+LRESULT CWindow::DefaultMDIChildHandler(UINT message, WPARAM wParam, LPARAM lParam)
+{
+    return ::DefMDIChildProc(m_hwnd, message, wParam, lParam);
+}
+
 CWindow::CWindow()
 {
     m_hwnd = NULL;
+    m_pParentWindow = NULL;
 }
 
 CWindow::~CWindow()

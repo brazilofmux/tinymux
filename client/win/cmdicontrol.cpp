@@ -1,10 +1,5 @@
 #include "stdafx.h"
 
-LRESULT CMDIControl::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
-{
-    return ::DefFrameProc(m_pParentWindow->m_hwnd, m_hwnd, message, wParam, lParam);
-}
-
 CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREATESTRUCT *pcs)
 {
     HWND hChildControl = ::CreateWindowEx(WS_EX_CLIENTEDGE, L"mdiclient", NULL,

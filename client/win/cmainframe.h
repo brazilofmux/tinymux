@@ -16,7 +16,6 @@ public:
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
     LRESULT OnCommand(WPARAM wParam, LPARAM lParam);
-    LRESULT OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam);
 
     // MDI Control
     //
