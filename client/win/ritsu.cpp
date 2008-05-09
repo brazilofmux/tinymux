@@ -121,6 +121,7 @@ public:
 class CRitsuApp
 {
 public:
+    static LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam);
     CRitsuApp();
 
     bool   Initialize(HINSTANCE hInstance, int nCmdShow);
@@ -129,20 +130,22 @@ public:
 
     bool   RegisterClasses(void);
     bool   UnregisterClasses(void);
+    bool   EnableHook(void);
+    bool   DisableHook(void);
 
     int    LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax);
     HICON  LoadIcon(LPCTSTR lpIconName);
 
     ~CRitsuApp() {};
 
-#if 0
-    // Temporary used during window creation process.  This approach assumes a
-    // single thread. MFC does basically the same thing for multiple threads
-    // using a Window creation hook and thread-local storage to pass the
-    // initial CWindow pointer to the corresponding window procedure.
+    // Mechanism for associating CWindow objects allocated by us with the
+    // window handles allocated by the platform.  This approach assumes a
+    // single thread. MFC does basically the same thing for multiple threads.
+    // We use a Window creation hook and a thread-local global variable to
+    // attach the initial CWindow pointer with the window handle.
     //
     CWindow    *m_pTemp;
-#endif
+    HHOOK       m_hhk;
     CHashTable  m_mapHandles;
 
     // Application
@@ -296,10 +299,6 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
     CMainFrame *pWnd = (CMainFrame *)GetWindowPointer(hWnd);
     switch (message)
     {
-    case WM_GETMINMAXINFO:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-        break;
-
     case WM_CREATE:
         {
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
@@ -313,30 +312,6 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
 
     case WM_DESTROY:
         PostQuitMessage(0);
-        break;
-
-    case WM_NCCREATE:
-        {
-            lRes = 0;
-            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
-            if (NULL != pcs)
-            {
-                CreateParams *pcp = (CreateParams *)pcs->lpCreateParams;
-                pWnd = (CMainFrame *)pcp->pWindow;
-                if (NULL != pWnd)
-                {
-                    Attach(hWnd, pcp->pWindow);
-                    if (NULL != pWnd->m_pMDIControl)
-                    {
-                        lRes = pWnd->m_pMDIControl->OnDefaultHandler(message, wParam, lParam);
-                    }
-                    else
-                    {
-                        lRes = pWnd->OnDefaultHandler(message, wParam, lParam);
-                    }
-                }
-            }
-        }
         break;
 
     case WM_NCDESTROY:
@@ -461,26 +436,6 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
     case WM_DESTROY:
         lRes = pWnd->OnDestroy();
 
-    case WM_NCCREATE:
-        {
-            lRes = 0;
-            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
-            if (NULL != pcs)
-            {
-                MDICREATESTRUCT *pmcs = (MDICREATESTRUCT *)pcs->lpCreateParams;
-                if (NULL != pmcs)
-                {
-                    CreateParams *pcp = (CreateParams *)pmcs->lParam;
-                    if (NULL != pcp->pWindow)
-                    {
-                        Attach(hWnd, pcp->pWindow);
-                        lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
-                    }
-                }
-            }
-        }
-        break;
-
     case WM_NCDESTROY:
         {
             lRes = DefMDIChildProc(hWnd, message, wParam, lParam);
@@ -540,6 +495,7 @@ CWindow *CMDIControl::CreateNewChild(void)
         mcs.style = MDIS_ALLCHILDSTYLES;
         mcs.lParam = (LPARAM)&cp;
 
+        g_theApp.m_pTemp = pChild;
         (void)::SendMessage(m_hwnd, WM_MDICREATE, 0, (LPARAM)&mcs);
     }
     return pChild;
@@ -700,8 +656,50 @@ CRitsuApp::CRitsuApp()
     m_atmMain    = NULL;
     m_atmChild   = NULL;
     m_pMainFrame = NULL;
+    m_hhk        = NULL;
     m_szChildClass[0] = L'\0';
     m_szMainClass[0] = L'\0';
+}
+
+LRESULT CALLBACK CRitsuApp::CBTProc
+(
+    int    nCode,
+    WPARAM wParam,
+    LPARAM lParam
+)
+{
+    if (HCBT_CREATEWND == nCode)
+    {
+        HWND hwnd = (HWND)wParam;
+        if (NULL != g_theApp.m_pTemp)
+        {
+            CWindow *pWnd = GetWindowPointer(hwnd);
+            if (NULL == pWnd)
+            {
+                Attach(hwnd, g_theApp.m_pTemp);
+                g_theApp.m_pTemp = NULL;
+            }
+        }
+    }
+
+    return CallNextHookEx(g_theApp.m_hhk, nCode, wParam, lParam);      
+}
+
+bool CRitsuApp::EnableHook(void)
+{
+    m_hhk = SetWindowsHookEx(WH_CBT, CBTProc, NULL, ::GetCurrentThreadId()); 
+    return (NULL != m_hhk);
+}
+
+bool CRitsuApp::DisableHook(void)
+{
+    bool bRet = true;
+    if (NULL != m_hhk)
+    {
+        bRet = (FALSE != UnhookWindowsHookEx(m_hhk));
+        m_hhk = NULL;
+    }
+    return bRet;
 }
 
 bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
@@ -711,6 +709,11 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     TIME_Initialize();
     init_timer();
     SeedRandomNumberGenerator();
+
+    if (!EnableHook())
+    {
+        return false;
+    }
 
     m_pMainFrame = NULL;
     try
@@ -743,6 +746,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 bool CRitsuApp::Finalize(void)
 {
     m_pMainFrame = NULL;
+    DisableHook();
     UnregisterClasses();
     return true;
 }
@@ -940,6 +944,7 @@ bool CMainFrame::Create(void)
     CreateParams cp;
     cp.pWindow = this;
     cp.pParentWindow = NULL;
+    g_theApp.m_pTemp = this;
     HWND hWnd = ::CreateWindowEx(0L, g_theApp.m_szMainClass, szTitle,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         (xSize - cx)/2, (ySize - cy)/2, cx, cy,
