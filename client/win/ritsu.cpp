@@ -139,6 +139,8 @@ CRitsuApp::CRitsuApp()
     m_hhk        = NULL;
     m_szSessionClass[0] = L'\0';
     m_szMainClass[0]    = L'\0';
+    m_szOutputClass[0]  = L'\0';
+    m_brushBlack = NULL;
 }
 
 LRESULT CALLBACK CRitsuApp::CBTProc
@@ -209,7 +211,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     {
         return false;
     }
-    
+
     if (!m_pMainFrame->Create())
     {
         UnregisterClasses();
@@ -335,6 +337,9 @@ bool CRitsuApp::RegisterClasses(void)
 {
     LoadString(IDS_MAIN_FRAME, m_szMainClass, MAX_LOADSTRING);
     LoadString(IDS_SESSION_FRAME, m_szSessionClass, MAX_LOADSTRING);
+    LoadString(IDS_OUTPUT_FRAME, m_szOutputClass, MAX_LOADSTRING);
+
+    m_brushBlack = CreateSolidBrush(RGB(0, 0, 0));
 
     WNDCLASSEX wcex;
 
@@ -373,6 +378,22 @@ bool CRitsuApp::RegisterClasses(void)
         return false;
     }
     m_atmSession = atm;
+
+    // Register Output Frame Window class.
+    //
+    wcex.lpfnWndProc   = (WNDPROC)COutputFrame::OutputWndProc;
+    wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
+    wcex.hbrBackground = NULL;
+    wcex.lpszClassName = m_szOutputClass;
+    wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_SMALL);
+
+    atm = RegisterClassEx(&wcex);
+    if (0 == atm)
+    {
+        return false;
+    }
+    m_atmOutput = atm;
+
     return true;
 }
 
@@ -396,5 +417,24 @@ bool CRitsuApp::UnregisterClasses(void)
         }
         m_atmSession = 0;
     }
+
+    if (0 != m_atmOutput)
+    {
+        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmOutput), m_hInstance))
+        {
+            b = false;
+        }
+        m_atmOutput = 0;
+    }
+
+    if (NULL != m_brushBlack)
+    {
+        if (FALSE == DeleteObject(m_brushBlack))
+        {
+            b = false;
+        }
+        m_brushBlack = NULL;
+    }
+
     return b;
 }

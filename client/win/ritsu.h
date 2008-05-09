@@ -50,11 +50,14 @@ public:
 
     // Application
     //
+    HBRUSH      m_brushBlack;
     HINSTANCE   m_hInstance;
     ATOM        m_atmMain;
     ATOM        m_atmSession;
+    ATOM        m_atmOutput;
     WCHAR       m_szMainClass[MAX_LOADSTRING];
     WCHAR       m_szSessionClass[MAX_LOADSTRING];
+    WCHAR       m_szOutputClass[MAX_LOADSTRING];
 
     // Main Frame.
     //
