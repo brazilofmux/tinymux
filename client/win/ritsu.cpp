@@ -12,15 +12,28 @@
 
 const int StartChildren = 3000;
 
+class CMainFrame;
+class CChildFrame;
+class CMDIControl;
+
 class CWindow
 {
 public:
     CWindow();
     virtual ~CWindow();
 
-    virtual LRESULT OnCreate(CREATESTRUCT *pcs) = 0;
     LRESULT SendMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
+    void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
     bool DrawMenuBar(void);
+    void MoveWindow
+    (
+        int x,
+        int y,
+        int cx,
+        int cy,
+        bool bRepaint = true
+    );
 
     HWND        m_hwnd;
 };
@@ -50,8 +63,6 @@ public:
 
     CMainFrame();
     bool Create(void);
-    void ShowWindow(int nCmdShow) { ::ShowWindow(m_hwnd, nCmdShow); }
-    void UpdateWindow(void) { ::UpdateWindow(m_hwnd); }
     LRESULT EnableDisableCloseItem(bool bActivate);
     void IncreaseDecreaseChildCount(bool bIncrease);
     virtual ~CMainFrame();
@@ -66,10 +77,6 @@ public:
     //
     CMDIControl *m_pMDIControl;
     int          m_nChildren;
-
-    // Document stuff.
-    //
-    WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
 class CChildFrame : public CWindow
@@ -82,11 +89,14 @@ public:
     // Handlers.
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
-    LRESULT OnMDIActivate(bool bActivate);
     LRESULT OnDestroy(void);
     LRESULT OnPaint(void);
 
     CMainFrame  *m_pParentWindow;
+
+    // Document stuff.
+    //
+    WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
 void *GetWindowPointer(HWND hwnd);
@@ -191,16 +201,6 @@ LRESULT CMainFrame::OnDefaultHandler(UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(m_hwnd, message, wParam, lParam);
 }
 
-//
-//  FUNCTION: MainWndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE:  Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
 LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRes = 0;
@@ -286,11 +286,6 @@ bool CWindow::DrawMenuBar(void)
     return (0 == ::DrawMenuBar(m_hwnd));
 }
 
-LRESULT CChildFrame::OnMDIActivate(bool bActivate)
-{
-    return 0;
-}
-
 LRESULT CChildFrame::OnDestroy(void)
 {
     (void)m_pParentWindow->IncreaseDecreaseChildCount(false);
@@ -304,7 +299,7 @@ LRESULT CChildFrame::OnPaint(void)
     RECT rt;
     GetClientRect(m_hwnd, &rt);
     FillRect(hdc, &rt, (HBRUSH)(COLOR_WINDOW+1));
-    DrawText(hdc, g_theApp.m_pMainFrame->m_szHello, wcslen(g_theApp.m_pMainFrame->m_szHello), &rt, DT_CENTER);
+    DrawText(hdc, m_szHello, wcslen(m_szHello), &rt, DT_CENTER);
     EndPaint(m_hwnd, &ps);
     return 0;
 }
@@ -321,10 +316,6 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
             lRes = pWnd->OnCreate(pcs);
         }
-        break;
-
-    case WM_MDIACTIVATE:
-        lRes = pWnd->OnMDIActivate(hWnd == (HWND)lParam);
         break;
 
     case WM_ERASEBKGND:
@@ -346,7 +337,7 @@ LRESULT CALLBACK CChildFrame::ChildWndProc(HWND hWnd, UINT message, WPARAM wPara
 
 CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREATESTRUCT *pcs)
 {
-    HWND hChildControl = CreateWindowEx(WS_EX_CLIENTEDGE, L"mdiclient", NULL,
+    HWND hChildControl = ::CreateWindowEx(WS_EX_CLIENTEDGE, L"mdiclient", NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
         pcs->x, pcs->y, pcs->cx, pcs->cy, pParentWindow->m_hwnd,
         (HMENU)IDC_MAIN_MDI, g_theApp.m_hInstance, pccs);
@@ -377,7 +368,7 @@ CWindow *CMDIControl::CreateNewChild(void)
         MDICREATESTRUCT mcs;
         memset(&mcs, 0, sizeof(mcs));
         mcs.szTitle = L"Untitled";
-        mcs.szClass = L"RitsuChildFrame";
+        mcs.szClass = g_theApp.m_szChildClass;
         mcs.hOwner = g_theApp.m_hInstance;
         mcs.x = mcs.cx = CW_USEDEFAULT;
         mcs.y = mcs.cy = CW_USEDEFAULT;
@@ -425,6 +416,7 @@ LRESULT CChildFrame::OnCreate(CREATESTRUCT *pcs)
         m_pParentWindow = (CMainFrame *)pmdics->lParam;
     }
     (void)m_pParentWindow->IncreaseDecreaseChildCount(true);
+    g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
     return 0;
 }
 
@@ -528,6 +520,11 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+void CWindow::MoveWindow(int x, int y, int cx, int cy, bool bRepaint)
+{
+    ::MoveWindow(m_hwnd, x, y, cx, cy, bRepaint ? TRUE : FALSE);
+}
+
 CRitsuApp::CRitsuApp()
 {
     m_hInstance  = NULL;
@@ -535,11 +532,16 @@ CRitsuApp::CRitsuApp()
     m_atmChild   = NULL;
     m_pMainFrame = NULL;
     m_pTemp      = NULL;
+    m_szChildClass[0] = L'\0';
+    m_szMainClass[0] = L'\0';
 }
 
 bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 {
     m_hInstance = hInstance;
+
+    TIME_Initialize();
+    init_timer();
 
     m_pMainFrame = NULL;
     try
@@ -700,6 +702,7 @@ CMainFrame::~CMainFrame()
 CChildFrame::CChildFrame()
 {
     m_pParentWindow = NULL;
+    m_szHello[0] = L'\0';
 }
 
 CChildFrame::~CChildFrame()
@@ -708,13 +711,14 @@ CChildFrame::~CChildFrame()
 
 bool CRitsuApp::RegisterClasses(void)
 {
-    LoadString(IDC_MAIN_FRAME, m_szMainClass, MAX_LOADSTRING);
+    LoadString(IDS_MAIN_FRAME, m_szMainClass, MAX_LOADSTRING);
+    LoadString(IDS_CHILD_FRAME, m_szChildClass, MAX_LOADSTRING);
 
     WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = 0; // CS_HREDRAW | CS_VREDRAW;
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = (WNDPROC)CMainFrame::MainWndProc;
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = LONGCEIL(sizeof(ExtraWindowData));
@@ -738,7 +742,7 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.lpfnWndProc   = (WNDPROC)CChildFrame::ChildWndProc;
     wcex.hIcon         = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
     wcex.lpszMenuName  = (LPCTSTR) NULL;
-    wcex.lpszClassName = L"RitsuChildFrame";
+    wcex.lpszClassName = m_szChildClass;
     wcex.hIconSm       = g_theApp.LoadIcon((LPCTSTR)IDI_BACKSCROLL);
 
     atm = RegisterClassEx(&wcex);
@@ -756,7 +760,6 @@ bool CMainFrame::Create(void)
     //
     WCHAR szTitle[MAX_LOADSTRING];
     g_theApp.LoadString(IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
 
     int xSize = ::GetSystemMetrics(SM_CXSCREEN);
     int ySize = ::GetSystemMetrics(SM_CYSCREEN);
@@ -764,7 +767,7 @@ bool CMainFrame::Create(void)
     int cy = (9*ySize)/10;
 
     g_theApp.m_pTemp = this;
-    HWND hWnd = CreateWindowEx(0L, g_theApp.m_szMainClass, szTitle,
+    HWND hWnd = ::CreateWindowEx(0L, g_theApp.m_szMainClass, szTitle,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         (xSize - cx)/2, (ySize - cy)/2, cx, cy,
         NULL, NULL, g_theApp.m_hInstance, NULL);

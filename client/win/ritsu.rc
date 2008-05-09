@@ -128,10 +128,11 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    IDS_APP_TITLE           "ritsu"
+    IDS_APP_TITLE           "Ritsu"
     IDS_HELLO               "Hello World!"
-    IDC_RITSU               "RITSU"
-    IDC_MAIN_FRAME          "RITSU_MAIN_FRAME"
+    IDS_RITSU               "Ritsu"
+    IDS_MAIN_FRAME          "RitsuMainFrame"
+    IDS_CHILD_FRAME         "RitsuChildFrame"
 END
 
 #endif    // English (U.S.) resources

@@ -11,8 +11,8 @@
 #define IDS_HELLO                       106
 #define IDI_RITSU                       107
 #define IDI_SMALL                       108
-#define IDC_RITSU                       109
-#define IDC_MAIN_FRAME                  110
+#define IDS_RITSU                       109
+#define IDS_MAIN_FRAME                  110
 #define IDR_MAINFRAME                   111
 #define IDI_BACKSCROLL                  112
 #define IDM_FILE_NEW                    113
@@ -23,13 +23,15 @@
 #define IDM_WINDOW_ARRANGE              118
 #define IDM_WINDOW_CLOSE_ALL            119
 #define IDC_MAIN_MDI                    120
+#define IDS_CHILD_FRAME                 122
+#define IDC_RITSU                       123
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        121
+#define _APS_NEXT_RESOURCE_VALUE        124
 #define _APS_NEXT_COMMAND_VALUE         32775
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
