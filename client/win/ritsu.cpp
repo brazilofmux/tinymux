@@ -1,206 +1,375 @@
-// ritsu.cpp : Defines the class behaviors for the application.
+// ritsu.cpp : Defines the entry point for the application.
 //
 
 #include "stdafx.h"
-#include "ritsu.h"
+#include "resource.h"
 
-#include "MainFrm.h"
-#include "ChildFrm.h"
-#include "ritsuDoc.h"
-#include "ritsuView.h"
+#define MAX_LOADSTRING 100
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+const int StartChildren = 3000;
 
-/////////////////////////////////////////////////////////////////////////////
-// CRitsuApp
+class CRitsuApp
+{
+public:
+    CRitsuApp();
 
-BEGIN_MESSAGE_MAP(CRitsuApp, CWinApp)
-    //{{AFX_MSG_MAP(CRitsuApp)
-    ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
-        // NOTE - the ClassWizard will add and remove mapping macros here.
-        //    DO NOT EDIT what you see in these blocks of generated code!
-    //}}AFX_MSG_MAP
-    // Standard file based document commands
-    ON_COMMAND(ID_FILE_NEW, CWinApp::OnFileNew)
-    ON_COMMAND(ID_FILE_OPEN, CWinApp::OnFileOpen)
-    // Standard print setup command
-    ON_COMMAND(ID_FILE_PRINT_SETUP, CWinApp::OnFilePrintSetup)
-END_MESSAGE_MAP()
+    bool Initialize(HINSTANCE hInstance, int nCmdShow);
+    bool Finalize(void);
 
-/////////////////////////////////////////////////////////////////////////////
-// CRitsuApp construction
+    ~CRitsuApp() {};
+
+//private:
+
+    HINSTANCE   m_hInstance;
+    ATOM        m_atmMainFrame;
+    ATOM        m_atmChildFrame;
+    TCHAR       m_szHello[MAX_LOADSTRING];
+    HWND        m_hMainFrame;
+    HWND        m_hChildFrame;
+};
+
+// Global Variables:
+//
+CRitsuApp g_theApp;
+
+int APIENTRY wWinMain
+(
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPSTR     lpCmdLine,
+    int       nCmdShow
+)
+{
+    if (!g_theApp.Initialize(hInstance, nCmdShow))
+    {
+        g_theApp.Finalize();
+        return 0;
+    }
+
+    // Main message loop.
+    //
+    MSG msg;
+    BOOL bRet;
+    HACCEL hAccelTable = LoadAccelerators(hInstance, (LPCTSTR)IDC_RITSU);
+    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
+    {
+        if (bRet == -1)
+        {
+            break;
+        }
+        else if (  !TranslateMDISysAccel(g_theApp.m_hChildFrame, &msg)
+                && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) 
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+    g_theApp.m_hMainFrame = NULL;
+    DestroyAcceleratorTable(hAccelTable);
+    g_theApp.Finalize();
+    return msg.wParam;
+}
+
+// Mesage handler for about box.
+//
+LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return TRUE;
+
+    case WM_COMMAND:
+        if (  IDOK == LOWORD(wParam)
+           || IDCANCEL == LOWORD(wParam))
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+void CreateNewMDIChild(HWND hChildWnd)
+{
+    MDICREATESTRUCT mcs;
+    memset(&mcs, 0, sizeof(mcs));
+    mcs.szTitle = _T("Untitled");
+    mcs.szClass = _T("RitsuChildFrame");
+    mcs.hOwner = g_theApp.m_hInstance;
+    mcs.x = mcs.cx = CW_USEDEFAULT;
+    mcs.y = mcs.cy = CW_USEDEFAULT;
+    mcs.style = MDIS_ALLCHILDSTYLES;
+
+    SendMessage(hChildWnd, WM_MDICREATE, 0, (LPARAM)&mcs);
+}
+
+//
+//  FUNCTION: MainWndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  PURPOSE:  Processes messages for the main window.
+//
+//  WM_COMMAND  - process the application menu
+//  WM_PAINT    - Paint the main window
+//  WM_DESTROY  - post a quit message and return
+//
+//
+LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) 
+    {
+    case WM_CREATE:
+        {
+            // Create Child Frame Window.
+            //
+            CLIENTCREATESTRUCT ccs;
+            memset(&ccs, 0, sizeof(ccs));
+            ccs.hWindowMenu = GetSubMenu(GetMenu(hWnd), 1);
+            ccs.idFirstChild = StartChildren;
+            HWND hChildWnd = CreateWindowEx(WS_EX_CLIENTEDGE, _T("MDICLIENT"), NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
+                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWnd, (HMENU)IDM_FILE_NEW, g_theApp.m_hInstance, &ccs);
+
+            if (NULL != hChildWnd)
+            {
+                g_theApp.m_hChildFrame = hChildWnd;
+                CreateNewMDIChild(g_theApp.m_hChildFrame);
+                ShowWindow(hChildWnd, SW_SHOW);
+            }
+        }
+        break;
+
+    case WM_COMMAND:
+        {
+            // Parse the menu selections:
+            //
+            int wmId    = LOWORD(wParam); 
+            int wmEvent = HIWORD(wParam); 
+            switch (wmId)
+            {
+            case IDM_FILE_NEW:
+                CreateNewMDIChild(g_theApp.m_hChildFrame);
+                break;
+
+            case IDM_FILE_CLOSE:
+                {
+                    HWND hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE, 0, 0);
+                    if (NULL != hWndCurrent)
+                    {
+                        SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
+                    }
+                }
+                break;
+
+            case IDM_ABOUT:
+                DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
+                break;
+
+            case IDM_EXIT:
+                DestroyWindow(hWnd);
+                break;
+
+            case IDM_WINDOW_TILE:
+                SendMessage(g_theApp.m_hChildFrame, WM_MDITILE, 0, 0);
+                break;
+                
+            case IDM_WINDOW_CASCADE:
+                SendMessage(g_theApp.m_hChildFrame, WM_MDICASCADE, 0, 0);
+                break;
+                
+            case IDM_WINDOW_ARRANGE:
+                SendMessage(g_theApp.m_hChildFrame, WM_MDIICONARRANGE, 0, 0);
+                break;
+                
+            case IDM_WINDOW_CLOSE_ALL:
+                {
+                    HWND hWndCurrent;
+                    
+                    do {
+                        hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE,0,0);
+                        if (NULL != hWndCurrent)
+                        {
+                            SendMessage(hWndCurrent, WM_CLOSE, 0, 0);
+                        }
+                    } while (NULL != hWndCurrent);
+                }
+                break;
+
+            default:
+                if (StartChildren <= wmId)
+                {
+                    return DefFrameProc(hWnd, g_theApp.m_hChildFrame, WM_COMMAND, wParam, lParam);
+                }
+                else
+                {
+                    HWND hWndCurrent = (HWND)SendMessage(g_theApp.m_hChildFrame, WM_MDIGETACTIVE, 0, 0);
+                    if (NULL != hWndCurrent)
+                    {
+                        SendMessage(hWndCurrent, WM_COMMAND, wParam, lParam);
+                    }
+                }
+            }
+        }
+        break;
+
+    case WM_DESTROY:
+
+        PostQuitMessage(0);
+        break;
+
+    default:
+
+        return DefFrameProc(hWnd, g_theApp.m_hChildFrame, message, wParam, lParam);
+   }
+   return 0;
+}
+
+LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) 
+    {
+    case WM_CREATE:
+        break;
+
+    case WM_MDIACTIVATE:
+        {
+            HMENU hMenu, hFileMenu;
+            UINT EnableFlag;
+
+            hMenu = GetMenu(g_theApp.m_hMainFrame);
+            if (hWnd == (HWND)lParam)
+            {
+                EnableFlag = MF_ENABLED;
+            }
+            else
+            {
+                EnableFlag = MF_GRAYED;
+            }
+
+            EnableMenuItem(hMenu, 1, MF_BYPOSITION | EnableFlag);
+
+            hFileMenu = GetSubMenu(hMenu, 0);
+
+            EnableMenuItem(hFileMenu, IDM_FILE_CLOSE, MF_BYCOMMAND | EnableFlag);
+            EnableMenuItem(hFileMenu, IDM_WINDOW_CLOSE_ALL, MF_BYCOMMAND | EnableFlag);
+
+            DrawMenuBar(g_theApp.m_hMainFrame);
+        }
+        break;
+
+    case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
+            RECT rt;
+            GetClientRect(hWnd, &rt);
+            DrawText(hdc, g_theApp.m_szHello, wcslen(g_theApp.m_szHello), &rt, DT_CENTER);
+            EndPaint(hWnd, &ps);
+        }
+        break;
+    default:
+
+        return DefMDIChildProc(hWnd, message, wParam, lParam);
+   }
+   return 0;
+}
 
 CRitsuApp::CRitsuApp()
 {
-    // TODO: add construction code here,
-    // Place all significant initialization in InitInstance
+    m_hInstance     = NULL;
+    m_hMainFrame    = NULL;
+    m_hChildFrame   = NULL;
+    m_atmChildFrame = 0;
+    m_atmMainFrame  = 0;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// The one and only CRitsuApp object
-
-CRitsuApp theApp;
-
-// This identifier was generated to be statistically unique for your app.
-// You may change it if you prefer to choose a specific identifier.
-
-// {D97C1736-12EC-4347-98C9-0C6BF4768B89}
-static const CLSID clsid =
-{ 0xd97c1736, 0x12ec, 0x4347, { 0x98, 0xc9, 0xc, 0x6b, 0xf4, 0x76, 0x8b, 0x89 } };
-
-/////////////////////////////////////////////////////////////////////////////
-// CRitsuApp initialization
-
-BOOL CRitsuApp::InitInstance()
+bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 {
-    if (!AfxSocketInit())
+    m_hInstance  = hInstance;
+
+    TCHAR szMainFrameClass[MAX_LOADSTRING];
+    LoadString(hInstance, IDC_MAIN_FRAME, szMainFrameClass, MAX_LOADSTRING);
+
+    // Register Main Frame Window class.
+    //
+    WNDCLASSEX wcex;
+
+    wcex.cbSize = sizeof(WNDCLASSEX); 
+
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc    = (WNDPROC)MainWndProc;
+    wcex.cbClsExtra     = 0;
+    wcex.cbWndExtra     = 0;
+    wcex.hInstance      = hInstance;
+    wcex.hIcon          = LoadIcon(hInstance, (LPCTSTR)IDI_RITSU);
+    wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.lpszMenuName   = (LPCTSTR)IDC_RITSU;
+    wcex.lpszClassName  = szMainFrameClass;
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+
+    ATOM atm = RegisterClassEx(&wcex);
+    if (0 == atm)
     {
-        AfxMessageBox(IDP_SOCKETS_INIT_FAILED);
-        return FALSE;
+        return false;
+    }
+    m_atmMainFrame = atm;
+
+    // Register Child Frame Window class.
+    //
+    wcex.lpfnWndProc   = (WNDPROC) ChildWndProc;
+    wcex.hIcon         = LoadIcon(hInstance, (LPCTSTR)IDI_BACKSCROLL);
+    wcex.lpszMenuName  = (LPCTSTR) NULL;
+    wcex.lpszClassName = _T("RitsuChildFrame");
+    wcex.hIconSm       = LoadIcon(hInstance, (LPCTSTR)IDI_BACKSCROLL);
+ 
+    atm = RegisterClassEx(&wcex);
+    if (0 == atm) 
+    {
+        return false; 
+    }
+    m_atmChildFrame = atm;
+
+    // Create Main Frame Window.
+    //
+    TCHAR szTitle[MAX_LOADSTRING];
+    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    LoadString(hInstance, IDS_HELLO, m_szHello, MAX_LOADSTRING);
+
+    HWND hWnd = CreateWindowEx(0L, szMainFrameClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+
+    if (!hWnd)
+    {
+        return false;
+    }
+    m_hMainFrame = hWnd;
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    return true;
+}
+
+bool CRitsuApp::Finalize(void)
+{
+    bool b;
+    if (0 != m_atmMainFrame)
+    {
+        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmMainFrame), m_hInstance))
+        {
+            b = false;
+        }
+        m_atmMainFrame = 0;
     }
 
-    // Initialize OLE libraries
-    if (!AfxOleInit())
+    if (0 != m_atmChildFrame)
     {
-        AfxMessageBox(IDP_OLE_INIT_FAILED);
-        return FALSE;
+        if (FALSE == UnregisterClass(MAKEINTATOM(m_atmChildFrame), m_hInstance))
+        {
+            b = false;
+        }
+        m_atmChildFrame = 0;
     }
-
-    AfxEnableControlContainer();
-
-    // Standard initialization
-    // If you are not using these features and wish to reduce the size
-    //  of your final executable, you should remove from the following
-    //  the specific initialization routines you do not need.
-
-#ifdef _AFXDLL
-    Enable3dControls();         // Call this when using MFC in a shared DLL
-#else
-    Enable3dControlsStatic();   // Call this when linking to MFC statically
-#endif
-
-    // Change the registry key under which our settings are stored.
-    // TODO: You should modify this string to be something appropriate
-    // such as the name of your company or organization.
-    SetRegistryKey(_T("Local AppWizard-Generated Applications"));
-
-    LoadStdProfileSettings();  // Load standard INI file options (including MRU)
-
-    // Register the application's document templates.  Document templates
-    //  serve as the connection between documents, frame windows and views.
-
-    CMultiDocTemplate* pDocTemplate;
-    pDocTemplate = new CMultiDocTemplate(
-        IDR_RITSUTYPE,
-        RUNTIME_CLASS(CRitsuDoc),
-        RUNTIME_CLASS(CChildFrame), // custom MDI child frame
-        RUNTIME_CLASS(CRitsuView));
-    AddDocTemplate(pDocTemplate);
-
-    // Connect the COleTemplateServer to the document template.
-    //  The COleTemplateServer creates new documents on behalf
-    //  of requesting OLE containers by using information
-    //  specified in the document template.
-    m_server.ConnectTemplate(clsid, pDocTemplate, FALSE);
-
-    // Register all OLE server factories as running.  This enables the
-    //  OLE libraries to create objects from other applications.
-    COleTemplateServer::RegisterAll();
-        // Note: MDI applications register all server objects without regard
-        //  to the /Embedding or /Automation on the command line.
-
-    // create main MDI Frame window
-    CMainFrame* pMainFrame = new CMainFrame;
-    if (!pMainFrame->LoadFrame(IDR_MAINFRAME))
-        return FALSE;
-    m_pMainWnd = pMainFrame;
-
-    // Parse command line for standard shell commands, DDE, file open
-    CCommandLineInfo cmdInfo;
-    ParseCommandLine(cmdInfo);
-
-    // Check to see if launched as OLE server
-    if (cmdInfo.m_bRunEmbedded || cmdInfo.m_bRunAutomated)
-    {
-        // Application was run with /Embedding or /Automation.  Don't show the
-        //  main window in this case.
-        return TRUE;
-    }
-
-    // When a server application is launched stand-alone, it is a good idea
-    //  to update the system registry in case it has been damaged.
-    m_server.UpdateRegistry(OAT_DISPATCH_OBJECT);
-    COleObjectFactory::UpdateRegistryAll();
-
-    // Dispatch commands specified on the command line
-    if (!ProcessShellCommand(cmdInfo))
-        return FALSE;
-
-    // The main window has been initialized, so show and update it.
-    pMainFrame->ShowWindow(m_nCmdShow);
-    pMainFrame->UpdateWindow();
-
-    return TRUE;
+    return b;
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CAboutDlg dialog used for App About
-
-class CAboutDlg : public CDialog
-{
-public:
-    CAboutDlg();
-
-// Dialog Data
-    //{{AFX_DATA(CAboutDlg)
-    enum { IDD = IDD_ABOUTBOX };
-    //}}AFX_DATA
-
-    // ClassWizard generated virtual function overrides
-    //{{AFX_VIRTUAL(CAboutDlg)
-    protected:
-    virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-    //}}AFX_VIRTUAL
-
-// Implementation
-protected:
-    //{{AFX_MSG(CAboutDlg)
-        // No message handlers
-    //}}AFX_MSG
-    DECLARE_MESSAGE_MAP()
-};
-
-CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
-{
-    //{{AFX_DATA_INIT(CAboutDlg)
-    //}}AFX_DATA_INIT
-}
-
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
-{
-    CDialog::DoDataExchange(pDX);
-    //{{AFX_DATA_MAP(CAboutDlg)
-    //}}AFX_DATA_MAP
-}
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
-    //{{AFX_MSG_MAP(CAboutDlg)
-        // No message handlers
-    //}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-// App command to run the dialog
-void CRitsuApp::OnAppAbout()
-{
-    CAboutDlg aboutDlg;
-    aboutDlg.DoModal();
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CRitsuApp message handlers
-
