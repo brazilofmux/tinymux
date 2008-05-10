@@ -55,9 +55,11 @@ public:
     ATOM        m_atmMain;
     ATOM        m_atmSession;
     ATOM        m_atmOutput;
+    ATOM        m_atmInput;
     WCHAR       m_szMainClass[MAX_LOADSTRING];
     WCHAR       m_szSessionClass[MAX_LOADSTRING];
     WCHAR       m_szOutputClass[MAX_LOADSTRING];
+    WCHAR       m_szInputClass[MAX_LOADSTRING];
 
     // Main Frame.
     //

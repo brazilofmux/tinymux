@@ -12,7 +12,7 @@ void CSessionFrame::OnSize(UINT nType, int cx, int cy)
     int cyInput  = cy/4;
     int cyOutput = cy - cyInput;
     m_pOutputWindow->MoveWindow(0, 0, cx, cyOutput);
-    m_pInputWindow->MoveWindow(0, 0, cx, cyInput);
+    m_pInputWindow->MoveWindow(0, cyOutput, cx, cyInput);
 }
 
 LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -93,8 +93,7 @@ LRESULT CSessionFrame::OnCreate(CREATESTRUCT *pcs)
     int cyInput  = pcs->cy/4;
     int cyOutput = pcs->cy - cyInput;
     if (  !m_pOutputWindow->Create(this, 0, 0, pcs->cx, cyOutput)
-       || !m_pInputWindow->Create(this, 0, cyOutput, pcs->cx, cyInput)
-       )
+       || !m_pInputWindow->Create(this, 0, cyOutput, pcs->cx, cyInput))
     {
         return 1;
     }

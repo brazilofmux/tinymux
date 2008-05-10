@@ -13,6 +13,11 @@ public:
     // Handlers.
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
+    LRESULT OnPaint(void);
+
+    // Document stuff.
+    //
+    WCHAR        m_szHello[MAX_LOADSTRING];
 };
 
 #endif // CINPUTFRAME_H
