@@ -61,6 +61,9 @@ public:
     WCHAR       m_szOutputClass[MAX_LOADSTRING];
     WCHAR       m_szInputClass[MAX_LOADSTRING];
 
+    bool        m_bMsftEdit;
+    HMODULE     m_hRichEdit;
+
     // Main Frame.
     //
     CMainFrame  *m_pMainFrame;

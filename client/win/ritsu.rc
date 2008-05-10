@@ -129,7 +129,6 @@ END
 STRINGTABLE DISCARDABLE
 BEGIN
     IDS_APP_TITLE           "Ritsu"
-    IDS_HELLO               "Hello World!"
     IDS_RITSU               "Ritsu"
     IDS_MAIN_FRAME          "RitsuMainFrame"
     IDS_SESSION_FRAME       "RitsuSessionFrame"

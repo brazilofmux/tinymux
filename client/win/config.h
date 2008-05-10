@@ -32,6 +32,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
+#include <richedit.h>
+#define MSFTEDIT_CLASS  L"RICHEDIT50W"
 
 #include <share.h>
 #include <io.h>

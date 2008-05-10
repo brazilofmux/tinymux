@@ -33,26 +33,37 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
     {
         m_pParentWindow = pcp->pParentWindow;
     }
-    g_theApp.LoadString(IDS_HELLO, m_szHello, MAX_LOADSTRING);
+
+    if (g_theApp.m_bMsftEdit)
+    {
+        // Rich Edit 4.1 is available on Windows XP SP1 and later.
+        //
+        m_hwndRichEdit = ::CreateWindowEx(0L, MSFTEDIT_CLASS, NULL,
+            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            pcs->x, pcs->y, pcs->cx, pcs->cy,
+            m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
+    }
+    else
+    {
+        // Rich Edit 2.0 (98/NT4) or 3.0 (Me/2K/XP) control.
+        //
+        m_hwndRichEdit = ::CreateWindowEx(0L, RICHEDIT_CLASS, NULL,
+            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            pcs->x, pcs->y, pcs->cx, pcs->cy,
+            m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
+    }
     return 0;
 }
 
-LRESULT CInputFrame::OnPaint(void)
+void CInputFrame::OnSize(UINT nType, int cx, int cy)
 {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(m_hwnd, &ps);
-    RECT rt;
-    GetClientRect(m_hwnd, &rt);
-    FillRect(hdc, &rt, g_theApp.m_brushBlack);
-    DrawText(hdc, m_szHello, wcslen(m_szHello), &rt, DT_CENTER);
-    EndPaint(m_hwnd, &ps);
-    return 0;
+    ::MoveWindow(m_hwndRichEdit, 0, 0, cx, cy, true);
 }
 
 CInputFrame::CInputFrame()
 {
     m_pParentWindow = NULL;
-    m_szHello[0] = L'\0';
+    m_hwndRichEdit  = NULL;
 }
 
 CInputFrame::~CInputFrame()
@@ -73,11 +84,9 @@ LRESULT CALLBACK CInputFrame::InputWndProc(HWND hWnd, UINT message, WPARAM wPara
         }
         break;
 
-    case WM_ERASEBKGND:
-        return 1;
-
-    case WM_PAINT:
-        lRes = pWnd->OnPaint();
+    case WM_SIZE:
+        pWnd->OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
+        lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
         break;
 
     case WM_NCDESTROY:

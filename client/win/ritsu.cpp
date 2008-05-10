@@ -137,11 +137,13 @@ CRitsuApp::CRitsuApp()
     m_atmSession = NULL;
     m_pMainFrame = NULL;
     m_hhk        = NULL;
+    m_hRichEdit  = NULL;
+    m_brushBlack = NULL;
     m_szSessionClass[0] = L'\0';
     m_szMainClass[0]    = L'\0';
     m_szOutputClass[0]  = L'\0';
     m_szInputClass[0]   = L'\0';
-    m_brushBlack = NULL;
+    m_bMsftEdit = false;
 }
 
 LRESULT CALLBACK CRitsuApp::CBTProc
@@ -197,6 +199,24 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
         return false;
     }
 
+    m_hRichEdit = ::LoadLibrary(L"Msftedit.dll");
+    if (NULL != m_hRichEdit)
+    {
+        m_bMsftEdit = true;
+    }
+    else
+    {
+        m_hRichEdit = ::LoadLibrary(L"Riched20.dll");
+        if (NULL != m_hRichEdit)
+        {
+            m_bMsftEdit = false;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     m_pMainFrame = NULL;
     try
     {
@@ -236,6 +256,12 @@ bool CRitsuApp::Finalize(void)
 {
     m_pMainFrame = NULL;
     DisableHook();
+    if (NULL != m_hRichEdit)
+    {
+        ::FreeLibrary(m_hRichEdit);
+        m_hRichEdit = NULL;
+    }
+
     UnregisterClasses();
     return true;
 }
