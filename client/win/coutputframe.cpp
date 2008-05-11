@@ -41,7 +41,7 @@ LRESULT COutputFrame::OnCreate(CREATESTRUCT *pcs)
         // Rich Edit 4.1 is available on Windows XP SP1 and later.
         //
         m_hwndRichEdit = ::CreateWindowEx(0L, MSFTEDIT_CLASS, NULL,
-            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE | WS_VSCROLL,
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
@@ -50,7 +50,7 @@ LRESULT COutputFrame::OnCreate(CREATESTRUCT *pcs)
         // Rich Edit 2.0 (98/NT4) or 3.0 (Me/2K/XP) control.
         //
         m_hwndRichEdit = ::CreateWindowEx(0L, RICHEDIT_CLASS, NULL,
-            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE | WS_VSCROLL,
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
@@ -103,12 +103,14 @@ DWORD CALLBACK COutputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, L
 
 void COutputFrame::AppendText(LONG cb, LPBYTE pbBuff)
 {
-#if 0
+    pbBuff[cb] = '\0';
+    pbBuff[cb+1] = '\0';
+
     // Position to the end.
     //
     CHARRANGE cr;
-    cr.cpMin = -1;
-    cr.cpMax = -1;
+    cr.cpMin = -1; // nLength;
+    cr.cpMax = -1; // nLength;
     (void)::SendMessage(m_hwndRichEdit, EM_EXSETSEL, 0, (LPARAM)&cr);
 
     STREAMFRAGMENT sf;
@@ -119,16 +121,7 @@ void COutputFrame::AppendText(LONG cb, LPBYTE pbBuff)
     es.dwCookie = (DWORD)&sf;
     es.dwError  = ERROR_SUCCESS;
     es.pfnCallback = COutputFrame::EditStreamCallback;
-    ::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE, (LPARAM)&es);
-#else
-    pbBuff[cb] = '\0';
-    pbBuff[cb+1] = '\0';
-    if ('\r' != pbBuff[0])
-    {
-        LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0, (LPARAM)pbBuff);
-    }
-#endif
-    return;
+    ::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE | SFF_SELECTION, (LPARAM)&es);
 }
 
 COutputFrame::COutputFrame()

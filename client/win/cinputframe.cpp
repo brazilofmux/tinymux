@@ -39,7 +39,7 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
         // Rich Edit 4.1 is available on Windows XP SP1 and later.
         //
         m_hwndRichEdit = ::CreateWindowEx(0L, MSFTEDIT_CLASS, NULL,
-            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE | WS_VSCROLL,
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
@@ -48,7 +48,7 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
         // Rich Edit 2.0 (98/NT4) or 3.0 (Me/2K/XP) control.
         //
         m_hwndRichEdit = ::CreateWindowEx(0L, RICHEDIT_CLASS, NULL,
-            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE,
+            ES_MULTILINE | ES_AUTOVSCROLL | WS_CHILD | WS_BORDER | WS_CLIPCHILDREN | WS_VISIBLE | WS_VSCROLL,
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
