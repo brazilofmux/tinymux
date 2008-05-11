@@ -387,7 +387,7 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.hInstance      = g_theApp.m_hInstance;
     wcex.hIcon          = g_theApp.LoadIcon((LPCTSTR)IDI_RITSU);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground  = NULL; // (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = (LPCTSTR)IDC_RITSU;
     wcex.lpszClassName  = m_szMainClass;
     wcex.hIconSm        = g_theApp.LoadIcon((LPCTSTR)IDI_SMALL);

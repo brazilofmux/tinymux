@@ -76,6 +76,7 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
         lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_DEFAULT, (LPARAM) &cf2);
     }
     lRes = ::SendMessage(m_hwndRichEdit, EM_SETEVENTMASK, SCF_DEFAULT, ENM_KEYEVENTS);
+    lRes = ::SendMessage(m_hwndRichEdit, EM_EXLIMITTEXT, 0, 20*1024*1024);
     return 0;
 }
 
