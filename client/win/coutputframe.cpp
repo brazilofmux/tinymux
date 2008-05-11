@@ -54,12 +54,81 @@ LRESULT COutputFrame::OnCreate(CREATESTRUCT *pcs)
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
+    if (NULL == m_hwndRichEdit)
+    {
+        return 1;
+    }
+
+    CHARFORMAT2 cf2;
+    memset(&cf2, 0, sizeof(cf2));
+    cf2.cbSize = sizeof(cf2);
+    cf2.dwMask = CFM_FACE | CFM_COLOR | CFM_BACKCOLOR | CFM_SIZE;
+    cf2.crTextColor = RGB(255,128,0);
+    cf2.crBackColor = RGB(60,60,60);
+    cf2.yHeight = 20*14;
+    memcpy(cf2.szFaceName, L"Courier New", sizeof(L"Curier New"));
+    LRESULT lRes = ::SendMessage(m_hwndRichEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)cf2.crBackColor);
+    if (g_theApp.m_bMsftEdit)
+    {
+        lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_ALL, (LPARAM) &cf2);
+    }
+    else
+    {
+        lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_DEFAULT, (LPARAM) &cf2);
+    }
     return 0;
 }
 
 void COutputFrame::OnSize(UINT nType, int cx, int cy)
 {
     ::MoveWindow(m_hwndRichEdit, 0, 0, cx, cy, true);
+}
+
+typedef struct
+{
+    LONG   cb;
+    LPBYTE pbBuff;
+} STREAMFRAGMENT;
+
+DWORD CALLBACK COutputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+{
+    STREAMFRAGMENT *psf = (STREAMFRAGMENT *)dwCookie;
+    mux_assert(psf->cb < cb);
+    memcpy(pbBuff, psf->pbBuff, psf->cb);
+    pbBuff[psf->cb] = L'\0';
+    *pcb = psf->cb;
+    psf->cb = 0;
+    return 0;
+}
+
+void COutputFrame::AppendText(LONG cb, LPBYTE pbBuff)
+{
+#if 0
+    // Position to the end.
+    //
+    CHARRANGE cr;
+    cr.cpMin = -1;
+    cr.cpMax = -1;
+    (void)::SendMessage(m_hwndRichEdit, EM_EXSETSEL, 0, (LPARAM)&cr);
+
+    STREAMFRAGMENT sf;
+    sf.cb = cb;
+    sf.pbBuff = pbBuff;
+
+    EDITSTREAM es;
+    es.dwCookie = (DWORD)&sf;
+    es.dwError  = ERROR_SUCCESS;
+    es.pfnCallback = COutputFrame::EditStreamCallback;
+    ::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE, (LPARAM)&es);
+#else
+    pbBuff[cb] = '\0';
+    pbBuff[cb+1] = '\0';
+    if ('\r' != pbBuff[0])
+    {
+        LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0, (LPARAM)pbBuff);
+    }
+#endif
+    return;
 }
 
 COutputFrame::COutputFrame()

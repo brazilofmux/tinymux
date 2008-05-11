@@ -52,12 +52,68 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
             pcs->x, pcs->y, pcs->cx, pcs->cy,
             m_hwnd, NULL, g_theApp.m_hRichEdit, NULL);
     }
+
+    if (NULL == m_hwndRichEdit)
+    {
+        return 1;
+    }
+
+    CHARFORMAT2 cf2;
+    memset(&cf2, 0, sizeof(cf2));
+    cf2.cbSize = sizeof(cf2);
+    cf2.dwMask = CFM_FACE | CFM_COLOR | CFM_BACKCOLOR | CFM_SIZE;
+    cf2.crTextColor = RGB(255,128,0);
+    cf2.crBackColor = RGB(60,60,60);
+    cf2.yHeight = 20*14;
+    memcpy(cf2.szFaceName, L"Courier New", sizeof(L"Curier New"));
+    LRESULT lRes = ::SendMessage(m_hwndRichEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)cf2.crBackColor);
+    if (g_theApp.m_bMsftEdit)
+    {
+        lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_ALL, (LPARAM) &cf2);
+    }
+    else
+    {
+        lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_DEFAULT, (LPARAM) &cf2);
+    }
+    lRes = ::SendMessage(m_hwndRichEdit, EM_SETEVENTMASK, SCF_DEFAULT, ENM_KEYEVENTS);
     return 0;
 }
 
 void CInputFrame::OnSize(UINT nType, int cx, int cy)
 {
     ::MoveWindow(m_hwndRichEdit, 0, 0, cx, cy, true);
+}
+
+DWORD CALLBACK CInputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+{
+    CInputFrame *pWndInput = (CInputFrame *)dwCookie;
+    CSessionFrame *pWndSession = (CSessionFrame *)pWndInput->m_pParentWindow;
+    pWndSession->m_pOutputWindow->AppendText(cb, pbBuff);
+    *pcb = cb;
+    return 0;
+}
+
+LRESULT CInputFrame::OnNotify(NMHDR *phdr)
+{
+    if (EN_MSGFILTER == phdr->code)
+    {
+        MSGFILTER *pmsgflt = (MSGFILTER *)phdr;
+        if ('\r' == pmsgflt->wParam)
+        {
+            // Stream it out.
+            //
+            EDITSTREAM es;
+            es.dwCookie = (DWORD)this;
+            es.dwError  = ERROR_SUCCESS;
+            es.pfnCallback = CInputFrame::EditStreamCallback;
+            (void)::SendMessage(m_hwndRichEdit, EM_STREAMOUT, SF_TEXT|SF_UNICODE, (LPARAM)&es);
+
+            LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0, (LPARAM)L"");
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
 }
 
 CInputFrame::CInputFrame()
@@ -77,6 +133,13 @@ LRESULT CALLBACK CInputFrame::InputWndProc(HWND hWnd, UINT message, WPARAM wPara
 
     switch (message)
     {
+    case WM_NOTIFY:
+        {
+            NMHDR *phdr = (NMHDR *)lParam;
+            pWnd->OnNotify(phdr);
+        }
+        break;
+
     case WM_CREATE:
         {
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
