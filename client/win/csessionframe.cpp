@@ -38,6 +38,10 @@ LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM w
         lRes = pWnd->DefaultMDIChildHandler(message, wParam, lParam);
         break;
 
+    case WM_SETFOCUS:
+        ::SetFocus(pWnd->m_pInputWindow->m_hwndRichEdit);
+        break;
+
     case WM_NCDESTROY:
         {
             lRes = pWnd->DefaultMDIChildHandler(message, wParam, lParam);

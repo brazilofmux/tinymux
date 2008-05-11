@@ -9,7 +9,7 @@ public:
 
     COutputFrame();
     bool Create(CWindow *pParentWindow, int x, int y, int cx, int cy);
-    void AppendText(LONG cb, LPBYTE pbBuff);
+    void AppendText(size_t nBuffer, WCHAR *pBuffer);
     ~COutputFrame();
 
     // Handlers.

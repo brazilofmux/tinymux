@@ -93,19 +93,20 @@ typedef struct
 DWORD CALLBACK COutputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
     STREAMFRAGMENT *psf = (STREAMFRAGMENT *)dwCookie;
-    mux_assert(psf->cb < cb);
-    memcpy(pbBuff, psf->pbBuff, psf->cb);
-    pbBuff[psf->cb] = L'\0';
-    *pcb = psf->cb;
-    psf->cb = 0;
+    LONG cbMove = cb;
+    if (psf->cb < cbMove)
+    {
+        cbMove = psf->cb;
+    }
+    memcpy(pbBuff, psf->pbBuff, cbMove);
+    *pcb = cbMove;
+    psf->cb -= cbMove;
+    psf->pbBuff += cbMove;
     return 0;
 }
 
-void COutputFrame::AppendText(LONG cb, LPBYTE pbBuff)
+void COutputFrame::AppendText(size_t nBuffer, WCHAR *pBuffer)
 {
-    pbBuff[cb] = '\0';
-    pbBuff[cb+1] = '\0';
-
     // Position to the end.
     //
     CHARRANGE cr;
@@ -114,14 +115,18 @@ void COutputFrame::AppendText(LONG cb, LPBYTE pbBuff)
     (void)::SendMessage(m_hwndRichEdit, EM_EXSETSEL, 0, (LPARAM)&cr);
 
     STREAMFRAGMENT sf;
-    sf.cb = cb;
-    sf.pbBuff = pbBuff;
+    sf.cb = nBuffer*sizeof(WCHAR);
+    sf.pbBuff = (BYTE *)pBuffer;
 
     EDITSTREAM es;
     es.dwCookie = (DWORD)&sf;
     es.dwError  = ERROR_SUCCESS;
     es.pfnCallback = COutputFrame::EditStreamCallback;
-    ::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE | SFF_SELECTION, (LPARAM)&es);
+    (void)::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE | SFF_SELECTION, (LPARAM)&es);
+
+    // Position view to the end.
+    //
+    (void)::SendMessage(m_hwndRichEdit, WM_VSCROLL, SB_BOTTOM, NULL);
 }
 
 COutputFrame::COutputFrame()

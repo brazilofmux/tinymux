@@ -18,6 +18,7 @@ public:
     LRESULT OnNotify(NMHDR *phdr);
 
     HWND    m_hwndRichEdit;
+    bool    m_bFirst;
 };
 
 #endif // CINPUTFRAME_H

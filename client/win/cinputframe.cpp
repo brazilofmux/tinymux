@@ -86,10 +86,25 @@ void CInputFrame::OnSize(UINT nType, int cx, int cy)
 
 DWORD CALLBACK CInputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
-    CInputFrame *pWndInput = (CInputFrame *)dwCookie;
-    CSessionFrame *pWndSession = (CSessionFrame *)pWndInput->m_pParentWindow;
-    pWndSession->m_pOutputWindow->AppendText(cb, pbBuff);
     *pcb = cb;
+    if ((cb % sizeof(WCHAR)) == 0)
+    {
+        size_t nBuffer = cb/sizeof(WCHAR);
+        WCHAR *pBuffer = (WCHAR *)pbBuff;
+        if (  2 != nBuffer
+           || pBuffer[0] != L'\r'
+           || pBuffer[1] != L'\n')
+        {
+            CInputFrame *pWndInput = (CInputFrame *)dwCookie;
+            CSessionFrame *pWndSession = (CSessionFrame *)pWndInput->m_pParentWindow;
+            if (!pWndInput->m_bFirst)
+            {
+                pWndSession->m_pOutputWindow->AppendText(2, L"\r\n");
+            }
+            pWndInput->m_bFirst = false;
+            pWndSession->m_pOutputWindow->AppendText(nBuffer, pBuffer);
+        }
+    }
     return 0;
 }
 
@@ -108,7 +123,7 @@ LRESULT CInputFrame::OnNotify(NMHDR *phdr)
             es.pfnCallback = CInputFrame::EditStreamCallback;
             (void)::SendMessage(m_hwndRichEdit, EM_STREAMOUT, SF_TEXT|SF_UNICODE, (LPARAM)&es);
 
-            LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0, (LPARAM)L"");
+            LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0,NULL);
             return 1;
         }
         return 0;
@@ -120,6 +135,7 @@ CInputFrame::CInputFrame()
 {
     m_pParentWindow = NULL;
     m_hwndRichEdit  = NULL;
+    m_bFirst = true;
 }
 
 CInputFrame::~CInputFrame()
@@ -145,6 +161,11 @@ LRESULT CALLBACK CInputFrame::InputWndProc(HWND hWnd, UINT message, WPARAM wPara
             CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
             lRes = pWnd->OnCreate(pcs);
         }
+        break;
+
+    case WM_ACTIVATE:
+    case WM_SETFOCUS:
+        ::SetFocus(pWnd->m_hwndRichEdit);
         break;
 
     case WM_SIZE:
