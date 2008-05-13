@@ -7474,7 +7474,7 @@ HEIGHT()
   sessions.
 
   Example:
-    > think height(me)
+    > say height(me)
     You say, "26"
 
   Related Topics: width().
@@ -13576,7 +13576,7 @@ WIDTH()
   sessions.
 
   Example:
-    > think width(me)
+    > say width(me)
     You say, "122"
 
   Related Topics: height().
