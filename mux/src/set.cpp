@@ -351,8 +351,8 @@ void do_alias
             //
             notify_quiet(executor, T("That name is already in use."));
         }
-        else if (  !(badname_check(trimalias)
-                && ValidatePlayerName(trimalias)))
+        else if ( !(  badname_check(trimalias)
+                   && ValidatePlayerName(trimalias)))
         {
             notify_quiet(executor, T("That\xE2\x80\x99s a silly name for a player!"));
         }
