@@ -1964,7 +1964,7 @@ void do_admin
 // ---------------------------------------------------------------------------
 // cf_read: Read in config parameters from named file
 //
-struct
+static struct
 {
     char **pFilename;
     char *pSuffix;

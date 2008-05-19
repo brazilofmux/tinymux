@@ -27,6 +27,8 @@ typedef struct
     unsigned short iNanosecond;  // Nanoseconds less than a Microsecond.
 } FIELDEDTIME;
 
+class CLinearTimeDelta;
+
 class CLinearTimeAbsolute
 {
     friend class CLinearTimeDelta;

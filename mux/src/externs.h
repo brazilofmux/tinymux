@@ -211,14 +211,12 @@ extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);
 extern char *split_token(char **sp, char sep);
 
-#ifdef HAVE_IEEE_FP_FORMAT
 #define IEEE_MAKE_NAN  1
 #define IEEE_MAKE_IND  2
 #define IEEE_MAKE_PINF 3
 #define IEEE_MAKE_NINF 4
 
 double MakeSpecialFloat(int iWhich);
-#endif // HAVE_IEEE_FP_FORMAT
 
 /* From unparse.cpp */
 extern char *unparse_boolexp(dbref, BOOLEXP *);
