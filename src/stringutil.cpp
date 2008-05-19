@@ -2344,7 +2344,7 @@ double Tiny_atof(char *szString)
 #ifdef HAVE_IEEE_FP_FORMAT
         return MakeSpecialFloat(pfr.iString);
 #else
-        reurn 0.0;
+        return 0.0;
 #endif
     }
 

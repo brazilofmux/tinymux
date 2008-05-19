@@ -1489,7 +1489,7 @@ void do_admin(dbref player, dbref cause, int extra, char *kw, char *value)
 // ---------------------------------------------------------------------------
 // cf_read: Read in config parameters from named file
 //
-struct
+static struct
 {
     char **pFilename;
     char *pSuffix;
