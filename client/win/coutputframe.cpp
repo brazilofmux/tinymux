@@ -66,7 +66,7 @@ LRESULT COutputFrame::OnCreate(CREATESTRUCT *pcs)
     cf2.crTextColor = RGB(255,128,0);
     cf2.crBackColor = RGB(60,60,60);
     cf2.yHeight = 20*14;
-    memcpy(cf2.szFaceName, L"Courier New", sizeof(L"Curier New"));
+    memcpy(cf2.szFaceName, L"Courier New", sizeof(L"Courier New"));
     LRESULT lRes = ::SendMessage(m_hwndRichEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)cf2.crBackColor);
     if (g_theApp.m_bMsftEdit)
     {
