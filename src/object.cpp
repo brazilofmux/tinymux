@@ -449,7 +449,7 @@ void destroy_obj(dbref obj)
             notify(owner, "Halted.");
         }
     }
-    nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+    nfy_que(obj, 0, NFY_DRAIN, 0);
 
     // Remove forwardlists and stacks.
     //
