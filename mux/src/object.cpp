@@ -404,7 +404,7 @@ void destroy_bad_obj(dbref obj)
     if (!mudstate.bStandAlone)
     {
         halt_que(NOTHING, obj);
-        nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+        nfy_que(obj, 0, NFY_DRAIN, 0);
         fwdlist_clr(obj);
         stack_clr(obj);
         ReleaseAllResources(obj);
@@ -455,7 +455,7 @@ void destroy_obj(dbref obj)
         {
             notify(owner, "Halted.");
         }
-        nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+        nfy_que(obj, 0, NFY_DRAIN, 0);
 
         // Remove forwardlists and stacks.
         //
