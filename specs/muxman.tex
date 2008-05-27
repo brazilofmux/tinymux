@@ -80,8 +80,8 @@ or macro languages. This is also sometimes called hardcode.
 
 The term \emph{hardcode} usually means the approximately 120,000 lines of C/C++
 source code that make up the game server itself.
-All of the MUSH-type text-based game servers are written in C except MUX 2.0
-which is a combination of C and C++.
+All of the MUSH-type text-based game servers are written in C except
+TinyMUX 2 which is a combination of C and C++.
 
 However, the term can also be used more generically to refer to anything
 written in C/C++ or even to anything written in a general purpose programming
@@ -94,7 +94,7 @@ server. You could call
 it softcode, but then you are also probably including non-MUSH family languages
 further away and more incompatible. For the purpose of this document, we'll
 call it softcode with the understanding that we expect it to run on a particular
-set of closely related servers and on TinyMUX 2.0 in particular.
+set of closely related servers and on TinyMUX 2 in particular.
 
 \section{I'm using Windows. Why does the log say it can't find its files?}
 You are probably running the tinymux.exe file directly from the GUI by double
@@ -106,7 +106,7 @@ might be somewhere else.  The current directory is too undefined for the game
 to be run this way.
 
 You should open a Command Prompt window (that is, an MS-DOS box), change to
-the drive and `mux2.0$\backslash$game' sub-directory where you extracted the
+the drive and `mux2.6$\backslash$game' sub-directory where you extracted the
 distribution, make sure the tinymux.exe, a.exe, dbconvert.exe, and mkindx.exe
 programs are in the `bin' sub-directory, and then run the startmux.bat batch
 file.
@@ -116,46 +116,72 @@ Windows running. It's more than a little helpful if this server has a dedicated
 Internet or Intranet connection, as without it, you'll be using it by yourself.
 
 You need to find the latest known-good distribution from
-www.tinymux.com and download it. If you are using a web browser, it will
+www.tinymux.org and download it. If you are using a web browser, it will
 download it in `binary' mode for you automatically, however, if you use an FTP
-client manually, you'll need to be sure to put the transfer into binary. Even
-between Unix machines, Non-binary transfers can be problematic.
+client manually, you'll need to be sure to change the transfer to binary mode.
+Even between Unix machines, non-binary transfers can be problematic.
 
 Here is a typical manual FTP conversation:
 \footnotesize{\texttt{
 \begin{verse}
-\$ \emph{ftp svdltd.com}\\
-Connected to svdltd.com.\\
-220 sdennis0 Microsoft FTP Service (Version 4.0).\\
-User (svdltd.com:(none)): \emph{anonymous}\\
-331 Anonymous access allowed, send identity (e-mail name) as password.\\
+\$ \emph{ftp ftp.tinymux.org}\\
+Connected to ftp.tinymux.org.\\
+220 ProFTPD 1.2.9 Server (DinahFTP) [dinah.mushpark.com]\\
+User (ftp.tinymux.org:(none)): \emph{anonymous}\\
+331 Anonymous login ok, send your complete email address as your password.\\
 Password: \emph{sdennis@svdltd.com}\\
-230-Welcome to Solid Vertical Domains, Ltd.\\
-230 Anonymous user logged in.\\
-ftp$>$ \emph{cd TinyMUX}\\
+230 Anonymous access granted, restrictions apply.\\
+ftp$>$ \emph{cd TinyMUX/tinymux-2.6}\\
 250 CWD command successful.\\
 ftp$>$ \emph{binary}\\
 200 Type set to I.\\
-ftp$>$ \emph{ls *.tar.gz}\\
-200 PORT command successful.\\
-150 Opening ASCII mode data connection for file list.\\
-miam.tar.gz\\
-mux2.0-B1.tar.gz\\
-mux2.0-B2.tar.gz\\
-mux2.0-B3.tar.gz\\
-mux2.0-B4.tar.gz\\
-mux2.0-B5.tar.gz\\
-mux2.0-B6.tar.gz\\
-mux2.0-B7.tar.gz\\
+ftp$>$ \emph{ls}\\
+200 PORT command successful\\
+150 Opening ASCII mode data connection for file list\\
+22\\
+23\\
+26\\
+24\\
+25\\
+27\\
 226 Transfer complete.\\
-139 bytes received in 0.03 seconds (4.48 Kbytes/sec)\\
-ftp$>$ \emph{get mux2.0-B7.tar.gz}\\
-200 PORT command successful.\\
-150 Opening BINARY mode data connection for mux2.0-B7.tar.gz(655702 bytes).\\
+ftp: 24 bytes received in 0.00Seconds 24000.00Kbytes/sec.\\
+ftp$>$ \emph{cd 27}\\
+250 CWD command successful.\\
+ftp$>$ \emph{ls}\\
+200 PORT command successful\\
+150 Opening ASCII mode data connection for file list\\
+mux-2.6.5.26-2.6.5.27.unix.patch.gz\\
+mux-2.6.5.26-2.6.5.27.unix.patch.gz.sig\\
+mux-2.6.5.26-2.6.5.27.win32.bin.utp\\
+mux-2.6.5.26-2.6.5.27.win32.bin.utp.sig\\
+mux-2.6.5.26-2.6.5.27.win32.src.utp\\
+mux-2.6.5.26-2.6.5.27.win32.src.utp.sig\\
+mux-2.6.5.27.unix.tar.bz2\\
+mux-2.6.5.27.unix.tar.bz2.sig\\
+mux-2.6.5.27.unix.tar.gz\\
+mux-2.6.5.27.unix.tar.gz.sig\\
+mux-2.6.5.27.win32.bin.j\\
+mux-2.6.5.27.win32.bin.j.sig\\
+mux-2.6.5.27.win32.bin.tar.gz\\
+mux-2.6.5.27.win32.bin.tar.gz.sig\\
+mux-2.6.5.27.win32.bin.zip\\
+mux-2.6.5.27.win32.bin.zip.sig\\
+mux-2.6.5.27.win32.src.j\\
+mux-2.6.5.27.win32.src.j.sig\\
+mux-2.6.5.27.win32.src.tar.gz\\
+mux-2.6.5.27.win32.src.tar.gz.sig\\
+mux-2.6.5.27.win32.src.zip\\
+mux-2.6.5.27.win32.src.zip.sig\\
 226 Transfer complete.\\
-655702 bytes received in 0.09 seconds (6975.55 Kbytes/sec)\\
+ftp: 712 bytes received in 0.02Seconds 44.50Kbytes/sec.\\
+ftp$>$ \emph{get mux-2.6.5.27.unix.tar.gz}\\
+200 PORT command successful\\
+150 Opening BINARY mode data connection for mux-2.6.5.27.unix.tar.gz (981835 bytes)\\
+226 Transfer complete.\\
+ftp: 981835 bytes received in 5.69Seconds 172.62Kbytes/sec.\\
 ftp$>$ \emph{quit}\\
-221 Goodbye from Solid Vertical Domains, Ltd.\\
+221 Goodbye.\\
 \$
 \end{verse}
 }}
@@ -164,23 +190,24 @@ produce the file and in which order. Gzip handles `.gz' files, and tar handled
 `.tar' files. So in order to unpack this distribution, we do the following:
 \footnotesize{\texttt{
 \begin{verse}
-\$ \emph{gzip -d mux2.0-B7.tar.gz}\\
-\$ \emph{tar xvf mux2.0-B7.tar}
+\$ \emph{gzip -d mux-2.6.5.27.unix.tar.gz}\\
+\$ \emph{tar xvf mux-2.6.5.27.unix.tar}
 \end{verse}
 }}
-These two commands will create a sub-directory called `mux2.0' with all the
+These two commands will create a sub-directory called `mux2.6' with all the
 required files in the right places. So, in order to build the game, continue
 as follows:
 \footnotesize{\texttt{
 \begin{verse}
-\$ \emph{cd mux2.0/src}\\
-\$ \emph{./Configure}\\
+\$ \emph{cd mux2.6/src}\\
+\$ \emph{./configure}\\
+\$ \emph{make depend}
 \$ \emph{make}
 \end{verse}
 }}
 On some system `gmake' is required instead of `make'. At the end of this
-process, you should have executable programs built in the mux2.0/src directory
-with links made to the mux2.0/game/bin directory. A link in Unix parlance is
+process, you should have executable programs built in the mux2.6/src directory
+with links made to the mux2.6/game/bin directory. A link in Unix parlance is
 another name for the same file contents.
 
 At this point, if you don't have an existing database to convert or import,
