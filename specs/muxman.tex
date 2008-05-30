@@ -1,11 +1,37 @@
-\documentclass[dvips]{book}
+\documentclass[10pt,letterpaper]{book}
+
+\usepackage{color}
+\usepackage{ifpdf}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\ifpdf
+    \pdfcompresslevel9
+    \usepackage{pxfonts}
+    \usepackage{makeidx}
+    \makeindex
+    \usepackage[  pdftex,
+                  pdfauthor={Stephen Dennis},
+                  pdftitle={TinyMUX Manual},
+                  pdfkeywords={MUX;TinyMUX;MUSH;MUD;Softcode},
+                  bookmarksnumbered,
+                  english
+               ]{hyperref}
+\else
+    \usepackage[english]{hyperref}
+\fi
+\hypersetup{colorlinks=true}
+\usepackage{fancyhdr}
 \usepackage{times}
+\usepackage{courier}
+\usepackage{helvet}
+
 \setlength{\oddsidemargin}{0.5in}
 \setlength{\evensidemargin}{0in}
 \setlength{\textwidth}{6in}
 \title{TinyMUX Manual}
 \author{Stephen Dennis (AKA Brazil)}
-\date{2008-MAY-27}
+\date{2008-MAY-30}
+
 \begin{document}
 \frontmatter
 \maketitle
