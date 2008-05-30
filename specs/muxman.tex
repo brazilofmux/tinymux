@@ -97,19 +97,19 @@ call it softcode with the understanding that we expect it to run on a particular
 set of closely related servers and on TinyMUX 2 in particular.
 
 \section{I'm using Windows. Why does the log say it can't find its files?}
-You are probably running the tinymux.exe file directly from the GUI by double
+You are probably running the netmux.exe file directly from the GUI by double
 clicking on the icon. The server needs the current directory to be the game
 sub-directory. All the file names are relative to that point, but when you
-double-click on the tinymux.exe program directly, the current directory might
+double-click on the netmux.exe program directly, the current directory might
 be the game$\backslash$bin or tinymux$\backslash$release directory, or it
 might be somewhere else.  The current directory is too undefined for the game
 to be run this way.
 
 You should open a Command Prompt window (that is, an MS-DOS box), change to
 the drive and `mux2.6$\backslash$game' sub-directory where you extracted the
-distribution, make sure the tinymux.exe, a.exe, dbconvert.exe, and mkindx.exe
-programs are in the `bin' sub-directory, and then run the startmux.bat batch
-file.
+distribution, make sure the netmux.exe and dbconvert.exe
+programs are in the `bin' sub-directory, and then run the startmux.wsf
+script from the `mux2.6$\backslash$game' sub-directory.
 \section{How to Begin Running TinyMUX}
 The first thing you'll need is some server hardware with some flavor of Unix or
 Windows running. It's more than a little helpful if this server has a dedicated
