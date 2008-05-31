@@ -59,6 +59,8 @@ Always be prepared and ready to find your own way.
 \chapter{Basics}
 \section{Glossary}
 
+Commonly-used terms:
+
 \begin{description}
 \item[Character]
 The avatar interacts within the virtual world under the
@@ -66,6 +68,24 @@ control of the Player.
 This avatar may also be called the Player Character to indicate that the
 player controls the character as opposed to NPCs (Non-Player Characters) or
 mobs which are game-control characters and groups of characters, respectively.
+
+\item[Database]
+Every game has a database which holds a persistent representation of
+everything as well as their interelationships.
+After connecting, players are able to communicate with each other and affect
+the game's database.
+Some of the interelationships are more complex than others.
+
+\item[Dbref]
+A database can be viewed as a set of objects.
+Each object is assigned a unique number starting with zero and prefixed with
+a pound sign (\#0, \#1, \ldots).
+The pound sign (\#) before the number indicates that together they are a dbref
+and not something else.
+During its lifetime, an object's dbref and type does not change\footnote{See @toad
+for an exception to the type rule.}.
+Once an object is destroyed, its dbref can be re-assigned to a new,
+different object.
 
 \item[Player]
 This can refer to two things: 1) Someone who reads manuals and
