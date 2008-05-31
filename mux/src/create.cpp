@@ -60,21 +60,24 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     {
         return;
     }
-    if (!direction || !*direction)
+    if (  NULL == direction
+       || '\0' == direction[0])
     {
         notify_quiet(player, T("Open where?"));
         return;
     }
     else if (!Controls(player, loc))
     {
-        if (!(Open_ok(loc) && could_doit(player, loc, A_LOPEN)))
+        if ( !(  Open_ok(loc)
+              && could_doit(player, loc, A_LOPEN)))
         {
             notify_quiet(player, NOPERM_MESSAGE);
             return;
         }
     }
+
     dbref exit = create_obj(player, TYPE_EXIT, direction, 0);
-    if (exit == NOTHING)
+    if (NOTHING == exit)
     {
         return;
     }

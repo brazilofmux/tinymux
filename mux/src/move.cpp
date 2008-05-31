@@ -272,29 +272,39 @@ static void send_dropto(dbref thing, dbref player)
 //
 static void process_sticky_dropto(dbref loc, dbref player)
 {
-    dbref dropto, thing, next;
-
     // Do nothing if checking anything but a sticky room
     //
-    if (!Good_obj(loc) || !Has_dropto(loc) || !Sticky(loc))
+    if (  !Good_obj(loc)
+       || !Has_dropto(loc)
+       || !Sticky(loc))
+    {
         return;
+    }
 
     // Make sure dropto loc is valid
     //
-    dropto = Dropto(loc);
-    if ((dropto == NOTHING) || (dropto == loc))
+    dbref dropto = Dropto(loc);
+    if (  NOTHING == dropto
+       || dropto == loc)
+    {
         return;
+    }
 
     // Make sure no players hanging out
     //
+    dbref thing;
     DOLIST(thing, Contents(loc))
     {
-        if ((Connected(Owner(thing)) && Hearer(thing)))
+        if (  Connected(Owner(thing))
+           && Hearer(thing))
+        {
             return;
+        }
     }
 
     // Send everything through the dropto
     //
+    dbref next;
     s_Contents(loc, reverse_list(Contents(loc)));
     SAFE_DOLIST(thing, next, Contents(loc))
     {
@@ -408,14 +418,16 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     const UTF8 *failmsg;
 
     dbref src = Location(thing);
-    if ((dest != HOME) && Good_obj(src))
+    if (  HOME != dest
+       && Good_obj(src))
     {
         curr = src;
         for (count = mudconf.ntfy_nest_lim; count > 0; count--)
         {
             if (!could_doit(thing, curr, A_LTELOUT))
             {
-                if ((thing == cause) || (cause == NOTHING))
+                if (  thing == cause
+                   || NOTHING == cause)
                 {
                     failmsg = T("You can\xE2\x80\x99t teleport out!");
                 }
@@ -424,11 +436,13 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                     failmsg = T("You can\xE2\x80\x99t be teleported out!");
                     notify_quiet(cause, T("You can\xE2\x80\x99t teleport that out!"));
                 }
+
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
                        A_ATOFAIL, 0, NULL, 0);
                 return false;
             }
+
             if (isRoom(curr))
             {
                 break;
@@ -442,10 +456,12 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
         move_the_exit(thing, dest);
         return true;
     }
+
     if (dest == HOME)
     {
         dest = Home(thing);
     }
+
     bool canhear = Hearer(thing);
     if (!(hush & HUSH_LEAVE))
     {
@@ -880,7 +896,9 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     dbref loc = Location(executor);
     if (!Good_obj(loc))
+    {
         return;
+    }
 
     dbref exitloc, thing;
     UTF8 *buf, *bp;
@@ -896,6 +914,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     case NOTHING:
         notify(executor, T("You don\xE2\x80\x99t have that!"));
         return;
+
     case AMBIGUOUS:
         notify(executor, T("I don\xE2\x80\x99t know which you mean!"));
         return;
@@ -921,9 +940,14 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         //
         move_via_generic(thing, Location(executor), executor, 0);
         notify(thing, T("Dropped."));
+
         quiet = false;
-        if ((key & DROP_QUIET) && Controls(executor, thing))
+        if (  (key & DROP_QUIET)
+           && Controls(executor, thing))
+        {
             quiet = true;
+        }
+
         bp = buf = alloc_lbuf("do_drop.did_it");
         safe_tprintf_str(buf, &bp, "dropped %s.", Moniker(thing));
         oattr = quiet ? 0 : A_ODROP;
@@ -935,24 +959,26 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         // Process droptos
         //
         process_dropped_dropto(thing, executor);
-
         break;
+
     case TYPE_EXIT:
 
         // You have to be carrying it.
         //
-        if ((Exits(thing) != executor) && !Wizard(executor))
+        if (  Exits(thing) != executor
+           && !Wizard(executor))
         {
             notify(executor, T("You can\xE2\x80\x99t drop that."));
             return;
         }
+
         if (!Controls(executor, loc))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
         }
 
-        // Do it
+        // Do it.
         //
         exitloc = Exits(thing);
         s_Exits(exitloc, remove_first(Exits(exitloc), thing));
@@ -960,10 +986,14 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         s_Exits(thing, loc);
 
         if (!Quiet(executor))
+        {
             notify(executor, T("Exit dropped."));
+        }
         break;
+
     default:
         notify(executor, T("You can\xE2\x80\x99t drop that."));
+        break;
     }
 }
 
