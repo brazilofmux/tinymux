@@ -1,10 +1,10 @@
 \documentclass[10pt,letterpaper]{book}
 
-\usepackage{color}
 \usepackage{ifpdf}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \ifpdf
+    \usepackage[pdftex,dvipsnames]{color}
     \pdfcompresslevel9
     \usepackage{pxfonts}
     \usepackage{makeidx}
@@ -17,6 +17,7 @@
                   english
                ]{hyperref}
 \else
+    \usepackage[dvips,usenames]{color}
     \usepackage[english]{hyperref}
 \fi
 \hypersetup{colorlinks=true}
