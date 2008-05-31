@@ -1397,6 +1397,10 @@ void do_pemit_whisper
     //
     if (nargs < 2)
     {
+        if ('\0' == recipient[0])
+        {
+            return;
+        }
         message = recipient;
         recipient = NULL;
     }
