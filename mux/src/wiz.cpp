@@ -128,10 +128,11 @@ static void do_teleport_single
     }
     else if (Has_contents(destination))
     {
-        // You must control the destination OR it must be a JUMP_OK room where
+        // You must control the destination OR it must be a JUMP_OK where
         // the victim passes its TELEPORT lock (exit victims have the
         // additional requirement that the destination must be OPEN_OK and
-        // pass the OPEN lock) OR you must be Tel_Anywhere.
+        // the victim must pass the destination's OPEN lock) OR you must be
+        // Tel_Anywhere.
         //
         // Only God may teleport exits into God.
         //
