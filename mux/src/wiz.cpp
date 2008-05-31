@@ -147,6 +147,7 @@ void do_teleport
             return;
         }
     }
+
     if (  isGarbage(destination)
        || (  Has_location(destination)
           && isGarbage(Location(destination))))
@@ -158,16 +159,43 @@ void do_teleport
     }
     else if (Has_contents(destination))
     {
-        // You must control the destination, or it must be a JUMP_OK
-        // room where you pass its TELEPORT lock.
+        // You must control the destination OR it must be a JUMP_OK room where
+        // the victim passes its TELEPORT lock (exit victims have the
+        // additional requirement that the destination must be OPEN_OK and
+        // pass the OPEN lock) OR you must be Tel_Anywhere.
         //
-        if (  !(  Controls(executor, destination)
-               || Jump_ok(destination)
-               || Tel_Anywhere(executor))
-           || !could_doit(executor, destination, A_LTPORT)
-           || (  isExit(victim)
-              && God(destination)
-              && !God(executor)))
+        // Only God may teleport exits into God.
+        //
+        if (  (  Controls(executor, destination)
+              || Tel_Anywhere(executor)
+              || (  Jump_ok(destination)
+                 && could_doit(victim, destination, A_LTPORT)
+                 && (  !isExit(victim)
+                    || (  Open_ok(destination)
+                       && could_doit(executor, destination, A_LOPEN)))))
+           && (  !isExit(victim)
+              || !God(destination)
+              || God(executor)))
+        {
+            // We're OK, do the teleport.
+            //
+            if (key & TELEPORT_QUIET)
+            {
+                hush = HUSH_ENTER | HUSH_LEAVE;
+            }
+
+            if (move_via_teleport(victim, destination, enactor, hush))
+            {
+                if (executor != victim)
+                {
+                    if (!Quiet(executor))
+                    {
+                        notify_quiet(executor, "Teleported.");
+                    }
+                }
+            }
+        }
+        else
         {
             // Nope, report failure.
             //
@@ -178,25 +206,6 @@ void do_teleport
             did_it(victim, destination,
                    A_TFAIL, "You can't teleport there!",
                    A_OTFAIL, 0, A_ATFAIL, (char **)NULL, 0);
-            return;
-        }
-
-        // We're OK, do the teleport.
-        //
-        if (key & TELEPORT_QUIET)
-        {
-            hush = HUSH_ENTER | HUSH_LEAVE;
-        }
-
-        if (move_via_teleport(victim, destination, enactor, hush))
-        {
-            if (executor != victim)
-            {
-                if (!Quiet(executor))
-                {
-                    notify_quiet(executor, "Teleported.");
-                }
-            }
         }
     }
     else if (isExit(destination))
