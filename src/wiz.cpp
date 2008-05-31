@@ -152,6 +152,7 @@ void do_teleport
             return;
         }
     }
+
     if (  isGarbage(destination)
        || (  Has_location(destination)
           && isGarbage(Location(destination))))
@@ -163,16 +164,41 @@ void do_teleport
     }
     else if (Has_contents(destination))
     {
-        // You must control the destination, or it must be a JUMP_OK
-        // room where you pass its TELEPORT lock.
+        // You must control the destination OR it must be a JUMP_OK room where
+        // the victim passes its TELEPORT lock (exit victims have the
+        // additional requirement that the destination must be OPEN_OK and
+        // pass the OPEN lock) OR you must be Tel_Anywhere.
         //
-        if (  !( Controls(player, destination)
-                 || Jump_ok(destination)
-                 || Tel_Anywhere(player)
-               )
-              || !could_doit(player, destination, A_LTPORT)
-              || ( isExit(victim) && God(destination) && !God(player) )
-           )
+        // Only God may teleport exits into God.
+        //
+        if (  (  Controls(player, destination)
+              || Tel_Anywhere(player)
+              || (  Jump_ok(destination)
+                 && could_doit(victim, destination, A_LTPORT)
+                 && !isExit(victim)))
+           && (  !isExit(victim)
+              || !God(destination)
+              || God(player)))
+        {
+            // We're OK, do the teleport.
+            //
+            if (key & TELEPORT_QUIET)
+            {
+                hush = HUSH_ENTER | HUSH_LEAVE;
+            }
+
+            if (move_via_teleport(victim, destination, cause, hush))
+            {
+                if (player != victim)
+                {
+                    if (!Quiet(player))
+                    {
+                        notify_quiet(player, "Teleported.");
+                    }
+                }
+            }
+        }
+        else
         {
             // Nope, report failure.
             //
@@ -183,25 +209,6 @@ void do_teleport
             did_it(victim, destination,
                    A_TFAIL, "You can't teleport there!",
                    A_OTFAIL, 0, A_ATFAIL, (char **)NULL, 0);
-            return;
-        }
-
-        // We're OK, do the teleport.
-        //
-        if (key & TELEPORT_QUIET)
-        {
-            hush = HUSH_ENTER | HUSH_LEAVE;
-        }
-
-        if (move_via_teleport(victim, destination, cause, hush))
-        {
-            if (player != victim)
-            {
-                if (!Quiet(player))
-                {
-                    notify_quiet(player, "Teleported.");
-                }
-            }
         }
     }
     else if ( isExit(destination) )
