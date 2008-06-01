@@ -818,7 +818,7 @@ void do_clone
 
     // Go make the clone object.
     //
-    bool bValid;
+    bool bValid = false;
     size_t nValidName;
     UTF8 *pValidName = NULL;
     switch (Typeof(thing))
