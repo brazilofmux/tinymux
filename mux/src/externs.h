@@ -348,7 +348,7 @@ void add_quota(dbref, int);
 bool canpayfees(dbref, dbref, int, int);
 void giveto(dbref,int);
 bool payfor(dbref,int);
-bool IsRestricted(size_t nName, const UTF8 *pName, int charset);
+bool IsRestricted(const UTF8 *pName, int charset);
 UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, int charset);
 UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 bool ValidatePlayerName(const UTF8 *pName);

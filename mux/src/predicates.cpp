@@ -302,7 +302,7 @@ void giveto(dbref who, int pennies)
 // Every character in the name must be allowed by one of the character sets mentioned.
 // If no character sets are mentions, everything is allowed.
 //
-bool IsRestricted(size_t nName, const UTF8 *pName, int charset)
+bool IsRestricted(const UTF8 *pName, int charset)
 {
     if (0 == charset)
     {
@@ -403,7 +403,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
         return NULL;
     }
 
-    if (IsRestricted(nStripped, pStripped, charset))
+    if (IsRestricted(pStripped, charset))
     {
         return NULL;
     }
@@ -567,7 +567,7 @@ bool ValidatePlayerName(const UTF8 *pName)
         return false;
     }
 
-    if (IsRestricted(nName, pName, mudconf.player_name_charset))
+    if (IsRestricted(pName, mudconf.player_name_charset))
     {
         return false;
     }
