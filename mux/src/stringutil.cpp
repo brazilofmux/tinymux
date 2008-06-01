@@ -1462,6 +1462,10 @@ size_t ANSI_TruncateToField
     int  iEndGoal
 )
 {
+    if (0 == nField)
+    {
+        return 0;
+    }
     if (!szString)
     {
         pField0[0] = '\0';

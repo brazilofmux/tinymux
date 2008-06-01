@@ -1225,6 +1225,10 @@ FUNCTION(fun_columns)
         if (iColumn == 0)
         {
             nBufferAvailable -= safe_fill(buff, bufc, ' ', nIndent);
+            if (0 == nBufferAvailable)
+            {
+                break;
+            }
         }
 
         char *objstring = split_token(&cp, &sep);
@@ -1248,6 +1252,7 @@ FUNCTION(fun_columns)
             bNeedCRLF = true;
         }
     }
+
     if (bNeedCRLF)
     {
         safe_copy_buf("\r\n", 2, buff, bufc);
