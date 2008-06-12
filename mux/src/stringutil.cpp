@@ -6572,6 +6572,7 @@ void mux_string::replace_Chars
                 {
                     ; // Nothing.
                 }
+                nMove = CursorMin;
             }
             else
             {
