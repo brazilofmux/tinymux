@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  February 2008
+Last Update:  June 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -323,6 +323,12 @@ Bug Fixes:
  -- Fix translate(%xua%xn%xyb,p) --> '%xua%xu%xyb' (Issue 461).
  -- Fix interaction between @notify and @destroy that left non-default
     semaphores blocked on garbage object (Issue 435).
+ -- Add page-colon-space case (e.g., page p1=: 's clock ticks.').
+ -- Help did not match behavior of mail(<player>, <number>) (Issue 477).
+ -- Buffer footer corruption and SIGSEGV with columns() (Issue 501).
+ -- Exits could be teleported to JUMP_OK locations (Issue 518)
+ -- Fix Visual C++ 2008 Express Edition build error (Issue 509)
+ -- Test MEMALLOC() return value in mguests.cpp (Issue 505).
 
 
 Performance Enhancements:
@@ -350,6 +356,10 @@ Cosmetic Changes:
  -- Increased width of certain columns in @list hashstats (Requests,
     Hits, and Checks) and @list allocations (Allocs).
  -- Fix spelling errors in readme files and respace.
+ -- Remove unused configuration option, use_http.
+ -- Flag letter 'z' should be OPEN_OK.
+ -- The examples for WIDTH() and HEIGHT() are for 'say' instead of 'think'.
+ -- Fix typo in orflags() topic (Issue 504).
 
 
 Miscellaneous:
