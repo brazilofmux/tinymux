@@ -2,8 +2,10 @@
 
 .tex.pdf:
 	pdflatex $<
+	pdflatex $<
 
 .tex.dvi:
+	latex $<
 	latex $<
 
 .dvi.ps:
