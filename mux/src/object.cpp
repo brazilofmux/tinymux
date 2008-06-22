@@ -395,7 +395,8 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         }
         if (okname)
         {
-            okname = (lookup_player(NOTHING, buff, false) == NOTHING);
+            bool bAlias = false;
+            okname = (lookup_player_name(buff, bAlias) == NOTHING);
             if (!okname)
             {
                 notify(player, tprintf("The name %s is already taken.", name));
@@ -528,7 +529,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         mux_ltoa(quota, buff);
         atr_add_raw(obj, A_QUOTA, buff);
         atr_add_raw(obj, A_RQUOTA, buff);
-        add_player_name(obj, Name(obj));
+        add_player_name(obj, Name(obj), false);
         free_sbuf(buff);
         s_Zone(obj, NOTHING);
     }
@@ -846,11 +847,11 @@ void destroy_player(dbref player, dbref victim)
 
     // Remove the name from the name hash table.
     //
-    delete_player_name(victim, Name(victim));
+    delete_player_name(victim, Name(victim), false);
     dbref aowner;
     int aflags;
     UTF8 *buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
-    delete_player_name(victim, buf);
+    delete_player_name(victim, buf, true);
     free_lbuf(buf);
 
     move_via_generic(victim, NOTHING, player, 0);

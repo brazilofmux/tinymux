@@ -715,8 +715,20 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
  * Manage playername->dbref mapping
  */
 
-bool add_player_name(dbref player, const UTF8 *name)
+typedef struct
 {
+    dbref dbPlayer;
+    bool  bAlias;
+} player_name_entry;
+
+bool add_player_name(dbref player, const UTF8 *name, bool bAlias)
+{
+    if (  !Good_obj(player)
+       || !isPlayer(player))
+    {
+        return false;
+    }
+
     bool stat = false;
 
     // Convert to all lowercase.
@@ -724,17 +736,19 @@ bool add_player_name(dbref player, const UTF8 *name)
     size_t nCased;
     UTF8  *pCased = mux_strlwr(name, nCased);
 
-    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
-    if (p)
+    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased,
+        &mudstate.player_htab);
+
+    if (NULL != p)
     {
-        // Entry found in the hashtable.  If a player, succeed if the
-        // numbers match (already correctly in the hash table), fail
-        // if they don't.
+        // Entry found in the hashtable.  Succeed if the numbers are already
+        // correctly in the hash table.
         //
-        if (  Good_obj(*p)
-           && isPlayer(*p))
+        if (  Good_obj(p->dbPlayer)
+           && isPlayer(p->dbPlayer))
         {
-            if (*p == player)
+            if (  p->dbPlayer == player
+               && p->bAlias == bAlias)
             {
                 return true;
             }
@@ -744,14 +758,13 @@ bool add_player_name(dbref player, const UTF8 *name)
             }
         }
 
-        // It's an alias (or an incorrect entry). Clobber it.
+        // It's an invalid entry.  Clobber it.
         //
-        delete p;
-
+        player_name_entry *pOrig = p;
         p = NULL;
         try
         {
-            p = new dbref;
+            p = new player_name_entry;
         }
         catch (...)
         {
@@ -760,12 +773,14 @@ bool add_player_name(dbref player, const UTF8 *name)
 
         if (NULL != p)
         {
-            *p = player;
+            p->dbPlayer = player;
+            p->bAlias = bAlias;
             stat = hashreplLEN(pCased, nCased, p, &mudstate.player_htab);
-        }
-        else
-        {
-            ISOUTOFMEMORY(p);
+            if (stat)
+            {
+                delete pOrig;
+                pOrig = NULL;
+            }
         }
     }
     else
@@ -773,7 +788,7 @@ bool add_player_name(dbref player, const UTF8 *name)
         p = NULL;
         try
         {
-            p = new dbref;
+            p = new player_name_entry;
         }
         catch (...)
         {
@@ -782,34 +797,55 @@ bool add_player_name(dbref player, const UTF8 *name)
 
         if (NULL != p)
         {
-            *p = player;
+            p->dbPlayer = player;
+            p->bAlias = bAlias;
             stat = hashaddLEN(pCased, nCased, p, &mudstate.player_htab);
-        }
-        else
-        {
-            ISOUTOFMEMORY(p);
         }
     }
     return stat;
 }
 
-bool delete_player_name(dbref player, const UTF8 *name)
+bool delete_player_name(dbref player, const UTF8 *name, bool bAlias)
 {
-    size_t nCased;
-    UTF8  *pCased = mux_strlwr(name, nCased);
-
-    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
-    if (  !p
-       || *p == NOTHING
-       || (  player != NOTHING
-          && *p != player))
+    if (NOTHING == player)
     {
         return false;
     }
+
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
+
+    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased,
+        &mudstate.player_htab);
+
+    if (  NULL == p
+       || (  Good_obj(p->dbPlayer)
+          && isPlayer(p->dbPlayer)
+          && (  p->dbPlayer != player
+             || p->bAlias != bAlias)))
+    {
+        return false;
+    }
+
     delete p;
     p = NULL;
     hashdeleteLEN(pCased, nCased, &mudstate.player_htab);
     return true;
+}
+
+dbref lookup_player_name(UTF8 *name, bool &bAlias)
+{
+    dbref thing = NOTHING;
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
+    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
+    if (  NULL != p
+       && Good_obj(p->dbPlayer))
+    {
+        thing = p->dbPlayer;
+        bAlias = p->bAlias;
+    }
+    return thing;
 }
 
 dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
@@ -819,23 +855,26 @@ dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
         return doer;
     }
 
-    while (*name == LOOKUP_TOKEN)
+    while (LOOKUP_TOKEN == name[0])
     {
         name++;
     }
-    dbref thing;
-    if (*name == NUMBER_TOKEN)
+
+    dbref thing = NOTHING;
+    if (NUMBER_TOKEN == name[0])
     {
         name++;
         if (!is_integer(name, NULL))
         {
             return NOTHING;
         }
+
         thing = mux_atol(name);
         if (!Good_obj(thing))
         {
             return NOTHING;
         }
+
         if ( !(  isPlayer(thing)
               || God(doer)))
         {
@@ -844,33 +883,17 @@ dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
         return thing;
     }
 
-    size_t nCased;
-    UTF8  *pCased = mux_strlwr(name, nCased);
-    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
-    if (!p)
+    bool bAlias = false;
+    thing = lookup_player_name(name, bAlias);
+    if (  NOTHING == thing
+       && check_who)
     {
-        if (check_who)
-        {
-            thing = find_connected_name(doer, name);
-            if (Hidden(thing))
-            {
-                thing = NOTHING;
-            }
-        }
-        else
+        thing = find_connected_name(doer, name);
+        if (Hidden(thing))
         {
             thing = NOTHING;
         }
     }
-    else if (!Good_obj(*p))
-    {
-        thing = NOTHING;
-    }
-    else
-    {
-        thing = *p;
-    }
-
     return thing;
 }
 
@@ -881,7 +904,7 @@ void load_player_names(void)
     {
         if (isPlayer(i))
         {
-            add_player_name(i, Name(i));
+            add_player_name(i, Name(i), false);
         }
     }
     UTF8 *alias = alloc_lbuf("load_player_names");
@@ -894,7 +917,7 @@ void load_player_names(void)
             alias = atr_pget_str(alias, i, A_ALIAS, &aowner, &aflags);
             if (*alias)
             {
-                add_player_name(i, alias);
+                add_player_name(i, alias, true);
             }
         }
     }

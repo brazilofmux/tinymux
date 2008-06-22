@@ -131,7 +131,7 @@ const UTF8 *CGuests::Create(DESC *d)
            || !Guest(guest_player))
         {
             guest_player = Guests[i] = MakeGuestChar();
-            if (guest_player == NOTHING)
+            if (NOTHING == guest_player)
             {
                 queue_string(d, T("Error creating guest, please try again later.\n"));
                 return NULL;
@@ -146,13 +146,14 @@ const UTF8 *CGuests::Create(DESC *d)
         {
             // Lets try to grab our own name, if we don't have it.
             //
+            bool bAlias = false;
             mux_sprintf(name, sizeof(name), "%s%d", mudconf.guest_prefix, i+1);
-            dbref j = lookup_player(GOD, name, false);
-            if (j == NOTHING)
+            dbref j = lookup_player_name(name, bAlias);
+            if (NOTHING == j)
             {
-                delete_player_name(guest_player, Name(guest_player));
+                delete_player_name(guest_player, Name(guest_player), false);
                 s_Name(guest_player, name);
-                add_player_name(guest_player, Name(guest_player));
+                add_player_name(guest_player, Name(guest_player), false);
             }
             else
             {
@@ -294,9 +295,10 @@ dbref CGuests::MakeGuestChar(void)
     bool bFound = false;
     for (i = 0; i < mudconf.number_guests;i++)
     {
+        bool bAlias = false;
         mux_sprintf(name, sizeof(name), "%s%d", mudconf.guest_prefix, i + 1);
-        player = lookup_player(GOD, name, false);
-        if (player == NOTHING)
+        player = lookup_player_name(name, bAlias);
+        if (NOTHING == player)
         {
             bFound = true;
             break;

@@ -182,7 +182,7 @@ void do_name
     UNUSED_PARAMETER(ncargs);
 
     dbref thing = match_controlled(executor, name);
-    if (thing == NOTHING)
+    if (NOTHING == thing)
     {
         return;
     }
@@ -190,7 +190,7 @@ void do_name
     // Check for bad name.
     //
     if (  nargs < 2
-       || newname[0] == '\0')
+       || '\0' == newname[0])
     {
         notify_quiet(executor, T("Give it what new name?"));
         return;
@@ -210,9 +210,11 @@ void do_name
         }
         else
         {
-            dbref jwho = lookup_player(NOTHING, buff, false);
-            if (  jwho != NOTHING
-               && jwho != thing)
+            bool bAlias = false;
+            dbref jwho = lookup_player_name(buff, bAlias);
+            if (  NOTHING != jwho
+               && (  jwho != thing
+                  || bAlias))
             {
                 notify_quiet(executor, T("That name is already in use."));
                 free_lbuf(buff);
@@ -231,10 +233,10 @@ void do_name
         {
             raw_broadcast(WIZARD, "[Suspect] %s renamed to %s", Name(thing), buff);
         }
-        delete_player_name(thing, Name(thing));
+        delete_player_name(thing, Name(thing), false);
         s_Name(thing, buff);
         set_modified(thing);
-        add_player_name(thing, Name(thing));
+        add_player_name(thing, Name(thing), false);
         if (!Quiet(executor) && !Quiet(thing))
         {
             notify_quiet(executor, T("Name set."));
@@ -306,7 +308,7 @@ void do_alias
     UNUSED_PARAMETER(ncargs);
 
     dbref thing = match_controlled(executor, name);
-    if (thing == NOTHING)
+    if (NOTHING == thing)
     {
         return;
     }
@@ -323,6 +325,7 @@ void do_alias
         UTF8 *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
         UTF8 *trimalias = trim_spaces(alias);
         dbref nPlayer;
+        bool bAlias = false;
 
         if (!Controls(executor, thing))
         {
@@ -337,15 +340,16 @@ void do_alias
         {
             // New alias is null, just clear it.
             //
-            delete_player_name(thing, oldalias);
+            delete_player_name(thing, oldalias, true);
             atr_clr(thing, A_ALIAS);
             if (!Quiet(executor))
             {
                 notify_quiet(executor, T("Alias removed."));
             }
         }
-        else if (  (nPlayer = lookup_player(NOTHING, trimalias, false)) != NOTHING
-                && nPlayer != thing)
+        else if (  (nPlayer = lookup_player_name(trimalias, bAlias)) != NOTHING
+                && (  nPlayer != thing
+                   || !bAlias))
         {
             // Make sure new alias isn't already in use.
             //
@@ -360,9 +364,9 @@ void do_alias
         {
             // Remove the old name and add the new name.
             //
-            delete_player_name(thing, oldalias);
+            delete_player_name(thing, oldalias, true);
             atr_add(thing, A_ALIAS, trimalias, Owner(executor), aflags);
-            if (add_player_name(thing, trimalias))
+            if (add_player_name(thing, trimalias, true))
             {
                 if (!Quiet(executor))
                 {
