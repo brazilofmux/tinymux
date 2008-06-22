@@ -319,9 +319,10 @@ void  empty_obj(dbref);
 /* From player.cpp */
 dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
 void AddToPublicChannel(dbref player);
-bool add_player_name(dbref, const UTF8 *);
-bool delete_player_name(dbref, const UTF8 *);
-dbref lookup_player(dbref, UTF8 *, bool);
+bool add_player_name(dbref player, const UTF8 *name, bool bAlias);
+bool delete_player_name(dbref player, const UTF8 *name, bool bAlias);
+dbref lookup_player_name(UTF8 *name, bool &bAlias);
+dbref lookup_player(dbref doer, UTF8 *name, bool check_who);
 void load_player_names(void);
 void badname_add(UTF8 *);
 void badname_remove(UTF8 *);

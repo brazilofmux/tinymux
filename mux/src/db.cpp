@@ -1052,25 +1052,31 @@ void do_fixdb
                 notify(executor, T("That\xE2\x80\x99s not a good name for a player."));
                 return;
             }
+
+            bool bAlias = false;
             pValidName = arg2;
-            if (lookup_player(NOTHING, pValidName, false) != NOTHING)
+            if (  lookup_player_name(pValidName, bAlias) != NOTHING
+               || bAlias)
             {
-                notify(executor, T("That name is already in use."));
+                notify(executor, T("That name is already in use or is an alias."));
                 return;
             }
+
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
             log_name(thing),
             log_text(T(" renamed to "));
             log_text(pValidName);
             ENDLOG;
+
             if (Suspect(executor))
             {
                 raw_broadcast(WIZARD, "[Suspect] %s renamed to %s",
                     Name(thing), pValidName);
             }
-            delete_player_name(thing, Name(thing));
+
+            delete_player_name(thing, Name(thing), false);
             s_Name(thing, pValidName);
-            add_player_name(thing, pValidName);
+            add_player_name(thing, pValidName, false);
         }
         else
         {

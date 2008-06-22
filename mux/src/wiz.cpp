@@ -453,14 +453,14 @@ void do_toad
     // Zap the name from the name hash table.
     //
     mux_sprintf(buf, MBUF_SIZE, "a slimy toad named %s", pVictimMoniker);
-    delete_player_name(victim, pVictimName);
+    delete_player_name(victim, pVictimName, false);
     s_Name(victim, buf);
     free_mbuf(buf);
 
     // Zap the alias, too.
     //
     buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
-    delete_player_name(victim, buf);
+    delete_player_name(victim, buf, true);
     free_lbuf(buf);
 
     // Boot off.
