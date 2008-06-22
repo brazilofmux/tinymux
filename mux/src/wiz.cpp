@@ -441,17 +441,18 @@ void do_toad
     //
     loc = Location(victim);
     buf = alloc_mbuf("do_toad");
-    const UTF8 *pVictimName = Moniker(victim);
+    const UTF8 *pVictimMoniker = Moniker(victim);
+    const UTF8 *pVictimName = Name(victim);
     mux_sprintf(buf, MBUF_SIZE, "%s has been turned into a slimy toad!",
-        pVictimName);
+        pVictimMoniker);
     notify_except2(loc, executor, victim, executor, buf);
     mux_sprintf(buf, MBUF_SIZE, "You toaded %s! (%d objects @chowned)",
-        pVictimName, count + 1);
+        pVictimMoniker, count + 1);
     notify_quiet(executor, buf);
 
     // Zap the name from the name hash table.
     //
-    mux_sprintf(buf, MBUF_SIZE, "a slimy toad named %s", pVictimName);
+    mux_sprintf(buf, MBUF_SIZE, "a slimy toad named %s", pVictimMoniker);
     delete_player_name(victim, pVictimName);
     s_Name(victim, buf);
     free_mbuf(buf);
