@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  April 2008
+Last Update:  June 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -296,6 +296,16 @@ Bug Fixes:
     quotes (Issue 508).
  -- Make trigger() act like @trigger/quiet (Issue 507).
  -- Eliminate cases of uninitialized Color States (Issue 511).
+ -- Fix whisper to cause error messages to preceed other
+    notifications (Issue 456).
+ -- Whisper with no message or recipients (Issue 510).
+ -- Exits could be teleported to JUMP_OK locations (Issue 518).
+ -- Fix warning about possible uninitialized variable.
+ -- In a (Copy, Move), if we are trimming a Copy down, the Move should
+    be zero. We were writing beyond the end of the buffer (Issue 517).
+ -- @toad wasn't deleting the right name.
+ -- Fix @name and @alias to prevent them from stepping on each other's
+    names (Issue 516).
 
 
 Performance Enhancements:
@@ -330,6 +340,9 @@ Cosmetic Changes:
  -- Add latin-1 and iso8859-1 names to charset configs.  Document
     default.
  -- Fix typo in atan() help topic.
+ -- Flag letter 'z' should be OPEN_OK.
+ -- The examples for WIDTH() and HEIGHT() are for 'say' instead of
+   'think'.
 
 
 Miscellaneous:
