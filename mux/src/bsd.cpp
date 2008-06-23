@@ -3160,7 +3160,7 @@ static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
  * \param chOption  Telnet Option.
  * \param chRequest Telnet SB command.
  * \param pPayload  Pointer to the payload.
- * \param iLength   Length of the payload.
+ * \param nPayload  Length of the payload.
  * \return          None.
  */
 
@@ -3307,14 +3307,6 @@ int UsState(DESC *d, unsigned char chOption)
     return d->nvt_us_state[chOption];
 }
 
-/*! \brief Change the other side's negotiation state.
- *
- * \param d         Player connection context.
- * \param chOption  Telnet Option
- * \param iHimState One of the six option negotiation states.
- * \return          None.
- */
-
 void SendCharsetRequest(DESC *d)
 {
     if (OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET])
@@ -3330,6 +3322,14 @@ void SendCharsetRequest(DESC *d)
         SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 26);
     }
 }
+
+/*! \brief Change the other side's negotiation state.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option
+ * \param iHimState One of the six option negotiation states.
+ * \return          None.
+ */
 
 static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
@@ -3394,7 +3394,6 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
         }
     }
 }
-
 
 /*! \brief Determine whether we want a particular option on his side of the
  * link to be enabled.

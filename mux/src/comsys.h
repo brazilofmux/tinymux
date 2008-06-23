@@ -10,28 +10,36 @@
 
 #define NUM_COMSYS 500
 
-//! \def Maximum Users Per Channel
+//! \def MAX_USERS_PER_CHANNEL
+// Maximum Users Per Channel
 #define MAX_USERS_PER_CHANNEL 1000000
 
-//! \def Maximum length for channel names
+//! \def MAX_CHANNEL_LEN
+// Maximum length for channel names
 #define MAX_CHANNEL_LEN 50
 
-//! \def Maximum length for channel headers (display names)
+//! \def MAX_HEADER_LEN
+// Maximum length for channel headers (display names)
 #define MAX_HEADER_LEN  100
 
-//! \def Maximum length for Player titles for channels
+//! \def MAX_TITLE_LEN
+// Maximum length for Player titles for channels
 #define MAX_TITLE_LEN   200
 
-//! \def Maximum length for an alias to a channel
+//! \def MAX_ALIAS_LEN
+// Maximum length for an alias to a channel
 #define MAX_ALIAS_LEN   15
 
-//! \def Actual size of a channel alias
+//! \def ALIAS_SIZE
+// Actual size of a channel alias
 #define ALIAS_SIZE      (MAX_ALIAS_LEN+1)
 
-//! \def Maximum cost to use for a channel
+//! \def MAX_COST
+// Maximum cost to use for a channel
 #define MAX_COST        32767
 
-//! \struct Comsys user data
+//! \struct comuser
+// Comsys user data
 struct comuser
 {
     //! dbref of the user
@@ -46,7 +54,8 @@ struct comuser
     struct comuser *on_next;
 };
 
-//! \struct Channel data for Comsys
+//! \struct channel
+// Channel data for Comsys
 struct channel
 {
     //! Name of the Channel
@@ -76,7 +85,8 @@ struct channel
     int num_messages;
 };
 
-//! \struct Data for storing user information for players on channels
+//! \struct tagComsys
+// Data for storing user information for players on channels
 typedef struct tagComsys
 {
     //! DBREF of the user
