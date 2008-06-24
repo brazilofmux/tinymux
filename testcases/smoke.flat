@@ -121,7 +121,7 @@
 >256
 "@log smoke=Beginning say test cases."
 >257
-"@set me=MONITOR;say Where is the movie theater?;@if strmatch(setr(0,%va),A48C514BDD9396D2067CC19F857E9BD210BC1EED)={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@set me=!MONITOR;@trig me/tr.done"
+"@set me=MONITOR;say Where is the movie theater?;say add(1,1) add(1,1) [add(1,1)];say/noeval add(1,1) add(1,1) [add(1,1)];nsay add(1,1) add(1,1) [add(1,1)];@wait 0={@if strmatch(setr(0,v(va)),57482DB6F281845A75AD9449C908B7E1E32ECFA8)={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@set me=!MONITOR;@trig me/tr.done}"
 >258
 "@log smoke=End say test cases.;@notify smoke"
 >100
