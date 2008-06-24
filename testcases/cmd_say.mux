@@ -1,0 +1,47 @@
+#
+# cmd_say.mux
+# $Id$
+#
+@create test_cmd_say
+-
+@set test_cmd_say=INHERIT QUIET
+-
+@listen test_cmd_say=*
+-
+@aahear test_cmd_say=
+  @va me=sha1(%va%0)
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cmd_say=
+  @log smoke=Beginning say test cases.
+-
+#
+# Test Case #1 - help file examples.
+#
+&tr.tc001 test_cmd_say=
+  @set me=MONITOR;
+  say Where is the movie theater?;
+  @if strmatch(
+        setr(0,%va),
+        A48C514BDD9396D2067CC19F857E9BD210BC1EED
+      )=
+  {
+    @log smoke=TC001: say examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: say examples. Failed (%q0).
+  };
+  @set me=!MONITOR;
+  @trig me/tr.done
+-
+&tr.done test_cmd_say=
+  @log smoke=End say test cases.;
+  @notify smoke
+-
+drop test_cmd_say
+-
+#
+# End of Test Cases
+#

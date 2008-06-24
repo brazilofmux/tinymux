@@ -83,12 +83,16 @@ extern void pool_reset(void);
 #define safe_mb_chr safe_mb_chr_ascii
 #define safe_chr safe_chr_ascii
 
+//! \struct lbuf_ref
+// Tracks references to an lbuf. See LBUF_SIZE.
 struct lbuf_ref
 {
     int      refcount;
     UTF8    *lbuf_ptr;
 };
 
+//! \struct reg_ref
+// Tracks references to a register.
 struct reg_ref
 {
     int      refcount;

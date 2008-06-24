@@ -12,7 +12,7 @@
 # Beginning of Test Cases
 #
 &tr.tc000 test_secure_fn=
-  @log smoke=Begining secure() test cases.
+  @log smoke=Beginning secure() test cases.
 -
 #
 # Test Case #1 - Test that characters %$\[](){},; mixed with ASCII are replaced with spaces.

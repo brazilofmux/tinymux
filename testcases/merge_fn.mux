@@ -12,7 +12,7 @@
 # Beginning of Test Cases
 #
 &tr.tc000 test_merge_fn=
-  @log smoke=Begining merge() test cases.
+  @log smoke=Beginning merge() test cases.
 -
 #
 # Test Case #1 - Verify that examples work.

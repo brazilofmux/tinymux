@@ -7,7 +7,7 @@
 @set smoke=INHERIT QUIET
 -
 &suite.list smoke=
-  escape_fn convtime_fn merge_fn secure_fn shutdown
+  cmd_say escape_fn convtime_fn merge_fn secure_fn shutdown
 -
 @startup smoke=
   @log smoke=Starting SmokeMUX;
