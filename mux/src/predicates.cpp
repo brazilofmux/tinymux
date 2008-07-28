@@ -24,8 +24,6 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-#include "table.h"
-
 UTF8 *DCL_CDECL tprintf(const char *fmt,...)
 {
     static UTF8 buff[LBUF_SIZE];

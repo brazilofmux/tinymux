@@ -457,10 +457,6 @@ SOURCE=.\svdrand.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\table.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\timeutil.h
 # End Source File
 # Begin Source File

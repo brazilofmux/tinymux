@@ -138,8 +138,6 @@ src/svdhash.cpp
 src/svdhash.h
 src/svdrand.cpp
 src/svdrand.h
-src/table.cpp
-src/table.h
 src/timer.cpp
 src/timeutil.cpp
 src/timeutil.h

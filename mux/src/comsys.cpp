@@ -19,10 +19,6 @@
 #include "interface.h"
 #include "powers.h"
 
-#ifdef MUX_TABLE
-#include "table.h"
-#endif // MUX_TABLE
-
 static int num_channels;
 static comsys_t *comsys_table[NUM_COMSYS];
 
@@ -2630,18 +2626,7 @@ void do_comlist
         bWild = false;
     }
 
-#ifdef MUX_TABLE
-    mux_display_table *Table = new mux_display_table(executor);
-    Table->header_begin();
-    Table->column_add(T("Alias"), 9, 9);
-    Table->column_add(T("Channel"), 18, 18);
-    Table->column_add(T("Status"), 8, 8);
-    Table->column_add(T("Title"), 5, LBUF_SIZE, 0);
-    Table->header_end();
-    Table->body_begin();
-#else // MUX_TABLE
     raw_notify(executor, T("Alias     Channel            Status   Title"));
-#endif // MUX_TABLE
 
     comsys_t *c = get_comsys(executor);
     int i;
@@ -2653,15 +2638,6 @@ void do_comlist
             if (  !bWild
                || quick_wild(pattern, c->channels[i]))
             {
-#ifdef MUX_TABLE
-                Table->row_begin();
-                Table->cell_add(c->alias + i * ALIAS_SIZE);
-                Table->cell_add(c->channels[i]);
-                Table->cell_add(T((user->bUserIsOn ? "on  " : "off ")), false);
-                Table->cell_add(T((user->ComTitleStatus ? "con " : "coff")));
-                Table->cell_add(user->title);
-                Table->row_end();
-#else // MUX_TABLE
                 UTF8 *p =
                     tprintf("%-9.9s %-18.18s %s %s %s",
                         c->alias + i * ALIAS_SIZE,
@@ -2670,7 +2646,6 @@ void do_comlist
                         (user->ComTitleStatus ? "con " : "coff"),
                         user->title);
                 raw_notify(executor, p);
-#endif // MUX_TABLE
             }
         }
         else
@@ -2678,10 +2653,6 @@ void do_comlist
             raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * ALIAS_SIZE, c->channels[i]));
         }
     }
-#ifdef MUX_TABLE
-    Table->body_end();
-    delete Table;
-#endif // MUX_TABLE
     raw_notify(executor, T("-- End of comlist --"));
 }
 
@@ -3661,24 +3632,6 @@ void do_chanlist
     struct channel *ch;
     int flags = 0;
 
-#ifdef MUX_TABLE
-    mux_display_table *Table = new mux_display_table(executor);
-    Table->header_begin();
-    Table->column_add(T("*"), 1, 1, 0);
-    Table->column_add(T("*"), 1, 1, 0);
-    Table->column_add(T("*"), 1, 1);
-    Table->column_add(T("Channel"), 13, 13);
-    Table->column_add(T("Owner"), 15, 15);
-    if (key & CLIST_HEADERS)
-    {
-        Table->column_add(T("Header"), 45, 45);
-    }
-    else
-    {
-        Table->column_add(T("Description"), 45, 45);
-    }
-    Table->header_end();
-#else // MUX_TABLE
     if (key & CLIST_HEADERS)
     {
         raw_notify(executor, T("*** Channel       Owner           Header"));
@@ -3687,7 +3640,6 @@ void do_chanlist
     {
         raw_notify(executor, T("*** Channel       Owner           Description"));
     }
-#endif // MUX_TABLE
 
     bool bWild;
     if (  NULL != pattern
@@ -3738,10 +3690,6 @@ void do_chanlist
             {
                 qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
 
-#ifdef MUX_TABLE
-                Table->body_begin();
-#endif // MUX_TABLE
-
                 for (size_t i = 0; i < actualEntries; i++)
                 {
                     ch = charray[i].ptr;
@@ -3773,16 +3721,7 @@ void do_chanlist
                                 pBuffer = T("No description.");
                             }
                         }
-#ifdef MUX_TABLE
-                        Table->row_begin();
-                        Table->cell_add(T(((ch->type & (CHANNEL_PUBLIC)) ? "P" : "-")));
-                        Table->cell_add(T(((ch->type & (CHANNEL_LOUD))   ? "L" : "-")));
-                        Table->cell_add(T(((ch->type & (CHANNEL_SPOOF))  ? "S" : "-")));
-                        Table->cell_add(ch->name);
-                        Table->cell_add(Moniker(ch->charge_who));
-                        Table->cell_add(pBuffer);
-                        Table->row_end();
-#else // MUX_TABLE
+
                         UTF8 *temp = alloc_mbuf("do_chanlist_temp");
                         mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
@@ -3808,23 +3747,17 @@ void do_chanlist
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);
-#endif // MUX_TABLE
+
                         if (NULL != atrstr)
                         {
                             free_lbuf(atrstr);
                         }
                     }
                 }
-#ifdef MUX_TABLE
-                Table->body_end();
-#endif // MUX_TABLE
             }
             MEMFREE(charray);
         }
     }
-#ifdef MUX_TABLE
-    delete Table;
-#endif // MUX_TABLE
     raw_notify(executor, T("-- End of list of Channels --"));
 }
 
