@@ -368,6 +368,7 @@
 	".\help.h"\
 	".\htab.h"\
 	".\libmux.h"\
+	".\mail.h"\
 	".\match.h"\
 	".\misc.h"\
 	".\modules.h"\
@@ -398,6 +399,7 @@
 	".\misc.h"\
 	".\modules.h"\
 	".\mudconf.h"\
+	".\pcre.h"\
 	".\powers.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
