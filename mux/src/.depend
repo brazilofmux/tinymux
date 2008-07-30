@@ -1,4 +1,5 @@
 _build.o: _build.cpp _build.h
+alarm.o: alarm.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 alloc.o: alloc.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 attrcache.o: attrcache.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 boolexp.o: boolexp.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h
@@ -46,7 +47,11 @@ strtod.o: strtod.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copy
 svdrand.o: svdrand.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 svdhash.o: svdhash.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 timer.o: timer.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h command.h mguests.h interface.h 
+timeabsolute.o: timeabsolute.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
+timedelta.o: timedelta.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
+timeparser.o: timeparser.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 timeutil.o: timeutil.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
+timezone.o: timezone.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 unparse.o: unparse.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 vattr.o: vattr.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h functions.h vattr.h
 walkdb.o: walkdb.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h misc.h powers.h

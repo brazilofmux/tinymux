@@ -4,6 +4,24 @@
 	".\_build.h"\
 	
 
+.\alarm.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\match.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
 .\alloc.cpp : \
 	".\alloc.h"\
 	".\attrcache.h"\
@@ -998,7 +1016,79 @@
 	".\timeutil.h"\
 	
 
+.\timeabsolute.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\match.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
+.\timedelta.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\match.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
+.\timeparser.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\match.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
 .\timeutil.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\match.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
+.\timezone.cpp : \
 	".\alloc.h"\
 	".\attrcache.h"\
 	".\autoconf.h"\

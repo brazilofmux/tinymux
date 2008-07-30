@@ -176,7 +176,7 @@ const CLinearTimeDelta time_15m   = 15*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
-extern void TIME_Initialize(void);
+void TIME_Initialize(void);
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
@@ -194,13 +194,27 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
     *piMod = x % y; \
     return x / y;   \
 }
-
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
-extern bool isLeapYear(long iYear);
+int iMod(int x, int y);
+int iFloorDivision(int x, int y);
+INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod);
+bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
+void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
+                         unsigned short *iMicro, unsigned short *iNano);
+bool isLeapYear(long iYear);
+void ConvertToSecondsString(UTF8 *buffer, INT64 n64, int nFracDigits);
+bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str);
+void GetUTCLinearTime(INT64 *plt);
+bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
+CLinearTimeDelta QueryLocalOffsetAtUTC
+(
+    const CLinearTimeAbsolute &lta,
+    bool *pisDST
+);
+
 extern const UTF8 *monthtab[12];
+extern const char daystab[12];
 extern const UTF8 *DayOfWeekString[7];
-extern int iMod(int x, int y);
 
 #endif // TIMEUTIL_H

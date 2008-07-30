@@ -93,6 +93,10 @@ SOURCE=.\_build.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\alarm.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\alloc.cpp
 # End Source File
 # Begin Source File
@@ -285,7 +289,23 @@ SOURCE=.\timer.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\timeabsolute.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\timedelta.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\timeparser.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\timeutil.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\timezone.cpp
 # End Source File
 # Begin Source File
 

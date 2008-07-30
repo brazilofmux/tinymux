@@ -39,6 +39,7 @@ ALL : "$(OUTDIR)\netmux.exe"
 
 CLEAN :
 	-@erase "$(INTDIR)\_build.obj"
+	-@erase "$(INTDIR)\alarm.obj"
 	-@erase "$(INTDIR)\alloc.obj"
 	-@erase "$(INTDIR)\attrcache.obj"
 	-@erase "$(INTDIR)\boolexp.obj"
@@ -87,7 +88,11 @@ CLEAN :
 	-@erase "$(INTDIR)\svdhash.obj"
 	-@erase "$(INTDIR)\svdrand.obj"
 	-@erase "$(INTDIR)\timer.obj"
+	-@erase "$(INTDIR)\timeabsolute.obj"
+	-@erase "$(INTDIR)\timedelta.obj"
+	-@erase "$(INTDIR)\timeparser.obj"
 	-@erase "$(INTDIR)\timeutil.obj"
+	-@erase "$(INTDIR)\timezone.obj"
 	-@erase "$(INTDIR)\unparse.obj"
 	-@erase "$(INTDIR)\vattr.obj"
 	-@erase "$(INTDIR)\version.obj"
@@ -124,6 +129,7 @@ LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.8 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
+	"$(INTDIR)\alarm.obj" \
 	"$(INTDIR)\alloc.obj" \
 	"$(INTDIR)\attrcache.obj" \
 	"$(INTDIR)\boolexp.obj" \
@@ -172,7 +178,11 @@ LINK32_OBJS= \
 	"$(INTDIR)\svdhash.obj" \
 	"$(INTDIR)\svdrand.obj" \
 	"$(INTDIR)\timer.obj" \
+	"$(INTDIR)\timeabsolute.obj" \
+	"$(INTDIR)\timedelta.obj" \
+	"$(INTDIR)\timeparser.obj" \
 	"$(INTDIR)\timeutil.obj" \
+	"$(INTDIR)\timezone.obj" \
 	"$(INTDIR)\unparse.obj" \
 	"$(INTDIR)\vattr.obj" \
 	"$(INTDIR)\version.obj" \
@@ -198,6 +208,7 @@ ALL : "$(OUTDIR)\netmux.exe" "$(OUTDIR)\netmux.bsc"
 
 CLEAN :
 	-@erase "$(INTDIR)\_build.obj"
+	-@erase "$(INTDIR)\alarm.obj"
 	-@erase "$(INTDIR)\alloc.obj"
 	-@erase "$(INTDIR)\attrcache.obj"
 	-@erase "$(INTDIR)\boolexp.obj"
@@ -246,7 +257,11 @@ CLEAN :
 	-@erase "$(INTDIR)\svdhash.obj"
 	-@erase "$(INTDIR)\svdrand.obj"
 	-@erase "$(INTDIR)\timer.obj"
+	-@erase "$(INTDIR)\timeabsolute.obj"
+	-@erase "$(INTDIR)\timedelta.obj"
+	-@erase "$(INTDIR)\timeparser.obj"
 	-@erase "$(INTDIR)\timeutil.obj"
+	-@erase "$(INTDIR)\timezone.obj"
 	-@erase "$(INTDIR)\unparse.obj"
 	-@erase "$(INTDIR)\vattr.obj"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -288,6 +303,7 @@ LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
+	"$(INTDIR)\alarm.obj" \
 	"$(INTDIR)\alloc.obj" \
 	"$(INTDIR)\attrcache.obj" \
 	"$(INTDIR)\boolexp.obj" \
@@ -336,7 +352,11 @@ LINK32_OBJS= \
 	"$(INTDIR)\svdhash.obj" \
 	"$(INTDIR)\svdrand.obj" \
 	"$(INTDIR)\timer.obj" \
+	"$(INTDIR)\timeabsolute.obj" \
+	"$(INTDIR)\timedelta.obj" \
+	"$(INTDIR)\timeparser.obj" \
 	"$(INTDIR)\timeutil.obj" \
+	"$(INTDIR)\timezone.obj" \
 	"$(INTDIR)\unparse.obj" \
 	"$(INTDIR)\vattr.obj" \
 	"$(INTDIR)\version.obj" \
@@ -365,6 +385,11 @@ LINK32_OBJS= \
 SOURCE=.\_build.cpp
 
 "$(INTDIR)\_build.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\alarm.cpp
+
+"$(INTDIR)\alarm.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\alloc.cpp
@@ -607,7 +632,27 @@ SOURCE=.\timer.cpp
 "$(INTDIR)\timer.obj": $(SOURCE) "$(INTDIR)"
 
 
+SOURCE=.\timeabsolute.cpp
+
+"$(INTDIR)\timeabsolute.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\timedelta.cpp
+
+"$(INTDIR)\timedelta.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\timeparser.cpp
+
+"$(INTDIR)\timeparser.obj": $(SOURCE) "$(INTDIR)"
+
+
 SOURCE=.\timeutil.cpp
+
+"$(INTDIR)\timeutil.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\timezone.cpp
 
 "$(INTDIR)\timeutil.obj": $(SOURCE) "$(INTDIR)"
 
