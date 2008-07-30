@@ -188,7 +188,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\version.obj" \
 	"$(INTDIR)\walkdb.obj" \
 	"$(INTDIR)\wild.obj" \
-	"$(INTDIR)\wiz.obj"
+	"$(INTDIR)\wiz.obj" \
+	"$(OUTDIR)\libmux.lib"
 
 "$(OUTDIR)\netmux.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -362,7 +363,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\version.obj" \
 	"$(INTDIR)\walkdb.obj" \
 	"$(INTDIR)\wild.obj" \
-	"$(INTDIR)\wiz.obj"
+	"$(INTDIR)\wiz.obj" \
+	"$(OUTDIR)\libmux.lib"
 
 "$(OUTDIR)\netmux.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -627,11 +629,6 @@ SOURCE=.\svdrand.cpp
 "$(INTDIR)\svdrand.obj": $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=.\timer.cpp
-
-"$(INTDIR)\timer.obj": $(SOURCE) "$(INTDIR)"
-
-
 SOURCE=.\timeabsolute.cpp
 
 "$(INTDIR)\timeabsolute.obj": $(SOURCE) "$(INTDIR)"
@@ -645,6 +642,11 @@ SOURCE=.\timedelta.cpp
 SOURCE=.\timeparser.cpp
 
 "$(INTDIR)\timeparser.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\timer.cpp
+
+"$(INTDIR)\timer.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\timeutil.cpp
