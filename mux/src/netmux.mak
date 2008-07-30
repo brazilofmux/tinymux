@@ -55,6 +55,7 @@ CLEAN :
 	-@erase "$(INTDIR)\file_c.obj"
 	-@erase "$(INTDIR)\flags.obj"
 	-@erase "$(INTDIR)\funceval.obj"
+	-@erase "$(INTDIR)\funceval2.obj"
 	-@erase "$(INTDIR)\functions.obj"
 	-@erase "$(INTDIR)\funmath.obj"
 	-@erase "$(INTDIR)\game.obj"
@@ -145,6 +146,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\file_c.obj" \
 	"$(INTDIR)\flags.obj" \
 	"$(INTDIR)\funceval.obj" \
+	"$(INTDIR)\funceval2.obj" \
 	"$(INTDIR)\functions.obj" \
 	"$(INTDIR)\funmath.obj" \
 	"$(INTDIR)\game.obj" \
@@ -225,6 +227,7 @@ CLEAN :
 	-@erase "$(INTDIR)\file_c.obj"
 	-@erase "$(INTDIR)\flags.obj"
 	-@erase "$(INTDIR)\funceval.obj"
+	-@erase "$(INTDIR)\funceval2.obj"
 	-@erase "$(INTDIR)\functions.obj"
 	-@erase "$(INTDIR)\funmath.obj"
 	-@erase "$(INTDIR)\game.obj"
@@ -320,6 +323,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\file_c.obj" \
 	"$(INTDIR)\flags.obj" \
 	"$(INTDIR)\funceval.obj" \
+	"$(INTDIR)\funceval2.obj" \
 	"$(INTDIR)\functions.obj" \
 	"$(INTDIR)\funmath.obj" \
 	"$(INTDIR)\game.obj" \
@@ -465,6 +469,11 @@ SOURCE=.\flags.cpp
 
 
 SOURCE=.\funceval.cpp
+
+"$(INTDIR)\funceval.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\funceval2.cpp
 
 "$(INTDIR)\funceval.obj": $(SOURCE) "$(INTDIR)"
 

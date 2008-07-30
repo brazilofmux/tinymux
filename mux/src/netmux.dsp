@@ -157,6 +157,10 @@ SOURCE=.\funceval.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\funceval2.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\functions.cpp
 # End Source File
 # Begin Source File

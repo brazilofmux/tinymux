@@ -68,6 +68,7 @@ src/file_c.h
 src/flags.cpp
 src/flags.h
 src/funceval.cpp
+src/funceval2.cpp
 src/functions.cpp
 src/functions.h
 src/funmath.cpp
