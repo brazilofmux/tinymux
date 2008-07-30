@@ -392,7 +392,6 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\functions.h"\
-	".\help.h"\
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\

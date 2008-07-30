@@ -16,20 +16,12 @@
 #include "config.h"
 #include "externs.h"
 
-#include <limits.h>
-#include <math.h>
-
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
 #include "functions.h"
-#include "help.h"
-#include "mail.h"
 #include "misc.h"
 #include "pcre.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
 
 /* ---------------------------------------------------------------------------
  * fun_grab: a combination of extract() and match(), sortof. We grab the

@@ -16,9 +16,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <limits.h>
-#include <math.h>
-
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
@@ -26,7 +23,6 @@
 #include "help.h"
 #include "mail.h"
 #include "misc.h"
-#include "pcre.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
