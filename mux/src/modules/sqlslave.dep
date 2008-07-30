@@ -3,8 +3,8 @@
 .\sqlslave.cpp : \
 	"..\autoconf.h"\
 	"..\config.h"\
-	"..\copyright.h"\
 	"..\libmux.h"\
 	"..\modules.h"\
+	".\autoconf.h"\
 	".\sql.h"\
 	

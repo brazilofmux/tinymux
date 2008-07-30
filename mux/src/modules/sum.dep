@@ -3,7 +3,6 @@
 .\sum.cpp : \
 	"..\autoconf.h"\
 	"..\config.h"\
-	"..\copyright.h"\
 	"..\libmux.h"\
 	"..\modules.h"\
 	".\sum.h"\
