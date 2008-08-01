@@ -31,6 +31,7 @@ game/data/db_load
 game/data/db_unload
 game/text/help.txt
 game/text/wizhelp.txt
+src/Doxyfile
 src/Makefile.in
 src/_build.cpp
 src/_build.h
