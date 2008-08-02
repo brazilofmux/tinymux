@@ -90,11 +90,7 @@ double MakeSpecialFloat(int iWhich)
 
 static int mux_fpclass(double result)
 {
-    union
-    {
-        UINT64 i64;
-        double d;
-    } u;
+    SpecialFloatUnion u;
 
     u.d = result;
 
