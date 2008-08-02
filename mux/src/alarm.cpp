@@ -27,7 +27,7 @@ CMuxAlarm MuxAlarm;
  * \return            Always 1.
  */
 
-static DWORD WINAPI CMuxAlarm::AlarmProc(LPVOID lpParameter)
+DWORD WINAPI CMuxAlarm::AlarmProc(LPVOID lpParameter)
 {
     CMuxAlarm *pthis = (CMuxAlarm *)lpParameter;
     DWORD dwWait = pthis->dwWait;
