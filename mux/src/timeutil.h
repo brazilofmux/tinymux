@@ -125,6 +125,7 @@ private:
     bool bAlarmSet;
 #if defined(WINDOWS_THREADS)
     HANDLE hThread;
+static DWORD WINAPI AlarmProc(LPVOID lpParameter);
 #endif // WINDOWS_THREADS
 
 public:

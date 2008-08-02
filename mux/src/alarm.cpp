@@ -3,7 +3,7 @@
  *
  * $Id$
  *
- * This module implements an alarm clock mechanism used to help abbreviate
+ * This module implements an Alarm Clock mechanism used to help abbreviate
  * work as part of limiting CPU usage.
  */
 
@@ -18,7 +18,16 @@ CMuxAlarm MuxAlarm;
 //
 #if defined(WINDOWS_TIME)
 
-static DWORD WINAPI AlarmProc(LPVOID lpParameter)
+/*! \brief Alarm Clock Thread Procedure.
+ *
+ * This thread takes requests to wait from dwWait.  If the allowed time runs
+ * out, bAlarm is set.
+ *
+ * \param lParameter  Void pointer to CMuxAlarm instance.
+ * \return            Always 1.
+ */
+
+static DWORD WINAPI CMuxAlarm::AlarmProc(LPVOID lpParameter)
 {
     CMuxAlarm *pthis = (CMuxAlarm *)lpParameter;
     DWORD dwWait = pthis->dwWait;
@@ -43,12 +52,28 @@ static DWORD WINAPI AlarmProc(LPVOID lpParameter)
     return 1;
 }
 
+/*! \brief Alarm Clock Constructor.
+ *
+ * The order of execution in this function is important as the semaphore must
+ * be in place and in the correct state before the thread begins to use it.
+ *
+ * \return  none.
+ */
+
 CMuxAlarm::CMuxAlarm(void)
 {
     hSemAlarm = CreateSemaphore(NULL, 0, 1, NULL);
     Clear();
     hThread = CreateThread(NULL, 0, AlarmProc, (LPVOID)this, 0, NULL);
 }
+
+/*! \brief Alarm Clock Destructor.
+ *
+ * This function ensures the thread is completely shutdown and all resources
+ * are released.
+ *
+ * \return  none.
+ */
 
 CMuxAlarm::~CMuxAlarm()
 {
@@ -59,15 +84,38 @@ CMuxAlarm::~CMuxAlarm()
     CloseHandle(hSave);
 }
 
+/*! \brief Sleep Routine.
+ *
+ * A sleep request does not prevent the Alarm Clock from firing, so typically,
+ * the server sleeps while the Alarm Clock is not set.
+ *
+ * \return  none.
+ */
+
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
     ::Sleep(ltd.ReturnMilliseconds());
 }
 
+/*! \brief Surrenders a little time.
+ *
+ * One most operating system, a request to sleep for 0 is a polite way of
+ * giving other threads the remainder of your time slice.
+ *
+ * \return  none.
+ */
+
 void CMuxAlarm::SurrenderSlice(void)
 {
     ::Sleep(0);
 }
+
+/*! \brief Set the Alarm Clock.
+ *
+ * This sets the Alarm Clock to fire after a certain time has passed.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Set(CLinearTimeDelta ltd)
 {
@@ -76,6 +124,13 @@ void CMuxAlarm::Set(CLinearTimeDelta ltd)
     bAlarmed  = false;
     bAlarmSet = true;
 }
+
+/*! \brief Clear the Alarm Clock.
+ *
+ * This turns the Alarm Clock off.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Clear(void)
 {
@@ -87,11 +142,27 @@ void CMuxAlarm::Clear(void)
 
 #elif defined(UNIX_TIME)
 
+/*! \brief Alarm Clock Constructor.
+ *
+ * The UNIX version of the Alarm Clock is built on signals, so there isn't
+ * much to initialize.
+ *
+ * \return  none.
+ */
+
 CMuxAlarm::CMuxAlarm(void)
 {
     bAlarmed = false;
     bAlarmSet = false;
 }
+
+/*! \brief Sleep Routine.
+ *
+ * A sleep request does not prevent signals from from firing, so typically,
+ * the server sleeps while the Alarm Clock is not set.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
@@ -164,10 +235,28 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 #endif
 }
 
+/*! \brief Surrenders a little time.
+ *
+ * One most operating system, a request to sleep for 0 is a polite way of
+ * giving other threads the remainder of your time slice.
+ *
+ * \return  none.
+ */
+
 void CMuxAlarm::SurrenderSlice(void)
 {
     ::sleep(0);
 }
+
+/*! \brief Set the Alarm Clock.
+ *
+ * This sets the Alarm Clock to fire after a certain time has passed by
+ * requesting a SIG_PROF to fire at that time.  Note that SIG_PROF is used
+ * by the profiler, so the Alarm Clock must be disable in autoconf.h before
+ * the server can be profiled.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Set(CLinearTimeDelta ltd)
 {
@@ -181,6 +270,13 @@ void CMuxAlarm::Set(CLinearTimeDelta ltd)
     bAlarmed  = false;
 #endif
 }
+
+/*! \brief Clear the Alarm Clock.
+ *
+ * This turns the Alarm Clock off.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Clear(void)
 {
@@ -197,6 +293,14 @@ void CMuxAlarm::Clear(void)
     bAlarmed  = false;
 #endif
 }
+
+/*! \brief Clear the Alarm Clock.
+ *
+ * Like the AlarmProc above, this routine is called when a SIGPROF signal
+ * occurs indicating that the allowed time has passed.
+ *
+ * \return  none.
+ */
 
 void CMuxAlarm::Signal(void)
 {
