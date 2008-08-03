@@ -2626,7 +2626,7 @@ void do_comlist
         bWild = false;
     }
 
-    raw_notify(executor, T("Alias     Channel            Status   Title"));
+    raw_notify(executor, T("Alias           Channel            Status   Title"));
 
     comsys_t *c = get_comsys(executor);
     int i;
@@ -2639,7 +2639,7 @@ void do_comlist
                || quick_wild(pattern, c->channels[i]))
             {
                 UTF8 *p =
-                    tprintf("%-9.9s %-18.18s %s %s %s",
+                    tprintf("%-15.15s %-18.18s %s %s %s",
                         c->alias + i * ALIAS_SIZE,
                         c->channels[i],
                         (user->bUserIsOn ? "on " : "off"),
