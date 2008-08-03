@@ -2633,14 +2633,14 @@ void do_comlist
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
     Table->header_begin();
-    Table->column_add(T("Alias"), 9, 9);
+    Table->column_add(T("Alias"), 15, 15);
     Table->column_add(T("Channel"), 18, 18);
     Table->column_add(T("Status"), 8, 8);
     Table->column_add(T("Title"), 5, LBUF_SIZE, 0);
     Table->header_end();
     Table->body_begin();
 #else // MUX_TABLE
-    raw_notify(executor, T("Alias     Channel            Status   Title"));
+    raw_notify(executor, T("Alias           Channel            Status   Title"));
 #endif // MUX_TABLE
 
     comsys_t *c = get_comsys(executor);
@@ -2663,7 +2663,7 @@ void do_comlist
                 Table->row_end();
 #else // MUX_TABLE
                 UTF8 *p =
-                    tprintf("%-9.9s %-18.18s %s %s %s",
+                    tprintf("%-15.15s %-18.18s %s %s %s",
                         c->alias + i * ALIAS_SIZE,
                         c->channels[i],
                         (user->bUserIsOn ? "on " : "off"),
