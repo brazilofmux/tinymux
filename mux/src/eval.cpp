@@ -2039,10 +2039,10 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         // i or I
                         // itext() substitutions
                         //
-                        iStr++;
-                        ch = pStr[iStr];
+                        ch = pStr[iStr+1];
                         if (mux_isdigit(ch))
                         {
+                            iStr++;
                             i = mudstate.in_loop - (ch - '0') - 1;
                             if (  0 <= i
                                && i < MAX_ITEXT)
@@ -2050,6 +2050,12 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 safe_str(mudstate.itext[i], buff, bufc);
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
+                        }
+                        else if (  '\0' != ch
+                                && nBufferAvailable)
+                        {
+                            *(*bufc)++ = pStr[iStr];
+                            nBufferAvailable--;
                         }
                     }
                 }
