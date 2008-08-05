@@ -394,7 +394,14 @@ static bool get_list(FILE *f, dbref i)
                     size_t nBufferUnicode;
                     UTF8 *pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
                     pBufferUnicode = convert_color(pBufferUnicode);
-                    pBuffer = ConvertToLatin(pBufferUnicode);
+                    if (ATR_INFO_CHAR != pBufferUnicode[0])
+                    {
+                        pBuffer = ConvertToLatin(pBufferUnicode);
+                    }
+                    else
+                    {
+                        pBuffer = tprintf("%c%s", ATR_INFO_CHAR, ConvertToLatin(pBufferUnicode+1));
+                    }
                     nBuffer = strlen(pBuffer);
                 }
                 else
@@ -967,8 +974,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                                 const UTF8 *pUnicode = (const UTF8 *)atr_get_raw(iObject, iAttr);
                                 if (NULL != pUnicode)
                                 {
+                                    const char *pLatin;
+
                                     pUnicode = convert_color(pUnicode);
-                                    const char *pLatin = ConvertToLatin(pUnicode);
+                                    if (ATR_INFO_CHAR != pUnicode[0])
+                                    {
+                                        pLatin = ConvertToLatin(pUnicode);
+                                    }
+                                    else
+                                    {
+                                        pLatin = tprintf("%c%s", ATR_INFO_CHAR, ConvertToLatin(pUnicode+1));
+                                    }
                                     size_t nLatin = strlen(pLatin);
                                     atr_add_raw_LEN(iObject, iAttr, pLatin, nLatin);
                                 }
