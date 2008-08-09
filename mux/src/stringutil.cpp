@@ -5837,6 +5837,8 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
 }
 
+// This function is deprecated.
+//
 UTF8 mux_string::export_Char(size_t n) const
 {
     if (m_iLast.m_byte <= n)
@@ -6812,6 +6814,8 @@ bool mux_string::search
     return bSucceeded;
 }
 
+// This function is deprecated.
+//
 void mux_string::set_Char(size_t n, const UTF8 cChar)
 {
     if (m_iLast.m_byte <= n)
