@@ -3439,7 +3439,7 @@ Related Topics: @name.
 & @QUERY
 @QUERY
 
-  COMMAND: @query[/<method>] [<dbref>/<attribute>]=[<dbname>]/<query>
+  COMMAND: @query[/<method>] <dbref>/<attribute>=[<dbname>]/<query>
 
   Performs an asynchronous query of external (possibly remote) data.  When the
   query completes, <attribute> on <dbref> is @triggered with the result.  For
