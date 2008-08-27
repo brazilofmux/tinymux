@@ -51,7 +51,7 @@ clean:
 
 	# Add here commands to clean up the package.
 	-(cd src; $(MAKE) clean)
-	-rm -f game/bin/dbconvert game/bin/netmux game/bin/slave src/unsplit \
+	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/slave src/unsplit \
 		src/buildnum.data src/config.log src/config.status \
 		src/Makefile src/autoconf.h
 
@@ -68,8 +68,10 @@ install: build
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/netmux
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/slave
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/dbconvert
+	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/libmux.so
 	dh_install src/netmux $(DEB_INSTALL)/bin
 	dh_install src/slave $(DEB_INSTALL)/bin
+	dh_install src/libmux.so $(DEB_INSTALL)/bin
 	dh_install debian/tinymux-install $(DEB_BIN)
 	chmod a+rX -R $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)
 	chmod a-x $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/netmux.conf
