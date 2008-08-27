@@ -18,7 +18,7 @@ Description: text-based multi-user virtual world server
  the virtual world. This is done by building new rooms and objects,
  and utilizing its internal programming language, MUSHcode.
  .
- TinyMUX doesn't provide the superset of features available in other
- MUSH flavors, but those it does implement provide a stable and
+ TinyMUX does not provide a superset of all the features available in
+ other MUSH flavors, but those it does implement provide a stable and
  robust environment that performs as well or better than that of its
  peers.
