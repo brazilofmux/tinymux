@@ -2,8 +2,9 @@ Source: tinymux
 Section: games
 Priority: optional
 Maintainer: Ervin Hearn III <noltar@korongil.net>
+DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 4.0.0), binutils (>= 2.12.90 )
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 Vcs-Svn: http://tinymux.googlecode.com/svn/trunk/
 Vcs-Browser: http://code.google.com/p/tinymux/source/browse/trunk
 Homepage: http://www.tinymux.org/
