@@ -170,7 +170,7 @@ case "$1" in
      #
 
      mkcdir bin
-     mklns netmux slave
+     mklns netmux slave libmux.so
      ln -s $SRCDIR/$DWNDIR/netmux dbconvert
 
      echo -n "."
