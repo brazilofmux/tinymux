@@ -2368,7 +2368,7 @@ Related Topics: @name.
     > &checkdiv divisible_by_five_club = [mod(mid(%#,2,20),5)]
     Only objects whose db-number is divisible by 5 may pass.
 
-  Related Topics: @lock attributes.
+  Related Topics: @lock attribute.
 
 & @LOCK INDIRECT
 @LOCK INDIRECT
