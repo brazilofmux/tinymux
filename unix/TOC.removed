@@ -4,3 +4,5 @@ src/sqlshared.h
 src/sqlslave.cpp
 src/svdreport.cpp
 src/svdreport.h
+src/configure.in
+src/modules/configure.in
