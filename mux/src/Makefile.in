@@ -112,6 +112,7 @@ NETMUX_BASE_OBJ = _build.o alarm.o alloc.o attrcache.o boolexp.o bsd.o \
 LIBMUX_BASE_SRC = libmux.cpp
 LIBMUX_BASE_OBJ = libmux.o
 MUX_LIBS = @MUX_LIBS@
+DL_LIB = @DL_LIB@
 
 # Version number routines
 #
@@ -192,7 +193,7 @@ netmux: $(NETMUX_OBJ) $(VER_SRC)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~

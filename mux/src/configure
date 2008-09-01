@@ -694,6 +694,7 @@ DYNAMICLIB_EXT
 DYNAMICLIB_CPPFLAGS
 DYNAMICLIB_TARGET
 MUX_LIBS
+DL_LIB
 subdirs
 LIBOBJS
 LTLIBOBJS'
@@ -5018,6 +5019,7 @@ fi
 
 { echo "$as_me:$LINENO: checking for dlopen" >&5
 echo $ECHO_N "checking for dlopen... $ECHO_C" >&6; }
+LIBS_SAVE=$LIBS
 
 { echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
 echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6; }
@@ -5146,6 +5148,7 @@ _ACEOF
               ;;
     esac
     MUX_LIBS="-lmux"
+    DL_LIB="-ldl"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -5156,6 +5159,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+LIBS=$LIBS_SAVE
+
 
 
 
@@ -12729,12 +12734,13 @@ DYNAMICLIB_EXT!$DYNAMICLIB_EXT$ac_delim
 DYNAMICLIB_CPPFLAGS!$DYNAMICLIB_CPPFLAGS$ac_delim
 DYNAMICLIB_TARGET!$DYNAMICLIB_TARGET$ac_delim
 MUX_LIBS!$MUX_LIBS$ac_delim
+DL_LIB!$DL_LIB$ac_delim
 subdirs!$subdirs$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 82; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

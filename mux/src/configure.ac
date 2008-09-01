@@ -231,6 +231,7 @@ AC_CHECK_LIB(inet, main)
 AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(m, main)
 AC_MSG_CHECKING(for dlopen)
+LIBS_SAVE=$LIBS
 AC_CHECK_LIB(dl,dlopen)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <dlfcn.h>
@@ -252,11 +253,14 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
               ;;
     esac
     MUX_LIBS="-lmux"
+    DL_LIB="-ldl"
     ],[])
+LIBS=$LIBS_SAVE
 AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CPPFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
 AC_SUBST(MUX_LIBS)
+AC_SUBST(DL_LIB)
 
 # Checks for header files.
 #
