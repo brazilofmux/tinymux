@@ -224,11 +224,9 @@ AC_MINIX
 # Checks for libraries.
 #
 AC_CHECK_LIB(crypt, main)
-AC_CHECK_LIB(resolv, main)
 AC_CHECK_LIB(sun, getpwnam)
 AC_CHECK_LIB(seq, main)
 AC_CHECK_LIB(intl, main)
-AC_CHECK_LIB(nsl, main)
 AC_CHECK_LIB(inet, main)
 AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(m, main)
