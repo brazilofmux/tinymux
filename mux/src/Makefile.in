@@ -151,15 +151,6 @@ DEFS =
 #DEFS = -signed
 #
 
-# Libraries.  Use the second line if you want to use the resolver to get
-# hostnames and your libc doesn't use it already.  If you use it, you'd
-# better have your nameserver working or things may hang for a while when
-# people try to login from distant sites.  Use the third line if you're running
-# on a SysV-ish system and BSD support isn't built in to the standard libc.
-#
-MORELIBS  = -lm
-#MORELIBS = -lm -lnsl -lsocket -L/usr/ucblib -lucb  # Mips
-
 # ================== END OF CONFIGURATION SECTION =================
 
 # Auxiliary source files: only used by offline utilities.
@@ -197,11 +188,11 @@ unsplit: unsplit.o
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
