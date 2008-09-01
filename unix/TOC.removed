@@ -1,3 +1,5 @@
 BETA
 src/table.cpp
 src/table.h
+src/configure.in
+src/modules/configure.in
