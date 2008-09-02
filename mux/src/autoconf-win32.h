@@ -118,12 +118,6 @@
 /* Define to 1 if you have the `m' library (-lm). */
 /* #undef HAVE_LIBM */
 
-/* Define to 1 if you have the `nsl' library (-lnsl). */
-/* #undef HAVE_LIBNSL */
-
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-/* #undef HAVE_LIBRESOLV */
-
 /* Define to 1 if you have the `seq' library (-lseq). */
 /* #undef HAVE_LIBSEQ */
 
