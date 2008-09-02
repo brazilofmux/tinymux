@@ -214,9 +214,6 @@ AC_PROG_CXXCPP
 AC_PROG_CC
 AC_PROG_CPP
 AC_CANONICAL_HOST
-case "$host" in
-*irix*) LIBS="-lm" ;;
-esac
 AC_ISC_POSIX
 AC_AIX
 AC_MINIX
@@ -230,6 +227,10 @@ AC_CHECK_LIB(intl, main)
 AC_CHECK_LIB(inet, main)
 AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(m, main)
+case "$host" in
+*solaris*) AC_CHECK_LIB(nsl, main)
+           ;;
+esac
 AC_MSG_CHECKING(for dlopen)
 AC_CHECK_LIB(dl,dlopen)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
