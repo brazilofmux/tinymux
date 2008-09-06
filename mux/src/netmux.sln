@@ -1,0 +1,68 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmux", "libmux.vcproj", "{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netmux", "netmux.vcproj", "{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample", "modules\sample.vcproj", "{1CB7989F-273C-4A7D-9BDE-57DDB7047196}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sum", "modules\sum.vcproj", "{38D996E0-458D-43E7-834F-10645162ADD4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlproxy.vcproj", "{5689B87D-E634-4061-8090-BC93974ABB2E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave.vcproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}.Debug.ActiveCfg = Debug|Win32
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}.Debug.Build.0 = Debug|Win32
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}.Release.ActiveCfg = Release|Win32
+		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}.Release.Build.0 = Release|Win32
+		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Debug.ActiveCfg = Debug|Win32
+		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Debug.Build.0 = Debug|Win32
+		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Release.ActiveCfg = Release|Win32
+		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Release.Build.0 = Release|Win32
+		{1CB7989F-273C-4A7D-9BDE-57DDB7047196}.Debug.ActiveCfg = Debug|Win32
+		{1CB7989F-273C-4A7D-9BDE-57DDB7047196}.Debug.Build.0 = Debug|Win32
+		{1CB7989F-273C-4A7D-9BDE-57DDB7047196}.Release.ActiveCfg = Release|Win32
+		{1CB7989F-273C-4A7D-9BDE-57DDB7047196}.Release.Build.0 = Release|Win32
+		{38D996E0-458D-43E7-834F-10645162ADD4}.Debug.ActiveCfg = Debug|Win32
+		{38D996E0-458D-43E7-834F-10645162ADD4}.Debug.Build.0 = Debug|Win32
+		{38D996E0-458D-43E7-834F-10645162ADD4}.Release.ActiveCfg = Release|Win32
+		{38D996E0-458D-43E7-834F-10645162ADD4}.Release.Build.0 = Release|Win32
+		{5689B87D-E634-4061-8090-BC93974ABB2E}.Debug.ActiveCfg = Debug|Win32
+		{5689B87D-E634-4061-8090-BC93974ABB2E}.Debug.Build.0 = Debug|Win32
+		{5689B87D-E634-4061-8090-BC93974ABB2E}.Release.ActiveCfg = Release|Win32
+		{5689B87D-E634-4061-8090-BC93974ABB2E}.Release.Build.0 = Release|Win32
+		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Debug.ActiveCfg = Debug|Win32
+		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Debug.Build.0 = Debug|Win32
+		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Release.ActiveCfg = Release|Win32
+		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
