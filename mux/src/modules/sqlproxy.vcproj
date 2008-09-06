@@ -3,8 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="sqlproxy"
-	SccProjectName=""
-	SccLocalPath="">
+	ProjectGUID="{5689B87D-E634-4061-8090-BC93974ABB2E}">
 	<Platforms>
 		<Platform
 			Name="Win32"/>

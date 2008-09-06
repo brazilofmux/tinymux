@@ -3,8 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="sqlslave"
-	SccProjectName=""
-	SccLocalPath="">
+	ProjectGUID="{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}">
 	<Platforms>
 		<Platform
 			Name="Win32"/>

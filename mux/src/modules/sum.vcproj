@@ -3,8 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="sum"
-	SccProjectName=""
-	SccLocalPath="">
+	ProjectGUID="{38D996E0-458D-43E7-834F-10645162ADD4}">
 	<Platforms>
 		<Platform
 			Name="Win32"/>

@@ -3,8 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="netmux"
-	SccProjectName=""
-	SccLocalPath="">
+	ProjectGUID="{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
