@@ -1,3 +1,10 @@
 ALPHA
 src/svdreport.cpp
 src/svdreport.h
+src/libmux.dsp
+src/netmux.dsp
+src/netmux.dsw
+src/modules/sample.dsp
+src/modules/sum.dsp
+src/modules/sqlproxy.dsp
+src/modules/sqlslave.dsp
