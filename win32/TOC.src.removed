@@ -1,3 +1,10 @@
 BETA
 src/table.cpp
 src/table.h
+src/libmux.vcproj
+src/netmux.sln
+src/netmux.vcproj
+src/modules/sample.vcproj
+src/modules/sum.vcproj
+src/modules/sqlproxy.vcproj
+src/modules/sqlslave.vcproj
