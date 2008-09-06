@@ -80,8 +80,8 @@ src/mudconf.h
 src/muxcli.cpp
 src/muxcli.h
 src/netcommon.cpp
-src/netmux.dsp
-src/netmux.dsw
+src/netmux.vcproj
+src/netmux.sln
 src/object.cpp
 src/pcre.cpp
 src/pcre.h
