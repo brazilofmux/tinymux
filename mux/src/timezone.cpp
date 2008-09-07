@@ -297,7 +297,6 @@ static int FindOffsetEntry(const CLinearTimeAbsolute& lta)
         {
             hi = mid - 1;
         }
-
     }
     return lo-1;
 }
