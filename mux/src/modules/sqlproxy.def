@@ -1,6 +1,4 @@
 LIBRARY "sqlproxy.dll"
-DESCRIPTION 'SQLProxy TinyMUX module'
-
 EXPORTS
     mux_CanUnloadNow    @1 PRIVATE
     mux_GetClassObject  @2 PRIVATE
