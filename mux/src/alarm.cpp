@@ -80,7 +80,7 @@ CMuxAlarm::~CMuxAlarm()
     HANDLE hSave = hSemAlarm;
     hSemAlarm = INVALID_HANDLE_VALUE;
     ReleaseSemaphore(hSave, 1, NULL);
-    WaitForSingleObject(hThread, 15*FACTOR_100NS_PER_SECOND);
+    WaitForSingleObject(hThread, static_cast<DWORD>(15*FACTOR_MS_PER_SECOND));
     CloseHandle(hSave);
 }
 
