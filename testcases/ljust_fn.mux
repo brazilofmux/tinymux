@@ -1,0 +1,66 @@
+#
+# ljust_fn.mux - Test Cases for secure().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with ljust() behaviors.
+#
+@create test_ljust_fn
+-
+@set test_ljust_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ljust_fn=
+  @log smoke=Beginning ljust() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_ljust_fn=
+  @if strmatch(
+        setr(0,sha1(
+            -[ljust(foo,6)]-
+            %r0[ljust(foo,6)]7%r01234567
+            =[ljust(bar,5,.)]=
+            [translate(ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)]
+          )
+        ),
+        8B48261F6D01F56324CA49BEC063E6940FB2031C
+      )=
+  {
+    @log smoke=TC001: ljust examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: ljust examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regression of Issue 527.
+#
+&tr.tc002 test_ljust_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(2,10),ljust(X,##,left(1234567890,##)))]
+          )
+        ),
+        D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE
+      )=
+  {
+    @log smoke=TC002: Regressions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: Regressions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ljust_fn=
+  @log smoke=End ljust() test cases.;
+  @notify smoke
+-
+drop test_ljust_fn
+-
+#
+# End of Test Cases
+#

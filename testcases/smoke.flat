@@ -1,5 +1,5 @@
 +X996099
-+S9
++S10
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-8
+9
 -1
 -1
 -1
@@ -200,13 +200,42 @@
 "@log smoke=End escape() test cases.;@notify smoke"
 <
 !5
-"test_merge_fn"
+"test_ljust_fn"
 0
 -1
 -1
 -1
 0
 4
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Thu Sep 11 00:23:35.996402 2008"
+>219
+"Thu Sep 11 00:23:35.996669 2008"
+>256
+"@log smoke=Beginning ljust() test cases."
+>257
+"@if strmatch(setr(0,sha1(-[ljust(foo,6)]-%r0[ljust(foo,6)]7%r01234567=[ljust(bar,5,.)]=[translate(ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),8B48261F6D01F56324CA49BEC063E6940FB2031C)={@log smoke=TC001: ljust examples. Succeeded.},{@log smoke=TC001: ljust examples. Failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1([iter(lnum(2,10),ljust(X,##,left(1234567890,##)))])),D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
+>258
+"@log smoke=End ljust() test cases.;@notify smoke"
+<
+!6
+"test_merge_fn"
+0
+-1
+-1
+-1
+0
+5
 1
 -1
 1
@@ -250,14 +279,14 @@
 >258
 "@log smoke=End merge() test cases.;@notify smoke"
 <
-!6
+!7
 "test_secure_fn"
 0
 -1
 -1
 -1
 0
-5
+6
 1
 -1
 1
@@ -283,14 +312,14 @@
 >258
 "@log smoke=End secure() test cases.;@notify smoke"
 <
-!7
+!8
 "test_shutdown"
 0
 -1
 -1
 -1
 0
-6
+7
 1
 -1
 1
@@ -306,14 +335,14 @@
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
-!8
+!9
 "smoke"
 0
 -1
 -1
 -1
 0
-7
+8
 1
 -1
 1
@@ -327,7 +356,7 @@
 >219
 "Tue Jun 24 09:27:57.368834 2008"
 >271
-"cmd_say escape_fn convtime_fn merge_fn secure_fn shutdown"
+"cmd_say convtime_fn escape_fn ljust_fn merge_fn secure_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
