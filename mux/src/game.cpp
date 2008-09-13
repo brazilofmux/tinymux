@@ -2603,11 +2603,22 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 #define CPU_EXTMODEL(x)  ((x >> 16) & 0x00000000F)
 #define CPU_EXTFAMILY(x) ((x >> 20) & 0x00000000F)
 
-#define CPU_FEATURE_MMX  0x00800000UL
-#define CPU_FEATURE_FSXR 0x01000000UL
-#define CPU_FEATURE_SSE  0x02000000UL
-#define CPU_FEATURE_SSE2 0x04000000UL
-#define CPU_MSR_SSE3     0x00000001UL
+// Feature bits reported in EDX.
+//
+#define CPU_FEATURE_MMX     0x00800000UL
+#define CPU_FEATURE_FSXR    0x01000000UL
+#define CPU_FEATURE_SSE     0x02000000UL
+#define CPU_FEATURE_SSE2    0x04000000UL
+
+// Feature bits reported in ECX.
+//
+#define CPU_FEATURE2_SSE3   0x00000001UL
+#define CPU_FEATURE2_DTES64 0x00000002UL
+#define CPU_FEATURE2_SSSE3  0x00000200UL
+#define CPU_FEATURE2_SSE41  0x00080000UL
+#define CPU_FEATURE2_SSE42  0x00100000UL
+#define CPU_FEATURE2_POPCNT 0x00800000UL
+#define CPU_FEATURE2_AES    0x02000000UL
 
 // Indicators.
 //
@@ -2628,6 +2639,10 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 #define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2      0x00000400UL
 #define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3      0x00000800UL
 #define CPU_TYPE_FAMILY_F_SSE3               0x00000800UL
+#define CPU_TYPE_FAMILY_6_SSSE3              0x00001000UL
+#define CPU_TYPE_FAMILY_6_SSE41              0x00002000UL
+#define CPU_TYPE_FAMILY_6_SSE42_POPCNT       0x00008000UL
+#define CPU_TYPE_FAMILY_6_AES_DTE64          0x00010000UL
 
 static void cpu_init(void)
 {
@@ -2720,7 +2735,7 @@ static void cpu_init(void)
 
     UINT32 dwSignature;
     UINT32 dwBrand;
-    UINT32 dwMSR;
+    UINT32 dwFeatures2;
     UINT32 dwFeatures;
 
     __asm
@@ -2729,7 +2744,7 @@ static void cpu_init(void)
         cpuid
         mov dwSignature,eax
         mov dwBrand,ebx
-        mov dwMSR,ecx
+        mov dwFeatures2,ecx
         mov dwFeatures,edx
     }
 
@@ -2756,11 +2771,15 @@ static void cpu_init(void)
         dwEffModel = CPU_MODEL(dwSignature);
     }
 
-#define ADVF_MMX  0x00000001UL
-#define ADVF_FSXR 0x00000002UL
-#define ADVF_SSE  0x00000004UL
-#define ADVF_SSE2 0x00000008UL
-#define ADVF_SSE3 0x00000010UL
+#define ADVF_MMX   0x00000001UL
+#define ADVF_FSXR  0x00000002UL
+#define ADVF_SSE   0x00000004UL
+#define ADVF_SSE2  0x00000008UL
+#define ADVF_SSE3  0x00000010UL
+#define ADVF_SSSE3 0x00000020UL
+#define ADVF_SSE41 0x00000040UL
+#define ADVF_SSE42 0x00000080UL
+#define ADVF_AES   0x00000100UL
 
     UINT32 dwAdvFeatures = 0;
 
@@ -2782,10 +2801,25 @@ static void cpu_init(void)
     {
         dwAdvFeatures |= ADVF_SSE2;
     }
-    if (  dwEffFamily <= 5
-       && dwMSR & CPU_MSR_SSE3)
+    if (dwFeatures2 & CPU_FEATURE2_SSE3)
     {
         dwAdvFeatures |= ADVF_SSE3;
+    }
+    if (dwFeatures2 & CPU_FEATURE2_SSSE3)
+    {
+        dwAdvFeatures |= ADVF_SSSE3;
+    }
+    if (dwFeatures2 & CPU_FEATURE2_SSE41)
+    {
+        dwAdvFeatures |= ADVF_SSE41;
+    }
+    if (dwFeatures2 & CPU_FEATURE2_SSE42)
+    {
+        dwAdvFeatures |= ADVF_SSE42;
+    }
+    if (dwFeatures2 & CPU_FEATURE2_AES)
+    {
+        dwAdvFeatures |= ADVF_AES;
     }
 
     // Test whether operating system will allow use of these extensions.
@@ -2804,7 +2838,7 @@ static void cpu_init(void)
         }
         catch (...)
         {
-            dwUseable &= ~(ADVF_MMX|ADVF_SSE|ADVF_SSE2|ADVF_SSE3);
+            dwUseable &= ~(ADVF_MMX|ADVF_SSE|ADVF_SSE2|ADVF_SSE3|ADVF_SSSE3|ADVF_SSE41|ADVF_SSE42|ADVF_AES);
         }
     }
 
@@ -2821,7 +2855,7 @@ static void cpu_init(void)
         }
         catch (...)
         {
-            dwUseable &= ~(ADVF_SSE|ADVF_SSE2|ADVF_SSE3);
+            dwUseable &= ~(ADVF_SSE|ADVF_SSE2|ADVF_SSE3|ADVF_SSSE3|ADVF_SSE41|ADVF_SSE42|ADVF_AES);
         }
     }
 
@@ -2838,7 +2872,7 @@ static void cpu_init(void)
         }
         catch (...)
         {
-            dwUseable &= ~(ADVF_SSE2|ADVF_SSE3);
+            dwUseable &= ~(ADVF_SSE2|ADVF_SSE3|ADVF_SSSE3|ADVF_SSE41|ADVF_SSE42|ADVF_AES);
         }
     }
 
@@ -2855,7 +2889,75 @@ static void cpu_init(void)
         }
         catch (...)
         {
-            dwUseable &= ~(ADVF_SSE3);
+            dwUseable &= ~(ADVF_SSE3|ADVF_SSSE3|ADVF_SSE41|ADVF_SSE42|ADVF_AES);
+        }
+    }
+
+    if (dwUseable & ADVF_SSSE3)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSSE3 instruction.
+                //
+                phaddw xmm1,xmm2
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSSE3|ADVF_SSE41|ADVF_SSE42|ADVF_AES);
+        }
+    }
+
+    if (dwUseable & ADVF_SSE41)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSE41 instruction.
+                //
+                pcmpeqq xmm1,xmm2
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSE41|ADVF_SSE42|ADVF_AES);
+        }
+    }
+
+    if (dwUseable & ADVF_SSE42)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSE42 instruction.
+                //
+                pcmpgtq xmm1,xmm2
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSE42|ADVF_AES);
+        }
+    }
+
+    if (dwUseable & ADVF_AES)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a AES instruction.
+                //
+                aesenc xmm1,xmm2
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_AES);
         }
     }
 
@@ -2888,7 +2990,32 @@ static void cpu_init(void)
                     {
                         if (dwUseable & ADVF_SSE3)
                         {
-                            if (dwEffFamily < 15)
+                            if (dwUseable & ADVF_SSSE3)
+                            {
+                                if (dwUseable & ADVF_SSE41)
+                                {
+                                    if (dwUseable & ADVF_SSE42)
+                                    {
+                                        if (dwUseable & ADVF_AES)
+                                        {
+                                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_AES_DTE64;
+                                        }
+                                        else
+                                        {
+                                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_SSE42_POPCNT;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        __intel_cpu_indicator = CPU_TYPE_FAMILY_6_SSE41;
+                                    }
+                                }
+                                else
+                                {
+                                    __intel_cpu_indicator = CPU_TYPE_FAMILY_6_SSSE3;
+                                }
+                            }
+                            else if (dwEffFamily < 15)
                             {
                                 __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3;
                             }
@@ -2932,7 +3059,7 @@ static void cpu_init(void)
 
     // Report findings to the log.
     //
-    fprintf(stderr, "cpu_init: %s, Family %u, Model %u, %s%s%s%s%s" ENDLINE,
+    fprintf(stderr, "cpu_init: %s, Family %u, Model %u, %s%s%s%s%s%s%s%s%s" ENDLINE,
         (Intel == maker ? "Intel" : (AMD == maker ? "AMD" : "Unknown")),
         dwEffFamily,
         dwEffModel,
@@ -2940,17 +3067,25 @@ static void cpu_init(void)
         (dwUseable & ADVF_FSXR) ? "FSXR ": "",
         (dwUseable & ADVF_SSE)  ? "SSE ": "",
         (dwUseable & ADVF_SSE2) ? "SSE2 ": "",
-        (dwUseable & ADVF_SSE3) ? "SSE3 ": "");
+        (dwUseable & ADVF_SSE3) ? "SSE3 ": "",
+        (dwUseable & ADVF_SSSE3) ? "SSSE3 ": "",
+        (dwUseable & ADVF_SSE41) ? "SSE41 ": "",
+        (dwUseable & ADVF_SSE42) ? "SSE42 ": "",
+        (dwUseable & ADVF_AES) ? "AES ": "");
 
     if (dwUseable != dwAdvFeatures)
     {
         UINT32 dw = dwAdvFeatures & (~dwUseable);
-        fprintf(stderr, "cpu_init: %s%s%s%s%s unsupported by OS." ENDLINE,
+        fprintf(stderr, "cpu_init: %s%s%s%s%s%s%s%s%s unsupported by OS." ENDLINE,
             (dw & ADVF_MMX)  ? "MMX ": "",
             (dw & ADVF_FSXR) ? "FSXR ": "",
             (dw & ADVF_SSE)  ? "SSE ": "",
             (dw & ADVF_SSE2) ? "SSE2 ": "",
-            (dw & ADVF_SSE3) ? "SSE3 ": "");
+            (dw & ADVF_SSE3) ? "SSE3 ": "",
+            (dw & ADVF_SSSE3) ? "SSSE3 ": "",
+            (dw & ADVF_SSE41) ? "SSE41 ": "",
+            (dw & ADVF_SSE42) ? "SSE42 ": "",
+            (dw & ADVF_AES) ? "AES ": "");
     }
 }
 
