@@ -8650,7 +8650,7 @@ static void centerjustcombo
     while (nPos < nLeading)
     {
         mux_cursor iEnd;
-        sPad->cursor_from_point(iEnd, nLeading-nPos);
+        sPad->cursor_from_point(iEnd, nLeading - nPos);
         nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sPad->export_TextColor(*bufc, CursorMin, iEnd, nMax);
         nPos += nPad;
@@ -8665,15 +8665,24 @@ static void centerjustcombo
 
     // Output first part of trailing padding.
     //
-    if (nTrailing)
+    if (0 < nTrailing)
     {
-        LBUF_OFFSET nPadPart = (LBUF_OFFSET)(nPos % nPad);
-        mux_cursor iStart, iEnd;
-        sPad->cursor_from_point(iStart, nPadPart);
-        sPad->cursor_from_point(iEnd, nWidth-nPos);
-        nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sPad->export_TextColor(*bufc, iStart, iEnd, nMax);
-        nPos += nPad-nPadPart;
+        LBUF_OFFSET nPadStart = (LBUF_OFFSET)(nPos % nPad);
+        LBUF_OFFSET nPadPart  = nWidth - nLeading - nStr.m_point;
+        if (nPad - nPadStart < nPadPart)
+        {
+            nPadPart = nPad - nPadStart;
+        }
+
+        if (0 < nPadPart)
+        {
+            mux_cursor iStart, iEnd;
+            sPad->cursor_from_point(iStart, nPadStart);
+            sPad->cursor_from_point(iEnd, nPadStart+nPadPart);
+            nMax = buff + (LBUF_SIZE-1) - *bufc;
+            *bufc += sPad->export_TextColor(*bufc, iStart, iEnd, nMax);
+            nPos += nPadPart;
+        }
     }
 
     // Output trailing padding.
