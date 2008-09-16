@@ -12,8 +12,8 @@ extern char szBuildDate[];
 #define MUX_BUILD_DATE szBuildDate
 #endif // MUX_BUILD_DATE
 
-#define MUX_VERSION       "2.6.5.28"         // Version number
-#define MUX_RELEASE_DATE  "2008-JUN-17"      // Source release date
+#define MUX_VERSION       "2.6.5.29"         // Version number
+#define MUX_RELEASE_DATE  "2008-SEP-16"      // Source release date
     
 // Define if this release is qualified as ALPHA or BETA.
 //

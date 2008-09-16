@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  June 2008
+Last Update:  September 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -329,6 +329,9 @@ Bug Fixes:
  -- Exits could be teleported to JUMP_OK locations (Issue 518)
  -- Fix Visual C++ 2008 Express Edition build error (Issue 509)
  -- Test MEMALLOC() return value in mguests.cpp (Issue 505).
+ -- @toad wasn't deleting the right name from an internal table.
+ -- Leading Ctrl-A in attribute was converted to '?' during 2.7
+    flatfile conversion.
 
 
 Performance Enhancements:
@@ -376,3 +379,4 @@ Miscellaneous:
  -- Increase MAX_ALIASES_PER_PLAYER from 50 to 100.
  -- Fix gcc constant string warnings.
  -- Remove unfinished sqlshared.cpp, sqlshare.h, and sqlslave.cpp.
+ -- Switch to using Visual Studio 2003 and Intel Compiler v10.1.
