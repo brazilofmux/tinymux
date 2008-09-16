@@ -2516,15 +2516,15 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 
 // GenuineIntel
 //
-#define INTEL_MFGSTR0 'uneG'
-#define INTEL_MFGSTR1 'letn'
-#define INTEL_MFGSTR2 'Ieni'
+#define INTEL_MFGSTR_EBX  0x756E6547  // 'uneG'
+#define INTEL_MFGSTR_ECX  0x6C65746E  // 'letn'
+#define INTEL_MFGSTR_EDX  0x49656E69  // 'Ieni'
 
 // AuthenticAMD
 //
-#define AMD_MFGSTR0   'htuA'
-#define AMD_MFGSTR1   'DMAc'
-#define AMD_MFGSTR2   'itne'
+#define AMD_MFGSTR_EBX    0x68747541  // 'htuA'
+#define AMD_MFGSTR_ECX    0x444D4163  // 'DMAc'
+#define AMD_MFGSTR_EDX    0x69746E65  // 'itne'
 
 #define CPUID_1 1
 
@@ -2614,9 +2614,9 @@ static void cpu_init(void)
     }
 
     UINT32 dwHighest;
-    UINT32 dwMfgStr0;
-    UINT32 dwMfgStr1;
-    UINT32 dwMfgStr2;
+    UINT32 dwMfgStr_ebx;
+    UINT32 dwMfgStr_ecx;
+    UINT32 dwMfgStr_edx;
 
     // CPUID is supported.
     //
@@ -2625,9 +2625,9 @@ static void cpu_init(void)
         mov eax,CPUID_0
         cpuid
         mov dwHighest,eax
-        mov dwMfgStr0,ebx
-        mov dwMfgStr1,ecx
-        mov dwMfgStr2,edx
+        mov dwMfgStr_ebx,ebx
+        mov dwMfgStr_ecx,ecx
+        mov dwMfgStr_edx,edx
     }
 
     if (0 == dwHighest)
@@ -2645,15 +2645,15 @@ static void cpu_init(void)
     } CPUMaker;
 
     CPUMaker maker;
-    if (  INTEL_MFGSTR0 == dwMfgStr0
-       && INTEL_MFGSTR1 == dwMfgStr1
-       && INTEL_MFGSTR2 == dwMfgStr2)
+    if (  INTEL_MFGSTR_EBX == dwMfgStr_ebx
+       && INTEL_MFGSTR_ECX == dwMfgStr_ecx
+       && INTEL_MFGSTR_EDX == dwMfgStr_edx)
     {
         maker = Intel;
     }
-    else if (  AMD_MFGSTR0 == dwMfgStr0
-            && AMD_MFGSTR1 == dwMfgStr1
-            && AMD_MFGSTR2 == dwMfgStr2)
+    else if (  AMD_MFGSTR_EBX == dwMfgStr_ebx
+            && AMD_MFGSTR_ECX == dwMfgStr_ecx
+            && AMD_MFGSTR_EDX == dwMfgStr_edx)
     {
         maker = AMD;
     }
