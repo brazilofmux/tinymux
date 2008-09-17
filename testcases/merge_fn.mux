@@ -202,7 +202,7 @@
               [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65301)])]
             )
           ),
-          0000000000000000000000000000000000000000
+          076E2E619D7BCF0E90A154BD70B1ECE7B5D580A0
         )=
     {
       @log smoke=TC008: Single Unicode substitution in each position. Succeeded.
@@ -235,7 +235,7 @@
               [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)]%b,[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
             )
           ),
-          0000000000000000000000000000000000000000
+          2293B4B64B2317A57915358CFBAE254E8920410F
         )=
     {
       @log smoke=TC009: Unicode with space/null substitution in each position. Succeeded.
@@ -267,7 +267,7 @@
               [merge([chr(65297)][chr(65298)][chr(65299)][chr(65300)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
             )
           ),
-          0000000000000000000000000000000000000000
+          3104B719D0B03EA860E75AE911560B545AE742A6
         )=
     {
       @log smoke=TC010: Vary length of run over 5 character Unicode string. Succeeded.
@@ -296,7 +296,7 @@
               [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65301)])]
             )
           ),
-          0000000000000000000000000000000000000000
+          EE76EC447F7E80D4F2C2C67060F2106E879C6033
         )=
     {
       @log smoke=TC011: Single Unicode substitution in each position with color. Succeeded.
@@ -329,7 +329,7 @@
               [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy%b,%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
             )
           ),
-          0000000000000000000000000000000000000000
+          C62F770B471B3BF5B34543328E86D5B109323D46
         )=
     {
       @log smoke=TC012: Unicode with space/null substitution in each position with color. Succeeded.
@@ -361,7 +361,7 @@
               [merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65299)]%xx[chr(65300)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
             )
           ),
-          0000000000000000000000000000000000000000
+          0AEBF28EB7E6788821689B7FBFBE1B8DC57AA8FF
         )=
     {
       @log smoke=TC013: Vary length of run over 5 character Unicode string with color. Succeeded.

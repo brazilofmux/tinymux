@@ -6646,7 +6646,7 @@ void mux_string::replace_Chars
     m_autf[m_iLast.m_byte] = '\0';
 }
 
-bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
+bool mux_string::replace_Point(const UTF8 *p, const mux_cursor &i)
 {
     size_t n = utf8_FirstByte[m_autf[i.m_byte]];
     size_t m = utf8_FirstByte[p[0]];
@@ -6682,6 +6682,11 @@ bool mux_string::replace_Point(const UTF8 *p, mux_cursor &i)
         m_autf[i.m_byte + j] = p[j];
     }
     return true;
+}
+
+void mux_string::replace_Char(const mux_cursor &i, const mux_string &sStr, const mux_cursor &j)
+{
+    this->replace_Point(sStr.m_autf+j.m_byte, i);
 }
 
 /*! \brief Reverses the string.
@@ -6843,6 +6848,12 @@ void mux_string::set_Color(size_t n, ColorState csColor)
     {
         m_pcs[n] = csColor;
     }
+}
+
+bool mux_string::compare_Char(const mux_cursor &i, const mux_string &sStr) const
+{
+    return (  sStr.m_iLast.m_byte <= m_iLast.m_byte - i.m_byte
+           && 0 == memcmp(m_autf + i.m_byte, sStr.m_autf, sStr.m_iLast.m_byte));
 }
 
 /*! \brief Removes a specified set of characters from string.

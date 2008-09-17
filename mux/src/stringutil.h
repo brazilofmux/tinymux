@@ -972,7 +972,8 @@ public:
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
     void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
-    bool replace_Point(const UTF8 *p, mux_cursor &i);
+    bool replace_Point(const UTF8 *p, const mux_cursor &i);
+    void replace_Char(const mux_cursor &i, const mux_string &sStr, const mux_cursor &j);
     void reverse(void);
     bool search
     (
@@ -990,6 +991,7 @@ public:
     ) const;
     void set_Char(size_t n, const UTF8 cChar); // Deprecated.
     void set_Color(size_t n, ColorState csColor);
+    bool compare_Char(const mux_cursor &i, const mux_string &sStr) const;
     void strip
     (
         const UTF8 *pStripSet,

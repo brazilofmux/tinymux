@@ -6290,9 +6290,9 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    // BUGBUG: Won't allow a UTF-8 sequence in the third argument.
-    //
-    if (1 < strlen((char *)fargs[2]))
+    size_t n;
+    if (  !utf8_strlen(fargs[2], n)
+       || 1 < n)
     {
         safe_str(T("#-1 TOO MANY CHARACTERS"), buff, bufc);
         return;
@@ -6300,10 +6300,12 @@ static FUNCTION(fun_merge)
 
     mux_string *sStrA = NULL;
     mux_string *sStrB = NULL;
+    mux_string *sStrC = NULL;
     try
     {
         sStrA = new mux_string(fargs[0]);
         sStrB = new mux_string(fargs[1]);
+        sStrC = new mux_string(fargs[2]);
     }
     catch (...)
     {
@@ -6311,12 +6313,14 @@ static FUNCTION(fun_merge)
     }
 
     if (  NULL != sStrA
-       && NULL != sStrB)
+       && NULL != sStrB
+       && NULL != sStrC)
     {
         // Do length checks first.
         //
-        size_t nLen = sStrA->length_point();
-        if (nLen != sStrB->length_point())
+        mux_cursor nLenA = sStrA->length_cursor();
+        mux_cursor nLenB = sStrB->length_cursor();
+        if (nLenA.m_point != nLenB.m_point)
         {
             safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
         }
@@ -6325,21 +6329,24 @@ static FUNCTION(fun_merge)
             // Find the character to look for.  Null character is considered a
             // space.
             //
-            // BUGBUG: Wrong.
-            //
-            const UTF8 cFill = *fargs[2] ? *fargs[2] : ' ';
-
-            for (size_t i = 0; i < nLen; i++)
+            if (0 == sStrC->length_point())
             {
-                // BUGBUG: Won't compare UTF-8 sequences.
-                //
-                if (sStrA->export_Char(i) == cFill)
+                sStrC->import(T(" "));
+            }
+
+            mux_cursor iA, iB;
+            if (  sStrA->cursor_start(iA)
+               && sStrB->cursor_start(iB))
+            {
+                do
                 {
-                    // BUGBUG: set_Char uses byte but set_Color uses point.
-                    //
-                    sStrA->set_Char(i, sStrB->export_Char(i));
-                    sStrA->set_Color(i, sStrB->export_Color(i));
-                }
+                    if (sStrA->compare_Char(iA, *sStrC))
+                    {
+                        sStrA->replace_Char(iA, *sStrB, iB);
+                        sStrA->set_Color(iA.m_point, sStrB->export_Color(iB.m_point));
+                    }
+                } while (  sStrA->cursor_next(iA)
+                        && sStrB->cursor_next(iB));
             }
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
@@ -6348,6 +6355,7 @@ static FUNCTION(fun_merge)
     }
     delete sStrA;
     delete sStrB;
+    delete sStrC;
 }
 
 /* ---------------------------------------------------------------------------
