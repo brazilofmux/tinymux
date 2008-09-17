@@ -1,4 +1,4 @@
-This project holds testcases for TinyMUX. The code is formatted and must be
+This project holds test cases for TinyMUX. The code is formatted and must be
 unformatted before being quoted into a game.
 
 The unformat.pl program is located in the tool sub-directory. This requires
@@ -6,7 +6,7 @@ Perl.
 
 Steps to create:
 
- 1. Use './tools/unformat.pl *.mux > out' to create a quoteable installer.
+ 1. Use './tools/unformat.pl *.mux > out' to create a quotable installer.
  2. Start a non-SGP minimal database by removing netmux.db before ./Startmux
  3. /quote out into the new database.
  4. @shutdown

@@ -3,12 +3,12 @@
 # $Id$
 #
 # Strategy: The structure of the code under convtime() can be broken into the
-# core gregorian routines, the timezone routines, and the automagic date
+# core Gregorian routines, the timezone routines, and the auto-magic date
 # string parser. Of these three, the timezone routines have proven the most
 # fragile of the three as it is the most affected by 32/64-bit, compiler, and
 # Operating System variations.
 #
-# The first battery of test cases attempt to cover the core gregorian routines
+# The first battery of test cases attempt to cover the core Gregorian routines
 # and bypass paths that would lead to timezone adjustments or the more powerful
 # date string parser.
 #
@@ -29,7 +29,7 @@
 # Beginning of Test Cases
 #
 &tr.tc000 test_convtime_fn=
-  @log smoke=Begining convtime() test cases.
+  @log smoke=Beginning convtime() test cases.
 -
 #
 # Test Case #1 - Leaving the timezone code paths out of the mix, test that
@@ -55,7 +55,7 @@
         9FE8D9AAA0AB16874BD7216A1C691186575C31CF
       )=
   {
-    @log smoke=TC001: Every day in 2006 suceeded.
+    @log smoke=TC001: Every day in 2006 succeeded.
   },
   {
     @log smoke=TC001: At least one day in 2006 failed (%q0).
@@ -85,7 +85,7 @@
         BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6
       )=
   {
-    @log smoke=TC002: Every day in 1970 suceeded.
+    @log smoke=TC002: Every day in 1970 succeeded.
   },
   {
     @log smoke=TC002: At least one day in 1970 failed (%q0).
@@ -115,7 +115,7 @@
         095DE0A215B35BEC232FB806D3743EE3FB597AF4
       )=
   {
-    @log smoke=TC003: Every day in 1969 suceeded.
+    @log smoke=TC003: Every day in 1969 succeeded.
   },
   {
     @log smoke=TC003: At least one day in 1969 failed (%q0).
@@ -145,7 +145,7 @@
         CF81EFE3EFA928E4D36D3574F2094A0D25274681
       )=
   {
-    @log smoke=TC004: Every day in 1601 suceeded.
+    @log smoke=TC004: Every day in 1601 succeeded.
   },
   {
     @log smoke=TC004: At least one day in 1601 failed (%q0).
@@ -175,7 +175,7 @@
         603B4DF3A3F0289928666DEDC9ACC952A9E400A4
       )=
   {
-    @log smoke=TC005: Every day in 1600 suceeded.
+    @log smoke=TC005: Every day in 1600 succeeded.
   },
   {
     @log smoke=TC005: At least one day in 1600 failed (%q0).
@@ -205,7 +205,7 @@
         D62426344636E8D947A7153C1E5F682104853197
       )=
   {
-    @log smoke=TC006: Every day in 1 A.D. suceeded.
+    @log smoke=TC006: Every day in 1 A.D. succeeded.
   },
   {
     @log smoke=TC006: At least one day in 1 A.D. failed (%q0).
@@ -235,7 +235,7 @@
         F82F361B6C7D954AA4D86F964C10342E89D08F9F
       )=
   {
-    @log smoke=TC007: Every day in 1 B.C. suceeded.
+    @log smoke=TC007: Every day in 1 B.C. succeeded.
   },
   {
     @log smoke=TC007: At least one day in 1 B.C. failed (%q0).

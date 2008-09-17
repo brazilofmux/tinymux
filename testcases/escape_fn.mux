@@ -12,7 +12,7 @@
 # Beginning of Test Cases
 #
 &tr.tc000 test_escape_fn=
-  @log smoke=Begining escape() test cases.
+  @log smoke=Beginning escape() test cases.
 -
 #
 # Test Case #1 - Test that characters %\[]{};,()^$ mixed with ASCII are replaced with spaces.
