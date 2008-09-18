@@ -248,6 +248,10 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
               DYNAMICLIB_TARGET="libmux.dylib"
               DYNAMICLIB_CPPFLAGS="-dynamiclib"
               ;;
+    *cygwin*) DYNAMICLIB_EXT="dll"
+              DYNAMICLIB_TARGET="libmux.dll"
+              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              ;;
     *)        DYNAMICLIB_EXT="so"
               DYNAMICLIB_TARGET="libmux.so"
               DYNAMICLIB_CPPFLAGS="-shared -fPIC"
