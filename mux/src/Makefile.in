@@ -161,7 +161,7 @@ ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALI
 
 # Compiliation source files.
 #
-ALLSRC     = $(NETMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
+ALLSRC     = $(NETMUX_BASE_SRC) $(LIBMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
 NETMUX_SRC = $(NETMUX_BASE_SRC) $(REALITY_SRC)
 NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 
@@ -196,7 +196,7 @@ netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(ALLSRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:

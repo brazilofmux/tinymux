@@ -58,6 +58,8 @@ vattr.o: vattr.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h fl
 walkdb.o: walkdb.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h misc.h powers.h
 wild.o: wild.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h file_c.h interface.h powers.h
+libmux.o: libmux.cpp copyright.h autoconf.h config.h libmux.h
+version.o: version.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h _build.h command.h
 unsplit.o: unsplit.cpp copyright.h 
 slave.o: slave.cpp autoconf.h config.h slave.h 
 stubslave.o: stubslave.cpp copyright.h autoconf.h config.h libmux.h modules.h
