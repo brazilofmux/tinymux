@@ -351,8 +351,12 @@ typedef char  boolexp_type;
 
 typedef __int64          INT64;
 typedef unsigned __int64 UINT64;
+#ifndef INT64_C
 #define INT64_C(c)       (c ## i64)
+#endif // INT64_C
+#ifndef UINT64_C
 #define UINT64_C(c)      (c ## ui64)
+#endif // UINT64_C
 
 #define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
@@ -424,8 +428,12 @@ typedef int HANDLE;
 
 typedef long long          INT64;
 typedef unsigned long long UINT64;
+#ifndef INT64_C
 #define INT64_C(c)       (c ## ll)
+#endif // INT64_C
+#ifndef UINT64_C
 #define UINT64_C(c)      (c ## ull)
+#endif
 
 typedef int SOCKET;
 #ifdef PATH_MAX
