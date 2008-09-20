@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  June 2008
+Last Update:  September 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,6 +306,14 @@ Bug Fixes:
  -- @toad wasn't deleting the right name.
  -- Fix @name and @alias to prevent them from stepping on each other's
     names (Issue 516).
+ -- Fix comlist command to show all of longest possible alias.
+ -- Fix %i from reaching beyond buffer.
+ -- Fix crashbug in sqlslave module when MySQL returns NULL pointer in
+    field.
+ -- Fix edge case in ljust(), center(), lpad(), and cpad() (Issue 527).
+ -- Fix remaining open issues with merge() (Issue 447, 449).
+ -- Fix @pemit (and friends) to remove duplicates matches (Issue 499).
+ -- Fix wrap() from leaving a leading space on second line (Issue 479).
 
 
 Performance Enhancements:
@@ -395,3 +403,5 @@ Miscellaneous:
  -- Add regmatchi() topic.
  -- Remove unused use_http configuration option.
  -- Consolidate error message reporting for @pemit/list (Issue 363).
+ -- Switch to using Visual Studio 2003 and Intel Compiler v10.1.
+ -- Fix build issues within Cygwin.
