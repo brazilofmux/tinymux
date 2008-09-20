@@ -1000,7 +1000,7 @@ void do_pemit_single
     int key,
     bool bDoContents,
     int pemit_flags,
-	dbref target,
+    dbref target,
     int chPoseType,
     UTF8 *message
 )
@@ -1281,7 +1281,7 @@ void do_pemit_single
 )
 {
     dbref target = FindPemitTarget(player, key, recipient);
-	do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+    do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
 }
 
 void do_pemit_list
@@ -1304,7 +1304,7 @@ void do_pemit_list
     UTF8 *error_message = NULL;
     UTF8 *error_ptr = NULL;
     dbref aPlayers[(LBUF_SIZE+1)/2];
-	int   nPlayers = 0;
+    int   nPlayers = 0;
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
@@ -1313,11 +1313,11 @@ void do_pemit_list
     {
         dbref target = FindPemitTarget(player, key, p);
 
-		if (Good_obj(target))
-		{
-			aPlayers[nPlayers++] = target;
+        if (Good_obj(target))
+        {
+            aPlayers[nPlayers++] = target;
         }
-		else
+        else
         {
             if (NULL == error_message)
             {
@@ -1363,14 +1363,14 @@ void do_pemit_list
         }
     }
 
-	for (int i = 0; i < nPlayers; i++)
-	{
-		dbref target = aPlayers[i];
-		if (NOTHING != target)
-		{
-			do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
-		}
-	}
+    for (int i = 0; i < nPlayers; i++)
+    {
+        dbref target = aPlayers[i];
+        if (NOTHING != target)
+        {
+            do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+        }
+    }
 
     if (NULL != error_message)
     {
