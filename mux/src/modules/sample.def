@@ -1,5 +1,4 @@
 LIBRARY "sample.dll"
-DESCRIPTION 'Sample TinyMUX module'
 
 EXPORTS
     mux_CanUnloadNow    @1 PRIVATE
