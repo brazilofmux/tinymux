@@ -1599,6 +1599,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                 curNext = curEnd;
             }
         }
+
         if (  curEnd == nStr
            || mux_isspace(sStr->export_Char(curEnd.m_byte)))
         {
@@ -1606,6 +1607,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
             // spaces so that right and center justifications come out right.
             //
             mux_cursor curSpace = curEnd;
+            sStr->cursor_next(curNext);
             while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
                   && curStr < curSpace)
             {
