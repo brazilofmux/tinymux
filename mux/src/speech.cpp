@@ -1000,7 +1000,7 @@ void do_pemit_single
     int key,
     bool bDoContents,
     int pemit_flags,
-    UTF8 *recipient,
+	dbref target,
     int chPoseType,
     UTF8 *message
 )
@@ -1009,8 +1009,6 @@ void do_pemit_single
     UTF8 *buf2, *bp;
     int depth;
     bool ok_to_do = false;
-
-    dbref target = FindPemitTarget(player, key, recipient);
 
     switch (key)
     {
@@ -1271,6 +1269,21 @@ void do_pemit_single
     }
 }
 
+void do_pemit_single
+(
+    dbref player,
+    int key,
+    bool bDoContents,
+    int pemit_flags,
+    UTF8 *recipient,
+    int chPoseType,
+    UTF8 *message
+)
+{
+    dbref target = FindPemitTarget(player, key, recipient);
+	do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+}
+
 void do_pemit_list
 (
     dbref player,
@@ -1290,6 +1303,8 @@ void do_pemit_list
 
     UTF8 *error_message = NULL;
     UTF8 *error_ptr = NULL;
+    dbref aPlayers[(LBUF_SIZE+1)/2];
+	int   nPlayers = 0;
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
@@ -1298,8 +1313,11 @@ void do_pemit_list
     {
         dbref target = FindPemitTarget(player, key, p);
 
-        if (  NOTHING == target
-           || AMBIGUOUS == target)
+		if (Good_obj(target))
+		{
+			aPlayers[nPlayers++] = target;
+        }
+		else
         {
             if (NULL == error_message)
             {
@@ -1324,14 +1342,35 @@ void do_pemit_list
                 safe_str(T(" (ambiguous)"), error_message, &error_ptr);
                 break;
             }
-
-        }
-        else
-        {
-            do_pemit_single(player, key, bDoContents, pemit_flags, p,
-                    chPoseType, message);
         }
     }
+
+    // Remove duplicate dbrefs.
+    //
+    int i;
+    for (i = 0; i < nPlayers-1; i++)
+    {
+        if (aPlayers[i] != NOTHING)
+        {
+            int j;
+            for (j = i+1; j < nPlayers; j++)
+            {
+                if (aPlayers[j] == aPlayers[i])
+                {
+                    aPlayers[j] = NOTHING;
+                }
+            }
+        }
+    }
+
+	for (int i = 0; i < nPlayers; i++)
+	{
+		dbref target = aPlayers[i];
+		if (NOTHING != target)
+		{
+			do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+		}
+	}
 
     if (NULL != error_message)
     {
