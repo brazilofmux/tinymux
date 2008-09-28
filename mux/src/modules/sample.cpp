@@ -140,8 +140,6 @@ CSample::CSample(void) : m_cRef(1)
     m_pIServerEventsControl = NULL;
 }
 
-#define LOG_ALWAYS      0x80000000  /* Always log it */
-
 MUX_RESULT CSample::FinalConstruct(void)
 {
     MUX_RESULT mr;
