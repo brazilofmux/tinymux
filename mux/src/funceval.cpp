@@ -2450,19 +2450,19 @@ FUNCTION(fun_isword)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
     bool result;
-    if (  nfargs < 1
-       || '\0' == fargs[0][0])
+    UTF8 *p = fargs[0];
+    if ('\0' == p[0])
     {
         result = false;
     }
     else
     {
         result = true;
-        UTF8 *p = fargs[0];
         for (int i = 0; '\0' != p[i]; i++)
         {
             if (!mux_isalpha(p[i]))
