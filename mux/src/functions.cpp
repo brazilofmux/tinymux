@@ -10925,7 +10925,7 @@ static FUN builtin_function_list[] =
     {T("ISNUM"),       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISRAT"),       fun_israt,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISUB"),        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {T("ISWORD"),      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ISWORD"),      fun_isword,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("ITEMIZE"),     fun_itemize,    MAX_ARG, 1,       4,         0, CA_PUBLIC},
 #ifdef DEPRECATED
     {T("ITEMS"),       fun_items,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
