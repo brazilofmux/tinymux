@@ -2450,15 +2450,22 @@ FUNCTION(fun_isword)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *p;
-    bool result = true;
-
-    for (p = fargs[0]; *p; p++)
+    bool result;
+    UTF8 *p = fargs[0];
+    if ('\0' == p[0])
     {
-        if (!mux_isalpha(*p))
+        result = false;
+    }
+    else
+    {
+        result = true;
+        for (int i = 0; '\0' != p[i]; i++)
         {
-            result = false;
-            break;
+            if (!mux_isalpha(p[i]))
+            {
+                result = false;
+                break;
+            }
         }
     }
     safe_bool(result, buff, bufc);
