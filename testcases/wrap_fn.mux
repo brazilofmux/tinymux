@@ -1,0 +1,68 @@
+#
+# wrap_fn.mux - Test Cases for wrap().
+# $Id$
+#
+# Strategy: Vary three argument with color and UTF-8 in combination with
+# expected wrap() behaviors.
+#
+@create test_wrap_fn
+-
+@set test_wrap_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_wrap_fn=
+  @log smoke=Beginning wrap() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_wrap_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [wrap(Hi there. How are you?, 10, right, |%b, %b|)]
+            [wrap(You see before you a stranger., 10, left,,,6)]
+          )
+        ),
+        C50CE42A68B71A06A8D1C4E4BD8245A670E1234E
+      )=
+  {
+    @log smoke=TC001: wrap examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: wrap examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_wrap_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [wrap(Test%rTest,10,c,>,<)]
+            [wrap(Test1%r%rTest2,11,c)]
+            [wrap(This is some test text to demonstrate the leading space issue that is occurring,69)]
+            [wrap(%rth,10,left,|,|,2)]
+          )
+        ),
+        859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA
+      )=
+  {
+    @log smoke=TC002: Regressions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: Regressions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_wrap_fn=
+  @log smoke=End wrap() test cases.;
+  @notify smoke
+-
+drop test_wrap_fn
+-
+#
+# End of Test Cases
+#
