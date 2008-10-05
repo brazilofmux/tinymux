@@ -1,5 +1,5 @@
 +X996099
-+S15
++S16
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-14
+15
 -1
 -1
 -1
@@ -141,7 +141,7 @@
 -1
 1
 33556481
-64
+0
 0
 0
 0
@@ -149,18 +149,14 @@
 "Tue Jun 24 09:27:57.300173 2008"
 >219
 "Tue Jun 24 09:27:57.368898 2008"
->26
-"*"
 >27
 "@va me=sha1(%va%0)"
 >256
 "@log smoke=Beginning say test cases."
 >257
-"@set me=MONITOR;say Where is the movie theater?;say add(1,1) add(1,1) [add(1,1)];say/noeval add(1,1) add(1,1) [add(1,1)];nsay add(1,1) add(1,1) [add(1,1)];@wait 0={@if strmatch(setr(0,v(va)),57482DB6F281845A75AD9449C908B7E1E32ECFA8)={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@set me=!MONITOR;@trig me/tr.done}"
+"@listen test_cmd_say=*;say Where is the movie theater?;say add(1,1) add(1,1) [add(1,1)];say/noeval add(1,1) add(1,1) [add(1,1)];nsay add(1,1) add(1,1) [add(1,1)];@wait 0={@if strmatch(setr(0,v(va)),01C65FD8FBBD1784A0EC8B850A16D059DA873EDB)={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@listen test_cmd_say=;@trig me/tr.done}"
 >262
 "@log smoke=End say test cases.;@notify smoke"
->100
-"A48C514BDD9396D2067CC19F857E9BD210BC1EED"
 <
 !4
 "test_convtime_fn"
@@ -537,10 +533,39 @@
 >219
 "Tue Jun 24 09:27:57.368834 2008"
 >271
-"center_fn cmd_say convtime_fn cpad_fn escape_fn ljust_fn lpad_fn merge_fn rjust_fn rpad_fn secure_fn shutdown"
+"center_fn cmd_say convtime_fn cpad_fn escape_fn ljust_fn lpad_fn merge_fn rjust_fn rpad_fn secure_fn wrap_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
+<
+!15
+"test_wrap_fn"
+0
+-1
+-1
+-1
+0
+14
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Sun Oct 05 13:57:26.348106 2008"
+>219
+"Sun Oct 05 13:57:31.36807 2008"
+>256
+"@log smoke=Beginning wrap() test cases."
+>257
+"@if strmatch(setr(0,sha1([wrap(Hi there. How are you?, 10, right, |%b, %b|)][wrap(You see before you a stranger., 10, left,,,6)])),C50CE42A68B71A06A8D1C4E4BD8245A670E1234E)={@log smoke=TC001: wrap examples. Succeeded.},{@log smoke=TC001: wrap examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([wrap(Test%rTest,10,c,>,<)][wrap(Test1%r%rTest2,11,c)][wrap(This is some test text to demonstrate the leading space issue that is occurring,69)][wrap(%rth,10,left,|,|,2)])),859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
+>262
+"@log smoke=End wrap() test cases.;@notify smoke"
 <
 ***END OF DUMP***

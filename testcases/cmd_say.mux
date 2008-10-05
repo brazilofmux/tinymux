@@ -6,8 +6,6 @@
 -
 @set test_cmd_say=INHERIT QUIET
 -
-@listen test_cmd_say=*
--
 @aahear test_cmd_say=
   @va me=sha1(%va%0)
 -
@@ -21,7 +19,7 @@
 # Test Case #1 - help file examples.
 #
 &tr.tc001 test_cmd_say=
-  @set me=MONITOR;
+  @listen test_cmd_say=*;
   say Where is the movie theater?;
   say add(1,1) add(1,1) [add(1,1)];
   say/noeval add(1,1) add(1,1) [add(1,1)];
@@ -29,7 +27,7 @@
   @wait 0={
     @if strmatch(
           setr(0,v(va)),
-          57482DB6F281845A75AD9449C908B7E1E32ECFA8
+          01C65FD8FBBD1784A0EC8B850A16D059DA873EDB
         )=
     {
       @log smoke=TC001: say examples. Succeeded.
@@ -37,7 +35,7 @@
     {
       @log smoke=TC001: say examples. Failed (%q0).
     };
-    @set me=!MONITOR;
+    @listen test_cmd_say=;
     @trig me/tr.done
   }
 -
