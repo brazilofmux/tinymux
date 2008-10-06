@@ -1,0 +1,67 @@
+#
+# edit_fn.mux - Test Cases for edit().
+# $Id$
+#
+# Strategy: Vary three argument with color and UTF-8 in combination with
+# expected edit() behaviors.
+#
+@create test_edit_fn
+-
+@set test_edit_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_edit_fn=
+  @log smoke=Beginning edit() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_edit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [edit(This is a test,is,x)]
+            [edit(Atlantic,^,Trans)]
+          )
+        ),
+        0337BC64662CB00DFAE98EB132967118CBE47A9A
+      )=
+  {
+    @log smoke=TC001: edit examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: edit examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_edit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [edit(plain,plain,%xrplain)]
+            [translate(edit(abcdXYZabcd,XYZ,ansi(h,repeat(*,40))),p)]
+            [edit(|%xr||,|,%r)]
+          )
+        ),
+        5C5C3164454B20292A6E4A02D07309E7344C117A
+      )=
+  {
+    @log smoke=TC002: Regressions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: Regressions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_edit_fn=
+  @log smoke=End edit() test cases.;
+  @notify smoke
+-
+drop test_edit_fn
+-
+#
+# End of Test Cases
+#
