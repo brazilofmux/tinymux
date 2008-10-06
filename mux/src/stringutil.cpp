@@ -6622,6 +6622,13 @@ void mux_string::replace_Chars
         else if (0 != sTo.m_ncs)
         {
             realloc_m_pcs(iLast.m_point);
+
+            // Propagate CS_NORMAL out further.
+            //
+            for (int i = iStart.m_point + nCopy.m_point; i < iLast.m_point; i++)
+            {
+                m_pcs[i] = CS_NORMAL;
+            }
         }
 
         m_iLast = iLast;
