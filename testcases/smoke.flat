@@ -1,5 +1,5 @@
 +X996099
-+S16
++S17
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-15
+16
 -1
 -1
 -1
@@ -70,29 +70,29 @@
 0
 0
 >218
-"Tue Jun 24 09:27:36.958624 2008"
+"Sun Oct 05 22:43:05.057513 2008"
 >219
-"Tue Jun 24 09:27:36.958624 2008"
+"Sun Oct 05 22:43:05.057513 2008"
 >30
-"Tue Jun 24 09:27:50.300395 2008"
+"Sun Oct 05 22:43:13.899107 2008"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$9lwkyQzwJ05A$RkrLx4kphtni4M1BFi3pATGNI4M="
+"$SHA1$I9m3XVrbampj$tvEHDaW3ZbbB3Y6JtazNdquVqM0="
 >88
 "sdennis@localhost"
 >144
 "127.0.0.1"
 >84
-"#1;localhost;Tue Jun 24 09:27:50.30065 2008;;;;;;;0;0;;;;;;;"
+"#1;localhost;Sun Oct 05 22:43:13.899352 2008;;;;;;;0;0;;;;;;;"
 >213
-"-1 8 -1 -1 8"
+"-1 16 -1 -1 16"
 >222
 "Shutdown"
 >224
-"21 21 21 1 1214324892"
+"46 46 46 1 1223271840"
 <
 !2
 "test_center_fn"
@@ -111,9 +111,9 @@
 0
 0
 >218
-"Sat Sep 13 10:26:46.615019 2008"
+"Sun Oct 05 22:43:16.173058 2008"
 >219
-"Sat Sep 13 10:26:46.631809 2008"
+"Sun Oct 05 22:43:16.173874 2008"
 >256
 "@log smoke=Beginning center() test cases."
 >257
@@ -146,9 +146,9 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.300173 2008"
+"Sun Oct 05 22:43:16.173982 2008"
 >219
-"Tue Jun 24 09:27:57.368898 2008"
+"Sun Oct 05 22:43:16.174196 2008"
 >27
 "@va me=sha1(%va%0)"
 >256
@@ -175,9 +175,9 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.300864 2008"
+"Sun Oct 05 22:43:16.174292 2008"
 >219
-"Tue Jun 24 09:27:57.31712 2008"
+"Sun Oct 05 22:43:16.190993 2008"
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
@@ -214,9 +214,9 @@
 0
 0
 >218
-"Sat Sep 13 10:26:46.633364 2008"
+"Sun Oct 05 22:43:16.191125 2008"
 >219
-"Sat Sep 13 10:26:46.633979 2008"
+"Sun Oct 05 22:43:16.191522 2008"
 >256
 "@log smoke=Beginning cpad() test cases."
 >257
@@ -233,7 +233,7 @@
 "@log smoke=End cpad() test cases.;@notify smoke"
 <
 !6
-"test_escape_fn"
+"test_edit_fn"
 0
 -1
 -1
@@ -249,24 +249,20 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.317325 2008"
+"Sun Oct 05 22:43:16.191633 2008"
 >219
-"Tue Jun 24 09:27:57.317734 2008"
+"Sun Oct 05 22:43:16.19189 2008"
 >256
-"@log smoke=Beginning escape() test cases."
+"@log smoke=Beginning edit() test cases."
 >257
-"@va me=a%%a%\\a%[a%]a%{a%}a%;a%,a%(a%)a%^a%$a;@vb me=%%%\\%[%]%{%}%;%,%(%)%^%$;@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),0F46DFE38EA4276DCB859687C581218BFE31555A)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([edit(This is a test,is,x)][edit(Atlantic,^,Trans)])),0337BC64662CB00DFAE98EB132967118CBE47A9A)={@log smoke=TC001: edit examples. Succeeded.},{@log smoke=TC001: edit examples. Failed (%q0).}"
 >258
-"@va me=%xga%xr%%%xga%xr%\\%xga%xr%[%xga%xr%]%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%,%xga%xr%(%xga%xr%)%xga%xr%^%xga%xr%$%xga;@vb me=%xg%%%xr%\\%xg%[%xr%]%xg%{%xr%}%xg%;%xr%,%xg%(%xr%)%xg%^%xr%$%xg;@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),A6CFDB6A32ED24A3C96BFD5967E44EA3299FAECF)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
->259
-"@if chr(256)={@va me=[chr(256)]%%[chr(256)]%\\[chr(256)]%[[chr(256)]%][chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%,[chr(256)]%([chr(256)]%)[chr(256)]%^[chr(256)]%$[chr(256)];@vb me=[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%[[chr(10010)]%][chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%,[chr(10010)]%([chr(10010)]%)[chr(10010)]%^[chr(10010)]%$[chr(10010)];@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),CFFF6871E52E341AA58EF45DCE68192CBE4B95D7)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
->260
-"@if chr(256)={@va me=%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%,%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%^%xg[chr(256)]%xr%$%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%,%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%^%xg[chr(10010)]%xr%$%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),580F9823C431602FF47C668D52FB71823C97D591)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([edit(plain,plain,%xrplain)][translate(edit(abcdXYZabcd,XYZ,ansi(h,repeat(*,40))),p)][edit(|%xr||,|,%r)])),5C5C3164454B20292A6E4A02D07309E7344C117A)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
 >262
-"@log smoke=End escape() test cases.;@notify smoke"
+"@log smoke=End edit() test cases.;@notify smoke"
 <
 !7
-"test_ljust_fn"
+"test_escape_fn"
 0
 -1
 -1
@@ -282,26 +278,24 @@
 0
 0
 >218
-"Thu Sep 11 00:23:35.996402 2008"
+"Sun Oct 05 22:43:16.19199 2008"
 >219
-"Thu Sep 11 00:23:35.996669 2008"
+"Sun Oct 05 22:43:16.192528 2008"
 >256
-"@log smoke=Beginning ljust() test cases."
+"@log smoke=Beginning escape() test cases."
 >257
-"@if strmatch(setr(0,sha1(-[ljust(foo,6)]-%r0[ljust(foo,6)]7%r01234567=[ljust(bar,5,.)]=[translate(ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),8B48261F6D01F56324CA49BEC063E6940FB2031C)={@log smoke=TC001: ljust examples. Succeeded.},{@log smoke=TC001: ljust examples. Failed (%q0).}"
+"@va me=a%%a%\\a%[a%]a%{a%}a%;a%,a%(a%)a%^a%$a;@vb me=%%%\\%[%]%{%}%;%,%(%)%^%$;@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),0F46DFE38EA4276DCB859687C581218BFE31555A)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
 >258
-"@if strmatch(setr(0,sha1([iter(lnum(2,10),ljust(X,##,left(1234567890,##)))])),D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
+"@va me=%xga%xr%%%xga%xr%\\%xga%xr%[%xga%xr%]%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%,%xga%xr%(%xga%xr%)%xga%xr%^%xga%xr%$%xga;@vb me=%xg%%%xr%\\%xg%[%xr%]%xg%{%xr%}%xg%;%xr%,%xg%(%xr%)%xg%^%xr%$%xg;@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),A6CFDB6A32ED24A3C96BFD5967E44EA3299FAECF)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
 >259
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1))][iter(lnum(1,10),ljust(left(1234567890,##),2))][iter(lnum(1,10),ljust(left(1234567890,##),3))][iter(lnum(1,10),ljust(left(1234567890,##),4))][iter(lnum(1,10),ljust(left(1234567890,##),5))][iter(lnum(1,10),ljust(left(1234567890,##),6))][iter(lnum(1,10),ljust(left(1234567890,##),7))][iter(lnum(1,10),ljust(left(1234567890,##),8))][iter(lnum(1,10),ljust(left(1234567890,##),9))][iter(lnum(1,10),ljust(left(1234567890,##),10))][iter(lnum(1,10),ljust(left(1234567890,##),11))])),E8E118711ADE44E77161F96C22AD1B82FC4F1852)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
+"@if chr(256)={@va me=[chr(256)]%%[chr(256)]%\\[chr(256)]%[[chr(256)]%][chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%,[chr(256)]%([chr(256)]%)[chr(256)]%^[chr(256)]%$[chr(256)];@vb me=[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%[[chr(10010)]%][chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%,[chr(10010)]%([chr(10010)]%)[chr(10010)]%^[chr(10010)]%$[chr(10010)];@if strmatch(setr(0,sha1(escape(%va)[escape(%vb)])),CFFF6871E52E341AA58EF45DCE68192CBE4B95D7)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
 >260
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1,-))][iter(lnum(1,10),ljust(left(1234567890,##),2,-))][iter(lnum(1,10),ljust(left(1234567890,##),3,-))][iter(lnum(1,10),ljust(left(1234567890,##),4,-))][iter(lnum(1,10),ljust(left(1234567890,##),5,-))][iter(lnum(1,10),ljust(left(1234567890,##),6,-))][iter(lnum(1,10),ljust(left(1234567890,##),7,-))][iter(lnum(1,10),ljust(left(1234567890,##),8,-))][iter(lnum(1,10),ljust(left(1234567890,##),9,-))][iter(lnum(1,10),ljust(left(1234567890,##),10,-))][iter(lnum(1,10),ljust(left(1234567890,##),11,-))])),D2CE2047BCEAEB4C132D47DCDD468FBFD3D014BC)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
->261
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1,-+))][iter(lnum(1,10),ljust(left(1234567890,##),2,-+))][iter(lnum(1,10),ljust(left(1234567890,##),3,-+))][iter(lnum(1,10),ljust(left(1234567890,##),4,-+))][iter(lnum(1,10),ljust(left(1234567890,##),5,-+))][iter(lnum(1,10),ljust(left(1234567890,##),6,-+))][iter(lnum(1,10),ljust(left(1234567890,##),7,-+))][iter(lnum(1,10),ljust(left(1234567890,##),8,-+))][iter(lnum(1,10),ljust(left(1234567890,##),9,-+))][iter(lnum(1,10),ljust(left(1234567890,##),10,-+))][iter(lnum(1,10),ljust(left(1234567890,##),11,-+))])),4826527E17C2AA79ABD3A1FE652918FB0125A5B3)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
+"@if chr(256)={@va me=%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%,%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%^%xg[chr(256)]%xr%$%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%,%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%^%xg[chr(10010)]%xr%$%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(escape(%va),p)[translate(escape(%vb),p)])),580F9823C431602FF47C668D52FB71823C97D591)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
 >262
-"@log smoke=End ljust() test cases.;@notify smoke"
+"@log smoke=End escape() test cases.;@notify smoke"
 <
 !8
-"test_lpad_fn"
+"test_ljust_fn"
 0
 -1
 -1
@@ -317,26 +311,26 @@
 0
 0
 >218
-"Sat Sep 13 10:26:46.635403 2008"
+"Sun Oct 05 22:43:16.192648 2008"
 >219
-"Sat Sep 13 10:26:46.635834 2008"
+"Sun Oct 05 22:43:16.193118 2008"
 >256
-"@log smoke=Beginning lpad() test cases."
+"@log smoke=Beginning ljust() test cases."
 >257
-"@if strmatch(setr(0,sha1(-[lpad(foo,6)]-%r0[lpad(foo,6)]7%r01234567=[lpad(bar,5,.)]=[translate(lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),8B48261F6D01F56324CA49BEC063E6940FB2031C)={@log smoke=TC001: lpad examples. Succeeded.},{@log smoke=TC001: lpad examples. Failed (%q0).}"
+"@if strmatch(setr(0,sha1(-[ljust(foo,6)]-%r0[ljust(foo,6)]7%r01234567=[ljust(bar,5,.)]=[translate(ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),8B48261F6D01F56324CA49BEC063E6940FB2031C)={@log smoke=TC001: ljust examples. Succeeded.},{@log smoke=TC001: ljust examples. Failed (%q0).}"
 >258
-"@if strmatch(setr(0,sha1([iter(lnum(2,10),lpad(X,##,left(1234567890,##)))])),D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(2,10),ljust(X,##,left(1234567890,##)))])),D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
 >259
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1))][iter(lnum(1,10),lpad(left(1234567890,##),2))][iter(lnum(1,10),lpad(left(1234567890,##),3))][iter(lnum(1,10),lpad(left(1234567890,##),4))][iter(lnum(1,10),lpad(left(1234567890,##),5))][iter(lnum(1,10),lpad(left(1234567890,##),6))][iter(lnum(1,10),lpad(left(1234567890,##),7))][iter(lnum(1,10),lpad(left(1234567890,##),8))][iter(lnum(1,10),lpad(left(1234567890,##),9))][iter(lnum(1,10),lpad(left(1234567890,##),10))][iter(lnum(1,10),lpad(left(1234567890,##),11))])),9AD9DBAEF718063DD033C829E5D7DA7C0D5200D8)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1))][iter(lnum(1,10),ljust(left(1234567890,##),2))][iter(lnum(1,10),ljust(left(1234567890,##),3))][iter(lnum(1,10),ljust(left(1234567890,##),4))][iter(lnum(1,10),ljust(left(1234567890,##),5))][iter(lnum(1,10),ljust(left(1234567890,##),6))][iter(lnum(1,10),ljust(left(1234567890,##),7))][iter(lnum(1,10),ljust(left(1234567890,##),8))][iter(lnum(1,10),ljust(left(1234567890,##),9))][iter(lnum(1,10),ljust(left(1234567890,##),10))][iter(lnum(1,10),ljust(left(1234567890,##),11))])),E8E118711ADE44E77161F96C22AD1B82FC4F1852)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1,-))][iter(lnum(1,10),lpad(left(1234567890,##),2,-))][iter(lnum(1,10),lpad(left(1234567890,##),3,-))][iter(lnum(1,10),lpad(left(1234567890,##),4,-))][iter(lnum(1,10),lpad(left(1234567890,##),5,-))][iter(lnum(1,10),lpad(left(1234567890,##),6,-))][iter(lnum(1,10),lpad(left(1234567890,##),7,-))][iter(lnum(1,10),lpad(left(1234567890,##),8,-))][iter(lnum(1,10),lpad(left(1234567890,##),9,-))][iter(lnum(1,10),lpad(left(1234567890,##),10,-))][iter(lnum(1,10),lpad(left(1234567890,##),11,-))])),A87814DBD959AD160BD93A77137B7BFA8122B062)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1,-))][iter(lnum(1,10),ljust(left(1234567890,##),2,-))][iter(lnum(1,10),ljust(left(1234567890,##),3,-))][iter(lnum(1,10),ljust(left(1234567890,##),4,-))][iter(lnum(1,10),ljust(left(1234567890,##),5,-))][iter(lnum(1,10),ljust(left(1234567890,##),6,-))][iter(lnum(1,10),ljust(left(1234567890,##),7,-))][iter(lnum(1,10),ljust(left(1234567890,##),8,-))][iter(lnum(1,10),ljust(left(1234567890,##),9,-))][iter(lnum(1,10),ljust(left(1234567890,##),10,-))][iter(lnum(1,10),ljust(left(1234567890,##),11,-))])),D2CE2047BCEAEB4C132D47DCDD468FBFD3D014BC)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1,-+))][iter(lnum(1,10),lpad(left(1234567890,##),2,-+))][iter(lnum(1,10),lpad(left(1234567890,##),3,-+))][iter(lnum(1,10),lpad(left(1234567890,##),4,-+))][iter(lnum(1,10),lpad(left(1234567890,##),5,-+))][iter(lnum(1,10),lpad(left(1234567890,##),6,-+))][iter(lnum(1,10),lpad(left(1234567890,##),7,-+))][iter(lnum(1,10),lpad(left(1234567890,##),8,-+))][iter(lnum(1,10),lpad(left(1234567890,##),9,-+))][iter(lnum(1,10),lpad(left(1234567890,##),10,-+))][iter(lnum(1,10),lpad(left(1234567890,##),11,-+))])),47D4FEC41656ADFDFA050084FC109EA064208D6F)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),ljust(left(1234567890,##),1,-+))][iter(lnum(1,10),ljust(left(1234567890,##),2,-+))][iter(lnum(1,10),ljust(left(1234567890,##),3,-+))][iter(lnum(1,10),ljust(left(1234567890,##),4,-+))][iter(lnum(1,10),ljust(left(1234567890,##),5,-+))][iter(lnum(1,10),ljust(left(1234567890,##),6,-+))][iter(lnum(1,10),ljust(left(1234567890,##),7,-+))][iter(lnum(1,10),ljust(left(1234567890,##),8,-+))][iter(lnum(1,10),ljust(left(1234567890,##),9,-+))][iter(lnum(1,10),ljust(left(1234567890,##),10,-+))][iter(lnum(1,10),ljust(left(1234567890,##),11,-+))])),4826527E17C2AA79ABD3A1FE652918FB0125A5B3)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
 >262
-"@log smoke=End lpad() test cases.;@notify smoke"
+"@log smoke=End ljust() test cases.;@notify smoke"
 <
 !9
-"test_merge_fn"
+"test_lpad_fn"
 0
 -1
 -1
@@ -352,9 +346,44 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.317838 2008"
+"Sun Oct 05 22:43:16.193223 2008"
 >219
-"Tue Jun 24 09:27:57.360704 2008"
+"Sun Oct 05 22:43:16.193609 2008"
+>256
+"@log smoke=Beginning lpad() test cases."
+>257
+"@if strmatch(setr(0,sha1(-[lpad(foo,6)]-%r0[lpad(foo,6)]7%r01234567=[lpad(bar,5,.)]=[translate(lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),8B48261F6D01F56324CA49BEC063E6940FB2031C)={@log smoke=TC001: lpad examples. Succeeded.},{@log smoke=TC001: lpad examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([iter(lnum(2,10),lpad(X,##,left(1234567890,##)))])),D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1))][iter(lnum(1,10),lpad(left(1234567890,##),2))][iter(lnum(1,10),lpad(left(1234567890,##),3))][iter(lnum(1,10),lpad(left(1234567890,##),4))][iter(lnum(1,10),lpad(left(1234567890,##),5))][iter(lnum(1,10),lpad(left(1234567890,##),6))][iter(lnum(1,10),lpad(left(1234567890,##),7))][iter(lnum(1,10),lpad(left(1234567890,##),8))][iter(lnum(1,10),lpad(left(1234567890,##),9))][iter(lnum(1,10),lpad(left(1234567890,##),10))][iter(lnum(1,10),lpad(left(1234567890,##),11))])),9AD9DBAEF718063DD033C829E5D7DA7C0D5200D8)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
+>260
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1,-))][iter(lnum(1,10),lpad(left(1234567890,##),2,-))][iter(lnum(1,10),lpad(left(1234567890,##),3,-))][iter(lnum(1,10),lpad(left(1234567890,##),4,-))][iter(lnum(1,10),lpad(left(1234567890,##),5,-))][iter(lnum(1,10),lpad(left(1234567890,##),6,-))][iter(lnum(1,10),lpad(left(1234567890,##),7,-))][iter(lnum(1,10),lpad(left(1234567890,##),8,-))][iter(lnum(1,10),lpad(left(1234567890,##),9,-))][iter(lnum(1,10),lpad(left(1234567890,##),10,-))][iter(lnum(1,10),lpad(left(1234567890,##),11,-))])),A87814DBD959AD160BD93A77137B7BFA8122B062)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),lpad(left(1234567890,##),1,-+))][iter(lnum(1,10),lpad(left(1234567890,##),2,-+))][iter(lnum(1,10),lpad(left(1234567890,##),3,-+))][iter(lnum(1,10),lpad(left(1234567890,##),4,-+))][iter(lnum(1,10),lpad(left(1234567890,##),5,-+))][iter(lnum(1,10),lpad(left(1234567890,##),6,-+))][iter(lnum(1,10),lpad(left(1234567890,##),7,-+))][iter(lnum(1,10),lpad(left(1234567890,##),8,-+))][iter(lnum(1,10),lpad(left(1234567890,##),9,-+))][iter(lnum(1,10),lpad(left(1234567890,##),10,-+))][iter(lnum(1,10),lpad(left(1234567890,##),11,-+))])),47D4FEC41656ADFDFA050084FC109EA064208D6F)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
+>262
+"@log smoke=End lpad() test cases.;@notify smoke"
+<
+!10
+"test_merge_fn"
+0
+-1
+-1
+-1
+0
+9
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Sun Oct 05 22:43:16.193713 2008"
+>219
+"Sun Oct 05 22:43:16.215176 2008"
 >256
 "@log smoke=Beginning merge() test cases."
 >257
@@ -386,43 +415,8 @@
 >262
 "@log smoke=End merge() test cases.;@notify smoke"
 <
-!10
-"test_rjust_fn"
-0
--1
--1
--1
-0
-9
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Sat Sep 13 10:26:46.664252 2008"
->219
-"Sat Sep 13 10:26:46.664513 2008"
->256
-"@log smoke=Beginning rjust() test cases."
->257
-"@if strmatch(setr(0,sha1(-[rjust(foo,6)]-%r0[rjust(foo,6)]7%r01234567=[rjust(bar,5,.)]=[translate(rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),0C5D8424AE31914B150A17AB286EB85E4977044D)={@log smoke=TC001: rjust examples. Succeeded.},{@log smoke=TC001: rjust examples. Failed (%q0).}"
->258
-"@if strmatch(setr(0,sha1([iter(lnum(2,10),rjust(X,##,left(1234567890,##)))])),94963D849CA4A2DB3372DD2F85C6BDD4BBD1DA0D)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
->259
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1))][iter(lnum(1,10),rjust(left(1234567890,##),2))][iter(lnum(1,10),rjust(left(1234567890,##),3))][iter(lnum(1,10),rjust(left(1234567890,##),4))][iter(lnum(1,10),rjust(left(1234567890,##),5))][iter(lnum(1,10),rjust(left(1234567890,##),6))][iter(lnum(1,10),rjust(left(1234567890,##),7))][iter(lnum(1,10),rjust(left(1234567890,##),8))][iter(lnum(1,10),rjust(left(1234567890,##),9))][iter(lnum(1,10),rjust(left(1234567890,##),10))][iter(lnum(1,10),rjust(left(1234567890,##),11))])),9DB90C442D375E6391D16D2295034623D036624C)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
->260
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1,-))][iter(lnum(1,10),rjust(left(1234567890,##),2,-))][iter(lnum(1,10),rjust(left(1234567890,##),3,-))][iter(lnum(1,10),rjust(left(1234567890,##),4,-))][iter(lnum(1,10),rjust(left(1234567890,##),5,-))][iter(lnum(1,10),rjust(left(1234567890,##),6,-))][iter(lnum(1,10),rjust(left(1234567890,##),7,-))][iter(lnum(1,10),rjust(left(1234567890,##),8,-))][iter(lnum(1,10),rjust(left(1234567890,##),9,-))][iter(lnum(1,10),rjust(left(1234567890,##),10,-))][iter(lnum(1,10),rjust(left(1234567890,##),11,-))])),F6BD2950D1E4DB1CE7B7C332DD6ED790185737AD)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
->261
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1,-+))][iter(lnum(1,10),rjust(left(1234567890,##),2,-+))][iter(lnum(1,10),rjust(left(1234567890,##),3,-+))][iter(lnum(1,10),rjust(left(1234567890,##),4,-+))][iter(lnum(1,10),rjust(left(1234567890,##),5,-+))][iter(lnum(1,10),rjust(left(1234567890,##),6,-+))][iter(lnum(1,10),rjust(left(1234567890,##),7,-+))][iter(lnum(1,10),rjust(left(1234567890,##),8,-+))][iter(lnum(1,10),rjust(left(1234567890,##),9,-+))][iter(lnum(1,10),rjust(left(1234567890,##),10,-+))][iter(lnum(1,10),rjust(left(1234567890,##),11,-+))])),58E8A45BB7B3F3C6DBA517E56A18463B9F0F5BA8)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
->262
-"@log smoke=End rjust() test cases.;@notify smoke"
-<
 !11
-"test_rpad_fn"
+"test_rjust_fn"
 0
 -1
 -1
@@ -438,26 +432,26 @@
 0
 0
 >218
-"Sat Sep 13 10:26:46.664577 2008"
+"Sun Oct 05 22:43:16.215335 2008"
 >219
-"Sat Sep 13 10:26:52.686996 2008"
+"Sun Oct 05 22:43:18.220068 2008"
 >256
-"@log smoke=Beginning rpad() test cases."
+"@log smoke=Beginning rjust() test cases."
 >257
-"@if strmatch(setr(0,sha1(-[rpad(foo,6)]-%r0[rpad(foo,6)]7%r01234567=[rpad(bar,5,.)]=[translate(rpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),0C5D8424AE31914B150A17AB286EB85E4977044D)={@log smoke=TC001: rpad examples. Succeeded.},{@log smoke=TC001: rpad examples. Failed (%q0).}"
+"@if strmatch(setr(0,sha1(-[rjust(foo,6)]-%r0[rjust(foo,6)]7%r01234567=[rjust(bar,5,.)]=[translate(rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),0C5D8424AE31914B150A17AB286EB85E4977044D)={@log smoke=TC001: rjust examples. Succeeded.},{@log smoke=TC001: rjust examples. Failed (%q0).}"
 >258
-"@if strmatch(setr(0,sha1([iter(lnum(2,10),rpad(X,##,left(1234567890,##)))])),94963D849CA4A2DB3372DD2F85C6BDD4BBD1DA0D)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(2,10),rjust(X,##,left(1234567890,##)))])),94963D849CA4A2DB3372DD2F85C6BDD4BBD1DA0D)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
 >259
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1))][iter(lnum(1,10),rpad(left(1234567890,##),2))][iter(lnum(1,10),rpad(left(1234567890,##),3))][iter(lnum(1,10),rpad(left(1234567890,##),4))][iter(lnum(1,10),rpad(left(1234567890,##),5))][iter(lnum(1,10),rpad(left(1234567890,##),6))][iter(lnum(1,10),rpad(left(1234567890,##),7))][iter(lnum(1,10),rpad(left(1234567890,##),8))][iter(lnum(1,10),rpad(left(1234567890,##),9))][iter(lnum(1,10),rpad(left(1234567890,##),10))][iter(lnum(1,10),rpad(left(1234567890,##),11))])),C7E5F96403B1DE054008770C6F9BA2EE1F2F7C68)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1))][iter(lnum(1,10),rjust(left(1234567890,##),2))][iter(lnum(1,10),rjust(left(1234567890,##),3))][iter(lnum(1,10),rjust(left(1234567890,##),4))][iter(lnum(1,10),rjust(left(1234567890,##),5))][iter(lnum(1,10),rjust(left(1234567890,##),6))][iter(lnum(1,10),rjust(left(1234567890,##),7))][iter(lnum(1,10),rjust(left(1234567890,##),8))][iter(lnum(1,10),rjust(left(1234567890,##),9))][iter(lnum(1,10),rjust(left(1234567890,##),10))][iter(lnum(1,10),rjust(left(1234567890,##),11))])),9DB90C442D375E6391D16D2295034623D036624C)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1,-))][iter(lnum(1,10),rpad(left(1234567890,##),2,-))][iter(lnum(1,10),rpad(left(1234567890,##),3,-))][iter(lnum(1,10),rpad(left(1234567890,##),4,-))][iter(lnum(1,10),rpad(left(1234567890,##),5,-))][iter(lnum(1,10),rpad(left(1234567890,##),6,-))][iter(lnum(1,10),rpad(left(1234567890,##),7,-))][iter(lnum(1,10),rpad(left(1234567890,##),8,-))][iter(lnum(1,10),rpad(left(1234567890,##),9,-))][iter(lnum(1,10),rpad(left(1234567890,##),10,-))][iter(lnum(1,10),rpad(left(1234567890,##),11,-))])),690DF8136366F5E1FA44B56E514981D2A8369DA9)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1,-))][iter(lnum(1,10),rjust(left(1234567890,##),2,-))][iter(lnum(1,10),rjust(left(1234567890,##),3,-))][iter(lnum(1,10),rjust(left(1234567890,##),4,-))][iter(lnum(1,10),rjust(left(1234567890,##),5,-))][iter(lnum(1,10),rjust(left(1234567890,##),6,-))][iter(lnum(1,10),rjust(left(1234567890,##),7,-))][iter(lnum(1,10),rjust(left(1234567890,##),8,-))][iter(lnum(1,10),rjust(left(1234567890,##),9,-))][iter(lnum(1,10),rjust(left(1234567890,##),10,-))][iter(lnum(1,10),rjust(left(1234567890,##),11,-))])),F6BD2950D1E4DB1CE7B7C332DD6ED790185737AD)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1,-+))][iter(lnum(1,10),rpad(left(1234567890,##),2,-+))][iter(lnum(1,10),rpad(left(1234567890,##),3,-+))][iter(lnum(1,10),rpad(left(1234567890,##),4,-+))][iter(lnum(1,10),rpad(left(1234567890,##),5,-+))][iter(lnum(1,10),rpad(left(1234567890,##),6,-+))][iter(lnum(1,10),rpad(left(1234567890,##),7,-+))][iter(lnum(1,10),rpad(left(1234567890,##),8,-+))][iter(lnum(1,10),rpad(left(1234567890,##),9,-+))][iter(lnum(1,10),rpad(left(1234567890,##),10,-+))][iter(lnum(1,10),rpad(left(1234567890,##),11,-+))])),B0719CA69656641DA10F69C1AA67B9787A848146)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rjust(left(1234567890,##),1,-+))][iter(lnum(1,10),rjust(left(1234567890,##),2,-+))][iter(lnum(1,10),rjust(left(1234567890,##),3,-+))][iter(lnum(1,10),rjust(left(1234567890,##),4,-+))][iter(lnum(1,10),rjust(left(1234567890,##),5,-+))][iter(lnum(1,10),rjust(left(1234567890,##),6,-+))][iter(lnum(1,10),rjust(left(1234567890,##),7,-+))][iter(lnum(1,10),rjust(left(1234567890,##),8,-+))][iter(lnum(1,10),rjust(left(1234567890,##),9,-+))][iter(lnum(1,10),rjust(left(1234567890,##),10,-+))][iter(lnum(1,10),rjust(left(1234567890,##),11,-+))])),58E8A45BB7B3F3C6DBA517E56A18463B9F0F5BA8)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
 >262
-"@log smoke=End rpad() test cases.;@notify smoke"
+"@log smoke=End rjust() test cases.;@notify smoke"
 <
 !12
-"test_secure_fn"
+"test_rpad_fn"
 0
 -1
 -1
@@ -473,24 +467,26 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.360846 2008"
+"Sun Oct 05 22:43:20.228099 2008"
 >219
-"Tue Jun 24 09:27:57.368464 2008"
+"Sun Oct 05 22:43:28.292058 2008"
 >256
-"@log smoke=Beginning secure() test cases."
+"@log smoke=Beginning rpad() test cases."
 >257
-"@va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\\a%$a%,a;@vb me=%[%]%(%)%{%}%;%%%\\%$%,;@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),46921D8F439E5D25081D6E6810EA42693EB7FBB0)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
+"@if strmatch(setr(0,sha1(-[rpad(foo,6)]-%r0[rpad(foo,6)]7%r01234567=[rpad(bar,5,.)]=[translate(rpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)])),0C5D8424AE31914B150A17AB286EB85E4977044D)={@log smoke=TC001: rpad examples. Succeeded.},{@log smoke=TC001: rpad examples. Failed (%q0).}"
 >258
-"@va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\\%xga%xr%$%xga%xr%,%xga;@vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\\%xr%$%xg%,%xr;@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),0432DFA8F9CAB622E397DB9BD462C3516DF8A07F)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([iter(lnum(2,10),rpad(X,##,left(1234567890,##)))])),94963D849CA4A2DB3372DD2F85C6BDD4BBD1DA0D)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
 >259
-"@if chr(256)={@va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\\[chr(256)]%$[chr(256)]%,[chr(256)];@vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%$[chr(10010)]%,[chr(10010)];@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1))][iter(lnum(1,10),rpad(left(1234567890,##),2))][iter(lnum(1,10),rpad(left(1234567890,##),3))][iter(lnum(1,10),rpad(left(1234567890,##),4))][iter(lnum(1,10),rpad(left(1234567890,##),5))][iter(lnum(1,10),rpad(left(1234567890,##),6))][iter(lnum(1,10),rpad(left(1234567890,##),7))][iter(lnum(1,10),rpad(left(1234567890,##),8))][iter(lnum(1,10),rpad(left(1234567890,##),9))][iter(lnum(1,10),rpad(left(1234567890,##),10))][iter(lnum(1,10),rpad(left(1234567890,##),11))])),C7E5F96403B1DE054008770C6F9BA2EE1F2F7C68)={@log smoke=TC003: Vary string and width with default fill. Succeeded.},{@log smoke=TC003: Vary string and width with default fill. Failed (%q0).}"
 >260
-"@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1,-))][iter(lnum(1,10),rpad(left(1234567890,##),2,-))][iter(lnum(1,10),rpad(left(1234567890,##),3,-))][iter(lnum(1,10),rpad(left(1234567890,##),4,-))][iter(lnum(1,10),rpad(left(1234567890,##),5,-))][iter(lnum(1,10),rpad(left(1234567890,##),6,-))][iter(lnum(1,10),rpad(left(1234567890,##),7,-))][iter(lnum(1,10),rpad(left(1234567890,##),8,-))][iter(lnum(1,10),rpad(left(1234567890,##),9,-))][iter(lnum(1,10),rpad(left(1234567890,##),10,-))][iter(lnum(1,10),rpad(left(1234567890,##),11,-))])),690DF8136366F5E1FA44B56E514981D2A8369DA9)={@log smoke=TC004: Vary string and width with '-' fill. Succeeded.},{@log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1([iter(lnum(1,10),rpad(left(1234567890,##),1,-+))][iter(lnum(1,10),rpad(left(1234567890,##),2,-+))][iter(lnum(1,10),rpad(left(1234567890,##),3,-+))][iter(lnum(1,10),rpad(left(1234567890,##),4,-+))][iter(lnum(1,10),rpad(left(1234567890,##),5,-+))][iter(lnum(1,10),rpad(left(1234567890,##),6,-+))][iter(lnum(1,10),rpad(left(1234567890,##),7,-+))][iter(lnum(1,10),rpad(left(1234567890,##),8,-+))][iter(lnum(1,10),rpad(left(1234567890,##),9,-+))][iter(lnum(1,10),rpad(left(1234567890,##),10,-+))][iter(lnum(1,10),rpad(left(1234567890,##),11,-+))])),B0719CA69656641DA10F69C1AA67B9787A848146)={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;@trig me/tr.done}"
 >262
-"@log smoke=End secure() test cases.;@notify smoke"
+"@log smoke=End rpad() test cases.;@notify smoke"
 <
 !13
-"test_shutdown"
+"test_secure_fn"
 0
 -1
 -1
@@ -506,14 +502,24 @@
 0
 0
 >218
-"Tue Jun 24 09:27:57.368539 2008"
+"Sun Oct 05 22:43:30.300089 2008"
 >219
-"Tue Jun 24 09:27:57.368622 2008"
+"Sun Oct 05 22:43:37.328095 2008"
 >256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+"@log smoke=Beginning secure() test cases."
+>257
+"@va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\\a%$a%,a;@vb me=%[%]%(%)%{%}%;%%%\\%$%,;@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),46921D8F439E5D25081D6E6810EA42693EB7FBB0)={@log smoke=TC001: ASCII mix. Succeeded.},{@log smoke=TC001: ASCII mix. Failed (%q0).}"
+>258
+"@va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\\%xga%xr%$%xga%xr%,%xga;@vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\\%xr%$%xg%,%xr;@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),0432DFA8F9CAB622E397DB9BD462C3516DF8A07F)={@log smoke=TC002: ASCII-color mix. Succeeded.},{@log smoke=TC002: ASCII-color mix. Failed (%q0).}"
+>259
+"@if chr(256)={@va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\\[chr(256)]%$[chr(256)]%,[chr(256)];@vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\\[chr(10010)]%$[chr(10010)]%,[chr(10010)];@if strmatch(setr(0,sha1(secure(%va)[secure(%vb)])),05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2)={@log smoke=TC003: Unicode mix. Succeeded.},{@log smoke=TC003: Unicode mix. Failed (%q0).}},{@log smoke=TC003: Unicode is not supported on this version. Okay.}"
+>260
+"@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD)={@log smoke=TC004: Unicode-color mix. Succeeded.},{@log smoke=TC004: Unicode-color mix. Failed (%q0).};@trig me/tr.done},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
+>262
+"@log smoke=End secure() test cases.;@notify smoke"
 <
 !14
-"smoke"
+"test_shutdown"
 0
 -1
 -1
@@ -523,24 +529,20 @@
 1
 -1
 1
-37750785
+33556481
 0
 0
 0
 0
 >218
-"Tue Jun 24 09:27:57.36869 2008"
+"Sun Oct 05 22:43:39.336079 2008"
 >219
-"Tue Jun 24 09:27:57.368834 2008"
->271
-"center_fn cmd_say convtime_fn cpad_fn escape_fn ljust_fn lpad_fn merge_fn rjust_fn rpad_fn secure_fn wrap_fn shutdown"
->19
-"@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
->272
-"@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
+"Sun Oct 05 22:43:41.34508 2008"
+>256
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
 !15
-"test_wrap_fn"
+"smoke"
 0
 -1
 -1
@@ -550,15 +552,42 @@
 1
 -1
 1
+37750785
+0
+0
+0
+0
+>218
+"Sun Oct 05 22:43:43.352067 2008"
+>219
+"Sun Oct 05 22:43:47.369076 2008"
+>271
+"center_fn cmd_say convtime_fn cpad_fn edit_fn escape_fn ljust_fn lpad_fn merge_fn rjust_fn rpad_fn secure_fn wrap_fn shutdown"
+>19
+"@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
+>272
+"@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
+<
+!16
+"test_wrap_fn"
+0
+-1
+-1
+-1
+0
+15
+1
+-1
+1
 33556481
 0
 0
 0
 0
 >218
-"Sun Oct 05 13:57:26.348106 2008"
+"Sun Oct 05 22:43:49.376104 2008"
 >219
-"Sun Oct 05 13:57:31.36807 2008"
+"Sun Oct 05 22:43:54.397072 2008"
 >256
 "@log smoke=Beginning wrap() test cases."
 >257
