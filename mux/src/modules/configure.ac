@@ -49,11 +49,16 @@ AC_MINIX
 
 # Checks for libraries.
 #
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="$save_LDFLAGS $SQL_LIBPATH"
 AC_CHECK_LIB(mysqlclient, main)
 if test "x$ac_cv_lib_mysqlclient_main" = "xyes"; then
   SQL_LIBS="-lmysqlclient -lz"
   AC_DEFINE([HAVE_MYSQL], [], [Define if mysql exists.])
 fi
+LDFLAGS="$save_LDFLAGS"
+LIBS="$save_LIBS"
 AC_MSG_CHECKING(for dlopen)
 AC_CHECK_LIB(dl,dlopen)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
