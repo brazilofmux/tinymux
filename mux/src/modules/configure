@@ -4297,6 +4297,9 @@ fi
 
 # Checks for libraries.
 #
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="$save_LDFLAGS $SQL_LIBPATH"
 
 { echo "$as_me:$LINENO: checking for main in -lmysqlclient" >&5
 echo $ECHO_N "checking for main in -lmysqlclient... $ECHO_C" >&6; }
@@ -4370,6 +4373,8 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+LDFLAGS="$save_LDFLAGS"
+LIBS="$save_LIBS"
 { echo "$as_me:$LINENO: checking for dlopen" >&5
 echo $ECHO_N "checking for dlopen... $ECHO_C" >&6; }
 
