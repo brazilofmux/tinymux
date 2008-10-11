@@ -601,11 +601,28 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
 
         if (NULL != m_database)
         {
+#ifdef MYSQL_OPT_RECONNECT
+            // As of MySQL 5.0.3, the default is no longer to reconnect.
+            //
+            my_bool reconnect = 1;
+            mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
+            mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
+
             if (mysql_real_connect(m_database, (char *)pServer, (char *)pUser,
                  (char *)pPassword, (char *)pDatabase, 0, NULL, 0) == 0)
             {
                 mysql_close(m_database);
                 m_database = NULL;
+            }
+            else
+            {
+#ifdef MYSQL_OPT_RECONNECT
+                // Before MySQL 5.0.19, mysql_real_connect sets the option
+                // back to default, so we set it again.
+                //
+                mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
             }
         }
     }
