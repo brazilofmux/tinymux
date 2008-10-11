@@ -2342,10 +2342,22 @@ static void init_sql(void)
 
         if (mush_database)
         {
+#ifdef MYSQL_OPT_RECONNECT
+           // As of MySQL 5.0.3, the default is no longer to reconnect.
+           //
+           my_bool reconnect = 1;
+           mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
            if (mysql_real_connect(mush_database,mudconf.sql_server,
                       mudconf.sql_user, mudconf.sql_password,
                       mudconf.sql_database, 0, NULL, 0))
            {
+#ifdef MYSQL_OPT_RECONNECT
+               // Before MySQL 5.0.19, mysql_real_connect sets the option
+               // back to default, so we set it again.
+               //
+               mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
                STARTLOG(LOG_STARTUP,"SQL","CONN");
                log_text("Connected to MySQL");
                ENDLOG;
