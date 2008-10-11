@@ -1,8 +1,4 @@
 ALPHA
-src/sqlshared.cpp
-src/sqlshared.h
-src/sqlslave.cpp
-src/svdreport.cpp
-src/svdreport.h
+BETA
 src/configure.in
 src/modules/configure.in

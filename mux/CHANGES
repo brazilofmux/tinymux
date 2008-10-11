@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  September 2008
+Last Update:  October 2008
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,6 +314,12 @@ Bug Fixes:
  -- Fix remaining open issues with merge() (Issue 447, 449).
  -- Fix @pemit (and friends) to remove duplicates matches (Issue 499).
  -- Fix wrap() from leaving a leading space on second line (Issue 479).
+ -- Fix isword() to accept a single %b (Issue 532).
+ -- Fix wrap() from advancing over first letter in line (Issue 533).
+ -- Set MYSQL_OPT_RECONNECT and MYSQL_SET_CHARSET_NAME options.
+ -- Fix ./configure --with-mysql-libs and --with-mysql-include
+    interaction --enable-stubslave on FreeBSD.
+ -- Fix case of edit() leaving ColorState uninitialized (Issue 537).
 
 
 Performance Enhancements:

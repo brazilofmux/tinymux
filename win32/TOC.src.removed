@@ -1,6 +1,5 @@
 ALPHA
-src/svdreport.cpp
-src/svdreport.h
+BETA
 src/libmux.dsp
 src/netmux.dsp
 src/netmux.dsw
