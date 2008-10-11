@@ -2415,6 +2415,8 @@ static void init_sql(void)
             my_bool reconnect = 1;
             mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
 #endif
+            mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
+
             if (mysql_real_connect(mush_database,
                        (char *)mudconf.sql_server, (char *)mudconf.sql_user,
                        (char *)mudconf.sql_password,
