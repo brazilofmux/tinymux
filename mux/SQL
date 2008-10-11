@@ -1,5 +1,5 @@
 TinyMUX 2.7:  SQL
-Last Update:  March 2008
+Last Update:  October 2008
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TinyMUX 2.7 supports both asynchronous and synchronous SQL.  The synchronous/
@@ -43,7 +43,29 @@ Asynchronous SQL:
 
    To perform MySQL queries you will use the @query command in conjunction
    with the rsrelease(), rserror(), rsprev(), rsrecnext(), rsrows(),
-   rsrec(), rsnext() and rsrecprev() functions.
+   rsrec(), rsnext() and rsrecprev() functions.  Here's an example:
+
+   &FOO.TR me=
+     @if rserror()=
+     {
+       @pemit %#=Rows: [rsrows()];
+       @if rsrows()=
+       {
+         @trig me/bar.tr
+       }
+     },
+     {
+       @pemit %#=Error: [rserror()]
+     }
+
+   &BAR.TR me=
+     @pemit %#=rsrec(|);
+     @if rsnext()=
+     {
+       @trig me/bar.tr
+     }
+
+   @query/sql me/foo.tr=/show databases;
 
 
 4) This method will allow SQL queries to occur without blocking the main game
