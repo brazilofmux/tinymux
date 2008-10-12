@@ -67,6 +67,7 @@ LRESULT CInputFrame::OnCreate(CREATESTRUCT *pcs)
     cf2.yHeight = 20*14;
     memcpy(cf2.szFaceName, L"Courier New", sizeof(L"Courier New"));
     LRESULT lRes = ::SendMessage(m_hwndRichEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)cf2.crBackColor);
+    lRes = ::SendMessage(m_hwndRichEdit, EM_SETTEXTMODE, TM_PLAINTEXT, 0);
     if (g_theApp.m_bMsftEdit)
     {
         lRes = ::SendMessage(m_hwndRichEdit, EM_SETCHARFORMAT, SCF_ALL, (LPARAM) &cf2);
