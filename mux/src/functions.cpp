@@ -2265,7 +2265,7 @@ static FUNCTION(fun_mid)
     int nLength    = mux_atol(fargs[2]);
     if (nLength < 0)
     {
-        iPosition0 += nLength;
+        iPosition0 += 1 + nLength;
         nLength = -nLength;
     }
 
