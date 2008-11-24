@@ -9,6 +9,9 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+
+#ifndef SSL_ENABLED
+
 #include "sha1.h"
 
 void SHA1_Init(SHA1_CONTEXT *p)
@@ -196,5 +199,8 @@ int main(int argc, char *argv[])
     printf("%s", T("Passed." ENDLINE));
     return 1;
 }
+
+#endif
+
 
 #endif

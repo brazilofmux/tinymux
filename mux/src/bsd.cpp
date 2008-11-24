@@ -1000,6 +1000,7 @@ int initialize_ssl()
 {
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
+    OpenSSL_add_all_digests();
     ssl_ctx = SSL_CTX_new (SSLv23_server_method());
     tls_ctx = SSL_CTX_new (TLSv1_server_method());
 

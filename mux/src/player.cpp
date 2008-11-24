@@ -18,7 +18,11 @@
 #include "functions.h"
 #include "interface.h"
 #include "powers.h"
+#ifdef USE_OPENSSL
+#include <openssl/sha.h>
+#else
 #include "sha1.h"
+#endif
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
@@ -413,6 +417,16 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     // Calculate SHA-1 Hash.
     //
+#ifdef SSL_ENABLED
+    SHA_CTX shac;
+    UTF8 szHashRaw[SHA_DIGEST_LENGTH + 1];
+
+    SHA1_Init(&shac);
+    SHA1_Update(&shac, pSaltField, nSaltField);
+    SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
+    SHA1_Final(szHashRaw, &shac);
+    szHashRaw[20] = '\0';        
+#else
     SHA1_CONTEXT shac;
 
     SHA1_Init(&shac);
@@ -434,6 +448,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
         *p++ = (UINT8)(shac.H[i]      );
     }
     *p = '\0';
+#endif
 
     //          1         2         3         4
     // 12345678901234567890123456789012345678901234567
