@@ -18,7 +18,7 @@
 #include "functions.h"
 #include "interface.h"
 #include "powers.h"
-#ifdef USE_OPENSSL
+#ifdef SSL_ENABLED
 #include <openssl/sha.h>
 #else
 #include "sha1.h"
