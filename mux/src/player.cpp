@@ -425,7 +425,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     SHA1_Update(&shac, pSaltField, nSaltField);
     SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
     SHA1_Final(szHashRaw, &shac);
-    szHashRaw[20] = '\0';        
+    szHashRaw[20] = '\0';
 #else
     SHA1_CONTEXT shac;
 
