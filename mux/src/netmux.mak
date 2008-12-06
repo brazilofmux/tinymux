@@ -127,7 +127,7 @@ CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D 
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.8 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.9 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alarm.obj" \
