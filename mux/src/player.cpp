@@ -417,38 +417,13 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     // Calculate SHA-1 Hash.
     //
-#ifdef SSL_ENABLED
     SHA_CTX shac;
     UTF8 szHashRaw[SHA_DIGEST_LENGTH + 1];
-
     SHA1_Init(&shac);
     SHA1_Update(&shac, pSaltField, nSaltField);
     SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
     SHA1_Final(szHashRaw, &shac);
-    szHashRaw[20] = '\0';
-#else
-    SHA1_CONTEXT shac;
-
-    SHA1_Init(&shac);
-    SHA1_Compute(&shac, nSaltField, pSaltField);
-    SHA1_Compute(&shac, strlen((char *)szPassword), szPassword);
-    SHA1_Final(&shac);
-
-    // Serialize 5 UINT32 words into big-endian.
-    //
-    UTF8 szHashRaw[21];
-    UTF8 *p = szHashRaw;
-
-    int i;
-    for (i = 0; i <= 4; i++)
-    {
-        *p++ = (UINT8)(shac.H[i] >> 24);
-        *p++ = (UINT8)(shac.H[i] >> 16);
-        *p++ = (UINT8)(shac.H[i] >>  8);
-        *p++ = (UINT8)(shac.H[i]      );
-    }
-    *p = '\0';
-#endif
+    szHashRaw[SHA_DIGEST_LENGTH] = '\0';
 
     //          1         2         3         4
     // 12345678901234567890123456789012345678901234567

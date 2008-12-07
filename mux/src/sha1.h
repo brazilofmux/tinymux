@@ -14,10 +14,12 @@ typedef struct
     UINT32   H[5];
     UINT8    block[64];
     size_t   nblock;
-} SHA1_CONTEXT;
+} SHA_CTX;
 
-void SHA1_Init(SHA1_CONTEXT *p);
-void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const UTF8 *buf);
-void SHA1_Final(SHA1_CONTEXT *p);
+#define SHA_DIGEST_LENGTH 20
+
+void SHA1_Init(SHA_CTX *p);
+void SHA1_Update(SHA_CTX *p, __in_ecount(n) const UTF8 *buf, __in size_t n);
+void SHA1_Final(__out UINT8 md[SHA_DIGEST_LENGTH], SHA_CTX *p);
 
 #endif // SHA1_H

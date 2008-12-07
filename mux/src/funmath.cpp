@@ -2924,41 +2924,26 @@ FUNCTION(fun_sha1)
     UNUSED_PARAMETER(ncargs);
 
     int i;
-
-#ifdef SSL_ENABLED
     SHA_CTX shac;
-    unsigned char md[SHA_DIGEST_LENGTH];
-
     SHA1_Init(&shac);
     for (i = 0; i < nfargs; ++i)
-      SHA1_Update(&shac, fargs[i], strlen((const char *)fargs[i]));
+    {
+        SHA1_Update(&shac, fargs[i], strlen((const char *)fargs[i]));
+    }
+
+    UINT8 md[SHA_DIGEST_LENGTH];
     SHA1_Final(md, &shac);
 
-    const char *digits = "0123456789ABCDEF";
+    const UTF8 digits[] = "0123456789ABCDEF";
     UTF8 buf[(SHA_DIGEST_LENGTH * 2) + 1];
     int bufoffset = 0;
 
-    for (i = 0; i < SHA_DIGEST_LENGTH; ++i)
+    for (i = 0; i < SHA_DIGEST_LENGTH; i++)
     {
-      unsigned char c = md[i];
-      buf[bufoffset++] = digits[c >> 4];
-      buf[bufoffset++] = digits[c & 0x0F];
+        UINT8 c = md[i];
+        buf[bufoffset++] = digits[(c >> 4) & 0x0F];
+        buf[bufoffset++] = digits[(c     ) & 0x0F];
     }
     buf[bufoffset] = '\0';
     safe_str(buf, buff, bufc);
-#else
-    SHA1_CONTEXT shac;
-    SHA1_Init(&shac);
-    for (i = 0; i < nfargs; i++)
-    {
-        SHA1_Compute(&shac, strlen((char *)fargs[i]), fargs[i]);
-    }
-    SHA1_Final(&shac);
-    for (i = 0; i <= 4; i++)
-    {
-        UTF8 buf[9];
-        mux_sprintf(buf, sizeof(buf), "%08X", shac.H[i]);
-        safe_str(buf, buff, bufc);
-    }
-#endif
 }
