@@ -160,7 +160,7 @@ typedef struct
     UINT32   H[5];
 } sha1_test_vector;
 
-#define NUM_VECTORS 2
+#define NUM_VECTORS 5
 sha1_test_vector vectors[NUM_VECTORS] =
 {
     {
@@ -168,8 +168,34 @@ sha1_test_vector vectors[NUM_VECTORS] =
         { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D }
     },
     {
+        // 64-byte block composed of 55 bytes, 1-byte pad (0x80), and 8-byte
+        // length.
+        //
+        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop"),
+        { 0x47B17281, 0x0795699F, 0xE739197D, 0x1A1F5960, 0x700242F1 }
+    },
+    {
+        // First 64-byte block composed of 56 bytes, 1-byte pad (0x80), and 7
+        // zeros.  Second 64-byte block composed of 56 zeros (0x00) and 8-byte
+        // length.
+        //
         T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
         { 0x84983E44, 0x1C3BD26E, 0xBAAE4AA1, 0xF95129E5, 0xE54670F1 }
+    },
+    {
+        // First 64-byte block composed of 63 bytes and 1-byte pad (0x80).
+        // Second 64-byte block composed of 56 zeros (0x00), and 8-byte
+        // length.
+        //
+        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567"),
+        { 0x55A0C42A, 0x00BD4B49, 0x6A16D1AC, 0x32E20B5A, 0x7FA3E087 }
+    },
+    {
+        // First 64-byte block composed of 64 bytes.  Second 64-byte block
+        // composed of 1-byte pad (0x80), 55 zeros (0x00), and 8-byte length.
+        //
+        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678"),
+        { 0x9EF5C682, 0xD93914E7, 0x7A5D345A, 0xBB957436, 0x445A6FB6 }
     }
 };
 
