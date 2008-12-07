@@ -122,7 +122,7 @@ void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const char *buf)
 void SHA1_Final(SHA1_CONTEXT *p)
 {
     p->block[p->nblock++] = 0x80;
-    if (sizeof(p->block) - sizeof(UINT64) <= p->nblock)
+    if (sizeof(p->block) - sizeof(UINT64) < p->nblock)
     {
         memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock);
         SHA1_HashBlock(p);
