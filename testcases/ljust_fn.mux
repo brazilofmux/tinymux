@@ -74,7 +74,7 @@
             [iter(lnum(1,10),ljust(left(1234567890,##),11))]
           )
         ),
-        E8E118711ADE44E77161F96C22AD1B82FC4F1852
+        1AD7014992692AF669A011408E9519A4018C4604
       )=
   {
     @log smoke=TC003: Vary string and width with default fill. Succeeded.
@@ -102,7 +102,7 @@
             [iter(lnum(1,10),ljust(left(1234567890,##),11,-))]
           )
         ),
-        D2CE2047BCEAEB4C132D47DCDD468FBFD3D014BC
+        7C2DDD94EA0E993B7ED7BF1A967CC31D6B2D5A4D
       )=
   {
     @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
@@ -130,7 +130,7 @@
             [iter(lnum(1,10),ljust(left(1234567890,##),11,-+))]
           )
         ),
-        4826527E17C2AA79ABD3A1FE652918FB0125A5B3
+        4831EDC595942F04B1B27B606B6399E98F9C5CE4
       )=
   {
     @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
