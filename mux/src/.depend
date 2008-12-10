@@ -41,7 +41,7 @@ quota.o: quota.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h fl
 rob.o: rob.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h powers.h
 pcre.o: pcre.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copyright.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h pcre.h
 set.o: set.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h powers.h
-sha1.o: sha1.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h sha1.h
+sha1.o: sha1.cpp copyright.h autoconf.h config.h sha1.h
 speech.o: speech.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h interface.h powers.h
 stringutil.o: stringutil.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h ansi.h pcre.h
 strtod.o: strtod.cpp autoconf.h config.h externs.h db.h attrcache.h flags.h copyright.h timeutil.h match.h libmux.h modules.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h 
