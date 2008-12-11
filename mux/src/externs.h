@@ -216,13 +216,10 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
 #define notify_with_cause_ooc(p,c,m)        notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC)
 #define notify_with_cause_html(p,c,m)       notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
 #define notify_quiet_with_cause(p,c,m)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME)
-//#define notify_puppet(p,c,m)                notify_check(p,c,m, MSG_ME_ALL|MSG_F_DOWN)
-//#define notify_quiet_puppet(p,c,m)          notify_check(p,c,m, MSG_ME)
 #define notify_all(p,c,m)                   notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS)
 #define notify_all_from_inside(p,c,m)       notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE)
 #define notify_all_from_inside_saypose(p,c,m) notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_SAYPOSE)
 #define notify_all_from_inside_html(p,c,m)  notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_HTML)
-//#define notify_all_from_outside(p,c,m)      notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS|MSG_S_OUTSIDE)
 
 void notify_except(dbref, dbref, dbref, const UTF8 *, int key);
 void notify_except2(dbref, dbref, dbref, dbref, const UTF8 *);
