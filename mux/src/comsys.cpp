@@ -1483,7 +1483,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     {
         if (!payfor(player, Guest(player) ? 0 : ch->charge))
         {
-            notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
+            raw_notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
             return;
         }
         else
