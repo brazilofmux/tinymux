@@ -36,21 +36,18 @@ int APIENTRY wWinMain
 (
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
-    LPSTR     lpCmdLine,
+    LPWSTR    lpCmdLine,
     int       nCmdShow
 )
 {
-    if (!g_theApp.Initialize(hInstance, nCmdShow))
+    int ret = 0;
+    if (g_theApp.Initialize(hInstance, nCmdShow))
     {
-        g_theApp.Finalize();
-        return 0;
+        ret = g_theApp.Run();
     }
-
-    int ret = g_theApp.Run();
     g_theApp.Finalize();
     return ret;
 }
-
 
 typedef struct
 {
