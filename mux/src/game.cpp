@@ -886,7 +886,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                         continue;
                     }
                     notify_check(recip, sender, buff,
-                             MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
+                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
                 }
             }
             free_lbuf(buff);
@@ -906,7 +906,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     buff = add_prefix(obj, target, A_PREFIX, msg,
                         "From a distance,");
                     notify_check(recip, sender, buff,
-                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
                     free_lbuf(buff);
                 }
             }
@@ -945,7 +945,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     tbuff = add_prefix(obj, target, A_PREFIX, buff,
                         "From a distance,");
                     notify_check(recip, sender, tbuff,
-                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
                     free_lbuf(tbuff);
                 }
             }
@@ -977,7 +977,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 if (obj != target)
                 {
                     notify_check(obj, sender, buff,
-                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key & MSG_HTML);
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
             if (key & MSG_S_OUTSIDE)
@@ -1010,7 +1010,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                    && obj != targetloc)
                 {
                     notify_check(obj, sender, buff,
-                    MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE);
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
                 }
             }
             if (key & MSG_S_INSIDE)
@@ -1038,7 +1038,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 buff = (char *)msg;
             }
             notify_check(targetloc, sender, buff,
-                MSG_ME | MSG_F_UP | MSG_S_INSIDE);
+                MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
             if (key & MSG_S_INSIDE)
             {
                 free_lbuf(buff);
