@@ -979,7 +979,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 if (obj != target)
                 {
                     notify_check(obj, sender, *msgFinal,
-                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key & MSG_HTML | (key & (MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
         }
