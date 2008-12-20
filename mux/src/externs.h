@@ -815,10 +815,16 @@ extern int anum_alc_top;
 #define MSG_OOC         0x00008000UL    /* Overide visibility rules because it's OOC */
 #define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speech. */
 
+#define MSG_SRC_MASK    0x80000000UL    /* Bit mask for originating code path */
+#define MSG_SRC_COMSYS  0x80000000UL    /* Message originated from comsys */
+#define MSG_SRC_GENERIC 0x00000000UL    /* Message originated from 'none of the above' */
+
 #define MSG_ME_ALL      (MSG_ME|MSG_INV_EXITS|MSG_FWDLIST)
 #define MSG_F_CONTENTS  (MSG_INV)
 #define MSG_F_UP        (MSG_NBR_A|MSG_LOC_A)
 #define MSG_F_DOWN      (MSG_INV_L)
+
+#define DecodeMsgSource(x) ((x)&MSG_SRC_MASK)
 
 /* Look primitive directives */
 

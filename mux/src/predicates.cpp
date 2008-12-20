@@ -671,7 +671,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
                                  (gender == 4) ? "" : "s", poss[gender],
                                  (gender == 4) ? "" : "s"));
         }
-        notify_check(thing, thing, *sStr, (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
+        notify_check(thing, thing, *sStr, MSG_ME | MSG_NBR | MSG_LOC | MSG_INV);
         delete sStr;
     }
 }

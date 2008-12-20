@@ -1499,6 +1499,11 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     }
 }
 
+inline void notify_comsys(dbref target, dbref sender, const mux_string &msg)
+{
+    notify_check(target, sender, msg, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC|MSG_SRC_COMSYS);
+}
+
 // Transmit the given message as appropriate to all listening parties.
 // Perform channel message logging, if configured, for the channel.
 //
@@ -1525,11 +1530,11 @@ void SendChannelMessage
                || bSpoof
                || msgNoComtitle == NULL)
             {
-                notify_with_cause_ooc(user->who, executor, msgNormal);
+                notify_comsys(user->who, executor, msgNormal);
             }
             else
             {
-                notify_with_cause_ooc(user->who, executor, msgNoComtitle);
+                notify_comsys(user->who, executor, msgNoComtitle);
             }
         }
     }
@@ -1622,7 +1627,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), NULL, 0);
             *bp = '\0';
 
-            notify_with_cause_ooc(enactor, executor, buf);
+            notify_comsys(enactor, executor, buf);
 
             free_lbuf(buf);
         }

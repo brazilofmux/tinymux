@@ -683,12 +683,28 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 msg_ns->append(Moniker(Owner(sender)));
                 msg_ns->append_TextPlain(T("}"), 1);
             }
+
             if (sender != mudstate.curr_enactor)
             {
                 msg_ns->append_TextPlain(T("<-("), 3);
                 msg_ns->append(mudstate.curr_enactor);
                 msg_ns->append_TextPlain(T(")"), 1);
             }
+
+            switch (DecodeMsgSource(key))
+            {
+            case MSG_SRC_COMSYS:
+                msg_ns->append_TextPlain(T(",comsys"));
+                break;
+
+            default:
+                if (key & MSG_SAYPOSE)
+                {
+                    msg_ns->append_TextPlain(T(",saypose"));
+                }
+                break;
+            }
+
             msg_ns->append_TextPlain(T("] "), 2);
         }
     }
@@ -879,7 +895,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                         continue;
                     }
                     notify_check(recip, sender, *msgFinal,
-                             MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
         }
@@ -901,7 +917,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
 
                     msgFinal->append(msg);
                     notify_check(recip, sender, *msgFinal,
-                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
         }
@@ -946,7 +962,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
 
                     msgPrefixed2->append(*msgFinal);
                     notify_check(recip, sender, *msgPrefixed2,
-                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
             delete msgPrefixed2;
@@ -979,7 +995,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 if (obj != target)
                 {
                     notify_check(obj, sender, *msgFinal,
-                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
         }
@@ -1011,7 +1027,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && obj != targetloc)
                 {
                     notify_check(obj, sender, *msgFinal,
-                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
         }
@@ -1037,7 +1053,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             }
 
             notify_check(targetloc, sender, *msgFinal,
-                MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SAYPOSE | MSG_OOC)));
+                MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
         }
         free_lbuf(msgPlain);
     }
@@ -1070,13 +1086,13 @@ void notify_except(dbref loc, dbref player, dbref exception, const UTF8 *msg, in
 
     if (loc != exception)
     {
-        notify_check(loc, player, msg, (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A | key));
+        notify_check(loc, player, msg, MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A | key);
     }
     DOLIST(first, Contents(loc))
     {
         if (first != exception)
         {
-            notify_check(first, player, msg, (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key));
+            notify_check(first, player, msg, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key);
         }
     }
 }
@@ -1088,14 +1104,14 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const UTF8 
     if (  loc != exc1
        && loc != exc2)
     {
-        notify_check(loc, player, msg, (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A));
+        notify_check(loc, player, msg, MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A);
     }
     DOLIST(first, Contents(loc))
     {
         if (  first != exc1
            && first != exc2)
         {
-            notify_check(first, player, msg, (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
+            notify_check(first, player, msg, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE);
         }
     }
 }
