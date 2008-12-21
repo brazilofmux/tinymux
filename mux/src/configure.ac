@@ -232,8 +232,10 @@ case "$host" in
            ;;
 esac
 AC_MSG_CHECKING(for dlopen)
-LIBS_SAVE=$LIBS
-AC_CHECK_LIB(dl,dlopen)
+AC_CHECK_LIB(dl,dlopen,[
+    AC_DEFINE([HAVE_LIBDL], [], [Define if libdl exists.])
+    DL_LIB="-dl"
+])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <dlfcn.h>
     ]],[[
@@ -258,9 +260,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
               ;;
     esac
     MUX_LIBS="-lmux"
-    DL_LIB="-ldl"
     ],[])
-LIBS=$LIBS_SAVE
 AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CPPFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)

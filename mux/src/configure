@@ -5084,8 +5084,6 @@ fi
 esac
 { echo "$as_me:$LINENO: checking for dlopen" >&5
 echo $ECHO_N "checking for dlopen... $ECHO_C" >&6; }
-LIBS_SAVE=$LIBS
-
 { echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
 echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6; }
 if test "${ac_cv_lib_dl_dlopen+set}" = set; then
@@ -5148,11 +5146,13 @@ fi
 { echo "$as_me:$LINENO: result: $ac_cv_lib_dl_dlopen" >&5
 echo "${ECHO_T}$ac_cv_lib_dl_dlopen" >&6; }
 if test $ac_cv_lib_dl_dlopen = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBDL 1
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBDL
 _ACEOF
 
-  LIBS="-ldl $LIBS"
+    DL_LIB="-dl"
 
 fi
 
@@ -5217,7 +5217,6 @@ _ACEOF
               ;;
     esac
     MUX_LIBS="-lmux"
-    DL_LIB="-ldl"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -5228,7 +5227,6 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
-LIBS=$LIBS_SAVE
 
 
 
