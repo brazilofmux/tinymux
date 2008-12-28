@@ -848,7 +848,7 @@ FUNCTION(fun_trunc)
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        safe_tprintf_str(buff, bufc, T("%.0f"), rIntegerPart);
+        fval(buff, bufc, rIntegerPart);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
@@ -1577,7 +1577,7 @@ FUNCTION(fun_floor)
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        safe_tprintf_str(buff, bufc, T("%.0f"), r);
+        fval(buff, bufc, r);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
@@ -1606,7 +1606,7 @@ FUNCTION(fun_ceil)
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        safe_tprintf_str(buff, bufc, T("%.0f"), r);
+        fval(buff, bufc, r);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
