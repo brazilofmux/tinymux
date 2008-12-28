@@ -4952,9 +4952,9 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(count) UTF8 *buff, __in size_t count,
     size_t len;
 #if defined(WIN32)
 #if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
-    int cc = vsnprintf_s((char *)buff, count, _TRUNCATE, fmt, va);
+    int cc = vsnprintf_s((char *)buff, count, _TRUNCATE, (char *)fmt, va);
 #else // _MSC_VER
-    int cc = _vsnprintf((char *)buff, count, fmt, va);
+    int cc = _vsnprintf((char *)buff, count, (char *)fmt, va);
 #endif // _MSC_VER
 #else // WIN32
 #ifdef NEED_VSPRINTF_DCL
