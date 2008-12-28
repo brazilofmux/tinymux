@@ -556,7 +556,7 @@ FUNCTION(fun_lastcreate)
         if (i == iObjectPosition)
         {
             dbref jLastCreated = mux_atol(ptr);
-            safe_tprintf_str(buff, bufc, "#%d", jLastCreated);
+            safe_tprintf_str(buff, bufc, T("#%d"), jLastCreated);
             break;
         }
     }

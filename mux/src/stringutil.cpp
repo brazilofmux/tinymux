@@ -4921,7 +4921,7 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, va_list va)
 {
     // From the manuals:
     //
@@ -4961,7 +4961,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_lis
     extern char *vsprintf(char *, char *, va_list);
 #endif // NEED_VSPRINTF_DCL
 
-    int cc = vsnprintf((char *)buff, count, fmt, va);
+    int cc = vsnprintf((char *)buff, count, (char *)fmt, va);
 #endif // WIN32
     if (0 <= cc && static_cast<size_t>(cc) <= count-1)
     {
@@ -4984,7 +4984,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_lis
     return len;
 }
 
-void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const char *fmt, ...)
+void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -5194,7 +5194,7 @@ CF_HAND(cf_art_rule)
     }
     if (*pCurrent == '\0')
     {
-        cf_log_syntax(player, cmd, "No article or regexp specified.");
+        cf_log_syntax(player, cmd, T("No article or regexp specified."));
         return -1;
     }
 
@@ -5223,7 +5223,7 @@ CF_HAND(cf_art_rule)
     if (!bOkay)
     {
         *pCurrent = '\0';
-        cf_log_syntax(player, cmd, "Invalid article \xE2\x80\x98%s\xE2\x80\x99.", pArticle);
+        cf_log_syntax(player, cmd, T("Invalid article \xE2\x80\x98%s\xE2\x80\x99."), pArticle);
         return -1;
     }
 
@@ -5234,7 +5234,7 @@ CF_HAND(cf_art_rule)
 
     if (*pCurrent == '\0')
     {
-        cf_log_syntax(player, cmd, "No regexp specified.");
+        cf_log_syntax(player, cmd, T("No regexp specified."));
         return -1;
     }
 
@@ -5243,7 +5243,7 @@ CF_HAND(cf_art_rule)
     pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, NULL);
     if (!reNewRegexp)
     {
-        cf_log_syntax(player, cmd, "Error processing regexp \xE2\x80\x98%s\xE2\x80\x99:.",
+        cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99:."),
               pCurrent, errptr);
         return -1;
     }
@@ -5279,7 +5279,7 @@ CF_HAND(cf_art_rule)
         {
             MEMFREE(study);
         }
-        cf_log_syntax(player, cmd, "Out of memory.");
+        cf_log_syntax(player, cmd, T("Out of memory."));
         return -1;
     }
 

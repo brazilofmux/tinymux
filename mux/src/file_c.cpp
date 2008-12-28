@@ -128,7 +128,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
         //
         STARTLOG(LOG_PROBLEMS, "FIL", "OPEN");
         buff = alloc_mbuf("fcache_read.LOG");
-        mux_sprintf(buff, MBUF_SIZE, "Couldn\xE2\x80\x99t open file \xE2\x80\x98%s\xE2\x80\x99.", filename);
+        mux_sprintf(buff, MBUF_SIZE, T("Couldn\xE2\x80\x99t open file \xE2\x80\x98%s\xE2\x80\x99."), filename);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG

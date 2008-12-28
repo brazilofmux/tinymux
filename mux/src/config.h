@@ -46,6 +46,7 @@
 #define __deref_inout
 #define __deref_out
 #define __in
+#define __in_z
 #define __in_ecount(n)
 #define __in_opt
 #define __inout

@@ -29,7 +29,7 @@ static UTF8 *unparse_object_quiet(dbref player, dbref loc)
 
     static UTF8 buf[SBUF_SIZE];
 
-    mux_sprintf(buf, SBUF_SIZE, "(#%d)", loc);
+    mux_sprintf(buf, SBUF_SIZE, T("(#%d)"), loc);
     return buf;
 }
 
@@ -142,7 +142,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
 
                 default:
 
-                    safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
+                    safe_tprintf_str(boolexp_buf, &buftop, T("#%d"), b->thing);
                     break;
                 }
                 break;
@@ -162,7 +162,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
 
                 default:
 
-                    safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
+                    safe_tprintf_str(boolexp_buf, &buftop, T("#%d"), b->thing);
                     break;
                 }
             }

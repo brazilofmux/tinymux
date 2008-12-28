@@ -356,7 +356,7 @@ void do_rxlevel
     // Set the Rx Level.
     //
     UTF8 *buff = alloc_lbuf("do_rxlevel");
-    mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
+    mux_sprintf(buff, LBUF_SIZE, T("%08X %08X"), RxLevel(thing) & andmask | ormask, TxLevel(thing));
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
 }
@@ -458,7 +458,7 @@ void do_txlevel
     // Set the Tx Level.
     //
     UTF8 *buff = alloc_lbuf("do_rxlevel");
-    mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing), TxLevel(thing) & andmask | ormask);
+    mux_sprintf(buff, LBUF_SIZE, T("%08X %08X"), RxLevel(thing), TxLevel(thing) & andmask | ormask);
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
 }
@@ -471,11 +471,11 @@ void do_txlevel
 void decompile_rlevels(dbref player, dbref thing, UTF8 *thingname)
 {
     UTF8 *buf = rxlevel_description(player, thing);
-    notify(player, tprintf("@rxlevel %s=%s", thingname, buf));
+    notify(player, tprintf(T("@rxlevel %s=%s"), thingname, buf));
     free_mbuf(buf);
 
     buf = txlevel_description(player, thing);
-    notify(player, tprintf("@txlevel %s=%s", thingname, buf));
+    notify(player, tprintf(T("@txlevel %s=%s"), thingname, buf));
     free_mbuf(buf);
 }
 
@@ -796,7 +796,7 @@ void did_it_rlevel
                 else
                 {
                     notify_except2_rlevel2(loc, player, player, thing,
-                        tprintf("%s %s", Name(player), buff));
+                        tprintf(T("%s %s"), Name(player), buff));
                 }
             }
             free_lbuf(buff);
@@ -810,7 +810,7 @@ void did_it_rlevel
             else
             {
                 notify_except2_rlevel2(loc, player, player, thing,
-                    tprintf("%s %s", Name(player), odef));
+                    tprintf(T("%s %s"), Name(player), odef));
             }
         }
         free_lbuf(d);
@@ -827,7 +827,7 @@ void did_it_rlevel
         else
         {
             notify_except2_rlevel2(loc, player, player, thing,
-                tprintf("%s %s", Name(player), odef));
+                tprintf(T("%s %s"), Name(player), odef));
         }
     }
 

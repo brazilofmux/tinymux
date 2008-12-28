@@ -82,7 +82,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, UTF8 pTopic[TOPIC_NAME_
         if (  0 < nLine
            && '\n' != Line[nLine - 1])
         {
-            Log.tinyprintf("HelpIndex_Read, line %d: line too long" ENDLINE, lineno);
+            Log.tinyprintf(T("HelpIndex_Read, line %d: line too long" ENDLINE), lineno);
         }
     }
 
@@ -130,7 +130,7 @@ static void helpindex_read(int iHelpfile)
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     UTF8 szTextFilename[SBUF_SIZE+8];
-    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt",
+    mux_sprintf(szTextFilename, sizeof(szTextFilename), T("%s.txt"),
         mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     FILE *fp;
@@ -138,7 +138,7 @@ static void helpindex_read(int iHelpfile)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         UTF8 *p = alloc_lbuf("helpindex_read.LOG");
-        mux_sprintf(p, LBUF_SIZE, "Can\xE2\x80\x99t open %s for reading.", szTextFilename);
+        mux_sprintf(p, LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
         log_text(p);
         free_lbuf(p);
         ENDLOG;
@@ -191,7 +191,7 @@ static void helpindex_read(int iHelpfile)
                 {
                     MEMFREE(htab_entry->key);
                     htab_entry->key = NULL;
-                    Log.tinyprintf("helpindex_read: duplicate %s entries for %s" ENDLINE,
+                    Log.tinyprintf(T("helpindex_read: duplicate %s entries for %s" ENDLINE),
                         szTextFilename, pCased);
                 }
                 delete htab_entry;
@@ -291,11 +291,11 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, CHashTable *h
 
     if (!matched)
     {
-        notify(executor, tprintf("No entry for \xE2\x80\x98%s\xE2\x80\x99.", topic));
+        notify(executor, tprintf(T("No entry for \xE2\x80\x98%s\xE2\x80\x99."), topic));
     }
     else
     {
-        notify(executor, tprintf("Here are the entries which match \xE2\x80\x98%s\xE2\x80\x99:", topic));
+        notify(executor, tprintf(T("Here are the entries which match \xE2\x80\x98%s\xE2\x80\x99:"), topic));
         *buffp = '\0';
         notify(executor, topic_list);
         free_lbuf(topic_list);
@@ -306,7 +306,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     UTF8 *result)
 {
     UTF8 szTextFilename[SBUF_SIZE+8];
-    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt",
+    mux_sprintf(szTextFilename, sizeof(szTextFilename), T("%s.txt"),
         mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     size_t offset = htab_entry->pos;
@@ -315,7 +315,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         UTF8 *line = alloc_lbuf("ReportTopic.open");
-        mux_sprintf(line, LBUF_SIZE, "Can\xE2\x80\x99t open %s for reading.", szTextFilename);
+        mux_sprintf(line, LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
@@ -327,7 +327,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
         UTF8 *line = alloc_lbuf("ReportTopic.seek");
-        mux_sprintf(line, LBUF_SIZE, "Seek error in file %s.", szTextFilename);
+        mux_sprintf(line, LBUF_SIZE, T("Seek error in file %s."), szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
@@ -445,7 +445,7 @@ static bool ValidateHelpFileIndex(int iHelpfile)
     {
         UTF8 *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");
-        mux_sprintf(buf, MBUF_SIZE, "Unknown help file number: %d", iHelpfile);
+        mux_sprintf(buf, MBUF_SIZE, T("Unknown help file number: %d"), iHelpfile);
         log_text(buf);
         ENDLOG;
         free_mbuf(buf);

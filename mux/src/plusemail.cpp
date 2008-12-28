@@ -324,7 +324,7 @@ UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
 
 // Write a formatted string to a socket.
 //
-static int DCL_CDECL mod_email_sock_printf(SOCKET sock, const char *format, ...)
+static int DCL_CDECL mod_email_sock_printf(SOCKET sock, const UTF8 *format, ...)
 {
     va_list vargs;
     UTF8 mybuf[2*LBUF_SIZE];
@@ -521,7 +521,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if (-1 == result)
     {
-        notify(executor, tprintf("@email: Unable to resolve hostname %s!",
+        notify(executor, tprintf(T("@email: Unable to resolve hostname %s!"),
             pMailServer));
         free_lbuf(addy);
         return;
@@ -566,11 +566,11 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     if ('2' != inputline[0])
     {
         mod_email_sock_close(mailsock);
-        notify(executor, tprintf("@email: Invalid mailserver greeting (%s)",
+        notify(executor, tprintf(T("@email: Invalid mailserver greeting (%s)"),
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "EHLO %s\r\n", ConvertCRLFtoSpace(mudconf.mail_ehlo));
+    mod_email_sock_printf(mailsock, T("EHLO %s\r\n"), ConvertCRLFtoSpace(mudconf.mail_ehlo));
 
     do
     {
@@ -590,11 +590,11 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("@email: Error response on EHLO (%s)",
+        notify(executor, tprintf(T("@email: Error response on EHLO (%s)"),
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", ConvertCRLFtoSpace(mudconf.mail_sendaddr));
+    mod_email_sock_printf(mailsock, T("MAIL FROM:<%s>\r\n"), ConvertCRLFtoSpace(mudconf.mail_sendaddr));
 
     do
     {
@@ -614,11 +614,11 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("@email: Error response on MAIL FROM (%s)",
+        notify(executor, tprintf(T("@email: Error response on MAIL FROM (%s)"),
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", ConvertCRLFtoSpace(addy));
+    mod_email_sock_printf(mailsock, T("RCPT TO:<%s>\r\n"), ConvertCRLFtoSpace(addy));
 
     do
     {
@@ -638,14 +638,14 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("@email: Error response on RCPT TO (%s)",
+        notify(executor, tprintf(T("@email: Error response on RCPT TO (%s)"),
             inputline));
         free_lbuf(body);
         free_lbuf(addy);
         return;
     }
 
-    mod_email_sock_printf(mailsock, "DATA\r\n");
+    mod_email_sock_printf(mailsock, T("DATA\r\n"));
 
     do
     {
@@ -665,7 +665,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if ('3' != inputline[0])
     {
-        notify(executor, tprintf("@email: Error response on DATA (%s)",
+        notify(executor, tprintf(T("@email: Error response on DATA (%s)"),
             inputline));
         free_lbuf(body);
         free_lbuf(addy);
@@ -673,16 +673,16 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     }
 
     UTF8 *pSendName = StringClone(ConvertCRLFtoSpace(mudconf.mail_sendname));
-    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  pSendName, ConvertCRLFtoSpace(mudconf.mail_sendaddr));
+    mod_email_sock_printf(mailsock, T("From: %s <%s>\r\n"),  pSendName, ConvertCRLFtoSpace(mudconf.mail_sendaddr));
     MEMFREE(pSendName);
 
-    mod_email_sock_printf(mailsock, "To: %s\r\n", ConvertCRLFtoSpace(addy));
-    mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", mudstate.short_ver);
-    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", ConvertCRLFtoSpace(subject));
+    mod_email_sock_printf(mailsock, T("To: %s\r\n"), ConvertCRLFtoSpace(addy));
+    mod_email_sock_printf(mailsock, T("X-Mailer: TinyMUX %s\r\n"), mudstate.short_ver);
+    mod_email_sock_printf(mailsock, T("Subject: %s\r\n\r\n"), ConvertCRLFtoSpace(subject));
 
     // The body is encoded to include the CRLF.CRLF at the end.
     //
-    mod_email_sock_printf(mailsock, "%s", EncodeBody(body));
+    mod_email_sock_printf(mailsock, T("%s"), EncodeBody(body));
 
     do
     {
@@ -712,14 +712,14 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("@email: Message rejected (%s)",inputline));
+        notify(executor, tprintf(T("@email: Message rejected (%s)"), inputline));
     }
     else
     {
-        notify(executor, tprintf("@email: Mail sent to %s (%s)", ConvertCRLFtoSpace(addy), &inputline[4]));
+        notify(executor, tprintf(T("@email: Mail sent to %s (%s)"), ConvertCRLFtoSpace(addy), &inputline[4]));
     }
 
-    mod_email_sock_printf(mailsock, "QUIT\n");
+    mod_email_sock_printf(mailsock, T("QUIT\n"));
     mod_email_sock_close(mailsock);
 
     free_lbuf(body);

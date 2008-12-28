@@ -24,7 +24,7 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-UTF8 *DCL_CDECL tprintf(const char *fmt,...)
+UTF8 *DCL_CDECL tprintf(__in_z const UTF8 *fmt,...)
 {
     static UTF8 buff[LBUF_SIZE];
     va_list ap;
@@ -34,7 +34,7 @@ UTF8 *DCL_CDECL tprintf(const char *fmt,...)
     return buff;
 }
 
-void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const char *fmt,...)
+void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, __in_z const UTF8 *fmt,...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -223,12 +223,12 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
     {
         if (player == who)
         {
-            notify(player, tprintf("Sorry, you don\xE2\x80\x99t have enough %s.",
+            notify(player, tprintf(T("Sorry, you don\xE2\x80\x99t have enough %s."),
                        mudconf.many_coins));
         }
         else
         {
-            notify(player, tprintf("Sorry, that player doesn\xE2\x80\x99t have enough %s.",
+            notify(player, tprintf(T("Sorry, that player doesn\xE2\x80\x99t have enough %s."),
                 mudconf.many_coins));
         }
         return false;
@@ -662,12 +662,12 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
 
         if (can_hear)
         {
-            sStr->append_TextPlain(tprintf(" grow%s ears and can now hear.",
+            sStr->append_TextPlain(tprintf(T(" grow%s ears and can now hear."),
                                  (gender == 4) ? "" : "s"));
         }
         else
         {
-            sStr->append_TextPlain(tprintf(" lose%s %s ears and become%s deaf.",
+            sStr->append_TextPlain(tprintf(T(" lose%s %s ears and become%s deaf."),
                                  (gender == 4) ? "" : "s", poss[gender],
                                  (gender == 4) ? "" : "s"));
         }
@@ -886,7 +886,7 @@ void do_addcommand
             if (  nextp->thing == thing
                && nextp->atr == pattr->number)
             {
-                notify(player, tprintf("%s already added.", pName));
+                notify(player, tprintf(T("%s already added."), pName));
                 return;
             }
         }
@@ -944,7 +944,7 @@ void do_addcommand
             // unaliased name, therefore, we want to re-target all the
             // aliases.
             //
-            UTF8 *p = tprintf("__%s", pName);
+            UTF8 *p = tprintf(T("__%s"), pName);
             hashdeleteLEN(p, strlen((char *)p), &mudstate.command_htab);
             hashreplall(old, cmd, &mudstate.command_htab);
             hashaddLEN(p, strlen((char *)p), old, &mudstate.command_htab);
@@ -954,7 +954,7 @@ void do_addcommand
     // We reset the one letter commands here so you can overload them.
     //
     cache_prefix_cmds();
-    notify(player, tprintf("Command %s added.", pName));
+    notify(player, tprintf(T("Command %s added."), pName));
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
@@ -994,12 +994,12 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
                 {
                     pName = ap->name;
                 }
-                notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
+                notify(player, tprintf(T("%s: #%d/%s"), nextp->name, nextp->thing, pName));
             }
         }
         else
         {
-            notify(player, tprintf("%s not found in command table.", pCased));
+            notify(player, tprintf(T("%s not found in command table."), pCased));
         }
         return;
     }
@@ -1026,7 +1026,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
                     {
                         pName = ap->name;
                     }
-                    notify(player, tprintf("%s: #%d/%s", nextp->name,
+                    notify(player, tprintf(T("%s: #%d/%s"), nextp->name,
                         nextp->thing, pName));
                     didit = true;
                 }
@@ -1099,7 +1099,7 @@ void do_delcommand
     if (  old
        && (old->callseq & CS_ADDED))
     {
-        UTF8 *p__Name = tprintf("__%s", pCased);
+        UTF8 *p__Name = tprintf(T("__%s"), pCased);
         size_t n__Name = strlen((char *)p__Name);
 
         if (command[0] == '\0')
@@ -1226,7 +1226,7 @@ void handle_prog(DESC *d, UTF8 *message)
 
         if (d->program_data != NULL)
         {
-            queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
+            queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
 
             if (OPTION_YES == UsState(d, TELNET_EOR))
             {
@@ -1511,7 +1511,7 @@ void do_prog
     {
         d->program_data = program;
 
-        queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
+        queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
 
         if (OPTION_YES == UsState(d, TELNET_EOR))
         {
@@ -1571,9 +1571,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 
 #ifdef SSL_ENABLED
-    raw_broadcast(0, "GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)", Moniker(Owner(executor)));
+    raw_broadcast(0, T("GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"), Moniker(Owner(executor)));
 #else
-    raw_broadcast(0, "GAME: Restart by %s, please wait.", Moniker(Owner(executor)));
+    raw_broadcast(0, T("GAME: Restart by %s, please wait."), Moniker(Owner(executor)));
 #endif
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text(T("Restart by "));
@@ -1659,7 +1659,7 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 #endif // HAVE_WORKING_FORK
 
-    raw_broadcast(0, "GAME: Backing up database. Please wait.");
+    raw_broadcast(0, T("GAME: Backing up database. Please wait."));
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
     log_text(T("Backup by "));
     log_name(executor);
@@ -1670,15 +1670,15 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     // to use it as the flatfile.
     //
     dump_database_internal(DUMP_I_FLAT);
-    system((char *)tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.indb));
+    system((char *)tprintf(T("./_backupflat.sh %s.FLAT 1>&2"), mudconf.indb));
 #else // MEMORY_BASED
     // Invoking _backupflat.sh without an argument prompts the backup script
     // to use dbconvert itself.
     //
     dump_database_internal(DUMP_I_NORMAL);
-    system((char *)tprintf("./_backupflat.sh 1>&2"));
+    system((char *)tprintf(T("./_backupflat.sh 1>&2")));
 #endif // MEMORY_BASED
-    raw_broadcast(0, "GAME: Backup finished.");
+    raw_broadcast(0, T("GAME: Backup finished."));
 }
 #endif // UNIX_PROCESSES
 
@@ -2513,7 +2513,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 else
                 {
                     notify_except2_rlevel(loc, player, player, thing,
-                        tprintf("%s %s", Moniker(player), buff));
+                        tprintf(T("%s %s"), Moniker(player), buff));
                 }
 #else
                 if (aflags & AF_NONAME)
@@ -2523,7 +2523,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 else
                 {
                     notify_except2(loc, player, player, thing,
-                        tprintf("%s %s", Moniker(player), buff));
+                        tprintf(T("%s %s"), Moniker(player), buff));
                 }
 #endif // REALITY_LVLS
             }
@@ -2539,7 +2539,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             else
             {
                 notify_except2_rlevel(loc, player, player, thing,
-                        tprintf("%s %s", Moniker(player), odef));
+                        tprintf(T("%s %s"), Moniker(player), odef));
             }
 #else
             if (ctrl_flags & VERB_NONAME)
@@ -2549,7 +2549,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             else
             {
                 notify_except2(loc, player, player, thing,
-                        tprintf("%s %s", Moniker(player), odef));
+                        tprintf(T("%s %s"), Moniker(player), odef));
             }
 #endif // REALITY_LVLS
         }
@@ -2566,7 +2566,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
         }
         else
         {
-            notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+            notify_except2_rlevel(loc, player, player, thing, tprintf(T("%s %s"), Name(player), odef));
         }
 #else
         if (ctrl_flags & VERB_NONAME)
@@ -2575,7 +2575,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
         }
         else
         {
-            notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+            notify_except2(loc, player, player, thing, tprintf(T("%s %s"), Name(player), odef));
         }
 #endif // REALITY_LVLS
     }
@@ -2823,7 +2823,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
 //
 void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 {
-    Log.tinyprintf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
+    Log.tinyprintf(T("%s(%u): Out of memory." ENDLINE), SourceFile, LineNo);
     Log.Flush();
     if (  !mudstate.bStandAlone
        && mudstate.bCanRestart)
@@ -2841,7 +2841,7 @@ void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 //
 bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
 {
-    Log.tinyprintf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
+    Log.tinyprintf(T("%s(%u): Assertion failed." ENDLINE), SourceFile, LineNo);
     report();
     Log.Flush();
     if (  !mudstate.bStandAlone
@@ -2909,7 +2909,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
             if (!match_found)
             {
                 match_found = true;
-                raw_notify(executor, tprintf("%-12s %-20s %-20s",
+                raw_notify(executor, tprintf(T("%-12s %-20s %-20s"),
                             T("Reference"), T("Target"), T("Owner")));
                 raw_notify(executor,
                         T("-------------------------------------------------------"));
@@ -2918,7 +2918,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
             UTF8 *object_buf =
                 unparse_object(executor, htab_entry->target, false);
 
-            raw_notify(executor, tprintf("%-12s %-20s %-20s", htab_entry->name,
+            raw_notify(executor, tprintf(T("%-12s %-20s %-20s"), htab_entry->name,
                         object_buf, Moniker(htab_entry->owner)));
 
             free_lbuf(object_buf);

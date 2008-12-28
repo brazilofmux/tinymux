@@ -393,19 +393,19 @@ void cf_log_notfound(dbref player, const UTF8 *cmd, const UTF8 *thingname, const
     if (mudstate.bReadingConfiguration)
     {
         STARTLOG(LOG_STARTUP, "CNF", "NFND");
-        Log.tinyprintf("%s: %s %s not found", cmd, thingname, thing);
+        Log.tinyprintf(T("%s: %s %s not found"), cmd, thingname, thing);
         ENDLOG;
     }
     else
     {
-        notify(player, tprintf("%s %s not found", thingname, thing));
+        notify(player, tprintf(T("%s %s not found"), thingname, thing));
     }
 }
 
 // ---------------------------------------------------------------------------
 // cf_log_syntax: Log a syntax error.
 //
-void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const char *fmt, ...)
+void DCL_CDECL cf_log_syntax(dbref player, __in_z UTF8 *cmd, __in_z const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -450,7 +450,7 @@ static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int fai
         {
             STARTLOG(LOG_STARTUP, "CNF", "NDATA")
             buff = alloc_lbuf("cf_status_from_succfail.LOG");
-            mux_sprintf(buff, LBUF_SIZE, "%s: Nothing to set", cmd);
+            mux_sprintf(buff, LBUF_SIZE, T("%s: Nothing to set"), cmd);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG
@@ -534,7 +534,7 @@ static CF_HAND(cf_int_array)
 
     if (NULL == aPorts)
     {
-        cf_log_syntax(player, cmd, "Out of memory.");
+        cf_log_syntax(player, cmd, T("Out of memory."));
         return -1;
     }
 
@@ -568,7 +568,7 @@ static CF_HAND(cf_int_array)
 
         if (NULL == q)
         {
-            cf_log_syntax(player, cmd, "Out of memory.");
+            cf_log_syntax(player, cmd, T("Out of memory."));
             return -1;
         }
 
@@ -720,7 +720,7 @@ static CF_HAND(cf_string)
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
-            Log.tinyprintf("%s: String truncated", cmd);
+            Log.tinyprintf(T("%s: String truncated"), cmd);
             ENDLOG;
         }
         else
@@ -778,7 +778,7 @@ static CF_HAND(cf_string_dyn)
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
-            Log.tinyprintf("%s: String truncated", cmd);
+            Log.tinyprintf(T("%s: String truncated"), cmd);
             ENDLOG;
         }
         else
@@ -1490,13 +1490,13 @@ static CF_HAND(cf_site)
         }
         if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
         {
-            cf_log_syntax(player, cmd, "Missing host address or mask.", "");
+            cf_log_syntax(player, cmd, T("Missing host address or mask."));
             return -1;
         }
         if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
            || !isValidSubnetMask(ulMask = ntohl(ulNetBits)))
         {
-            cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
+            cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
             return -1;
         }
         mask_num.s_addr = ulNetBits;
@@ -1509,14 +1509,14 @@ static CF_HAND(cf_site)
         *mask_txt++ = '\0';
         if (!is_integer(mask_txt, NULL))
         {
-            cf_log_syntax(player, cmd, "Mask field (%s) in CIDR IP prefix is not numeric.", mask_txt);
+            cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
             return -1;
         }
         int mask_bits = mux_atol(mask_txt);
         if (  mask_bits < 0
            || 32 < mask_bits)
         {
-            cf_log_syntax(player, cmd, "Mask bits (%d) in CIDR IP prefix out of range.", mask_bits);
+            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), mask_bits);
             return -1;
         }
         else
@@ -1533,7 +1533,7 @@ static CF_HAND(cf_site)
     }
     if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
     {
-        cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
+        cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
         return -1;
     }
     addr_num.s_addr = ulNetBits;
@@ -1546,7 +1546,7 @@ static CF_HAND(cf_site)
         // interfere with the subnet tests in site_check. The subnet spec
         // would be defunct and useless.
         //
-        cf_log_syntax(player, cmd, "Non-zero host address bits outside the subnet mask (fixed): %s %s", addr_txt, mask_txt);
+        cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
         ulAddr &= ulMask;
         addr_num.s_addr = htonl(ulAddr);
     }
@@ -1567,7 +1567,7 @@ static CF_HAND(cf_site)
 
     if (NULL == site)
     {
-        cf_log_syntax(player, cmd, "Out of memory.");
+        cf_log_syntax(player, cmd, T("Out of memory."));
         return -1;
     }
 
@@ -1623,20 +1623,20 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
     UTF8 *pBase = mux_strtok_parse(&tts);
     if (pBase == NULL)
     {
-        cf_log_syntax(player, cmd, "Missing path for helpfile %s", pCmdName);
+        cf_log_syntax(player, cmd, T("Missing path for helpfile %s"), pCmdName);
         return -1;
     }
     if (  pCmdName[0] == '_'
        && pCmdName[1] == '_')
     {
         cf_log_syntax(player, cmd,
-            "Helpfile %s would conflict with the use of @addcommand.",
+            T("Helpfile %s would conflict with the use of @addcommand."),
             pCmdName);
         return -1;
     }
     if (SBUF_SIZE <= strlen((char *)pBase))
     {
-        cf_log_syntax(player, cmd, "Helpfile \xE2\x80\x98%s\xE2\x80\x99 filename too long", pBase);
+        cf_log_syntax(player, cmd, T("Helpfile \xE2\x80\x98%s\xE2\x80\x99 filename too long"), pBase);
         return -1;
     }
 
@@ -1657,7 +1657,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
 
         if (NULL == mudstate.aHelpDesc)
         {
-            cf_log_syntax(player, cmd, "Out of memory.");
+            cf_log_syntax(player, cmd, T("Out of memory."));
             return -1;
         }
     }
@@ -1676,7 +1676,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
 
         if (NULL == mudstate.aHelpDesc)
         {
-            cf_log_syntax(player, cmd, "Out of memory.");
+            cf_log_syntax(player, cmd, T("Out of memory."));
             return -1;
         }
 
@@ -1726,7 +1726,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
         hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
         hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
 
-        p = tprintf("__%s", cmdp->cmdname);
+        p = tprintf(T("__%s"), cmdp->cmdname);
         hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
         hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
     }
@@ -1854,7 +1854,7 @@ static CF_HAND(cf_module)
 
     if (NULL == modname)
     {
-        cf_log_syntax(player, cmd, "Module name is missing.");
+        cf_log_syntax(player, cmd, T("Module name is missing."));
         return -1;
     }
 
@@ -1873,7 +1873,7 @@ static CF_HAND(cf_module)
     }
     else
     {
-        cf_log_syntax(player, cmd, "load type is invalid.");
+        cf_log_syntax(player, cmd, T("load type is invalid."));
         return -1;
     }
 
@@ -1881,13 +1881,13 @@ static CF_HAND(cf_module)
     if (  NULL == mudstate.pISlaveControl
        && eLocal == eType)
     {
-        cf_log_syntax(player, cmd, "No StubSlave management interface available.");
+        cf_log_syntax(player, cmd, T("No StubSlave management interface available."));
         return -1;
     }
 #else // STUB_SLAVE
     if (eLocal == eType)
     {
-        cf_log_syntax(player, cmd, "StubSlave is not enabled.");
+        cf_log_syntax(player, cmd, T("StubSlave is not enabled."));
         return -1;
     }
 #endif // STUB_SLAVE
@@ -1911,10 +1911,10 @@ static CF_HAND(cf_module)
         UTF8 *buffer = alloc_lbuf("cf_module");
 #if defined(WINDOWS_FILES)
         size_t n;
-        mux_sprintf(buffer, LBUF_SIZE, ".\\bin\\%s.dll", str);
+        mux_sprintf(buffer, LBUF_SIZE, T(".\\bin\\%s.dll"), str);
         UTF16 *filename = ConvertFromUTF8ToUTF16(buffer, &n);
 #elif defined(UNIX_FILES)
-        mux_sprintf(buffer, LBUF_SIZE, "./bin/%s.so", str);
+        mux_sprintf(buffer, LBUF_SIZE, T("./bin/%s.so"), str);
         UTF8 *filename = buffer;
 #endif
         if (eInProc == eType)

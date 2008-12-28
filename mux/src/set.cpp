@@ -231,7 +231,7 @@ void do_name
         ENDLOG;
         if (Suspect(thing))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s renamed to %s", Name(thing), buff);
+            raw_broadcast(WIZARD, T("[Suspect] %s renamed to %s"), Name(thing), buff);
         }
         delete_player_name(thing, Name(thing), false);
         s_Name(thing, buff);
@@ -1075,7 +1075,7 @@ void do_chown
         if (ROYALTY & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/nostrip on %s(#%d) leaves ROYALTY priviledge intact.",
+                tprintf(T("Warning: @chown/nostrip on %s(#%d) leaves ROYALTY priviledge intact."),
                 Moniker(thing), thing));
         }
 
@@ -1084,7 +1084,7 @@ void do_chown
         if (INHERIT & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/nostrip on %s(#%d) leaves INHERIT priviledge intact.",
+                tprintf(T("Warning: @chown/nostrip on %s(#%d) leaves INHERIT priviledge intact."),
                 Moniker(thing), thing));
         }
 
@@ -1093,9 +1093,9 @@ void do_chown
             UTF8 *buff = alloc_lbuf("do_chown.notify");
             UTF8 *bp = buff;
 
-            safe_tprintf_str(buff, &bp, "Owner of %s(#%d) changed from ", Moniker(thing), thing);
-            safe_tprintf_str(buff, &bp, "%s(#%d) to ", Moniker(nOwnerOrig), nOwnerOrig);
-            safe_tprintf_str(buff, &bp, "%s(#%d).", Moniker(nOwnerNew), nOwnerNew);
+            safe_tprintf_str(buff, &bp, T("Owner of %s(#%d) changed from "), Moniker(thing), thing);
+            safe_tprintf_str(buff, &bp, T("%s(#%d) to "), Moniker(nOwnerOrig), nOwnerOrig);
+            safe_tprintf_str(buff, &bp, T("%s(#%d)."), Moniker(nOwnerNew), nOwnerNew);
             *bp = '\0';
             notify_quiet(executor, buff);
             free_lbuf(buff);
@@ -1501,13 +1501,13 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         int anum = mkattr(executor, args[i]);
         if (anum <= 0)
         {
-            notify_quiet(executor, tprintf("%s: That\xE2\x80\x99s not a good name for an attribute.", args[i]));
+            notify_quiet(executor, tprintf(T("%s: That\xE2\x80\x99s not a good name for an attribute."), args[i]));
             continue;
         }
         ATTR *out_attr = atr_num(anum);
         if (!out_attr)
         {
-            notify_quiet(executor, tprintf("%s: Permission denied.", args[i]));
+            notify_quiet(executor, tprintf(T("%s: Permission denied."), args[i]));
         }
         else if (out_attr->number == in_anum)
         {
@@ -1520,7 +1520,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         {
             if (!bCanSetAttr(executor, thing, out_attr))
             {
-                notify_quiet(executor, tprintf("%s: Permission denied.", args[i]));
+                notify_quiet(executor, tprintf(T("%s: Permission denied."), args[i]));
             }
             else
             {
@@ -1528,7 +1528,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                 atr_add(thing, out_attr->number, astr, Owner(executor), aflags);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, tprintf("%s: Set.", out_attr->name));
+                    notify_quiet(executor, tprintf(T("%s: Set."), out_attr->name));
                 }
             }
         }
@@ -1541,7 +1541,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     {
         if (in_attr)
         {
-            notify_quiet(executor, tprintf("%s: Not copied anywhere. Not cleared.", in_attr->name));
+            notify_quiet(executor, tprintf(T("%s: Not copied anywhere. Not cleared."), in_attr->name));
         }
         else
         {
@@ -1559,13 +1559,13 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                 atr_clr(thing, in_attr->number);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, tprintf("%s: Cleared.", in_attr->name));
+                    notify_quiet(executor, tprintf(T("%s: Cleared."), in_attr->name));
                 }
             }
             else
             {
                 notify_quiet(executor,
-                    tprintf("%s: Could not remove old attribute.  Permission denied.",
+                    tprintf(T("%s: Could not remove old attribute.  Permission denied."),
                     in_attr->name));
             }
         }
@@ -1840,7 +1840,7 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
         }
 
         *dst = replace_string(from, to, src);
-        *returnstr = replace_string(from, tprintf("%s%s%s", COLOR_INTENSE,
+        *returnstr = replace_string(from, tprintf(T("%s%s%s"), COLOR_INTENSE,
                              to, COLOR_RESET), src);
     }
 }
@@ -1906,7 +1906,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
                 atr_add(thing, ap->number, result, Owner(executor), aflags);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, tprintf("Set - %s: %s", ap->name,
+                    notify_quiet(executor, tprintf(T("Set - %s: %s"), ap->name,
                                  returnstr));
                 }
                 free_lbuf(result);
@@ -1916,7 +1916,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
             {
                 // No rights to change the attr.
                 //
-                notify_quiet(executor, tprintf("%s: Permission denied.", ap->name));
+                notify_quiet(executor, tprintf(T("%s: Permission denied."), ap->name));
             }
 
         }
@@ -2101,8 +2101,8 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     {
         df_use = alloc_lbuf("do_use.use");
         df_ouse = alloc_lbuf("do_use.ouse");
-        mux_sprintf(df_use, LBUF_SIZE, "You use %s", Moniker(thing));
-        mux_sprintf(df_ouse, LBUF_SIZE, "uses %s", Moniker(thing));
+        mux_sprintf(df_use, LBUF_SIZE, T("You use %s"), Moniker(thing));
+        mux_sprintf(df_ouse, LBUF_SIZE, T("uses %s"), Moniker(thing));
         did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE, 0,
             NULL, 0);
         free_lbuf(df_use);

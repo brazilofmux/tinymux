@@ -444,16 +444,16 @@ void do_toad
     buf = alloc_mbuf("do_toad");
     const UTF8 *pVictimMoniker = Moniker(victim);
     const UTF8 *pVictimName = Name(victim);
-    mux_sprintf(buf, MBUF_SIZE, "%s has been turned into a slimy toad!",
+    mux_sprintf(buf, MBUF_SIZE, T("%s has been turned into a slimy toad!"),
         pVictimMoniker);
     notify_except2(loc, executor, victim, executor, buf);
-    mux_sprintf(buf, MBUF_SIZE, "You toaded %s! (%d objects @chowned)",
+    mux_sprintf(buf, MBUF_SIZE, T("You toaded %s! (%d objects @chowned)"),
         pVictimMoniker, count + 1);
     notify_quiet(executor, buf);
 
     // Zap the name from the name hash table.
     //
-    mux_sprintf(buf, MBUF_SIZE, "a slimy toad named %s", pVictimMoniker);
+    mux_sprintf(buf, MBUF_SIZE, T("a slimy toad named %s"), pVictimMoniker);
     delete_player_name(victim, pVictimName, false);
     s_Name(victim, buf);
     free_mbuf(buf);
@@ -472,7 +472,7 @@ void do_toad
     //
     ReleaseAllResources(victim);
 
-    buf = tprintf("%d connection%s closed.", count, (count == 1 ? "" : "s"));
+    buf = tprintf(T("%d connection%s closed."), count, (count == 1 ? "" : "s"));
     notify_quiet(executor, buf);
 }
 
@@ -551,7 +551,7 @@ void do_newpassword
     notify_quiet(executor, T("Password changed."));
     UTF8 *buf = alloc_lbuf("do_newpassword");
     UTF8 *bp = buf;
-    safe_tprintf_str(buf, &bp, "Your password has been changed by %s.", Moniker(executor));
+    safe_tprintf_str(buf, &bp, T("Your password has been changed by %s."), Moniker(executor));
     notify_quiet(victim, buf);
     free_lbuf(buf);
 }
@@ -584,7 +584,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
-        log_printf("Port %d", victim);
+        log_printf(T("Port %d"), victim);
         log_text(T(" was @booted by "));
         log_name(executor);
         ENDLOG;
@@ -617,7 +617,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         log_text(T(" was @booted by "));
         log_name(executor);
         ENDLOG;
-        notify_quiet(executor, tprintf("You booted %s off!", Moniker(victim)));
+        notify_quiet(executor, tprintf(T("You booted %s off!"), Moniker(victim)));
     }
 
     const UTF8 *buf;
@@ -627,7 +627,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     }
     else
     {
-        buf = tprintf("%s gently shows you the door.", Moniker(executor));
+        buf = tprintf(T("%s gently shows you the door."), Moniker(executor));
     }
 
     if (key & BOOT_PORT)
@@ -638,7 +638,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         count = boot_off(victim, buf);
     }
-    notify_quiet(executor, tprintf("%d connection%s closed.", count, (count == 1 ? "" : "s")));
+    notify_quiet(executor, tprintf(T("%d connection%s closed."), count, (count == 1 ? "" : "s")));
 }
 
 // ---------------------------------------------------------------------------
@@ -767,13 +767,13 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                 fcache_send(executor, FC_WIZMOTD);
                 notify_quiet(executor, T("----- motd messages -----"));
             }
-            notify_quiet(executor, tprintf("MOTD: %s", mudconf.motd_msg));
+            notify_quiet(executor, tprintf(T("MOTD: %s"), mudconf.motd_msg));
             notify_quiet( executor,
-                          tprintf("Wizard MOTD: %s", mudconf.wizmotd_msg) );
+                          tprintf(T("Wizard MOTD: %s"), mudconf.wizmotd_msg) );
             notify_quiet( executor,
-                          tprintf("Down MOTD: %s", mudconf.downmotd_msg) );
+                          tprintf(T("Down MOTD: %s"), mudconf.downmotd_msg) );
             notify_quiet( executor,
-                          tprintf("Full MOTD: %s", mudconf.fullmotd_msg) );
+                          tprintf(T("Full MOTD: %s"), mudconf.fullmotd_msg) );
         }
         else
         {

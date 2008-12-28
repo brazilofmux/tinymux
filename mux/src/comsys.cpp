@@ -69,11 +69,11 @@ void save_comsys(UTF8 *filename)
 {
     UTF8 buffer[500];
 
-    mux_sprintf(buffer, sizeof(buffer), "%s.#", filename);
+    mux_sprintf(buffer, sizeof(buffer), T("%s.#"), filename);
     FILE *fp;
     if (!mux_fopen(&fp, buffer, T("wb")))
     {
-        Log.tinyprintf("Unable to open %s for writing." ENDLINE, buffer);
+        Log.tinyprintf(T("Unable to open %s for writing." ENDLINE), buffer);
         return;
     }
     DebugTotalFiles++;
@@ -344,7 +344,7 @@ void add_comsys(comsys_t *c)
 {
     if (c->who < 0 || c->who >= mudstate.db_top)
     {
-        Log.tinyprintf("add_comsys: dbref %d out of range [0, %d)" ENDLINE,
+        Log.tinyprintf(T("add_comsys: dbref %d out of range [0, %d)" ENDLINE),
                 c->who, mudstate.db_top);
         return;
     }
@@ -359,7 +359,7 @@ void del_comsys(dbref who)
 {
     if (who < 0 || who >= mudstate.db_top)
     {
-        Log.tinyprintf("del_comsys: dbref %d out of range [0, %d)" ENDLINE,
+        Log.tinyprintf(T("del_comsys: dbref %d out of range [0, %d)" ENDLINE),
                 who, mudstate.db_top);
         return;
     }
@@ -588,11 +588,11 @@ void load_comsystem_V4(FILE *fp)
 
                 if (!Good_dbref(t_user.who))
                 {
-                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)." ENDLINE, t_user.who, mudstate.db_top);
+                    Log.tinyprintf(T("load_comsystem: dbref %d out of range [0, %d)." ENDLINE), t_user.who, mudstate.db_top);
                 }
                 else if (isGarbage(t_user.who))
                 {
-                    Log.tinyprintf("load_comsystem: dbref is GARBAGE." ENDLINE, t_user.who);
+                    Log.tinyprintf(T("load_comsystem: dbref is GARBAGE." ENDLINE), t_user.who);
                 }
                 else
                 {
@@ -786,12 +786,12 @@ void load_comsystem_V0123(FILE *fp)
             //
             if (ch->type & CHANNEL_PUBLIC)
             {
-                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", COLOR_FG_CYAN, COLOR_INTENSE,
+                mux_sprintf(temp, sizeof(temp), T("%s[%s%s%s%s%s]%s"), COLOR_FG_CYAN, COLOR_INTENSE,
                     COLOR_FG_BLUE, ch->name, COLOR_RESET, COLOR_FG_CYAN, COLOR_RESET);
             }
             else
             {
-                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", COLOR_FG_MAGENTA, COLOR_INTENSE,
+                mux_sprintf(temp, sizeof(temp), T("%s[%s%s%s%s%s]%s"), COLOR_FG_MAGENTA, COLOR_INTENSE,
                     COLOR_FG_RED, ch->name, COLOR_RESET, COLOR_FG_MAGENTA,
                     COLOR_RESET);
             }
@@ -852,11 +852,11 @@ void load_comsystem_V0123(FILE *fp)
 
                 if (!Good_dbref(t_user.who))
                 {
-                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)." ENDLINE, t_user.who, mudstate.db_top);
+                    Log.tinyprintf(T("load_comsystem: dbref %d out of range [0, %d)." ENDLINE), t_user.who, mudstate.db_top);
                 }
                 else if (isGarbage(t_user.who))
                 {
-                    Log.tinyprintf("load_comsystem: dbref is GARBAGE." ENDLINE, t_user.who);
+                    Log.tinyprintf(T("load_comsystem: dbref is GARBAGE." ENDLINE), t_user.who);
                 }
                 else
                 {
@@ -966,7 +966,7 @@ void load_channels_V4(FILE *fp)
         }
         else
         {
-            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
+            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), c->who);
         }
         purge_comsystem();
     }
@@ -1032,7 +1032,7 @@ void load_channels_V0123(FILE *fp)
         }
         else
         {
-            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
+            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), c->who);
         }
         purge_comsystem();
     }
@@ -1048,7 +1048,7 @@ void load_comsys_V4(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE);
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE));
         return;
     }
 
@@ -1059,7 +1059,7 @@ void load_comsys_V4(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE);
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE));
         return;
     }
 }
@@ -1074,7 +1074,7 @@ void load_comsys_V0123(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE);
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE));
         return;
     }
 
@@ -1085,7 +1085,7 @@ void load_comsys_V0123(FILE *fp)
     }
     else
     {
-        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE);
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE));
         return;
     }
 }
@@ -1105,16 +1105,16 @@ void load_comsys(UTF8 *filename)
     FILE *fp;
     if (!mux_fopen(&fp, filename, T("rb")))
     {
-        Log.tinyprintf("Error: Couldn\xE2\x80\x99t find %s." ENDLINE, filename);
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find %s." ENDLINE), filename);
     }
     else
     {
         DebugTotalFiles++;
-        Log.tinyprintf("LOADING: %s" ENDLINE, filename);
+        Log.tinyprintf(T("LOADING: %s" ENDLINE), filename);
         int ch = getc(fp);
         if (EOF == ch)
         {
-            Log.tinyprintf("Error: Couldn\xE2\x80\x99t read first byte.");
+            Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t read first byte."));
         }
         else
         {
@@ -1148,7 +1148,7 @@ void load_comsys(UTF8 *filename)
             DebugTotalFiles--;
         }
 
-        Log.tinyprintf("LOADING: %s (done)" ENDLINE, filename);
+        Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), filename);
     }
 }
 
@@ -1420,7 +1420,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     struct channel *ch = select_channel(arg1);
     if (!ch)
     {
-        raw_notify(player, tprintf("Unknown channel %s.", arg1));
+        raw_notify(player, tprintf(T("Unknown channel %s."), arg1));
         return;
     }
     struct comuser *user = select_user(ch, player);
@@ -1449,7 +1449,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     }
     else if (!user->bUserIsOn)
     {
-        raw_notify(player, tprintf("You must be on %s to do that.", arg1));
+        raw_notify(player, tprintf(T("You must be on %s to do that."), arg1));
         return;
     }
     else if (!strcmp((char *)arg2, "who"))
@@ -1479,7 +1479,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     {
         if (!payfor(player, Guest(player) ? 0 : ch->charge))
         {
-            raw_notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
+            raw_notify(player, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
             return;
         }
         else
@@ -1565,7 +1565,7 @@ void SendChannelMessage
                 atr_add(ch->chan_obj, pattr->number, mux_ltoa_t(logmax), GOD,
                     AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
-            UTF8 *p = tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
+            UTF8 *p = tprintf(T("HISTORY_%d"), iMod(ch->num_messages, logmax));
             int atr = mkattr(GOD, p);
             if (0 < atr)
             {
@@ -1579,7 +1579,7 @@ void SendChannelMessage
                     // Save message in history with timestamp.
                     //
                     UTF8 temp[LBUF_SIZE];
-                    mux_sprintf(temp, sizeof(temp), "[%s] %s", ltaNow.ReturnDateString(0), msgNormal);
+                    mux_sprintf(temp, sizeof(temp), T("[%s] %s"), ltaNow.ReturnDateString(0), msgNormal);
                     atr_add(ch->chan_obj, atr, temp, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
                 }
                 else
@@ -1650,7 +1650,7 @@ void do_joinchannel(dbref player, struct channel *ch)
     {
         if (ch->num_users >= MAX_USERS_PER_CHANNEL)
         {
-            raw_notify(player, tprintf("Too many people on channel %s already.",
+            raw_notify(player, tprintf(T("Too many people on channel %s already."),
                         ch->name));
             return;
         }
@@ -1704,7 +1704,7 @@ void do_joinchannel(dbref player, struct channel *ch)
     }
     else
     {
-        raw_notify(player, tprintf("You are already on channel %s.", ch->name));
+        raw_notify(player, tprintf(T("You are already on channel %s."), ch->name));
         return;
     }
 
@@ -1724,7 +1724,7 @@ void do_joinchannel(dbref player, struct channel *ch)
 void do_leavechannel(dbref player, struct channel *ch)
 {
     struct comuser *user = select_user(ch, player);
-    raw_notify(player, tprintf("You have left channel %s.", ch->name));
+    raw_notify(player, tprintf(T("You have left channel %s."), ch->name));
 
     if (user->bUserIsOn)
     {
@@ -1760,11 +1760,11 @@ static void do_comwho_line
             buff = unparse_object(player, user->who, false);
             if (ch->type & CHANNEL_SPOOF)
             {
-                msg = tprintf("%s as %s", buff, user->title);
+                msg = tprintf(T("%s as %s"), buff, user->title);
             }
             else
             {
-                msg = tprintf("%s as %s %s", buff, user->title, buff);
+                msg = tprintf(T("%s as %s %s"), buff, user->title, buff);
             }
         }
         else
@@ -1776,7 +1776,7 @@ static void do_comwho_line
             else
             {
                 buff = unparse_object(player, user->who, false);
-                msg = tprintf("%s %s", user->title, buff);
+                msg = tprintf(T("%s %s"), user->title, buff);
             }
         }
     }
@@ -1834,7 +1834,7 @@ void do_comwho(dbref player, struct channel *ch)
             }
         }
     }
-    raw_notify(player, tprintf("-- %s --", ch->name));
+    raw_notify(player, tprintf(T("-- %s --"), ch->name));
 }
 
 void do_comlast(dbref player, struct channel *ch, int arg)
@@ -1882,12 +1882,12 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     UTF8 *message;
     int histnum = ch->num_messages - arg;
 
-    raw_notify(player, tprintf("%s -- Begin Comsys Recall --", ch->header));
+    raw_notify(player, tprintf(T("%s -- Begin Comsys Recall --"), ch->header));
 
     for (int count = 0; count < arg; count++)
     {
         histnum++;
-        pattr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
+        pattr = atr_str(tprintf(T("HISTORY_%d"), iMod(histnum, logmax)));
         if (pattr)
         {
             message = atr_get("do_comlast.1436", obj, pattr->number,
@@ -1897,7 +1897,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
         }
     }
 
-    raw_notify(player, tprintf("%s -- End Comsys Recall --", ch->header));
+    raw_notify(player, tprintf(T("%s -- End Comsys Recall --"), ch->header));
 }
 
 // Turn channel history timestamping on or off for the given channel.
@@ -1998,7 +1998,7 @@ static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
     {
         for (int count = 0; count <= oldnum; count++)
         {
-            ATTR *hist = atr_str(tprintf("HISTORY_%d", count));
+            ATTR *hist = atr_str(tprintf(T("HISTORY_%d"), count));
             if (hist)
             {
                 atr_clr(ch->chan_obj, hist->number);
@@ -2119,7 +2119,7 @@ void do_addcom
     if (!ch)
     {
         StripTabsAndTruncate(channel, Buffer, MAX_CHANNEL_LEN, MAX_CHANNEL_LEN);
-        raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
+        raw_notify(executor, tprintf(T("Channel %s does not exist yet."), Buffer));
         return;
     }
     if (!test_join_access(executor, ch))
@@ -2130,7 +2130,7 @@ void do_addcom
     comsys_t *c = get_comsys(executor);
     if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
     {
-        raw_notify(executor, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
+        raw_notify(executor, tprintf(T("Sorry, but you have reached the maximum number of aliases allowed.")));
         return;
     }
     for (j = 0; j < c->numchannels && (strcmp((char *)pValidAlias, (char *)c->alias + j * ALIAS_SIZE) > 0); j++)
@@ -2139,7 +2139,7 @@ void do_addcom
     }
     if (j < c->numchannels && !strcmp((char *)pValidAlias, (char *)c->alias + j * ALIAS_SIZE))
     {
-        UTF8 *p = tprintf("That alias is already in use for channel %s.", c->channels[j]);
+        UTF8 *p = tprintf(T("That alias is already in use for channel %s."), c->channels[j]);
         raw_notify(executor, p);
         return;
     }
@@ -2187,7 +2187,7 @@ void do_addcom
         do_joinchannel(executor, ch);
     }
 
-    raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
+    raw_notify(executor, tprintf(T("Channel %s added with alias %s."), channel, pValidAlias));
 }
 
 void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
@@ -2230,13 +2230,13 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             if (found <= 1)
             {
                 do_delcomchannel(executor, c->channels[i], false);
-                raw_notify(executor, tprintf("Alias %s for channel %s deleted.",
+                raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
                     arg1, c->channels[i]));
                 MEMFREE(c->channels[i]);
             }
             else
             {
-                raw_notify(executor, tprintf("Alias %s for channel %s deleted.",
+                raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
                     arg1, c->channels[i]));
             }
 
@@ -2261,7 +2261,7 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, tprintf("Unknown channel %s.", channel));
+        raw_notify(player, tprintf(T("Unknown channel %s."), channel));
     }
     else
     {
@@ -2285,7 +2285,7 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
                             &messNoComtitle);
                         SendChannelMessage(player, ch, messNormal, messNoComtitle);
                     }
-                    raw_notify(player, tprintf("You have left channel %s.",
+                    raw_notify(player, tprintf(T("You have left channel %s."),
                                 channel));
                 }
 
@@ -2360,7 +2360,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         }
         Buffer[nChannel] = '\0';
         mux_sprintf(newchannel->header, sizeof(newchannel->header),
-            "%s[%s]%s", COLOR_INTENSE, Buffer, COLOR_RESET);
+            T("%s[%s]%s"), COLOR_INTENSE, Buffer, COLOR_RESET);
 
         // Then, we use the non-ANSI part for the name.
         //
@@ -2387,7 +2387,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
 
     if (select_channel(newchannel->name))
     {
-        raw_notify(executor, tprintf("Channel %s already exists.", newchannel->name));
+        raw_notify(executor, tprintf(T("Channel %s already exists."), newchannel->name));
         MEMFREE(newchannel);
         return;
     }
@@ -2411,7 +2411,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
 
     // Report the channel creation using non-ANSI name.
     //
-    raw_notify(executor, tprintf("Channel %s created.", newchannel->name));
+    raw_notify(executor, tprintf(T("Channel %s created."), newchannel->name));
 }
 
 void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *channel, const UTF8 *cargs[], int ncargs)
@@ -2435,7 +2435,7 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
 
     if (!ch)
     {
-        raw_notify(executor, tprintf("Could not find channel %s.", channel));
+        raw_notify(executor, tprintf(T("Could not find channel %s."), channel));
         return;
     }
     else if (  !Comm_All(executor)
@@ -2456,7 +2456,7 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
     ch->users = NULL;
     MEMFREE(ch);
     ch = NULL;
-    raw_notify(executor, tprintf("Channel %s destroyed.", channel));
+    raw_notify(executor, tprintf(T("Channel %s destroyed."), channel));
 }
 
 
@@ -2497,7 +2497,7 @@ static void do_listchannels(dbref player, UTF8 *pattern)
             {
 
                 mux_sprintf(temp, sizeof(temp),
-                        "%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d",
+                        T("%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d"),
                         (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
                         (ch->type & CHANNEL_LOUD) ? 'L' : '-',
                         (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
@@ -2567,7 +2567,7 @@ void do_comtitle
             {
                 if ((ch->type & CHANNEL_SPOOF) == 0)
                 {
-                    raw_notify(executor, tprintf("Comtitles are now off for channel %s", channel));
+                    raw_notify(executor, tprintf(T("Comtitles are now off for channel %s"), channel));
                     do_setcomtitlestatus(executor, ch, false);
                 }
                 else
@@ -2577,14 +2577,14 @@ void do_comtitle
             }
             else if (key == COMTITLE_ON)
             {
-                raw_notify(executor, tprintf("Comtitles are now on for channel %s", channel));
+                raw_notify(executor, tprintf(T("Comtitles are now on for channel %s"), channel));
                 do_setcomtitlestatus(executor, ch, true);
             }
             else
             {
                 UTF8 *pValidatedTitleValue = RestrictTitleValue(arg2);
                 do_setnewtitle(executor, ch, pValidatedTitleValue);
-                raw_notify(executor, tprintf("Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s.",
+                raw_notify(executor, tprintf(T("Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s."),
                     pValidatedTitleValue, channel));
             }
         }
@@ -2644,7 +2644,7 @@ void do_comlist
                || quick_wild(pattern, c->channels[i]))
             {
                 UTF8 *p =
-                    tprintf("%-15.15s %-18.18s %s %s %s",
+                    tprintf(T("%-15.15s %-18.18s %s %s %s"),
                         c->alias + i * ALIAS_SIZE,
                         c->channels[i],
                         (user->bUserIsOn ? "on " : "off"),
@@ -2655,7 +2655,7 @@ void do_comlist
         }
         else
         {
-            raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * ALIAS_SIZE, c->channels[i]));
+            raw_notify(executor, tprintf(T("Bad Comsys Alias: %s for Channel: %s"), c->alias + i * ALIAS_SIZE, c->channels[i]));
         }
     }
     raw_notify(executor, T("-- End of comlist --"));
@@ -2808,7 +2808,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
     }
     if (NULL == ch)
     {
-        raw_notify(executor, tprintf("Unknown channel %s.", channel));
+        raw_notify(executor, tprintf(T("Unknown channel %s."), channel));
         return;
     }
     if ( !(  Comm_All(executor)
@@ -2818,8 +2818,8 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
         return;
     }
 
-    raw_notify(executor, tprintf("-- %s --", ch->name));
-    raw_notify(executor, tprintf("%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player"));
+    raw_notify(executor, tprintf(T("-- %s --"), ch->name));
+    raw_notify(executor, tprintf(T("%-29.29s %-6.6s %-6.6s"), "Name", "Status", "Player"));
     struct comuser *user;
     UTF8 *buff;
     static UTF8 temp[SBUF_SIZE];
@@ -2833,14 +2833,14 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
               || See_Hidden(executor)))
         {
             buff = unparse_object(executor, user->who, false);
-            mux_sprintf(temp, sizeof(temp), "%-29.29s %-6.6s %-6.6s", strip_color(buff),
+            mux_sprintf(temp, sizeof(temp), T("%-29.29s %-6.6s %-6.6s"), strip_color(buff),
                 user->bUserIsOn ? "on " : "off",
                 isPlayer(user->who) ? "yes" : "no ");
             raw_notify(executor, temp);
             free_lbuf(buff);
         }
     }
-    raw_notify(executor, tprintf("-- %s --", ch->name));
+    raw_notify(executor, tprintf(T("-- %s --"), ch->name));
 }
 
 // Assemble and transmit player disconnection messages to the player's active
@@ -2914,14 +2914,14 @@ static void do_comconnectchannel(dbref player, UTF8 *channel, UTF8 *alias, int i
             else
             {
                 raw_notify(player,
-                        tprintf("Bad Comsys Alias: %s for Channel: %s",
+                        tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
                             alias + i * ALIAS_SIZE, channel));
             }
         }
     }
     else
     {
-        raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s",
+        raw_notify(player, tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
                     alias + i * ALIAS_SIZE, channel));
     }
 }
@@ -3059,7 +3059,7 @@ void do_editchannel
     struct channel *ch = select_channel(arg1);
     if (!ch)
     {
-        raw_notify(executor, tprintf("Unknown channel %s.", arg1));
+        raw_notify(executor, tprintf(T("Unknown channel %s."), arg1));
         return;
     }
     if ( !(  Comm_All(executor)
@@ -3305,7 +3305,7 @@ void do_cemit
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
-        raw_notify(executor, tprintf("Channel %s does not exist.", chan));
+        raw_notify(executor, tprintf(T("Channel %s does not exist."), chan));
         return;
     }
     if (  !Controls(executor, ch->charge_who)
@@ -3321,7 +3321,7 @@ void do_cemit
     }
     else
     {
-        mux_strncpy(text2, tprintf("%s %s", ch->header, text), LBUF_SIZE-1);
+        mux_strncpy(text2, tprintf(T("%s %s"), ch->header, text), LBUF_SIZE-1);
     }
     SendChannelMessage(executor, ch, text2, text2);
 }
@@ -3360,7 +3360,7 @@ void do_chopen
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
-        msg = tprintf("@cset: Channel %s does not exist.", chan);
+        msg = tprintf(T("@cset: Channel %s does not exist."), chan);
         raw_notify(executor, msg);
         return;
     }
@@ -3377,32 +3377,32 @@ void do_chopen
     {
     case CSET_PUBLIC:
         ch->type |= CHANNEL_PUBLIC;
-        msg = tprintf("@cset: Channel %s placed on the public listings.", chan);
+        msg = tprintf(T("@cset: Channel %s placed on the public listings."), chan);
         break;
 
     case CSET_PRIVATE:
         ch->type &= ~CHANNEL_PUBLIC;
-        msg = tprintf("@cset: Channel %s taken off the public listings." , chan);
+        msg = tprintf(T("@cset: Channel %s taken off the public listings."), chan);
         break;
 
     case CSET_LOUD:
         ch->type |= CHANNEL_LOUD;
-        msg = tprintf("@cset: Channel %s now sends connect/disconnect msgs.", chan);
+        msg = tprintf(T("@cset: Channel %s now sends connect/disconnect msgs."), chan);
         break;
 
     case CSET_QUIET:
         ch->type &= ~CHANNEL_LOUD;
-        msg = tprintf("@cset: Channel %s connect/disconnect msgs muted.", chan);
+        msg = tprintf(T("@cset: Channel %s connect/disconnect msgs muted."), chan);
         break;
 
     case CSET_SPOOF:
         ch->type |= CHANNEL_SPOOF;
-        msg = tprintf("@cset: Channel %s set spoofable.", chan);
+        msg = tprintf(T("@cset: Channel %s set spoofable."), chan);
         break;
 
     case CSET_NOSPOOF:
         ch->type &= ~CHANNEL_SPOOF;
-        msg = tprintf("@cset: Channel %s set unspoofable.", chan);
+        msg = tprintf(T("@cset: Channel %s set unspoofable."), chan);
         break;
 
     case CSET_OBJECT:
@@ -3413,18 +3413,18 @@ void do_chopen
         if (thing == NOTHING)
         {
             ch->chan_obj = thing;
-            msg = tprintf("Channel %s is now disassociated from any channel object.", ch->name);
+            msg = tprintf(T("Channel %s is now disassociated from any channel object."), ch->name);
         }
         else if (Good_obj(thing))
         {
             ch->chan_obj = thing;
             buff = unparse_object(executor, thing, false);
-            msg = tprintf("Channel %s is now using %s as channel object.", ch->name, buff);
+            msg = tprintf(T("Channel %s is now using %s as channel object."), ch->name, buff);
             free_lbuf(buff);
         }
         else
         {
-            msg = tprintf("%d is not a valid channel object.", thing);
+            msg = tprintf(T("%d is not a valid channel object."), thing);
         }
         break;
 
@@ -3436,22 +3436,22 @@ void do_chopen
     case CSET_LOG:
         if (do_chanlog(executor, chan, value))
         {
-            msg = tprintf("@cset: Channel %s maximum history set.", chan);
+            msg = tprintf(T("@cset: Channel %s maximum history set."), chan);
         }
         else
         {
-            msg = tprintf("@cset: Maximum history must be a number less than or equal to %d.", MAX_RECALL_REQUEST);
+            msg = tprintf(T("@cset: Maximum history must be a number less than or equal to %d."), MAX_RECALL_REQUEST);
         }
         break;
 
     case CSET_LOG_TIME:
         if (do_chanlog_timestamps(executor, chan, value))
         {
-            msg = tprintf("@cset: Channel %s timestamp logging set.", chan);
+            msg = tprintf(T("@cset: Channel %s timestamp logging set."), chan);
         }
         else
         {
-            msg = tprintf("@cset: Failed.  Is logging enabled for %s?", chan);
+            msg = tprintf(T("@cset: Failed.  Is logging enabled for %s?"), chan);
         }
     }
     raw_notify(executor, msg);
@@ -3512,14 +3512,14 @@ void do_chboot
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(executor, tprintf("@cboot: %s is not on the channel.",
+        raw_notify(executor, tprintf(T("@cboot: %s is not on the channel."),
             Moniker(thing)));
         return;
     }
 
-    raw_notify(executor, tprintf("You boot %s off channel %s.",
+    raw_notify(executor, tprintf(T("You boot %s off channel %s."),
                                  Moniker(thing), ch->name));
-    raw_notify(thing, tprintf("%s boots you off channel %s.",
+    raw_notify(thing, tprintf(T("%s boots you off channel %s."),
                               Moniker(thing), ch->name));
 
     if (!(key & CBOOT_QUIET))
@@ -3728,7 +3728,7 @@ void do_chanlist
                         }
 
                         UTF8 *temp = alloc_mbuf("do_chanlist_temp");
-                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
+                        mux_sprintf(temp, MBUF_SIZE, T("%c%c%c "),
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                             (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
@@ -3985,7 +3985,7 @@ FUNCTION(fun_chanobj)
     dbref obj = ch->chan_obj;
     if (Good_obj(obj))
     {
-        safe_str(tprintf("#%d", obj), buff, bufc);
+        safe_str(tprintf(T("#%d"), obj), buff, bufc);
     }
     else
     {

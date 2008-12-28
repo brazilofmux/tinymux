@@ -99,7 +99,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
 #else
             notify_except2(loc, thing, thing, cause,
 #endif // REALITY_LVLS
-                       tprintf("%s has left.", Moniker(thing)));
+                       tprintf(T("%s has left."), Moniker(thing)));
         }
     }
 }
@@ -184,7 +184,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
 #else
         notify_except2(loc, thing, thing, cause,
 #endif // REALITY_LVLS
-                   tprintf("%s has arrived.", Moniker(thing)));
+                   tprintf(T("%s has arrived."), Moniker(thing)));
     }
 }
 
@@ -233,7 +233,7 @@ void move_object(dbref thing, dbref dest)
        && RandomINT32(0, mudconf.payfind-1) == 0)
     {
         giveto(thing, 1);
-        notify(thing, tprintf("You found a %s!", mudconf.one_coin));
+        notify(thing, tprintf(T("You found a %s!"), mudconf.one_coin));
     }
 }
 
@@ -679,7 +679,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         {
             // Tell all
             //
-            notify_except(loc, executor, executor, tprintf("%s goes home.", Moniker(executor)), 0);
+            notify_except(loc, executor, executor, tprintf(T("%s goes home."), Moniker(executor)), 0);
         }
 
         // Give the player the messages
@@ -817,7 +817,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         {
             if (thingloc != playerloc)
             {
-                notify(thingloc, tprintf("%s was taken from you.",
+                notify(thingloc, tprintf(T("%s was taken from you."),
                     Moniker(thing)));
             }
             move_via_generic(thing, executor, executor, 0);
@@ -949,7 +949,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
 
         bp = buf = alloc_lbuf("do_drop.did_it");
-        safe_tprintf_str(buf, &bp, "dropped %s.", Moniker(thing));
+        safe_tprintf_str(buf, &bp, T("dropped %s."), Moniker(thing));
         oattr = quiet ? 0 : A_ODROP;
         aattr = quiet ? 0 : A_ADROP;
         did_it(executor, thing, A_DROP, T("Dropped."), oattr, buf,

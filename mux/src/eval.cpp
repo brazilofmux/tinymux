@@ -917,7 +917,7 @@ static void tcache_finish(void)
     {
         TCENT *xp = tcache_head;
         tcache_head = xp->next;
-        notify(Owner(xp->player), tprintf("%s(#%d)} \xE2\x80\x98%s\xE2\x80\x99 -> \xE2\x80\x98%s\xE2\x80\x99", Name(xp->player),
+        notify(Owner(xp->player), tprintf(T("%s(#%d)} \xE2\x80\x98%s\xE2\x80\x99 -> \xE2\x80\x98%s\xE2\x80\x99"), Name(xp->player),
             xp->player, xp->orig, xp->result));
         free_lbuf(xp->orig);
         free_lbuf(xp->result);
@@ -1501,23 +1501,23 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             if (fp->minArgs == fp->maxArgs)
                             {
                                 mux_sprintf(mux_scratch, sizeof(mux_scratch),
-                                    "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
+                                    T("#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS"),
                                     fp->name, fp->minArgs);
                             }
                             else if (fp->minArgs + 1 == fp->maxArgs)
                             {
                                 mux_sprintf(mux_scratch, sizeof(mux_scratch),
-                                    "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
+                                    T("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
                             else if (MuxAlarm.bAlarmed)
                             {
-                                mux_sprintf(mux_scratch, sizeof(mux_scratch), "#-1 CPU LIMITED");
+                                mux_sprintf(mux_scratch, sizeof(mux_scratch), T("#-1 CPU LIMITED"));
                             }
                             else
                             {
                                 mux_sprintf(mux_scratch, sizeof(mux_scratch),
-                                    "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
+                                    T("#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS"),
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
                             safe_str(mux_scratch, buff, &oldp);
@@ -2253,7 +2253,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
            && 0 < tcache_count - mudconf.trace_limit)
         {
             tbuf = alloc_mbuf("exec.trace_diag");
-            mux_sprintf(tbuf, MBUF_SIZE, "%d lines of trace output discarded.", tcache_count
+            mux_sprintf(tbuf, MBUF_SIZE, T("%d lines of trace output discarded."), tcache_count
                 - mudconf.trace_limit);
             notify(executor, tbuf);
             free_mbuf(tbuf);

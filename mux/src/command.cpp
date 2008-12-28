@@ -1094,7 +1094,7 @@ static UTF8 *hook_name(const UTF8 *pCommand, int key)
         }
     }
 
-    return tprintf("%s_%s", keylet, cmdName);
+    return tprintf(T("%s_%s"), keylet, cmdName);
 }
 
 static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
@@ -1295,7 +1295,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                 if (xkey == -1)
                 {
                     notify(executor,
-                       tprintf("Unrecognized switch \xE2\x80\x98%s\xE2\x80\x99 for command \xE2\x80\x98%s\xE2\x80\x99.",
+                       tprintf(T("Unrecognized switch \xE2\x80\x98%s\xE2\x80\x99 for command \xE2\x80\x98%s\xE2\x80\x99."),
                        switchp, cmdp->cmdname));
                     return;
                 }
@@ -1324,7 +1324,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     }
     else if (switchp && !(cmdp->callseq & CS_ADDED))
     {
-        notify(executor, tprintf("Command %s does not take switches.",
+        notify(executor, tprintf(T("Command %s does not take switches."),
             cmdp->cmdname));
         return;
     }
@@ -1755,7 +1755,7 @@ UTF8 *process_command
     if (!Good_obj(executor))
     {
         STARTLOG(LOG_BUGS, T("CMD"), T("PLYR"));
-        log_printf("Bad player in process_command: %d", executor);
+        log_printf(T("Bad player in process_command: %d"), executor);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
         return pOriginalCommand;
@@ -1769,7 +1769,7 @@ UTF8 *process_command
               && interactive)))
     {
         notify(Owner(executor),
-            tprintf("Attempt to execute command by halted object #%d", executor));
+            tprintf(T("Attempt to execute command by halted object #%d"), executor));
         mudstate.debug_cmd = cmdsave;
         return pOriginalCommand;
     }
@@ -1800,7 +1800,7 @@ UTF8 *process_command
 
     if (Verbose(executor))
     {
-        notify(Owner(executor), tprintf("%s] %s", Name(executor), pOriginalCommand));
+        notify(Owner(executor), tprintf(T("%s] %s"), Name(executor), pOriginalCommand));
     }
 
     // Eat leading whitespace, and space-compress if configured.
@@ -3198,7 +3198,7 @@ static void list_df_flags(dbref player)
 
     UTF8 *buff = alloc_lbuf("list_df_flags");
     mux_sprintf(buff, LBUF_SIZE,
-        "Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s",
+        T("Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s"),
         playerb, roomb, exitb, thingb, robotb);
 
     free_sbuf(playerb);
@@ -3222,45 +3222,45 @@ static void list_costs(dbref player)
 
     if (mudconf.quotas)
     {
-        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.room_quota);
+        mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.room_quota);
     }
     notify(player,
-           tprintf("Digging a room costs %d %s%s.",
+           tprintf(T("Digging a room costs %d %s%s."),
                mudconf.digcost, coin_name(mudconf.digcost), buff));
     if (mudconf.quotas)
     {
-        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.exit_quota);
+        mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.exit_quota);
     }
     notify(player,
-           tprintf("Opening a new exit costs %d %s%s.",
+           tprintf(T("Opening a new exit costs %d %s%s."),
                mudconf.opencost, coin_name(mudconf.opencost), buff));
     notify(player,
-           tprintf("Linking an exit, home, or dropto costs %d %s.",
+           tprintf(T("Linking an exit, home, or dropto costs %d %s."),
                mudconf.linkcost, coin_name(mudconf.linkcost)));
     if (mudconf.quotas)
     {
-        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.thing_quota);
+        mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.thing_quota);
     }
     if (mudconf.createmin == mudconf.createmax)
     {
         raw_notify(player,
-               tprintf("Creating a new thing costs %d %s%s.",
+               tprintf(T("Creating a new thing costs %d %s%s."),
                    mudconf.createmin,
                    coin_name(mudconf.createmin), buff));
     }
     else
     {
         raw_notify(player,
-        tprintf("Creating a new thing costs between %d and %d %s%s.",
+        tprintf(T("Creating a new thing costs between %d and %d %s%s."),
             mudconf.createmin, mudconf.createmax,
             mudconf.many_coins, buff));
     }
     if (mudconf.quotas)
     {
-        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.player_quota);
+        mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.player_quota);
     }
     notify(player,
-           tprintf("Creating a robot costs %d %s%s.",
+           tprintf(T("Creating a robot costs %d %s%s."),
                mudconf.robotcost, coin_name(mudconf.robotcost), buff));
     if (mudconf.killmin == mudconf.killmax)
     {
@@ -3269,13 +3269,13 @@ static void list_costs(dbref player)
         {
             chance = (mudconf.killmin * 100) / mudconf.killguarantee;
         }
-        raw_notify(player, tprintf("Killing costs %d %s, with a %d%% chance of success.",
+        raw_notify(player, tprintf(T("Killing costs %d %s, with a %d%% chance of success."),
             mudconf.killmin, coin_name(mudconf.digcost), chance));
     }
     else
     {
         int cost_surething;
-        raw_notify(player, tprintf("Killing costs between %d and %d %s.",
+        raw_notify(player, tprintf(T("Killing costs between %d and %d %s."),
             mudconf.killmin, mudconf.killmax, mudconf.many_coins));
         if (0 < mudconf.killguarantee)
         {
@@ -3285,20 +3285,20 @@ static void list_costs(dbref player)
         {
             cost_surething = mudconf.killmin;
         }
-        raw_notify(player, tprintf("You must spend %d %s to guarantee success.",
+        raw_notify(player, tprintf(T("You must spend %d %s to guarantee success."),
             cost_surething, coin_name(cost_surething)));
     }
     raw_notify(player,
-           tprintf("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s.",
+           tprintf(T("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s."),
             mudconf.searchcost, coin_name(mudconf.searchcost)));
     if (mudconf.machinecost > 0)
         raw_notify(player,
-           tprintf("Each command run from the queue costs 1/%d %s.",
+           tprintf(T("Each command run from the queue costs 1/%d %s."),
                mudconf.machinecost, mudconf.one_coin));
     if (mudconf.waitcost > 0)
     {
         raw_notify(player,
-               tprintf("A %d %s deposit is charged for putting a command on the queue.",
+               tprintf(T("A %d %s deposit is charged for putting a command on the queue."),
                    mudconf.waitcost, mudconf.one_coin));
         raw_notify(player, T("The deposit is refunded when the command is run or canceled."));
     }
@@ -3309,26 +3309,26 @@ static void list_costs(dbref player)
     else if (mudconf.sacfactor == 1)
     {
         if (mudconf.sacadjust < 0)
-            mux_sprintf(buff, MBUF_SIZE, "<create cost> - %d", -mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, T("<create cost> - %d"), -mudconf.sacadjust);
         else if (mudconf.sacadjust > 0)
-            mux_sprintf(buff, MBUF_SIZE, "<create cost> + %d", mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, T("<create cost> + %d"), mudconf.sacadjust);
         else
-            mux_sprintf(buff, MBUF_SIZE, "<create cost>");
+            mux_sprintf(buff, MBUF_SIZE, T("<create cost>"));
     }
     else
     {
         if (mudconf.sacadjust < 0)
-            mux_sprintf(buff, MBUF_SIZE, "(<create cost> / %d) - %d", mudconf.sacfactor, -mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, T("(<create cost> / %d) - %d"), mudconf.sacfactor, -mudconf.sacadjust);
         else if (mudconf.sacadjust > 0)
-            mux_sprintf(buff, MBUF_SIZE, "(<create cost> / %d) + %d", mudconf.sacfactor, mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, T("(<create cost> / %d) + %d"), mudconf.sacfactor, mudconf.sacadjust);
         else
-            mux_sprintf(buff, MBUF_SIZE, "<create cost> / %d", mudconf.sacfactor);
+            mux_sprintf(buff, MBUF_SIZE, T("<create cost> / %d"), mudconf.sacfactor);
     }
-    raw_notify(player, tprintf("The value of an object is %s.", buff));
+    raw_notify(player, tprintf(T("The value of an object is %s."), buff));
     if (mudconf.clone_copy_cost)
         raw_notify(player, T("The default value of cloned objects is the value of the original object."));
     else
-        raw_notify(player, tprintf("The default value of cloned objects is %d %s.",
+        raw_notify(player, tprintf(T("The default value of cloned objects is %d %s."),
                 mudconf.createmin, coin_name(mudconf.createmin)));
 
     free_mbuf(buff);
@@ -3389,7 +3389,7 @@ static void list_options(dbref player)
     if (mudconf.trace_topdown)
     {
         raw_notify(player, T("Trace output is presented top-down (whole expression first, then sub-exprs)."));
-        raw_notify(player, tprintf("Only %d lines of trace output are displayed.", mudconf.trace_limit));
+        raw_notify(player, tprintf(T("Only %d lines of trace output are displayed."), mudconf.trace_limit));
     }
     else
     {
@@ -3415,17 +3415,17 @@ static void list_options(dbref player)
         raw_notify(player, T("The \xE2\x80\x98get()\xE2\x80\x99 function will return the description of faraway objects,"));
     if (mudconf.read_rem_name)
         raw_notify(player, T("The \xE2\x80\x98name()\xE2\x80\x99 function will return the name of faraway objects."));
-    raw_notify(player, tprintf("The default switch for the \xE2\x80\x98@switch\xE2\x80\x99 command is %s.", switchd[mudconf.switch_df_all]));
+    raw_notify(player, tprintf(T("The default switch for the \xE2\x80\x98@switch\xE2\x80\x99 command is %s."), switchd[mudconf.switch_df_all]));
 
     // Using \230 instead \x98 because \x98c is making gcc choke.
     //
-    raw_notify(player, tprintf("The default switch for the \xE2\x80\230examine\xE2\x80\x99 command is %s.", examd[mudconf.exam_public]));
+    raw_notify(player, tprintf(T("The default switch for the \xE2\x80\230examine\xE2\x80\x99 command is %s."), examd[mudconf.exam_public]));
     if (mudconf.sweep_dark)
         raw_notify(player, T("Players may @sweep dark locations."));
     if (mudconf.fascist_tport)
         raw_notify(player, T("You may only @teleport out of locations that are JUMP_OK or that you control."));
     raw_notify(player,
-           tprintf("Players may have at most %d commands in the queue at one time.",
+           tprintf(T("Players may have at most %d commands in the queue at one time."),
                mudconf.queuemax));
     if (mudconf.match_mine)
     {
@@ -3439,10 +3439,10 @@ static void list_options(dbref player)
     buff = alloc_mbuf("list_options");
 
     raw_notify(player,
-           tprintf("%d commands are run from the queue when there is no net activity.",
+           tprintf(T("%d commands are run from the queue when there is no net activity."),
                mudconf.queue_chunk));
     raw_notify(player,
-           tprintf("%d commands are run from the queue when there is net activity.",
+           tprintf(T("%d commands are run from the queue when there is net activity."),
                mudconf.active_q_chunk));
     if (mudconf.idle_wiz_dark)
         raw_notify(player, T("Wizards idle for longer than the default timeout are automatically set DARK."));
@@ -3460,30 +3460,30 @@ static void list_options(dbref player)
 #endif // HAVE_WORKING_FORK
     if (mudconf.max_players >= 0)
         raw_notify(player,
-        tprintf("There may be at most %d players logged in at once.",
+        tprintf(T("There may be at most %d players logged in at once."),
             mudconf.max_players));
     if (mudconf.quotas)
-        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.start_quota);
+        mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.start_quota);
     else
         *buff = '\0';
     raw_notify(player,
-           tprintf("New players are given %d %s to start with.",
+           tprintf(T("New players are given %d %s to start with."),
                mudconf.paystart, mudconf.many_coins));
     raw_notify(player,
-           tprintf("Players are given %d %s each day they connect.",
+           tprintf(T("Players are given %d %s each day they connect."),
                mudconf.paycheck, mudconf.many_coins));
     raw_notify(player,
-      tprintf("Earning money is difficult if you have more than %d %s.",
+      tprintf(T("Earning money is difficult if you have more than %d %s."),
           mudconf.paylimit, mudconf.many_coins));
     if (mudconf.payfind > 0)
         raw_notify(player,
-               tprintf("Players have a 1 in %d chance of finding a %s each time they move.",
+               tprintf(T("Players have a 1 in %d chance of finding a %s each time they move."),
                    mudconf.payfind, mudconf.one_coin));
     raw_notify(player,
-           tprintf("The head of the object freelist is #%d.",
+           tprintf(T("The head of the object freelist is #%d."),
                mudstate.freelist));
 
-    mux_sprintf(buff, MBUF_SIZE, "Intervals: Dump...%d  Clean...%d  Idlecheck...%d",
+    mux_sprintf(buff, MBUF_SIZE, T("Intervals: Dump...%d  Clean...%d  Idlecheck...%d"),
         mudconf.dump_interval, mudconf.check_interval,
         mudconf.idle_interval);
     raw_notify(player, buff);
@@ -3495,30 +3495,30 @@ static void list_options(dbref player)
     long lDump  = ltdDump.ReturnSeconds();
     long lCheck = ltdCheck.ReturnSeconds();
     long lIdle  = ltdIdle.ReturnSeconds();
-    mux_sprintf(buff, MBUF_SIZE, "Timers: Dump...%ld  Clean...%ld  Idlecheck...%ld",
+    mux_sprintf(buff, MBUF_SIZE, T("Timers: Dump...%ld  Clean...%ld  Idlecheck...%ld"),
         lDump, lCheck, lIdle);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, "Timeouts: Idle...%d  Connect...%d  Tries...%d",
+    mux_sprintf(buff, MBUF_SIZE, T("Timeouts: Idle...%d  Connect...%d  Tries...%d"),
         mudconf.idle_timeout, mudconf.conn_timeout,
         mudconf.retry_limit);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, "Scheduling: Timeslice...%s  Max_Quota...%d  Increment...%d",
+    mux_sprintf(buff, MBUF_SIZE, T("Scheduling: Timeslice...%s  Max_Quota...%d  Increment...%d"),
         mudconf.timeslice.ReturnSecondsString(3), mudconf.cmd_quota_max,
         mudconf.cmd_quota_incr);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, "Spaces...%s  Savefiles...%s",
+    mux_sprintf(buff, MBUF_SIZE, T("Spaces...%s  Savefiles...%s"),
         ed[mudconf.space_compress], ed[mudconf.compress_db]);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, "New characters: Room...#%d  Home...#%d  DefaultHome...#%d  Quota...%d",
+    mux_sprintf(buff, MBUF_SIZE, T("New characters: Room...#%d  Home...#%d  DefaultHome...#%d  Quota...%d"),
         mudconf.start_room, mudconf.start_home, mudconf.default_home,
         mudconf.start_quota);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, "Misc: GuestChar...#%d  IdleQueueChunk...%d  ActiveQueueChunk...%d  Master_room...#%d",
+    mux_sprintf(buff, MBUF_SIZE, T("Misc: GuestChar...#%d  IdleQueueChunk...%d  ActiveQueueChunk...%d  Master_room...#%d"),
         mudconf.guest_char, mudconf.queue_chunk,
         mudconf.active_q_chunk, mudconf.master_room);
     raw_notify(player, buff);
@@ -3538,7 +3538,7 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
 
     // If wild_match, then only list attributes that match wildcard(s)
     //
-    UTF8 *p = tprintf("--- User-Defined Attributes %s---",
+    UTF8 *p = tprintf(T("--- User-Defined Attributes %s---"),
         wild_mtch ? "(wildmatched) " : "");
     raw_notify(player, p);
 
@@ -3561,19 +3561,19 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
                 }
                 wna++;
             }
-            mux_sprintf(buff, LBUF_SIZE, "%s(%d)", va->name, va->number);
+            mux_sprintf(buff, LBUF_SIZE, T("%s(%d)"), va->name, va->number);
             listset_nametab(player, attraccess_nametab, va->flags, buff, true);
         }
     }
 
     if (wild_mtch)
     {
-        p = tprintf("%d attributes matched, %d attributes total, next=%d", wna,
+        p = tprintf(T("%d attributes matched, %d attributes total, next=%d"), wna,
             na, mudstate.attr_next);
     }
     else
     {
-        p = tprintf("%d attributes, next=%d", na, mudstate.attr_next);
+        p = tprintf(T("%d attributes, next=%d"), na, mudstate.attr_next);
     }
     raw_notify(player, p);
     free_lbuf(buff);
@@ -3676,12 +3676,12 @@ static void list_db_stats(dbref player)
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
     CLinearTimeDelta ltd = lsaNow - cs_ltime;
-    raw_notify(player, tprintf("DB Cache Stats   Writes       Reads  (over %d seconds)", ltd.ReturnSeconds()));
-    raw_notify(player, tprintf("Calls      %12d%12d", cs_writes, cs_reads));
-    raw_notify(player, tprintf("\nDeletes    %12d", cs_dels));
-    raw_notify(player, tprintf("Syncs      %12d", cs_syncs));
-    raw_notify(player, tprintf("I/O        %12d%12d", cs_dbwrites, cs_dbreads));
-    raw_notify(player, tprintf("Cache Hits %12d%12d", cs_whits, cs_rhits));
+    raw_notify(player, tprintf(T("DB Cache Stats   Writes       Reads  (over %d seconds)"), ltd.ReturnSeconds()));
+    raw_notify(player, tprintf(T("Calls      %12d%12d"), cs_writes, cs_reads));
+    raw_notify(player, tprintf(T("\nDeletes    %12d"), cs_dels));
+    raw_notify(player, tprintf(T("Syncs      %12d"), cs_syncs));
+    raw_notify(player, tprintf(T("I/O        %12d%12d"), cs_dbwrites, cs_dbreads));
+    raw_notify(player, tprintf(T("Cache Hits %12d%12d"), cs_whits, cs_rhits));
 #endif // MEMORY_BASED
 }
 
@@ -3727,36 +3727,36 @@ static void list_process(dbref player)
     int maxfds = sysconf(_SC_OPEN_MAX);
 #endif // HAVE_GETDTABLESIZE
     int psize = getpagesize();
-    raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", game_pid, psize));
+    raw_notify(player, tprintf(T("Process ID:  %10d        %10d bytes per page"), game_pid, psize));
 #else // UNIX_NETWORKING
-    raw_notify(player, tprintf("Process ID:  %10d", game_pid));
+    raw_notify(player, tprintf(T("Process ID:  %10d"), game_pid));
 #endif // UNIX_NETWORKING
 
 #ifdef HAVE_GETRUSAGE
-    raw_notify(player, tprintf("Time used:   %10d user   %10d sys",
+    raw_notify(player, tprintf(T("Time used:   %10d user   %10d sys"),
                usage.ru_utime.tv_sec, usage.ru_stime.tv_sec));
-    raw_notify(player, tprintf("Resident mem:%10d shared %10d private%10d stack",
+    raw_notify(player, tprintf(T("Resident mem:%10d shared %10d private%10d stack"),
            ixrss, idrss, isrss));
     raw_notify(player,
-           tprintf("Integral mem:%10d shared %10d private%10d stack",
+           tprintf(T("Integral mem:%10d shared %10d private%10d stack"),
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
     raw_notify(player,
-           tprintf("Max res mem: %10d pages  %10d bytes",
+           tprintf(T("Max res mem: %10d pages  %10d bytes"),
                usage.ru_maxrss, (usage.ru_maxrss * psize)));
     raw_notify(player,
-           tprintf("Page faults: %10d hard   %10d soft   %10d swapouts",
+           tprintf(T("Page faults: %10d hard   %10d soft   %10d swapouts"),
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));
     raw_notify(player,
-           tprintf("Disk I/O:    %10d reads  %10d writes",
+           tprintf(T("Disk I/O:    %10d reads  %10d writes"),
                usage.ru_inblock, usage.ru_oublock));
     raw_notify(player,
-           tprintf("Network I/O: %10d in     %10d out",
+           tprintf(T("Network I/O: %10d in     %10d out"),
                usage.ru_msgrcv, usage.ru_msgsnd));
     raw_notify(player,
-           tprintf("Context swi: %10d vol    %10d forced %10d sigs",
+           tprintf(T("Context swi: %10d vol    %10d forced %10d sigs"),
                usage.ru_nvcsw, usage.ru_nivcsw, usage.ru_nsignals));
     raw_notify(player,
-           tprintf("Descs avail: %10d", maxfds));
+           tprintf(T("Descs avail: %10d"), maxfds));
 #endif // HAVE_GETRUSAGE
 }
 
@@ -3779,7 +3779,7 @@ static void list_modules(dbref executor)
             break;
         }
 
-        raw_notify(executor, tprintf("%s (%s)", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+        raw_notify(executor, tprintf(T("%s (%s)"), ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
     }
 
 #ifdef STUB_SLAVE
@@ -3795,7 +3795,7 @@ static void list_modules(dbref executor)
                 break;
             }
 
-            raw_notify(executor, tprintf("%s (%s) by stubslave", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+            raw_notify(executor, tprintf(T("%s (%s) by stubslave"), ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
         }
     }
 #endif
@@ -3815,7 +3815,7 @@ static void list_rlevels(dbref player)
     raw_notify(player, T("Reality levels:"));
     for (i = 0; i < mudconf.no_levels; ++i)
     {
-        raw_notify(player, tprintf("    Level: %-20.20s    Value: 0x%08x     Desc: %s",
+        raw_notify(player, tprintf(T("    Level: %-20.20s    Value: 0x%08x     Desc: %s"),
             mudconf.reality_level[i].name, mudconf.reality_level[i].value,
                 mudconf.reality_level[i].attr));
     }
@@ -4126,7 +4126,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             atrpt = atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
-                notify(player, tprintf("%c     --- At %s(#%d) :",
+                notify(player, tprintf(T("%c     --- At %s(#%d) :"),
                     (Zone(target) == target ? '*' : ' '), Name(target), target));
                 notify(player, atrpt);
                 bFound = true;
@@ -4142,7 +4142,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     atrpt = atr_get("do_icmd.4102", zone, A_CMDCHECK, &aowner, &aflags);
                     if (*atrpt)
                     {
-                        notify(player, tprintf("%c     z-- At %s(#%d) :",
+                        notify(player, tprintf(T("%c     z-- At %s(#%d) :"),
                             '*', Name(zone), zone));
                         notify(player, atrpt);
                         bFound = true;
@@ -4321,11 +4321,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     {
                         if (cmdp)
                         {
-                            pt3 = tprintf(" %d:%s", key + 1, cmdp->cmdname);
+                            pt3 = tprintf(T(" %d:%s"), key + 1, cmdp->cmdname);
                         }
                         else
                         {
-                            pt3 = tprintf(" %d:home", key + 1);
+                            pt3 = tprintf(T(" %d:home"), key + 1);
                         }
 
                         size_t natrpt = strlen((char *)atrpt);
@@ -4414,7 +4414,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 message = T("Bad command");
             }
-            notify(player, tprintf("@icmd:%s %s.", (loc_set == -1) ? T("") : T(" Location -"), message));
+            notify(player, tprintf(T("@icmd:%s %s."), (loc_set == -1) ? T("") : T(" Location -"), message));
         }
     }
     free_lbuf(buff1);
@@ -4451,7 +4451,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         return;
     }
 
-    notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
+    notify_all_from_inside(loc, executor, tprintf(T("%s types -=> %s"),
         Moniker(executor), string));
     process_command(executor, caller, enactor, eval, true, string, NULL, 0);
     mudstate.train_nest_lev--;
@@ -4525,7 +4525,7 @@ static void show_hook(UTF8 *bf, UTF8 *bfptr, int key)
 static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-    const char *pFmt = "%-32.32s | %s";
+    const UTF8 *pFmt = T("%-32.32s | %s");
     const UTF8 *pCmd = cmdp->cmdname;
     if (  pCmd[0] != '\0'
        && pCmd[1] == '\0')
@@ -4533,35 +4533,35 @@ static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff
         switch (pCmd[0])
         {
         case '"':
-            pFmt = "S %-30.30s | %s";
+            pFmt = T("S %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98\"\xE2\x80\x99 hook on \xE2\x80\x98say\xE2\x80\x99)");
             break;
         case ':':
-            pFmt = "P %-30.30s | %s";
+            pFmt = T("P %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98:\xE2\x80\x99 hook on \xE2\x80\x98pose\xE2\x80\x99)");
             break;
         case ';':
-            pFmt = "P %-30.30s | %s";
+            pFmt = T("P %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98;\xE2\x80\x99 hook on \xE2\x80\x98pose\xE2\x80\x99)");
             break;
         case '\\':
-            pFmt = "E %-30.30s | %s";
+            pFmt = T("E %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98\\\\\xE2\x80\x99 hook on \xE2\x80\x98@emit\xE2\x80\x99)");
             break;
         case '#':
-            pFmt = "F %-30.30s | %s";
+            pFmt = T("F %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98#\xE2\x80\x99 hook on \xE2\x80\x98@force\xE2\x80\x99)");
             break;
         case '&':
-            pFmt = "V %-30.30s | %s";
+            pFmt = T("V %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98&\xE2\x80\x99 hook on \xE2\x80\x98@set\xE2\x80\x99)");
             break;
         case '-':
-            pFmt = "M %-30.30s | %s";
+            pFmt = T("M %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98-\xE2\x80\x99 hook on \xE2\x80\x98@mail\xE2\x80\x99)");
             break;
         case '~':
-            pFmt = "M %-30.30s | %s";
+            pFmt = T("M %-30.30s | %s");
             pCmd = T("(\xE2\x80\x98~\xE2\x80\x99 hook on \xE2\x80\x98@mail\xE2\x80\x99)");
             break;
         }
@@ -4627,12 +4627,12 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         {
             s_ptr = s_ptrbuff = alloc_lbuf("@hook");
             show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-            notify(executor, tprintf("@hook: New mask for \xE2\x80\x98%s\xE2\x80\x99 -> %s", cmdp->cmdname, s_ptrbuff));
+            notify(executor, tprintf(T("@hook: New mask for \xE2\x80\x98%s\xE2\x80\x99 -> %s"), cmdp->cmdname, s_ptrbuff));
             free_lbuf(s_ptrbuff);
         }
         else
         {
-            notify(executor, tprintf("@hook: New mask for \xE2\x80\x98%s\xE2\x80\x99 is empty.", cmdp->cmdname));
+            notify(executor, tprintf(T("@hook: New mask for \xE2\x80\x98%s\xE2\x80\x99 is empty."), cmdp->cmdname));
         }
     }
     if (  (key & HOOK_LIST)
@@ -4644,21 +4644,21 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             {
                 s_ptr = s_ptrbuff = alloc_lbuf("@hook");
                 show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-                notify(executor, tprintf("@hook: Mask for hashed command \xE2\x80\x98%s\xE2\x80\x99 -> %s", cmdp->cmdname, s_ptrbuff));
+                notify(executor, tprintf(T("@hook: Mask for hashed command \xE2\x80\x98%s\xE2\x80\x99 -> %s"), cmdp->cmdname, s_ptrbuff));
                 free_lbuf(s_ptrbuff);
             }
             else
             {
-                notify(executor, tprintf("@hook: Mask for hashed command \xE2\x80\x98%s\xE2\x80\x99 is empty.", cmdp->cmdname));
+                notify(executor, tprintf(T("@hook: Mask for hashed command \xE2\x80\x98%s\xE2\x80\x99 is empty."), cmdp->cmdname));
             }
         }
         else
         {
-            notify(executor, tprintf("%.32s-+-%s",
+            notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            notify(executor, tprintf("%-32s | %s", "Built-in Command", "Hook Mask Values"));
-            notify(executor, tprintf("%.32s-+-%s",
+            notify(executor, tprintf(T("%-32s | %s"), "Built-in Command", "Hook Mask Values"));
+            notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
             found = false;
@@ -4717,15 +4717,15 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             }
             if (!found)
             {
-                notify(executor, tprintf("%26s -- No @hooks defined --", " "));
+                notify(executor, tprintf(T("%26s -- No @hooks defined --"), " "));
             }
             found = false;
             /* We need to search the attribute table as well */
-            notify(executor, tprintf("%.32s-+-%s",
+            notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            notify(executor, tprintf("%-32s | %s", "Built-in Attribute", "Hook Mask Values"));
-            notify(executor, tprintf("%.32s-+-%s",
+            notify(executor, tprintf(T("%-32s | %s"), "Built-in Attribute", "Hook Mask Values"));
+            notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
             cbuff = alloc_sbuf("cbuff_hook");
@@ -4752,19 +4752,19 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                 {
                     found = true;
                     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-                    notify(executor, tprintf("%-32.32s | %s", cmdp->cmdname, s_ptrbuff));
+                    notify(executor, tprintf(T("%-32.32s | %s"), cmdp->cmdname, s_ptrbuff));
                 }
             }
             free_sbuf(cbuff);
             if (!found)
             {
-                notify(executor, tprintf("%26s -- No @hooks defined --", " "));
+                notify(executor, tprintf(T("%26s -- No @hooks defined --"), " "));
             }
             free_lbuf(s_ptrbuff);
-            notify(executor, tprintf("%.32s-+-%s",
+            notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            notify(executor, tprintf("The hook object is currently: #%d (%s)",
+            notify(executor, tprintf(T("The hook object is currently: #%d (%s)"),
                 mudconf.hook_obj,
                 (  (  Good_obj(mudconf.hook_obj)
                    && !Going(mudconf.hook_obj))

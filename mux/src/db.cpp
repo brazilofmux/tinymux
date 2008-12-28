@@ -450,7 +450,7 @@ FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
                         if (!mudstate.bStandAlone)
                         {
                             notify(player,
-                                tprintf("Cannot forward to #%d: Permission denied.",
+                                tprintf(T("Cannot forward to #%d: Permission denied."),
                                 target));
                         }
                     }
@@ -891,7 +891,7 @@ void do_attribute
             }
             else
             {
-                notify(executor, tprintf("Unknown permission: %s.", sp));
+                notify(executor, tprintf(T("Unknown permission: %s."), sp));
             }
 
             // Get the next token.
@@ -1005,42 +1005,42 @@ void do_fixdb
 
         s_Owner(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Owner set to #%d", res));
+            notify(executor, tprintf(T("Owner set to #%d"), res));
         break;
 
     case FIXDB_LOC:
 
         s_Location(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Location set to #%d", res));
+            notify(executor, tprintf(T("Location set to #%d"), res));
         break;
 
     case FIXDB_CON:
 
         s_Contents(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Contents set to #%d", res));
+            notify(executor, tprintf(T("Contents set to #%d"), res));
         break;
 
     case FIXDB_EXITS:
 
         s_Exits(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Exits set to #%d", res));
+            notify(executor, tprintf(T("Exits set to #%d"), res));
         break;
 
     case FIXDB_NEXT:
 
         s_Next(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Next set to #%d", res));
+            notify(executor, tprintf(T("Next set to #%d"), res));
         break;
 
     case FIXDB_PENNIES:
 
         s_Pennies(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf("Pennies set to %d", res));
+            notify(executor, tprintf(T("Pennies set to %d"), res));
         break;
 
     case FIXDB_NAME:
@@ -1070,7 +1070,7 @@ void do_fixdb
 
             if (Suspect(executor))
             {
-                raw_broadcast(WIZARD, "[Suspect] %s renamed to %s",
+                raw_broadcast(WIZARD, T("[Suspect] %s renamed to %s"),
                     Name(thing), pValidName);
             }
 
@@ -1092,7 +1092,7 @@ void do_fixdb
         }
         if (!Quiet(executor))
         {
-            notify(executor, tprintf("Name set to %s", pValidName));
+            notify(executor, tprintf(T("Name set to %s"), pValidName));
         }
         break;
     }
@@ -1891,7 +1891,7 @@ static const UTF8 *atr_encode(const UTF8 *iattr, dbref thing, dbref owner, int f
     //
     if (owner == NOTHING)
         owner = Owner(thing);
-    return tprintf("%c%d:%d:%s", ATR_INFO_CHAR, owner, flags, iattr);
+    return tprintf(T("%c%d:%d:%s"), ATR_INFO_CHAR, owner, flags, iattr);
 }
 
 // atr_decode_flags_owner: Decode the owner and flags (if present) and
@@ -3495,20 +3495,20 @@ int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
 {
     if (mudstate.bStandAlone)
     {
-        Log.tinyprintf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
+        Log.tinyprintf(T("Opening (%s,%s)" ENDLINE), game_dir_file, game_pag_file);
     }
     int cc = cache_init(game_dir_file, game_pag_file, nCachePages);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
         if (mudstate.bStandAlone)
         {
-            Log.tinyprintf("Done opening (%s,%s)." ENDLINE, game_dir_file,
+            Log.tinyprintf(T("Done opening (%s,%s)." ENDLINE), game_dir_file,
                 game_pag_file);
         }
         else
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            Log.tinyprintf("Using game db files: (%s,%s).", game_dir_file,
+            Log.tinyprintf(T("Using game db files: (%s,%s)."), game_dir_file,
                 game_pag_file);
             ENDLOG;
         }
@@ -3938,7 +3938,7 @@ void load_restart_db(void)
         DebugTotalFiles--;
     }
     remove("restart.db");
-    raw_broadcast(0, "GAME: Restart finished.");
+    raw_broadcast(0, T("GAME: Restart finished."));
 }
 #endif // HAVE_WORKING_FORK
 
@@ -3978,7 +3978,7 @@ int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
     }
     else
     {
-        Log.tinyprintf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE,
+        Log.tinyprintf(T("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE),
             old_name, new_name, GetLastError());
     }
     MEMFREE(pNewName);
@@ -4007,7 +4007,7 @@ int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
     }
     else
     {
-        Log.tinyprintf("rename %s to %s fails with errno of %s(%d)" ENDLINE, old_name, new_name, strerror(errno), errno);
+        Log.tinyprintf(T("rename %s to %s fails with errno of %s(%d)" ENDLINE), old_name, new_name, strerror(errno), errno);
     }
     return -1;
 }

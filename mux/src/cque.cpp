@@ -195,7 +195,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);
                         UTF8 *logbuf = alloc_lbuf("do_top.LOG.cpu");
-                        mux_sprintf(logbuf, LBUF_SIZE, " queued command taking %s secs (enactor #%d): ",
+                        mux_sprintf(logbuf, LBUF_SIZE, T(" queued command taking %s secs (enactor #%d): "),
                             ltd.ReturnSecondsString(4), point->enactor);
                         log_text(logbuf);
                         free_lbuf(logbuf);
@@ -460,7 +460,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         return;
     }
-    notify(Owner(executor), tprintf("%d queue entr%s removed.", numhalted, numhalted == 1 ? "y" : "ies"));
+    notify(Owner(executor), tprintf(T("%d queue entr%s removed."), numhalted, numhalted == 1 ? "y" : "ies"));
 }
 
 static int Notify_Key;
@@ -1030,7 +1030,7 @@ void sql_que
     }
 
     UTF8 mbuf[MBUF_SIZE];
-    mux_sprintf(mbuf, MBUF_SIZE, "@trigger #%d/%s", thing, pattr->name);
+    mux_sprintf(mbuf, MBUF_SIZE, T("@trigger #%d/%s"), thing, pattr->name);
     BQUE *tmp = setup_que(executor, caller, enactor, eval,
         mbuf,
         nargs, args,
@@ -1258,38 +1258,38 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
     CLinearTimeDelta ltd = p->ltaWhen - Show_lsaNow;
     if (p->fpTask == dispatch_DatabaseDump)
     {
-        notify(Show_Player, tprintf("[%d]auto-@dump", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]auto-@dump"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_FreeListReconstruction)
     {
-        notify(Show_Player, tprintf("[%d]auto-@dbck", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]auto-@dbck"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_IdleCheck)
     {
-        notify(Show_Player, tprintf("[%d]Check for idle players", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Check for idle players"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_CheckEvents)
     {
-        notify(Show_Player, tprintf("[%d]Test for @daily time", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Test for @daily time"), ltd.ReturnSeconds()));
     }
 #ifndef MEMORY_BASED
     else if (p->fpTask == dispatch_CacheTick)
     {
-        notify(Show_Player, tprintf("[%d]Database cache tick", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Database cache tick"), ltd.ReturnSeconds()));
     }
 #endif
     else if (p->fpTask == Task_ProcessCommand)
     {
-        notify(Show_Player, tprintf("[%d]Further command quota", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Further command quota"), ltd.ReturnSeconds()));
     }
 #if defined(WINDOWS_NETWORKING)
     else if (p->fpTask == Task_FreeDescriptor)
     {
-        notify(Show_Player, tprintf("[%d]Delayed descriptor deallocation", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Delayed descriptor deallocation"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == Task_DeferredClose)
     {
-        notify(Show_Player, tprintf("[%d]Delayed socket close", ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(T("[%d]Delayed socket close"), ltd.ReturnSeconds()));
     }
 #endif
     else
@@ -1305,20 +1305,20 @@ static void ShowPsLine(BQUE *tmp)
     if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf("[#%d/%d]%s:%s", tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[#%d/%d]%s:%s"), tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (tmp->IsTimed)
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf("[%d]%s:%s", ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[%d]%s:%s"), ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (Good_obj(tmp->u.s.sem))
     {
-        notify(Show_Player, tprintf("[#%d]%s:%s", tmp->u.s.sem, bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[#%d]%s:%s"), tmp->u.s.sem, bufp, tmp->comm));
     }
     else
     {
-        notify(Show_Player, tprintf("%s:%s", bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("%s:%s"), bufp, tmp->comm));
     }
     UTF8 *bp = bufp;
     if (Show_Key == PS_LONG)
@@ -1336,7 +1336,7 @@ static void ShowPsLine(BQUE *tmp)
         }
         *bp = '\0';
         bp = unparse_object(Show_Player, tmp->enactor, false);
-        notify(Show_Player, tprintf("   Enactor: %s%s", bp, bufp));
+        notify(Show_Player, tprintf(T("   Enactor: %s%s"), bp, bufp));
         free_lbuf(bp);
     }
     free_lbuf(bufp);
@@ -1517,14 +1517,14 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
     // Display stats.
     //
     bufp = alloc_mbuf("do_ps");
-    mux_sprintf(bufp, MBUF_SIZE, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d",
+    mux_sprintf(bufp, MBUF_SIZE, T("Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d"),
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout,
         Shown_SQLTimeout, Total_SQLTimeout);
     notify(executor, bufp);
     if (Wizard(executor))
     {
-        mux_sprintf(bufp, MBUF_SIZE, "        System Tasks.....%d", Total_SystemTasks);
+        mux_sprintf(bufp, MBUF_SIZE, T("        System Tasks.....%d"), Total_SystemTasks);
         notify(executor, bufp);
     }
     free_mbuf(bufp);
@@ -1576,7 +1576,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
         if (!Quiet(executor))
         {
-            notify(executor, tprintf("%d commands processed.", ncmds));
+            notify(executor, tprintf(T("%d commands processed."), ncmds));
         }
     }
     else if (key == QUEUE_WARP)
@@ -1596,11 +1596,11 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         }
         if (0 < iWarp)
         {
-            notify(executor, tprintf("WaitQ timer advanced %d seconds.", iWarp));
+            notify(executor, tprintf(T("WaitQ timer advanced %d seconds."), iWarp));
         }
         else if (iWarp < 0)
         {
-            notify(executor, tprintf("WaitQ timer set back %d seconds.", iWarp));
+            notify(executor, tprintf(T("WaitQ timer set back %d seconds."), iWarp));
         }
         else
         {

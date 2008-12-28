@@ -118,7 +118,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 STARTLOG(LOG_BUGS, T("BUG"), T("LOCK"));
                 log_name_and_loc(player);
                 buff = alloc_mbuf("eval_boolexp.LOG.indir");
-                mux_sprintf(buff, MBUF_SIZE, ": Lock had bad indirection (%c, type %d)",
+                mux_sprintf(buff, MBUF_SIZE, T(": Lock had bad indirection (%c, type %d)"),
                     INDIR_TOKEN, b->sub1->type);
                 log_text(buff);
                 free_mbuf(buff);
@@ -472,14 +472,14 @@ static BOOLEXP *parse_boolexp_L(void)
 
             if (b->thing == NOTHING)
             {
-                notify(parse_player, tprintf("I don\xE2\x80\x99t see %s here.", buf));
+                notify(parse_player, tprintf(T("I don\xE2\x80\x99t see %s here."), buf));
                 free_lbuf(buf);
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
             if (b->thing == AMBIGUOUS)
             {
-                notify(parse_player, tprintf("I don\xE2\x80\x99t know which %s you mean!",
+                notify(parse_player, tprintf(T("I don\xE2\x80\x99t know which %s you mean!"),
                     buf));
                 free_lbuf(buf);
                 free_bool(b);

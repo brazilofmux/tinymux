@@ -22,7 +22,7 @@ void do_version(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     notify(executor, mudstate.version);
     UTF8 *buff = alloc_mbuf("do_version");
-    mux_sprintf(buff, MBUF_SIZE, "Build date: %s", MUX_BUILD_DATE);
+    mux_sprintf(buff, MBUF_SIZE, T("Build date: %s"), MUX_BUILD_DATE);
     notify(executor, buff);
     free_mbuf(buff);
 }
@@ -32,55 +32,55 @@ void build_version(void)
 #if defined(WIN64)
 #if defined(ALPHA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win64 #%s [ALPHA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s for Win64 #%s [ALPHA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Alpha Win64", MUX_VERSION);
+            T("MUX %s Alpha Win64"), MUX_VERSION);
 #elif defined(BETA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win64 #%s [BETA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s for Win64 #%s [BETA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Beta Win64", MUX_VERSION);
+            T("MUX %s Beta Win64"), MUX_VERSION);
 #else // RELEASED
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win64 #%s [%s]", MUX_VERSION, MUX_BUILD_NUM,
+            T("MUX %s for Win64 #%s [%s]"), MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Win64", MUX_VERSION);
+            T("MUX %s Win64"), MUX_VERSION);
 #endif // ALPHA, BETA, RELEASED
 #elif defined(WIN32)
 #if defined(ALPHA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win32 #%s [ALPHA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s for Win32 #%s [ALPHA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Alpha Win32", MUX_VERSION);
+            T("MUX %s Alpha Win32"), MUX_VERSION);
 #elif defined(BETA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win32 #%s [BETA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s for Win32 #%s [BETA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Beta Win32", MUX_VERSION);
+            T("MUX %s Beta Win32"), MUX_VERSION);
 #else // RELEASED
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s for Win32 #%s [%s]", MUX_VERSION, MUX_BUILD_NUM,
+            T("MUX %s for Win32 #%s [%s]"), MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Win32", MUX_VERSION);
+            T("MUX %s Win32"), MUX_VERSION);
 #endif // ALPHA, BETA, RELEASED
 #else // WIN32
 #if defined(ALPHA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s #%s [ALPHA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s #%s [ALPHA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Alpha", MUX_VERSION);
+            T("MUX %s Alpha"), MUX_VERSION);
 #elif defined(BETA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s #%s [BETA]", MUX_VERSION, MUX_BUILD_NUM);
+            T("MUX %s #%s [BETA]"), MUX_VERSION, MUX_BUILD_NUM);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s Beta", MUX_VERSION);
+            T("MUX %s Beta"), MUX_VERSION);
 #else // RELEASED
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
-            "MUX %s #%s [%s]", MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+            T("MUX %s #%s [%s]"), MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
         mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
-            "MUX %s", MUX_VERSION);
+            T("MUX %s"), MUX_VERSION);
 #endif // ALPHA, BETA, RELEASED
 #endif // WIN32
 }

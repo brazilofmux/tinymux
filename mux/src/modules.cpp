@@ -133,7 +133,7 @@ void init_modules(void)
     if (MUX_SUCCEEDED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Registered netmux modules.");
+        log_printf(T("Registered netmux modules."));
         ENDLOG;
 
 #if defined(STUB_SLAVE)
@@ -147,13 +147,13 @@ void init_modules(void)
         if (MUX_SUCCEEDED(mr))
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf("Opened interface for StubSlave management.");
+            log_printf(T("Opened interface for StubSlave management."));
             ENDLOG;
         }
         else
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf("Failed to open interface for StubSlave management (%d).", mr);
+            log_printf(T("Failed to open interface for StubSlave management (%d)."), mr);
             ENDLOG;
         }
 #endif // STUB_SLAVE
@@ -161,7 +161,7 @@ void init_modules(void)
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Failed to register netmux modules (%d).", mr);
+        log_printf(T("Failed to register netmux modules (%d)."), mr);
         ENDLOG;
     }
 }
@@ -177,7 +177,7 @@ void final_modules(void)
         if (MUX_FAILED(mr))
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf("Failed to request stubslave to shutdown (%d).", mr);
+            log_printf(T("Failed to request stubslave to shutdown (%d)."), mr);
             ENDLOG;
         }
 
@@ -190,13 +190,13 @@ void final_modules(void)
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Failed to revoke netmux modules (%d).", mr);
+        log_printf(T("Failed to revoke netmux modules (%d)."), mr);
         ENDLOG;
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf("Revoked netmux modules.", mr);
+        log_printf(T("Revoked netmux modules."), mr);
         ENDLOG;
     }
     mux_FinalizeModuleLibrary();
@@ -276,7 +276,7 @@ void CLog::log_number(int num)
     ::log_number(num);
 }
 
-void DCL_CDECL CLog::log_printf(const char *fmt, ...)
+void DCL_CDECL CLog::log_printf(const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

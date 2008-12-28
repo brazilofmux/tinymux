@@ -257,7 +257,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         UTF8 szPortPair[128];
-                        mux_sprintf(szPortPair, sizeof(szPortPair), "%d, %d\r\n",
+                        mux_sprintf(szPortPair, sizeof(szPortPair), T("%d, %d\r\n"),
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         size_t nPortPair = strlen((char *)szPortPair);
@@ -439,7 +439,7 @@ static int get_slave_result(void)
         {
             if (d->username[0])
             {
-                atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
+                atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"), d->username, d->addr));
             }
             else
             {
@@ -469,7 +469,7 @@ static int get_slave_result(void)
         mux_strncpy(d->username, userid, 10);
         if (d->player != 0)
         {
-            atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
+            atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"), d->username, d->addr));
         }
     }
     return 1;
@@ -944,7 +944,7 @@ static int get_slave_result(void)
             {
                 if (d->username[0])
                 {
-                    atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s",
+                    atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"),
                         d->username, d->addr));
                 }
                 else
@@ -971,7 +971,7 @@ static int get_slave_result(void)
         d->username[10] = '\0';
         if (d->player != 0)
         {
-            atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s",
+            atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"),
                              d->username, d->addr));
         }
     }
@@ -1164,7 +1164,7 @@ static void make_socket(PortInfo *Port)
 
         if (!CompletionPort)
         {
-            Log.tinyprintf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
+            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
             return;
         }
 
@@ -1203,7 +1203,7 @@ static void make_socket(PortInfo *Port)
 
         if (IS_SOCKET_ERROR(nRet))
         {
-            Log.tinyprintf("Error %ld on bind" ENDLINE, SOCKET_LAST_ERROR);
+            Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
             if (0 == SOCKET_CLOSE(s))
             {
                 DebugTotalSockets--;
@@ -1218,7 +1218,7 @@ static void make_socket(PortInfo *Port)
 
         if (nRet)
         {
-            Log.tinyprintf("Error %ld on listen" ENDLINE, SOCKET_LAST_ERROR);
+            Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
             if (0 == SOCKET_CLOSE(s))
             {
                 DebugTotalSockets--;
@@ -1242,7 +1242,7 @@ static void make_socket(PortInfo *Port)
         }
 
         Port->socket = s;
-        Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, Port->port);
+        Log.tinyprintf(T("Listening (NT-style) on port %d" ENDLINE), Port->port);
         return;
     }
 #endif // WINDOWS_NETWORKING
@@ -1279,9 +1279,9 @@ static void make_socket(PortInfo *Port)
     listen(s, SOMAXCONN);
     Port->socket = s;
 #ifdef SSL_ENABLED
-    Log.tinyprintf("Listening on port %d (%s)" ENDLINE, Port->port, Port->ssl ? "SSL" : "plaintext");
+    Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->ssl ? "SSL" : "plaintext");
 #else
-    Log.tinyprintf("Listening on port %d" ENDLINE, Port->port);
+    Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
 #endif
 }
 
@@ -2167,7 +2167,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
-        mux_sprintf(pBuffM1, MBUF_SIZE, "[%u/%s] Connection refused.  (Remote port %d)",
+        mux_sprintf(pBuffM1, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
             newsock, pBuffM2, usPort);
         log_text(pBuffM1);
         free_mbuf(pBuffM1);
@@ -2230,7 +2230,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
            && mudconf.use_hostname)
         {
             UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
-            mux_sprintf(pBuffL1, LBUF_SIZE, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
+            mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n%s,%d,%d\n"), pBuffM2, pBuffM2, usPort,
                 Port->port);
             len = strlen((char *)pBuffL1);
             if (mux_write(slave_socket, pBuffL1, len) < 0)
@@ -2249,7 +2249,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         STARTLOG(LOG_NET, "NET", "CONN");
         UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
-        mux_sprintf(pBuffM3, MBUF_SIZE, "[%u/%s] Connection opened (remote port %d)", newsock,
+        mux_sprintf(pBuffM3, MBUF_SIZE, T("[%u/%s] Connection opened (remote port %d)"), newsock,
             pBuffM2, usPort);
         log_text(pBuffM3);
         free_mbuf(pBuffM3);
@@ -2421,10 +2421,10 @@ void shutdownsock(DESC *d, int reason)
         {
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             buff = alloc_mbuf("shutdownsock.LOG.logout");
-            mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Logout by ", d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
-            mux_sprintf(buff, MBUF_SIZE, " <Reason: %s>", disc_reasons[reason]);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -2434,10 +2434,10 @@ void shutdownsock(DESC *d, int reason)
             fcache_dump(d, FC_QUIT);
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             buff = alloc_mbuf("shutdownsock.LOG.disconn");
-            mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Logout by ", d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
-            mux_sprintf(buff, MBUF_SIZE, " <Reason: %s>", disc_reasons[reason]);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -2455,7 +2455,7 @@ void shutdownsock(DESC *d, int reason)
         dbref locPlayer = Location(d->player);
         int penPlayer = Pennies(d->player);
         const UTF8 *PlayerName = PureName(d->player);
-        mux_sprintf(buff, LBUF_SIZE, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
+        mux_sprintf(buff, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"), d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
         log_text(buff);
@@ -2472,7 +2472,7 @@ void shutdownsock(DESC *d, int reason)
         }
         STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
         buff = alloc_mbuf("shutdownsock.LOG.neverconn");
-        mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Connection closed, never connected. <Reason: %s>",
+        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected. <Reason: %s>"),
             d->descriptor, d->addr, disc_reasons[reason]);
         log_text(buff);
         free_mbuf(buff);
@@ -2628,7 +2628,7 @@ static void shutdownsock_brief(DESC *d)
     //
     if (!fpCancelIo((HANDLE) d->descriptor))
     {
-        Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
+        Log.tinyprintf(T("Error %ld on CancelIo" ENDLINE), GetLastError());
     }
 
     shutdown(d->descriptor, SD_BOTH);
@@ -2662,7 +2662,7 @@ static void shutdownsock_brief(DESC *d)
     //
     if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted))
     {
-        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+        Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE), GetLastError());
     }
 
 }
@@ -2966,10 +2966,10 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
                     // Do no more writes and post a notification that the descriptor should be shutdown.
                     //
                     d->bConnectionDropped = true;
-                    Log.tinyprintf("WriteFile(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    Log.tinyprintf(T("WriteFile(%d) failed with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                     {
-                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus() in process_output_ntio()." ENDLINE, GetLastError());
+                        Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus() in process_output_ntio()." ENDLINE), GetLastError());
                     }
                 }
             }
@@ -4571,7 +4571,7 @@ void BuildSignalNamesTable(void)
 
             // This is the only non-const memory case.
             //
-            tsn->pShortName = StringClone(tprintf("SIG%03d", i));
+            tsn->pShortName = StringClone(tprintf(T("SIG%03d"), i));
         }
     }
 }
@@ -4645,11 +4645,11 @@ void LogStatBuf(int stat_buf, const char *Name)
     STARTLOG(LOG_ALWAYS, "NET", Name);
     if (WIFEXITED(stat_buf))
     {
-        Log.tinyprintf("process exited unexpectedly with exit status %d.", WEXITSTATUS(stat_buf));
+        Log.tinyprintf(T("process exited unexpectedly with exit status %d."), WEXITSTATUS(stat_buf));
     }
     else if (WIFSIGNALED(stat_buf))
     {
-        Log.tinyprintf("process was terminated with signal %s.", SignalDesc(WTERMSIG(stat_buf)));
+        Log.tinyprintf(T("process was terminated with signal %s."), SignalDesc(WTERMSIG(stat_buf)));
     }
     else
     {
@@ -4687,7 +4687,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         // Drop a flatfile.
         //
         log_signal(sig);
-        raw_broadcast(0, "Caught signal %s requesting a flatfile @dump. Please wait.", SignalDesc(sig));
+        raw_broadcast(0, T("Caught signal %s requesting a flatfile @dump. Please wait."), SignalDesc(sig));
         dump_database_internal(DUMP_I_SIGNAL);
         break;
 
@@ -4766,10 +4766,10 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 #if defined(HAVE_WORKING_FORK)
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef STUB_SLAVE
-            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, stubslave_pid=%d" ENDLINE,
+            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, slave_pid=%d, stubslave_pid=%d" ENDLINE),
                 mudstate.dumper, child, slave_pid, stubslave_pid);
 #else
-            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
+            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE),
                 mudstate.dumper, child, slave_pid);
 #endif // STUB_SLAVE
             ENDLOG;
@@ -4818,10 +4818,10 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         //
         check_panicking(sig);
         log_signal(sig);
-        raw_broadcast(0, "GAME: Caught signal %s, exiting.", SignalDesc(sig));
+        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), SignalDesc(sig));
         if ('\0' != mudconf.crash_msg[0])
         {
-            raw_broadcast(0, "GAME: %s", mudconf.crash_msg);
+            raw_broadcast(0, T("GAME: %s"), mudconf.crash_msg);
         }
         mudstate.shutdown_flag = true;
         break;
@@ -4875,11 +4875,11 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
            && mudstate.bCanRestart)
         {
             raw_broadcast(0,
-                    "GAME: Fatal signal %s caught, restarting.", SignalDesc(sig));
+                    T("GAME: Fatal signal %s caught, restarting."), SignalDesc(sig));
 
             if ('\0' != mudconf.crash_msg[0])
             {
-                raw_broadcast(0, "GAME: %s", mudconf.crash_msg);
+                raw_broadcast(0, T("GAME: %s"), mudconf.crash_msg);
             }
 
             // There is no older DB. It's a fiction. Our only choice is
@@ -5027,31 +5027,31 @@ void list_system_resources(dbref player)
     int nTotal = 0;
     notify(player, T("System Resources"));
 
-    mux_sprintf(buffer, sizeof(buffer), "Total Open Files: %ld", DebugTotalFiles);
+    mux_sprintf(buffer, sizeof(buffer), T("Total Open Files: %ld"), DebugTotalFiles);
     notify(player, buffer);
     nTotal += DebugTotalFiles;
 
-    mux_sprintf(buffer, sizeof(buffer), "Total Sockets: %ld", DebugTotalSockets);
+    mux_sprintf(buffer, sizeof(buffer), T("Total Sockets: %ld"), DebugTotalSockets);
     notify(player, buffer);
     nTotal += DebugTotalSockets;
 
 #if defined(WINDOWS_NETWORKING)
-    mux_sprintf(buffer, sizeof(buffer), "Total Threads: %ld", DebugTotalThreads);
+    mux_sprintf(buffer, sizeof(buffer), T("Total Threads: %ld"), DebugTotalThreads);
     notify(player, buffer);
     nTotal += DebugTotalThreads;
 
-    mux_sprintf(buffer, sizeof(buffer), "Total Semaphores: %ld", DebugTotalSemaphores);
+    mux_sprintf(buffer, sizeof(buffer), T("Total Semaphores: %ld"), DebugTotalSemaphores);
     notify(player, buffer);
     nTotal += DebugTotalSemaphores;
 #endif // WINDOWS_NETWORKING
 
-    mux_sprintf(buffer, sizeof(buffer), "Total Handles (sum of above): %d", nTotal);
+    mux_sprintf(buffer, sizeof(buffer), T("Total Handles (sum of above): %d"), nTotal);
     notify(player, buffer);
 
 #if defined(WINDOWS_NETWORKING)
     for (int i = 0; i < NUM_SLAVE_THREADS; i++)
     {
-        mux_sprintf(buffer, sizeof(buffer), "Thread %d at line %u", i+1, SlaveThreadInfo[i].iDoing);
+        mux_sprintf(buffer, sizeof(buffer), T("Thread %d at line %u"), i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
 #endif // WINDOWS_NETWORKING
@@ -5073,7 +5073,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
     struct descriptor_data * d;
 
-    Log.tinyprintf("Starting NT-style listening on port %d" ENDLINE, Port->port);
+    Log.tinyprintf(T("Starting NT-style listening on port %d" ENDLINE), Port->port);
 
     //
     // Loop forever accepting connections
@@ -5100,7 +5100,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         {
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
             unsigned short us = ntohs(SockAddr.sin_port);
-            Log.tinyprintf("[%d/%s] Connection refused.  (Remote port %d)",
+            Log.tinyprintf(T("[%d/%s] Connection refused.  (Remote port %d)"),
                 socketClient, inet_ntoa(SockAddr.sin_addr), us);
             ENDLOG;
 
@@ -5156,7 +5156,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
         if (!CompletionPort)
         {
-            Log.tinyprintf("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE, GetLastError(), socketClient);
+            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE), GetLastError(), socketClient);
             shutdownsock_brief(d);
             continue;
         }
@@ -5165,7 +5165,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
         if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_welcome))
         {
-            Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+            Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
             shutdownsock_brief(d);
             continue;
         }
@@ -5179,14 +5179,14 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
             // Post a notification that the descriptor should be shutdown, and do no more IO.
             //
             d->bConnectionDropped = true;
-            Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
+            Log.tinyprintf(T("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, GetLastError());
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
             {
-                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE, GetLastError());
+                Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE), GetLastError());
             }
         }
     }
-    Log.tinyprintf("End of NT-style listening on port %d" ENDLINE, Port->port);
+    Log.tinyprintf(T("End of NT-style listening on port %d" ENDLINE), Port->port);
     return 1;
 }
 
@@ -5219,7 +5219,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
         //
         if (!fpCancelIo((HANDLE) d->descriptor))
         {
-            Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
+            Log.tinyprintf(T("Error %ld on CancelIo" ENDLINE), GetLastError());
         }
 
         shutdown(d->descriptor, SD_BOTH);
@@ -5236,7 +5236,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
         //
         if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted))
         {
-            Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+            Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE), GetLastError());
         }
     }
 }
@@ -5299,10 +5299,10 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
                     // Post a notification that the descriptor should be shutdown
                     //
-                    Log.tinyprintf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    Log.tinyprintf(T("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                     {
-                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
+                        Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE), GetLastError());
                     }
                 }
             }
@@ -5310,7 +5310,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         else if (  lpo == &d->OutboundOverlapped
                 && !d->bConnectionDropped)
         {
-            //Log.tinyprintf("Write(%d bytes)." ENDLINE, nbytes);
+            //Log.tinyprintf(T("Write(%d bytes)." ENDLINE), nbytes);
 
             // Write completed. We own the buffer again.
             //
@@ -5345,7 +5345,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         }
         else if (lpo == &d->InboundOverlapped && !d->bConnectionDropped)
         {
-            //Log.tinyprintf("Read(%d bytes)." ENDLINE, nbytes);
+            //Log.tinyprintf(T("Read(%d bytes)." ENDLINE), nbytes);
             // The read operation completed
             //
             if (0 == nbytes)
@@ -5356,10 +5356,10 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 // Post a notification that the descriptor should be shutdown
                 //
                 d->bConnectionDropped = true;
-                Log.tinyprintf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
+                Log.tinyprintf(T("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE), d->descriptor);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                 {
-                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+                    Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
                 }
                 continue;
             }
@@ -5402,10 +5402,10 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // Post a notification that the descriptor should be shutdown, and do no more IO.
                     //
                     d->bConnectionDropped = true;
-                    Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    Log.tinyprintf(T("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                     {
-                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+                        Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
                     }
                 }
             }
@@ -5425,7 +5425,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
             const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
-            Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
+            Log.tinyprintf(T("[%s/%s] Connection opened (remote port %d)"),
                 bInvalidSocket ? T("UNKNOWN") : lDesc, buff,
                 ntohs(d->address.sin_port));
             ENDLOG;
@@ -5437,7 +5437,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 // Log premature disconnection.
                 //
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC");
-                Log.tinyprintf("[UNKNOWN/%s] Connection closed prematurely (remote port %d)",
+                Log.tinyprintf(T("[UNKNOWN/%s] Connection closed prematurely (remote port %d)"),
                     buff, ntohs(d->address.sin_port));
                 ENDLOG;
 
@@ -5466,7 +5466,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted_final))
             {
-                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE, GetLastError());
+                Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE), GetLastError());
             }
         }
         else if (lpo == &lpo_aborted_final)
@@ -5504,12 +5504,12 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     bool bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
     if (IS_INVALID_SOCKET(port))
     {
-        sendMsg = tprintf("SITEMON: [UNKNOWN] %s from %s.%s", msg, address,
+        sendMsg = tprintf(T("SITEMON: [UNKNOWN] %s from %s.%s"), msg, address,
             bSuspect ? T(" (SUSPECT)"): T(""));
     }
     else
     {
-        sendMsg = tprintf("SITEMON: [%d] %s from %s.%s", port, msg,
+        sendMsg = tprintf(T("SITEMON: [%d] %s from %s.%s"), port, msg,
             address, bSuspect ? T(" (SUSPECT)"): T(""));
     }
 

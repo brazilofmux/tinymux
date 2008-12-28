@@ -235,7 +235,7 @@ void raw_notify_newline(dbref player)
  * raw_broadcast: Send message to players who have indicated flags
  */
 
-void DCL_CDECL raw_broadcast(int inflags, const char *fmt, ...)
+void DCL_CDECL raw_broadcast(int inflags, __in_z const UTF8 *fmt, ...)
 {
     if (!fmt || !*fmt)
     {
@@ -466,7 +466,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
             {
                 STARTLOG(LOG_NET, "NET", "WRITE");
                 UTF8 *buf = alloc_lbuf("queue_write.LOG");
-                mux_sprintf(buf, LBUF_SIZE, "[%u/%s] Output buffer overflow, %d chars discarded by ",
+                mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %d chars discarded by "),
                     d->descriptor, d->addr, tp->hdr.nchars);
                 log_text(buf);
                 free_lbuf(buf);
@@ -919,7 +919,7 @@ static void announce_connect(dbref player, DESC *d)
 
     if ('\0' != mudconf.motd_msg[0])
     {
-        raw_notify( player, tprintf("\n%sMOTD:%s %s\n", COLOR_INTENSE,
+        raw_notify( player, tprintf(T("\n%sMOTD:%s %s\n"), COLOR_INTENSE,
                     COLOR_RESET, mudconf.motd_msg));
     }
 
@@ -927,7 +927,7 @@ static void announce_connect(dbref player, DESC *d)
     {
         if ('\0' != mudconf.wizmotd_msg[0])
         {
-            raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", COLOR_INTENSE,
+            raw_notify(player, tprintf(T("%sWIZMOTD:%s %s\n"), COLOR_INTENSE,
                         COLOR_RESET, mudconf.wizmotd_msg));
         }
 
@@ -981,11 +981,11 @@ static void announce_connect(dbref player, DESC *d)
         db[player].fs.word[FLAG_WORD1] &= ~DARK;
     }
 
-    const char *pRoomAnnounceFmt;
-    const char *pMonitorAnnounceFmt;
+    const UTF8 *pRoomAnnounceFmt;
+    const UTF8 *pMonitorAnnounceFmt;
     if (num < 2)
     {
-        pRoomAnnounceFmt = "%s has connected.";
+        pRoomAnnounceFmt = T("%s has connected.");
         if (mudconf.have_comsys)
         {
             do_comconnect(player);
@@ -993,26 +993,26 @@ static void announce_connect(dbref player, DESC *d)
         if (  Hidden(player)
            && Can_Hide(player))
         {
-            pMonitorAnnounceFmt = "GAME: %s has DARK-connected.";
+            pMonitorAnnounceFmt = T("GAME: %s has DARK-connected.");
         }
         else
         {
-            pMonitorAnnounceFmt = "GAME: %s has connected.";
+            pMonitorAnnounceFmt = T("GAME: %s has connected.");
         }
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has connected.", Moniker(player));
+            raw_broadcast(WIZARD, T("[Suspect] %s has connected."), Moniker(player));
         }
     }
     else
     {
-        pRoomAnnounceFmt = "%s has reconnected.";
-        pMonitorAnnounceFmt = "GAME: %s has reconnected.";
+        pRoomAnnounceFmt = T("%s has reconnected.");
+        pMonitorAnnounceFmt = T("GAME: %s has reconnected.");
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has reconnected.", Moniker(player));
+            raw_broadcast(WIZARD, T("[Suspect] %s has reconnected."), Moniker(player));
         }
     }
     mux_sprintf(buf, LBUF_SIZE, pRoomAnnounceFmt, Moniker(player));
@@ -1118,7 +1118,7 @@ static void announce_connect(dbref player, DESC *d)
 
         default:
 
-            log_printf("Invalid zone #%d for %s(#%d) has bad type %d",
+            log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
                 zone, PureName(player), player, Typeof(zone));
         }
     }
@@ -1160,11 +1160,11 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Moniker(player));
+            raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."), Moniker(player));
         }
         UTF8 *buf = alloc_lbuf("announce_disconnect.only");
 
-        mux_sprintf(buf, LBUF_SIZE, "%s has disconnected.", Moniker(player));
+        mux_sprintf(buf, LBUF_SIZE, T("%s has disconnected."), Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
@@ -1190,7 +1190,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
             do_mail_purge(player);
         }
 
-        raw_broadcast(MONITOR, "GAME: %s has disconnected. <%s>", Moniker(player), reason);
+        raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"), Moniker(player), reason);
 
         c_Connected(player);
 
@@ -1287,7 +1287,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
                 break;
 
             default:
-                log_printf("Invalid zone #%d for %s(#%d) has bad type %d",
+                log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
                     zone, PureName(player), player, Typeof(zone));
             }
         }
@@ -1309,10 +1309,10 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has partially disconnected.", Moniker(player));
+            raw_broadcast(WIZARD, T("[Suspect] %s has partially disconnected."), Moniker(player));
         }
         UTF8 *mbuf = alloc_mbuf("announce_disconnect.partial");
-        mux_sprintf(mbuf, MBUF_SIZE, "%s has partially disconnected.", Moniker(player));
+        mux_sprintf(mbuf, MBUF_SIZE, T("%s has partially disconnected."), Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
@@ -1332,7 +1332,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
 #else
         notify_check(player, player, mbuf, key);
 #endif // REALITY_LVLS
-        raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
+        raw_broadcast(MONITOR, T("GAME: %s has partially disconnected."),
             Moniker(player));
         free_mbuf(mbuf);
     }
@@ -1912,7 +1912,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                && Wizard_Who(e->player)
                && key == CMD_WHO)
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%-3s#%-6d%5d%3s%s\r\n",
+                mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s#%-6d%5d%3s%s\r\n"),
                     pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
@@ -1920,11 +1920,11 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
                     d->command_count,
                     slist,
-                    trimmed_site(((d->username[0] != '\0') ? tprintf("%s@%s", d->username, d->addr) : d->addr)));
+                    trimmed_site(((d->username[0] != '\0') ? tprintf(T("%s@%s"), d->username, d->addr) : d->addr)));
             }
             else if (key == CMD_SESSION)
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n",
+                mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n"),
                     pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
@@ -1937,7 +1937,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             else if (  Wizard_Who(e->player)
                     || See_Hidden(e->player))
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%-3s%s\r\n",
+                mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s%s\r\n"),
                     pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
@@ -1946,7 +1946,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             }
             else
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s  %s\r\n",
+                mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s  %s\r\n"),
                     pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
@@ -1958,7 +1958,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
 
     // Sometimes I like the ternary operator.
     //
-    mux_sprintf(buf, MBUF_SIZE, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
+    mux_sprintf(buf, MBUF_SIZE, T("%d Player%slogged in, %d record, %s maximum.\r\n"), count,
         (count == 1) ? T(" ") : T("s "), mudstate.record_players,
         (mudconf.max_players == -1) ? T("no") : mux_ltoa_t(mudconf.max_players));
     queue_write(e, (char *)buf);
@@ -2020,12 +2020,12 @@ static void dump_info(DESC *arg_desc)
         queue_write(arg_desc, "### Begin INFO 1.1\r\n");
     }
 
-    queue_string(arg_desc, tprintf("Name: %s\r\n", mudconf.mud_name));
+    queue_string(arg_desc, tprintf(T("Name: %s\r\n"), mudconf.mud_name));
 
     CLinearTimeAbsolute lta = mudstate.start_time;
     lta.UTC2Local();
     UTF8 *temp = lta.ReturnDateString();
-    queue_write(arg_desc, (char *)tprintf("Uptime: %s\r\n", temp));
+    queue_write(arg_desc, (char *)tprintf(T("Uptime: %s\r\n"), temp));
 
     DESC *d;
     int count = 0;
@@ -2042,9 +2042,9 @@ static void dump_info(DESC *arg_desc)
             count++;
         }
     }
-    queue_write(arg_desc, (char *)tprintf("Connected: %d\r\n", count));
-    queue_write(arg_desc, (char *)tprintf("Size: %d\r\n", mudstate.db_top));
-    queue_write(arg_desc, (char *)tprintf("Version: %s\r\n", mudstate.short_ver));
+    queue_write(arg_desc, (char *)tprintf(T("Connected: %d\r\n"), count));
+    queue_write(arg_desc, (char *)tprintf(T("Size: %d\r\n"), mudstate.db_top));
+    queue_write(arg_desc, (char *)tprintf(T("Version: %s\r\n"), mudstate.short_ver));
 
     if (  0 != nDumpInfoTable
        || 0 != nLocalDumpInfoTable)
@@ -2210,7 +2210,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     }
     else // if (key == DOING_POLL)
     {
-        notify(executor, tprintf("Poll: %s", mudstate.doing_hdr));
+        notify(executor, tprintf(T("Poll: %s"), mudstate.doing_hdr));
     }
 }
 
@@ -2248,7 +2248,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     UTF8 *buff = alloc_mbuf("failconn.LOG");
-    mux_sprintf(buff, MBUF_SIZE, "[%u/%s] %s rejected to ", d->descriptor, d->addr, logtype);
+    mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->descriptor, d->addr, logtype);
     log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
@@ -2381,7 +2381,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, (char *)connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99", d->descriptor, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->descriptor, d->addr, user);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2437,7 +2437,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             //
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
             buff = alloc_mbuf("check_conn.LOG.login");
-            mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Connected to ", d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connected to "), d->descriptor, d->addr);
             log_text(buff);
             log_name_and_loc(player);
             free_mbuf(buff);
@@ -2573,7 +2573,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 queue_write(d, "\r\n");
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                mux_sprintf(buff, LBUF_SIZE, "[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed", d->descriptor, d->addr, user);
+                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->descriptor, d->addr, user);
                 log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2583,7 +2583,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 AddToPublicChannel(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
-                mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Created ", d->descriptor, d->addr);
+                mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->descriptor, d->addr);
                 log_text(buff);
                 log_name(player);
                 free_mbuf(buff);
@@ -2616,7 +2616,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99", d->descriptor, d->addr, msg);
+        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99"), d->descriptor, d->addr, msg);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -2690,7 +2690,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         {
             UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
-            mux_sprintf(buf, sizeof(buf), "Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99", mudstate.debug_cmd);
+            mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99"), mudstate.debug_cmd);
             log_text(buf);
             ENDLOG;
         }
@@ -2755,7 +2755,7 @@ void do_command(DESC *d, UTF8 *command)
             STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
             log_name_and_loc(d->player);
             UTF8 *logbuf = alloc_lbuf("do_command.LOG.cpu");
-            mux_sprintf(logbuf, LBUF_SIZE, " queued command taking %s secs: ",
+            mux_sprintf(logbuf, LBUF_SIZE, T(" queued command taking %s secs: "),
                 ltd.ReturnSecondsString(4));
             log_text(logbuf);
             free_lbuf(logbuf);
@@ -3023,14 +3023,14 @@ static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, in
 
     buff = alloc_mbuf("list_sites.buff");
     buff1 = alloc_sbuf("list_sites.addr");
-    mux_sprintf(buff, MBUF_SIZE, "----- %s -----", header_txt);
+    mux_sprintf(buff, MBUF_SIZE, T("----- %s -----"), header_txt);
     notify(player, buff);
     notify(player, T("Address              Mask                 Status"));
     for (this0 = site_list; this0; this0 = this0->next)
     {
         str = stat_string(stat_type, this0->flag);
         mux_strncpy(buff1, (UTF8 *)inet_ntoa(this0->mask), SBUF_SIZE-1);
-        mux_sprintf(buff, MBUF_SIZE, "%-20s %-20s %s", inet_ntoa(this0->address), buff1,
+        mux_sprintf(buff, MBUF_SIZE, T("%-20s %-20s %s"), inet_ntoa(this0->address), buff1,
             str);
         notify(player, buff);
     }
@@ -3223,7 +3223,7 @@ FUNCTION(fun_host)
     if (bFound)
     {
         UTF8 *hostname = ((d->username[0] != '\0') ?
-            tprintf("%s@%s", d->username, d->addr) : d->addr);
+            tprintf(T("%s@%s"), d->username, d->addr) : d->addr);
         safe_str(hostname, buff, bufc);
         return;
     }

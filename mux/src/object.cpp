@@ -236,7 +236,7 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
     }
 
     UTF8 tbuf[SBUF_SIZE];
-    mux_sprintf(tbuf, SBUF_SIZE, "%d %d %d %d %d", object_list[0],
+    mux_sprintf(tbuf, SBUF_SIZE, T("%d %d %d %d %d"), object_list[0],
             object_list[1], object_list[2], object_list[3], object_num);
     atr_add_raw(player, A_NEWOBJS, tbuf);
 }
@@ -287,7 +287,7 @@ static void ProcessMasterRoomACreate(dbref creator, dbref thing)
             {
                 CLinearTimeAbsolute lta;
                 UTF8 buf[SBUF_SIZE];
-                mux_sprintf(buf, SBUF_SIZE, "#%d", thing);
+                mux_sprintf(buf, SBUF_SIZE, T("#%d"), thing);
                 xargs[0] = buf;
                 wait_que(master_room_obj, creator, creator,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0, act, nxargs,
@@ -399,7 +399,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             okname = (lookup_player_name(buff, bAlias) == NOTHING);
             if (!okname)
             {
-                notify(player, tprintf("The name %s is already taken.", name));
+                notify(player, tprintf(T("The name %s is already taken."), name));
                 free_lbuf(buff);
                 return NOTHING;
             }
@@ -408,13 +408,13 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         break;
 
     default:
-        LOG_SIMPLE(LOG_BUGS, "BUG", "OTYPE", tprintf("Bad object type in create_obj: %d.", objtype));
+        LOG_SIMPLE(LOG_BUGS, "BUG", "OTYPE", tprintf(T("Bad object type in create_obj: %d."), objtype));
         return NOTHING;
     }
 
     if (!okname)
     {
-        notify(player, tprintf("That\xE2\x80\x99s a silly name for %s!", tname));
+        notify(player, tprintf(T("That\xE2\x80\x99s a silly name for %s!"), tname));
         return NOTHING;
     }
 
@@ -464,7 +464,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         }
         else
         {
-            LOG_SIMPLE(LOG_PROBLEMS, "FRL", "DAMAG", tprintf("Freelist damaged, bad object #%d.", obj));
+            LOG_SIMPLE(LOG_PROBLEMS, "FRL", "DAMAG", tprintf(T("Freelist damaged, bad object #%d."), obj));
             obj = NOTHING;
             mudstate.freelist = NOTHING;
         }
@@ -666,8 +666,8 @@ void destroy_obj(dbref obj)
             if (  !Quiet(owner)
                && !Quiet(obj))
             {
-                notify(owner, tprintf(
-                       "You get back your %d %s deposit for %s(#%d).",
+                notify(owner,
+                    tprintf(T("You get back your %d %s deposit for %s(#%d)."),
                         val, mudconf.one_coin, Moniker(obj), obj));
             }
         }
@@ -856,7 +856,7 @@ void destroy_player(dbref player, dbref victim)
 
     move_via_generic(victim, NOTHING, player, 0);
     destroy_obj(victim);
-    notify_quiet(player, tprintf("(%d objects @chowned to you)", count));
+    notify_quiet(player, tprintf(T("(%d objects @chowned to you)"), count));
 }
 
 static void purge_going(void)
@@ -1048,7 +1048,7 @@ static void check_dead_refs(void)
                     if (  !Quiet(i)
                        && !Quiet(owner))
                     {
-                        notify(owner, tprintf("Parent cleared on %s(#%d)",
+                        notify(owner, tprintf(T("Parent cleared on %s(#%d)"),
                             Moniker(i), i));
                     }
                 }
@@ -1080,7 +1080,7 @@ static void check_dead_refs(void)
                     if (  !Quiet(i)
                        && !Quiet(owner))
                     {
-                        notify(owner, tprintf("Zone cleared on %s(#%d)",
+                        notify(owner, tprintf(T("Zone cleared on %s(#%d)"),
                             Moniker(i), i));
                     }
                 }
@@ -1203,7 +1203,7 @@ static void check_dead_refs(void)
                     if (  !Quiet(i)
                        && !Quiet(owner))
                     {
-                        notify(owner, tprintf("Home reset on %s(#%d)",
+                        notify(owner, tprintf(T("Home reset on %s(#%d)"),
                             Moniker(i), i));
                     }
                     else
@@ -1258,7 +1258,7 @@ static void check_dead_refs(void)
                         if (  !Quiet(i)
                            && !Quiet(owner))
                         {
-                            notify(owner, tprintf("Dropto removed from %s(#%d)",
+                            notify(owner, tprintf(T("Dropto removed from %s(#%d)"),
                                 Moniker(i), i));
                         }
                     }
@@ -1851,7 +1851,7 @@ static void check_floating(void)
                 dbref owner = Owner(i);
                 if (Good_owner(owner))
                 {
-                    notify(owner, tprintf( "You own a floating room: %s(#%d)",
+                    notify(owner, tprintf(T("You own a floating room: %s(#%d)"),
                         Moniker(i), i));
                 }
             }

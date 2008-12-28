@@ -1073,7 +1073,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     int    temp;
     hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
     hp1.GetStats(0, &nRecords1, &nAllocatedSize1, &temp);
-    Log.tinyprintf("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE,
+    Log.tinyprintf(T("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE),
         nRecords, nAllocatedSize, nRecords0, nAllocatedSize0, nRecords1,
         nAllocatedSize1);
     if (nRecords0 + nRecords1 != nRecords)
@@ -1113,7 +1113,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.tinyprintf("CHashPage::Write - SetFilePointer error %u." ENDLINE, GetLastError());
+            Log.tinyprintf(T("CHashPage::Write - SetFilePointer error %u." ENDLINE), GetLastError());
             continue;
         }
         DWORD nWritten;
@@ -1122,7 +1122,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.tinyprintf("CHashPage::Write - WriteFile error %u." ENDLINE, cc);
+                Log.tinyprintf(T("CHashPage::Write - WriteFile error %u." ENDLINE), cc);
             }
             continue;
         }
@@ -1138,7 +1138,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.tinyprintf("CHashPage::Read - SetFilePointer error %u." ENDLINE, GetLastError());
+            Log.tinyprintf(T("CHashPage::Read - SetFilePointer error %u." ENDLINE), GetLastError());
             continue;
         }
         DWORD nRead;
@@ -1147,7 +1147,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.tinyprintf("CHashPage::Read - ReadFile error %u." ENDLINE, cc);
+                Log.tinyprintf(T("CHashPage::Read - ReadFile error %u." ENDLINE), cc);
             }
             continue;
         }
@@ -1168,7 +1168,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #else
         if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.tinyprintf("CHashPage::Write - lseek error %u." ENDLINE, errno);
+            Log.tinyprintf(T("CHashPage::Write - lseek error %u." ENDLINE), errno);
             continue;
         }
         int cc = mux_write(hFile, m_pPage, m_nPageSize);
@@ -1177,14 +1177,14 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.tinyprintf("CHashPage::Write - write error %u." ENDLINE, errno);
+                Log.tinyprintf(T("CHashPage::Write - write error %u." ENDLINE), errno);
             }
             else
             {
                 // Our write request was only partially filled. The disk is
                 // probably full.
                 //
-                Log.tinyprintf("CHashPage::Write - partial write." ENDLINE);
+                Log.tinyprintf(T("CHashPage::Write - partial write." ENDLINE));
             }
         }
         return true;
@@ -1208,7 +1208,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #else
         if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.tinyprintf("CHashPage::Read - lseek error %u." ENDLINE, errno);
+            Log.tinyprintf(T("CHashPage::Read - lseek error %u." ENDLINE), errno);
             continue;
         }
         int cc = mux_read(hFile, m_pPage, m_nPageSize);
@@ -1217,13 +1217,13 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.tinyprintf("CHashPage::Read - read error %u." ENDLINE, errno);
+                Log.tinyprintf(T("CHashPage::Read - read error %u." ENDLINE), errno);
             }
             else
             {
                 // Our read request was only partially filled. Surrender.
                 //
-                Log.tinyprintf("CHashPage::Read - partial read." ENDLINE);
+                Log.tinyprintf(T("CHashPage::Read - partial read." ENDLINE));
             }
             continue;
         }
@@ -1929,7 +1929,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
         if (iFileDir < nStart || nEnd < iFileDir)
         {
-            Log.tinyprintf("CHashFile::Insert - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE,
+            Log.tinyprintf(T("CHashFile::Insert - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE),
                 iFileDir, nStart, nEnd);
             return false;
         }
@@ -2175,7 +2175,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
     m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
     if (iFileDir < nStart || nEnd < iFileDir)
     {
-        Log.tinyprintf("CHashFile::Find - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE,
+        Log.tinyprintf(T("CHashFile::Find - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE),
             iFileDir, nStart, nEnd);
         return HF_FIND_END;
     }
@@ -2825,7 +2825,7 @@ void CLogFile::WriteString(const UTF8 *pString)
     WriteBuffer(nString, pString);
 }
 
-void DCL_CDECL CLogFile::tinyprintf(const char *fmt, ...)
+void DCL_CDECL CLogFile::tinyprintf(const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -2849,14 +2849,14 @@ static void MakeLogName
     if (  pBasename
        && pBasename[0] != '\0')
     {
-        mux_sprintf(szLogName, nLogName, "%s/%s-%s.log",
+        mux_sprintf(szLogName, nLogName, T("%s/%s-%s.log"),
             pBasename,
             szPrefix,
             szTimeStamp);
     }
     else
     {
-        mux_sprintf(szLogName, nLogName, "%s-%s.log",
+        mux_sprintf(szLogName, nLogName, T("%s-%s.log"),
             szPrefix,
             szTimeStamp);
     }

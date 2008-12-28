@@ -165,11 +165,11 @@ static void dbclean_CheckANHtoAT(dbref executor)
         }
     }
 
-    notify(executor, tprintf("   Total Attributes: %d", nAttributes));
-    notify(executor, tprintf("   Predefined: %d", nPredefined));
-    notify(executor, tprintf("   User Defined: %d", nUserDefined));
-    notify(executor, tprintf("   Index Out of Bounds: %d", nOutOfBounds));
-    notify(executor, tprintf("   Inconsistent: %d", nInvalid));
+    notify(executor, tprintf(T("   Total Attributes: %d"), nAttributes));
+    notify(executor, tprintf(T("   Predefined: %d"), nPredefined));
+    notify(executor, tprintf(T("   User Defined: %d"), nUserDefined));
+    notify(executor, tprintf(T("   Index Out of Bounds: %d"), nOutOfBounds));
+    notify(executor, tprintf(T("   Inconsistent: %d"), nInvalid));
     notify(executor, T("   Done."));
 }
 
@@ -234,11 +234,11 @@ static void dbclean_CheckATtoANH(dbref executor)
         }
     }
 
-    notify(executor, tprintf("   Total Attributes: %d", nAttributes));
-    notify(executor, tprintf("   Predefined: %d", nPredefined));
-    notify(executor, tprintf("   User Defined: %d", nUserDefined));
-    notify(executor, tprintf("   Empty: %d", nEmpty));
-    notify(executor, tprintf("   Inconsistent: %d", nInvalid));
+    notify(executor, tprintf(T("   Total Attributes: %d"), nAttributes));
+    notify(executor, tprintf(T("   Predefined: %d"), nPredefined));
+    notify(executor, tprintf(T("   User Defined: %d"), nUserDefined));
+    notify(executor, tprintf(T("   Empty: %d"), nEmpty));
+    notify(executor, tprintf(T("   Inconsistent: %d"), nInvalid));
     notify(executor, T("   Done."));
 }
 
@@ -286,7 +286,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
                         // is already in Canonical form, otherwise, we would need to
                         // call MakeCanonicalAttributeName.
                         //
-                        UTF8 *p = tprintf("DANGLINGATTR-%08d", iAttr);
+                        UTF8 *p = tprintf(T("DANGLINGATTR-%08d"), iAttr);
                         vattr_define_LEN(p, strlen((char *)p), iAttr, 0);
                         nDangle++;
                     }
@@ -305,9 +305,9 @@ static void dbclean_CheckALISTtoAT(dbref executor)
             }
         }
     }
-    notify(executor, tprintf("   Invalid: %d", nInvalid));
-    notify(executor, tprintf("   DANGLINGATTR-99999999 added: %d", nDangle));
-    notify(executor, tprintf("   ALIST prunes: %d", nALIST));
+    notify(executor, tprintf(T("   Invalid: %d"), nInvalid));
+    notify(executor, tprintf(T("   DANGLINGATTR-99999999 added: %d"), nDangle));
+    notify(executor, tprintf(T("   ALIST prunes: %d"), nALIST));
     atr_pop();
 }
 
@@ -348,8 +348,8 @@ static void dbclean_CheckALISTtoDB(dbref executor)
             }
         }
     }
-    notify(executor, tprintf("   Invalid: %d", nInvalid));
-    notify(executor, tprintf("   DB prunes: %d", nMissing));
+    notify(executor, tprintf(T("   Invalid: %d"), nInvalid));
+    notify(executor, tprintf(T("   DB prunes: %d"), nMissing));
     atr_pop();
 }
 
@@ -615,7 +615,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     int cVAttributes = dbclean_RemoveStaleAttributeNames();
     notify(executor, T("Renumbering and compacting attribute numbers..."));
     dbclean_RenumberAttributes(cVAttributes);
-    notify(executor, tprintf("Next Attribute number to allocate: %d", mudstate.attr_next));
+    notify(executor, tprintf(T("Next Attribute number to allocate: %d"), mudstate.attr_next));
     notify(executor, T("Checking Integrity of the attribute data structures..."));
     dbclean_IntegrityChecking(executor);
     notify(executor, T("@dbclean completed.."));

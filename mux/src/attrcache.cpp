@@ -74,7 +74,7 @@ void cache_redirect(void)
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
         UTF8 TempFileName[20];
-        mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
+        mux_sprintf(TempFileName, sizeof(TempFileName), T("$convtemp.%d"), i);
         mux_assert(mux_fopen(&TempFiles[i], TempFileName, T("wb+")));
         mux_assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
@@ -114,7 +114,7 @@ void cache_pass2(void)
         }
         fclose(TempFiles[i]);
         UTF8 TempFileName[20];
-        mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
+        mux_sprintf(TempFileName, sizeof(TempFileName), T("$convtemp.%d"), i);
         RemoveFile(TempFileName);
         fprintf(stderr, ENDLINE);
     }
@@ -126,7 +126,7 @@ void cache_cleanup(void)
     {
         fclose(TempFiles[i]);
         UTF8 TempFileName[20];
-        mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
+        mux_sprintf(TempFileName, sizeof(TempFileName), T("$convtemp.%d"), i);
         RemoveFile(TempFileName);
     }
 }
@@ -348,7 +348,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
-        Log.tinyprintf("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) while database is write-protected" ENDLINE,
+        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) while database is write-protected" ENDLINE),
             nam->object, nam->attrnum, value, len);
         return false;
     }
@@ -398,7 +398,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     //
     if (!hfAttributeFile.Insert((HP_HEAPLENGTH)(len+sizeof(Aname)), nHash, &TempRecord))
     {
-        Log.tinyprintf("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE,
+        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
     }
 
@@ -458,7 +458,7 @@ void cache_del(Aname *nam)
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
-        Log.tinyprintf("cache_del((%d,%d)) while database is write-protected" ENDLINE,
+        Log.tinyprintf(T("cache_del((%d,%d)) while database is write-protected" ENDLINE),
             nam->object, nam->attrnum);
         return;
     }

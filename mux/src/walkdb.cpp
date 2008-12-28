@@ -104,7 +104,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        buff = tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins);
+        buff = tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins);
         notify_quiet(executor, buff);
         return;
     }
@@ -142,7 +142,7 @@ bool get_stats(dbref player, dbref who, STATS *info)
     //
     if (!payfor(player, mudconf.searchcost))
     {
-        notify(player, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
+        notify(player, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
         return false;
     }
     info->s_total = 0;
@@ -227,7 +227,7 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             {
                 nNextFree = mudstate.db_top;
             }
-            notify(executor, tprintf("The universe contains %d objects (next free is #%d).",
+            notify(executor, tprintf(T("The universe contains %d objects (next free is #%d)."),
                 mudstate.db_top, nNextFree));
             return;
         }
@@ -250,11 +250,11 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     {
         return;
     }
-    notify(executor, tprintf(
-     "%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)",
-               statinfo.s_total, statinfo.s_rooms, statinfo.s_exits,
-               statinfo.s_things, statinfo.s_players,
-               statinfo.s_garbage));
+    notify(executor,
+        tprintf(T("%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"),
+            statinfo.s_total, statinfo.s_rooms, statinfo.s_exits,
+            statinfo.s_things, statinfo.s_players,
+            statinfo.s_garbage));
 }
 
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
@@ -406,7 +406,7 @@ void do_chownall
     int count = chown_all(victim, recipient, executor, key);
     if (!Quiet(executor))
     {
-        notify(executor, tprintf("%d objects @chowned.", count));
+        notify(executor, tprintf(T("%d objects @chowned."), count));
     }
 }
 
@@ -511,7 +511,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 
     if (parm->s_rst_owner == NOTHING)
     {
-        notify(player, tprintf("%s: No such player", pname));
+        notify(player, tprintf(T("%s: No such player"), pname));
         return false;
     }
 
@@ -711,7 +711,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
             }
             else
             {
-                notify(player, tprintf("%s: unknown type", searchfor));
+                notify(player, tprintf(T("%s: unknown type"), searchfor));
                 return false;
             }
         }
@@ -753,7 +753,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 
     if (err)
     {
-        notify(player, tprintf("%s: unknown class", searchtype));
+        notify(player, tprintf(T("%s: unknown class"), searchtype));
         return false;
     }
 
@@ -773,7 +773,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player,
-            tprintf("You don\xE2\x80\x99t have enough %s to search. (You need %d)",
+            tprintf(T("You don\xE2\x80\x99t have enough %s to search. (You need %d)"),
                  mudconf.many_coins, mudconf.searchcost));
         return false;
     }
@@ -930,7 +930,7 @@ static void search_mark(dbref player, int key)
             nchanged++;
         }
     }
-    notify( player, tprintf("%d objects %smarked", nchanged,
+    notify( player, tprintf(T("%d objects %smarked"), nchanged,
             ((key == SRCH_MARK) ? "" : "un")) );
     return;
 }
@@ -1122,7 +1122,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     else
     {
         mux_sprintf(outbuf, LBUF_SIZE,
-            "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d",
+            T("\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"),
             rcount, ecount, tcount, pcount);
         notify(executor, outbuf);
     }
@@ -1361,7 +1361,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
     {
         nSum += nBin[i];
-        mux_sprintf(buff, MBUF_SIZE, "%3d %03d - %03d: %6d %6d",
+        mux_sprintf(buff, MBUF_SIZE, T("%3d %03d - %03d: %6d %6d"),
             iHour/24 + 1, iHour, iHour+8, nBin[i], nSum);
         notify(executor, buff);
     }

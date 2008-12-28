@@ -124,7 +124,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         if (!payfor(player, mudconf.linkcost))
         {
             notify_quiet(player,
-                tprintf("You don\xE2\x80\x99t have enough %s to link.",
+                tprintf(T("You don\xE2\x80\x99t have enough %s to link."),
                     mudconf.many_coins));
         }
         else
@@ -338,11 +338,11 @@ void do_link
                 UTF8 *bp = buff1;
 
                 UTF8 *p;
-                p = tprintf("Home of %s(#%d) changed from ", Name(thing), thing);
+                p = tprintf(T("Home of %s(#%d) changed from "), Name(thing), thing);
                 safe_str(p, buff1, &bp);
-                p = tprintf("%s(#%d) to ", Name(nHomeOrig), nHomeOrig);
+                p = tprintf(T("%s(#%d) to "), Name(nHomeOrig), nHomeOrig);
                 safe_str(p, buff1, &bp);
-                p = tprintf("%s(#%d).", Name(nHomeNew), nHomeNew);
+                p = tprintf(T("%s(#%d)."), Name(nHomeNew), nHomeNew);
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
@@ -390,11 +390,11 @@ void do_link
                 UTF8 *bp = buff1;
 
                 UTF8 *p;
-                p = tprintf("Dropto of %s(#%d) changed from ", Name(thing), thing);
+                p = tprintf(T("Dropto of %s(#%d) changed from "), Name(thing), thing);
                 safe_str(p, buff1, &bp);
-                p = tprintf("%s(#%d) to ", Name(nDroptoOrig), nDroptoOrig);
+                p = tprintf(T("%s(#%d) to "), Name(nDroptoOrig), nDroptoOrig);
                 safe_str(p, buff1, &bp);
-                p = tprintf("%s(#%d).", Name(nDroptoNew), nDroptoNew);
+                p = tprintf(T("%s(#%d)."), Name(nDroptoNew), nDroptoNew);
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
@@ -412,7 +412,7 @@ void do_link
 
         STARTLOG(LOG_BUGS, "BUG", "OTYPE");
         buff = alloc_mbuf("do_link.LOG.badtype");
-        mux_sprintf(buff, MBUF_SIZE, "Strange object type: object #%d = %d",
+        mux_sprintf(buff, MBUF_SIZE, T("Strange object type: object #%d = %d"),
             thing, Typeof(thing));
         log_text(buff);
         free_mbuf(buff);
@@ -535,8 +535,8 @@ void do_parent
             if (  NULL != action
                && '\0' != action[0])
             {
-                mux_sprintf(child, SBUF_SIZE, "#%d", thing);
-                mux_sprintf(original_executor, SBUF_SIZE, "#%d", executor);
+                mux_sprintf(child, SBUF_SIZE, T("#%d"), thing);
+                mux_sprintf(original_executor, SBUF_SIZE, T("#%d"), executor);
                 xargs[1] = removal;
 
                 did_it(previous_parent, previous_parent, 0, NULL, 0, NULL,
@@ -555,8 +555,8 @@ void do_parent
             if (  NULL != action
                && '\0' != action[0])
             {
-                mux_sprintf(child, SBUF_SIZE, "#%d", thing);
-                mux_sprintf(original_executor, SBUF_SIZE, "#%d", executor);
+                mux_sprintf(child, SBUF_SIZE, T("#%d"), thing);
+                mux_sprintf(original_executor, SBUF_SIZE, T("#%d"), executor);
                 xargs[1] = addition;
 
                 did_it(parent, parent, 0, NULL, 0, NULL, A_APARENT, 0,
@@ -615,7 +615,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 #endif // TINYMUX_MODULES
 
-    notify(executor, tprintf("%s created as room #%d.", name, room));
+    notify(executor, tprintf(T("%s created as room #%d."), name, room));
 
     UTF8 *buff = alloc_sbuf("do_dig");
     if (  nargs >= 1
@@ -685,7 +685,7 @@ void do_create
     s_Home(thing, new_home(executor));
     if (!Quiet(executor))
     {
-        notify(executor, tprintf("%s created as object #%d", Name(thing), thing));
+        notify(executor, tprintf(T("%s created as object #%d"), Name(thing), thing));
     }
 
     local_data_create(thing);
@@ -773,7 +773,7 @@ void do_clone
        && (key & CLONE_FROM_PARENT))
     {
         notify_quiet(executor,
-              tprintf("You don\xE2\x80\x99t control %s, ignoring /parent.",
+              tprintf(T("You don\xE2\x80\x99t control %s, ignoring /parent."),
                   Name(thing)));
         key &= ~CLONE_FROM_PARENT;
     }
@@ -881,13 +881,13 @@ void do_clone
         if (arg2 && *arg2)
         {
             notify(executor,
-             tprintf("%s cloned as %s, new copy is object #%d.",
+             tprintf(T("%s cloned as %s, new copy is object #%d."),
                  Name(thing), arg2, clone));
         }
         else
         {
             notify(executor,
-                   tprintf("%s cloned, new copy is object #%d.",
+                   tprintf(T("%s cloned, new copy is object #%d."),
                        Name(thing), clone));
         }
     }
@@ -985,7 +985,7 @@ void do_pcreate
     dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
-        notify_quiet(executor, tprintf("Failure creating \xE2\x80\x98%s\xE2\x80\x99.  %s", name, pmsg));
+        notify_quiet(executor, tprintf(T("Failure creating \xE2\x80\x98%s\xE2\x80\x99.  %s"), name, pmsg));
         return;
     }
     AddToPublicChannel(newplayer);
@@ -993,7 +993,7 @@ void do_pcreate
     {
         move_object(newplayer, Location(executor));
         notify_quiet(executor,
-            tprintf("New robot \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99",
+            tprintf(T("New robot \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99"),
                 name, newplayer, pass));
         notify_quiet(executor, T("Your robot has arrived."));
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
@@ -1006,7 +1006,7 @@ void do_pcreate
     {
         move_object(newplayer, mudconf.start_room);
         notify_quiet(executor,
-               tprintf("New player \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99",
+               tprintf(T("New player \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99"),
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
@@ -1101,7 +1101,7 @@ static void ProcessMasterRoomADestroy(dbref destroyer, dbref thing)
             {
                 CLinearTimeAbsolute lta;
                 UTF8 buf[SBUF_SIZE];
-                mux_sprintf(buf, SBUF_SIZE, "#%d", thing);
+                mux_sprintf(buf, SBUF_SIZE, T("#%d"), thing);
                 xargs[0] = buf;
                 wait_que(master_room_obj, destroyer, destroyer,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0, act, nxargs,
@@ -1188,7 +1188,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     {
         if (!mudconf.destroy_going_now)
         {
-            notify_quiet(executor, tprintf("No sense beating a dead %s.", pCased));
+            notify_quiet(executor, tprintf(T("No sense beating a dead %s."), pCased));
             return;
         }
         key |= DEST_INSTANT;
@@ -1226,7 +1226,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
         case TYPE_EXIT:
         case TYPE_THING:
-            notify(executor, tprintf("The %s shakes and begins to crumble.",
+            notify(executor, tprintf(T("The %s shakes and begins to crumble."),
                 pCased));
             break;
 
@@ -1240,7 +1240,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
            && !Quiet(ThingOwner))
         {
             notify_quiet(ThingOwner,
-                tprintf("You will be rewarded shortly for %s(#%d).",
+                tprintf(T("You will be rewarded shortly for %s(#%d)."),
                 Moniker(thing), thing));
         }
     }
@@ -1255,20 +1255,20 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             {
                 if (!Quiet(thing))
                 {
-                    notify(executor, tprintf("Destroyed %s(#%d).",
+                    notify(executor, tprintf(T("Destroyed %s(#%d)."),
                         Moniker(thing), thing));
                 }
             }
             else if (ThingOwner == thing)
             {
-                notify(executor, tprintf("Destroyed %s(#%d).",
+                notify(executor, tprintf(T("Destroyed %s(#%d)."),
                     Moniker(thing), thing));
             }
             else
             {
                 UTF8 *tname = alloc_lbuf("destroy_obj");
                 mux_strncpy(tname, Moniker(ThingOwner), LBUF_SIZE-1);
-                notify(executor, tprintf("Destroyed %s\xE2\x80\x99s %s(#%d).",
+                notify(executor, tprintf(T("Destroyed %s\xE2\x80\x99s %s(#%d)."),
                     tname, Moniker(thing), thing));
                 free_lbuf(tname);
             }

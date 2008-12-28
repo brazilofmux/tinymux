@@ -146,13 +146,13 @@ static void show_quota(dbref player, dbref victim)
 
     if (!Free_Quota(victim))
     {
-        mux_sprintf( buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
-                    " Quota: %9d  Used: %9d", aq, rq);
+        mux_sprintf(buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
+                    T(" Quota: %9d  Used: %9d"), aq, rq);
     }
     else
     {
-        mux_sprintf( buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
-                     " Quota: UNLIMITED  Used: %9d", rq);
+        mux_sprintf(buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
+                     T(" Quota: UNLIMITED  Used: %9d"), rq);
     }
     notify_quiet(player, buff);
     free_lbuf(buff);

@@ -94,7 +94,7 @@ void do_kill
             //
             if (!payfor(executor, cost))
             {
-                notify(executor, tprintf("You don\xE2\x80\x99t have enough %s.", mudconf.many_coins));
+                notify(executor, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
                 return;
             }
         }
@@ -108,20 +108,20 @@ void do_kill
             //
             notify(executor, T("Your murder attempt failed."));
             buf1 = alloc_lbuf("do_kill.failed");
-            mux_sprintf(buf1, LBUF_SIZE, "%s tried to kill you!", Moniker(executor));
+            mux_sprintf(buf1, LBUF_SIZE, T("%s tried to kill you!"), Moniker(executor));
             notify_with_cause_ooc(victim, executor, buf1);
             if (Suspect(executor))
             {
                 mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
                 if (executor == Owner(executor))
                 {
-                    raw_broadcast(WIZARD, "[Suspect] %s tried to kill %s(#%d).", buf1, Moniker(victim), victim);
+                    raw_broadcast(WIZARD, T("[Suspect] %s tried to kill %s(#%d)."), buf1, Moniker(victim), victim);
                 }
                 else
                 {
                     buf2 = alloc_lbuf("do_kill.SUSP.failed");
                     mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
-                    raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d).",
+                    raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> tried to kill %s(#%d)."),
                         buf2, buf1, executor, Moniker(victim), victim);
                     free_lbuf(buf2);
                 }
@@ -139,17 +139,17 @@ void do_kill
             mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
             if (executor == Owner(executor))
             {
-                raw_broadcast(WIZARD, "[Suspect] %s killed %s(#%d).", buf1, Moniker(victim), victim);
+                raw_broadcast(WIZARD, T("[Suspect] %s killed %s(#%d)."), buf1, Moniker(victim), victim);
             }
             else
             {
                 mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
-                raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> killed %s(#%d).",
+                raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> killed %s(#%d)."),
                     buf2, buf1, executor, Moniker(victim), victim);
             }
         }
-        mux_sprintf(buf1, LBUF_SIZE, "You killed %s!", Moniker(victim));
-        mux_sprintf(buf2, LBUF_SIZE, "killed %s!", Moniker(victim));
+        mux_sprintf(buf1, LBUF_SIZE, T("You killed %s!"), Moniker(victim));
+        mux_sprintf(buf2, LBUF_SIZE, T("killed %s!"), Moniker(victim));
         if (!isPlayer(victim))
         {
             if (halt_que(NOTHING, victim) > 0)
@@ -165,7 +165,7 @@ void do_kill
 
         // notify victim
         //
-        mux_sprintf(buf1, LBUF_SIZE, "%s killed you!", Moniker(executor));
+        mux_sprintf(buf1, LBUF_SIZE, T("%s killed you!"), Moniker(executor));
         notify_with_cause_ooc(victim, executor, buf1);
 
         // Pay off the bonus.
@@ -175,7 +175,7 @@ void do_kill
             cost /= 2;  // Victim gets half.
             if (Pennies(Owner(victim)) < mudconf.paylimit)
             {
-                mux_sprintf(buf1, LBUF_SIZE, "Your insurance policy pays %d %s.", cost,
+                mux_sprintf(buf1, LBUF_SIZE, T("Your insurance policy pays %d %s."), cost,
                     mudconf.many_coins);
                 notify(victim, buf1);
                 giveto(Owner(victim), cost);
@@ -270,9 +270,9 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
     {
         str = alloc_lbuf("do_give.thing.ok");
         mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
-        notify_with_cause_ooc(recipient, giver, tprintf("%s gave you %s.", str, Moniker(thing)));
+        notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str, Moniker(thing)));
         notify(giver, T("Given."));
-        notify_with_cause_ooc(thing, giver, tprintf("%s gave you to %s.", str, Moniker(recipient)));
+        notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str, Moniker(recipient)));
         free_lbuf(str);
     }
     did_it(giver, thing, A_DROP, NULL, A_ODROP, NULL, A_ADROP, 0, NULL, 0);
@@ -287,13 +287,13 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     if (  amount < 0
        && !Steal(giver))
     {
-        notify(giver, tprintf("You look through your pockets. Nope, no negative %s.",
+        notify(giver, tprintf(T("You look through your pockets. Nope, no negative %s."),
             mudconf.many_coins));
         return;
     }
     if (!amount)
     {
-        notify(giver, tprintf("You must specify a positive number of %s.",
+        notify(giver, tprintf(T("You must specify a positive number of %s."),
             mudconf.many_coins));
         return;
     }
@@ -302,13 +302,13 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         if (  isPlayer(recipient)
            && (Pennies(recipient) + amount > mudconf.paylimit))
         {
-            notify(giver, tprintf("That player doesn\xE2\x80\x99t need that many %s!",
+            notify(giver, tprintf(T("That player doesn\xE2\x80\x99t need that many %s!"),
                 mudconf.many_coins));
             return;
         }
         if (!could_doit(giver, recipient, A_LUSE))
         {
-            notify(giver, tprintf("%s won\xE2\x80\x99t take your money.", Moniker(recipient)));
+            notify(giver, tprintf(T("%s won\xE2\x80\x99t take your money."), Moniker(recipient)));
             return;
         }
     }
@@ -317,7 +317,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     //
     if (!payfor(giver, amount))
     {
-        notify(giver, tprintf("You don\xE2\x80\x99t have that many %s to give!",
+        notify(giver, tprintf(T("You don\xE2\x80\x99t have that many %s to give!"),
             mudconf.many_coins));
         return;
     }
@@ -358,13 +358,13 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     {
         if (amount == 1)
         {
-            notify(giver, tprintf("You give a %s to %s.", mudconf.one_coin, Moniker(recipient)));
-            notify_with_cause_ooc(recipient, giver, tprintf("%s gives you a %s.", Moniker(giver), mudconf.one_coin));
+            notify(giver, tprintf(T("You give a %s to %s."), mudconf.one_coin, Moniker(recipient)));
+            notify_with_cause_ooc(recipient, giver, tprintf(T("%s gives you a %s."), Moniker(giver), mudconf.one_coin));
         }
         else
         {
-            notify(giver, tprintf("You give %d %s to %s.", amount, mudconf.many_coins, Moniker(recipient)));
-            notify_with_cause_ooc(recipient, giver, tprintf("%s gives you %d %s.",
+            notify(giver, tprintf(T("You give %d %s to %s."), amount, mudconf.many_coins, Moniker(recipient)));
+            notify_with_cause_ooc(recipient, giver, tprintf(T("%s gives you %d %s."),
                 Moniker(giver), amount, mudconf.many_coins));
         }
     }
@@ -373,12 +373,12 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     //
     if ((amount - cost) == 1)
     {
-        notify(giver, tprintf("You get 1 %s in change.", mudconf.one_coin));
+        notify(giver, tprintf(T("You get 1 %s in change."), mudconf.one_coin));
         giveto(giver, 1);
     }
     else if (amount != cost)
     {
-        notify(giver, tprintf("You get %d %s in change.", (amount - cost), mudconf.many_coins));
+        notify(giver, tprintf(T("You get %d %s in change."), (amount - cost), mudconf.many_coins));
         giveto(giver, (amount - cost));
     }
 

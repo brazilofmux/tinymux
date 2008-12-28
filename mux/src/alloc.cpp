@@ -141,14 +141,14 @@ static void pool_err
     if (0 == mudstate.logging)
     {
         STARTLOG(logflag, logsys, "ALLOC");
-        Log.tinyprintf("%s[%d] (tag %s) %s in %s line %d at %p. (%s)", action,
+        Log.tinyprintf(T("%s[%d] (tag %s) %s in %s line %d at %p. (%s)"), action,
             pools[poolnum].pool_client_size, tag, reason, file, line, ph,
             mudstate.debug_cmd);
         ENDLOG;
     }
     else if (LOG_ALLOCATE != logflag)
     {
-        Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %p. >***",
+        Log.tinyprintf(T(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %p. >***"),
             action, pools[poolnum].pool_client_size, tag, reason, file, line, ph);
     }
 }
@@ -314,7 +314,7 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
        && mudstate.logging == 0
        && start_log(T("DBG"), T("ALLOC")))
     {
-        Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)",
+        Log.tinyprintf(T("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
             pools[poolnum].pool_client_size, tag, file, line, ph,
             mudstate.debug_cmd);
         end_log();
@@ -414,7 +414,7 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
        && mudstate.logging == 0
        && start_log(T("DBG"), T("ALLOC")))
     {
-        Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)",
+        Log.tinyprintf(T("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
             LBUF_SIZE, tag, file, line, ph, mudstate.debug_cmd);
         end_log();
     }
@@ -436,7 +436,7 @@ void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int lin
     if (buf == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_printf("Attempt to free null pointer in %s line %d.", file, line);
+        log_printf(T("Attempt to free null pointer in %s line %d."), file, line);
         ENDLOG
         return;
     }
@@ -484,7 +484,7 @@ void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int lin
        && mudstate.logging == 0
        && start_log(T("DBG"), T("ALLOC")))
     {
-        Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
+        Log.tinyprintf(T("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
             pools[poolnum].pool_client_size, ph->u.buf_tag, file, line, ph,
             mudstate.debug_cmd);
         end_log();
@@ -512,7 +512,7 @@ void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, con
     if (buf == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_printf("Attempt to free_lbuf null pointer in %s line %d.", file, line);
+        log_printf(T("Attempt to free_lbuf null pointer in %s line %d."), file, line);
         ENDLOG
         return;
     }
@@ -573,7 +573,7 @@ void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, con
        && mudstate.logging == 0
        && start_log(T("DBG"), T("ALLOC")))
     {
-        Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
+        Log.tinyprintf(T("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
             LBUF_SIZE, ph->u.buf_tag, file, line, ph, mudstate.debug_cmd);
         end_log();
     }
@@ -590,13 +590,13 @@ static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
 {
     POOLHDR *ph;
     int numfree = 0;
-    notify(player, tprintf("----- %s -----", text));
+    notify(player, tprintf(T("----- %s -----"), text));
     for (ph = pools[poolnum].chain_head; ph != NULL; ph = ph->next)
     {
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
             notify(player, T("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
-            notify(player, tprintf("%d free %s (before corruption)",
+            notify(player, tprintf(T("%d free %s (before corruption)"),
                        numfree, text));
             return;
         }
@@ -612,7 +612,7 @@ static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
             numfree++;
         }
     }
-    notify(player, tprintf("%d free %s", numfree, text));
+    notify(player, tprintf(T("%d free %s"), numfree, text));
 }
 
 void list_bufstats(dbref player)

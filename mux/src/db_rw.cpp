@@ -328,13 +328,13 @@ static bool get_list(FILE *f, dbref i)
             if (c != '\n')
             {
                 ungetc(c, f);
-                Log.tinyprintf("No line feed on object %d" ENDLINE, i);
+                Log.tinyprintf(T("No line feed on object %d" ENDLINE), i);
                 return true;
             }
             return true;
 
         default:
-            Log.tinyprintf("Bad character \xE2\x80\x98%c\xE2\x80\x99 when getting attributes on object %d" ENDLINE, c, i);
+            Log.tinyprintf(T("Bad character \xE2\x80\x98%c\xE2\x80\x99 when getting attributes on object %d" ENDLINE), c, i);
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
@@ -467,7 +467,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (header_gotten)
                 {
-                    Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(T(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE), i);
                     tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
@@ -481,7 +481,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     if (  g_version < MIN_SUPPORTED_VERSION
                        || MAX_SUPPORTED_VERSION < g_version)
                     {
-                        Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
+                        Log.tinyprintf(T(ENDLINE "Unsupported flatfile version: %d." ENDLINE), g_version);
                         return -1;
                     }
 
@@ -521,7 +521,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (size_gotten)
                 {
-                    Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(T(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE), i);
                     tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
@@ -536,7 +536,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (nextattr_gotten)
                 {
-                    Log.tinyprintf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(T(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE), i);
                     tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
@@ -547,7 +547,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             else
             {
-                Log.tinyprintf(ENDLINE "Unexpected character \xE2\x80\x98%c\xE2\x80\x99 in MUX header near object #%d, ignored." ENDLINE, ch, i);
+                Log.tinyprintf(T(ENDLINE "Unexpected character \xE2\x80\x98%c\xE2\x80\x99 in MUX header near object #%d, ignored." ENDLINE), ch, i);
                 tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
             }
             break;
@@ -643,7 +643,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             {
                 if (!get_list(f, i))
                 {
-                    Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
+                    Log.tinyprintf(T(ENDLINE "Error reading attrs for object #%d" ENDLINE), i);
                     return -1;
                 }
             }
@@ -660,7 +660,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
             if (strncmp((char *)tstr, "**END OF DUMP***", 16))
             {
-                Log.tinyprintf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
+                Log.tinyprintf(T(ENDLINE "Bad EOF marker at object #%d" ENDLINE), i);
                 return -1;
             }
             else
@@ -669,19 +669,19 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (g_max_nam_atr < g_max_obj_atr)
                 {
-                    Log.tinyprintf(ENDLINE "Warning: One or more attribute values are unnamed. Did you use ./Backup on a running game?");
+                    Log.tinyprintf(T(ENDLINE "Warning: One or more attribute values are unnamed. Did you use ./Backup on a running game?"));
                 }
 
                 if (!nextattr_gotten)
                 {
-                    Log.tinyprintf(ENDLINE "Warning: Missing +N<next free>. Adjusting.");
+                    Log.tinyprintf(T(ENDLINE "Warning: Missing +N<next free>. Adjusting."));
                 }
 
                 if (mudstate.attr_next <= g_max_nam_atr)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf(ENDLINE "Warning: +N<next free attr> conflicts with existing attribute names. Adjusting.");
+                        Log.tinyprintf(T(ENDLINE "Warning: +N<next free attr> conflicts with existing attribute names. Adjusting."));
                     }
                     mudstate.attr_next = g_max_nam_atr + 1;
                 }
@@ -690,7 +690,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf(ENDLINE "Warning: +N<next free attr> conflicts object attribute numbers. Adjusting.");
+                        Log.tinyprintf(T(ENDLINE "Warning: +N<next free attr> conflicts object attribute numbers. Adjusting."));
                     }
                     mudstate.attr_next = g_max_nam_atr + 1;
                 }
@@ -710,7 +710,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf(ENDLINE "Info: +N<next free attr> can be safely adjusted down.");
+                        Log.tinyprintf(T(ENDLINE "Info: +N<next free attr> can be safely adjusted down."));
                     }
                     mudstate.attr_next = max_atr + 1;
                 }
@@ -761,17 +761,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
 
         case EOF:
-            Log.tinyprintf(ENDLINE "Unexpected end of file near object #%d" ENDLINE, i);
+            Log.tinyprintf(T(ENDLINE "Unexpected end of file near object #%d" ENDLINE), i);
             return -1;
 
         default:
             if (mux_isprint_ascii(ch))
             {
-                Log.tinyprintf(ENDLINE "Illegal character \xE2\x80\x98%c\xE2\x80\x99 near object #%d" ENDLINE, ch, i);
+                Log.tinyprintf(T(ENDLINE "Illegal character \xE2\x80\x98%c\xE2\x80\x99 near object #%d" ENDLINE), ch, i);
             }
             else
             {
-                Log.tinyprintf(ENDLINE "Illegal character 0x%02x near object #%d" ENDLINE, ch, i);
+                Log.tinyprintf(T(ENDLINE "Illegal character 0x%02x near object #%d" ENDLINE), ch, i);
             }
             return -1;
         }

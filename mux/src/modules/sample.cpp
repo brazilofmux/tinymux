@@ -151,7 +151,7 @@ MUX_RESULT CSample::FinalConstruct(void)
     {
         if (m_pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
         {
-            m_pILog->log_printf("CSample::CSample().");
+            m_pILog->log_printf(T("CSample::CSample()."));
             m_pILog->end_log();
         }
     }
@@ -178,7 +178,7 @@ CSample::~CSample()
     {
         if (m_pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
         {
-            m_pILog->log_printf("CSample::~CSample().");
+            m_pILog->log_printf(T("CSample::~CSample()."));
             m_pILog->end_log();
         }
 
@@ -349,7 +349,7 @@ MUX_RESULT CSampleFactory::LockServer(bool bLock)
 //
 void CSample::startup(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::startup event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::startup event." ENDLINE));
 
 #if 1
     ISum *pISum = NULL;
@@ -360,18 +360,18 @@ void CSample::startup(void)
         mr = pISum->Add(1,1, &sum);
         if (MUX_SUCCEEDED(mr))
         {
-            m_pILog->log_printf("ISum::Add(1,1) is %d." ENDLINE, sum);
+            m_pILog->log_printf(T("ISum::Add(1,1) is %d." ENDLINE), sum);
         }
         else
         {
-            m_pILog->log_printf("Call to pISum->Add() failed with %d." ENDLINE, mr);
+            m_pILog->log_printf(T("Call to pISum->Add() failed with %d." ENDLINE), mr);
         }
         pISum->Release();
         pISum = NULL;
     }
     else
     {
-        m_pILog->log_printf("CreateInstance returned %d." ENDLINE, mr);
+        m_pILog->log_printf(T("CreateInstance returned %d." ENDLINE), mr);
     }
 #endif
 }
@@ -384,7 +384,7 @@ void CSample::startup(void)
 //
 void CSample::presync_database(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::presync_database event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::presync_database event." ENDLINE));
 }
 
 // Like the above routine except that it called from the SIGSEGV handler.
@@ -393,7 +393,7 @@ void CSample::presync_database(void)
 //
 void CSample::presync_database_sigsegv(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::presync_database_sigsegv event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::presync_database_sigsegv event." ENDLINE));
 }
 
 // This is called prior to the game database writing out it's own
@@ -416,7 +416,7 @@ void CSample::dump_database(int dump_type)
 {
     UNUSED_PARAMETER(dump_type);
 
-    m_pILog->log_printf("Sample module sees CSample::dump_database event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::dump_database event." ENDLINE));
 }
 
 // The function is called when the dumping process has completed.
@@ -428,7 +428,7 @@ void CSample::dump_database(int dump_type)
 //
 void CSample::dump_complete_signal(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::dump_complete_signal event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::dump_complete_signal event." ENDLINE));
 }
 
 // Called when the game is shutting down, after the game database has
@@ -436,7 +436,7 @@ void CSample::dump_complete_signal(void)
 //
 void CSample::shutdown(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::shutdown event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::shutdown event." ENDLINE));
 }
 
 // Called after the database consistency check is completed.   Add
@@ -444,7 +444,7 @@ void CSample::shutdown(void)
 //
 void CSample::dbck(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::dbck event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::dbck event." ENDLINE));
 }
 
 // Called when a player connects or creates at the connection screen.
@@ -457,7 +457,7 @@ void CSample::connect(dbref player, int isnew, int num)
     UNUSED_PARAMETER(isnew);
     UNUSED_PARAMETER(num);
 
-    m_pILog->log_printf("Sample module sees CSample::connect event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::connect event." ENDLINE));
 }
 
 // Called when player disconnects from the game.  The parameter 'num' is
@@ -469,7 +469,7 @@ void CSample::disconnect(dbref player, int num)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(num);
 
-    m_pILog->log_printf("Sample module sees CSample::disconnect event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::disconnect event." ENDLINE));
 }
 
 // Called after any object type is created.
@@ -478,7 +478,7 @@ void CSample::data_create(dbref object)
 {
     UNUSED_PARAMETER(object);
 
-    m_pILog->log_printf("Sample module sees CSample::data_create event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::data_create event." ENDLINE));
 }
 
 // Called when an object is cloned.  clone is the new object created
@@ -489,7 +489,7 @@ void CSample::data_clone(dbref clone, dbref source)
     UNUSED_PARAMETER(clone);
     UNUSED_PARAMETER(source);
 
-    m_pILog->log_printf("Sample module sees CSample::data_clone event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::data_clone event." ENDLINE));
 }
 
 // Called when the object is truly destroyed, not just set GOING
@@ -498,7 +498,7 @@ void CSample::data_free(dbref object)
 {
     UNUSED_PARAMETER(object);
 
-    m_pILog->log_printf("Sample module sees CSample::data_free event." ENDLINE);
+    m_pILog->log_printf(T("Sample module sees CSample::data_free event." ENDLINE));
 }
 
 // SumProxy component which is not directly accessible.

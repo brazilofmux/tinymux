@@ -956,11 +956,11 @@ UTF8 *unparse_object_numonly(dbref target)
     }
     else if (!Good_obj(target))
     {
-        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
+        mux_sprintf(buf, LBUF_SIZE, T("*ILLEGAL*(#%d)"), target);
     }
     else
     {
-        mux_sprintf(buf, LBUF_SIZE, "%s(#%d)", PureName(target), target);
+        mux_sprintf(buf, LBUF_SIZE, T("%s(#%d)"), PureName(target), target);
     }
     return buf;
 }
@@ -1010,7 +1010,7 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
     }
     else if (!Good_obj(target))
     {
-        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
+        mux_sprintf(buf, LBUF_SIZE, T("*ILLEGAL*(#%d)"), target);
     }
     else
     {
@@ -1245,7 +1245,7 @@ bool convert_flags(dbref player, UTF8 *flaglist, FLAGSET *fset, FLAG *p_type)
                 if (  type != NOTYPE
                    && type != i)
                 {
-                    UTF8 *p = tprintf("%c: Conflicting type specifications.",
+                    UTF8 *p = tprintf(T("%c: Conflicting type specifications."),
                         *s);
                     notify(player, p);
                     return false;
@@ -1288,7 +1288,7 @@ bool convert_flags(dbref player, UTF8 *flaglist, FLAGSET *fset, FLAG *p_type)
         if (!handled)
         {
             notify(player,
-                   tprintf("%c: Flag unknown or not valid for specified object type",
+                   tprintf(T("%c: Flag unknown or not valid for specified object type"),
                        *s));
             return false;
         }
@@ -1330,7 +1330,7 @@ void decompile_flags(dbref player, dbref thing, UTF8 *thingname)
 
         // Report this flag.
         //
-        notify(player, tprintf("@set %s=%s", thingname, fp->flagname));
+        notify(player, tprintf(T("@set %s=%s"), thingname, fp->flagname));
     }
 }
 
@@ -1416,7 +1416,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                     MEMFREE(lookup->flagname);
                     lookup->flagname = (UTF8 *)lookup->pOrigName;
                     hashdeleteLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
-                    notify(executor, tprintf("Flag name \xE2\x80\x98%s\xE2\x80\x99 removed from the hash table.", pCheckedAlias));
+                    notify(executor, tprintf(T("Flag name \xE2\x80\x98%s\xE2\x80\x99 removed from the hash table."), pCheckedAlias));
                 }
                 else
                 {

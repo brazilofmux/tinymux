@@ -62,7 +62,7 @@ public:
     virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
     virtual void log_text(const UTF8 *text) = 0;
     virtual void log_number(int num) = 0;
-    virtual void DCL_CDECL log_printf(const char *fmt, ...) = 0;
+    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...) = 0;
     virtual void log_name(dbref target) = 0;
     virtual void log_name_and_loc(dbref player) = 0;
     virtual void log_type_and_name(dbref thing) = 0;
@@ -85,7 +85,7 @@ public:
     virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
     virtual void log_text(const UTF8 *text);
     virtual void log_number(int num);
-    virtual void DCL_CDECL log_printf(const char *fmt, ...);
+    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...);
     virtual void log_name(dbref target);
     virtual void log_name_and_loc(dbref player);
     virtual void log_type_and_name(dbref thing);

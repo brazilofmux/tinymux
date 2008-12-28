@@ -144,12 +144,12 @@ void CLinearTimeAbsolute::ReturnUniqueString(UTF8 *buffer, size_t nBuffer)
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
     {
-        mux_sprintf(buffer, nBuffer, "%04d%02d%02d-%02d%02d%02d", ft.iYear, ft.iMonth,
+        mux_sprintf(buffer, nBuffer, T("%04d%02d%02d-%02d%02d%02d"), ft.iYear, ft.iMonth,
                 ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond);
     }
     else
     {
-        mux_sprintf(buffer, nBuffer, "%03d", m_nCount++);
+        mux_sprintf(buffer, nBuffer, T("%03d"), m_nCount++);
     }
 }
 
@@ -178,7 +178,7 @@ UTF8 *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
               || ft.iMicrosecond != 0
               || ft.iNanosecond != 0))
         {
-            mux_sprintf(buffer, sizeof(buffer), ".%03d%03d%03d",
+            mux_sprintf(buffer, sizeof(buffer), T(".%03d%03d%03d"),
                 ft.iMillisecond, ft.iMicrosecond, ft.iNanosecond);
 
             // Remove trailing zeros.
@@ -192,7 +192,7 @@ UTF8 *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
             *p = '\0';
         }
         mux_sprintf(m_Buffer, sizeof(m_Buffer),
-            "%s %s %02d %02d:%02d:%02d%s %04d",
+            T("%s %s %02d %02d:%02d:%02d%s %04d"),
             DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
             ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, buffer,
             ft.iYear);

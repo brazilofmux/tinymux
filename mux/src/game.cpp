@@ -1169,11 +1169,11 @@ static void report_timecheck
             obj_counted++;
             if (yes_log)
             {
-                Log.tinyprintf("#%d\t%ld" ENDLINE, thing, used_msecs);
+                Log.tinyprintf(T("#%d\t%ld" ENDLINE), thing, used_msecs);
             }
             if (yes_screen)
             {
-                raw_notify(player, tprintf("#%d\t%ld", thing, used_msecs));
+                raw_notify(player, tprintf(T("#%d\t%ld"), thing, used_msecs));
             }
             if (yes_clear)
             {
@@ -1188,13 +1188,13 @@ static void report_timecheck
     if (yes_screen)
     {
         raw_notify(player,
-            tprintf("Counted %d objects using %ld msecs over %d seconds.",
+            tprintf(T("Counted %d objects using %ld msecs over %d seconds."),
             obj_counted, lTotal, lPeriod));
     }
 
     if (yes_log)
     {
-        Log.tinyprintf("Counted %d objects using %ld msecs over %d seconds.",
+        Log.tinyprintf(T("Counted %d objects using %ld msecs over %d seconds."),
             obj_counted, lTotal, lPeriod);
         end_log();
     }
@@ -1264,7 +1264,7 @@ void do_shutdown
         return;
     }
 
-    raw_broadcast(0, "GAME: Shutdown by %s", Moniker(Owner(executor)));
+    raw_broadcast(0, T("GAME: Shutdown by %s"), Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text(T("Shutdown by "));
     log_name(executor);
@@ -1424,10 +1424,10 @@ void dump_database_internal(int dump_type)
         DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
         bool bOpen;
 
-        mux_sprintf(outfn, sizeof(outfn), "%s%s", *(dp->ppszOutputBase), dp->szOutputSuffix);
+        mux_sprintf(outfn, sizeof(outfn), T("%s%s"), *(dp->ppszOutputBase), dp->szOutputSuffix);
         if (dp->bUseTemporary)
         {
-            mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", outfn, mudstate.epoch);
+            mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), outfn, mudstate.epoch);
             RemoveFile(tmpfile);
             bOpen = mux_fopen(&f, tmpfile, T("wb"));
         }
@@ -1483,13 +1483,13 @@ void dump_database_internal(int dump_type)
     //
     if (mudconf.compress_db)
     {
-        mux_sprintf(prevfile, sizeof(prevfile), "%s.prev.gz", mudconf.outdb);
-        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch - 1);
+        mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev.gz"), mudconf.outdb);
+        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#.gz"), mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
-        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
-        mux_sprintf(outfn, sizeof(outfn), "%s.gz", mudconf.outdb);
+        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#.gz"), mudconf.outdb, mudstate.epoch);
+        mux_sprintf(outfn, sizeof(outfn), T("%s.gz"), mudconf.outdb);
 
-        f = popen((char *)tprintf("%s > %s", mudconf.compress, tmpfile), POPEN_WRITE_OP);
+        f = popen((char *)tprintf(T("%s > %s"), mudconf.compress, tmpfile), POPEN_WRITE_OP);
         if (f)
         {
             DebugTotalFiles++;
@@ -1512,10 +1512,10 @@ void dump_database_internal(int dump_type)
     }
     else
     {
-        mux_sprintf(prevfile, sizeof(prevfile), "%s.prev", mudconf.outdb);
-        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch - 1);
+        mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev"), mudconf.outdb);
+        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
-        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch);
+        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
 
         if (mux_fopen(&f, tmpfile, T("wb")))
         {
@@ -1582,7 +1582,7 @@ static void dump_database(void)
     mudstate.dumped  = 0;
 #endif // HAVE_WORKING_FORK
     buff = alloc_mbuf("dump_database");
-    mux_sprintf(buff, MBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+    mux_sprintf(buff, MBUF_SIZE, T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
     log_text(T("Dumping: "));
@@ -1659,7 +1659,7 @@ void fork_and_dump(int key)
 
     if (*mudconf.dump_msg)
     {
-        raw_broadcast(0, "%s", mudconf.dump_msg);
+        raw_broadcast(0, T("%s"), mudconf.dump_msg);
     }
     check_mail_expiration();
     UTF8 *buff = alloc_lbuf("fork_and_dump");
@@ -1677,7 +1677,7 @@ void fork_and_dump(int key)
         if (key & DUMP_STRUCT)
         {
             mudstate.epoch++;
-            mux_sprintf(buff, LBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+            mux_sprintf(buff, LBUF_SIZE, T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
             log_text(T("Checkpointing: "));
             log_text(buff);
         }
@@ -1687,7 +1687,7 @@ void fork_and_dump(int key)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "FLAT");
         log_text(T("Creating flatfile: "));
-        mux_sprintf(buff, LBUF_SIZE, "%s.FLAT", mudconf.outdb);
+        mux_sprintf(buff, LBUF_SIZE, T("%s.FLAT"), mudconf.outdb);
         log_text(buff);
         ENDLOG;
     }
@@ -1816,7 +1816,7 @@ void fork_and_dump(int key)
 
     if (*mudconf.postdump_msg)
     {
-        raw_broadcast(0, "%s", mudconf.postdump_msg);
+        raw_broadcast(0, T("%s"), mudconf.postdump_msg);
     }
 }
 
@@ -1840,10 +1840,10 @@ static int load_game(int ccPageFile)
 
     if (mudconf.compress_db)
     {
-        mux_sprintf(infile, sizeof(infile), "%s.gz", mudconf.indb);
+        mux_sprintf(infile, sizeof(infile), T("%s.gz"), mudconf.indb);
         if (stat((char *)infile, &statbuf) == 0)
         {
-            f = popen((char *)tprintf(" %s < %s", mudconf.uncompress, infile), POPEN_READ_OP);
+            f = popen((char *)tprintf(T(" %s < %s"), mudconf.uncompress, infile), POPEN_READ_OP);
             if (f != NULL)
             {
                 DebugTotalFiles++;
@@ -1958,9 +1958,9 @@ static int load_game(int ccPageFile)
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
-            Log.tinyprintf("LOADING: %s" ENDLINE, mudconf.mail_db);
+            Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
             load_mail(f);
-            Log.tinyprintf("LOADING: %s (done)" ENDLINE, mudconf.mail_db);
+            Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
             if (fclose(f) == 0)
             {
                 DebugTotalFiles--;
@@ -2209,7 +2209,7 @@ static void info(int fmt, int flags, int ver)
     {
         cp = T("*unknown*");
     }
-    Log.tinyprintf("%s version %d:", cp, ver);
+    Log.tinyprintf(T("%s version %d:"), cp, ver);
     if (  ver < MIN_SUPPORTED_VERSION
        || MAX_SUPPORTED_VERSION < ver)
     {
@@ -2304,14 +2304,14 @@ static void dbconvert(void)
     int cc = init_dbfile(dirfile, pagfile, 650);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
-        Log.tinyprintf("Can\xE2\x80\x99t open database in (%s, %s) files\n", dirfile, pagfile);
+        Log.tinyprintf(T("Can\xE2\x80\x99t open database in (%s, %s) files\n"), dirfile, pagfile);
         exit(1);
     }
     else if (cc == HF_OPEN_STATUS_OLD)
     {
         if (setflags == OUTPUT_FLAGS)
         {
-            Log.tinyprintf("Would overwrite existing database (%s, %s)\n", dirfile, pagfile);
+            Log.tinyprintf(T("Would overwrite existing database (%s, %s)\n"), dirfile, pagfile);
             CLOSE;
             exit(1);
         }
@@ -2320,7 +2320,7 @@ static void dbconvert(void)
     {
         if (setflags == UNLOAD_FLAGS)
         {
-            Log.tinyprintf("Database (%s, %s) is empty.\n", dirfile, pagfile);
+            Log.tinyprintf(T("Database (%s, %s) is empty.\n"), dirfile, pagfile);
             CLOSE;
             exit(1);
         }
@@ -2404,7 +2404,7 @@ static void write_pidfile(const UTF8 *pFilename)
     else
     {
         STARTLOG(LOG_ALWAYS, "PID", "FAIL");
-        Log.tinyprintf("Failed to write pidfile %s\n", pFilename);
+        Log.tinyprintf(T("Failed to write pidfile %s\n"), pFilename);
         ENDLOG;
     }
 }
@@ -3314,7 +3314,7 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         // We can't run on this version of WinSock.
         //
-        Log.tinyprintf("INFO: WinSock v%d.%d instead of v2.2." ENDLINE,
+        Log.tinyprintf(T("INFO: WinSock v%d.%d instead of v2.2." ENDLINE),
             LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
         //WSACleanup();
         //return 102;
@@ -3406,7 +3406,7 @@ int DCL_CDECL main(int argc, char *argv[])
                     mudstate.pIQueryControl = NULL;
 
                     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                    log_printf("Couldn\xE2\x80\x99t connect sink to server (%d).", mr);
+                    log_printf(T("Couldn\xE2\x80\x99t connect sink to server (%d)."), mr);
                     ENDLOG;
                 }
             }
@@ -3416,7 +3416,7 @@ int DCL_CDECL main(int argc, char *argv[])
                 mudstate.pIQueryControl = NULL;
 
                 STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                log_printf("Couldn\xE2\x80\x99t create Query Sink (%d).", mr);
+                log_printf(T("Couldn\xE2\x80\x99t create Query Sink (%d)."), mr);
                 ENDLOG;
             }
         }
@@ -3426,7 +3426,7 @@ int DCL_CDECL main(int argc, char *argv[])
             mudstate.pIQueryControl = NULL;
 
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf("Couldn\xE2\x80\x99t connect to Query Server (%d).", mr);
+            log_printf(T("Couldn\xE2\x80\x99t connect to Query Server (%d)."), mr);
             ENDLOG;
         }
     }

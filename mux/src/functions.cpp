@@ -810,7 +810,7 @@ static FUNCTION(fun_restarts)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str(tprintf("%d", mudstate.restart_count), buff, bufc);
+    safe_str(tprintf(T("%d"), mudstate.restart_count), buff, bufc);
 }
 
 // fun_timefmt
@@ -1017,7 +1017,7 @@ static FUNCTION(fun_timefmt)
             {
                 // Long version.
                 //
-                safe_tprintf_str(buff, bufc, "%s, %s %d, %d, %02d:%02d:%02d",
+                safe_tprintf_str(buff, bufc, T("%s, %s %d, %d, %02d:%02d:%02d"),
                     pValidLongDayOfWeek,
                     pValidLongMonth,
                     ft.iDayOfMonth, ft.iYear, ft.iHour, ft.iMinute,
@@ -1030,18 +1030,18 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'C': // $C - The century (year/100).
-            safe_tprintf_str(buff, bufc, "%d", ft.iYear / 100);
+            safe_tprintf_str(buff, bufc, T("%d"), ft.iYear / 100);
             break;
 
         case 'd': // $d - Day of Month as decimal number (1-31)
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 ft.iDayOfMonth);
             break;
 
         case 'x': // $x - Date
             if (iOption == '#')
             {
-                safe_tprintf_str(buff, bufc, "%s, %s %d, %d",
+                safe_tprintf_str(buff, bufc, T("%s, %s %d, %d"),
                     pValidLongDayOfWeek,
                     pValidLongMonth,
                     ft.iDayOfMonth, ft.iYear);
@@ -1051,56 +1051,56 @@ static FUNCTION(fun_timefmt)
             // FALL THROUGH
 
         case 'D': // $D - Equivalent to %m/%d/%y
-            safe_tprintf_str(buff, bufc, "%02d/%02d/%02d", ft.iMonth,
+            safe_tprintf_str(buff, bufc, T("%02d/%02d/%02d"), ft.iMonth,
                 ft.iDayOfMonth, ft.iYear % 100);
             break;
 
         case 'e': // $e - Like $d, the day of the month as a decimal number,
                   // but a leading zero is replaced with a space.
-            safe_tprintf_str(buff, bufc, "%2d", ft.iDayOfMonth);
+            safe_tprintf_str(buff, bufc, T("%2d"), ft.iDayOfMonth);
             break;
 
         case 'F': // $F - The ISO 8601 formated date.
-            safe_tprintf_str(buff, bufc, "%d-%02d-%02d", ft.iYear, ft.iMonth,
+            safe_tprintf_str(buff, bufc, T("%d-%02d-%02d"), ft.iYear, ft.iMonth,
                 ft.iDayOfMonth);
             break;
 
         case 'g': // $g - Like $G, two-digit ISO 8601 year.
-            safe_tprintf_str(buff, bufc, "%02d", iYearISO%100);
+            safe_tprintf_str(buff, bufc, T("%02d"), iYearISO%100);
             break;
 
         case 'G': // $G - The ISO 8601 year.
-            safe_tprintf_str(buff, bufc, "%04d", iYearISO);
+            safe_tprintf_str(buff, bufc, T("%04d"), iYearISO);
             break;
 
         case 'H': // $H - Hour of the 24-hour day.
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d", ft.iHour);
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"), ft.iHour);
             break;
 
         case 'I': // $I - Hour of the 12-hour day
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d", iHour12);
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"), iHour12);
             break;
 
         case 'j': // $j - Day of the year.
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%03d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%03d"),
                 ft.iDayOfYear);
             break;
 
         case 'k': // $k - Hour of the 24-hour day. Pad with a space.
-            safe_tprintf_str(buff, bufc, "%2d", ft.iHour);
+            safe_tprintf_str(buff, bufc, T("%2d"), ft.iHour);
             break;
 
         case 'l': // $l - Hour of the 12-hour clock. Pad with a space.
-            safe_tprintf_str(buff, bufc, "%2d", iHour12);
+            safe_tprintf_str(buff, bufc, T("%2d"), iHour12);
             break;
 
         case 'm': // $m - Month of the year
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 ft.iMonth);
             break;
 
         case 'M': // $M - Minutes after the hour
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 ft.iMinute);
             break;
 
@@ -1118,12 +1118,12 @@ static FUNCTION(fun_timefmt)
 
         case 'r': // $r - Equivalent to $I:$M:$S $p
             safe_tprintf_str( buff, bufc,
-                (iOption=='#')?"%d:%02d:%02d %s":"%02d:%02d:%02d %s",
+                (iOption=='#')?T("%d:%02d:%02d %s"):T("%02d:%02d:%02d %s"),
                 iHour12, ft.iMinute, ft.iSecond, (ft.iHour<12)?T("AM"):T("PM"));
             break;
 
         case 'R': // $R - Equivalent to $H:$M
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d:%02d":"%02d:%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d:%02d"):T("%02d:%02d"),
                 ft.iHour, ft.iMinute);
             break;
 
@@ -1132,7 +1132,7 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'S': // $S - Seconds after the minute
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 ft.iSecond);
             break;
 
@@ -1143,7 +1143,7 @@ static FUNCTION(fun_timefmt)
         case 'X': // $X - Time
         case 'T': // $T - Equivalent to $H:$M:$S
             safe_tprintf_str(buff, bufc,
-                (iOption=='#')?"%d:%02d:%02d":"%02d:%02d:%02d",
+                (iOption=='#')?T("%d:%02d:%02d"):T("%02d:%02d:%02d"),
                 ft.iHour, ft.iMinute, ft.iSecond);
             break;
 
@@ -1152,12 +1152,12 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'U': // $U - Week of the year from 1st Sunday
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 iWeekOfYearSunday);
             break;
 
         case 'V': // $V - ISO 8601:1988 week number.
-            safe_tprintf_str(buff, bufc, "%02d", iWeekISO);
+            safe_tprintf_str(buff, bufc, T("%02d"), iWeekISO);
             break;
 
         case 'w': // $w - Day of the week. 0 = Sunday
@@ -1165,22 +1165,22 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'W': // $W - Week of the year from 1st Monday
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 iWeekOfYearMonday);
             break;
 
         case 'y': // $y - Two-digit year
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%02d"),
                 ft.iYear % 100);
             break;
 
         case 'Y': // $Y - All-digit year
-            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%04d",
+            safe_tprintf_str(buff, bufc, (iOption=='#')?T("%d"):T("%04d"),
                 ft.iYear);
             break;
 
         case 'z': // $z - Time zone
-            safe_tprintf_str(buff, bufc, "%c%02d%02d", iTZSign, iTZHour,
+            safe_tprintf_str(buff, bufc, T("%c%02d%02d"), iTZSign, iTZHour,
                 iTZMinute);
             break;
 
@@ -2107,7 +2107,7 @@ FUNCTION(fun_successes)
             switch (getsuccs(num_dice, difficulty, &successes))
             {
             case 0:
-                safe_tprintf_str(buff, bufc, "%d", successes);
+                safe_tprintf_str(buff, bufc, T("%d"), successes);
                 break;
 
             case NUMBER_TOO_LARGE:
@@ -2180,7 +2180,7 @@ static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[], 
     {
         pRefAttrib = alloc_lbuf("get_handler");
         UTF8 *bufp = pRefAttrib;
-        safe_tprintf_str(pRefAttrib, &bufp, "%s/%s", fargs[0], fargs[1]);
+        safe_tprintf_str(pRefAttrib, &bufp, T("%s/%s"), fargs[0], fargs[1]);
         bFreeBuffer = true;
     }
     dbref thing;
@@ -2397,7 +2397,7 @@ static FUNCTION(fun_parent)
         if (  Examinable(executor, it)
            || it == enactor)
         {
-            safe_tprintf_str(buff, bufc, "#%d", Parent(it));
+            safe_tprintf_str(buff, bufc, T("#%d"), Parent(it));
         }
         else
         {
@@ -2670,7 +2670,7 @@ static FUNCTION(fun_con)
            || where_is(executor) == it
            || it == enactor)
         {
-            safe_tprintf_str(buff, bufc, "#%d", Contents(it));
+            safe_tprintf_str(buff, bufc, T("#%d"), Contents(it));
         }
         else
         {
@@ -2719,7 +2719,7 @@ static FUNCTION(fun_exit)
         {
             if (exit_visible(exit, executor, key))
             {
-                safe_tprintf_str(buff, bufc, "#%d", exit);
+                safe_tprintf_str(buff, bufc, T("#%d"), exit);
                 return;
             }
         }
@@ -2760,7 +2760,7 @@ static FUNCTION(fun_next)
         {
             if (!isExit(it))
             {
-                safe_tprintf_str(buff, bufc, "#%d", Next(it));
+                safe_tprintf_str(buff, bufc, T("#%d"), Next(it));
             }
             else
             {
@@ -2779,7 +2779,7 @@ static FUNCTION(fun_next)
                     if (  exit != it
                        && exit_visible(exit, executor, key))
                     {
-                        safe_tprintf_str(buff, bufc, "#%d", exit);
+                        safe_tprintf_str(buff, bufc, T("#%d"), exit);
                         return;
                     }
                 }
@@ -2817,7 +2817,7 @@ static FUNCTION(fun_loc)
     }
     else if (locatable(executor, it, enactor))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Location(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), Location(it));
     }
     else
     {
@@ -2845,7 +2845,7 @@ static FUNCTION(fun_where)
     }
     else if (locatable(executor, it, enactor))
     {
-        safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), where_is(it));
     }
     else
     {
@@ -2892,7 +2892,7 @@ static FUNCTION(fun_rloc)
                 break;
             }
         }
-        safe_tprintf_str(buff, bufc, "#%d", it);
+        safe_tprintf_str(buff, bufc, T("#%d"), it);
     }
     else
     {
@@ -2930,7 +2930,7 @@ static FUNCTION(fun_room)
             }
             if (isRoom(it))
             {
-                safe_tprintf_str(buff, bufc, "#%d", it);
+                safe_tprintf_str(buff, bufc, T("#%d"), it);
                 return;
             }
         }
@@ -2938,7 +2938,7 @@ static FUNCTION(fun_room)
     }
     else if (isRoom(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", it);
+        safe_tprintf_str(buff, bufc, T("#%d"), it);
     }
     else
     {
@@ -2988,7 +2988,7 @@ static FUNCTION(fun_owner)
         }
         it = Owner(it);
     }
-    safe_tprintf_str(buff, bufc, "#%d", it);
+    safe_tprintf_str(buff, bufc, T("#%d"), it);
 }
 
 /*
@@ -3476,7 +3476,7 @@ static FUNCTION(fun_num)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_tprintf_str(buff, bufc, "#%d", match_thing_quiet(executor, fargs[0]));
+    safe_tprintf_str(buff, bufc, T("#%d"), match_thing_quiet(executor, fargs[0]));
 }
 
 static void internalPlayerFind
@@ -3974,7 +3974,7 @@ FUNCTION(fun_entrances)
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        notify(executor, tprintf("You don\xE2\x80\x99t have enough %s.",
+        notify(executor, tprintf(T("You don\xE2\x80\x99t have enough %s."),
             mudconf.many_coins));
         safe_nothing(buff, bufc);
         return;
@@ -4036,15 +4036,15 @@ static FUNCTION(fun_home)
     }
     else if (Has_home(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Home(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), Home(it));
     }
     else if (Has_dropto(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Dropto(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), Dropto(it));
     }
     else if (isExit(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), where_is(it));
     }
     else
     {
@@ -5050,7 +5050,7 @@ static FUNCTION(fun_rxlevel)
                 strcat((char *)levelbuff, " ");
             }
         }
-        safe_tprintf_str(buff, bufc, "%s", levelbuff);
+        safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
     }
     else
     {
@@ -5083,7 +5083,7 @@ static FUNCTION(fun_txlevel)
                 strcat((char *)levelbuff, " ");
             }
         }
-        safe_tprintf_str(buff, bufc, "%s", levelbuff);
+        safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
     }
     else
     {
@@ -6273,7 +6273,7 @@ static FUNCTION(fun_stats)
         safe_str(T("#-1 ERROR GETTING STATS"), buff, bufc);
         return;
     }
-    safe_tprintf_str(buff, bufc, "%d %d %d %d %d %d", statinfo.s_total, statinfo.s_rooms,
+    safe_tprintf_str(buff, bufc, T("%d %d %d %d %d %d"), statinfo.s_total, statinfo.s_rooms,
             statinfo.s_exits, statinfo.s_things, statinfo.s_players, statinfo.s_garbage);
 }
 
@@ -7471,7 +7471,7 @@ static FUNCTION(fun_locate)
         (void)match_status(executor, what);
     }
 
-    safe_tprintf_str(buff, bufc, "#%d", what);
+    safe_tprintf_str(buff, bufc, T("#%d"), what);
 }
 
 static void switch_handler
@@ -9699,11 +9699,11 @@ static const UTF8 *digit_format(int Seconds)
 
     if (Days > 0)
     {
-        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), "%dd %02d:%02d", Days, Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%dd %02d:%02d"), Days, Hours, Minutes);
     }
     else
     {
-        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), "%02d:%02d", Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%02d:%02d"), Hours, Minutes);
     }
     return TimeBuffer80;
 }
@@ -9743,24 +9743,24 @@ static int tf1_width_table[4][3] =
 
 static struct
 {
-    const char *specs[4];
+    const UTF8 *specs[4];
     int         div[3];
 } tf1_case_table[4] =
 {
     {
-        { "   %2d:%02d", "    %2d:%02d", "     %2d:%02d", "      %2d:%02d" },
+        { T("   %2d:%02d"), T("    %2d:%02d"), T("     %2d:%02d"), T("      %2d:%02d") },
         { 3600, 60, 1 }
     },
     {
-        { "%dd %02d:%02d", "%2dd %02d:%02d", "%3dd %02d:%02d", "%4dd %02d:%02d" },
+        { T("%dd %02d:%02d"), T("%2dd %02d:%02d"), T("%3dd %02d:%02d"), T("%4dd %02d:%02d") },
         { 86400, 3600, 60 }
     },
     {
-        { "%3dd %02dh", "%4dd %02dh", "%5dd %02dh", "%6dd %02dh" },
+        { T("%3dd %02dh"), T("%4dd %02dh"), T("%5dd %02dh"), T("%6dd %02dh") },
         { 86400, 3600, 1 }
     },
     {
-        { "%4dw %d", "%4dw %d", "", "" },
+        { T("%4dw %d"), T("%4dw %d"), T(""), T("") },
         { 604800, 86400, 1 }
     }
 };
@@ -11283,9 +11283,9 @@ void do_function
        || NULL == fname
        || '\0' == fname[0])
     {
-        notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
+        notify(executor, tprintf(T("%-28s   %-8s  %-30s Flgs"),
             "Function Name", "DBref#", "Attribute"));
-        notify(executor, tprintf("%28s   %8s  %30s %4s",
+        notify(executor, tprintf(T("%28s   %8s  %30s %4s"),
             "----------------------------", "--------",
             "------------------------------", " -- "));
 
@@ -11298,17 +11298,17 @@ void do_function
             {
                 pName = ap->name;
             }
-            notify(executor, tprintf("%-28.28s   #%-7d  %-30.30s  %c%c",
+            notify(executor, tprintf(T("%-28.28s   #%-7d  %-30.30s  %c%c"),
                 ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
                 ((ufp2->flags & FN_PRES) ? 'p' : '-')));
             count++;
         }
 
-        notify(executor, tprintf("%28s   %8s  %30s %4s",
+        notify(executor, tprintf(T("%28s   %8s  %30s %4s"),
             "----------------------------", "--------",
             "------------------------------", " -- "));
 
-        notify(executor, tprintf("Total User-Defined Functions: %d", count));
+        notify(executor, tprintf(T("Total User-Defined Functions: %d"), count));
         return;
     }
 
@@ -11343,7 +11343,7 @@ void do_function
         ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
         if (NULL == ufp)
         {
-            notify_quiet(executor, tprintf("Function %s not found.", pName));
+            notify_quiet(executor, tprintf(T("Function %s not found."), pName));
         }
         else
         {
@@ -11364,7 +11364,7 @@ void do_function
             }
             hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
             delete ufp;
-            notify_quiet(executor, tprintf("Function %s deleted.", pName));
+            notify_quiet(executor, tprintf(T("Function %s deleted."), pName));
         }
         return;
     }
@@ -11447,7 +11447,7 @@ void do_function
     ufp->flags = key;
     if (!Quiet(executor))
     {
-        notify_quiet(executor, tprintf("Function %s defined.", pName));
+        notify_quiet(executor, tprintf(T("Function %s defined."), pName));
     }
 }
 

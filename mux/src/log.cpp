@@ -67,7 +67,7 @@ bool start_log(const UTF8 *primary, const UTF8 *secondary)
                 ltaNow.GetLocal();
                 FIELDEDTIME ft;
                 ltaNow.ReturnFields(&ft);
-                mux_sprintf(buffer, sizeof(buffer), "%d.%02d%02d:%02d%02d%02d ", ft.iYear,
+                mux_sprintf(buffer, sizeof(buffer), T("%d.%02d%02d:%02d%02d%02d "), ft.iYear,
                     ft.iMonth, ft.iDayOfMonth, ft.iHour, ft.iMinute,
                     ft.iSecond);
             }
@@ -77,12 +77,12 @@ bool start_log(const UTF8 *primary, const UTF8 *secondary)
             if (  secondary
                && *secondary)
             {
-                Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name,
+                Log.tinyprintf(T("%s%s %3s/%-5s: "), buffer, mudconf.mud_name,
                     primary, secondary);
             }
             else
             {
-                Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name,
+                Log.tinyprintf(T("%s%s %-9s: "), buffer, mudconf.mud_name,
                     primary);
             }
         }
@@ -150,7 +150,7 @@ void log_number(int num)
     Log.WriteInteger(num);
 }
 
-void DCL_CDECL log_printf(const char *fmt, ...)
+void DCL_CDECL log_printf(__in_z const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -170,7 +170,7 @@ void log_name(dbref target)
 {
     if (mudstate.bStandAlone)
     {
-        Log.tinyprintf("%s(#%d)", PureName(target), target);
+        Log.tinyprintf(T("%s(#%d)"), PureName(target), target);
     }
     else
     {
@@ -197,7 +197,7 @@ void log_name(dbref target)
             {
                 tp = unparse_object_numonly(Owner(target));
             }
-            Log.tinyprintf("[%s]", strip_color(tp));
+            Log.tinyprintf(T("[%s]"), strip_color(tp));
             free_lbuf(tp);
         }
     }
@@ -244,7 +244,7 @@ static const UTF8 *OBJTYP(dbref thing)
 
 void log_type_and_name(dbref thing)
 {
-    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : T(""));
+    Log.tinyprintf(T("%s #%d(%s)"), OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : T(""));
     return;
 }
 
@@ -317,7 +317,7 @@ void do_log
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
-        mux_sprintf(pFullName, LBUF_SIZE, "logs/M-%s.log", pFilename);
+        mux_sprintf(pFullName, LBUF_SIZE, T("logs/M-%s.log"), pFilename);
 
         // Strip the message of all ANSI.
         //

@@ -244,7 +244,7 @@ FUNCTION(fun_zone)
     }
     else if (Examinable(executor, it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Zone(it));
+        safe_tprintf_str(buff, bufc, T("#%d"), Zone(it));
     }
     else
     {
@@ -567,7 +567,7 @@ FUNCTION(fun_create)
         }
         break;
     }
-    safe_tprintf_str(buff, bufc, "#%d", thing);
+    safe_tprintf_str(buff, bufc, T("#%d"), thing);
 }
 
 FUNCTION(fun_destroy)
@@ -1856,7 +1856,7 @@ FUNCTION(fun_mail)
                || Wizard(executor))
             {
                 count_mail(playerask, 0, &rc, &uc, &cc);
-                safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
+                safe_tprintf_str(buff, bufc, T("%d %d %d"), rc, uc, cc);
             }
             else
             {
@@ -2063,7 +2063,7 @@ FUNCTION(fun_mailj)
                         cc++;
                     }
                 }
-                safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
+                safe_tprintf_str(buff, bufc, T("%d %d %d"), rc, uc, cc);
             }
             else
             {
@@ -2176,7 +2176,7 @@ FUNCTION(fun_mailfrom)
     int from = mail_fetch_from(playerask, num);
     if (NOTHING != from)
     {
-        safe_tprintf_str(buff, bufc, "#%d", from);
+        safe_tprintf_str(buff, bufc, T("#%d"), from);
         return;
     }
 

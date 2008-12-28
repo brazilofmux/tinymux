@@ -109,7 +109,7 @@ static void encrypt_logindata(UTF8 *atrbuf, LDATA *info)
     }
     UTF8 *bp = alloc_lbuf("encrypt_logindata");
     mux_sprintf(bp, LBUF_SIZE,
-        "#%d;%s;%s;%s;%s;%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;",
+        T("#%d;%s;%s;%s;%s;%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;"),
         info->tot_good,
         info->good[0].host, info->good[0].dtm,
         info->good[1].host, info->good[1].dtm,
@@ -150,9 +150,9 @@ void record_login
         if (login_info.new_bad > 0)
         {
             notify(player, T(""));
-            notify(player, tprintf("**** %d failed connect%s since your last successful connect. ****",
+            notify(player, tprintf(T("**** %d failed connect%s since your last successful connect. ****"),
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
-            notify(player, tprintf("Most recent attempt was from %s on %s.",
+            notify(player, tprintf(T("Most recent attempt was from %s on %s."),
                 login_info.bad[0].host, login_info.bad[0].dtm));
             notify(player, T(""));
             login_info.new_bad = 0;
@@ -162,7 +162,7 @@ void record_login
            && login_info.good[0].dtm
            && *login_info.good[0].dtm)
         {
-            notify(player, tprintf("Last connect was from %s on %s.",
+            notify(player, tprintf(T("Last connect was from %s on %s."),
                 login_info.good[0].host, login_info.good[0].dtm));
         }
 
@@ -176,7 +176,7 @@ void record_login
         login_info.tot_good++;
         if (*lusername)
         {
-            atr_add_raw(player, A_LASTSITE, tprintf("%s@%s", lusername, lhost));
+            atr_add_raw(player, A_LASTSITE, tprintf(T("%s@%s"), lusername, lhost));
         }
         else
         {
@@ -642,7 +642,7 @@ static void disp_from_on(dbref player, UTF8 *dtm_str, UTF8 *host_str)
     if (dtm_str && *dtm_str && host_str && *host_str)
     {
         notify(player,
-               tprintf("     From: %s   On: %s", dtm_str, host_str));
+               tprintf(T("     From: %s   On: %s"), dtm_str, host_str));
     }
 }
 
@@ -686,12 +686,12 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 
-        notify(executor, tprintf("Total successful connects: %d", login_info.tot_good));
+        notify(executor, tprintf(T("Total successful connects: %d"), login_info.tot_good));
         for (i = 0; i < NUM_GOOD; i++)
         {
             disp_from_on(executor, login_info.good[i].host, login_info.good[i].dtm);
         }
-        notify(executor, tprintf("Total failed connects: %d", login_info.tot_bad));
+        notify(executor, tprintf(T("Total failed connects: %d"), login_info.tot_bad));
         for (i = 0; i < NUM_BAD; i++)
         {
             disp_from_on(executor, login_info.bad[i].host, login_info.bad[i].dtm);
