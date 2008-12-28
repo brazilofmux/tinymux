@@ -5150,7 +5150,7 @@ if test $ac_cv_lib_dl_dlopen = yes; then
 
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBDL
+#define HAVE_LIBDL 1
 _ACEOF
 
     LIBS="-ldl $LIBS"

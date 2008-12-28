@@ -234,7 +234,7 @@ esac
 AC_MSG_CHECKING(for dlopen)
 LIBS_SAVE=$LIBS
 AC_CHECK_LIB(dl,dlopen,[
-    AC_DEFINE([HAVE_LIBDL], [], [Define if libdl exists.])
+    AC_DEFINE([HAVE_LIBDL], [1], [Define if libdl exists.])
     LIBS="-ldl $LIBS"
     DL_LIB="-ldl"
 ])
