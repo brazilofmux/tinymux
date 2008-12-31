@@ -482,9 +482,11 @@ void mux_strtok_ctl(__in MUX_STRTOK_STATE *tts, __in const UTF8 *pControl);
 UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen);
 UTF8 *mux_strtok_parse(__deref_in MUX_STRTOK_STATE *tts);
 
+size_t mux_utoa(unsigned long uval, UTF8 *buf);
 size_t mux_ltoa(long val, __out UTF8 *buf);
 UTF8 *mux_ltoa_t(long val);
 void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
+size_t mux_ui64toa(UINT64 uval, UTF8 *buf);
 size_t mux_i64toa(INT64 val, __out UTF8 *buf);
 UTF8 *mux_i64toa_t(INT64 val);
 void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);

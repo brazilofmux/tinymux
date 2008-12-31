@@ -3391,17 +3391,9 @@ const UTF8 Digits100[201] =
 061626364656667686960717273747576777879708182838485868788898\
 09192939495969798999";
 
-size_t mux_ltoa(long val, UTF8 *buf)
+size_t mux_utoa(unsigned long uval, UTF8 *buf)
 {
     UTF8 *p = buf;
-
-    if (val < 0)
-    {
-        *p++ = '-';
-        val = -val;
-    }
-    unsigned long uval = (unsigned long)val;
-
     UTF8 *q = p;
 
     const UTF8 *z;
@@ -3445,6 +3437,23 @@ size_t mux_ltoa(long val, UTF8 *buf)
     return nLength;
 }
 
+size_t mux_ltoa(long val, UTF8 *buf)
+{
+    UTF8 *p = buf;
+
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = -val;
+    }
+    unsigned long uval = (unsigned long)val;
+
+    p += mux_utoa(uval, p);
+
+    size_t nLength = p - buf;
+    return nLength;
+}
+
 UTF8 *mux_ltoa_t(long val)
 {
     static UTF8 buff[I32BUF_SIZE];
@@ -3459,17 +3468,9 @@ void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
     safe_copy_buf(temp, n, buff, bufc);
 }
 
-size_t mux_i64toa(INT64 val, UTF8 *buf)
+size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
 {
     UTF8 *p = buf;
-
-    if (val < 0)
-    {
-        *p++ = '-';
-        val = -val;
-    }
-    UINT64 uval = (UINT64)val;
-
     UTF8 *q = p;
 
     const UTF8 *z;
@@ -3510,6 +3511,23 @@ size_t mux_i64toa(INT64 val, UTF8 *buf)
         // Stop when we reach or pass the middle.
         //
     }
+    return nLength;
+}
+
+size_t mux_i64toa(INT64 val, UTF8 *buf)
+{
+    UTF8 *p = buf;
+
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = -val;
+    }
+    UINT64 uval = (UINT64)val;
+
+    p += mux_ui64toa(uval, p);
+
+    size_t nLength = p - buf;
     return nLength;
 }
 
