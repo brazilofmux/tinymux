@@ -3407,6 +3407,43 @@ static void ReverseDigits(UTF8 *pFirst, UTF8 *pLast)
     }
 }
 
+static const UTF8 Digits16U[17] = "0123456789ABCDEF";
+static const UTF8 Digits16L[17] = "0123456789abcdef";
+
+size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase)
+{
+    UTF8 *p = buf;
+    UTF8 *q = p;
+    const UTF8 *pDigits = bUpperCase ? Digits16U : Digits16L;
+
+    while (uval > 15)
+    {
+        *p++ = pDigits[uval % 16];
+        uval /= 16;
+    }
+    *p++ = pDigits[uval];
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
+}
+
+size_t mux_ui64tox(UINT64 uval, UTF8 *buf, bool bUpperCase)
+{
+    UTF8 *p = buf;
+    UTF8 *q = p;
+    const UTF8 *pDigits = bUpperCase ? Digits16U : Digits16L;
+
+    while (uval > 15)
+    {
+        *p++ = pDigits[uval % 16];
+        uval /= 16;
+    }
+    *p++ = pDigits[uval];
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
+}
+
 const UTF8 Digits100[201] =
 "001020304050607080900111213141516171819102122232425262728292\
 031323334353637383930414243444546474849405152535455565758595\
