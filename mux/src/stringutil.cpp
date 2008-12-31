@@ -3385,6 +3385,28 @@ bool matches_exit_from_list(const UTF8 *str, const UTF8 *pattern)
     return false;
 }
 
+// In the conversion routines that follow, digits are decoded into a buffer in
+// reverse order with a possible leading '-' if the value was negative.
+//
+static void ReverseDigits(UTF8 *pFirst, UTF8 *pLast)
+{
+    // Stop when we reach or pass the middle.
+    //
+    while (pFirst < pLast)
+    {
+        // Swap characters at *pFirst and *pLast.
+        //
+        UTF8 temp = *pLast;
+        *pLast = *pFirst;
+        *pFirst = temp;
+
+        // Move pFirst and pLast towards the middle.
+        //
+        --pLast;
+        ++pFirst;
+    }
+}
+
 const UTF8 Digits100[201] =
 "001020304050607080900111213141516171819102122232425262728292\
 031323334353637383930414243444546474849405152535455565758595\
@@ -3410,48 +3432,21 @@ size_t mux_utoa(unsigned long uval, UTF8 *buf)
     {
         *p++ = *(z+1);
     }
-
-    size_t nLength = p - buf;
-    *p-- = '\0';
-
-    // The digits are in reverse order with a possible leading '-'
-    // if the value was negative. q points to the first digit,
-    // and p points to the last digit.
-    //
-    while (q < p)
-    {
-        // Swap characters are *p and *q
-        //
-        UTF8 temp = *p;
-        *p = *q;
-        *q = temp;
-
-        // Move p and first digit towards the middle.
-        //
-        --p;
-        ++q;
-
-        // Stop when we reach or pass the middle.
-        //
-    }
-    return nLength;
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
 }
 
 size_t mux_ltoa(long val, UTF8 *buf)
 {
     UTF8 *p = buf;
-
     if (val < 0)
     {
         *p++ = '-';
         val = -val;
     }
-    unsigned long uval = (unsigned long)val;
-
-    p += mux_utoa(uval, p);
-
-    size_t nLength = p - buf;
-    return nLength;
+    p += mux_utoa((unsigned long)val, p);
+    return p - buf;
 }
 
 UTF8 *mux_ltoa_t(long val)
@@ -3487,31 +3482,9 @@ size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
     {
         *p++ = *(z+1);
     }
-
-    size_t nLength = p - buf;
-    *p-- = '\0';
-
-    // The digits are in reverse order with a possible leading '-'
-    // if the value was negative. q points to the first digit,
-    // and p points to the last digit.
-    //
-    while (q < p)
-    {
-        // Swap characters are *p and *q
-        //
-        UTF8 temp = *p;
-        *p = *q;
-        *q = temp;
-
-        // Move p and first digit towards the middle.
-        //
-        --p;
-        ++q;
-
-        // Stop when we reach or pass the middle.
-        //
-    }
-    return nLength;
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
 }
 
 size_t mux_i64toa(INT64 val, UTF8 *buf)
