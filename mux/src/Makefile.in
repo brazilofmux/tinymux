@@ -85,6 +85,12 @@ SSL_LIBS          = @SSL_LIBS@
 #
 DEPRECATED = @DEPRECATED@
 
+# Potentially expensive internal self-checking of the server. This does not
+# increase softcode validation or validation of the operating environment.
+# It's useful primarily during development while running test cases.
+#
+SELFCHECK = @SELFCHECK@
+
 # Base source and object files for building netmux
 #
 NETMUX_BASE_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
@@ -157,7 +163,9 @@ DEFS =
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC = unsplit.cpp
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(FIRANMUX) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) \
+    $(REALITY_LVLS) $(STUB_SLAVE) $(FIRANMUX) $(DEPRECATED) $(SELFCHECK) \
+    $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
 
 # Compiliation source files.
 #

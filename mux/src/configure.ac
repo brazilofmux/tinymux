@@ -119,6 +119,23 @@ AC_ARG_ENABLE(
 AC_SUBST(INLINESQL)
 AC_SUBST(INLINESQL_LIBS)
 
+AC_MSG_CHECKING(whether to perform expensive self-checking)
+AC_ARG_ENABLE(
+  [selfcheck],
+  AS_HELP_STRING([--enable-selfcheck],[enable expensive self-checking (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      SELFCHECK="-DSELFCHECK"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(SELFCHECK)
+
 AC_MSG_CHECKING(for location of SQL header files)
 AC_ARG_WITH(
   [mysql-include],

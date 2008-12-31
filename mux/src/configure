@@ -663,6 +663,7 @@ FIRANMUX
 FIRANLIBS
 INLINESQL
 INLINESQL_LIBS
+SELFCHECK
 INLINESQL_INCLUDE
 INLINESQL_LIBPATH
 SSL
@@ -1293,6 +1294,7 @@ Optional Features:
   --enable-firanmux       enable Firan MUX (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
+  --enable-selfcheck      enable expensive self-checking (default is NO)
   --enable-ssl            enable SSL encryption support (default is NO)
   --enable-deprecated     enable deprecated features (default is NO)
 
@@ -1898,6 +1900,29 @@ echo "${ECHO_T}no" >&6; }
 
 fi
 
+
+
+
+{ echo "$as_me:$LINENO: checking whether to perform expensive self-checking" >&5
+echo $ECHO_N "checking whether to perform expensive self-checking... $ECHO_C" >&6; }
+# Check whether --enable-selfcheck was given.
+if test "${enable_selfcheck+set}" = set; then
+  enableval=$enable_selfcheck;
+    if test "x$enableval" = "xno"; then
+      { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+    else
+      SELFCHECK="-DSELFCHECK"
+      { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+    fi
+
+else
+
+    { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
 
 
 
@@ -12773,6 +12798,7 @@ FIRANMUX!$FIRANMUX$ac_delim
 FIRANLIBS!$FIRANLIBS$ac_delim
 INLINESQL!$INLINESQL$ac_delim
 INLINESQL_LIBS!$INLINESQL_LIBS$ac_delim
+SELFCHECK!$SELFCHECK$ac_delim
 INLINESQL_INCLUDE!$INLINESQL_INCLUDE$ac_delim
 INLINESQL_LIBPATH!$INLINESQL_LIBPATH$ac_delim
 SSL!$SSL$ac_delim
@@ -12810,7 +12836,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
