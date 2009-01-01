@@ -368,6 +368,9 @@
 #define SIZEOF_LONG 4
 #endif
 
+/* The size of `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
+
 /* The size of `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
@@ -381,8 +384,18 @@
 #define SIZEOF_UNSIGNED_LONG 4
 #endif
 
+/* The size of `unsigned long long', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_LONG_LONG 8
+
 /* The size of `unsigned short', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_SHORT 2
+
+/* The size of `void *', as computed by sizeof. */
+#if defined(WIN64)
+#defined SIZEOF_VOID_P 8
+#else
+#defined SIZEOF_VOID_P 4
+#endif
 
 /* Define if platform computes integer quotient as the smallest integer
    greater than or equal to the algebraic quotient. */

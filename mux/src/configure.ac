@@ -364,12 +364,15 @@ AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
 AC_C_CONST
 AC_C_INLINE
-AC_CHECK_SIZEOF(short,2)
-AC_CHECK_SIZEOF(unsigned short,2)
-AC_CHECK_SIZEOF(int,4)
-AC_CHECK_SIZEOF(unsigned int,4)
-AC_CHECK_SIZEOF(long,4)
-AC_CHECK_SIZEOF(unsigned long,4)
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([unsigned short])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([unsigned int])
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([unsigned long])
+AC_CHECK_SIZEOF([long long])
+AC_CHECK_SIZEOF([unsigned long long])
+AC_CHECK_SIZEOF([void *])
 AS_MESSAGE([checking for socklen_t dcls...])
 AC_EGREP_HEADER(socklen_t,sys/socket.h,AC_DEFINE([SOCKLEN_T_DCL], [], [Define if socklen_t is defined.]))
 AC_CHECK_DECLS([sys_siglist],[],[],[#include <signal.h>
