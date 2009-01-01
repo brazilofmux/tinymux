@@ -558,6 +558,23 @@ typedef   signed char INT8;
 typedef unsigned char UINT8;
 #define I8BUF_SIZE  LONGEST_I8
 
+// Develop an unsigned integer type which is the same size as a pointer.
+//
+#define SIZEOF_UINT_PTR SIZEOF_VOID_P
+#if SIZEOF_UNSIGNED_INT == SIZEOF_VOID_P
+typedef unsigned int UINT_PTR;
+#define SIZEOF_UINT_PTR SIZEOF_VOID_P
+#elif SIZEOF_UNSIGNED_LONG == SIZEOF_VOID_P
+typedef unsigned long UINT_PTR;
+#define SIZEOF_UINT_PTR SIZEOF_VOID_P
+#elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
+typedef unsigned short UINT_PTR;
+#elif SIZEOF_UNSIGNED_LONG_LONG == SIZEOF_VOID_P
+typedef UINT64 UINT_PTR;
+#elif
+#error TinyMUX cannot find an integer type with same size as a pointer.
+#endif
+
 #ifndef HAVE_IN_ADDR_T
 typedef UINT32 in_addr_t;
 #endif
