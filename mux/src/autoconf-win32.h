@@ -392,9 +392,9 @@
 
 /* The size of `void *', as computed by sizeof. */
 #if defined(WIN64)
-#defined SIZEOF_VOID_P 8
+#define SIZEOF_VOID_P 8
 #else
-#defined SIZEOF_VOID_P 4
+#define SIZEOF_VOID_P 4
 #endif
 
 /* Define if platform computes integer quotient as the smallest integer
