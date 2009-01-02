@@ -3841,7 +3841,7 @@ static void do_malias_list_all(dbref player)
 
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
 
-        UTF8 *p = tprintf( "%-12s %s%s %-15.15s",
+        UTF8 *p = tprintf( "%-12s %s%s %-s",
             m->name, m->desc, pSpaces, Moniker(m->owner));
         raw_notify(player, p);
     }
@@ -4614,7 +4614,7 @@ static void do_malias_adminlist(dbref player)
     {
         m = malias[i];
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
-        raw_notify(player, tprintf("%-4d %-12s %s%s %-15.15s",
+        raw_notify(player, tprintf("%-4d %-12s %s%s %-s",
                        i, m->name, m->desc, pSpaces,
                        Moniker(m->owner)));
     }
