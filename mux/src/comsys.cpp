@@ -78,12 +78,12 @@ void save_comsys(UTF8 *filename)
     }
     DebugTotalFiles++;
 
-    fprintf(fp, "+V4\n");
-    fprintf(fp, "*** Begin CHANNELS ***\n");
+    mux_fprintf(fp, T("+V4\n"));
+    mux_fprintf(fp, T("*** Begin CHANNELS ***\n"));
 
     save_channels(fp);
 
-    fprintf(fp, "*** Begin COMSYS ***\n");
+    mux_fprintf(fp, T("*** Begin COMSYS ***\n"));
     save_comsystem(fp);
 
     if (fclose(fp) == 0)
@@ -272,7 +272,7 @@ void save_channels(FILE *fp)
         }
     }
 
-    fprintf(fp, "%d\n", np);
+    mux_fprintf(fp, T("%d\n"), np);
     for (i = 0; i < NUM_COMSYS; i++)
     {
         c = comsys_table[i];
@@ -281,12 +281,12 @@ void save_channels(FILE *fp)
         {
             // Write user dbref and # of channels.
             //
-            fprintf(fp, "%d %d\n", c->who, c->numchannels);
+            mux_fprintf(fp, T("%d %d\n"), c->who, c->numchannels);
             for (j = 0; j < c->numchannels; j++)
             {
                 // Write channel alias and channel name.
                 //
-                fprintf(fp, "%s %s\n", c->alias + j * ALIAS_SIZE, c->channels[j]);
+                mux_fprintf(fp, T("%s %s\n"), c->alias + j * ALIAS_SIZE, c->channels[j]);
             }
             c = c->next;
         }
@@ -1162,20 +1162,20 @@ void save_comsystem(FILE *fp)
 
     // Number of channels.
     //
-    fprintf(fp, "%d\n", num_channels);
+    mux_fprintf(fp, T("%d\n"), num_channels);
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch;
          ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
         // Channel name.
         //
-        fprintf(fp, "%s\n", ch->name);
+        mux_fprintf(fp, T("%s\n"), ch->name);
 
         // Channel header.
         //
-        fprintf(fp, "%s\n", ch->header);
+        mux_fprintf(fp, T("%s\n"), ch->header);
 
-        fprintf(fp, "%d %d %d %d %d %d %d %d\n", ch->type, ch->temp1,
+        mux_fprintf(fp, T("%d %d %d %d %d %d %d %d\n"), ch->type, ch->temp1,
             ch->temp2, ch->charge, ch->charge_who, ch->amount_col,
             ch->num_messages, ch->chan_obj);
 
@@ -1193,7 +1193,7 @@ void save_comsystem(FILE *fp)
 
         // Number of users on this channel.
         //
-        fprintf(fp, "%d\n", nUsers);
+        mux_fprintf(fp, T("%d\n"), nUsers);
         for (j = 0; j < ch->num_users; j++)
         {
             user = ch->users[j];
@@ -1203,17 +1203,17 @@ void save_comsystem(FILE *fp)
 
                 // Write user state: dbref, on flag, and comtitle status.
                 //
-                fprintf(fp, "%d %d %d\n", user->who, user->bUserIsOn, user->ComTitleStatus);
+                mux_fprintf(fp, T("%d %d %d\n"), user->who, user->bUserIsOn, user->ComTitleStatus);
 
                 // Write user title data.
                 //
                 if (user->title[0] != '\0')
                 {
-                    fprintf(fp, "t:%s\n", user->title);
+                    mux_fprintf(fp, T("t:%s\n"), user->title);
                 }
                 else
                 {
-                    fprintf(fp, "t:\n");
+                    mux_fprintf(fp, T("t:\n"));
                 }
             }
         }

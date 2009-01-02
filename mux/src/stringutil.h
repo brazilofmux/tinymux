@@ -605,6 +605,7 @@ void ItemToList_Final(ITL *pContext);
 
 size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
 void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...);
+void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...);
 size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct

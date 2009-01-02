@@ -2961,9 +2961,9 @@ static void malias_write(FILE *fp)
     for (i = 0; i < ma_top; i++)
     {
         m = malias[i];
-        fprintf(fp, "%d %d\n", m->owner, m->numrecep);
-        fprintf(fp, "N:%s\n", m->name);
-        fprintf(fp, "D:%s\n", m->desc);
+        mux_fprintf(fp, T("%d %d\n"), m->owner, m->numrecep);
+        mux_fprintf(fp, T("N:%s\n"), m->name);
+        mux_fprintf(fp, T("D:%s\n"), m->desc);
         for (j = 0; j < m->numrecep; j++)
         {
             putref(fp, m->list[j]);
@@ -2973,7 +2973,7 @@ static void malias_write(FILE *fp)
 
 static void save_malias(FILE *fp)
 {
-    fprintf(fp, "*** Begin MALIAS ***\n");
+    mux_fprintf(fp, T("*** Begin MALIAS ***\n"));
     malias_write(fp);
 }
 
@@ -2984,7 +2984,7 @@ int dump_mail(FILE *fp)
 
     // Write out version number
     //
-    fprintf(fp, "+V6\n");
+    mux_fprintf(fp, T("+V6\n"));
     putref(fp, mudstate.mail_db_top);
     DO_WHOLE_DB(thing)
     {
@@ -3006,7 +3006,7 @@ int dump_mail(FILE *fp)
         }
     }
 
-    fprintf(fp, "*** END OF DUMP ***\n");
+    mux_fprintf(fp, T("*** END OF DUMP ***\n"));
 
     // Add the db of mail messages
     //
@@ -3018,7 +3018,7 @@ int dump_mail(FILE *fp)
             putstring(fp, MessageFetch(i));
         }
     }
-    fprintf(fp, "+++ END OF DUMP +++\n");
+    mux_fprintf(fp, T("+++ END OF DUMP +++\n"));
     save_malias(fp);
 
     return count;

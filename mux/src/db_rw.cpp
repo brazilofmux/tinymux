@@ -882,8 +882,8 @@ dbref db_write(FILE *f, int format, int version)
         Log.Flush();
     }
     i = mudstate.attr_next;
-    fprintf(f, "+X%d\n+S%d\n+N%d\n", flags, mudstate.db_top, i);
-    fprintf(f, "-R%d\n", mudstate.record_players);
+    mux_fprintf(f, T("+X%d\n+S%d\n+N%d\n"), flags, mudstate.db_top, i);
+    mux_fprintf(f, T("-R%d\n"), mudstate.record_players);
 
     // Dump user-named attribute info.
     //

@@ -350,7 +350,7 @@ void do_log
             // Okay, at this point, the file exists.
             //
             free_lbuf(pFullName);
-            fprintf(hFile, "%s" ENDLINE, pMessage);
+            mux_fprintf(hFile, T("%s" ENDLINE), pMessage);
             fclose(hFile);
             return;
         }

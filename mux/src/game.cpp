@@ -2398,7 +2398,7 @@ static void write_pidfile(const UTF8 *pFilename)
     FILE *fp;
     if (mux_fopen(&fp, pFilename, T("wb")))
     {
-        fprintf(fp, "%d" ENDLINE, game_pid);
+        mux_fprintf(fp, T("%d" ENDLINE), game_pid);
         fclose(fp);
     }
     else
@@ -3091,7 +3091,7 @@ static void cpu_init(void)
 
     // Report findings to the log.
     //
-    fprintf(stderr, "cpu_init: %s, Family %u, Model %u, %s%s%s%s%s%s%s%s%s" ENDLINE,
+    mux_fprintf(stderr, T("cpu_init: %s, Family %u, Model %u, %s%s%s%s%s%s%s%s%s" ENDLINE),
         (Intel == maker ? "Intel" : (AMD == maker ? "AMD" : "Unknown")),
         dwEffFamily,
         dwEffModel,
@@ -3108,7 +3108,7 @@ static void cpu_init(void)
     if (dwUseable != dwAdvFeatures)
     {
         UINT32 dw = dwAdvFeatures & (~dwUseable);
-        fprintf(stderr, "cpu_init: %s%s%s%s%s%s%s%s%s unsupported by OS." ENDLINE,
+        mux_fprintf(stderr, T("cpu_init: %s%s%s%s%s%s%s%s%s unsupported by OS." ENDLINE),
             (dw & ADVF_MMX)  ? "MMX ": "",
             (dw & ADVF_FSXR) ? "FSXR ": "",
             (dw & ADVF_SSE)  ? "SSE ": "",
@@ -3195,36 +3195,36 @@ int DCL_CDECL main(int argc, char *argv[])
 
     if (bVersion)
     {
-        fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
+        mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
         return 1;
     }
     if (  bSyntaxError
        || conffile == NULL
        || !bServerOption)
     {
-        fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
+        mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
         if (mudstate.bStandAlone)
         {
-            fprintf(stderr, "Usage: %s -d <dbname> -i <infile> [-o <outfile>] [-l|-u|-k]" ENDLINE, pProg);
-            fprintf(stderr, "  -d  Basename." ENDLINE);
-            fprintf(stderr, "  -i  Input file." ENDLINE);
-            fprintf(stderr, "  -k  Check." ENDLINE);
-            fprintf(stderr, "  -l  Load." ENDLINE);
-            fprintf(stderr, "  -o  Output file." ENDLINE);
-            fprintf(stderr, "  -u  Unload." ENDLINE);
+            mux_fprintf(stderr, T("Usage: %s -d <dbname> -i <infile> [-o <outfile>] [-l|-u|-k]" ENDLINE), pProg);
+            mux_fprintf(stderr, T("  -d  Basename." ENDLINE));
+            mux_fprintf(stderr, T("  -i  Input file." ENDLINE));
+            mux_fprintf(stderr, T("  -k  Check." ENDLINE));
+            mux_fprintf(stderr, T("  -l  Load." ENDLINE));
+            mux_fprintf(stderr, T("  -o  Output file." ENDLINE));
+            mux_fprintf(stderr, T("  -u  Unload." ENDLINE));
         }
         else
         {
-            fprintf(stderr, "Usage: %s [-c <filename>] [-p <filename>] [-h] [-s] [-v]" ENDLINE, pProg);
-            fprintf(stderr, "  -c  Specify configuration file." ENDLINE);
-            fprintf(stderr, "  -e  Specify logfile basename (or '-' for stderr)." ENDLINE);
-            fprintf(stderr, "  -h  Display this help." ENDLINE);
-            fprintf(stderr, "  -p  Specify process ID file." ENDLINE);
-            fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
+            mux_fprintf(stderr, T("Usage: %s [-c <filename>] [-p <filename>] [-h] [-s] [-v]" ENDLINE), pProg);
+            mux_fprintf(stderr, T("  -c  Specify configuration file." ENDLINE));
+            mux_fprintf(stderr, T("  -e  Specify logfile basename (or '-' for stderr)." ENDLINE));
+            mux_fprintf(stderr, T("  -h  Display this help." ENDLINE));
+            mux_fprintf(stderr, T("  -p  Specify process ID file." ENDLINE));
+            mux_fprintf(stderr, T("  -s  Start with a minimal database." ENDLINE));
 #if defined(WINDOWS_NETWORKING)
-            fprintf(stderr, "  -n  Disable use of NT I/O Completion Ports." ENDLINE);
+            mux_fprintf(stderr, T("  -n  Disable use of NT I/O Completion Ports." ENDLINE));
 #endif // WINDOWS_NETWORKING
-            fprintf(stderr, "  -v  Display version string." ENDLINE ENDLINE);
+            mux_fprintf(stderr, T("  -v  Display version string." ENDLINE ENDLINE));
         }
         return 1;
     }

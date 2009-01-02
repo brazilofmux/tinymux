@@ -3581,7 +3581,7 @@ void dump_restart_db(void)
     int version = 4;
 
     mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
-    fprintf(f, "+V%d\n", version);
+    mux_fprintf(f, T("+V%d\n"), version);
     putref(f, nMainGamePorts);
     for (int i = 0; i < nMainGamePorts; i++)
     {

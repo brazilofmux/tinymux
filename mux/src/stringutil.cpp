@@ -5312,6 +5312,21 @@ void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __i
     va_end(ap);
 }
 
+void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...)
+{
+    if (NULL != fp)
+    {
+        UTF8 Buffer[MBUF_SIZE];
+
+        va_list ap;
+        va_start(ap, fmt);
+        size_t nBuffer = mux_vsnprintf(Buffer, sizeof(Buffer), fmt, ap);
+        va_end(ap);
+
+        fwrite(Buffer, 1, nBuffer, fp);
+    }
+}
+
 // This function acts like fgets except that any data on the end of the
 // line past the buffer size is truncated instead of being returned on
 // the next call.

@@ -3214,7 +3214,7 @@ again:
         {
             // Whoa! We've been told this new pointer, but it's not.
             //
-            fprintf(stderr, "The heap is giving us unfreed pointers (0x%08X). Weird.\n", adr.address);
+            mux_fprintf(stderr, T("The heap is giving us unfreed pointers (0x%08X). Weird.\n"), adr.address);
             hfAllocData.Remove(iDir);
             goto again;
         }
@@ -3224,7 +3224,7 @@ again:
     size_t TotalSpace;
     adr.fileline = AddSpaceToFileLine(file, line, size, &TotalSpace);
     hfAllocData.Insert(sizeof(adr), nHash, &adr);
-    fprintf(stderr, "malloc %d bytes %s, %d\n  bringing total to %d bytes\n",
+    mux_fprintf(stderr, T("malloc %d bytes %s, %d\n  bringing total to %d bytes\n"),
         size, file, line, TotalSpace);
 }
 
@@ -3253,12 +3253,12 @@ again:
             char filename[1024];
             if (SubtractSpaceFromFileLine(adr.fileline, adr.size, &nSpace, &AllocLine, filename))
             {
-                fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on %s, %d...\n  leaving total of %d bytes\n",
+                mux_fprintf(stderr, T("free %d bytes on %s, %d ...\n  allocated on %s, %d...\n  leaving total of %d bytes\n"),
                     adr.size, file, line, filename, AllocLine, nSpace);
             }
             else
             {
-                fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on UNKNOWN\n", adr.size, file, line);
+                mux_fprintf(stderr, T("free %d bytes on %s, %d ...\n  allocated on UNKNOWN\n"), adr.size, file, line);
             }
             goto again;
         }
@@ -3269,7 +3269,7 @@ again:
     {
         // Problems.
         //
-        fprintf(stderr, "We are freeing unallocated pointers (0x%08X) on %s, %d\n", pointer, file, line);
+        mux_fprintf(stderr, T("We are freeing unallocated pointers (0x%08X) on %s, %d\n"), pointer, file, line);
     }
 }
 
@@ -3291,12 +3291,12 @@ void *MemAllocate(size_t size, const char *file, int line)
         }
         else
         {
-            fprintf(stderr, "malloc not intitalized on %s, %d.\n", file, line);
+            mux_fprintf(stderr, T("malloc not intitalized on %s, %d.\n"), file, line);
         }
     }
     else
     {
-        fprintf(stderr, "malloc ran out of memory on %s, %d.\n", file, line);
+        mux_fprintf(stderr, T("malloc ran out of memory on %s, %d.\n"), file, line);
     }
     return vp;
 }
@@ -3316,13 +3316,13 @@ void MemFree(void *pointer, const char *file, int line)
         }
         else
         {
-            fprintf(stderr, "free called on %s, %d before initialized with 0x%08X\n", file, line, pointer);
+            mux_fprintf(stderr, T("free called on %s, %d before initialized with 0x%08X\n"), file, line, pointer);
         }
         free(pointer);
     }
     else
     {
-        fprintf(stderr, "We tried to free(0) on %s, %d\n", file, line);
+        mux_fprintf(stderr, T("We tried to free(0) on %s, %d\n"), file, line);
     }
 }
 

@@ -86,10 +86,10 @@ void cache_pass2(void)
 {
     ATTR_RECORD Record;
     cache_redirected = false;
-    fprintf(stderr, "2nd Pass:\n");
+    mux_fprintf(stderr, T("2nd Pass:\n"));
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
-        fprintf(stderr, "File %d: ", i);
+        mux_fprintf(stderr, T("File %d: "), i);
         long int li = fseek(TempFiles[i], 0, SEEK_SET);
         mux_assert(0L == li);
 
@@ -116,7 +116,7 @@ void cache_pass2(void)
         UTF8 TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), T("$convtemp.%d"), i);
         RemoveFile(TempFileName);
-        fprintf(stderr, ENDLINE);
+        mux_fprintf(stderr, T(ENDLINE));
     }
 }
 
