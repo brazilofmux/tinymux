@@ -5014,7 +5014,8 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                     dDeferred = 0;
                 }
 
-                size_t n;
+                size_t cbBuff;
+                size_t cpBuff;
                 size_t nWidth;
                 size_t nPrecision;
                 bool bLeft = false;
@@ -5045,17 +5046,17 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             if (0 == nLongs)
                             {
                                 int i = va_arg(va, int);
-                                n = mux_ltoa(i, Buff);
+                                cbBuff = cpBuff = mux_ltoa(i, Buff);
                             }
                             else if (1 == nLongs)
                             {
                                 long int i = va_arg(va, long int);
-                                n = mux_ltoa(i, Buff);
+                                cbBuff = cpBuff = mux_ltoa(i, Buff);
                             }
                             else if (2 == nLongs)
                             {
                                 INT64 i = va_arg(va, INT64);
-                                n = mux_i64toa(i, Buff);
+                                cbBuff = cpBuff = mux_i64toa(i, Buff);
                             }
                             else
                             {
@@ -5066,14 +5067,28 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                         {
                             // Obtain and validate argument.
                             //
-                            size_t t;
                             pBuff = va_arg(va, UTF8 *);
-                            if (  !utf8_strlen(pBuff, t)
+                            if (  !utf8_strlen(pBuff, cpBuff)
                                || 0 != nLongs)
                             {
                                 goto done;
                             }
-                            n = strlen((char *)pBuff);
+                            cbBuff = strlen((char *)pBuff);
+
+                            if (  bPrecision
+                               && nPrecision < cpBuff)
+                            {
+                                // Need to walk cbBuff back to correspond to changes in cpBuff.
+                                //
+                                while (cpBuff != nPrecision)
+                                {
+                                    do
+                                    {
+                                        cbBuff--;
+                                    } while (UTF8_CONTINUE <= utf8_FirstByte[pBuff[cbBuff]]);
+                                    cpBuff--;
+                                }
+                            }
                         }
                         else if ('p' == pFmt[iFmt])
                         {
@@ -5092,9 +5107,9 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             } u;
                             u.pv = va_arg(va, void *);
 #if SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG
-                            n = mux_utox(u.ui, Buff, true);
+                            cbBuff = cpBuff = mux_utox(u.ui, Buff, true);
 #elif SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG_LONG
-                            n = mux_ui64tox(u.ui, Buff, true);
+                            cbBuff = cpBuff = mux_ui64tox(u.ui, Buff, true);
 #else
 #error Size of pointer is larger size of largest known integer.
 #endif
@@ -5113,17 +5128,17 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             if (0 == nLongs)
                             {
                                 unsigned int ui = va_arg(va, unsigned int);
-                                n = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                                cbBuff = cpBuff = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
                             }
                             else if (1 == nLongs)
                             {
                                 unsigned long int ui = va_arg(va, unsigned long int);
-                                n = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                                cbBuff = cpBuff = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
                             }
                             else if (2 == nLongs)
                             {
                                 UINT64 ui = va_arg(va, UINT64);
-                                n = bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff);
+                                cbBuff = cpBuff = bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff);
                             }
                             else
                             {
@@ -5133,29 +5148,19 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
 
                         // Calculate and validate needed size.  Numberic and
                         // string fields are at least the size of their width.
-                        // String fields may be truncated by precision.
+                        // String fields may have been truncated above by
+                        // precision.
                         //
-                        if (  bPrecision
-                           && 's' == pFmt[iFmt]
-                           && nPrecision < n)
-                        {
-                            n = nPrecision;
-                        }
-
-                        size_t nUsed = n;
+                        // Width is compared with the number of code points.
+                        // Padding is always done with space or zero.
+                        //
+                        size_t nUsed = cbBuff;
+                        size_t nPadding = 0;
                         if (  bWidth
-                           && n < nWidth)
+                           && cpBuff < nWidth)
                         {
-                            nUsed = nWidth;
-                        }
-
-                        // If necessary, truncate string to fit.
-                        //
-                        if (  's' == pFmt[iFmt]
-                           && bWidth
-                           && nWidth < n)
-                        {
-                            n = nWidth;
+                            nPadding = nWidth - cpBuff;
+                            nUsed += nPadding;
                         }
 
                         if (nLimit < iBuffer + nUsed)
@@ -5170,41 +5175,42 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                         {
                             if (  'd' == pFmt[iFmt]
                                && '-' == pBuff[0]
-                               && n < nWidth
+                               && 0 < nPadding
                                && bZeroPadded)
                             {
                                 // The leading minus sign must be laid down before zero-padding begins.
                                 //
                                 pBuffer[iBuffer] = '-';
                                 iBuffer++;
-                                nWidth--;
-                                n--;
+
                                 pBuff++;
+                                cbBuff--;
+                                cpBuff--;
                             }
 
-                            while (n < nWidth)
+                            while (0 < nPadding)
                             {
                                 pBuffer[iBuffer] = bZeroPadded?'0':' ';
                                 iBuffer++;
-                                nWidth--;
+                                nPadding--;
                             }
                         }
 
                         // Apply string.
                         //
-                        memcpy(pBuffer + iBuffer, pBuff, n);
-                        iBuffer += n;
+                        memcpy(pBuffer + iBuffer, pBuff, cbBuff);
+                        iBuffer += cbBuff;
 
                         // Apply trailing padding if necessary.
                         //
                         if (  bLeft
                            && bWidth) 
                         {
-                            while (n < nWidth)
+                            while (0 < nPadding)
                             {
                                 pBuffer[iBuffer] = bZeroPadded?'0':' ';
                                 iBuffer++;
-                                nWidth--;
+                                nPadding--;
                             }
                         }
 
