@@ -603,7 +603,7 @@ bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
-size_t DCL_CDECL mux_vsnprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, va_list va);
+size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
 void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...);
 size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 

@@ -4949,67 +4949,359 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-size_t DCL_CDECL mux_vsnprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va)
 {
-    // From the manuals:
-    //
-    // vsnprintf returns the number of characters written, not
-    // including the terminating '\0' character.
-    //
-    // It returns a -1 if an output error occurs.
-    //
-    // It can return a number larger than the size of the buffer
-    // on some systems to indicate how much space it -would- have taken
-    // if not limited by the request.
-    //
-    // On Windows, it can fill the buffer completely without a
-    // null-termination and return -1.
-
-    // To favor the Unix case, if there is an output error, but
-    // vsnprint doesn't touch the buffer, we avoid undefined trash by
-    // null-terminating the buffer to zero-length before the call.
-    // Not sure that this happens, but it's a cheap precaution.
-    //
-    buff[0] = '\0';
-
-    // If Unix version does start touching the buffer, null-terminates,
-    // and returns -1, we are still safe. However, if Unix version
-    // touches the buffer writes garbage, and then returns -1, we may
-    // pass garbage, but this possibility seems very unlikely.
-    //
-    size_t len;
-#if defined(WIN32)
-#if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
-    int cc = vsnprintf_s((char *)buff, count, _TRUNCATE, (char *)fmt, va);
-#else // _MSC_VER
-    int cc = _vsnprintf((char *)buff, count, (char *)fmt, va);
-#endif // _MSC_VER
-#else // WIN32
-#ifdef NEED_VSPRINTF_DCL
-    extern char *vsprintf(char *, char *, va_list);
-#endif // NEED_VSPRINTF_DCL
-
-    int cc = vsnprintf((char *)buff, count, (char *)fmt, va);
-#endif // WIN32
-    if (0 <= cc && static_cast<size_t>(cc) <= count-1)
+    if (  NULL == pBuffer
+       || nBuffer < 1)
     {
-        len = cc;
+       return 0;
     }
-    else
+    size_t nLimit = nBuffer-1;
+
+    // Rather than copy a character at a time, some copies are deferred and performed in a single request.
+    //
+    size_t iFmtDeferred;
+    size_t dDeferred = 0;
+
+    size_t iBuffer = 0;
+    size_t ncpFmt;
+    size_t iFmt = 0;
+    if (  NULL != pFmt
+       && utf8_strlen(pFmt, ncpFmt))
     {
-        if (buff[0] == '\0')
+        static UTF8 Buff[I64BUF_SIZE];
+
+        while (0 != ncpFmt)
         {
-            // vsnprintf did not touch the buffer.
+            if ('%' != pFmt[iFmt])
+            {
+                // Ordinary character.
+                //
+                size_t d = utf8_FirstByte[pFmt[iFmt]];
+                if (nLimit < iBuffer + d)
+                {
+                    if (0 < dDeferred)
+                    {
+                        // Unravel the deferred copy.
+                        //
+                        memcpy(pBuffer + iBuffer, pFmt + iFmtDeferred, dDeferred);
+                        iBuffer += dDeferred;
+                        dDeferred = 0;
+                    }
+                    goto done;
+                }
+                else if (0 < dDeferred)
+                {
+                    dDeferred += d;
+                }
+                else
+                {
+                    iFmtDeferred = iFmt;
+                    dDeferred += d;
+                }
+
+                iFmt += d;
+                ncpFmt--;
+            }
+            else
+            {
+                if (0 < dDeferred)
+                {
+                    // Unravel the deferred copy.
+                    //
+                    memcpy(pBuffer + iBuffer, pFmt + iFmtDeferred, dDeferred);
+                    iBuffer += dDeferred;
+                    dDeferred = 0;
+                }
+
+                size_t n;
+                size_t nWidth;
+                bool bLeft = false;
+                bool bZeroPadded = false;
+                bool bWidth = false;
+                int nLongs = 0;
+
+                iFmt++;
+                ncpFmt--;
+
+                while (0 != ncpFmt)
+                {
+                    if (  'd' == pFmt[iFmt]
+                       || 's' == pFmt[iFmt]
+                       || 'u' == pFmt[iFmt]
+                       || 'x' == pFmt[iFmt]
+                       || 'X' == pFmt[iFmt]
+                       || 'p' == pFmt[iFmt])
+                    {
+                        UTF8 *pBuff = Buff;
+
+                        if ('d' == pFmt[iFmt])
+                        {
+                            // Obtain and validate argument.
+                            //
+                            if (0 == nLongs)
+                            {
+                                int i = va_arg(va, int);
+                                n = mux_ltoa(i, Buff);
+                            }
+                            else if (1 == nLongs)
+                            {
+                                long int i = va_arg(va, long int);
+                                n = mux_ltoa(i, Buff);
+                            }
+                            else if (2 == nLongs)
+                            {
+                                INT64 i = va_arg(va, INT64);
+                                n = mux_i64toa(i, Buff);
+                            }
+                            else
+                            {
+                                goto done;
+                            }
+                        }
+                        else  if ('s' == pFmt[iFmt])
+                        {
+                            // Obtain and validate argument.
+                            //
+                            size_t t;
+                            pBuff = va_arg(va, UTF8 *);
+                            if (  !utf8_strlen(pBuff, t)
+                               || 0 != nLongs)
+                            {
+                                goto done;
+                            }
+                            n = strlen((char *)pBuff);
+                        }
+                        else if ('p' == pFmt[iFmt])
+                        {
+                            if (  0 != nLongs
+                               || bWidth)
+                            {
+                                goto done;
+                            }
+
+                            // Convert pointer to unsigned integer.
+                            //
+                            union
+                            {
+                                UINT_PTR ui;
+                                void *pv;
+                            } u;
+                            u.pv = va_arg(va, void *);
+#if SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG
+                            n = mux_utox(u.ui, Buff, true);
+#elif SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG_LONG
+                            n = mux_ui64tox(u.ui, Buff, true);
+#else
+#error Size of pointer is larger size of largest known integer.
+#endif
+                            bWidth = true;
+                            nWidth = 2*sizeof(UINT_PTR);
+                            bZeroPadded = true;
+                        }
+                        else
+                        {
+                            bool bHex = (  'x' == pFmt[iFmt]
+                                        || 'X' == pFmt[iFmt]);
+                            bool bUpper = ('X' == pFmt[iFmt]);
+
+                            // Obtain and validate argument.
+                            //
+                            if (0 == nLongs)
+                            {
+                                unsigned int ui = va_arg(va, unsigned int);
+                                n = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                            }
+                            else if (1 == nLongs)
+                            {
+                                unsigned long int ui = va_arg(va, unsigned long int);
+                                n = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                            }
+                            else if (2 == nLongs)
+                            {
+                                UINT64 ui = va_arg(va, UINT64);
+                                n = bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff);
+                            }
+                            else
+                            {
+                                goto done;
+                            }
+                        }
+
+                        // Calculate and validate needed size.  Numberic fields
+                        // are at least the size of their width.  String fields
+                        // may be truncated by the width.
+                        //
+                        size_t nUsed = n;
+                        if (  bWidth
+                           && (  (  's' == pFmt[iFmt]
+                                 && nWidth < n)
+                              || (  's' != pFmt[iFmt]
+                                 && n < nWidth)))
+                        {
+                            nUsed = nWidth;
+                        }
+
+                        if (nLimit < iBuffer + nUsed)
+                        {
+                            goto done;
+                        }
+
+                        // Apply leading padding if necessary.
+                        //
+                        if (  !bLeft
+                           && bWidth)
+                        {
+                            if (  'd' == pFmt[iFmt]
+                               && '-' == pBuff[0]
+                               && n < nWidth
+                               && bZeroPadded)
+                            {
+                                // The leading minus sign must be laid down before zero-padding begins.
+                                //
+                                pBuffer[iBuffer] = '-';
+                                iBuffer++;
+                                nWidth--;
+                                n--;
+                                pBuff++;
+                            }
+
+                            while (n < nWidth)
+                            {
+                                pBuffer[iBuffer] = bZeroPadded?'0':' ';
+                                iBuffer++;
+                                nWidth--;
+                            }
+                        }
+
+                        // If necessary, truncate string to fit.
+                        //
+                        if (  's' == pFmt[iFmt]
+                           && bWidth
+                           && nWidth < n)
+                        {
+                            n = nWidth;
+                        }
+
+                        // Apply string.
+                        //
+                        memcpy(pBuffer + iBuffer, pBuff, n);
+                        iBuffer += n;
+
+                        // Apply trailing padding if necessary.
+                        //
+                        if (  bLeft
+                           && bWidth) 
+                        {
+                            while (n < nWidth)
+                            {
+                                pBuffer[iBuffer] = bZeroPadded?'0':' ';
+                                iBuffer++;
+                                nWidth--;
+                            }
+                        }
+
+                        iFmt++;
+                        ncpFmt--;
+                        break;
+                    }
+                    else if ('l' == pFmt[iFmt])
+                    {
+                        nLongs++;
+                        iFmt++;
+                        ncpFmt--;
+                    }
+                    else if (  '0' <= pFmt[iFmt]
+                            && pFmt[iFmt] <= '9')
+                    {
+                        if (!bWidth)
+                        {
+                            if ('0' == pFmt[iFmt])
+                            {
+                                if (bZeroPadded)
+                                {
+                                    goto done;
+                                }
+                                bZeroPadded = true;
+                            }
+                            else
+                            {
+                                nWidth = pFmt[iFmt] - '0';
+                                bWidth = true;
+                            }
+                        }
+                        else
+                        {
+                            nWidth = 10 * nWidth + pFmt[iFmt] - '0';
+                        }
+
+                        iFmt++;
+                        ncpFmt--;
+                    }
+                    else if ('-' == pFmt[iFmt])
+                    {
+                        if (bLeft)
+                        {
+                            goto done;
+                        }
+                        bLeft = true;
+
+                        iFmt++;
+                        ncpFmt--;
+                    }
+                    else if ('c' == pFmt[iFmt])
+                    {
+                        unsigned int ch = va_arg(va, unsigned int);
+                        if (nLimit < iBuffer + 1)
+                        {
+                            goto done;
+                        }
+                        pBuffer[iBuffer] = ch;
+                        iBuffer++;
+
+                        iFmt++;
+                        ncpFmt--;
+                        break;
+                    }
+                    else if ('%' == pFmt[iFmt])
+                    {
+                        // "%%"
+                        //
+                        if (nLimit < iBuffer + 1)
+                        {
+                            goto done;
+                        }
+                        pBuffer[iBuffer] = '%';
+                        iBuffer++;
+
+                        iFmt++;
+                        ncpFmt--;
+                        break;
+                    }
+                    else
+                    {
+                        mux_assert(0);
+
+                        iFmt += utf8_FirstByte[pFmt[iFmt]];
+                        ncpFmt--;
+                    }
+                }
+            }
+        }
+
+        if (0 < dDeferred)
+        {
+            // Unravel the deferred copy.
             //
-            len = 0;
-        }
-        else
-        {
-            len = count-1;
+            memcpy(pBuffer + iBuffer, pFmt + iFmtDeferred, dDeferred);
+            iBuffer += dDeferred;
+            dDeferred = 0;
         }
     }
-    buff[len] = '\0';
-    return len;
+
+done:
+    pBuffer[iBuffer] = '\0';
+    return iBuffer;
 }
 
 void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...)
