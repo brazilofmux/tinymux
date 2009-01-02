@@ -4543,35 +4543,35 @@ static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff
         {
         case '"':
             pFmt = "S %-30.30s | %s";
-            pCmd = T("('\"' hook on say)");
+            pCmd = T("('\"' hook on 'say')");
             break;
         case ':':
             pFmt = "P %-30.30s | %s";
-            pCmd = T("(':' hook on pose)");
+            pCmd = T("(':' hook on 'pose')");
             break;
         case ';':
             pFmt = "P %-30.30s | %s";
-            pCmd = T("(';' hook on pose)");
+            pCmd = T("(';' hook on 'pose')");
             break;
         case '\\':
             pFmt = "E %-30.30s | %s";
-            pCmd = T("('\\\\' hook on @emit)");
+            pCmd = T("('\\\\' hook on '@emit')");
             break;
         case '#':
             pFmt = "F %-30.30s | %s";
-            pCmd = T("('#' hook on @force)");
+            pCmd = T("('#' hook on '@force')");
             break;
         case '&':
             pFmt = "V %-30.30s | %s";
-            pCmd = T("('&' hook on @set)");
+            pCmd = T("('&' hook on '@set')");
             break;
         case '-':
             pFmt = "M %-30.30s | %s";
-            pCmd = T("('-' hook on @mail)");
+            pCmd = T("('-' hook on '@mail')");
             break;
         case '~':
             pFmt = "M %-30.30s | %s";
-            pCmd = T("('~' hook on @mail)");
+            pCmd = T("('~' hook on '@mail')");
             break;
         }
     }
