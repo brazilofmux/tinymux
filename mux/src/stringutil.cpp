@@ -5016,9 +5016,12 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
 
                 size_t n;
                 size_t nWidth;
+                size_t nPrecision;
                 bool bLeft = false;
                 bool bZeroPadded = false;
                 bool bWidth = false;
+                bool bSawPeriod = false;
+                bool bPrecision = false;
                 int nLongs = 0;
 
                 iFmt++;
@@ -5128,18 +5131,31 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             }
                         }
 
-                        // Calculate and validate needed size.  Numberic fields
-                        // are at least the size of their width.  String fields
-                        // may be truncated by the width.
+                        // Calculate and validate needed size.  Numberic and
+                        // string fields are at least the size of their width.
+                        // String fields may be truncated by precision.
                         //
+                        if (  bPrecision
+                           && 's' == pFmt[iFmt]
+                           && nPrecision < n)
+                        {
+                            n = nPrecision;
+                        }
+
                         size_t nUsed = n;
                         if (  bWidth
-                           && (  (  's' == pFmt[iFmt]
-                                 && nWidth < n)
-                              || (  's' != pFmt[iFmt]
-                                 && n < nWidth)))
+                           && n < nWidth)
                         {
                             nUsed = nWidth;
+                        }
+
+                        // If necessary, truncate string to fit.
+                        //
+                        if (  's' == pFmt[iFmt]
+                           && bWidth
+                           && nWidth < n)
+                        {
+                            n = nWidth;
                         }
 
                         if (nLimit < iBuffer + nUsed)
@@ -5174,15 +5190,6 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             }
                         }
 
-                        // If necessary, truncate string to fit.
-                        //
-                        if (  's' == pFmt[iFmt]
-                           && bWidth
-                           && nWidth < n)
-                        {
-                            n = nWidth;
-                        }
-
                         // Apply string.
                         //
                         memcpy(pBuffer + iBuffer, pBuff, n);
@@ -5214,26 +5221,48 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                     else if (  '0' <= pFmt[iFmt]
                             && pFmt[iFmt] <= '9')
                     {
-                        if (!bWidth)
+                        if (!bSawPeriod)
                         {
-                            if ('0' == pFmt[iFmt])
+                            if (!bWidth)
                             {
-                                if (bZeroPadded)
+                                if ('0' == pFmt[iFmt])
                                 {
-                                    goto done;
+                                    if (bZeroPadded)
+                                    {
+                                        goto done;
+                                    }
+                                    bZeroPadded = true;
                                 }
-                                bZeroPadded = true;
+                                else
+                                {
+                                    nWidth = pFmt[iFmt] - '0';
+                                    bWidth = true;
+                                }
                             }
                             else
                             {
-                                nWidth = pFmt[iFmt] - '0';
-                                bWidth = true;
+                                nWidth = 10 * nWidth + pFmt[iFmt] - '0';
                             }
                         }
                         else
                         {
-                            nWidth = 10 * nWidth + pFmt[iFmt] - '0';
+                            if (!bPrecision)
+                            {
+                                nPrecision = pFmt[iFmt] - '0';
+                                bPrecision = true;
+                            }
+                            else
+                            {
+                                nPrecision = 10 * nPrecision + pFmt[iFmt] - '0';
+                            }
                         }
+
+                        iFmt++;
+                        ncpFmt--;
+                    }
+                    else if ('.' == pFmt[iFmt])
+                    {
+                        bSawPeriod = true;
 
                         iFmt++;
                         ncpFmt--;
