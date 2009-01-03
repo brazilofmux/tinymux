@@ -3966,7 +3966,7 @@ UTF8 *mux_ftoa(double r, bool bRounded, int frac)
     //
     if (0 <= mudconf.float_precision)
     {
-        mode = 3;
+        mode = 5;
         if (mudconf.float_precision < nRequestMaximum)
         {
             nRequestMaximum = mudconf.float_precision;
@@ -3976,7 +3976,7 @@ UTF8 *mux_ftoa(double r, bool bRounded, int frac)
 
     if (bRounded)
     {
-        mode = 3;
+        mode = 5;
         nRequest = frac;
         if (nRequestMaximum < nRequest)
         {
