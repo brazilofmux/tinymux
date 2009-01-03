@@ -4978,7 +4978,8 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                 // Ordinary character.
                 //
                 size_t d = utf8_FirstByte[pFmt[iFmt]];
-                if (nLimit < iBuffer + d)
+                size_t dProposed = dDeferred + d;
+                if (nLimit < iBuffer + dProposed)
                 {
                     if (0 < dDeferred)
                     {
@@ -4990,15 +4991,11 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                     }
                     goto done;
                 }
-                else if (0 < dDeferred)
-                {
-                    dDeferred += d;
-                }
-                else
+                else if (0 == dDeferred)
                 {
                     iFmtDeferred = iFmt;
-                    dDeferred += d;
                 }
+                dDeferred = dProposed;
 
                 iFmt += d;
                 ncpFmt--;
