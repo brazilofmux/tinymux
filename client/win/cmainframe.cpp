@@ -158,6 +158,10 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
         (void)m_pMDIControl->CreateNewChild();
         break;
 
+    case IDM_FILE_OPEN:
+        ;
+        break;
+
     case IDM_FILE_CLOSE:
         {
             CWindow *pChild = m_pMDIControl->GetActive();

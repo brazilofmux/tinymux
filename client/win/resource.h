@@ -9,8 +9,8 @@
 #define IDS_RITSU                       105
 #define IDR_MAINFRAME                   106
 #define IDM_FILE_NEW                    107
-#define IDM_FILE_CLOSE                  108
-#define IDM_FILE_OPEN                   109
+#define IDM_FILE_OPEN                   108
+#define IDM_FILE_CLOSE                  109
 #define IDM_EXIT                        110
 #define IDM_WINDOW_TILE                 111
 #define IDM_WINDOW_CASCADE              112
