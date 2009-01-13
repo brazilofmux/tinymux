@@ -10,6 +10,8 @@
 #include "config.h"
 #include "externs.h"
 
+#include "mathutil.h"
+
 #define DO_COMMIT
 
 int cs_writes   = 0;    // total writes

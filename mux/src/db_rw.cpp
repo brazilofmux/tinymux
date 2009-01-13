@@ -10,6 +10,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "mathutil.h"
 #include "vattr.h"
 
 static int g_version;

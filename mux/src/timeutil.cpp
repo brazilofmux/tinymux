@@ -15,6 +15,8 @@
 #include "config.h"
 #include "externs.h"
 
+#include "mathutil.h"
+
 const INT64 FACTOR_MS_PER_SECOND    = INT64_C(1000);
 const INT64 FACTOR_US_PER_SECOND    = INT64_C(1000000);
 const INT64 FACTOR_100NS_PER_SECOND = INT64_C(10000000);

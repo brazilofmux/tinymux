@@ -482,26 +482,6 @@ void mux_strtok_ctl(__in MUX_STRTOK_STATE *tts, __in const UTF8 *pControl);
 UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen);
 UTF8 *mux_strtok_parse(__deref_in MUX_STRTOK_STATE *tts);
 
-size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase);
-size_t mux_ui64tox(unsigned long uval, UTF8 *buf, bool bUpperCase);
-
-size_t mux_utoa(unsigned long uval, UTF8 *buf);
-size_t mux_ltoa(long val, __out UTF8 *buf);
-UTF8 *mux_ltoa_t(long val);
-void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
-size_t mux_ui64toa(UINT64 uval, UTF8 *buf);
-size_t mux_i64toa(INT64 val, __out UTF8 *buf);
-UTF8 *mux_i64toa_t(INT64 val);
-void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
-long mux_atol(__in const UTF8 *pString);
-INT64 mux_atoi64(__in const UTF8 *pString);
-double mux_atof(__in const UTF8 *szString, bool bStrict = true);
-UTF8 *mux_ftoa(double r, bool bRounded, int frac);
-
-bool is_integer(__in const UTF8 *str, __out_opt int *pDigits = NULL);
-bool is_rational(__in const UTF8 *str);
-bool is_real(__in const UTF8 *str);
-
 // Color State
 //
 typedef UINT16 ColorState;
@@ -629,24 +609,6 @@ struct ArtRuleset
     void *m_pRegexpStudy;
     int m_bUseAn;
 };
-
-typedef struct
-{
-    int         iLeadingSign;
-    int         iString;
-    const UTF8  *pDigitsA;
-    size_t      nDigitsA;
-    const UTF8  *pDigitsB;
-    size_t      nDigitsB;
-    int         iExponentSign;
-    const UTF8  *pDigitsC;
-    size_t      nDigitsC;
-    const UTF8  *pMeat;
-    size_t      nMeat;
-
-} PARSE_FLOAT_RESULT;
-
-extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
 class mux_field
 {

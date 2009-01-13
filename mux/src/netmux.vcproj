@@ -751,6 +751,27 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="mathutil.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="3"
+						FavorSizeOrSpeed="0"
+						PreprocessorDefinitions=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="mguests.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -1515,6 +1536,9 @@
 			</File>
 			<File
 				RelativePath="match.h">
+			</File>
+			<File
+				RelativePath="mathutil.h">
 			</File>
 			<File
 				RelativePath="mguests.h">

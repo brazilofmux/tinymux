@@ -67,6 +67,7 @@ CLEAN :
 	-@erase "$(INTDIR)\look.obj"
 	-@erase "$(INTDIR)\mail.obj"
 	-@erase "$(INTDIR)\match.obj"
+	-@erase "$(INTDIR)\mathutil.obj"
 	-@erase "$(INTDIR)\mguests.obj"
 	-@erase "$(INTDIR)\modules.obj"
 	-@erase "$(INTDIR)\move.obj"
@@ -158,6 +159,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\look.obj" \
 	"$(INTDIR)\mail.obj" \
 	"$(INTDIR)\match.obj" \
+	"$(INTDIR)\mathutil.obj" \
 	"$(INTDIR)\mguests.obj" \
 	"$(INTDIR)\modules.obj" \
 	"$(INTDIR)\move.obj" \
@@ -239,6 +241,7 @@ CLEAN :
 	-@erase "$(INTDIR)\look.obj"
 	-@erase "$(INTDIR)\mail.obj"
 	-@erase "$(INTDIR)\match.obj"
+	-@erase "$(INTDIR)\mathutil.obj"
 	-@erase "$(INTDIR)\mguests.obj"
 	-@erase "$(INTDIR)\modules.obj"
 	-@erase "$(INTDIR)\move.obj"
@@ -335,6 +338,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\look.obj" \
 	"$(INTDIR)\mail.obj" \
 	"$(INTDIR)\match.obj" \
+	"$(INTDIR)\mathutil.obj" \
 	"$(INTDIR)\mguests.obj" \
 	"$(INTDIR)\modules.obj" \
 	"$(INTDIR)\move.obj" \
@@ -531,6 +535,11 @@ SOURCE=.\mail.cpp
 SOURCE=.\match.cpp
 
 "$(INTDIR)\match.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\mathutil.cpp
+
+"$(INTDIR)\mathutil.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\mguests.cpp

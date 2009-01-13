@@ -25,6 +25,7 @@
 #include "command.h"
 #include "comsys.h"
 #include "interface.h"
+#include "mathutil.h"
 #include "powers.h"
 #include "vattr.h"
 

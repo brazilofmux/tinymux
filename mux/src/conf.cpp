@@ -15,6 +15,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
+#include "mathutil.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.

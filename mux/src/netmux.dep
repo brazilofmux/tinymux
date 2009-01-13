@@ -77,6 +77,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -101,6 +102,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\slave.h"\
@@ -156,6 +158,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -180,6 +183,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -203,6 +207,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -226,6 +231,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -252,6 +258,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -275,6 +282,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -298,6 +306,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -321,6 +330,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -343,6 +353,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -370,6 +381,7 @@
 	".\libmux.h"\
 	".\mail.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\misc.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -396,6 +408,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\misc.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -424,6 +437,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\misc.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -449,6 +463,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\sha1.h"\
@@ -589,6 +604,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -639,6 +655,27 @@
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+
+
+.\mathutil.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\mathutil.h"\
+	".\modules.h"\
+	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
@@ -705,6 +742,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -737,6 +775,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\mguests.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -762,6 +801,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\mguests.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -810,6 +850,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -833,6 +874,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -854,6 +896,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -899,6 +942,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -923,6 +967,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -946,6 +991,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -1014,6 +1060,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
@@ -1036,6 +1083,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\pcre.h"\
@@ -1077,6 +1125,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -1157,6 +1206,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -1179,6 +1229,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\mguests.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -1200,6 +1251,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -1240,6 +1292,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -1308,6 +1361,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\misc.h"\
 	".\modules.h"\
 	".\mudconf.h"\
@@ -1330,6 +1384,7 @@
 	".\htab.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
@@ -1354,6 +1409,7 @@
 	".\interface.h"\
 	".\libmux.h"\
 	".\match.h"\
+	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\

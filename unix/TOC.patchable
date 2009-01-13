@@ -92,6 +92,8 @@ src/mail.cpp
 src/mail.h
 src/match.cpp
 src/match.h
+src/mathutil.cpp
+src/mathutil.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h

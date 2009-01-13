@@ -17,6 +17,7 @@
 #include "comsys.h"
 #include "functions.h"
 #include "interface.h"
+#include "mathutil.h"
 #include "powers.h"
 
 static int num_channels;

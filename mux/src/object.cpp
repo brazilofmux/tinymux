@@ -12,6 +12,7 @@
 
 #include "attrs.h"
 #include "command.h"
+#include "mathutil.h"
 #include "mguests.h"
 #include "powers.h"
 

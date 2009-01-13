@@ -19,6 +19,7 @@
 #include "comsys.h"
 #include "functions.h"
 #include "mguests.h"
+#include "mathutil.h"
 #include "powers.h"
 #include "vattr.h"
 #include "pcre.h"

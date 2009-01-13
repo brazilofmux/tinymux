@@ -12,6 +12,7 @@
 
 #include "command.h"
 #include "interface.h"
+#include "mathutil.h"
 #include "powers.h"
 #if defined(FIRANMUX)
 #include "attrs.h"

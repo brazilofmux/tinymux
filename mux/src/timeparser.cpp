@@ -11,6 +11,8 @@
 #include "config.h"
 #include "externs.h"
 
+#include "mathutil.h"
+
 // We must deal with several levels at once. That is, a single
 // character is overlapped by layers and layers of meaning from 'digit'
 // to 'the second digit of the hours field of the timezone'.

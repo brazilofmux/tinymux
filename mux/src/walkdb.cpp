@@ -12,6 +12,7 @@
 
 #include "attrs.h"
 #include "command.h"
+#include "mathutil.h"
 #include "misc.h"
 
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.

@@ -17,6 +17,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
+#include "mathutil.h"
 #include "powers.h"
 
 bool break_called = false;

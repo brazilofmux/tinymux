@@ -19,6 +19,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
+#include "mathutil.h"
 #include "powers.h"
 #ifdef REALITY_LVLS
 #include "levels.h"

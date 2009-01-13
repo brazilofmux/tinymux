@@ -13,6 +13,7 @@
 #include <signal.h>
 
 #include "command.h"
+#include "mathutil.h"
 #include "mguests.h"
 
 CScheduler scheduler;

@@ -18,6 +18,7 @@
 
 #include "attrs.h"
 #include "functions.h"
+#include "mathutil.h"
 
 //-----------------------------------------------------------------------------
 // parse_to: Split a line at a character, obeying nesting.  The line is

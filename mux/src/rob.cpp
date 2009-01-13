@@ -12,6 +12,7 @@
 
 #include "attrs.h"
 #include "command.h"
+#include "mathutil.h"
 #include "powers.h"
 
 void do_kill

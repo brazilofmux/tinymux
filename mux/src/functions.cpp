@@ -16,6 +16,7 @@
 #include "funmath.h"
 #include "interface.h"
 #include "misc.h"
+#include "mathutil.h"
 #include "pcre.h"
 #ifdef REALITY_LVLS
 #include "levels.h"

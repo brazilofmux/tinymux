@@ -15,6 +15,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "mathutil.h"
 
 static bool parsing_internal = false;
 

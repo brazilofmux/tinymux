@@ -14,6 +14,7 @@
 
 #include "command.h"
 #include "file_c.h"
+#include "mathutil.h"
 
 typedef struct filecache_block_hdr FBLKHDR;
 typedef struct filecache_block FBLOCK;

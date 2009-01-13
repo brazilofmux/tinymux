@@ -20,6 +20,7 @@
 #include "command.h"
 #include "comsys.h"
 #include "functions.h"
+#include "mathutil.h"
 #include "misc.h"
 #include "pcre.h"
 

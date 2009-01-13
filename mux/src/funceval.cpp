@@ -23,6 +23,7 @@
 #include "help.h"
 #include "mail.h"
 #include "misc.h"
+#include "mathutil.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS

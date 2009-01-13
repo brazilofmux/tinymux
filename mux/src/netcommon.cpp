@@ -20,6 +20,7 @@
 #include "comsys.h"
 #include "file_c.h"
 #include "functions.h"
+#include "mathutil.h"
 #include "mguests.h"
 #include "powers.h"
 #ifdef REALITY_LVLS
