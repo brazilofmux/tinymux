@@ -25,6 +25,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "file_c.h"
+#include "mathutil.h"
 #include "slave.h"
 
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
