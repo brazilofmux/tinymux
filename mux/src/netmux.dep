@@ -1342,6 +1342,27 @@
 	".\utf8tables.h"\
 	
 
+.\utf8tables.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\modules.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	".\utf8tables.h"\
+	
+
 .\vattr.cpp : \
 	".\alloc.h"\
 	".\attrcache.h"\
