@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated Dependency File, included by libmux.mak
+# Included by libmux.mak
 
 .\libmux.cpp : \
 	".\autoconf.h"\
