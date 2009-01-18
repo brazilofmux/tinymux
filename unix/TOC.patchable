@@ -157,6 +157,7 @@ src/tools/muxlocks.dat
 src/tools/README.muxdbpuller
 src/unparse.cpp
 src/unsplit.cpp
+src/utf8tables.cpp
 src/vattr.cpp
 src/vattr.h
 src/version.cpp

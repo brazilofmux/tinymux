@@ -22,6 +22,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\alloc.cpp : \
@@ -42,6 +43,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\attrcache.cpp : \
@@ -62,6 +64,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\boolexp.cpp : \
@@ -84,6 +87,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\bsd.cpp : \
@@ -110,6 +114,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\command.cpp : \
@@ -138,6 +143,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	".\vattr.h"\
 	
 
@@ -166,6 +172,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\conf.cpp : \
@@ -190,6 +197,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\cque.cpp : \
@@ -215,6 +223,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\create.cpp : \
@@ -239,6 +248,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\db.cpp : \
@@ -266,6 +276,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	".\vattr.h"\
 	
 
@@ -289,6 +300,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	".\vattr.h"\
 	
 
@@ -313,6 +325,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\file_c.cpp : \
@@ -337,6 +350,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\flags.cpp : \
@@ -361,6 +375,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\funceval.cpp : \
@@ -390,6 +405,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\funceval2.cpp : \
@@ -418,6 +434,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\functions.cpp : \
@@ -447,6 +464,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\funmath.cpp : \
@@ -471,6 +489,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\game.cpp : \
@@ -502,6 +521,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\help.cpp : \
@@ -524,6 +544,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\htab.cpp : \
@@ -544,6 +565,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\local.cpp : \
@@ -566,6 +588,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\log.cpp : \
@@ -587,6 +610,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\look.cpp : \
@@ -612,6 +636,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\mail.cpp : \
@@ -637,6 +662,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\match.cpp : \
@@ -659,6 +685,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 
 
 .\mathutil.cpp : \
@@ -680,6 +707,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\mguests.cpp : \
@@ -705,6 +733,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\modules.cpp : \
@@ -725,6 +754,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\move.cpp : \
@@ -750,6 +780,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\muxcli.cpp : \
@@ -784,6 +815,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\object.cpp : \
@@ -810,6 +842,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\pcre.cpp : \
@@ -831,6 +864,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\player.cpp : \
@@ -859,6 +893,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\player_c.cpp : \
@@ -881,6 +916,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\plusemail.cpp : \
@@ -903,6 +939,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\powers.cpp : \
@@ -925,6 +962,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\predicates.cpp : \
@@ -950,6 +988,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\quota.cpp : \
@@ -975,6 +1014,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\rob.cpp : \
@@ -999,6 +1039,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\set.cpp : \
@@ -1022,6 +1063,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\sha1.cpp : \
@@ -1043,6 +1085,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\speech.cpp : \
@@ -1068,6 +1111,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\stringutil.cpp : \
@@ -1091,6 +1135,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\strtod.cpp : \
@@ -1111,6 +1156,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\svdhash.cpp : \
@@ -1132,6 +1178,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\svdrand.cpp : \
@@ -1152,6 +1199,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timeabsolute.cpp : \
@@ -1172,6 +1220,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timedelta.cpp : \
@@ -1192,6 +1241,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timeparser.cpp : \
@@ -1213,6 +1263,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timer.cpp : \
@@ -1237,6 +1288,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timeutil.cpp : \
@@ -1258,6 +1310,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\timezone.cpp : \
@@ -1278,6 +1331,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\unparse.cpp : \
@@ -1299,6 +1353,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\vattr.cpp : \
@@ -1323,6 +1378,7 @@
 	".\svdrand.h"\
 	".\timeutil.h"\
 	".\vattr.h"\
+	".\utf8tables.h"\
 	
 
 .\version.cpp : \
@@ -1345,6 +1401,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\walkdb.cpp : \
@@ -1370,6 +1427,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\wild.cpp : \
@@ -1391,6 +1449,7 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	
 
 .\wiz.cpp : \
@@ -1417,4 +1476,5 @@
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
+	".\utf8tables.h"\
 	

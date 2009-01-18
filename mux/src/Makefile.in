@@ -102,7 +102,7 @@ NETMUX_BASE_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp pcre.cpp set.cpp sha1.cpp \
     speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp timer.cpp \
     timeabsolute.cpp timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-    unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+    unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
 NETMUX_BASE_OBJ = _build.o alarm.o alloc.o attrcache.o boolexp.o bsd.o \
     command.o comsys.o conf.o cque.o create.o db.o db_rw.o eval.o file_c.o \
     flags.o funceval.o funceval2.o functions.o funmath.o game.o help.o \
@@ -110,8 +110,8 @@ NETMUX_BASE_OBJ = _build.o alarm.o alloc.o attrcache.o boolexp.o bsd.o \
     move.o muxcli.o netcommon.o object.o predicates.o player.o player_c.o \
     plusemail.o powers.o quota.o rob.o pcre.o set.o sha1.o speech.o \
     stringutil.o strtod.o svdrand.o svdhash.o timer.o timeabsolute.o \
-    timedelta.o timeparser.o timeutil.o timezone.o unparse.o vattr.o \
-    walkdb.o wild.o wiz.o
+    timedelta.o timeparser.o timeutil.o timezone.o unparse.o utf8tables.o \
+    vattr.o walkdb.o wild.o wiz.o
 
 # Base sources and object files for building @DYNAMICLIB_TARGET@
 #

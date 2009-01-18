@@ -682,6 +682,11 @@ SOURCE=.\unparse.cpp
 "$(INTDIR)\unparse.obj": $(SOURCE) "$(INTDIR)"
 
 
+SOURCE=.\utf8tables.cpp
+
+"$(INTDIR)\utf8tables.obj": $(SOURCE) "$(INTDIR)"
+
+
 SOURCE=.\vattr.cpp
 
 "$(INTDIR)\vattr.obj": $(SOURCE) "$(INTDIR)"

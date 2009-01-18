@@ -10,6 +10,7 @@
 
 #include "alloc.h"
 #include "htab.h"
+#include "utf8tables.h"
 #include "stringutil.h"
 
 #ifdef HAVE_NETINET_IN_H
