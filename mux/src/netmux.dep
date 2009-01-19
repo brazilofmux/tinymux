@@ -109,7 +109,6 @@
 	".\mathutil.h"\
 	".\modules.h"\
 	".\mudconf.h"\
-	".\slave.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
