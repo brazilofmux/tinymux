@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated Dependency File, included by sample.mak
+# Included by sample.mak
 
 .\sample.cpp : \
 	"..\autoconf.h"\

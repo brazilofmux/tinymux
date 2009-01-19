@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated Dependency File, included by sqlslave.mak
+# Included by sqlslave.mak
 
 .\sqlslave.cpp : \
 	"..\autoconf.h"\

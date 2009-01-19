@@ -18,3 +18,4 @@ game/text/staffhelp.txt
 game/text/wizmotd.txt
 game/text/wiznews.txt
 src/.depend
+src/modules/.depend

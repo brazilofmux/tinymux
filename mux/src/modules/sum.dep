@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated Dependency File, included by sum.mak
+# Included by sum.mak
 
 .\sum.cpp : \
 	"..\autoconf.h"\
