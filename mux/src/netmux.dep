@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated Dependency File, included by netmux.mak
+# Included by netmux.mak
 
 .\_build.cpp : \
 	".\_build.h"\
@@ -14,7 +14,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -32,7 +34,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -51,7 +55,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -73,7 +79,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\slave.h"\
 	".\stringutil.h"\
@@ -84,7 +92,6 @@
 
 .\command.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -96,11 +103,12 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\functions.h"\
-	".\help.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\pcre.h"\
 	".\powers.h"\
@@ -113,7 +121,6 @@
 
 .\comsys.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -127,7 +134,9 @@
 	".\functions.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -149,7 +158,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -170,7 +181,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -191,7 +204,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -215,7 +230,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -236,7 +253,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -247,7 +266,6 @@
 
 .\eval.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -258,7 +276,9 @@
 	".\flags.h"\
 	".\functions.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -279,7 +299,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -289,9 +311,7 @@
 
 .\flags.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
-	".\attrs.h"\
 	".\autoconf.h"\
 	".\command.h"\
 	".\config.h"\
@@ -300,7 +320,10 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -311,7 +334,6 @@
 
 .\funceval.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -323,11 +345,13 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\functions.h"\
+	".\help.h"\
 	".\htab.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\mail.h"\
 	".\match.h"\
 	".\misc.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\pcre.h"\
 	".\powers.h"\
@@ -339,7 +363,6 @@
 
 .\functions.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -353,16 +376,17 @@
 	".\funmath.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\misc.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\pcre.h"\
 	".\powers.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\timeutil.h"
+	".\timeutil.h"\
 	
 
 .\funmath.cpp : \
@@ -377,7 +401,9 @@
 	".\functions.h"\
 	".\funmath.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\sha1.h"\
 	".\stringutil.h"\
@@ -403,9 +429,10 @@
 	".\help.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\muxcli.h"\
 	".\pcre.h"\
@@ -413,7 +440,7 @@
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\timeutil.h"
+	".\timeutil.h"\
 	
 
 .\help.cpp : \
@@ -428,7 +455,9 @@
 	".\flags.h"\
 	".\help.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -446,7 +475,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -466,7 +497,9 @@
 	".\flags.h"\
 	".\functions.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -485,7 +518,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -495,7 +530,6 @@
 
 .\look.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -507,8 +541,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -529,8 +564,11 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\interface.h"\
+	".\libmux.h"\
 	".\mail.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -550,8 +588,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -573,8 +612,10 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -584,11 +625,24 @@
 	
 
 .\modules.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
 	".\autoconf.h"\
 	".\config.h"\
 	".\copyright.h"\
+	".\db.h"\
 	".\externs.h"\
-
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\modules.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
 
 .\move.cpp : \
 	".\alloc.h"\
@@ -603,8 +657,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -620,7 +675,6 @@
 
 .\netcommon.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -635,9 +689,10 @@
 	".\functions.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -659,8 +714,10 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -669,22 +726,28 @@
 	".\timeutil.h"\
 	
 
-.\pcre.cpp : \
+.\predicates.cpp : \
 	".\alloc.h"\
 	".\attrcache.h"\
+	".\attrs.h"\
 	".\autoconf.h"\
+	".\command.h"\
 	".\config.h"\
 	".\copyright.h"\
 	".\db.h"\
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
-	".\pcre.h"\
+	".\powers.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
+	".\table.h"\
 	".\timeutil.h"\
 	
 
@@ -703,7 +766,9 @@
 	".\functions.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\sha1.h"\
@@ -724,7 +789,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -743,7 +810,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -762,31 +831,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
-	".\mudconf.h"\
-	".\powers.h"\
-	".\stringutil.h"\
-	".\svdhash.h"\
-	".\svdrand.h"\
-	".\timeutil.h"\
-	
-
-.\predicates.cpp : \
-	".\alloc.h"\
-	".\ansi.h"\
-	".\attrcache.h"\
-	".\attrs.h"\
-	".\autoconf.h"\
-	".\command.h"\
-	".\config.h"\
-	".\copyright.h"\
-	".\db.h"\
-	".\externs.h"\
-	".\flags.h"\
-	".\htab.h"\
-	".\interface.h"\
-	".\levels.h"\
-	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -808,7 +855,9 @@
 	".\flags.h"\
 	".\functions.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -829,7 +878,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -838,9 +889,29 @@
 	".\timeutil.h"\
 	
 
+.\pcre.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\modules.h"\
+	".\mudconf.h"\
+	".\pcre.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
 .\set.cpp : \
 	".\alloc.h"\
-	".\ansi.h"\
 	".\attrcache.h"\
 	".\attrs.h"\
 	".\autoconf.h"\
@@ -851,7 +922,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -870,7 +943,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\sha1.h"\
 	".\stringutil.h"\
@@ -892,8 +967,9 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
-	".\levels.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -913,7 +989,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\pcre.h"\
 	".\stringutil.h"\
@@ -932,26 +1010,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
-	".\mudconf.h"\
-	".\stringutil.h"\
-	".\svdhash.h"\
-	".\svdrand.h"\
-	".\timeutil.h"\
-	{$(INCLUDE)}"fenv.h"\
-	
-
-.\svdhash.cpp : \
-	".\alloc.h"\
-	".\attrcache.h"\
-	".\autoconf.h"\
-	".\config.h"\
-	".\copyright.h"\
-	".\db.h"\
-	".\externs.h"\
-	".\flags.h"\
-	".\htab.h"\
-	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -969,7 +1030,29 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
+	".\mudconf.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
+.\svdhash.cpp : \
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -989,8 +1072,10 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\mguests.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -1008,7 +1093,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -1026,7 +1113,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -1047,33 +1136,15 @@
 	".\flags.h"\
 	".\functions.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
 	".\timeutil.h"\
 	".\vattr.h"\
-	
-
-.\version.cpp : \
-	".\_build.h"\
-	".\alloc.h"\
-	".\attrcache.h"\
-	".\autoconf.h"\
-	".\command.h"\
-	".\config.h"\
-	".\copyright.h"\
-	".\db.h"\
-	".\externs.h"\
-	".\flags.h"\
-	".\htab.h"\
-	".\match.h"\
-	".\mudconf.h"\
-	".\stringutil.h"\
-	".\svdhash.h"\
-	".\svdrand.h"\
-	".\timeutil.h"\
 	
 
 .\walkdb.cpp : \
@@ -1088,8 +1159,10 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
 	".\misc.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
 	".\stringutil.h"\
@@ -1108,7 +1181,9 @@
 	".\externs.h"\
 	".\flags.h"\
 	".\htab.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
@@ -1130,9 +1205,33 @@
 	".\flags.h"\
 	".\htab.h"\
 	".\interface.h"\
+	".\libmux.h"\
 	".\match.h"\
+	".\modules.h"\
 	".\mudconf.h"\
 	".\powers.h"\
+	".\stringutil.h"\
+	".\svdhash.h"\
+	".\svdrand.h"\
+	".\timeutil.h"\
+	
+
+.\version.cpp : \
+	".\_build.h"\
+	".\alloc.h"\
+	".\attrcache.h"\
+	".\autoconf.h"\
+	".\command.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\db.h"\
+	".\externs.h"\
+	".\flags.h"\
+	".\htab.h"\
+	".\libmux.h"\
+	".\match.h"\
+	".\modules.h"\
+	".\mudconf.h"\
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
