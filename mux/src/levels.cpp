@@ -17,6 +17,7 @@
 #include "command.h"
 #include "powers.h"
 #include "levels.h"
+#include "mathutil.h"
 
 RLEVEL RxLevel(dbref thing)
 {
