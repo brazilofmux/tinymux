@@ -1,3 +1,4 @@
+# Included by netmux.mak
 
 .\_build.cpp : \
 	".\_build.h"\
