@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  September 2008
+Last Update:  January 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -332,6 +332,12 @@ Bug Fixes:
  -- @toad wasn't deleting the right name from an internal table.
  -- Leading Ctrl-A in attribute was converted to '?' during 2.7
     flatfile conversion.
+ -- Set MYSQL_OPT_RECONNECT and MYSQL_SET_CHARSET_NAME MySQL options.
+ -- Fix mid() with negative length (Issue 539).
+ -- Fix padding in SHA1_Final() for data 9 bytes shorter than a
+    multiple of 64 (Issue 544).
+ -- Don't strip MSG_SAYPOSE or MSG_OOC when forwarding messages to
+    contents, exits, etc.
 
 
 Performance Enhancements:
