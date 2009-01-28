@@ -263,11 +263,12 @@ static void EncodeBase64(size_t nIn, const UTF8 *pIn, UTF8 *pOut)
 const UTF8 szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
 #define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
-#define MD5_PREFIX_LENGTH 3
-const UTF8 szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
-
-#define BLOWFISH_PREFIX_LENGTH 4
-const UTF8 szBlowfishPrefix[BLOWFISH_PREFIX_LENGTH+1] = "$2a$";
+// These are known but passed through as CRYPT_OTHER:
+//
+// MD5        $1$
+// Blowfish   $2a$
+// SHA-256    $5$
+// SHA-512    $6$
 
 #define SALT_LENGTH 9
 #define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
@@ -296,12 +297,10 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
 
 #define CRYPT_FAIL        0
 #define CRYPT_SHA1        1
-#define CRYPT_MD5         2
-#define CRYPT_DES         3
-#define CRYPT_DES_EXT     4
-#define CRYPT_BLOWFISH    5
-#define CRYPT_CLEARTEXT   6
-#define CRYPT_OTHER       7
+#define CRYPT_DES         2
+#define CRYPT_DES_EXT     3
+#define CRYPT_CLEARTEXT   4
+#define CRYPT_OTHER       5
 
 const UTF8 szFail[] = "$FAIL$$";
 
@@ -342,16 +341,6 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
                 {
                     *piType = CRYPT_SHA1;
                 }
-            }
-            else if (  nAlgo == MD5_PREFIX_LENGTH
-                    && memcmp(szSetting, szMD5Prefix, MD5_PREFIX_LENGTH) == 0)
-            {
-                *piType = CRYPT_MD5;
-            }
-            else if (  nAlgo == BLOWFISH_PREFIX_LENGTH
-                    && memcmp(szSetting, szBlowfishPrefix, BLOWFISH_PREFIX_LENGTH) == 0)
-            {
-                *piType = CRYPT_BLOWFISH;
             }
             else
             {
@@ -397,8 +386,6 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     case CRYPT_CLEARTEXT:
         return szPassword;
 
-    case CRYPT_MD5:
-    case CRYPT_BLOWFISH:
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
 #if defined(WINDOWS_CRYPT)
