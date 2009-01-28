@@ -10995,9 +10995,9 @@ static FUN builtin_function_list[] =
     {T("MAILFROM"),    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {T("MAILJ"),       fun_mailj,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {T("MAILSIZE"),    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("MAILSUBJ"),    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("MAP"),         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
     {T("MATCH"),       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MATCHALL"),    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},

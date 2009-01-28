@@ -1912,7 +1912,6 @@ FUNCTION(fun_mail)
     }
 }
 
-#ifdef FIRANMUX
 FUNCTION(fun_mailsize)
 {
     if (!mudconf.have_mailer)
@@ -1999,6 +1998,7 @@ FUNCTION(fun_mailsubj)
     }
 }
 
+#ifdef FIRANMUX
 // This function can take one of three formats:
 //
 //  1.  mailj(num)  --> returns message <num> for privs.

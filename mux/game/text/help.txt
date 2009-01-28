@@ -9652,9 +9652,7 @@ MAILSIZE()
 
   Returns the size of <player>'s mail bag in bytes.
 
-  This function is only available with --enable-firanmux.
-
-  Related Topics:
+  Related Topics: mail(), mailsubj().
 
 & MAILSUBJ()
 MAILSUBJ()
@@ -9665,9 +9663,7 @@ MAILSUBJ()
   First form returns the subject line from the executor's <num>'th mail item.
   Second form returns the subject line from the <player>'s <num>'th mail item.
 
-  This function is only available with --enable-firanmux.
-
-  Related Topics: mail(), mailj().
+  Related Topics: mail(), mailj(), mailsize().
 
 & MAP()
 MAP()
