@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  October 2008
+Last Update:  January 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,6 +124,7 @@ Feature Additions:
  -- Convert vertical quotes to directional quotes and hyphen drawing
     to en dashes (Issue 473).
  -- Update Unicode tables.
+ -- Expose mailsubj() and mailsize() in the stock build.
 
 
 Bug Fixes:
@@ -320,6 +321,19 @@ Bug Fixes:
  -- Fix ./configure --with-mysql-libs and --with-mysql-include
     interaction --enable-stubslave on FreeBSD.
  -- Fix case of edit() leaving ColorState uninitialized (Issue 537).
+ -- Change m_database to mush_database to fix broken
+    --enable-inlinesql build.
+ -- Fix padding in SHA1_Final() for data 9 bytes shorter than a
+    multiple of 64 (Issue 544).
+ -- Fix test cases affected by Issue 544.
+ -- Fix color regression from 2.6 that affects ljust(), rjust(), and
+    center() (Issue 541).
+ -- A notify() call should be raw_notify() instead.
+ -- Don't strip MSG_SAYPOSE or MSG_OOC when forwarding messages to
+    contents, exits, etc.
+ -- Remove UTF-8 color codepoints from @hook report as
+    printf("%-30.30s") leaves this misaligned.
+ -- Revert @hook report back to 2.6 appearance.
 
 
 Performance Enhancements:
@@ -411,3 +425,5 @@ Miscellaneous:
  -- Consolidate error message reporting for @pemit/list (Issue 363).
  -- Switch to using Visual Studio 2003 and Intel Compiler v10.1.
  -- Fix build issues within Cygwin.
+ -- Add SHA-1 test vectors.
+ -- Update dependencies used by .mak files.
