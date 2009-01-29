@@ -161,9 +161,9 @@ XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
 #if defined(FIRANMUX)
 XFUNCTION(fun_mailj);
+#endif
 XFUNCTION(fun_mailsize);
 XFUNCTION(fun_mailsubj);
-#endif
 XFUNCTION(fun_matchall);
 XFUNCTION(fun_mix);
 XFUNCTION(fun_munge);
