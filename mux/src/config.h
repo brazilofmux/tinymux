@@ -54,6 +54,8 @@
 #define __out
 #define __out_ecount(n)
 #define __out_opt
+#elif defined(WIN64)
+#define __in_z
 #endif
 
 #ifndef _GNU_SOURCE
@@ -563,14 +565,12 @@ typedef unsigned char UINT8;
 #define SIZEOF_UINT_PTR SIZEOF_VOID_P
 #if SIZEOF_UNSIGNED_INT == SIZEOF_VOID_P
 typedef unsigned int UINT_PTR;
-#define SIZEOF_UINT_PTR SIZEOF_VOID_P
-#elif SIZEOF_UNSIGNED_LONG == SIZEOF_VOID_P
-typedef unsigned long UINT_PTR;
-#define SIZEOF_UINT_PTR SIZEOF_VOID_P
-#elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
-typedef unsigned short UINT_PTR;
 #elif SIZEOF_UNSIGNED_LONG_LONG == SIZEOF_VOID_P
 typedef UINT64 UINT_PTR;
+#elif SIZEOF_UNSIGNED_LONG == SIZEOF_VOID_P
+typedef unsigned long UINT_PTR;
+#elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
+typedef unsigned short UINT_PTR;
 #elif
 #error TinyMUX cannot find an integer type with same size as a pointer.
 #endif
