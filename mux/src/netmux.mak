@@ -96,6 +96,7 @@ CLEAN :
 	-@erase "$(INTDIR)\timeutil.obj"
 	-@erase "$(INTDIR)\timezone.obj"
 	-@erase "$(INTDIR)\unparse.obj"
+	-@erase "$(INTDIR)\utf8tables.obj"
 	-@erase "$(INTDIR)\vattr.obj"
 	-@erase "$(INTDIR)\version.obj"
 	-@erase "$(INTDIR)\walkdb.obj"
@@ -188,6 +189,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\timeutil.obj" \
 	"$(INTDIR)\timezone.obj" \
 	"$(INTDIR)\unparse.obj" \
+	"$(INTDIR)\utf8tables.obj" \
 	"$(INTDIR)\vattr.obj" \
 	"$(INTDIR)\version.obj" \
 	"$(INTDIR)\walkdb.obj" \
@@ -270,6 +272,7 @@ CLEAN :
 	-@erase "$(INTDIR)\timeutil.obj"
 	-@erase "$(INTDIR)\timezone.obj"
 	-@erase "$(INTDIR)\unparse.obj"
+	-@erase "$(INTDIR)\utf8tables.obj"
 	-@erase "$(INTDIR)\vattr.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
@@ -367,6 +370,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\timeutil.obj" \
 	"$(INTDIR)\timezone.obj" \
 	"$(INTDIR)\unparse.obj" \
+	"$(INTDIR)\utf8tables.obj" \
 	"$(INTDIR)\vattr.obj" \
 	"$(INTDIR)\version.obj" \
 	"$(INTDIR)\walkdb.obj" \
