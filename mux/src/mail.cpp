@@ -354,11 +354,11 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     // the provided folder name.
     //
     mux_string *sRecord = new mux_string;
-    sRecord->append(fld);
+    sRecord->append((long)fld);
     sRecord->append(T(":"));
     sRecord->append(name);
     sRecord->append(T(":"));
-    sRecord->append(fld);
+    sRecord->append((long)fld);
     sRecord->UpperCase();
 
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
@@ -534,6 +534,15 @@ static int get_folder_number(dbref player, UTF8 *name)
                 q++;
             }
             *q = '\0';
+
+            // A bug in TinyMUX 2.7 (Jan 22, 2008 through Feb 1, 2009)
+            // generated a leading '#' in folder numbers.  The following
+            // workaround can eventually be removed.
+            //
+            if ('#' == *p)
+            {
+                p++;
+            }
 
             int iFolderNumber = mux_atol(p);
             free_lbuf(aFolders);
