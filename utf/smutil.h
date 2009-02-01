@@ -28,6 +28,7 @@ typedef struct OutputStatus
     int nStates;
     int nColumns;
     int SizeOfState;
+    int SizeOfBlobOffset;
     int SizeOfMachine;
 } OutputStatus;
 
@@ -46,7 +47,6 @@ public:
     void RemoveDuplicateRows(void);
     void DetectDuplicateColumns(void);
     void NumberStates(void);
-    void MinimumMachineSize(int *piSizeOfState, int *piSizeOfMachine);
     void OutputTables(OutputControl *poc, OutputStatus *pos);
     void Final(void);
     ~StateMachine();
