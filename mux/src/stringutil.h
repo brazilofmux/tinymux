@@ -108,11 +108,47 @@ inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
 //
 inline bool mux_isprint(__in const unsigned char *p)
 {
-    int iState = CL_PRINT_START_STATE;
+    unsigned char iState = CL_PRINT_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_print_stt[iState][cl_print_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_print_itt[(unsigned char)ch];
+        unsigned short iOffset = cl_print_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_print_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_print_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_print_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_PRINT_ACCEPTING_STATES_START);
     return ((iState - CL_PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -121,11 +157,47 @@ inline bool mux_isprint(__in const unsigned char *p)
 //
 inline bool mux_isattrnameinitial(__in const unsigned char *p)
 {
-    int iState = CL_ATTRNAMEINITIAL_START_STATE;
+    unsigned char iState = CL_ATTRNAMEINITIAL_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_attrnameinitial_stt[iState][cl_attrnameinitial_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_attrnameinitial_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_attrnameinitial_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_attrnameinitial_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_attrnameinitial_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_attrnameinitial_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START);
     return ((iState - CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -134,11 +206,47 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
 //
 inline bool mux_isattrname(__in const unsigned char *p)
 {
-    int iState = CL_ATTRNAME_START_STATE;
+    unsigned char iState = CL_ATTRNAME_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_attrname_stt[iState][cl_attrname_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_attrname_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_attrname_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_attrname_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_attrname_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_attrname_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_ATTRNAME_ACCEPTING_STATES_START);
     return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -147,11 +255,47 @@ inline bool mux_isattrname(__in const unsigned char *p)
 //
 inline bool mux_isobjectname(__in const unsigned char *p)
 {
-    int iState = CL_OBJECTNAME_START_STATE;
+    unsigned char iState = CL_OBJECTNAME_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_objectname_stt[iState][cl_objectname_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_objectname_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_objectname_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_objectname_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_objectname_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_objectname_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_OBJECTNAME_ACCEPTING_STATES_START);
     return ((iState - CL_OBJECTNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -160,11 +304,47 @@ inline bool mux_isobjectname(__in const unsigned char *p)
 //
 inline bool mux_isplayername(__in const unsigned char *p)
 {
-    int iState = CL_PLAYERNAME_START_STATE;
+    unsigned char iState = CL_PLAYERNAME_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_playername_stt[iState][cl_playername_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_playername_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_playername_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_playername_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_playername_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_playername_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_PLAYERNAME_ACCEPTING_STATES_START);
     return ((iState - CL_PLAYERNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -173,11 +353,47 @@ inline bool mux_isplayername(__in const unsigned char *p)
 //
 inline bool mux_is8859_1(__in const unsigned char *p)
 {
-    int iState = CL_8859_1_START_STATE;
+    unsigned char iState = CL_8859_1_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_8859_1_stt[iState][cl_8859_1_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_8859_1_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_8859_1_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_8859_1_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_8859_1_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_8859_1_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_8859_1_ACCEPTING_STATES_START);
     return ((iState - CL_8859_1_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -186,11 +402,47 @@ inline bool mux_is8859_1(__in const unsigned char *p)
 //
 inline bool mux_is8859_2(__in const unsigned char *p)
 {
-    int iState = CL_8859_2_START_STATE;
+    unsigned char iState = CL_8859_2_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = cl_8859_2_stt[iState][cl_8859_2_itt[(unsigned char)ch]];
+        unsigned char iColumn = cl_8859_2_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_8859_2_sot[iState];
+        for (;;)
+        {
+            int y = (char)cl_8859_2_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_8859_2_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = cl_8859_2_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < CL_8859_2_ACCEPTING_STATES_START);
     return ((iState - CL_8859_2_ACCEPTING_STATES_START) == 1) ? true : false;
 }
@@ -207,11 +459,47 @@ const char *ConvertToAscii(__in const UTF8 *pString);
 //
 inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
 {
-    int iState = TR_TOLOWER_START_STATE;
+    unsigned char iState = TR_TOLOWER_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = tr_tolower_stt[iState][tr_tolower_itt[(unsigned char)ch]];
+        unsigned char iColumn = tr_tolower_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_tolower_sot[iState];
+        for (;;)
+        {
+            int y = (char)tr_tolower_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_tolower_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = tr_tolower_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < TR_TOLOWER_ACCEPTING_STATES_START);
 
     if (TR_TOLOWER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
@@ -230,11 +518,47 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
 //
 inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
 {
-    int iState = TR_TOUPPER_START_STATE;
+    unsigned char iState = TR_TOUPPER_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = tr_toupper_stt[iState][tr_toupper_itt[(unsigned char)ch]];
+        unsigned char iColumn = tr_toupper_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_toupper_sot[iState];
+        for (;;)
+        {
+            int y = (char)tr_toupper_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_toupper_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = tr_toupper_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
 
     if (TR_TOUPPER_DEFAULT == iState - TR_TOUPPER_ACCEPTING_STATES_START)
@@ -253,11 +577,47 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
 //
 inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 {
-    int iState = TR_TOTITLE_START_STATE;
+    unsigned char iState = TR_TOTITLE_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = tr_totitle_stt[iState][tr_totitle_itt[(unsigned char)ch]];
+        unsigned char iColumn = tr_totitle_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_totitle_sot[iState];
+        for (;;)
+        {
+            int y = (char)tr_totitle_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_totitle_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = tr_totitle_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < TR_TOTITLE_ACCEPTING_STATES_START);
 
     if (TR_TOTITLE_DEFAULT == iState - TR_TOTITLE_ACCEPTING_STATES_START)
@@ -276,11 +636,47 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 //
 inline int mux_color(__in const unsigned char *p)
 {
-    int iState = TR_COLOR_START_STATE;
+    unsigned char iState = TR_COLOR_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = tr_color_stt[iState][tr_color_itt[(unsigned char)ch]];
+        unsigned char iColumn = tr_color_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_color_sot[iState];
+        for (;;)
+        {
+            int y = (char)tr_color_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_color_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = tr_color_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
     } while (iState < TR_COLOR_ACCEPTING_STATES_START);
     return iState - TR_COLOR_ACCEPTING_STATES_START;
 }

@@ -2,7 +2,7 @@
 #
 UNICODE=~/unicode
 
-all: classify integers strings stringutil.cpp.txt stringutil.h.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt buildFiles
+all: classify integers strings utf8tables.cpp.txt utf8tables.h.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt buildFiles
 
 UnicodeData.txt:
 	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
@@ -34,8 +34,8 @@ strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 buildFiles: buildFiles.cpp smutil.cpp smutil.h
 	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp
 
-stringutil.cpp.txt stringutil.h.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt
-	-rm stringutil.cpp.txt stringutil.h.txt
+utf8tables.cpp.txt utf8tables.h.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt
+	-rm utf8tables.cpp.txt utf8tables.h.txt
 	./classify cl_print cl_Printable.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt
 	./classify cl_attrname cl_AttrName.txt

@@ -680,13 +680,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("stringutil.cpp.txt", "a");
-    FILE *fpInclude = fopen("stringutil.h.txt", "a");
+    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
+    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
     if (  NULL == fp
        || NULL == fpBody
        || NULL == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, stringutil.cpp.txt, and stringutil.h.txt.\n", pFilename);
+        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, and utf8tables.h.txt.\n", pFilename);
         exit(0);
     }
 

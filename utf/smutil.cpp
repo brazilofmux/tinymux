@@ -1113,7 +1113,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                 fprintf(poc->fpBody, "\n");
             }
         }
-        fprintf(poc->fpBody, "\n};\n");
+        fprintf(poc->fpBody, "\n};\n\n");
 
         switch (os.SizeOfState)
         {
