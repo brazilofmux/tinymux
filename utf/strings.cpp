@@ -499,7 +499,10 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     fprintf(fpBody, "// %d code points.\n", cIncluded);
     fprintf(fpInclude, "// %d code points.\n", cIncluded);
     fprintf(stderr, "%d code points.\n", cIncluded);
-    sm.ReportStatus();
+
+    OutputStatus os;
+    sm.OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
@@ -540,7 +543,12 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     // Output State Transition Table.
     //
     sm.NumberStates();
-    sm.OutputTables(fpBody, fpInclude, UpperPrefix, LowerPrefix);
+    OutputControl oc;
+    oc.fpBody = fpBody;
+    oc.fpInclude = fpInclude;
+    oc.UpperPrefix = UpperPrefix;
+    oc.LowerPrefix = LowerPrefix;
+    sm.OutputTables(&oc, NULL);
 
     fprintf(fpBody, "\n");
     fprintf(fpInclude, "\n");

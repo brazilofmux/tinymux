@@ -290,14 +290,6 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     }
 }
 
-void StateMachine::ReportStatus(void)
-{
-    int SizeOfState;
-    int SizeOfMachine;
-    MinimumMachineSize(&SizeOfState, &SizeOfMachine);
-    fprintf(stderr, "%d states, %d columns, %d bytes\n", m_nStates, m_nColumns, SizeOfMachine);
-}
-
 bool StateMachine::RowsEqual(State *p, State *q)
 {
     ValidateStatePointer(p, __LINE__);
@@ -468,7 +460,10 @@ void StateMachine::MergeAcceptingStates(void)
             }
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::RemoveDuplicateRows(void)
@@ -566,7 +561,10 @@ void StateMachine::RemoveDuplicateRows(void)
             }
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::DetectDuplicateColumns(void)
@@ -625,7 +623,10 @@ void StateMachine::DetectDuplicateColumns(void)
             m_itt[i] = m_itt[m_itt[i]];
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::SetUndefinedStates(int AcceptingState)
@@ -706,78 +707,88 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 #endif
 }
 
-void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
+void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
 {
-    int SizeOfState;
-    int SizeOfMachine;
-    MinimumMachineSize(&SizeOfState, &SizeOfMachine);
+    OutputStatus os;
+    os.nStates = m_nStates;
+    os.nColumns = m_nColumns;
 
-    fprintf(fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
-    fprintf(fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
+    MinimumMachineSize(&os.SizeOfState, &os.SizeOfMachine);
+    if (NULL == poc)
+    {
+        if (NULL != pos)
+        {
+            *pos = os;
+        }
+        return;
+    }
+
+    fprintf(poc->fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
+    fprintf(poc->fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
 
     int iAcceptingStatesStart = m_nStates;
 
-    fprintf(fpInclude, "#define %s_START_STATE (0)\n", UpperPrefix);
-    fprintf(fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
+    fprintf(poc->fpInclude, "#define %s_START_STATE (0)\n", poc->UpperPrefix);
+    fprintf(poc->fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", poc->UpperPrefix, iAcceptingStatesStart);
 
-    fprintf(fpInclude, "extern const unsigned char %s_itt[256];\n", LowerPrefix);
-    fprintf(fpBody, "const unsigned char %s_itt[256] =\n", LowerPrefix);
-    fprintf(fpBody, "{\n");
+    fprintf(poc->fpInclude, "extern const unsigned char %s_itt[256];\n", poc->LowerPrefix);
+    fprintf(poc->fpBody, "const unsigned char %s_itt[256] =\n", poc->LowerPrefix);
+    fprintf(poc->fpBody, "{\n");
     int i;
     for (i = 0; i < 256; i++)
     {
         int j = i % 16;
         if (0 == j)
         {
-            fprintf(fpBody, "    ");
+            fprintf(poc->fpBody, "    ");
         }
 
-        fprintf(fpBody, " %3d", m_itt[i]);
+        fprintf(poc->fpBody, " %3d", m_itt[i]);
         if (i < 256-1)
         {
-            fprintf(fpBody, ",");
+            fprintf(poc->fpBody, ",");
         }
 
         if (7 == j)
         {
-            fprintf(fpBody, " ");
+            fprintf(poc->fpBody, " ");
         }
 
         if (15 == j)
         {
-            fprintf(fpBody, "\n");
+            fprintf(poc->fpBody, "\n");
         }
 
         if (127 == i)
         {
-            fprintf(fpBody, "\n");
+            fprintf(poc->fpBody, "\n");
         }
     }
-    fprintf(fpBody, "\n};\n\n");
+    fprintf(poc->fpBody, "\n};\n\n");
 
-    switch (SizeOfState)
+    switch (os.SizeOfState)
     {
     case 1:
-        fprintf(fpInclude, "extern const unsigned char %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpInclude, "extern const unsigned char %s_stt[%d][%d];\n", poc->LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpBody, "const unsigned char %s_stt[%d][%d] =\n", poc->LowerPrefix, m_nStates, m_nColumns);
         break;
 
     case 2:
-        fprintf(fpInclude, "extern const unsigned short %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpInclude, "extern const unsigned short %s_stt[%d][%d];\n", poc->LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpBody, "const unsigned short %s_stt[%d][%d] =\n", poc->LowerPrefix, m_nStates, m_nColumns);
         break;
 
     default:
-        fprintf(fpInclude, "extern const unsigned long %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpInclude, "extern const unsigned long %s_stt[%d][%d];\n", poc->LowerPrefix, m_nStates, m_nColumns);
+        fprintf(poc->fpBody, "const unsigned long %s_stt[%d][%d] =\n", poc->LowerPrefix, m_nStates, m_nColumns);
         break;
     }
-    fprintf(fpBody, "{\n");
+    fprintf(poc->fpBody, "{\n");
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
 
-        fprintf(fpBody, "    {");
+        fprintf(poc->fpBody, "    {");
         int j;
         for (j = 0; j < 256; j++)
         {
@@ -809,18 +820,23 @@ void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix
 
             if (0 != j)
             {
-                fprintf(fpBody, ",");
+                fprintf(poc->fpBody, ",");
             }
-            fprintf(fpBody, " %3d", k);
+            fprintf(poc->fpBody, " %3d", k);
         }
-        fprintf(fpBody, "}");
+        fprintf(poc->fpBody, "}");
         if (i < m_nStates - 1)
         {
-            fprintf(fpBody, ",");
+            fprintf(poc->fpBody, ",");
         }
-        fprintf(fpBody, "\n");
+        fprintf(poc->fpBody, "\n");
     }
-    fprintf(fpBody, "};\n");
+    fprintf(poc->fpBody, "};\n");
+
+    if (NULL != pos)
+    {
+        *pos = os;
+    }
 }
 
 void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)

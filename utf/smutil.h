@@ -15,6 +15,22 @@ typedef struct State
     struct State *next[256];
 } State;
 
+typedef struct OutputControl
+{
+    FILE *fpBody;
+    FILE *fpInclude;
+    char *UpperPrefix;
+    char *LowerPrefix;
+} OutputControl;
+
+typedef struct OutputStatus
+{
+    int nStates;
+    int nColumns;
+    int SizeOfState;
+    int SizeOfMachine;
+} OutputStatus;
+
 #define NUM_STATES 20000
 #define NUM_ACCEPTING_STATES 20000
 
@@ -30,9 +46,8 @@ public:
     void RemoveDuplicateRows(void);
     void DetectDuplicateColumns(void);
     void NumberStates(void);
-    void MinimumMachineSize(int *pSizeOfState, int *pSizeOfMachine);
-    void OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix);
-    void ReportStatus(void);
+    void MinimumMachineSize(int *piSizeOfState, int *piSizeOfMachine);
+    void OutputTables(OutputControl *poc, OutputStatus *pos);
     void Final(void);
     ~StateMachine();
 
