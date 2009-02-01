@@ -942,7 +942,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
     // occupies 256 bytes.  The state machine is a two-dimensional compressed
     // table (a blob and a map of state numbers to positions within this blob).
     //
-    os.SizeOfMachine = 256 + m_nStates * os.SizeOfBlobOffset + nBlob * os.SizeOfState + 256;
+    os.SizeOfMachine = m_nStates * os.SizeOfBlobOffset + nBlob * os.SizeOfState + 256;
 
     // Test compressed state table.
     //
