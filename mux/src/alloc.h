@@ -21,7 +21,7 @@
 #define NUM_POOLS    10
 
 #ifdef FIRANMUX
-#define LBUF_SIZE   16000   // Large
+#define LBUF_SIZE   24000   // Large
 #else
 #define LBUF_SIZE   8000    // Large
 #endif
