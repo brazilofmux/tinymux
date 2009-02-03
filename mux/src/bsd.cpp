@@ -3649,7 +3649,44 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             {
                 // Execute UTF-8 state machine.
                 //
-                d->raw_codepoint_state = cl_print_stt[d->raw_codepoint_state][cl_print_itt[ch]];
+                unsigned char iColumn = cl_print_itt[(unsigned char)ch];
+                unsigned short iOffset = cl_print_sot[d->raw_codepoint_state];
+                for (;;)
+                {
+                    int y = (char)cl_print_sbt[iOffset];
+                    if (0 < y)
+                    {
+                        // RUN phrase.
+                        //
+                        if (iColumn < y)
+                        {
+                            d->raw_codepoint_state = cl_print_sbt[iOffset+1];
+                            break;
+                        }
+                        else
+                        {
+                            iColumn -= y;
+                            iOffset += 2;
+                        }
+                    }
+                    else
+                    {
+                        // COPY phrase.
+                        //
+                        y = -y;
+                        if (iColumn < y)
+                        {
+                            d->raw_codepoint_state = cl_print_sbt[iOffset+iColumn+1];
+                            break;
+                        }
+                        else
+                        {
+                            iColumn -= y;
+                            iOffset += y + 1;
+                        }
+                    }
+                }
+
                 if (  1 == d->raw_codepoint_state - CL_PRINT_ACCEPTING_STATES_START
                    && p < pend)
                 {

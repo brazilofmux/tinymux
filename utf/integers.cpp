@@ -230,7 +230,10 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     fprintf(fpBody, "// %d code points.\n", cIncluded);
     fprintf(fpInclude, "// %d code points.\n", cIncluded);
     fprintf(stderr, "%d code points.\n", cIncluded);
-    sm.ReportStatus();
+
+    OutputStatus os;
+    sm.OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 bool g_bDefault = false;
@@ -275,7 +278,12 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     // Output State Transition Table.
     //
     sm.NumberStates();
-    sm.OutputTables(fpBody, fpInclude, UpperPrefix, LowerPrefix);
+    OutputControl oc;
+    oc.fpBody = fpBody;
+    oc.fpInclude = fpInclude;
+    oc.UpperPrefix = UpperPrefix;
+    oc.LowerPrefix = LowerPrefix;
+    sm.OutputTables(&oc, NULL);
 }
 
 int main(int argc, char *argv[])
@@ -328,13 +336,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("stringutil.cpp.txt", "a");
-    FILE *fpInclude = fopen("stringutil.h.txt", "a");
+    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
+    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
     if (  NULL == fp
        || NULL == fpBody
        || NULL == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, stringutil.cpp.txt, or stringutil.h.txt\n", pFilename);
+        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt\n", pFilename);
         exit(0);
     }
 

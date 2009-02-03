@@ -564,7 +564,43 @@ const char *ConvertToLatin(const UTF8 *pString)
         do
         {
             unsigned char ch = *p++;
-            iState = tr_latin1_stt[iState][tr_latin1_itt[(unsigned char)ch]];
+            unsigned char iColumn = tr_latin1_itt[(unsigned char)ch];
+            unsigned short iOffset = tr_latin1_sot[iState];
+            for (;;)
+            {
+                int y = (char)tr_latin1_sbt[iOffset];
+                if (0 < y)
+                {
+                    // RUN phrase.
+                    //
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin1_sbt[iOffset+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn -= y;
+                        iOffset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = -y;
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin1_sbt[iOffset+iColumn+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn -= y;
+                        iOffset += y + 1;
+                    }
+                }
+            }
         } while (iState < TR_LATIN1_ACCEPTING_STATES_START);
         *q++ = (char)(iState - TR_LATIN1_ACCEPTING_STATES_START);
         pString = utf8_NextCodePoint(pString);
@@ -591,7 +627,43 @@ const char *ConvertToAscii(const UTF8 *pString)
         do
         {
             unsigned char ch = *p++;
-            iState = tr_ascii_stt[iState][tr_ascii_itt[(unsigned char)ch]];
+            unsigned char iColumn = tr_ascii_itt[(unsigned char)ch];
+            unsigned short iOffset = tr_ascii_sot[iState];
+            for (;;)
+            {
+                int y = (char)tr_ascii_sbt[iOffset];
+                if (0 < y)
+                {
+                    // RUN phrase.
+                    //
+                    if (iColumn < y)
+                    {
+                        iState = tr_ascii_sbt[iOffset+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn -= y;
+                        iOffset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = -y;
+                    if (iColumn < y)
+                    {
+                        iState = tr_ascii_sbt[iOffset+iColumn+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn -= y;
+                        iOffset += y + 1;
+                    }
+                }
+            }
         } while (iState < TR_ASCII_ACCEPTING_STATES_START);
         *q++ = (char)(iState - TR_ASCII_ACCEPTING_STATES_START);
         pString = utf8_NextCodePoint(pString);

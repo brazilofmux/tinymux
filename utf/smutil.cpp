@@ -290,14 +290,6 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     }
 }
 
-void StateMachine::ReportStatus(void)
-{
-    int SizeOfState;
-    int SizeOfMachine;
-    MinimumMachineSize(&SizeOfState, &SizeOfMachine);
-    fprintf(stderr, "%d states, %d columns, %d bytes\n", m_nStates, m_nColumns, SizeOfMachine);
-}
-
 bool StateMachine::RowsEqual(State *p, State *q)
 {
     ValidateStatePointer(p, __LINE__);
@@ -468,7 +460,10 @@ void StateMachine::MergeAcceptingStates(void)
             }
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::RemoveDuplicateRows(void)
@@ -566,7 +561,10 @@ void StateMachine::RemoveDuplicateRows(void)
             }
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::DetectDuplicateColumns(void)
@@ -625,7 +623,10 @@ void StateMachine::DetectDuplicateColumns(void)
             m_itt[i] = m_itt[m_itt[i]];
         }
     }
-    ReportStatus();
+
+    OutputStatus os;
+    OutputTables(NULL, &os);
+    fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
 void StateMachine::SetUndefinedStates(int AcceptingState)
@@ -654,26 +655,6 @@ void StateMachine::NumberStates(void)
     {
         m_stt[i]->iState = i;
     }
-}
-
-void StateMachine::MinimumMachineSize(int *pSizeOfState, int *pSizeOfMachine)
-{
-    int SizeOfState;
-    int TotalStates = m_nStates + m_nLargestAcceptingState + 1;
-    if (TotalStates < 256)
-    {
-        SizeOfState = sizeof(unsigned char);
-    }
-    else if (TotalStates < 65536)
-    {
-        SizeOfState = sizeof(unsigned short);
-    }
-    else
-    {
-        SizeOfState = sizeof(unsigned int);
-    }
-    *pSizeOfState = SizeOfState;
-    *pSizeOfMachine = m_nStates*SizeOfState*m_nColumns + 256;
 }
 
 void StateMachine::ValidateStatePointer(State *pState, int iLine)
@@ -706,79 +687,61 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 #endif
 }
 
-void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
+void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
 {
-    int SizeOfState;
-    int SizeOfMachine;
-    MinimumMachineSize(&SizeOfState, &SizeOfMachine);
+    OutputStatus os;
+    os.nStates = m_nStates;
+    os.nColumns = m_nColumns;
 
-    fprintf(fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
-    fprintf(fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, SizeOfMachine);
-
+    // The internal states start with 0. The accepting states (numbering
+    // m_nLargestAcceptingState) follow immediately. Finally, we allocate a
+    // single error state.
+    //
     int iAcceptingStatesStart = m_nStates;
-
-    fprintf(fpInclude, "#define %s_START_STATE (0)\n", UpperPrefix);
-    fprintf(fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
-
-    fprintf(fpInclude, "extern const unsigned char %s_itt[256];\n", LowerPrefix);
-    fprintf(fpBody, "const unsigned char %s_itt[256] =\n", LowerPrefix);
-    fprintf(fpBody, "{\n");
-    int i;
-    for (i = 0; i < 256; i++)
+    int TotalStates = iAcceptingStatesStart + m_nLargestAcceptingState + 1;
+    if (TotalStates < 256)
     {
-        int j = i % 16;
-        if (0 == j)
-        {
-            fprintf(fpBody, "    ");
-        }
-
-        fprintf(fpBody, " %3d", m_itt[i]);
-        if (i < 256-1)
-        {
-            fprintf(fpBody, ",");
-        }
-
-        if (7 == j)
-        {
-            fprintf(fpBody, " ");
-        }
-
-        if (15 == j)
-        {
-            fprintf(fpBody, "\n");
-        }
-
-        if (127 == i)
-        {
-            fprintf(fpBody, "\n");
-        }
+        os.SizeOfState = sizeof(unsigned char);
     }
-    fprintf(fpBody, "\n};\n\n");
-
-    switch (SizeOfState)
+    else if (TotalStates < 65536)
     {
-    case 1:
-        fprintf(fpInclude, "extern const unsigned char %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
-        break;
-
-    case 2:
-        fprintf(fpInclude, "extern const unsigned short %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
-        break;
-
-    default:
-        fprintf(fpInclude, "extern const unsigned long %s_stt[%d][%d];\n", LowerPrefix, m_nStates, m_nColumns);
-        fprintf(fpBody, "const unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
-        break;
+        os.SizeOfState = sizeof(unsigned short);
     }
-    fprintf(fpBody, "{\n");
+    else
+    {
+        os.SizeOfState = sizeof(unsigned int);
+    }
+
+    // Mapping from state number to position in blob which contains
+    // run-length-compressed row.
+    //
+    int *piCopy = NULL;
+    int *piBlobOffsets = NULL;;
+    int *piBlob = NULL;
+
+    int nBlob = 0;
+    piCopy = new int[m_nColumns];
+    piBlobOffsets = new int[m_nStates];
+    piBlob = new int[2*m_nStates*m_nColumns];
+    if (  NULL == piCopy
+       || NULL == piBlobOffsets
+       || NULL == piBlob)
+    {
+        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+        goto CleanUp;
+    }
+
+    int i, j, k, t;
     for (i = 0; i < m_nStates; i++)
     {
+        int kLastValue = 0;
+        int kRunCount = 0;
+        int kCopyCount = 0;
+
+        piBlobOffsets[i] = nBlob;
+
         State *pi = m_stt[i];
 
-        fprintf(fpBody, "    {");
-        int j;
         for (j = 0; j < 256; j++)
         {
             if (!m_ColumnPresent[j])
@@ -789,7 +752,6 @@ void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix
             State *pj = pi->next[j];
             ValidateStatePointer(pj, __LINE__);
 
-            int k;
             char *p = reinterpret_cast<char *>(pj);
             if (  m_aAcceptingStates <= p
                && p < m_aAcceptingStates + sizeof(m_aAcceptingStates))
@@ -807,20 +769,406 @@ void StateMachine::OutputTables(FILE *fpBody, FILE *fpInclude, char *UpperPrefix
                 k = pj->iState;
             }
 
-            if (0 != j)
+            if (0 == j)
             {
-                fprintf(fpBody, ",");
+                piCopy[0] = k;
+                kCopyCount = 1;
+                kRunCount = 0;
+                kLastValue = k;
             }
-            fprintf(fpBody, " %3d", k);
+            else if (kLastValue == k)
+            {
+                if (0 < kRunCount)
+                {
+                    if (kRunCount < 127)
+                    {
+                        kRunCount++;
+                    }
+                    else
+                    {
+                        // Emit leftover RUN phrase.
+                        //
+                        if (2 * m_nStates * m_nColumns <= nBlob)
+                        {
+                            fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                            goto CleanUp;
+                        }
+                        piBlob[nBlob++] = kRunCount;
+                        if (2 * m_nStates * m_nColumns <= nBlob)
+                        {
+                            fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                            goto CleanUp;
+                        }
+                        piBlob[nBlob++] = kLastValue;
+ 
+                        piCopy[0] = k;
+                        kCopyCount = 1;
+                        kRunCount = 0;
+                        kLastValue = k;
+                    }
+                }
+                else if (1 == kCopyCount)
+                {
+                    kCopyCount = 0;
+                    kRunCount = 2;
+                }
+                else // if (1 < kCopyCount)
+                {
+                    // Emit leftover COPY phrase.
+                    //
+                    if (2 * m_nStates * m_nColumns <= nBlob)
+                    {
+                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                        goto CleanUp;
+                    }
+                    piBlob[nBlob++] = -(kCopyCount-1);
+                    for (t = 0; t < kCopyCount - 1; t++)
+                    {
+                        if (2 * m_nStates * m_nColumns <= nBlob)
+                        {
+                            fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                            goto CleanUp;
+                        }
+                        piBlob[nBlob++] = piCopy[t];
+                    }
+
+                    kCopyCount = 0;
+                    kRunCount = 2;
+                    kLastValue = k;
+                }
+            }
+            else // if (kLastValue != k)
+            {
+                if (0 < kCopyCount)
+                {
+                    if (m_nColumns <= kCopyCount)
+                    {
+                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                        goto CleanUp;
+                    }
+                    piCopy[kCopyCount++] = k;
+                    kLastValue = k;
+                    if (127 < kCopyCount)
+                    {
+                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                        goto CleanUp;
+                    }
+                }
+                else if (1 == kRunCount)
+                {
+                    piCopy[0] = kLastValue;
+                    piCopy[1] = k;
+                    kCopyCount = 2;
+                    kLastValue = k;
+                }
+                else // if (1 < kRunCount)
+                {
+                    // Emit RUN phrase.
+                    //
+                    if (2 * m_nStates * m_nColumns <= nBlob)
+                    {
+                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                        goto CleanUp;
+                    }
+                    piBlob[nBlob++] = kRunCount;
+                    if (2 * m_nStates * m_nColumns <= nBlob)
+                    {
+                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                        goto CleanUp;
+                    }
+                    piBlob[nBlob++] = kLastValue;
+
+                    piCopy[0] = k;
+                    kCopyCount = 1;
+                    kRunCount = 0;
+                    kLastValue = k;
+                }
+            }
         }
-        fprintf(fpBody, "}");
-        if (i < m_nStates - 1)
+
+        if (0 < kRunCount)
         {
-            fprintf(fpBody, ",");
+            // Emit leftover RUN phrase.
+            //
+            if (2 * m_nStates * m_nColumns <= nBlob)
+            {
+                fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                goto CleanUp;
+            }
+            piBlob[nBlob++] = kRunCount;
+            if (2 * m_nStates * m_nColumns <= nBlob)
+            {
+                fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                goto CleanUp;
+            }
+            piBlob[nBlob++] = kLastValue;
         }
-        fprintf(fpBody, "\n");
+        else if (0 < kCopyCount)
+        {
+            // Emit leftover COPY phrase.
+            //
+            if (2 * m_nStates * m_nColumns <= nBlob)
+            {
+                fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                goto CleanUp;
+            }
+            piBlob[nBlob++] = -kCopyCount;
+            for (t = 0; t < kCopyCount; t++)
+            {
+                if (2 * m_nStates * m_nColumns <= nBlob)
+                {
+                    fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                    goto CleanUp;
+                }
+                piBlob[nBlob++] = piCopy[t];
+            }
+        }
     }
-    fprintf(fpBody, "};\n");
+
+    if (nBlob < 256)
+    {
+        os.SizeOfBlobOffset = sizeof(unsigned char);
+    }
+    else if (nBlob < 65536)
+    {
+        os.SizeOfBlobOffset = sizeof(unsigned short);
+    }
+    else
+    {
+        os.SizeOfBlobOffset = sizeof(unsigned int);
+    }
+
+    // The input translation table, which maps bytes to columns, always
+    // occupies 256 bytes.  The state machine is a two-dimensional compressed
+    // table (a blob and a map of state numbers to positions within this blob).
+    //
+    os.SizeOfMachine = m_nStates * os.SizeOfBlobOffset + nBlob * os.SizeOfState + 256;
+
+    // Test compressed state table.
+    //
+    for (i = 0; i < m_nStates; i++)
+    {
+        State *pi = m_stt[i];
+
+        int iColumn = 0;
+        for (j = 0; j < 256; j++)
+        {
+            if (!m_ColumnPresent[j])
+            {
+                continue;
+            }
+
+            State *pj = pi->next[j];
+            ValidateStatePointer(pj, __LINE__);
+
+            char *p = reinterpret_cast<char *>(pj);
+            if (  m_aAcceptingStates <= p
+               && p < m_aAcceptingStates + sizeof(m_aAcceptingStates))
+            {
+                k = static_cast<int>(iAcceptingStatesStart + (p - m_aAcceptingStates));
+            }
+            else if (&m_Undefined == pj)
+            {
+                // This is a don't care.
+                //
+                k = 0;
+            }
+            else
+            {
+                k = pj->iState;
+            }
+
+            // Validate that position (i,iColumn) gives k.
+            //
+            int Offset = piBlobOffsets[i];
+            int t = iColumn;
+            int result;
+            for (;;)
+            {
+                int y = piBlob[Offset];
+                if (0 < y)
+                {
+                    // RUN phrase.
+                    //
+                    if (t < y)
+                    {
+                        result = piBlob[Offset+1];
+                        break;
+                    }
+                    else
+                    {
+                        t -= y;
+                        Offset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = -y;
+                    if (t < y)
+                    {
+                        result = piBlob[Offset+t+1];
+                        break;
+                    }
+                    else
+                    {
+                        t -= y;
+                        Offset += y + 1;
+                    }
+                }
+            }
+
+            if (result != k)
+            {
+                fprintf(stderr, "Compressed state machine invalid. CleanUp, line %d\n", __LINE__);
+                fprintf(stderr, "(%d,%d)-->%d instead of %d\n", i, iColumn, result, k);
+            }
+
+            iColumn++;
+        }
+    }
+
+    if (NULL != poc)
+    {
+        fprintf(poc->fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
+        fprintf(poc->fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
+
+        fprintf(poc->fpInclude, "#define %s_START_STATE (0)\n", poc->UpperPrefix);
+        fprintf(poc->fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", poc->UpperPrefix, iAcceptingStatesStart);
+
+        fprintf(poc->fpInclude, "extern const unsigned char %s_itt[256];\n", poc->LowerPrefix);
+        fprintf(poc->fpBody, "const unsigned char %s_itt[256] =\n", poc->LowerPrefix);
+        fprintf(poc->fpBody, "{\n");
+        for (i = 0; i < 256; i++)
+        {
+            j = i % 16;
+            if (0 == j)
+            {
+                fprintf(poc->fpBody, "    ");
+            }
+
+            fprintf(poc->fpBody, " %3d", m_itt[i]);
+            if (i < 256-1)
+            {
+                fprintf(poc->fpBody, ",");
+            }
+
+            if (7 == j)
+            {
+                fprintf(poc->fpBody, " ");
+            }
+
+            if (15 == j)
+            {
+                fprintf(poc->fpBody, "\n");
+            }
+
+            if (127 == i)
+            {
+                fprintf(poc->fpBody, "\n");
+            }
+        }
+        fprintf(poc->fpBody, "\n};\n\n");
+
+        switch (os.SizeOfBlobOffset)
+        {
+        case 1:
+            fprintf(poc->fpInclude, "extern const unsigned char %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpBody, "const unsigned char %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
+            break;
+
+        case 2:
+            fprintf(poc->fpInclude, "extern const unsigned short %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpBody, "const unsigned short %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
+            break;
+
+        default:
+            fprintf(poc->fpInclude, "extern const unsigned long %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpBody, "const unsigned long %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
+            break;
+        }
+        fprintf(poc->fpBody, "{\n");
+        for (i = 0; i < m_nStates; i++)
+        {
+            j = i % 16;
+            if (0 == j)
+            {
+                fprintf(poc->fpBody, "    ");
+            }
+
+            fprintf(poc->fpBody, " %4d", piBlobOffsets[i]);
+            if (i < m_nStates-1)
+            {
+                fprintf(poc->fpBody, ",");
+            }
+
+            if (7 == j)
+            {
+                fprintf(poc->fpBody, " ");
+            }
+
+            if (15 == j)
+            {
+                fprintf(poc->fpBody, "\n");
+            }
+        }
+        fprintf(poc->fpBody, "\n};\n\n");
+
+        switch (os.SizeOfState)
+        {
+        case 1:
+            fprintf(poc->fpInclude, "extern const unsigned char %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpBody, "const unsigned char %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
+            break;
+
+        case 2:
+            fprintf(poc->fpInclude, "extern const unsigned short %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpBody, "const unsigned short %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
+            break;
+
+        default:
+            fprintf(poc->fpInclude, "extern const unsigned long %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpBody, "const unsigned long %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
+            break;
+        }
+        fprintf(poc->fpBody, "{\n");
+        for (i = 0; i < nBlob; i++)
+        {
+            j = i % 16;
+            if (0 == j)
+            {
+                fprintf(poc->fpBody, "    ");
+            }
+
+            fprintf(poc->fpBody, " %4d", piBlob[i]);
+            if (i < nBlob-1)
+            {
+                fprintf(poc->fpBody, ",");
+            }
+
+            if (7 == j)
+            {
+                fprintf(poc->fpBody, " ");
+            }
+
+            if (15 == j)
+            {
+                fprintf(poc->fpBody, "\n");
+            }
+        }
+        fprintf(poc->fpBody, "\n};\n");
+    }
+
+CleanUp:
+    delete piCopy;
+    delete piBlobOffsets;
+    delete piBlob;
+
+    if (NULL != pos)
+    {
+        *pos = os;
+    }
 }
 
 void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
