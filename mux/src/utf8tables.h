@@ -162,6 +162,22 @@ extern const unsigned char tr_totitle_sbt[1445];
 #define TR_TOTITLE_XOR_START (11)
 extern const string_desc tr_totitle_ott[100];
 
+// utf/tr_foldpunc.txt
+//
+// 14 code points.
+// 7 states, 11 columns, 310 bytes
+//
+#define TR_FOLDPUNC_START_STATE (0)
+#define TR_FOLDPUNC_ACCEPTING_STATES_START (7)
+extern const unsigned char tr_foldpunc_itt[256];
+extern const unsigned char tr_foldpunc_sot[7];
+extern const unsigned char tr_foldpunc_sbt[47];
+
+#define TR_FOLDPUNC_DEFAULT (0)
+#define TR_FOLDPUNC_LITERAL_START (1)
+#define TR_FOLDPUNC_XOR_START (3)
+extern const string_desc tr_foldpunc_ott[3];
+
 // utf/tr_Color.txt
 //
 // 517 code points.

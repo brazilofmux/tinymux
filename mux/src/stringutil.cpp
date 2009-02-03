@@ -2864,6 +2864,62 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
     return Buffer;
 }
 
+// mux_foldpunc - alias punctuation.
+//
+UTF8 *mux_foldpunc(const UTF8 *a, size_t &n)
+{
+    static UTF8 Buffer[LBUF_SIZE];
+
+    n = 0;
+    while ('\0' != *a)
+    {
+        size_t j;
+        size_t m;
+        bool bXor;
+        const string_desc *qDesc = mux_foldpunc(a, bXor);
+        if (NULL == qDesc)
+        {
+            m = utf8_FirstByte[Buffer[n]];
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            for (j = 0; j < m; j++)
+            {
+                Buffer[n+j] = a[j];
+            }
+        }
+        else
+        {
+            m = qDesc->n_bytes;
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            if (bXor)
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = a[j] ^ qDesc->p[j];
+                }
+            }
+            else
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = qDesc->p[j];
+                }
+            }
+        }
+        n += m;
+        a = utf8_NextCodePoint(a);
+    }
+    Buffer[n] = '\0';
+    return Buffer;
+}
+
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
 // should be chosen to include the '\0' termination.
@@ -5565,6 +5621,37 @@ void mux_string::UpperCaseFirst(void)
 
         bool bXor;
         const string_desc *qDesc = mux_totitle(p, bXor);
+        if (NULL != qDesc)
+        {
+            size_t m = qDesc->n_bytes;
+            if (bXor)
+            {
+                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                //
+                size_t j;
+                for (j = 0; j < m; j++)
+                {
+                    p[j] ^= qDesc->p[j];
+                }
+            }
+            else
+            {
+                // TODO: The string must be expanded or contracted in terms of points and bytes.
+                //
+            }
+        }
+    }
+}
+
+void mux_string::FoldPunctuation(void)
+{
+    mux_cursor i = CursorMin;
+    if (i < m_iLast)
+    {
+        UTF8 *p = m_autf + i.m_byte;
+
+        bool bXor;
+        const string_desc *qDesc = mux_foldpunc(p, bXor);
         if (NULL != qDesc)
         {
             size_t m = qDesc->n_bytes;

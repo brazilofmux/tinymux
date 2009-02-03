@@ -632,6 +632,65 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
     }
 }
 
+// utf/tr_foldpunc.txt
+//
+inline const string_desc *mux_foldpunc(__in const unsigned char *p, bool &bXor)
+{
+    int iState = TR_FOLDPUNC_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_foldpunc_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_foldpunc_sot[iState];
+        for (;;)
+        {
+            int y = (char)tr_foldpunc_sbt[iOffset];
+            if (0 < y)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_foldpunc_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = -y;
+                if (iColumn < y)
+                {
+                    iState = tr_foldpunc_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn -= y;
+                    iOffset += y + 1;
+                }
+            }
+        }
+    } while (iState < TR_FOLDPUNC_ACCEPTING_STATES_START);
+
+    if (TR_FOLDPUNC_DEFAULT == iState - TR_FOLDPUNC_ACCEPTING_STATES_START)
+    {
+        bXor = false;
+        return NULL;
+    }
+    else
+    {
+        bXor = (TR_FOLDPUNC_XOR_START <= iState - TR_FOLDPUNC_ACCEPTING_STATES_START);
+        return tr_foldpunc_ott + iState - TR_FOLDPUNC_ACCEPTING_STATES_START - 1;
+    }
+}
+
 // utf/tr_Color.txt
 //
 inline int mux_color(__in const unsigned char *p)
@@ -802,6 +861,7 @@ int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b);
 int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n);
 UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n);
 UTF8 *mux_strupr(__in const UTF8 *a, size_t &n);
+UTF8 *mux_foldpunc(__in const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
 {
@@ -1245,6 +1305,7 @@ public:
     void UpperCase(void);
     void LowerCase(void);
     void UpperCaseFirst(void);
+    void FoldPunctuation(void);
 
     // mux_string_cursor c;
     // cursor_start(c);
