@@ -2882,7 +2882,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
 
     // Rather than copy a character at a time, some copies are deferred and performed in a single request.
     //
-    size_t iFmtDeferred;
+    size_t iFmtDeferred = 0;
     size_t dDeferred = 0;
 
     size_t iBuffer = 0;
@@ -2935,8 +2935,8 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
 
                 size_t cbBuff;
                 size_t cpBuff;
-                size_t nWidth;
-                size_t nPrecision;
+                size_t nWidth = 0;
+                size_t nPrecision = 0;
                 bool bLeft = false;
                 bool bZeroPadded = false;
                 bool bWidth = false;
