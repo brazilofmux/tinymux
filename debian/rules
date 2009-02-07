@@ -9,15 +9,15 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-CFLAGS = -Wall -g
+CXXFLAGS = -Wall
 DEB_INSTALL = usr/lib/tinymux/game
 DEB_SHRINSTALL = usr/share/tinymux/game
 DEB_BIN = usr/games
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
+	CXXFLAGS += -O0
 else
-	CFLAGS += -O2
+	CXXFLAGS += -O3 -fomit-frame-pointer
 endif
 
 configure: configure-stamp
@@ -50,8 +50,9 @@ clean:
 	# Add here commands to clean up the package.
 	-(cd src; $(MAKE) realclean)
 	-(cd src/modules; $(MAKE) realclean)
-	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/stubslave \
-		game/bin/slave src/unsplit src/buildnum.data src/config.log src/config.status \
+	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/sample.so \
+		game/bin/slave game/bin/sqlproxy.so game/bin/sqlslave.so game/bin/stubslave \
+                game/bin/sum.so src/unsplit src/buildnum.data src/config.log src/config.status \
 		src/Makefile src/autoconf.h src/modules/config.status src/modules/Makefile \
 		src/modules/autoconf.h
 
