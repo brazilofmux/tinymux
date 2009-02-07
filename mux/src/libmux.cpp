@@ -2145,6 +2145,9 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                                     aChannels[g_nChannel].pfDisc(&aChannels[g_nChannel], pqiFrame);
                                 }
                                 break;
+
+                            default:
+                                break;
                             }
                         }
                     }

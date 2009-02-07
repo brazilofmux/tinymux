@@ -2048,8 +2048,6 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
     fd_set input_set;
     fd_set output_set;
     int found;
-    DESC *d, *dnext, *newd;
-    int i;
 
     mudstate.debug_cmd = T("< pipepump >");
 
