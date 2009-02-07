@@ -155,6 +155,7 @@ src/timeutil.h
 src/timezone.cpp
 src/unparse.cpp
 src/utf8tables.cpp
+src/utf8tables.h
 src/vattr.cpp
 src/vattr.h
 src/version.cpp
