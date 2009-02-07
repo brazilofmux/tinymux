@@ -9,9 +9,6 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-
-
-
 CFLAGS = -Wall -g
 DEB_INSTALL = usr/lib/tinymux/game
 DEB_SHRINSTALL = usr/share/tinymux/game
@@ -28,7 +25,7 @@ configure-stamp:
 	dh_testdir
 
 	# Add here commands to configure the package.
-	(cd src; ./configure --enable-realitylvls --enable-wodrealms)
+	(cd src; ./configure --enable-stubslave)
 
 	touch configure-stamp
 
@@ -41,6 +38,7 @@ build-stamp: configure-stamp
 	# Add here commands to compile the package.
 	(cd src; $(MAKE) depend)
 	(cd src; $(MAKE))
+	(cd src/modules; $(MAKE))
 
 	touch build-stamp
 
@@ -51,9 +49,11 @@ clean:
 
 	# Add here commands to clean up the package.
 	-(cd src; $(MAKE) realclean)
-	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/slave src/unsplit \
-		src/buildnum.data src/config.log src/config.status src/Makefile src/autoconf.h \
-		src/modules/config.status src/modules/Makefile src/modules/autoconf.h
+	-(cd src/modules; $(MAKE) realclean)
+	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/stubslave \
+		game/bin/slave src/unsplit src/buildnum.data src/config.log src/config.status \
+		src/Makefile src/autoconf.h src/modules/config.status src/modules/Makefile \
+		src/modules/autoconf.h
 
 	dh_clean 
 
@@ -69,9 +69,11 @@ install: build
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/slave
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/dbconvert
 	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/libmux.so
+	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/stubslave
 	dh_install src/netmux $(DEB_INSTALL)/bin
 	dh_install src/slave $(DEB_INSTALL)/bin
 	dh_install src/libmux.so $(DEB_INSTALL)/bin
+	dh_install src/stubslave $(DEB_INSTALL)/bin
 	dh_install debian/tinymux-install $(DEB_BIN)
 	chmod a+rX -R $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)
 	chmod a-x $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/netmux.conf
