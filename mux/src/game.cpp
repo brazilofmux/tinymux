@@ -2412,13 +2412,8 @@ static bool bVersion = false;
 static const char *pErrorBasename = "";
 static bool bServerOption = false;
 
-#ifdef MEMORY_BASED
-#define NUM_CLI_OPTIONS 7
-#else
-#define NUM_CLI_OPTIONS 13
-#endif
-
-static CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
+#define NUM_CLI_OPTIONS (sizeof(OptionTable)/sizeof(OptionTable[0]))
+static CLI_OptionEntry OptionTable[] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
@@ -3069,8 +3064,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Parse the command line
     //
-    CLI_Process(argc, argv, OptionTable,
-        sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
+    CLI_Process(argc, argv, OptionTable, NUM_CLI_OPTIONS, CLI_CallBack);
 
 #ifndef MEMORY_BASED
     if (mudstate.bStandAlone)
