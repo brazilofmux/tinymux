@@ -3747,22 +3747,22 @@ static void list_process(dbref player)
     raw_notify(player, tprintf("Resident mem:%10d shared %10d private%10d stack",
            ixrss, idrss, isrss));
     raw_notify(player,
-           tprintf("Integral mem:%10d shared %10d private%10d stack",
+           tprintf("Integral mem:%10ld shared %10ld private%10ld stack",
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
     raw_notify(player,
-           tprintf("Max res mem: %10d pages  %10d bytes",
+           tprintf("Max res mem: %10ld pages  %10ld bytes",
                usage.ru_maxrss, (usage.ru_maxrss * psize)));
     raw_notify(player,
-           tprintf("Page faults: %10d hard   %10d soft   %10d swapouts",
+           tprintf("Page faults: %10ld hard   %10ld soft   %10d swapouts",
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));
     raw_notify(player,
-           tprintf("Disk I/O:    %10d reads  %10d writes",
+           tprintf("Disk I/O:    %10ld reads  %10ld writes",
                usage.ru_inblock, usage.ru_oublock));
     raw_notify(player,
-           tprintf("Network I/O: %10d in     %10d out",
+           tprintf("Network I/O: %10ld in     %10ld out",
                usage.ru_msgrcv, usage.ru_msgsnd));
     raw_notify(player,
-           tprintf("Context swi: %10d vol    %10d forced %10d sigs",
+           tprintf("Context swi: %10ld vol    %10ld forced %10ld sigs",
                usage.ru_nvcsw, usage.ru_nivcsw, usage.ru_nsignals));
     raw_notify(player,
            tprintf("Descs avail: %10d", maxfds));
