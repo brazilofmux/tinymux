@@ -3739,13 +3739,13 @@ static void list_process(dbref player)
     raw_notify(player, tprintf(T("Resident mem:%10d shared %10d private%10d stack"),
            ixrss, idrss, isrss));
     raw_notify(player,
-           tprintf(T("Integral mem:%10d shared %10ld private%10ld stack"),
+           tprintf(T("Integral mem:%10ld shared %10ld private%10ld stack"),
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
     raw_notify(player,
            tprintf(T("Max res mem: %10ld pages  %10ld bytes"),
                usage.ru_maxrss, (usage.ru_maxrss * psize)));
     raw_notify(player,
-           tprintf(T("Page faults: %10ld hard   %10ld soft   %10d swapouts"),
+           tprintf(T("Page faults: %10ld hard   %10ld soft   %10ld swapouts"),
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));
     raw_notify(player,
            tprintf(T("Disk I/O:    %10ld reads  %10ld writes"),
