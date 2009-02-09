@@ -249,6 +249,21 @@ extern const unsigned char tr_totitle_stt[48][90];
 #define TR_TOTITLE_XOR_START (11)
 extern const string_desc tr_totitle_ott[100];
 
+// utf/tr_foldpunc.txt
+//
+// 14 code points.
+// 7 states, 11 columns, 333 bytes
+//
+#define TR_FOLDPUNC_START_STATE (0)
+#define TR_FOLDPUNC_ACCEPTING_STATES_START (7)
+extern const unsigned char tr_foldpunc_itt[256];
+extern const unsigned char tr_foldpunc_stt[7][11];
+
+#define TR_FOLDPUNC_DEFAULT (0)
+#define TR_FOLDPUNC_LITERAL_START (1)
+#define TR_FOLDPUNC_XOR_START (3)
+extern const string_desc tr_foldpunc_ott[3];
+
 // utf/tr_Color.txt
 //
 // 517 code points.
@@ -430,6 +445,29 @@ inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
     }
 }
 
+// utf/tr_foldpunc.txt
+//
+inline const string_desc *mux_foldpunc(const unsigned char *p, bool &bXor)
+{
+    int iState = TR_FOLDPUNC_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_foldpunc_stt[iState][tr_foldpunc_itt[(unsigned char)ch]];
+    } while (iState < TR_FOLDPUNC_ACCEPTING_STATES_START);
+
+    if (TR_FOLDPUNC_DEFAULT == iState - TR_FOLDPUNC_ACCEPTING_STATES_START)
+    {
+        bXor = false;
+        return NULL;
+    }
+    else
+    {
+        bXor = (TR_FOLDPUNC_XOR_START <= iState - TR_FOLDPUNC_ACCEPTING_STATES_START);
+        return tr_foldpunc_ott + iState - TR_FOLDPUNC_ACCEPTING_STATES_START - 1;
+    }
+}
+
 // utf/tr_Color.txt
 //
 inline int mux_color(const unsigned char *p)
@@ -579,6 +617,7 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
 UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
 UTF8 *mux_strupr(const UTF8 *a, size_t &n);
+UTF8 *mux_foldpunc(const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
 {
@@ -1039,6 +1078,7 @@ public:
     void UpperCase(void);
     void LowerCase(void);
     void UpperCaseFirst(void);
+    void FoldPunctuation(void);
 
     // mux_string_cursor c;
     // cursor_start(c);

@@ -1726,6 +1726,51 @@ const string_desc tr_totitle_ott[100] =
     {  4,  1, T("\x00\x00\x01\x28") } // 8 references
 };
 
+// utf/tr_foldpunc.txt
+//
+// 14 code points.
+// 7 states, 11 columns, 333 bytes
+//
+const unsigned char tr_foldpunc_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   1,   0,   0,   0,   0,   1,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       2,   0,   3,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    4,   4,   4,   4,   5,   6,   6,   6,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   7,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   8,   9,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,  10,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char tr_foldpunc_stt[7][11] =
+{
+    {   7,  10,   7,   7,   7,   7,   7,   7,   1,   3,   5},
+    {   7,   7,   2,   7,   7,   7,   7,   7,   7,   7,   7},
+    {   7,   7,   7,   7,   8,   9,   9,   7,   7,   7,   7},
+    {   7,   7,   4,   7,   7,   7,   7,   7,   7,   7,   7},
+    {   7,   7,   7,   7,   7,   7,   9,   7,   7,   7,   7},
+    {   7,   7,   7,   7,   7,   7,   7,   6,   7,   7,   7},
+    {   7,   7,   7,   9,   7,   7,   7,   7,   7,   7,   7}
+};
+
+const string_desc tr_foldpunc_ott[3] =
+{
+    {  1,  1, T("\x27") }, // 4 references
+    {  1,  1, T("\x22") }, // 8 references
+    {  1,  1, T("\x00") } // 2 references
+};
+
 // utf/tr_Color.txt
 //
 // 517 code points.
@@ -4914,6 +4959,62 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
     return Buffer;
 }
 
+// mux_foldpunc - alias punctuation.
+//
+UTF8 *mux_foldpunc(const UTF8 *a, size_t &n)
+{
+    static UTF8 Buffer[LBUF_SIZE];
+
+    n = 0;
+    while ('\0' != *a)
+    {
+        size_t j;
+        size_t m;
+        bool bXor;
+        const string_desc *qDesc = mux_foldpunc(a, bXor);
+        if (NULL == qDesc)
+        {
+            m = utf8_FirstByte[Buffer[n]];
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            for (j = 0; j < m; j++)
+            {
+                Buffer[n+j] = a[j];
+            }
+        }
+        else
+        {
+            m = qDesc->n_bytes;
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            if (bXor)
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = a[j] ^ qDesc->p[j];
+                }
+            }
+            else
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = qDesc->p[j];
+                }
+            }
+        }
+        n += m;
+        a = utf8_NextCodePoint(a);
+    }
+    Buffer[n] = '\0';
+    return Buffer;
+}
+
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
 // should be chosen to include the '\0' termination.
@@ -7276,6 +7377,37 @@ void mux_string::UpperCaseFirst(void)
 
         bool bXor;
         const string_desc *qDesc = mux_totitle(p, bXor);
+        if (NULL != qDesc)
+        {
+            size_t m = qDesc->n_bytes;
+            if (bXor)
+            {
+                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                //
+                size_t j;
+                for (j = 0; j < m; j++)
+                {
+                    p[j] ^= qDesc->p[j];
+                }
+            }
+            else
+            {
+                // TODO: The string must be expanded or contracted in terms of points and bytes.
+                //
+            }
+        }
+    }
+}
+
+void mux_string::FoldPunctuation(void)
+{
+    mux_cursor i = CursorMin;
+    if (i < m_iLast)
+    {
+        UTF8 *p = m_autf + i.m_byte;
+
+        bool bXor;
+        const string_desc *qDesc = mux_foldpunc(p, bXor);
         if (NULL != qDesc)
         {
             size_t m = qDesc->n_bytes;
