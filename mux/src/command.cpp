@@ -3753,7 +3753,7 @@ static void list_process(dbref player)
            tprintf("Max res mem: %10ld pages  %10ld bytes",
                usage.ru_maxrss, (usage.ru_maxrss * psize)));
     raw_notify(player,
-           tprintf("Page faults: %10ld hard   %10ld soft   %10d swapouts",
+           tprintf("Page faults: %10ld hard   %10ld soft   %10ld swapouts",
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));
     raw_notify(player,
            tprintf("Disk I/O:    %10ld reads  %10ld writes",
