@@ -2767,7 +2767,7 @@ UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
         const string_desc *qDesc = mux_tolower(a, bXor);
         if (NULL == qDesc)
         {
-            m = utf8_FirstByte[Buffer[n]];
+            m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
@@ -2823,7 +2823,7 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
         const string_desc *qDesc = mux_toupper(a, bXor);
         if (NULL == qDesc)
         {
-            m = utf8_FirstByte[Buffer[n]];
+            m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
@@ -2879,7 +2879,7 @@ UTF8 *mux_foldpunc(const UTF8 *a, size_t &n)
         const string_desc *qDesc = mux_foldpunc(a, bXor);
         if (NULL == qDesc)
         {
-            m = utf8_FirstByte[Buffer[n]];
+            m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
