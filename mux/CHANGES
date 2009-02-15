@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  January 2009
+Last Update:  February 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -334,6 +334,12 @@ Bug Fixes:
  -- Remove UTF-8 color codepoints from @hook report as
     printf("%-30.30s") leaves this misaligned.
  -- Revert @hook report back to 2.6 appearance.
+ -- Fix @mail folders (Issue 560).
+ -- Option table was defined one element too large.
+ -- On 64-bit FreeBSD, '@list process' showed negative values.
+ -- Fix use of unitialized memory in mux_strlwr(), mux_strupr(), and
+    mux_foldpunc() (Issue 562).
+ -- Started fixing Issue 555 by including punctuation-folding tables.
 
 
 Performance Enhancements:
@@ -427,3 +433,4 @@ Miscellaneous:
  -- Fix build issues within Cygwin.
  -- Add SHA-1 test vectors.
  -- Update dependencies used by .mak files.
+ -- Firan is now using 24000-byte buffers.
