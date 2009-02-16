@@ -89,142 +89,133 @@ int main(void)
                 gets(q); /* Get next line */
             }
         }
-        else
+        else if (f[0] == '+')
         {
-            if (f[0] == '+')
+            if ((f[1] == 'A') || (f[1] == 'N'))
             {
-                if ((f[1] == 'A') || (f[1] == 'N'))
+                val = atoi(f2);
+                if (cntr == 3)
                 {
-                    val = atoi(f2);
-                    if (cntr == 3)
+                    printf("-R1\n");
+                }
+                printf("+%c%d\n",f[1],val);
+                cntr++;
+                fflush(stdout);
+                gets(q);
+            }
+            else if (f[1] == 'X')
+            {
+                printf("%s\n", q);
+                cntr++;
+                fflush(stdout);
+                gets(q);
+            }
+            else if (f[1] == 'T')
+            {
+                printf("+X992001\n");
+                cntr++;
+                fflush(stdout);
+                gets(q);
+            }
+            else
+            {
+                printf("%s\n",q);
+                fflush(stdout);
+                gets(q);
+            }
+        }
+        else if (f[0] == '>')
+        {
+            val = atoi(f1);
+            /* attr conversion */
+            if ((val == 99) || ((val > 212) && (val < 218)))
+            {
+                switch (val)
+                {
+                case 99:
+                    strcpy(attrname, "ControlLock");
+                    break;
+
+                case 213:
+                    strcpy(attrname, "NewObjs");
+                    badobj++;
+                    break;
+
+                case 214: /* Conformat */
+                    break;
+
+                case 215: /* Exit Format */
+                    break;
+
+                case 216:
+                    strcpy(attrname, "ExitTo");
+                    break;
+
+                case 217:
+                    strcpy(attrname, "ChownLock");
+                    break;
+                }
+
+                if (val == 214 || val == 215)
+                {
+                    if (val == 214)
                     {
-                        printf("-R1\n");
+                        printf(">242\n", val);
                     }
-                    printf("+%c%d\n",f[1],val);
-                    cntr++;
+                    else
+                    {
+                        printf(">241\n", val);
+                    }
                     fflush(stdout);
                     gets(q);
-                }
-                else if (f[1] == 'X')
-                {
-                    printf("%s\n", q);
-                    cntr++;
-                    fflush(stdout);
-                    gets(q);
-                }
-                else if (f[1] == 'T')
-                {
-                    printf("+X992001\n");
-                    cntr++;
-                    fflush(stdout);
+                    printf("%s\n",q);
                     gets(q);
                 }
                 else
                 {
-                    printf("%s\n",q);
-                    fflush(stdout);
+                    gets(q);
+                    if (val != 213)
+                    {
+                        fprintf(stderr, "Can not convert attribute '%s' (attrnum %d) for object #%d.\r\nAttribute will be skipped.\r\n", attrname, val, obj);
+                        fprintf(stderr, "--> Content of attribute: %s\r\n", q);
+                    }
                     gets(q);
                 }
             }
             else
             {
-                if (f[0] == '>')
-                {
-                    val = atoi(f1);
-                    /* attr conversion */
-                    if ((val == 99) || ((val > 212) && (val < 218)))
-                    {
-                        switch (val)
-                        {
-                        case 99:
-                            strcpy(attrname, "ControlLock");
-                            break;
-
-                        case 213:
-                            strcpy(attrname, "NewObjs");
-                            badobj++;
-                            break;
-
-                        case 214: /* Conformat */
-                            break;
-
-                        case 215: /* Exit Format */
-                            break;
-
-                        case 216:
-                            strcpy(attrname, "ExitTo");
-                            break;
-
-                        case 217:
-                            strcpy(attrname, "ChownLock");
-                            break;
-                        }
-
-                        if (val == 214 || val == 215)
-                        {
-                            if (val == 214)
-                            {
-                                printf(">242\n", val);
-                            }
-                            else
-                            {
-                                printf(">241\n", val);
-                            }
-                            fflush(stdout);
-                            gets(q);
-                            printf("%s\n",q);
-                            gets(q);
-                        }
-                        else
-                        {
-                            gets(q);
-                            if (val != 213)
-                            {
-                                fprintf(stderr, "Can not convert attribute '%s' (attrnum %d) for object #%d.\r\nAttribute will be skipped.\r\n", attrname, val, obj);
-                                fprintf(stderr, "--> Content of attribute: %s\r\n", q);
-                            }
-                            gets(q);
-                        }
-                    }
-                    else
-                    {
-                        printf(">%d\n",val);
-                        fflush(stdout);
-                        gets(q);
-                        printf("%s\n",q);
-                        gets(q);
-                    }
-                }
-                else
-                {
-                    if (f[0] == '-')
-                    {
-                        printf("%s\n",q);
-                        cntr++;
-                        gets(q);
-                    }
-                    else
-                    {
-                        printf("%s\n",q);
-                        fflush(stdout);
-                        gets(q);
-                    }
-
-                    if (strstr(f, "***END OF DUMP***") != NULL)
-                    {
-                        printf("***END OF DUMP***\n");
-                        fflush(stdout);
-                        q = NULL;
-                        if (badobj > 0)
-                        {
-                            fprintf(stderr, "WARNING: Can not convert INTERNAL attribute 'NewObjs'.\r\n");
-                            fprintf(stderr, "--> %d total instances ignored.  Not required for MUX2.\r\n", badobj);
-                        }
-                        return(0);
-                    }
-                }
+                printf(">%d\n",val);
+                fflush(stdout);
+                gets(q);
+                printf("%s\n",q);
+                gets(q);
             }
         }
-    } /* while */
-    return(0);	
+        else if (f[0] == '-')
+        {
+            printf("%s\n",q);
+            cntr++;
+            gets(q);
+        }
+        else
+        {
+            printf("%s\n",q);
+            fflush(stdout);
+            gets(q);
+        }
+
+        if (strstr(f, "***END OF DUMP***") != NULL)
+        {
+            printf("***END OF DUMP***\n");
+            fflush(stdout);
+            q = NULL;
+            if (badobj > 0)
+            {
+                fprintf(stderr, "WARNING: Can not convert INTERNAL attribute 'NewObjs'.\r\n");
+                fprintf(stderr, "--> %d total instances ignored.  Not required for MUX2.\r\n", badobj);
+            }
+            return 0;
+        }
+    }
+    return 0;	
 }
