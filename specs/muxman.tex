@@ -32,7 +32,7 @@
 \setlength{\textwidth}{6in}
 \title{TinyMUX Manual}
 \author{Stephen Dennis (AKA Brazil)}
-\date{2008-JUN-08}
+\date{2009-FEB-16}
 
 \begin{document}
 \frontmatter
@@ -41,14 +41,22 @@
 
 \mainmatter
 \chapter{Introduction}
-TinyMUX is a member of the MUSH family of servers and ultimately
+A TinyMUX server allows a (possibly anonymous) crowd of people from all over
+the world to interact with each other within a persistent, virtual, text-based
+environment.
+Within this environment, players are able change the grid by adding rooms and
+exits, add code in the form of commands and functions, and communicate with
+each other.
+It is a platform for a wide range of game types including combat, simulation,
+loot-and-solve, heavily-coded roleplaying, lightly-coded roleplaying, or pure
+social elements.
+Most MUSH-style games contain an element of roleplaying, but this is not a
+requirement.
+
+TinyMUX is a member of the MUSH family of servers which are all ultimately
 derived from the original TinyMUD.
-As a platform for building text-based, TinyMUX is a generic enough to support
-a wide range of game types that include combat, simulation, loot-and-solve,
-heavily-coded roleplaying, lightly-coded roleplaying, or pure social elements.
-However, once one is familiar with a tool, it tends to be used over and over
-to solve the same types of games.
-Most MUSH-style games contain an element of roleplaying.
+The capabilities and functions of each in their several versions vary, but
+what is learned using one can be carried to another with little effort.
 
 Documentation that is available is both limited and out of date. In order to
 get a good idea of what you're dealing with, you may need to splice together
@@ -89,6 +97,15 @@ for an exception to the type rule.}.
 Once an object is destroyed, its dbref can be re-assigned to a new,
 different object.
 
+\item[Hardcode]
+The term \emph{hardcode} usually means the approximately 120,000 lines of C/C++
+source code that make up the game server itself.
+All of the MUSH-type text-based game servers are written in C except
+TinyMUX 2 which is a combination of C and C++.
+However, the term can also be used more generically to refer to anything
+written in C/C++ or even to anything written in a general purpose programming
+language.
+
 \item[Player]
 This can refer to two things: 1) Someone who reads manuals and
 logs into a MUSH may be referred to as a player, and 2) An object with a type of
@@ -102,6 +119,14 @@ Objects with the PUPPET flag are often used to represent pets and NPCs
 When set on an object, the object will grow eyes and ears and relay everything
 it sees and hears to its owner. The owning Player controls what the Puppet
 says and does.
+
+\item[Softcode]
+\emph{Softcode} is the platform language that TinyMUX provides to users.
+It is also called \emph{MUSHcode}.
+For the purpose of this document, we'll call this platform language
+\emph{softcode} with the understanding that we expect it to run on a
+particular set of closely-related servers and on TinyMUX 2 in
+particular.
 
 \end{description}
 
@@ -118,36 +143,6 @@ Commonly-used abbreviations:
 
 \end{description}
 \section{Frequently Asked Questions (FAQ)}
-\subsection{What is a Text-Based Game Server?}
-It is a program that allows a multitude of people to connect to the same
-text-based environment and interact with each other and with the environment.
-The administrator runs this server on top of an operating system and the server
-in turn allows other people to connect. % See Figure 1 below.
-
-These layers are written in a particular computer language. The hardware
-layers have their own C-like language for describing how a body of gates are
-connected logically, geographical, thermally, etc.  Most operating systems are
-written in C/C++ with some assembly language and some higher-level scripting
-or macro languages. This is also sometimes called hardcode.
-
-The term \emph{hardcode} usually means the approximately 120,000 lines of C/C++
-source code that make up the game server itself.
-All of the MUSH-type text-based game servers are written in C except
-TinyMUX 2 which is a combination of C and C++.
-
-However, the term can also be used more generically to refer to anything
-written in C/C++ or even to anything written in a general purpose programming
-language.
-
-All of the Softcode Global Packages are written in a mostly universal language
-that doesn't have a name. You could call it MUSHcode, but then you are probably
-referring to the commands and functions of a specific version of a specific
-server. You could call
-it softcode, but then you are also probably including non-MUSH family languages
-further away and more incompatible. For the purpose of this document, we'll
-call it softcode with the understanding that we expect it to run on a particular
-set of closely related servers and on TinyMUX 2 in particular.
-
 \subsection{I'm using Windows. Why does the log say it can't find its files?}
 You are probably running the netmux.exe file directly from the GUI by double
 clicking on the icon. The server needs the current directory to be the game
