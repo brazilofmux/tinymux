@@ -184,7 +184,74 @@ Support for an external scripting language (usually driven from triggers).
 
 \end{description}
 
-\section{Connecting to an Existing Game}
+\section{Connecting to a Game}
+To open a session with a game, you need its host name (e.g., mygame.com) and
+the port number (e.g., 4011) it is listening on. These two things together are
+called a game's \emph{addy}. Many games allow users to create accounts for
+themselves at the welcome screen, but you may have been given a username and
+password through some other means. Most clients have a dialog for entering
+these four items: 1) hostname, 2) port, 3) username, and 4) password. If you
+don't have a username or password, leave them blank, and you can fill them in
+later after you create your character.
+
+Your client may also ask you the method used connect. TinyMUX uses the following commands at the welcome screen:
+
+\footnotesize{\texttt{
+\begin{verse}
+create $<$username$>$ $<$password$>$\\
+connect $<$username$>$ $<$password$>$
+\end{verse}
+}}
+
+The password can be a phrase of any length and it can contain spaces,
+but be careful to remember it.
+If the username contains a space, surround the name with double quotes
+(e.g., "Mr. Smith").
+Instead of a username, you can also use your \emph{player object}'s dbref
+(e.g., \#12345).
+
+Once connected, your session is associated with a \emph{player object} in the
+game's database.
+It will contain attributes, flags, and powers which you can sometimes change,
+and it will have a location (i.e., a room or thing object which in turn will
+have their own attributes, flags, and powers).
+Rooms are connected to each other with exits, things can be carried by
+players, players and things can be located in rooms.
+How these locations interconnect is call a game's \emph{grid} and can
+represent the layout of roads and rooms of a city, a set of tunnels and
+caverns, a space station, or whatever.
+
+There are a few initial, suggested commands to use before proceeding:
+
+\footnotesize{\texttt{
+\begin{verse}
+@set me=ANSI\\
+@lock me=me\\
+@lock/use me=me\\
+@lock/enter me=me\\
+@sex me=male\\
+@desc me=\%r[space(5)]You see ...
+\end{verse}
+}}
+
+The name, me, is a reference to yourself.
+The ANSI flag enables color to be sent to your client.
+The locks (in this case, default, use, and enter, respectively) prevent
+other players from picking you up or going inside you.
+You can use a softcode function by surrounding it in square brackets; space()
+returns the requested number of spaces which causes your description to
+indent by five space.
+See `help @lock', `help substitutions', `help space', and `help look' for more
+information.
+With these changes in place, the appearance of the room and your appearance have
+changed:
+
+\footnotesize{\texttt{
+\begin{verse}
+look\\
+look me
+\end{verse}
+}}
 
 \chapter{Hosting First Steps}
 \section{How to Begin Running TinyMUX}
@@ -515,5 +582,6 @@ format:
 }}
 The 29 at the end represents the number of significant bits in the base subnet
 address.
+
 \backmatter
 \end{document}
