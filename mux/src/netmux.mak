@@ -1,4 +1,4 @@
-# Makefile for building AMD64 version with Intel 9.1 Compiler.
+# Makefile for building AMD64 version with Intel 9.1, 10.0, and 11.0 Compilers.
 #
 !IF "$(CFG)" == ""
 CFG=netmux - Win64 Release
