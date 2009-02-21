@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: December 2008
+Last Update: February 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,12 +13,20 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
- -- Placeholder.
+ -- CMuxAlarm destructor was prepared to wait longer than 15 seconds.
+ -- Use mode 5 for rounding instead of mode 3 (Issue 295).
+ -- Fix @mail folders (Issue 560).
+ -- Change Modified and Created to be AF_CONST instead of AF_GOD.
+ -- Include utf8tables.h in the releases.
+ -- Command-line option table was defined one element too large.
+ -- @list process showed negative values on 64-bit FreeBSD.
+ -- Fix use of unitialized memory in mux_strlwr(), mux_strupr(), and
+    mux_foldpunc() (Issue 562).
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Use run-length encoded Unicode tables to save space.
 
 
 Cosmetic Changes:
@@ -28,4 +36,8 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Placeholder.
+ -- Split, rename, refact, and generally rearrange things.
+ -- When OpenSSL is enabled, use its SHA1 routines instead of the one
+    bundled with MUX.
+ -- Use mux_vsprintf() implementation of *printf() functionality.
+ -- Firan is now using 24000-byte buffers.
