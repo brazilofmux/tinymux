@@ -1619,9 +1619,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     Log.StopLogging();
 
 #ifdef GAME_DOOFERMUX
-    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
+    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p",
+        mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #else
-    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
+    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
+        mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #endif // GAME_DOOFERMUX
 #endif // UNIX_PROCESSES
 }

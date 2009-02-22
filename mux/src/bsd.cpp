@@ -628,7 +628,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         {
             mux_close(i);
         }
-        execlp("bin/stubslave", "stubslave", NULL);
+        execlp("bin/stubslave", "stubslave", (char *)NULL);
         _exit(1);
     }
     mux_close(sv[1]);
@@ -842,7 +842,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         {
             mux_close(i);
         }
-        execlp("bin/slave", "slave", NULL);
+        execlp("bin/slave", "slave", (char *)NULL);
         _exit(1);
     }
     close(sv[1]);
@@ -4955,9 +4955,9 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 #endif // HAVE_WORKING_FORK
 
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #endif // GAME_DOOFERMUX
             break;
 #endif // UNIX_PROCESSES
