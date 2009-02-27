@@ -92,6 +92,7 @@ int query(char *ip, char *orig_arg)
     char buf3[MAX_STRING * 4];
     char arg[MAX_STRING];
     size_t len;
+    ssize_t written;
     char *p;
     in_addr_t addr;
 
@@ -103,7 +104,7 @@ int query(char *ip, char *orig_arg)
     const char *pHName = ip;
 
 #ifdef HAVE_GETHOSTBYADDR
-    hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
+    hp = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
     if (  hp
        && strlen(hp->h_name) < MAX_STRING)
     {
@@ -119,13 +120,14 @@ int query(char *ip, char *orig_arg)
 
     arg_for_errors = orig_arg;
     strcpy(arg, orig_arg);
-    comma = (char *)strrchr(arg, ',');
+    comma = (char *) strrchr(arg, ',');
     if (comma == NULL)
     {
         return -1;
     }
+
     *comma = 0;
-    port_pair = (char *)strrchr(arg, ',');
+    port_pair = (char *) strrchr(arg, ',');
     if (port_pair == NULL)
     {
         return -1;
@@ -151,7 +153,7 @@ int query(char *ip, char *orig_arg)
         strcpy(namebuf, arg);
         def.h_name = namebuf;
         def.h_addr_list = alist;
-        def.h_addr = (char *)&defaddr;
+        def.h_addr = (char *) &defaddr;
         def.h_length = sizeof(struct in_addr);
 
         def.h_addrtype = AF_INET;
@@ -159,13 +161,14 @@ int query(char *ip, char *orig_arg)
         hp = &def;
     }
     sin.sin_family = hp->h_addrtype;
-    bcopy(hp->h_addr, (char *)&sin.sin_addr, hp->h_length);
+    bcopy(hp->h_addr, (char *) &sin.sin_addr, hp->h_length);
     sin.sin_port = htons(113); // ident port
     s = socket(hp->h_addrtype, SOCK_STREAM, 0);
     if (s < 0)
     {
         return -1;
     }
+
     if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
         if (   errno != ECONNREFUSED
             && errno != ETIMEDOUT
@@ -180,16 +183,22 @@ int query(char *ip, char *orig_arg)
     else
     {
         len = strlen(port_pair);
-        if ((size_t)write(s, port_pair, len) != len)
+        written = write(s, port_pair, len);
+        if (  written < 0
+           || len != (size_t)written)
         {
             close(s);
             return (-1);
         }
-        if (write(s, "\r\n", 2) != 2)
+
+        written = write(s, "\r\n", 2);
+        if (  written < 0
+           || 2 != written)
         {
             close(s);
             return (-1);
         }
+
         f = fdopen(s, "r");
         {
             int c;
@@ -201,6 +210,7 @@ int query(char *ip, char *orig_arg)
                 {
                     break;
                 }
+
                 if (0x20 <= c && c <= 0x7E)
                 {
                     *p++ = c;
@@ -213,14 +223,21 @@ int query(char *ip, char *orig_arg)
             *p = '\0';
         }
         fclose(f);
-        p = (char *)format_inet_addr(buf2, ntohl(sin.sin_addr.s_addr));
+        p = (char *) format_inet_addr(buf2, ntohl(sin.sin_addr.s_addr));
         *p++ = ' ';
         p = stpcpy(p, result);
         *p++ = '\n';
         *p++ = '\0';
     }
+
     sprintf(buf3, "%s%s", buf, buf2);
-    write(1, buf3, strlen(buf3));
+    len = strlen(buf3);
+    written = write(1, buf3, len);
+    if (  written < 0
+       || len != (size_t)written)
+    {
+        return (-1);
+    }
     return 0;
 }
 
@@ -233,6 +250,7 @@ RETSIGTYPE alarm_signal(int iSig)
     {
         exit(1);
     }
+
     signal(SIGALRM, CAST_SIGNAL_FUNC alarm_signal);
     interval.tv_sec = 120;  // 2 minutes.
     interval.tv_usec = 0;
@@ -290,6 +308,7 @@ int main(int argc, char *argv[])
         {
             break;
         }
+
         if (len < 0)
         {
             if (errno == EINTR)
@@ -299,12 +318,14 @@ int main(int argc, char *argv[])
             }
             break;
         }
+
         arg[len] = '\0';
         p = strchr(arg, '\n');
         if (p)
         {
             *p = '\0';
         }
+
         child = fork();
         switch (child)
         {
@@ -329,6 +350,7 @@ int main(int argc, char *argv[])
             exit(query(arg, p + 1) != 0);
             break;
         }
+
         if (child > 0)
         {
             nChildrenStarted++;
