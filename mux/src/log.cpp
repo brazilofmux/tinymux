@@ -11,6 +11,7 @@
 #include "externs.h"
 
 #include "command.h"
+#include "mathutil.h"
 
 NAMETAB logdata_nametab[] =
 {
@@ -359,4 +360,311 @@ void do_log
 
     notify(executor, T("Not a valid log file."));
     return;
+}
+
+CLogFile Log;
+void CLogFile::WriteInteger(int iNumber)
+{
+    UTF8 aTempBuffer[I32BUF_SIZE];
+    size_t nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
+    WriteBuffer(nTempBuffer, aTempBuffer);
+}
+
+void CLogFile::WriteBuffer(size_t nString, const UTF8 *pString)
+{
+    if (!bEnabled)
+    {
+        return;
+    }
+
+#if defined(WINDOWS_THREADS)
+    EnterCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
+
+    while (nString > 0)
+    {
+        size_t nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
+        if (nAvailable == 0)
+        {
+            Flush();
+            continue;
+        }
+
+        size_t nToMove = nAvailable;
+        if (nString < nToMove)
+        {
+            nToMove = nString;
+        }
+
+        // Move nToMove bytes from pString to aBuffer+nBuffer
+        //
+        memcpy(m_aBuffer+m_nBuffer, pString, nToMove);
+        pString += nToMove;
+        nString -= nToMove;
+        m_nBuffer += nToMove;
+    }
+    Flush();
+
+#if defined(WINDOWS_THREADS)
+    LeaveCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
+}
+
+void CLogFile::WriteString(const UTF8 *pString)
+{
+    size_t nString = strlen((char *)pString);
+    WriteBuffer(nString, pString);
+}
+
+void DCL_CDECL CLogFile::tinyprintf(const UTF8 *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    UTF8 aTempBuffer[SIZEOF_LOG_BUFFER];
+    size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
+    va_end(ap);
+    WriteBuffer(nString, aTempBuffer);
+}
+
+static void MakeLogName
+(
+    const UTF8 *pBasename,
+    const UTF8 *szPrefix,
+    CLinearTimeAbsolute lta,
+    UTF8 *szLogName,
+    size_t nLogName
+)
+{
+    UTF8 szTimeStamp[18];
+    lta.ReturnUniqueString(szTimeStamp, sizeof(szTimeStamp));
+    if (  pBasename
+       && pBasename[0] != '\0')
+    {
+        mux_sprintf(szLogName, nLogName, T("%s/%s-%s.log"),
+            pBasename,
+            szPrefix,
+            szTimeStamp);
+    }
+    else
+    {
+        mux_sprintf(szLogName, nLogName, T("%s-%s.log"),
+            szPrefix,
+            szTimeStamp);
+    }
+}
+
+bool CLogFile::CreateLogFile(void)
+{
+    CloseLogFile();
+
+    m_nSize = 0;
+
+    bool bSuccess;
+#if defined(WINDOWS_FILES)
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL == pFilename)
+    {
+        return false;
+    }
+
+    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+#elif defined(UNIX_FILES)
+    bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
+#endif // UNIX_FILES
+    return bSuccess;
+}
+
+void CLogFile::AppendLogFile(void)
+{
+    CloseLogFile();
+
+    bool bSuccess;
+#if defined(WINDOWS_FILES)
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL == pFilename)
+    {
+        return;
+    }
+
+    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+#elif defined(UNIX_FILES)
+    bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY);
+#endif // UNIX_FILES
+
+    if (bSuccess)
+    {
+#if defined(WINDOWS_FILES)
+        SetFilePointer(m_hFile, 0, 0, FILE_END);
+#elif defined(UNIX_FILES)
+        mux_lseek(m_fdFile, 0, SEEK_END);
+#endif // UNIX_FILES
+    }
+}
+
+void CLogFile::CloseLogFile(void)
+{
+#if defined(WINDOWS_FILES)
+    if (INVALID_HANDLE_VALUE != m_hFile)
+    {
+        CloseHandle(m_hFile);
+        m_hFile = INVALID_HANDLE_VALUE;
+    }
+#elif defined(UNIX_FILES)
+    if (MUX_OPEN_INVALID_HANDLE_VALUE != m_fdFile)
+    {
+        mux_close(m_fdFile);
+        m_fdFile = MUX_OPEN_INVALID_HANDLE_VALUE;
+    }
+#endif // UNIX_FILES
+}
+
+#define FILE_SIZE_TRIGGER (512*1024UL)
+
+void CLogFile::Flush(void)
+{
+    if (  m_nBuffer <= 0
+       || !bEnabled)
+    {
+        return;
+    }
+    if (bUseStderr)
+    {
+        fwrite(m_aBuffer, m_nBuffer, 1, stderr);
+    }
+    else
+    {
+        m_nSize += m_nBuffer;
+#if defined(WINDOWS_FILES)
+        unsigned long nWritten;
+        WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL);
+#elif defined(UNIX_FILES)
+        mux_write(m_fdFile, m_aBuffer, m_nBuffer);
+#endif // UNIX_FILES
+
+        if (m_nSize > FILE_SIZE_TRIGGER)
+        {
+            CloseLogFile();
+
+            m_ltaStarted.GetLocal();
+            MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename,
+                sizeof(m_szFilename));
+
+            CreateLogFile();
+        }
+    }
+    m_nBuffer = 0;
+}
+
+void CLogFile::SetPrefix(const UTF8 *szPrefix)
+{
+    if (  !bUseStderr
+       && strcmp((char *)szPrefix, (char *)m_szPrefix) != 0)
+    {
+        if (bEnabled)
+        {
+            CloseLogFile();
+        }
+
+        UTF8 szNewName[SIZEOF_PATHNAME];
+        MakeLogName(m_pBasename, szPrefix, m_ltaStarted, szNewName, sizeof(szNewName));
+        if (bEnabled)
+        {
+            ReplaceFile(m_szFilename, szNewName);
+        }
+        mux_strncpy(m_szPrefix, szPrefix, 31);
+        mux_strncpy(m_szFilename, szNewName, SIZEOF_PATHNAME-1);
+
+        if (bEnabled)
+        {
+            AppendLogFile();
+        }
+    }
+}
+
+void CLogFile::SetBasename(const UTF8 *pBasename)
+{
+    if (m_pBasename)
+    {
+        MEMFREE(m_pBasename);
+        m_pBasename = NULL;
+    }
+    if (  pBasename
+       && strcmp((char *)pBasename, "-") == 0)
+    {
+        bUseStderr = true;
+    }
+    else
+    {
+        bUseStderr = false;
+        if (pBasename)
+        {
+            m_pBasename = StringClone(pBasename);
+        }
+        else
+        {
+            m_pBasename = StringClone(T(""));
+        }
+    }
+}
+
+CLogFile::CLogFile(void)
+{
+#if defined(WINDOWS_THREADS)
+    InitializeCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
+
+    m_ltaStarted.GetLocal();
+#if defined(WINDOWS_FILES)
+    m_hFile = INVALID_HANDLE_VALUE;
+#elif defined(UNIX_FILES)
+    m_fdFile = MUX_OPEN_INVALID_HANDLE_VALUE;
+#endif // UNIX_FILES
+    m_nSize = 0;
+    m_nBuffer = 0;
+    bEnabled = false;
+    bUseStderr = true;
+    m_pBasename = NULL;
+    m_szPrefix[0] = '\0';
+    m_szFilename[0] = '\0';
+}
+
+void CLogFile::StartLogging()
+{
+    if (!bUseStderr)
+    {
+        m_ltaStarted.GetLocal();
+        MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename,
+            sizeof(m_szFilename));
+        CreateLogFile();
+    }
+    bEnabled = true;
+}
+
+void CLogFile::StopLogging(void)
+{
+    Flush();
+    bEnabled = false;
+    if (!bUseStderr)
+    {
+        CloseLogFile();
+        m_szPrefix[0] = '\0';
+        m_szFilename[0] = '\0';
+        SetBasename(NULL);
+    }
+}
+
+CLogFile::~CLogFile(void)
+{
+    StopLogging();
+#if defined(WINDOWS_THREADS)
+    DeleteCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
 }

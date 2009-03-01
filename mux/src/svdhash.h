@@ -293,47 +293,4 @@ public:
     ~CHashTable(void);
 };
 
-
-#define SIZEOF_LOG_BUFFER 1024
-class CLogFile
-{
-private:
-    CLinearTimeAbsolute m_ltaStarted;
-#if defined(WINDOWS_THREADS)
-    CRITICAL_SECTION csLog;
-#endif // WINDOWS_THREADS
-#if defined(WINDOWS_FILES)
-    HANDLE m_hFile;
-#elif defined(UNIX_FILES)
-    int    m_fdFile;
-#endif // UNIX_FILES
-    size_t m_nSize;
-    size_t m_nBuffer;
-    UTF8 m_aBuffer[SIZEOF_LOG_BUFFER];
-    bool bEnabled;
-    bool bUseStderr;
-    UTF8 *m_pBasename;
-    UTF8 m_szPrefix[32];
-    UTF8 m_szFilename[SIZEOF_PATHNAME];
-
-    bool CreateLogFile(void);
-    void AppendLogFile(void);
-    void CloseLogFile(void);
-public:
-    CLogFile(void);
-    ~CLogFile(void);
-    void WriteBuffer(size_t nString, const UTF8 *pString);
-    void WriteString(const UTF8 *pString);
-    void WriteInteger(int iNumber);
-    void DCL_CDECL tinyprintf(const UTF8 *pFormatSpec, ...);
-    void Flush(void);
-    void SetPrefix(const UTF8 *pPrefix);
-    void SetBasename(const UTF8 *pBasename);
-    void StartLogging(void);
-    void StopLogging(void);
-};
-
-extern CLogFile Log;
-
 #endif //!SVDHASH_H
-
