@@ -535,19 +535,28 @@ void CLogFile::Flush(void)
     {
         return;
     }
+
     if (bUseStderr)
     {
-        fwrite(m_aBuffer, m_nBuffer, 1, stderr);
+        // There is no recourse if the following fails.
+        //
+        (void)fwrite(m_aBuffer, m_nBuffer, 1, stderr);
     }
     else
     {
         m_nSize += m_nBuffer;
 #if defined(WINDOWS_FILES)
         unsigned long nWritten;
-        WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL);
+        bool fSuccess = (TRUE == WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL));
 #elif defined(UNIX_FILES)
-        mux_write(m_fdFile, m_aBuffer, m_nBuffer);
+        ssize_t written = mux_write(m_fdFile, m_aBuffer, m_nBuffer);
+        bool fSuccess = (0 < written && m_nBuffer == (size_t)written);
 #endif // UNIX_FILES
+
+        if (!fSuccess)
+        {
+            raw_broadcast(WIZARD, T("CLogFile::Flush() is unable to write to the game's log.  The disk may be full."));
+        }
 
         if (m_nSize > FILE_SIZE_TRIGGER)
         {
