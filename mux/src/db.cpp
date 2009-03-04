@@ -193,6 +193,7 @@ ATTR AttrTable[] =
     {T("Use"),         A_USE,      AF_ODARK | AF_NOPROG},
     {T("UseLock"),     A_LUSE,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {T("UserLock"),    A_LUSER,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("VisibleLock"), A_LVISIBLE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {T("VA"),          A_VA,       AF_ODARK},
     {T("VB"),          A_VA + 1,   AF_ODARK},
     {T("VC"),          A_VA + 2,   AF_ODARK},

@@ -323,7 +323,7 @@ NAMETAB lock_sw[] =
     {T("tportlock"),       2,  CA_PUBLIC,  A_LTPORT},
     {T("uselock"),         1,  CA_PUBLIC,  A_LUSE},
     {T("userlock"),        4,  CA_PUBLIC,  A_LUSER},
-    {T("visiblelock"),     1,  CA_PUBLIC,  A_LVISIBILITY},
+    {T("visiblelock"),     1,  CA_PUBLIC,  A_LVISIBLE},
     {(UTF8 *) NULL,        0,          0,  0}
 };
 

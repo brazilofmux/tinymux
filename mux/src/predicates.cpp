@@ -173,7 +173,7 @@ bool can_see(dbref player, dbref thing, bool can_see_loc)
 #ifdef REALITY_LVLS
               && IsReal(player, thing)
 #endif // REALITY_LVLS
-              && could_doit(player, thing, A_LVISIBILITY))
+              && could_doit(player, thing, A_LVISIBLE))
            || (  mudconf.see_own_dark
               && MyopicExam(player, thing)));
 }
