@@ -216,7 +216,7 @@
 #define A_ADESTROY  228  // @adestroy attribute
 #define A_APARENT   229  // @aparent attribute
 #define A_ACREATE   230  // @acreate attribute
-#define A_LVISIBILITY   231 // Visibility Lock Storage Attribute
+#define A_LVISIBLE  231  // Visibility Lock Storage Attribute
 
 // 232 - 235 unused
 
