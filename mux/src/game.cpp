@@ -3545,9 +3545,9 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
 #ifdef SSL_ENABLED
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts);
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
 #else
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL);
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL, mudconf.ip_address);
 #endif
 
 #if defined(HAVE_WORKING_FORK)

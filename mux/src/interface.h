@@ -263,7 +263,7 @@ extern int mux_socket_read(DESC *d, char* buffer, int nBytes, int flags);
 
 extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
-extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL);
+extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
 #if defined(WINDOWS_NETWORKING)
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);

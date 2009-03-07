@@ -3161,6 +3161,15 @@ INPUT_DATABASE
 
   Related Topics: crash_database, output_database
 
+& IP_ADDRESS
+IP_ADDRESS
+
+  CONFIG PARAMETER: ip_address <address>
+  DEFAULT: 0.0.0.0
+
+  Specifies the IP address the MUX should listen on on startup.
+  The default of 0.0.0.0 will make it listen on all interfaces.
+
 & KILL_GUARANTEE_COST
 KILL_GUARANTEE_COST
 

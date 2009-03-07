@@ -61,6 +61,7 @@ void cf_init(void)
     mudconf.status_file = StringClone(T("shutdown.status"));
     mudconf.max_cache_size = 1*1024*1024;
 
+    mudconf.ip_address = StringClone(T("0.0.0.0"));
     mudconf.ports.n = 1;
     mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
     if (mudconf.ports.pi)
@@ -2151,6 +2152,7 @@ static CONFPARM conftable[] =
     {T("indent_desc"),               cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.indent_desc,     NULL,               0},
     {T("initial_size"),              cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.init_size,              NULL,               0},
     {T("input_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.indb,            NULL, SIZEOF_PATHNAME},
+    {T("ip_address"),                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.ip_address,      NULL,              15},
     {T("kill_guarantee_cost"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
     {T("kill_max_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
     {T("kill_min_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},

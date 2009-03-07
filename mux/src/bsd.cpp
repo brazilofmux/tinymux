@@ -1142,12 +1142,11 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 }
 
 
-static void make_socket(PortInfo *Port)
+static void make_socket(PortInfo *Port, const UTF8 *ip_address)
 {
     SOCKET s;
     struct sockaddr_in server;
     int opt = 1;
-
     Port->socket = INVALID_SOCKET;
 
 #if defined(WINDOWS_NETWORKING)
@@ -1196,7 +1195,10 @@ static void make_socket(PortInfo *Port)
         //
         server.sin_port = htons((unsigned short)(Port->port));
         server.sin_family = AF_INET;
-        server.sin_addr.s_addr = INADDR_ANY;
+        if (inet_addr((const char*)ip_address) != -1)
+            server.sin_addr.s_addr = inet_addr((const char*)ip_address);
+        else
+            server.sin_addr.s_addr = INADDR_ANY;
 
         // bind our name to the socket
         //
@@ -1262,7 +1264,10 @@ static void make_socket(PortInfo *Port)
     }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
+    if (inet_addr((const char*)ip_address) != -1)
+        server.sin_addr.s_addr = inet_addr((const char*)ip_address);
+    else
+        server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons((unsigned short)(Port->port));
 
     int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
@@ -1300,7 +1305,7 @@ bool ValidSocket(SOCKET s)
 
 #endif // UNIX_NETWORKING
 
-void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL)
+void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address)
 {
     // Any existing open port which does not appear in the requested set
     // should be closed.
@@ -1375,7 +1380,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #ifdef SSL_ENABLED
             aPorts[k].ssl = 0;
 #endif
-            make_socket(aPorts+k);
+            make_socket(aPorts+k, ip_address);
             if (  !IS_INVALID_SOCKET(aPorts[k].socket)
 #if defined(UNIX_NETWORKING)
                && ValidSocket(aPorts[k].socket)
@@ -1413,7 +1418,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                 k = *pnPorts;
                 aPorts[k].port = piaSSL->pi[j];
                 aPorts[k].ssl = 1;
-                make_socket(aPorts+k);
+                make_socket(aPorts+k, ip_address);
                 if (  !IS_INVALID_SOCKET(aPorts[k].socket)
 #if defined(UNIX_NETWORKING)
                    && ValidSocket(aPorts[k].socket)
