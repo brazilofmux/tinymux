@@ -1057,23 +1057,63 @@ static UTF8 *ColorTransitionANSI
     return Buffer;
 }
 
+/*! \brief Convert private color code points within a string to ANSI color
+ * sequences.
+ *
+ * This routine converts these internal color code points to ANSI sequences
+ * which clients will recognize.
+ *
+ * Internally, the server uses color code points to represent color.  This
+ * representation is more compact, it simplifies the parser, and it thwarts
+ * the possibility of softcode generating naked ESC characters.  Several
+ * protocols use the ESC character, so it is helpful if the server controls
+ * their use.
+ *
+ * \param pString   String (length LBUF_SIZE-1 or less) with color code points.
+ * \param bNoBleed  Should we dodge a naked return-to-normal state.
+ * \return          String with exportable ANSI color sequences.
+ */
+
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
     while ('\0' != *pString)
     {
+        size_t nLen = utf8_FirstByte[*pString];
         unsigned int iCode = mux_color(pString);
         if (COLOR_NOTCOLOR == iCode)
         {
-            utf8_safe_chr(pString, aBuffer, &pBuffer);
+            if (  UTF8_CONTINUE <= nLen
+               || sizeof(aBuffer) - (pString - aBuffer) - 1 < nLen)
+            {
+                break;
+            }
+
+            size_t j;
+            for (j = 1; j < nLen; j++)
+            {
+                if (  '\0' == pString[j]
+                   || UTF8_CONTINUE != utf8_FirstByte[pString[j]])
+                {
+                    break;
+                }
+            }
+
+            if (j != nLen)
+            {
+                break;
+            }
+
+            memcpy(pBuffer, pString, nLen);
+            pBuffer += nLen;
         }
         else
         {
             memcpy(pBuffer, aColors[iCode].pAnsi, aColors[iCode].nAnsi);
             pBuffer += aColors[iCode].nAnsi;
         }
-        pString = utf8_NextCodePoint(pString);
+        pString += nLen;
 
         if (  bNoBleed
            && COLOR_INDEX_RESET == iCode
