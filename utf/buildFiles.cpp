@@ -580,6 +580,7 @@ public:
     void SaveClassifyPrivateUse(void);
     void SaveDecompositions(void);
     void SaveClassifyPrintable(void);
+    void SaveCombiningClass(void);
 
     void GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[]);
 
@@ -643,6 +644,7 @@ int main(int argc, char *argv[])
     g_UniData->SaveClassifyPrivateUse();
     g_UniData->SaveDecompositions();
     g_UniData->SaveClassifyPrintable();
+    g_UniData->SaveCombiningClass();
 
     return 0;
 }
@@ -1079,6 +1081,97 @@ void UniData::SaveDecompositions()
                     fprintf(fp, "%04X", pts[pt2]);
                 }
                 fprintf(fp, ";%s\n", cp[pt].GetDescription());
+            }
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveCombiningClass()
+{
+    FILE *fp = fopen("tr_class.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (cp[pt].IsDefined())
+        {
+            static const int table[] =
+            {
+                0,
+                1,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                35,
+                36,
+                84,
+                91,
+                103,
+                107,
+                118,
+                122,
+                129,
+                130,
+                132,
+                202,
+                214,
+                216,
+                218,
+                220,
+                222,
+                224,
+                226,
+                228,
+                230,
+                232,
+                233,
+                234,
+                240,
+            };
+
+            int i;
+            int cc = cp[pt].GetCombiningClass();
+            for (i = 0; i < sizeof(table)/sizeof(table[0]); i++)
+            {
+                if (table[i] == cc)
+                {
+                    fprintf(fp, "%04X;%u;%s\n", pt, i, cp[pt].GetDescription());
+                    break;
+                }
+            }
+
+            if (i == sizeof(table)/sizeof(table[0]))
+            {
+                fprintf(fp, "Didn't find entry for %u\n", cc);
             }
         }
     }

@@ -50,3 +50,4 @@ utf8tables.cpp.txt utf8tables.h.txt: classify integers strings cl_Printable.txt 
 	./strings -d tr_totitle tr_totitle.txt
 	./strings -d tr_foldpunc tr_foldpunc.txt
 	./integers -d 0 tr_color tr_Color.txt
+	#./integers -d 0 tr_class tr_class.txt
