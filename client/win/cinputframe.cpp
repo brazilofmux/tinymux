@@ -86,7 +86,7 @@ void CInputFrame::OnSize(UINT nType, int cx, int cy)
     ::MoveWindow(m_hwndRichEdit, 0, 0, cx, cy, true);
 }
 
-DWORD CALLBACK CInputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+DWORD CALLBACK CInputFrame::EditStreamCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
     *pcb = cb;
     if ((cb % sizeof(WCHAR)) == 0)
@@ -120,7 +120,7 @@ LRESULT CInputFrame::OnNotify(NMHDR *phdr)
             // Stream it out.
             //
             EDITSTREAM es;
-            es.dwCookie = (DWORD)this;
+            es.dwCookie = (DWORD_PTR)this;
             es.dwError  = ERROR_SUCCESS;
             es.pfnCallback = CInputFrame::EditStreamCallback;
             (void)::SendMessage(m_hwndRichEdit, EM_STREAMOUT, SF_TEXT|SF_UNICODE, (LPARAM)&es);

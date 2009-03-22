@@ -90,7 +90,7 @@ typedef struct
     LPBYTE pbBuff;
 } STREAMFRAGMENT;
 
-DWORD CALLBACK COutputFrame::EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+DWORD CALLBACK COutputFrame::EditStreamCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
     STREAMFRAGMENT *psf = (STREAMFRAGMENT *)dwCookie;
     LONG cbMove = cb;
@@ -119,7 +119,7 @@ void COutputFrame::AppendText(size_t nBuffer, WCHAR *pBuffer)
     sf.pbBuff = (BYTE *)pBuffer;
 
     EDITSTREAM es;
-    es.dwCookie = (DWORD)&sf;
+    es.dwCookie = (DWORD_PTR)&sf;
     es.dwError  = ERROR_SUCCESS;
     es.pfnCallback = COutputFrame::EditStreamCallback;
     (void)::SendMessage(m_hwndRichEdit, EM_STREAMIN, SF_TEXT | SF_UNICODE | SFF_SELECTION, (LPARAM)&es);

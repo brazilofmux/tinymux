@@ -5,7 +5,7 @@ class COutputFrame : public CWindow
 {
 public:
     static LRESULT CALLBACK OutputWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-    static DWORD CALLBACK EditStreamCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
+    static DWORD CALLBACK EditStreamCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
 
     COutputFrame();
     bool Create(CWindow *pParentWindow, int x, int y, int cx, int cy);
