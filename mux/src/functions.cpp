@@ -2627,7 +2627,8 @@ static FUNCTION(fun_v)
     // Leading digit, process as argument number.
     //
     int i = mux_atol(fargs[0]);
-    if (  i < ncargs
+    if (  0 <= i
+       && i < ncargs
        && NULL != cargs[i])
     {
         safe_str(cargs[i], buff, bufc);
