@@ -105,8 +105,8 @@ void cf_init(void)
     mudconf.fullmotd_msg[0] = '\0';
     mudconf.dump_msg[0] = '\0';
     mudconf.postdump_msg[0] = '\0';
-    mudconf.fixed_home_msg[0] = '\0';
-    mudconf.fixed_tel_msg[0] = '\0';
+    mux_strncpy(mudconf.fixed_home_msg, T("You are fixed in place and cannot move."), 128);
+    mux_strncpy(mudconf.fixed_tel_msg, T("You are fixed in place and cannot teleport."), 128);
     mux_strncpy(mudconf.public_channel, T("Public"), 31);
     mux_strncpy(mudconf.public_channel_alias, T("pub"), 31);
     mux_strncpy(mudconf.guests_channel, T("Guests"), 31);

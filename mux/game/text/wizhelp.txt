@@ -2445,7 +2445,7 @@ FIND_MONEY_CHANCE
 FIXED_HOME_MESSAGE
 
   CONFIG PARAMETER: fixed_home_message <string>
-  DEFAULT: none
+  DEFAULT: You are fixed in place and cannot move.
 
   Specifies the string that is sent to a player when they try to go home
   while they are set with the FIXED flag.
@@ -2459,7 +2459,7 @@ FIXED_HOME_MESSAGE
 FIXED_TEL_MESSAGE
 
   CONFIG PARAMETER: fixed_tel_message <string>
-  DEFAULT: none
+  DEFAULT: You are fixed in place and cannot teleport.
 
   Specifies the string that is sent to a player when they try to teleport
   while they are set with the FIXED flag.
