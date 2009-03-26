@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  February 2009
+Last Update:  March 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -340,6 +340,9 @@ Bug Fixes:
  -- Fix use of unitialized memory in mux_strlwr(), mux_strupr(), and
     mux_foldpunc() (Issue 562).
  -- Started fixing Issue 555 by including punctuation-folding tables.
+ -- Visible Lock not treated as such by lock() and elock()
+    (Issue 570).
+ -- Add boundary to avoid crash with v(-1) (Issue 580).
 
 
 Performance Enhancements:
@@ -434,3 +437,7 @@ Miscellaneous:
  -- Add SHA-1 test vectors.
  -- Update dependencies used by .mak files.
  -- Firan is now using 24000-byte buffers.
+ -- Include iso8859-2 value to three other affected configuration
+    options.
+ -- Most of charset_nametab[] options are not unique in the first five
+    characters.
