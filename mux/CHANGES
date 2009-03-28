@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: February 2009
+Last Update: March 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -8,7 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Add ip_address configuration option for boxes with multiple IP addresses
+    (several per card, several cards, tunnels, vpn, etc.)
 
 
 Bug Fixes:
@@ -22,6 +23,14 @@ Bug Fixes:
  -- @list process showed negative values on 64-bit FreeBSD.
  -- Fix use of unitialized memory in mux_strlwr(), mux_strupr(), and
     mux_foldpunc() (Issue 562).
+ -- VisibleLock not treated as such by lock() and elock() (Issue 570).
+ -- Include iso8859-2 value to three other affected configuration
+    options.
+ -- Most of charset_nametab[] options are not unique in the first five
+    characters.
+ -- Fix color_convert() to use all of the 2*LBUF_SIZE buffer
+    (Issue 443).
+ -- Add boundary to avoid crash with v(-1) (Issue 580).
 
 
 Performance Enhancements:
@@ -31,7 +40,8 @@ Performance Enhancements:
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Change default fixed_tel_message and fixed_home_message
+    (Issue 579).
 
 
 Miscellaneous:
@@ -41,3 +51,8 @@ Miscellaneous:
     bundled with MUX.
  -- Use mux_vsprintf() implementation of *printf() functionality.
  -- Firan is now using 24000-byte buffers.
+ -- Surpress GCC 4 warnings about sentinels.
+ -- Fix compiler warning in slave.cpp about unused return value.
+ -- Move CLog from svdhash.cpp to log.cpp.
+ -- Fix compiler warnings in CLog about unused return values.
+ -- Let indent have a little of its way with log.cpp.
