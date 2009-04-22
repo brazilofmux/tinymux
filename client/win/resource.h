@@ -6,7 +6,6 @@
 #define IDD_RITSU_DIALOG                101
 #define IDD_ABOUTBOX                    102
 #define IDS_APP_TITLE                   103
-#define IDS_RITSU                       105
 #define IDR_MAINFRAME                   106
 #define IDM_FILE_NEW                    107
 #define IDM_FILE_OPEN                   108

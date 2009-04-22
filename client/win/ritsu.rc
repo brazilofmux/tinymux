@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -31,16 +31,16 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_RITSU               ICON    DISCARDABLE     "res\\ritsu.ico"
-IDI_SMALL               ICON    DISCARDABLE     "res\\small.ico"
-IDI_BACKSCROLL          ICON    DISCARDABLE     "res\\backscroll.ico"
+IDI_RITSU               ICON                    "res\\ritsu.ico"
+IDI_SMALL               ICON                    "res\\small.ico"
+IDI_BACKSCROLL          ICON                    "res\\backscroll.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
 //
 
-IDC_RITSU MENU DISCARDABLE
+IDC_RITSU MENU 
 BEGIN
     POPUP "&File"
     BEGIN
@@ -68,7 +68,7 @@ END
 // Accelerator
 //
 
-IDC_RITSU ACCELERATORS MOVEABLE PURE
+IDC_RITSU ACCELERATORS 
 BEGIN
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
@@ -80,15 +80,15 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOG DISCARDABLE  22, 17, 230, 75
-STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+IDD_ABOUTBOX DIALOGEX 22, 17, 182, 44
+STYLE DS_SETFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
-FONT 8, "System"
+FONT 8, "System", 0, 0, 0x0
 BEGIN
     ICON            IDI_RITSU,IDC_MYICON,14,9,16,16
-    LTEXT           "Ritsu Version 1.0",IDC_STATIC,49,10,119,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2008",IDC_STATIC,49,20,119,8
-    DEFPUSHBUTTON   "OK",IDOK,195,6,30,11,WS_GROUP
+    LTEXT           "Ritsu Version 1.0",IDC_STATIC,49,10,57,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2009",IDC_STATIC,49,20,61,8
+    DEFPUSHBUTTON   "OK",IDOK,137,12,33,14,WS_GROUP
 END
 
 
@@ -98,7 +98,7 @@ END
 // TEXTINCLUDE
 //
 
-2 TEXTINCLUDE DISCARDABLE
+2 TEXTINCLUDE 
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -107,13 +107,13 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
 END
 
-1 TEXTINCLUDE DISCARDABLE
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
@@ -126,10 +126,13 @@ END
 // String Table
 //
 
-STRINGTABLE DISCARDABLE
+STRINGTABLE 
 BEGIN
     IDS_APP_TITLE           "Ritsu"
-    IDS_RITSU               "Ritsu"
+END
+
+STRINGTABLE 
+BEGIN
     IDS_MAIN_FRAME          "RitsuMainFrame"
     IDS_SESSION_FRAME       "RitsuSessionFrame"
     IDS_OUTPUT_FRAME        "RitsuOutputFrame"
