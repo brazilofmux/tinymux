@@ -16,6 +16,9 @@ public:
     //
     LRESULT OnCreate(CREATESTRUCT *pcs);
     LRESULT OnCommand(WPARAM wParam, LPARAM lParam);
+    void    OnSessionNew();
+    void    OnSessionOpen();
+    void    OnSessionCloseActive();
 
     // MDI Control
     //

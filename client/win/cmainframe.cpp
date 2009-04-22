@@ -155,21 +155,15 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
     switch (wmId)
     {
     case IDM_FILE_NEW:
-        (void)m_pMDIControl->CreateNewChild();
+        OnSessionNew();
         break;
 
     case IDM_FILE_OPEN:
-        ;
+        OnSessionOpen();
         break;
 
     case IDM_FILE_CLOSE:
-        {
-            CWindow *pChild = m_pMDIControl->GetActive();
-            if (NULL != pChild)
-            {
-                pChild->SendMessage(WM_CLOSE, 0, 0);
-            }
-        }
+        OnSessionCloseActive();
         break;
 
     case IDM_ABOUT:
@@ -221,6 +215,23 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
         }
     }
     return 0;
+}
+void CMainFrame::OnSessionNew()
+{
+    (void)m_pMDIControl->CreateNewChild();
+}
+
+void CMainFrame::OnSessionOpen()
+{
+}
+
+void CMainFrame::OnSessionCloseActive()
+{
+    CWindow *pChild = m_pMDIControl->GetActive();
+    if (NULL != pChild)
+    {
+        pChild->SendMessage(WM_CLOSE, 0, 0);
+    }
 }
 
 CMainFrame::CMainFrame()
