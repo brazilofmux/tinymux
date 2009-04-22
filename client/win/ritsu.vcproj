@@ -99,7 +99,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -448,13 +448,7 @@
 				RelativePath="res\backscroll.ico">
 			</File>
 			<File
-				RelativePath="ritsu.ico">
-			</File>
-			<File
 				RelativePath="res\ritsu.ico">
-			</File>
-			<File
-				RelativePath="small.ico">
 			</File>
 			<File
 				RelativePath="res\small.ico">
