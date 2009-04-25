@@ -14,7 +14,7 @@ CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREAT
     }
 }
 
-CWindow *CMDIControl::CreateNewChild(void)
+CSessionFrame *CMDIControl::CreateNewChild(void)
 {
     CSessionFrame *pChild = NULL;
     try
@@ -50,13 +50,13 @@ CWindow *CMDIControl::CreateNewChild(void)
     return pChild;
 }
 
-CWindow *CMDIControl::GetActive(void)
+CSessionFrame *CMDIControl::GetActive(void)
 {
-    CWindow *pWnd = NULL;
+    CSessionFrame *pWnd = NULL;
     HWND hwnd = (HWND)::SendMessage(m_hwnd, WM_MDIGETACTIVE, 0, 0);
     if (NULL != hwnd)
     {
-        pWnd = (CWindow *)GetWindowPointer(hwnd);
+        pWnd = static_cast<CSessionFrame *>(GetWindowPointer(hwnd));
     }
     return pWnd;
 }

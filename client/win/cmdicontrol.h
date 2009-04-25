@@ -5,8 +5,8 @@ class CMDIControl : public CWindow
 {
 public:
     CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREATESTRUCT *pcs);
-    CWindow *CreateNewChild(void);
-    CWindow *GetActive(void);
+    CSessionFrame *CreateNewChild(void);
+    CSessionFrame *GetActive(void);
     LRESULT Tile(void);
     LRESULT Cascade(void);
     LRESULT IconArrange(void);

@@ -216,6 +216,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+
 void CMainFrame::OnSessionNew()
 {
     (void)m_pMDIControl->CreateNewChild();
@@ -227,7 +228,7 @@ void CMainFrame::OnSessionOpen()
 
 void CMainFrame::OnSessionCloseActive()
 {
-    CWindow *pChild = m_pMDIControl->GetActive();
+    CSessionFrame *pChild = m_pMDIControl->GetActive();
     if (NULL != pChild)
     {
         pChild->SendMessage(WM_CLOSE, 0, 0);
