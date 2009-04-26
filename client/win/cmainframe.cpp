@@ -125,27 +125,6 @@ LRESULT CMainFrame::OnCreate(CREATESTRUCT *pcs)
     return 0;
 }
 
-// Mesage handler for about box.
-//
-LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        if (  IDOK     == LOWORD(wParam)
-           || IDCANCEL == LOWORD(wParam))
-        {
-            ::EndDialog(hDlg, LOWORD(wParam));
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
-}
-
 LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 {
     // Parse the menu selections:
@@ -167,7 +146,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
         break;
 
     case IDM_ABOUT:
-        DialogBox(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)AboutProc);
+        OnAbout();
         break;
 
     case IDM_EXIT:
@@ -232,6 +211,19 @@ void CMainFrame::OnSessionCloseActive()
     if (NULL != pChild)
     {
         pChild->SendMessage(WM_CLOSE, 0, 0);
+    }
+}
+
+void CMainFrame::OnAbout()
+{
+    if (NULL == g_theApp.m_hwndAbout)
+    {
+        g_theApp.m_hwndAbout = CreateDialog(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)g_theApp.AboutProc);
+        ::ShowWindow(g_theApp.m_hwndAbout, SW_SHOW);
+    }
+    else
+    {
+        SetFocus(g_theApp.m_hwndAbout);
     }
 }
 

@@ -20,6 +20,7 @@ class CRitsuApp
 {
 public:
     static LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
     CRitsuApp();
 
     bool   Initialize(HINSTANCE hInstance, int nCmdShow);
@@ -63,6 +64,8 @@ public:
 
     bool        m_bMsftEdit;
     HMODULE     m_hRichEdit;
+
+	HWND        m_hwndAbout;
 
     // Main Frame.
     //
