@@ -167,7 +167,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 
     case IDM_WINDOW_CLOSE_ALL:
         {
-            CWindow *pChild = NULL;
+            CSessionFrame *pChild = NULL;
 
             do {
                 pChild = m_pMDIControl->GetActive();
@@ -186,7 +186,7 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            CWindow *pChild = m_pMDIControl->GetActive();
+            CSessionFrame *pChild = m_pMDIControl->GetActive();
             if (NULL != pChild)
             {
                 pChild->SendMessage(WM_CLOSE, 0, 0);
