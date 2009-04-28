@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="ritsu"
+	Name="fidget"
 	ProjectGUID="{C19CD69E-DFD2-474B-8D4D-1ECF9331B18E}">
 	<Platforms>
 		<Platform
@@ -30,7 +30,7 @@
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/ritsu.pch"
+				PrecompiledHeaderFile=".\Release/fidget.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -41,10 +41,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Release/ritsu.exe"
+				OutputFile=".\Release/fidget.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/ritsu.pdb"
+				ProgramDatabaseFile=".\Release/fidget.pdb"
 				SubSystem="2"
 				EntryPointSymbol="wWinMainCRTStartup"
 				TargetMachine="1"/>
@@ -54,7 +54,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/ritsu.tlb"
+				TypeLibraryName=".\Release/fidget.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -92,7 +92,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/ritsu.pch"
+				PrecompiledHeaderFile=".\Debug/fidget.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -104,11 +104,11 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Debug/ritsu.exe"
+				OutputFile=".\Debug/fidget.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/ritsu.pdb"
+				ProgramDatabaseFile=".\Debug/fidget.pdb"
 				SubSystem="2"
 				EntryPointSymbol="wWinMainCRTStartup"
 				TargetMachine="1"/>
@@ -118,7 +118,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/ritsu.tlb"
+				TypeLibraryName=".\Debug/fidget.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -263,7 +263,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="ritsu.cpp">
+				RelativePath="fidget.cpp">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -282,7 +282,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="ritsu.rc">
+				RelativePath="fidget.rc">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -426,7 +426,7 @@
 				RelativePath="resource.h">
 			</File>
 			<File
-				RelativePath="ritsu.h">
+				RelativePath="fidget.h">
 			</File>
 			<File
 				RelativePath="stdafx.h">
@@ -448,7 +448,7 @@
 				RelativePath="res\backscroll.ico">
 			</File>
 			<File
-				RelativePath="res\ritsu.ico">
+				RelativePath="res\fidget.ico">
 			</File>
 			<File
 				RelativePath="res\small.ico">

@@ -1,4 +1,4 @@
-// ritsu.cpp : Entry point for this application is wWinMain().
+// fidget.cpp : Entry point for this application is wWinMain().
 //
 //
 // Notes about specific messages:
@@ -27,7 +27,7 @@
 
 // Global Variables:
 //
-CRitsuApp g_theApp;
+CFidgetApp g_theApp;
 
 int APIENTRY wWinMain
 (
@@ -124,7 +124,7 @@ CWindow *Detach(HWND hwnd)
     return NULL;
 }
 
-CRitsuApp::CRitsuApp()
+CFidgetApp::CFidgetApp()
 {
     m_hInstance  = NULL;
     m_atmMain    = NULL;
@@ -141,7 +141,7 @@ CRitsuApp::CRitsuApp()
     m_hwndAbout = NULL;
 }
 
-LRESULT CALLBACK CRitsuApp::CBTProc
+LRESULT CALLBACK CFidgetApp::CBTProc
 (
     int    nCode,
     WPARAM wParam,
@@ -164,13 +164,13 @@ LRESULT CALLBACK CRitsuApp::CBTProc
     return CallNextHookEx(g_theApp.m_hhk, nCode, wParam, lParam);      
 }
 
-bool CRitsuApp::EnableHook(void)
+bool CFidgetApp::EnableHook(void)
 {
     m_hhk = SetWindowsHookEx(WH_CBT, CBTProc, NULL, ::GetCurrentThreadId()); 
     return (NULL != m_hhk);
 }
 
-bool CRitsuApp::DisableHook(void)
+bool CFidgetApp::DisableHook(void)
 {
     bool bRet = true;
     if (NULL != m_hhk)
@@ -181,7 +181,7 @@ bool CRitsuApp::DisableHook(void)
     return bRet;
 }
 
-bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
+bool CFidgetApp::Initialize(HINSTANCE hInstance, int nCmdShow)
 {
     m_hInstance = hInstance;
 
@@ -247,7 +247,7 @@ bool CRitsuApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     return true;
 }
 
-bool CRitsuApp::Finalize(void)
+bool CFidgetApp::Finalize(void)
 {
     m_pMainFrame = NULL;
     DisableHook();
@@ -261,9 +261,9 @@ bool CRitsuApp::Finalize(void)
     return true;
 }
 
-WPARAM CRitsuApp::Run(void)
+WPARAM CFidgetApp::Run(void)
 {
-    HACCEL hAccelTable = LoadAccelerators(m_hInstance, (LPCTSTR)IDC_RITSU);
+    HACCEL hAccelTable = LoadAccelerators(m_hInstance, (LPCTSTR)IDC_FIDGET);
 
     // Main message loop:
     //
@@ -354,17 +354,17 @@ WPARAM CRitsuApp::Run(void)
     return iReturn;
 }
 
-int CRitsuApp::LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
+int CFidgetApp::LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
 {
     return ::LoadString(m_hInstance, uID, lpBuffer, nBufferMax);
 }
 
-HICON CRitsuApp::LoadIcon(LPCTSTR lpIconName)
+HICON CFidgetApp::LoadIcon(LPCTSTR lpIconName)
 {
     return ::LoadIcon(m_hInstance, lpIconName);
 }
 
-bool CRitsuApp::RegisterClasses(void)
+bool CFidgetApp::RegisterClasses(void)
 {
     LoadString(IDS_MAIN_FRAME, m_szMainClass, MAX_LOADSTRING);
     LoadString(IDS_SESSION_FRAME, m_szSessionClass, MAX_LOADSTRING);
@@ -382,10 +382,10 @@ bool CRitsuApp::RegisterClasses(void)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = g_theApp.m_hInstance;
-    wcex.hIcon          = g_theApp.LoadIcon((LPCTSTR)IDI_RITSU);
+    wcex.hIcon          = g_theApp.LoadIcon((LPCTSTR)IDI_FIDGET);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground  = NULL; // (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = (LPCTSTR)IDC_RITSU;
+    wcex.lpszMenuName   = (LPCTSTR)IDC_FIDGET;
     wcex.lpszClassName  = m_szMainClass;
     wcex.hIconSm        = g_theApp.LoadIcon((LPCTSTR)IDI_SMALL);
 
@@ -444,7 +444,7 @@ bool CRitsuApp::RegisterClasses(void)
     return true;
 }
 
-bool CRitsuApp::UnregisterClasses(void)
+bool CFidgetApp::UnregisterClasses(void)
 {
     bool b = true;
     if (0 != m_atmMain)
@@ -497,7 +497,7 @@ bool CRitsuApp::UnregisterClasses(void)
 
 // Mesage handler for about box.
 //
-LRESULT CALLBACK CRitsuApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CFidgetApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {

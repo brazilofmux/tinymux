@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ritsu", "ritsu.vcproj", "{C19CD69E-DFD2-474B-8D4D-1ECF9331B18E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fidget", "fidget.vcproj", "{C19CD69E-DFD2-474B-8D4D-1ECF9331B18E}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject

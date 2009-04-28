@@ -1,9 +1,9 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by ritsu.rc
+// Used by fidget.rc
 //
 #define IDC_MYICON                      2
-#define IDD_RITSU_DIALOG                101
+#define IDD_FIDGET_DIALOG               101
 #define IDD_ABOUTBOX                    102
 #define IDS_APP_TITLE                   103
 #define IDR_MAINFRAME                   106
@@ -17,12 +17,12 @@
 #define IDM_WINDOW_CLOSE_ALL            114
 #define IDM_ABOUT                       115
 #define IDC_MAIN_MDI                    116
-#define IDC_RITSU                       117
+#define IDC_FIDGET                      117
 #define IDS_MAIN_FRAME                  118
 #define IDS_SESSION_FRAME               119
 #define IDS_OUTPUT_FRAME                120
 #define IDS_INPUT_FRAME                 121
-#define IDI_RITSU                       122
+#define IDI_FIDGET                      122
 #define IDI_SMALL                       123
 #define IDI_BACKSCROLL                  124
 

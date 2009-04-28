@@ -12,7 +12,7 @@
 #include "svdrand.h"
 #include "svdhash.h"
 
-class CRitsuApp;
+class CFidgetApp;
 class CWindow;
 class CMainFrame;
 class CMDIControl;
@@ -20,7 +20,7 @@ class CSessionFrame;
 class COutputFrame;
 class CInputFrame;
 
-#include "ritsu.h"
+#include "fidget.h"
 #include "cwindow.h"
 #include "csessionframe.h"
 #include "cmdicontrol.h"

@@ -31,7 +31,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_RITSU               ICON                    "res\\ritsu.ico"
+IDI_FIDGET              ICON                    "res\\fidget.ico"
 IDI_SMALL               ICON                    "res\\small.ico"
 IDI_BACKSCROLL          ICON                    "res\\backscroll.ico"
 
@@ -40,7 +40,7 @@ IDI_BACKSCROLL          ICON                    "res\\backscroll.ico"
 // Menu
 //
 
-IDC_RITSU MENU 
+IDC_FIDGET MENU 
 BEGIN
     POPUP "&File"
     BEGIN
@@ -68,7 +68,7 @@ END
 // Accelerator
 //
 
-IDC_RITSU ACCELERATORS 
+IDC_FIDGET ACCELERATORS 
 BEGIN
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
@@ -85,8 +85,8 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
 FONT 8, "System", 0, 0, 0x0
 BEGIN
-    ICON            IDI_RITSU,IDC_MYICON,14,9,16,16
-    LTEXT           "Ritsu Version 1.0",IDC_STATIC,49,10,57,8,SS_NOPREFIX
+    ICON            IDI_FIDGET,IDC_MYICON,14,9,16,16
+    LTEXT           "Fidget Version 1.0",IDC_STATIC,49,10,57,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2009",IDC_STATIC,49,20,61,8
     DEFPUSHBUTTON   "OK",IDOK,137,12,33,14,WS_GROUP
 END
@@ -128,15 +128,15 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_APP_TITLE           "Ritsu"
+    IDS_APP_TITLE           "Fidget"
 END
 
 STRINGTABLE 
 BEGIN
-    IDS_MAIN_FRAME          "RitsuMainFrame"
-    IDS_SESSION_FRAME       "RitsuSessionFrame"
-    IDS_OUTPUT_FRAME        "RitsuOutputFrame"
-    IDS_INPUT_FRAME         "RitsuInputFrame"
+    IDS_MAIN_FRAME          "FidgetMainFrame"
+    IDS_SESSION_FRAME       "FidgetSessionFrame"
+    IDS_OUTPUT_FRAME        "FidgetOutputFrame"
+    IDS_INPUT_FRAME         "FidgetInputFrame"
 END
 
 #endif    // English (U.S.) resources

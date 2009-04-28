@@ -1,6 +1,6 @@
 
-#if !defined(CRITSUAPP_H)
-#define CRITSUAPP_H
+#if !defined(CFIDGETAPP_H)
+#define CFIDGETAPP_H
 
 #include "resource.h"
 
@@ -16,12 +16,12 @@ CWindow *Detach(HWND hwnd);
 
 #define MAX_LOADSTRING 100
 
-class CRitsuApp
+class CFidgetApp
 {
 public:
     static LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-    CRitsuApp();
+    CFidgetApp();
 
     bool   Initialize(HINSTANCE hInstance, int nCmdShow);
     WPARAM Run(void);
@@ -35,13 +35,13 @@ public:
     int    LoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax);
     HICON  LoadIcon(LPCTSTR lpIconName);
 
-    ~CRitsuApp() {};
+    ~CFidgetApp() {};
 
     // Mechanism for associating CWindow objects allocated by us with the
     // window handles allocated by the platform.  This approach assumes a
     // single thread. MFC does basically the same thing for multiple threads.
     // We use a window creation hook and a thread-local global variable
-    // (CRitsuApp::m_pTemp) to attach the initial CWindow pointer with the
+    // (CFidgetApp::m_pTemp) to attach the initial CWindow pointer with the
     // window handle. The CWindow is disassociated and destructed during
     // WM_NCDESTROY.
     //
@@ -72,6 +72,6 @@ public:
     CMainFrame  *m_pMainFrame;
 };
 
-extern CRitsuApp g_theApp;
+extern CFidgetApp g_theApp;
 
-#endif // CRITSUAPP_H
+#endif // CFIDGETAPP_H
