@@ -1,4 +1,3 @@
-
 #if !defined(CFIDGETAPP_H)
 #define CFIDGETAPP_H
 
@@ -20,7 +19,9 @@ class CFidgetApp
 {
 public:
     static LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam);
-	static LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK AboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK NewSessionProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
     CFidgetApp();
 
     bool   Initialize(HINSTANCE hInstance, int nCmdShow);
@@ -65,7 +66,8 @@ public:
     bool        m_bMsftEdit;
     HMODULE     m_hRichEdit;
 
-	HWND        m_hwndAbout;
+    HWND        m_hwndAbout;
+    HWND        m_hwndNewSession;
 
     // Main Frame.
     //

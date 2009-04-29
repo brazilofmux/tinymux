@@ -198,7 +198,15 @@ LRESULT CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 
 void CMainFrame::OnSessionNew()
 {
-    (void)m_pMDIControl->CreateNewChild();
+    if (NULL == g_theApp.m_hwndNewSession)
+    {
+        g_theApp.m_hwndNewSession = CreateDialog(g_theApp.m_hInstance, (LPCTSTR)IDD_SESSIONBOX, m_hwnd, (DLGPROC)g_theApp.NewSessionProc);
+        ::ShowWindow(g_theApp.m_hwndNewSession, SW_SHOW);
+    }
+    else
+    {
+        SetFocus(g_theApp.m_hwndNewSession);
+    }
 }
 
 void CMainFrame::OnSessionOpen()

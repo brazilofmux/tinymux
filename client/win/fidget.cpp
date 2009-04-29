@@ -139,6 +139,7 @@ CFidgetApp::CFidgetApp()
     m_szInputClass[0]   = L'\0';
     m_bMsftEdit = false;
     m_hwndAbout = NULL;
+    m_hwndNewSession = NULL;
 }
 
 LRESULT CALLBACK CFidgetApp::CBTProc
@@ -321,7 +322,9 @@ WPARAM CFidgetApp::Run(void)
                 {
                     // Translate and dispatch message to Windows Procedure.
                     //
-                    if (  (  NULL == m_hwndAbout
+                    if (  (  NULL == m_hwndNewSession
+                          || !IsDialogMessage(m_hwndNewSession, &msg))
+                       && (  NULL == m_hwndAbout
                           || !IsDialogMessage(m_hwndAbout, &msg))
                        && !TranslateMDISysAccel(g_theApp.m_pMainFrame->m_pMDIControl->m_hwnd, &msg)
                        && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -517,3 +520,31 @@ LRESULT CALLBACK CFidgetApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, L
     return FALSE;
 }
 
+// Mesage handler for New Session Dialog.
+//
+LRESULT CALLBACK CFidgetApp::NewSessionProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return TRUE;
+
+    case WM_COMMAND:
+        if (IDOK == LOWORD(wParam))
+        {
+            CSessionFrame *pChild = g_theApp.m_pMainFrame->m_pMDIControl->CreateNewChild();
+
+            DestroyWindow(hDlg);
+            g_theApp.m_hwndNewSession = NULL;
+            return TRUE;
+        }
+        else if (IDCANCEL == LOWORD(wParam))
+        {
+            DestroyWindow(hDlg);
+            g_theApp.m_hwndNewSession = NULL;
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
