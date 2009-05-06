@@ -1400,7 +1400,7 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
 //    0X8 Hexadecimal
 //    8   Decimal
 //
-static bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
+bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
 {
     *pnIP = 0;
     if (!str)

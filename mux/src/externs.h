@@ -47,6 +47,7 @@ void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
 int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
 void DCL_CDECL cf_log_syntax(dbref player, __in_z UTF8 *cmd, __in_z const UTF8 *fmt, ...);
 void ValidateConfigurationDbrefs(void);
+bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP);
 int  cf_read(void);
 void cf_init(void);
 void cf_list(dbref, UTF8 *, UTF8 **);

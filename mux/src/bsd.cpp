@@ -1195,10 +1195,10 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
         //
         server.sin_port = htons((unsigned short)(Port->port));
         server.sin_family = AF_INET;
-        if (inet_addr((const char*)ip_address) != -1)
-            server.sin_addr.s_addr = inet_addr((const char*)ip_address);
-        else
+        if (!MakeCanonicalIPv4(ip_address, &server.sin_addr.s_addr))
+        {
             server.sin_addr.s_addr = INADDR_ANY;
+        }
 
         // bind our name to the socket
         //
@@ -1264,10 +1264,10 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
     }
 
     server.sin_family = AF_INET;
-    if (inet_addr((const char*)ip_address) != -1)
-        server.sin_addr.s_addr = inet_addr((const char*)ip_address);
-    else
+    if (!MakeCanonicalIPv4(ip_address, &server.sin_addr.s_addr))
+    {
         server.sin_addr.s_addr = INADDR_ANY;
+    }
     server.sin_port = htons((unsigned short)(Port->port));
 
     int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
