@@ -16,7 +16,18 @@
 
 #include "stdafx.h"
 
-CMuxAlarm MuxAlarm;
+const INT64 FACTOR_MS_PER_SECOND    = INT64_C(1000);
+const INT64 FACTOR_US_PER_SECOND    = INT64_C(1000000);
+const INT64 FACTOR_100NS_PER_SECOND = INT64_C(10000000);
+const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
+const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
+const INT64 FACTOR_100NS_PER_DAY    = FACTOR_100NS_PER_HOUR*24;
+const INT64 FACTOR_100NS_PER_WEEK   = FACTOR_100NS_PER_DAY*7;
+
+const char daystab[12] =
+{
+    31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 
@@ -378,24 +389,6 @@ inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 }
 #endif // LARGEST_INT_LTE_NEG_QUOTIENT
 
-#if 0
-static int iModAdjusted(int x, int y)
-{
-    return iMod(x - 1, y) + 1;
-}
-
-static INT64 i64ModAdjusted(INT64 x, INT64 y)
-{
-    return i64Mod(x - 1, y) + 1;
-}
-#endif // 0
-
-const INT64 FACTOR_100NS_PER_SECOND = INT64_C(10000000);
-const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
-const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
-const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
-const INT64 FACTOR_100NS_PER_WEEK = FACTOR_100NS_PER_DAY*7;
-
 int CLinearTimeAbsolute::m_nCount = 0;
 WCHAR CLinearTimeAbsolute::m_Buffer[I64BUF_SIZE*2];
 WCHAR CLinearTimeDelta::m_Buffer[I64BUF_SIZE*2];
@@ -490,8 +483,6 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
     m_tDelta = FACTOR_100NS_PER_SECOND * tv->tv_sec
              + FACTOR_100NS_PER_MICROSECOND * tv->tv_usec;
 }
-
-static const unsigned char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 {
@@ -878,73 +869,6 @@ void GetUTCLinearTime(INT64 *plt)
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
-static DWORD WINAPI AlarmProc(LPVOID lpParameter)
-{
-    CMuxAlarm *pthis = (CMuxAlarm *)lpParameter;
-    DWORD dwWait = pthis->dwWait;
-    for (;;)
-    {
-        HANDLE hSemAlarm = pthis->hSemAlarm;
-        if (hSemAlarm == INVALID_HANDLE_VALUE)
-        {
-            break;
-        }
-        DWORD dwReason = WaitForSingleObject(hSemAlarm, dwWait);
-        if (dwReason == WAIT_TIMEOUT)
-        {
-            pthis->bAlarmed = true;
-            dwWait = INFINITE;
-        }
-        else
-        {
-            dwWait = pthis->dwWait;
-        }
-    }
-    return 1;
-}
-
-CMuxAlarm::CMuxAlarm(void)
-{
-    hSemAlarm = CreateSemaphore(NULL, 0, 1, NULL);
-    Clear();
-    hThread = CreateThread(NULL, 0, AlarmProc, (LPVOID)this, 0, NULL);
-}
-
-CMuxAlarm::~CMuxAlarm()
-{
-    HANDLE hSave = hSemAlarm;
-    hSemAlarm = INVALID_HANDLE_VALUE;
-    ReleaseSemaphore(hSave, 1, NULL);
-    WaitForSingleObject(hThread, 15*FACTOR_100NS_PER_SECOND);
-    CloseHandle(hSave);
-}
-
-void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
-{
-    ::Sleep(ltd.ReturnMilliseconds());
-}
-
-void CMuxAlarm::SurrenderSlice(void)
-{
-    ::Sleep(0);
-}
-
-void CMuxAlarm::Set(CLinearTimeDelta ltd)
-{
-    dwWait = ltd.ReturnMilliseconds();
-    ReleaseSemaphore(hSemAlarm, 1, NULL);
-    bAlarmed  = false;
-    bAlarmSet = true;
-}
-
-void CMuxAlarm::Clear(void)
-{
-    dwWait = INFINITE;
-    ReleaseSemaphore(hSemAlarm, 1, NULL);
-    bAlarmed  = false;
-    bAlarmSet = false;
-}
-
 #elif defined(UNIX_TIME)
 
 void GetUTCLinearTime(INT64 *plt)
@@ -967,123 +891,6 @@ void GetUTCLinearTime(INT64 *plt)
 
     *plt = t*FACTOR_100NS_PER_SECOND;
 #endif
-}
-
-CMuxAlarm::CMuxAlarm(void)
-{
-    bAlarmed = false;
-    bAlarmSet = false;
-}
-
-void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
-{
-#if   defined(HAVE_NANOSLEEP)
-    struct timespec req;
-    ltd.ReturnTimeSpecStruct(&req);
-    while (!mudstate.shutdown_flag)
-    {
-        struct timespec rem;
-        if (  nanosleep(&req, &rem) == -1
-           && errno == EINTR)
-        {
-            req = rem;
-        }
-        else
-        {
-            break;
-        }
-    }
-#else
-#ifdef HAVE_SETITIMER
-    struct itimerval oit;
-    bool   bSaved = false;
-    if (bAlarmSet)
-    {
-        // Save existing timer and disable.
-        //
-        struct itimerval it;
-        it.it_value.tv_sec = 0;
-        it.it_value.tv_usec = 0;
-        it.it_interval.tv_sec = 0;
-        it.it_interval.tv_usec = 0;
-        setitimer(ITIMER_PROF, &it, &oit);
-        bSaved = true;
-        bAlarmSet = false;
-    }
-#endif
-#if   defined(HAVE_USLEEP)
-#define TIME_1S 1000000
-    unsigned long usec;
-    INT64 usecTotal = ltd.ReturnMicroseconds();
-
-    while (  usecTotal
-          && mudstate.shutdown_flag)
-    {
-        usec = usecTotal;
-        if (usecTotal < TIME_1S)
-        {
-            usec = usecTotal;
-        }
-        else
-        {
-            usec = TIME_1S-1;
-        }
-        usleep(usec);
-        usecTotal -= usec;
-    }
-#else
-    ::sleep(ltd.ReturnSeconds());
-#endif
-#ifdef HAVE_SETITIMER
-    if (bSaved)
-    {
-        // Restore and re-enabled timer.
-        //
-        setitimer(ITIMER_PROF, &oit, NULL);
-        bAlarmSet = true;
-    }
-#endif
-#endif
-}
-
-void CMuxAlarm::SurrenderSlice(void)
-{
-    ::sleep(0);
-}
-
-void CMuxAlarm::Set(CLinearTimeDelta ltd)
-{
-#ifdef HAVE_SETITIMER
-    struct itimerval it;
-    ltd.ReturnTimeValueStruct(&it.it_value);
-    it.it_interval.tv_sec = 0;
-    it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, NULL);
-    bAlarmSet = true;
-    bAlarmed  = false;
-#endif
-}
-
-void CMuxAlarm::Clear(void)
-{
-#ifdef HAVE_SETITIMER
-    // Turn off the timer.
-    //
-    struct itimerval it;
-    it.it_value.tv_sec = 0;
-    it.it_value.tv_usec = 0;
-    it.it_interval.tv_sec = 0;
-    it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, NULL);
-    bAlarmSet = false;
-    bAlarmed  = false;
-#endif
-}
-
-void CMuxAlarm::Signal(void)
-{
-    bAlarmSet = false;
-    bAlarmed  = true;
 }
 
 #endif // UNIX_TIME
