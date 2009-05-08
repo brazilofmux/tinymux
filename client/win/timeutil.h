@@ -1,7 +1,7 @@
 /*! \file timeutil.h
  * \brief CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.h 3048 2007-12-28 01:08:40Z brazilofmux $
+ * $Id: timeutil.h 3851 2008-09-07 04:58:22Z brazilofmux $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -87,7 +87,7 @@ class CLinearTimeDelta
 
 private:
     INT64 m_tDelta;
-    static UTF8  m_Buffer[I64BUF_SIZE*2];
+    static UTF8 m_Buffer[I64BUF_SIZE*2];
 
 public:
     CLinearTimeDelta(void);
@@ -193,7 +193,7 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-int  iMod(int x, int y);
+int iMod(int x, int y);
 int iFloorDivision(int x, int y);
 INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod);
 

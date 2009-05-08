@@ -1,17 +1,13 @@
 /*! \file timeutil.cpp
- * \brief CLinearTimeAbsolute and CLinearTimeDelta modules.
+ * \brief Time-related helper functions.
  *
- * $Id: timeutil.cpp 3226 2008-01-23 08:30:29Z brazilofmux $
+ * $Id: timeutil.cpp 4093 2009-01-13 04:40:40Z brazilofmux $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
  *
- * The two primary classes are CLinearTimeAbsolute and CLinearTimeDelta deal
- * with civil time from a fixed Epoch and time differences generally,
- * respectively.
- *
- * This file also contains code related to parsing date strings and glossing
- * over time-related platform differences.
+ * This contains conversions between linear and fielded time as well helper
+ * functions to gloss over time-related platform differences.
  */
 
 #include "stdafx.h"
@@ -120,7 +116,7 @@ inline int iDivision(int x, int y)
 
 // Provide LLEQ division on a SGEQ platform.
 //
-static int iFloorDivision(int x, int y)
+int iFloorDivision(int x, int y)
 {
     if (y < 0)
     {
@@ -390,7 +386,7 @@ bool isLeapYear(long iYear)
     return true;
 }
 
-static bool isValidDate(int iYear, int iMonth, int iDay)
+bool isValidDate(int iYear, int iMonth, int iDay)
 {
     if (iYear < -27256 || 30826 < iYear)
     {
@@ -447,7 +443,6 @@ static int FixedFromGregorian_Adjusted(int iYear, int iMonth, int iDay)
     //
     return iFixedDay - 584389;
 }
-
 
 // Epoch of iFixedDay should be 1 R.D.
 //
