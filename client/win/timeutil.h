@@ -41,7 +41,7 @@ class CLinearTimeAbsolute
 private:
     INT64  m_tAbsolute;
     static int m_nCount;
-    static TCHAR m_Buffer[I64BUF_SIZE*2];
+    static UTF8 m_Buffer[I64BUF_SIZE*2];
 
 public:
     //CLinearTimeAbsolute(int tInitial);
@@ -87,7 +87,7 @@ class CLinearTimeDelta
 
 private:
     INT64 m_tDelta;
-    static WCHAR m_Buffer[I64BUF_SIZE*2];
+    static UTF8  m_Buffer[I64BUF_SIZE*2];
 
 public:
     CLinearTimeDelta(void);
@@ -172,7 +172,7 @@ const CLinearTimeDelta time_15m   = 15*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
-extern void TIME_Initialize(void);
+void TIME_Initialize(void);
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
@@ -193,7 +193,18 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool isLeapYear(long iYear);
-extern int  iMod(int x, int y);
+int  iMod(int x, int y);
+int iFloorDivision(int x, int y);
+INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod);
+
+bool isLeapYear(long iYear);
+void GetUTCLinearTime(INT64 *plt);
+CLinearTimeDelta QueryLocalOffsetAtUTC
+(
+    const CLinearTimeAbsolute &lta,
+    bool *pisDST
+);
+
+extern const char daystab[12];
 
 #endif // TIMEUTIL_H
