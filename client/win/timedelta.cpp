@@ -1,7 +1,7 @@
 /*! \file timedelta.cpp
  * \brief CLinearTimeDelta module.
  *
- * $Id: timedelta.cpp 3759 2008-07-30 03:57:53Z brazilofmux $
+ * $Id$
  *
  * CLinearTimeDelta deals with time differences.
  *

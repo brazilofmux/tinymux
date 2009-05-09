@@ -1,7 +1,7 @@
 /*! \file svdrand.h
  * \brief Random Numbers.
  *
- * $Id: svdrand.h 3048 2007-12-28 01:08:40Z brazilofmux $
+ * $Id$
  *
  * Random Numbers based on algorithms presented in "Numerical Recipes in C",
  * Cambridge Press, 1992.

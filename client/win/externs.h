@@ -1,7 +1,7 @@
 /*! \file externs.h
  * \brief Prototypes for externs not defined elsewhere.
  *
- * $Id: externs.h 3414 2008-03-23 15:37:04Z brazilofmux $
+ * $Id$
  *
  */
 

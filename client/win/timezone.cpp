@@ -1,7 +1,7 @@
 /*! \file timezone.cpp
  * \brief Timezone-related helper functions.
  *
- * $Id: timezone.cpp 3849 2008-09-07 04:56:51Z brazilofmux $
+ * $Id$
  *
  * This contains conversions between local and UTC timezones.
  */

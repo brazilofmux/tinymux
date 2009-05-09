@@ -1,7 +1,7 @@
 /*! \file alarm.cpp
  * \brief CMuxAlarm module.
  *
- * $Id: alarm.cpp 3851 2008-09-07 04:58:22Z brazilofmux $
+ * $Id$
  *
  * This module implements an Alarm Clock mechanism used to help abbreviate
  * work as part of limiting CPU usage.

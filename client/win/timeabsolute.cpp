@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  * \brief CLinearTimeAbsolute module.
  *
- * $Id: timeabsolute.cpp 4055 2008-12-28 02:44:29Z brazilofmux $
+ * $Id$
  *
  * CLinearTimeAbsolute deals with civil time from a fixed Epoch.
  *

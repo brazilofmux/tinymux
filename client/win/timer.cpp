@@ -1,7 +1,7 @@
 /*! \file timer.cpp
  * \brief Mini-task scheduler for timed events.
  *
- * $Id: timer.cpp 3000 2007-12-26 08:17:12Z brazilofmux $
+ * $Id$
  *
  */
 
