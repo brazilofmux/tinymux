@@ -155,7 +155,7 @@ CMuxAlarm::CMuxAlarm(void)
 
 /*! \brief Sleep Routine.
  *
- * A sleep request does not prevent signals from from firing, so typically,
+ * A sleep request does not prevent signals from firing, so typically,
  * the server sleeps while the Alarm Clock is not set.
  *
  * \return  none.
@@ -163,7 +163,7 @@ CMuxAlarm::CMuxAlarm(void)
 
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
-#if   defined(HAVE_NANOSLEEP)
+#if defined(HAVE_NANOSLEEP)
     struct timespec req;
     ltd.ReturnTimeSpecStruct(&req);
     while (!mudstate.shutdown_flag)
@@ -180,7 +180,7 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
         }
     }
 #else
-#ifdef HAVE_SETITIMER
+#if defined(HAVE_SETITIMER)
     struct itimerval oit;
     bool   bSaved = false;
     if (bAlarmSet)
@@ -197,7 +197,7 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
         bAlarmSet = false;
     }
 #endif
-#if   defined(HAVE_USLEEP)
+#if defined(HAVE_USLEEP)
 #define TIME_1S 1000000
     unsigned long usec;
     INT64 usecTotal = ltd.ReturnMicroseconds();
