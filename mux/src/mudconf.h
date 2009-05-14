@@ -364,6 +364,7 @@ struct statedata
     dbref   freelist;           /* Head of object freelist */
     dbref   mod_al_id;          /* Where did mod_alist come from? */
     dbref   poutobj;            /* Object doing the piping */
+    int     asserting;          // Are we in the middle of asserting?
     int     attr_next;          /* Next attr to alloc when freelist is empty */
     int     db_size;            /* Allocated size of db structure */
     int     db_top;             /* Number of items in the db */

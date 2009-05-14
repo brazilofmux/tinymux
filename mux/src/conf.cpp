@@ -315,6 +315,7 @@ void cf_init(void)
     mudstate.bReadingConfiguration = false;
     mudstate.bCanRestart = false;
     mudstate.panicking = false;
+    mudstate.asserting = 0;
     mudstate.logging = 0;
     mudstate.epoch = 0;
     mudstate.generation = 0;

@@ -4964,6 +4964,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 #else // GAME_DOOFERMUX
             execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #endif // GAME_DOOFERMUX
+            mux_assert(false);
             break;
 #endif // UNIX_PROCESSES
         }

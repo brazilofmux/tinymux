@@ -1625,6 +1625,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
         mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
 #endif // GAME_DOOFERMUX
+    mux_assert(false);
 #endif // UNIX_PROCESSES
 }
 
@@ -2826,17 +2827,23 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
 //
 void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 {
-    Log.tinyprintf(T("%s(%u): Out of memory." ENDLINE), SourceFile, LineNo);
-    Log.Flush();
-    if (  !mudstate.bStandAlone
-       && mudstate.bCanRestart)
+    mudstate.asserting++;
+    if (  1 <= mudstate.asserting
+       && mudstate.asserting <= 2)
     {
-        do_restart(GOD, GOD, GOD, 0, 0);
+        Log.tinyprintf(T("%s(%u): Out of memory." ENDLINE), SourceFile, LineNo);
+        Log.Flush();
+        if (  !mudstate.bStandAlone
+           && mudstate.bCanRestart)
+        {
+            do_restart(GOD, GOD, GOD, 0, 0);
+        }
+        else
+        {
+            abort();
+        }
     }
-    else
-    {
-        abort();
-    }
+    mudstate.asserting--;
 }
 
 // --------------------------------------------------------------------------
@@ -2844,18 +2851,24 @@ void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 //
 bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
 {
-    Log.tinyprintf(T("%s(%u): Assertion failed." ENDLINE), SourceFile, LineNo);
-    report();
-    Log.Flush();
-    if (  !mudstate.bStandAlone
-       && mudstate.bCanRestart)
+    mudstate.asserting++;
+    if (  1 <= mudstate.asserting
+       && mudstate.asserting <= 2)
     {
-        do_restart(GOD, GOD, GOD, 0, 0);
+        Log.tinyprintf(T("%s(%u): Assertion failed." ENDLINE), SourceFile, LineNo);
+        report();
+        Log.Flush();
+        if (  !mudstate.bStandAlone
+           && mudstate.bCanRestart)
+        {
+            do_restart(GOD, GOD, GOD, 0, 0);
+        }
+        else
+        {
+            abort();
+        }
     }
-    else
-    {
-        abort();
-    }
+    mudstate.asserting--;
     return false;
 }
 
