@@ -1195,7 +1195,12 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
         //
         server.sin_port = htons((unsigned short)(Port->port));
         server.sin_family = AF_INET;
-        if (!MakeCanonicalIPv4(ip_address, &server.sin_addr.s_addr))
+        in_addr_t ulNetBits;
+        if (MakeCanonicalIPv4(ip_address, &ulNetBits))
+        {
+            server.sin_addr.s_addr = ulNetBits;
+        }
+        else
         {
             server.sin_addr.s_addr = INADDR_ANY;
         }
@@ -1263,8 +1268,13 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
         log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
     }
 
+    in_addr_t ulNetBits;
     server.sin_family = AF_INET;
-    if (!MakeCanonicalIPv4(ip_address, &server.sin_addr.s_addr))
+    if (MakeCanonicalIPv4(ip_address, &ulNetBits))
+    {
+        server.sin_addr.s_addr = ulNetBits;
+    }
+    else
     {
         server.sin_addr.s_addr = INADDR_ANY;
     }
