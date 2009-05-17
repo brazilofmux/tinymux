@@ -1,5 +1,5 @@
 TinyMUX 2.7: CONFIGURATION
-Last Update: December 2006
+Last Update: May 2009
 
 TinyMUX 2.0 gets the information it needs to operate the game (aside from
 the database itself) from a configuration file that is read in at startup.
@@ -51,9 +51,9 @@ Making a New Configuration File:
                                    space.
     paycheck <amount>              Players get this much money each
                                    day they connect.
-    paystart <amount>              Players start out with this much
+    starting_pay <amount>          Players start out with this much
                                    money.
-    payfind <chance>               Each time a player moves, he has a
+    find_money_chance <chance>     Each time a player moves, he has a
                                    1 in <chance> chance of finding a
                                    penny.
     player_starting_room <roomno>  The room that new players are
