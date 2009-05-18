@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: March 2009
+Last Update: May 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,6 +31,10 @@ Bug Fixes:
  -- Fix color_convert() to use all of the 2*LBUF_SIZE buffer
     (Issue 443).
  -- Add boundary to avoid crash with v(-1) (Issue 580).
+ -- Assertions while processing an assertion would nest recursively.
+ -- In CONFIGURATION readme, use starting_pay and find_money_chance
+    instead of paystart and payfind (Issue #589).
+ -- Fix wild1() to handle ? with Color and Unicode (Issue 590).
 
 
 Performance Enhancements:
