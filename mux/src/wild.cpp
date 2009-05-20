@@ -164,20 +164,34 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
 
             // Single character match.  Return false if at end of data.
             //
-            if (!*dstr)
+            size_t t;
+            if (  '\0' == dstr[0]
+               || UTF8_CONTINUE <= (t = utf8_FirstByte[*dstr]))
             {
                 return false;
             }
-            arglist[arg][0] = *dstr;
-            arglist[arg][1] = '\0';
+
+            size_t j;
+            for (j = 1; j < t; j++)
+            {
+                if (  '\0' == dstr[j]
+                   || UTF8_CONTINUE != utf8_FirstByte[dstr[j]])
+                {
+                    return false;
+                }
+            }
+
+            memcpy(arglist[arg], dstr, t);
+            arglist[arg][t] = '\0';
             arg++;
 
             // Jump to the fast routine if we can.
             //
             if (arg >= numargs)
             {
-                return quick_wild(tstr + 1, dstr + 1);
+                return quick_wild(tstr + 1, dstr + t);
             }
+            dstr += t;
             break;
 
         case '\\':
@@ -202,9 +216,10 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
             {
                 return true;
             }
+            dstr++;
+            break;
         }
         tstr++;
-        dstr++;
     }
 
     // If at end of pattern, slurp the rest, and leave.

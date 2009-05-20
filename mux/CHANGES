@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  March 2009
+Last Update:  May 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -343,6 +343,9 @@ Bug Fixes:
  -- Visible Lock not treated as such by lock() and elock()
     (Issue 570).
  -- Add boundary to avoid crash with v(-1) (Issue 580).
+ -- In CONFIGURATION readme, use starting_pay and find_money_chance
+    instead of paystart and payfind (Issue #589).
+ -- Fix wild1() to handle ? with Color and Unicode (Issue 590).
 
 
 Performance Enhancements:
