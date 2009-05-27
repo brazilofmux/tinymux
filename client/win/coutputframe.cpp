@@ -166,7 +166,7 @@ LRESULT CALLBACK COutputFrame::OutputWndProc(HWND hWnd, UINT message, WPARAM wPa
             pWnd = NULL;
         }
         break;
-    
+
     default:
         lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
     }

@@ -48,8 +48,8 @@ LRESULT CALLBACK CMainFrame::MainWndProc(HWND hWnd, UINT message, WPARAM wParam,
             lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
         }
         break;
-   }
-   return lRes;
+    }
+    return lRes;
 }
 
 void CMainFrame::IncreaseDecreaseSessionCount(bool bIncrease)

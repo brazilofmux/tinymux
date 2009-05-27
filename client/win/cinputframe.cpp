@@ -183,7 +183,7 @@ LRESULT CALLBACK CInputFrame::InputWndProc(HWND hWnd, UINT message, WPARAM wPara
             pWnd = NULL;
         }
         break;
-    
+
     default:
         lRes = pWnd->DefaultWindowHandler(message, wParam, lParam);
     }

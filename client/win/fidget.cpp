@@ -235,7 +235,7 @@ bool CFidgetApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     int cy = (9*ySize)/10;
     int x = (xSize - cx)/2;
     int y = (ySize - cy)/2;
-    
+
     if (!m_pMainFrame->Create(x, y, cx, cy))
     {
         UnregisterClasses();
