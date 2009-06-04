@@ -1424,10 +1424,10 @@ Related Topics: @name.
     @dolist/delimit , {Frodo, Bilbo Baggins, Gandalf} = page ## = HELP!!!!
     @wait me="This is a semaphore.
     @dolist/notify lnum(3)=say ##
-    > You say, "This is a semaphore."
     > You say, "0"
     > You say, "1"
     > You say, "2"
+    > You say, "This is a semaphore."
 
   Related Topics: iter(), @notify, SEMAPHORES.
 
