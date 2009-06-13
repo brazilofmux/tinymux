@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  May 2009
+Last Update:  June 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -346,6 +346,8 @@ Bug Fixes:
  -- In CONFIGURATION readme, use starting_pay and find_money_chance
     instead of paystart and payfind (Issue #589).
  -- Fix wild1() to handle ? with Color and Unicode (Issue 590).
+ -- Fix @dolist help topic (Issue 593).
+ -- Removed run-time dependency on libguide40.dll (Issue 594).
 
 
 Performance Enhancements:
