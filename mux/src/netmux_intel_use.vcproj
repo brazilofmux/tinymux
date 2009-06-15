@@ -78,7 +78,7 @@
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/G7 /O3 /arch:IA32 /QaxSSE,SSE2,SSE3,SSSE3,SSE4.1,SSE4.2 /Qprec_div /Qipo2 /Qsfalign8 /Qparallel /Qpar_threshold50 /Qunroll /Qprof_use /Qopt-prefetch /Qopenmp-link:static"
+				AdditionalOptions="/G7 /O3 /QaxKWNPTOS /Qprec_div /Qipo2 /Qsfalign8 /Qparallel /Qpar_threshold50 /Qunroll /Qprof_use /Qprefetch "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
