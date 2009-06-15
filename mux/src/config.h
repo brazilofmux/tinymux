@@ -55,7 +55,7 @@
 #define __out_ecount(n)
 #define __out_opt
 #elif defined(WIN64)
-#define __in_z
+//#define __in_z
 #endif
 
 #ifndef _GNU_SOURCE
