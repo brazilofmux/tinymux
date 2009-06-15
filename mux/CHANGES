@@ -8,8 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Add ip_address configuration option for boxes with multiple IP addresses
-    (several per card, several cards, tunnels, vpn, etc.)
+ -- Add ip_address configuration option for boxes with multiple IP
+    addresses (several per card, several cards, tunnels, vpn, etc.)
 
 
 Bug Fixes:
@@ -21,7 +21,7 @@ Bug Fixes:
  -- Include utf8tables.h in the releases.
  -- Command-line option table was defined one element too large.
  -- @list process showed negative values on 64-bit FreeBSD.
- -- Fix use of unitialized memory in mux_strlwr(), mux_strupr(), and
+ -- Fix use of uninitialized memory in mux_strlwr(), mux_strupr(), and
     mux_foldpunc() (Issue 562).
  -- VisibleLock not treated as such by lock() and elock() (Issue 570).
  -- Include iso8859-2 value to three other affected configuration
@@ -50,12 +50,12 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Split, rename, refact, and generally rearrange things.
+ -- Split, rename, refactor, and generally rearrange things.
  -- When OpenSSL is enabled, use its SHA1 routines instead of the one
     bundled with MUX.
  -- Use mux_vsprintf() implementation of *printf() functionality.
  -- Firan is now using 24000-byte buffers.
- -- Surpress GCC 4 warnings about sentinels.
+ -- Suppress GCC 4 warnings about sentinels.
  -- Fix compiler warning in slave.cpp about unused return value.
  -- Move CLog from svdhash.cpp to log.cpp.
  -- Fix compiler warnings in CLog about unused return values.
