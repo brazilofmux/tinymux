@@ -4259,7 +4259,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
         return;
     }
 
-    LBUF_OFFSET nWords = words->find_Words(psep->str);
+    LBUF_OFFSET nWords = words->find_Words(psep->str, true);
 
     if (  nWords <= iWord
        && (  flag != IF_INSERT
@@ -4306,7 +4306,17 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
 
         if (flag == IF_INSERT)
         {
-            print_sep(psep, buff, bufc);
+            if (i < words->Count())
+            {
+                if (!bFirst)
+                {
+                    print_sep(psep, buff, bufc);
+                }
+                else
+                {
+                    bFirst = false;
+                }
+            }
             words->export_WordColor(i, buff, bufc);
         }
     }

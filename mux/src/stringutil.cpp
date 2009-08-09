@@ -7450,15 +7450,30 @@ void mux_words::export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
     *bufc += m_s->export_TextColor(*bufc, iStart, iEnd, nMax);
 }
 
-LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim)
+LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
 {
+    LBUF_OFFSET nWords = 0;
+
+    // If the input string is empty, there is some unavoidable ambiguity
+    // related to whether to interpret this as an empty list (a list with no
+    // elements) or to interpret this as a list with a single empty element
+    // (a list with one element which is empty).
+    //
+    // To resolve this, we need to know the context of the caller.
+    //
+    if (  CursorMin == m_s->m_iLast
+       && bFavorEmptyList)
+    {
+       m_nWords = nWords;
+       return nWords;
+    }
+
     pDelim = strip_color(pDelim);
     mux_cursor nDelim = CursorMin;
     utf8_strlen(pDelim, nDelim);
 
     mux_cursor iPos = CursorMin;
     mux_cursor iStart = CursorMin;
-    LBUF_OFFSET nWords = 0;
     bool bSucceeded = m_s->search(pDelim, &iPos, iStart);
 
     while (  bSucceeded

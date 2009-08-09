@@ -1262,10 +1262,11 @@ public:
 
     mux_words(const mux_string &sStr);
     void export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc = NULL);
-    LBUF_OFFSET find_Words(const UTF8 *pDelim);
+    LBUF_OFFSET find_Words(const UTF8 *pDelim, bool bFavorEmptyList = false);
     void ignore_Word(LBUF_OFFSET n);
     mux_cursor wordBegin(LBUF_OFFSET n) const;
     mux_cursor wordEnd(LBUF_OFFSET n) const;
+    LBUF_OFFSET Count(void) { return m_nWords; }
 };
 
 #endif // STRINGUTIL_H
