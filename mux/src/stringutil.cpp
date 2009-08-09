@@ -7450,36 +7450,6 @@ void mux_words::export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
     *bufc += m_s->export_TextColor(*bufc, iStart, iEnd, nMax);
 }
 
-LBUF_OFFSET mux_words::find_Words(void)
-{
-    mux_cursor n = m_s->m_iLast;
-    LBUF_OFFSET nWords = 0;
-    bool bPrev = true;
-
-    for (mux_cursor i = CursorMin; i < n; m_s->cursor_next(i))
-    {
-        if (  !bPrev
-           && m_aControl[m_s->m_autf[i.m_byte]])
-        {
-            bPrev = true;
-            m_aiWordEnds[nWords] = i;
-            nWords++;
-        }
-        else if (bPrev)
-        {
-            bPrev = false;
-            m_aiWordBegins[nWords] = i;
-        }
-    }
-    if (!bPrev)
-    {
-        m_aiWordEnds[nWords] = n;
-        nWords++;
-    }
-    m_nWords = nWords;
-    return m_nWords;
-}
-
 LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim)
 {
     pDelim = strip_color(pDelim);
@@ -7520,34 +7490,6 @@ void mux_words::ignore_Word(LBUF_OFFSET n)
         m_aiWordEnds[i] = m_aiWordEnds[i + 1];
     }
     m_nWords--;
-}
-
-void mux_words::set_Control(const UTF8 *pControlSet)
-{
-    if (  NULL == pControlSet
-       || '\0' == pControlSet[0])
-    {
-        // Nothing to do.
-        //
-        return;
-    }
-
-    // Load set of characters.
-    //
-    memset(m_aControl, false, sizeof(m_aControl));
-    while (*pControlSet)
-    {
-        UTF8 ch = *pControlSet++;
-        if (mux_isprint_ascii(ch))
-        {
-            m_aControl[ch] = true;
-        }
-    }
-}
-
-void mux_words::set_Control(const bool table[UCHAR_MAX+1])
-{
-    memcpy(m_aControl, table, sizeof(table));
 }
 
 mux_cursor mux_words::wordBegin(LBUF_OFFSET n) const

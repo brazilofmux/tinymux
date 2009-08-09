@@ -1253,7 +1253,6 @@ inline bool isEmpty(const mux_string *p)
 class mux_words
 {
 private:
-    bool        m_aControl[UCHAR_MAX+1];
     LBUF_OFFSET m_nWords;
     mux_cursor m_aiWordBegins[MAX_WORDS];
     mux_cursor m_aiWordEnds[MAX_WORDS];
@@ -1263,11 +1262,8 @@ public:
 
     mux_words(const mux_string &sStr);
     void export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc = NULL);
-    LBUF_OFFSET find_Words(void);
     LBUF_OFFSET find_Words(const UTF8 *pDelim);
     void ignore_Word(LBUF_OFFSET n);
-    void set_Control(const UTF8 *pControlSet);
-    void set_Control(const bool table[UCHAR_MAX+1]);
     mux_cursor wordBegin(LBUF_OFFSET n) const;
     mux_cursor wordEnd(LBUF_OFFSET n) const;
 };
