@@ -4343,9 +4343,9 @@ ARBITRARY COMMANDS (continued)
     testobj says "I was foobar'ed with xyzzy"
 
   You can prevent individual attributes from being checked for $-commands
-  with the command '@set <obj>/<attr> = no_program'.  Attributes so set
+  with the command '@set <obj>/<attr> = no_command'.  Attributes so set
   are reported with ($) following the attribute name when examined.
-  The command '@set <obj>/<attr> = !no_program' clears the flag.
+  The command '@set <obj>/<attr> = !no_command' clears the flag.
 
   You can also match a regular expression rather than wildcards. See
   'help Regular Expressions' for details.
