@@ -4553,7 +4553,7 @@ ARBITRARY COMMANDS
 
 { 'help arbitrary2' for more }
 
-& arbitrary2
+& ARBITRARY2
 ARBITRARY COMMANDS (continued)
 
   Example:
@@ -4669,7 +4669,7 @@ ATTRCNT()
 
   Related Topics: lattr()
 
-& attrib2
+& ATTRIB2
 ATTRIBUTE OWNERSHIP (continued)
 
   Locked attributes may not be modified or removed, and do not change ownership
@@ -4687,7 +4687,7 @@ ATTRIBUTE OWNERSHIP (continued)
 
 { 'help attrib3' for more }
 
-& attrib3
+& ATTRIB3
 ATTRIBUTE OWNERSHIP (continued)
 
   When checking an attribute lock against an object, the lock will
@@ -5421,7 +5421,7 @@ COMMAND EVALUATION
 
 { 'help command evaluation2' for more }
 
-& command evaluation2
+& COMMAND EVALUATION2
 COMMAND EVALUATION (continued)
 
   - The first word of the command is checked to see if it is an internal MUX
@@ -10061,7 +10061,7 @@ MOVING
 
 { 'help moving2' for more }
 
-& moving2
+& MOVING2
 MOVING (continued)
 
   - You are moved to the new location.  If you are entering an object,
@@ -10086,7 +10086,7 @@ MOVING (continued)
 
 { 'help moving3' for more }
 
-& moving3
+& MOVING3
 MOVING (continued)
 
   - If you are a player, or have your LISTEN attribute set to something,
@@ -12002,7 +12002,7 @@ SEARCH CLASSES
 
 { 'help search classes2' for more }
 
-& search classes2
+& SEARCH CLASSES2
 SEARCH CLASSES (continued)
 
   EOBJECT   - A combination of TYPE=OBJECT and EVAL=<restriction>.
@@ -12119,7 +12119,7 @@ SEMAPHORES
 
 { 'help semaphores2' for more }
 
-& semaphores2
+& SEMAPHORES2
 SEMAPHORES (continued)
 
   You may also combine the semaphore and timer options of @wait with
@@ -13196,7 +13196,7 @@ TAKE
 
 { 'help take2' for more }
 
-& take2
+& TAKE2
 TAKE (continued)
 
   The following switch is recognized:
