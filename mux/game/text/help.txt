@@ -4568,7 +4568,7 @@ ARBITRARY COMMANDS (continued)
   The command '@set <obj>/<attr> = !no_command' clears the flag.
 
   You can also match a regular expression rather than wildcards. See
-  'help Regular Expressions' for details.
+  'help regexp syntax' for details.
 
   The following attributes are never checked for $-commands: ALIAS CHARGES
   DESC DROP FAIL IDESC ODESC ODROP OFAIL OSUCC SEX SUCC.
