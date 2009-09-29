@@ -12536,7 +12536,7 @@ SUBSTITUTIONS (continued)
   equivalent to [get(%!/name)].  The substitutions forms are more efficient.
   Note that %=<name> supports single-letter attributes names while [v(name)]
   does not. For attribute names longer than one character, %=<name>,
-  [get(%!/name], and v(name) are equivalent.
+  [get(%!/name)], and v(name) are equivalent.
 
   Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 
