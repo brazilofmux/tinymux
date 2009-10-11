@@ -29,6 +29,8 @@ UINT32 CRC32_ProcessInteger2
     UINT32 nInteger2
 );
 
+UINT32 CRC32_ProcessPointer(void *p);
+
 UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,

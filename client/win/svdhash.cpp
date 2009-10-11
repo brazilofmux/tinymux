@@ -122,6 +122,25 @@ UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
     return ~ulCrc;
 }
 
+UINT32 CRC32_ProcessPointer(void *p)
+{
+    UINT_PTR uip = (UINT_PTR)(p);
+    UINT32 ulCrc;
+    ulCrc  = ~((UINT32)(uip & 0xFFFFFFFF));
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+#ifdef WIN64
+    ulCrc ^= ((UINT32)((uip >> 32) & 0xFFFFFFFF));
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+#endif
+    return ~ulCrc;
+}
+
 #define DO1(buf,i)  {s1 += buf[i]; s2 += s1;}
 #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
 #define DO4(buf,i)  DO2(buf,i); DO2(buf,i+2);

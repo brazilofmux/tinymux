@@ -56,7 +56,7 @@ CWindow *GetWindowPointer(HWND hwnd)
 {
     mux_assert(NULL != hwnd);
     recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+    UINT32 nHash = CRC32_ProcessPointer(hwnd);
 
     UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -80,7 +80,7 @@ void Attach(HWND hwnd, CWindow *pWnd)
     mux_assert(NULL != pWnd);
 
     recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+    UINT32 nHash = CRC32_ProcessPointer(hwnd);
 
     UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -105,7 +105,7 @@ CWindow *Detach(HWND hwnd)
 {
     mux_assert(NULL != hwnd);
     recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessBuffer(0, &hwnd, sizeof(hwnd));
+    UINT32 nHash = CRC32_ProcessPointer(hwnd);
 
     UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
