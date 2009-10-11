@@ -244,83 +244,7 @@ extern int    socket(int, int, int);
 extern int    select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
 
-typedef int   dbref;
-typedef int   FLAG;
-typedef int   POWER;
-#ifdef REALITY_LVLS
-typedef unsigned int RLEVEL;
-#endif // REALITY_LVLS
-typedef char  boolexp_type;
-
 #define UNUSED_PARAMETER(x) ((void)(x))
-
-/* Compile time options */
-
-#define PLAYER_NAME_LIMIT   22  /* Max length for player names */
-#define NUM_ENV_VARS        10  /* Number of env vars (%0 et al) */
-#define MAX_ARG             100 /* max # args from command processor */
-                                /* values beyond 1000 will cause %= substitutions to fail */
-#define MAX_GLOBAL_REGS     36  /* r() registers */
-
-#define OUTPUT_BLOCK_SIZE   16384
-
-/* ---------------------------------------------------------------------------
- * Database R/W flags.
- */
-
-#define MANDFLAGS_V2  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
-#define OFLAGS_V2     (V_DATABASE|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
-
-#define MANDFLAGS_V3  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED|V_ATRKEY)
-#define OFLAGS_V3     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
-
-#define OUTPUT_VERSION  3
-#ifdef MEMORY_BASED
-#define OUTPUT_FLAGS    (MANDFLAGS_V3)
-#else // MEMORY_BASED
-#define OUTPUT_FLAGS    (MANDFLAGS_V3|OFLAGS_V3)
-#endif // MEMORY_BASED
-
-#define UNLOAD_VERSION  3
-#define UNLOAD_FLAGS    (MANDFLAGS_V3)
-
-#define MIN_SUPPORTED_VERSION 1
-#define MAX_SUPPORTED_VERSION 3
-
-/* magic lock cookies */
-#define NOT_TOKEN   '!'
-#define AND_TOKEN   '&'
-#define OR_TOKEN    '|'
-#define LOOKUP_TOKEN    '*'
-#define NUMBER_TOKEN    '#'
-#define INDIR_TOKEN '@'     /* One of these two should go. */
-#define CARRY_TOKEN '+'     /* One of these two should go. */
-#define IS_TOKEN    '='
-#define OWNER_TOKEN '$'
-
-/* matching attribute tokens */
-#define AMATCH_CMD  '$'
-#define AMATCH_LISTEN   '^'
-
-/* delimiters for various things */
-#define EXIT_DELIMITER  ';'
-#define ARG_DELIMITER   '='
-#define ARG_LIST_DELIM  ','
-
-/* This token is used to denote a null output delimiter. */
-
-#define NULL_DELIM_VAR  "@@"
-
-/* This is used to indent output from pretty-printing. */
-
-#define INDENT_STR  "  "
-
-/* amount of object endowment, based on cost */
-#define OBJECT_ENDOWMENT(cost) (((cost)/mudconf.sacfactor) + mudconf.sacadjust)
-
-/* !!! added for recycling, return value of object */
-#define OBJECT_DEPOSIT(pennies) \
-    (((pennies) - mudconf.sacadjust)* mudconf.sacfactor)
 
 // The smallest char array that will hold the longest representation of each
 // bit size of integer.
@@ -369,7 +293,7 @@ typedef unsigned __int64 UINT64;
 #define MUX_ULONG_PTR DWORD
 #define MUX_PULONG_PTR LPDWORD
 #elif
-#error TinyMUX Requires at least version 6.0 of Visual C++.
+#error Fidget requires at least version 6.0 of Visual C++.
 #endif
 
 #define SIZEOF_PATHNAME (_MAX_PATH + 1)
@@ -576,38 +500,8 @@ extern bool AssertionFailed(const WCHAR *SourceFile, unsigned int LineNo);
 extern void OutOfMemory(const WCHAR *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory((WCHAR *)__FILE__, __LINE__); }}
 
-//#define MEMORY_ACCOUNTING
-
-// Memory Allocation Accounting
-//
-#ifdef MEMORY_ACCOUNTING
-extern void *MemAllocate(size_t n, const char *f, int l);
-extern void MemFree(void *p, const char *f, int l);
-extern void *MemRealloc(void *p, size_t n, const char *f, int l);
-#define MEMALLOC(n)          MemAllocate((n), __FILE__, __LINE__)
-#define MEMFREE(p)           MemFree((p), __FILE__, __LINE__)
-#define MEMREALLOC(p, n)     MemRealloc((p), (n), __FILE__, __LINE__)
-#else // MEMORY_ACCOUNTING
-#define MEMALLOC(n)          malloc((n))
-#define MEMFREE(p)           free((p))
-#define MEMREALLOC(p, n)     realloc((p),(n))
-#endif // MEMORY_ACCOUNTING
-
-// If it's Hewlett Packard, then getrusage is provided a different
-// way.
-//
-#ifdef hpux
-#define HAVE_GETRUSAGE 1
-#include <sys/syscall.h>
-#define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
-#endif // hpux
-
 #if defined(__INTEL_COMPILER)
 extern "C" unsigned int __intel_cpu_indicator;
 #endif
-
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-void init_rlimit(void);
-#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
 #endif // !CONFIG_H
