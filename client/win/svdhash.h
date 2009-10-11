@@ -8,21 +8,6 @@
 #ifndef SVDHASH_H
 #define SVDHASH_H
 
-#ifndef MEMORY_BASED
-//
-// These are from 'svdhash.cpp'.
-//
-extern int cs_writes;       // total writes
-extern int cs_reads;        // total reads
-extern int cs_dels;         // total deletes
-extern int cs_fails;        // attempts to grab nonexistent
-extern int cs_syncs;        // total cache syncs
-extern int cs_dbreads;      // total read-throughs
-extern int cs_dbwrites;     // total write-throughs
-extern int cs_rhits;        // total reads filled from cache
-extern int cs_whits;        // total writes to dirty cache
-#endif // !MEMORY_BASED
-
 //#define HP_PROTECTION
 
 #define SECTOR_SIZE     512
@@ -30,21 +15,21 @@ extern int cs_whits;        // total writes to dirty cache
 #define HT_SIZEOF_PAGE (1*LBUF_BLOCKED)
 #define HF_SIZEOF_PAGE (3*LBUF_BLOCKED)
 
-extern UINT32 CRC32_ProcessBuffer
+UINT32 CRC32_ProcessBuffer
 (
     UINT32         ulCrc,
     const void    *pBuffer,
     size_t         nBuffer
 );
 
-extern UINT32 CRC32_ProcessInteger(UINT32 nInteger);
-extern UINT32 CRC32_ProcessInteger2
+UINT32 CRC32_ProcessInteger(UINT32 nInteger);
+UINT32 CRC32_ProcessInteger2
 (
     UINT32 nInteger1,
     UINT32 nInteger2
 );
 
-extern UINT32 HASH_ProcessBuffer
+UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,
     const void  *arg_pBuffer,
