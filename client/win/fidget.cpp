@@ -46,32 +46,10 @@ int APIENTRY wWinMain
     return ret;
 }
 
-typedef struct
-{
-    HWND     hwnd;
-    CWindow *pWnd;
-} recHandlePtr;
-
 CWindow *GetWindowPointer(HWND hwnd)
 {
     mux_assert(NULL != hwnd);
-    recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessPointer(hwnd);
-
-    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
-
-        if (rec.hwnd == hwnd)
-        {
-            mux_assert(NULL != rec.pWnd);
-            return rec.pWnd;
-        }
-        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
-    }
-    return NULL;
+    return reinterpret_cast<CWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 }
 
 void Attach(HWND hwnd, CWindow *pWnd)
@@ -79,48 +57,17 @@ void Attach(HWND hwnd, CWindow *pWnd)
     mux_assert(NULL != hwnd);
     mux_assert(NULL != pWnd);
 
-    recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessPointer(hwnd);
-
-    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
-
-        if (rec.hwnd == hwnd)
-        {
-            return;
-        }
-        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
-    }
-
-    rec.hwnd = hwnd;
-    rec.pWnd = pWnd;
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(g_theApp.m_pTemp));
     pWnd->m_hwnd = hwnd;
-    g_theApp.m_mapHandles.Insert((HP_HEAPLENGTH)sizeof(rec), nHash, &rec);
 }
 
 CWindow *Detach(HWND hwnd)
 {
     mux_assert(NULL != hwnd);
-    recHandlePtr rec;
-    UINT32 nHash = CRC32_ProcessPointer(hwnd);
-
-    UINT32 iDir = g_theApp.m_mapHandles.FindFirstKey(nHash);
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        g_theApp.m_mapHandles.Copy(iDir, &nRecord, &rec);
-
-        if (rec.hwnd == hwnd)
-        {
-            g_theApp.m_mapHandles.Remove(iDir);
-            mux_assert(NULL != rec.pWnd);
-            return rec.pWnd;
-        }
-        iDir = g_theApp.m_mapHandles.FindNextKey(iDir, nHash);
-    }
+    CWindow *pWnd = reinterpret_cast<CWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    mux_assert(NULL != pWnd);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+    pWnd->m_hwnd = hwnd;
     return NULL;
 }
 
