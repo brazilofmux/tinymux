@@ -6375,17 +6375,21 @@ EDEFAULT()
 & EDIT()
 EDIT()
 
-  FUNCTION: edit(<string>,<from>,<to>)
+  FUNCTION: edit(<string>,<from>,<to>,[<fromN>,<toN>]...)
 
   This function edits <string>, replacing all occurrences of the substring
   <from> with the string <to>.  If <from> is '$', then <to> is appended to
-  <string>, while if <from> is '^', then it is prepended.
+  <string>, while if <from> is '^', then it is prepended. Successive edits
+  can be performed as on PennMUSH by providing additional pairs of from/to
+  strings.
 
   Examples:
     > say edit(This is a test,is,x)
     You say, "Thx x a test"
     > say edit(Atlantic,^,Trans)
     You say, "TransAtlantic"
+    > say edit(Multiple edits.,edits,elepehants,e e,e pink e)
+    You say, "Multiple pink elephants."
 
   Related Topics: @edit.
 
