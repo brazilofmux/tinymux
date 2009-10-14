@@ -7339,7 +7339,7 @@ static FUNCTION(fun_edit)
 
     if (NULL != sStr)
     {
-        for (unsigned int i = 1; i < nfargs; i += 2)
+        for (unsigned int i = 1; i + 1 < nfargs; i += 2)
         {
             try
             {
@@ -7350,7 +7350,7 @@ static FUNCTION(fun_edit)
             {
                 ; // Nothing.
             }
-            if (NULL != sStr && NULL != sFrom && NULL != sTo)
+            if (NULL != sFrom && NULL != sTo)
             {
                 sStr->edit(*sFrom, *sTo);
             }
