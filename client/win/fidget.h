@@ -48,7 +48,6 @@ public:
     //
     CWindow    *m_pTemp;
     HHOOK       m_hhk;
-    CHashTable  m_mapHandles;
 
     // Application
     //

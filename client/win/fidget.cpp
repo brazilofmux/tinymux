@@ -46,7 +46,7 @@ int APIENTRY wWinMain
     return ret;
 }
 
-CWindow *GetWindowPointer(HWND hwnd)
+inline CWindow *GetWindowPointer(HWND hwnd)
 {
     mux_assert(NULL != hwnd);
     return reinterpret_cast<CWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
