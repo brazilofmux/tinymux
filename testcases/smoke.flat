@@ -1,5 +1,5 @@
 +X996099
-+S19
++S20
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-18
+19
 -1
 -1
 -1
@@ -70,29 +70,29 @@
 0
 0
 >218
-"Sat Aug 08 14:21:16.321623 2009"
+"Tue Oct 13 23:07:40.386928 2009"
 >219
-"Sat Aug 08 14:21:16.321623 2009"
+"Tue Oct 13 23:07:40.386928 2009"
 >30
-"Sat Aug 08 14:21:25.737673 2009"
+"Tue Oct 13 23:08:25.549963 2009"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$kb5JVEf4Aalm$xiJXKZb6/nJ7CcJsqcb8fV3Luik="
+"$SHA1$GnqE0We3tmUN$sinsxt4xmBmIyXufA1Eg7X8fP84="
 >88
-"sdennis@localhost"
+"192.168.1.48"
 >144
-"127.0.0.1"
+"192.168.1.48"
 >84
-"#1;localhost;Sat Aug 08 14:21:25.737896 2009;;;;;;;0;0;;;;;;;"
+"#1;192.168.1.48;Tue Oct 13 23:08:25.550165 2009;;;;;;;0;0;;;;;;;"
 >213
-"-1 18 -1 -1 18"
+"-1 19 -1 -1 19"
 >222
 "Shutdown"
 >224
-"105 105 105 1 1249766591"
+"76 76 76 1 1255500582"
 <
 !2
 "test_center_fn"
@@ -111,9 +111,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.620667 2009"
+"Tue Oct 13 23:08:28.379373 2009"
 >219
-"Sat Aug 08 14:21:50.636555 2009"
+"Tue Oct 13 23:08:28.412555 2009"
 >256
 "@log smoke=Beginning center() test cases."
 >257
@@ -146,9 +146,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.636692 2009"
+"Tue Oct 13 23:08:28.412653 2009"
 >219
-"Sat Aug 08 14:21:50.63694 2009"
+"Tue Oct 13 23:08:28.412767 2009"
 >27
 "@va me=sha1(%va%0)"
 >256
@@ -175,9 +175,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.637034 2009"
+"Tue Oct 13 23:08:28.412813 2009"
 >219
-"Sat Aug 08 14:21:50.63787 2009"
+"Tue Oct 13 23:08:28.43994 2009"
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
@@ -214,9 +214,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.637996 2009"
+"Tue Oct 13 23:08:28.440023 2009"
 >219
-"Sat Aug 08 14:21:50.638367 2009"
+"Tue Oct 13 23:08:28.475609 2009"
 >256
 "@log smoke=Beginning cpad() test cases."
 >257
@@ -249,9 +249,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.638467 2009"
+"Tue Oct 13 23:08:28.475706 2009"
 >219
-"Sat Aug 08 14:21:50.638674 2009"
+"Tue Oct 13 23:08:28.47582 2009"
 >256
 "@log smoke=Beginning edit() test cases."
 >257
@@ -278,9 +278,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.638768 2009"
+"Tue Oct 13 23:08:28.475868 2009"
 >219
-"Sat Aug 08 14:21:50.639096 2009"
+"Tue Oct 13 23:08:28.495022 2009"
 >256
 "@log smoke=Beginning escape() test cases."
 >257
@@ -311,9 +311,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.639196 2009"
+"Tue Oct 13 23:08:28.495097 2009"
 >219
-"Sat Aug 08 14:21:50.639734 2009"
+"Tue Oct 13 23:08:28.515199 2009"
 >256
 "@log smoke=Beginning insert() test cases."
 >257
@@ -325,7 +325,7 @@
 >260
 "@if strmatch(setr(0,sha1(iter(-2 -1,## [insert(,##,Pear,|)]))),5F364FF7EEEC93E30C5709B5184501A17046BDEA)={@log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.},{@log smoke=TC004: Empty list, ASCII, negative positions. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1(iter(-3 -2 -1,## [insert(|,##,Pear,|)])iter(-4 -3 -2 -1,## [insert(||,##,Pear,|)])iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)]))),148A471E93499E3B65FEBD56EA9A82F25912037A)={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;@tr me/tr.done},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (%q0).;@tr me/tr.done}"
+"@if strmatch(setr(0,sha1(iter(-3 -2 -1,## [insert(|,##,Pear,|)])iter(-4 -3 -2 -1,## [insert(||,##,Pear,|)])iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)]))),148A471E93499E3B65FEBD56EA9A82F25912037A)={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (%q0).;@trig me/tr.done}"
 >262
 "@log smoke=End insert() test cases.;@notify smoke"
 <
@@ -346,9 +346,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.639836 2009"
+"Tue Oct 13 23:08:28.515292 2009"
 >219
-"Sat Aug 08 14:21:50.640201 2009"
+"Tue Oct 13 23:08:28.538825 2009"
 >256
 "@log smoke=Beginning ljust() test cases."
 >257
@@ -381,9 +381,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.640257 2009"
+"Tue Oct 13 23:08:28.538915 2009"
 >219
-"Sat Aug 08 14:21:50.685003 2009"
+"Tue Oct 13 23:08:28.563961 2009"
 >256
 "@log smoke=Beginning lpad() test cases."
 >257
@@ -416,9 +416,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:50.685127 2009"
+"Tue Oct 13 23:08:28.564053 2009"
 >219
-"Sat Aug 08 14:21:52.691976 2009"
+"Tue Oct 13 23:08:29.610619 2009"
 >256
 "@log smoke=Beginning merge() test cases."
 >257
@@ -467,9 +467,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:54.700045 2009"
+"Tue Oct 13 23:08:31.618667 2009"
 >219
-"Sat Aug 08 14:21:57.712038 2009"
+"Tue Oct 13 23:08:34.63083 2009"
 >256
 "@log smoke=Beginning mid() test cases."
 >257
@@ -492,9 +492,9 @@
 0
 0
 >218
-"Sat Aug 08 14:21:59.720016 2009"
+"Tue Oct 13 23:08:36.638603 2009"
 >219
-"Sat Aug 08 14:22:07.752005 2009"
+"Tue Oct 13 23:08:44.666622 2009"
 >256
 "@log smoke=Beginning rjust() test cases."
 >257
@@ -527,9 +527,9 @@
 0
 0
 >218
-"Sat Aug 08 14:22:09.760027 2009"
+"Tue Oct 13 23:08:46.674639 2009"
 >219
-"Sat Aug 08 14:22:17.792114 2009"
+"Tue Oct 13 23:08:54.706642 2009"
 >256
 "@log smoke=Beginning rpad() test cases."
 >257
@@ -562,9 +562,9 @@
 0
 0
 >218
-"Sat Aug 08 14:22:19.800276 2009"
+"Tue Oct 13 23:08:56.715804 2009"
 >219
-"Sat Aug 08 14:22:26.86401 2009"
+"Tue Oct 13 23:09:03.775615 2009"
 >256
 "@log smoke=Beginning secure() test cases."
 >257
@@ -579,7 +579,7 @@
 "@log smoke=End secure() test cases.;@notify smoke"
 <
 !16
-"test_shutdown"
+"test_shuffle_fn"
 0
 -1
 -1
@@ -595,14 +595,22 @@
 0
 0
 >218
-"Sat Aug 08 14:22:28.872047 2009"
+"Tue Oct 13 23:09:05.783625 2009"
 >219
-"Sat Aug 08 14:22:30.880057 2009"
+"Tue Oct 13 23:09:11.826813 2009"
 >256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
+"@log smoke=Beginning shuffle() test cases."
+>257
+"@if strmatch(setr(0,sha1(sort(shuffle(foo bar baz gleep)))),E781E4DEE8517047FDA699DA1855EBE9C8FF19E0)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1(shuffle(a a a a,,)[shuffle(a a a a,,%b)][shuffle(a a a a,,-)][shuffle(a a a a,%b,)][shuffle(a a a a,%b,%b)][shuffle(a a a a,%b,-)][shuffle(a|a|a|a,|,)][shuffle(a|a|a|a,|,%b)][shuffle(a|a|a|a,|,-)])),8E1A8CDF4A722DB1A45A9E4D02754357F9541315)={@log smoke=TC002: Input and output delimiters. Succeeded.},{@log smoke=TC002: Input and output delimiters. Failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1(shuffle(a|a|a|a,|)[shuffle(a|a|a,|)][shuffle(a|a,|)][shuffle(a,|)][shuffle(,|)])),2318642C6752974D7757F55BFA29DC7FC6B5ADD0)={@log smoke=TC003: Vary number of arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC003: Vary number of arguments. Failed (%q0).;@trig me/tr.done}"
+>262
+"@log smoke=End shuffle() test cases.;@notify smoke"
 <
 !17
-"smoke"
+"test_shutdown"
 0
 -1
 -1
@@ -612,24 +620,20 @@
 1
 -1
 1
-37750785
+33556481
 0
 0
 0
 0
 >218
-"Sat Aug 08 14:22:32.888043 2009"
+"Tue Oct 13 23:09:13.835055 2009"
 >219
-"Sat Aug 08 14:22:36.928955 2009"
->271
-"center_fn cmd_say convtime_fn cpad_fn edit_fn escape_fn insert_fn ljust_fn lpad_fn merge_fn mid_fn rjust_fn rpad_fn secure_fn wrap_fn shutdown"
->19
-"@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
->272
-"@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
+"Tue Oct 13 23:09:15.843622 2009"
+>256
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
 !18
-"test_wrap_fn"
+"smoke"
 0
 -1
 -1
@@ -639,15 +643,42 @@
 1
 -1
 1
+37750785
+0
+0
+0
+0
+>218
+"Tue Oct 13 23:09:17.850637 2009"
+>219
+"Tue Oct 13 23:09:21.867621 2009"
+>271
+"center_fn cmd_say convtime_fn cpad_fn edit_fn escape_fn insert_fn ljust_fn lpad_fn merge_fn mid_fn rjust_fn rpad_fn secure_fn shuffle_fn wrap_fn shutdown"
+>19
+"@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
+>272
+"@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
+<
+!19
+"test_wrap_fn"
+0
+-1
+-1
+-1
+0
+18
+1
+-1
+1
 33556481
 0
 0
 0
 0
 >218
-"Sat Aug 08 14:22:38.936029 2009"
+"Tue Oct 13 23:09:23.875628 2009"
 >219
-"Sat Aug 08 14:22:43.956005 2009"
+"Tue Oct 13 23:09:28.895596 2009"
 >256
 "@log smoke=Beginning wrap() test cases."
 >257
