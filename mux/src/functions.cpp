@@ -7321,7 +7321,6 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -7332,26 +7331,38 @@ static FUNCTION(fun_edit)
     try
     {
         sStr  = new mux_string(fargs[0]);
-        sFrom = new mux_string(fargs[1]);
-        sTo   = new mux_string(fargs[2]);
     }
     catch (...)
     {
         ; // Nothing.
     }
 
-    if (  NULL != sStr
-       && NULL != sFrom
-       && NULL != sTo)
+    if (NULL != sStr)
     {
-        sStr->edit(*sFrom, *sTo);
+        for (unsigned int i = 1; i + 1 < nfargs; i += 2)
+        {
+            try
+            {
+                sFrom = new mux_string(fargs[i]);
+                sTo = new mux_string(fargs[i + 1]);
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            if (NULL != sFrom && NULL != sTo)
+            {
+                sStr->edit(*sFrom, *sTo);
+            }
+            delete sFrom;
+            delete sTo;
+        }
+
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
     }
 
     delete sStr;
-    delete sFrom;
-    delete sTo;
 }
 
 /* ---------------------------------------------------------------------------
@@ -10881,7 +10892,7 @@ static FUN builtin_function_list[] =
     {T("DUMPING"),     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("E"),           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("EDEFAULT"),    fun_edefault,   MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
-    {T("EDIT"),        fun_edit,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {T("EDIT"),        fun_edit,       MAX_ARG, 3, MAX_ARG,         0, CA_PUBLIC},
     {T("ELEMENTS"),    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("ELOCK"),       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("EMIT"),        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
