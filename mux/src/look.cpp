@@ -2631,7 +2631,7 @@ void do_decomp
                 else
                 {
                     mux_strncpy(thingname, translate_string(Name(thing), true),
-                            LBUF_SIZE-1);
+                        LBUF_SIZE-1);
                 }
                 break;
             }

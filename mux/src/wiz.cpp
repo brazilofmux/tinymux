@@ -718,11 +718,12 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         else if (key != MOTD_LIST)
             key |= MOTD_BRIEF;
     }
+
     switch (key)
     {
     case MOTD_ALL:
 
-        mux_strncpy(mudconf.motd_msg, message, GBUF_SIZE-1);
+        mux_strncpy(mudconf.motd_msg, message, sizeof(mudconf.motd_msg)-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, T("Set: MOTD."));
@@ -731,7 +732,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     case MOTD_WIZ:
 
-        mux_strncpy(mudconf.wizmotd_msg, message, GBUF_SIZE-1);
+        mux_strncpy(mudconf.wizmotd_msg, message, sizeof(mudconf.wizmotd_msg)-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, T("Set: Wizard MOTD."));
@@ -740,7 +741,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     case MOTD_DOWN:
 
-        mux_strncpy(mudconf.downmotd_msg, message, GBUF_SIZE-1);
+        mux_strncpy(mudconf.downmotd_msg, message, sizeof(mudconf.downmotd_msg)-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, T("Set: Down MOTD."));
@@ -749,7 +750,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     case MOTD_FULL:
 
-        mux_strncpy(mudconf.fullmotd_msg, message, GBUF_SIZE-1);
+        mux_strncpy(mudconf.fullmotd_msg, message, sizeof(mudconf.fullmotd_msg)-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, T("Set: Full MOTD."));

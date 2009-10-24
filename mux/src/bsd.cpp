@@ -223,8 +223,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                 // We have a host name.
                 //
-                mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), MAX_STRING-1);
-                mux_strncpy(token, (UTF8 *)hp->h_name, MAX_STRING-1);
+                mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host)-1);
+                mux_strncpy(token, (UTF8 *)hp->h_name, sizeof(token)-1);
 
                 // Setup ident port.
                 //
@@ -329,9 +329,9 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     if (iSlaveResult < SLAVE_RESULT_STACK_SIZE)
                     {
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        mux_strncpy(SlaveResults[iSlaveResult].host, host, MAX_STRING-1);
-                        mux_strncpy(SlaveResults[iSlaveResult].token, token, MAX_STRING-1);
-                        mux_strncpy(SlaveResults[iSlaveResult].ident, szIdent, MAX_STRING-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].host, host, sizeof(SlaveResults[iSlaveResult].host)-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].token, token, sizeof(SlaveResults[iSlaveResult].token)-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].ident, szIdent, sizeof(SlaveResults[iSlaveResult].ident)-1);
                         iSlaveResult++;
                     }
                     else
@@ -417,9 +417,9 @@ static int get_slave_result(void)
         return 1;
     }
     iSlaveResult--;
-    mux_strncpy(host, SlaveResults[iSlaveResult].host, MAX_STRING-1);
-    mux_strncpy(token, SlaveResults[iSlaveResult].token, MAX_STRING-1);
-    mux_strncpy(ident, SlaveResults[iSlaveResult].ident, MAX_STRING-1);
+    mux_strncpy(host, SlaveResults[iSlaveResult].host, sizeof(host)-1);
+    mux_strncpy(token, SlaveResults[iSlaveResult].token, sizeof(token)-1);
+    mux_strncpy(ident, SlaveResults[iSlaveResult].ident, sizeof(ident)-1);
     ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
 
     // At this point, we have a host name on our own stack.
@@ -435,7 +435,7 @@ static int get_slave_result(void)
             continue;
         }
 
-        mux_strncpy(d->addr, token, 50);
+        mux_strncpy(d->addr, token, sizeof(d->addr)-1);
         if (d->player != 0)
         {
             if (d->username[0])
@@ -467,7 +467,7 @@ static int get_slave_result(void)
             continue;
         }
 
-        mux_strncpy(d->username, userid, 10);
+        mux_strncpy(d->username, userid, sizeof(d->username)-1);
         if (d->player != 0)
         {
             atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"), d->username, d->addr));
@@ -2819,7 +2819,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
-    mux_strncpy(d->addr, (UTF8 *)inet_ntoa(a->sin_addr), 50);
+    mux_strncpy(d->addr, (UTF8 *)inet_ntoa(a->sin_addr), sizeof(d->addr)-1);
 
 #if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from

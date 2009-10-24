@@ -1267,7 +1267,7 @@ static void BuildChannelMessage
             // Evaluate the comtitle as code.
             //
             UTF8 TempToEval[LBUF_SIZE];
-            mux_strncpy(TempToEval, user->title, LBUF_SIZE-1);
+            mux_strncpy(TempToEval, user->title, sizeof(TempToEval)-1);
             mux_exec(TempToEval, LBUF_SIZE-1, *messNormal, &mnptr, user->who, user->who, user->who,
                 EV_FCHECK | EV_EVAL | EV_TOP, NULL, 0);
         }

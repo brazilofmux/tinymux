@@ -228,7 +228,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
     //
     if (!tstr[1])
     {
-        mux_strncpy(arglist[arg], dstr, LBUF_SIZE - 1);
+        mux_strncpy(arglist[arg], dstr, LBUF_SIZE-1);
         return true;
     }
 
@@ -338,8 +338,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
             // Found a match!  Fill in all remaining arguments. First do the
             // '*'...
             //
-            mux_strncpy(arglist[argpos], datapos,
-                            (dstr - datapos) - numextra);
+            mux_strncpy(arglist[argpos], datapos, (dstr - datapos) - numextra);
             datapos = dstr - numextra;
             argpos++;
 

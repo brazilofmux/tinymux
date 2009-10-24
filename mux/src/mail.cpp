@@ -2851,7 +2851,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
             {
                 if (!tr && !tu)
                 {
-                    mux_strncpy(last, mp->time, 49);
+                    mux_strncpy(last, mp->time, sizeof(last)-1);
                 }
                 if (Cleared(mp))
                 {

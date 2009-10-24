@@ -539,7 +539,7 @@ static const char *encode_iac(const char *szString)
                 }
                 else
                 {
-                    mux_strncpy((UTF8 *)pBuffer, (UTF8 *)pString, 2*LBUF_SIZE-1);
+                    mux_strncpy((UTF8 *)pBuffer, (UTF8 *)pString, sizeof(Buffer)-1);
                     return Buffer;
                 }
             }
@@ -1894,12 +1894,12 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
-            static UTF8 pNameField[MBUF_SIZE];
-            mux_strncpy(pNameField, T("<Unconnected>"), MBUF_SIZE-1);
-            size_t vwNameField = strlen((char *)pNameField);
+            static UTF8 NameField[MBUF_SIZE];
+            mux_strncpy(NameField, T("<Unconnected>"), sizeof(NameField)-1);
+            size_t vwNameField = strlen((char *)NameField);
             if (d->flags & DS_CONNECTED)
             {
-                vwNameField = trimmed_name(d->player, pNameField, 13, MAX_TRIMMED_NAME_LENGTH, 1);
+                vwNameField = trimmed_name(d->player, NameField, 13, MAX_TRIMMED_NAME_LENGTH, 1);
             }
 
             // The width size allocated to the 'On For' field.
@@ -1914,7 +1914,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                && key == CMD_WHO)
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s#%-6d%5d%3s%s\r\n"),
-                    pNameField,
+                    NameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     flist,
@@ -1926,7 +1926,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             else if (key == CMD_SESSION)
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n"),
-                    pNameField,
+                    NameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     d->descriptor,
@@ -1939,7 +1939,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     || See_Hidden(e->player))
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s%s\r\n"),
-                    pNameField,
+                    NameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     flist,
@@ -1948,7 +1948,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             else
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s  %s\r\n"),
-                    pNameField,
+                    NameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     d->doing);
@@ -2195,14 +2195,16 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             notify(executor, NOPERM_MESSAGE);
             return;
         }
+
         if (nValidDoing == 0)
         {
-            mux_strncpy(mudstate.doing_hdr, T("Doing"), SIZEOF_DOING_STRING-1);
+            mux_strncpy(mudstate.doing_hdr, T("Doing"), sizeof(mudstate.doing_hdr)-1);
         }
         else
         {
             memcpy(mudstate.doing_hdr, szValidDoing, nValidDoing+1);
         }
+
         if (  !bQuiet
            && !Quiet(executor))
         {

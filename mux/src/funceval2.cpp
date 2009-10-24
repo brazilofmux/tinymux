@@ -952,7 +952,7 @@ FUNCTION(fun_munge)
     // Copy list1 for later evaluation of the attribute.
     //
     UTF8 *list1 = alloc_lbuf("fun_munge.list1");
-    mux_strncpy(list1, fargs[1], LBUF_SIZE - 1);
+    mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
 
     // Prepare data structures for a hash table that will map
     // elements of list1 to corresponding elements of list2.

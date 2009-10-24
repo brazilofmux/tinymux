@@ -86,7 +86,7 @@ void cf_init(void)
     mudconf.guest_nuker = GOD;
     mudconf.number_guests = 30;
     mudconf.min_guests = 1;
-    mux_strncpy(mudconf.guest_prefix, T("Guest"), 31);
+    mux_strncpy(mudconf.guest_prefix, T("Guest"), sizeof(mudconf.guest_prefix)-1);
     mudconf.guest_file     = StringClone(T("text/guest.txt"));
     mudconf.conn_file      = StringClone(T("text/connect.txt"));
     mudconf.creg_file      = StringClone(T("text/register.txt"));
@@ -105,13 +105,13 @@ void cf_init(void)
     mudconf.fullmotd_msg[0] = '\0';
     mudconf.dump_msg[0] = '\0';
     mudconf.postdump_msg[0] = '\0';
-    mux_strncpy(mudconf.fixed_home_msg, T("You are fixed in place and cannot move."), 128);
-    mux_strncpy(mudconf.fixed_tel_msg, T("You are fixed in place and cannot teleport."), 128);
-    mux_strncpy(mudconf.public_channel, T("Public"), 31);
-    mux_strncpy(mudconf.public_channel_alias, T("pub"), 31);
-    mux_strncpy(mudconf.guests_channel, T("Guests"), 31);
-    mux_strncpy(mudconf.guests_channel_alias, T("g"), 31);
-    mux_strncpy(mudconf.pueblo_msg, T("</xch_mudtext><img xch_mode=html>"), GBUF_SIZE-1);
+    mux_strncpy(mudconf.fixed_home_msg, T("You are fixed in place and cannot move."), sizeof(mudconf.fixed_home_msg)-1);
+    mux_strncpy(mudconf.fixed_tel_msg, T("You are fixed in place and cannot teleport."), sizeof(mudconf.fixed_tel_msg)-1);
+    mux_strncpy(mudconf.public_channel, T("Public"), sizeof(mudconf.public_channel)-1);
+    mux_strncpy(mudconf.public_channel_alias, T("pub"), sizeof(mudconf.public_channel_alias)-1);
+    mux_strncpy(mudconf.guests_channel, T("Guests"), sizeof(mudconf.guests_channel)-1);
+    mux_strncpy(mudconf.guests_channel_alias, T("g"), sizeof(mudconf.guests_channel_alias)-1);
+    mux_strncpy(mudconf.pueblo_msg, T("</xch_mudtext><img xch_mode=html>"), sizeof(mudconf.pueblo_msg)-1);
 #if defined(FIRANMUX)
     mux_strncpy(mudconf.immobile_msg, T("You have been set immobile."), sizeof(mudconf.immobile_msg)-1);
 #endif // FIRANMUX
@@ -259,9 +259,9 @@ void cf_init(void)
          | HEAD_FLAG | SLAVE | STAFF | SUSPECT | UNINSPECTED;
 
     mudconf.vattr_flags = AF_ODARK;
-    mux_strncpy(mudconf.mud_name, T("MUX"), 31);
-    mux_strncpy(mudconf.one_coin, T("penny"), 31);
-    mux_strncpy(mudconf.many_coins, T("pennies"), 31);
+    mux_strncpy(mudconf.mud_name, T("MUX"), sizeof(mudconf.mud_name)-1);
+    mux_strncpy(mudconf.one_coin, T("penny"), sizeof(mudconf.one_coin)-1);
+    mux_strncpy(mudconf.many_coins, T("pennies"), sizeof(mudconf.many_coins)-1);
     mudconf.timeslice.SetSeconds(1);
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
@@ -325,7 +325,7 @@ void cf_init(void)
     mudstate.attr_next = A_USER_START;
     mudstate.debug_cmd = T("< init >");
     mudstate.curr_cmd  = T("< none >");
-    mux_strncpy(mudstate.doing_hdr, T("Doing"), SIZEOF_DOING_STRING-1);
+    mux_strncpy(mudstate.doing_hdr, T("Doing"), sizeof(mudstate.doing_hdr)-1);
     mudstate.access_list = NULL;
     mudstate.suspect_list = NULL;
     mudstate.badname_head = NULL;
@@ -868,7 +868,7 @@ static CF_HAND(cf_name)
 
         size_t bCased = nCased;
         UTF8 Buffer[LBUF_SIZE];
-        mux_strncpy(Buffer, pCased, LBUF_SIZE-1);
+        mux_strncpy(Buffer, pCased, sizeof(Buffer)-1);
         pCased = mux_strupr(newname, nCased);
         if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
         {
@@ -1791,7 +1791,7 @@ static CF_HAND(cf_hook)
 
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
-    mux_strncpy(playbuff, str, 200);
+    mux_strncpy(playbuff, str, sizeof(playbuff));
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, playbuff);
     mux_strtok_ctl(&tts, T(" \t"));
@@ -1810,7 +1810,7 @@ static CF_HAND(cf_hook)
     }
 
     *vp = cmdp->hookmask;
-    mux_strncpy(playbuff, str, 200);
+    mux_strncpy(playbuff, str, sizeof(playbuff)-1);
     hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
     {

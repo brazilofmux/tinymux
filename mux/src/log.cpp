@@ -593,8 +593,8 @@ void CLogFile::SetPrefix(const UTF8 * szPrefix)
         {
             ReplaceFile(m_szFilename, szNewName);
         }
-        mux_strncpy(m_szPrefix, szPrefix, 31);
-        mux_strncpy(m_szFilename, szNewName, SIZEOF_PATHNAME - 1);
+        mux_strncpy(m_szPrefix, szPrefix, sizeof(m_szPrefix)-1);
+        mux_strncpy(m_szFilename, szNewName, sizeof(m_szFilename)-1);
 
         if (bEnabled)
         {
