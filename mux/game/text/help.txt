@@ -2322,7 +2322,7 @@ Related Topics: @name.
        ( <key> )
 
   You can make complex locks by combining keys with the logical AND and OR
-  operators (& and ! respectively), or by using the NOT operator.  You
+  operators (& and | respectively), or by using the NOT operator.  You
   may also group complex locks with parentheses.
 
   Examples:
