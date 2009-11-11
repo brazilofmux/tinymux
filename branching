@@ -42,17 +42,14 @@ trunk   \
          \  dev
           ------------------------
              \
-              \  dev_alierak
-               -------------
+              \  dev_brazil
+               ------------
                 \
-                 \  dev_brazil
-                  ------------
+                 \  dev_firan
+                  -----------
                    \
-                    \  dev_firan
+                    \  dev_ian
                      -----------
-                      \
-                       \  dev_jake
-                        -----------
 
 In the Grand Scheme, the trunk is used only for alpha releases, and the only
 changes allowed are merges from other branches.  For beta and maintenance
@@ -69,9 +66,9 @@ organized into a promotion tree like so:
                 |
                dev
                 |
-                |------------------------------------
-                |            |           |          |
-             dev_alierak  dev_brazil  dev_firan  dev_jake
+                |-------------------------
+                |            |           |
+             dev_brazil   dev_firan   dev_ian
 
 
 An individual developer (e.g., Brazil) would make changes in branch dev_brazil,
@@ -82,10 +79,10 @@ changes.  There is also a strong desire to avoid breaking the build in these
 private branches, however, the only person affected by a broken build is the
 developer who broke it.
 
-Periodically, changes made on dev_alierak, dev_brazil, and dev_firan branches
+Periodically, changes made on dev_brazil, dev_firan, and dev_ian branches
 are merged into the dev branch, and periodically, changes from dev are merged
 into the trunk.  Likewise, changes brought into dev are periodically merged
-down into dev_alierak, dev_brazil, and dev_firan.
+down into dev_brazil, dev_firan, and dev_ian.
 
 2.2. Release-Side Branches.
 
