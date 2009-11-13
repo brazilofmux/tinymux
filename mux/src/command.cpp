@@ -928,20 +928,17 @@ void cache_prefix_cmds(void)
 
 inline bool is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd)
 {
+    bool fReturn = false;
+    size_t nPrefix = 0;
+    CMDENT *pcmd = NULL;
+
     if (NULL != pCommand)
     {
-        CMDENT *pcmd = g_prefix_cmds[(unsigned char)pCommand[0]];
+        pcmd = g_prefix_cmds[(unsigned char)pCommand[0]];
         if (NULL != pcmd)
         {
-            if (NULL != pnPrefix)
-            {
-                *pnPrefix = 1;
-            }
-            if (NULL != ppcmd)
-            {
-                *ppcmd = pcmd;
-            }
-            return true;
+            nPrefix = 1;
+            fReturn = true;
         }
         else if (  0xE2 == pCommand[0]
                 && 0x80 == pCommand[1]
@@ -952,27 +949,22 @@ inline bool is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd
             pcmd = g_prefix_cmds[(unsigned char)'"'];
             if (NULL != pcmd)
             {
-                if (NULL != pnPrefix)
-                {
-                    *pnPrefix = 3;
-                }
-                if (NULL != ppcmd)
-                {
-                    *ppcmd = pcmd;
-                }
-                return true;
+                nPrefix = 3;
+                fReturn = true;
             }
         }
     }
+
     if (NULL != pnPrefix)
     {
-        *pnPrefix = 0;
+        *pnPrefix = nPrefix;
     }
+
     if (NULL != ppcmd)
     {
-        *ppcmd = NULL;
+        *ppcmd = pcmd;
     }
-    return false;
+    return fReturn;
 }
 
 // ---------------------------------------------------------------------------
@@ -1435,7 +1427,6 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             buf1 = parse_to(&arg, '\0', interp | EV_TOP);
         }
 
-
         // Call the correct handler.
         //
         if (cmdp->callseq & CS_ADDED)
@@ -1810,7 +1801,7 @@ UTF8 *process_command
     {
         pOriginalCommand++;
     }
-    mux_strncpy(preserve_cmd, pOriginalCommand, LBUF_SIZE-1);
+    mux_strncpy(preserve_cmd, pOriginalCommand, sizeof(preserve_cmd)-1);
     mudstate.debug_cmd = pOriginalCommand;
     mudstate.curr_cmd = preserve_cmd;
 
