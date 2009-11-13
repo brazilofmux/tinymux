@@ -160,15 +160,7 @@ bool CFidgetApp::Initialize(HINSTANCE hInstance, int nCmdShow)
         }
     }
 
-    m_pMainFrame = NULL;
-    try
-    {
-        m_pMainFrame = new CMainFrame;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    m_pMainFrame = new (std::nothrow) CMainFrame;
 
     if (  NULL == m_pMainFrame
        || !RegisterClasses())

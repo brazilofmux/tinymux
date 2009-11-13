@@ -101,17 +101,8 @@ bool CTaskHeap::Grow(void)
     // Grow the heap.
     //
     int n = GrowFiftyPercent(m_nAllocated, INITIAL_TASKS, INT_MAX);
-    PTASK_RECORD *p = NULL;
-    try
-    {
-        p = new PTASK_RECORD[n];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (!p)
+    PTASK_RECORD *p = new (std::nothrow) PTASK_RECORD[n];
+    if (NULL == p)
     {
         return false;
     }
@@ -135,17 +126,8 @@ void CTaskHeap::Shrink(void)
         return;
     }
 
-    PTASK_RECORD *p = NULL;
-    try
-    {
-        p = new PTASK_RECORD[n];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (!p)
+    PTASK_RECORD *p = new (std::nothrow) PTASK_RECORD[n];
+    if (NULL == p)
     {
         return;
     }

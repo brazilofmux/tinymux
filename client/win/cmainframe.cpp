@@ -108,16 +108,7 @@ LRESULT CMainFrame::OnCreate(CREATESTRUCT *pcs)
     ccs.hWindowMenu = ::GetSubMenu(GetMenu(m_hwnd), 1);
     ccs.idFirstChild = StartChildren;
 
-    CMDIControl *pMDIControl = NULL;
-    try
-    {
-        pMDIControl = new CMDIControl(this, &ccs, pcs);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
+    CMDIControl *pMDIControl = new (std::nothrow) CMDIControl(this, &ccs, pcs);
     if (NULL != pMDIControl)
     {
         m_pMDIControl = pMDIControl;

@@ -1200,7 +1200,6 @@ void CHashTable::Init(void)
     m_nDir = 0;
     m_nPages = 0;
     m_nDirDepth = 0;
-    m_pDir = NULL;
 
     m_nEntries = 0;
     m_nDeletions = 0;
@@ -1210,29 +1209,14 @@ void CHashTable::Init(void)
     m_nMaxScan = 0;
 
     UINT32 nDirRequest = 2;
-    try
-    {
-        m_pDir = new pCHashPage[nDirRequest];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    m_pDir = new (std::nothrow) pCHashPage[nDirRequest];
 
-    if (m_pDir)
+    if (NULL != m_pDir)
     {
         m_nDir = nDirRequest;
-        m_pDir[1] = m_pDir[0] = NULL;
-        try
-        {
-            m_pDir[1] = m_pDir[0] = new CHashPage;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+        m_pDir[1] = m_pDir[0] = new (std::nothrow) CHashPage;
 
-        if (m_pDir[0])
+        if (NULL != m_pDir[0])
         {
             if (m_pDir[0]->Allocate(HT_SIZEOF_PAGE))
             {

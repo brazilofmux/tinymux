@@ -72,22 +72,11 @@ LRESULT CSessionFrame::OnCreate(CREATESTRUCT *pcs)
         }
     }
 
-    m_pOutputWindow = NULL;
-    m_pInputWindow = NULL;
-
-    try
-    {
-        m_pOutputWindow = new COutputFrame;
-        m_pInputWindow = new CInputFrame;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    m_pOutputWindow = new (std::nothrow) COutputFrame;;
+    m_pInputWindow = new (std::nothrow) CInputFrame;
 
     if (  NULL == m_pOutputWindow
-       || NULL == m_pInputWindow
-       )
+       || NULL == m_pInputWindow)
     {
         delete m_pOutputWindow;
         delete m_pInputWindow;

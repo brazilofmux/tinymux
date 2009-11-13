@@ -16,16 +16,7 @@ CMDIControl::CMDIControl(CWindow *pParentWindow, CLIENTCREATESTRUCT *pccs, CREAT
 
 CSessionFrame *CMDIControl::CreateNewChild(void)
 {
-    CSessionFrame *pChild = NULL;
-    try
-    {
-        pChild = new CSessionFrame;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
+    CSessionFrame *pChild = new (std::nothrow) CSessionFrame;
     if (NULL != pChild)
     {
         // The Child Window sets the m_pParentWindow in its OnCreate().

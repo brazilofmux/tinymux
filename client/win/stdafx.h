@@ -27,5 +27,6 @@ class CInputFrame;
 #include "cmainframe.h"
 #include "coutputframe.h"
 #include "cinputframe.h"
+#include <new>
 
 #endif // STDAFX_H
