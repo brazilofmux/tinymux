@@ -607,6 +607,10 @@ extern int anum_alc_top;
 #define DUMP_STRUCT     1   /* Dump flat structure file */
 #define DUMP_TEXT       2   /* Dump to external attribute database. */
 #define DUMP_FLATFILE   4   /* Dump .FLAT file */
+#define EDIT_CHANNEL_CCHOWN   0  /* @cchown */
+#define EDIT_CHANNEL_CCHARGE  1  /* @ccharge */
+#define EDIT_CHANNEL_CPFLAGS  2  /* @cpflags */
+#define EDIT_CHANNEL_COFLAGS  3  /* @coflags */
 #define EXAM_DEFAULT    0   /* Default */
 #define EXAM_BRIEF      1   /* Nonowner sees just owner */
 #define EXAM_LONG       2   /* Nonowner sees public attrs too */
