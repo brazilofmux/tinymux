@@ -1486,7 +1486,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
         else
         {
             ch->amount_col += ch->charge;
-            giveto(ch->charge_who, ch->charge);
+            giveto(Owner(ch->charge_who), ch->charge);
         }
 
         // BuildChannelMessage allocates messNormal and messNoComtitle,
@@ -3083,10 +3083,12 @@ void do_editchannel
     {
     case EDIT_CHANNEL_CCHOWN:
         {
-            dbref who = lookup_player(executor, arg2, true);
+            init_match(executor, arg2, NOTYPE);
+            match_everything(0);
+            dbref who = match_result();
             if (Good_obj(who))
             {
-                ch->charge_who = Owner(who);
+                ch->charge_who = who;
                 raw_notify(executor, T("Set."));
             }
             else
