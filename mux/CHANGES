@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: May 2009
+Last Update: November 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -10,6 +10,7 @@ Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Add ip_address configuration option for boxes with multiple IP
     addresses (several per card, several cards, tunnels, vpn, etc.)
+ -- Added handling for variable number of to/from arguments to edit().
 
 
 Bug Fixes:
@@ -35,6 +36,9 @@ Bug Fixes:
  -- In CONFIGURATION readme, use starting_pay and find_money_chance
     instead of paystart and payfind (Issue #589).
  -- Fix wild1() to handle ? with Color and Unicode (Issue 590).
+ -- Fix behavior of insert(,1,Apple,|) (Issue #598).
+ -- Non-player objects owning channels works with @cchown (Issue 565).
+ -- ./Backup script didn't work on OS X (Issue 604).
 
 
 Performance Enhancements:
@@ -60,3 +64,9 @@ Miscellaneous:
  -- Move CLog from svdhash.cpp to log.cpp.
  -- Fix compiler warnings in CLog about unused return values.
  -- Let indent have a little of its way with log.cpp.
+ -- Fix @dolist help topic (Issue 593)
+ -- Change reference to no_program which should be no_command.
+ -- Topic reference should be to 'regexp syntax'.
+ -- Fix typo in substitutions3 (Issue 605).
+ -- Fix typo on help @lock compound (Issue 606).
+ -- Simplify is_prefix_cmd().
