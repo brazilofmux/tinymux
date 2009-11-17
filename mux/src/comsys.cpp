@@ -1486,7 +1486,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
         else
         {
             ch->amount_col += ch->charge;
-            giveto(Owner(ch->charge_who), ch->charge);
+            giveto(ch->charge_who, ch->charge);
         }
 
         // BuildChannelMessage allocates messNormal and messNoComtitle,
