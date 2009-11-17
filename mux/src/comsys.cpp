@@ -3104,10 +3104,12 @@ void do_editchannel
     {
     case 0:
         {
-            dbref who = lookup_player(executor, arg2, true);
+            init_match(executor, arg2, NOTYPE);
+            match_everything(0);
+            dbref who = match_result();
             if (Good_obj(who))
             {
-                ch->charge_who = Owner(who);
+                ch->charge_who = who;
                 raw_notify(executor, T("Set."));
             }
             else

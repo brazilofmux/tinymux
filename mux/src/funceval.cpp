@@ -108,7 +108,7 @@ FUNCTION(fun_cwho)
     }
     if (  !mudconf.have_comsys
        || (  !Comm_All(executor)
-          && executor != ch->charge_who))
+          && !Controls(executor, ch->charge_who)))
     {
         safe_noperm(buff, bufc);
         return;
