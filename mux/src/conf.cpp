@@ -1465,20 +1465,14 @@ static bool isValidSubnetMask(in_addr_t ulMask)
     return false;
 }
 
-// ---------------------------------------------------------------------------
-// cf_site: Update site information
-
-static CF_HAND(cf_site)
+// Parse IPv4/netmask notation in either standard or CIDR prefix notation
+//
+bool ParseIPv4Subnet(UTF8 *str, dbref player, UTF8 *cmd, struct in_addr *pAddress, struct in_addr *pMask)
 {
-    UNUSED_PARAMETER(pExtra);
-
-    SITE **ppv = (SITE **)vp;
-    struct in_addr addr_num, mask_num;
     in_addr_t ulMask, ulNetBits;
-
     UTF8 *addr_txt;
     UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
-    if (!mask_txt)
+    if (NULL == mask_txt)
     {
         // Standard IP range and netmask notation.
         //
@@ -1486,23 +1480,27 @@ static CF_HAND(cf_site)
         mux_strtok_src(&tts, str);
         mux_strtok_ctl(&tts, T(" \t=,"));
         addr_txt = mux_strtok_parse(&tts);
-        mask_txt = NULL;
-        if (addr_txt)
+        if (NULL != addr_txt)
         {
             mask_txt = mux_strtok_parse(&tts);
         }
-        if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
+
+        if (  NULL == addr_txt
+           || '\0' == *addr_txt
+           || NULL == mask_txt
+           || '\0' == *mask_txt)
         {
             cf_log_syntax(player, cmd, T("Missing host address or mask."));
-            return -1;
+            return false;
         }
+
         if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
            || !isValidSubnetMask(ulMask = ntohl(ulNetBits)))
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
-            return -1;
+            return false;
         }
-        mask_num.s_addr = ulNetBits;
+        pMask->s_addr = ulNetBits;
     }
     else
     {
@@ -1513,14 +1511,15 @@ static CF_HAND(cf_site)
         if (!is_integer(mask_txt, NULL))
         {
             cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
-            return -1;
+            return false;
         }
+
         int mask_bits = mux_atol(mask_txt);
         if (  mask_bits < 0
            || 32 < mask_bits)
         {
             cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), mask_bits);
-            return -1;
+            return false;
         }
         else
         {
@@ -1531,16 +1530,17 @@ static CF_HAND(cf_site)
             {
                 ulMask = (0xFFFFFFFFUL << (32 - mask_bits)) & 0xFFFFFFFFUL;
             }
-            mask_num.s_addr = htonl(ulMask);
+            pMask->s_addr = htonl(ulMask);
         }
     }
+
     if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
     {
         cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
-        return -1;
+        return false;
     }
-    addr_num.s_addr = ulNetBits;
-    in_addr_t ulAddr = ntohl(addr_num.s_addr);
+    pAddress->s_addr = ulNetBits;
+    in_addr_t ulAddr = ntohl(pAddress->s_addr);
 
     if (ulAddr & ~ulMask)
     {
@@ -1551,9 +1551,26 @@ static CF_HAND(cf_site)
         //
         cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
         ulAddr &= ulMask;
-        addr_num.s_addr = htonl(ulAddr);
+        pAddress->s_addr = htonl(ulAddr);
     }
 
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// cf_site: Update site information
+
+static CF_HAND(cf_site)
+{
+    UNUSED_PARAMETER(pExtra);
+
+    struct in_addr addr_num, mask_num;
+    if (!ParseIPv4Subnet(str, player, cmd, &addr_num, &mask_num))
+    {
+        return -1;
+    }
+
+    SITE **ppv = (SITE **)vp;
     SITE *head = *ppv;
 
     // Parse the access entry and allocate space for it.
