@@ -10974,7 +10974,7 @@ POWERS LIST (continued)
   poll              Can set the @poll.
   prog              Can use @program on players other than them self.
   search            Can @search anyone.
-  see_all           Can examine and see attributes like a wizard.
+  see_all           Can see mortal-permissioned attributes of all things.
   see_hidden        Can see hidden players and DARK wizards.
   see_queue         Can @ps/all or @ps any player.
   siteadmin         Can @shutdown and @restart.
