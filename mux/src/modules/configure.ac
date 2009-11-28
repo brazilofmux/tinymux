@@ -14,8 +14,17 @@ AC_ARG_WITH(
       AC_MSG_RESULT($withval)
   ],
   [
-      SQL_INCLUDE="-I/usr/include/mysql"
-      AC_MSG_RESULT(/usr/include/mysql)
+      if test -d "/usr/include/mysql"; then
+          bestguessval="/usr/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      elif test -d "/usr/local/include/mysql"; then
+          bestguessval="/usr/local/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      else
+          AC_MSG_RESULT(Unknown. Use --with-mysql-include with path)
+      fi
   ])
 AC_SUBST(SQL_INCLUDE)
 
@@ -28,8 +37,17 @@ AC_ARG_WITH(
       AC_MSG_RESULT($withval)
   ],
   [
-      SQL_LIBPATH="-L/usr/lib/mysql"
-      AC_MSG_RESULT(/usr/lib/mysql)
+      if test -d "/usr/lib/mysql"; then
+          bestguessval="/usr/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      elif test -d "/usr/local/lib/mysql"; then
+          bestguessval="/usr/local/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      else
+          AC_MSG_RESULT(Unknown. Use --with-mysql-libs with path)
+      fi
   ])
 AC_SUBST(SQL_LIBPATH)
 
