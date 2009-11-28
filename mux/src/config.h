@@ -373,7 +373,7 @@ typedef unsigned __int64 UINT64;
 // 1200 is Visual C++ 6.0
 #define MUX_ULONG_PTR DWORD
 #define MUX_PULONG_PTR LPDWORD
-#elif
+#else
 #error TinyMUX Requires at least version 6.0 of Visual C++.
 #endif
 
@@ -571,7 +571,7 @@ typedef UINT64 UINT_PTR;
 typedef unsigned long UINT_PTR;
 #elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
 typedef unsigned short UINT_PTR;
-#elif
+#else
 #error TinyMUX cannot find an integer type with same size as a pointer.
 #endif
 
