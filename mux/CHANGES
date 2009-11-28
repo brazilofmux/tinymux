@@ -70,3 +70,4 @@ Miscellaneous:
  -- Fix typo in substitutions3 (Issue 605).
  -- Fix typo on help @lock compound (Issue 606).
  -- Simplify is_prefix_cmd().
+ -- Clarify use of see_all @power (Issue 584).
