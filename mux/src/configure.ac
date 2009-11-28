@@ -156,8 +156,17 @@ AC_ARG_WITH(
       elif test "x$enable_inlinesql" = "x"; then
         AC_MSG_RESULT(none)
       else
-        INLINESQL_INCLUDE="-I/usr/include/mysql"
-        AC_MSG_RESULT(/usr/include/mysql)
+        if test -d "/usr/include/mysql"; then
+            bestguessval="/usr/include/mysql"
+            INLINESQL_INCLUDE="-I$bestguessval"
+            AC_MSG_RESULT($bestguessval)
+        elif test -d "/usr/local/include/mysql"; then
+            bestguessval="/usr/local/include/mysql"
+            INLINESQL_INCLUDE="-I$bestguessval"
+            AC_MSG_RESULT($bestguessval)
+        else
+            AC_MSG_RESULT(Unknown. Use --with-mysql-include with path)
+        fi
       fi
   ])
 AC_SUBST(INLINESQL_INCLUDE)
@@ -182,8 +191,17 @@ AC_ARG_WITH(
       elif test "x$enable_inlinesql" = "x"; then
         AC_MSG_RESULT(none)
       else
-        INLINESQL_LIBPATH="-L/usr/lib/mysql"
-        AC_MSG_RESULT(/usr/lib/mysql)
+        if test -d "/usr/lib/mysql"; then
+            bestguessval="/usr/lib/mysql"
+            INLINESQL_LIBPATH="-L$bestguessval"
+            AC_MSG_RESULT($bestguessval)
+        elif test -d "/usr/local/lib/mysql"; then
+            bestguessval="/usr/local/lib/mysql"
+            INLINESQL_LIBPATH="-L$bestguessval"
+            AC_MSG_RESULT($bestguessval)
+        else
+            AC_MSG_RESULT(Unknown. Use --with-mysql-libs with path)
+        fi
       fi
   ])
 AC_SUBST(INLINESQL_LIBPATH)

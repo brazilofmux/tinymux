@@ -1734,9 +1734,20 @@ echo "${ECHO_T}$withval" >&6; }
 
 else
 
-      SQL_INCLUDE="-I/usr/include/mysql"
-      { echo "$as_me:$LINENO: result: /usr/include/mysql" >&5
-echo "${ECHO_T}/usr/include/mysql" >&6; }
+      if test -d "/usr/include/mysql"; then
+          bestguessval="/usr/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          { echo "$as_me:$LINENO: result: $bestguessval" >&5
+echo "${ECHO_T}$bestguessval" >&6; }
+      elif test -d "/usr/local/include/mysql"; then
+          bestguessval="/usr/local/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          { echo "$as_me:$LINENO: result: $bestguessval" >&5
+echo "${ECHO_T}$bestguessval" >&6; }
+      else
+          { echo "$as_me:$LINENO: result: Unknown. Use --with-mysql-include with path" >&5
+echo "${ECHO_T}Unknown. Use --with-mysql-include with path" >&6; }
+      fi
 
 fi
 
@@ -1754,9 +1765,20 @@ echo "${ECHO_T}$withval" >&6; }
 
 else
 
-      SQL_LIBPATH="-L/usr/lib/mysql"
-      { echo "$as_me:$LINENO: result: /usr/lib/mysql" >&5
-echo "${ECHO_T}/usr/lib/mysql" >&6; }
+      if test -d "/usr/lib/mysql"; then
+          bestguessval="/usr/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          { echo "$as_me:$LINENO: result: $bestguessval" >&5
+echo "${ECHO_T}$bestguessval" >&6; }
+      elif test -d "/usr/local/lib/mysql"; then
+          bestguessval="/usr/local/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          { echo "$as_me:$LINENO: result: $bestguessval" >&5
+echo "${ECHO_T}$bestguessval" >&6; }
+      else
+          { echo "$as_me:$LINENO: result: Unknown. Use --with-mysql-libs with path" >&5
+echo "${ECHO_T}Unknown. Use --with-mysql-libs with path" >&6; }
+      fi
 
 fi
 
