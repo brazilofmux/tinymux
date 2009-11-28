@@ -97,7 +97,7 @@ typedef unsigned __int64 UINT64;
 // 1200 is Visual C++ 6.0
 #define MUX_ULONG_PTR DWORD
 #define MUX_PULONG_PTR LPDWORD
-#elif
+#else
 #error TinyMUX Requires at least version 6.0 of Visual C++.
 #endif
 
