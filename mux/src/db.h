@@ -164,6 +164,7 @@ struct object
     CLinearTimeAbsolute tThrottleExpired;
     int     throttled_attributes;
     int     throttled_mail;
+    int     throttled_references;
 
     UTF8    *purename;
     UTF8    *moniker;
@@ -200,6 +201,7 @@ extern OBJ *db;
 #define Dropto(t)       Location(t)
 #define ThAttrib(t)     db[t].throttled_attributes
 #define ThMail(t)       db[t].throttled_mail
+#define ThRefs(t)       db[t].throttled_references
 
 #define s_Location(t,n)     db[t].location = (n)
 
@@ -218,6 +220,7 @@ extern OBJ *db;
 #define s_Dropto(t,n)       s_Location(t,n)
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
+#define s_ThRefs(t,n)       db[t].throttled_references = (n);
 
 #ifdef DEPRECATED
 #define Stack(t)            db[t].stackhead
@@ -238,6 +241,7 @@ void free_boolexp(BOOLEXP *);
 dbref    parse_dbref(const UTF8 *);
 bool ThrottleMail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);
+bool ThrottleReferences(dbref executor);
 bool ThrottlePlayerCreate(void);
 int  mkattr(dbref executor, const UTF8 *);
 void al_store(void);

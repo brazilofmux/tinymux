@@ -169,6 +169,7 @@ struct confdata
     int     pcreate_per_hour;   // Maximum allowed players created per hour */
     int     queue_chunk;        /* # cmds to run from queue when idle */
     int     queuemax;           /* max commands a player may have in queue */
+    int     references_per_hour;/* Maximum allowed @reference adds per hour per object */
     int     retry_limit;        /* close conn after this many bad logins */
     int     robotcost;          /* cost of @robot command */
     int     room_quota;         /* quota needed to make a room */

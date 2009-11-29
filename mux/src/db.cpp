@@ -1439,6 +1439,7 @@ static void SetupThrottle(dbref executor)
     db[executor].tThrottleExpired = tNow + ltdHour;
     s_ThAttrib(executor, mudconf.vattr_per_hour);
     s_ThMail(executor, mudconf.mail_per_hour);
+    s_ThRefs(executor, mudconf.references_per_hour);
 }
 
 static void SetupGlobalThrottle(void)
@@ -1492,6 +1493,23 @@ bool ThrottleMail(dbref executor)
     if (0 < ThMail(executor))
     {
         s_ThMail(executor, ThMail(executor)-1);
+        return false;
+    }
+    CLinearTimeAbsolute tNow;
+    tNow.GetUTC();
+    if (db[executor].tThrottleExpired <= tNow)
+    {
+        SetupThrottle(executor);
+        return false;
+    }
+    return true;
+}
+
+bool ThrottleReferences(dbref executor)
+{
+    if (0 < ThRefs(executor))
+    {
+        s_ThRefs(executor, ThRefs(executor)-1);
         return false;
     }
     CLinearTimeAbsolute tNow;
@@ -2893,6 +2911,7 @@ static void initialize_objects(dbref first, dbref last)
         db[thing].tThrottleExpired.Set100ns(0);
         s_ThAttrib(thing, 0);
         s_ThMail(thing, 0);
+        s_ThRefs(thing, 0);
 
 #ifdef MEMORY_BASED
         db[thing].pALHead  = NULL;

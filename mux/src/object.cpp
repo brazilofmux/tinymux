@@ -514,6 +514,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     db[obj].tThrottleExpired.Set100ns(0);
     s_ThAttrib(obj, 0);
     s_ThMail(obj, 0);
+    s_ThRefs(obj, 0);
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();

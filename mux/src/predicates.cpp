@@ -3039,6 +3039,12 @@ void do_reference
         else
         {
             eOperation = Add;
+            if (  !Wizard(executor)
+               && ThrottleReferences(executor))
+            {
+                raw_notify(executor, T("References requested too quickly."));
+                return;
+            }
         }
     }
 
