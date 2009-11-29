@@ -303,6 +303,7 @@ void cf_init(void)
     mudconf.cache_pages = 40;
     mudconf.mail_per_hour = 50;
     mudconf.vattr_per_hour = 5000;
+    mudconf.references_per_hour = 500;
     mudconf.pcreate_per_hour = 100;
     mudconf.lbuf_size = LBUF_SIZE;
     mudconf.attr_name_charset = 0;
@@ -2243,6 +2244,7 @@ static CONFPARM conftable[] =
     {T("raw_helpfile"),              cf_raw_helpfile,CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {T("read_remote_desc"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_desc,   NULL,               0},
     {T("read_remote_name"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_name,   NULL,               0},
+    {T("references_per_hour"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.references_per_hour,    NULL,               0},
     {T("register_create_file"),      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
     {T("register_site"),             cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,  H_REGISTRATION},
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.reset_players,   NULL,               0},
