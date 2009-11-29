@@ -1908,7 +1908,7 @@ CONFIG PARAMETERS (continued)
 
   pueblo_message  queue_active_chunk  queue_idle_chunk  quiet_look
   quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
-  read_remote_name  reality_level  references_per_hour register_create_file
+  read_remote_name  reality_level  references_per_hour  register_create_file
   register_site  reset_players  restrict_home  retry_limit  robot_cost
   robot_flags  robot_speech  room_flags  room_name_charset  room_parent
   room_quota  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe
@@ -1920,7 +1920,7 @@ CONFIG PARAMETERS (continued)
   thing_name_charset  thing_parent  thing_quota  timeslice  toad_recipient
   trace_output_limit  trace_topdown  trust_site  uncompress_program
   unowned_safe  user_attr_access  user_attr_per_hour  wait_cost
-  wizard_motd_file  wizard_motd_message zone_recursion_limit
+  wizard_motd_file  wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
