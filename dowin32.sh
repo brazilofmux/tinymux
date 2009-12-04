@@ -60,11 +60,11 @@ tar czf mux-$NewVersion.win32.src.tar.gz $DistroDir
 if [ -e mux-$NewVersion.win32.src.j ]; then
     rm mux-$NewVersion.win32.src.j
 fi
-jar32 a -m4 -r mux-$NewVersion.win32.src.j $DistroDir\\
+/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.src.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.src.zip ]; then
     rm mux-$NewVersion.win32.src.zip
 fi
-pkzip -add -recurse -path -maximum mux-$NewVersion.win32.src.zip $DistroDir\\\*.\*
+/cygdrive/c/binnt/pkzip -add -recurse -path -maximum mux-$NewVersion.win32.src.zip $DistroDir\\\*.\*
 
 patchableFiles=`cat win32/TOC.bin.patchable`
 unpatchedFiles=`cat win32/TOC.bin.unpatched`
@@ -113,8 +113,8 @@ tar czf mux-$NewVersion.win32.bin.tar.gz $DistroDir
 if [ -e mux-$NewVersion.win32.bin.j ]; then
     rm mux-$NewVersion.win32.bin.j
 fi
-jar32 a -m4 -r mux-$NewVersion.win32.bin.j $DistroDir\\
+/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.bin.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.bin.zip ]; then
     rm mux-$NewVersion.win32.bin.zip
 fi
-pkzip -add -recurse -path -maximum mux-$NewVersion.win32.bin.zip $DistroDir\\\*.\*
+/cygdrive/c/binnt/pkzip -add -recurse -path -maximum mux-$NewVersion.win32.bin.zip $DistroDir\\\*.\*
