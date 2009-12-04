@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  January 2009
+Last Update:  December 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -338,6 +338,17 @@ Bug Fixes:
     multiple of 64 (Issue 544).
  -- Don't strip MSG_SAYPOSE or MSG_OOC when forwarding messages to
     contents, exits, etc.
+ -- Option table was defined one element too large.
+ -- Use CXXFLAGS instead of CFLAGS.
+ -- Should be starting_pay instead of paystart and find_money_chance
+    instead of payfind (Issue #589).
+ -- Fix @dolist help topic (Issue 593).
+ -- Change reference to no_program which should be no_command.
+ -- Topic reference should be to 'regexp syntax'.
+ -- Fix typo in substitutions3 (Issue 605).
+ -- Fix typo on help @lock compound (Issue 606).
+ -- Clarify use of see_all @power (Issue 584).
+ -- Fix one case of #elif without a condition.
 
 
 Performance Enhancements:
@@ -386,3 +397,5 @@ Miscellaneous:
  -- Fix gcc constant string warnings.
  -- Remove unfinished sqlshared.cpp, sqlshare.h, and sqlslave.cpp.
  -- Switch to using Visual Studio 2003 and Intel Compiler v10.1.
+ -- Firan is now using 24000-byte buffers.
+ -- Increase Debian debhelper compat level.
