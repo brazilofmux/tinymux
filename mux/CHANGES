@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  June 2009
+Last Update:  December 2009
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -348,6 +348,17 @@ Bug Fixes:
  -- Fix wild1() to handle ? with Color and Unicode (Issue 590).
  -- Fix @dolist help topic (Issue 593).
  -- Removed run-time dependency on libguide40.dll (Issue 594).
+ -- Fix behavior of insert(,1,Apple,|) (Issue #598).
+ -- Change reference to no_program which should be no_command.
+ -- Topic reference should be to 'regexp syntax'.
+ -- Fix typo in substitutions3 (Issue 605).
+ -- Fix typoe on help @lock compound (Issue 606).
+ -- Non-player objects can own channels (Issue 565).
+ -- ./Backup script didn't work on OS X (Issue 604).
+ -- Clarify use of see_all @power (Issue 584).
+ -- Fix one case of #elif without a condition.
+ -- Look for MySQL in /usr/local if it isn't found elsewhere (Issue 612).
+ -- Throttle use of @reference (Issue 587).
 
 
 Performance Enhancements:
@@ -446,3 +457,4 @@ Miscellaneous:
     options.
  -- Most of charset_nametab[] options are not unique in the first five
     characters.
+ -- Remove dead code from mux_string class.
