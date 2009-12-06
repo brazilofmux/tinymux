@@ -1685,12 +1685,12 @@ const string_desc tr_totitle_ott[100] =
     {  4,  1, T("\x00\x00\x01\x28") } // 8 references
 };
 
-// utf/tr_foldpunc.txt
+// utf/tr_foldmatch.txt
 //
 // 14 code points.
 // 7 states, 11 columns, 310 bytes
 //
-const unsigned char tr_foldpunc_itt[256] =
+const unsigned char tr_foldmatch_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
@@ -1712,19 +1712,19 @@ const unsigned char tr_foldpunc_itt[256] =
 
 };
 
-const unsigned char tr_foldpunc_sot[7] =
+const unsigned char tr_foldmatch_sot[7] =
 {
         0,    9,   15,   23,   29,   35,   41
 };
 
-const unsigned char tr_foldpunc_sbt[47] =
+const unsigned char tr_foldmatch_sbt[47] =
 {
        -2,    7,   10,    6,    7,   -3,    1,    3,     5,    2,    7,   -1,    2,    8,    7,    4,
         7,   -1,    8,    2,    9,    4,    7,    2,     7,   -1,    4,    8,    7,    6,    7,   -1,
         9,    4,    7,    7,    7,   -1,    6,    3,     7,    3,    7,   -1,    9,    7,    7
 };
 
-const string_desc tr_foldpunc_ott[3] =
+const string_desc tr_foldmatch_ott[3] =
 {
     {  1,  1, T("\x27") }, // 4 references
     {  1,  1, T("\x22") }, // 8 references

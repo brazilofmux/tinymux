@@ -636,22 +636,22 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 //
 inline const string_desc *mux_foldpunc(__in const unsigned char *p, bool &bXor)
 {
-    int iState = TR_FOLDPUNC_START_STATE;
+    int iState = TR_FOLDMATCH_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_foldpunc_itt[(unsigned char)ch];
-        unsigned short iOffset = tr_foldpunc_sot[iState];
+        unsigned char iColumn = tr_foldmatch_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_foldmatch_sot[iState];
         for (;;)
         {
-            int y = (char)tr_foldpunc_sbt[iOffset];
+            int y = (char)tr_foldmatch_sbt[iOffset];
             if (0 < y)
             {
                 // RUN phrase.
                 //
                 if (iColumn < y)
                 {
-                    iState = tr_foldpunc_sbt[iOffset+1];
+                    iState = tr_foldmatch_sbt[iOffset+1];
                     break;
                 }
                 else
@@ -667,7 +667,7 @@ inline const string_desc *mux_foldpunc(__in const unsigned char *p, bool &bXor)
                 y = -y;
                 if (iColumn < y)
                 {
-                    iState = tr_foldpunc_sbt[iOffset+iColumn+1];
+                    iState = tr_foldmatch_sbt[iOffset+iColumn+1];
                     break;
                 }
                 else
@@ -677,17 +677,17 @@ inline const string_desc *mux_foldpunc(__in const unsigned char *p, bool &bXor)
                 }
             }
         }
-    } while (iState < TR_FOLDPUNC_ACCEPTING_STATES_START);
+    } while (iState < TR_FOLDMATCH_ACCEPTING_STATES_START);
 
-    if (TR_FOLDPUNC_DEFAULT == iState - TR_FOLDPUNC_ACCEPTING_STATES_START)
+    if (TR_FOLDMATCH_DEFAULT == iState - TR_FOLDMATCH_ACCEPTING_STATES_START)
     {
         bXor = false;
         return NULL;
     }
     else
     {
-        bXor = (TR_FOLDPUNC_XOR_START <= iState - TR_FOLDPUNC_ACCEPTING_STATES_START);
-        return tr_foldpunc_ott + iState - TR_FOLDPUNC_ACCEPTING_STATES_START - 1;
+        bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
+        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
     }
 }
 
