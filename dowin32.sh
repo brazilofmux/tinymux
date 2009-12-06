@@ -3,9 +3,9 @@
 # REQUIRED: The two ReferenceDir must already exist. They may be created by
 # untaring a previous distribution.
 #
-OldBuild=2
+OldBuild=3
 OldVersion=2.9.0.$OldBuild
-NewBuild=3
+NewBuild=4
 NewVersion=2.9.0.$NewBuild
 
 ChangesDir=mux
@@ -61,7 +61,7 @@ tar czf mux-$NewVersion.win32.src.tar.gz $DistroDir
 if [ -e mux-$NewVersion.win32.src.j ]; then
     rm mux-$NewVersion.win32.src.j
 fi
-jar32 a -m4 -r mux-$NewVersion.win32.src.j $DistroDir\\
+/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.src.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.src.zip ]; then
     rm mux-$NewVersion.win32.src.zip
 fi
@@ -114,7 +114,7 @@ tar czf mux-$NewVersion.win32.bin.tar.gz $DistroDir
 if [ -e mux-$NewVersion.win32.bin.j ]; then
     rm mux-$NewVersion.win32.bin.j
 fi
-jar32 a -m4 -r mux-$NewVersion.win32.bin.j $DistroDir\\
+/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.bin.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.bin.zip ]; then
     rm mux-$NewVersion.win32.bin.zip
 fi
