@@ -124,6 +124,7 @@ VX 123
 VY 124 
 VZ 125 
 GetFromLock 127 
+Mfail 128 
 Gfail 129 
 Ogfail 130 
 Agfail 131 
@@ -173,12 +174,13 @@ RegInfo 223
 ConnInfo 224 
 MailLock 225 
 OpenLock 226 
-Color 236
-Alead 237
-Lead  238
-Olead 239
+Color 236 
+Alead 237 
+Lead  238 
+Olead 239 
 IdleTimeout 240 
 ExitFormat 241 
 ConFormat 242 
 NameFormat 243 
 DescFormat 244 
+RLevel 250 
