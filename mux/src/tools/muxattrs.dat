@@ -173,6 +173,7 @@ RegInfo 223
 ConnInfo 224 
 MailLock 225 
 OpenLock 226 
+LastWhisper 227 
 Color 236
 Alead 237
 Lead  238
