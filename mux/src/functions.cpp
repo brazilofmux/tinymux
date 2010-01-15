@@ -10884,6 +10884,7 @@ static FUN builtin_function_list[] =
     {T("DELETE"),      fun_delete,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("DESTROY"),     fun_destroy,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("DIE"),         fun_die,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("DIGEST"),      fun_digest,           2, 1,       2,         0, CA_PUBLIC},
     {T("DIGITTIME"),   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("DIST2D"),      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {T("DIST3D"),      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},
@@ -11217,7 +11218,7 @@ static FUN builtin_function_list[] =
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZWHO"),        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {(UTF8 *)NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
+    {(UTF8 *)NULL,         NULL,       MAX_ARG, 0,       0,         0, 0}
 };
 
 void function_add(FUN *fp)

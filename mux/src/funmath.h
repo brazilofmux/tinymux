@@ -90,5 +90,6 @@ XFUNCTION(fun_bnand);
 XFUNCTION(fun_bxor);
 XFUNCTION(fun_crc32);
 XFUNCTION(fun_sha1);
+XFUNCTION(fun_digest);
 
 #endif

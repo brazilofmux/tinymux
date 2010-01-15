@@ -21,6 +21,7 @@
 
 #ifdef SSL_ENABLED
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 #else
 #include "sha1.h"
 #endif
@@ -2680,6 +2681,44 @@ FUNCTION(fun_crc32)
     safe_i64toa(ulCRC32, buff, bufc);
 }
 
+void safe_hex(UINT8 md[], size_t len, __in UTF8 *buff, __deref_inout UTF8 **bufc)
+{
+    UTF8 *buf = NULL;
+    try
+    {
+        buf = new UTF8[(len * 2) + 1];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    int bufoffset = 0;
+    const UTF8 digits[] = "0123456789ABCDEF";
+    for (size_t i = 0; i < len; i++)
+    {
+        UINT8 c = md[i];
+        buf[bufoffset++] = digits[(c >> 4) & 0x0F];
+        buf[bufoffset++] = digits[(c     ) & 0x0F];
+    }
+    buf[bufoffset] = '\0';
+    safe_str(buf, buff, bufc);
+    delete [] buf;
+}
+
+void sha1_helper(int nfargs, __in UTF8 *fargs[], __in UTF8 *buff, __deref_inout UTF8 **bufc)
+{
+    SHA_CTX shac;
+    SHA1_Init(&shac);
+    for (int i = 0; i < nfargs; ++i)
+    {
+        SHA1_Update(&shac, fargs[i], strlen((const char *)fargs[i]));
+    }
+    UINT8 md[SHA_DIGEST_LENGTH];
+    SHA1_Final(md, &shac);
+    safe_hex(md, SHA_DIGEST_LENGTH, buff, bufc);
+}
+
 FUNCTION(fun_sha1)
 {
     UNUSED_PARAMETER(executor);
@@ -2689,27 +2728,48 @@ FUNCTION(fun_sha1)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    sha1_helper(nfargs, fargs, buff, bufc);
+}
+
+FUNCTION(fun_digest)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+#ifdef SSL_ENABLED
+    EVP_MD_CTX ctx;
+
+    const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
+    if (NULL == mp)
+    {
+        safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
+        return;
+    }
+
+    EVP_DigestInit(&ctx, mp);
+
     int i;
-    SHA_CTX shac;
-    SHA1_Init(&shac);
-    for (i = 0; i < nfargs; ++i)
+    for (i = 1; i < nfargs; i++)
     {
-        SHA1_Update(&shac, fargs[i], strlen((const char *)fargs[i]));
+        EVP_DigestUpdate(&ctx, fargs[i], strlen((const char *)fargs[i]));
     }
 
-    UINT8 md[SHA_DIGEST_LENGTH];
-    SHA1_Final(md, &shac);
-
-    const UTF8 digits[] = "0123456789ABCDEF";
-    UTF8 buf[(SHA_DIGEST_LENGTH * 2) + 1];
-    int bufoffset = 0;
-
-    for (i = 0; i < SHA_DIGEST_LENGTH; i++)
+    unsigned int len = 0;
+    UINT8 md[EVP_MAX_MD_SIZE];
+    EVP_DigestFinal(&ctx, md, &len);
+    safe_hex(md, len, buff, bufc);
+#else
+    if (strcmp((char *)fargs[0], "sha1") == 0)
     {
-        UINT8 c = md[i];
-        buf[bufoffset++] = digits[(c >> 4) & 0x0F];
-        buf[bufoffset++] = digits[(c     ) & 0x0F];
+        sha1_helper(nfargs-1, fargs+1, buff, bufc);
     }
-    buf[bufoffset] = '\0';
-    safe_str(buf, buff, bufc);
+    else
+    {
+        safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
+    }
+#endif // SSL_ENABLED
 }
