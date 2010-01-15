@@ -2693,13 +2693,17 @@ void safe_hex(UINT8 md[], size_t len, __in UTF8 *buff, __deref_inout UTF8 **bufc
         ; // Nothing.
     }
 
+    if (NULL == buf)
+    {
+        return;
+    }
+
     int bufoffset = 0;
-    const UTF8 digits[] = "0123456789ABCDEF";
     for (size_t i = 0; i < len; i++)
     {
         UINT8 c = md[i];
-        buf[bufoffset++] = digits[(c >> 4) & 0x0F];
-        buf[bufoffset++] = digits[(c     ) & 0x0F];
+        buf[bufoffset++] = Digits16U[(c >> 4) & 0x0F];
+        buf[bufoffset++] = Digits16U[(c     ) & 0x0F];
     }
     buf[bufoffset] = '\0';
     safe_str(buf, buff, bufc);
@@ -2763,7 +2767,7 @@ FUNCTION(fun_digest)
     EVP_DigestFinal(&ctx, md, &len);
     safe_hex(md, len, buff, bufc);
 #else
-    if (strcmp((char *)fargs[0], "sha1") == 0)
+    if (mux_stricmp(fargs[0], T("sha1")) == 0)
     {
         sha1_helper(nfargs-1, fargs+1, buff, bufc);
     }

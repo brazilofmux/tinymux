@@ -681,8 +681,8 @@ static void ReverseDigits(UTF8 *pFirst, UTF8 *pLast)
     }
 }
 
-static const UTF8 Digits16U[17] = "0123456789ABCDEF";
-static const UTF8 Digits16L[17] = "0123456789abcdef";
+const UTF8 Digits16U[17] = "0123456789ABCDEF";
+const UTF8 Digits16L[17] = "0123456789abcdef";
 
 size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase)
 {

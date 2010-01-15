@@ -78,5 +78,8 @@ bool is_rational(__in_z const UTF8 *str);
 bool is_real(__in_z const UTF8 *str);
 
 extern const UTF8 *mux_FPStrings[8];
+extern const UTF8 Digits16U[17];
+extern const UTF8 Digits16L[17];
+
 
 #endif
