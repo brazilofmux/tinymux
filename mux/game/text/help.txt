@@ -5993,6 +5993,8 @@ CRC32()
     > think crc32(MUX)
     629126998
 
+  Related Topics: digest(), sha1(), unpack().
+
 & CREATE()
 CREATE()
 
@@ -6221,7 +6223,7 @@ DIGEST()
 
   Without SSL, only the sha1 algorithm is enabled.
 
-  Related Topics: sha1()
+  Related Topics: crc32(), sha1()
 
 & DIGITTIME()
 DIGITTIME()
@@ -12372,7 +12374,7 @@ SHA1()
     > think sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)
     84983E441C3BD26EBAAE4AA1F95129E5E54670F1
 
-  Related Topics: crc32(), unpack().
+  Related Topics: crc32(), digest(), unpack().
 
 & SHL()
 SHL()

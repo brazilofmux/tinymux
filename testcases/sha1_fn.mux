@@ -1,0 +1,87 @@
+#
+# sha1_fn.mux - Test Cases for sha1().
+# $Id$
+#
+# Strategy: Exercise examples and test vectors.
+#
+@create test_sha1_fn
+-
+@set test_sha1_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sha1_fn=
+  @log smoke=Beginning sha1() test cases.
+-
+#
+# Test Case #1 - Test that help topic examples work.
+#
+&tr.tc001 test_sha1_fn=
+  @if strmatch(
+        setr(0,sha1(
+            sha1(abc)
+            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)]
+          )
+        ),
+        9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93
+      )=
+  {
+    @log smoke=TC001: Examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Try standard test vectors from sha1.cpp.
+#
+&tr.tc002 test_sha1_fn=
+  @if strmatch(
+        setr(0,sha1(
+            sha1(abc)
+            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
+            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
+            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]
+            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)]
+          )
+        ),
+        FBED900C606159E86C5970A5F88915B52716C445
+      )=
+  {
+    @log smoke=TC002: Standard test vectors. Succeeded.
+  },
+  {
+    @log smoke=TC002: Standard test vectors. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Try parser-related tests.
+#
+&tr.tc003 test_sha1_fn=
+  @if strmatch(
+        setr(0,sha1(
+            sha1()
+            [sha1(abc,def)]
+          )
+        ),
+        4551A9972114A4E299759843141C00FEF391C9B9
+      )=
+  {
+    @log smoke=TC003: Parser-related tests. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: Parser-related tests. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sha1_fn=
+  @log smoke=End sha1() test cases.;
+  @notify smoke
+-
+drop test_sha1_fn
+-
+#
+# End of Test Cases
+#

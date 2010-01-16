@@ -1,0 +1,119 @@
+#
+# digest_fn.mux - Test Cases for digest().
+# $Id$
+#
+# Strategy: Exercise examples and test vectors.
+#
+@create test_digest_fn
+-
+@set test_digest_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_digest_fn=
+  @log smoke=Beginning digest() test cases.
+-
+#
+# Test Case #1 - Test that help topic examples work.
+#
+&tr.tc001 test_digest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            digest(sha1,abc)
+            [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)]
+          )
+        ),
+        9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93
+      )=
+  {
+    @log smoke=TC001: Examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Try standard test vectors from sha1.cpp.
+#
+&tr.tc002 test_digest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            digest(sha1,abc)
+            [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
+            [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
+            [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]
+            [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)]
+          )
+        ),
+        FBED900C606159E86C5970A5F88915B52716C445
+      )=
+  {
+    @log smoke=TC002: Standard test vectors. Succeeded.
+  },
+  {
+    @log smoke=TC002: Standard test vectors. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Try parser-related tests.
+#
+&tr.tc003 test_digest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            digest(sha1)
+            [digest(sha1,)]
+            [digest(sha1,abc,def)]
+          )
+        ),
+        48DF4575AECAEC5B934FBECAF5854D3F2A561F88
+      )=
+  {
+    @log smoke=TC003: Parser-related tests. Succeeded.
+  },
+  {
+    @log smoke=TC003: Parser-related tests. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Test MD5 is available.
+#
+&tr.tc004 test_digest_fn=
+  @if digest(md5)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              digest(md5,)
+              [digest(md5,a)]
+              [digest(md5,abc)]
+              [digest(md5,message digest)]
+              [digest(md5,abcdefghijklmnopqrstuvwxyz)]
+              [digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)]
+              [digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)]
+            )
+          ),
+          1D8FA29F6663DE476736B2D75991D96C346F881C
+        )=
+    {
+      @log smoke=TC004: MD5 test vectors. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC004: MD5 test vectors. Failed (%q0).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC004: MD5 is not supported in this version. Okay.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_digest_fn=
+  @log smoke=End digest() test cases.;
+  @notify smoke
+-
+drop test_digest_fn
+-
+#
+# End of Test Cases
+#
