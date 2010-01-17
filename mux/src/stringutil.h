@@ -634,7 +634,7 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_foldpunc.txt
 //
-inline const string_desc *mux_foldpunc(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
 {
     int iState = TR_FOLDMATCH_START_STATE;
     do
@@ -861,7 +861,7 @@ int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b);
 int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n);
 UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n);
 UTF8 *mux_strupr(__in const UTF8 *a, size_t &n);
-UTF8 *mux_foldpunc(__in const UTF8 *a, size_t &n);
+UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged);
 
 typedef struct tag_itl
 {
@@ -1305,7 +1305,7 @@ public:
     void UpperCase(void);
     void LowerCase(void);
     void UpperCaseFirst(void);
-    void FoldPunctuation(void);
+    void FoldForMatching(void);
 
     // mux_string_cursor c;
     // cursor_start(c);

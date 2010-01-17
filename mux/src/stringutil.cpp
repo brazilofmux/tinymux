@@ -2904,19 +2904,20 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
     return Buffer;
 }
 
-// mux_foldpunc - alias punctuation.
+// mux_foldmatch - alias for matching.
 //
-UTF8 *mux_foldpunc(const UTF8 *a, size_t &n)
+UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
     n = 0;
+    fChanged = false;
     while ('\0' != *a)
     {
         size_t j;
         size_t m;
         bool bXor;
-        const string_desc *qDesc = mux_foldpunc(a, bXor);
+        const string_desc *qDesc = mux_foldmatch(a, bXor);
         if (NULL == qDesc)
         {
             m = utf8_FirstByte[*a];
@@ -2932,6 +2933,7 @@ UTF8 *mux_foldpunc(const UTF8 *a, size_t &n)
         }
         else
         {
+            fChanged = true;
             m = qDesc->n_bytes;
             if (LBUF_SIZE-1 < n + m)
             {
@@ -5683,15 +5685,14 @@ void mux_string::UpperCaseFirst(void)
     }
 }
 
-void mux_string::FoldPunctuation(void)
+void mux_string::FoldForMatching(void)
 {
-    mux_cursor i = CursorMin;
-    if (i < m_iLast)
+    for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
 
         bool bXor;
-        const string_desc *qDesc = mux_foldpunc(p, bXor);
+        const string_desc *qDesc = mux_foldmatch(p, bXor);
         if (NULL != qDesc)
         {
             size_t m = qDesc->n_bytes;
