@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: November 2009
+Last Update: January 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,6 +11,8 @@ Feature Additions:
  -- Add ip_address configuration option for boxes with multiple IP
     addresses (several per card, several cards, tunnels, vpn, etc.)
  -- Added handling for variable number of to/from arguments to edit().
+ -- Also look for MySQL under /usr/local (Issue 612).
+ -- Add DIGEST() softcode function (Issue 476).
 
 
 Bug Fixes:
@@ -39,6 +41,8 @@ Bug Fixes:
  -- Fix behavior of insert(,1,Apple,|) (Issue #598).
  -- Non-player objects owning channels works with @cchown (Issue 565).
  -- ./Backup script didn't work on OS X (Issue 604).
+ -- Throttle use of @reference (Issue 587).
+ -- Add missing attributes to muxattrs.dat.
 
 
 Performance Enhancements:
