@@ -40,19 +40,64 @@
 &tr.tc002 test_edit_fn=
   @if strmatch(
         setr(0,sha1(
-            [edit(plain,plain,%xrplain)]
+            [translate(edit(plain,plain,%xrplain),p)]
             [translate(edit(abcdXYZabcd,XYZ,ansi(h,repeat(*,40))),p)]
-            [edit(|%xr||,|,%r)]
+            [translate(edit(|%xr||,|,%r),p)]
+            [translate(edit(CONNECTEDCONNECTEDabcdefCONNECTEDCONNECTED,CONNECTED,%xr-),p)]
           )
         ),
-        5C5C3164454B20292A6E4A02D07309E7344C117A
+        5A6C50DD934D45E1E5A6DE6426C278DFFB41755A
       )=
   {
-    @log smoke=TC002: Regressions. Succeeded.;
+    @log smoke=TC002: Regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: Regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Length of single change
+#
+&tr.tc003 test_edit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [translate(edit(repeat(a,500),repeat(a,500),%xra),p)]
+            [translate(edit(a,a,repeat(%xra,500)),p)]
+            [translate(edit(repeat(%xba,500),repeat(a,500),a),p)]
+            [translate(edit(%xba,a,repeat(a,500)),p)]
+          )
+        ),
+        CE1B02A3551DCB285F627943FE292C877C2C9955
+      )=
+  {
+    @log smoke=TC003: Single Change. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: Regressions. Failed (%q0).;
+    @log smoke=TC003: Single Change. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #4 - Multiple changes
+#
+&tr.tc004 test_edit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [translate(edit(repeat(a,500),a,%xrab),p)]
+            [translate(edit(repeat(ab,500),ab,%xra),p)]
+            [translate(edit(repeat(%xba,500),a,a),p)]
+            [translate(edit(repeat(%xbab,500),ab,a),p)]
+          )
+        ),
+        FE10E9EEDA8A5A742255BE48EC27E19E2881E007
+      )=
+  {
+    @log smoke=TC004: Multiple Changes. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: Multiple Changes. Failed (%q0).;
     @trig me/tr.done
   }
 -

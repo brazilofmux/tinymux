@@ -70,29 +70,29 @@
 0
 0
 >218
-"Sat Jan 16 11:32:18.331706 2010"
+"Sun Jan 24 11:06:10.995732 2010"
 >219
-"Sat Jan 16 11:32:18.331706 2010"
+"Sun Jan 24 11:06:10.995732 2010"
 >30
-"Sat Jan 16 11:32:24.830822 2010"
+"Sun Jan 24 11:06:16.532506 2010"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$5HiVId+FE4qp$a+Zs93ITQ4QK7zrVaBGA2cPBe+Q="
+"$SHA1$AWHuNTdU7vxk$fwNqka2YoGkPKlwsn7koXXkl0nM="
 >88
 "192.168.1.48"
 >144
 "192.168.1.48"
 >84
-"#1;192.168.1.48;Sat Jan 16 11:32:24.831009 2010;;;;;;;0;0;;;;;;;"
+"#1;192.168.1.48;Sun Jan 24 11:06:16.535924 2010;;;;;;;0;0;;;;;;;"
 >213
 "-1 21 -1 -1 21"
 >222
 "Shutdown"
 >224
-"7 7 7 1 1263670352"
+"4 4 4 1 1264359980"
 <
 !2
 "test_center_fn"
@@ -111,9 +111,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.437565 2010"
+"Sun Jan 24 11:06:17.753707 2010"
 >219
-"Sat Jan 16 11:32:26.469138 2010"
+"Sun Jan 24 11:06:17.762116 2010"
 >256
 "@log smoke=Beginning center() test cases."
 >257
@@ -146,9 +146,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.469224 2010"
+"Sun Jan 24 11:06:17.790293 2010"
 >219
-"Sat Jan 16 11:32:26.469312 2010"
+"Sun Jan 24 11:06:17.790413 2010"
 >27
 "@va me=sha1(%va%0)"
 >256
@@ -175,9 +175,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.469362 2010"
+"Sun Jan 24 11:06:17.790489 2010"
 >219
-"Sat Jan 16 11:32:26.498556 2010"
+"Sun Jan 24 11:06:17.821633 2010"
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
@@ -214,9 +214,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.498644 2010"
+"Sun Jan 24 11:06:17.821724 2010"
 >219
-"Sat Jan 16 11:32:26.523169 2010"
+"Sun Jan 24 11:06:17.844815 2010"
 >256
 "@log smoke=Beginning cpad() test cases."
 >257
@@ -249,9 +249,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.523226 2010"
+"Sun Jan 24 11:06:17.84489 2010"
 >219
-"Sat Jan 16 11:32:26.542603 2010"
+"Sun Jan 24 11:06:17.856323 2010"
 >256
 "@log smoke=Beginning digest() test cases."
 >257
@@ -282,15 +282,19 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.542659 2010"
+"Sun Jan 24 11:06:17.858311 2010"
 >219
-"Sat Jan 16 11:32:26.558473 2010"
+"Sun Jan 24 11:06:17.890533 2010"
 >256
 "@log smoke=Beginning edit() test cases."
 >257
 "@if strmatch(setr(0,sha1([edit(This is a test,is,x)][edit(Atlantic,^,Trans)])),0337BC64662CB00DFAE98EB132967118CBE47A9A)={@log smoke=TC001: edit examples. Succeeded.},{@log smoke=TC001: edit examples. Failed (%q0).}"
 >258
-"@if strmatch(setr(0,sha1([edit(plain,plain,%xrplain)][translate(edit(abcdXYZabcd,XYZ,ansi(h,repeat(*,40))),p)][edit(|%xr||,|,%r)])),5C5C3164454B20292A6E4A02D07309E7344C117A)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([translate(edit(plain,plain,%xrplain),p)][translate(edit(abcdXYZabcd,XYZ,ansi(h,repeat(*,40))),p)][translate(edit(|%xr||,|,%r),p)][translate(edit(CONNECTEDCONNECTEDabcdefCONNECTEDCONNECTED,CONNECTED,%xr-),p)])),5A6C50DD934D45E1E5A6DE6426C278DFFB41755A)={@log smoke=TC002: Regressions. Succeeded.},{@log smoke=TC002: Regressions. Failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1([translate(edit(repeat(a,500),repeat(a,500),%xra),p)][translate(edit(a,a,repeat(%xra,500)),p)][translate(edit(repeat(%xba,500),repeat(a,500),a),p)][translate(edit(%xba,a,repeat(a,500)),p)])),CE1B02A3551DCB285F627943FE292C877C2C9955)={@log smoke=TC003: Single Change. Succeeded.;@trig me/tr.done},{@log smoke=TC003: Single Change. Failed (%q0).;@trig me/tr.done}"
+>260
+"@if strmatch(setr(0,sha1([translate(edit(repeat(a,500),a,%xrab),p)][translate(edit(repeat(ab,500),ab,%xra),p)][translate(edit(repeat(%xba,500),a,a),p)][translate(edit(repeat(%xbab,500),ab,a),p)])),FE10E9EEDA8A5A742255BE48EC27E19E2881E007)={@log smoke=TC004: Multiple Changes. Succeeded.;@trig me/tr.done},{@log smoke=TC004: Multiple Changes. Failed (%q0).;@trig me/tr.done}"
 >262
 "@log smoke=End edit() test cases.;@notify smoke"
 <
@@ -311,9 +315,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.558532 2010"
+"Sun Jan 24 11:06:17.89063 2010"
 >219
-"Sat Jan 16 11:32:26.577085 2010"
+"Sun Jan 24 11:06:17.921311 2010"
 >256
 "@log smoke=Beginning escape() test cases."
 >257
@@ -344,9 +348,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.577143 2010"
+"Sun Jan 24 11:06:17.921401 2010"
 >219
-"Sat Jan 16 11:32:26.596373 2010"
+"Sun Jan 24 11:06:17.925161 2010"
 >256
 "@log smoke=Beginning insert() test cases."
 >257
@@ -379,9 +383,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.596442 2010"
+"Sun Jan 24 11:06:17.93854 2010"
 >219
-"Sat Jan 16 11:32:26.619431 2010"
+"Sun Jan 24 11:06:17.975647 2010"
 >256
 "@log smoke=Beginning ljust() test cases."
 >257
@@ -414,9 +418,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.619491 2010"
+"Sun Jan 24 11:06:17.975762 2010"
 >219
-"Sat Jan 16 11:32:26.643806 2010"
+"Sun Jan 24 11:06:17.982859 2010"
 >256
 "@log smoke=Beginning lpad() test cases."
 >257
@@ -449,9 +453,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:26.643897 2010"
+"Sun Jan 24 11:06:17.982915 2010"
 >219
-"Sat Jan 16 11:32:27.649164 2010"
+"Sun Jan 24 11:06:18.985222 2010"
 >256
 "@log smoke=Beginning merge() test cases."
 >257
@@ -500,9 +504,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.649271 2010"
+"Sun Jan 24 11:06:18.985328 2010"
 >219
-"Sat Jan 16 11:32:27.649336 2010"
+"Sun Jan 24 11:06:18.98539 2010"
 >256
 "@log smoke=Beginning mid() test cases."
 >257
@@ -525,9 +529,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.649391 2010"
+"Sun Jan 24 11:06:18.985467 2010"
 >219
-"Sat Jan 16 11:32:27.649795 2010"
+"Sun Jan 24 11:06:18.985859 2010"
 >256
 "@log smoke=Beginning rjust() test cases."
 >257
@@ -560,9 +564,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.649994 2010"
+"Sun Jan 24 11:06:18.986073 2010"
 >219
-"Sat Jan 16 11:32:27.687653 2010"
+"Sun Jan 24 11:06:19.019751 2010"
 >256
 "@log smoke=Beginning rpad() test cases."
 >257
@@ -595,9 +599,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.687742 2010"
+"Sun Jan 24 11:06:19.019843 2010"
 >219
-"Sat Jan 16 11:32:27.699731 2010"
+"Sun Jan 24 11:06:19.036651 2010"
 >256
 "@log smoke=Beginning secure() test cases."
 >257
@@ -628,9 +632,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.699821 2010"
+"Sun Jan 24 11:06:19.036757 2010"
 >219
-"Sat Jan 16 11:32:27.699948 2010"
+"Sun Jan 24 11:06:19.03689 2010"
 >256
 "@log smoke=Beginning sha1() test cases."
 >257
@@ -659,9 +663,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.700008 2010"
+"Sun Jan 24 11:06:19.036949 2010"
 >219
-"Sat Jan 16 11:32:27.700187 2010"
+"Sun Jan 24 11:06:19.037138 2010"
 >256
 "@log smoke=Beginning shuffle() test cases."
 >257
@@ -690,9 +694,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.700246 2010"
+"Sun Jan 24 11:06:19.037199 2010"
 >219
-"Sat Jan 16 11:32:27.700282 2010"
+"Sun Jan 24 11:06:19.03724 2010"
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
@@ -713,9 +717,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.700341 2010"
+"Sun Jan 24 11:06:19.037302 2010"
 >219
-"Sat Jan 16 11:32:27.700425 2010"
+"Sun Jan 24 11:06:19.03738 2010"
 >271
 "center_fn cmd_say convtime_fn cpad_fn digest_fn edit_fn escape_fn insert_fn ljust_fn lpad_fn merge_fn mid_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn wrap_fn shutdown"
 >19
@@ -740,9 +744,9 @@
 0
 0
 >218
-"Sat Jan 16 11:32:27.700485 2010"
+"Sun Jan 24 11:06:19.037437 2010"
 >219
-"Sat Jan 16 11:32:27.700585 2010"
+"Sun Jan 24 11:06:19.03754 2010"
 >256
 "@log smoke=Beginning wrap() test cases."
 >257
