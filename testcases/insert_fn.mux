@@ -1,0 +1,122 @@
+#
+# insert_fn.mux - Test Cases for insert().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with insert() behaviors.
+#
+@create test_insert_fn
+-
+@set test_insert_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_insert_fn=
+  @log smoke=Beginning insert() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_insert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            insert(This is a test, 4, new)
+            [insert(Yet@Another@List, 3, Funk, @)]
+          )
+        ),
+        80194573F0E288397A859CD3A27CCF1FD922C8DB
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Empty list. ASCII. Positive positions.
+#
+&tr.tc002 test_insert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(0 1 2,## [insert(,##,Pear,|)])
+          )
+        ),
+        6A543151C6BDF80889FEAF3A53079DE952657E2A
+      )=
+  {
+    @log smoke=TC002: Empty list, ASCII, positive positions. Succeeded.
+  },
+  {
+    @log smoke=TC002: Empty list, ASCII, positive positions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Non-empty lists. ASCII. Positive positions.
+#
+&tr.tc003 test_insert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(0 1 2 3,## [insert(|,##,Pear,|)])
+            iter(0 1 2 3 4,## [insert(||,##,Pear,|)])
+            iter(0 1 2 3 4 5,## [insert(|||,##,Pear,|)])
+          )
+        ),
+        86316ADB7ADA940BCB55F7EE8BF4DE5E0852D34C
+      )=
+  {
+    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Succeeded.
+  },
+  {
+    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Empty list. ASCII. Negative positions.
+#
+&tr.tc004 test_insert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(-2 -1,## [insert(,##,Pear,|)])
+          )
+        ),
+        5F364FF7EEEC93E30C5709B5184501A17046BDEA
+      )=
+  {
+    @log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.
+  },
+  {
+    @log smoke=TC004: Empty list, ASCII, negative positions. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Non-empty lists. ASCII. Negative positions.
+#
+&tr.tc005 test_insert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(-3 -2 -1,## [insert(|,##,Pear,|)])
+            iter(-4 -3 -2 -1,## [insert(||,##,Pear,|)])
+            iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)])
+          )
+        ),
+        148A471E93499E3B65FEBD56EA9A82F25912037A
+      )=
+  {
+    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_insert_fn=
+  @log smoke=End insert() test cases.;
+  @notify smoke
+-
+drop test_insert_fn
+-
+#
+# End of Test Cases
+#

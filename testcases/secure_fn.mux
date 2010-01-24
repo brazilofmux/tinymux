@@ -100,12 +100,13 @@
           B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD
         )=
     {
-      @log smoke=TC004: Unicode-color mix. Succeeded.
+      @log smoke=TC004: Unicode-color mix. Succeeded.;
+      @trig me/tr.done
     },
     {
-      @log smoke=TC004: Unicode-color mix. Failed (%q0).
+      @log smoke=TC004: Unicode-color mix. Failed (%q0).;
+      @trig me/tr.done
     };
-    @trig me/tr.done
   },
   {
     @log smoke=TC004: Unicode is not supported on this version. Okay.;

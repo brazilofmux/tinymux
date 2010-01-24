@@ -1,0 +1,93 @@
+#
+# shuffle_fn.mux - Test Cases for shuffle().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with shuffle() behaviors.
+#
+@create test_shuffle_fn
+-
+@set test_shuffle_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_shuffle_fn=
+  @log smoke=Beginning shuffle() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            sort(shuffle(foo bar baz gleep))
+          )
+        ),
+        E781E4DEE8517047FDA699DA1855EBE9C8FF19E0
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Exercise input and output delimiters.
+#
+&tr.tc002 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            shuffle(a a a a,,)
+            [shuffle(a a a a,,%b)]
+            [shuffle(a a a a,,-)]
+            [shuffle(a a a a,%b,)]
+            [shuffle(a a a a,%b,%b)]
+            [shuffle(a a a a,%b,-)]
+            [shuffle(a|a|a|a,|,)]
+            [shuffle(a|a|a|a,|,%b)]
+            [shuffle(a|a|a|a,|,-)]
+          )
+        ),
+        8E1A8CDF4A722DB1A45A9E4D02754357F9541315
+      )=
+  {
+    @log smoke=TC002: Input and output delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC002: Input and output delimiters. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of arguments.
+#
+&tr.tc003 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            shuffle(a|a|a|a,|)
+            [shuffle(a|a|a,|)]
+            [shuffle(a|a,|)]
+            [shuffle(a,|)]
+            [shuffle(,|)]
+          )
+        ),
+        2318642C6752974D7757F55BFA29DC7FC6B5ADD0
+      )=
+  {
+    @log smoke=TC003: Vary number of arguments. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: Vary number of arguments. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_shuffle_fn=
+  @log smoke=End shuffle() test cases.;
+  @notify smoke
+-
+drop test_shuffle_fn
+-
+#
+# End of Test Cases
+#

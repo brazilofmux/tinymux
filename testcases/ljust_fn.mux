@@ -37,15 +37,16 @@
   }
 -
 #
-# Test Case #2 - Regression of Issue 527.
+# Test Case #2 - Regressions.
 #
 &tr.tc002 test_ljust_fn=
   @if strmatch(
         setr(0,sha1(
             [iter(lnum(2,10),ljust(X,##,left(1234567890,##)))]
+            [translate(%ch[ljust(xx,10,%cn%cy.)],p)]
           )
         ),
-        D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE
+        16E1B2CAF075692CCA1F7C006C70283539DAF7FA
       )=
   {
     @log smoke=TC002: Regressions. Succeeded.
