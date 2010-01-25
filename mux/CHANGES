@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  December 2009
+Last Update:  January 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -359,6 +359,7 @@ Bug Fixes:
  -- Fix one case of #elif without a condition.
  -- Look for MySQL in /usr/local if it isn't found elsewhere (Issue 612).
  -- Throttle use of @reference (Issue 587).
+ -- Fix heap corruption bug in edit() codepath.
 
 
 Performance Enhancements:
