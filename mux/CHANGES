@@ -43,6 +43,7 @@ Bug Fixes:
  -- ./Backup script didn't work on OS X (Issue 604).
  -- Throttle use of @reference (Issue 587).
  -- Add missing attributes to muxattrs.dat.
+ -- Fix heap corruption bug in edit() codepath.
 
 
 Performance Enhancements:
