@@ -1,7 +1,7 @@
-TinyMUX 2.9: README (Unix-based)
-Last Update: December 2008
+TinyMUX 2.10: README (Unix-based)
+Last Update: January 2010
 
-Congratulations and welcome to the README file for TinyMUX 2.9.  That
+Congratulations and welcome to the README file for TinyMUX 2.10.  That
 you have chosen to actually read the file is a sign of bravery equal to
 that of Beowulf facing Grendel or anyone who has ever faced the garden
 variety lumbering behemoth.
@@ -18,7 +18,7 @@ because we want you to succeed, we are happy to provide a file that will,
 in our sincerest hopes, provide you with enough information to make that
 possible.  If not, it should be at least an entertaining read....
 
-The TinyMUX 2.9 README and supplemental documentation has been divided into
+The TinyMUX 2.10 README and supplemental documentation has been divided into
 multiple files.  For discussion and instructions on how to do various things
 associated with the care and feeding of your TinyMUX, please refer to the
 following files:
@@ -33,11 +33,11 @@ following files:
 
   NOTES               All kinds of tidbits made much easier to find.
                       Known compiling issues and known fixes are located
-                      here.  Known OSes that TinyMUX 2.9 will run on and
+                      here.  Known OSes that TinyMUX 2.10 will run on and
                       compiling issues.  Contains basic conversion
                       information.
 
-  docs/BACKUP         A file about the TinyMUX 2.9 Backup script.
+  docs/BACKUP         A file about the TinyMUX 2.10 Backup script.
 
   docs/CONFIGURATION  How to set up your TinyMUX, including an explanation of
                       the common configuration items, as well as how to set up
@@ -62,7 +62,7 @@ following files:
 
 General Information:
 ~~~~~~~~~~~~~~~~~~~
-TinyMUX 2.9 is written in a mix of C and C++ and is currently being developed
+TinyMUX 2.10 is written in a mix of C and C++ and is currently being developed
 on Win32, Win64, Debian, and FreeBSD.  It is a continuation of the TinyMUX 1.x
 flavor of MUSH servers.
 
@@ -109,7 +109,7 @@ Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Support for other database formats was removed circa TinyMUX 2.1.  To import
 one of the following formats, you must first use dbconvert from TinyMUX 2.0
-before using the resulting flatfile with TinyMUX 2.9.
+before using the resulting flatfile with TinyMUX 2.10.
 
    TinyMUX 1.4, 1.5, 1.6 (not beta)
    TinyMUX(Win32Beta) 1.5, 1.6, 2.0
@@ -166,7 +166,7 @@ due to lack of available time, it is ad-hoc.
 
 Environment:
 ~~~~~~~~~~~
-TinyMUX 2.9 should run on most Unixes with BSD-style sockets and a C++
+TinyMUX 2.10 should run on most Unixes with BSD-style sockets and a C++
 compiler that groks function prototypes.  It is 64-bit 'clean' code.  It
 has been compiled and run successfully 'out of the box' on the following
 platforms:
@@ -189,5 +189,5 @@ Solaris 2.4, 2.5, 2.6, 5.1, 9, 10.
 SuSE 6.2, 9.3-10.2
 Ubuntu 5.10
 
-If you get TinyMUX 2.9 working on another platform, please let us know
+If you get TinyMUX 2.10 working on another platform, please let us know
 about it!

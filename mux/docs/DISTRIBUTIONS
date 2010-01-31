@@ -1,10 +1,10 @@
-TinyMUX 2.9: DISTRIBUTIONS
-Last Update: December 2008
+TinyMUX 2.10: DISTRIBUTIONS
+Last Update: January 2010
 
-Where you can get TinyMUX 2.9:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Where you can get TinyMUX 2.10:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TinyMUX 2.9 is developed by Stephen Dennis (brazilofmux@gmail.com) and a small
+TinyMUX 2.10 is developed by Stephen Dennis (brazilofmux@gmail.com) and a small
 group of enthusiastic volunteers.  The server is simultaneously developed on
 Windows and Unix platforms.  For the latest version, updates, and news, please
 look at any of the project websites:
@@ -38,6 +38,7 @@ the game
                 2005-2006       2.6
                    2007         2.7
                 2008-2009       2.9
+                   2010         2.10
 
 2.x.1       Feature Change.  After Beta has started, the third number
             indicates a change in the feature set -- usually the addition of

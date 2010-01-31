@@ -103,7 +103,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib"
 				OutputFile=".\bin_release/netmux.exe"
-				Version="2.9"
+				Version="2.10"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ProgramDatabaseFile=".\bin_release/netmux.pdb"

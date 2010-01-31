@@ -1,5 +1,5 @@
-TinyMUX 2.9: README (Win32/64-based)
-Last Update: December 2008
+TinyMUX 2.10: README (Win32/64-based)
+Last Update: January 2010
 
 Herein are extra notes for the Win32/64 distribution.  These notes do not
 apply well to the Unix distribution.
@@ -34,7 +34,7 @@ named incorrectly.  Use version 2.50 of PKZip or use WinZip.
 Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
 You can use Cygwin tools to unpack the Win32 distribution.  However, as
 mentioned above, you should not be using the Win32 distribution if you want
-to use Cygwin to compile TinyMUX 2.9.
+to use Cygwin to compile TinyMUX 2.10.
 
 Regarding JAR from ARJ Software, this archiving tool produces the smallest
 files.  It's available via http://www.arjsoftware.com/jar.htm.
@@ -48,21 +48,21 @@ To use a binary distribution:
     following lines (depending on which archiving program you have chosen to
     use).
 
-        jar32 x mux-2.9.0.1.win32.bin.j
-        tar xzf mux-2.9.0.1.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.9.0.1.win32.bin.zip
+        jar32 x mux-2.10.0.1.win32.bin.j
+        tar xzf mux-2.10.0.1.win32.bin.tar.gz
+        pkzip -extract -directories mux-2.10.0.1.win32.bin.zip
 
     -or-
 
-    Unpack the mux-2.9.0.1.win32.bin.zip using WinZip.
+    Unpack the mux-2.10.0.1.win32.bin.zip using WinZip.
 
- 2. The pre-built binaries for 32-bit are already placed in mux2.9/game/bin and
-    ready to go.  64-bit binaries are provided in mux2.9/game/bin/win64, but to
+ 2. The pre-built binaries for 32-bit are already placed in mux2.10/game/bin and
+    ready to go.  64-bit binaries are provided in mux2.10/game/bin/win64, but to
     use those, you need to be using a 64-bit version of Windows, and you need
-    to copy them up one directory level into mux2.9/game/bin.  64-bit versions
+    to copy them up one directory level into mux2.10/game/bin.  64-bit versions
     of Windows can use either.
 
- 3. cd mux2.9/game
+ 3. cd mux2.10/game
 
  4. Possibly edit netmux.conf and mux.config to tweak the configuration.
 
@@ -82,26 +82,25 @@ To use a source distribution:
     following lines (depending on which archiving program you have chosen to
     use).
 
-        jar32 x mux-2.9.0.1.win32.src.j
-        tar xzf mux-2.9.0.1.win32.src.tar.gz
-        pkzip -extract -directories mux-2.9.0.1.win32.src.zip
+        jar32 x mux-2.10.0.1.win32.src.j
+        tar xzf mux-2.10.0.1.win32.src.tar.gz
+        pkzip -extract -directories mux-2.10.0.1.win32.src.zip
 
     -or-
 
-    Unpack the mux-2.9.0.1.win32.src.zip using WinZip.
+    Unpack the mux-2.10.0.1.win32.src.zip using WinZip.
 
- 2. Start Visual C++ and open the workspace file (mux2.9/src/netmux.dsw).  Your
+ 2. Start Visual C++ and open the workspace file (mux2.10/src/netmux.dsw).  Your
     version of Visual Studio may want to convert this workspace file into a
     'solution' file and also convert all the project files.  Let it do this,
     and then remember to work with the solution file thereafter.
 
  3. Within Visual C++, do a batch build in order to produce netmux.exe.  The
-    non-debug version will be placed in mux2.9/src/bin_release and must be
-    copied over to mux2.9/game/bin.  It will also build a libmux.dll file which
-    must also be copied over to mux2.9/game/bin.  Starting with 2.9, it will
-    also build several modules under mux2.9/src/modules/bin_release.  If you
-    intend to use these, they must also be copied into the mux2.9/game/bin
-    directory.
+    non-debug version will be placed in mux2.10/src/bin_release and must be
+    copied over to mux2.10/game/bin.  It will also build a libmux.dll file which
+    must also be copied over to mux2.10/game/bin.  It will also build several
+    modules under mux2.10/src/modules/bin_release.  If you intend to use
+    these, they must also be copied into the mux2.10/game/bin directory.
 
  4. Start the server with the following:
 
