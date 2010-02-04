@@ -84,11 +84,11 @@ void ParseFields(char *buffer, int max_fields, int &nFields, char *aFields[])
     }
 }
 
-void ParsePoints(const char *buffer, int max_points, int &nPoints, const char *aPoints[])
+void ParsePoints(char *buffer, int max_points, int &nPoints, const char *aPoints[])
 {
     nPoints = 0;
 
-    const char *p = buffer;
+    char *p = buffer;
     while (  '\0' != p[0]
           && nPoints < max_points)
     {

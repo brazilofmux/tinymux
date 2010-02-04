@@ -844,7 +844,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         if (6 <= nFields)
         {
             bool bValid = false;
-            const char *pDecomposition_Mapping = NULL;
+            char *pDecomposition_Mapping = NULL;
             const char *pDecomposition_Type = NULL;
             if ('<' == aFields[5][0])
             {
