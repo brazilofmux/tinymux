@@ -125,7 +125,7 @@ LRESULT CInputFrame::OnNotify(NMHDR *phdr)
             es.pfnCallback = CInputFrame::EditStreamCallback;
             (void)::SendMessage(m_hwndRichEdit, EM_STREAMOUT, SF_TEXT|SF_UNICODE, (LPARAM)&es);
 
-            LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0,NULL);
+            LRESULT lRes = ::SendMessage(m_hwndRichEdit, WM_SETTEXT, 0, NULL);
             return 1;
         }
         return 0;

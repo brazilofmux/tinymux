@@ -191,7 +191,8 @@ void CMainFrame::OnSessionNew()
 {
     if (NULL == g_theApp.m_hwndNewSession)
     {
-        g_theApp.m_hwndNewSession = CreateDialog(g_theApp.m_hInstance, (LPCTSTR)IDD_SESSIONBOX, m_hwnd, (DLGPROC)g_theApp.NewSessionProc);
+        g_theApp.m_hwndNewSession = CreateDialog(g_theApp.m_hInstance,
+            (LPCTSTR)IDD_SESSIONBOX, m_hwnd, (DLGPROC)g_theApp.NewSessionProc);
         ::ShowWindow(g_theApp.m_hwndNewSession, SW_SHOW);
     }
     else
@@ -217,7 +218,8 @@ void CMainFrame::OnAbout()
 {
     if (NULL == g_theApp.m_hwndAbout)
     {
-        g_theApp.m_hwndAbout = CreateDialog(g_theApp.m_hInstance, (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)g_theApp.AboutProc);
+        g_theApp.m_hwndAbout = CreateDialog(g_theApp.m_hInstance,
+            (LPCTSTR)IDD_ABOUTBOX, m_hwnd, (DLGPROC)g_theApp.AboutProc);
         ::ShowWindow(g_theApp.m_hwndAbout, SW_SHOW);
     }
     else
