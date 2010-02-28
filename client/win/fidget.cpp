@@ -109,12 +109,12 @@ LRESULT CALLBACK CFidgetApp::CBTProc
         }
     }
 
-    return CallNextHookEx(g_theApp.m_hhk, nCode, wParam, lParam);      
+    return CallNextHookEx(g_theApp.m_hhk, nCode, wParam, lParam);
 }
 
 bool CFidgetApp::EnableHook(void)
 {
-    m_hhk = SetWindowsHookEx(WH_CBT, CBTProc, NULL, ::GetCurrentThreadId()); 
+    m_hhk = SetWindowsHookEx(WH_CBT, CBTProc, NULL, ::GetCurrentThreadId());
     return (NULL != m_hhk);
 }
 
@@ -466,7 +466,18 @@ LRESULT CALLBACK CFidgetApp::NewSessionProc(HWND hDlg, UINT message, WPARAM wPar
     switch (message)
     {
     case WM_INITDIALOG:
-        return TRUE;
+
+        // Host name is limited to be less than 100 characters long.
+        // Port is limited to be numeric by the dialog resource.  It is also
+        // limited here to be no longer than five characters (i.e., 0-65535).
+        //
+        ::SendMessage(::GetDlgItem(hDlg, IDC_TCPIP_HOST), EM_SETLIMITTEXT, 100, 0);
+        ::SendMessage(::GetDlgItem(hDlg, IDC_TCPIP_PORT), EM_SETLIMITTEXT, 5, 0);
+
+        // Position at IDC_TCPIP_HOST.
+        //
+        SetFocus(::GetDlgItem(hDlg, IDC_TCPIP_HOST));
+        return FALSE;
 
     case WM_COMMAND:
         if (IDOK == LOWORD(wParam))
