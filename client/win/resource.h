@@ -26,8 +26,8 @@
 #define IDI_FIDGET                      122
 #define IDI_SMALL                       123
 #define IDI_BACKSCROLL                  124
-#define IDC_EDIT1                       1000
-#define IDC_EDIT2                       1001
+#define IDC_TCPIP_HOST                  1000
+#define IDC_TCPIP_PORT                  1001
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
