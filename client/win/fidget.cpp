@@ -459,42 +459,198 @@ LRESULT CALLBACK CFidgetApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, L
     return FALSE;
 }
 
+bool ValidateHost(WCHAR *aHost)
+{
+    bool fValid = true;
+    WCHAR *aHostOut = aHost;
+
+    // Skip leading spaces and zeroes.
+    //
+    while (  L'\0' != *aHost
+          && iswspace(*aHost))
+    {
+        aHost++;
+    }
+
+    // Copy valid characters until whitespace.
+    //
+    while (  L'\0' != *aHost
+          && !iswspace(*aHost))
+    {
+        *aHostOut++ = *aHost++;
+    }
+
+    *aHostOut = L'\0';
+
+    return fValid;
+}
+
+bool ValidatePort(WCHAR *aPort)
+{
+    bool fValid = true;
+    WCHAR *aPortOut = aPort;
+
+    // Skip leading spaces and zeroes.
+    //
+    while (  L'\0' != *aPort
+          && (  iswspace(*aPort)
+             || '0' == *aPort))
+    {
+        aPort++;
+    }
+
+    // Validate and count digits.
+    //
+    size_t n = 0;
+    while (  L'\0' != *aPort
+          && !iswspace(*aPort)
+          && n <= 5)
+    {
+        if (iswdigit(*aPort))
+        {
+            *aPortOut++ = *aPort;
+            n++;
+        }
+        else
+        {
+            fValid = false;
+        }
+        aPort++;
+    }
+
+    // Skip trailing spaces.
+    //
+    while (  L'\0' != *aPort
+          && iswspace(*aPort))
+    {
+        aPort++;
+    }
+
+    if (L'\0' != *aPort)
+    {
+        fValid = false;
+    }
+
+    if (0 == n)
+    {
+        fValid = false;
+    }
+
+    *aPortOut = L'\0';
+        
+    return fValid;
+}
+
 // Mesage handler for New Session Dialog.
 //
 LRESULT CALLBACK CFidgetApp::NewSessionProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    WCHAR aTcpIpHost[256];
+    WCHAR aTcpIpPort[6];
+
     switch (message)
     {
     case WM_INITDIALOG:
 
-        // Host name is limited to be less than 100 characters long.
+        // Host name is limited to be less than 255 characters long.
         // Port is limited to be numeric by the dialog resource.  It is also
         // limited here to be no longer than five characters (i.e., 0-65535).
+        // It is still possible to paste non-digit characters into
+        // IDC_TCPIP_PORT.  These can be removed at EN_KILLFOCUS time or at
+        // IDOK time.
         //
-        ::SendMessage(::GetDlgItem(hDlg, IDC_TCPIP_HOST), EM_SETLIMITTEXT, 100, 0);
+        ::SendMessage(::GetDlgItem(hDlg, IDC_TCPIP_HOST), EM_SETLIMITTEXT, 255, 0);
         ::SendMessage(::GetDlgItem(hDlg, IDC_TCPIP_PORT), EM_SETLIMITTEXT, 5, 0);
 
-        // Position at IDC_TCPIP_HOST.
+        // The dialog automatically positions at IDC_TCPIP_HOST since it
+        // appears first in the dialog resource.
         //
-        SetFocus(::GetDlgItem(hDlg, IDC_TCPIP_HOST));
-        return FALSE;
+        return TRUE;
 
     case WM_COMMAND:
-        if (IDOK == LOWORD(wParam))
         {
-            CSessionFrame *pChild = g_theApp.m_pMainFrame->m_pMDIControl->CreateNewChild();
+            WORD wControlId  = LOWORD(wParam);
+            WORD wNotifyCode = HIWORD(wParam);
+            if (IDOK == wControlId)
+            {
+                const int nMaxTcpIpHost = sizeof(aTcpIpHost)/sizeof(WCHAR);
+                UINT  nTcpIpHost = ::GetDlgItemText(hDlg, IDC_TCPIP_HOST, aTcpIpHost, nMaxTcpIpHost);
+                if (0 == nTcpIpHost)
+                {
+                    aTcpIpHost[nTcpIpHost] = L'\0';
+                }
 
-            DestroyWindow(hDlg);
-            g_theApp.m_hwndNewSession = NULL;
-            return TRUE;
+                const int nMaxTcpIpPort = sizeof(aTcpIpPort)/sizeof(WCHAR);
+                UINT  nTcpIpPort = ::GetDlgItemText(hDlg, IDC_TCPIP_PORT, aTcpIpPort, nMaxTcpIpPort);
+                if (0 == nTcpIpPort)
+                {
+                    aTcpIpPort[nTcpIpPort] = L'\0';
+                }
+
+                bool fValidHost = ValidateHost(aTcpIpHost);
+                bool fValidPort = ValidatePort(aTcpIpPort);
+
+                // Update all fields.
+                //
+                ::SetDlgItemText(hDlg, IDC_TCPIP_HOST, aTcpIpHost);
+                ::SetDlgItemText(hDlg, IDC_TCPIP_PORT, aTcpIpPort);
+
+                // Focus on first invalid field.
+                //
+                if (!fValidHost)
+                {
+                    ::SetFocus(::GetDlgItem(hDlg, IDC_TCPIP_HOST));
+                    return FALSE;
+                }
+
+                if (!fValidPort)
+                {
+                    ::SetFocus(::GetDlgItem(hDlg, IDC_TCPIP_PORT));
+                    return FALSE;
+                }
+                
+                CSessionFrame *pChild = g_theApp.m_pMainFrame->m_pMDIControl->CreateNewChild();
+
+                DestroyWindow(hDlg);
+                g_theApp.m_hwndNewSession = NULL;
+                return TRUE;
+            }
+            else if (IDCANCEL == wControlId)
+            {
+                DestroyWindow(hDlg);
+                g_theApp.m_hwndNewSession = NULL;
+                return TRUE;
+            }
+            else if (IDC_TCPIP_HOST == wControlId)
+            {
+                if (EN_KILLFOCUS == wNotifyCode)
+                {
+                    const int nMaxTcpIpHost = sizeof(aTcpIpHost)/sizeof(WCHAR);
+                    UINT  nTcpIpHost = ::GetDlgItemText(hDlg, IDC_TCPIP_HOST, aTcpIpHost, nMaxTcpIpHost);
+                    if (0 == nTcpIpHost)
+                    {
+                        aTcpIpHost[nTcpIpHost] = L'\0';
+                    }
+                    ValidateHost(aTcpIpHost);
+                    ::SetDlgItemText(hDlg, IDC_TCPIP_HOST, aTcpIpHost);
+                }
+            }
+            else if (IDC_TCPIP_PORT == wControlId)
+            {
+                if (EN_KILLFOCUS == wNotifyCode)
+                {
+                    const int nMaxTcpIpPort = sizeof(aTcpIpPort)/sizeof(WCHAR);
+                    UINT  nTcpIpPort = ::GetDlgItemText(hDlg, IDC_TCPIP_PORT, aTcpIpPort, nMaxTcpIpPort);
+                    if (0 == nTcpIpPort)
+                    {
+                        aTcpIpPort[nTcpIpPort] = L'\0';
+                    }
+                    ValidatePort(aTcpIpPort);
+                    ::SetDlgItemText(hDlg, IDC_TCPIP_PORT, aTcpIpPort);
+                }
+            }
+            break;
         }
-        else if (IDCANCEL == LOWORD(wParam))
-        {
-            DestroyWindow(hDlg);
-            g_theApp.m_hwndNewSession = NULL;
-            return TRUE;
-        }
-        break;
     }
     return FALSE;
 }
