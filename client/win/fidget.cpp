@@ -465,7 +465,7 @@ LRESULT CALLBACK CFidgetApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, L
 // Each label may contain ASCII letters 'a' through 'z' (case insensitive), digits ('0' through '9'), or hyphen.
 // No label may begin or end with a hyphen.
 //
-bool ValidateHost(WCHAR *aHost)
+bool ValidateHost(WCHAR aHost[])
 {
     bool fValid = true;
     size_t i = 0;
@@ -584,48 +584,49 @@ bool ValidateHost(WCHAR *aHost)
     return fValid;
 }
 
-bool ValidatePort(WCHAR *aPort)
+bool ValidatePort(WCHAR aPort[])
 {
     bool fValid = true;
-    WCHAR *aPortOut = aPort;
+    size_t i = 0;
+    size_t j = 0;
 
     // Skip leading spaces and zeroes.
     //
-    while (  L'\0' != *aPort
-          && (  iswspace(*aPort)
-             || '0' == *aPort))
+    while (  L'\0' != aPort[i]
+          && (  iswspace(aPort[i])
+             || '0' == aPort[i]))
     {
-        aPort++;
+        i++;
     }
 
     // Validate and count digits.
     //
     size_t n = 0;
-    while (  L'\0' != *aPort
-          && !iswspace(*aPort)
+    while (  L'\0' != aPort[i]
+          && !iswspace(aPort[i])
           && n <= 5)
     {
-        if (iswdigit(*aPort))
+        if (iswdigit(aPort[i]))
         {
-            *aPortOut++ = *aPort;
+            aPort[j++] = aPort[i];
             n++;
         }
         else
         {
             fValid = false;
         }
-        aPort++;
+        i++;
     }
 
     // Skip trailing spaces.
     //
-    while (  L'\0' != *aPort
-          && iswspace(*aPort))
+    while (  L'\0' != aPort[i]
+          && iswspace(aPort[i]))
     {
-        aPort++;
+        i++;
     }
 
-    if (L'\0' != *aPort)
+    if (L'\0' != aPort[i])
     {
         fValid = false;
     }
@@ -635,8 +636,36 @@ bool ValidatePort(WCHAR *aPort)
         fValid = false;
     }
 
-    *aPortOut = L'\0';
-        
+    aPort[j] = L'\0';
+
+	if (fValid)
+	{
+		// Data is validated sufficiently tightly to risk calling _wtoi().
+		//
+		for (;;)
+		{
+			long iPort = _wtoi(aPort);
+			if (0 < iPort && iPort < 65536)
+			{
+				break;
+			}
+			else if (  0 < j
+					&& 65536 <= iPort)
+			{
+				// Truncate last digit
+				//
+				j--;
+				aPort[j] = L'\0';
+				fValid = false;
+			}
+			else
+			{
+				fValid = false;
+				break;
+			}
+		}
+	}
+
     return fValid;
 }
 
