@@ -459,28 +459,127 @@ LRESULT CALLBACK CFidgetApp::AboutProc(HWND hDlg, UINT message, WPARAM wParam, L
     return FALSE;
 }
 
+// A hostname is limited to 255 characters total.
+// It is broken into labels separated by periods.
+// Each label is limited to between 1 and 63 characters.
+// Each label may contain ASCII letters 'a' through 'z' (case insensitive), digits ('0' through '9'), or hyphen.
+// No label may begin or end with a hyphen.
+//
 bool ValidateHost(WCHAR *aHost)
 {
     bool fValid = true;
-    WCHAR *aHostOut = aHost;
+    size_t i = 0;
+    size_t j = 0;
 
-    // Skip leading spaces and zeroes.
+    // Skip leading invalid characters. Hyphen and period may not occur at the beginning.
     //
-    while (  L'\0' != *aHost
-          && iswspace(*aHost))
-    {
-        aHost++;
+	while (  L'\0' != aHost[i]
+          && (aHost[i] < L'a' || L'z' < aHost[i])
+          && (aHost[i] < L'A' || L'Z' < aHost[i])
+	      && (aHost[i] < L'0' || L'9' < aHost[i]))
+	{
+        i++;
     }
 
-    // Copy valid characters until whitespace.
+    // Copy valid characters until whitespace or end of string.
     //
-    while (  L'\0' != *aHost
-          && !iswspace(*aHost))
+    size_t nLabel = 0;
+    for (;;)
     {
-        *aHostOut++ = *aHost++;
+        if (  L'\0' == aHost[i]
+           || iswspace(aHost[i]))
+        {
+            break;
+        }
+        else if (  (L'a' <= aHost[i] && aHost[i] <= L'z')
+                || (L'0' <= aHost[i] && aHost[i] <= L'9'))
+        {
+            nLabel++;
+            if (63 < nLabel)
+            {
+                // A label must be 63 characters or less.
+                //
+                fValid = false;
+            }
+            aHost[j++] = aHost[i++];
+        }
+        else if (L'A' <= aHost[i] && aHost[i] <= L'Z')
+        {
+            nLabel++;
+            if (63 < nLabel)
+            {
+                // A label must be 63 characters or less.
+                //
+                fValid = false;
+            }
+
+            // Convert to lower-case.
+            //
+            aHost[j++] = aHost[i++] + (L'a' - L'A');
+        }
+        else if (L'.' == aHost[i])
+        {
+            if (0 == nLabel)
+            {
+                // A label must contain at least one character.
+                //
+                fValid = false;
+            }
+            else if (  0 < j
+                    && L'-' == aHost[j-1])
+            {
+                // A label cannot end with a hyphen.
+                //
+                fValid = false;
+            }
+            nLabel = 0;
+            aHost[j++] = aHost[i++];
+        }
+        else if (L'-' == aHost[i])
+        {
+            if (0 == nLabel)
+            {
+                // A label cannot start with a hyphen.
+                //
+                fValid = false;
+            }
+            nLabel++;
+            if (63 < nLabel)
+            {
+                // A label must be 63 characters or less.
+                //
+                fValid = false;
+            }
+            aHost[j++] = aHost[i++];
+        }
+        else
+        {
+            // Skip it.
+            //
+            i++;
+        }
     }
 
-    *aHostOut = L'\0';
+    if (0 == nLabel)
+    {
+        // A label must contain at least one character.
+        //
+        fValid = false;
+    }
+    else if (  0 < j
+            && L'-' == aHost[j-1])
+    {
+        // A label cannot end with a hyphen.
+        //
+        fValid = false;
+    }
+
+    if (255 < j)
+    {
+        fValid = false;
+    }
+
+    aHost[j++] = L'\0';
 
     return fValid;
 }
