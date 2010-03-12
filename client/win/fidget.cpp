@@ -473,11 +473,11 @@ bool ValidateHost(WCHAR aHost[])
 
     // Skip leading invalid characters. Hyphen and period may not occur at the beginning.
     //
-	while (  L'\0' != aHost[i]
+    while (  L'\0' != aHost[i]
           && (aHost[i] < L'a' || L'z' < aHost[i])
           && (aHost[i] < L'A' || L'Z' < aHost[i])
-	      && (aHost[i] < L'0' || L'9' < aHost[i]))
-	{
+          && (aHost[i] < L'0' || L'9' < aHost[i]))
+    {
         i++;
     }
 
@@ -638,33 +638,33 @@ bool ValidatePort(WCHAR aPort[])
 
     aPort[j] = L'\0';
 
-	if (fValid)
-	{
-		// Data is validated sufficiently tightly to risk calling _wtoi().
-		//
-		for (;;)
-		{
-			long iPort = _wtoi(aPort);
-			if (0 < iPort && iPort < 65536)
-			{
-				break;
-			}
-			else if (  0 < j
-					&& 65536 <= iPort)
-			{
-				// Truncate last digit
-				//
-				j--;
-				aPort[j] = L'\0';
-				fValid = false;
-			}
-			else
-			{
-				fValid = false;
-				break;
-			}
-		}
-	}
+    if (fValid)
+    {
+        // Data is validated sufficiently tightly to risk calling _wtoi().
+        //
+        for (;;)
+        {
+            long iPort = _wtoi(aPort);
+            if (0 < iPort && iPort < 65536)
+            {
+                break;
+            }
+            else if (  0 < j
+                    && 65536 <= iPort)
+            {
+                // Truncate last digit
+                //
+                j--;
+                aPort[j] = L'\0';
+                fValid = false;
+            }
+            else
+            {
+                fValid = false;
+                break;
+            }
+        }
+    }
 
     return fValid;
 }
