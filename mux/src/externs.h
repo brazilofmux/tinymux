@@ -999,7 +999,7 @@ typedef struct
 
 #define MAX_LISTEN_PORTS 10
 #ifdef SSL_ENABLED
-extern int initialize_ssl();
+extern bool initialize_ssl();
 extern void shutdown_ssl();
 
 extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];

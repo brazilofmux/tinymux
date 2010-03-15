@@ -997,7 +997,7 @@ int pem_passwd_callback(char *buf, int size, int rwflag, void *userdata)
     return ((passwdLen > size) ? size : passwdLen);
 }
 
-int initialize_ssl()
+bool initialize_ssl()
 {
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
@@ -1015,7 +1015,7 @@ int initialize_ssl()
         SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
         tls_ctx = NULL;
-        return 0;
+        return false;
     }
     if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
@@ -1027,7 +1027,7 @@ int initialize_ssl()
         SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
         tls_ctx = NULL;
-        return 0;
+        return false;
     }
 
     SSL_CTX_set_default_passwd_cb(ssl_ctx, pem_passwd_callback);
@@ -1045,7 +1045,7 @@ int initialize_ssl()
         SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
         tls_ctx = NULL;
-        return 0;
+        return false;
     }
 
     /* Since we're reusing settings, we only need to check the key once.
@@ -1057,7 +1057,7 @@ int initialize_ssl()
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
         ssl_ctx = NULL;
-        return 0;
+        return false;
     }
 
 
@@ -1073,7 +1073,7 @@ int initialize_ssl()
     log_text(T("initialize_ssl: SSL engine initialized successfully."));
     ENDLOG;
 
-    return 1;
+    return true;
 }
 
 void shutdown_ssl()
