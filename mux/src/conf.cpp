@@ -73,7 +73,7 @@ void cf_init(void)
         ISOUTOFMEMORY(mudconf.ports.pi);
     }
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     mudconf.sslPorts.n = 0;
     mudconf.sslPorts.pi = NULL;
     mudconf.ssl_certificate_file[0] = '\0';
@@ -2225,7 +2225,7 @@ static CONFPARM conftable[] =
     {T("player_starting_home"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
     {T("player_starting_room"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
     {T("port"),                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     {T("port_ssl"),                  cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.sslPorts,        NULL, MAX_LISTEN_PORTS},
 #endif
     {T("postdump_message"),          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             256},
@@ -2267,7 +2267,7 @@ static CONFPARM conftable[] =
     {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
     {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      NULL,               0},
     {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  NULL,               0},
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     {T("ssl_certificate_file"),      cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_file,NULL,          128},
     {T("ssl_certificate_key"),       cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_key, NULL,          128},
     {T("ssl_certificate_password"),  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_password, NULL,     128},

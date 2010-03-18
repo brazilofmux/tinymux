@@ -9,7 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 
-#ifndef SSL_ENABLED
+#ifndef UNIX_DIGEST
 
 #include "sha1.h"
 

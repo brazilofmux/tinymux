@@ -31,7 +31,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
 extern "C" MUX_RESULT DCL_API pipepump(void);
 #endif // STUB_SLAVE
 #endif // HAVE_WORKING_FORK
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
 void CleanUpSSLConnections(void);
 #endif
 
@@ -992,13 +992,13 @@ typedef struct
 {
     int    port;
     SOCKET socket;
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     bool   fSSL;
 #endif
 } PortInfo;
 
 #define MAX_LISTEN_PORTS 10
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
 extern bool initialize_ssl();
 extern void shutdown_ssl();
 

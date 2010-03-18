@@ -30,7 +30,7 @@
 #include <sys/select.h>
 #endif // UNIX_NETWORKING_SELECT && HAVE_SYS_SELECT_H
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
 #include <openssl/ssl.h>
 #endif
 
@@ -237,7 +237,7 @@ struct descriptor_data
   UTF8 username[11];
   UTF8 doing[SIZEOF_DOING_STRING];
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
   SSL *ssl_session;
 #endif
 };

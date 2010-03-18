@@ -19,7 +19,7 @@
 #include "interface.h"
 #include "mathutil.h"
 #include "powers.h"
-#ifdef SSL_ENABLED
+#ifdef UNIX_DIGEST
 #include <openssl/sha.h>
 #else
 #include "sha1.h"

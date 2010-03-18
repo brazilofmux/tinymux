@@ -346,6 +346,7 @@ typedef char  boolexp_type;
 #define WINDOWS_TIME
 #define WINDOWS_THREADS
 #define WINDOWS_INSTRINSICS
+//#define WINDOWS_SSL
 #define TINYMUX_MODULES
 
 #define DCL_CDECL  __cdecl
@@ -413,6 +414,10 @@ typedef unsigned __int64 UINT64;
 #define UNIX_DYNALIB
 #define TINYMUX_MODULES
 #endif // HAVE_DLOPEN
+#if defined(SSL_ENABLED)
+#define UNIX_SSL
+#define UNIX_DIGEST
+#endif // SSL_ENABLED
 
 #if defined(HAVE_SYS_SELECT_H) && defined(HAVE_SELECT)
 #define UNIX_NETWORKING_SELECT

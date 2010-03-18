@@ -456,7 +456,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
             //      the same exact write request later than to extend the
             //      request to something larger.
             //
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
             if (d->ssl_session)
             {
                 tp->hdr.flags |= TBLK_FLAG_LOCKED;

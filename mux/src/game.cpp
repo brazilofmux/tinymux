@@ -3436,7 +3436,7 @@ int DCL_CDECL main(int argc, char *argv[])
     init_sql();
 #endif // INLINESQL
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     if (!initialize_ssl())
     {
         // Do some extra handling?
@@ -3544,7 +3544,7 @@ int DCL_CDECL main(int argc, char *argv[])
             DebugTotalFiles--;
         }
     }
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
 #else
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL, mudconf.ip_address);
@@ -3643,7 +3643,7 @@ int DCL_CDECL main(int argc, char *argv[])
     WSACleanup();
 #endif // WINDOWS_NETWORKING
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     shutdown_ssl();
 #endif
 

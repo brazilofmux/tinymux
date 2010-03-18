@@ -195,7 +195,7 @@ struct confdata
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     IntArray    sslPorts;       // SSL ports
 
     // Due to OpenSSL requirements, these have to be char, NOT UTF8.  Sorry. :(

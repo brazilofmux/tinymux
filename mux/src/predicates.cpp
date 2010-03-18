@@ -1571,7 +1571,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
         return;
     }
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     raw_broadcast(0, T("GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"), Moniker(Owner(executor)));
 #else
     raw_broadcast(0, T("GAME: Restart by %s, please wait."), Moniker(Owner(executor)));
@@ -1581,7 +1581,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     log_name(executor);
     ENDLOG;
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_SSL
     CleanUpSSLConnections();
 #endif
 

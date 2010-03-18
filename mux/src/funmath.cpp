@@ -19,7 +19,7 @@
 #include "funmath.h"
 #include "mathutil.h"
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_DIGEST
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #else
@@ -2744,7 +2744,7 @@ FUNCTION(fun_digest)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-#ifdef SSL_ENABLED
+#ifdef UNIX_DIGEST
     EVP_MD_CTX ctx;
 
     const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
@@ -2775,5 +2775,5 @@ FUNCTION(fun_digest)
     {
         safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
     }
-#endif // SSL_ENABLED
+#endif // UNIX_DIGEST
 }
