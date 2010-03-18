@@ -1295,7 +1295,7 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
     listen(s, SOMAXCONN);
     Port->socket = s;
 #ifdef SSL_ENABLED
-    Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->ssl ? "SSL" : "plaintext");
+    Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->fSSL ? "SSL" : "plaintext");
 #else
     Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
 #endif
@@ -1388,7 +1388,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
             k = *pnPorts;
             aPorts[k].port = pia->pi[j];
 #ifdef SSL_ENABLED
-            aPorts[k].ssl = 0;
+            aPorts[k].fSSL = false;
 #endif
             make_socket(aPorts+k, ip_address);
             if (  !IS_INVALID_SOCKET(aPorts[k].socket)
@@ -1427,7 +1427,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
             {
                 k = *pnPorts;
                 aPorts[k].port = piaSSL->pi[j];
-                aPorts[k].ssl = 1;
+                aPorts[k].fSSL = true;
                 make_socket(aPorts+k, ip_address);
                 if (  !IS_INVALID_SOCKET(aPorts[k].socket)
 #if defined(UNIX_NETWORKING)
@@ -2272,7 +2272,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #ifdef SSL_ENABLED
         SSL *ssl_session = NULL;
 
-        if (Port->ssl && ssl_ctx)
+        if (Port->fSSL && ssl_ctx)
         {
             ssl_session = SSL_new(ssl_ctx);
             SSL_set_fd(ssl_session, newsock);

@@ -993,7 +993,7 @@ typedef struct
     int    port;
     SOCKET socket;
 #ifdef SSL_ENABLED
-    int    ssl;
+    bool   fSSL;
 #endif
 } PortInfo;
 

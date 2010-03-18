@@ -3609,7 +3609,7 @@ void dump_restart_db(void)
         putref(f, aMainGamePorts[i].port);
         putref(f, aMainGamePorts[i].socket);
 #ifdef SSL_ENABLED
-        putref(f, aMainGamePorts[i].ssl);
+        putref(f, aMainGamePorts[i].fSSL ? 1 : 0);
 #else
         putref(f, 0);
 #endif
@@ -3693,9 +3693,10 @@ void load_restart_db(void)
             if (3 <= version)
             {
 #ifdef SSL_ENABLED
-                aMainGamePorts[i].ssl = getref(f);
+                aMainGamePorts[i].fSSL = (0 != getref(f));
 #else
-                getref(f); // Eat meaningless field
+                // Eat meaningless field.
+                (void)getref(f);
 #endif
             }
         }
