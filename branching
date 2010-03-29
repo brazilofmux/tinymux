@@ -108,8 +108,8 @@ scaled better.  As it is, newer developers are working in branches named after
 older, now-idle developers.
 
 We are now using a combination of SVN and GIT with much better support for
-branching.  Control of work is formalized in the Issue database, and no
-changes (no matter how mundane) are made unless there is an Issue that covers
-and approves it (no matter how mundane).  Furthermore, instead of a single
+branching.  Control of work is formalized in the Issue database.  It is
+preferred that no change (no matter how mundane) is made unless there is an
+Issue that covers and approves it.  Furthermore, instead of a single
 gate-keeper, each leaf branch can have its own gate-keeper, impose their own
 rules, fulfill their own internal QA function in their own way.
