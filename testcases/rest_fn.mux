@@ -1,0 +1,44 @@
+#
+# rest_fn.mux - Test Cases for rest().
+# $Id$
+#
+@create test_rest_fn
+-
+@set test_rest_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_rest_fn=
+  @log smoke=Beginning rest() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(This is a test)]
+            [rest(Would you like coffee, or perhaps tea)]
+            [rest(List!with!different!delimiters,!)]
+          )
+        ),
+        0000000000000000000000000000000000000000
+      )=
+  {
+    @log smoke=TC001: rest examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: rest examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+&tr.done test_rest_fn=
+  @log smoke=End rest() test cases.;
+  @notify smoke
+-
+drop test_rest_fn
+-
+#
+# End of Test Cases
+#

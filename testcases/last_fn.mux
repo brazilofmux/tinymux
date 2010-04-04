@@ -1,0 +1,43 @@
+#
+# last_fn.mux - Test Cases for last().
+# $Id$
+#
+@create test_last_fn
+-
+@set test_last_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_last_fn=
+  @log smoke=Beginning last() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(This is a test)]
+            [last(Happy-Fun-Test-Thing,-)]
+          )
+        ),
+        6B29D54D17E640A77827E4A56AD42F202188B9C0
+      )=
+  {
+    @log smoke=TC001: last examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: last examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+&tr.done test_last_fn=
+  @log smoke=End last() test cases.;
+  @notify smoke
+-
+drop test_last_fn
+-
+#
+# End of Test Cases
+#

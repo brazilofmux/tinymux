@@ -1,0 +1,44 @@
+#
+# first_fn.mux - Test Cases for first().
+# $Id$
+#
+@create test_first_fn
+-
+@set test_first_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_first_fn=
+  @log smoke=Beginning first() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(This is a test)]
+            [first(Would you like coffee, or perhaps tea)]
+            [first(List&with&nonstandard&delimiters,&)]
+          )
+        ),
+        0000000000000000000000000000000000000000
+      )=
+  {
+    @log smoke=TC001: first examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: first examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+&tr.done test_first_fn=
+  @log smoke=End first() test cases.;
+  @notify smoke
+-
+drop test_first_fn
+-
+#
+# End of Test Cases
+#
