@@ -23,7 +23,7 @@
             [rest(List!with!different!delimiters,!)]
           )
         ),
-        0000000000000000000000000000000000000000
+        948C7B2E7A1CB66F0BF5572D267B0D181B70764A
       )=
   {
     @log smoke=TC001: rest examples. Succeeded.;
@@ -33,6 +33,7 @@
     @log smoke=TC001: rest examples. Failed (%q0).;
     @trig me/tr.done
   }
+-
 &tr.done test_rest_fn=
   @log smoke=End rest() test cases.;
   @notify smoke

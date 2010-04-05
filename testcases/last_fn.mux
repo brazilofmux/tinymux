@@ -32,6 +32,7 @@
     @log smoke=TC001: last examples. Failed (%q0).;
     @trig me/tr.done
   }
+-
 &tr.done test_last_fn=
   @log smoke=End last() test cases.;
   @notify smoke

@@ -23,7 +23,7 @@
             [first(List&with&nonstandard&delimiters,&)]
           )
         ),
-        0000000000000000000000000000000000000000
+        FB7BF5BC0AB59D2CCC3D34E252DF0CE4AD3E916B
       )=
   {
     @log smoke=TC001: first examples. Succeeded.;
@@ -33,6 +33,7 @@
     @log smoke=TC001: first examples. Failed (%q0).;
     @trig me/tr.done
   }
+-
 &tr.done test_first_fn=
   @log smoke=End first() test cases.;
   @notify smoke
