@@ -25,11 +25,29 @@
         6B29D54D17E640A77827E4A56AD42F202188B9C0
       )=
   {
-    @log smoke=TC001: last examples. Succeeded.;
+    @log smoke=TC001: last examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: last examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(%ba b c%b)]
+          )
+        ),
+        84A516841BA77A5B4648DE2CD0DFCB30EA46DBB4
+      )=
+  {
+    @log smoke=TC002: last regressions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: last examples. Failed (%q0).;
+    @log smoke=TC002: last regressions. Failed (%q0).;
     @trig me/tr.done
   }
 -

@@ -26,11 +26,29 @@
         FB7BF5BC0AB59D2CCC3D34E252DF0CE4AD3E916B
       )=
   {
-    @log smoke=TC001: first examples. Succeeded.;
+    @log smoke=TC001: first examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: first examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(%ba b c%b)]
+          )
+        ),
+        86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
+      )=
+  {
+    @log smoke=TC002: first regressions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: first examples. Failed (%q0).;
+    @log smoke=TC002: first regressions. Failed (%q0).;
     @trig me/tr.done
   }
 -

@@ -34,6 +34,26 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(%ba b c%b)]
+          )
+        ),
+        B005807AE4A78B35A2ACCADEF2919ACDB6639CCF
+      )=
+  {
+    @log smoke=TC002: rest regressions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: rest regressions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_rest_fn=
   @log smoke=End rest() test cases.;
   @notify smoke
