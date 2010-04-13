@@ -512,6 +512,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     //
     atr_push();
     dbref iObject;
+    char *tbuff = alloc_lbuf("dbclean_RenumberAttributes.534");
     DO_WHOLE_DB(iObject)
     {
         char *as;
@@ -526,16 +527,29 @@ static void dbclean_RenumberAttributes(int cVAttributes)
                 int iNew = aMap[iAttr-iMapStart];
                 if (iNew)
                 {
-                    dbref iOwner;
-                    int   iFlag;
-                    char *pRecord = atr_get(iObject, iAttr, &iOwner, &iFlag);
-                    atr_add_raw(iObject, iNew, pRecord);
-                    free_lbuf(pRecord);
-                    atr_add_raw(iObject, iAttr, NULL);
+                    // Copy value from old attribute number to new attribute
+                    // number. Raw access does not support using returned
+                    // pointer for any other database access, so value must be
+                    // copied to a temporary buffer.  Encoded attribute flags
+                    // and encoded attribute owner are copied in encoded form.
+                    //
+                    size_t n;
+                    const char *p = atr_get_raw_LEN(iObject, iAttr, &n);
+                    if (NULL != p)
+                    {
+                        memcpy(tbuff, p, n);
+                        atr_add_raw_LEN(iObject, iNew, tbuff, n);
+                    }
+
+                    // Delete value at old attribute number.
+                    //
+                    atr_add_raw_LEN(iObject, iAttr, NULL, 0);
                 }
             }
         }
     }
+    free_lbuf(tbuff);
+    tbuff = NULL;
 
     // Traverse entire @addcommand data structure.
     //
