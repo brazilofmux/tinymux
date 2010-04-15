@@ -151,7 +151,8 @@ static void pcache_save(PCACHE *pp)
 void pcache_reload(dbref player)
 {
     if (  Good_obj(player)
-       && OwnsOthers(player))
+       && OwnsOthers(player)
+       && !mudstate.bStandAlone)
     {
         PCACHE *pp = pcache_find(player);
         pcache_save(pp);
