@@ -1547,6 +1547,7 @@ static void check_loc_exits(dbref loc)
                 s_Exits(exit, loc);
             }
         }
+
         if (exit != NOTHING)
         {
             // All OK (or all was made OK).
@@ -1558,7 +1559,8 @@ static void check_loc_exits(dbref loc)
                 //
                 temp = Owner(exit);
                 if (  temp != Owner(loc)
-                   && temp != Owner(Location(exit)))
+                   && !(  Good_dbref(dest)
+                       && temp == Owner(dest)))
                 {
                     Log_header_err(exit, loc, temp, true, T("Owner"),
                         T("does not own either the source or destination."));
