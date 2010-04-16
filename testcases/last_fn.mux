@@ -67,7 +67,7 @@
             [last(a b c d e f g h)]
           )
         ),
-        0000000000000000000000000000000000000000
+        425AF12A0743502B322E93A015BCF868E324D56A
       )=
   {
     @log smoke=TC003: last with element count. Succeeded.
@@ -91,7 +91,7 @@
             [last(%b%b%ba)]
           )
         ),
-        0000000000000000000000000000000000000000
+        84A9A1BC4C61161667A244839F47A6C989988892
       )=
   {
     @log smoke=TC004: last walk two elements through whitespace. Succeeded.
@@ -127,7 +127,7 @@
             [last(a b c d e f g h%b%b)]
           )
         ),
-        0000000000000000000000000000000000000000
+        335DA2829014E3275529C26BC799E83F369285B2
       )=
   {
     @log smoke=TC005: last walk whitespace through elements. Succeeded.
@@ -154,7 +154,7 @@
             [last(a-b-c-d-e-f-g-h,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        425AF12A0743502B322E93A015BCF868E324D56A
       )=
   {
     @log smoke=TC006: last vary elements with single-hyphen delimiter. Succeeded.
@@ -178,7 +178,7 @@
             [last(---a,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        6C0596B8AC609191181A90517D51C0B486F23799
       )=
   {
     @log smoke=TC007: last walk two elements through single-hyphens. Succeeded.
@@ -214,7 +214,7 @@
             [last(a-b-c-d-e-f-g-h--,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        A00EDCBA60A5FDF544A0C7EFF462F288F12035D2
       )=
   {
     @log smoke=TC008: last walk single-hypens through elements. Succeeded.;
