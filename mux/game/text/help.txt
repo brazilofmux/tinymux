@@ -12006,8 +12006,7 @@ SEARCH CLASSES
   function calls:
 
   TYPE      - Restricts to objects of the indicated type (OBJECTS, ROOMS,
-              EXITS, PLAYERS, GARBAGE).  THINGS may be used as an alias for
-              OBJECTS.
+              EXITS, PLAYERS).  THINGS may be used as an alias for OBJECTS.
   NAME      - Restricts to objects whose names start with <restriction>.
   OBJECTS   - A combination of TYPE=OBJECT and NAME=<restriction>.
   THINGS    - An alias for OBJECTS.

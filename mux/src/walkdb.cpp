@@ -698,10 +698,6 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
             {
                 parm->s_rst_type = TYPE_THING;
             }
-            else if (string_prefix(T("garbage"), searchfor))
-            {
-                parm->s_rst_type = TYPE_GARBAGE;
-            }
             else if (string_prefix(T("players"), searchfor))
             {
                 parm->s_rst_type = TYPE_PLAYER;
