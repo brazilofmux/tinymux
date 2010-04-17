@@ -70,29 +70,29 @@
 0
 0
 >218
-"Sun Apr 04 18:57:28.487036 2010"
+"Fri Apr 16 21:49:39.940058 2010"
 >219
-"Sun Apr 04 18:57:28.487036 2010"
+"Fri Apr 16 21:49:39.940058 2010"
 >30
-"Sun Apr 04 18:57:35.726417 2010"
+"Fri Apr 16 21:49:45.476877 2010"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$NmGFkZfkJwYv$tFQBrsZIEGXL0nPXsc58rJt46EA="
+"$SHA1$93rlJR6ZyGHZ$w9YwXonsFvstOB4M/LTWlbeI4ZA="
 >88
 "192.168.1.47"
 >144
 "192.168.1.47"
 >84
-"#1;192.168.1.47;Sun Apr 04 18:57:35.726617 2010;;;;;;;0;0;;;;;;;"
+"#1;192.168.1.47;Fri Apr 16 21:49:45.477061 2010;;;;;;;0;0;;;;;;;"
 >213
 "-1 24 -1 -1 24"
 >222
 "Shutdown"
 >224
-"4 4 4 1 1270432660"
+"6 6 6 1 1271479791"
 <
 !2
 "test_center_fn"
@@ -111,9 +111,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.811111 2010"
+"Fri Apr 16 21:49:48.145872 2010"
 >219
-"Sun Apr 04 18:57:36.84653 2010"
+"Fri Apr 16 21:49:48.170644 2010"
 >256
 "@log smoke=Beginning center() test cases."
 >257
@@ -146,9 +146,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.84662 2010"
+"Fri Apr 16 21:49:48.170761 2010"
 >219
-"Sun Apr 04 18:57:36.846713 2010"
+"Fri Apr 16 21:49:48.170858 2010"
 >27
 "@va me=sha1(%va%0)"
 >256
@@ -175,9 +175,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.846763 2010"
+"Fri Apr 16 21:49:48.170908 2010"
 >219
-"Sun Apr 04 18:57:36.876156 2010"
+"Fri Apr 16 21:49:48.192023 2010"
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
@@ -214,9 +214,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.876214 2010"
+"Fri Apr 16 21:49:48.192111 2010"
 >219
-"Sun Apr 04 18:57:36.900441 2010"
+"Fri Apr 16 21:49:48.208234 2010"
 >256
 "@log smoke=Beginning cpad() test cases."
 >257
@@ -249,9 +249,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.9005 2010"
+"Fri Apr 16 21:49:48.208327 2010"
 >219
-"Sun Apr 04 18:57:36.923808 2010"
+"Fri Apr 16 21:49:48.222505 2010"
 >256
 "@log smoke=Beginning digest() test cases."
 >257
@@ -282,9 +282,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.923891 2010"
+"Fri Apr 16 21:49:48.222593 2010"
 >219
-"Sun Apr 04 18:57:36.944821 2010"
+"Fri Apr 16 21:49:48.23672 2010"
 >256
 "@log smoke=Beginning edit() test cases."
 >257
@@ -315,9 +315,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.944881 2010"
+"Fri Apr 16 21:49:48.236782 2010"
 >219
-"Sun Apr 04 18:57:36.981433 2010"
+"Fri Apr 16 21:49:48.263152 2010"
 >256
 "@log smoke=Beginning escape() test cases."
 >257
@@ -348,13 +348,15 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.981499 2010"
+"Fri Apr 16 21:49:48.263258 2010"
 >219
-"Sun Apr 04 18:57:36.981574 2010"
+"Fri Apr 16 21:49:48.263362 2010"
 >256
 "@log smoke=Beginning first() test cases."
 >257
-"@if strmatch(setr(0,sha1([first(This is a test)][first(Would you like coffee, or perhaps tea)][first(List&with&nonstandard&delimiters,&)])),FB7BF5BC0AB59D2CCC3D34E252DF0CE4AD3E916B)={@log smoke=TC001: first examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: first examples. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([first(This is a test)][first(Would you like coffee, or perhaps tea)][first(List&with&nonstandard&delimiters,&)])),FB7BF5BC0AB59D2CCC3D34E252DF0CE4AD3E916B)={@log smoke=TC001: first examples. Succeeded.},{@log smoke=TC001: first examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([first(%ba b c%b)])),86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8)={@log smoke=TC002: first regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: first regressions. Failed (%q0).;@trig me/tr.done}"
 >262
 "@log smoke=End first() test cases.;@notify smoke"
 <
@@ -375,9 +377,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:36.981628 2010"
+"Fri Apr 16 21:49:48.263413 2010"
 >219
-"Sun Apr 04 18:57:37.017069 2010"
+"Fri Apr 16 21:49:48.281038 2010"
 >256
 "@log smoke=Beginning insert() test cases."
 >257
@@ -410,13 +412,27 @@
 0
 0
 >218
-"Sun Apr 04 18:57:37.017139 2010"
+"Fri Apr 16 21:49:48.281117 2010"
 >219
-"Sun Apr 04 18:57:37.017214 2010"
+"Fri Apr 16 21:49:48.307147 2010"
 >256
 "@log smoke=Beginning last() test cases."
 >257
-"@if strmatch(setr(0,sha1([last(This is a test)][last(Happy-Fun-Test-Thing,-)])),6B29D54D17E640A77827E4A56AD42F202188B9C0)={@log smoke=TC001: last examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: last examples. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([last(This is a test)][last(Happy-Fun-Test-Thing,-)])),6B29D54D17E640A77827E4A56AD42F202188B9C0)={@log smoke=TC001: last examples. Succeeded.},{@log smoke=TC001: last examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([last(%ba b c%b)])),84A516841BA77A5B4648DE2CD0DFCB30EA46DBB4)={@log smoke=TC002: last regressions. Succeeded.},{@log smoke=TC002: last regressions. Failed (%q0).}"
+>259
+"@if strmatch(setr(0,sha1([last()][last(%b)][last(a)][last(a b)][last(a b c)][last(a b c d)][last(a b c d e)][last(a b c d e f)][last(a b c d e f g)][last(a b c d e f g h)])),425AF12A0743502B322E93A015BCF868E324D56A)={@log smoke=TC003: last with element count. Succeeded.},{@log smoke=TC003: last with element count. Failed (%q0).}"
+>260
+"@if strmatch(setr(0,sha1([last(%b%b%b)][last(b%b%b%b)][last(%bb%b%b)][last(a%b%bb%b)][last(%ba%b%bb)][last(%b%ba%b)][last(%b%b%ba)])),84A9A1BC4C61161667A244839F47A6C989988892)={@log smoke=TC004: last walk two elements through whitespace. Succeeded.},{@log smoke=TC004: last walk two elements through whitespace. Failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1([last(a b c d e f g h)][last(%ba b c d e f g h)][last(a%bb c d e f g h)][last(a b%bc d e f g h)][last(a b c%bd e f g h)][last(a b c d%be f g h)][last(a b c d e%bf g h)][last(a b c d e f%bg h)][last(a b c d e f g%bh)][last(a b c d e f g h%b)][last(%b%ba b c d e f g h)][last(a%b%bb c d e f g h)][last(a b%b%bc d e f g h)][last(a b c%b%bd e f g h)][last(a b c d%b%be f g h)][last(a b c d e%b%bf g h)][last(a b c d e f%b%bg h)][last(a b c d e f g%b%bh)][last(a b c d e f g h%b%b)])),335DA2829014E3275529C26BC799E83F369285B2)={@log smoke=TC005: last walk whitespace through elements. Succeeded.},{@log smoke=TC005: last walk whitespace through elements. Failed (%q0).}"
+>263
+"@if strmatch(setr(0,sha1([last(,-)][last(-,-)][last(a,-)][last(a-b,-)][last(a-b-c,-)][last(a-b-c-d,-)][last(a-b-c-d-e,-)][last(a-b-c-d-e-f,-)][last(a-b-c-d-e-f-g,-)][last(a-b-c-d-e-f-g-h,-)])),425AF12A0743502B322E93A015BCF868E324D56A)={@log smoke=TC006: last vary elements with single-hyphen delimiter. Succeeded.},{@log smoke=TC006: last vary elements with single-hypehn delimiter. Failed (%q0).}"
+>264
+"@if strmatch(setr(0,sha1([last(---,-)][last(b---,-)][last(-b--,-)][last(a--b-,-)][last(-a--b,-)][last(--a-,-)][last(---a,-)])),6C0596B8AC609191181A90517D51C0B486F23799)={@log smoke=TC007: last walk two elements through single-hyphens. Succeeded.},{@log smoke=TC007: last walk two elements through single-hyphens. Failed (%q0).}"
+>265
+"@if strmatch(setr(0,sha1([last(a-b-c-d-e-f-g-h,-)][last(-a-b-c-d-e-f-g-h,-)][last(a--b-c-d-e-f-g-h,-)][last(a-b--c-d-e-f-g-h,-)][last(a-b-c--d-e-f-g-h,-)][last(a-b-c-d--e-f-g-h,-)][last(a-b-c-d-e--f-g-h,-)][last(a-b-c-d-e-f--g-h,-)][last(a-b-c-d-e-f-g--h,-)][last(a-b-c-d-e-f-g-h-,-)][last(--a-b-c-d-e-f-g-h,-)][last(a---b-c-d-e-f-g-h,-)][last(a-b---c-d-e-f-g-h,-)][last(a-b-c---d-e-f-g-h,-)][last(a-b-c-d---e-f-g-h,-)][last(a-b-c-d-e---f-g-h,-)][last(a-b-c-d-e-f---g-h,-)][last(a-b-c-d-e-f-g---h,-)][last(a-b-c-d-e-f-g-h--,-)])),A00EDCBA60A5FDF544A0C7EFF462F288F12035D2)={@log smoke=TC008: last walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: last walk single-hypens through elements. Failed (%q0).;@trig me/tr.done}"
 >262
 "@log smoke=End last() test cases.;@notify smoke"
 <
@@ -437,9 +453,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:37.01727 2010"
+"Fri Apr 16 21:49:48.307239 2010"
 >219
-"Sun Apr 04 18:57:37.044671 2010"
+"Fri Apr 16 21:49:49.311135 2010"
 >256
 "@log smoke=Beginning ljust() test cases."
 >257
@@ -472,9 +488,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.047152 2010"
+"Fri Apr 16 21:49:49.311245 2010"
 >219
-"Sun Apr 04 18:57:38.04753 2010"
+"Fri Apr 16 21:49:49.311422 2010"
 >256
 "@log smoke=Beginning lpad() test cases."
 >257
@@ -507,9 +523,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.047587 2010"
+"Fri Apr 16 21:49:49.311483 2010"
 >219
-"Sun Apr 04 18:57:38.048194 2010"
+"Fri Apr 16 21:49:49.312297 2010"
 >256
 "@log smoke=Beginning merge() test cases."
 >257
@@ -558,9 +574,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.048249 2010"
+"Fri Apr 16 21:49:49.312497 2010"
 >219
-"Sun Apr 04 18:57:38.04868 2010"
+"Fri Apr 16 21:49:49.312605 2010"
 >256
 "@log smoke=Beginning mid() test cases."
 >257
@@ -583,13 +599,15 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.048751 2010"
+"Fri Apr 16 21:49:49.347957 2010"
 >219
-"Sun Apr 04 18:57:38.048829 2010"
+"Fri Apr 16 21:49:49.348079 2010"
 >256
 "@log smoke=Beginning rest() test cases."
 >257
 "@if strmatch(setr(0,sha1([rest(This is a test)][rest(Would you like coffee, or perhaps tea)][rest(List!with!different!delimiters,!)])),948C7B2E7A1CB66F0BF5572D267B0D181B70764A)={@log smoke=TC001: rest examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: rest examples. Failed (%q0).;@trig me/tr.done}"
+>258
+"@if strmatch(setr(0,sha1([rest(%ba b c%b)])),B005807AE4A78B35A2ACCADEF2919ACDB6639CCF)={@log smoke=TC002: rest regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: rest regressions. Failed (%q0).;@trig me/tr.done}"
 >262
 "@log smoke=End rest() test cases.;@notify smoke"
 <
@@ -610,9 +628,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.048895 2010"
+"Fri Apr 16 21:49:49.348137 2010"
 >219
-"Sun Apr 04 18:57:38.049126 2010"
+"Fri Apr 16 21:49:49.363235 2010"
 >256
 "@log smoke=Beginning rjust() test cases."
 >257
@@ -645,9 +663,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.049188 2010"
+"Fri Apr 16 21:49:49.363343 2010"
 >219
-"Sun Apr 04 18:57:38.09511 2010"
+"Fri Apr 16 21:49:49.363761 2010"
 >256
 "@log smoke=Beginning rpad() test cases."
 >257
@@ -680,9 +698,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.095202 2010"
+"Fri Apr 16 21:49:49.363826 2010"
 >219
-"Sun Apr 04 18:57:38.095498 2010"
+"Fri Apr 16 21:49:49.363983 2010"
 >256
 "@log smoke=Beginning secure() test cases."
 >257
@@ -713,9 +731,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.09556 2010"
+"Fri Apr 16 21:49:49.364044 2010"
 >219
-"Sun Apr 04 18:57:38.095684 2010"
+"Fri Apr 16 21:49:49.364166 2010"
 >256
 "@log smoke=Beginning sha1() test cases."
 >257
@@ -744,9 +762,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.095752 2010"
+"Fri Apr 16 21:49:49.364226 2010"
 >219
-"Sun Apr 04 18:57:38.095883 2010"
+"Fri Apr 16 21:49:49.36435 2010"
 >256
 "@log smoke=Beginning shuffle() test cases."
 >257
@@ -775,9 +793,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.095945 2010"
+"Fri Apr 16 21:49:49.364417 2010"
 >219
-"Sun Apr 04 18:57:38.095984 2010"
+"Fri Apr 16 21:49:49.364455 2010"
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
@@ -798,9 +816,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.096047 2010"
+"Fri Apr 16 21:49:49.364537 2010"
 >219
-"Sun Apr 04 18:57:38.096127 2010"
+"Fri Apr 16 21:49:49.364616 2010"
 >271
 "center_fn cmd_say convtime_fn cpad_fn digest_fn edit_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn wrap_fn shutdown"
 >19
@@ -825,9 +843,9 @@
 0
 0
 >218
-"Sun Apr 04 18:57:38.096186 2010"
+"Fri Apr 16 21:49:49.364676 2010"
 >219
-"Sun Apr 04 18:57:38.096291 2010"
+"Fri Apr 16 21:49:49.364784 2010"
 >256
 "@log smoke=Beginning wrap() test cases."
 >257
