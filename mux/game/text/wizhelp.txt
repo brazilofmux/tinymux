@@ -88,7 +88,7 @@
   If the dbref of the destroyer and the destroyed are the same, the ADESTROY
   attribute is not executed.
 
-  Note: The destroyed object may already be GARBAGE upon execution of the
+  Note: The object may already have been destroyed upon execution of the
   ADESTROY.
 
   Related Topics: @acreate

@@ -3779,7 +3779,7 @@ Related Topics: @name.
   free, but if you specify either /all or <player>, then this command costs
   100 coins to run, because it is computationally expensive.
 
-  Related Topics: stats().
+  Related Topics: garbage, stats().
 
 & @SUCCESS
 @SUCCESS
@@ -7362,6 +7362,21 @@ GAGGED
   circumstances. This flag has no meaning for objects, exits, or rooms.
 
   Related Topics:
+
+& GARBAGE
+GARBAGE
+
+  Garbage is the un-object.  It is the lack of an object -- the gap where an 
+  object once was.  This gap will eventually be filled as new objects are 
+  created.  Not to worry though.  These gaps occupy very little memory.  The
+  server does not allow softcode to search, modify, access, step into,
+  otherwise access these gaps.
+
+  It is best to leave garbage alone, and softcode should see these gaps between 
+  valid dbrefs in the same way as if they were accessing dbrefs beyond the end 
+  of the valid database.
+  
+  Related Topics: @stats, stats()
 
 & GENDER
 GENDER
@@ -12801,7 +12816,7 @@ STATS()
     > @stats/all
     377 objects = 51 rooms, 165 exits, 134 things, 20 players. (7 garbage)
 
-  Related Topics: @stats.
+  Related Topics: garbage, @stats.
 
 & STEP()
 STEP()
