@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: January 2010
+Last Update: April 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,7 +13,11 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
- -- Placeholder.
+ -- Fix @dbclean to not strip attribute owner and flags on attributes
+    that it re-numbers (Issue 621).
+ -- Fix access of uninitialized memory during dbconvert when @queuemax
+    is set on player object (Issue 623).
+ -- db_check can potentially crash if exit destination is HOME.
 
 
 Performance Enhancements:
@@ -28,4 +32,4 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Placeholder.
+ -- Removed search class type=GARBAGE.
