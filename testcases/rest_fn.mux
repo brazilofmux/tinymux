@@ -70,7 +70,7 @@
             [rest(a b c d e f g h)]
           )
         ),
-        0000000000000000000000000000000000000000
+        8EB7EA335550471C312E977457DE89BB99B93364
       )=
   {
     @log smoke=TC003: rest with element count. Succeeded.
@@ -94,7 +94,7 @@
             [rest(%b%b%ba)]
           )
         ),
-        0000000000000000000000000000000000000000
+        9A900F538965A426994E1E90600920AFF0B4E8D2
       )=
   {
     @log smoke=TC004: rest walk two elements through whitespace. Succeeded.
@@ -130,7 +130,7 @@
             [rest(a b c d e f g h%b%b)]
           )
         ),
-        0000000000000000000000000000000000000000
+        4C6250F87A51A73853D33D45DED07D421F8CD3FC
       )=
   {
     @log smoke=TC005: rest walk whitespace through elements. Succeeded.
@@ -157,7 +157,7 @@
             [rest(a-b-c-d-e-f-g-h,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        97390652ED4494920433D07636609573C56BC382
       )=
   {
     @log smoke=TC006: rest vary elements with single-hyphen delimiter. Succeeded.
@@ -181,7 +181,7 @@
             [rest(---a,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        4E00D785D949250EDAFD53BAB971DF31614F42D0
       )=
   {
     @log smoke=TC007: rest walk two elements through single-hyphens. Succeeded.
@@ -217,7 +217,7 @@
             [rest(a-b-c-d-e-f-g-h--,-)]
           )
         ),
-        0000000000000000000000000000000000000000
+        90085EA0CBEAC53D01601544859E34CBB1D71642
       )=
   {
     @log smoke=TC008: rest walk single-hypens through elements. Succeeded.;
