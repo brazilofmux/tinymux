@@ -1,30 +1,95 @@
-Enclosed in TinyMUX.Win32.zip are two folder structures representing Visual Studio 2008 (Standard Edition) Projects.  They are simple and straightforward, developed strictly with native DotNET Namespaces.  As such, Visual Studio 2008 Express (available for free download from MicroSoft) should have no problem opening, editing, and building these applications.
+Enclosed in TinyMUX.Win32.zip are two folder structures representing
+Visual Studio 2008 (Standard Edition) Projects.  They are simple and
+straightforward, developed strictly with native DotNET Namespaces.  As
+such, Visual Studio 2008 Express (available for free download from
+Microsoft) should have no problem opening, editing, and building these
+applications.
 
 Each project is a small Win32 application built with VB.NET:
-- Each project targets the DotNET Framework v2.0 for maximum compatibility.  This makes these DotNET developments compatible with all Windows version 98 and newer.  (2.0 is the last Framework supporting Windows 98)
-- The DotNET Framework 2.0 (or newer) MUST be installed before either of these applications run!
+
+ - Each project targets the DotNET Framework v2.0 for maximum
+   compatibility.  This makes these DotNET developments compatible with
+   all Windows version 98 and newer.  (2.0 is the last Framework
+   supporting Windows 98)
+
+ - The DotNET Framework 2.0 (or newer) MUST be installed before either
+   of these applications run!
 
 Installation:
-- Install the DotNET Framework FIRST.  If you compile this VB.NET code, that's pretty much a given.
-- Compile.
-- Copy the Service and Control Panel Executables to the same local filesystem directory.
-- From the commandline, run 'INSTALLUTIL TinyMUX.Win32.Service.EXE'  This registers the Service with Windows.
-- Either run the Control Panel to autocreate the first .CONF file or manually create an ASCII Text File named MUXSrvc.TXT - this file contains a list of TinyMUX\Game directories, one entry per line - this file MUST reside in the SAME directory as BOTH the Control Panel and the Service.
+
+ - Install the DotNET Framework FIRST.  If you compile this VB.NET code,
+   that's pretty much a given.
+
+ - Compile.
+
+ - Copy the Service and Control Panel Executables to the same local
+   filesystem directory.
+
+ - From the commandline, run 'INSTALLUTIL TinyMUX.Win32.Service.EXE'.
+   This registers the Service with Windows.
+
+ - Either run the Control Panel to autocreate the first .CONF file or
+   manually create an ASCII Text File named MUXSrvc.TXT - this file
+   contains a list of TinyMUX\Game directories, one entry per line -
+   this file MUST reside in the SAME directory as BOTH the Control
+   Panel and the Service.
 
 Installation Caveats:
-- The Control Panel uses System.Windows.Forms controls to present a simple text-editor GUI and a FolderBrowser control to the user to autoadd and remove TinyMUX\Game folders from the Service Configuration file.  If you plan to use this GUI Tool, DO NOT ATTEMPT TO USE AN OPEN SOURCE FRAMEWORK.  Mono is by far the most complete, and it is woefully far from adequate to handle even the simplest System.Windows.Forms controls.
-- If you want to edit the MUXSrvc.CONF file by hand with a straight ASCII editor, more power to you.  Use any Framework you want.  The Control Panel presents a browser to select a folder, provides a great deal of pre-load error checking to ensure the selected folder is valid as a TinyMUX\Game folder, and provides an AUTOMATIC signal to the Service every time the text file is saved which forces the service to rescan the CONF file and load any games listed that aren't running already.
--- If you don't want to use the GUI, you can send the custom command to rescan straight to the service by initiating command '128' from any tool or command line that successfully transmits an ExecuteCustomCommand signal to a Win32 Service.
+
+ - The Control Panel uses System.Windows.Forms controls to present a
+   simple text-editor GUI and a FolderBrowser control to the user to
+   autoadd and remove TinyMUX\Game folders from the Service
+   Configuration file.  If you plan to use this GUI Tool, DO NOT ATTEMPT
+   TO USE AN OPEN SOURCE FRAMEWORK.  Mono is by far the most complete,
+   and it is woefully far from adequate to handle even the simplest
+   System.Windows.Forms controls.
+
+ - If you want to edit the MUXSrvc.CONF file by hand with a straight
+   ASCII editor, more power to you.  Use any Framework you want.  The
+   Control Panel presents a browser to select a folder, provides a great
+   deal of pre-load error checking to ensure the selected folder is
+   valid as a TinyMUX\Game folder, and provides an AUTOMATIC signal to
+   the Service every time the text file is saved which forces the
+   service to rescan the CONF file and load any games listed that
+   aren't running already.
+
+ - If you don't want to use the GUI, you can send the custom command to
+   rescan straight to the service by initiating command '128' from any
+   tool or command line that successfully transmits an
+   ExecuteCustomCommand signal to a Win32 Service.
 
 Usage:
-- Either add TinyMUX\Game directories to the CONF file with the Control Panel or by hand.
--- The GAME directory is the directory that contains StartMUX.WSF and MUXCONFIG.VBS.  All other directories are irrelevent.
--- Enter as many as you like.
-- Start the Tinymux.Win32 Service from Start->Settings->Control Panel->Administrative Tools->Services.
-- Any errors that occur in the Service will appear in a TinyMUX.Win32 segment of the Windows EventLog.
-- TinyMUX Game Servers run as normal (from Startmux.wsf) within the Service.
--- A server @restarted behaves as normal.
--- A server @shutdown behaves as normal.
---- If a server is @shutdown, it can be restarted by stopping and restarting the Service (if its Game directory entry is still in the MUXSrvc.CONF file) OR by sending Command '128' to the TinyMUX.Win32 Service.  If you use the Control Panel, just open it and save the unchanged document via File->Save.
-- When the Service is stopped either by user, system, or Windows shutdown, it sends a SIGTERM to each and every 'netmux' process running on the system - even if those processes were not started BY the Service.  If those processes are not in the CONF file, they will not restart with the Service or with a rescan command.
+
+ - Either add TinyMUX\Game directories to the CONF file with the Control
+   Panel or by hand.
+
+ - The GAME directory is the directory that contains StartMUX.WSF and
+   MUXCONFIG.VBS.  All other directories are irrelevent.
+
+ - Enter as many as you like.
+
+ - Start the Tinymux.Win32 Service from Start->Settings->Control Panel->
+   Administrative Tools->Services.
+
+ - Any errors that occur in the Service will appear in a TinyMUX.Win32
+   segment of the Windows EventLog.
+
+ - TinyMUX Game Servers run as normal (from Startmux.wsf) within the
+   Service.
+
+ - A server @restarted behaves as normal.
+
+ - A server @shutdown behaves as normal.
+
+ - If a server is @shutdown, it can be restarted by stopping and
+   restarting the Service (if its Game directory entry is still in the
+   MUXSrvc.CONF file) OR by sending Command '128' to the TinyMUX.Win32
+   Service.  If you use the Control Panel, just open it and save the
+   unchanged document via File->Save.
+
+ - When the Service is stopped either by user, system, or Windows
+   shutdown, it sends a SIGTERM to each and every 'netmux' process
+   running on the system - even if those processes were not started BY
+   the Service.  If those processes are not in the CONF file, they will
+   not restart with the Service or with a rescan command.
 
