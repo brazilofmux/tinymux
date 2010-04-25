@@ -362,7 +362,7 @@
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\timeutil.h"
+	".\timeutil.h"\
 	
 
 .\funmath.cpp : \
@@ -413,7 +413,7 @@
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\timeutil.h"
+	".\timeutil.h"\
 	
 
 .\help.cpp : \
