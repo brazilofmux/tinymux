@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  December 2009
+Last Update:  April 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -349,6 +349,11 @@ Bug Fixes:
  -- Fix typo on help @lock compound (Issue 606).
  -- Clarify use of see_all @power (Issue 584).
  -- Fix one case of #elif without a condition.
+ -- Add missing attributes to muxattrs.dat.
+ -- Fix @dbclean to not strip attribute owner and flags on attributes
+    that it re-numbers (Issue 621).
+ -- Fix access of uninitialized memory during dbconvert when @queuemax
+    is set on player object (Issue 623).
 
 
 Performance Enhancements:
@@ -399,3 +404,4 @@ Miscellaneous:
  -- Switch to using Visual Studio 2003 and Intel Compiler v10.1.
  -- Firan is now using 24000-byte buffers.
  -- Increase Debian debhelper compat level.
+ -- Build updates for Intel Compiler v11.1.
