@@ -19,8 +19,6 @@
 #include "attrs.h"
 #include "powers.h"
 
-extern char *FDECL(crypt, (const char *, const char *));
-
 void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
 {
     dbref victim, destination, loc;
