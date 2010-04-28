@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.33 2002-02-02 04:39:02 sdennis Exp $
+// $Id: bsd.cpp,v 1.36 2002/12/17 18:24:13 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1552,6 +1552,28 @@ void shutdownsock(DESC *d, int reason)
 
     if (reason == R_LOGOUT)
     {
+        // Is this desc still in interactive mode?
+        //
+        if (d->program_data != NULL)
+        {
+            num = 0;
+            DESC_ITER_PLAYER(d->player, dtemp) num++;
+
+            if (num == 0)
+            {
+                for (i = 0; i < MAX_GLOBAL_REGS; i++)
+                {
+                    if (d->program_data->wait_regs[i])
+                    {
+                        free_lbuf(d->program_data->wait_regs[i]);
+                        d->program_data->wait_regs[i] = NULL;
+                    }
+                }
+                MEMFREE(d->program_data);
+                d->program_data = NULL;
+                atr_clr(d->player, A_PROGCMD);
+            }
+        }
         d->connected_at.GetUTC();
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
@@ -1656,6 +1678,7 @@ void shutdownsock(DESC *d, int reason)
                 }
                 MEMFREE(d->program_data);
                 d->program_data = NULL;
+                atr_clr(d->player, A_PROGCMD);
             }
         }
 
@@ -1755,8 +1778,8 @@ void shutdownsock_brief(DESC *d)
 void make_nonblocking(SOCKET s)
 {
 #ifdef WIN32
-    unsigned long arg;
-    if (ioctlsocket(s, FIONBIO, &arg) == SOCKET_ERROR)
+    unsigned long arg_on = 1;
+    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &arg_on)))
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
     }
@@ -2333,9 +2356,11 @@ static void unset_signals(void)
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
-#ifdef SYS_SIGLIST_DECLARED
+#if defined(HAVE_SYS_SIGNAME)
+#define signames sys_signame
+#elif defined(SYS_SIGLIST_DECLARED)
 #define signames sys_siglist
-#else // SYS_SIGLIST_DECLARED
+#else // HAVE_SYS_SIGNAME
     static const char *signames[] =
     {
         "SIGZERO",  "SIGHUP",  "SIGINT",    "SIGQUIT",
@@ -2347,9 +2372,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         "SIGXCPU",  "SIGXFSZ", "SIGVTALRM", "SIGPROF",
         "SIGWINCH", "SIGLOST", "SIGUSR1",   "SIGUSR2"
     };
-#endif // SYS_SIGLIST_DECLARED
-
-    char buff[32];
+#endif // HAVE_SYS_SIGNAME
 
 #ifndef WIN32
 #if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
@@ -2434,8 +2457,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         //
         check_panicking(sig);
         log_signal(signames[sig]);
-        sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
-        raw_broadcast(0, buff);
+        raw_broadcast(0, "Caught signal %s, exiting.", signames[sig]);
         dump_database_internal(DUMP_I_SIGNAL);
 #ifdef WIN32
         WSACleanup();

@@ -1,6 +1,6 @@
 // mguests.cpp - multiguest code originally ported from DarkZone 
 //
-// $Id: mguests.cpp,v 1.4 2001-06-29 18:16:31 sdennis Exp $
+// $Id: mguests.cpp,v 1.4 2001/06/29 18:16:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

@@ -1,5 +1,5 @@
 /* mail.h */
-/* $Id: mail.h,v 1.2 2000-10-07 02:28:45 sdennis Exp $ */
+/* $Id: mail.h,v 1.2 2000/10/07 02:28:45 sdennis Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H

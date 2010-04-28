@@ -1,5 +1,5 @@
 /* powers.h - object powers */
-/* $Id: powers.h,v 1.1 2000-04-11 07:14:46 sdennis Exp $ */
+/* $Id: powers.h,v 1.1 2000/04/11 07:14:46 sdennis Exp $ */
 
 #include "copyright.h"
 

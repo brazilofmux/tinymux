@@ -4,10 +4,11 @@
  * The philosophy is to keep this program as simple/small as possible.
  * It does normal fork()s, so the smaller it is, the faster it goes.
  * 
- * $Id: slave.cpp,v 1.5 2002-02-02 04:39:03 sdennis Exp $
+ * $Id: slave.cpp,v 1.6 2002/09/25 05:43:52 sdennis Exp $
  */
 
 #include "autoconf.h"
+#include "config.h"
 
 #include <ctype.h>
 #include <netdb.h>
@@ -76,7 +77,7 @@ int query(char *ip, char *orig_arg)
     char arg[MAX_STRING];
     size_t len;
     char *p;
-    long addr;
+    in_addr_t addr;
 
     addr = inet_addr(ip);
     if (addr == -1)

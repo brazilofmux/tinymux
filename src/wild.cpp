@@ -10,7 +10,7 @@
 // This code is hereby placed under GNU copyleft,
 // see copyright.h for details.
 //
-// $Id: wild.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: wild.cpp,v 1.2 2002/08/22 01:33:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -37,6 +37,12 @@ static int numargs;
 //
 int quick_wild(char *tstr, char *dstr)
 {
+    if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
+    {
+        return FALSE;
+    }
+    mudstate.wild_invk_ctr++;
+
     while (*tstr != '*')
     {
         switch (*tstr)
@@ -142,6 +148,12 @@ int quick_wild(char *tstr, char *dstr)
 //
 int wild1(char *tstr, char *dstr, int arg)
 {
+    if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
+    {
+        return FALSE;
+    }
+    mudstate.wild_invk_ctr++;
+
     char *datapos;
     int argpos, numextra;
 
@@ -355,6 +367,8 @@ int wild1(char *tstr, char *dstr, int arg)
 //
 int wild(char *tstr, char *dstr, char *args[], int nargs)
 {
+    mudstate.wild_invk_ctr = 0;
+
     int i, value;
     char *scan;
 
@@ -464,5 +478,6 @@ int wild_match(char *tstr, char *dstr)
         }
     }
 
+    mudstate.wild_invk_ctr = 0;
     return quick_wild(tstr, dstr);
 }

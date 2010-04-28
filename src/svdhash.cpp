@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.21 2001-09-08 19:27:54 sdennis Exp $
+// $Id: svdhash.cpp,v 1.22 2002/05/29 23:51:24 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -1763,7 +1763,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         UINT32 iFileDir = nHash >> (32-m_nDirDepth);
         if (iFileDir >= m_nDir)
         {
-            Log.WriteString("CHashFile::Insert - iFileDir out of range.." ENDLINE);
+            Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
             return FALSE;
         }
         HF_FILEOFFSET oPage = m_pDir[iFileDir];

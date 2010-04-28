@@ -45,8 +45,8 @@ extern void hashreplall(int *, int *, CHashTable *);
 extern char *hashinfo(const char *, CHashTable *);
 extern int  *hash_nextentry(CHashTable *htab);
 extern int  *hash_firstentry(CHashTable *htab);
-extern char *hash_firstkey(CHashTable *htab, int *);
-extern char *hash_nextkey(CHashTable *htab, int *);
+extern int *hash_firstkey(CHashTable *htab, int *, char **);
+extern int *hash_nextkey(CHashTable *htab, int *, char **);
 
 extern NAMETAB powers_nametab[];
 

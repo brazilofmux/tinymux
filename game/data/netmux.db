@@ -1,15 +1,17 @@
 +X992001
-+S11
++S12
 +N451
--R2
+-R1
 +A321
 "1:CMD-IC"
 +A296
 "1:HEADER-STAFF"
-+A393
-"1:CMD_CNOTEDELETE"
++A299
+"1:LASTCONN"
 +A384
 "1:CMD-BG_REMOVE"
++A435
+"1:FUNC_PLACEINFO"
 +A269
 "1:CREDITS-+FINGER"
 +A282
@@ -18,8 +20,6 @@
 "1:CMD-MOTD_RESET"
 +A413
 "1:DO_SIT"
-+A442
-"1:SPY_ADD"
 +A368
 "1:CMD-PROJECT-EDIT"
 +A284
@@ -28,12 +28,16 @@
 "1:SPY_WHO"
 +A443
 "1:SPY_REMOVE"
++A369
+"1:CMD-PROJECT-SET"
 +A361
 "1:CMD-VERSION-UPDATE"
-+A375
-"1:CMD-RSUMMON"
++A316
+"1:FN_ROLL"
 +A314
 "1:FN_ISSTAFF"
++A347
+"1:CMD-MOTD_DEL"
 +A302
 "1:NAMESORT"
 +A414
@@ -46,12 +50,12 @@
 "1:SGP-OBJECTS"
 +A337
 "1:CMD-SELFBOOT"
++A426
+"1:DO_TT"
 +A427
 "1:DO_TTOOC"
 +A278
 "1:FIL-LWHO"
-+A438
-"1:DO_MUTTER_PLACE"
 +A409
 "1:PLACESCLEANUP1"
 +A373
@@ -82,14 +86,14 @@
 "1:CMD-COMMANDS"
 +A271
 "1:CREDITS-+TIMESTAMP"
++A294
+"1:FN_SCAN"
 +A420
 "1:PLACE_LOOK"
-+A388
-"1:CMD-CNOTE"
 +A398
 "1:CMD-STNOTE-SET"
-+A299
-"1:LASTCONN"
++A393
+"1:CMD_CNOTEDELETE"
 +A305
 "1:STAFF-LIST"
 +A289
@@ -108,8 +112,8 @@
 "1:CMD-REGISTER-STAFF"
 +A389
 "1:CMD_CNOTE-LIST"
-+A347
-"1:CMD-MOTD_DEL"
++A388
+"1:CMD-CNOTE"
 +A297
 "1:HEADER-STAFFCON"
 +A315
@@ -118,12 +122,10 @@
 "1:LOCSORT"
 +A292
 "1:FOOTER-COMPLEX"
-+A283
-"1:FOOTER-EQ-O"
++A392
+"1:CMD_CNOTEAPPROVE"
 +A385
 "1:CMD-BG_REPLACE"
-+A430
-"1:UPDATEINFO"
 +A267
 "1:CREDITS-+WHERE"
 +A318
@@ -164,10 +166,14 @@
 "1:DO_PLACE"
 +A346
 "1:CMD-MOTD_SET"
++A430
+"1:UPDATEINFO"
 +A275
 "1:CREDITS-BACKGROUNDS"
 +A277
 "1:DARKEX"
++A371
+"1:CMD-TRACKER-HELP"
 +A344
 "1:CMD-VIEW-ITEM"
 +A434
@@ -176,10 +182,12 @@
 "1:BAR"
 +A312
 "1:FN_DICE"
++A442
+"1:SPY_ADD"
 +A447
 "1:DOTS_FN"
-+A272
-"1:CREDITS-+3WHO"
++A449
+"1:KILL_WORDS_FN"
 +A268
 "1:CREDITS-+UPTIME"
 +A276
@@ -212,14 +220,12 @@
 "1:CMD-FINGER"
 +A298
 "1:IDLETIME"
-+A316
-"1:FN_ROLL"
++A374
+"1:CMD-RJOIN"
 +A340
 "1:CMD-STAFF-ALL"
 +A421
 "1:DO_PLOOK"
-+A449
-"1:KILL_WORDS_FN"
 +A324
 "1:CMD-KNOCK"
 +A383
@@ -258,10 +264,10 @@
 "1:FN_FINDPC"
 +A266
 "1:CREDITS-LWHO"
-+A294
-"1:FN_SCAN"
 +A362
 "1:CAN_USE"
++A272
+"1:CREDITS-+3WHO"
 +A376
 "1:CMD-SUMMON"
 +A327
@@ -294,18 +300,16 @@
 "1:UPDATE-HISTORY"
 +A323
 "1:CMD-INFO-SEE"
-+A359
-"1:CMD-VERSION-ADD"
 +A424
 "1:NAME_3AUX_FN"
-+A392
-"1:CMD_CNOTEAPPROVE"
 +A288
 "1:FOOTER-OZZ"
-+A358
-"1:CMD-VERSION-HISTORY"
-+A374
-"1:CMD-RJOIN"
++A359
+"1:CMD-VERSION-ADD"
++A438
+"1:DO_MUTTER_PLACE"
++A375
+"1:CMD-RSUMMON"
 +A332
 "1:CMD-PLUS-WHO"
 +A433
@@ -316,8 +320,6 @@
 "1:CMD_CNOTE-VIEW"
 +A416
 "1:DO_STAND"
-+A369
-"1:CMD-PROJECT-SET"
 +A335
 "1:CMD-REGISTER-HELP"
 +A311
@@ -332,8 +334,8 @@
 "1:CMD-VERSION-REMOVE"
 +A336
 "1:CMD_SCAN"
-+A435
-"1:FUNC_PLACEINFO"
++A283
+"1:FOOTER-EQ-O"
 +A263
 "1:COLDISP_FN"
 +A370
@@ -354,14 +356,10 @@
 "1:CMD-TIMESTOP"
 +A334
 "1:CMD-REGISTER"
-+A371
-"1:CMD-TRACKER-HELP"
 +A270
 "1:CREDITS-REGISTER"
 +A422
 "1:PLOOK_FOLD_FN"
-+A426
-"1:DO_TT"
 +A258
 "1:SGP-VERSION"
 +A291
@@ -382,6 +380,8 @@
 "1:CMD-BG_ADD"
 +A353
 "1:CMD-TIMESTAMP-SET"
++A358
+"1:CMD-VERSION-HISTORY"
 +A264
 "1:COLDISP_FLD"
 +A428
@@ -396,7 +396,7 @@
 "Limbo"
 -1
 -1
-1
+-1
 -1
 -1
 -1
@@ -412,7 +412,7 @@
 <
 !1
 "Wizard"
-0
+11
 -1
 -1
 -1
@@ -427,27 +427,33 @@
 0
 0
 0
+>30
+"Thu Aug 22 23:05:24 2002"
 >49
 "20"
 >38
 "20"
 >5
 "XXNHc95o0HhAc"
+>88
+"sdennis5.svdltd.com"
+>84
+"#1;sdennis5.svdltd.com;Thu Aug 22 23:05:24 2002;;;;;;;0;0;;;;;;;"
 >222
 "Shutdown"
 >224
-"110 110 110 1 988266934"
+"1166 1166 1166 1 1030083890"
 <
 !2
 "Master Room"
 -1
 -1
-10
+9
 -1
 -1
 -1
 
-1
+3
 -1
 0
 0
@@ -458,13 +464,14 @@
 <
 !3
 "Storage"
-2
+11
 -1
 -1
 -1
 0
--1
-
+1
+(=3
+)
 3
 -1
 150
@@ -473,25 +480,27 @@
 0
 0
 0
+>30
+"Thu Aug 22 23:05:47 2002"
 >49
 "20"
 >38
 "20"
 >5
 "XX6..GR5mMOzM"
->222
-"Shutdown"
->224
-"565 565 565 1 988267619"
+>62
+"=(#3)"
+>59
+"=(#3)"
 <
 !4
 "SGP - Global Parent Object"
-2
+11
 -1
 -1
 -1
 2
-3
+5
 
 3
 -1
@@ -504,9 +513,9 @@
 >257
 "#4|#8|#6|#7|#5|#9|#10"
 >258
-"1.0|RPPack|Apr 26 2001"
+"1.0|RPPack|Aug 22 2002"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
 >6
 "This is the global data object for SGP. All the main global objects read data and write from this object and their code will -not- work without it. Non-command attributes for globals that you add to any of the globals objects should be placed here.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >260
@@ -610,12 +619,12 @@
 <
 !5
 "SGP - Global Functions"
-2
+11
 -1
 -1
 -1
 2
-4
+10
 
 3
 -1
@@ -626,7 +635,7 @@
 0
 0
 >258
-"1.0|Base 121600|Apr 26 2001"
+"1.0|Base 121600|Aug 22 2002"
 >259
 "Base Install 121600 [elements(time(),2 3 5)]"
 >6
@@ -663,7 +672,7 @@
 -1
 -1
 2
-5
+-1
 
 3
 -1
@@ -676,9 +685,9 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Apr 26 2001"
+"1.0|RPPack|Aug 22 2002"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
 >6
 "This is the main globals object for SGP. These are global commands that every player will have access to and use.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >317
@@ -756,11 +765,11 @@
 >390
 "$+cnoteview *:@switch [hasattr(%#,CNOTE-%0)]=0,{@pemit %#=[Name(%#)] has no such cnote. +cnotelist [name(%#)] to view their cnotes.},1,{@pemit %#=[name(%#)]'s '%0' reads:%r[u(v(db)/footer)]%r[u(num(%#)/CNOTE-%0)]%r[u(v(db)/footer)]%r}"
 >400
-"$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),controls(%#,##))=1,{@destroy/override ##;@destroy/override ##}"
+"$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),isdbref(get(##/SGP-CREATOR)))=1,{@set [get(##/SGP-CREATOR)]=SGP-HASTIMESTOP:;@destroy/override ##;@destroy/override ##}"
 >401
-"$+timestop:@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<"
+"$+timestop:@switch 0=and(isdbref(get(owner(%#)/SGP-HASTIMESTOP)),andflags(owner(owner(%#)/SGP-HASTIMESTOP),W)),{@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;&SGP-CREATOR %q1=[owner(%#)];&SGP-HASTIMESTOP [owner(%#)]=%q1;@set %#/SGP-HASTIMESTOP=wizard;@set %#/SGP-HASTIMESTOP=hidden;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<},{@pemit %#=You may only have one timestop in play at a time.}"
 >402
-"$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]},{@pemit %#=That person is not in the same location as you are.}"
+"$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]; @pemit/list get(v(db)/staff-list)=ALERT: %N has just used +warn on [name(*%0)] to alert [obj(*%0)] about a potentially dangerous IC situation.},{@pemit %#=That person is not in the same location as you are.}"
 <
 !7
 "SGP - Wizard Globals"
@@ -782,9 +791,9 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Apr 26 2001"
+"1.0|RPPack|Aug 22 2002"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
 >6
 "This is the wizard globals object for SGP. These are global commands that only wizards will have access to.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >345
@@ -852,9 +861,9 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Apr 26 2001"
+"1.0|RPPack|Aug 22 2002"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
 >6
 "This is the staff globals object for SGP. These are global commands that only staff, as defined in the isstaff() on the global functions object, will have access to. You may substitute ostaff() for isstaff() in the lock setting.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >362
@@ -928,7 +937,7 @@
 >403
 "#10"
 >258
-"SGP-Y2K|Base|Apr 26 2001"
+"SGP-Y2K|Base|Aug 22 2002"
 >259
 "Y2K"
 >404
@@ -952,7 +961,7 @@
 >413
 "$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >414
-"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)]};@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]"
+"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)];@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]}"
 >415
 "$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
 >416
@@ -1012,12 +1021,12 @@
 <
 !10
 "Places_function_object"
-2
+11
 -1
 -1
 -1
 2
-9
+3
 
 3
 -1
@@ -1028,7 +1037,7 @@
 0
 0
 >258
-"SGP-Y2K|Base|Apr 26 2001"
+"SGP-Y2K|Base|Aug 22 2002"
 >259
 "Y2K"
 >6
@@ -1051,5 +1060,23 @@
 "[switch([rand(3)]%0,0,,1,,2,,0*,%0,...)]"
 >450
 "#1"
+<
+!11
+"Auxilary Room"
+-1
+-1
+4
+-1
+-1
+-1
+
+3
+-1
+0
+0
+4
+0
+0
+0
 <
 ***END OF DUMP***

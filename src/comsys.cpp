@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.49 2002-02-02 04:39:02 sdennis Exp $
+// * $Id: comsys.cpp,v 1.51 2002/07/18 00:35:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2459,7 +2459,7 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(player, tprintf("@cboot: %s in not on the channel.", Name(thing)));
+        raw_notify(player, tprintf("@cboot: %s is not on the channel.", Name(thing)));
         return;
     }
 
@@ -2737,9 +2737,7 @@ FUNCTION(fun_channels)
         return;
     }
 
-    char *outbuff = alloc_lbuf("fun_comlist_outbuff");
-    *outbuff='\0';
-
+    BOOL bFirst = TRUE;
     struct channel *chn;
     for (chn = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          chn;
@@ -2749,10 +2747,15 @@ FUNCTION(fun_channels)
            || (chn->type & CHANNEL_PUBLIC)
            || chn->charge_who == player)
         {
-            strcat(outbuff, chn->name);
-            strcat(outbuff, " ");
+            if (bFirst)
+            {
+                bFirst = FALSE;
+            }
+            else
+            {
+                safe_chr(' ', buff, bufc);
+            }
+            safe_str(chn->name, buff, bufc);
         }
     }
-    safe_str(outbuff, buff, bufc);
-    free_lbuf(outbuff);
 }

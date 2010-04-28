@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.6 2001-07-07 17:54:54 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.6 2001/07/07 17:54:54 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"

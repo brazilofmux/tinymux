@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.9 2001-09-08 19:27:55 sdennis Exp $
+// $Id: vattr.cpp,v 1.11 2002/09/22 21:31:28 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -24,6 +24,8 @@
 #include "alloc.h"
 #include "htab.h"
 #include "attrs.h"
+#include "command.h"
+#include "functions.h"
 
 static char FDECL(*store_string, (char *));
 
@@ -553,6 +555,55 @@ void dbclean_RenumberAttributes(int cVAttributes)
                     free_lbuf(pRecord);
                     atr_add_raw(iObject, iAttr, NULL);
                 }
+            }
+        }
+    }
+
+    // Traverse entire @addcommand data structure.
+    //
+    int nKeyLength;
+    char *pKeyName;
+    CMDENT *old;
+    for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyLength, &pKeyName);
+         old != NULL;
+         old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyLength, &pKeyName))
+    {
+        if (old && (old->callseq & CS_ADDED))
+        {
+            pKeyName[nKeyLength] = '\0';
+            ADDENT *nextp;
+            for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+            {
+                if (strcmp(pKeyName, nextp->name) != 0)
+                {
+                    continue;
+                }
+                int iAttr = nextp->atr;
+                if (iMapStart <= iAttr && iAttr <= iMapEnd)
+                {
+                    int iNew = aMap[iAttr-iMapStart];
+                    if (iNew)
+                    {
+                        nextp->atr = iNew;
+                    }
+                }
+            }
+        }
+    }
+
+    // Traverse entire @function data structure.
+    //
+    UFUN *ufp2;
+    extern UFUN *ufun_head;
+    for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
+    {
+        int iAttr = ufp2->atr;
+        if (iMapStart <= iAttr && iAttr <= iMapEnd)
+        {
+            int iNew = aMap[iAttr-iMapStart];
+            if (iNew)
+            {
+                ufp2->atr = iNew;
             }
         }
     }

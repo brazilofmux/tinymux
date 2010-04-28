@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.6 2001-02-23 17:31:33 sdennis Exp $
+// $Id: timeutil.h,v 1.6 2001/02/23 17:31:33 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.

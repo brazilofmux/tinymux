@@ -1,5 +1,5 @@
 /* misc.h - miscellaneous structures that are needed in more than one file */
-/* $Id: misc.h,v 1.1 2000-04-11 07:14:46 sdennis Exp $ */
+/* $Id: misc.h,v 1.1 2000/04/11 07:14:46 sdennis Exp $ */
 
 #include "copyright.h"
 

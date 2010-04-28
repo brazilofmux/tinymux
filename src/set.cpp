@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.10 2001-10-08 06:13:54 sdennis Exp $ 
+// $Id: set.cpp,v 1.12 2002/08/22 01:33:52 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -157,11 +157,9 @@ void do_chzone(dbref player, dbref cause, int key, char *name, char *newobj)
         //
         Flags(thing) &= ~(WIZARD | ROYALTY | INHERIT);
 
-#ifdef USE_POWERS
         // Wipe out all powers.
         //
         Powers(thing) = 0;
-#endif // USE_POWERS
     }
     notify(player, "Zone changed.");
 }
@@ -1258,6 +1256,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, int check_excl
             ok = 0;
         }
 
+        mudstate.wild_invk_ctr = 0;
         if (  ok
            && quick_wild(str, (char *)attr->name))
         {

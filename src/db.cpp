@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.52 2002-02-02 04:39:02 sdennis Exp $
+// $Id: db.cpp,v 1.53 2002/10/18 05:21:22 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3219,6 +3219,9 @@ void load_restart_db(void)
         new_strings = 1;
 
     maxd = MainGameSockPort + 1;
+
+    DebugTotalSockets = 1; // The main game port.
+
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, new_strings));
 
@@ -3239,6 +3242,7 @@ void load_restart_db(void)
     while ((val = getref(f)) != 0)
     {
         ndescriptors++;
+        DebugTotalSockets++;
         d = alloc_desc("restart");
         d->descriptor = val;
         d->flags = getref(f);

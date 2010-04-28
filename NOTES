@@ -1,5 +1,5 @@
 TinyMUX 2.0: NOTES
-Last Update: April 2000
+Last Update: April 2002
 
 This is a list of information that never seems to be handy enough when you 
 need it.
@@ -37,9 +37,6 @@ Handy Stuff:
    mail_expiration accordingly, or else ALL @mail older than the default 
    value of 14 days will be deleted.
  
- - If you do not want to use the built-in +help command, redefine 
-   PLUSHELP_COMMAND in config.h to be something else.
-   
  - 'Backup' has superceeded the traditional use of db_unload for making 
     flatfiles.  The script makes a flatfile of the DB and also creates a 
     tar.gz file containing the mail,db, comsys.db, configuration files, 

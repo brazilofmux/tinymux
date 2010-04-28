@@ -3,7 +3,7 @@
  * powers.c - power manipulation routines 
  */
 /*
- * $Id: powers.cpp,v 1.3 2001-01-22 02:28:13 sdennis Exp $ 
+ * $Id: powers.cpp,v 1.3 2001/01/22 02:28:13 sdennis Exp $ 
  */
 
 #include "copyright.h"

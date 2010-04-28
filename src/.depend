@@ -42,7 +42,7 @@ svdreport.o: svdreport.cpp copyright.h autoconf.h config.h externs.h svdrand.h t
 timer.o: timer.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h match.h command.h comsys.h
 timeutil.o: timeutil.cpp autoconf.h copyright.h config.h timeutil.h stringutil.h
 unparse.o: unparse.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h powers.h
-vattr.o: vattr.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h vattr.h attrs.h
+vattr.o: vattr.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h vattr.h attrs.h command.h functions.h
 walkdb.o: walkdb.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h match.h command.h powers.h misc.h attrs.h
 wild.o: wild.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h
 wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h file_c.h interface.h match.h command.h attrs.h powers.h
@@ -55,7 +55,7 @@ sa-stringu.o: sa-stringu.cpp stringutil.cpp copyright.h autoconf.h config.h exte
 sa-conf.o: sa-conf.cpp conf.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h command.h attrs.h powers.h match.h
 sa-log.o: sa-log.cpp log.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h powers.h ansi.h
 sa-object.o: sa-object.cpp object.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h command.h powers.h attrs.h
-sa-vattr.o: sa-vattr.cpp vattr.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h vattr.h attrs.h
+sa-vattr.o: sa-vattr.cpp vattr.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h vattr.h attrs.h command.h functions.h
 sa-htab.o: sa-htab.cpp htab.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h
 sa-player_c.o: sa-player_c.cpp player_c.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h attrs.h
 sa-flags.o: sa-flags.cpp flags.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h command.h powers.h
@@ -66,5 +66,5 @@ sa-timeutil.o: sa-timeutil.cpp timeutil.cpp autoconf.h copyright.h config.h time
 dbconvert.o: dbconvert.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h vattr.h _build.h
 mkindx.o: mkindx.cpp copyright.h autoconf.h config.h help.h _build.h
 unsplit.o: unsplit.cpp copyright.h 
-slave.o: slave.cpp autoconf.h copyright.h slave.h 
+slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
 portconc.o: portconc.cpp

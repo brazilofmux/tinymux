@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.6 2001-06-30 17:16:48 morgan Exp $ 
+// $Id: dbconvert.cpp,v 1.6 2001/06/30 17:16:48 morgan Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"

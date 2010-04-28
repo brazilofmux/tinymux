@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.17 2001-07-03 19:43:39 sdennis Exp $ 
+// $Id: version.cpp,v 1.17 2001/07/03 19:43:39 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"

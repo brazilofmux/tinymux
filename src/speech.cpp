@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.10 2001-09-28 09:57:39 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.10 2001/09/28 09:57:39 sdennis Exp $ 
  */
 
 #include "copyright.h"

@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.3 2001-06-29 16:58:31 sdennis Exp $
+// $Id: unparse.cpp,v 1.3 2001/06/29 16:58:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

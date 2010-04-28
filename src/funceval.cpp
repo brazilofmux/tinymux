@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.55 2002-02-02 04:39:03 sdennis Exp $
+// $Id: funceval.cpp,v 1.67 2002/10/18 22:53:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -80,30 +80,41 @@ FUNCTION(fun_ansi)
 {
     extern char *ColorTable[256];
 
-    char *s = fargs[0];
-    char *bufc_save = *bufc;
-
-    while (*s)
+    char aTemp[LBUF_SIZE];
+    size_t nTemp = LBUF_SIZE-1;
+    char *pTemp = aTemp;
+ 
+    const char *s = fargs[0];
+    while (*s) 
     {
         char *pColor = ColorTable[*s];
         if (pColor)
         {
-            safe_str(pColor, buff, bufc);
+            size_t n = strlen(pColor);
+            if (n < nTemp)
+            {
+                memcpy(pTemp, pColor, n);
+                pTemp += n;
+                nTemp -= n;
+            }
+            else
+            {
+                break;
+            }
         }
         s++;
     }
-    safe_str(fargs[1], buff, bufc);
-    **bufc = '\0';
+    safe_str(fargs[1], aTemp, &pTemp);
+    *pTemp = '\0';
+    nTemp = pTemp - aTemp;
 
     // ANSI_NORMAL is guaranteed to be written on the end.
     //
-    char Temp[LBUF_SIZE];
     int nVisualWidth;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nLen = ANSI_TruncateToField(bufc_save, nBufferAvailable, Temp, sizeof(Temp),
-        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    memcpy(bufc_save, Temp, nLen);
-    *bufc = bufc_save + nLen;
+    int nLen = ANSI_TruncateToField(aTemp, nBufferAvailable, *bufc,
+        nBufferAvailable, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    *bufc += nLen;
 }
 
 FUNCTION(fun_zone)
@@ -563,13 +574,24 @@ FUNCTION(fun_decrypt)
 //
 FUNCTION(fun_zwho)
 {
-    dbref it = match_thing(player, fargs[0]);
-
-    if (!mudconf.have_zones || (!Controls(player, it) && !WizRoy(player)))
+    if (!mudconf.have_zones)
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
+    dbref it = match_thing(player, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(player)
+              || Controls(player, it)))
+    {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        return;
+    }
+
     dbref i;
     DTB pContext;
     DbrefToBuffer_Init(&pContext, buff, bufc);
@@ -590,11 +612,21 @@ FUNCTION(fun_zwho)
  */
 FUNCTION(fun_inzone)
 {
-    dbref it = match_thing(player, fargs[0]);
-
-    if (!mudconf.have_zones || (!Controls(player, it) && !WizRoy(player)))
+    if (!mudconf.have_zones)
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
+        return;
+    }
+    dbref it = match_thing(player, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(player)
+              || Controls(player, it)))
+    {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
     dbref i;
@@ -616,10 +648,21 @@ FUNCTION(fun_inzone)
 //
 FUNCTION(fun_children)
 {
-    dbref it = match_thing(player, fargs[0]);
-    if (!(WizRoy(player) || Controls(player, it)))
+    if (!mudconf.have_zones)
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
+        return;
+    }
+    dbref it = match_thing(player, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(player)
+              || Controls(player, it)))
+    {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
 
@@ -1179,7 +1222,7 @@ FUNCTION(fun_strtrunc)
 
 FUNCTION(fun_ifelse)
 {
-    if (!fn_range_check("IFELSE", nfargs, 2, 3, buff, bufc))
+    if (!fn_range_check("IF", nfargs, 2, 3, buff, bufc))
     {
         return;
     }
@@ -1237,7 +1280,7 @@ FUNCTION(fun_dec)
     }
     else if (nfargs > 1)
     {
-        fn_range_check("INC", nfargs, 0, 1, buff, bufc);
+        fn_range_check("DEC", nfargs, 0, 1, buff, bufc);
     }
     else
     {
@@ -1614,7 +1657,7 @@ FUNCTION(fun_udefault)
                     check_read_perms(player, thing, ap, aowner, aflags,
                              buff, bufc)) {
                     str = atext;
-                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
+                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 2);
                     free_lbuf(atext);
                     free_lbuf(objname);
                     return;
@@ -1777,6 +1820,7 @@ FUNCTION(fun_grab)
     s = trim_space_sep(fargs[0], sep);
     do {
         r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r)) {
             safe_str(r, buff, bufc);
             return;
@@ -1790,24 +1834,20 @@ FUNCTION(fun_grab)
  */
 FUNCTION(fun_scramble)
 {
-    int n, i, j;
-    char c, *old;
-
     if (!fargs[0] || !*fargs[0])
     {
         return;
     }
-    old = *bufc;
+    char *old = *bufc;
 
-    safe_str(fargs[0], buff, bufc);
-    **bufc = '\0';
+    unsigned int n;
+    safe_str(strip_ansi(fargs[0], &n), buff, bufc);
 
-    n = strlen(old);
-
-    for (i = 0; i < n; i++)
-    {
-        j = RandomINT32(i, n-1);
-        c = old[i];
+    unsigned int i;
+    for (i = 0; i < n-1; i++)
+    {   
+        int j = RandomINT32(i, n-1);
+        char c = old[i];
         old[i] = old[j];
         old[j] = c;
     }
@@ -2091,6 +2131,7 @@ FUNCTION(fun_matchall)
     do
     {
         r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             Tiny_ltoa(wcount, tbuf);
@@ -2986,9 +3027,8 @@ FUNCTION(fun_lstack)
     STACK *sp;
     dbref doer;
 
-    if (nfargs > 1)
+    if (!fn_range_check("LSTACK", nfargs, 0, 1, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (CSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs == 0 || !*fargs[0])
@@ -3036,9 +3076,8 @@ FUNCTION(fun_empty)
 {
     dbref doer;
 
-    if (nfargs > 1)
+    if (!fn_range_check("EMPTY", nfargs, 0, 1, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (CSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs == 0 || !*fargs[0])
@@ -3062,9 +3101,8 @@ FUNCTION(fun_items)
 {
     dbref doer;
 
-    if (nfargs > 1)
+    if (!fn_range_check("ITEMS", nfargs, 0, 1, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (NUMSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs == 0 || !*fargs[0])
@@ -3090,9 +3128,8 @@ FUNCTION(fun_peek)
     dbref doer;
     int count, pos;
 
-    if (nfargs > 2)
+    if (!fn_range_check("PEEK", nfargs, 0, 2, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (PEEK) EXPECTS 0-2 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs <= 0 || !*fargs[0])
@@ -3148,9 +3185,8 @@ FUNCTION(fun_pop)
     dbref doer;
     int count = 0, pos;
 
-    if (nfargs > 2)
+    if (!fn_range_check("POP", nfargs, 0, 2, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (POP) EXPECTS 0-2 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs <= 0 || !*fargs[0])
@@ -3219,9 +3255,8 @@ FUNCTION(fun_push)
     dbref doer;
     char *data;
 
-    if (nfargs < 1 || 2 < nfargs)
+    if (!fn_range_check("PUSH", nfargs, 1, 2, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (PUSH) EXPECTS 1-2 ARGUMENTS", buff, bufc);
         return;
     }
     if (nfargs <= 1 || !*fargs[1])
@@ -3235,7 +3270,8 @@ FUNCTION(fun_push)
         data = fargs[1];
     }
 
-    if (!Controls(player, doer))
+    if (  isGarbage(doer)
+       || !Controls(player, doer))
     {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
@@ -3375,12 +3411,15 @@ public:
     BOOL IsSet(unsigned int i);
 };
 
+// Construct a CBitField to hold (nMaximum_arg+1) bits numbered 0 through
+// nMaximum_arg.
+//
 CBitField::CBitField(unsigned int nMaximum_arg)
 {
     nInts  = 0;
     pInts  = NULL;
     pMasks = NULL;
-    if (0 < nMaximum)
+    if (0 < nMaximum_arg)
     {
         nMaximum = nMaximum_arg;
         nBitsPer = sizeof(UINT32)*8;
@@ -3401,7 +3440,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
 
         // Allocate array of UINT32s.
         //
-        nInts    = (nMaximum+nBitsPer-1) >> nShift;
+        nInts    = (nMaximum+nBitsPer) >> nShift;
         pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
         (void)ISOUTOFMEMORY(pMasks);
         pInts    = pMasks + nBitsPer;
@@ -3432,7 +3471,7 @@ void CBitField::ClearAll(void)
 
 void CBitField::Set(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         pInts[i>>nShift] |= pMasks[i&nMask];
     }
@@ -3440,7 +3479,7 @@ void CBitField::Set(unsigned int i)
 
 void CBitField::Clear(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         pInts[i>>nShift] &= ~pMasks[i&nMask];
     }
@@ -3448,7 +3487,7 @@ void CBitField::Clear(unsigned int i)
 
 BOOL CBitField::IsSet(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         if (pInts[i>>nShift] & pMasks[i&nMask])
         {

@@ -2,7 +2,7 @@
  * move.c -- Routines for moving about 
  */
 /*
- * $Id: move.cpp,v 1.5 2001-07-17 15:40:53 sdennis Exp $ 
+ * $Id: move.cpp,v 1.5 2001/07/17 15:40:53 sdennis Exp $ 
  */
 
 #include "copyright.h"

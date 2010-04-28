@@ -1,6 +1,6 @@
 // Definitions for user-defined attributes.
 //
-// $Id: vattr.h,v 1.3 2000-04-24 22:42:27 sdennis Exp $
+// $Id: vattr.h,v 1.3 2000/04/24 22:42:27 sdennis Exp $
 //
 typedef struct user_attribute VATTR;
 struct user_attribute

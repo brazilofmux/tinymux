@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.7 2001-07-31 05:20:28 sdennis Exp $ */
+/* $Id: command.h,v 1.7 2001/07/31 05:20:28 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H

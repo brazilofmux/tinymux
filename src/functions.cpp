@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.84 2002-03-01 00:49:47 sdennis Exp $
+// $Id: functions.cpp,v 1.93 2002/10/13 00:05:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1849,14 +1849,15 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
+    {
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
+    }
     else
+    {
         safe_str("#-1", buff, bufc);
-    return;
+    }
 }
 
 /*
@@ -1870,10 +1871,13 @@ FUNCTION(fun_where)
 
     it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
+    {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+    }
     else
+    {
         safe_str("#-1", buff, bufc);
-    return;
+    }
 }
 
 /*
@@ -1883,19 +1887,27 @@ FUNCTION(fun_where)
 
 FUNCTION(fun_rloc)
 {
-    int i, levels;
-    dbref it;
-
-    levels = Tiny_atol(fargs[1]);
+    int levels = Tiny_atol(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
+    {
         levels = mudconf.ntfy_nest_lim;
+    }
 
-    it = match_thing(player, fargs[0]);
-    if (locatable(player, it, cause)) {
-        for (i = 0; i < levels; i++) {
-            if (!Good_obj(it) || !Has_location(it))
+    dbref it = match_thing(player, fargs[0]);
+    if (locatable(player, it, cause))
+    {
+        for (int i = 0; i < levels; i++)
+        {
+            if (  Good_obj(it)
+               && (  isExit(it)
+                  || Has_location(it)))
+            {
+                it = Location(it);
+            }
+            else
+            {
                 break;
-            it = Location(it);
+            }
         }
         safe_tprintf_str(buff, bufc, "#%d", it);
         return;
@@ -2056,6 +2068,7 @@ FUNCTION(fun_match)
     char *s = trim_space_sep(fargs[0], sep);
     do {
         char *r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
@@ -2070,6 +2083,7 @@ FUNCTION(fun_strmatch)
 {
     // Check if we match the whole string.  If so, return 1.
     //
+    mudstate.wild_invk_ctr = 0;
     int cc = quick_wild(fargs[1], fargs[0]);
     safe_chr(cc ? '1' : '0', buff, bufc);
 }
@@ -3001,16 +3015,15 @@ static void handle_vectors
     // It's okay to have vmul() be passed a scalar first or second arg,
     // but everything else has to be same-dimensional.
     //
-    if (  (n != m)
-       && (  (flag != VMUL_F)
-          || ((n != 1) && (m != 1))
-          )
-       )
+    if (  n != m
+       && !(  flag == VMUL_F
+           && (n == 1 || m == 1)))
     {
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         return;
     }
-    if (n > MAXDIM)
+    if (  MAXDIM < n
+       || MAXDIM < m)
     {
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
         return;
@@ -3520,9 +3533,10 @@ FUNCTION(fun_pos)
     // instead of the source because the the pattern will tend to be
     // smaller (i.e., on average, fewer bytes to move).
     //
-    unsigned int nPat = 0;
+    unsigned int nPat;
     char aPatBuf[LBUF_SIZE];
-    memcpy(aPatBuf, strip_ansi(fargs[0], &nPat), nPat);
+    char *pPatBuf = strip_ansi(fargs[0], &nPat);
+    memcpy(aPatBuf, pPatBuf, nPat);
 
     // Strip ANSI from source.
     //
@@ -5279,9 +5293,13 @@ FUNCTION(fun_filter)
         str = atextbuf;
         TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
-        if (!first && *result == '1')
-            safe_chr(sep, buff, bufc);
-        if (*result == '1') {
+        if (  result[0] == '1'
+           && result[1] == '\0')
+        {
+            if (!first)
+            {
+                safe_chr(sep, buff, bufc);
+            }
             safe_str(objstring, buff, bufc);
             first = 0;
         }
@@ -6724,8 +6742,9 @@ void NDECL(init_functab)
     char *buff = alloc_sbuf("init_functab");
     for (FUN *fp = flist; fp->name; fp++)
     {
-        memcpy(buff, fp->name, SBUF_SIZE);
-        buff[SBUF_SIZE-1] = '\0';
+        char *bp = buff;
+        safe_sb_str(fp->name, buff, &bp);
+        *bp = '\0';
         _strlwr(buff);
         hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
     }
@@ -6752,9 +6771,14 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
         {
+            const char *pName = "(WARNING: Bad Attribute Number)";
             ap = atr_num(ufp2->atr);
+            if (ap)
+            {
+                pName = ap->name;
+            }
             notify(player, tprintf("%-28.28s   #%-7d  %-30.30s  %c%c",
-                ufp2->name, ufp2->obj, ap->name, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
+                ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
                 ((ufp2->flags & FN_PRES) ? 'p' : '-')));
             count++;
         }

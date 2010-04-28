@@ -1,5 +1,5 @@
 /* ansi.h */
-/* $Id: ansi.h,v 1.1 2000-04-11 07:14:42 sdennis Exp $ */
+/* $Id: ansi.h,v 1.1 2000/04/11 07:14:42 sdennis Exp $ */
 
 /* ANSI control codes for various neat-o terminal effects
  *

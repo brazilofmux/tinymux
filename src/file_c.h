@@ -1,5 +1,5 @@
 /* file_c.h -- File cache header file */
-/* $Id: file_c.h,v 1.1 2000-04-11 07:14:44 sdennis Exp $ */
+/* $Id: file_c.h,v 1.1 2000/04/11 07:14:44 sdennis Exp $ */
 
 #include "copyright.h"
 #ifndef __FILE_C

@@ -1,5 +1,5 @@
 TinyMUX 2.0: INSTALL
-Last Update: December 2001
+Last Update: April 2002
 
 Please note that there are two sets of instructions included in this 
 file.  Please skip to 'Instructions for Existing Games' for how to 
@@ -128,8 +128,6 @@ or upgrade.]
     - If you had a mail database previously, adjust mail_expiration 
       accordingly, BEFORE you restart the game, or else ALL @mail older 
       than the default value of 14 days will be deleted.
-    - If you do not want to use the built-in +help command, redefine
-      PLUSHELP_COMMAND in config.h to be something else.
       
 5.  Start TinyMUX 2.0 by running './Startmux'.
 

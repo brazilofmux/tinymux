@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  February 2001
+Last Update:  December 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -478,6 +478,82 @@ Bug Fixes:
      visible to the user.
  --  Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
  --  Bug #799 - SIGSEGV possible in lcmds().
+ --  Fix use of %9 with udefault().
+ --  Fix edit(test,,a) --> 'testa'. Found by Ashen-Shugar.
+ --  Fix the way nanoseconds are broken into milliseconds, microseconds, and
+     nanoseconds. Probably not observable in MUX 2.0.
+ --  Fix filter() behavior where a prefix of '1' was enough to test true.
+     Fixed by Raevnos.
+ --  @chzone should have cleared powers. Fix by Jake.
+ --  Fix MAT_HOME bug. Found by Alierak.
+ --  Fix channels() against the potential of having more than an LBUF in
+     channel names. Channels can only be created by Wizards, so this
+     isn't an urgent issue.
+ --  Fix SIGSEGV bug in ANSI_String_Copy that becomes an issue with the use
+     of center/ljust/rjust. Discovered by Elmeria@Crystal Bridges.
+ --  Fixed uninitialized variable in a utility function used by LROOMS().
+ --  Fixed @listcommand when @addcommand'ed commands have previous aliases.
+     It only affected the report.
+ --  Fix '-0' display for 'think imul(1024,1024,1024,1024,1024,1024,8)'
+     Reported by Alierak.
+ --  Improve/fix 64-bit alignment of buffers via backpatching from MUX 2.1.
+     Alierak prompted.
+ --  Use A_VA name instead of equivalent literal 100. Reported by Alierak.
+ --  pool_check() needed to verify PCACHE pool as well. Reported by Alierak.
+ --  Fixed Prefix-without-suffix bug. Reported by Alierak.
+ --  On a NetBSD/Alpha system in which sizeof(unsigned long) == 8, IPv4 mask
+     validation gave false negatives.  Reported by Alierak.
+ --  On same NetBSD/Alpha system, reverse-DNS slave was non-functional because
+     gethostbyname() choked on the eight-byte IPv4 argument. Reported by
+     Alierak.
+ --  IP ranges of the form 'a.b.c.d/m' would allow 'm' to be text and take it
+     as a zero value. For example, 'forbid_site 1.2.3.4/foobar' would effect
+     every IP address. Too easy to shoot yourself in the foot. Reported by
+     Alierak.
+ --  LROOMS() would not check across the entire database. It left off
+     consideration of the database's last dbref. Reported by Alierak.
+ --  For exits, loc(foo) did not return the same answer as rloc(foo,1).
+     Reported by Alierak.
+ --  Use long signal names if they are available. Bug from MUX 1.6. Reported
+     by Alierak.
+ --  Fixed a memcpy/strip-ansi idiom bug in pos().  Found by Jake.  Bug
+     introduced by Brazil.
+ --  raw_broadcast() can be called from a signal handler and therefore, it
+     shouldn't be allocating/freeing memory.
+ --  After a @restart, '@list resources' reports zero open sockets. This was
+     previously fixed in MUX 2.1, so we are just Backpatching.  Prompted by
+     Alierak.
+ --  Fixed bug in ansi() that was previously fixed, but has returned.
+     ansi() returned a result that is much shorter than it needs to be.
+     Reported by Alierak (both first and second time).  Brazil's bug.
+ --  Backpatched some error messages for several zone functions from MUX 2.2.
+ --  Don't allow children(#-1) to return all unparented dbrefs.  Bug
+     from MUX 1.6.  Reported by Alierak.  I'm calling it a bug, and yet,
+     there is some value in the previous behavior.
+ --  Fix IF(,,,,,) from reporting an invocation error for "IFELSE".  Reported
+     by Alierak.
+ --  think dec(5,2) reported an invocation error for "INC". Reported by
+     Alierak.
+ --  Strip ANSI from argument to scramble to prevent ANSI from being
+     scrambled.  Backpatched from MUX 2.1.  Prompted by Alierak.
+ --  lstack(,,,) reported invocation error for "CSTACK".  Reported by Alierak.
+ --  empty(,,,) reported invocation error for "CSTACK".  Reported by Alierak.
+ --  items(,,,) reported invocation error for "NUMSTACK".  Reported by
+     Alierak.
+ --  Fixed SIGSEGV bug in vmul().  Reported by Alierak. Bug from MUX 1.6.
+ --  Fixed unlikely SIGSEGV bug in function table initialization.
+     Brazil's bug.  Fixed by Brazil.  Reported by Kieran Boru.
+ --  OutOfMemory() and AssertionFailed() reversed sense of bCanRestart.
+     Reported by Alierak.  Brazil's bug.
+ --  Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
+ --  Fixed probable bug on the Win32 build where a socket could be setup as
+     non-blocking.  The non-blocking behavior has not been reported or
+     reproduced, but if, by chance, the right four bytes of stack memory
+     were zero, a reading of the code indicates that non-blocking would have
+     been de-selected instead of selected.  The Unix distribution is
+     unaffected, and since this has not been reported or reproduced
+     previously, the odds are good that the calling pattern with a connection
+     is made doesn't allow those four bytes to be zero.  Brazil's bug.
 
 
 Performance Enhancements:
@@ -582,6 +658,8 @@ Performance Enhancements:
  --  Fixed memory leak of Bools upon a @backup or @dump/flatfile. Bug
      originated in MUX 1.6, first fixed in Chaotic MUX, and is already
      fixed in MUSH 3.0.
+ --  Fixed @dbclean so that it updates the @addcommand and @function data
+     structures as well.
 
 
 Cosmetic Changes:

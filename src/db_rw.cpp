@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.19 2002-01-22 21:28:55 sdennis Exp $
+// $Id: db_rw.cpp,v 1.19 2002/01/22 21:28:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

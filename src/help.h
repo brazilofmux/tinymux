@@ -1,5 +1,5 @@
 /* help.h */
-/* $Id: help.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
+/* $Id: help.h,v 1.1 2000/04/11 07:14:45 sdennis Exp $ */
 
 #define  TOPIC_NAME_LEN     30
 

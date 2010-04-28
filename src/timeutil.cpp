@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.19 2002-02-01 00:43:58 sdennis Exp $
+// $Id: timeutil.cpp,v 1.21 2002/10/12 18:54:03 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1073,9 +1073,9 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ft->iSecond = (int)(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = (int)(ns100 % FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = (int)(ns100 / FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = (int)(ns100 % FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = (int)(ns100 / FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
     ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
@@ -2375,7 +2375,7 @@ PD_Node *PD_NewNode(void)
     {
         return Nodes+(nNodes++);
     }
-    return 0;
+    return NULL;
 }
 
 PD_Node *PD_FirstNode(void)
@@ -2493,20 +2493,20 @@ PD_Node *PD_ScanNextToken(char **ppString)
     int ch = *p;
     if (ch == 0)
     {
-        return 0;
+        return NULL;
     }
     PD_Node *pNode;
     int iType = LexTable[ch];
     if (iType == PD_LEX_EOS || iType == PD_LEX_INVALID)
     {
-        return 0;
+        return NULL;
     }
     else if (iType == PD_LEX_SYMBOL)
     {
         pNode = PD_NewNode();
         if (!pNode)
         {
-            return 0;
+            return NULL;
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
@@ -2551,6 +2551,10 @@ PD_Node *PD_ScanNextToken(char **ppString)
         } while (iType == LexTable[ch]);
 
         pNode = PD_NewNode();
+        if (!pNode)
+        {
+            return NULL;
+        }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
         unsigned int nLen = p - pSave;
@@ -2599,7 +2603,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             }
             if (!bFound)
             {
-                return 0;
+                return NULL;
             }
         }
     }

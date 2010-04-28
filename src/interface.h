@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.6 2001-06-11 12:57:02 sdennis Exp $ */
+/* $Id: interface.h,v 1.6 2001/06/11 12:57:02 sdennis Exp $ */
 
 #include "copyright.h"
 

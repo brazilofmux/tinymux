@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.35 2002-02-02 04:39:03 sdennis Exp $
+// $Id: predicates.cpp,v 1.38 2002/10/13 17:08:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -684,8 +684,6 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
     ADDENT *nextp;
     int didit = 0;
 
-    char *keyname;
-
     // Let's make this case insensitive...
     //
     _strlwr(name);
@@ -702,7 +700,13 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
                
             for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
             {
-                notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
+                ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                const char *pName = "(WARNING: Bad Attribute Number)";
+                if (ap)
+                {
+                    pName = ap->name;
+                }
+                notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
             }
         }
         else
@@ -713,19 +717,26 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
     }
     else
     {
-        int nKeyLength;
-        for (keyname = hash_firstkey(&mudstate.command_htab, &nKeyLength); keyname != NULL;
-             keyname = hash_nextkey(&mudstate.command_htab, &nKeyLength))
+        char *pKeyName;
+        int  nKeyName;
+        for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
+             old != NULL;
+             old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyName, &pKeyName))
         {
-
-            old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
-        
-            if (old && (old->callseq & CS_ADDED)) {
-                
-                for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next) {
-                    if (strncmp(keyname, nextp->name, nKeyLength))
+            if (old->callseq & CS_ADDED)
+            {
+                pKeyName[nKeyName] = '\0';
+                for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+                {
+                    if (strcmp(pKeyName, nextp->name) != 0)
                         continue;
-                    notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
+                    ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                    const char *pName = "(WARNING: Bad Attribute Number)";
+                    if (ap)
+                    {
+                        pName = ap->name;
+                    }
+                    notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
                     didit = 1;
                 }
             }
@@ -1991,11 +2002,11 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
 #endif // STANDALONE
     return TRUE;
@@ -2013,11 +2024,11 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
 #endif // STANDALONE
     return FALSE;

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.19 2001-09-08 19:02:37 sdennis Exp $
+// $Id: stringutil.h,v 1.19 2001/09/08 19:02:37 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.

@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.4 2000-08-09 07:03:20 sdennis Exp $ */
+/* $Id: flags.h,v 1.4 2000/08/09 07:03:20 sdennis Exp $ */
 
 #include "copyright.h"
 

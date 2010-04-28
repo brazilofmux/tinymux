@@ -2,7 +2,7 @@
  * rob.c -- Commands dealing with giving/taking/killing things or money 
  */
 /*
- * $Id: rob.cpp,v 1.5 2001-06-29 19:12:44 sdennis Exp $ 
+ * $Id: rob.cpp,v 1.5 2001/06/29 19:12:44 sdennis Exp $ 
  */
 
 #include "copyright.h"

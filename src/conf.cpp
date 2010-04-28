@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.40 2002-02-02 04:39:02 sdennis Exp $
+// $Id: conf.cpp,v 1.42 2002/09/25 05:43:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -249,6 +249,7 @@ void NDECL(cf_init)
     mudconf.markdata[7] = 0x80;
     mudconf.func_nest_lim = 50;
     mudconf.func_invk_lim = 2500;
+    mudconf.wild_invk_lim = 100000;
     mudconf.ntfy_nest_lim = 20;
     mudconf.lock_nest_lim = 20;
     mudconf.parent_nest_lim = 10;
@@ -298,6 +299,7 @@ void NDECL(cf_init)
     mudstate.markbits = NULL;
     mudstate.func_nest_lev = 0;
     mudstate.func_invk_ctr = 0;
+    mudstate.wild_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
@@ -871,7 +873,7 @@ CF_HAND(cf_badname)
  * Avoiding a SIGSEGV on certain operating systems is better than supporting
  * niche formats that are only available on Berkeley Unix.
  */
-static BOOL sane_inet_addr(char *str, unsigned long *pnu32)
+static BOOL sane_inet_addr(char *str, in_addr_t *pnu32)
 {
     *pnu32 = 0;
     int i;
@@ -905,16 +907,16 @@ static BOOL sane_inet_addr(char *str, unsigned long *pnu32)
 // valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
 // a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
 //
-BOOL isValidSubnetMask(unsigned long ulMask)
+BOOL isValidSubnetMask(in_addr_t ulMask)
 {
-    unsigned long ulTest = 0xFFFFFFFFUL;
+    in_addr_t ulTest = 0xFFFFFFFFUL;
     for (int i = 0; i <= 32; i++)
     {
         if (ulMask == ulTest)
         {
             return TRUE;
         }
-        ulTest <<= 1;
+        ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
     }
     return FALSE;
 }
@@ -926,7 +928,7 @@ CF_HAND(cf_site)
 {
     SITE **ppv = (SITE **)vp;
     struct in_addr addr_num, mask_num;
-    unsigned long ulMask, ulNetBits;
+    in_addr_t ulMask, ulNetBits;
 
     char *addr_txt;
     char *mask_txt = strchr(str, '/');
@@ -962,8 +964,14 @@ CF_HAND(cf_site)
         //
         addr_txt = str;
         *mask_txt++ = '\0';
+        if (!is_integer(mask_txt, NULL))
+        {
+            cf_log_syntax(player, cmd, "Mask field (%s) in CIDR IP prefix is not numeric.", mask_txt);
+            return -1;
+        }
         int mask_bits = Tiny_atol(mask_txt);
-        if ((mask_bits > 32) || (mask_bits < 0))
+        if (  mask_bits < 0
+           || 32 < mask_bits)
         {
             cf_log_syntax(player, cmd, "Mask bits (%d) in CIDR IP prefix out of range.", mask_bits);
             return -1;
@@ -975,7 +983,7 @@ CF_HAND(cf_site)
             ulMask = 0;
             if (mask_bits > 0)
             {
-                ulMask = 0xFFFFFFFFUL << (32 - mask_bits);
+                ulMask = (0xFFFFFFFFUL << (32 - mask_bits)) & 0xFFFFFFFFUL;
             }
             mask_num.s_addr = htonl(ulMask);
         }
@@ -986,7 +994,7 @@ CF_HAND(cf_site)
         return -1;
     }
     addr_num.s_addr = ulNetBits;
-    unsigned long ulAddr = ntohl(addr_num.s_addr);
+    in_addr_t ulAddr = ntohl(addr_num.s_addr);
 
     if (ulAddr & ~ulMask)
     {
