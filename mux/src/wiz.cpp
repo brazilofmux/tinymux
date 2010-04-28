@@ -13,8 +13,6 @@
 #include "file_c.h"
 #include "powers.h"
 
-extern char *crypt(const char *, const char *);
-
 void do_teleport
 (
     dbref executor,
