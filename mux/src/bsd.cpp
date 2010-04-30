@@ -4062,21 +4062,37 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 #endif
 
                 case TELNET_TTYPE:
-                    if (TELNETSB_IS == d->aOption[1])
+                    if (  2 <= m
+                       && TELNETSB_IS == d->aOption[1])
                     {
-                        if (d->ttype)
-                        {
-                            MEMFREE(d->ttype);
-                            d->ttype = NULL;
-                        }
-
-                        // Skip past the TTYPE and TELQUAL_IS bytes.
+                        // Skip past the TTYPE and TELQUAL_IS bytes validating
+                        // that terminal type information is an NVT ASCII
+                        // string.
                         //
                         size_t nTermType = m-2;
-                        unsigned char *pTermType = &d->aOption[2];
-                        d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
-                        memcpy(d->ttype, pTermType, nTermType);
-                        d->ttype[nTermType] = '\0';
+                        UTF8 *pTermType = &d->aOption[2];
+
+                        bool fASCII = true;
+                        for (int i = 0; i < nTermType; i++)
+                        {
+                            if (!mux_isprint_ascii(pTermType[i]))
+                            {
+                                fASCII = false;
+                                break;
+                            }
+                        }
+                        
+                        if (fASCII)
+                        {
+                            if (NULL != d->ttype)
+                            {
+                                MEMFREE(d->ttype);
+                                d->ttype = NULL;
+                            }
+                            d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
+                            memcpy(d->ttype, pTermType, nTermType);
+                            d->ttype[nTermType] = '\0';
+                        }
                     }
                     break;
 
