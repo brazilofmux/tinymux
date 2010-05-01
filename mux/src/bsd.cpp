@@ -4073,7 +4073,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         UTF8 *pTermType = &d->aOption[2];
 
                         bool fASCII = true;
-                        for (int i = 0; i < nTermType; i++)
+                        for (size_t i = 0; i < nTermType; i++)
                         {
                             if (!mux_isprint_ascii(pTermType[i]))
                             {
@@ -4098,49 +4098,60 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                 case TELNET_ENV:
                 case TELNET_OLDENV:
-                    if (TELNETSB_IS == d->aOption[1])
+                    if (  2 <= m
+                       && (  TELNETSB_IS == d->aOption[1]
+                          || TELNETSB_INFO == d->aOption[1]))
                     {
-                        unsigned char *envPtr;
-
-                        envPtr = &d->aOption[2];
-
+                        unsigned char *envPtr = &d->aOption[2];
                         while (envPtr < &d->aOption[m])
                         {
-                            if (  TELNETSB_USERVAR == *envPtr
-                               || TELNETSB_VAR     == *envPtr)
+                            unsigned char ch = *envPtr++;
+                            if (  TELNETSB_USERVAR == ch
+                               || TELNETSB_VAR     == ch)
                             {
-                                unsigned char *pVarname = ++envPtr;
+                                size_t nVarname = 0;
+                                unsigned char *pVarname = envPtr;
+                                size_t nVarval = 0;
                                 unsigned char *pVarval = NULL;
 
-                                while (  TELNETSB_VALUE != *envPtr
-                                      && envPtr < &d->aOption[m])
+                                while (envPtr < &d->aOption[m])
                                 {
-                                    envPtr++;
+                                    ch = *envPtr++;
+                                    if (TELNETSB_VALUE == ch)
+                                    {
+                                        nVarname = envPtr - pVarname - 1;
+                                        pVarval = envPtr;
+                                        while (envPtr < &d->aOption[m])
+                                        {
+                                            ch = *envPtr++;
+                                            if (  TELNETSB_USERVAR == ch
+                                               || TELNETSB_VAR == ch)
+                                            {
+                                                nVarval = envPtr - pVarval - 1;
+                                                break;
+                                            }
+                                        }
+
+                                        if (envPtr == &d->aOption[m])
+                                        {
+                                            nVarval = envPtr - pVarval;
+                                        }
+                                        break;
+                                    }
                                 }
 
-                                if (envPtr < &d->aOption[m])
+                                UTF8 varname[1024];
+                                UTF8 varval[1024];
+                                if (  NULL != pVarval
+                                   && 0 < nVarname
+                                   && nVarname < sizeof(varname) - 1
+                                   && 0 < nVarval
+                                   && nVarval < sizeof(varval) - 1)
                                 {
-                                    pVarval = ++envPtr;
-                                }
-
-                                while (  TELNETSB_USERVAR != *envPtr
-                                      && TELNETSB_VAR     != *envPtr
-                                      && envPtr < &d->aOption[m])
-                                {
-                                    envPtr++;
-                                }
-
-                                if (  pVarval - pVarname < 1023
-                                   && envPtr - pVarval < 1023)
-                                {
-                                    UTF8 varname[1024];
-                                    UTF8 varval[1024];
-
-                                    memset(varname, 0, 1024);
-                                    memset(varval, 0, 1024);
-
-                                    memcpy(varname, pVarname, pVarval - pVarname - 1);
-                                    memcpy(varval, pVarval, envPtr - pVarval);
+                                    memcpy(varname, pVarname, nVarname);
+                                    varname[nVarname] = '\0';
+                                    memcpy(varval, pVarval, nVarval);
+                                    varval[nVarval] = '\0';
 
                                     // This is a horrible, horrible nasty hack
                                     // to try and detect UTF8.  We do not even
@@ -4148,11 +4159,12 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     // this way, and just default to Latin1 if
                                     // we can't get a UTF8 locale.
                                     //
-                                    if (  0 == mux_stricmp(varname, T("LC_CTYPE"))
-                                       || 0 == mux_stricmp(varname, T("LC_ALL")))
+                                    if (  mux_stricmp(varname, T("LC_CTYPE")) == 0
+                                       || mux_stricmp(varname, T("LC_ALL")) == 0
+                                       || mux_stricmp(varname, T("LANG")) == 0)
                                     {
                                         UTF8 *pEncoding = (UTF8 *)strchr((char *)varval, '.');
-                                        if (pEncoding)
+                                        if (NULL != pEncoding)
                                         {
                                             pEncoding++;
                                         }
@@ -4161,7 +4173,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             pEncoding = &varval[0];
                                         }
 
-                                        if (  0 == mux_stricmp(pEncoding, T("utf-8"))
+                                        if (  mux_stricmp(pEncoding, T("utf-8")) == 0
                                            && CHARSET_UTF8 != d->encoding)
                                         {
                                             // Since we are changing to the
@@ -4177,21 +4189,15 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             EnableHim(d, TELNET_BINARY);
                                         }
                                     }
-
-                                    if (0 == mux_stricmp(varname, T("USER")))
+                                    else if (mux_stricmp(varname, T("USER")) == 0)
                                     {
-                                        memset(d->username, 0, 11);
-                                        memcpy(d->username, varval, 10);
+                                        memcpy(d->username, varval, nVarval + 1);
                                     }
 
                                     // We can also get 'DISPLAY' here if we were
                                     // feeling masochistic, and actually use
                                     // Xterm functionality.
                                 }
-                            }
-                            else
-                            {
-                                envPtr++;
                             }
                         }
                     }
