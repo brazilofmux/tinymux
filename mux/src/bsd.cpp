@@ -3324,17 +3324,10 @@ int UsState(DESC *d, unsigned char chOption)
 
 void SendCharsetRequest(DESC *d)
 {
-    if (OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET])
+    if (OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET])
     {
-        char aCharsets[26] =
-        {
-            ';',
-            'U', 'T', 'F', '-', '8', ';',
-            'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', ';',
-            'U', 'S', '-', 'A', 'S', 'C', 'I', 'I'
-        };
-
-        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 26);
+        char aCharsets[] = ";UTF-8;ISO-8859-1;US-ASCII";
+        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
     }
 }
 
@@ -3362,10 +3355,6 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             //
             char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
-        }
-        else if (TELNET_CHARSET == chOption)
-        {
-            SendCharsetRequest(d);
         }
         else if (TELNET_STARTTLS == chOption)
         {
@@ -3397,13 +3386,20 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
 {
     d->nvt_us_state[chOption] = iUsState;
 
-    if (TELNET_EOR == chOption)
+    if (OPTION_YES == iUsState)
     {
-        if (OPTION_YES == iUsState)
+        if (TELNET_EOR == chOption)
         {
             EnableUs(d, TELNET_SGA);
         }
-        else if (OPTION_NO == iUsState)
+        else if (TELNET_CHARSET == chOption)
+        {
+            SendCharsetRequest(d);
+        }
+    }
+    else if (OPTION_NO == iUsState)
+    {
+        if (TELNET_EOR == chOption)
         {
             DisableUs(d, TELNET_SGA);
         }
@@ -3453,6 +3449,7 @@ static bool DesiredUsOption(DESC *d, unsigned char chOption)
 {
     if (  TELNET_EOR    == chOption
        || TELNET_BINARY == chOption
+       || TELNET_CHARSET == chOption
        || (  TELNET_SGA == chOption
           && OPTION_YES == UsState(d, TELNET_EOR)))
     {
@@ -3605,6 +3602,7 @@ void TelnetSetup(DESC *d)
     EnableHim(d, TELNET_NAWS);
     EnableHim(d, TELNET_ENV);
 //    EnableHim(d, TELNET_OLDENV);
+    EnableUs(d, TELNET_CHARSET);
     EnableHim(d, TELNET_CHARSET);
 #ifdef UNIX_SSL
     if (!d->ssl_session)
@@ -3633,6 +3631,13 @@ void TelnetSetup(DESC *d)
 
 static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
+    char szUTF8[] = "UTF-8";
+    char szISO8859_1[] = "ISO-8859-1";
+    char szUSASCII[] = "US-ASCII";
+    const size_t nUTF8 = sizeof(szUTF8) - 1;
+    const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
+    const size_t nUSASCII = sizeof(szUSASCII) - 1;
+    
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
@@ -4232,13 +4237,6 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         {
                             unsigned char *pCharset = &d->aOption[2];
                             
-                            char szUTF8[] = "UTF-8";
-                            char szISO8859_1[] = "ISO-8859-1";
-                            char szUSASCII[] = "US-ASCII";
-                            const size_t nUTF8 = sizeof(szUTF8) - 1;
-                            const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
-                            const size_t nUSASCII = sizeof(szUSASCII) - 1;
-                            
                             if (  nUTF8 == m - 2
                                && memcmp((char *)pCharset, szUTF8, nUTF8) == 0)
                             {
@@ -4287,6 +4285,90 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                             DisableUs(d, TELNET_BINARY);
                             DisableHim(d, TELNET_BINARY);
+                        }
+                        else if (TELNETSB_REQUEST == d->aOption[1])
+                        {
+                            bool fRequestAcknowledged = false;
+                            unsigned char *reqPtr = &d->aOption[2];
+                            if (reqPtr < &d->aOption[m])
+                            {
+                                // NVT_IAC is not permitted as a separator.
+                                // '[' might be the beginning of "[TTABLE]"
+                                // <version>, but we don't support parsing
+                                // and ignoring that.
+                                //
+                                unsigned char chSep = *reqPtr++;
+                                if (  NVT_IAC != chSep
+                                   || '[' != chSep)
+                                {
+                                    unsigned char *pTermStart = reqPtr;
+                                    unsigned char *pTermEnd = NULL;
+                                    
+                                    while (reqPtr < &d->aOption[m])
+                                    {
+                                        unsigned char ch = *reqPtr++;
+                                        if (  chSep == ch
+                                           || reqPtr == &d->aOption[m])
+                                        {
+                                            size_t nTerm = reqPtr - pTermStart - 1;
+
+                                            // Process [pTermStart, pTermEnd)
+                                            // We let the client determine priority by its order of the list.
+                                            //
+                                            if (  nUTF8 == nTerm
+                                               && memcmp((char *)pTermStart, szUTF8, nUTF8) == 0)
+                                            {
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                fRequestAcknowledged = true;
+                                                if (CHARSET_UTF8 != d->encoding)
+                                                {
+                                                    // Since we are changing to the UTF-8
+                                                    // character set, the printable state machine
+                                                    // needs to be initialized.
+                                                    //
+                                                    d->encoding = CHARSET_UTF8;
+                                                    d->negotiated_encoding = CHARSET_UTF8;
+                                                    d->raw_codepoint_state = CL_PRINT_START_STATE;
+
+                                                    EnableUs(d, TELNET_BINARY);
+                                                    EnableHim(d, TELNET_BINARY);
+                                                }
+                                                break;
+                                            }
+                                            else if (  nISO8859_1 == nTerm
+                                                    && memcmp((char *)pTermStart, szISO8859_1, nISO8859_1) == 0)
+                                            {
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                fRequestAcknowledged = true;
+                                                d->encoding = CHARSET_LATIN1;
+                                                d->negotiated_encoding = CHARSET_LATIN1;
+
+                                                EnableUs(d, TELNET_BINARY);
+                                                EnableHim(d, TELNET_BINARY);
+                                                break;
+                                            }
+                                            else if (  nUSASCII== nTerm
+                                                    && memcmp((char *)pTermStart, szUSASCII, nUSASCII) == 0)
+                                            {
+                                                fRequestAcknowledged = true;
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                d->encoding = CHARSET_ASCII;
+                                                d->negotiated_encoding = CHARSET_ASCII;
+
+                                                DisableUs(d, TELNET_BINARY);
+                                                DisableHim(d, TELNET_BINARY);
+                                                break;
+                                            }
+                                            pTermStart = reqPtr;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!fRequestAcknowledged)
+                            {
+                                SendSb(d, TELNET_CHARSET, TELNETSB_REJECT, NULL, 0);
+                            }
                         }
                     }
                 }
