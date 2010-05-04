@@ -3988,6 +3988,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                        SSL_set_fd(d->ssl_session, d->descriptor);
                        SSL_accept(d->ssl_session);
                     }
+                    break;
 #endif
 
                 case TELNET_TTYPE:
