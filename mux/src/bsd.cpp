@@ -4051,7 +4051,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
 #ifdef SSL_ENABLED
                 case TELNET_STARTTLS:
-                    if (TELNETSB_FOLLOWS == d->aOption[1])
+                    if (  2 == m
+                       && TELNETSB_FOLLOWS == d->aOption[1])
                     {
                        d->ssl_session = SSL_new(tls_ctx);
                        SSL_set_fd(d->ssl_session, d->descriptor);
