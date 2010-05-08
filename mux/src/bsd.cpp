@@ -4109,48 +4109,70 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             if (  TELNETSB_USERVAR == ch
                                || TELNETSB_VAR     == ch)
                             {
-                                size_t nVarname = 0;
-                                unsigned char *pVarname = envPtr;
-                                size_t nVarval = 0;
-                                unsigned char *pVarval = NULL;
+                                unsigned char *pVarnameStart = envPtr;
+                                unsigned char *pVarnameEnd = NULL;
+                                unsigned char *pVarvalStart = NULL;
+                                unsigned char *pVarvalEnd = NULL;
 
                                 while (envPtr < &d->aOption[m])
                                 {
                                     ch = *envPtr++;
                                     if (TELNETSB_VALUE == ch)
                                     {
-                                        nVarname = envPtr - pVarname - 1;
-                                        pVarval = envPtr;
+                                        pVarnameEnd = envPtr - 1;
+                                        pVarvalStart = envPtr;
+
                                         while (envPtr < &d->aOption[m])
                                         {
                                             ch = *envPtr++;
                                             if (  TELNETSB_USERVAR == ch
                                                || TELNETSB_VAR == ch)
                                             {
-                                                nVarval = envPtr - pVarval - 1;
+                                                pVarvalEnd = envPtr - 1;
                                                 break;
                                             }
                                         }
 
                                         if (envPtr == &d->aOption[m])
                                         {
-                                            nVarval = envPtr - pVarval;
+                                            pVarvalEnd = envPtr;
                                         }
                                         break;
                                     }
                                 }
 
+                                if (  envPtr == &d->aOption[m]
+                                   && NULL == pVarnameEnd)
+                                {
+                                    pVarnameEnd = envPtr;
+                                }
+
+                                size_t nVarname = 0;
+                                size_t nVarval = 0;
+
+                                if (  NULL != pVarnameStart
+                                   && NULL != pVarnameEnd)
+                                {
+                                    nVarname = pVarnameEnd - pVarnameStart;
+                                }
+
+                                if (  NULL != pVarvalStart
+                                   && NULL != pVarvalEnd)
+                                {
+                                    nVarval = pVarvalEnd - pVarvalStart;
+                                }
+
                                 UTF8 varname[1024];
                                 UTF8 varval[1024];
-                                if (  NULL != pVarval
+                                if (  NULL != pVarvalStart
                                    && 0 < nVarname
                                    && nVarname < sizeof(varname) - 1
                                    && 0 < nVarval
                                    && nVarval < sizeof(varval) - 1)
                                 {
-                                    memcpy(varname, pVarname, nVarname);
+                                    memcpy(varname, pVarnameStart, nVarname);
                                     varname[nVarname] = '\0';
-                                    memcpy(varval, pVarval, nVarval);
+                                    memcpy(varval, pVarvalStart, nVarval);
                                     varval[nVarval] = '\0';
 
                                     // This is a horrible, horrible nasty hack
