@@ -4135,54 +4135,68 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     break;
 
                 case TELNET_CHARSET:
-                    if (TELNETSB_ACCEPT == d->aOption[1])
+                    if (2 <= m)
                     {
-                        unsigned char *pCharset = &d->aOption[2];
-                        if (0 == strncmp((char *)pCharset, "UTF-8", m - 2))
+                        if (TELNETSB_ACCEPT == d->aOption[1])
                         {
-                            if (CHARSET_UTF8 != d->encoding)
+                            unsigned char *pCharset = &d->aOption[2];
+                            
+                            char szUTF8[] = "UTF-8";
+                            char szISO8859_1[] = "ISO-8859-1";
+                            char szUSASCII[] = "US-ASCII";
+                            const size_t nUTF8 = sizeof(szUTF8) - 1;
+                            const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
+                            const size_t nUSASCII = sizeof(szUSASCII) - 1;
+                            
+                            if (  nUTF8 == m - 2
+                               && memcmp((char *)pCharset, szUTF8, nUTF8) == 0)
                             {
-                                // Since we are changing to the UTF-8
-                                // character set, the printable state machine
-                                // needs to be initialized.
-                                //
-                                d->encoding = CHARSET_UTF8;
-                                d->negotiated_encoding = CHARSET_UTF8;
-                                d->raw_codepoint_state = CL_PRINT_START_STATE;
+                                if (CHARSET_UTF8 != d->encoding)
+                                {
+                                    // Since we are changing to the UTF-8
+                                    // character set, the printable state machine
+                                    // needs to be initialized.
+                                    //
+                                    d->encoding = CHARSET_UTF8;
+                                    d->negotiated_encoding = CHARSET_UTF8;
+                                    d->raw_codepoint_state = CL_PRINT_START_STATE;
+
+                                    EnableUs(d, TELNET_BINARY);
+                                    EnableHim(d, TELNET_BINARY);
+                                }
+                            }
+                            else if (  nISO8859_1 == m - 2
+                                    && memcmp((char *)pCharset, szISO8859_1, nISO8859_1) == 0)
+                            {
+                                d->encoding = CHARSET_LATIN1;
+                                d->negotiated_encoding = CHARSET_LATIN1;
 
                                 EnableUs(d, TELNET_BINARY);
                                 EnableHim(d, TELNET_BINARY);
                             }
-                        }
-                        else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
-                        {
-                            d->encoding = CHARSET_LATIN1;
-                            d->negotiated_encoding = CHARSET_LATIN1;
+                            else if (  nUSASCII == m - 2
+                                    && memcmp((char *)pCharset, szUSASCII, nUSASCII) == 0)
+                            {
+                                d->encoding = CHARSET_ASCII;
+                                d->negotiated_encoding = CHARSET_ASCII;
 
-                            EnableUs(d, TELNET_BINARY);
-                            EnableHim(d, TELNET_BINARY);
+                                DisableUs(d, TELNET_BINARY);
+                                DisableHim(d, TELNET_BINARY);
+                            }
                         }
-                        else if (0 == strncmp((char *)pCharset, "US-ASCII", m-2))
+                        else if (TELNETSB_REJECT == d->aOption[1])
                         {
+                            // The client has replied that it doesn't even support
+                            // Latin1/ISO-8859-1 accented characters.  Thus, we
+                            // should probably record this to strip out any
+                            // accents.
+                            //
                             d->encoding = CHARSET_ASCII;
                             d->negotiated_encoding = CHARSET_ASCII;
 
                             DisableUs(d, TELNET_BINARY);
                             DisableHim(d, TELNET_BINARY);
                         }
-                    }
-                    else if (TELNETSB_REJECT == d->aOption[1])
-                    {
-                        // The client has replied that it doesn't even support
-                        // Latin1/ISO-8859-1 accented characters.  Thus, we
-                        // should probably record this to strip out any
-                        // accents.
-                        //
-                        d->encoding = CHARSET_ASCII;
-                        d->negotiated_encoding = CHARSET_ASCII;
-
-                        DisableUs(d, TELNET_BINARY);
-                        DisableHim(d, TELNET_BINARY);
                     }
                 }
             }
