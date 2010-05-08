@@ -1,9 +1,9 @@
 TinyMUX 2.9: CHANGES
-Last Update: January 2010
+Last Update: May 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- None.
 
 
 Feature Additions:
@@ -44,6 +44,12 @@ Bug Fixes:
  -- Throttle use of @reference (Issue 587).
  -- Add missing attributes to muxattrs.dat.
  -- Fix heap corruption bug in edit() codepath.
+ -- Fix @dbclean to not strip attribute owner and flags on attributes
+    that it re-numbers (Issue 621).
+ -- Fix access of uninitialized memory during dbconvert when @queuemax
+    is set on player object (Issue 623).
+ -- db_check could potentially crash if exit destination is HOME.
+ -- Stricter parsing of telnet options.
 
 
 Performance Enhancements:
