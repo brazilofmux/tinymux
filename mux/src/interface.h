@@ -119,30 +119,30 @@ struct prog_data
 
 // Character Names
 //
-#define NVT_BS   '\x08'
-#define NVT_DEL  '\x7F'
-#define NVT_EOR  '\xEF'
-#define NVT_NOP  '\xF1'
-#define NVT_GA   '\xF9'
-#define NVT_WILL '\xFB'
-#define NVT_WONT '\xFC'
-#define NVT_DO   '\xFD'
-#define NVT_DONT '\xFE'
-#define NVT_IAC  '\xFF'
-#define NVT_SB   '\xFA'
-#define NVT_SE   '\xF0'
+#define NVT_BS   ((unsigned char)'\x08')
+#define NVT_DEL  ((unsigned char)'\x7F')
+#define NVT_EOR  ((unsigned char)'\xEF')
+#define NVT_NOP  ((unsigned char)'\xF1')
+#define NVT_GA   ((unsigned char)'\xF9')
+#define NVT_WILL ((unsigned char)'\xFB')
+#define NVT_WONT ((unsigned char)'\xFC')
+#define NVT_DO   ((unsigned char)'\xFD')
+#define NVT_DONT ((unsigned char)'\xFE')
+#define NVT_IAC  ((unsigned char)'\xFF')
+#define NVT_SB   ((unsigned char)'\xFA')
+#define NVT_SE   ((unsigned char)'\xF0')
 
 // Telnet Options
 //
-#define TELNET_BINARY   '\x00'
-#define TELNET_SGA      '\x03'
-#define TELNET_EOR      '\x19'
-#define TELNET_NAWS     '\x1F'
-#define TELNET_TTYPE    '\x18'
-#define TELNET_OLDENV   '\x24'
-#define TELNET_ENV      '\x27'
-#define TELNET_CHARSET  '\x2A'
-#define TELNET_STARTTLS '\x2E'
+#define TELNET_BINARY   ((unsigned char)'\x00')
+#define TELNET_SGA      ((unsigned char)'\x03')
+#define TELNET_EOR      ((unsigned char)'\x19')
+#define TELNET_NAWS     ((unsigned char)'\x1F')
+#define TELNET_TTYPE    ((unsigned char)'\x18')
+#define TELNET_OLDENV   ((unsigned char)'\x24')
+#define TELNET_ENV      ((unsigned char)'\x27')
+#define TELNET_CHARSET  ((unsigned char)'\x2A')
+#define TELNET_STARTTLS ((unsigned char)'\x2E')
 
 // Telnet Option Negotiation States
 //

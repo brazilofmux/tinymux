@@ -3184,17 +3184,17 @@ static void SendSb
     DESC *d,
     unsigned char chOption,
     unsigned char chRequest,
-    char  *pPayload,
+    unsigned char *pPayload,
     size_t nPayload
 )
 {
     size_t nMaximum = 6 + 2*nPayload;
 
-    char buffer[100];
-    char *pSB = buffer;
+    unsigned char buffer[100];
+    unsigned char *pSB = buffer;
     if (sizeof(buffer) < nMaximum)
     {
-        pSB = (char *)MEMALLOC(nMaximum);
+        pSB = (unsigned char *)MEMALLOC(nMaximum);
         if (NULL == pSB)
         {
             return;
@@ -3206,7 +3206,7 @@ static void SendSb
     pSB[2] = chOption;
     pSB[3] = chRequest;
 
-    char *p = &pSB[4];
+    unsigned char *p = &pSB[4];
 
     for (size_t loop = 0; loop < nPayload; loop++)
     {
@@ -3220,7 +3220,7 @@ static void SendSb
     *(p++) = NVT_SE;
 
     size_t length = p - pSB;
-    queue_write_LEN(d, pSB, length);
+    queue_write_LEN(d, (char *)pSB, length);
 
     if (pSB != buffer)
     {
@@ -3326,7 +3326,7 @@ void SendCharsetRequest(DESC *d)
 {
     if (OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET])
     {
-        char aCharsets[] = ";UTF-8;ISO-8859-1;US-ASCII";
+        unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;US-ASCII";
         SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
     }
 }
@@ -3353,7 +3353,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         {
             // Request environment variables.
             //
-            char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
+            unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
         else if (TELNET_STARTTLS == chOption)
@@ -4299,7 +4299,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 //
                                 unsigned char chSep = *reqPtr++;
                                 if (  NVT_IAC != chSep
-                                   || '[' != chSep)
+                                   && '[' != chSep)
                                 {
                                     unsigned char *pTermStart = reqPtr;
                                     
@@ -4317,7 +4317,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             if (  nUTF8 == nTerm
                                                && memcmp((char *)pTermStart, szUTF8, nUTF8) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 if (CHARSET_UTF8 != d->encoding)
                                                 {
@@ -4337,7 +4337,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             else if (  nISO8859_1 == nTerm
                                                     && memcmp((char *)pTermStart, szISO8859_1, nISO8859_1) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 d->encoding = CHARSET_LATIN1;
                                                 d->negotiated_encoding = CHARSET_LATIN1;
@@ -4350,7 +4350,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                                     && memcmp((char *)pTermStart, szUSASCII, nUSASCII) == 0)
                                             {
                                                 fRequestAcknowledged = true;
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, (char *)pTermStart, nTerm);
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 d->encoding = CHARSET_ASCII;
                                                 d->negotiated_encoding = CHARSET_ASCII;
 
