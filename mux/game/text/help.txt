@@ -250,8 +250,8 @@ $-COMMANDS
   ATTRIBUTE: Adisconnect
 
   Sets the actions to be taken by a player upon disconnecting from the MUX.
-  The following steps occur in the following order whenever a player connects
-  to the MUX. Parentage is observed.
+  The following steps occur in the following order whenever a player
+  disconnects from the MUX. Parentage is observed.
 
    - Execute the connecting player's @adisconnect.
    - Execute the master room's @adisconnect.
