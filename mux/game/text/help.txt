@@ -6783,7 +6783,7 @@ FAILURE
   (because it is unlinked or locked). You fail to use a room when you fail
   to look around (because it's locked).
 
-  Related Topics: get, look, @afail, @fail, @lock, @ofail, STRINGS.
+  Related Topics: get, look, @afail, @fail, @lock, @ofail.
 
 & FCOUNT()
 FCOUNT()
