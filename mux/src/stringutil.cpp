@@ -4908,8 +4908,7 @@ void mux_string::realloc_m_pcs(size_t ncs)
             // Initialize the implicit CS_NORMAL ColorStates to maintain the
             // mux_string invariant.
             //
-            int i;
-            for (i = 0; i < ncs; i++)
+            for (size_t i = 0; i < ncs; i++)
             {
                 m_pcs[i] = CS_NORMAL;
             }

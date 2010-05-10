@@ -4302,7 +4302,6 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                    || '[' != chSep)
                                 {
                                     unsigned char *pTermStart = reqPtr;
-                                    unsigned char *pTermEnd = NULL;
                                     
                                     while (reqPtr < &d->aOption[m])
                                     {
@@ -4312,7 +4311,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         {
                                             size_t nTerm = reqPtr - pTermStart - 1;
 
-                                            // Process [pTermStart, pTermEnd)
+                                            // Process [pTermStart, pTermStart+nTermEnd)
                                             // We let the client determine priority by its order of the list.
                                             //
                                             if (  nUTF8 == nTerm
