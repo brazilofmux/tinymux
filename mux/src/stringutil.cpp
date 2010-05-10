@@ -568,8 +568,8 @@ const char *ConvertToLatin(const UTF8 *pString)
             unsigned short iOffset = tr_latin1_sot[iState];
             for (;;)
             {
-                int y = (char)tr_latin1_sbt[iOffset];
-                if (0 < y)
+                int y = tr_latin1_sbt[iOffset];
+                if (y < 128)
                 {
                     // RUN phrase.
                     //
@@ -588,7 +588,7 @@ const char *ConvertToLatin(const UTF8 *pString)
                 {
                     // COPY phrase.
                     //
-                    y = -y;
+                    y = 256-y;
                     if (iColumn < y)
                     {
                         iState = tr_latin1_sbt[iOffset+iColumn+1];
@@ -631,8 +631,8 @@ const char *ConvertToAscii(const UTF8 *pString)
             unsigned short iOffset = tr_ascii_sot[iState];
             for (;;)
             {
-                int y = (char)tr_ascii_sbt[iOffset];
-                if (0 < y)
+                int y = tr_ascii_sbt[iOffset];
+                if (y < 128)
                 {
                     // RUN phrase.
                     //
@@ -651,7 +651,7 @@ const char *ConvertToAscii(const UTF8 *pString)
                 {
                     // COPY phrase.
                     //
-                    y = -y;
+                    y = 256-y;
                     if (iColumn < y)
                     {
                         iState = tr_ascii_sbt[iOffset+iColumn+1];

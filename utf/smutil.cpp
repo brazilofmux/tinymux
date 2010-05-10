@@ -1141,7 +1141,25 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                 fprintf(poc->fpBody, "    ");
             }
 
-            fprintf(poc->fpBody, " %4d", piBlob[i]);
+            int iBlob = piBlob[i];
+            if (0 <= iBlob)
+            {
+                fprintf(poc->fpBody, " %3d", iBlob);
+            }
+            else if (-127 <= iBlob)
+            {
+                // Negative entries are COPY phrases.
+                //
+                fprintf(poc->fpBody, " %3d", 256+iBlob);
+            }
+            else
+            {
+                // Negative entries should not be larger than -127.
+                //
+                fprintf(stderr, "CleanUp, line %d\n", __LINE__);
+                goto CleanUp;
+            }
+
             if (i < nBlob-1)
             {
                 fprintf(poc->fpBody, ",");

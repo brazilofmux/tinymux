@@ -116,8 +116,8 @@ inline bool mux_isprint(__in const unsigned char *p)
         unsigned short iOffset = cl_print_sot[iState];
         for (;;)
         {
-            int y = (char)cl_print_sbt[iOffset];
-            if (0 < y)
+            int y = cl_print_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -136,7 +136,7 @@ inline bool mux_isprint(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_print_sbt[iOffset+iColumn+1];
@@ -165,8 +165,8 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
         unsigned char iOffset = cl_attrnameinitial_sot[iState];
         for (;;)
         {
-            int y = (char)cl_attrnameinitial_sbt[iOffset];
-            if (0 < y)
+            int y = cl_attrnameinitial_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -185,7 +185,7 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_attrnameinitial_sbt[iOffset+iColumn+1];
@@ -214,8 +214,8 @@ inline bool mux_isattrname(__in const unsigned char *p)
         unsigned char iOffset = cl_attrname_sot[iState];
         for (;;)
         {
-            int y = (char)cl_attrname_sbt[iOffset];
-            if (0 < y)
+            int y = cl_attrname_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -234,7 +234,7 @@ inline bool mux_isattrname(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_attrname_sbt[iOffset+iColumn+1];
@@ -263,8 +263,8 @@ inline bool mux_isobjectname(__in const unsigned char *p)
         unsigned char iOffset = cl_objectname_sot[iState];
         for (;;)
         {
-            int y = (char)cl_objectname_sbt[iOffset];
-            if (0 < y)
+            int y = cl_objectname_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -283,7 +283,7 @@ inline bool mux_isobjectname(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_objectname_sbt[iOffset+iColumn+1];
@@ -312,8 +312,8 @@ inline bool mux_isplayername(__in const unsigned char *p)
         unsigned char iOffset = cl_playername_sot[iState];
         for (;;)
         {
-            int y = (char)cl_playername_sbt[iOffset];
-            if (0 < y)
+            int y = cl_playername_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -332,7 +332,7 @@ inline bool mux_isplayername(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_playername_sbt[iOffset+iColumn+1];
@@ -361,8 +361,8 @@ inline bool mux_is8859_1(__in const unsigned char *p)
         unsigned char iOffset = cl_8859_1_sot[iState];
         for (;;)
         {
-            int y = (char)cl_8859_1_sbt[iOffset];
-            if (0 < y)
+            int y = cl_8859_1_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -381,7 +381,7 @@ inline bool mux_is8859_1(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_8859_1_sbt[iOffset+iColumn+1];
@@ -410,8 +410,8 @@ inline bool mux_is8859_2(__in const unsigned char *p)
         unsigned char iOffset = cl_8859_2_sot[iState];
         for (;;)
         {
-            int y = (char)cl_8859_2_sbt[iOffset];
-            if (0 < y)
+            int y = cl_8859_2_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -430,7 +430,7 @@ inline bool mux_is8859_2(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = cl_8859_2_sbt[iOffset+iColumn+1];
@@ -467,8 +467,8 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
         unsigned short iOffset = tr_tolower_sot[iState];
         for (;;)
         {
-            int y = (char)tr_tolower_sbt[iOffset];
-            if (0 < y)
+            int y = tr_tolower_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -487,7 +487,7 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = tr_tolower_sbt[iOffset+iColumn+1];
@@ -526,8 +526,8 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
         unsigned short iOffset = tr_toupper_sot[iState];
         for (;;)
         {
-            int y = (char)tr_toupper_sbt[iOffset];
-            if (0 < y)
+            int y = tr_toupper_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -546,7 +546,7 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = tr_toupper_sbt[iOffset+iColumn+1];
@@ -585,8 +585,8 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
         unsigned short iOffset = tr_totitle_sot[iState];
         for (;;)
         {
-            int y = (char)tr_totitle_sbt[iOffset];
-            if (0 < y)
+            int y = tr_totitle_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -605,7 +605,7 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = tr_totitle_sbt[iOffset+iColumn+1];
@@ -644,8 +644,8 @@ inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
         unsigned short iOffset = tr_foldmatch_sot[iState];
         for (;;)
         {
-            int y = (char)tr_foldmatch_sbt[iOffset];
-            if (0 < y)
+            int y = tr_foldmatch_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -664,7 +664,7 @@ inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = tr_foldmatch_sbt[iOffset+iColumn+1];
@@ -703,8 +703,8 @@ inline int mux_color(__in const unsigned char *p)
         unsigned short iOffset = tr_color_sot[iState];
         for (;;)
         {
-            int y = (char)tr_color_sbt[iOffset];
-            if (0 < y)
+            int y = tr_color_sbt[iOffset];
+            if (y < 128)
             {
                 // RUN phrase.
                 //
@@ -723,7 +723,7 @@ inline int mux_color(__in const unsigned char *p)
             {
                 // COPY phrase.
                 //
-                y = -y;
+                y = 256-y;
                 if (iColumn < y)
                 {
                     iState = tr_color_sbt[iOffset+iColumn+1];
