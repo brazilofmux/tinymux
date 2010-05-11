@@ -7339,7 +7339,7 @@ static FUNCTION(fun_edit)
 
     if (NULL != sStr)
     {
-        for (unsigned int i = 1; i + 1 < nfargs; i += 2)
+        for (int i = 1; i + 1 < nfargs; i += 2)
         {
             try
             {
