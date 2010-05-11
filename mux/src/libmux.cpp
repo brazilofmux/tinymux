@@ -111,7 +111,6 @@ static QUEUE_INFO *g_pQueue_Out = NULL;
 
 static CHANNEL_INFO *aChannels = NULL;
 static UINT32        nChannels = 0;
-static UINT32        nChannelsAllocated = 0;
 
 static LibraryState    g_LibraryState   = eLibraryDown;
 static process_context g_ProcessContext = IsUninitialized;
