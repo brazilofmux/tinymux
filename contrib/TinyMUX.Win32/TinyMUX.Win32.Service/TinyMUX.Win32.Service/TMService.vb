@@ -1,4 +1,4 @@
-﻿Imports System.ServiceProcess
+Imports System.ServiceProcess
 
 ''' <summary>
 ''' A class designed for a Win32 Service Implementation.

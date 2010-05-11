@@ -1,4 +1,4 @@
-﻿Imports System.ComponentModel
+Imports System.ComponentModel
 Imports System.Configuration.Install
 
 Public Class TMServiceInstaller

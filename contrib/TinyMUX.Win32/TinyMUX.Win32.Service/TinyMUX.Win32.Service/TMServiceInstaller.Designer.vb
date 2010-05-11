@@ -1,4 +1,4 @@
-﻿<System.ComponentModel.RunInstaller(True)> Partial Class TMServiceInstaller
+<System.ComponentModel.RunInstaller(True)> Partial Class TMServiceInstaller
     Inherits System.Configuration.Install.Installer
 
     'Installer overrides dispose to clean up the component list.

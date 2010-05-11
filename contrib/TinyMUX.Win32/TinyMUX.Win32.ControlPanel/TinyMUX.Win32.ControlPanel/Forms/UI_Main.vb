@@ -1,4 +1,4 @@
-﻿Public Class UI_Main
+Public Class UI_Main
     ''' <summary>
     ''' This code occurs whenever the program is started.
     ''' It does nothing but call the Update routine that populates
