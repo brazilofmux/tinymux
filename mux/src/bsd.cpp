@@ -3322,12 +3322,25 @@ int UsState(DESC *d, unsigned char chOption)
     return d->nvt_us_state[chOption];
 }
 
-void SendCharsetRequest(DESC *d)
+void SendCharsetRequest(DESC *d, bool fDefacto = false)
 {
-    if (OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET])
+    if (  OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
+       || (  fDefacto
+          && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]))
     {
         unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;US-ASCII";
         SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
+    }
+}
+
+void DefactoCharsetCheck(DESC *d)
+{
+    if (  NULL != d->ttype
+       && OPTION_NO == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
+       && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]
+       && mux_stricmp(d->ttype, T("mushclient")) == 0)
+    {
+        SendCharsetRequest(d, true);
     }
 }
 
@@ -3363,6 +3376,10 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         else if (TELNET_BINARY == chOption)
         {
             EnableUs(d, TELNET_BINARY);
+        }
+        else if (TELNET_CHARSET == chOption)
+        {
+            DefactoCharsetCheck(d);
         }
     }
     else if (OPTION_NO == iHimState)
@@ -3402,6 +3419,10 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
         if (TELNET_EOR == chOption)
         {
             DisableUs(d, TELNET_SGA);
+        }
+        else if (TELNET_CHARSET == chOption)
+        {
+            DefactoCharsetCheck(d);
         }
     }
 }
@@ -4097,6 +4118,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
                             memcpy(d->ttype, pTermType, nTermType);
                             d->ttype[nTermType] = '\0';
+
+                            DefactoCharsetCheck(d);
                         }
                     }
                     break;
