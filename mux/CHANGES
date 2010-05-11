@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: April 2010
+Last Update: May 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,6 +18,11 @@ Bug Fixes:
  -- Fix access of uninitialized memory during dbconvert when @queuemax
     is set on player object (Issue 623).
  -- db_check can potentially crash if exit destination is HOME.
+ -- Stricter telnet option parsing.
+ -- Avoid using negative initializers in UTF-8 run-copy table to fix
+    gcc 3.4.2 and VC -W4 warnings (Issue 573).
+ -- Detect and revert to de facto telnet behavior for MUSHClient
+    (Issue 625).
 
 
 Performance Enhancements:
@@ -27,9 +32,11 @@ Performance Enhancements:
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Remove reference to STRINGS in FAILURE help topic.
+ -- Fix connects/disconnects typo in @ADISCONNECT topic.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Removed search class type=GARBAGE.
+ -- Switch to Intel Compiler v11.1.
