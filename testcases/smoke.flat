@@ -72,11 +72,11 @@
 0
 0
 >218
-"Fri May 14 08:15:52.079043 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:52.079043 2010"
+"Fri Jan 01 00:00:00 2010"
 >30
-"Fri May 14 08:15:53.080503 2010"
+"Fri Jan 01 00:00:00 2010"
 >49
 "20"
 >38
@@ -88,11 +88,11 @@
 >144
 "127.0.0.1"
 >84
-"#1;127.0.0.1;Fri May 14 08:15:53.080612 2010;;;;;;;0;0;;;;;;;"
+"#1;127.0.0.1;Fri Jan 01 00:00:00 2010;;;;;;;0;0;;;;;;;"
 >222
 "Shutdown"
 >224
-"1 1 1 1 1273850154"
+"0 0 0 0 1262304000"
 <
 !2
 "test_center_fn"
@@ -112,9 +112,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.080913 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.087165 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning center() test cases."
 >257
@@ -148,9 +148,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.087248 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.087332 2010"
+"Fri Jan 01 00:00:00 2010"
 >27
 "@va me=sha1(%va%0)"
 >256
@@ -178,9 +178,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.087374 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.087635 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
@@ -218,9 +218,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.087672 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.087956 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning cpad() test cases."
 >257
@@ -254,9 +254,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.088 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.088123 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning digest() test cases."
 >257
@@ -288,9 +288,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.08816 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.088285 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning edit() test cases."
 >257
@@ -322,9 +322,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.088322 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.088853 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning escape() test cases."
 >257
@@ -356,9 +356,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.09515 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.095376 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning first() test cases."
 >257
@@ -398,9 +398,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.095416 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:53.126975 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning insert() test cases."
 >257
@@ -434,9 +434,9 @@
 0
 0
 >218
-"Fri May 14 08:15:53.127053 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.131398 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning last() test cases."
 >257
@@ -476,9 +476,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.131484 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.131654 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning ljust() test cases."
 >257
@@ -512,9 +512,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.131712 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.131872 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning lpad() test cases."
 >257
@@ -548,9 +548,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.131911 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.167263 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning merge() test cases."
 >257
@@ -600,9 +600,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.167334 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.167389 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning mid() test cases."
 >257
@@ -626,9 +626,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.167426 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.184192 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning rest() test cases."
 >257
@@ -668,9 +668,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.184284 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.18446 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning rjust() test cases."
 >257
@@ -704,9 +704,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.18451 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.184755 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning rpad() test cases."
 >257
@@ -740,9 +740,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.184805 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.184951 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning secure() test cases."
 >257
@@ -774,9 +774,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.184999 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.18511 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning sha1() test cases."
 >257
@@ -806,9 +806,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.185159 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.185455 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning shuffle() test cases."
 >257
@@ -850,9 +850,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.185504 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.185537 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
@@ -874,9 +874,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.185587 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.185658 2010"
+"Fri Jan 01 00:00:00 2010"
 >271
 "center_fn cmd_say convtime_fn cpad_fn digest_fn edit_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn wrap_fn shutdown"
 >19
@@ -902,9 +902,9 @@
 0
 0
 >218
-"Fri May 14 08:15:54.185707 2010"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Fri May 14 08:15:54.185802 2010"
+"Fri Jan 01 00:00:00 2010"
 >256
 "@log smoke=Beginning wrap() test cases."
 >257
