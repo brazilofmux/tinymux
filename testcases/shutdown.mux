@@ -1,0 +1,21 @@
+#
+# shutdown.mux - Last job.
+# $Id$
+#
+@create test_shutdown
+-
+@set test_shutdown=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_shutdown=
+  @log smoke=Ending SmokeMUX;
+  @notify smoke;
+  @shutdown
+-
+drop test_shutdown
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+#	MakeSmoke - Kick off the automated build of smoke database.
+#
+PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
+#
+#	Verify that file dependencies are in a pristine state.
+#
+GAMENAME=smoke
+PIDFILE=$GAMENAME.pid
+BIN=../mux/game/bin
+TEXT=./text
+DATA=./$GAMENAME.d
+LOGDIR=$DATA
+NEW_DB=$GAMENAME.db.new
+INPUT_DB=$GAMENAME.db
+GDBM_DB=$GAMENAME
+CRASH_DB=$GAMENAME.db.CRASH
+SAVE_DB=$GAMENAME.db.old
+TMP=`mktemp`
+#
+#	Verify that temporary game directory does not already exist.
+#
+if [ -r $DATA ]; then
+	echo "$DATA directory already exists."
+	exit 1
+fi
+if [ -r $BIN/NETMUX ]; then
+	echo "Build the server first."
+	exit 1
+fi
+#
+#	Make sure the smoke test isn't already running.
+#
+if [ -r "$PIDFILE" ]; then
+    oldpid=`cat $PIDFILE`
+    if [ "$oldpid" -gt 1 ]; then
+        nmux=`ps | grep $oldpid | grep netmux | wc -l`
+        if [ "$nmux" -gt 0 ]; then
+            echo "A smoke test already seems to be running."
+            exit 0
+        fi
+    fi
+fi
+perl ./tools/unformat.pl *.mux > $TMP
+#
+#	Create necessary environment.
+#
+mkdir $DATA
+if [ ! -r text ]; then
+    echo "Creating text directory."
+    mkdir text
+fi
+cp ../mux/game/alias.conf .
+cp ../mux/game/compat.conf .
+cat > smoke.conf <<\_EOF
+# smoke.conf - TinyMUX configuration file for smoke testing.
+#
+input_database	smoke.d/smoke.db
+output_database	smoke.d/smoke.db.new
+crash_database	smoke.d/smoke.db.CRASH
+game_dir_file	smoke.d/smoke.dir
+game_pag_file	smoke.d/smoke.pag
+#
+# Mail, comsystem, and macro databases.
+#
+mail_database   smoke.d/mail.db
+comsys_database smoke.d/comsys.db
+#
+port 2860
+mud_name SmokeMUX
+#
+include alias.conf
+include compat.conf
+_EOF
+#
+#	Kick off MUX
+#
+
+# Linux/Solaris
+LD_LIBRARY_PATH=$BIN
+export LD_LIBRARY_PATH
+
+# Mac OS X / NeXTStep / Mach
+DYLD_LIBRARY_PATH=$BIN
+export DYLD_LIBRARY_PATH
+
+# AIX
+LIBPATH=$BIN
+export LIBPATH
+
+# HP-UX
+SHLIB_PATH=$BIN
+export SHLIB_PATH
+
+(nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
+
+sleep 1
+expect ./tools/upload.tcl $TMP
+$BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$GAMENAME.db.new" -o smoke.flat -u
+
+#
+#	Grab resulting log file and clean up.
+#
+rm smoke.conf $PIDFILE shutdown.status alias.conf compat.conf $TMP
+rm -rf $DATA text

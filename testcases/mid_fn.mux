@@ -1,0 +1,46 @@
+#
+# mid_fn.mux - Test Cases for mid().
+# $Id$
+#
+# Strategy: Vary three argument with color and UTF-8 in combination with
+# expected mid() behaviors.
+#
+@create test_mid_fn
+-
+@set test_mid_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_mid_fn=
+  @log smoke=Beginning mid() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_mid_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mid(foobar,2,2)]
+            [mid(foobar,2,-2)]
+          )
+        ),
+        973A0ABA88E038ED295728D49D24759890274404
+      )=
+  {
+    @log smoke=TC001: mid examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: mid examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+&tr.done test_mid_fn=
+  @log smoke=End mid() test cases.;
+  @notify smoke
+-
+drop test_mid_fn
+-
+#
+# End of Test Cases
+#

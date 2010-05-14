@@ -1,0 +1,13 @@
+#
+# 0upload.mux - Initial settings to control smoke.flat creation.
+# $Id$
+#
+@set me=QUIET
+-
+@admin command_quota_increment=1000
+-
+@admin command_quota_max=1000
+-
+#
+# End of 0upload.mux
+#

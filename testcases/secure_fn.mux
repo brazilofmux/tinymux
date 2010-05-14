@@ -1,0 +1,124 @@
+#
+# secure_fn.mux - Test Cases for secure().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with secure() behaviors.
+#
+@create test_secure_fn
+-
+@set test_secure_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_secure_fn=
+  @log smoke=Beginning secure() test cases.
+-
+#
+# Test Case #1 - Test that characters %$\[](){},; mixed with ASCII are replaced with spaces.
+#
+&tr.tc001 test_secure_fn=
+  @va me=a%[a%]a%(a%)a%{a%}a%;a%%a%\a%$a%,a;
+  @vb me=%[%]%(%)%{%}%;%%%\%$%,;
+  @if strmatch(
+        setr(0,sha1(
+            secure(%va)
+            [secure(%vb)]
+          )
+        ),
+        46921D8F439E5D25081D6E6810EA42693EB7FBB0
+      )=
+  {
+    @log smoke=TC001: ASCII mix. Succeeded.
+  },
+  {
+    @log smoke=TC001: ASCII mix. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Test that characters %$\[](){},; mixed with color and ASCII are replaced with spaces.
+#
+&tr.tc002 test_secure_fn=
+  @va me=%xga%xr%[%xga%xr%]%xga%xr%(%xga%xr%)%xga%xr%{%xga%xr%}%xga%xr%;%xga%xr%%%xga%xr%\%xga%xr%$%xga%xr%,%xga;
+  @vb me=%xg%[%xr%]%xg%(%xr%)%xg%{%xr%}%xg%;%xr%%%xg%\%xr%$%xg%,%xr;
+  @if strmatch(
+        setr(0,sha1(
+            translate(secure(%va),p)
+            [translate(secure(%vb),p)]
+          )
+        ),
+        0432DFA8F9CAB622E397DB9BD462C3516DF8A07F
+      )=
+  {
+    @log smoke=TC002: ASCII-color mix. Succeeded.
+  },
+  {
+    @log smoke=TC002: ASCII-color mix. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Test that characters %$\[](){},; mixed with Unicode are replaced with spaces.
+#
+&tr.tc003 test_secure_fn=
+  @if chr(256)=
+  {
+    @va me=[chr(256)]%[[chr(256)]%][chr(256)]%([chr(256)]%)[chr(256)]%{[chr(256)]%}[chr(256)]%;[chr(256)]%%[chr(256)]%\[chr(256)]%$[chr(256)]%,[chr(256)];
+    @vb me=[chr(10010)]%[[chr(10010)]%][chr(10010)]%([chr(10010)]%)[chr(10010)]%{[chr(10010)]%}[chr(10010)]%;[chr(10010)]%%[chr(10010)]%\[chr(10010)]%$[chr(10010)]%,[chr(10010)];
+    @if strmatch(
+          setr(0,sha1(
+              secure(%va)
+              [secure(%vb)]
+            )
+          ),
+          05682C82D8D3A053DD4743BB2B3F0FBF07DC41B2
+        )=
+    {
+      @log smoke=TC003: Unicode mix. Succeeded.
+    },
+    {
+      @log smoke=TC003: Unicode mix. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC003: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #4 - Test that characters %$\[](){},; mixed with color and Unicode are replaced with spaces.
+#
+&tr.tc004 test_secure_fn=
+  @if chr(256)=
+  {
+    @va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];
+    @vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];
+    @if strmatch(
+          setr(0,sha1(
+              translate(secure(%va),p)
+              [translate(secure(%vb),p)]
+            )
+          ),
+          B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD
+        )=
+    {
+      @log smoke=TC004: Unicode-color mix. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC004: Unicode-color mix. Failed (%q0).;
+      @trig me/tr.done
+    };
+  },
+  {
+    @log smoke=TC004: Unicode is not supported on this version. Okay.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_secure_fn=
+  @log smoke=End secure() test cases.;
+  @notify smoke
+-
+drop test_secure_fn
+-
+#
+# End of Test Cases
+#

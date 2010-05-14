@@ -1,0 +1,387 @@
+#
+# merge_fn.mux - Test Cases for merge().
+# $Id$
+#
+# Strategy: Exercise a mix of color, ASCII, and Unicode in combination with merge() behaviors.
+#
+@create test_merge_fn
+-
+@set test_merge_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_merge_fn=
+  @log smoke=Beginning merge() test cases.
+-
+#
+# Test Case #1 - Verify that examples work.
+#
+&tr.tc001 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(AB--EF,abcdef,-)
+            [merge(AB[space(2)]EF,abcdef,)]
+          )
+        ),
+        39309B3557549C45DC2C3C651D3FFE8AAF59615A
+      )=
+  {
+    @log smoke=TC001: Examples in help. Succeeded.
+  },
+  {
+    @log smoke=TC001: Examples in help. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Test each position of 5 character ASCII string.
+#
+&tr.tc002 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(01234,abcde,0)
+            [merge(01234,abcde,1)]
+            [merge(01234,abcde,2)]
+            [merge(01234,abcde,3)]
+            [merge(01234,abcde,4)]
+            [merge(01234,abcde,5)]
+          )
+        ),
+        409BF3EDACB2E596A5BD26AE207F857EC0069254
+      )=
+  {
+    @log smoke=TC002: Single ASCII substitution in each position. Succeeded.
+  },
+  {
+    @log smoke=TC002: Single ASCII substitution in each position. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Test each position of 5 characters with space/null <character>.
+#
+&tr.tc003 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(%b1234,abcde,%b)
+            [merge(%b1234,abcde,)]
+            [merge(0%b234,abcde,%b)]
+            [merge(0%b234,abcde,)]
+            [merge(01%b34,abcde,%b)]
+            [merge(01%b34,abcde,)]
+            [merge(012%b4,abcde,%b)]
+            [merge(012%b4,abcde,)]
+            [merge(0123%b,abcde,%b)]
+            [merge(0123%b,abcde,)]
+          )
+        ),
+        82150D5D128C74D654BC88DCE416E78BD83D7A5E
+      )=
+  {
+    @log smoke=TC003: ASCII with space/null substitution in each position. Succeeded.
+  },
+  {
+    @log smoke=TC003: ASCII with space/null substitution in each position. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Vary length of run over 5 character ASCII string.
+#
+&tr.tc004 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            merge(01234,abcde,0)
+            [merge(00234,abcde,0)]
+            [merge(00034,abcde,0)]
+            [merge(00004,abcde,0)]
+            [merge(00000,abcde,0)]
+            [merge(10000,abcde,0)]
+            [merge(12000,abcde,0)]
+            [merge(12300,abcde,0)]
+            [merge(12340,abcde,0)]
+          )
+        ),
+        9ABC0A0A8BE449B42B1135D01B718F0E29C07D43
+      )=
+  {
+    @log smoke=TC004: Vary length of run over 5 character ASCII string. Succeeded.
+  },
+  {
+    @log smoke=TC004: Vary length of run over 5 character ASCII string. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Test each position of 5 character ASCII string with color.
+#
+&tr.tc005 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,0),p)
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,1),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,2),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,3),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,4),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,5),p)]
+          )
+        ),
+        F02564F2F3E93316F72B54E98020480FC469BC44
+      )=
+  {
+    @log smoke=TC005: Single ASCII substitution in each position with color. Succeeded.
+  },
+  {
+    @log smoke=TC005: Single ASCII substitution in each position with color. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Test each position of 5 characters with space/null <character> with color.
+#
+&tr.tc006 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            translate(merge(%xr%b%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,%b),p)
+            [translate(merge(%xr%b%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,),p)]
+            [translate(merge(%xr0%xg%b%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,%b),p)]
+            [translate(merge(%xr0%xg%b%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,),p)]
+            [translate(merge(%xr0%xg1%xb%b%xx3%xy4,%xca%xmb%xuc%xwd%xhe,%b),p)]
+            [translate(merge(%xr0%xg1%xb%b%xx3%xy4,%xca%xmb%xuc%xwd%xhe,),p)]
+            [translate(merge(%xr0%xg1%xb2%xx%b%xy4,%xca%xmb%xuc%xwd%xhe,%b),p)]
+            [translate(merge(%xr0%xg1%xb2%xx%b%xy4,%xca%xmb%xuc%xwd%xhe,),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy%b,%xca%xmb%xuc%xwd%xhe,%b),p)]
+            [translate(merge(%xr0%xg1%xb2%xx3%xy%b,%xca%xmb%xuc%xwd%xhe,),p)]
+          )
+        ),
+        1660A09AA3B0E8ECA4D0B8FF2DEEF628F7503210
+      )=
+  {
+    @log smoke=TC006: ASCII with space/null substitution in each position with color. Succeeded.
+  },
+  {
+    @log smoke=TC006: ASCII with space/null substitution in each position with color. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Vary length of run over 5 character ASCII string with color.
+#
+&tr.tc007 test_merge_fn=
+  @if strmatch(
+        setr(0,sha1(
+            translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,0),p)
+            [translate(merge(%xr0%xg1%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr0%xg0%xb2%xx3%xy4,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr0%xg0%xb0%xx3%xy4,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr0%xg0%xb0%xx0%xy4,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr0%xg0%xb0%xx0%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr1%xg0%xb0%xx0%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr1%xg2%xb0%xx0%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr1%xg2%xb3%xx0%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
+            [translate(merge(%xr1%xg2%xb3%xx4%xy0,%xca%xmb%xuc%xwd%xhe,0),p)]
+          )
+        ),
+        79E95C3E708BE72B5000278CCA30AFF3B6BE3C12
+      )=
+  {
+    @log smoke=TC007: Vary length of run over 5 character ASCII string with color. Succeeded.
+  },
+  {
+    @log smoke=TC007: Vary length of run over 5 character ASCII string with color. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Test each position of 5 character Unicode string.
+#
+&tr.tc008 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65297)])]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65298)])]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65299)])]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65300)])]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65301)])]
+            )
+          ),
+          076E2E619D7BCF0E90A154BD70B1ECE7B5D580A0
+        )=
+    {
+      @log smoke=TC008: Single Unicode substitution in each position. Succeeded.
+    },
+    {
+      @log smoke=TC008: Single Unicode substitution in each position. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC008: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #9 - Test each position of 5 characters with space/null <character>.
+#
+&tr.tc009 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge(%b[chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],%b)
+              [merge(%b[chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
+              [merge([chr(65296)]%b[chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],%b)]
+              [merge([chr(65296)]%b[chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
+              [merge([chr(65296)][chr(65297)]%b[chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],%b)]
+              [merge([chr(65296)][chr(65297)]%b[chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
+              [merge([chr(65296)][chr(65297)][chr(65298)]%b[chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],%b)]
+              [merge([chr(65296)][chr(65297)][chr(65298)]%b[chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)]%b,[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],%b)]
+              [merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)]%b,[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],)]
+            )
+          ),
+          2293B4B64B2317A57915358CFBAE254E8920410F
+        )=
+    {
+      @log smoke=TC009: Unicode with space/null substitution in each position. Succeeded.
+    },
+    {
+      @log smoke=TC009: Unicode with space/null substitution in each position. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC009: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #10 - Vary length of run over 5 character Unicode string.
+#
+&tr.tc010 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])
+              [merge([chr(65296)][chr(65296)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65296)][chr(65296)][chr(65296)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65296)][chr(65296)][chr(65296)][chr(65296)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65296)][chr(65296)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65297)][chr(65296)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65297)][chr(65298)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65297)][chr(65298)][chr(65299)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+              [merge([chr(65297)][chr(65298)][chr(65299)][chr(65300)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])]
+            )
+          ),
+          3104B719D0B03EA860E75AE911560B545AE742A6
+        )=
+    {
+      @log smoke=TC010: Vary length of run over 5 character Unicode string. Succeeded.
+    },
+    {
+      @log smoke=TC010: Vary length of run over 5 character Unicode string. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC010: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #11 - Test each position of 5 character Unicode string with color.
+#
+&tr.tc011 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65297)])]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65298)])]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65299)])]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65300)])]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65301)])]
+            )
+          ),
+          EE76EC447F7E80D4F2C2C67060F2106E879C6033
+        )=
+    {
+      @log smoke=TC011: Single Unicode substitution in each position with color. Succeeded.
+    },
+    {
+      @log smoke=TC011: Single Unicode substitution in each position with color. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC011: Unicode is not supported on this version. Okay.
+  }
+-
+#
+# Test Case #12 - Test each position of 5 characters with space/null <character> with color.
+#
+&tr.tc012 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge(%xr%b%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)
+              [merge(%xr%b%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
+              [merge(%xr[chr(65296)]%xg%b%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)]
+              [merge(%xr[chr(65296)]%xg%b%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb%b%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb%b%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx%b%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx%b%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy%b,%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)]
+              [merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy%b,%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)]
+            )
+          ),
+          C62F770B471B3BF5B34543328E86D5B109323D46
+        )=
+    {
+      @log smoke=TC012: Unicode with space/null substitution in each position with color. Succeeded.
+    },
+    {
+      @log smoke=TC012: Unicode with space/null substitution in each position with color. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC012: Unicode is not supported on this version with color. Okay.
+  }
+-
+#
+# Test Case #13 - Vary length of run over 5 character Unicode string with color.
+#
+&tr.tc013 test_merge_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])
+              [merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65297)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65299)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+              [merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65299)]%xx[chr(65300)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])]
+            )
+          ),
+          0AEBF28EB7E6788821689B7FBFBE1B8DC57AA8FF
+        )=
+    {
+      @log smoke=TC013: Vary length of run over 5 character Unicode string with color. Succeeded.
+    },
+    {
+      @log smoke=TC013: Vary length of run over 5 character Unicode string with color. Failed (%q0).
+    };
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC013: Unicode is not supported on this version with color. Okay.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_merge_fn=
+  @log smoke=End merge() test cases.;
+  @notify smoke
+-
+drop test_merge_fn
+-
+#
+# End of Test Cases
+#

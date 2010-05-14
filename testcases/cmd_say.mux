@@ -1,0 +1,50 @@
+#
+# cmd_say.mux
+# $Id$
+#
+@create test_cmd_say
+-
+@set test_cmd_say=INHERIT QUIET
+-
+@aahear test_cmd_say=
+  @va me=sha1(%va%0)
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cmd_say=
+  @log smoke=Beginning say test cases.
+-
+#
+# Test Case #1 - help file examples.
+#
+&tr.tc001 test_cmd_say=
+  @listen test_cmd_say=*;
+  say Where is the movie theater?;
+  say add(1,1) add(1,1) [add(1,1)];
+  say/noeval add(1,1) add(1,1) [add(1,1)];
+  nsay add(1,1) add(1,1) [add(1,1)];
+  @wait 0={
+    @if strmatch(
+          setr(0,v(va)),
+          01C65FD8FBBD1784A0EC8B850A16D059DA873EDB
+        )=
+    {
+      @log smoke=TC001: say examples. Succeeded.
+    },
+    {
+      @log smoke=TC001: say examples. Failed (%q0).
+    };
+    @listen test_cmd_say=;
+    @trig me/tr.done
+  }
+-
+&tr.done test_cmd_say=
+  @log smoke=End say test cases.;
+  @notify smoke
+-
+drop test_cmd_say
+-
+#
+# End of Test Cases
+#

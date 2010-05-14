@@ -1,0 +1,238 @@
+#
+# first_fn.mux - Test Cases for first().
+# $Id$
+#
+@create test_first_fn
+-
+@set test_first_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_first_fn=
+  @log smoke=Beginning first() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(This is a test)]
+            [first(Would you like coffee, or perhaps tea)]
+            [first(List&with&nonstandard&delimiters,&)]
+          )
+        ),
+        FB7BF5BC0AB59D2CCC3D34E252DF0CE4AD3E916B
+      )=
+  {
+    @log smoke=TC001: first examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: first examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(%ba b c%b)]
+          )
+        ),
+        86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
+      )=
+  {
+    @log smoke=TC002: first regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: first regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of elements.
+#
+&tr.tc003 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first()]
+            [first(%b)]
+            [first(a)]
+            [first(a b)]
+            [first(a b c)]
+            [first(a b c d)]
+            [first(a b c d e)]
+            [first(a b c d e f)]
+            [first(a b c d e f g)]
+            [first(a b c d e f g h)]
+          )
+        ),
+        B480C074D6B75947C02681F31C90C668C46BF6B8
+      )=
+  {
+    @log smoke=TC003: first with element count. Succeeded.
+  },
+  {
+    @log smoke=TC003: first with element count. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(%b%b%b)]
+            [first(b%b%b%b)]
+            [first(%bb%b%b)]
+            [first(a%b%bb%b)]
+            [first(%ba%b%bb)]
+            [first(%b%ba%b)]
+            [first(%b%b%ba)]
+          )
+        ),
+        56A4A27E9F8F31C93A2F74EF04ACD8301FCE21FA
+      )=
+  {
+    @log smoke=TC004: first walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: first walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(a b c d e f g h)]
+            [first(%ba b c d e f g h)]
+            [first(a%bb c d e f g h)]
+            [first(a b%bc d e f g h)]
+            [first(a b c%bd e f g h)]
+            [first(a b c d%be f g h)]
+            [first(a b c d e%bf g h)]
+            [first(a b c d e f%bg h)]
+            [first(a b c d e f g%bh)]
+            [first(a b c d e f g h%b)]
+            [first(%b%ba b c d e f g h)]
+            [first(a%b%bb c d e f g h)]
+            [first(a b%b%bc d e f g h)]
+            [first(a b c%b%bd e f g h)]
+            [first(a b c d%b%be f g h)]
+            [first(a b c d e%b%bf g h)]
+            [first(a b c d e f%b%bg h)]
+            [first(a b c d e f g%b%bh)]
+            [first(a b c d e f g h%b%b)]
+          )
+        ),
+        1335BFA62671B0015C6E20766C07035868EDB8F4
+      )=
+  {
+    @log smoke=TC005: first walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: first walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(,-)]
+            [first(-,-)]
+            [first(a,-)]
+            [first(a-b,-)]
+            [first(a-b-c,-)]
+            [first(a-b-c-d,-)]
+            [first(a-b-c-d-e,-)]
+            [first(a-b-c-d-e-f,-)]
+            [first(a-b-c-d-e-f-g,-)]
+            [first(a-b-c-d-e-f-g-h,-)]
+          )
+        ),
+        B480C074D6B75947C02681F31C90C668C46BF6B8
+      )=
+  {
+    @log smoke=TC006: first vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: first vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(---,-)]
+            [first(b---,-)]
+            [first(-b--,-)]
+            [first(a--b-,-)]
+            [first(-a--b,-)]
+            [first(--a-,-)]
+            [first(---a,-)]
+          )
+        ),
+        6C0596B8AC609191181A90517D51C0B486F23799
+      )=
+  {
+    @log smoke=TC007: first walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: first walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_first_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [first(a-b-c-d-e-f-g-h,-)]
+            [first(-a-b-c-d-e-f-g-h,-)]
+            [first(a--b-c-d-e-f-g-h,-)]
+            [first(a-b--c-d-e-f-g-h,-)]
+            [first(a-b-c--d-e-f-g-h,-)]
+            [first(a-b-c-d--e-f-g-h,-)]
+            [first(a-b-c-d-e--f-g-h,-)]
+            [first(a-b-c-d-e-f--g-h,-)]
+            [first(a-b-c-d-e-f-g--h,-)]
+            [first(a-b-c-d-e-f-g-h-,-)]
+            [first(--a-b-c-d-e-f-g-h,-)]
+            [first(a---b-c-d-e-f-g-h,-)]
+            [first(a-b---c-d-e-f-g-h,-)]
+            [first(a-b-c---d-e-f-g-h,-)]
+            [first(a-b-c-d---e-f-g-h,-)]
+            [first(a-b-c-d-e---f-g-h,-)]
+            [first(a-b-c-d-e-f---g-h,-)]
+            [first(a-b-c-d-e-f-g---h,-)]
+            [first(a-b-c-d-e-f-g-h--,-)]
+          )
+        ),
+        321A618BA6830DE900738B0814D0C9F28FF2FECE
+      )=
+  {
+    @log smoke=TC008: first walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: first walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_first_fn=
+  @log smoke=End first() test cases.;
+  @notify smoke
+-
+drop test_first_fn
+-
+#
+# End of Test Cases
+#
+
