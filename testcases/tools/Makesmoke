@@ -98,9 +98,11 @@ export SHLIB_PATH
 sleep 1
 expect ./tools/upload.tcl $TMP
 $BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$GAMENAME.db.new" -o smoke.flat -u
+./tools/scrubflat.sed < smoke.flat > $TMP
+mv $TMP smoke.flat
 
 #
 #	Grab resulting log file and clean up.
 #
-rm smoke.conf $PIDFILE shutdown.status alias.conf compat.conf $TMP
+rm smoke.conf $PIDFILE shutdown.status alias.conf compat.conf
 rm -rf $DATA text
