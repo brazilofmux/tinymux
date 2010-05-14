@@ -1,0 +1,237 @@
+#
+# last_fn.mux - Test Cases for last().
+# $Id$
+#
+@create test_last_fn
+-
+@set test_last_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_last_fn=
+  @log smoke=Beginning last() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(This is a test)]
+            [last(Happy-Fun-Test-Thing,-)]
+          )
+        ),
+        6B29D54D17E640A77827E4A56AD42F202188B9C0
+      )=
+  {
+    @log smoke=TC001: last examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: last examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(%ba b c%b)]
+          )
+        ),
+        84A516841BA77A5B4648DE2CD0DFCB30EA46DBB4
+      )=
+  {
+    @log smoke=TC002: last regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: last regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of elements.
+#
+&tr.tc003 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last()]
+            [last(%b)]
+            [last(a)]
+            [last(a b)]
+            [last(a b c)]
+            [last(a b c d)]
+            [last(a b c d e)]
+            [last(a b c d e f)]
+            [last(a b c d e f g)]
+            [last(a b c d e f g h)]
+          )
+        ),
+        425AF12A0743502B322E93A015BCF868E324D56A
+      )=
+  {
+    @log smoke=TC003: last with element count. Succeeded.
+  },
+  {
+    @log smoke=TC003: last with element count. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(%b%b%b)]
+            [last(b%b%b%b)]
+            [last(%bb%b%b)]
+            [last(a%b%bb%b)]
+            [last(%ba%b%bb)]
+            [last(%b%ba%b)]
+            [last(%b%b%ba)]
+          )
+        ),
+        84A9A1BC4C61161667A244839F47A6C989988892
+      )=
+  {
+    @log smoke=TC004: last walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: last walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(a b c d e f g h)]
+            [last(%ba b c d e f g h)]
+            [last(a%bb c d e f g h)]
+            [last(a b%bc d e f g h)]
+            [last(a b c%bd e f g h)]
+            [last(a b c d%be f g h)]
+            [last(a b c d e%bf g h)]
+            [last(a b c d e f%bg h)]
+            [last(a b c d e f g%bh)]
+            [last(a b c d e f g h%b)]
+            [last(%b%ba b c d e f g h)]
+            [last(a%b%bb c d e f g h)]
+            [last(a b%b%bc d e f g h)]
+            [last(a b c%b%bd e f g h)]
+            [last(a b c d%b%be f g h)]
+            [last(a b c d e%b%bf g h)]
+            [last(a b c d e f%b%bg h)]
+            [last(a b c d e f g%b%bh)]
+            [last(a b c d e f g h%b%b)]
+          )
+        ),
+        335DA2829014E3275529C26BC799E83F369285B2
+      )=
+  {
+    @log smoke=TC005: last walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: last walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(,-)]
+            [last(-,-)]
+            [last(a,-)]
+            [last(a-b,-)]
+            [last(a-b-c,-)]
+            [last(a-b-c-d,-)]
+            [last(a-b-c-d-e,-)]
+            [last(a-b-c-d-e-f,-)]
+            [last(a-b-c-d-e-f-g,-)]
+            [last(a-b-c-d-e-f-g-h,-)]
+          )
+        ),
+        425AF12A0743502B322E93A015BCF868E324D56A
+      )=
+  {
+    @log smoke=TC006: last vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: last vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(---,-)]
+            [last(b---,-)]
+            [last(-b--,-)]
+            [last(a--b-,-)]
+            [last(-a--b,-)]
+            [last(--a-,-)]
+            [last(---a,-)]
+          )
+        ),
+        6C0596B8AC609191181A90517D51C0B486F23799
+      )=
+  {
+    @log smoke=TC007: last walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: last walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_last_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [last(a-b-c-d-e-f-g-h,-)]
+            [last(-a-b-c-d-e-f-g-h,-)]
+            [last(a--b-c-d-e-f-g-h,-)]
+            [last(a-b--c-d-e-f-g-h,-)]
+            [last(a-b-c--d-e-f-g-h,-)]
+            [last(a-b-c-d--e-f-g-h,-)]
+            [last(a-b-c-d-e--f-g-h,-)]
+            [last(a-b-c-d-e-f--g-h,-)]
+            [last(a-b-c-d-e-f-g--h,-)]
+            [last(a-b-c-d-e-f-g-h-,-)]
+            [last(--a-b-c-d-e-f-g-h,-)]
+            [last(a---b-c-d-e-f-g-h,-)]
+            [last(a-b---c-d-e-f-g-h,-)]
+            [last(a-b-c---d-e-f-g-h,-)]
+            [last(a-b-c-d---e-f-g-h,-)]
+            [last(a-b-c-d-e---f-g-h,-)]
+            [last(a-b-c-d-e-f---g-h,-)]
+            [last(a-b-c-d-e-f-g---h,-)]
+            [last(a-b-c-d-e-f-g-h--,-)]
+          )
+        ),
+        A00EDCBA60A5FDF544A0C7EFF462F288F12035D2
+      )=
+  {
+    @log smoke=TC008: last walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: last walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_last_fn=
+  @log smoke=End last() test cases.;
+  @notify smoke
+-
+drop test_last_fn
+-
+#
+# End of Test Cases
+#
+

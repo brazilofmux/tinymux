@@ -1,0 +1,240 @@
+#
+# rest_fn.mux - Test Cases for rest().
+# $Id$
+#
+@create test_rest_fn
+-
+@set test_rest_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_rest_fn=
+  @log smoke=Beginning rest() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(This is a test)]
+            [rest(Would you like coffee, or perhaps tea)]
+            [rest(List!with!different!delimiters,!)]
+          )
+        ),
+        948C7B2E7A1CB66F0BF5572D267B0D181B70764A
+      )=
+  {
+    @log smoke=TC001: rest examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: rest examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(%ba b c%b)]
+          )
+        ),
+        B005807AE4A78B35A2ACCADEF2919ACDB6639CCF
+      )=
+  {
+    @log smoke=TC002: rest regressions. Succeeded.
+   },
+  {
+    @log smoke=TC002: rest regressions. Failed (%q0).
+   }
+-
+#
+# Test Case #3 - Vary number of elements.
+#
+&tr.tc003 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest()]
+            [rest(%b)]
+            [rest(a)]
+            [rest(a b)]
+            [rest(a b c)]
+            [rest(a b c d)]
+            [rest(a b c d e)]
+            [rest(a b c d e f)]
+            [rest(a b c d e f g)]
+            [rest(a b c d e f g h)]
+          )
+        ),
+        8EB7EA335550471C312E977457DE89BB99B93364
+      )=
+  {
+    @log smoke=TC003: rest with element count. Succeeded.
+  },
+  {
+    @log smoke=TC003: rest with element count. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(%b%b%b)]
+            [rest(b%b%b%b)]
+            [rest(%bb%b%b)]
+            [rest(a%b%bb%b)]
+            [rest(%ba%b%bb)]
+            [rest(%b%ba%b)]
+            [rest(%b%b%ba)]
+          )
+        ),
+        9A900F538965A426994E1E90600920AFF0B4E8D2
+      )=
+  {
+    @log smoke=TC004: rest walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: rest walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(a b c d e f g h)]
+            [rest(%ba b c d e f g h)]
+            [rest(a%bb c d e f g h)]
+            [rest(a b%bc d e f g h)]
+            [rest(a b c%bd e f g h)]
+            [rest(a b c d%be f g h)]
+            [rest(a b c d e%bf g h)]
+            [rest(a b c d e f%bg h)]
+            [rest(a b c d e f g%bh)]
+            [rest(a b c d e f g h%b)]
+            [rest(%b%ba b c d e f g h)]
+            [rest(a%b%bb c d e f g h)]
+            [rest(a b%b%bc d e f g h)]
+            [rest(a b c%b%bd e f g h)]
+            [rest(a b c d%b%be f g h)]
+            [rest(a b c d e%b%bf g h)]
+            [rest(a b c d e f%b%bg h)]
+            [rest(a b c d e f g%b%bh)]
+            [rest(a b c d e f g h%b%b)]
+          )
+        ),
+        4C6250F87A51A73853D33D45DED07D421F8CD3FC
+      )=
+  {
+    @log smoke=TC005: rest walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: rest walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(,-)]
+            [rest(-,-)]
+            [rest(a,-)]
+            [rest(a-b,-)]
+            [rest(a-b-c,-)]
+            [rest(a-b-c-d,-)]
+            [rest(a-b-c-d-e,-)]
+            [rest(a-b-c-d-e-f,-)]
+            [rest(a-b-c-d-e-f-g,-)]
+            [rest(a-b-c-d-e-f-g-h,-)]
+          )
+        ),
+        97390652ED4494920433D07636609573C56BC382
+      )=
+  {
+    @log smoke=TC006: rest vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: rest vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(---,-)]
+            [rest(b---,-)]
+            [rest(-b--,-)]
+            [rest(a--b-,-)]
+            [rest(-a--b,-)]
+            [rest(--a-,-)]
+            [rest(---a,-)]
+          )
+        ),
+        4E00D785D949250EDAFD53BAB971DF31614F42D0
+      )=
+  {
+    @log smoke=TC007: rest walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: rest walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_rest_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [rest(a-b-c-d-e-f-g-h,-)]
+            [rest(-a-b-c-d-e-f-g-h,-)]
+            [rest(a--b-c-d-e-f-g-h,-)]
+            [rest(a-b--c-d-e-f-g-h,-)]
+            [rest(a-b-c--d-e-f-g-h,-)]
+            [rest(a-b-c-d--e-f-g-h,-)]
+            [rest(a-b-c-d-e--f-g-h,-)]
+            [rest(a-b-c-d-e-f--g-h,-)]
+            [rest(a-b-c-d-e-f-g--h,-)]
+            [rest(a-b-c-d-e-f-g-h-,-)]
+            [rest(--a-b-c-d-e-f-g-h,-)]
+            [rest(a---b-c-d-e-f-g-h,-)]
+            [rest(a-b---c-d-e-f-g-h,-)]
+            [rest(a-b-c---d-e-f-g-h,-)]
+            [rest(a-b-c-d---e-f-g-h,-)]
+            [rest(a-b-c-d-e---f-g-h,-)]
+            [rest(a-b-c-d-e-f---g-h,-)]
+            [rest(a-b-c-d-e-f-g---h,-)]
+            [rest(a-b-c-d-e-f-g-h--,-)]
+          )
+        ),
+        90085EA0CBEAC53D01601544859E34CBB1D71642
+      )=
+  {
+    @log smoke=TC008: rest walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: rest walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_rest_fn=
+  @log smoke=End rest() test cases.;
+  @notify smoke
+-
+drop test_rest_fn
+-
+#
+# End of Test Cases
+#
+

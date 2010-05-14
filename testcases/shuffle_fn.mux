@@ -20,7 +20,7 @@
 &tr.tc001 test_shuffle_fn=
   @if strmatch(
         setr(0,sha1(
-            sort(shuffle(foo bar baz gleep))
+            sort(shuffle(foo bar baz gleep),a)
           )
         ),
         E781E4DEE8517047FDA699DA1855EBE9C8FF19E0
@@ -33,9 +33,27 @@
   }
 -
 #
-# Test Case #2 - Exercise input and output delimiters.
+# Test Case #2 - Regressions.
 #
 &tr.tc002 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(%ba%b%bb%bc%b,%b),a)]
+          )
+        ),
+        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+      )=
+  {
+    @log smoke=TC002: shuffle regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: shuffle regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Exercise input and output delimiters.
+#
+&tr.tc003 test_shuffle_fn=
   @if strmatch(
         setr(0,sha1(
             shuffle(a a a a,,)
@@ -52,33 +70,190 @@
         8E1A8CDF4A722DB1A45A9E4D02754357F9541315
       )=
   {
-    @log smoke=TC002: Input and output delimiters. Succeeded.
+    @log smoke=TC003: Input and output delimiters. Succeeded.
   },
   {
-    @log smoke=TC002: Input and output delimiters. Failed (%q0).
+    @log smoke=TC003: Input and output delimiters. Failed (%q0).
   }
 -
 #
-# Test Case #3 - Vary number of arguments.
+# Test Case #4 - Vary number of arguments.
 #
-&tr.tc003 test_shuffle_fn=
+&tr.tc004 test_shuffle_fn=
   @if strmatch(
         setr(0,sha1(
-            shuffle(a|a|a|a,|)
-            [shuffle(a|a|a,|)]
-            [shuffle(a|a,|)]
-            [shuffle(a,|)]
             [shuffle(,|)]
+            [shuffle(a,|)]
+            [shuffle(a|a,|)]
+            [shuffle(a|a|a,|)]
+            [shuffle(a|a|a|a,|)]
+            [shuffle()]
+            [shuffle(%b)]
+            [sort(shuffle(a),a)]
+            [sort(shuffle(a b),a)]
+            [sort(shuffle(a b c),a)]
+            [sort(shuffle(a b c d),a)]
+            [sort(shuffle(a b c d e),a)]
+            [sort(shuffle(a b c d e f),a)]
+            [sort(shuffle(a b c d e f g),a)]
+            [sort(shuffle(a b c d e f g h),a)]
           )
         ),
-        2318642C6752974D7757F55BFA29DC7FC6B5ADD0
+        57D4E671DBE939E8AF2ADBA9F10E8A569B85F837
       )=
   {
-    @log smoke=TC003: Vary number of arguments. Succeeded.;
+    @log smoke=TC004: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC004: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk two elements through whitespace.
+#
+&tr.tc005 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(%b%b%b),a)]
+            [sort(shuffle(b%b%b%b),a)]
+            [sort(shuffle(%bb%b%b),a)]
+            [sort(shuffle(a%b%bb%b),a)]
+            [sort(shuffle(%ba%b%bb),a)]
+            [sort(shuffle(%b%ba%b),a)]
+            [sort(shuffle(%b%b%ba),a)]
+          )
+        ),
+        5FA05DE12E35ED6C53A9E13B96F14DB89F597339
+      )=
+  {
+    @log smoke=TC005: shuffle walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC005: shuffle walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Walk whitespace through elements
+#
+&tr.tc006 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(a b c d e f g h),a)]
+            [sort(shuffle(%ba b c d e f g h),a)]
+            [sort(shuffle(a%bb c d e f g h),a)]
+            [sort(shuffle(a b%bc d e f g h),a)]
+            [sort(shuffle(a b c%bd e f g h),a)]
+            [sort(shuffle(a b c d%be f g h),a)]
+            [sort(shuffle(a b c d e%bf g h),a)]
+            [sort(shuffle(a b c d e f%bg h),a)]
+            [sort(shuffle(a b c d e f g%bh),a)]
+            [sort(shuffle(a b c d e f g h%b),a)]
+            [sort(shuffle(%b%ba b c d e f g h),a)]
+            [sort(shuffle(a%b%bb c d e f g h),a)]
+            [sort(shuffle(a b%b%bc d e f g h),a)]
+            [sort(shuffle(a b c%b%bd e f g h),a)]
+            [sort(shuffle(a b c d%b%be f g h),a)]
+            [sort(shuffle(a b c d e%b%bf g h),a)]
+            [sort(shuffle(a b c d e f%b%bg h),a)]
+            [sort(shuffle(a b c d e f g%b%bh),a)]
+            [sort(shuffle(a b c d e f g h%b%b),a)]
+          )
+        ),
+        0DF50C53FA1DD20FEA99BACB5C61724CFA4807CC
+      )=
+  {
+    @log smoke=TC006: shuffle walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC006: shuffle walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc007 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(,-),a,-)]
+            [sort(shuffle(-,-),a,-)]
+            [sort(shuffle(a,-),a,-)]
+            [sort(shuffle(a-b,-),a,-)]
+            [sort(shuffle(a-b-c,-),a,-)]
+            [sort(shuffle(a-b-c-d,-),a,-)]
+            [sort(shuffle(a-b-c-d-e,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]
+          )
+        ),
+        83944F822FC3420BDFADC68E12B5B28222501DEE
+      )=
+  {
+    @log smoke=TC007: shuffle vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC007: shuffle vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk two elements through single-hyphens.
+#
+&tr.tc008 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(---,-),a,-)]
+            [sort(shuffle(b---,-),a,-)]
+            [sort(shuffle(-b--,-),a,-)]
+            [sort(shuffle(a--b-,-),a,-)]
+            [sort(shuffle(-a--b,-),a,-)]
+            [sort(shuffle(--a-,-),a,-)]
+            [sort(shuffle(---a,-),a,-)]
+          )
+        ),
+        DB238978516966D4C581F89065AF22313D63BCE5
+      )=
+  {
+    @log smoke=TC008: shuffle walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC008: shuffle walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - Walk single-hyphens through elements
+#
+&tr.tc009 test_shuffle_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]
+            [sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]
+            [sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]
+          )
+        ),
+        4E248BE30EA69551056C53F958E81F5E35269C53
+      )=
+  {
+    @log smoke=TC009: shuffle walk single-hypens through elements. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: Vary number of arguments. Failed (%q0).;
+    @log smoke=TC009: shuffle walk single-hypens through elements. Failed (%q0).;
     @trig me/tr.done
   }
 -
