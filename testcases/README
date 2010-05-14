@@ -1,17 +1,23 @@
-This project holds test cases for TinyMUX. The code is formatted and must be
+This project holds the TinyMUX test cases.  The code is formatted and must be
 unformatted before being quoted into a game.
 
-The unformat.pl program is located in the tool sub-directory. This requires
-Perl.
+The unformat.pl program, a Perl script, is located in the tools sub-directory.
+The upload.tcl, an expect script, is useful for quoting the installer into the
+a new database.
 
 Steps to create:
 
  1. Use './tools/unformat.pl *.mux > out' to create a quotable installer.
- 2. Start a non-SGP minimal database by removing netmux.db before ./Startmux
- 3. /quote out into the new database.
- 4. @shutdown
+ 2. Remove netmux.db so that we start with a non-SGP minimal database.
+ 3. Start the server with ./Startmux
+ 4. /quote this into the new database using either your choice of client and
+    manually @shutdown, or use the included upload.tcl script which performs
+    @shutdown automatically.
  5. ./db_unload netmux netmux.db.new smoke.flat
  6. mv smoke.flat ../../../testcases/smoke.flat
+
+The resulting database automatically runs all the tests and then shuts itself
+down.  No clients connections are needed to initiate this.
 
 Steps to use (from ./game):
 
