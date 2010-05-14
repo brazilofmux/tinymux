@@ -27,7 +27,7 @@
   @wait 0={
     @if cor(
           cand(
-            chr(256),
+            t(chr(256)),
             strmatch(
               setr(0,v(va)),
               01C65FD8FBBD1784A0EC8B850A16D059DA873EDB

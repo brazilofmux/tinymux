@@ -156,7 +156,7 @@
 >256
 "@log smoke=Beginning say test cases."
 >257
-"@listen test_cmd_say=*;say Where is the movie theater?;say add(1,1) add(1,1) [add(1,1)];say/noeval add(1,1) add(1,1) [add(1,1)];nsay add(1,1) add(1,1) [add(1,1)];@wait 0={@if cor(cand(chr(256),strmatch(setr(0,v(va)),01C65FD8FBBD1784A0EC8B850A16D059DA873EDB)),cand(not(chr(256)),strmatch(setr(0,v(va)),F5D08777EA6D0F93BDADAE7D2504087DFBA85F7D)))={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@listen test_cmd_say=;@trig me/tr.done}"
+"@listen test_cmd_say=*;say Where is the movie theater?;say add(1,1) add(1,1) [add(1,1)];say/noeval add(1,1) add(1,1) [add(1,1)];nsay add(1,1) add(1,1) [add(1,1)];@wait 0={@if cor(cand(t(chr(256)),strmatch(setr(0,v(va)),01C65FD8FBBD1784A0EC8B850A16D059DA873EDB)),cand(not(chr(256)),strmatch(setr(0,v(va)),F5D08777EA6D0F93BDADAE7D2504087DFBA85F7D)))={@log smoke=TC001: say examples. Succeeded.},{@log smoke=TC001: say examples. Failed (%q0).};@listen test_cmd_say=;@trig me/tr.done}"
 >262
 "@log smoke=End say test cases.;@notify smoke"
 <
