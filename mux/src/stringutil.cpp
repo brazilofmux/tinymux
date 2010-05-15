@@ -7464,8 +7464,18 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
     mux_cursor nDelim = CursorMin;
     utf8_strlen(pDelim, nDelim);
 
+    bool fSpaceDelim = (1 == nDelim.m_byte && ' ' == pDelim[0]);
+
     mux_cursor iPos = CursorMin;
     mux_cursor iStart = CursorMin;
+
+    if (fSpaceDelim)
+    {
+        while (' ' == m_s->m_autf[iStart.m_byte])
+        {
+            iStart = iStart + curAscii;
+        }
+    }
     bool bSucceeded = m_s->search(pDelim, &iPos, iStart);
 
     while (  bSucceeded
@@ -7474,12 +7484,28 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
         m_aiWordBegins[nWords] = iStart;
         m_aiWordEnds[nWords] = iPos;
         nWords++;
-        iStart = iPos + nDelim;
+        if (fSpaceDelim)
+        {
+            iStart = iPos;
+            while (' ' == m_s->m_autf[iStart.m_byte])
+            {
+                iStart = iStart + curAscii;
+            }
+        }
+        else
+        {
+            iStart = iPos + nDelim;
+        }
         bSucceeded = m_s->search(pDelim, &iPos, iStart);
     }
-    m_aiWordBegins[nWords] = iStart;
-    m_aiWordEnds[nWords] = m_s->m_iLast;
-    nWords++;
+
+    if (  !fSpaceDelim
+       || m_s->m_iLast != iStart)
+    {
+        m_aiWordBegins[nWords] = iStart;
+        m_aiWordEnds[nWords] = m_s->m_iLast;
+        nWords++;
+    }
     m_nWords = nWords;
     return nWords;
 }
