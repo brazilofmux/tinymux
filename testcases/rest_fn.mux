@@ -26,12 +26,10 @@
         948C7B2E7A1CB66F0BF5572D267B0D181B70764A
       )=
   {
-    @log smoke=TC001: rest examples. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: rest examples. Succeeded.
   },
   {
-    @log smoke=TC001: rest examples. Failed (%q0).;
-    @trig me/tr.done
+    @log smoke=TC001: rest examples. Failed (%q0).
   }
 -
 #

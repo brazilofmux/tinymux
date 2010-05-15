@@ -260,13 +260,13 @@
 >256
 "@log smoke=Beginning digest() test cases."
 >257
-"@if strmatch(setr(0,sha1(digest(sha1,abc)[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)])),9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93)={@log smoke=TC001: Examples. Succeeded.},{@log smoke=TC001: Examples. Failed (%q0).}"
+"@if strmatch([digest()],*NOT FOUND)={@log smoke=TC001: DIGEST() is not supported on this version. Okay.},{@if strmatch(setr(0,sha1(digest(sha1,abc)[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)])),9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93)={@log smoke=TC001: Examples. Succeeded.},{@log smoke=TC001: Examples. Failed (%q0).}}"
 >258
-"@if strmatch(setr(0,sha1(digest(sha1,abc)[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)])),FBED900C606159E86C5970A5F88915B52716C445)={@log smoke=TC002: Standard test vectors. Succeeded.},{@log smoke=TC002: Standard test vectors. Failed (%q0).}"
+"@if strmatch([digest()],*NOT FOUND)={@log smoke=TC002: DIGEST() is not supported on this version. Okay.},{@if strmatch(setr(0,sha1(digest(sha1,abc)[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)][digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)])),FBED900C606159E86C5970A5F88915B52716C445)={@log smoke=TC002: Standard test vectors. Succeeded.},{@log smoke=TC002: Standard test vectors. Failed (%q0).}}"
 >259
-"@if strmatch(setr(0,sha1(digest(sha1)[digest(sha1,)][digest(sha1,abc,def)])),48DF4575AECAEC5B934FBECAF5854D3F2A561F88)={@log smoke=TC003: Parser-related tests. Succeeded.},{@log smoke=TC003: Parser-related tests. Failed (%q0).}"
+"@if strmatch([digest()],*NOT FOUND)={@log smoke=TC003: DIGEST() is not supported on this version. Okay.},{@if strmatch(setr(0,sha1(digest(sha1)[digest(sha1,)][digest(sha1,abc,def)])),48DF4575AECAEC5B934FBECAF5854D3F2A561F88)={@log smoke=TC003: Parser-related tests. Succeeded.},{@log smoke=TC003: Parser-related tests. Failed (%q0).}}"
 >260
-"@if digest(md5)={@if strmatch(setr(0,sha1(digest(md5,)[digest(md5,a)][digest(md5,abc)][digest(md5,message digest)][digest(md5,abcdefghijklmnopqrstuvwxyz)][digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)][digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)])),1D8FA29F6663DE476736B2D75991D96C346F881C)={@log smoke=TC004: MD5 test vectors. Succeeded.;@trig me/tr.done},{@log smoke=TC004: MD5 test vectors. Failed (%q0).;@trig me/tr.done}},{@log smoke=TC004: MD5 is not supported in this version. Okay.;@trig me/tr.done}"
+"@if strmatch([digest()],*NOT FOUND)={@log smoke=TC005: DIGEST() is not supported on this version. Okay.;@trig me/tr.done},{@if digest(md5)={@if strmatch(setr(0,sha1(digest(md5,)[digest(md5,a)][digest(md5,abc)][digest(md5,message digest)][digest(md5,abcdefghijklmnopqrstuvwxyz)][digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)][digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)])),1D8FA29F6663DE476736B2D75991D96C346F881C)={@log smoke=TC004: MD5 test vectors. Succeeded.;@trig me/tr.done},{@log smoke=TC004: MD5 test vectors. Failed (%q0).;@trig me/tr.done}},{@log smoke=TC004: MD5 is not supported in this version. Okay.;@trig me/tr.done}}"
 >262
 "@log smoke=End digest() test cases.;@notify smoke"
 <
@@ -606,7 +606,9 @@
 >256
 "@log smoke=Beginning mid() test cases."
 >257
-"@if strmatch(setr(0,sha1([mid(foobar,2,2)][mid(foobar,2,-2)])),973A0ABA88E038ED295728D49D24759890274404)={@log smoke=TC001: mid examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mid examples. Failed (%q0).;@trig me/tr.done}&tr.done test_mid_fn=@log smoke=End mid() test cases.;@notify smoke"
+"@if strmatch(setr(0,sha1([mid(foobar,2,2)][mid(foobar,2,-2)])),973A0ABA88E038ED295728D49D24759890274404)={@log smoke=TC001: mid examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mid examples. Failed (%q0).;@trig me/tr.done}"
+>262
+"@log smoke=End mid() test cases.;@notify smoke"
 <
 !16
 "test_rest_fn"
@@ -632,7 +634,7 @@
 >256
 "@log smoke=Beginning rest() test cases."
 >257
-"@if strmatch(setr(0,sha1([rest(This is a test)][rest(Would you like coffee, or perhaps tea)][rest(List!with!different!delimiters,!)])),948C7B2E7A1CB66F0BF5572D267B0D181B70764A)={@log smoke=TC001: rest examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: rest examples. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([rest(This is a test)][rest(Would you like coffee, or perhaps tea)][rest(List!with!different!delimiters,!)])),948C7B2E7A1CB66F0BF5572D267B0D181B70764A)={@log smoke=TC001: rest examples. Succeeded.},{@log smoke=TC001: rest examples. Failed (%q0).}"
 >258
 "@if strmatch(setr(0,sha1([rest(%ba b c%b)])),B005807AE4A78B35A2ACCADEF2919ACDB6639CCF)={@log smoke=TC002: rest regressions. Succeeded.},{@log smoke=TC002: rest regressions. Failed (%q0).}"
 >259
