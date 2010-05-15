@@ -14,7 +14,7 @@ Finally, the resulting database is unloaded and scrubbed with scrubflat.sed,
 a Sed script.
 
 The resulting smoke.flat database automatically runs all the tests and then
-shuts itself down.  No clients connections are needed to initiate or manager
+shuts itself down.  No clients connections are needed to initiate or manage
 this.
 
 After building the server from ./mux/src, the smoke test data, smoke.flat, is
