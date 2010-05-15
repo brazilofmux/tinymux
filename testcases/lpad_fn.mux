@@ -19,125 +19,156 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_lpad_fn=
-  @if strmatch(
-        setr(0,sha1(
-            -[lpad(foo,6)]-
-            %r0[lpad(foo,6)]7%r01234567
-            =[lpad(bar,5,.)]=
-            [translate(lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)]
-          )
-        ),
-        8B48261F6D01F56324CA49BEC063E6940FB2031C
-      )=
+  @if strmatch([lpad()],*NOT FOUND)=
   {
-    @log smoke=TC001: lpad examples. Succeeded.
+    @log smoke=TC001: LPAD() is not supported on this version. Okay.
   },
   {
-    @log smoke=TC001: lpad examples. Failed (%q0).
+    @if strmatch(
+          setr(0,sha1(
+              -[lpad(foo,6)]-
+              %r0[lpad(foo,6)]7%r01234567
+              =[lpad(bar,5,.)]=
+              [translate(lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)]
+            )
+          ),
+          8B48261F6D01F56324CA49BEC063E6940FB2031C
+        )=
+    {
+      @log smoke=TC001: lpad examples. Succeeded.
+    },
+    {
+      @log smoke=TC001: lpad examples. Failed (%q0).
+    }
   }
 -
 #
 # Test Case #2 - Regression of Issue 527.
 #
 &tr.tc002 test_lpad_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(2,10),lpad(X,##,left(1234567890,##)))]
-          )
-        ),
-        D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE
-      )=
+  @if strmatch([lpad()],*NOT FOUND)=
   {
-    @log smoke=TC002: Regressions. Succeeded.
+    @log smoke=TC002: LPAD() is not supported on this version. Okay.
   },
   {
-    @log smoke=TC002: Regressions. Failed (%q0).
+    @if strmatch(
+          setr(0,sha1(
+              [iter(lnum(2,10),lpad(X,##,left(1234567890,##)))]
+            )
+          ),
+          D35B58788A87440D2C93ADEB8F9E5CA5255C9BEE
+        )=
+    {
+      @log smoke=TC002: Regressions. Succeeded.
+    },
+    {
+      @log smoke=TC002: Regressions. Failed (%q0).
+    }
   }
 -
 #
 # Test Case #3 - Vary string and width with default fill.
 #
 &tr.tc003 test_lpad_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),lpad(left(1234567890,##),1))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),2))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),3))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),4))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),5))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),6))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),7))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),8))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),9))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),10))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),11))]
-          )
-        ),
-        9AD9DBAEF718063DD033C829E5D7DA7C0D5200D8
-      )=
+  @if strmatch([lpad()],*NOT FOUND)=
   {
-    @log smoke=TC003: Vary string and width with default fill. Succeeded.
+    @log smoke=TC003: LPAD() is not supported on this version. Okay.
   },
   {
-    @log smoke=TC003: Vary string and width with default fill. Failed (%q0).
+    @if strmatch(
+          setr(0,sha1(
+              [iter(lnum(1,10),lpad(left(1234567890,##),1))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),2))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),3))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),4))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),5))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),6))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),7))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),8))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),9))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),10))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),11))]
+            )
+          ),
+          9AD9DBAEF718063DD033C829E5D7DA7C0D5200D8
+        )=
+    {
+      @log smoke=TC003: Vary string and width with default fill. Succeeded.
+    },
+    {
+      @log smoke=TC003: Vary string and width with default fill. Failed (%q0).
+    }
   }
 -
 #
 # Test Case #4 - Vary string and width with '-' fill.
 #
 &tr.tc004 test_lpad_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),lpad(left(1234567890,##),1,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),2,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),3,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),4,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),5,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),6,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),7,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),8,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),9,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),10,-))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),11,-))]
-          )
-        ),
-        A87814DBD959AD160BD93A77137B7BFA8122B062
-      )=
+  @if strmatch([lpad()],*NOT FOUND)=
   {
-    @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
+    @log smoke=TC004: LPAD() is not supported on this version. Okay.
   },
   {
-    @log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).
+    @if strmatch(
+          setr(0,sha1(
+              [iter(lnum(1,10),lpad(left(1234567890,##),1,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),2,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),3,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),4,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),5,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),6,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),7,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),8,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),9,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),10,-))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),11,-))]
+            )
+          ),
+          A87814DBD959AD160BD93A77137B7BFA8122B062
+        )=
+    {
+      @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
+    },
+    {
+      @log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).
+    }
   }
 -
 #
 # Test Case #5 - Vary string and width with '-+' fill.
 #
 &tr.tc005 test_lpad_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),lpad(left(1234567890,##),1,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),2,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),3,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),4,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),5,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),6,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),7,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),8,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),9,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),10,-+))]
-            [iter(lnum(1,10),lpad(left(1234567890,##),11,-+))]
-          )
-        ),
-        47D4FEC41656ADFDFA050084FC109EA064208D6F
-      )=
+  @if strmatch([lpad()],*NOT FOUND)=
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
+    @log smoke=TC005: LPAD() is not supported on this version. Okay.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;
-    @trig me/tr.done
+    @if strmatch(
+          setr(0,sha1(
+              [iter(lnum(1,10),lpad(left(1234567890,##),1,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),2,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),3,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),4,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),5,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),6,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),7,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),8,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),9,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),10,-+))]
+              [iter(lnum(1,10),lpad(left(1234567890,##),11,-+))]
+            )
+          ),
+          47D4FEC41656ADFDFA050084FC109EA064208D6F
+        )=
+    {
+      @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;
+      @trig me/tr.done
+    }
   }
 -
 &tr.done test_lpad_fn=
