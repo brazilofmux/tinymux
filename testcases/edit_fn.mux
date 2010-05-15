@@ -70,12 +70,10 @@
         CE1B02A3551DCB285F627943FE292C877C2C9955
       )=
   {
-    @log smoke=TC003: Single Change. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC003: Single Change. Succeeded.
   },
   {
-    @log smoke=TC003: Single Change. Failed (%q0).;
-    @trig me/tr.done
+    @log smoke=TC003: Single Change. Failed (%q0).
   }
 -
 #
