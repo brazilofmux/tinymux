@@ -35,6 +35,7 @@
     @log smoke=TC001: mid examples. Failed (%q0).;
     @trig me/tr.done
   }
+-
 &tr.done test_mid_fn=
   @log smoke=End mid() test cases.;
   @notify smoke
