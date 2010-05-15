@@ -1,0 +1,268 @@
+#
+# pickrand_fn.mux - Test Cases for pickrand().
+# $Id$
+#
+# Strategy: Exercise color and UTF-8 in combination with pickrand() behaviors.
+#
+@create test_pickrand_fn
+-
+@set test_pickrand_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_pickrand_fn=
+  @log smoke=Beginning pickrand() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(foo bar baz,pickrand(foo bar baz))))]
+          )
+        ),
+        C0C0DB445C9A4B3E47205E6EBC8E2BF408FDC34B
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(foo bar baz,pickrand(foo%b%bbar%b%bbaz,%b))))]
+          )
+        ),
+        C0C0DB445C9A4B3E47205E6EBC8E2BF408FDC34B
+      )=
+  {
+    @log smoke=TC002: pickrand regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: pickrand regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Exercise input and output delimiters.
+#
+&tr.tc003 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(a,pickrand(a a a a,,))))]
+            [iter(lnum(10),t(member(a,pickrand(a a a a,,%b))))]
+            [iter(lnum(10),t(member(a,pickrand(a a a a,,-))))]
+            [iter(lnum(10),t(member(a,pickrand(a a a a,%b,))))]
+            [iter(lnum(10),t(member(a,pickrand(a a a a,%b,%b))))]
+            [iter(lnum(10),t(member(a,pickrand(a a a a,%b,-))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a|a|a,|,))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a|a|a,|,%b))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a|a|a,|,-))))]
+          )
+        ),
+        D5F44297284BE0FE7AB1FAC32E3CB43E8A9F75A5
+      )=
+  {
+    @log smoke=TC003: Input and output delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: Input and output delimiters. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Vary number of arguments.
+#
+&tr.tc004 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(a,pickrand(,|))))]
+            [iter(lnum(10),t(member(a,pickrand(a,|))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a,|))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a|a,|))))]
+            [iter(lnum(10),t(member(a,pickrand(a|a|a|a,|))))]
+            [iter(lnum(10),t(member(a,pickrand())))]
+            [iter(lnum(10),t(member(a,pickrand(%b))))]
+            [iter(lnum(10),t(member(a,pickrand(a))))]
+            [iter(lnum(10),t(member(a b,pickrand(a b))))]
+            [iter(lnum(10),t(member(a b c,pickrand(a b c))))]
+            [iter(lnum(10),t(member(a b c d,pickrand(a b c d))))]
+            [iter(lnum(10),t(member(a b c d e,pickrand(a b c d e))))]
+            [iter(lnum(10),t(member(a b c d e f,pickrand(a b c d e f))))]
+            [iter(lnum(10),t(member(a b c d e f g,pickrand(a b c d e f g))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g h))))]
+          )
+        ),
+        C0908A8A0E186C62BD1924D6A3EC2FD372814734
+      )=
+  {
+    @log smoke=TC004: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC004: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk two elements through whitespace.
+#
+&tr.tc005 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(b,pickrand(%b%b%b))))]
+            [iter(lnum(10),t(member(b,pickrand(b%b%b%b))))]
+            [iter(lnum(10),t(member(b,pickrand(%bb%b%b))))]
+            [iter(lnum(10),t(member(a b,pickrand(a%b%bb%b))))]
+            [iter(lnum(10),t(member(a b,pickrand(%ba%b%bb))))]
+            [iter(lnum(10),t(member(a,pickrand(%b%ba%b))))]
+            [iter(lnum(10),t(member(a,pickrand(%b%b%ba))))]
+          )
+        ),
+        A69C1E19B48C0ADAEEF2CF6F807D6F8A97C7086D
+      )=
+  {
+    @log smoke=TC005: pickrand walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC005: pickrand walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Walk whitespace through elements
+#
+&tr.tc006 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(%ba b c d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a%bb c d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b%bc d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c%bd e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d%be f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e%bf g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f%bg h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g%bh))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g h%b))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(%b%ba b c d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a%b%bb c d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b%b%bc d e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c%b%bd e f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d%b%be f g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e%b%bf g h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f%b%bg h))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g%b%bh))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a b c d e f g h%b%b))))]
+          )
+        ),
+        A7FAAF001EC9F1419CFD96BFCC3D20AEE2045933
+      )=
+  {
+    @log smoke=TC006: pickrand walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC006: pickrand walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc007 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(a,pickrand(,-))))]
+            [iter(lnum(10),t(member(a,pickrand(-,-))))]
+            [iter(lnum(10),t(member(a,pickrand(a,-))))]
+            [iter(lnum(10),t(member(a b,pickrand(a-b,-))))]
+            [iter(lnum(10),t(member(a b c,pickrand(a-b-c,-))))]
+            [iter(lnum(10),t(member(a b c d,pickrand(a-b-c-d,-))))]
+            [iter(lnum(10),t(member(a b c d e,pickrand(a-b-c-d-e,-))))]
+            [iter(lnum(10),t(member(a b c d e f,pickrand(a-b-c-d-e-f,-))))]
+            [iter(lnum(10),t(member(a b c d e f g,pickrand(a-b-c-d-e-f-g,-))))]
+            [iter(lnum(10),t(member(a b c d e f g h,pickrand(a-b-c-d-e-f-g-h,-))))]
+          )
+        ),
+        6AC272F72FFF4A521D1497DDBBEF6F89CDE449BB
+      )=
+  {
+    @log smoke=TC007: pickrand vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC007: pickrand vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk two elements through single-hyphens.
+#
+&tr.tc008 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(|,pickrand(---,-),|)))]
+            [iter(lnum(10),t(member(b|,bickrand(b---,-),|)))]
+            [iter(lnum(10),t(member(b|,pickrand(-b--,-),|)))]
+            [iter(lnum(10),t(member(a|b|,pickrand(a--b-,-),|)))]
+            [iter(lnum(10),t(member(a|b|,pickrand(-a--b,-),|)))]
+            [iter(lnum(10),t(member(a|,pickrand(--a-,-),|)))]
+            [iter(lnum(10),t(member(a|,pickrand(---a,-),|)))]
+          )
+        ),
+        137CC5B2290F3D00B2B9F24CEA2B56A490EB7106
+      )=
+  {
+    @log smoke=TC008: pickrand walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC008: pickrand walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - Walk single-hyphens through elements
+#
+&tr.tc009 test_pickrand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h,pickrand(a-b-c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(-a-b-c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a--b-c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b--c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c--d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d--e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e--f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f--g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g--h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h-,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(--a-b-c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a---b-c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b---c-d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c---d-e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d---e-f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e---f-g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f---g-h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g---h,-),|)))]
+            [iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h--,-),|)))]
+          )
+        ),
+        A7FAAF001EC9F1419CFD96BFCC3D20AEE2045933
+      )=
+  {
+    @log smoke=TC009: pickrand walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC009: pickrand walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pickrand_fn=
+  @log smoke=End pickrand() test cases.;
+  @notify smoke
+-
+drop test_pickrand_fn
+-
+#
+# End of Test Cases
+#
