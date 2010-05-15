@@ -41,13 +41,14 @@ fi
 #
 #	Create necessary environment.
 #
+echo "Creating $DATA directory."
 mkdir $DATA
 if [ ! -r logs ]; then
-    echo "Creating logs directory."
+    echo "Creating ./logs directory."
     mkdir logs
 fi
 if [ ! -r text ]; then
-    echo "Creating text directory."
+    echo "Creating ./text directory."
     mkdir text
 fi
 cp smoke.flat $DATA/$INPUT_DB
@@ -103,6 +104,7 @@ mv logs/M-smoke.log smoke.log
 rm smoke.conf
 rm $PIDFILE
 rm shutdown.status
-rm -rf $DATA logs text
+echo "Deleting $DATA, logs, and text directories."
+rm -rf $DATA ./logs ./text
 rm alias.conf
 rm compat.conf
