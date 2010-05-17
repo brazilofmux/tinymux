@@ -1,0 +1,222 @@
+#
+# columns_fn.mux - Test Cases for columns().
+# $Id$
+#
+@create test_columns_fn
+-
+@set test_columns_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_columns_fn=
+  @log smoke=Beginning columns() test cases.
+-
+#
+# Test Case #1 - Regressions.
+#
+&tr.tc001 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(a%b%bb%b%bc%b%b,5,%b)]
+          )
+        ),
+        7132A74E23CD26DCC350FEB5C0BCD90DBBE39367
+      )=
+  {
+    @log smoke=TC001: columns regressions. Succeeded.
+  },
+  {
+    @log smoke=TC001: columns regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Vary number of arguments.
+#
+&tr.tc002 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(,5,|)]
+            [columns(a,5,|)]
+            [columns(a|a,5,|)]
+            [columns(a|a|a,5,|)]
+            [columns(a|a|a|a,5,|)]
+            [columns(,5)]
+            [columns(%b,5)]
+            [columns(a,5)]
+            [columns(a b,5)]
+            [columns(a b c,5)]
+            [columns(a b c d,5)]
+            [columns(a b c d e,5)]
+            [columns(a b c d e f,5)]
+            [columns(a b c d e f g,5)]
+            [columns(a b c d e f g h,5)]
+          )
+        ),
+        CE865AAB5946FA1923D53409FC201E858F626EB9
+      )=
+  {
+    @log smoke=TC002: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC002: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Walk two elements through whitespace.
+#
+&tr.tc003 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(%b%b%b,5)]
+            [columns(b%b%b%b,5)]
+            [columns(%bb%b%b,5)]
+            [columns(a%b%bb%b,5)]
+            [columns(%ba%b%bb,5)]
+            [columns(%b%ba%b,5)]
+            [columns(%b%b%ba,5)]
+          )
+        ),
+        E70143F1400FCB245F175C1F88AE11A985E0442E
+      )=
+  {
+    @log smoke=TC003: columns walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC003: columns walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk whitespace through elements
+#
+&tr.tc004 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(a b c d e f g h,5)]
+            [columns(%ba b c d e f g h,5)]
+            [columns(a%bb c d e f g h,5)]
+            [columns(a b%bc d e f g h,5)]
+            [columns(a b c%bd e f g h,5)]
+            [columns(a b c d%be f g h,5)]
+            [columns(a b c d e%bf g h,5)]
+            [columns(a b c d e f%bg h,5)]
+            [columns(a b c d e f g%bh,5)]
+            [columns(a b c d e f g h%b,5)]
+            [columns(%b%ba b c d e f g h,5)]
+            [columns(a%b%bb c d e f g h,5)]
+            [columns(a b%b%bc d e f g h,5)]
+            [columns(a b c%b%bd e f g h,5)]
+            [columns(a b c d%b%be f g h,5)]
+            [columns(a b c d e%b%bf g h,5)]
+            [columns(a b c d e f%b%bg h,5)]
+            [columns(a b c d e f g%b%bh,5)]
+            [columns(a b c d e f g h%b%b,5)]
+          )
+        ),
+        BA26480F688F3E84A70418A40533CD83A3C2D0AF
+      )=
+  {
+    @log smoke=TC004: columns walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC004: columns walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc005 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(,5,-)]
+            [columns(-,5,-)]
+            [columns(a,5,-)]
+            [columns(a-b,5,-)]
+            [columns(a-b-c,5,-)]
+            [columns(a-b-c-d,5,-)]
+            [columns(a-b-c-d-e,5,-)]
+            [columns(a-b-c-d-e-f,5,-)]
+            [columns(a-b-c-d-e-f-g,5,-)]
+            [columns(a-b-c-d-e-f-g-h,5,-)]
+          )
+        ),
+        C2507191231E15DD5BF9E5B61DD1DEE9E7AC0DD6
+      )=
+  {
+    @log smoke=TC005: columns vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC005: columns vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Walk two elements through single-hyphens.
+#
+&tr.tc006 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(---,5,-)]
+            [columns(b---,5,-)]
+            [columns(-b--,5,-)]
+            [columns(a--b-,5,-)]
+            [columns(-a--b,5,-)]
+            [columns(--a-,5,-)]
+            [columns(---a,5,-)]
+          )
+        ),
+        9900E9BDAEF6E1F87BC645DB30A89FBCE71C66DE
+      )=
+  {
+    @log smoke=TC006: columns walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC006: columns walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk single-hyphens through elements
+#
+&tr.tc007 test_columns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [columns(a-b-c-d-e-f-g-h,5,-)]
+            [columns(-a-b-c-d-e-f-g-h,5,-)]
+            [columns(a--b-c-d-e-f-g-h,5,-)]
+            [columns(a-b--c-d-e-f-g-h,5,-)]
+            [columns(a-b-c--d-e-f-g-h,5,-)]
+            [columns(a-b-c-d--e-f-g-h,5,-)]
+            [columns(a-b-c-d-e--f-g-h,5,-)]
+            [columns(a-b-c-d-e-f--g-h,5,-)]
+            [columns(a-b-c-d-e-f-g--h,5,-)]
+            [columns(a-b-c-d-e-f-g-h-,5,-)]
+            [columns(--a-b-c-d-e-f-g-h,5,-)]
+            [columns(a---b-c-d-e-f-g-h,5,-)]
+            [columns(a-b---c-d-e-f-g-h,5,-)]
+            [columns(a-b-c---d-e-f-g-h,5,-)]
+            [columns(a-b-c-d---e-f-g-h,5,-)]
+            [columns(a-b-c-d-e---f-g-h,5,-)]
+            [columns(a-b-c-d-e-f---g-h,5,-)]
+            [columns(a-b-c-d-e-f-g---h,5,-)]
+            [columns(a-b-c-d-e-f-g-h--,5,-)]
+          )
+        ),
+        370D4A44C05738672E6C94773B7629EFE00AA07A
+      )=
+  {
+    @log smoke=TC007: columns walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: columns walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_columns_fn=
+  @log smoke=End columns() test cases.;
+  @notify smoke
+-
+drop test_columns_fn
+-
+#
+# End of Test Cases
+#
