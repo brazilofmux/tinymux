@@ -2,8 +2,6 @@
 # shuffle_fn.mux - Test Cases for shuffle().
 # $Id$
 #
-# Strategy: Exercise color and UTF-8 in combination with shuffle() behaviors.
-#
 @create test_shuffle_fn
 -
 @set test_shuffle_fn=INHERIT QUIET
