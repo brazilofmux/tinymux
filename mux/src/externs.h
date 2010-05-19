@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.66 2007/02/03 04:25:46 sdennis Exp $
+// $Id$
 //
 
 #ifndef EXTERNS_H

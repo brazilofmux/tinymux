@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.71 2006/05/18 18:43:44 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

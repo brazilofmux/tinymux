@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.24 2006/01/08 06:16:08 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

@@ -1,6 +1,6 @@
 // funmath.h -- declarations for math-related functions.
 //
-// $Id: funmath.h,v 1.3 2005/11/10 23:05:28 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

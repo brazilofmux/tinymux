@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.81 2006/09/05 23:42:17 sdennis Exp $
+// $Id$
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.26 2007/09/14 15:49:00 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.19 2006/01/07 21:48:00 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

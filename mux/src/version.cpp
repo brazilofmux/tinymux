@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.2 2006/01/07 01:50:19 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

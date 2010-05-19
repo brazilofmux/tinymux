@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.6 2006/01/07 23:05:01 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.8 2007/04/14 04:57:05 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

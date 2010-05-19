@@ -1,6 +1,6 @@
 // svdrand.h -- Random Numbers.
 //
-// $Id: svdrand.h,v 1.5 2004/06/10 15:23:32 sdennis Exp $
+// $Id$
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

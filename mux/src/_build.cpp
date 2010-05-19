@@ -1,6 +1,6 @@
 // _build.cpp
 //
-// $Id: _build.cpp,v 1.4 2004/06/10 15:39:34 sdennis Exp $
+// $Id$
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

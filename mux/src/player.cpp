@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.36 2006/01/07 09:14:26 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"
