@@ -259,50 +259,133 @@ static void EncodeBase64(size_t nIn, const UTF8 *pIn, UTF8 *pOut)
     q[0] = '\0';
 }
 
-#define SHA1_PREFIX_LENGTH 6
-const UTF8 szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
-#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
+const UTF8 szFail[] = "$FAIL$$";
 
-// These are known but passed through as CRYPT_OTHER:
-//
-// MD5        $1$
-// Blowfish   $2a$
-// SHA-256    $5$
-// SHA-512    $6$
+const UTF8 szSHA1Prefix[] = "$SHA1$";
+#define SHA1_PREFIX_LENGTH (sizeof(szSHA1Prefix)-1)
+#define SHA1_HASH_LENGTH 5*sizeof(UINT32)
+#define SHA1_ENCODED_HASH_LENGTH ENCODED_LENGTH(SHA1_HASH_LENGTH)
+#define SHA1_SALT_LENGTH 9
+#define SHA1_ENCODED_SALT_LENGTH ENCODED_LENGTH(SHA1_SALT_LENGTH)
 
-#define SALT_LENGTH 9
-#define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
+#define DES_SALT_LENGTH 2
 
-static const UTF8 *GenerateSalt(void)
-{
-    UTF8 szSaltRaw[SALT_LENGTH+1];
-    int i;
-    for (i = 0; i < SALT_LENGTH; i++)
-    {
-        szSaltRaw[i] = (UTF8)RandomINT32(0, 255);
-    }
-    szSaltRaw[SALT_LENGTH] = '\0';
+const UTF8 szMD5Prefix[] = "$1$";
+#define MD5_PREFIX_LENGTH (sizeof(szMD5Prefix)-1)
+#define MD5_SALT_LENGTH 16
 
-    static UTF8 szSaltEncoded[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH+1];
-    mux_strncpy(szSaltEncoded, szSHA1Prefix, SHA1_PREFIX_LENGTH);
-    EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded + SHA1_PREFIX_LENGTH);
-    return szSaltEncoded;
-}
+const UTF8 szSHA256Prefix[] = "$5$";
+#define SHA256_PREFIX_LENGTH (sizeof(szSHA256Prefix)-1)
+#define SHA256_SALT_LENGTH 16
 
-void ChangePassword(dbref player, const UTF8 *szPassword)
-{
-    int iType;
-    s_Pass(player, mux_crypt(szPassword, GenerateSalt(), &iType));
-}
+const UTF8 szSHA512Prefix[] = "$6$";
+#define SHA512_PREFIX_LENGTH (sizeof(szSHA512Prefix)-1)
+#define SHA512_SALT_LENGTH 16
 
 #define CRYPT_FAIL        0
 #define CRYPT_SHA1        1
 #define CRYPT_DES         2
 #define CRYPT_DES_EXT     3
 #define CRYPT_CLEARTEXT   4
-#define CRYPT_OTHER       5
+#define CRYPT_MD5         5
+#define CRYPT_SHA256      6
+#define CRYPT_SHA512      7
+#define CRYPT_OTHER       8
 
-const UTF8 szFail[] = "$FAIL$$";
+// These are known but passed through as CRYPT_OTHER:
+//
+// Blowfish   $2a$
+
+static const UTF8 *GenerateSalt(int iType)
+{
+    // The largest salt string is for SHA1 (6 + 28 bytes).
+    //
+    static UTF8 szSalt[SHA1_PREFIX_LENGTH + SHA1_ENCODED_SALT_LENGTH + 1];
+
+    szSalt[0] = '\0';
+    if (CRYPT_SHA1 == iType)
+    {
+        UTF8 szSaltRaw[SHA1_SALT_LENGTH+1];
+        for (int i = 0; i < SHA1_SALT_LENGTH; i++)
+        {
+            szSaltRaw[i] = (UTF8)RandomINT32(0, 255);
+        }
+        szSaltRaw[SHA1_SALT_LENGTH] = '\0';
+    
+        mux_strncpy(szSalt, szSHA1Prefix, SHA1_PREFIX_LENGTH);
+        EncodeBase64(SHA1_SALT_LENGTH, szSaltRaw, szSalt + SHA1_PREFIX_LENGTH);
+    }
+    else if (CRYPT_DES == iType)
+    {
+#if 0
+        for (int i = 0; i < DES_SALT_LENGTH; i++)
+        {
+            // Map random number to set 'a-zA-Z0-9./'.
+            //
+            INT32 j = RandomINT32(0, sizeof(Base64Table)-1);
+            UTF8 ch = Base64Table[j];
+            if ('+' == ch)
+            {
+                ch = '.';
+            }
+            szSalt[i] = ch;
+        }
+        szSalt[DES_SALT_LENGTH] = '\0';
+#else
+        return T("XX");
+#endif
+    }
+    else if (  CRYPT_MD5 == iType
+            || CRYPT_SHA256 == iType
+            || CRYPT_SHA512 == iType)
+    {
+        const UTF8 *pPrefix;
+        size_t      nPrefix;
+        size_t      nSalt;
+
+        if (CRYPT_MD5 == iType)
+        {
+            pPrefix = szMD5Prefix;
+            nPrefix = MD5_PREFIX_LENGTH;
+            nSalt   = MD5_SALT_LENGTH;
+        }
+        else if (CRYPT_SHA256 == iType)
+        {
+            pPrefix = szSHA256Prefix;
+            nPrefix = SHA256_PREFIX_LENGTH;
+            nSalt   = SHA256_SALT_LENGTH;
+        }
+        else if (CRYPT_SHA512 == iType)
+        {
+            pPrefix = szSHA512Prefix;
+            nPrefix = SHA512_PREFIX_LENGTH;
+            nSalt   = SHA512_SALT_LENGTH;
+        }
+
+        mux_strncpy(szSalt, pPrefix, nPrefix);
+        for (int i = nPrefix; i < nPrefix + nSalt; i++)
+        {
+            // Map random number to set 'a-zA-Z0-9./'.
+            //
+            INT32 j = RandomINT32(0, sizeof(Base64Table)-1);
+            UTF8 ch = Base64Table[j];
+            if ('+' == ch)
+            {
+                ch = '.';
+            }
+            szSalt[i] = ch;
+        }
+        szSalt[nPrefix + nSalt] = '\0';
+    }
+    return szSalt;
+}
+
+void ChangePassword(dbref player, const UTF8 *szPassword)
+{
+    int iTypeIn = CRYPT_SHA1;
+    int iTypeOut;
+    s_Pass(player, mux_crypt(szPassword, GenerateSalt(iTypeIn), &iTypeOut));
+}
 
 // There is no longer any support for DES-encrypted passwords on the Windows
 // build.  To convert these, using #1 to @newpassword, go through an older
@@ -337,10 +420,25 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
                 {
                     nSaltField = strlen((char *)pSaltField);
                 }
-                if (nSaltField <= ENCODED_SALT_LENGTH)
+                if (nSaltField <= SHA1_ENCODED_SALT_LENGTH)
                 {
                     *piType = CRYPT_SHA1;
                 }
+            }
+            else if (  nAlgo == MD5_PREFIX_LENGTH
+                    && memcmp(szSetting, szMD5Prefix, MD5_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_MD5;
+            }
+            else if (  nAlgo == SHA256_PREFIX_LENGTH
+                    && memcmp(szSetting, szSHA256Prefix, SHA256_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_SHA256;
+            }
+            else if (  nAlgo == SHA512_PREFIX_LENGTH
+                    && memcmp(szSetting, szSHA512Prefix, SHA512_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_SHA512;
             }
             else
             {
@@ -388,6 +486,9 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
+    case CRYPT_MD5:
+    case CRYPT_SHA256:
+    case CRYPT_SHA512:
 #if defined(WINDOWS_CRYPT)
         // The Windows release of TinyMUX only supports SHA1 and clear-text.
         //
@@ -417,7 +518,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     // 12345678901234567890123456789012345678901234567
     // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
-    static UTF8 buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
+    static UTF8 buf[SHA1_PREFIX_LENGTH + SHA1_ENCODED_SALT_LENGTH + 1 + SHA1_ENCODED_HASH_LENGTH + 1 + 16];
     mux_strncpy(buf, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
     buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';
