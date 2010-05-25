@@ -3810,7 +3810,7 @@ PARENT_RECURSION_LIMIT
 PASSWORD_METHODS
 
   CONFIG PARAMETER: password_methods [!]<method> [[!]<method>]...
-  DEFAULT: sha1
+  DEFAULT: none (which defaults to sha1)
 
     sha1      - A built-in method based on SHA-1 which is sufficient and
                 provides interoperability between UNIX and Windows.

@@ -311,7 +311,7 @@ void cf_init(void)
     mudconf.player_name_charset = 0;
     mudconf.room_name_charset = 0;
     mudconf.thing_name_charset = 0;
-    mudconf.password_methods = CRYPT_METHOD_SHA1;
+    mudconf.password_methods = CRYPT_DEFAULT;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;

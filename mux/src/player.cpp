@@ -47,11 +47,11 @@ struct logindata
 
 NAMETAB method_nametab[] =
 {
-    {T("sha1"),            4,  CA_GOD,     CRYPT_METHOD_SHA1},
-    {T("des"),             3,  CA_GOD,     CRYPT_METHOD_DES},
-    {T("md5"),             3,  CA_GOD,     CRYPT_METHOD_MD5},
-    {T("sha256"),          6,  CA_GOD,     CRYPT_METHOD_SHA256},
-    {T("sha512"),          6,  CA_GOD,     CRYPT_METHOD_SHA512},
+    {T("sha1"),            4,  CA_GOD,     CRYPT_SHA1},
+    {T("des"),             3,  CA_GOD,     CRYPT_DES},
+    {T("md5"),             3,  CA_GOD,     CRYPT_MD5},
+    {T("sha256"),          6,  CA_GOD,     CRYPT_SHA256},
+    {T("sha512"),          6,  CA_GOD,     CRYPT_SHA512},
     {(UTF8 *) NULL,        0,       0,     0}
 };
 
@@ -268,6 +268,18 @@ static void EncodeBase64(size_t nIn, const UTF8 *pIn, UTF8 *pOut)
     q[0] = '\0';
 }
 
+// Historically, TinyMUX DES passwords use a fixed salt of 'XX', but DES-based
+// crypt is not limited to this in general.  Because of the fixed salt, any
+// encrypted password that did not begin with a salt of 'XX' was interpreted
+// as a clear-text password.
+//
+// A fixed salt completely undermines the purpose of salting passwords, but
+// to support the legacy behavior, and to provide a path for clear-text
+// passwords, the default behavior is to continue limiting salt to 'XX'.  To
+// remove this limit, uncomment the line that follows:
+//
+//#define ENABLE_PROPER_DES
+
 const UTF8 szFail[] = "$FAIL$$";
 
 const UTF8 szSHA1Prefix[] = "$SHA1$";
@@ -290,16 +302,6 @@ const UTF8 szSHA256Prefix[] = "$5$";
 const UTF8 szSHA512Prefix[] = "$6$";
 #define SHA512_PREFIX_LENGTH (sizeof(szSHA512Prefix)-1)
 #define SHA512_SALT_LENGTH 16
-
-#define CRYPT_FAIL        0
-#define CRYPT_SHA1        1
-#define CRYPT_DES         2
-#define CRYPT_DES_EXT     3
-#define CRYPT_CLEARTEXT   4
-#define CRYPT_MD5         5
-#define CRYPT_SHA256      6
-#define CRYPT_SHA512      7
-#define CRYPT_OTHER       8
 
 // These are known but passed through as CRYPT_OTHER:
 //
@@ -326,7 +328,7 @@ static const UTF8 *GenerateSalt(int iType)
     }
     else if (CRYPT_DES == iType)
     {
-#if 0
+#if defined(ENABLE_PROPER_DES)
         for (int i = 0; i < DES_SALT_LENGTH; i++)
         {
             // Map random number to set 'a-zA-Z0-9./'.
@@ -393,21 +395,22 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
 {
     int iTypeOut;
     const UTF8 *pEncodedPassword = NULL;
-    if (  (  (mudconf.password_methods & CRYPT_METHOD_SHA512)
-          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA512), &iTypeOut)))
-       || (  (mudconf.password_methods & CRYPT_METHOD_SHA256)
-          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA256), &iTypeOut)))
-       || (  (mudconf.password_methods & CRYPT_METHOD_MD5)
-          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_MD5), &iTypeOut)))
-       || (  (mudconf.password_methods & CRYPT_METHOD_SHA1)
-          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA1), &iTypeOut)))
-       || (  (mudconf.password_methods & CRYPT_METHOD_DES)
-          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_DES), &iTypeOut)))
-       || (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA1), &iTypeOut)))
+    int methods[] = { CRYPT_SHA512, CRYPT_SHA256, CRYPT_MD5, CRYPT_SHA1, CRYPT_DES };
+    for (int i = 0; i < sizeof(methods)/sizeof(methods[0]); i++)
     {
-        mux_assert(NULL != pEncodedPassword);
-        s_Pass(player, pEncodedPassword);
+        if (  (mudconf.password_methods & methods[i])
+           && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(methods[i]), &iTypeOut)))
+        {
+            break;
+        }
     }
+
+    if (NULL == pEncodedPassword)
+    {
+        pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA1), &iTypeOut);
+        mux_assert(NULL != pEncodedPassword);
+    }
+    s_Pass(player, pEncodedPassword);
 }
 
 // There is no longer any support for DES-encrypted passwords on the Windows
@@ -475,7 +478,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     }
     else
     {
-#if 0
+#if defined(ENABLE_PROPER_DES)
         // Strictly speaking, we can say the algorithm is DES.
         //
         *piType = CRYPT_DES;
@@ -565,7 +568,7 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
         if (strcmp((char *)mux_crypt(pPassword, pTarget, &iType), (char *)pTarget) == 0)
         {
             bValidPass = true;
-            if (iType != CRYPT_SHA1)
+            if (iType & mudconf.password_methods)
             {
                 ChangePassword(player, pPassword);
             }
