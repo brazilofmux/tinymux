@@ -818,6 +818,16 @@ extern int anum_alc_top;
 #define ALLOW_CHARSET_8859_1 2
 #define ALLOW_CHARSET_8859_2 4
 
+/* Password Encryption Methods */
+
+#define CRYPT_METHOD_SHA1     1
+#define CRYPT_METHOD_DES      2
+#define CRYPT_METHOD_MD5      4
+#define CRYPT_METHOD_SHA256   8
+#define CRYPT_METHOD_SHA512  16
+
+extern NAMETAB method_nametab[];
+
 /* Hush codes for movement messages */
 
 #define HUSH_ENTER      1   /* xENTER/xEFAIL */

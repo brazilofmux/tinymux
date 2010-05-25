@@ -139,6 +139,7 @@ struct confdata
     int     player_name_charset; // Charset restrictions for player names.
     int     room_name_charset;  // Charset restrictions for room names.
     int     thing_name_charset; // Charset restrictions for thing names.
+    int     password_methods;   // Password encryption methods.
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
     struct  rlevel_def

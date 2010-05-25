@@ -45,6 +45,15 @@ struct logindata
     int new_bad;
 };
 
+NAMETAB method_nametab[] =
+{
+    {T("sha1"),            4,  CA_GOD,     CRYPT_METHOD_SHA1},
+    {T("des"),             3,  CA_GOD,     CRYPT_METHOD_DES},
+    {T("md5"),             3,  CA_GOD,     CRYPT_METHOD_MD5},
+    {T("sha256"),          6,  CA_GOD,     CRYPT_METHOD_SHA256},
+    {T("sha512"),          6,  CA_GOD,     CRYPT_METHOD_SHA512},
+    {(UTF8 *) NULL,        0,       0,     0}
+};
 
 /* ---------------------------------------------------------------------------
  * decrypt_logindata, encrypt_logindata: Decode and encode login info.
@@ -382,9 +391,23 @@ static const UTF8 *GenerateSalt(int iType)
 
 void ChangePassword(dbref player, const UTF8 *szPassword)
 {
-    int iTypeIn = CRYPT_SHA1;
     int iTypeOut;
-    s_Pass(player, mux_crypt(szPassword, GenerateSalt(iTypeIn), &iTypeOut));
+    const UTF8 *pEncodedPassword = NULL;
+    if (  (  (mudconf.password_methods & CRYPT_METHOD_SHA512)
+          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA512), &iTypeOut)))
+       || (  (mudconf.password_methods & CRYPT_METHOD_SHA256)
+          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA256), &iTypeOut)))
+       || (  (mudconf.password_methods & CRYPT_METHOD_MD5)
+          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_MD5), &iTypeOut)))
+       || (  (mudconf.password_methods & CRYPT_METHOD_SHA1)
+          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA1), &iTypeOut)))
+       || (  (mudconf.password_methods & CRYPT_METHOD_DES)
+          && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_DES), &iTypeOut)))
+       || (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(CRYPT_SHA1), &iTypeOut)))
+    {
+        mux_assert(NULL != pEncodedPassword);
+        s_Pass(player, pEncodedPassword);
+    }
 }
 
 // There is no longer any support for DES-encrypted passwords on the Windows
@@ -460,11 +483,10 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
         // However, in order to support clear-text passwords, we restrict
         // ourselves to only verifying an existing DES-encrypted password and
         // we assume a fixed salt of 'XX'.  If you have been using a different
-        // salt, or if you need to generate a DES-encrypted password, the
-        // following code won't work.
+        // salt, the following code won't work.
         //
         size_t nSetting = strlen((char *)szSetting);
-        if (  nSetting == 13
+        if (  2 <= nSetting
            && memcmp(szSetting, "XX", 2) == 0)
         {
             *piType = CRYPT_DES;

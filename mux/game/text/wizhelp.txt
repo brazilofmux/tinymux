@@ -1894,9 +1894,9 @@ CONFIG PARAMETERS (continued)
   module  money_name_plural  money_name_singular  motd_file  motd_message
   mud_name  newuser_file  nositemon_site  notify_recursion_limit
   number_guests  open_cost  output_database  output_limit  page_cost
-  paranoid_allocate  parent_recursion_limit  paycheck  pcreate_per_hour
-  pemit_any_object  pemit_far_players  permit_site  player_flags
-  player_parent  player_listen  player_match_own_commands
+  paranoid_allocate  parent_recursion_limit  password_methods  paycheck
+  pcreate_per_hour  pemit_any_object  pemit_far_players  permit_site
+  player_flags  player_parent  player_listen  player_match_own_commands
   player_name_charset  player_name_spaces  player_queue_limit  player_quota
   player_starting_home  player_starting_room  port  postdump_message
   power_alias  public_channel  public_channel_alias  public_flags
@@ -3805,6 +3805,30 @@ PARENT_RECURSION_LIMIT
 
   This directive specifies how far back to check parents for commands
   and attributes.
+
+& PASSWORD_METHODS
+PASSWORD_METHODS
+
+  CONFIG PARAMETER: password_methods [!]<method> [[!]<method>]...
+  DEFAULT: sha1
+
+    sha1      - A built-in methods based on SHA-1 which is sufficient and
+                provides best interoperability between UNIX and Windows.
+    des       - DES-based crypt available on most UNIX flavors.
+    md5       - More secure MD5-based crypt available on most UNIX flavors.
+    sha256    - SHA-256 which is available in glibc on Linux.
+    sha512    - SHA-512 which is available in glibc on Linux.
+
+  This directive enables/disables possible password encryption methods to
+  allow user passwords gradually migrated from one format to another.
+  Typically, one would expect to run for a period of time until all players
+  have had a chance to login successfully at least once.
+
+  If multiple methods are chosen, and the server will attempt each from
+  strongest to weakest.
+
+  The DES method uses only the first 8 characters of a password and ignores
+  characters thereafter.
 
 & PAYCHECK
 PAYCHECK

@@ -311,6 +311,7 @@ void cf_init(void)
     mudconf.player_name_charset = 0;
     mudconf.room_name_charset = 0;
     mudconf.thing_name_charset = 0;
+    mudconf.password_methods = CRYPT_METHOD_SHA1;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -2210,6 +2211,7 @@ static CONFPARM conftable[] =
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               NULL,               0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.paranoid_alloc,  NULL,               0},
     {T("parent_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        NULL,               0},
+    {T("password_methods"),          cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.password_methods,       method_nametab,     0},
     {T("paycheck"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paycheck,               NULL,               0},
     {T("pemit_any_object"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_any,       NULL,               0},
     {T("pemit_far_players"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_players,   NULL,               0},
