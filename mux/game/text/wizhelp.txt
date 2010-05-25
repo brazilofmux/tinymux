@@ -3812,19 +3812,19 @@ PASSWORD_METHODS
   CONFIG PARAMETER: password_methods [!]<method> [[!]<method>]...
   DEFAULT: sha1
 
-    sha1      - A built-in methods based on SHA-1 which is sufficient and
-                provides best interoperability between UNIX and Windows.
+    sha1      - A built-in method based on SHA-1 which is sufficient and
+                provides interoperability between UNIX and Windows.
     des       - DES-based crypt available on most UNIX flavors.
     md5       - More secure MD5-based crypt available on most UNIX flavors.
     sha256    - SHA-256 which is available in glibc on Linux.
     sha512    - SHA-512 which is available in glibc on Linux.
 
   This directive enables/disables possible password encryption methods to
-  allow user passwords gradually migrated from one format to another.
+  support gradual migration of user passwords from one format to another.
   Typically, one would expect to run for a period of time until all players
-  have had a chance to login successfully at least once.
+  have successfully logged in at least once.
 
-  If multiple methods are chosen, and the server will attempt each from
+  If multiple methods are chosen, the server will attempt each from
   strongest to weakest.
 
   The DES method uses only the first 8 characters of a password and ignores
