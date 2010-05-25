@@ -568,7 +568,7 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
         if (strcmp((char *)mux_crypt(pPassword, pTarget, &iType), (char *)pTarget) == 0)
         {
             bValidPass = true;
-            if (iType & mudconf.password_methods)
+            if (0 == (iType & mudconf.password_methods))
             {
                 ChangePassword(player, pPassword);
             }
