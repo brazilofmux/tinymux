@@ -2285,6 +2285,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 SSL_free(ssl_session);
                 STARTLOG(LOG_ALWAYS, "NET", "SSL");
                 log_text(T("SSL negotiation failed: "));
+                log_number(ssl_err);
                 ENDLOG;
                 shutdown(newsock, SD_BOTH);
                 if (0 == SOCKET_CLOSE(newsock))
@@ -2292,6 +2293,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                     DebugTotalSockets--;
                 }
                 newsock = INVALID_SOCKET;
+                *piSocketError = ssl_err;
                 errno = 0;
                 return NULL;
             }
