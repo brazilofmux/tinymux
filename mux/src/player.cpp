@@ -350,9 +350,9 @@ static const UTF8 *GenerateSalt(int iType)
             || CRYPT_SHA256 == iType
             || CRYPT_SHA512 == iType)
     {
-        const UTF8 *pPrefix;
-        size_t      nPrefix;
-        size_t      nSalt;
+        const UTF8 *pPrefix = NULL;
+        size_t      nPrefix = 0;
+        size_t      nSalt = 0;
 
         if (CRYPT_MD5 == iType)
         {
@@ -374,7 +374,7 @@ static const UTF8 *GenerateSalt(int iType)
         }
 
         mux_strncpy(szSalt, pPrefix, nPrefix);
-        for (int i = nPrefix; i < nPrefix + nSalt; i++)
+        for (size_t i = nPrefix; i < nPrefix + nSalt; i++)
         {
             // Map random number to set 'a-zA-Z0-9./'.
             //
@@ -396,7 +396,7 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
     int iTypeOut;
     const UTF8 *pEncodedPassword = NULL;
     int methods[] = { CRYPT_SHA512, CRYPT_SHA256, CRYPT_MD5, CRYPT_SHA1, CRYPT_DES };
-    for (int i = 0; i < sizeof(methods)/sizeof(methods[0]); i++)
+    for (size_t i = 0; i < sizeof(methods)/sizeof(methods[0]); i++)
     {
         if (  (mudconf.password_methods & methods[i])
            && NULL != (pEncodedPassword = mux_crypt(szPassword, GenerateSalt(methods[i]), &iTypeOut)))
