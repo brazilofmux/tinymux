@@ -1,0 +1,241 @@
+#
+# elements_fn.mux - Test Cases for elements().
+# $Id$
+#
+@create test_elements_fn
+-
+@set test_elements_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_elements_fn=
+  @log smoke=Beginning elements() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(Foo Ack Beep Moo Zot,2 4)]
+            [elements(Foof|Ack|Beep|Moo,3 1,|)]
+          )
+        ),
+        16FADBBC3DC2A755F54BB6FEF75FF506FEA9453E
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(a%b%bb%b%bc%b%b,2 4 5,%b)]
+          )
+        ),
+        E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98
+      )=
+  {
+    @log smoke=TC002: elements regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: elements regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of arguments.
+#
+&tr.tc003 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(,1 0 -1,|)]
+            [elements(a,2 1 0 -1,|)]
+            [elements(a|a,3 2 1 0 -1,|)]
+            [elements(a|a|a,3 2 1 0 -1,|)]
+            [elements(a|a|a|a,3 2 1 0 -1,|)]
+            [elements(,1 0 -1)]
+            [elements(%b,1 0 -1)]
+            [elements(a,2 1 0 -1)]
+            [elements(a b,3 2 1 0 -1)]
+            [elements(a b c,4 3 2 1 0 -1)]
+            [elements(a b c d,5 4 3 2 1 0 -1)]
+            [elements(a b c d e,6 4 3 2 1 0 -1)]
+            [elements(a b c d e f,6 4 3 2 1 0 -1)]
+            [elements(a b c d e f g,6 4 3 2 1 0 -1)]
+            [elements(a b c d e f g h,6 4 3 2 1 0 -1)]
+          )
+        ),
+        9DE8991CE5EAC23CDB36DC4398E3A2E8880F7E91
+      )=
+  {
+    @log smoke=TC003: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC003: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(%b%b%b,-1 1 2 0)]
+            [elements(b%b%b%b,-1 1 2 0)]
+            [elements(%bb%b%b,-1 1 2 0)]
+            [elements(a%b%bb%b,-1 1 2 0)]
+            [elements(%ba%b%bb,-1 1 2 0)]
+            [elements(%b%ba%b,-1 1 2 0)]
+            [elements(%b%b%ba,-1 1 2 0)]
+          )
+        ),
+        5FA05DE12E35ED6C53A9E13B96F14DB89F597339
+      )=
+  {
+    @log smoke=TC004: elements walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: elements walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(a b c d e f g h,1 2 3 8 -1 6 0 9 5 4 7)]
+            [elements(%ba b c d e f g h,5 0 -1 8 1 3 4 2 9 7 6)]
+            [elements(a%bb c d e f g h,5 2 7 4 0 -1 9 8 1 6 3)]
+            [elements(a b%bc d e f g h,5 1 4 8 3 9 -1 6 0 7 2)]
+            [elements(a b c%bd e f g h,0 6 3 -1 5 1 2 4 8 9 7)]
+            [elements(a b c d%be f g h,-1 2 9 8 3 1 5 4 7 6 0)]
+            [elements(a b c d e%bf g h,6 0 9 5 4 8 2 -1 3 1 7)]
+            [elements(a b c d e f%bg h,4 7 2 1 0 9 -1 8 6 5 3)]
+            [elements(a b c d e f g%bh,-1 4 1 6 3 7 9 8 0 2 5)]
+            [elements(a b c d e f g h%b,-1 4 5 0 3 9 1 6 7 2 8)]
+            [elements(%b%ba b c d e f g h,1 7 6 2 3 4 0 -1 5 8 9)]
+            [elements(a%b%bb c d e f g h,2 6 1 -1 0 5 7 9 4 8 3)]
+            [elements(a b%b%bc d e f g h,5 7 1 4 6 9 0 3 -1 2 8)]
+            [elements(a b c%b%bd e f g h,6 -1 8 5 0 2 4 3 1 7 9)]
+            [elements(a b c d%b%be f g h,4 -1 2 5 6 7 8 1 0 9 3)]
+            [elements(a b c d e%b%bf g h,1 9 6 8 2 -1 7 3 0 5 4)]
+            [elements(a b c d e f%b%bg h,6 7 2 5 1 -1 3 8 0 9 4)]
+            [elements(a b c d e f g%b%bh,1 -1 3 2 7 4 9 8 5 0 6)]
+            [elements(a b c d e f g h%b%b,3 0 7 2 8 4 1 6 9 5 -1)]
+          )
+        ),
+        BF7FD82C762B044C2DC8D00045875F8E45CB4BAE
+      )=
+  {
+    @log smoke=TC005: elements walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: elements walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(,1 0 -1,-)]
+            [elements(-,1 -1 0,-)]
+            [elements(a,-1 0 1 2,-)]
+            [elements(a-b,3 -1 1 0 2,-)]
+            [elements(a-b-c,3 -1 1 0 2 4,-)]
+            [elements(a-b-c-d,4 5 0 3 -1 2 1,-)]
+            [elements(a-b-c-d-e,1 5 0 -1 2 4 6 3,-)]
+            [elements(a-b-c-d-e-f,6 5 1 7 -1 4 3 2 0,-)]
+            [elements(a-b-c-d-e-f-g,7 1 2 3 4 6 -1 0 8 5,-)]
+            [elements(a-b-c-d-e-f-g-h,2 7 6 9 3 8 -1 4 5 0 1,-)]
+          )
+        ),
+        FBF8A76D6FFCC7C5B3C46D573C29BF88DA64BFCA
+      )=
+  {
+    @log smoke=TC006: elements vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: elements vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(---,-1 0 1,-)]
+            [elements(b---,2 0 -1 1,-)]
+            [elements(-b--,0 -1 1 2,-)]
+            [elements(a--b-,0 2 3 -1 1,-)]
+            [elements(-a--b,1 2 3 0 -1,-)]
+            [elements(--a-,1 -1 0 2-)]
+            [elements(---a,-1 2 0 1,-)]
+          )
+        ),
+        D24631ACF1C08F94D5FC5BCF62A18B0AB1A7F574
+      )=
+  {
+    @log smoke=TC007: elements walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: elements walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_elements_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [elements(a-b-c-d-e-f-g-h,1 2 9 3 4 6 0 5 -1 7 8,-)]
+            [elements(-a-b-c-d-e-f-g-h,4 0 6 7 8 3 -1 9 1 2 5,-)]
+            [elements(a--b-c-d-e-f-g-h,3 5 -1 7 8 2 0 1 9 4 6,-)]
+            [elements(a-b--c-d-e-f-g-h,4 -1 0 6 7 3 8 5 2 1 9,-)]
+            [elements(a-b-c--d-e-f-g-h,9 5 1 3 7 2 8 0 6 4 -1,-)]
+            [elements(a-b-c-d--e-f-g-h,7 3 8 5 -1 9 0 4 6 2 1,-)]
+            [elements(a-b-c-d-e--f-g-h,0 7 4 9 2 5 3 6 8 1 -1,-)]
+            [elements(a-b-c-d-e-f--g-h,4 9 2 8 3 7 0 5 -1 6 1,-)]
+            [elements(a-b-c-d-e-f-g--h,9 7 4 5 6 0 3 -1 2 1 8,-)]
+            [elements(a-b-c-d-e-f-g-h-,8 9 3 5 1 7 6 2 0 -1 4,-)]
+            [elements(--a-b-c-d-e-f-g-h,4 7 6 0 2 5 1 8 -1 3 9,-)]
+            [elements(a---b-c-d-e-f-g-h,6 2 -1 9 0 8 3 1 4 5 7,-)]
+            [elements(a-b---c-d-e-f-g-h,1 -1 6 5 0 9 8 7 2 3 4,-)]
+            [elements(a-b-c---d-e-f-g-h,-1 0 4 1 5 8 9 3 6 7 2,-)]
+            [elements(a-b-c-d---e-f-g-h,2 -1 4 5 9 8 6 7 1 3 0,-)]
+            [elements(a-b-c-d-e---f-g-h,2 1 4 8 7 -1 5 3 0 6 9,-)]
+            [elements(a-b-c-d-e-f---g-h,3 0 7 8 6 9 4 1 5 -1 2,-)]
+            [elements(a-b-c-d-e-f-g---h,4 3 8 5 2 7 1 9 0 6 -1,-)]
+            [elements(a-b-c-d-e-f-g-h--,3 0 8 1 4 7 6 2 9 -1 5,-)]
+          )
+        ),
+        EDEA0678367E8E6C80543BDC7E62FF588D590934
+      )=
+  {
+    @log smoke=TC008: elements walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: elements walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_elements_fn=
+  @log smoke=End elements() test cases.;
+  @notify smoke
+-
+drop test_elements_fn
+-
+#
+# End of Test Cases
+#
