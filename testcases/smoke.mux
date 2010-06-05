@@ -7,7 +7,8 @@
 @set smoke=INHERIT QUIET
 -
 &suite.list smoke=
-  center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn escape_fn 
+  center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn 
+  escape_fn 
   first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn 
   rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn wrap_fn shutdown
 -
