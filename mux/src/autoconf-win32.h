@@ -413,21 +413,19 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
-/* Define if Big Endian. */
-/* #undef WORDS_BIGENDIAN */
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel and VAX). */
+#if defined __BIG_ENDIAN__
+/* # undef WORDS_BIGENDIAN */
+#elif ! defined __LITTLE_ENDIAN__
+/* # undef WORDS_BIGENDIAN */
+#endif
 
 /* Define if Little Endian. */
 #define WORDS_LITTLEENDIAN
 
 /* Define if Unknown Endian. */
 /* #undef WORDS_UNKNOWN */
-
-/* Define to 1 if on AIX 3.
-   System headers sometimes define this.
-   We just want to avoid a redefinition error message.  */
-#ifndef _ALL_SOURCE
-# undef _ALL_SOURCE
-#endif
 
 /* Define to 1 if on MINIX. */
 /* #undef _MINIX */
@@ -438,6 +436,28 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 /* #undef _POSIX_SOURCE */
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+/* # undef _ALL_SOURCE */
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+/* # undef _GNU_SOURCE */
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+/* # undef _POSIX_PTHREAD_SEMANTICS */
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+/* # undef _TANDEM_SOURCE */
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+/* # undef __EXTENSIONS__ */
+#endif
+
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
