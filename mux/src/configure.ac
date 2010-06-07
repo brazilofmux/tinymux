@@ -254,7 +254,7 @@ AC_USE_SYSTEM_EXTENSIONS
 # Checks for libraries.
 #
 AC_SEARCH_LIBS([strerror],[cposix])
-AC_CHECK_LIB(crypt, main)
+AC_SEARCH_LIBS([crypt],[crypt],AC_DEFINE([HAVE_LIBCRYPT], [1], [Define to 1 if you have the `crypt' library (-lcrypt).]))
 AC_CHECK_LIB(sun, getpwnam)
 AC_CHECK_LIB(seq, main)
 AC_CHECK_LIB(intl, main)
