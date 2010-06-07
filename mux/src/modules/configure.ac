@@ -58,14 +58,18 @@ AC_PROG_CXXCPP
 AC_PROG_CC
 AC_PROG_CPP
 AC_CANONICAL_HOST
-case "$host" in
-*irix*) LIBS="-lm" ;;
-esac
 AC_USE_SYSTEM_EXTENSIONS
 
 # Checks for libraries.
 #
+# The following may be removeable:
+#   -lcposix: ISC is obsolete as of 2006-07-23.
 AC_SEARCH_LIBS([strerror],[cposix])
+
+case "$host" in
+*irix*) LIBS="-lm" ;;
+esac
+
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"
 LDFLAGS="$save_LDFLAGS $SQL_LIBPATH"

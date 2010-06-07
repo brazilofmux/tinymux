@@ -142,7 +142,7 @@
 /* Define to 1 if you have the `socket' library (-lsocket). */
 /* #undef HAVE_LIBSOCKET */
 
-/* Define to 1 if you have the `sun' library (-lsun). */
+/* Define to 1 if you have the `sun' library (-lsun) for IRIX. */
 /* #undef HAVE_LIBSUN */
 
 /* Define to 1 if you have the <limits.h> header file. */

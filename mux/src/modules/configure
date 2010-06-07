@@ -3763,9 +3763,6 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-case "$host" in
-*irix*) LIBS="-lm" ;;
-esac
 
 
 { $as_echo "$as_me:$LINENO: checking for grep that handles long lines and -e" >&5
@@ -4389,6 +4386,8 @@ _ACEOF
 
 # Checks for libraries.
 #
+# The following may be removeable:
+#   -lcposix: ISC is obsolete as of 2006-07-23.
 { $as_echo "$as_me:$LINENO: checking for library containing strerror" >&5
 $as_echo_n "checking for library containing strerror... " >&6; }
 if test "${ac_cv_search_strerror+set}" = set; then
@@ -4475,6 +4474,11 @@ if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
+
+
+case "$host" in
+*irix*) LIBS="-lm" ;;
+esac
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

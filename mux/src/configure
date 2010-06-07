@@ -4681,6 +4681,9 @@ _ACEOF
 
 # Checks for libraries.
 #
+# The following may be removeable:
+#   -lcposix: ISC is obsolete as of 2006-07-23.
+#   -lsun: We don't use getpwnam() and friends.
 { $as_echo "$as_me:$LINENO: checking for library containing strerror" >&5
 $as_echo_n "checking for library containing strerror... " >&6; }
 if test "${ac_cv_search_strerror+set}" = set; then
@@ -4859,14 +4862,12 @@ _ACEOF
 
 fi
 
-
-{ $as_echo "$as_me:$LINENO: checking for getpwnam in -lsun" >&5
-$as_echo_n "checking for getpwnam in -lsun... " >&6; }
-if test "${ac_cv_lib_sun_getpwnam+set}" = set; then
+{ $as_echo "$as_me:$LINENO: checking for library containing getpwnam" >&5
+$as_echo_n "checking for library containing getpwnam... " >&6; }
+if test "${ac_cv_search_getpwnam+set}" = set; then
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsun  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -4889,7 +4890,14 @@ return getpwnam ();
   return 0;
 }
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
+for ac_lib in '' sun; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -4910,27 +4918,38 @@ $as_echo "$ac_try_echo") >&5
 	 test "$cross_compiling" = yes ||
 	 $as_test_x conftest$ac_exeext
        }; then
-  ac_cv_lib_sun_getpwnam=yes
+  ac_cv_search_getpwnam=$ac_res
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_sun_getpwnam=no
+
 fi
 
 rm -rf conftest.dSYM
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+      conftest$ac_exeext
+  if test "${ac_cv_search_getpwnam+set}" = set; then
+  break
 fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_sun_getpwnam" >&5
-$as_echo "$ac_cv_lib_sun_getpwnam" >&6; }
-if test $ac_cv_lib_sun_getpwnam = yes; then
-  cat >>confdefs.h <<_ACEOF
+done
+if test "${ac_cv_search_getpwnam+set}" = set; then
+  :
+else
+  ac_cv_search_getpwnam=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_search_getpwnam" >&5
+$as_echo "$ac_cv_search_getpwnam" >&6; }
+ac_res=$ac_cv_search_getpwnam
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSUN 1
 _ACEOF
-
-  LIBS="-lsun $LIBS"
 
 fi
 
