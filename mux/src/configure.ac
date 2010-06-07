@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.62)
 AC_INIT([TinyMUX],[2.10],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
 AC_CONFIG_HEADER([autoconf.h])
@@ -249,12 +249,11 @@ AC_PROG_CXXCPP
 AC_PROG_CC
 AC_PROG_CPP
 AC_CANONICAL_HOST
-AC_ISC_POSIX
-AC_AIX
-AC_MINIX
+AC_USE_SYSTEM_EXTENSIONS
 
 # Checks for libraries.
 #
+AC_SEARCH_LIBS([strerror],[cposix])
 AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(sun, getpwnam)
 AC_CHECK_LIB(seq, main)
