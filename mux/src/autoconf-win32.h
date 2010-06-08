@@ -118,9 +118,6 @@
 /* Define to 1 if you have the `kqueue' function. */
 /* #undef HAVE_KQUEUE */
 
-/* Define to 1 if you have the `dl' library (-ldl). */
-/* #undef HAVE_LIBDL */
-
 /* Define to 1 if you have the `inet' library (-linet). */
 /* #undef HAVE_LIBINET */
 

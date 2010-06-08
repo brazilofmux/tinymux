@@ -5206,11 +5206,6 @@ fi
 $as_echo "$ac_cv_lib_dl_dlopen" >&6; }
 if test $ac_cv_lib_dl_dlopen = yes; then
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBDL 1
-_ACEOF
-
     LIBS="-ldl $LIBS"
     DL_LIB="-ldl"
 

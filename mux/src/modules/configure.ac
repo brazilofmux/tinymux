@@ -81,7 +81,7 @@ fi
 LDFLAGS="$save_LDFLAGS"
 LIBS="$save_LIBS"
 AC_MSG_CHECKING(for dlopen)
-AC_CHECK_LIB(dl,dlopen)
+AC_SEARCH_LIBS([dlopen],[dl])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <dlfcn.h>
     ]],[[
