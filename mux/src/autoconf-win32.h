@@ -127,9 +127,6 @@
 /* Define to 1 if you have the `inet' library (-linet). */
 /* #undef HAVE_LIBINET */
 
-/* Define to 1 if you have the `intl' library (-lintl). */
-/* #undef HAVE_LIBINTL */
-
 /* Define to 1 if you have the `m' library (-lm). */
 /* #undef HAVE_LIBM */
 
