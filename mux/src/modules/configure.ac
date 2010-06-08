@@ -65,10 +65,7 @@ AC_USE_SYSTEM_EXTENSIONS
 # The following may be removeable:
 #   -lcposix: ISC is obsolete as of 2006-07-23.
 AC_SEARCH_LIBS([strerror],[cposix])
-
-case "$host" in
-*irix*) LIBS="-lm" ;;
-esac
+AC_SEARCH_LIBS([sqrt],[m])
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

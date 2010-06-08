@@ -257,13 +257,11 @@ AC_USE_SYSTEM_EXTENSIONS
 #   -lcposix: ISC is obsolete as of 2006-07-23.
 AC_SEARCH_LIBS([strerror],[cposix])
 AC_SEARCH_LIBS([crypt],[crypt])
-AC_CHECK_LIB(inet, main)
-AC_CHECK_LIB(socket, main)
-AC_CHECK_LIB(m, main)
-case "$host" in
-*solaris*) AC_CHECK_LIB(nsl, main)
-           ;;
-esac
+AC_SEARCH_LIBS([socket],[socket inet])
+AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
+AC_SEARCH_LIBS([inet_addr],[nsl])
+AC_SEARCH_LIBS([sqrt],[m])
+
 AC_MSG_CHECKING(for dlopen)
 LIBS_SAVE=$LIBS
 AC_SEARCH_LIBS([dlopen],[dl],[

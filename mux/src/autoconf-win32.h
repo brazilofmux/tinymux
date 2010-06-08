@@ -118,18 +118,6 @@
 /* Define to 1 if you have the `kqueue' function. */
 /* #undef HAVE_KQUEUE */
 
-/* Define to 1 if you have the `inet' library (-linet). */
-/* #undef HAVE_LIBINET */
-
-/* Define to 1 if you have the `m' library (-lm). */
-/* #undef HAVE_LIBM */
-
-/* Define to 1 if you have the `nsl' library (-lnsl). */
-/* #undef HAVE_LIBNSL */
-
-/* Define to 1 if you have the `socket' library (-lsocket). */
-/* #undef HAVE_LIBSOCKET */
-
 /* Define to 1 if you have the <limits.h> header file. */
 /* #undef HAVE_LIMITS_H */
 
