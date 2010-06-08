@@ -266,9 +266,10 @@ case "$host" in
 esac
 AC_MSG_CHECKING(for dlopen)
 LIBS_SAVE=$LIBS
-AC_CHECK_LIB(dl,dlopen,[
-    LIBS="-ldl $LIBS"
-    DL_LIB="-ldl"
+AC_SEARCH_LIBS([dlopen],[dl],[
+    if test "$ac_cv_search_dlopen" != "none required"; then
+      DL_LIB="$ac_cv_search_dlopen"
+    fi
 ])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <dlfcn.h>
