@@ -135,9 +135,6 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define to 1 if you have the `seq' library (-lseq). */
-#undef HAVE_LIBSEQ
-
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 

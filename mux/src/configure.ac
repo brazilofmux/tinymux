@@ -259,7 +259,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_SEARCH_LIBS([strerror],[cposix])
 AC_SEARCH_LIBS([crypt],[crypt],AC_DEFINE([HAVE_LIBCRYPT], [1], [Define to 1 if you have the `crypt' library (-lcrypt).]))
 AC_SEARCH_LIBS([getpwnam],[sun],AC_DEFINE([HAVE_LIBSUN], [1], [Define to 1 if you have the `sun' library (-lsun) for IRIX.]))
-AC_CHECK_LIB(seq, main)
 AC_CHECK_LIB(intl, main)
 AC_CHECK_LIB(inet, main)
 AC_CHECK_LIB(socket, main)
