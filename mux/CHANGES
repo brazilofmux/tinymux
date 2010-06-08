@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: May 2010
+Last Update: June 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -8,7 +8,7 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Add password_methods configuration option.
 
 
 Bug Fixes:
@@ -23,6 +23,9 @@ Bug Fixes:
     gcc 3.4.2 and VC -W4 warnings (Issue 573).
  -- Detect and revert to de facto telnet behavior for MUSHClient
     (Issue 625).
+ -- Fix space delimiter regression from 2.6 (Issues 620, 628, 629,
+    630, 631, 632, 633, and 634).
+ -- Use CXX instead of CXXCPP in Makefile for modules.
 
 
 Performance Enhancements:
@@ -40,3 +43,6 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Removed search class type=GARBAGE.
  -- Switch to Intel Compiler v11.1.
+ -- Update and freshen autoconf to v2.62.
+ -- Add and use testcases for shuffle, pickrand, columns, and
+    elements.
