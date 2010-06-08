@@ -521,8 +521,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 #endif // WINDOWS_CRYPT
 
     case CRYPT_DES:
-#if defined(HAVE_LIBCRYPT) \
- || defined(HAVE_CRYPT)
+#if defined(HAVE_CRYPT)
         return (UTF8 *)crypt((char *)szPassword, (char *)szSetting);
 #else
         return szFail;
