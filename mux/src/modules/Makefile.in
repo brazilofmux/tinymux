@@ -29,7 +29,7 @@ depend: $(ALLSRC) ../unsplit
 	mv .depend~ .depend
 
 clean:
-	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~ sqlproxy.so~ sqlslave.so~
 
 realclean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so sample.so~ sum.so sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~ autoconf.h
