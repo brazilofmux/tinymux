@@ -1890,10 +1890,11 @@ const int g_trimoffset[4][4] =
 
 const char *ConvertToLatin(const UTF8 *pString)
 {
-    static char buffer[LBUF_SIZE];
+    static char buffer[2*LBUF_SIZE];
     char *q = buffer;
 
-    while ('\0' != *pString)
+    while (  '\0' != *pString
+          && q < buffer + sizeof(buffer) - 1)
     {
         const UTF8 *p = pString;
         int iState = TR_LATIN1_START_STATE;
