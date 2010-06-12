@@ -5746,11 +5746,11 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
        return nWords;
     }
 
-    pDelim = strip_color(pDelim);
-    mux_cursor nDelim = CursorMin;
-    utf8_strlen(pDelim, nDelim);
+    UTF8 *pDelimNoColor = StringClone(strip_color(pDelim));
+    mux_cursor nDelimNoColor = CursorMin;
+    utf8_strlen(pDelimNoColor, nDelimNoColor);
 
-    bool fSpaceDelim = (1 == nDelim.m_byte && ' ' == pDelim[0]);
+    bool fSpaceDelim = (1 == nDelimNoColor.m_byte && ' ' == pDelimNoColor[0]);
 
     mux_cursor iPos = CursorMin;
     mux_cursor iStart = CursorMin;
@@ -5762,7 +5762,7 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
             iStart = iStart + curAscii;
         }
     }
-    bool bSucceeded = m_s->search(pDelim, &iPos, iStart);
+    bool bSucceeded = m_s->search(pDelimNoColor, &iPos, iStart);
 
     while (  bSucceeded
           && nWords + 1 < MAX_WORDS)
@@ -5780,10 +5780,12 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
         }
         else
         {
-            iStart = iPos + nDelim;
+            iStart = iPos + nDelimNoColor;
         }
-        bSucceeded = m_s->search(pDelim, &iPos, iStart);
+        bSucceeded = m_s->search(pDelimNoColor, &iPos, iStart);
     }
+    MEMFREE(pDelimNoColor);
+    pDelimNoColor = NULL;
 
     if (  !fSpaceDelim
        || m_s->m_iLast != iStart)
