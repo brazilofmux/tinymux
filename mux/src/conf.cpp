@@ -63,8 +63,8 @@ void cf_init(void)
 
     mudconf.ip_address = StringClone(T("0.0.0.0"));
     mudconf.ports.n = 1;
-    mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
-    if (mudconf.ports.pi)
+    mudconf.ports.pi = new int[1];
+    if (NULL != mudconf.ports.pi)
     {
         mudconf.ports.pi[0] = 2860;
     }
