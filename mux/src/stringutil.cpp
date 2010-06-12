@@ -581,7 +581,7 @@ const char *ConvertToLatin(const UTF8 *pString)
                     }
                     else
                     {
-                        iColumn -= y;
+                        iColumn = static_cast<unsigned char>(iColumn - y);
                         iOffset += 2;
                     }
                 }
@@ -597,8 +597,8 @@ const char *ConvertToLatin(const UTF8 *pString)
                     }
                     else
                     {
-                        iColumn -= y;
-                        iOffset += y + 1;
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
                     }
                 }
             }
@@ -644,7 +644,7 @@ const char *ConvertToAscii(const UTF8 *pString)
                     }
                     else
                     {
-                        iColumn -= y;
+                        iColumn = static_cast<unsigned char>(iColumn - y);
                         iOffset += 2;
                     }
                 }
@@ -660,8 +660,8 @@ const char *ConvertToAscii(const UTF8 *pString)
                     }
                     else
                     {
-                        iColumn -= y;
-                        iOffset += y + 1;
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
                     }
                 }
             }
@@ -3309,7 +3309,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                         {
                             goto done;
                         }
-                        pBuffer[iBuffer] = ch;
+                        pBuffer[iBuffer] = static_cast<UTF8>(ch);
                         iBuffer++;
 
                         iFmt++;

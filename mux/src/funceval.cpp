@@ -1911,6 +1911,13 @@ FUNCTION(fun_mail)
 
 FUNCTION(fun_mailsize)
 {
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
+
     if (!mudconf.have_mailer)
     {
         safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
@@ -1925,14 +1932,14 @@ FUNCTION(fun_mailsize)
     else if (  executor == playerask
             || Wizard(executor))
     {
-        int totalsize = 0;
+        size_t totalsize = 0;
         MailList ml(playerask);
         struct mail *mp;
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
             totalsize += MessageFetchSize(mp->number) + 1;
         }
-        safe_ltoa(totalsize, buff, bufc);
+        safe_ltoa(static_cast<long>(totalsize), buff, bufc);
     }
     else
     {
@@ -1942,6 +1949,12 @@ FUNCTION(fun_mailsize)
 
 FUNCTION(fun_mailsubj)
 {
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
+
     if (!mudconf.have_mailer)
     {
         safe_str(T("#-1 MAILER DISABLED."), buff, bufc);

@@ -128,7 +128,7 @@ inline bool mux_isprint(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -144,8 +144,8 @@ inline bool mux_isprint(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }
@@ -177,7 +177,7 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -193,8 +193,8 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -226,7 +226,7 @@ inline bool mux_isattrname(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -242,8 +242,8 @@ inline bool mux_isattrname(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -275,7 +275,7 @@ inline bool mux_isobjectname(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -291,8 +291,8 @@ inline bool mux_isobjectname(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -324,7 +324,7 @@ inline bool mux_isplayername(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -340,8 +340,8 @@ inline bool mux_isplayername(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -373,7 +373,7 @@ inline bool mux_is8859_1(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -389,8 +389,8 @@ inline bool mux_is8859_1(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -422,7 +422,7 @@ inline bool mux_is8859_2(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -438,8 +438,8 @@ inline bool mux_is8859_2(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
                 }
             }
         }
@@ -479,7 +479,7 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -495,8 +495,8 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }
@@ -538,7 +538,7 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -554,8 +554,8 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }
@@ -597,7 +597,7 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -613,8 +613,8 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }
@@ -656,7 +656,7 @@ inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -672,8 +672,8 @@ inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }
@@ -715,7 +715,7 @@ inline int mux_color(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
                     iOffset += 2;
                 }
             }
@@ -731,8 +731,8 @@ inline int mux_color(__in const unsigned char *p)
                 }
                 else
                 {
-                    iColumn -= y;
-                    iOffset += y + 1;
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
                 }
             }
         }

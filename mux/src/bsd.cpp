@@ -3706,7 +3706,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         }
                         else
                         {
-                            iColumn -= y;
+                            iColumn = static_cast<unsigned char>(iColumn - y);
                             iOffset += 2;
                         }
                     }
@@ -3722,8 +3722,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         }
                         else
                         {
-                            iColumn -= y;
-                            iOffset += y + 1;
+                            iColumn = static_cast<unsigned char>(iColumn - y);
+                            iOffset = static_cast<unsigned short>(iOffset + y + 1);
                         }
                     }
                 }
