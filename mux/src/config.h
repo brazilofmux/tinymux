@@ -364,14 +364,16 @@ typedef unsigned __int64 UINT64;
 
 #define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
-// 1400 is Visual C++ 2005
+// 1600 is Visual C++ 10.0 (2010)
+// 1500 is Visual C++ 9.0 (2008)
+// 1400 is Visual C++ 8.0 (2005)
 #define LOCALTIME_TIME_T_MAX_VALUE UINT64_C(32535215999)
 #define MUX_ULONG_PTR ULONG_PTR
 #define MUX_PULONG_PTR PULONG_PTR
 #elif (_MSC_VER >= 1200)
-// 1310 is Visual C++ .NET 2003
-// 1300 is Visual C++ .NET 2002
-// 1200 is Visual C++ 6.0
+// 1310 is Visual C++ 7.1 (.NET 2003)
+// 1300 is Visual C++ 7.0 (.NET 2002)
+// 1200 is Visual C++ 6.0 (1998)
 #define MUX_ULONG_PTR DWORD
 #define MUX_PULONG_PTR LPDWORD
 #else
@@ -569,13 +571,13 @@ typedef unsigned char UINT8;
 //
 #define SIZEOF_UINT_PTR SIZEOF_VOID_P
 #if SIZEOF_UNSIGNED_INT == SIZEOF_VOID_P
-typedef unsigned int UINT_PTR;
+typedef unsigned int MUX_UINT_PTR;
 #elif SIZEOF_UNSIGNED_LONG_LONG == SIZEOF_VOID_P
-typedef UINT64 UINT_PTR;
+typedef UINT64 MUX_UINT_PTR;
 #elif SIZEOF_UNSIGNED_LONG == SIZEOF_VOID_P
-typedef unsigned long UINT_PTR;
+typedef unsigned long MUX_UINT_PTR;
 #elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
-typedef unsigned short UINT_PTR;
+typedef unsigned short MUX_UINT_PTR;
 #else
 #error TinyMUX cannot find an integer type with same size as a pointer.
 #endif

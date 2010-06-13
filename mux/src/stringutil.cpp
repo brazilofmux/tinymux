@@ -3120,7 +3120,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                             //
                             union
                             {
-                                UINT_PTR ui;
+                                MUX_UINT_PTR ui;
                                 void *pv;
                             } u;
                             u.pv = va_arg(va, void *);
@@ -3132,7 +3132,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
 #error Size of pointer is larger size of largest known integer.
 #endif
                             bWidth = true;
-                            nWidth = 2*sizeof(UINT_PTR);
+                            nWidth = 2*sizeof(MUX_UINT_PTR);
                             bZeroPadded = true;
                         }
                         else
