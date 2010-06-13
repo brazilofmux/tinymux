@@ -26,6 +26,7 @@ Bug Fixes:
  -- Fix space delimiter regression from 2.6 (Issues 620, 628, 629,
     630, 631, 632, 633, and 634).
  -- Use CXX instead of CXXCPP in Makefile for modules.
+ -- Protect ConvertToLatin() from buffer overflow (Issue 637).
 
 
 Performance Enhancements:
