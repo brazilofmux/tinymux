@@ -8699,7 +8699,7 @@ static void centerjustcombo
     {
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nLeading - nPos);
-        nPos += nPad;
+		nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
         s->append(*sPad, CursorMin, iEnd);
     }
     nPos = nLeading;
@@ -8707,7 +8707,7 @@ static void centerjustcombo
     // Output string.
     //
     s->append(*sStr, CursorMin, nStr);
-    nPos += nStr.m_point;
+	nPos = static_cast<LBUF_OFFSET>(nPos + nStr.m_point);
 
     // Output first part of trailing padding.
     //
@@ -8725,7 +8725,7 @@ static void centerjustcombo
             mux_cursor iStart, iEnd;
             sPad->cursor_from_point(iStart, nPadStart);
             sPad->cursor_from_point(iEnd, nPadStart+nPadPart);
-            nPos += nPadPart;
+			nPos = static_cast<LBUF_OFFSET>(nPos + nPadPart);
             s->append(*sPad, iStart, iEnd);
         }
     }
@@ -8736,7 +8736,7 @@ static void centerjustcombo
     {
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nWidth-nPos);
-        nPos += nPad;
+		nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
         s->append(*sPad, CursorMin, iEnd);
     }
 
