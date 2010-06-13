@@ -1561,7 +1561,8 @@ UTF8 *convert_color(const UTF8 *pString)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
-    while ('\0' != *pString)
+    while (  '\0' != *pString
+          && pBuffer < aBuffer + sizeof(aBuffer) - sizeof(ANSI_NORMAL) - 1)
     {
         unsigned int iCode = mux_color(pString);
         if (COLOR_NOTCOLOR == iCode)
@@ -1590,7 +1591,8 @@ char *ConvertToLatin(const UTF8 *pString)
     static char buffer[LBUF_SIZE];
     char *q = buffer;
 
-    while ('\0' != *pString)
+    while (  '\0' != *pString
+          && q < buffer + sizeof(buffer) - 1)
     {
         const UTF8 *p = pString;
         int iState = TR_LATIN1_START_STATE;
