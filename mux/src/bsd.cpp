@@ -3660,7 +3660,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     const size_t nUTF8 = sizeof(szUTF8) - 1;
     const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
     const size_t nUSASCII = sizeof(szUSASCII) - 1;
-    
+
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
@@ -4109,7 +4109,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 break;
                             }
                         }
-                        
+
                         if (fASCII)
                         {
                             if (NULL != d->ttype)
@@ -4261,7 +4261,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         if (TELNETSB_ACCEPT == d->aOption[1])
                         {
                             unsigned char *pCharset = &d->aOption[2];
-                            
+
                             if (  nUTF8 == m - 2
                                && memcmp((char *)pCharset, szUTF8, nUTF8) == 0)
                             {
@@ -4327,7 +4327,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                    && '[' != chSep)
                                 {
                                     unsigned char *pTermStart = reqPtr;
-                                    
+
                                     while (reqPtr < &d->aOption[m])
                                     {
                                         unsigned char ch = *reqPtr++;

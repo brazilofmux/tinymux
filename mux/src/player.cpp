@@ -322,7 +322,7 @@ static const UTF8 *GenerateSalt(int iType)
             szSaltRaw[i] = (UTF8)RandomINT32(0, 255);
         }
         szSaltRaw[SHA1_SALT_LENGTH] = '\0';
-    
+
         mux_strncpy(szSalt, szSHA1Prefix, SHA1_PREFIX_LENGTH);
         EncodeBase64(SHA1_SALT_LENGTH, szSaltRaw, szSalt + SHA1_PREFIX_LENGTH);
     }

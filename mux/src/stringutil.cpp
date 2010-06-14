@@ -3222,7 +3222,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
                         // Apply trailing padding if necessary.
                         //
                         if (  bLeft
-                           && bWidth) 
+                           && bWidth)
                         {
                             while (0 < nPadding)
                             {
@@ -4367,7 +4367,7 @@ LBUF_OFFSET mux_string::export_TextColor
                 {
                     nCopy = iPos.m_byte - iCopy.m_byte;
                     memcpy(pBuffer + nDone, m_autf + iCopy.m_byte, nCopy);
-					nDone = static_cast<LBUF_OFFSET>(nDone + nCopy);
+                    nDone = static_cast<LBUF_OFFSET>(nDone + nCopy);
                     iCopy = iPos;
                 }
 
@@ -4375,7 +4375,7 @@ LBUF_OFFSET mux_string::export_TextColor
                                                      m_pcs[iPos.m_point],
                                                      &nTransition);
                 memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
-				nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
+                nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
                 csPrev = m_pcs[iPos.m_point];
             }
             cursor_next(iPos);
@@ -4384,13 +4384,13 @@ LBUF_OFFSET mux_string::export_TextColor
         {
             nCopy = iPos.m_byte - iCopy.m_byte;
             memcpy(pBuffer + nDone, m_autf + iCopy.m_byte, nCopy);
-			nDone = static_cast<LBUF_OFFSET>(nDone + nCopy);
+            nDone = static_cast<LBUF_OFFSET>(nDone + nCopy);
         }
         if (csPrev != CS_NORMAL)
         {
             pTransition = ColorBinaryNormal(csPrev, &nTransition);
             memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
-			nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
+            nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
         }
         pBuffer[nDone] = '\0';
         return nDone;
@@ -4431,11 +4431,11 @@ LBUF_OFFSET mux_string::export_TextColor
         if (nTransition)
         {
             memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
-			nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
+            nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
             csPrev = m_pcs[iPos.m_point];
         }
         memcpy(pBuffer + nDone, m_autf + iPos.m_byte, nChar * sizeof(m_autf[0]));
-		nDone = static_cast<LBUF_OFFSET>(nDone + nChar);
+        nDone = static_cast<LBUF_OFFSET>(nDone + nChar);
         cursor_next(iPos);
     }
     pTransition = ColorBinaryNormal(csPrev, &nTransition);
@@ -4443,7 +4443,7 @@ LBUF_OFFSET mux_string::export_TextColor
        && nDone + nTransition <= nBytesMax)
     {
         memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
-		nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
+        nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
     }
     pBuffer[nDone] = '\0';
     return nDone;
@@ -5059,7 +5059,7 @@ bool mux_string::replace_Point(const UTF8 *p, const mux_cursor &i)
             UTF8 *pTo   = m_autf + i.m_byte + m;
             memmove(pTo, pFrom, nBytesMove);
 
-			m_iLast.m_byte = static_cast<LBUF_OFFSET>(m_iLast.m_byte + m - n);
+            m_iLast.m_byte = static_cast<LBUF_OFFSET>(m_iLast.m_byte + m - n);
             m_autf[m_iLast.m_byte] = '\0';
         }
     }

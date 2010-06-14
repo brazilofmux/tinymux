@@ -353,7 +353,7 @@ const unsigned char cl_objectname_itt[256] =
 
 const unsigned char cl_objectname_sot[8] =
 {
-        0,   12,   18,   24,   38,   56,   62,   68 
+        0,   12,   18,   24,   38,   56,   62,   68
 };
 
 const unsigned char cl_objectname_sbt[79] =
