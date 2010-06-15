@@ -94,25 +94,25 @@ extern const unsigned char cl_8859_2_sbt[73];
 
 // utf/tr_utf8_latin1.txt
 //
-// 2461 code points.
-// 97 states, 193 columns, 7270 bytes
+// 2396 code points.
+// 93 states, 192 columns, 7060 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (97)
+#define TR_LATIN1_ACCEPTING_STATES_START (93)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_sot[97];
-extern const unsigned short tr_latin1_sbt[3410];
+extern const unsigned short tr_latin1_sot[93];
+extern const unsigned short tr_latin1_sbt[3309];
 
 // utf/tr_utf8_ascii.txt
 //
-// 2424 code points.
-// 95 states, 193 columns, 3802 bytes
+// 2359 code points.
+// 91 states, 192 columns, 3693 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (95)
+#define TR_ASCII_ACCEPTING_STATES_START (91)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned short tr_ascii_sot[95];
-extern const unsigned char tr_ascii_sbt[3356];
+extern const unsigned short tr_ascii_sot[91];
+extern const unsigned char tr_ascii_sbt[3255];
 
 // utf/tr_tolower.txt
 //
