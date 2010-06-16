@@ -26,7 +26,18 @@
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
-
+ 
+NAMETAB default_charset_nametab[] =
+{
+    {T("ascii"),           5,       0,     CHARSET_ASCII},
+    {T("oem"),             3,       0,     CHARSET_CP437},
+    {T("cp437"),           5,       0,     CHARSET_CP437},
+    {T("latin-1"),         7,       0,     CHARSET_LATIN1},
+    {T("latin-2"),         7,       0,     CHARSET_LATIN2},
+    {T("iso8859-1"),       9,       0,     CHARSET_LATIN1},
+    {T("iso8859-2"),       9,       0,     CHARSET_LATIN2},
+    {(UTF8 *) NULL,        0,       0,     0}
+};
 
 /* ---------------------------------------------------------------------------
  * make_portlist: Make a list of ports for PORTS().
@@ -587,7 +598,15 @@ void queue_string(DESC *d, const UTF8 *s)
     {
         if (CHARSET_LATIN1 == d->encoding)
         {
-            q = ConvertToLatin(p);
+            q = ConvertToLatin1(p);
+        }
+        else if (CHARSET_LATIN2 == d->encoding)
+        {
+            q = ConvertToLatin2(p);
+        }
+        else if (CHARSET_CP437 == d->encoding)
+        {
+            q = ConvertToCp437(p);
         }
         else // if (CHARSET_ASCII == d->encoding)
         {
@@ -612,7 +631,15 @@ void queue_string(DESC *d, const mux_string &s)
     {
         if (CHARSET_LATIN1 == d->encoding)
         {
-            q = ConvertToLatin(p);
+            q = ConvertToLatin1(p);
+        }
+        else if (CHARSET_LATIN2 == d->encoding)
+        {
+            q = ConvertToLatin2(p);
+        }
+        else if (CHARSET_CP437 == d->encoding)
+        {
+            q = ConvertToCp437(p);
         }
         else // if (CHARSET_ASCII == d->encoding)
         {
@@ -2228,7 +2255,7 @@ NAMETAB logout_cmdtable[] =
     {T("WHO"),           3,  CA_PUBLIC,  CMD_WHO},
     {T("PUEBLOCLIENT"), 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
     {T("INFO"),          4,  CA_PUBLIC,  CMD_INFO},
-    {NULL,                    0,          0,         0}
+    {NULL,               0,          0,         0}
 };
 
 void init_logout_cmdtab(void)

@@ -16,7 +16,9 @@ inline bool isEmpty(__in_opt const UTF8 *p)
 }
 
 extern const bool mux_isprint_ascii[256];
+extern const bool mux_isprint_cp437[256];
 extern const bool mux_isprint_latin1[256];
+extern const bool mux_isprint_latin2[256];
 extern const bool mux_isdigit[256];
 extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
@@ -39,8 +41,12 @@ extern const UTF8 TableATOI[16][10];
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
 extern const unsigned char utf8_FirstByte[256];
+extern const UTF8 *cp437_utf8[256];
+#define cp437_utf8(x) ((const UTF8 *)cp437_utf8[(unsigned char)x])
 extern const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
+extern const UTF8 *latin2_utf8[256];
+#define latin2_utf8(x) ((const UTF8 *)latin2_utf8[(unsigned char)x])
 
 // This function trims the string back to the first valid UTF-8 sequence it
 // finds, but it does not validate the entire string.
@@ -67,7 +73,9 @@ inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
 }
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
+#define mux_isprint_cp437(x) (mux_isprint_cp437[(unsigned char)(x)])
 #define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
+#define mux_isprint_latin2(x) (mux_isprint_latin2[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
@@ -447,13 +455,21 @@ inline bool mux_is8859_2(__in const unsigned char *p)
     return ((iState - CL_8859_2_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/tr_utf8_latin1.txt
-//
-const char *ConvertToLatin(__in const UTF8 *pString);
-
 // utf/tr_utf8_ascii.txt
 //
 const char *ConvertToAscii(__in const UTF8 *pString);
+
+// utf/tr_utf8_cp437.txt
+//
+const char *ConvertToCp437(__in const UTF8 *pString);
+
+// utf/tr_utf8_latin1.txt
+//
+const char *ConvertToLatin1(__in const UTF8 *pString);
+
+// utf/tr_utf8_latin2.txt
+//
+const char *ConvertToLatin2(__in const UTF8 *pString);
 
 // utf/tr_tolower.txt
 //

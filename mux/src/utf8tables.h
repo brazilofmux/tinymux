@@ -92,6 +92,28 @@ extern const unsigned char cl_8859_2_itt[256];
 extern const unsigned char cl_8859_2_sot[6];
 extern const unsigned char cl_8859_2_sbt[73];
 
+// utf/tr_utf8_ascii.txt
+//
+// 2359 code points.
+// 91 states, 192 columns, 3693 bytes
+//
+#define TR_ASCII_START_STATE (0)
+#define TR_ASCII_ACCEPTING_STATES_START (91)
+extern const unsigned char tr_ascii_itt[256];
+extern const unsigned short tr_ascii_sot[91];
+extern const unsigned char tr_ascii_sbt[3255];
+
+// utf/tr_utf8_cp437.txt
+//
+// 2473 code points.
+// 100 states, 193 columns, 7550 bytes
+//
+#define TR_CP437_START_STATE (0)
+#define TR_CP437_ACCEPTING_STATES_START (100)
+extern const unsigned char tr_cp437_itt[256];
+extern const unsigned short tr_cp437_sot[100];
+extern const unsigned short tr_cp437_sbt[3547];
+
 // utf/tr_utf8_latin1.txt
 //
 // 2396 code points.
@@ -103,16 +125,16 @@ extern const unsigned char tr_latin1_itt[256];
 extern const unsigned short tr_latin1_sot[93];
 extern const unsigned short tr_latin1_sbt[3309];
 
-// utf/tr_utf8_ascii.txt
+// utf/tr_utf8_latin2.txt
 //
-// 2359 code points.
-// 91 states, 192 columns, 3693 bytes
+// 2364 code points.
+// 91 states, 192 columns, 7006 bytes
 //
-#define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (91)
-extern const unsigned char tr_ascii_itt[256];
-extern const unsigned short tr_ascii_sot[91];
-extern const unsigned char tr_ascii_sbt[3255];
+#define TR_LATIN2_START_STATE (0)
+#define TR_LATIN2_ACCEPTING_STATES_START (91)
+extern const unsigned char tr_latin2_itt[256];
+extern const unsigned short tr_latin2_sot[91];
+extern const unsigned short tr_latin2_sbt[3284];
 
 // utf/tr_tolower.txt
 //

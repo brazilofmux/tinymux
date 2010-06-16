@@ -37,6 +37,29 @@ const bool mux_isprint_ascii[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
+const bool mux_isprint_cp437[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1,  // 0
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 3
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,  // 7
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 8
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 9
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // A
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // B
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // D
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1   // F
+};
+
 const bool mux_isprint_latin1[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -52,6 +75,29 @@ const bool mux_isprint_latin1[256] =
 
     0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0,  // 8
     0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1,  // 9
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // A
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // B
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // D
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1   // F
+};
+
+const bool mux_isprint_latin2[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 3
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // A
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // B
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
@@ -403,6 +449,77 @@ const unsigned char utf8_FirstByte[256] =
     4,  4,  4,  4,  4,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6   // F
 };
 
+// The following table maps cp437 characters to their corresponding
+// UTF8 sequences.
+//
+const UTF8 *cp437_utf8[256] =
+{
+   T("\xE2\x80\x87"), T("\xE2\x98\xBA"), T("\xE2\x98\xBB"), T("\xE2\x99\xA5"),
+   T("\xE2\x99\xA6"), T("\xE2\x99\xA3"), T("\xE2\x99\xA0"), T("\xE2\x80\xA2"),
+   T("\xE2\x97\x98"), T("\xE2\x97\x8B"), T("\xE2\x97\x99"), T("\xE2\x99\x82"),
+   T("\xE2\x99\x80"), T("\xE2\x99\xAA"), T("\xE2\x99\xAB"), T("\xE2\x98\xBC"),
+   T("\xE2\x96\xBA"), T("\xE2\x97\x84"), T("\xE2\x86\x95"), T("\xE2\x80\xBC"),
+   T("\xC2\xB6"),     T("\xC2\xA7"),     T("\xE2\x96\xAC"), T("\xE2\x86\xA8"),
+   T("\xE2\x86\x91"), T("\xE2\x86\x93"), T("\xE2\x86\x92"), T("\xE2\x86\x90"),
+   T("\xE2\x88\x9F"), T("\xE2\x86\x94"), T("\xE2\x96\xB2"), T("\xE2\x96\xBC"),
+   T("\x20"),         T("\x21"),         T("\x22"),         T("\x23"),
+   T("\x24"),         T("\x25"),         T("\x26"),         T("\x27"),
+   T("\x28"),         T("\x29"),         T("\x2A"),         T("\x2B"),
+   T("\x2C"),         T("\x2D"),         T("\x2E"),         T("\x2F"),
+   T("\x30"),         T("\x31"),         T("\x32"),         T("\x33"),
+   T("\x34"),         T("\x35"),         T("\x36"),         T("\x37"),
+   T("\x38"),         T("\x39"),         T("\x3A"),         T("\x3B"),
+   T("\x3C"),         T("\x3D"),         T("\x3E"),         T("\x3F"),
+   T("\x40"),         T("\x41"),         T("\x42"),         T("\x43"),
+   T("\x44"),         T("\x45"),         T("\x46"),         T("\x47"),
+   T("\x48"),         T("\x49"),         T("\x4A"),         T("\x4B"),
+   T("\x4C"),         T("\x4D"),         T("\x4E"),         T("\x4F"),
+   T("\x50"),         T("\x51"),         T("\x52"),         T("\x53"),
+   T("\x54"),         T("\x55"),         T("\x56"),         T("\x57"),
+   T("\x58"),         T("\x59"),         T("\x5A"),         T("\x5B"),
+   T("\x5C"),         T("\x5D"),         T("\x5E"),         T("\x5F"),
+   T("\x60"),         T("\x61"),         T("\x62"),         T("\x63"),
+   T("\x64"),         T("\x65"),         T("\x66"),         T("\x67"),
+   T("\x68"),         T("\x69"),         T("\x6A"),         T("\x6B"),
+   T("\x6C"),         T("\x6D"),         T("\x6E"),         T("\x6F"),
+   T("\x70"),         T("\x71"),         T("\x72"),         T("\x73"),
+   T("\x74"),         T("\x75"),         T("\x76"),         T("\x77"),
+   T("\x78"),         T("\x79"),         T("\x7A"),         T("\x7B"),
+   T("\x7C"),         T("\x7D"),         T("\x7E"),         T("\x7F"),
+   T("\xC3\x87"),     T("\xC3\xBC"),     T("\xC3\xA9"),     T("\xC3\xA2"),
+   T("\xC3\xA4"),     T("\xC3\xA0"),     T("\xC3\xA5"),     T("\xC3\xA7"),
+   T("\xC3\xAA"),     T("\xC3\xAB"),     T("\xC3\xA8"),     T("\xC3\xAF"),
+   T("\xC3\xAE"),     T("\xC3\xAC"),     T("\xC3\x84"),     T("\xC3\x85"),
+   T("\xC3\x89"),     T("\xC3\xA6"),     T("\xC3\x86"),     T("\xC3\xB4"),
+   T("\xC3\xB6"),     T("\xC3\xB2"),     T("\xC3\xBB"),     T("\xC3\xB9"),
+   T("\xC3\xBF"),     T("\xC3\x96"),     T("\xC3\x9C"),     T("\xC2\xA2"),
+   T("\xC2\xA3"),     T("\xC2\xA5"),     T("\xE2\x82\xA7"), T("\xC6\x92"),
+   T("\xC3\xA1"),     T("\xC3\xAD"),     T("\xC3\xB3"),     T("\xC3\xBA"),
+   T("\xC3\xB1"),     T("\xC3\x91"),     T("\xC2\xAA"),     T("\xC2\xBA"),
+   T("\xC2\xBF"),     T("\xE2\x8C\x90"), T("\xC2\xAC"),     T("\xC2\xBD"),
+   T("\xC2\xBC"),     T("\xC2\xA1"),     T("\xC2\xAB"),     T("\xC2\xBB"),
+   T("\xE2\x96\x91"), T("\xE2\x96\x92"), T("\xE2\x96\x93"), T("\xE2\x94\x82"),
+   T("\xE2\x94\xA4"), T("\xE2\x95\xA1"), T("\xE2\x95\xA2"), T("\xE2\x95\x96"),
+   T("\xE2\x95\x95"), T("\xE2\x95\xA3"), T("\xE2\x95\x91"), T("\xE2\x95\x97"),
+   T("\xE2\x95\x9D"), T("\xE2\x95\x9C"), T("\xE2\x95\x9B"), T("\xE2\x94\x90"),
+   T("\xE2\x94\x94"), T("\xE2\x94\xB4"), T("\xE2\x94\xAC"), T("\xE2\x94\x9C"),
+   T("\xE2\x94\x80"), T("\xE2\x94\xBC"), T("\xE2\x95\x9E"), T("\xE2\x95\x9F"),
+   T("\xE2\x95\x9A"), T("\xE2\x95\x94"), T("\xE2\x95\xA9"), T("\xE2\x95\xA6"),
+   T("\xE2\x95\xA0"), T("\xE2\x95\x90"), T("\xE2\x95\xAC"), T("\xE2\x95\xA7"),
+   T("\xE2\x95\xA8"), T("\xE2\x95\xA4"), T("\xE2\x95\xA5"), T("\xE2\x95\x99"),
+   T("\xE2\x95\x98"), T("\xE2\x95\x92"), T("\xE2\x95\x93"), T("\xE2\x95\xAB"),
+   T("\xE2\x95\xAA"), T("\xE2\x94\x98"), T("\xE2\x94\x8C"), T("\xE2\x96\x88"),
+   T("\xE2\x96\x84"), T("\xE2\x96\x8C"), T("\xE2\x96\x90"), T("\xE2\x96\x80"),
+   T("\xCE\xB1"),     T("\xC3\x9F"),     T("\xCE\x93"),     T("\xCF\x80"),
+   T("\xCE\xA3"),     T("\xCF\x83"),     T("\xC2\xB5"),     T("\xCF\x84"),
+   T("\xCE\xA6"),     T("\xCE\x98"),     T("\xCE\xA9"),     T("\xCE\xB4"),
+   T("\xE2\x88\x9E"), T("\xCF\x86"),     T("\xCE\xB5"),     T("\xE2\x88\xA9"),
+   T("\xE2\x89\xA1"), T("\xC2\xB1"),     T("\xE2\x89\xA5"), T("\xE2\x89\xA4"),
+   T("\xE2\x8C\xA0"), T("\xE2\x8C\xA1"), T("\xC3\xB7"),     T("\xE2\x89\x88"),
+   T("\xC2\xB0"),     T("\xE2\x88\x99"), T("\xC2\xB7"),     T("\xE2\x88\x9A"),
+   T("\xE2\x81\xBF"), T("\xC2\xB2"),     T("\xE2\x96\xA0"), T("\xC2\xA0"),
+};
+
 // The following table maps existing 8-bit characters to their corresponding
 // UTF8 sequences.
 //
@@ -472,6 +589,77 @@ const UTF8 *latin1_utf8[256] =
    T("\xC3\xB4"),     T("\xC3\xB5"),     T("\xC3\xB6"),     T("\xC3\xB7"),
    T("\xC3\xB8"),     T("\xC3\xB9"),     T("\xC3\xBA"),     T("\xC3\xBB"),
    T("\xC3\xBC"),     T("\xC3\xBD"),     T("\xC3\xBE"),     T("\xC3\xBF"),
+};
+
+// The following table maps latin2 characters to their corresponding
+// UTF8 sequences.
+//
+const UTF8 *latin2_utf8[256] =
+{
+   T(""),             T("\x01"),         T("\x02"),         T("\x03"),
+   T("\x04"),         T("\x05"),         T("\x06"),         T("\x07"),
+   T("\x08"),         T("\x09"),         T("\x0A"),         T("\x0B"),
+   T("\x0C"),         T("\x0D"),         T("\x0E"),         T("\x0F"),
+   T("\x10"),         T("\x11"),         T("\x12"),         T("\x13"),
+   T("\x14"),         T("\x15"),         T("\x16"),         T("\x17"),
+   T("\x18"),         T("\x19"),         T("\x1A"),         T("\x1B"),
+   T("\x1C"),         T("\x1D"),         T("\x1E"),         T("\x1F"),
+   T("\x20"),         T("\x21"),         T("\x22"),         T("\x23"),
+   T("\x24"),         T("\x25"),         T("\x26"),         T("\x27"),
+   T("\x28"),         T("\x29"),         T("\x2A"),         T("\x2B"),
+   T("\x2C"),         T("\x2D"),         T("\x2E"),         T("\x2F"),
+   T("\x30"),         T("\x31"),         T("\x32"),         T("\x33"),
+   T("\x34"),         T("\x35"),         T("\x36"),         T("\x37"),
+   T("\x38"),         T("\x39"),         T("\x3A"),         T("\x3B"),
+   T("\x3C"),         T("\x3D"),         T("\x3E"),         T("\x3F"),
+   T("\x40"),         T("\x41"),         T("\x42"),         T("\x43"),
+   T("\x44"),         T("\x45"),         T("\x46"),         T("\x47"),
+   T("\x48"),         T("\x49"),         T("\x4A"),         T("\x4B"),
+   T("\x4C"),         T("\x4D"),         T("\x4E"),         T("\x4F"),
+   T("\x50"),         T("\x51"),         T("\x52"),         T("\x53"),
+   T("\x54"),         T("\x55"),         T("\x56"),         T("\x57"),
+   T("\x58"),         T("\x59"),         T("\x5A"),         T("\x5B"),
+   T("\x5C"),         T("\x5D"),         T("\x5E"),         T("\x5F"),
+   T("\x60"),         T("\x61"),         T("\x62"),         T("\x63"),
+   T("\x64"),         T("\x65"),         T("\x66"),         T("\x67"),
+   T("\x68"),         T("\x69"),         T("\x6A"),         T("\x6B"),
+   T("\x6C"),         T("\x6D"),         T("\x6E"),         T("\x6F"),
+   T("\x70"),         T("\x71"),         T("\x72"),         T("\x73"),
+   T("\x74"),         T("\x75"),         T("\x76"),         T("\x77"),
+   T("\x78"),         T("\x79"),         T("\x7A"),         T("\x7B"),
+   T("\x7C"),         T("\x7D"),         T("\x7E"),         T("\x7F"),
+   T("\x80"),         T("\x81"),         T("\x82"),         T("\x83"),
+   T("\x84"),         T("\x85"),         T("\x86"),         T("\x87"),
+   T("\x88"),         T("\x89"),         T("\x8A"),         T("\x8B"),
+   T("\x8C"),         T("\x8D"),         T("\x8E"),         T("\x8F"),
+   T("\x90"),         T("\x91"),         T("\x92"),         T("\x93"),
+   T("\x94"),         T("\x95"),         T("\x96"),         T("\x97"),
+   T("\x98"),         T("\x99"),         T("\x9A"),         T("\x9B"),
+   T("\x9C"),         T("\x9D"),         T("\x9E"),         T("\x9F"),
+   T("\xC2\xA0"),     T("\xC4\x84"),     T("\xCB\x98"),     T("\xC5\x81"),
+   T("\xC2\xA4"),     T("\xC4\xBD"),     T("\xC5\x9A"),     T("\xC2\xA7"),
+   T("\xC2\xA8"),     T("\xC5\xA0"),     T("\xC5\x9E"),     T("\xC5\xA4"),
+   T("\xC5\xB9"),     T("\xC2\xAD"),     T("\xC5\xBD"),     T("\xC5\xBB"),
+   T("\xC2\xB0"),     T("\xC4\x85"),     T("\xCB\x9B"),     T("\xC5\x82"),
+   T("\xC2\xB4"),     T("\xC4\xBE"),     T("\xC5\x9B"),     T("\xCB\x87"),
+   T("\xC2\xB8"),     T("\xC5\xA1"),     T("\xC5\x9F"),     T("\xC5\xA5"),
+   T("\xC5\xBA"),     T("\xCB\x9D"),     T("\xC5\xBE"),     T("\xC5\xBC"),
+   T("\xC5\x94"),     T("\xC3\x81"),     T("\xC3\x82"),     T("\xC4\x82"),
+   T("\xC3\x84"),     T("\xC4\xB9"),     T("\xC4\x86"),     T("\xC3\x87"),
+   T("\xC4\x8C"),     T("\xC3\x89"),     T("\xC4\x98"),     T("\xC3\x8B"),
+   T("\xC4\x9A"),     T("\xC3\x8D"),     T("\xC3\x8E"),     T("\xC4\x8E"),
+   T("\xC4\x90"),     T("\xC5\x83"),     T("\xC5\x87"),     T("\xC3\x93"),
+   T("\xC3\x94"),     T("\xC5\x90"),     T("\xC3\x96"),     T("\xC3\x97"),
+   T("\xC5\x98"),     T("\xC5\xAE"),     T("\xC3\x9A"),     T("\xC5\xB0"),
+   T("\xC3\x9C"),     T("\xC3\x9D"),     T("\xC5\xA2"),     T("\xC3\x9F"),
+   T("\xC5\x95"),     T("\xC3\xA1"),     T("\xC3\xA2"),     T("\xC4\x83"),
+   T("\xC3\xA4"),     T("\xC4\xBA"),     T("\xC4\x87"),     T("\xC3\xA7"),
+   T("\xC4\x8D"),     T("\xC3\xA9"),     T("\xC4\x99"),     T("\xC3\xAB"),
+   T("\xC4\x9B"),     T("\xC3\xAD"),     T("\xC3\xAE"),     T("\xC4\x8F"),
+   T("\xC4\x91"),     T("\xC5\x84"),     T("\xC5\x88"),     T("\xC3\xB3"),
+   T("\xC3\xB4"),     T("\xC5\x91"),     T("\xC3\xB6"),     T("\xC3\xB7"),
+   T("\xC5\x99"),     T("\xC5\xAF"),     T("\xC3\xBA"),     T("\xC5\xB1"),
+   T("\xC3\xBC"),     T("\xC3\xBD"),     T("\xC5\xA3"),     T("\xCB\x99"),
 };
 
 /*! \brief Validates UTF8 string and returns number of code points contained therein.
@@ -546,70 +734,6 @@ const int g_trimoffset[4][4] =
     { 3, 2, 1, 0 }
 };
 
-/*! \brief Convert UTF8 to latin1 with '?' for all unsupported characters.
- *
- * \param pString   UTF8 string.
- * \return          Equivalent string in latin1 codeset.
- */
-
-const char *ConvertToLatin(const UTF8 *pString)
-{
-    static char buffer[2*LBUF_SIZE];
-    char *q = buffer;
-
-    while (  '\0' != *pString
-          && q < buffer + sizeof(buffer) - 1)
-    {
-        const UTF8 *p = pString;
-        int iState = TR_LATIN1_START_STATE;
-        do
-        {
-            unsigned char ch = *p++;
-            unsigned char iColumn = tr_latin1_itt[(unsigned char)ch];
-            unsigned short iOffset = tr_latin1_sot[iState];
-            for (;;)
-            {
-                int y = tr_latin1_sbt[iOffset];
-                if (y < 128)
-                {
-                    // RUN phrase.
-                    //
-                    if (iColumn < y)
-                    {
-                        iState = tr_latin1_sbt[iOffset+1];
-                        break;
-                    }
-                    else
-                    {
-                        iColumn = static_cast<unsigned char>(iColumn - y);
-                        iOffset += 2;
-                    }
-                }
-                else
-                {
-                    // COPY phrase.
-                    //
-                    y = 256-y;
-                    if (iColumn < y)
-                    {
-                        iState = tr_latin1_sbt[iOffset+iColumn+1];
-                        break;
-                    }
-                    else
-                    {
-                        iColumn = static_cast<unsigned char>(iColumn - y);
-                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                    }
-                }
-            }
-        } while (iState < TR_LATIN1_ACCEPTING_STATES_START);
-        *q++ = (char)(iState - TR_LATIN1_ACCEPTING_STATES_START);
-        pString = utf8_NextCodePoint(pString);
-    }
-    *q = '\0';
-    return buffer;
-}
-
 /*! \brief Convert UTF8 to ASCII with '?' for all unsupported characters.
  *
  * \param pString   UTF8 string.
@@ -667,6 +791,198 @@ const char *ConvertToAscii(const UTF8 *pString)
             }
         } while (iState < TR_ASCII_ACCEPTING_STATES_START);
         *q++ = (char)(iState - TR_ASCII_ACCEPTING_STATES_START);
+        pString = utf8_NextCodePoint(pString);
+    }
+    *q = '\0';
+    return buffer;
+}
+
+/*! \brief Convert UTF8 to cp437 with '?' for all unsupported characters.
+ *
+ * \param pString   UTF8 string.
+ * \return          Equivalent string in latin1 codeset.
+ */
+
+const char *ConvertToCp437(const UTF8 *pString)
+{
+    static char buffer[2*LBUF_SIZE];
+    char *q = buffer;
+
+    while (  '\0' != *pString
+          && q < buffer + sizeof(buffer) - 1)
+    {
+        const UTF8 *p = pString;
+        int iState = TR_CP437_START_STATE;
+        do
+        {
+            unsigned char ch = *p++;
+            unsigned char iColumn = tr_cp437_itt[(unsigned char)ch];
+            unsigned short iOffset = tr_cp437_sot[iState];
+            for (;;)
+            {
+                int y = tr_cp437_sbt[iOffset];
+                if (y < 128)
+                {
+                    // RUN phrase.
+                    //
+                    if (iColumn < y)
+                    {
+                        iState = tr_cp437_sbt[iOffset+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = 256-y;
+                    if (iColumn < y)
+                    {
+                        iState = tr_cp437_sbt[iOffset+iColumn+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                    }
+                }
+            }
+        } while (iState < TR_CP437_ACCEPTING_STATES_START);
+        *q++ = (char)(iState - TR_CP437_ACCEPTING_STATES_START);
+        pString = utf8_NextCodePoint(pString);
+    }
+    *q = '\0';
+    return buffer;
+}
+
+/*! \brief Convert UTF8 to latin1 with '?' for all unsupported characters.
+ *
+ * \param pString   UTF8 string.
+ * \return          Equivalent string in latin1 codeset.
+ */
+
+const char *ConvertToLatin1(const UTF8 *pString)
+{
+    static char buffer[2*LBUF_SIZE];
+    char *q = buffer;
+
+    while (  '\0' != *pString
+          && q < buffer + sizeof(buffer) - 1)
+    {
+        const UTF8 *p = pString;
+        int iState = TR_LATIN1_START_STATE;
+        do
+        {
+            unsigned char ch = *p++;
+            unsigned char iColumn = tr_latin1_itt[(unsigned char)ch];
+            unsigned short iOffset = tr_latin1_sot[iState];
+            for (;;)
+            {
+                int y = tr_latin1_sbt[iOffset];
+                if (y < 128)
+                {
+                    // RUN phrase.
+                    //
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin1_sbt[iOffset+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = 256-y;
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin1_sbt[iOffset+iColumn+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                    }
+                }
+            }
+        } while (iState < TR_LATIN1_ACCEPTING_STATES_START);
+        *q++ = (char)(iState - TR_LATIN1_ACCEPTING_STATES_START);
+        pString = utf8_NextCodePoint(pString);
+    }
+    *q = '\0';
+    return buffer;
+}
+
+/*! \brief Convert UTF8 to latin2 with '?' for all unsupported characters.
+ *
+ * \param pString   UTF8 string.
+ * \return          Equivalent string in latin1 codeset.
+ */
+
+const char *ConvertToLatin2(const UTF8 *pString)
+{
+    static char buffer[2*LBUF_SIZE];
+    char *q = buffer;
+
+    while (  '\0' != *pString
+          && q < buffer + sizeof(buffer) - 1)
+    {
+        const UTF8 *p = pString;
+        int iState = TR_LATIN2_START_STATE;
+        do
+        {
+            unsigned char ch = *p++;
+            unsigned char iColumn = tr_latin2_itt[(unsigned char)ch];
+            unsigned short iOffset = tr_latin2_sot[iState];
+            for (;;)
+            {
+                int y = tr_latin2_sbt[iOffset];
+                if (y < 128)
+                {
+                    // RUN phrase.
+                    //
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin2_sbt[iOffset+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset += 2;
+                    }
+                }
+                else
+                {
+                    // COPY phrase.
+                    //
+                    y = 256-y;
+                    if (iColumn < y)
+                    {
+                        iState = tr_latin2_sbt[iOffset+iColumn+1];
+                        break;
+                    }
+                    else
+                    {
+                        iColumn = static_cast<unsigned char>(iColumn - y);
+                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                    }
+                }
+            }
+        } while (iState < TR_LATIN2_ACCEPTING_STATES_START);
+        *q++ = (char)(iState - TR_LATIN2_ACCEPTING_STATES_START);
         pString = utf8_NextCodePoint(pString);
     }
     *q = '\0';

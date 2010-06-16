@@ -1866,13 +1866,13 @@ CONFIG PARAMETERS
   connect_file  connect_reg_file  crash_database  crash_message
   create_max_cost  create_min_cost  dark_sleepers  def_exit_rx  def_exit_tx
   def_player_rx  def_player_tx  def_room_rx  def_room_tx  def_thing_rx
-  def_thing_tx  default_home  destroy_going_now  dig_cost  down_file
-  down_motd_message  dump_interval  dump_message  dump_offset  earn_limit
-  eval_comtitle  events_daily_hour  examine_flags  examine_public_attrs
-  exit_flags  exit_name_charset  exit_parent  exit_quota  fascist_teleport
-  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
-  flag_alias  flag_name  float_precision forbid_site  fork_dump  full_file
-  full_motd_message  function_access  function_alias  function_name
+  def_thing_tx  default_charset  default_home  destroy_going_now  dig_cost
+  down_file  down_motd_message  dump_interval  dump_message  dump_offset
+  earn_limit  eval_comtitle  events_daily_hour  examine_flags
+  examine_public_attrs  exit_flags  exit_name_charset  exit_parent  exit_quota
+  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
+  flag_access  flag_alias  flag_name  float_precision forbid_site  fork_dump
+  full_file  full_motd_message  function_access  function_alias  function_name
   function_invocation_limit  function_recursion_limit  game_dir_file
 
 { 'wizhelp config parameters2' for more }
@@ -2054,6 +2054,24 @@ DARK_SLEEPERS
 DEBUG FEATURES
 
   This topic intentionally left blank.
+
+& DEFAULT_CHARSET
+DEFAULT_CHARSET
+
+  CONFIG PARAMETER: default_charset [!]<charset> [[!]<charset>]...
+  DEFAULT: latin-1
+
+  Clients can always negotiate into a supported charset, but if this
+  negotiation fails or the client does  not support negotiation, the server
+  will assume clients are using default_charset.
+
+    ascii     - ASCII.
+    cp437     - OEM Code Page.
+    oem       - OEM Code Page.
+    iso8859-1 - ISO 8859-1 (Latin-1) used in Western Europe.
+    iso8859-2 - ISO 8859-2 (Latin-2) used in Eastern Europe.
+    latin-1   - ISO 8859-1 (Latin-1) used in Western Europe.
+    latin-2   - ISO 8859-2 (Latin-2) used in Eastern Europe.
 
 & DEFAULT_HOME
 DEFAULT_HOME

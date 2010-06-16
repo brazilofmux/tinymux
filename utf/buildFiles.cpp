@@ -313,9 +313,10 @@ static struct
 };
 
 #define MAPPING_ASCII      0
-#define MAPPING_ISO_8859_1 1
-#define MAPPING_ISO_8859_2 2
-#define NUM_MAPPINGS       3
+#define MAPPING_CP437      1
+#define MAPPING_ISO_8859_1 2
+#define MAPPING_ISO_8859_2 3
+#define NUM_MAPPINGS       4
 
 static struct
 {
@@ -325,7 +326,8 @@ static struct
     int   Type;
 } MappingTypeTable[] =
 {
-    { "ASCII",      "cl_ascii.txt",  "tr_utf8_ascii_out.txt", MAPPING_ASCII },
+    { "ASCII",      "cl_ascii.txt",  "tr_utf8_ascii_out.txt",  MAPPING_ASCII },
+    { "CP437",      "cl_437.txt",    "tr_utf8_cp437_out.txt",  MAPPING_CP437 },
     { "ISO-8859-1", "cl_8859_1.txt", "tr_utf8_latin1_out.txt", MAPPING_ISO_8859_1 },
     { "ISO-8859-2", "cl_8859_2.txt", "tr_utf8_latin2_out.txt", MAPPING_ISO_8859_2 },
     { NULL, 0 }

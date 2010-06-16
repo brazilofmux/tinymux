@@ -68,6 +68,7 @@
 #define CMD_NOxFIX  0x100
 
 extern NAMETAB logout_cmdtable[];
+extern NAMETAB default_charset_nametab[];
 
 typedef struct cmd_block CBLK;
 typedef struct cmd_block_hdr
@@ -171,8 +172,10 @@ struct prog_data
 #define TELNETSB_USERVAR        3
 
 #define CHARSET_ASCII           0
-#define CHARSET_LATIN1          1
-#define CHARSET_UTF8            2
+#define CHARSET_CP437           1
+#define CHARSET_LATIN1          2
+#define CHARSET_LATIN2          3
+#define CHARSET_UTF8            4
 
 typedef struct descriptor_data DESC;
 struct descriptor_data

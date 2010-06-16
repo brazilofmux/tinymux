@@ -4765,7 +4765,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     }
 }
 
-NAMETAB charset_nametab[] =
+NAMETAB allow_charset_nametab[] =
 {
     {T("ascii"),           5,       0,     ALLOW_CHARSET_ASCII},
     {T("latin-1"),         7,       0,     ALLOW_CHARSET_8859_1},

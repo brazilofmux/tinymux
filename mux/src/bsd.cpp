@@ -2814,8 +2814,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     memset(d->nvt_him_state, OPTION_NO, 256);
     memset(d->nvt_us_state, OPTION_NO, 256);
     d->ttype = NULL;
-    d->encoding = CHARSET_LATIN1;
-    d->negotiated_encoding = CHARSET_LATIN1;
+    d->encoding = mudconf.default_charset;
+    d->negotiated_encoding = mudconf.default_charset;
     d->height = 24;
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
@@ -3330,7 +3330,7 @@ void SendCharsetRequest(DESC *d, bool fDefacto = false)
        || (  fDefacto
           && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]))
     {
-        unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;US-ASCII";
+        unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
         SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
     }
 }
@@ -3656,9 +3656,13 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
     char szUTF8[] = "UTF-8";
     char szISO8859_1[] = "ISO-8859-1";
+    char szISO8859_2[] = "ISO-8859-2";
+    char szCp437[] = "CP437";
     char szUSASCII[] = "US-ASCII";
     const size_t nUTF8 = sizeof(szUTF8) - 1;
     const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
+    const size_t nISO8859_2 = sizeof(szISO8859_2) - 1;
+    const size_t nCp437 = sizeof(szCp437) - 1;
     const size_t nUSASCII = sizeof(szUSASCII) - 1;
 
     if (!d->raw_input)
@@ -3775,6 +3779,56 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     // Convert this latin1 character to the internal UTF-8 form.
                     //
                     const UTF8 *pUTF = latin1_utf8(ch);
+                    UTF8 nUTF = utf8_FirstByte[pUTF[0]];
+
+                    if (p + nUTF < pend)
+                    {
+                        nInputBytes += nUTF;
+                        while (nUTF--)
+                        {
+                            *p++ = *pUTF++;
+                        }
+                    }
+                    else
+                    {
+                        nLostBytes += nUTF;
+                    }
+                }
+            }
+            else if (CHARSET_LATIN2 == d->encoding)
+            {
+                // CHARSET_LATIN2
+                //
+                if (mux_isprint_latin2(ch))
+                {
+                    // Convert this latin2 character to the internal UTF-8 form.
+                    //
+                    const UTF8 *pUTF = latin2_utf8(ch);
+                    UTF8 nUTF = utf8_FirstByte[pUTF[0]];
+
+                    if (p + nUTF < pend)
+                    {
+                        nInputBytes += nUTF;
+                        while (nUTF--)
+                        {
+                            *p++ = *pUTF++;
+                        }
+                    }
+                    else
+                    {
+                        nLostBytes += nUTF;
+                    }
+                }
+            }
+            else if (CHARSET_CP437 == d->encoding)
+            {
+                // CHARSET_CP437
+                //
+                if (mux_isprint_cp437(ch))
+                {
+                    // Convert this cp437 character to the internal UTF-8 form.
+                    //
+                    const UTF8 *pUTF = cp437_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
                     if (p + nUTF < pend)
@@ -4288,6 +4342,24 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 EnableUs(d, TELNET_BINARY);
                                 EnableHim(d, TELNET_BINARY);
                             }
+                            else if (  nISO8859_2 == m - 2
+                                    && memcmp((char *)pCharset, szISO8859_2, nISO8859_2) == 0)
+                            {
+                                d->encoding = CHARSET_LATIN2;
+                                d->negotiated_encoding = CHARSET_LATIN2;
+
+                                EnableUs(d, TELNET_BINARY);
+                                EnableHim(d, TELNET_BINARY);
+                            }
+                            else if (  nCp437 == m - 2
+                                    && memcmp((char *)pCharset, szCp437, nCp437) == 0)
+                            {
+                                d->encoding = CHARSET_CP437;
+                                d->negotiated_encoding = CHARSET_CP437;
+
+                                EnableUs(d, TELNET_BINARY);
+                                EnableHim(d, TELNET_BINARY);
+                            }
                             else if (  nUSASCII == m - 2
                                     && memcmp((char *)pCharset, szUSASCII, nUSASCII) == 0)
                             {
@@ -4366,6 +4438,30 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                                 fRequestAcknowledged = true;
                                                 d->encoding = CHARSET_LATIN1;
                                                 d->negotiated_encoding = CHARSET_LATIN1;
+
+                                                EnableUs(d, TELNET_BINARY);
+                                                EnableHim(d, TELNET_BINARY);
+                                                break;
+                                            }
+                                            else if (  nISO8859_2 == nTerm
+                                                    && memcmp((char *)pTermStart, szISO8859_2, nISO8859_2) == 0)
+                                            {
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                fRequestAcknowledged = true;
+                                                d->encoding = CHARSET_LATIN2;
+                                                d->negotiated_encoding = CHARSET_LATIN2;
+
+                                                EnableUs(d, TELNET_BINARY);
+                                                EnableHim(d, TELNET_BINARY);
+                                                break;
+                                            }
+                                            else if (  nCp437 == nTerm
+                                                    && memcmp((char *)pTermStart, szCp437, nCp437) == 0)
+                                            {
+                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                fRequestAcknowledged = true;
+                                                d->encoding = CHARSET_CP437;
+                                                d->negotiated_encoding = CHARSET_CP437;
 
                                                 EnableUs(d, TELNET_BINARY);
                                                 EnableHim(d, TELNET_BINARY);
@@ -5180,7 +5276,7 @@ NAMETAB sigactions_nametab[] =
 {
     {T("exit"),        3,  0,  SA_EXIT},
     {T("default"),     1,  0,  SA_DFLT},
-    {(UTF8 *) NULL,         0,  0,  0}
+    {(UTF8 *) NULL,    0,  0,  0}
 };
 
 void set_signals(void)

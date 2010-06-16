@@ -312,6 +312,7 @@ void cf_init(void)
     mudconf.room_name_charset = 0;
     mudconf.thing_name_charset = 0;
     mudconf.password_methods = CRYPT_DEFAULT;
+    mudconf.default_charset = CHARSET_LATIN1;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -2085,7 +2086,7 @@ static CONFPARM conftable[] =
     {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
     {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
     {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
-    {T("attr_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.attr_name_charset,      charset_nametab,    0},
+    {T("attr_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.attr_name_charset,      allow_charset_nametab, 0},
     {T("autozone"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.autozone,        NULL,               0},
     {T("bad_name"),                  cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {T("badsite_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.site_file,       NULL, SIZEOF_PATHNAME},
@@ -2110,8 +2111,9 @@ static CONFPARM conftable[] =
     {T("create_max_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
     {T("create_min_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
     {T("dark_sleepers"),             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.dark_sleepers,   NULL,               0},
+    {T("default_charset"),           cf_option,      CA_GOD,    CA_PUBLIC,   &mudconf.default_charset,        default_charset_nametab, 0},
     {T("default_home"),              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.default_home,           NULL,               0},
-    {T("destroy_going_now"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.destroy_going_now, NULL,               0},
+    {T("destroy_going_now"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.destroy_going_now, NULL,             0},
     {T("dig_cost"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.digcost,                NULL,               0},
     {T("down_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
     {T("down_motd_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
@@ -2124,7 +2126,7 @@ static CONFPARM conftable[] =
     {T("examine_flags"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.ex_flags,        NULL,               0},
     {T("examine_public_attrs"),      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.exam_public,     NULL,               0},
     {T("exit_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.exit_flags,      NULL,               0},
-    {T("exit_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.exit_name_charset,      charset_nametab,    0},
+    {T("exit_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.exit_name_charset,      allow_charset_nametab, 0},
     {T("exit_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.exit_quota,             NULL,               0},
     {T("exit_parent"),               cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.exit_parent,            NULL,               0},
     {T("fascist_teleport"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.fascist_tport,   NULL,               0},
@@ -2220,7 +2222,7 @@ static CONFPARM conftable[] =
     {T("player_listen"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.player_listen,   NULL,               0},
     {T("player_match_own_commands"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine_pl,   NULL,               0},
     {T("player_name_spaces"),        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.name_spaces,     NULL,               0},
-    {T("player_name_charset"),       cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.player_name_charset,    charset_nametab,    0},
+    {T("player_name_charset"),       cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.player_name_charset,    allow_charset_nametab, 0},
     {T("player_parent"),             cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.player_parent,          NULL,               0},
     {T("player_queue_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queuemax,               NULL,               0},
     {T("player_quota"),              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
@@ -2256,7 +2258,7 @@ static CONFPARM conftable[] =
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},
     {T("robot_speech"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.robot_speak,     NULL,               0},
     {T("room_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.room_flags,      NULL,               0},
-    {T("room_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.room_name_charset,      charset_nametab,    0},
+    {T("room_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.room_name_charset,      allow_charset_nametab, 0},
     {T("room_parent"),               cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.room_parent,            NULL,               0},
     {T("room_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.room_quota,             NULL,               0},
     {T("run_startup"),               cf_bool,        CA_STATIC, CA_WIZARD,   (int *)&mudconf.run_startup,     NULL,               0},
@@ -2286,7 +2288,7 @@ static CONFPARM conftable[] =
     {T("terse_shows_exits"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_exits,     NULL,               0},
     {T("terse_shows_move_messages"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_movemsg,   NULL,               0},
     {T("thing_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
-    {T("thing_name_charset"),        cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.thing_name_charset,     charset_nametab,    0},
+    {T("thing_name_charset"),        cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.thing_name_charset,     allow_charset_nametab, 0},
     {T("thing_parent"),              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.thing_parent,           NULL,               0},
     {T("thing_quota"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
     {T("timeslice"),                 cf_seconds,     CA_GOD,    CA_PUBLIC,   (int *)&mudconf.timeslice,       NULL,               0},
