@@ -4639,13 +4639,19 @@ ASIN()
   Related Topics: acos(), atan(), ctu(), cos(), pi(), sin(), tan().
 
 & ATAN()
+& ATAN2()
 ATAN()
+ATAN2()
 
   FUNCTION: atan(<number>[, <units>])
+            atan2(<number1>, <number2>[, <units>])
 
-  Returns the arctangent of <number>. The value returned will be expressed in
-  <units>.  <units> may be 'radians', 'degrees', or 'gradians' or just the
-  first letter of any of these. By default, <units> is 'radians'.
+  Returns the arctangent of <number> or <number1>/<number2>.  The range of
+  atan() is always an angle in quadrants 1 and 4.  Taking into consideration
+  the sign of <number1> and <number2>, atan2() can return an angle in all four
+  quadrants.  The value returned will be expressed in <units>.  <units> may be
+  'radians', 'degrees', or 'gradians' or just the first letter of any of these.
+  By default, <units> is 'radians'.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -7246,8 +7252,8 @@ FUNCTION CLASSES (continued)
                              RESTARTSECS RESTARTTIME SECS SINGLETIME STARTSECS
                              STARTTIME TIME TIMEFMT WRITETIME
 
-  Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
-                             VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
+  Trigonometric:             ACOS ASIN ATAN ATAN2 COS CTU DIST2D DIST3D PI SIN
+                             TAN VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 
   WOD Realms (optional):     CANSEE
 
@@ -7261,22 +7267,22 @@ FUNCTION LIST
 
     @@()        ABS()       ACCENT()    ACOS()      ADD()       AFTER()
     ALPHAMAX()  ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()
-    APOSS()     ART()       ASIN()      ATAN()      ATTRCNT()   BAND()
-    BEEP()      BEFORE()    BITTYPE()   BNAND()     BOR()       BXOR()
-    CAND()      CANDBOOL()  CANSEE()    CAPSTR()    CASE()      CAT()
-    CEIL()      CENTER()    CHANNELS()  CHANOBJ()   CHILDREN()  CHOOSE()
-    CHR()       CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()
-    CON()       CONFIG()    CONN()      CONNLAST()  CONNLEFT()  CONNMAX()
-    CONNNUM()   CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()
-    COR()       CORBOOL()   COS()       CPAD()      CRC32()     CREATE()
-    CTIME()     CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()
-    DELETE()    DESTROY()   DIE()       DIGEST()    DIGITTIME() DIST2D()
-    DIST3D()    DISTRIBUTE()DOING()     DUMPING()   E()         EDEFAULT()
-    EDIT()      ELEMENTS()  ELOCK()     EMIT()      ENCRYPT()   ENTRANCES()
-    EQ()        ERROR()     ESCAPE()    ETIMEFMT()  EVAL()      EXIT()
-    EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()    FDIV()
-    FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()     FLOOR()
-    FLOORDIV()  FMOD()      FOLD()      FOREACH()   FULLNAME()
+    APOSS()     ART()       ASIN()      ATAN()      ATAN2()     ATTRCNT()
+    BAND()      BEEP()      BEFORE()    BITTYPE()   BNAND()     BOR()
+    BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()    CASE()
+    CAT()       CEIL()      CENTER()    CHANNELS()  CHANOBJ()   CHILDREN()
+    CHOOSE()    CHR()       CMDS()      COLUMNS()   COMALIAS()  COMP()
+    COMTITLE()  CON()       CONFIG()    CONN()      CONNLAST()  CONNLEFT()
+    CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()
+    CONVTIME()  COR()       CORBOOL()   COS()       CPAD()      CRC32()
+    CREATE()    CTIME()     CTU()       CWHO()      DEC()       DECRYPT()
+    DEFAULT()   DELETE()    DESTROY()   DIE()       DIGEST()    DIGITTIME()
+    DIST2D()    DIST3D()    DISTRIBUTE()DOING()     DUMPING()   E()
+    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()      ENCRYPT()
+    ENTRANCES() EQ()        ERROR()     ESCAPE()    ETIMEFMT()  EVAL()
+    EXIT()      EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()
+    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()
+    FLOOR()     FLOORDIV()  FMOD()      FOLD()      FOREACH()   FULLNAME()
 
 ("help function list2" for more)
 
@@ -7366,16 +7372,16 @@ GAGGED
 & GARBAGE
 GARBAGE
 
-  Garbage is the un-object.  It is the lack of an object -- the gap where an 
-  object once was.  This gap will eventually be filled as new objects are 
+  Garbage is the un-object.  It is the lack of an object -- the gap where an
+  object once was.  This gap will eventually be filled as new objects are
   created.  Not to worry though.  These gaps occupy very little memory.  The
   server does not allow softcode to search, modify, access, step into,
   otherwise access these gaps.
 
-  It is best to leave garbage alone, and softcode should see these gaps between 
-  valid dbrefs in the same way as if they were accessing dbrefs beyond the end 
+  It is best to leave garbage alone, and softcode should see these gaps between
+  valid dbrefs in the same way as if they were accessing dbrefs beyond the end
   of the valid database.
-  
+ 
   Related Topics: @stats, stats()
 
 & GENDER

@@ -60,6 +60,7 @@ XFUNCTION(fun_tan);
 XFUNCTION(fun_asin);
 XFUNCTION(fun_acos);
 XFUNCTION(fun_atan);
+XFUNCTION(fun_atan2);
 XFUNCTION(fun_exp);
 XFUNCTION(fun_power);
 XFUNCTION(fun_fmod);

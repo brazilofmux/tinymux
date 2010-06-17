@@ -1645,6 +1645,29 @@ FUNCTION(fun_atan)
     fval(buff, bufc, val);
 }
 
+FUNCTION(fun_atan2)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    double val1 = mux_atof(fargs[0]);
+    double val2 = mux_atof(fargs[1]);
+
+    mux_FPRestore();
+    val1 = atan2(val1, val2);
+    mux_FPSet();
+
+    if (3 == nfargs)
+    {
+        val1 = ConvertR2RDG(val1, fargs[2]);
+    }
+    fval(buff, bufc, val1);
+}
+
 FUNCTION(fun_exp)
 {
     UNUSED_PARAMETER(executor);

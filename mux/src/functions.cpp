@@ -10824,6 +10824,7 @@ static FUN builtin_function_list[] =
     {T("ART"),         fun_art,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ASIN"),        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ATAN"),        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("ATAN2"),       fun_atan2,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("ATTRCNT"),     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("BAND"),        fun_band,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("BEEP"),        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
