@@ -9,6 +9,8 @@ Major changes that may affect performance and require softcode tweaks:
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Add password_methods configuration option.
+ -- Add default_charset configuration option (Issue 575).
+ -- Add ATAN2().
 
 
 Bug Fixes:
