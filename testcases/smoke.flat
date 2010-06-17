@@ -1,5 +1,5 @@
 +X992002
-+S28
++S29
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-27
+28
 -1
 -1
 -1
@@ -1004,20 +1004,48 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >271
-"center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn wrap_fn shutdown"
+"center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn sqrt_fn wrap_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !27
-"test_wrap_fn"
+"test_sqrt_fn"
 0
 -1
 -1
 -1
 0
 26
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning sqrt() test cases."
+>257
+"@if strmatch(setr(0,sha1([round(sqrt(2),6)][round(sqrt(100),6)][round(sqrt(0),6)][sqrt(-1)])),5303C71ED201F716E63DE1210C4816F5FB8045BC)={@log smoke=TC001: sqrt examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sqrt examples. Failed (%q0).;@trig me/tr.done}"
+>262
+"@log smoke=End sqrt() test cases.;@notify smoke"
+<
+!28
+"test_wrap_fn"
+0
+-1
+-1
+-1
+0
+27
 
 1
 -1
