@@ -1,0 +1,47 @@
+#
+# sqrt_fn.mux - Test Cases for sqrt().
+# $Id$
+#
+@create test_sqrt_fn
+-
+@set test_sqrt_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sqrt_fn=
+  @log smoke=Beginning sqrt() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_sqrt_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(sqrt(2),6)]
+            [round(sqrt(100),6)]
+            [round(sqrt(0),6)]
+            [sqrt(-1)]
+          )
+        ),
+        5303C71ED201F716E63DE1210C4816F5FB8045BC
+      )=
+  {
+    @log smoke=TC001: sqrt examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: sqrt examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sqrt_fn=
+  @log smoke=End sqrt() test cases.;
+  @notify smoke
+-
+drop test_sqrt_fn
+-
+#
+# End of Test Cases
+#
+
