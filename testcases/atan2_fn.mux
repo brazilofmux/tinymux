@@ -1,0 +1,56 @@
+#
+# atan2_fn.mux - Test Cases for atan2().
+# $Id$
+#
+@create test_atan2_fn
+-
+@set test_atan2_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_atan2_fn=
+  @log smoke=Beginning atan2() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_atan2_fn=
+  @if strmatch([atan2()],*NOT FOUND)=
+  {
+    @log smoke=TC001: ATAN2() is not supported on this version. Okay.;
+    @trig me/tr.done
+  },
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [round(atan2(1,1),6)]
+              [round(atan2(1,-2),6)]
+              [round(atan2(-1,1),6)]
+              [round(atan2(-1,-1),6)]
+              [round(atan2(1,-1),6)]
+              [round(atan2(0,0),6)]
+            )
+          ),
+          B55A79DA9290C1CB2A56FB7960A0D359D20FEFAA
+        )=
+    {
+      @log smoke=TC001: atan2 examples. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC001: atan2 examples. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_atan2_fn=
+  @log smoke=End atan2() test cases.;
+  @notify smoke
+-
+drop test_atan2_fn
+-
+#
+# End of Test Cases
+#
+
