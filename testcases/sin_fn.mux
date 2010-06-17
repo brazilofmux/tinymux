@@ -1,0 +1,47 @@
+#
+# sin_fn.mux - Test Cases for sin().
+# $Id$
+#
+@create test_sin_fn
+-
+@set test_sin_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sin_fn=
+  @log smoke=Beginning sin() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_sin_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(sin(270,d),6)]
+            [round(sin(fdiv(pi(),2)),6)]
+            [round(sin(fdiv(pi(),4)),6)]
+            [round(sin(fdiv(pi(),6)),6)]
+          )
+        ),
+        FDF382C82E22F03A4D0E5F927B2BEC715CC842C9
+      )=
+  {
+    @log smoke=TC001: sin examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: sin examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sin_fn=
+  @log smoke=End sin() test cases.;
+  @notify smoke
+-
+drop test_sin_fn
+-
+#
+# End of Test Cases
+#
+
