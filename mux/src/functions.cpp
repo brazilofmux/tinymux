@@ -10614,7 +10614,7 @@ static FUNCTION(fun_accent)
 
     while ('\0' != *p)
     {
-        UTF8 ch = '\0';
+        UTF32 ch = L'\0';
         UTF8 ch0 = *p;
         if (  UTF8_SIZE1 == utf8_FirstByte[ch0]
            && (0 < (ch0 = AccentCombo1[ch0])))
@@ -10627,9 +10627,9 @@ static FUNCTION(fun_accent)
             }
         }
 
-        const UTF8 *t = latin1_utf8(ch);
-        if (mux_isprint(t))
+        if (L'\0' != ch)
         {
+            UTF8 *t = ConvertToUTF8(ch);
             utf8_safe_chr(t, buff, bufc);
         }
         else
