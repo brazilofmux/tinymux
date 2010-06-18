@@ -1,0 +1,164 @@
+#
+# accent_fn.mux - Test Cases for accent().
+# $Id$
+#
+@create test_accent_fn
+-
+@set test_accent_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_accent_fn=
+  @log smoke=Beginning accent() test cases.
+-
+#
+# Test Case #1 - Help file examples below ordinal U+00FF.
+#
+&tr.tc001 test_accent_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(accent(!,u))]
+            [ord(accent(<,"))]
+            [ord(accent(>,"))]
+            [ord(accent(?,u))]
+            [ord(accent(A,'))]
+            [ord(accent(A,:))]
+            [ord(accent(A,E))]
+            [ord(accent(A,^))]
+            [ord(accent(A,`))]
+            [ord(accent(A,o))]
+            [ord(accent(A,~))]
+            [ord(accent(C,\,))]
+            [ord(accent(E,'))]
+            [ord(accent(E,:))]
+            [ord(accent(E,^))]
+            [ord(accent(E,`))]
+            [ord(accent(I,'))]
+            [ord(accent(I,:))]
+            [ord(accent(I,^))]
+            [ord(accent(I,`))]
+            [ord(accent(N,~))]
+            [ord(accent(O,'))]
+            [ord(accent(O,:))]
+            [ord(accent(O,^))]
+            [ord(accent(O,`))]
+            [ord(accent(O,~))]
+            [ord(accent(P,|))]
+            [ord(accent(U,'))]
+            [ord(accent(U,:))]
+            [ord(accent(U,^))]
+            [ord(accent(U,`))]
+            [ord(accent(Y,'))]
+            [ord(accent(a,'))]
+            [ord(accent(a,:))]
+            [ord(accent(a,^))]
+            [ord(accent(a,`))]
+            [ord(accent(a,e))]
+            [ord(accent(a,o))]
+            [ord(accent(a,~))]
+            [ord(accent(c,\,))]
+            [ord(accent(e,'))]
+            [ord(accent(e,:))]
+            [ord(accent(e,^))]
+            [ord(accent(e,`))]
+            [ord(accent(i,'))]
+            [ord(accent(i,:))]
+            [ord(accent(i,^))]
+            [ord(accent(i,`))]
+            [ord(accent(n,~))]
+            [ord(accent(o,&))]
+            [ord(accent(o,'))]
+            [ord(accent(o,:))]
+            [ord(accent(o,^))]
+            [ord(accent(o,`))]
+            [ord(accent(o,~))]
+            [ord(accent(p,|))]
+            [ord(accent(s,B))]
+            [ord(accent(u,'))]
+            [ord(accent(u,:))]
+            [ord(accent(u,^))]
+            [ord(accent(u,`))]
+            [ord(accent(y,'))]
+            [ord(accent(y,:))]
+          )
+        ),
+        FE087562352920AC75C7F23C1876CBF0FAC5293A
+      )=
+  {
+    @log smoke=TC001: accent examples (U+00FF and below). Succeeded.
+  },
+  {
+    @log smoke=TC001: accent examples (U+00FF and below). Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Help file examples above ordinal U+00FF.
+#
+&tr.tc002 test_accent_fn=
+  @if cand(t(chr(256)),neq(ord(accent(A,-)),ord(A)))=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [ord(accent(A,\,))]
+              [ord(accent(A,-))]
+              [ord(accent(A,u))]
+              [ord(accent(C,'))]
+              [ord(accent(C,.))]
+              [ord(accent(C,^))]
+              [ord(accent(C,v))]
+              [ord(accent(D,v))]
+              [ord(accent(E,\,))]
+              [ord(accent(E,-))]
+              [ord(accent(E,.))]
+              [ord(accent(E,u))]
+              [ord(accent(E,v))]
+              [ord(accent(G,\,))]
+              [ord(accent(G,.))]
+              [ord(accent(G,^))]
+              [ord(accent(G,u))]
+              [ord(accent(a,\,))]
+              [ord(accent(a,-))]
+              [ord(accent(a,u))]
+              [ord(accent(c,'))]
+              [ord(accent(c,.))]
+              [ord(accent(c,^))]
+              [ord(accent(c,v))]
+              [ord(accent(d,v))]
+              [ord(accent(e,\,))]
+              [ord(accent(e,-))]
+              [ord(accent(e,.))]
+              [ord(accent(e,u))]
+              [ord(accent(e,v))]
+              [ord(accent(g,\,))]
+              [ord(accent(g,.))]
+              [ord(accent(g,^))]
+              [ord(accent(g,u))]
+            )
+          ),
+          57C74BE3FEC75D3D49334F86BF1387636C4ED8E4
+        )=
+    {
+      @log smoke=TC002: accent examples (U+0100 and above). Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC002: accent examples (U+0100 and above). Failed (%q0).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC002: Ordinals above U+00FF are not supported. Okay.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_accent_fn=
+  @log smoke=End accent() test cases.;
+  @notify smoke
+-
+drop test_accent_fn
+-
+#
+# End of Test Cases
+#
+
