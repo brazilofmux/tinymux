@@ -4194,13 +4194,11 @@ ACCENT()
   FUNCTION: accent(<string>, <template>)
 
   The accent() function will return <string>, with characters in it
-  possibly changed to accented ones according to <template>. Both
+  possibly changed to accented ones according to <template>.  Both
   arguments must be the same number of characters.
 
   Whether or not the resulting string is actually displayed correctly
-  is client-dependent. Some OSes uses different character sets than
-  the one assumed (ISO 8859-1), and some clients strip these 8-bit
-  characters.
+  is client-dependent.
 
 ("help accent2" for more)
 
@@ -4209,26 +4207,35 @@ ACCENT() (continued)
 
   For each character in <string>, the corresponding character of
   <template> is checked according to the table below, and a replacement
-  done. If either the current <string> or <template> characters aren't
+  done.  If either the current <string> or <template> characters aren't
   in the table, the <string> character is passed through unchanged.
 
-  Accent                         Template   String
-  Name       Description         Character  Character
+  Accent                            Template   String
+  Name          Description         Character  Character
   -----------------------------------------------------------------
-  grave      Backward slant      `          A,E,I,O,U,a,e,i,o,u
-             above letter
-  acute      Forward slant       '          A,E,I,O,U,Y,a,e,i,o,u,y
-             above letter
-  tilde      Wavy line above     ~          A,N,O,a,n,o
-             letter
-  circumflex carat above         ^          A,E,I,O,U,a,e,i,o,u
-             letter
-  umlaut     Two dots above      :          A,E,I,O,U,a,e,i,o,u
-  diaeresis  letter
-  ring       Small circle above  o          A,a
-             letter
-  cedilla    Small tail below    ,          C,c
-             letter
+  double acute  Two foward slants   "          O,U,o,u
+  acute         Forward slant       '          A,C,E,I,L,N,O,R,S,T,U,Y,Z,a,c,
+                above letter                   e,i,l,n,o,r,s,u,y,z
+  cedilla       Small tail below    ,          A,C,E,G,I,K,L,N,R,S,T,U,a,c,e,
+                letter                         g,i,k,l,n,r,s,t,u
+  macron        dash above letter   -          A,D,E,I,O,U,a,e,i,o,u
+  dot           dot above letter    .          C,E,G,I,Z,c,e,g,i,z
+  stroke        diagonal or         /          D,H,L,O,d,h,l,o
+                horizonal through
+                letter
+  umlaut        Two dots above      :          A,E,I,O,U,Ya,e,i,o,u,y
+  diaeresis     letter
+  circumflex    carat above         ^          A,C,E,G,H,I,J,O,S,U,W,Y,a,c,e,
+                letter                         g,h,i,j,o,s,u,w,y
+  grave         Backward slant      `          A,E,I,O,U,a,e,i,o,u
+                above letter
+  ring          Small circle above  o          A,U,a,u
+                letter
+  breve         rounded half-circle u          A,E,G,I,O,U,a,e,g,i,o,u
+                above letter
+  caron         inverted circumflex v          C,D,E,L,N,R,S,T,Z,c,e,l,n,r,t,z
+  tilde         Wavy line above     ~          A,I,N,O,U,a,i,n,o,u
+                letter
 
 ("help accent3" for more)
 
@@ -4250,6 +4257,26 @@ ACCENT() (continued)
   Lower-case thorn    |          p
   Capital eth         -          D
   Lower-case eth      &          o
+  Eng or engma        G          N
+  Eng or engma        g          n
+  Kra                 q          K
+
+  These are ligatures.
+
+                      Template   String
+  Description         Character  Character
+  --------------------------------------------------------------
+  Ligature AE         E          A
+  Ligature IJ         J          I
+  Ligature OE         E          O
+  Ligature ae         e          a
+  Ligature ij         j          i
+  Ligature oe         e          o
+
+("help accent4" for more)
+
+& ACCENT4
+ACCENT() (continued)
 
   Examples:
 
@@ -4258,11 +4285,6 @@ ACCENT() (continued)
 
     > think accent(The Nina was a ship, The Ni~a was a ship)
     The Ni(n-with-~)a was a ship
-
-("help accent4" for more)
-
-& ACCENT4
-ACCENT() (continued)
 
     > think accent(Khazad ai-menu!, Khaz^d ai-m^nu!)
     Khaz(a-with-^)d ai-m(e-with-^)nu!
