@@ -522,9 +522,16 @@ FUNCTION(fun_shl)
     if (  is_integer(fargs[0], NULL)
        && is_integer(fargs[1], NULL))
     {
-        INT64 a = mux_atoi64(fargs[0]);
         long  b = mux_atol(fargs[1]);
-        safe_i64toa(a << b, buff, bufc);
+        if (0 <= b)
+        {
+            INT64 a = mux_atoi64(fargs[0]);
+            safe_i64toa(a << b, buff, bufc);
+        }
+        else
+        {
+            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+        }
     }
     else
     {
@@ -545,9 +552,16 @@ FUNCTION(fun_shr)
     if (  is_integer(fargs[0], NULL)
        && is_integer(fargs[1], NULL))
     {
-        INT64 a = mux_atoi64(fargs[0]);
         long  b = mux_atol(fargs[1]);
-        safe_i64toa(a >> b, buff, bufc);
+        if (0 <= b)
+        {
+            INT64 a = mux_atoi64(fargs[0]);
+            safe_i64toa(a >> b, buff, bufc);
+        }
+        else
+        {
+            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+        }
     }
     else
     {
