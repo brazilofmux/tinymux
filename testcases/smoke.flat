@@ -1,5 +1,5 @@
 +X992002
-+S32
++S33
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-31
+32
 -1
 -1
 -1
@@ -973,13 +973,45 @@
 "@log smoke=End sha1() test cases.;@notify smoke"
 <
 !26
-"test_shuffle_fn"
+"test_shl_fn"
 0
 -1
 -1
 -1
 0
 25
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning shl() test cases."
+>257
+"@if strmatch(setr(0,sha1([shl(2,10)])),27285271B352ADB77C2CA213D92C21EF680FB133)={@log smoke=TC001: shl examples. Succeeded.},{@log smoke=TC001: shl examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([iter(lnum(0,61),shl(3,itext(0)))][iter(lnum(0,61),shl(-3,itext(0)))])),DEA892890B30F0536B2BA311BD02E276220A2D1E)={@log smoke=TC002: shl vary shifts. Succeeded.},{@log smoke=TC002: shl vary shifts. Failed (%q0).}"
+>260
+"@if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)={@log smoke=TC003: shl doesn't allow a negative shift. Succeeded.;@trig me/tr.done},{@log smoke=TC003: shl allows negative shift. Legacy behavior.;@trig me/tr.done}"
+>259
+"@log smoke=End shl() test cases.;@notify smoke"
+<
+!27
+"test_shuffle_fn"
+0
+-1
+-1
+-1
+0
+26
 
 1
 -1
@@ -1016,32 +1048,8 @@
 >259
 "@log smoke=End shuffle() test cases.;@notify smoke"
 <
-!27
-"test_shutdown"
-0
--1
--1
--1
-0
-26
-
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
-<
 !28
-"test_sin_fn"
+"test_shutdown"
 0
 -1
 -1
@@ -1062,20 +1070,44 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning sin() test cases."
->257
-"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
->259
-"@log smoke=End sin() test cases.;@notify smoke"
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
 !29
-"smoke"
+"test_sin_fn"
 0
 -1
 -1
 -1
 0
 28
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning sin() test cases."
+>257
+"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
+>259
+"@log smoke=End sin() test cases.;@notify smoke"
+<
+!30
+"smoke"
+0
+-1
+-1
+-1
+0
+29
 
 1
 -1
@@ -1090,20 +1122,20 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >271
-"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn sin_fn sqrt_fn wrap_fn shutdown"
+"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn wrap_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
-!30
+!31
 "test_sqrt_fn"
 0
 -1
 -1
 -1
 0
-29
+30
 
 1
 -1
@@ -1124,14 +1156,14 @@
 >259
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <
-!31
+!32
 "test_wrap_fn"
 0
 -1
 -1
 -1
 0
-30
+31
 
 1
 -1
