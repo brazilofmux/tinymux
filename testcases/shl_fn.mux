@@ -1,0 +1,74 @@
+#
+# shl_fn.mux - Test Cases for shl().
+# $Id$
+#
+@create test_shl_fn
+-
+@set test_shl_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_shl_fn=
+  @log smoke=Beginning shl() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_shl_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [shl(2,10)]
+          )
+        ),
+        27285271B352ADB77C2CA213D92C21EF680FB133
+      )=
+  {
+    @log smoke=TC001: shl examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: shl examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Vary shifts.
+#
+&tr.tc002 test_shl_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(0,61),shl(3,itext(0)))]
+            [iter(lnum(0,61),shl(-3,itext(0)))]
+          )
+        ),
+        DEA892890B30F0536B2BA311BD02E276220A2D1E
+      )=
+  {
+    @log smoke=TC002: shl vary shifts. Succeeded.
+  },
+  {
+    @log smoke=TC002: shl vary shifts. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary shifts.
+#
+&tr.tc003 test_shl_fn=
+  @if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)=
+  {
+    @log smoke=TC003: shl doesn't allow a negative shift. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: shl allows negative shift. Legacy behavior.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_shl_fn=
+  @log smoke=End shl() test cases.;
+  @notify smoke
+-
+drop test_shl_fn
+-
+#
+# End of Test Cases
+#
