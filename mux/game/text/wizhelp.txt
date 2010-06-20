@@ -3319,6 +3319,8 @@ LOCK_RECURSION_LIMIT
 LOG
 
   CONFIG PARAMETER: log [!]<logoption> [[!]<logoption>]...
+  DEFAULT: bugs checkpoints config_changes create logins network problems
+           security shouts startup suspect time_usage wizard 
 
   Specifies what types of events are to be logged to the logfile.
 
@@ -3398,6 +3400,7 @@ LOGOUT_CMD_ALIAS
 LOG_OPTIONS
 
   CONFIG PARAMETER: log_options [!]<option> [[!]<option>]...
+  DEFAULT: location timestamp
 
   Specifies the type of information to be included in each log entry.
   The possible values are:
