@@ -1,5 +1,5 @@
 +X992002
-+S33
++S34
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-32
+33
 -1
 -1
 -1
@@ -479,13 +479,55 @@
 "@log smoke=End escape() test cases.;@notify smoke"
 <
 !13
-"test_first_fn"
+"test_extract_fn"
 0
 -1
 -1
 -1
 0
 12
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning extract() test cases."
+>257
+"@if strmatch(setr(0,sha1([extract(This is a really neat example, 4, 2)][extract(Another@funky@test@for@extract, 3, 3, @)])),849E548200E97CC1452873B11519E15C1B7AE9B1)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([extract(a%b%bb%b%bc%b%b,2,2,%b)])),B005807AE4A78B35A2ACCADEF2919ACDB6639CCF)={@log smoke=TC002: extract regressions. Succeeded.},{@log smoke=TC002: extract regressions. Failed (%q0).}"
+>260
+"@if strmatch(setr(0,sha1([iter(lnum(-1,1),iter(lnum(0,1),extract(,itext(1),itext(0),|)))][iter(lnum(-1,2),iter(lnum(0,2),extract(a,itext(1),itext(0),|)))][iter(lnum(-1,3),iter(lnum(0,3),extract(a|b,itext(1),itext(0),|)))][iter(lnum(-1,4),iter(lnum(0,4),extract(a|b|c,itext(1),itext(0),|)))][iter(lnum(-1,5),iter(lnum(0,5),extract(a|b|c|d,itext(1),itext(0),|)))][iter(lnum(-1,1),extract(,itext(0),1))][iter(lnum(-1,1),extract(%b,itext(0),1))][iter(lnum(-1,2),extract(a,itext(0),1))][iter(lnum(-1,3),extract(a b,itext(0),1))][iter(lnum(-1,4),extract(a b c,itext(0),1))][iter(lnum(-1,5),extract(a b c d,itext(0),1))][iter(lnum(-1,6),extract(a b c d e,itext(0),1))][iter(lnum(-1,7),extract(a b c d e f,itext(0),1))][iter(lnum(-1,8),extract(a b c d e f g,itext(0),1))][iter(lnum(-1,9),extract(a b c d e f g h,itext(0),1))])),B2A9EA24A3039195E31254E5AE17B6B6F3D16FCA)={@log smoke=TC003: Vary number of arguments. Succeeded.},{@log smoke=TC003: Vary number of arguments. Failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1([iter(lnum(-1,2),extract(%b%b%b,itext(0),1))][iter(lnum(-1,2),extract(b%b%b%b,itext(0),1))][iter(lnum(-1,2),extract(%bb%b%b,itext(0),1))][iter(lnum(-1,2),extract(a%b%bb%b,itext(0),1))][iter(lnum(-1,2),extract(%ba%b%bb,itext(0),1))][iter(lnum(-1,2),extract(%b%ba%b,itext(0),1))][iter(lnum(-1,2),extract(%b%b%ba,itext(0),1))])),22B1D425CAF872D8BA710062DD9437AC763B8A76)={@log smoke=TC004: extract walk two elements through whitespace. Succeeded.},{@log smoke=TC004: extract walk two elements through whitespace. Failed (%q0).}"
+>262
+"@if strmatch(setr(0,sha1([iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(%ba b c d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a%bb c d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b%bc d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c%bd e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d%be f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e%bf g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f%bg h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g%bh,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h%b,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(%b%ba b c d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a%b%bb c d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b%b%bc d e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c%b%bd e f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d%b%be f g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e%b%bf g h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f%b%bg h,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g%b%bh,itext(0),itext(1))))][iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h%b%b,itext(0),itext(1))))])),4A5F493974EF42F4334AF0A9B9A0914AA11B698C)={@log smoke=TC005: extract walk whitespace through elements. Succeeded.},{@log smoke=TC005: extract walk whitespace through elements. Failed (%q0).}"
+>263
+"@if strmatch(setr(0,sha1([iter(lnum(0,2),iter(lnum(-1,1),extract(,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,1),extract(-,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,2),extract(a,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,3),extract(a-b,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,4),extract(a-b-c,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,5),extract(a-b-c-d,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,6),extract(a-b-c-d-e,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,7),extract(a-b-c-d-e-f,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,8),extract(a-b-c-d-e-f-g,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-g,itext(0),itext(1),-)))])),EB3CC2A89C615E9083EA7F4E2BA62E0B20BE252F)={@log smoke=TC006: extract vary elements with single-hyphen delimiter. Succeeded.},{@log smoke=TC006: extract vary elements with single-hypehn delimiter. Failed (%q0).}"
+>264
+"@if strmatch(setr(0,sha1([iter(lnum(0,2),iter(lnum(-1,1),extract(---,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,2),extract(b---,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,2),extract(-b--,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,3),extract(a--b-,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,3),extract(-a--b,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,2),extract(--a-,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,2),extract(---a,itext(0),itext(1),-)))])),C4823778B592D6D3D1DA2702BF302574016C0AF9)={@log smoke=TC007: extract walk two elements through single-hyphens. Succeeded.},{@log smoke=TC007: extract walk two elements through single-hyphens. Failed (%q0).}"
+>265
+"@if strmatch(setr(0,sha1([iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(-a-b-c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a--b-c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b--c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c--d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d--e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e--f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f--g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g--h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h-,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(--a-b-c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a---b-c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b---c-d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c---d-e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d---e-f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e---f-g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f---g-h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g---h,itext(0),itext(1),-)))][iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h--,itext(0),itext(1),-)))])),EE1806DE8D792507802A9A5AD34FF725041D8B6A)={@log smoke=TC008: extract walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: extract walk single-hypens through elements. Failed (%q0).;@trig me/tr.done}"
+>259
+"@log smoke=End extract() test cases.;@notify smoke"
+<
+!14
+"test_first_fn"
+0
+-1
+-1
+-1
+0
+13
 
 1
 -1
@@ -520,14 +562,14 @@
 >259
 "@log smoke=End first() test cases.;@notify smoke"
 <
-!14
+!15
 "test_insert_fn"
 0
 -1
 -1
 -1
 0
-13
+14
 
 1
 -1
@@ -556,14 +598,14 @@
 >259
 "@log smoke=End insert() test cases.;@notify smoke"
 <
-!15
+!16
 "test_last_fn"
 0
 -1
 -1
 -1
 0
-14
+15
 
 1
 -1
@@ -598,14 +640,14 @@
 >259
 "@log smoke=End last() test cases.;@notify smoke"
 <
-!16
+!17
 "test_ljust_fn"
 0
 -1
 -1
 -1
 0
-15
+16
 
 1
 -1
@@ -634,14 +676,14 @@
 >259
 "@log smoke=End ljust() test cases.;@notify smoke"
 <
-!17
+!18
 "test_lpad_fn"
 0
 -1
 -1
 -1
 0
-16
+17
 
 1
 -1
@@ -670,14 +712,14 @@
 >259
 "@log smoke=End lpad() test cases.;@notify smoke"
 <
-!18
+!19
 "test_merge_fn"
 0
 -1
 -1
 -1
 0
-17
+18
 
 1
 -1
@@ -722,14 +764,14 @@
 >259
 "@log smoke=End merge() test cases.;@notify smoke"
 <
-!19
+!20
 "test_mid_fn"
 0
 -1
 -1
 -1
 0
-18
+19
 
 1
 -1
@@ -750,14 +792,14 @@
 >259
 "@log smoke=End mid() test cases.;@notify smoke"
 <
-!20
+!21
 "test_pickrand_fn"
 0
 -1
 -1
 -1
 0
-19
+20
 
 1
 -1
@@ -792,14 +834,14 @@
 >259
 "@log smoke=End pickrand() test cases.;@notify smoke"
 <
-!21
+!22
 "test_rest_fn"
 0
 -1
 -1
 -1
 0
-20
+21
 
 1
 -1
@@ -834,14 +876,14 @@
 >259
 "@log smoke=End rest() test cases.;@notify smoke"
 <
-!22
+!23
 "test_rjust_fn"
 0
 -1
 -1
 -1
 0
-21
+22
 
 1
 -1
@@ -870,14 +912,14 @@
 >259
 "@log smoke=End rjust() test cases.;@notify smoke"
 <
-!23
+!24
 "test_rpad_fn"
 0
 -1
 -1
 -1
 0
-22
+23
 
 1
 -1
@@ -906,14 +948,14 @@
 >259
 "@log smoke=End rpad() test cases.;@notify smoke"
 <
-!24
+!25
 "test_secure_fn"
 0
 -1
 -1
 -1
 0
-23
+24
 
 1
 -1
@@ -940,14 +982,14 @@
 >259
 "@log smoke=End secure() test cases.;@notify smoke"
 <
-!25
+!26
 "test_sha1_fn"
 0
 -1
 -1
 -1
 0
-24
+25
 
 1
 -1
@@ -972,14 +1014,14 @@
 >259
 "@log smoke=End sha1() test cases.;@notify smoke"
 <
-!26
+!27
 "test_shl_fn"
 0
 -1
 -1
 -1
 0
-25
+26
 
 1
 -1
@@ -1004,14 +1046,14 @@
 >259
 "@log smoke=End shl() test cases.;@notify smoke"
 <
-!27
+!28
 "test_shuffle_fn"
 0
 -1
 -1
 -1
 0
-26
+27
 
 1
 -1
@@ -1048,32 +1090,8 @@
 >259
 "@log smoke=End shuffle() test cases.;@notify smoke"
 <
-!28
-"test_shutdown"
-0
--1
--1
--1
-0
-27
-
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
-<
 !29
-"test_sin_fn"
+"test_shutdown"
 0
 -1
 -1
@@ -1094,20 +1112,44 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning sin() test cases."
->257
-"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
->259
-"@log smoke=End sin() test cases.;@notify smoke"
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
 !30
-"smoke"
+"test_sin_fn"
 0
 -1
 -1
 -1
 0
 29
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning sin() test cases."
+>257
+"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
+>259
+"@log smoke=End sin() test cases.;@notify smoke"
+<
+!31
+"smoke"
+0
+-1
+-1
+-1
+0
+30
 
 1
 -1
@@ -1122,20 +1164,20 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >271
-"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn wrap_fn shutdown"
+"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn extract_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn wrap_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
-!31
+!32
 "test_sqrt_fn"
 0
 -1
 -1
 -1
 0
-30
+31
 
 1
 -1
@@ -1156,14 +1198,14 @@
 >259
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <
-!32
+!33
 "test_wrap_fn"
 0
 -1
 -1
 -1
 0
-31
+32
 
 1
 -1

@@ -1,0 +1,241 @@
+#
+# extract_fn.mux - Test Cases for extract().
+# $Id$
+#
+@create test_extract_fn
+-
+@set test_extract_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_extract_fn=
+  @log smoke=Beginning extract() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [extract(This is a really neat example, 4, 2)]
+            [extract(Another@funky@test@for@extract, 3, 3, @)]
+          )
+        ),
+        849E548200E97CC1452873B11519E15C1B7AE9B1
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [extract(a%b%bb%b%bc%b%b,2,2,%b)]
+          )
+        ),
+        B005807AE4A78B35A2ACCADEF2919ACDB6639CCF
+      )=
+  {
+    @log smoke=TC002: extract regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: extract regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of arguments.
+#
+&tr.tc003 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(-1,1),iter(lnum(0,1),extract(,itext(1),itext(0),|)))]
+            [iter(lnum(-1,2),iter(lnum(0,2),extract(a,itext(1),itext(0),|)))]
+            [iter(lnum(-1,3),iter(lnum(0,3),extract(a|b,itext(1),itext(0),|)))]
+            [iter(lnum(-1,4),iter(lnum(0,4),extract(a|b|c,itext(1),itext(0),|)))]
+            [iter(lnum(-1,5),iter(lnum(0,5),extract(a|b|c|d,itext(1),itext(0),|)))]
+            [iter(lnum(-1,1),extract(,itext(0),1))]
+            [iter(lnum(-1,1),extract(%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(a,itext(0),1))]
+            [iter(lnum(-1,3),extract(a b,itext(0),1))]
+            [iter(lnum(-1,4),extract(a b c,itext(0),1))]
+            [iter(lnum(-1,5),extract(a b c d,itext(0),1))]
+            [iter(lnum(-1,6),extract(a b c d e,itext(0),1))]
+            [iter(lnum(-1,7),extract(a b c d e f,itext(0),1))]
+            [iter(lnum(-1,8),extract(a b c d e f g,itext(0),1))]
+            [iter(lnum(-1,9),extract(a b c d e f g h,itext(0),1))]
+          )
+        ),
+        B2A9EA24A3039195E31254E5AE17B6B6F3D16FCA
+      )=
+  {
+    @log smoke=TC003: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC003: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(-1,2),extract(%b%b%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(b%b%b%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(%bb%b%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(a%b%bb%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(%ba%b%bb,itext(0),1))]
+            [iter(lnum(-1,2),extract(%b%ba%b,itext(0),1))]
+            [iter(lnum(-1,2),extract(%b%b%ba,itext(0),1))]
+          )
+        ),
+        22B1D425CAF872D8BA710062DD9437AC763B8A76
+      )=
+  {
+    @log smoke=TC004: extract walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: extract walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(%ba b c d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a%bb c d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b%bc d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c%bd e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d%be f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e%bf g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f%bg h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g%bh,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h%b,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(%b%ba b c d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a%b%bb c d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b%b%bc d e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c%b%bd e f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d%b%be f g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e%b%bf g h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f%b%bg h,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g%b%bh,itext(0),itext(1))))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a b c d e f g h%b%b,itext(0),itext(1))))]
+          )
+        ),
+        4A5F493974EF42F4334AF0A9B9A0914AA11B698C
+      )=
+  {
+    @log smoke=TC005: extract walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: extract walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(0,2),iter(lnum(-1,1),extract(,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,1),extract(-,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,2),extract(a,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,3),extract(a-b,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,4),extract(a-b-c,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,5),extract(a-b-c-d,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,6),extract(a-b-c-d-e,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,7),extract(a-b-c-d-e-f,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,8),extract(a-b-c-d-e-f-g,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-g,itext(0),itext(1),-)))]
+          )
+        ),
+        EB3CC2A89C615E9083EA7F4E2BA62E0B20BE252F
+      )=
+  {
+    @log smoke=TC006: extract vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: extract vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(0,2),iter(lnum(-1,1),extract(---,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,2),extract(b---,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,2),extract(-b--,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,3),extract(a--b-,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,3),extract(-a--b,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,2),extract(--a-,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,2),extract(---a,itext(0),itext(1),-)))]
+          )
+        ),
+        C4823778B592D6D3D1DA2702BF302574016C0AF9
+      )=
+  {
+    @log smoke=TC007: extract walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: extract walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_extract_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(-a-b-c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a--b-c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b--c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c--d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d--e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e--f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f--g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g--h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h-,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(--a-b-c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a---b-c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b---c-d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c---d-e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d---e-f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e---f-g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f---g-h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g---h,itext(0),itext(1),-)))]
+            [iter(lnum(0,2),iter(lnum(-1,9),extract(a-b-c-d-e-f-g-h--,itext(0),itext(1),-)))]
+          )
+        ),
+        EE1806DE8D792507802A9A5AD34FF725041D8B6A
+      )=
+  {
+    @log smoke=TC008: extract walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: extract walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_extract_fn=
+  @log smoke=End extract() test cases.;
+  @notify smoke
+-
+drop test_extract_fn
+-
+#
+# End of Test Cases
+#
