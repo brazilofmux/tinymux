@@ -11,6 +11,7 @@ Feature Additions:
  -- Add password_methods configuration option.
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
+ -- Add pairs for ACCENT() through U+017F.
 
 
 Bug Fixes:
@@ -29,6 +30,8 @@ Bug Fixes:
     630, 631, 632, 633, and 634).
  -- Use CXX instead of CXXCPP in Makefile for modules.
  -- Protect ConvertToLatin() from buffer overflow (Issue 637).
+ -- Return message from shl() and shr() when negative shifts are
+    requested.
 
 
 Performance Enhancements:
@@ -49,3 +52,4 @@ Miscellaneous:
  -- Update and freshen autoconf to v2.62.
  -- Add and use testcases for shuffle, pickrand, columns, and
     elements.
+ -- Document defaults for log and log_options.
