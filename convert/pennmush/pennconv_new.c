@@ -202,7 +202,6 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
    fprintf(fd_fileout, "%d\n", i_flags1); /* flags 1 */
    fprintf(fd_fileout, "%d\n", i_flags2); /* flags 2 */
    fprintf(fd_fileout, "%d\n", i_flags3); /* Flags 3 */
-   fprintf(fd_fileout, "%d\n", i_flags4); /* flags 4 */
    return((char *)NULL);
 }
 
@@ -212,7 +211,6 @@ convert_powerstomux(FILE *fd_filein, FILE *fd_fileout, char *s_instr)
    /* For now, just dump empty powers */
    fputs("0\n", fd_fileout); /* Powers 1 */
    fputs("0\n", fd_fileout); /* Powers 2 */
-   fputs("0\n", fd_fileout); /* Powers 3 */
    return;
 }
 
@@ -743,6 +741,8 @@ fprintf(stderr, "Value: %d\n", i_id);
       /* Store location */
       if ( s_firstarg && strcmp("location", s_firstarg) == 0) {
          fputs(stripnum(s_restarg), fd_fileout);
+         /* Store empty zone value for MUX */
+         fputs("-1\n", fd_fileout);
       } else {
          LogError(i_fetchcntr, "location", s_instr, s_firstarg, s_restarg);
       }
@@ -884,18 +884,6 @@ fprintf(stderr, "Value: %d\n", i_id);
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
       if ( s_firstarg && strcmp("attrcount", s_firstarg) == 0) {
-         /* Store empty depower list */
-         fputs("0\n", fd_fileout); /* Depower 1 */
-         fputs("0\n", fd_fileout); /* Depower 2 */
-         fputs("0\n", fd_fileout); /* Depower 3 */
-   
-         /* Store empty toggle list */
-         fputs("0\n", fd_fileout); /* Toggle 1 */
-         fputs("0\n", fd_fileout); /* Toggle 2 */
-
-         /* Store empty zone value for MUX */
-         fputs("-1\n", fd_fileout);
-
          for (i = 0; i < DEFINED_LOCKS; i++) {
             if ( s_lock_list[i] && *s_lock_list[i] ) {
                fprintf(fd_fileout, ">%d\n%s\n", i_lock_array[i], s_lock_list[i]);
