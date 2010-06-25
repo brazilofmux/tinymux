@@ -522,7 +522,17 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
             fprintf(fd_fileout, "%c%d:%d:%s", (char)1, i_owner, i_flags, StripQuote(s_restarg,i_exception));
       } else {
          if ( *(StripQuote(s_restarg,i_exception)) != '\n')
-            fputs(StripQuote(s_restarg,i_exception), fd_fileout);
+         {
+            /* Mark PennMUSH password for later conversion */
+            if (5 == i_attrib)
+            {
+               fprintf(fd_fileout, "$P6H$$%s", StripQuote(s_restarg,i_exception));
+            }
+            else
+            {
+               fputs(StripQuote(s_restarg,i_exception), fd_fileout);
+            }
+         }
          else
             ;/* fprintf(fd_fileout, "\r\n"); */
       }
