@@ -829,7 +829,8 @@ extern int anum_alc_top;
 #define CRYPT_MD5         0x00000020UL
 #define CRYPT_SHA256      0x00000040UL
 #define CRYPT_SHA512      0x00000080UL
-#define CRYPT_OTHER       0x00000100UL  // Not recognized.
+#define CRYPT_P6H         0x00000100UL  // From PennMUSH flatfile.
+#define CRYPT_OTHER       0x00000200UL  // Not recognized.
 
 extern NAMETAB method_nametab[];
 

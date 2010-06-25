@@ -303,6 +303,12 @@ const UTF8 szSHA512Prefix[] = "$6$";
 #define SHA512_PREFIX_LENGTH (sizeof(szSHA512Prefix)-1)
 #define SHA512_SALT_LENGTH 16
 
+#ifdef UNIX_DIGEST
+const UTF8 szP6HPrefix[] = "$P6H$";
+#define P6H_PREFIX_LENGTH (sizeof(szP6HPrefix)-1)
+#define P6H_ENCODED_HASH_LENGTH_MAX 40
+#endif
+
 // These are known but passed through as CRYPT_OTHER:
 //
 // Blowfish   $2a$
@@ -413,6 +419,40 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
     s_Pass(player, pEncodedPassword);
 }
 
+#ifdef UNIX_DIGEST
+UTF8 *p6h_crypt(const UTF8 *szPassword)
+{
+    // Calculate SHA-0 Hash.
+    //
+    SHA_CTX shac;
+    UTF8 szHashRaw[SHA_DIGEST_LENGTH];
+    SHA_Init(&shac);
+    SHA_Update(&shac, szPassword, strlen((const char *)szPassword));
+    SHA_Final(szHashRaw, &shac);
+
+    //          1         2
+    // 1234567890123456789012345678
+    // $P6H$$XXhhhhhhhhhhhhhhhhhhhh
+    //
+    static UTF8 buf[P6H_PREFIX_LENGTH + 1 + P6H_ENCODED_HASH_LENGTH_MAX + 1 + 16];
+    mux_strncpy(buf, szP6HPrefix, P6H_PREFIX_LENGTH);
+    buf[P6H_PREFIX_LENGTH] = '$';
+
+    unsigned int a = ((unsigned int)szHashRaw[0]) << 24
+                   | ((unsigned int)szHashRaw[1]) << 16
+                   | ((unsigned int)szHashRaw[2]) <<  8
+                   | ((unsigned int)szHashRaw[3]);
+
+    unsigned int b = ((unsigned int)szHashRaw[4]) << 24
+                   | ((unsigned int)szHashRaw[5]) << 16
+                   | ((unsigned int)szHashRaw[6]) <<  8
+                   | ((unsigned int)szHashRaw[7]);
+
+    mux_sprintf(buf + P6H_PREFIX_LENGTH + 1, P6H_ENCODED_HASH_LENGTH_MAX, T("XX%lu%lu"), a, b);
+    return buf;
+}
+#endif
+
 // There is no longer any support for DES-encrypted passwords on the Windows
 // build.  To convert these, using #1 to @newpassword, go through an older
 // version of TinyMUX, or go through a Unix host.
@@ -466,6 +506,13 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
             {
                 *piType = CRYPT_SHA512;
             }
+#ifdef UNIX_DIGEST
+            else if (  nAlgo == P6H_PREFIX_LENGTH
+                    && memcmp(szSetting, szP6HPrefix, P6H_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_P6H;
+            }
+#endif
             else
             {
                 *piType = CRYPT_OTHER;
@@ -508,6 +555,11 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     case CRYPT_CLEARTEXT:
         return szPassword;
+
+#ifdef UNIX_DIGEST
+    case CRYPT_P6H:
+        return p6h_crypt(szPassword);
+#endif
 
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
