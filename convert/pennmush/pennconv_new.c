@@ -248,18 +248,6 @@ process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations,
                   s_tmpbufptr = s_tmpbuff;
                   i_joinercount = 0;
                   /* Count joiners */
-/*
-                  while ( s_resttmp && *s_resttmp ) {
-                     if ( (*s_resttmp == '|') || (*s_resttmp == '&') )
-                        i_joinercount++;
-                     s_resttmp++;
-                  }
-                  s_resttmp = s_restarg;
-                  if ( i_joinercount ) {
-                     *s_tmpbufptr = '(';
-                     s_tmpbufptr++;
-                  }
-*/
                   while ( *s_resttmp && s_resttmp) {
                      /* Right now, we can't handle any alpha characters.  Will work later */
                      if ( *s_resttmp == '"' ) { 
@@ -344,23 +332,11 @@ process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations,
                   }
                   *s_tmpbufptr = '\0';
                   if ( !i_abortlock ) {
-/*
-fprintf(stderr, "Lock on line %d: ", i_fetchcntr);
-*/
                      if ( !i_joiner ) {
                         fprintf(fd_fileout, "%s\n", StripQuote(s_tmpbuff,1));
-/*
-fprintf(stderr, "%s\n", StripQuote(s_tmpbuff,1));
-*/
                      } else {
                         fprintf(fd_fileout, "(%s", StripQuote(s_tmpbuff,1));
-/*
-fprintf(stderr, "(%s", StripQuote(s_tmpbuff,1));
-*/
                         fprintf(fd_fileout, ")\n");
-/*
-fprintf(stderr, ")\n");
-*/
                      }
                      i_basic = 1;
                   }
@@ -461,10 +437,6 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
          fprintf(fd_fileout, ">%s\n", s_tmp2ptr2);
          i_attrib = atoi(s_tmp2ptr2);
       }
-/*
-if ( i_id == 859 )
-   fprintf(stderr, "Attrib: %s [%d/%d]\n", s_restarg, i_loop, i_iterations);
-*/
       i_loop++;
 
       /* get owner */
@@ -476,10 +448,6 @@ if ( i_id == 859 )
          LogError(i_fetchcntr, "owner", s_instr, s_firstarg, s_restarg);
       }
 
-/*
-if ( i_id == 859 )
-   fprintf(stderr, "Owner: %s", s_restarg);
-*/
       /* get flags */
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
@@ -503,17 +471,9 @@ if ( i_id == 859 )
          LogError(i_fetchcntr, "flags", s_instr, s_firstarg, s_restarg);
       }
 
-/*
-if ( i_id == 859 )
-   fprintf(stderr, "Flags: %s", s_restarg);
-*/
       /* get and toss away derefs */
       FGETS(s_instr, LBUF, fd_filein);
 
-/*
-if ( i_id == 859 )
-   fprintf(stderr, "Derefs: %s", s_instr);
-*/
       /* get value(s) */
       FGETS(s_instr, LBUF, fd_filein);
       if ( (strlen(s_instr) > 2) && (*(s_instr + strlen(s_instr) -2) != '"') ) {
@@ -555,16 +515,6 @@ if ( i_id == 859 )
             i_exception = 0;
          }
       } 
-/*
-if ( i_id >= 859 )
-fprintf(stderr, "TestValue: [%d]:[%d]:[%x]%s\n", i_contvalue, i_exception, *(s_restarg + strlen(s_restarg) - 2), s_restarg);
-
-*/
-/*
-if ( i_id >= 170 )
-   fprintf(stderr, "Value: X\n");
-   fprintf(stderr, "Value: %s\n", s_restarg);
-*/
       if ( ((i_owner != i_id) || (i_flags > 0)) && (i_attrib > 256) ) {
          if ( *(StripQuote(s_restarg,i_exception)) == '\n')
             fprintf(fd_fileout, "%c%d:%d:", (char)1, i_owner, i_flags, StripQuote(s_restarg,i_exception));
@@ -582,41 +532,6 @@ if ( i_id >= 170 )
       i_exception = 0;
       while ( i_contvalue && !feof(fd_filein) ) {
          FGETS(s_instr, LBUF, fd_filein);
-/*
-         if ( !s_instr || !*s_instr ) {
-            i_exception = 1;
-            i_contvalue = 1;
-         } else if ( *(s_instr+1) == '\r' ) {
-            i_contvalue = 1;
-         } else if ( *(s_instr+1) == '\n' ) {
-            i_contvalue = 1;
-            *(s_instr+1) == '\r';
-            *(s_instr+2) == '\n';
-            *(s_instr+3) == '\0';
-         } else if ( *(s_instr+1) && *(s_instr + strlen(s_instr) - 2) == '\r' ) {
-            i_contvalue = 1;
-         } else if ( *(s_instr+1) && *(s_instr + strlen(s_instr) - 2) != '"' ) {
-            i_contvalue = 1;
-            *(s_instr + strlen(s_instr) - 1) == '\r';
-            *(s_instr + strlen(s_instr)) == '\n';
-            *(s_instr + strlen(s_instr)+1) == '\0';
-         } else if ( *(s_instr+1) && (*(s_instr + strlen(s_instr) - 2) == '"') ) {
-            if ( *(s_instr+2) && (*(s_instr + strlen(s_instr) -3) == '\\') ) {
-               i_contvalue = 1;
-               *(s_instr + strlen(s_instr) - 1) == '\r';
-               *(s_instr + strlen(s_instr)) == '\n';
-               *(s_instr + strlen(s_instr)+1) == '\0';
-            } else {
-               i_contvalue = 0;
-               i_exception = 0;
-            }
-         }
-*/
-
-
-
-
-
          if ( !s_instr || !*s_instr ) {
             i_exception = 1;
             i_contvalue = 1;
@@ -642,10 +557,6 @@ if ( i_id >= 170 )
                i_exception = 0;
             }
          } 
-/*
-if ( i_id >= 859 )
-   fprintf(stderr, "Value: %s\n", s_instr);
-*/
          if ( *(s_instr) )
             fputs(StripQuote(s_instr,i_contvalue), fd_fileout);
          if ( i_exception )
@@ -707,9 +618,6 @@ ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd
       /* Populate dbref */
       if ( *s_instr == '!' ) {
          i_id = atoi((s_instr+1));
-/*
-fprintf(stderr, "Value: %d\n", i_id); 
-*/
          if ( i_id != 0 ) {
             fputs("<\n", fd_fileout);
          }
