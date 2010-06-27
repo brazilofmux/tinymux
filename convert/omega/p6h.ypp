@@ -1,0 +1,288 @@
+%{
+#include "omega.h"
+#include "p6hgame.h"
+int p6hlex();
+void p6herror(const char *s);
+%}
+
+%name-prefix="p6h"
+%union {
+    char               *p;
+    int                 i;
+    FLAGINFO           *pfi;
+    vector<FLAGINFO *> *pvfi;
+    FLAGALIASINFO      *pfai;
+    vector<FLAGALIASINFO *> *pvfai;
+    OBJECTINFO         *poi;
+    vector<OBJECTINFO *> *pvoi;
+    LOCKINFO           *pli;
+    vector<LOCKINFO *> *pvli;
+    ATTRINFO           *pai;
+    vector<ATTRINFO *> *pvai;
+}
+
+%token VHDR SAVEDTIME FLAGSLIST FLAGCOUNT NAME LETTER TYPE PERMS NEGATE_PERMS
+%token FLAGALIASCOUNT ALIAS POWERLIST OBJECTCOUNT LOCATION CONTENTS
+%token EXITS NEXT PARENT LOCKCOUNT OWNER ZONE PENNIES FLAGS POWERS WARNINGS
+%token CREATED MODIFIED ATTRCOUNT DEREFS VALUE CREATOR KEY EOD
+%token <p> STRING ATTRNAME
+%token <i> INTEGER DBREF OBJECT
+%type <pfi> flag flagphrase flagphrases
+%type <pvfi> flags
+%type <pfai> flagalias flagaliasphrase flagaliasphrases
+%type <pvfai> flagaliases
+%type <poi> object objectphrase objectphrases
+%type <pli> lock lockphrase lockphrases
+%type <pvli> locklist
+%type <pai> attr attrphrase attrphrases attr_old
+%type <pvai> attrlist attrlist_old
+%start start
+
+%%
+start
+:
+    VHDR
+    sections
+    EOD
+;
+
+sections
+:
+    section
+|
+    sections section
+;
+
+section
+:
+    SAVEDTIME STRING  { g_p6hgame.SetSavedTime($2); }
+|
+    FLAGSLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetFlagCount($3); g_p6hgame.SetFlagList($4); g_p6hgame.SetFlagAliasCount($6); g_p6hgame.SetFlagAliasList($7); }
+|
+    POWERLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetPowerCount($3); g_p6hgame.SetPowerList($4); g_p6hgame.SetPowerAliasCount($6); g_p6hgame.SetPowerAliasList($7); }
+|
+    OBJECTCOUNT
+|
+    objectlist
+;
+
+flags
+:
+    flag                     { $$ = new vector<FLAGINFO *>; $$->push_back($1); }
+|
+    flags flag               { $$ = $1; $$->push_back($2); }
+;
+
+flag
+:
+    NAME STRING flagphrases  { $$ = $3; $$->SetName($2); }
+;
+
+flagphrases
+:
+    flagphrase               { $$ = $1; }
+|
+    flagphrases flagphrase   { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+flagphrase
+:
+    LETTER STRING        { $$ = new FLAGINFO; $$->SetLetter($2); }
+|
+    TYPE STRING          { $$ = new FLAGINFO; $$->SetType($2); }
+|
+    PERMS STRING         { $$ = new FLAGINFO; $$->SetPerms($2); }
+|
+    NEGATE_PERMS STRING  { $$ = new FLAGINFO; $$->SetNegatePerms($2); }
+;
+
+flagaliases
+:
+    flagalias              { $$ = new vector<FLAGALIASINFO *>; $$->push_back($1); }
+|
+    flagaliases flagalias  { $$ = $1; $$->push_back($2); }
+;
+
+flagalias
+:
+    NAME STRING flagaliasphrases  { $$ = $3; $$->SetName($2); }
+;
+
+flagaliasphrases
+:
+    flagaliasphrase                   { $$ = $1; }
+|
+    flagaliasphrases flagaliasphrase  { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+flagaliasphrase
+:
+    ALIAS STRING     { $$ = new FLAGALIASINFO; $$->SetAlias($2); }
+;
+
+objectlist
+:
+    object
+|
+    objectlist object
+;
+
+object
+:
+    OBJECT objectphrases   { $2->SetRef($1); g_p6hgame.AddObject($2); }
+|
+    OBJECT STRING INTEGER INTEGER INTEGER INTEGER INTEGER LOCKCOUNT
+    INTEGER locklist INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER attrlist_old '<' {
+                                         OBJECTINFO *oi = new OBJECTINFO;
+                                         oi = new OBJECTINFO;
+                                         oi->SetRef($1);
+                                         oi->SetName($2);
+                                         oi->SetLocation($3);
+                                         oi->SetContents($4);
+                                         oi->SetExits($5);
+                                         oi->SetNext($6);
+                                         oi->SetParent($7);
+                                         oi->SetLocks($9, $10);
+                                         oi->SetOwner($11);
+                                         oi->SetZone($12);
+                                         oi->SetPennies($13);
+                                         oi->SetType($14);
+                                         oi->SetCreated($17);
+                                         oi->SetModified($18);
+                                         if (NULL != $19)
+                                         {
+                                             oi->SetAttrs($19->size(), $19);
+                                         }
+                                         g_p6hgame.AddObject(oi);
+                                     } 
+;
+
+objectphrases
+:
+    objectphrase                  { $$ = $1; }
+|
+    objectphrases objectphrase    { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+objectphrase
+:
+    NAME      STRING                 { $$ = new OBJECTINFO; $$->SetName($2); }
+|
+    LOCATION  DBREF                  { $$ = new OBJECTINFO; $$->SetLocation($2); }
+|
+    CONTENTS  DBREF                  { $$ = new OBJECTINFO; $$->SetContents($2); }
+|
+    EXITS     DBREF                  { $$ = new OBJECTINFO; $$->SetExits($2); }
+|
+    NEXT      DBREF                  { $$ = new OBJECTINFO; $$->SetNext($2); }
+|
+    PARENT    DBREF                  { $$ = new OBJECTINFO; $$->SetParent($2); }
+|
+    LOCKCOUNT INTEGER locklist       { $$ = new OBJECTINFO; $$->SetLocks($2, $3); }
+|
+    OWNER     DBREF                  { $$ = new OBJECTINFO; $$->SetOwner($2); }
+|
+    ZONE      DBREF                  { $$ = new OBJECTINFO; $$->SetZone($2); }
+|
+    PENNIES   INTEGER                { $$ = new OBJECTINFO; $$->SetPennies($2); }
+|
+    TYPE      INTEGER                { $$ = new OBJECTINFO; $$->SetType($2); }
+|
+    FLAGS     STRING                 { $$ = new OBJECTINFO; $$->SetFlags($2); }
+|
+    POWERS    STRING                 { $$ = new OBJECTINFO; $$->SetPowers($2); }
+|
+    WARNINGS  STRING                 { $$ = new OBJECTINFO; $$->SetWarnings($2); }
+|
+    CREATED   INTEGER                { $$ = new OBJECTINFO; $$->SetCreated($2); }
+|
+    MODIFIED  INTEGER                { $$ = new OBJECTINFO; $$->SetModified($2); }
+|
+    ATTRCOUNT INTEGER attrlist       { $$ = new OBJECTINFO; $$->SetAttrs($2, $3); }
+;
+
+locklist
+:
+    locklist lock                    { $$ = $1; if (NULL == $$) { $$ = new vector<LOCKINFO *>; } $$->push_back($2); }
+|
+                                     { $$ = NULL; }
+;
+
+lock
+:
+    TYPE STRING lockphrases          { $$ = $3; $$->SetType($2); }
+;
+
+lockphrases
+:
+    lockphrase                       { $$ = $1; }
+|
+    lockphrases lockphrase           { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+lockphrase
+:
+    CREATOR DBREF                    { $$ = new LOCKINFO; $$->SetCreator($2); }
+|
+    CREATOR INTEGER                  { $$ = new LOCKINFO; $$->SetCreator($2); }
+|
+    FLAGS   STRING                   { $$ = new LOCKINFO; $$->SetFlags($2); }
+|
+    FLAGS   INTEGER                  { $$ = new LOCKINFO; $$->SetFlags($2); }
+|
+    DEREFS  INTEGER                  { $$ = new LOCKINFO; $$->SetDerefs($2); }
+|
+    KEY     STRING                   { $$ = new LOCKINFO; $$->SetKey($2); }
+;
+
+attrlist
+:
+    attrlist attr                    { $$ = $1; if (NULL == $$) { $$ = new vector<ATTRINFO *>; } $$->push_back($2); }
+|
+                                     { $$ = NULL; }
+;
+
+
+attrlist_old
+:
+    attrlist_old attr_old           { $$ = $1; if (NULL == $$) { $$ = new vector<ATTRINFO *>; } $$->push_back($2); }
+|
+                                    { $$ = NULL; }
+;
+
+attr
+:
+    NAME STRING attrphrases          { $$ = $3; $$->SetName($2); }
+;
+
+attr_old
+:
+    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new ATTRINFO; $$->SetName($1); $$->SetOwner($3); $$->SetFlags($5); $$->SetValue($6); }
+;
+
+attrphrases
+:
+    attrphrase                       { $$ = $1; }
+|
+    attrphrases attrphrase           { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+attrphrase
+:
+    OWNER  DBREF                     { $$ = new ATTRINFO; $$->SetOwner($2); }
+|
+    FLAGS  STRING                    { $$ = new ATTRINFO; $$->SetFlags($2); }
+|
+    DEREFS INTEGER                   { $$ = new ATTRINFO; $$->SetDerefs($2); }
+|
+    VALUE  STRING                    { $$ = new ATTRINFO; $$->SetValue($2); }
+;
+
+%%
+
+void p6herror(const char *s)
+{
+    extern int p6hlineno;
+    fprintf(stderr, "%s near line %d.\n", s, p6hlineno);
+}

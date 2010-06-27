@@ -1,0 +1,17 @@
+Omega: README
+Last Update: June 2010
+
+This is intended to be the 'last' flatfile convertor.  It currently consumes
+and produces PennMUSH flatfiles, but the plan is to add parsers for other
+formats.
+
+This can eventually be used to validate backups (lint for your flatfile) --
+including which server version should be able to consume it.  It can also
+be used to extract a @decomp of specific objects for re-quoting into games.
+Finally, it can be used to convert from one format to another.
+
+Tested:
+
+2010-06-27 - Tested that a large flatfile produced by PennMUSH 1.8.0p6
+             (12/12/2005, 1008000009) is parsed and re-generated exactly the
+             same.

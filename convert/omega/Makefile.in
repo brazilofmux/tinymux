@@ -1,0 +1,25 @@
+all: omega
+
+omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o
+	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o -lfl
+
+omega.o: omega.cpp omega.h p6hgame.h
+	$(CXX) -g -c omega.cpp
+
+p6hgame.o: p6hgame.cpp omega.h p6hgame.h
+	$(CXX) -g -c p6hgame.cpp
+
+lex.p6h.cpp: p6h.ll
+	flex -8 -o lex.p6h.cpp p6h.ll
+
+p6h.tab.cpp p6h.tab.hpp: p6h.ypp
+	bison -d p6h.ypp
+
+p6h.tab.o: p6h.tab.hpp p6h.tab.cpp p6hgame.h
+	$(CXX) -g -c p6h.tab.cpp
+
+lex.p6h.o: lex.p6h.cpp p6h.tab.hpp p6hgame.h
+	$(CXX) -g -c lex.p6h.cpp
+
+clean:
+	-rm -f *.o lex.p6h.cpp location.hh p6h.tab.cpp p6h.tab.hpp position.hh stack.hh
