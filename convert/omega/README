@@ -15,3 +15,12 @@ Tested:
 2010-06-27 - Tested that a large flatfile produced by PennMUSH 1.8.0p6
              (12/12/2005, 1008000009) is parsed and re-generated exactly the
              same.
+
+             Round-trip tested minimal+ flatfile produced by PennMUSH 1.8.4p0
+             (05/09/2010, 1008004000)
+
+             Round-trip tested minimal+ flatfile produced by PennMUSH 1.8.0p0
+             (01/01/2005, 001008008000)
+
+2010-06-28 - Round-trip tested a large TinyMUX 2.7 database. Checked and fixed
+             memory leaks in p6h and t5x paths.

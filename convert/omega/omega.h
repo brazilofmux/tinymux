@@ -11,4 +11,6 @@
 #include <vector>
 using namespace std;
 
+char *StringClone(const char *str);
+
 #endif

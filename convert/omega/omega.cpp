@@ -1,5 +1,6 @@
 #include "omega.h"
 #include "p6hgame.h"
+#include "t5xgame.h"
 
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
@@ -35,17 +36,19 @@ int main(int argc, const char *argv[])
         if (NULL != fp)
         {
 #if 0
-            extern int p6hdebug;
-            p6hdebug = 1;
+            extern int t5xdebug;
+            t5xdebug = 1;
+            extern int t5x_flex_debug;
+            t5x_flex_debug = 1;
 #endif
-            extern int p6hparse();
-            extern FILE *p6hin;
-            p6hin = fp;
-            p6hparse();
+            extern int t5xparse();
+            extern FILE *t5xin;
+            t5xin = fp;
+            t5xparse();
 
-            g_p6hgame.Validate();
-            g_p6hgame.Write(stdout);
-            p6hin = NULL;
+            g_t5xgame.Validate();
+            g_t5xgame.Write(stdout);
+            t5xin = NULL;
        }
     }
     return 0;

@@ -1,0 +1,110 @@
+%{
+#include "omega.h"
+#include "t5xgame.h"
+int t5xlex();
+void t5xerror(const char *s);
+%}
+
+%name-prefix="t5x"
+%union {
+    char                   *p;
+    int                     i;
+    T5X_ATTRINFO           *pai;
+    vector<T5X_ATTRINFO *> *pvai;
+}
+
+%token EOD 
+%token <p> STRING
+%token <i> INTEGER DBREF OBJECT XHDR OBJECTCOUNT ATTRCOUNT RECORDPLAYERS ATTRNAME
+%type <pai> attr
+%type <pvai> attrlist
+%start start
+
+%%
+start
+:
+    XHDR        { g_t5xgame.SetFlags($1); }
+    sections
+    EOD
+;
+
+sections
+:
+    section
+|
+    sections section
+;
+
+section
+:
+|
+    OBJECTCOUNT    { g_t5xgame.SetObjectCount($1); }
+|
+    ATTRCOUNT      { g_t5xgame.SetAttrCount($1); }
+|
+    RECORDPLAYERS  { g_t5xgame.SetRecordPlayers($1); }
+|
+    ATTRNAME STRING { g_t5xgame.AddNumAndName($1, $2); }
+|
+    objectlist
+;
+
+objectlist
+:
+    object
+|
+    objectlist object
+;
+
+object
+:
+    OBJECT STRING
+    INTEGER INTEGER INTEGER INTEGER INTEGER 
+    INTEGER INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    attrlist '<' {
+                     T5X_OBJECTINFO *oi = new T5X_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetZone($4);
+                     oi->SetContents($5);
+                     oi->SetExits($6);
+                     oi->SetLink($7);
+                     oi->SetNext($8);
+                     oi->SetOwner($9);
+                     oi->SetParent($10);
+                     oi->SetPennies($11);
+                     oi->SetFlags1($12);
+                     oi->SetFlags2($13);
+                     oi->SetFlags3($14);
+                     oi->SetPowers1($15);
+                     oi->SetPowers2($16);
+                     if (NULL != $17)
+                     {
+                         oi->SetAttrs($17->size(), $17);
+                     }
+                     g_t5xgame.AddObject(oi);
+                 } 
+;
+
+attrlist
+:
+    attrlist attr       { $$ = $1; if (NULL == $$) { $$ = new vector<T5X_ATTRINFO *>; } $$->push_back($2); }
+|
+                        { $$ = NULL; }
+;
+
+
+attr
+:
+    '>' INTEGER STRING  { $$ = new T5X_ATTRINFO; $$->SetNumAndValue($2, $3); }
+;
+
+%%
+
+void t5xerror(const char *s)
+{
+    extern int t5xlineno;
+    fprintf(stderr, "%s near line %d.\n", s, t5xlineno);
+}

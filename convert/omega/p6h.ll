@@ -19,8 +19,7 @@
 
 <INITIAL>{
   ^\+V[0-9]+     {
-                     int flags = ((atoi(p6htext+2) - 2) / 256) - 5;
-                     g_p6hgame.SetFlags(flags);
+                     p6hlval.i = ((atoi(p6htext+2) - 2) / 256) - 5;
                      BEGIN(afterhdr);
                      return VHDR;
                  }
@@ -64,7 +63,7 @@
                      return INTEGER;
                  }
   ~[0-9]+        {
-                     g_p6hgame.SetObjectCount(atoi(p6htext+1));
+                     p6hlval.i = atoi(p6htext+1);
                      return OBJECTCOUNT;
                  }
   ![0-9]+        {

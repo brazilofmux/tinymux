@@ -7,26 +7,26 @@ void p6herror(const char *s);
 
 %name-prefix="p6h"
 %union {
-    char               *p;
-    int                 i;
-    FLAGINFO           *pfi;
-    vector<FLAGINFO *> *pvfi;
-    FLAGALIASINFO      *pfai;
-    vector<FLAGALIASINFO *> *pvfai;
-    OBJECTINFO         *poi;
-    vector<OBJECTINFO *> *pvoi;
-    LOCKINFO           *pli;
-    vector<LOCKINFO *> *pvli;
-    ATTRINFO           *pai;
-    vector<ATTRINFO *> *pvai;
+    char                       *p;
+    int                         i;
+    P6H_FLAGINFO                *pfi;
+    vector<P6H_FLAGINFO *>      *pvfi;
+    P6H_FLAGALIASINFO           *pfai;
+    vector<P6H_FLAGALIASINFO *> *pvfai;
+    P6H_OBJECTINFO              *poi;
+    vector<P6H_OBJECTINFO *>    *pvoi;
+    P6H_LOCKINFO                *pli;
+    vector<P6H_LOCKINFO *>      *pvli;
+    P6H_ATTRINFO                *pai;
+    vector<P6H_ATTRINFO *>      *pvai;
 }
 
-%token VHDR SAVEDTIME FLAGSLIST FLAGCOUNT NAME LETTER TYPE PERMS NEGATE_PERMS
-%token FLAGALIASCOUNT ALIAS POWERLIST OBJECTCOUNT LOCATION CONTENTS
+%token SAVEDTIME FLAGSLIST FLAGCOUNT NAME LETTER TYPE PERMS NEGATE_PERMS
+%token FLAGALIASCOUNT ALIAS POWERLIST LOCATION CONTENTS
 %token EXITS NEXT PARENT LOCKCOUNT OWNER ZONE PENNIES FLAGS POWERS WARNINGS
 %token CREATED MODIFIED ATTRCOUNT DEREFS VALUE CREATOR KEY EOD
 %token <p> STRING ATTRNAME
-%token <i> INTEGER DBREF OBJECT
+%token <i> INTEGER DBREF OBJECT VHDR OBJECTCOUNT 
 %type <pfi> flag flagphrase flagphrases
 %type <pvfi> flags
 %type <pfai> flagalias flagaliasphrase flagaliasphrases
@@ -41,7 +41,7 @@ void p6herror(const char *s);
 %%
 start
 :
-    VHDR
+    VHDR               { g_p6hgame.SetFlags($1); }
     sections
     EOD
 ;
@@ -61,14 +61,14 @@ section
 |
     POWERLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetPowerCount($3); g_p6hgame.SetPowerList($4); g_p6hgame.SetPowerAliasCount($6); g_p6hgame.SetPowerAliasList($7); }
 |
-    OBJECTCOUNT
+    OBJECTCOUNT       { g_p6hgame.SetObjectCount($1); }
 |
     objectlist
 ;
 
 flags
 :
-    flag                     { $$ = new vector<FLAGINFO *>; $$->push_back($1); }
+    flag                     { $$ = new vector<P6H_FLAGINFO *>; $$->push_back($1); }
 |
     flags flag               { $$ = $1; $$->push_back($2); }
 ;
@@ -87,18 +87,18 @@ flagphrases
 
 flagphrase
 :
-    LETTER STRING        { $$ = new FLAGINFO; $$->SetLetter($2); }
+    LETTER STRING        { $$ = new P6H_FLAGINFO; $$->SetLetter($2); }
 |
-    TYPE STRING          { $$ = new FLAGINFO; $$->SetType($2); }
+    TYPE STRING          { $$ = new P6H_FLAGINFO; $$->SetType($2); }
 |
-    PERMS STRING         { $$ = new FLAGINFO; $$->SetPerms($2); }
+    PERMS STRING         { $$ = new P6H_FLAGINFO; $$->SetPerms($2); }
 |
-    NEGATE_PERMS STRING  { $$ = new FLAGINFO; $$->SetNegatePerms($2); }
+    NEGATE_PERMS STRING  { $$ = new P6H_FLAGINFO; $$->SetNegatePerms($2); }
 ;
 
 flagaliases
 :
-    flagalias              { $$ = new vector<FLAGALIASINFO *>; $$->push_back($1); }
+    flagalias              { $$ = new vector<P6H_FLAGALIASINFO *>; $$->push_back($1); }
 |
     flagaliases flagalias  { $$ = $1; $$->push_back($2); }
 ;
@@ -117,7 +117,7 @@ flagaliasphrases
 
 flagaliasphrase
 :
-    ALIAS STRING     { $$ = new FLAGALIASINFO; $$->SetAlias($2); }
+    ALIAS STRING     { $$ = new P6H_FLAGALIASINFO; $$->SetAlias($2); }
 ;
 
 objectlist
@@ -134,8 +134,7 @@ object
     OBJECT STRING INTEGER INTEGER INTEGER INTEGER INTEGER LOCKCOUNT
     INTEGER locklist INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER
     INTEGER INTEGER attrlist_old '<' {
-                                         OBJECTINFO *oi = new OBJECTINFO;
-                                         oi = new OBJECTINFO;
+                                         P6H_OBJECTINFO *oi = new P6H_OBJECTINFO;
                                          oi->SetRef($1);
                                          oi->SetName($2);
                                          oi->SetLocation($3);
@@ -167,44 +166,44 @@ objectphrases
 
 objectphrase
 :
-    NAME      STRING                 { $$ = new OBJECTINFO; $$->SetName($2); }
+    NAME      STRING                 { $$ = new P6H_OBJECTINFO; $$->SetName($2); }
 |
-    LOCATION  DBREF                  { $$ = new OBJECTINFO; $$->SetLocation($2); }
+    LOCATION  DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetLocation($2); }
 |
-    CONTENTS  DBREF                  { $$ = new OBJECTINFO; $$->SetContents($2); }
+    CONTENTS  DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetContents($2); }
 |
-    EXITS     DBREF                  { $$ = new OBJECTINFO; $$->SetExits($2); }
+    EXITS     DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetExits($2); }
 |
-    NEXT      DBREF                  { $$ = new OBJECTINFO; $$->SetNext($2); }
+    NEXT      DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetNext($2); }
 |
-    PARENT    DBREF                  { $$ = new OBJECTINFO; $$->SetParent($2); }
+    PARENT    DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetParent($2); }
 |
-    LOCKCOUNT INTEGER locklist       { $$ = new OBJECTINFO; $$->SetLocks($2, $3); }
+    LOCKCOUNT INTEGER locklist       { $$ = new P6H_OBJECTINFO; $$->SetLocks($2, $3); }
 |
-    OWNER     DBREF                  { $$ = new OBJECTINFO; $$->SetOwner($2); }
+    OWNER     DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetOwner($2); }
 |
-    ZONE      DBREF                  { $$ = new OBJECTINFO; $$->SetZone($2); }
+    ZONE      DBREF                  { $$ = new P6H_OBJECTINFO; $$->SetZone($2); }
 |
-    PENNIES   INTEGER                { $$ = new OBJECTINFO; $$->SetPennies($2); }
+    PENNIES   INTEGER                { $$ = new P6H_OBJECTINFO; $$->SetPennies($2); }
 |
-    TYPE      INTEGER                { $$ = new OBJECTINFO; $$->SetType($2); }
+    TYPE      INTEGER                { $$ = new P6H_OBJECTINFO; $$->SetType($2); }
 |
-    FLAGS     STRING                 { $$ = new OBJECTINFO; $$->SetFlags($2); }
+    FLAGS     STRING                 { $$ = new P6H_OBJECTINFO; $$->SetFlags($2); }
 |
-    POWERS    STRING                 { $$ = new OBJECTINFO; $$->SetPowers($2); }
+    POWERS    STRING                 { $$ = new P6H_OBJECTINFO; $$->SetPowers($2); }
 |
-    WARNINGS  STRING                 { $$ = new OBJECTINFO; $$->SetWarnings($2); }
+    WARNINGS  STRING                 { $$ = new P6H_OBJECTINFO; $$->SetWarnings($2); }
 |
-    CREATED   INTEGER                { $$ = new OBJECTINFO; $$->SetCreated($2); }
+    CREATED   INTEGER                { $$ = new P6H_OBJECTINFO; $$->SetCreated($2); }
 |
-    MODIFIED  INTEGER                { $$ = new OBJECTINFO; $$->SetModified($2); }
+    MODIFIED  INTEGER                { $$ = new P6H_OBJECTINFO; $$->SetModified($2); }
 |
-    ATTRCOUNT INTEGER attrlist       { $$ = new OBJECTINFO; $$->SetAttrs($2, $3); }
+    ATTRCOUNT INTEGER attrlist       { $$ = new P6H_OBJECTINFO; $$->SetAttrs($2, $3); }
 ;
 
 locklist
 :
-    locklist lock                    { $$ = $1; if (NULL == $$) { $$ = new vector<LOCKINFO *>; } $$->push_back($2); }
+    locklist lock                    { $$ = $1; if (NULL == $$) { $$ = new vector<P6H_LOCKINFO *>; } $$->push_back($2); }
 |
                                      { $$ = NULL; }
 ;
@@ -223,22 +222,22 @@ lockphrases
 
 lockphrase
 :
-    CREATOR DBREF                    { $$ = new LOCKINFO; $$->SetCreator($2); }
+    CREATOR DBREF                    { $$ = new P6H_LOCKINFO; $$->SetCreator($2); }
 |
-    CREATOR INTEGER                  { $$ = new LOCKINFO; $$->SetCreator($2); }
+    CREATOR INTEGER                  { $$ = new P6H_LOCKINFO; $$->SetCreator($2); }
 |
-    FLAGS   STRING                   { $$ = new LOCKINFO; $$->SetFlags($2); }
+    FLAGS   STRING                   { $$ = new P6H_LOCKINFO; $$->SetFlags($2); }
 |
-    FLAGS   INTEGER                  { $$ = new LOCKINFO; $$->SetFlags($2); }
+    FLAGS   INTEGER                  { $$ = new P6H_LOCKINFO; $$->SetFlags($2); }
 |
-    DEREFS  INTEGER                  { $$ = new LOCKINFO; $$->SetDerefs($2); }
+    DEREFS  INTEGER                  { $$ = new P6H_LOCKINFO; $$->SetDerefs($2); }
 |
-    KEY     STRING                   { $$ = new LOCKINFO; $$->SetKey($2); }
+    KEY     STRING                   { $$ = new P6H_LOCKINFO; $$->SetKey($2); }
 ;
 
 attrlist
 :
-    attrlist attr                    { $$ = $1; if (NULL == $$) { $$ = new vector<ATTRINFO *>; } $$->push_back($2); }
+    attrlist attr                    { $$ = $1; if (NULL == $$) { $$ = new vector<P6H_ATTRINFO *>; } $$->push_back($2); }
 |
                                      { $$ = NULL; }
 ;
@@ -246,7 +245,7 @@ attrlist
 
 attrlist_old
 :
-    attrlist_old attr_old           { $$ = $1; if (NULL == $$) { $$ = new vector<ATTRINFO *>; } $$->push_back($2); }
+    attrlist_old attr_old           { $$ = $1; if (NULL == $$) { $$ = new vector<P6H_ATTRINFO *>; } $$->push_back($2); }
 |
                                     { $$ = NULL; }
 ;
@@ -258,7 +257,7 @@ attr
 
 attr_old
 :
-    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new ATTRINFO; $$->SetName($1); $$->SetOwner($3); $$->SetFlags($5); $$->SetValue($6); }
+    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new P6H_ATTRINFO; $$->SetName($1); $$->SetOwner($3); $$->SetFlags($5); $$->SetValue($6); }
 ;
 
 attrphrases
@@ -270,13 +269,13 @@ attrphrases
 
 attrphrase
 :
-    OWNER  DBREF                     { $$ = new ATTRINFO; $$->SetOwner($2); }
+    OWNER  DBREF                     { $$ = new P6H_ATTRINFO; $$->SetOwner($2); }
 |
-    FLAGS  STRING                    { $$ = new ATTRINFO; $$->SetFlags($2); }
+    FLAGS  STRING                    { $$ = new P6H_ATTRINFO; $$->SetFlags($2); }
 |
-    DEREFS INTEGER                   { $$ = new ATTRINFO; $$->SetDerefs($2); }
+    DEREFS INTEGER                   { $$ = new P6H_ATTRINFO; $$->SetDerefs($2); }
 |
-    VALUE  STRING                    { $$ = new ATTRINFO; $$->SetValue($2); }
+    VALUE  STRING                    { $$ = new P6H_ATTRINFO; $$->SetValue($2); }
 ;
 
 %%

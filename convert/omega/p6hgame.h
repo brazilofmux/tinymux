@@ -1,7 +1,7 @@
 #ifndef _P6HGAME_H_
-#define _p6HGAME_H_
+#define _P6HGAME_H_
 
-class FLAGINFO
+class P6H_FLAGINFO
 {
 public:
     char *m_pName;
@@ -19,13 +19,33 @@ public:
     char *m_pNegatePerms;
     void SetNegatePerms(char *p);
 
-    void Merge(FLAGINFO *pfi);
+    void Merge(P6H_FLAGINFO *pfi);
 
-    FLAGINFO();
-    ~FLAGINFO();
+    P6H_FLAGINFO()
+    {
+        m_pName = NULL;
+        m_pLetter = NULL;
+        m_pType = NULL;
+        m_pPerms = NULL;
+        m_pNegatePerms = NULL;
+    }
+
+    ~P6H_FLAGINFO()
+    {
+        free(m_pName);
+        free(m_pLetter);
+        free(m_pType);
+        free(m_pPerms);
+        free(m_pNegatePerms);
+        m_pName = NULL;
+        m_pLetter = NULL;
+        m_pType = NULL;
+        m_pPerms = NULL;
+        m_pNegatePerms = NULL;
+    }
 };
 
-class FLAGALIASINFO
+class P6H_FLAGALIASINFO
 {
 public:
     char *m_pName;
@@ -34,13 +54,24 @@ public:
     char *m_pAlias;
     void SetAlias(char *p);
 
-    void Merge(FLAGALIASINFO *pfi);
+    void Merge(P6H_FLAGALIASINFO *pfi);
 
-    FLAGALIASINFO();
-    ~FLAGALIASINFO();
+    P6H_FLAGALIASINFO()
+    {
+        m_pName = NULL;
+        m_pAlias = NULL;
+    }
+
+    ~P6H_FLAGALIASINFO()
+    {
+        free(m_pName);
+        free(m_pAlias);
+        m_pName = NULL;
+        m_pAlias = NULL;
+    }
 };
 
-class LOCKINFO
+class P6H_LOCKINFO
 {
 public:
     char *m_pType;
@@ -64,9 +95,9 @@ public:
     int  m_iFlags;
     void SetFlags(int iFlags)  { m_fFlags = true; m_iFlags = iFlags; }
 
-    void Merge(LOCKINFO *pli);
+    void Merge(P6H_LOCKINFO *pli);
 
-    LOCKINFO()
+    P6H_LOCKINFO()
     {
         m_pType = NULL;
         m_fCreator = false;
@@ -75,10 +106,18 @@ public:
         m_pKey = NULL;
         m_fFlags = false;
     }
-    ~LOCKINFO();
+    ~P6H_LOCKINFO()
+    {
+        free(m_pType);
+        free(m_pFlags);
+        free(m_pKey);
+        m_pType = NULL;
+        m_pFlags = NULL;
+        m_pKey = NULL;
+    }
 };
 
-class ATTRINFO
+class P6H_ATTRINFO
 {
 public:
     char *m_pName;
@@ -102,9 +141,9 @@ public:
     int  m_iFlags;
     void SetFlags(int iFlags)  { m_fFlags = true; m_iFlags = iFlags; }
 
-    void Merge(ATTRINFO *pai);
+    void Merge(P6H_ATTRINFO *pai);
 
-    ATTRINFO()
+    P6H_ATTRINFO()
     {
         m_pName = NULL;
         m_fOwner = false;
@@ -113,10 +152,18 @@ public:
         m_pValue = NULL;
         m_fFlags = false;
     }
-    ~ATTRINFO();
+    ~P6H_ATTRINFO()
+    {
+        free(m_pName);
+        free(m_pFlags);
+        free(m_pValue);
+        m_pName = NULL;
+        m_pFlags = NULL;
+        m_pValue = NULL;
+    }
 };
 
-class OBJECTINFO
+class P6H_OBJECTINFO
 {
 public:
     bool m_fRef;
@@ -181,19 +228,20 @@ public:
 
     bool m_fLockCount;
     int  m_nLockCount;
-    vector<LOCKINFO *> *m_pvli;
-    void SetLocks(int nLockCount, vector<LOCKINFO *> *pvli);
+    vector<P6H_LOCKINFO *> *m_pvli;
+    void SetLocks(int nLockCount, vector<P6H_LOCKINFO *> *pvli);
 
     bool m_fAttrCount;
     int  m_nAttrCount;
-    vector<ATTRINFO *> *m_pvai;
-    void SetAttrs(int nAttrCount, vector<ATTRINFO *> *pvai);
+    vector<P6H_ATTRINFO *> *m_pvai;
+    void SetAttrs(int nAttrCount, vector<P6H_ATTRINFO *> *pvai);
 
-    void Merge(OBJECTINFO *poi);
-    void WriteLock(const LOCKINFO &li) const;
-    void WriteAttr(const ATTRINFO &ai) const;
+    void Merge(P6H_OBJECTINFO *poi);
+    void WriteLock(const P6H_LOCKINFO &li) const;
+    void WriteAttr(const P6H_ATTRINFO &ai) const;
 
-    OBJECTINFO()  {
+    P6H_OBJECTINFO()
+    {
         m_fRef = false;
         m_pName = NULL;
         m_fLocation = false;
@@ -217,7 +265,35 @@ public:
         m_fAttrCount = false;
         m_pvai = NULL;
     }
-    ~OBJECTINFO();
+    ~P6H_OBJECTINFO()
+    {
+        free(m_pName);
+        free(m_pFlags);
+        free(m_pPowers);
+        free(m_pWarnings);
+        m_pName = NULL;
+        m_pFlags = NULL;
+        m_pPowers = NULL;
+        m_pWarnings = NULL;
+        if (NULL != m_pvli)
+        {
+            for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvli;
+            m_pvli = NULL;
+        }
+        if (NULL != m_pvai)
+        {
+            for (vector<P6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvai;
+            m_pvai = NULL;
+        }
+    }
 };
 
 
@@ -229,11 +305,9 @@ public:
     void ValidateSavedTime();
 
     void Write(FILE *fp);
-    void WriteFlag(const FLAGINFO &fi);
-    void WriteFlagAlias(const FLAGALIASINFO &fai);
-    void WriteObject(const OBJECTINFO &oi);
-
-    P6H_GAME();
+    void WriteFlag(const P6H_FLAGINFO &fi);
+    void WriteFlagAlias(const P6H_FLAGALIASINFO &fai);
+    void WriteObject(const P6H_OBJECTINFO &oi);
 
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
@@ -246,40 +320,104 @@ public:
     int  m_nFlags;
     void SetFlagCount(int nFlags)  { m_fFlags = true; m_nFlags = nFlags; }
 
-    vector<FLAGINFO *> *m_pvFlags;
-    void SetFlagList(vector<FLAGINFO *> *pvfi) { m_pvFlags = pvfi; }
+    vector<P6H_FLAGINFO *> *m_pvFlags;
+    void SetFlagList(vector<P6H_FLAGINFO *> *pvfi) { m_pvFlags = pvfi; }
 
     bool m_fFlagAliases;
     int  m_nFlagAliases;
     void SetFlagAliasCount(int nFlagAliases)  { m_fFlagAliases = true; m_nFlagAliases = nFlagAliases; }
 
-    vector<FLAGALIASINFO *> *m_pvFlagAliases;
-    void SetFlagAliasList(vector<FLAGALIASINFO *> *pvfai) { m_pvFlagAliases = pvfai; }
+    vector<P6H_FLAGALIASINFO *> *m_pvFlagAliases;
+    void SetFlagAliasList(vector<P6H_FLAGALIASINFO *> *pvfai) { m_pvFlagAliases = pvfai; }
   
     bool m_fPowers;
     int  m_nPowers;
     void SetPowerCount(int nPowers)  { m_fPowers = true; m_nPowers = nPowers; }
 
-    vector<FLAGINFO *> *m_pvPowers;
-    void SetPowerList(vector<FLAGINFO *> *pvpi) { m_pvPowers = pvpi; }
+    vector<P6H_FLAGINFO *> *m_pvPowers;
+    void SetPowerList(vector<P6H_FLAGINFO *> *pvpi) { m_pvPowers = pvpi; }
 
     bool m_fPowerAliases;
     int  m_nPowerAliases;
     void SetPowerAliasCount(int nPowerAliases)  { m_fPowerAliases = true; m_nPowerAliases = nPowerAliases; }
   
-    vector<FLAGALIASINFO *> *m_pvPowerAliases;
-    void SetPowerAliasList(vector<FLAGALIASINFO *> *pvpai) { m_pvPowerAliases = pvpai; }
+    vector<P6H_FLAGALIASINFO *> *m_pvPowerAliases;
+    void SetPowerAliasList(vector<P6H_FLAGALIASINFO *> *pvpai) { m_pvPowerAliases = pvpai; }
   
     bool m_fObjects;
     int  m_nObjects;
     void SetObjectCount(int nObjects) { m_fObjects = true; m_nObjects = nObjects; }
 
-    vector<OBJECTINFO *> m_vObjects;
-    void AddObject(OBJECTINFO *poi);
+    vector<P6H_OBJECTINFO *> m_vObjects;
+    void AddObject(P6H_OBJECTINFO *poi);
+
+    P6H_GAME()
+    {
+        m_flags = 0;
+        m_pSavedTime = NULL;
+        m_fObjects = false;
+        m_nObjects = 0;
+        m_fFlags = false;
+        m_nFlags = 0;
+        m_pvFlags = NULL;
+        m_fFlagAliases = false;
+        m_nFlagAliases = 0;
+        m_pvFlagAliases = NULL;
+        m_fPowers = false;
+        m_nPowers = 0;
+        m_pvPowers = NULL;
+        m_fPowerAliases = false;
+        m_nPowerAliases = 0;
+        m_pvPowerAliases = NULL;
+    }
+    ~P6H_GAME()
+    {
+        free(m_pSavedTime);
+        m_pSavedTime = NULL;
+        if (NULL != m_pvFlags)
+        {
+            for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvFlags;
+            m_pvFlags = NULL;
+        }
+        if (NULL != m_pvFlagAliases)
+        {
+            for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvFlagAliases->begin(); it != m_pvFlagAliases->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvFlagAliases;
+            m_pvFlagAliases = NULL;
+        }
+        if (NULL != m_pvPowers)
+        {
+            for (vector<P6H_FLAGINFO *>::iterator it = m_pvPowers->begin(); it != m_pvPowers->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvPowers;
+            m_pvPowers = NULL;
+        }
+        if (NULL != m_pvPowerAliases)
+        {
+            for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvPowerAliases->begin(); it != m_pvPowerAliases->end(); ++it)
+            {
+                delete *it;
+            } 
+            delete m_pvPowerAliases;
+            m_pvPowerAliases = NULL;
+        }
+        for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+        {
+            delete *it;
+        } 
+        m_vObjects.clear();
+    }
 };
 
 extern P6H_GAME g_p6hgame;
-
-char *StringClone(const char *str);
 
 #endif
