@@ -31,6 +31,8 @@ public:
     char *m_pValue;
     void SetNumAndValue(int iNum, char *pValue);
 
+    void Write(FILE *fp) const;
+
     T5X_ATTRINFO()
     {
         m_fNumAndValue = false;
@@ -114,7 +116,7 @@ public:
     vector<T5X_ATTRINFO *> *m_pvai;
     void SetAttrs(int nAttrCount, vector<T5X_ATTRINFO *> *pvai);
 
-    void WriteAttr(FILE *fp, const T5X_ATTRINFO &ai) const;
+    void Write(FILE *fp);
 
     T5X_OBJECTINFO()  {
         m_fRef = false;
@@ -155,7 +157,6 @@ public:
     void ValidateFlags();
 
     void Write(FILE *fp);
-    void WriteObject(FILE *fp, const T5X_OBJECTINFO &oi);
 
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }

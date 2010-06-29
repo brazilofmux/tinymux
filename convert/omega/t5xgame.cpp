@@ -184,85 +184,85 @@ void T5X_GAME::Validate()
     ValidateFlags();
 }
 
-void T5X_GAME::WriteObject(FILE *fp, const T5X_OBJECTINFO &oi)
+void T5X_OBJECTINFO::Write(FILE *fp)
 {
-    fprintf(fp, "!%d\n", oi.m_dbRef);
-    if (NULL != oi.m_pName)
+    fprintf(fp, "!%d\n", m_dbRef);
+    if (NULL != m_pName)
     {
-        fprintf(fp, "\"%s\"\n", EncodeString(oi.m_pName));
+        fprintf(fp, "\"%s\"\n", EncodeString(m_pName));
     }
-    if (oi.m_fLocation)
+    if (m_fLocation)
     {
-        fprintf(fp, "%d\n", oi.m_dbLocation);
+        fprintf(fp, "%d\n", m_dbLocation);
     }
-    if (oi.m_fZone)
+    if (m_fZone)
     {
-        fprintf(fp, "%d\n", oi.m_dbZone);
+        fprintf(fp, "%d\n", m_dbZone);
     }
-    if (oi.m_fContents)
+    if (m_fContents)
     {
-        fprintf(fp, "%d\n", oi.m_dbContents);
+        fprintf(fp, "%d\n", m_dbContents);
     }
-    if (oi.m_fExits)
+    if (m_fExits)
     {
-        fprintf(fp, "%d\n", oi.m_dbExits);
+        fprintf(fp, "%d\n", m_dbExits);
     }
-    if (oi.m_fLink)
+    if (m_fLink)
     {
-        fprintf(fp, "%d\n", oi.m_dbLink);
+        fprintf(fp, "%d\n", m_dbLink);
     }
-    if (oi.m_fNext)
+    if (m_fNext)
     {
-        fprintf(fp, "%d\n", oi.m_dbNext);
+        fprintf(fp, "%d\n", m_dbNext);
     }
-    if (oi.m_fOwner)
+    if (m_fOwner)
     {
-        fprintf(fp, "%d\n", oi.m_dbOwner);
+        fprintf(fp, "%d\n", m_dbOwner);
     }
-    if (oi.m_fParent)
+    if (m_fParent)
     {
-        fprintf(fp, "%d\n", oi.m_dbParent);
+        fprintf(fp, "%d\n", m_dbParent);
     }
-    if (oi.m_fPennies)
+    if (m_fPennies)
     {
-        fprintf(fp, "%d\n", oi.m_iPennies);
+        fprintf(fp, "%d\n", m_iPennies);
     }
-    if (oi.m_fFlags1)
+    if (m_fFlags1)
     {
-        fprintf(fp, "%d\n", oi.m_iFlags1);
+        fprintf(fp, "%d\n", m_iFlags1);
     }
-    if (oi.m_fFlags2)
+    if (m_fFlags2)
     {
-        fprintf(fp, "%d\n", oi.m_iFlags2);
+        fprintf(fp, "%d\n", m_iFlags2);
     }
-    if (oi.m_fFlags3)
+    if (m_fFlags3)
     {
-        fprintf(fp, "%d\n", oi.m_iFlags3);
+        fprintf(fp, "%d\n", m_iFlags3);
     }
-    if (oi.m_fPowers1)
+    if (m_fPowers1)
     {
-        fprintf(fp, "%d\n", oi.m_iPowers1);
+        fprintf(fp, "%d\n", m_iPowers1);
     }
-    if (oi.m_fPowers2)
+    if (m_fPowers2)
     {
-        fprintf(fp, "%d\n", oi.m_iPowers2);
+        fprintf(fp, "%d\n", m_iPowers2);
     }
-    if (  oi.m_fAttrCount
-       && NULL != oi.m_pvai)
+    if (  m_fAttrCount
+       && NULL != m_pvai)
     {
-        for (vector<T5X_ATTRINFO *>::iterator it = oi.m_pvai->begin(); it != oi.m_pvai->end(); ++it)
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            oi.WriteAttr(fp, **it);
+            (*it)->Write(fp);
         }
     }
     fprintf(fp, "<\n");
 }
 
-void T5X_OBJECTINFO::WriteAttr(FILE *fp, const T5X_ATTRINFO &ai) const
+void T5X_ATTRINFO::Write(FILE *fp) const
 {
-    if (ai.m_fNumAndValue)
+    if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n\"%s\"\n", ai.m_iNum, EncodeString(ai.m_pValue));
+        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValue));
     }
 }
 
@@ -287,7 +287,7 @@ void T5X_GAME::Write(FILE *fp)
     } 
     for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        WriteObject(fp, **it);
+        (*it)->Write(fp);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");
