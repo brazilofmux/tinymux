@@ -15,7 +15,8 @@ void t5xerror(const char *s);
 
 %token EOD 
 %token <p> STRING
-%token <i> INTEGER DBREF OBJECT XHDR OBJECTCOUNT ATTRCOUNT RECORDPLAYERS ATTRNAME
+%token <i> INTEGER DBREF OBJECT XHDR OBJECTCOUNT NEXTATTR RECORDPLAYERS
+%token <i> ATTRNAME
 %type <pai> attr
 %type <pvai> attrlist
 %start start
@@ -40,7 +41,7 @@ section
 |
     OBJECTCOUNT    { g_t5xgame.SetObjectCount($1); }
 |
-    ATTRCOUNT      { g_t5xgame.SetAttrCount($1); }
+    NEXTATTR       { g_t5xgame.SetNextAttr($1); }
 |
     RECORDPLAYERS  { g_t5xgame.SetRecordPlayers($1); }
 |

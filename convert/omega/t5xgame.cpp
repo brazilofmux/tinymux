@@ -273,9 +273,9 @@ void T5X_GAME::Write(FILE *fp)
     {
         fprintf(fp, "+S%d\n", m_nObjects);
     }
-    if (m_fAttrs)
+    if (m_fNextAttr)
     {
-        fprintf(fp, "+N%d\n", m_nAttrs);
+        fprintf(fp, "+N%d\n", m_nNextAttr);
     }
     if (m_fRecordPlayers)
     {

@@ -165,9 +165,9 @@ public:
     int  m_nObjects;
     void SetObjectCount(int nObjects) { m_fObjects = true; m_nObjects = nObjects; }
 
-    bool m_fAttrs;
-    int  m_nAttrs;
-    void SetAttrCount(int nAttrs) { m_fAttrs = true; m_nAttrs = nAttrs; }
+    bool m_fNextAttr;
+    int  m_nNextAttr;
+    void SetNextAttr(int nNextAttr) { m_fNextAttr = true; m_nNextAttr = nNextAttr; }
 
     bool m_fRecordPlayers;
     int  m_nRecordPlayers;
@@ -183,7 +183,7 @@ public:
     {
         m_flags = 0;
         m_fObjects = false;
-        m_fAttrs = false;
+        m_fNextAttr = false;
         m_fRecordPlayers = false;
         m_nObjects = 0;
     }

@@ -31,7 +31,7 @@
                  }
   ^\+N[0-9]+     {
                      t5xlval.i = atoi(t5xtext+2);
-                     return ATTRCOUNT;
+                     return NEXTATTR;
                  }
   ^\-R[0-9]+     {
                      t5xlval.i = atoi(t5xtext+2);
