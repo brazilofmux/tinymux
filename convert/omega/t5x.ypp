@@ -11,6 +11,7 @@ void t5xerror(const char *s);
     int                     i;
     T5X_ATTRINFO           *pai;
     vector<T5X_ATTRINFO *> *pvai;
+    T5X_LOCKEXP            *ple;
 }
 
 %token EOD 
@@ -19,6 +20,7 @@ void t5xerror(const char *s);
 %token <i> ATTRNAME
 %type <pai> attr
 %type <pvai> attrlist
+%type <ple> lockexp
 %start start
 
 %%
@@ -59,9 +61,40 @@ objectlist
 
 object
 :
-    OBJECT STRING
-    INTEGER INTEGER INTEGER INTEGER INTEGER 
-    INTEGER INTEGER INTEGER INTEGER INTEGER
+    OBJECT   STRING INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    lockexp
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    attrlist '<' {
+                     T5X_OBJECTINFO *oi = new T5X_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetZone($4);
+                     oi->SetContents($5);
+                     oi->SetExits($6);
+                     oi->SetLink($7);
+                     oi->SetNext($8);
+                     oi->SetUseLock($9);
+                     oi->SetOwner($10);
+                     oi->SetParent($11);
+                     oi->SetPennies($12);
+                     oi->SetFlags1($13);
+                     oi->SetFlags2($14);
+                     oi->SetFlags3($15);
+                     oi->SetPowers1($16);
+                     oi->SetPowers2($17);
+                     if (NULL != $18)
+                     {
+                         oi->SetAttrs($18->size(), $18);
+                     }
+                     g_t5xgame.AddObject(oi);
+                 } 
+|
+    OBJECT   STRING INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
     INTEGER INTEGER INTEGER INTEGER
     attrlist '<' {
                      T5X_OBJECTINFO *oi = new T5X_OBJECTINFO;
@@ -87,6 +120,32 @@ object
                      }
                      g_t5xgame.AddObject(oi);
                  } 
+;
+
+lockexp:
+    '(' '=' lockexp ')'          { $$ = new T5X_LOCKEXP; $$->SetIs($3);      }
+|
+    '(' '+' lockexp ')'          { $$ = new T5X_LOCKEXP; $$->SetCarry($3);    }
+|
+    '(' '@' lockexp ')'          { $$ = new T5X_LOCKEXP; $$->SetIndir($3);    }
+|
+    '(' '$' lockexp ')'          { $$ = new T5X_LOCKEXP; $$->SetOwner($3);    }
+|
+    '(' lockexp '&' lockexp ')'  { $$ = new T5X_LOCKEXP; $$->SetAnd($2,$4);   }
+|
+    '(' lockexp '|' lockexp ')'  { $$ = new T5X_LOCKEXP; $$->SetOr($2,$4);    }
+|
+    '(' '!' lockexp ')'          { $$ = new T5X_LOCKEXP; $$->SetNot($3);      }
+|
+    INTEGER                      { $$ = new T5X_LOCKEXP; $$->SetRef($1);      }
+|
+    STRING ':' STRING            { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+|
+    INTEGER ':' STRING           { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+|
+    STRING '/' STRING            { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
+|
+    INTEGER '/' STRING           { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
 ;
 
 attrlist

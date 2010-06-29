@@ -1,6 +1,117 @@
 #ifndef _T5XGAME_H_
 #define _T5XGAME_H_
 
+class T5X_LOCKEXP
+{
+public:
+    enum
+    {
+        le_is,
+        le_carry,
+        le_indirect,
+        le_owner,
+        le_and,
+        le_or,
+        le_not,
+        le_ref,
+        le_attr1,
+        le_attr2,
+        le_eval1,
+        le_eval2,
+        le_none,
+    } m_op;
+
+    T5X_LOCKEXP *m_le[2];
+    int          m_dbRef;
+    char        *m_p[2];
+
+    void SetIs(T5X_LOCKEXP *p)
+    {
+        m_op = le_is;
+        m_le[0] = p;
+    }
+    void SetCarry(T5X_LOCKEXP *p)
+    {
+        m_op = le_carry;
+        m_le[0] = p;
+    }
+    void SetIndir(T5X_LOCKEXP *p)
+    {
+        m_op = le_indirect;
+        m_le[0] = p;
+    }
+    void SetOwner(T5X_LOCKEXP *p)
+    {
+        m_op = le_owner;
+        m_le[0] = p;
+    }
+    void SetAnd(T5X_LOCKEXP *p, T5X_LOCKEXP *q)
+    {
+        m_op = le_and;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetOr(T5X_LOCKEXP *p, T5X_LOCKEXP *q)
+    {
+        m_op = le_or;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetNot(T5X_LOCKEXP *p)
+    {
+        m_op = le_not;
+        m_le[0] = p;
+    }
+    void SetRef(int dbRef)
+    {
+        m_op = le_ref;
+        m_dbRef = dbRef;
+    }
+    void SetAttr(char *p, char *q)
+    {
+        m_op = le_attr1;
+        m_p[0] = p;
+        m_p[1] = q;
+    }
+    void SetAttr(int dbRef, char *q)
+    {
+        m_op = le_attr2;
+        m_dbRef = dbRef;
+        m_p[1] = q;
+    }
+    void SetEval(char *p, char *q)
+    {
+        m_op = le_eval1;
+        m_p[0] = p;
+        m_p[1] = q;
+    }
+    void SetEval(int dbRef, char *q)
+    {
+        m_op = le_eval2;
+        m_dbRef = dbRef;
+        m_p[1] = q;
+    }
+
+    void Write(FILE *fp);
+
+    T5X_LOCKEXP()
+    {
+        m_op = le_none;
+        m_le[0] = m_le[1] = NULL;
+        m_p[0] = m_p[1] = NULL;
+        m_dbRef = 0;
+    }
+    ~T5X_LOCKEXP()
+    {
+        delete m_le[0];
+        delete m_le[1];
+        free(m_p[0]);
+        free(m_p[1]);
+        m_le[0] = m_le[1] = NULL;
+        m_p[0] = m_p[1] = NULL;
+    } 
+};
+
 class T5X_ATTRNAMEINFO
 {
 public:
@@ -116,9 +227,13 @@ public:
     vector<T5X_ATTRINFO *> *m_pvai;
     void SetAttrs(int nAttrCount, vector<T5X_ATTRINFO *> *pvai);
 
-    void Write(FILE *fp);
+    T5X_LOCKEXP *m_ple;
+    void SetUseLock(T5X_LOCKEXP *p) { free(m_ple); m_ple = p; }
 
-    T5X_OBJECTINFO()  {
+    void Write(FILE *fp, bool bWriteLock);
+
+    T5X_OBJECTINFO()
+    {
         m_fRef = false;
         m_pName = NULL;
         m_fLocation = false;
@@ -132,6 +247,7 @@ public:
         m_fPennies = false;
         m_fAttrCount = false;
         m_pvai = NULL;
+        m_ple = NULL;
     }
     ~T5X_OBJECTINFO()
     {

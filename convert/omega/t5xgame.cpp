@@ -45,15 +45,84 @@ t5x_gameflaginfo t5x_gameflagnames[] =
 #define T5X_NUM_GAMEFLAGNAMES (sizeof(t5x_gameflagnames)/sizeof(t5x_gameflagnames[0]))
 
 T5X_GAME g_t5xgame;
+
+void T5X_LOCKEXP::Write(FILE *fp)
+{
+    switch (m_op)
+    {
+    case le_is:
+        fprintf(fp, "(=");
+        m_le[0]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_carry:
+        fprintf(fp, "(+");
+        m_le[0]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_indirect:
+        fprintf(fp, "(@");
+        m_le[0]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_owner:
+        fprintf(fp, "($");
+        m_le[0]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_and:
+        fprintf(fp, "(");
+        m_le[0]->Write(fp);
+        fprintf(fp, "&");
+        m_le[1]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_or:
+        fprintf(fp, "(");
+        m_le[0]->Write(fp);
+        fprintf(fp, "|");
+        m_le[1]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_not:
+        fprintf(fp, "(!");
+        m_le[0]->Write(fp);
+        fprintf(fp, ")");
+        break;
+
+    case le_ref:
+        fprintf(fp, "%d\n", m_dbRef);
+        break;
+
+    case le_attr1:
+        fprintf(fp, "%s:%s\n", m_p[0], m_p[1]);
+        break;
+
+    case le_attr2:
+        fprintf(fp, "%d:%s\n", m_dbRef, m_p[1]);
+        break;
+
+    case le_eval1:
+        fprintf(fp, "%s/%s\n", m_p[0], m_p[1]);
+        break;
+
+    case le_eval2:
+        fprintf(fp, "%d/%s\n", m_dbRef, m_p[1]);
+        break;
+    }
+}
  
 void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
     m_iNum = iNum;
-    if (NULL != m_pName)
-    {
-        free(m_pName);
-    }
+    free(m_pName);
     m_pName = pName;
 }
 
@@ -272,7 +341,7 @@ void T5X_GAME::Validate()
     ValidateObjects();
 }
 
-void T5X_OBJECTINFO::Write(FILE *fp)
+void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock)
 {
     fprintf(fp, "!%d\n", m_dbRef);
     if (NULL != m_pName)
@@ -302,6 +371,18 @@ void T5X_OBJECTINFO::Write(FILE *fp)
     if (m_fNext)
     {
         fprintf(fp, "%d\n", m_dbNext);
+    }
+    if (bWriteLock)
+    {
+        if (NULL == m_ple)
+        {
+            fprintf(fp, "\n");
+        }
+        else
+        {
+            m_ple->Write(fp);
+            fprintf(fp, "\n");
+        }
     }
     if (m_fOwner)
     {
@@ -375,7 +456,7 @@ void T5X_GAME::Write(FILE *fp)
     } 
     for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        (*it)->Write(fp);
+        (*it)->Write(fp, (m_flags & V_ATRKEY) == 0);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");
