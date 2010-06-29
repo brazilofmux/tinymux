@@ -10,7 +10,7 @@ p6hgame.o: p6hgame.cpp omega.h p6hgame.h t5xgame.h
 	$(CXX) -g -c p6hgame.cpp
 
 lex.p6h.cpp: p6h.ll
-	flex -8 -o lex.p6h.cpp p6h.ll
+	$(LEX) -8 -olex.p6h.cpp p6h.ll
 
 p6h.tab.cpp p6h.tab.hpp: p6h.ypp
 	bison -d p6h.ypp
@@ -25,7 +25,7 @@ t5xgame.o: t5xgame.cpp omega.h t5xgame.h
 	$(CXX) -g -c t5xgame.cpp
 
 lex.t5x.cpp: t5x.ll
-	flex -8 -o lex.t5x.cpp t5x.ll
+	$(LEX) -8 -olex.t5x.cpp t5x.ll
 
 t5x.tab.cpp t5x.tab.hpp: t5x.ypp
 	bison -d t5x.ypp
