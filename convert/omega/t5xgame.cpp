@@ -131,90 +131,6 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
     m_pvai = pvai;
 }
 
-void T5X_OBJECTINFO::Merge(T5X_OBJECTINFO *poi)
-{
-    if (NULL != poi->m_pName && NULL == m_pName)
-    {
-        m_pName = poi->m_pName;
-        poi->m_pName = NULL;;
-    }
-    if (poi->m_fLocation && !m_fLocation)
-    {
-        m_fLocation = true;
-        m_dbLocation = poi->m_dbLocation;
-    }
-    if (poi->m_fContents && !m_fContents)
-    {
-        m_fContents = true;
-        m_dbContents = poi->m_dbContents;
-    }
-    if (poi->m_fExits && !m_fExits)
-    {
-        m_fExits = true;
-        m_dbExits = poi->m_dbExits;
-    }
-    if (poi->m_fNext && !m_fNext)
-    {
-        m_fNext = true;
-        m_dbNext = poi->m_dbNext;
-    }
-    if (poi->m_fParent && !m_fParent)
-    {
-        m_fParent = true;
-        m_dbParent = poi->m_dbParent;
-    }
-    if (poi->m_fOwner && !m_fOwner)
-    {
-        m_fOwner = true;
-        m_dbOwner = poi->m_dbOwner;
-    }
-    if (poi->m_fZone && !m_fZone)
-    {
-        m_fZone = true;
-        m_dbZone = poi->m_dbZone;
-    }
-    if (poi->m_fPennies && !m_fPennies)
-    {
-        m_fPennies = true;
-        m_iPennies = poi->m_iPennies;
-    }
-    if (poi->m_fFlags1 && !m_fFlags1)
-    {
-        m_fFlags1 = true;
-        m_iFlags1 = poi->m_iFlags1;
-    }
-    if (poi->m_fFlags2 && !m_fFlags2)
-    {
-        m_fFlags2 = true;
-        m_iFlags2 = poi->m_iFlags2;
-    }
-    if (poi->m_fFlags3 && !m_fFlags3)
-    {
-        m_fFlags3 = true;
-        m_iFlags3 = poi->m_iFlags3;
-    }
-    if (poi->m_fPowers1 && !m_fPowers1)
-    {
-        m_fPowers1 = true;
-        m_iPowers1 = poi->m_iPowers1;
-    }
-    if (poi->m_fPowers2 && !m_fPowers2)
-    {
-        m_fPowers2 = true;
-        m_iPowers2 = poi->m_iPowers2;
-    }
-    if (NULL != poi->m_pvai && NULL == m_pvai)
-    {
-        m_pvai = poi->m_pvai;
-        poi->m_pvai = NULL;
-    }
-    if (poi->m_fAttrCount && !m_fAttrCount)
-    {
-        m_fAttrCount = true;
-        m_nAttrCount = poi->m_nAttrCount;
-    }
-}
-
 void T5X_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
 {
     m_fNumAndValue = true;
@@ -224,17 +140,6 @@ void T5X_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
         free(m_pValue);
     }
     m_pValue = pValue;
-}
-
-void T5X_ATTRINFO::Merge(T5X_ATTRINFO *pai)
-{
-    if (pai->m_fNumAndValue && !m_fNumAndValue)
-    {
-        m_fNumAndValue = true;
-        m_iNum = pai->m_iNum;
-        m_pValue = pai->m_pValue;
-        pai->m_pValue = NULL;;
-    }
 }
 
 void T5X_GAME::AddNumAndName(int iNum, char *pName)

@@ -31,8 +31,6 @@ public:
     char *m_pValue;
     void SetNumAndValue(int iNum, char *pValue);
 
-    void Merge(T5X_ATTRINFO *pai);
-
     T5X_ATTRINFO()
     {
         m_fNumAndValue = false;
@@ -116,7 +114,6 @@ public:
     vector<T5X_ATTRINFO *> *m_pvai;
     void SetAttrs(int nAttrCount, vector<T5X_ATTRINFO *> *pvai);
 
-    void Merge(T5X_OBJECTINFO *poi);
     void WriteAttr(const T5X_ATTRINFO &ai) const;
 
     T5X_OBJECTINFO()  {
