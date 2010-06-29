@@ -530,254 +530,254 @@ static char *EncodeString(const char *str)
     return buf;
 }
 
-void P6H_GAME::WriteObject(const P6H_OBJECTINFO &oi)
+void P6H_GAME::WriteObject(FILE *fp, const P6H_OBJECTINFO &oi)
 {
-    printf("!%d\n", oi.m_dbRef);
+    fprintf(fp, "!%d\n", oi.m_dbRef);
     if (NULL != oi.m_pName)
     {
-        printf("name \"%s\"\n", EncodeString(oi.m_pName));
+        fprintf(fp, "name \"%s\"\n", EncodeString(oi.m_pName));
     }
     if (oi.m_fLocation)
     {
-        printf("location #%d\n", oi.m_dbLocation);
+        fprintf(fp, "location #%d\n", oi.m_dbLocation);
     }
     if (oi.m_fContents)
     {
-        printf("contents #%d\n", oi.m_dbContents);
+        fprintf(fp, "contents #%d\n", oi.m_dbContents);
     }
     if (oi.m_fExits)
     {
-        printf("exits #%d\n", oi.m_dbExits);
+        fprintf(fp, "exits #%d\n", oi.m_dbExits);
     }
     if (oi.m_fNext)
     {
-        printf("next #%d\n", oi.m_dbNext);
+        fprintf(fp, "next #%d\n", oi.m_dbNext);
     }
     if (oi.m_fParent)
     {
-        printf("parent #%d\n", oi.m_dbParent);
+        fprintf(fp, "parent #%d\n", oi.m_dbParent);
     }
 
     if (oi.m_fLockCount)
     {
         if (NULL == oi.m_pvli)
         {
-            printf("lockcount 0\n");
+            fprintf(fp, "lockcount 0\n");
         }
         else
         {
-            printf("lockcount %d\n", oi.m_pvli->size());
+            fprintf(fp, "lockcount %d\n", oi.m_pvli->size());
             for (vector<P6H_LOCKINFO *>::iterator it = oi.m_pvli->begin(); it != oi.m_pvli->end(); ++it)
             {
-                oi.WriteLock(**it);
+                oi.WriteLock(fp, **it);
             }
         }
     }
     if (oi.m_fOwner)
     {
-        printf("owner #%d\n", oi.m_dbOwner);
+        fprintf(fp, "owner #%d\n", oi.m_dbOwner);
     }
     if (oi.m_fZone)
     {
-        printf("zone #%d\n", oi.m_dbZone);
+        fprintf(fp, "zone #%d\n", oi.m_dbZone);
     }
     if (oi.m_fPennies)
     {
-        printf("pennies %d\n", oi.m_iPennies);
+        fprintf(fp, "pennies %d\n", oi.m_iPennies);
     }
     if (oi.m_fType)
     {
-        printf("type %d\n", oi.m_iType);
+        fprintf(fp, "type %d\n", oi.m_iType);
     }
     if (NULL != oi.m_pFlags)
     {
-        printf("flags \"%s\"\n", EncodeString(oi.m_pFlags));
+        fprintf(fp, "flags \"%s\"\n", EncodeString(oi.m_pFlags));
     }
     if (NULL != oi.m_pPowers)
     {
-        printf("powers \"%s\"\n", EncodeString(oi.m_pPowers));
+        fprintf(fp, "powers \"%s\"\n", EncodeString(oi.m_pPowers));
     }
     if (NULL != oi.m_pWarnings)
     {
-        printf("warnings \"%s\"\n", EncodeString(oi.m_pWarnings));
+        fprintf(fp, "warnings \"%s\"\n", EncodeString(oi.m_pWarnings));
     }
     if (oi.m_fCreated)
     {
-        printf("created %d\n", oi.m_iCreated);
+        fprintf(fp, "created %d\n", oi.m_iCreated);
     }
     if (oi.m_fModified)
     {
-        printf("modified %d\n", oi.m_iModified);
+        fprintf(fp, "modified %d\n", oi.m_iModified);
     }
     if (oi.m_fAttrCount)
     {
         if (NULL == oi.m_pvai)
         {
-            printf("attrcount 0\n");
+            fprintf(fp, "attrcount 0\n");
         }
         else
         {
-            printf("attrcount %d\n", oi.m_pvai->size());
+            fprintf(fp, "attrcount %d\n", oi.m_pvai->size());
             for (vector<P6H_ATTRINFO *>::iterator it = oi.m_pvai->begin(); it != oi.m_pvai->end(); ++it)
             {
-                oi.WriteAttr(**it);
+                oi.WriteAttr(fp, **it);
             }
         }
     }
 }
 
-void P6H_GAME::WriteFlag(const P6H_FLAGINFO &fi)
+void P6H_GAME::WriteFlag(FILE *fp, const P6H_FLAGINFO &fi)
 {
     if (NULL != fi.m_pName)
     {
-        printf(" name \"%s\"\n", EncodeString(fi.m_pName));
+        fprintf(fp, " name \"%s\"\n", EncodeString(fi.m_pName));
         if (NULL != fi.m_pLetter)
         {
-            printf("  letter \"%s\"\n", EncodeString(fi.m_pLetter));
+            fprintf(fp, "  letter \"%s\"\n", EncodeString(fi.m_pLetter));
         }
         if (NULL != fi.m_pType)
         {
-            printf("  type \"%s\"\n", EncodeString(fi.m_pType));
+            fprintf(fp, "  type \"%s\"\n", EncodeString(fi.m_pType));
         }
         if (NULL != fi.m_pLetter)
         {
-            printf("  perms \"%s\"\n", EncodeString(fi.m_pPerms));
+            fprintf(fp, "  perms \"%s\"\n", EncodeString(fi.m_pPerms));
         }
         if (NULL != fi.m_pNegatePerms)
         {
-            printf("  negate_perms \"%s\"\n", EncodeString(fi.m_pNegatePerms));
+            fprintf(fp, "  negate_perms \"%s\"\n", EncodeString(fi.m_pNegatePerms));
         }
     }
 }
 
-void P6H_GAME::WriteFlagAlias(const P6H_FLAGALIASINFO &fai)
+void P6H_GAME::WriteFlagAlias(FILE *fp, const P6H_FLAGALIASINFO &fai)
 {
     if (NULL != fai.m_pName)
     {
-        printf(" name \"%s\"\n", EncodeString(fai.m_pName));
+        fprintf(fp, " name \"%s\"\n", EncodeString(fai.m_pName));
         if (NULL != fai.m_pAlias)
         {
-            printf("  alias \"%s\"\n", EncodeString(fai.m_pAlias));
+            fprintf(fp, "  alias \"%s\"\n", EncodeString(fai.m_pAlias));
         }
     }
 }
 
-void P6H_OBJECTINFO::WriteLock(const P6H_LOCKINFO &li) const
+void P6H_OBJECTINFO::WriteLock(FILE *fp, const P6H_LOCKINFO &li) const
 {
     if (NULL != li.m_pType)
     {
-        printf(" type \"%s\"\n", EncodeString(li.m_pType));
+        fprintf(fp, " type \"%s\"\n", EncodeString(li.m_pType));
         if (li.m_fCreator)
         {
-            printf("  creator #%d\n", li.m_dbCreator);
+            fprintf(fp, "  creator #%d\n", li.m_dbCreator);
         }
         if (NULL != li.m_pFlags)
         {
-            printf("  flags \"%s\"\n", EncodeString(li.m_pFlags));
+            fprintf(fp, "  flags \"%s\"\n", EncodeString(li.m_pFlags));
         }
         if (li.m_fFlags)
         {
-            printf("  flags %d\n", li.m_iFlags);
+            fprintf(fp, "  flags %d\n", li.m_iFlags);
         }
         if (li.m_fDerefs)
         {
-            printf("  derefs %d\n", li.m_iDerefs);
+            fprintf(fp, "  derefs %d\n", li.m_iDerefs);
         }
         if (NULL != li.m_pKey)
         {
-            printf("  key \"%s\"\n", EncodeString(li.m_pKey));
+            fprintf(fp, "  key \"%s\"\n", EncodeString(li.m_pKey));
         }
     }
 }
 
-void P6H_OBJECTINFO::WriteAttr(const P6H_ATTRINFO &ai) const
+void P6H_OBJECTINFO::WriteAttr(FILE *fp, const P6H_ATTRINFO &ai) const
 {
     if (NULL != ai.m_pName)
     {
-        printf(" name \"%s\"\n", EncodeString(ai.m_pName));
+        fprintf(fp, " name \"%s\"\n", EncodeString(ai.m_pName));
         if (ai.m_fOwner)
         {
-            printf("  owner #%d\n", ai.m_dbOwner);
+            fprintf(fp, "  owner #%d\n", ai.m_dbOwner);
         }
         if (NULL != ai.m_pFlags)
         {
-            printf("  flags \"%s\"\n", EncodeString(ai.m_pFlags));
+            fprintf(fp, "  flags \"%s\"\n", EncodeString(ai.m_pFlags));
         }
         if (ai.m_fFlags)
         {
-            printf("  flags %d\n", ai.m_iFlags);
+            fprintf(fp, "  flags %d\n", ai.m_iFlags);
         }
         if (ai.m_fDerefs)
         {
-            printf("  derefs %d\n", ai.m_iDerefs);
+            fprintf(fp, "  derefs %d\n", ai.m_iDerefs);
         }
         if (NULL != ai.m_pValue)
         {
-            printf("  value \"%s\"\n", EncodeString(ai.m_pValue));
+            fprintf(fp, "  value \"%s\"\n", EncodeString(ai.m_pValue));
         }
     }
 }
 
 void P6H_GAME::Write(FILE *fp)
 {
-    printf("+V%d\n", (m_flags + 5) * 256 + 2);
+    fprintf(fp, "+V%d\n", (m_flags + 5) * 256 + 2);
     if (NULL != m_pSavedTime)
     {
-        printf("savedtime \"%s\"\n", m_pSavedTime);
+        fprintf(fp, "savedtime \"%s\"\n", m_pSavedTime);
     }
     if (m_fFlags)
     {
-        printf("+FLAGS LIST\nflagcount %d\n", m_nFlags);
+        fprintf(fp, "+FLAGS LIST\nflagcount %d\n", m_nFlags);
     }
     if (NULL != m_pvFlags)
     {
         for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
         {
-            WriteFlag(**it);
+            WriteFlag(fp, **it);
         }
     }
     if (m_fFlagAliases)
     {
-        printf("flagaliascount %d\n", m_nFlagAliases);
+        fprintf(fp, "flagaliascount %d\n", m_nFlagAliases);
     }
     if (NULL != m_pvFlagAliases)
     {
         for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvFlagAliases->begin(); it != m_pvFlagAliases->end(); ++it)
         {
-            WriteFlagAlias(**it);
+            WriteFlagAlias(fp, **it);
         }
     }
     if (m_fPowers)
     {
-        printf("+POWER LIST\nflagcount %d\n", m_nPowers);
+        fprintf(fp, "+POWER LIST\nflagcount %d\n", m_nPowers);
     }
     if (NULL != m_pvPowers)
     {
         for (vector<P6H_FLAGINFO *>::iterator it = m_pvPowers->begin(); it != m_pvPowers->end(); ++it)
         {
-            WriteFlag(**it);
+            WriteFlag(fp, **it);
         }
     }
     if (m_fPowerAliases)
     {
-        printf("flagaliascount %d\n", m_nPowerAliases);
+        fprintf(fp, "flagaliascount %d\n", m_nPowerAliases);
     }
     if (NULL != m_pvPowerAliases)
     {
         for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvPowerAliases->begin(); it != m_pvPowerAliases->end(); ++it)
         {
-            WriteFlagAlias(**it);
+            WriteFlagAlias(fp, **it);
         }
     }
     if (m_fObjects)
     {
-        printf("~%d\n", m_nObjects);
+        fprintf(fp, "~%d\n", m_nObjects);
     }
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        WriteObject(**it);
+        WriteObject(fp, **it);
     } 
 
-    printf("***END OF DUMP***\n");
+    fprintf(fp, "***END OF DUMP***\n");
 }
 

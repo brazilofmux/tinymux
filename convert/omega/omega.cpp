@@ -28,28 +28,81 @@ char *StringClone(const char *str)
     return StringCloneLen(str, strlen(str));
 }
 
+void Usage()
+{
+    fprintf(stderr, "omega <options> <infile> <outfile>\n");
+    fprintf(stderr, "Supported options:\n");
+    fprintf(stderr, "  --rt-p6h - Round-trip PennMUSH flatfile\n");
+    fprintf(stderr, "  --rt-t5x - Round-trip TinyMUX flatfile\n");
+}
+
 int main(int argc, const char *argv[])
 {
-    if (2 == argc)
+    if (4 != argc)
     {
-        FILE *fp = fopen(argv[1], "rb+");
-        if (NULL != fp)
-        {
-#if 0
-            extern int t5xdebug;
-            t5xdebug = 1;
-            extern int t5x_flex_debug;
-            t5x_flex_debug = 1;
-#endif
-            extern int t5xparse();
-            extern FILE *t5xin;
-            t5xin = fp;
-            t5xparse();
-
-            g_t5xgame.Validate();
-            g_t5xgame.Write(stdout);
-            t5xin = NULL;
-       }
+        Usage();
+        return 1;
     }
+
+    FILE *fpin = NULL;
+    FILE *fpout = NULL;
+
+    const int iModeNone  = 0;
+    const int iModeRTP6H = 1;
+    const int iModeRTT5X = 2;
+    int iMode = iModeNone;
+
+    if (strcmp("--rt-p6h", argv[1]) == 0)
+    {
+        iMode = iModeRTP6H;
+    }
+    else if (strcmp("--rt-t5x", argv[1]) == 0)
+    {
+        iMode = iModeRTT5X;
+    }
+    else
+    {
+        Usage();
+        return 1;
+    }
+
+    fpin = fopen(argv[2], "rb");
+    if (NULL == fpin)
+    {
+        fprintf(stderr, "Input file, %s, not found.\n", argv[2]);
+        return 1;
+    }
+    fpout = fopen(argv[3], "wb");
+    if (NULL == fpout)
+    {
+        fclose(fpin);
+        fprintf(stderr, "Output file, %s, not found.\n", argv[3]);
+        return 1;
+    }
+
+    if (iModeRTP6H == iMode)
+    {
+        extern int p6hparse();
+        extern FILE *p6hin;
+        p6hin = fpin;
+        p6hparse();
+
+        g_p6hgame.Validate();
+        g_p6hgame.Write(fpout);
+        p6hin = NULL;
+    }
+    else if (iModeRTT5X == iMode)
+    {
+        extern int t5xparse();
+        extern FILE *t5xin;
+        t5xin = fpin;
+        t5xparse();
+
+        g_t5xgame.Validate();
+        g_t5xgame.Write(fpout);
+        t5xin = NULL;
+    }
+    fclose(fpout);
+    fclose(fpin);
     return 0;
 }

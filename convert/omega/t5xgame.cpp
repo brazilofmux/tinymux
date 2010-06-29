@@ -95,11 +95,11 @@ static char *EncodeString(const char *str)
     return buf;
 }
 
-void T5X_ATTRNAMEINFO::Write()
+void T5X_ATTRNAMEINFO::Write(FILE *fp)
 {
     if (m_fNumAndName)
     {
-        printf("+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName));
+        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName));
     }
 }
 
@@ -179,125 +179,117 @@ void T5X_GAME::ValidateFlags()
     }
 }
 
-void T5X_GAME::ValidateSavedTime()
-{
-}
-
 void T5X_GAME::Validate()
 {
     ValidateFlags();
 }
 
-void T5X_GAME::WriteObject(const T5X_OBJECTINFO &oi)
+void T5X_GAME::WriteObject(FILE *fp, const T5X_OBJECTINFO &oi)
 {
-    printf("!%d\n", oi.m_dbRef);
+    fprintf(fp, "!%d\n", oi.m_dbRef);
     if (NULL != oi.m_pName)
     {
-        printf("\"%s\"\n", EncodeString(oi.m_pName));
+        fprintf(fp, "\"%s\"\n", EncodeString(oi.m_pName));
     }
     if (oi.m_fLocation)
     {
-        printf("%d\n", oi.m_dbLocation);
+        fprintf(fp, "%d\n", oi.m_dbLocation);
     }
     if (oi.m_fZone)
     {
-        printf("%d\n", oi.m_dbZone);
+        fprintf(fp, "%d\n", oi.m_dbZone);
     }
     if (oi.m_fContents)
     {
-        printf("%d\n", oi.m_dbContents);
+        fprintf(fp, "%d\n", oi.m_dbContents);
     }
     if (oi.m_fExits)
     {
-        printf("%d\n", oi.m_dbExits);
+        fprintf(fp, "%d\n", oi.m_dbExits);
     }
     if (oi.m_fLink)
     {
-        printf("%d\n", oi.m_dbLink);
+        fprintf(fp, "%d\n", oi.m_dbLink);
     }
     if (oi.m_fNext)
     {
-        printf("%d\n", oi.m_dbNext);
+        fprintf(fp, "%d\n", oi.m_dbNext);
     }
     if (oi.m_fOwner)
     {
-        printf("%d\n", oi.m_dbOwner);
+        fprintf(fp, "%d\n", oi.m_dbOwner);
     }
     if (oi.m_fParent)
     {
-        printf("%d\n", oi.m_dbParent);
+        fprintf(fp, "%d\n", oi.m_dbParent);
     }
     if (oi.m_fPennies)
     {
-        printf("%d\n", oi.m_iPennies);
+        fprintf(fp, "%d\n", oi.m_iPennies);
     }
     if (oi.m_fFlags1)
     {
-        printf("%d\n", oi.m_iFlags1);
+        fprintf(fp, "%d\n", oi.m_iFlags1);
     }
     if (oi.m_fFlags2)
     {
-        printf("%d\n", oi.m_iFlags2);
+        fprintf(fp, "%d\n", oi.m_iFlags2);
     }
     if (oi.m_fFlags3)
     {
-        printf("%d\n", oi.m_iFlags3);
+        fprintf(fp, "%d\n", oi.m_iFlags3);
     }
     if (oi.m_fPowers1)
     {
-        printf("%d\n", oi.m_iPowers1);
+        fprintf(fp, "%d\n", oi.m_iPowers1);
     }
     if (oi.m_fPowers2)
     {
-        printf("%d\n", oi.m_iPowers2);
+        fprintf(fp, "%d\n", oi.m_iPowers2);
     }
     if (  oi.m_fAttrCount
        && NULL != oi.m_pvai)
     {
         for (vector<T5X_ATTRINFO *>::iterator it = oi.m_pvai->begin(); it != oi.m_pvai->end(); ++it)
         {
-            oi.WriteAttr(**it);
+            oi.WriteAttr(fp, **it);
         }
     }
-    printf("<\n");
+    fprintf(fp, "<\n");
 }
 
-void T5X_OBJECTINFO::WriteAttr(const T5X_ATTRINFO &ai) const
+void T5X_OBJECTINFO::WriteAttr(FILE *fp, const T5X_ATTRINFO &ai) const
 {
     if (ai.m_fNumAndValue)
     {
-        printf(">%d\n\"%s\"\n", ai.m_iNum, EncodeString(ai.m_pValue));
+        fprintf(fp, ">%d\n\"%s\"\n", ai.m_iNum, EncodeString(ai.m_pValue));
     }
 }
 
 void T5X_GAME::Write(FILE *fp)
 {
-    printf("+X%d\n", m_flags);
+    fprintf(fp, "+X%d\n", m_flags);
     if (m_fObjects)
     {
-        printf("+S%d\n", m_nObjects);
+        fprintf(fp, "+S%d\n", m_nObjects);
     }
     if (m_fAttrs)
     {
-        printf("+N%d\n", m_nAttrs);
+        fprintf(fp, "+N%d\n", m_nAttrs);
     }
     if (m_fRecordPlayers)
     {
-        printf("-R%d\n", m_nRecordPlayers);
-    }
-    if (m_fFlags)
-    {
-        printf("+FLAGS LIST\nflagcount %d\n", m_nFlags);
+        fprintf(fp, "-R%d\n", m_nRecordPlayers);
     }
     for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
-        (*it)->Write();
+        (*it)->Write(fp);
     } 
     for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        WriteObject(**it);
+        WriteObject(fp, **it);
     } 
 
-    printf("***END OF DUMP***\n");
+    fprintf(fp, "***END OF DUMP***\n");
 }
 

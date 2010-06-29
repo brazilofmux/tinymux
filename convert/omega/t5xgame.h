@@ -9,7 +9,7 @@ public:
     char *m_pName;
     void  SetNumAndName(int iNum, char *pName);
 
-    void Write();
+    void Write(FILE *fp);
 
     T5X_ATTRNAMEINFO()
     {
@@ -114,7 +114,7 @@ public:
     vector<T5X_ATTRINFO *> *m_pvai;
     void SetAttrs(int nAttrCount, vector<T5X_ATTRINFO *> *pvai);
 
-    void WriteAttr(const T5X_ATTRINFO &ai) const;
+    void WriteAttr(FILE *fp, const T5X_ATTRINFO &ai) const;
 
     T5X_OBJECTINFO()  {
         m_fRef = false;
@@ -153,22 +153,13 @@ class T5X_GAME
 public:
     void Validate();
     void ValidateFlags();
-    void ValidateSavedTime();
 
     void Write(FILE *fp);
-    void WriteObject(const T5X_OBJECTINFO &oi);
+    void WriteObject(FILE *fp, const T5X_OBJECTINFO &oi);
 
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
-
-    bool m_fFlags;
-    int  m_nFlags;
-    void SetFlagCount(int nFlags)  { m_fFlags = true; m_nFlags = nFlags; }
-
-    bool m_fPowers;
-    int  m_nPowers;
-    void SetPowerCount(int nPowers)  { m_fPowers = true; m_nPowers = nPowers; }
 
     bool m_fObjects;
     int  m_nObjects;
@@ -195,10 +186,6 @@ public:
         m_fAttrs = false;
         m_fRecordPlayers = false;
         m_nObjects = 0;
-        m_fFlags = false;
-        m_nFlags = 0;
-        m_fPowers = false;
-        m_nPowers = 0;
     }
     ~T5X_GAME()
     {

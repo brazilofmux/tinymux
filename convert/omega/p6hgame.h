@@ -237,8 +237,8 @@ public:
     void SetAttrs(int nAttrCount, vector<P6H_ATTRINFO *> *pvai);
 
     void Merge(P6H_OBJECTINFO *poi);
-    void WriteLock(const P6H_LOCKINFO &li) const;
-    void WriteAttr(const P6H_ATTRINFO &ai) const;
+    void WriteLock(FILE *fp, const P6H_LOCKINFO &li) const;
+    void WriteAttr(FILE *fp, const P6H_ATTRINFO &ai) const;
 
     P6H_OBJECTINFO()
     {
@@ -305,9 +305,9 @@ public:
     void ValidateSavedTime();
 
     void Write(FILE *fp);
-    void WriteFlag(const P6H_FLAGINFO &fi);
-    void WriteFlagAlias(const P6H_FLAGALIASINFO &fai);
-    void WriteObject(const P6H_OBJECTINFO &oi);
+    void WriteFlag(FILE *fp, const P6H_FLAGINFO &fi);
+    void WriteFlagAlias(FILE *fp, const P6H_FLAGALIASINFO &fai);
+    void WriteObject(FILE *fp, const P6H_OBJECTINFO &oi);
 
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
