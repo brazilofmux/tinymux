@@ -20,6 +20,8 @@
 #define MANDFLAGS_V3  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED|V_ATRKEY)
 #define OFLAGS_V3     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
 
+#define A_USER_START    256     // Start of user-named attributes.
+
 typedef struct _t5x_gameflaginfo
 {
     int         mask;
@@ -239,9 +241,21 @@ void T5X_GAME::ValidateAttrNames()
         int n = 256;
         for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
-            if (n <= (*it)->m_iNum)
+            if ((*it)->m_fNumAndName)
             {
-                n = (*it)->m_iNum + 1;
+                int iNum = (*it)->m_iNum;
+                if (iNum < A_USER_START)
+                {
+                    fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", (*it)->m_pName, iNum, A_USER_START);
+                }
+                if (n <= iNum)
+                {
+                    n = iNum + 1;
+                }
+            }
+            else
+            {
+                fprintf(stderr, "WARNING: Unexpected ATTRNAMEINFO -- internal error.\n");
             }
         }
         if (m_nNextAttr != n)
