@@ -155,6 +155,8 @@ class T5X_GAME
 public:
     void Validate();
     void ValidateFlags();
+    void ValidateAttrNames();
+    void ValidateObjects();
 
     void Write(FILE *fp);
 

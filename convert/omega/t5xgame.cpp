@@ -14,6 +14,12 @@
 #define V_3FLAGS    0x00040000  /* Adding a 3rd flag word */
 #define V_QUOTED    0x00080000  /* Quoted strings, ala PennMUSH */
 
+#define MANDFLAGS_V2  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
+#define OFLAGS_V2     (V_DATABASE|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
+
+#define MANDFLAGS_V3  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED|V_ATRKEY)
+#define OFLAGS_V3     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
+
 typedef struct _t5x_gameflaginfo
 {
     int         mask;
@@ -157,31 +163,99 @@ void T5X_GAME::AddObject(T5X_OBJECTINFO *poi)
 void T5X_GAME::ValidateFlags()
 {
     int flags = m_flags;
-    fprintf(stderr, "Flags: ", flags);
 
     int ver = m_flags & V_MASK;
-    fprintf(stderr, "Version: %d\n", ver);
+    fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
+    if (ver < 1 || 3 < ver)
+    {
+        fprintf(stderr, "WARNING: Expecting version to be between 1 and 3.\n");
+    }
     flags &= ~V_MASK;
+    int tflags = flags;
+
+    fprintf(stderr, "INFO: Flatfile flags are ");
     for (int i = 0; i < T5X_NUM_GAMEFLAGNAMES; i++)
     {
-        if (t5x_gameflagnames[i].mask & flags)
+        if (t5x_gameflagnames[i].mask & tflags)
         {
             fprintf(stderr, "%s ", t5x_gameflagnames[i].pName);
-            flags &= ~t5x_gameflagnames[i].mask;
+            tflags &= ~t5x_gameflagnames[i].mask;
         }
     }
     fprintf(stderr, "\n");
-
-    if (0 != flags)
+    if (0 != tflags)
     {
-        fprintf(stderr, "Unknown flags: 0x%x\n", flags);
+        fprintf(stderr, "Unknown flags: 0x%x\n", tflags);
         exit(1);
+    }
+
+    // Validate mandatory flags are present.
+    //
+    if (  2 == ver
+       && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
+    {
+        fprintf(stderr, "WARNING: Not all mandatory flags for v2 are present.\n");
+    }
+    else if (  3 == ver
+            && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
+    {
+        fprintf(stderr, "WARNING: Not all mandatory flags for v3 are present.\n");
+    }
+
+    // Validate that this is a flatfile and not a structure file.
+    //
+    if (  (flags & V_DATABASE) != 0
+       || (flags & V_ATRNAME) != 0
+       || (flags & V_ATRMONEY) != 0)
+    {
+        fprintf(stderr, "WARNING: Expected a flatfile (with strings) instead of a structure file (with only object anchors).\n");
+    }
+}
+
+void T5X_GAME::ValidateObjects()
+{
+    if (!m_fObjects)
+    {
+        fprintf(stderr, "WARNING: +S phrase for object count was missing.\n");
+    }
+    else
+    {
+        int n = m_vObjects.size();
+        if (m_nObjects != n)
+        {
+            fprintf(stderr, "WARNING: +S phrase does not agree with actual number of objects.\n");
+        }
+    }
+}
+
+void T5X_GAME::ValidateAttrNames()
+{
+    if (!m_fNextAttr)
+    {
+        fprintf(stderr, "WARNING: +N phrase for attribute count was missing.\n");
+    }
+    else
+    {
+        int n = 256;
+        for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        {
+            if (n <= (*it)->m_iNum)
+            {
+                n = (*it)->m_iNum + 1;
+            }
+        }
+        if (m_nNextAttr != n)
+        {
+            fprintf(stderr, "WARNING: +N phrase (%d) does not agree with the maximum attribute number (%d).\n", m_nNextAttr, n);
+        }
     }
 }
 
 void T5X_GAME::Validate()
 {
     ValidateFlags();
+    ValidateAttrNames();
+    ValidateObjects();
 }
 
 void T5X_OBJECTINFO::Write(FILE *fp)
