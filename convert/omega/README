@@ -8,7 +8,7 @@ parsers for other formats.
 This can eventually be used to validate backups (lint for your flatfile) --
 including which server version should be able to consume it.  It can also
 be used to extract a @decomp of specific objects for re-quoting into games.
-Finally, it can be used to convert from one format to another in a lossly
+Finally, it can be used to convert from one format to another in a lossy
 fashion.
 
 Tested:
@@ -30,3 +30,6 @@ Tested:
 
 2010-06-29 - Round-trip an older PennMUSH flatfile (1.7.5p0 or after, but
              before 1.7.7p40).
+
+             Added ability to convert a from pre-1.7.7p40 flatfile to 1.7.7p40
+             flatfile.
