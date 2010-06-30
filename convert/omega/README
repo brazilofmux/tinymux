@@ -27,3 +27,6 @@ Tested:
              memory leaks in p6h and t5x paths.
 
              Round-trip tested the TinyMUX 2.6 SGP minimal database.
+
+2010-06-29 - Round-trip an older PennMUSH flatfile (1.7.5p0 or after, but
+             before 1.7.7p40).

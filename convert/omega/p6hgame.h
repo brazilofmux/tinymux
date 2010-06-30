@@ -21,6 +21,8 @@ public:
 
     void Merge(P6H_FLAGINFO *pfi);
 
+    void Write(FILE *fp);
+
     P6H_FLAGINFO()
     {
         m_pName = NULL;
@@ -55,6 +57,8 @@ public:
     void SetAlias(char *p);
 
     void Merge(P6H_FLAGALIASINFO *pfi);
+
+    void Write(FILE *fp);
 
     P6H_FLAGALIASINFO()
     {
@@ -96,6 +100,8 @@ public:
     void SetFlags(int iFlags)  { m_fFlags = true; m_iFlags = iFlags; }
 
     void Merge(P6H_LOCKINFO *pli);
+
+    void Write(FILE *fp, bool fLabels) const;
 
     P6H_LOCKINFO()
     {
@@ -142,6 +148,8 @@ public:
     void SetFlags(int iFlags)  { m_fFlags = true; m_iFlags = iFlags; }
 
     void Merge(P6H_ATTRINFO *pai);
+
+    void Write(FILE *fp, bool fLabels) const;
 
     P6H_ATTRINFO()
     {
@@ -220,8 +228,20 @@ public:
     char *m_pFlags;
     void SetFlags(char *pFlags);
 
+    bool m_fFlags;
+    int  m_iFlags;
+    void SetFlags(int iFlags) { m_fFlags = true; m_iFlags = iFlags; }
+
+    bool m_fToggles;
+    int  m_iToggles;
+    void SetToggles(int iToggles) { m_fToggles = true; m_iToggles = iToggles; }
+
     char *m_pPowers;
     void SetPowers(char *pPowers);
+
+    bool m_fPowers;
+    int  m_iPowers;
+    void SetPowers(int iPowers) { m_fPowers = true; m_iPowers = iPowers; }
 
     char *m_pWarnings;
     void SetWarnings(char *pWarnings);
@@ -237,8 +257,8 @@ public:
     void SetAttrs(int nAttrCount, vector<P6H_ATTRINFO *> *pvai);
 
     void Merge(P6H_OBJECTINFO *poi);
-    void WriteLock(FILE *fp, const P6H_LOCKINFO &li) const;
-    void WriteAttr(FILE *fp, const P6H_ATTRINFO &ai) const;
+
+    void Write(FILE *fp, bool fLabels);
 
     P6H_OBJECTINFO()
     {
@@ -258,7 +278,10 @@ public:
         m_fModified = false;
         m_fType = false;
         m_pFlags = NULL;
+        m_fFlags = false;
+        m_fToggles = false;
         m_pPowers = NULL;
+        m_fPowers = false;
         m_pWarnings = NULL;
         m_fLockCount = false;
         m_pvli = NULL;
@@ -305,9 +328,6 @@ public:
     void ValidateSavedTime();
 
     void Write(FILE *fp);
-    void WriteFlag(FILE *fp, const P6H_FLAGINFO &fi);
-    void WriteFlagAlias(FILE *fp, const P6H_FLAGALIASINFO &fai);
-    void WriteObject(FILE *fp, const P6H_OBJECTINFO &oi);
 
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }

@@ -146,7 +146,9 @@ object
                                          oi->SetOwner($11);
                                          oi->SetZone($12);
                                          oi->SetPennies($13);
-                                         oi->SetType($14);
+                                         oi->SetFlags($14);
+                                         oi->SetToggles($15);
+                                         oi->SetPowers($16);
                                          oi->SetCreated($17);
                                          oi->SetModified($18);
                                          if (NULL != $19)
@@ -257,7 +259,7 @@ attr
 
 attr_old
 :
-    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new P6H_ATTRINFO; $$->SetName($1); $$->SetOwner($3); $$->SetFlags($5); $$->SetValue($6); }
+    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new P6H_ATTRINFO; $$->SetName($1); $$->SetFlags($3); $$->SetDerefs($5); $$->SetValue($6); }
 ;
 
 attrphrases

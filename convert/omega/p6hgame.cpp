@@ -25,6 +25,17 @@
 #define DBF_SPIFFY_AF_ANSI      0x00200000
 #define DBF_HEAR_CONNECT        0x00400000
 
+// DBF_SPIFFY_LOCKS was introduced with PennMUSH 1.7.5p0 (11/14/2001) and
+// replaced DBF_NEW_LOCKS.
+//
+// DBF_NEW_FLAGS, DBF_NEW_POWERS, DBF_POWERS_LOGGED, and DBF_LABELS were
+// introduced with PennMUSH 1.7.7p40 (12/01/2004).
+//
+// DBF_SPIFFY_AF_ANSI was introduced with PennMUSH 1.8.3p0 (01/27/2007).
+//
+// DBF_HEAR_CONNECT was introduced with PennMUSH 1.8.3p10 (08/24/2009).
+//
+
 typedef struct _p6h_gameflaginfo
 {
     int         mask;
@@ -480,22 +491,64 @@ void P6H_GAME::AddObject(P6H_OBJECTINFO *poi)
 void P6H_GAME::ValidateFlags()
 {
     int flags = m_flags;
-    fprintf(stderr, "Flags: ", flags);
+    bool f177p40 = ((flags & DBF_LABELS) == DBF_LABELS);
+    if (f177p40)
+    {
+        fprintf(stderr, "INFO: Flatfile produced by 1.7.7p40 or later.\n");
+    }
+    else
+    {
+        fprintf(stderr, "INFO: Flatfile predates PennMUSH 1.7.7p40\n");
+    }
 
+    int tflags = flags;
+    fprintf(stderr, "INFO: Flatfile flags are ");
     for (int i = 0; i < P6H_NUM_GAMEFLAGNAMES; i++)
     {
-        if (p6h_gameflagnames[i].mask & flags)
+        if (p6h_gameflagnames[i].mask & tflags)
         {
             fprintf(stderr, "%s ", p6h_gameflagnames[i].pName);
-            flags &= ~p6h_gameflagnames[i].mask;
+            tflags &= ~p6h_gameflagnames[i].mask;
         }
     }
     fprintf(stderr, "\n");
-
-    if (0 != flags)
+    if (0 != tflags)
     {
-        fprintf(stderr, "Unknown flags: 0x%x\n", flags);
+        fprintf(stderr, "Unknown flags: 0x%x\n", tflags);
         exit(1);
+    }
+
+    // Validate mandatory flags are present.
+    //
+    const int iMandatory = DBF_NO_CHAT_SYSTEM
+                         | DBF_CREATION_TIMES
+                         | DBF_NEW_STRINGS
+                         | DBF_TYPE_GARBAGE
+                         | DBF_LESS_GARBAGE
+                         | DBF_SPIFFY_LOCKS;
+
+    const int iMand177p40 = DBF_NEW_FLAGS
+                          | DBF_NEW_POWERS
+                          | DBF_POWERS_LOGGED
+                          | DBF_LABELS;
+    if ((flags & iMandatory) != iMandatory)
+    {
+        fprintf(stderr, "WARNING: Not all mandatory flags are present.\n");
+    }
+
+    if (f177p40)
+    {
+        if ((flags & iMand177p40) != iMand177p40)
+        {
+            fprintf(stderr, "WARNING: Not all mandatory flags for post-1.7.7p40 are are present.\n");
+        }
+    }
+    else
+    {
+        if ((flags & iMand177p40) != 0)
+        {
+            fprintf(stderr, "WARNING: Unexpected flags for pre-1.7.7p40 appear.\n");
+        }
     }
 }
 
@@ -530,191 +583,328 @@ static char *EncodeString(const char *str)
     return buf;
 }
 
-void P6H_GAME::WriteObject(FILE *fp, const P6H_OBJECTINFO &oi)
+void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
 {
-    fprintf(fp, "!%d\n", oi.m_dbRef);
-    if (NULL != oi.m_pName)
+    fprintf(fp, "!%d\n", m_dbRef);
+    if (NULL != m_pName)
     {
-        fprintf(fp, "name \"%s\"\n", EncodeString(oi.m_pName));
+        if (fLabels)
+        {
+            fprintf(fp, "name \"%s\"\n", EncodeString(m_pName));
+        }
+        else
+        {
+            fprintf(fp, "\"%s\"\n", EncodeString(m_pName));
+        }
     }
-    if (oi.m_fLocation)
+    if (m_fLocation)
     {
-        fprintf(fp, "location #%d\n", oi.m_dbLocation);
+        if (fLabels)
+        {
+            fprintf(fp, "location #%d\n", m_dbLocation);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbLocation);
+        }
     }
-    if (oi.m_fContents)
+    if (m_fContents)
     {
-        fprintf(fp, "contents #%d\n", oi.m_dbContents);
+        if (fLabels)
+        {
+            fprintf(fp, "contents #%d\n", m_dbContents);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbContents);
+        }
     }
-    if (oi.m_fExits)
+    if (m_fExits)
     {
-        fprintf(fp, "exits #%d\n", oi.m_dbExits);
+        if (fLabels)
+        {
+            fprintf(fp, "exits #%d\n", m_dbExits);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbExits);
+        }
     }
-    if (oi.m_fNext)
+    if (m_fNext)
     {
-        fprintf(fp, "next #%d\n", oi.m_dbNext);
+        if (fLabels)
+        {
+            fprintf(fp, "next #%d\n", m_dbNext);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbNext);
+        }
     }
-    if (oi.m_fParent)
+    if (m_fParent)
     {
-        fprintf(fp, "parent #%d\n", oi.m_dbParent);
+        if (fLabels)
+        {
+            fprintf(fp, "parent #%d\n", m_dbParent);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbParent);
+        }
     }
 
-    if (oi.m_fLockCount)
+    if (m_fLockCount)
     {
-        if (NULL == oi.m_pvli)
+        if (NULL == m_pvli)
         {
             fprintf(fp, "lockcount 0\n");
         }
         else
         {
-            fprintf(fp, "lockcount %d\n", oi.m_pvli->size());
-            for (vector<P6H_LOCKINFO *>::iterator it = oi.m_pvli->begin(); it != oi.m_pvli->end(); ++it)
+            fprintf(fp, "lockcount %d\n", m_pvli->size());
+            for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
             {
-                oi.WriteLock(fp, **it);
+                (*it)->Write(fp, fLabels);
             }
         }
     }
-    if (oi.m_fOwner)
+    if (m_fOwner)
     {
-        fprintf(fp, "owner #%d\n", oi.m_dbOwner);
-    }
-    if (oi.m_fZone)
-    {
-        fprintf(fp, "zone #%d\n", oi.m_dbZone);
-    }
-    if (oi.m_fPennies)
-    {
-        fprintf(fp, "pennies %d\n", oi.m_iPennies);
-    }
-    if (oi.m_fType)
-    {
-        fprintf(fp, "type %d\n", oi.m_iType);
-    }
-    if (NULL != oi.m_pFlags)
-    {
-        fprintf(fp, "flags \"%s\"\n", EncodeString(oi.m_pFlags));
-    }
-    if (NULL != oi.m_pPowers)
-    {
-        fprintf(fp, "powers \"%s\"\n", EncodeString(oi.m_pPowers));
-    }
-    if (NULL != oi.m_pWarnings)
-    {
-        fprintf(fp, "warnings \"%s\"\n", EncodeString(oi.m_pWarnings));
-    }
-    if (oi.m_fCreated)
-    {
-        fprintf(fp, "created %d\n", oi.m_iCreated);
-    }
-    if (oi.m_fModified)
-    {
-        fprintf(fp, "modified %d\n", oi.m_iModified);
-    }
-    if (oi.m_fAttrCount)
-    {
-        if (NULL == oi.m_pvai)
+        if (fLabels)
         {
-            fprintf(fp, "attrcount 0\n");
+            fprintf(fp, "owner #%d\n", m_dbOwner);
         }
         else
         {
-            fprintf(fp, "attrcount %d\n", oi.m_pvai->size());
-            for (vector<P6H_ATTRINFO *>::iterator it = oi.m_pvai->begin(); it != oi.m_pvai->end(); ++it)
+            fprintf(fp, "%d\n", m_dbOwner);
+        }
+    }
+    if (m_fZone)
+    {
+        if (fLabels)
+        {
+            fprintf(fp, "zone #%d\n", m_dbZone);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_dbZone);
+        }
+    }
+    if (m_fPennies)
+    {
+        if (fLabels)
+        {
+            fprintf(fp, "pennies %d\n", m_iPennies);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_iPennies);
+        }
+    }
+    if (m_fType)
+    {
+        fprintf(fp, "type %d\n", m_iType);
+    }
+    if (NULL != m_pFlags)
+    {
+        fprintf(fp, "flags \"%s\"\n", EncodeString(m_pFlags));
+    }
+    if (m_fFlags)
+    {
+        fprintf(fp, "%d\n", m_iFlags);
+    }
+    if (m_fToggles)
+    {
+        fprintf(fp, "%d\n", m_iToggles);
+    }
+    if (NULL != m_pPowers)
+    {
+        fprintf(fp, "powers \"%s\"\n", EncodeString(m_pPowers));
+    }
+    if (m_fPowers)
+    {
+        fprintf(fp, "%d\n", m_iPowers);
+    }
+    if (NULL != m_pWarnings)
+    {
+        fprintf(fp, "warnings \"%s\"\n", EncodeString(m_pWarnings));
+    }
+    if (m_fCreated)
+    {
+        if (fLabels)
+        {
+            fprintf(fp, "created %d\n", m_iCreated);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_iCreated);
+        }
+    }
+    if (m_fModified)
+    {
+        if (fLabels)
+        {
+            fprintf(fp, "modified %d\n", m_iModified);
+        }
+        else
+        {
+            fprintf(fp, "%d\n", m_iModified);
+        }
+    }
+    if (m_fAttrCount)
+    {
+        if (NULL == m_pvai)
+        {
+            if (fLabels)
             {
-                oi.WriteAttr(fp, **it);
+                fprintf(fp, "attrcount 0\n");
+            }
+        }
+        else
+        {
+            if (fLabels)
+            {
+                fprintf(fp, "attrcount %d\n", m_pvai->size());
+            }
+            for (vector<P6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+            {
+                (*it)->Write(fp, fLabels);
+            }
+        }
+    }
+    if (!fLabels)
+    {
+        fprintf(fp, "<\n");
+    }
+}
+
+void P6H_FLAGINFO::Write(FILE *fp)
+{
+    if (NULL != m_pName)
+    {
+        fprintf(fp, " name \"%s\"\n", EncodeString(m_pName));
+        if (NULL != m_pLetter)
+        {
+            fprintf(fp, "  letter \"%s\"\n", EncodeString(m_pLetter));
+        }
+        if (NULL != m_pType)
+        {
+            fprintf(fp, "  type \"%s\"\n", EncodeString(m_pType));
+        }
+        if (NULL != m_pLetter)
+        {
+            fprintf(fp, "  perms \"%s\"\n", EncodeString(m_pPerms));
+        }
+        if (NULL != m_pNegatePerms)
+        {
+            fprintf(fp, "  negate_perms \"%s\"\n", EncodeString(m_pNegatePerms));
+        }
+    }
+}
+
+void P6H_FLAGALIASINFO::Write(FILE *fp)
+{
+    if (NULL != m_pName)
+    {
+        fprintf(fp, " name \"%s\"\n", EncodeString(m_pName));
+        if (NULL != m_pAlias)
+        {
+            fprintf(fp, "  alias \"%s\"\n", EncodeString(m_pAlias));
+        }
+    }
+}
+
+void P6H_LOCKINFO::Write(FILE *fp, bool fLabels) const
+{
+    if (NULL != m_pType)
+    {
+        if (fLabels)
+        {
+            fprintf(fp, " type \"%s\"\n", EncodeString(m_pType));
+        }
+        else
+        {
+            fprintf(fp, "type \"%s\"\n", EncodeString(m_pType));
+        }
+        if (m_fCreator)
+        {
+            if (fLabels)
+            {
+                fprintf(fp, "  creator #%d\n", m_dbCreator);
+            }
+            else
+            {
+                fprintf(fp, "creator %d\n", m_dbCreator);
+            }
+        }
+        if (NULL != m_pFlags)
+        {
+            fprintf(fp, "  flags \"%s\"\n", EncodeString(m_pFlags));
+        }
+        if (m_fFlags)
+        {
+            if (fLabels)
+            {
+                fprintf(fp, "  flags %d\n", m_iFlags);
+            }
+            else
+            {
+                fprintf(fp, "flags %d\n", m_iFlags);
+            }
+        }
+        if (m_fDerefs)
+        {
+            fprintf(fp, "  derefs %d\n", m_iDerefs);
+        }
+        if (NULL != m_pKey)
+        {
+            if (fLabels)
+            {
+                fprintf(fp, "  key \"%s\"\n", EncodeString(m_pKey));
+            }
+            else
+            {
+                fprintf(fp, "key \"%s\"\n", EncodeString(m_pKey));
             }
         }
     }
 }
 
-void P6H_GAME::WriteFlag(FILE *fp, const P6H_FLAGINFO &fi)
+void P6H_ATTRINFO::Write(FILE *fp, bool fLabels) const
 {
-    if (NULL != fi.m_pName)
+    if (fLabels)
     {
-        fprintf(fp, " name \"%s\"\n", EncodeString(fi.m_pName));
-        if (NULL != fi.m_pLetter)
+        if (NULL != m_pName)
         {
-            fprintf(fp, "  letter \"%s\"\n", EncodeString(fi.m_pLetter));
-        }
-        if (NULL != fi.m_pType)
-        {
-            fprintf(fp, "  type \"%s\"\n", EncodeString(fi.m_pType));
-        }
-        if (NULL != fi.m_pLetter)
-        {
-            fprintf(fp, "  perms \"%s\"\n", EncodeString(fi.m_pPerms));
-        }
-        if (NULL != fi.m_pNegatePerms)
-        {
-            fprintf(fp, "  negate_perms \"%s\"\n", EncodeString(fi.m_pNegatePerms));
+            fprintf(fp, " name \"%s\"\n", EncodeString(m_pName));
+            if (m_fOwner)
+            {
+                fprintf(fp, "  owner #%d\n", m_dbOwner);
+            }
+            if (NULL != m_pFlags)
+            {
+                fprintf(fp, "  flags \"%s\"\n", EncodeString(m_pFlags));
+            }
+            if (m_fFlags)
+            {
+                fprintf(fp, "  flags %d\n", m_iFlags);
+            }
+            if (m_fDerefs)
+            {
+                fprintf(fp, "  derefs %d\n", m_iDerefs);
+            }
+            if (NULL != m_pValue)
+            {
+                fprintf(fp, "  value \"%s\"\n", EncodeString(m_pValue));
+            }
         }
     }
-}
-
-void P6H_GAME::WriteFlagAlias(FILE *fp, const P6H_FLAGALIASINFO &fai)
-{
-    if (NULL != fai.m_pName)
+    else if (  NULL != m_pName
+            && m_fFlags
+            && m_fDerefs
+            && NULL != m_pValue)
     {
-        fprintf(fp, " name \"%s\"\n", EncodeString(fai.m_pName));
-        if (NULL != fai.m_pAlias)
-        {
-            fprintf(fp, "  alias \"%s\"\n", EncodeString(fai.m_pAlias));
-        }
-    }
-}
-
-void P6H_OBJECTINFO::WriteLock(FILE *fp, const P6H_LOCKINFO &li) const
-{
-    if (NULL != li.m_pType)
-    {
-        fprintf(fp, " type \"%s\"\n", EncodeString(li.m_pType));
-        if (li.m_fCreator)
-        {
-            fprintf(fp, "  creator #%d\n", li.m_dbCreator);
-        }
-        if (NULL != li.m_pFlags)
-        {
-            fprintf(fp, "  flags \"%s\"\n", EncodeString(li.m_pFlags));
-        }
-        if (li.m_fFlags)
-        {
-            fprintf(fp, "  flags %d\n", li.m_iFlags);
-        }
-        if (li.m_fDerefs)
-        {
-            fprintf(fp, "  derefs %d\n", li.m_iDerefs);
-        }
-        if (NULL != li.m_pKey)
-        {
-            fprintf(fp, "  key \"%s\"\n", EncodeString(li.m_pKey));
-        }
-    }
-}
-
-void P6H_OBJECTINFO::WriteAttr(FILE *fp, const P6H_ATTRINFO &ai) const
-{
-    if (NULL != ai.m_pName)
-    {
-        fprintf(fp, " name \"%s\"\n", EncodeString(ai.m_pName));
-        if (ai.m_fOwner)
-        {
-            fprintf(fp, "  owner #%d\n", ai.m_dbOwner);
-        }
-        if (NULL != ai.m_pFlags)
-        {
-            fprintf(fp, "  flags \"%s\"\n", EncodeString(ai.m_pFlags));
-        }
-        if (ai.m_fFlags)
-        {
-            fprintf(fp, "  flags %d\n", ai.m_iFlags);
-        }
-        if (ai.m_fDerefs)
-        {
-            fprintf(fp, "  derefs %d\n", ai.m_iDerefs);
-        }
-        if (NULL != ai.m_pValue)
-        {
-            fprintf(fp, "  value \"%s\"\n", EncodeString(ai.m_pValue));
-        }
+        fprintf(fp, "]%s^%d^%d\n\"%s\"\n", m_pName, m_iFlags, m_iDerefs, EncodeString(m_pValue));
     }
 }
 
@@ -733,7 +923,7 @@ void P6H_GAME::Write(FILE *fp)
     {
         for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
         {
-            WriteFlag(fp, **it);
+            (*it)->Write(fp);
         }
     }
     if (m_fFlagAliases)
@@ -744,7 +934,7 @@ void P6H_GAME::Write(FILE *fp)
     {
         for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvFlagAliases->begin(); it != m_pvFlagAliases->end(); ++it)
         {
-            WriteFlagAlias(fp, **it);
+            (*it)->Write(fp);
         }
     }
     if (m_fPowers)
@@ -755,7 +945,7 @@ void P6H_GAME::Write(FILE *fp)
     {
         for (vector<P6H_FLAGINFO *>::iterator it = m_pvPowers->begin(); it != m_pvPowers->end(); ++it)
         {
-            WriteFlag(fp, **it);
+            (*it)->Write(fp);
         }
     }
     if (m_fPowerAliases)
@@ -766,16 +956,17 @@ void P6H_GAME::Write(FILE *fp)
     {
         for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvPowerAliases->begin(); it != m_pvPowerAliases->end(); ++it)
         {
-            WriteFlagAlias(fp, **it);
+            (*it)->Write(fp);
         }
     }
     if (m_fObjects)
     {
         fprintf(fp, "~%d\n", m_nObjects);
     }
+    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        WriteObject(fp, **it);
+        (*it)->Write(fp, fLabels);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");
