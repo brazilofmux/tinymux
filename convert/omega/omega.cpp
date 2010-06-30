@@ -34,6 +34,7 @@ void Usage()
     fprintf(stderr, "Supported options:\n");
     fprintf(stderr, "  --rt-p6h - Round-trip PennMUSH flatfile\n");
     fprintf(stderr, "  --rt-t5x - Round-trip TinyMUX flatfile\n");
+    fprintf(stderr, "  --up-p6h - Upgrade pre-1.7.7p40 PennMUSH flatfile\n");
 }
 
 int main(int argc, const char *argv[])
@@ -50,6 +51,7 @@ int main(int argc, const char *argv[])
     const int iModeNone  = 0;
     const int iModeRTP6H = 1;
     const int iModeRTT5X = 2;
+    const int iModeUPP6H = 3;
     int iMode = iModeNone;
 
     if (strcmp("--rt-p6h", argv[1]) == 0)
@@ -59,6 +61,10 @@ int main(int argc, const char *argv[])
     else if (strcmp("--rt-t5x", argv[1]) == 0)
     {
         iMode = iModeRTT5X;
+    }
+    else if (strcmp("--up-p6h", argv[1]) == 0)
+    {
+        iMode = iModeUPP6H;
     }
     else
     {
@@ -101,6 +107,19 @@ int main(int argc, const char *argv[])
         g_t5xgame.Validate();
         g_t5xgame.Write(fpout);
         t5xin = NULL;
+    }
+    else if (iModeUPP6H == iMode)
+    {
+        extern int p6hparse();
+        extern FILE *p6hin;
+        p6hin = fpin;
+        p6hparse();
+
+        g_p6hgame.Validate();
+        g_p6hgame.Upgrade();
+        g_p6hgame.Validate();
+        g_p6hgame.Write(fpout);
+        p6hin = NULL;
     }
     fclose(fpout);
     fclose(fpin);

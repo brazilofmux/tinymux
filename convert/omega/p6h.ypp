@@ -259,7 +259,7 @@ attr
 
 attr_old
 :
-    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new P6H_ATTRINFO; $$->SetName($1); $$->SetFlags($3); $$->SetDerefs($5); $$->SetValue($6); }
+    ATTRNAME '^' INTEGER '^' INTEGER STRING  { $$ = new P6H_ATTRINFO; $$->SetName($1); $$->SetOwner($3); $$->SetFlags($5); $$->SetValue($6); }
 ;
 
 attrphrases

@@ -7,10 +7,12 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
 #include <vector>
 using namespace std;
 
 char *StringClone(const char *str);
+char *StringCloneLen(const char *str, size_t nStr);
 
 #endif

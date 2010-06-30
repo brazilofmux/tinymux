@@ -103,6 +103,8 @@ public:
 
     void Write(FILE *fp, bool fLabels) const;
 
+    void Upgrade();
+
     P6H_LOCKINFO()
     {
         m_pType = NULL;
@@ -150,6 +152,8 @@ public:
     void Merge(P6H_ATTRINFO *pai);
 
     void Write(FILE *fp, bool fLabels) const;
+
+    void Upgrade();
 
     P6H_ATTRINFO()
     {
@@ -259,6 +263,8 @@ public:
     void Merge(P6H_OBJECTINFO *poi);
 
     void Write(FILE *fp, bool fLabels);
+
+    void Upgrade();
 
     P6H_OBJECTINFO()
     {
@@ -370,6 +376,8 @@ public:
 
     vector<P6H_OBJECTINFO *> m_vObjects;
     void AddObject(P6H_OBJECTINFO *poi);
+
+    void Upgrade();
 
     P6H_GAME()
     {
