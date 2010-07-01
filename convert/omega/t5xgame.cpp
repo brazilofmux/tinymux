@@ -191,7 +191,7 @@ void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
     m_pName = pName;
 }
 
-static char *EncodeString(const char *str)
+static char *EncodeString(const char *str, bool fExtraEscapes)
 {
     static char buf[65536];
     char *p = buf;
@@ -204,25 +204,25 @@ static char *EncodeString(const char *str)
             *p++ = '\\';
             *p++ = *str++;
         }
-        else if ('\r' == *str)
+        else if (fExtraEscapes && '\r' == *str)
         {
             *p++ = '\\';
             *p++ = 'r';
             str++;
         }
-        else if ('\n' == *str)
+        else if (fExtraEscapes && '\n' == *str)
         {
             *p++ = '\\';
             *p++ = 'n';
             str++;
         }
-        else if ('\t' == *str)
+        else if (fExtraEscapes && '\t' == *str)
         {
             *p++ = '\\';
             *p++ = 't';
             str++;
         }
-        else if ('\x1B' == *str)
+        else if (fExtraEscapes && '\x1B' == *str)
         {
             *p++ = '\\';
             *p++ = 'e';
@@ -237,11 +237,11 @@ static char *EncodeString(const char *str)
     return buf;
 }
 
-void T5X_ATTRNAMEINFO::Write(FILE *fp)
+void T5X_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
 {
     if (m_fNumAndName)
     {
-        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName));
+        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
     }
 }
 
@@ -300,7 +300,7 @@ void T5X_GAME::ValidateFlags()
 {
     int flags = m_flags;
 
-    int ver = m_flags & V_MASK;
+    int ver = (m_flags & V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
     if (ver < 1 || 3 < ver)
     {
@@ -419,12 +419,12 @@ void T5X_GAME::Validate()
     ValidateObjects();
 }
 
-void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock)
+void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
 {
     fprintf(fp, "!%d\n", m_dbRef);
     if (NULL != m_pName)
     {
-        fprintf(fp, "\"%s\"\n", EncodeString(m_pName));
+        fprintf(fp, "\"%s\"\n", EncodeString(m_pName, fExtraEscapes));
     }
     if (m_fLocation)
     {
@@ -499,7 +499,7 @@ void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock)
     {
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            (*it)->Write(fp);
+            (*it)->Write(fp, fExtraEscapes);
         }
     }
     fprintf(fp, "<\n");
@@ -509,16 +509,18 @@ void T5X_OBJECTINFO::Validate()
 {
 }
 
-void T5X_ATTRINFO::Write(FILE *fp) const
+void T5X_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 {
     if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValue));
+        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValue, fExtraEscapes));
     }
 }
 
 void T5X_GAME::Write(FILE *fp)
 {
+    int ver = (m_flags & V_MASK);
+    bool fExtraEscapes = (2 <= ver);
     fprintf(fp, "+X%d\n", m_flags);
     if (m_fSizeHint)
     {
@@ -534,11 +536,11 @@ void T5X_GAME::Write(FILE *fp)
     }
     for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
-        (*it)->Write(fp);
+        (*it)->Write(fp, fExtraEscapes);
     } 
     for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
-        (*it)->Write(fp, (m_flags & V_ATRKEY) == 0);
+        (*it)->Write(fp, (m_flags & V_ATRKEY) == 0, fExtraEscapes);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");

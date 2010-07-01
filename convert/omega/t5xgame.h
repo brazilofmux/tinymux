@@ -150,7 +150,7 @@ public:
     char *m_pName;
     void  SetNumAndName(int iNum, char *pName);
 
-    void Write(FILE *fp);
+    void Write(FILE *fp, bool fExtraEscapes);
 
     T5X_ATTRNAMEINFO()
     {
@@ -172,7 +172,7 @@ public:
     char *m_pValue;
     void SetNumAndValue(int iNum, char *pValue);
 
-    void Write(FILE *fp) const;
+    void Write(FILE *fp, bool fExtraEscapes) const;
 
     T5X_ATTRINFO()
     {
@@ -260,7 +260,7 @@ public:
     T5X_LOCKEXP *m_ple;
     void SetUseLock(T5X_LOCKEXP *p) { free(m_ple); m_ple = p; }
 
-    void Write(FILE *fp, bool bWriteLock);
+    void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
 
     void Validate();
 
