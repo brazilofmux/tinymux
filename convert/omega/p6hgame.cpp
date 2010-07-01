@@ -1779,7 +1779,6 @@ void P6H_GAME::ConvertT5X()
         char buffer[256];
         sprintf(buffer, "%d:%s", 0, it->first);
         g_t5xgame.AddNumAndName(it->second, StringClone(buffer));
-        delete it->first;
     }
     g_t5xgame.SetNextAttr(iNextAttr);
 
@@ -1897,6 +1896,33 @@ void P6H_GAME::ConvertT5X()
         poi->SetPowers1(powers1);
         poi->SetPowers2(powers2);
 
+        if (NULL != (*it)->m_pvai)
+        {
+            vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+            for (vector<P6H_ATTRINFO *>::iterator itAttr = (*it)->m_pvai->begin(); itAttr != (*it)->m_pvai->end(); ++itAttr)
+            {
+                if (  NULL != (*itAttr)->m_pName
+                   && NULL != (*itAttr)->m_pValue)
+                {
+                    char *pAttrName = t5x_ConvertAttributeName((*itAttr)->m_pName);
+                    map<const char *, int , ltstr>::iterator itFound = AttrNames.find(pAttrName);
+                    if (itFound != AttrNames.end())
+                    {
+                        T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                        pai->SetNumAndValue(AttrNames[pAttrName], StringClone((*itAttr)->m_pValue));
+                        pvai->push_back(pai);
+                    }
+                    free(pAttrName);
+                }
+            }
+            if (0 < pvai->size())
+            {
+                poi->SetAttrs(pvai->size(), pvai);
+                pvai = NULL;
+            }
+            delete pvai;
+        }
+
         g_t5xgame.AddObject(poi);
 
         if (dbRefMax < (*it)->m_dbRef)
@@ -1904,6 +1930,14 @@ void P6H_GAME::ConvertT5X()
             dbRefMax = (*it)->m_dbRef;
         }
     }
+
+    // Release memory that we allocated.
+    //
+    for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
+    {
+        delete it->first;
+    }
+
     g_t5xgame.SetSizeHint(dbRefMax);
     g_t5xgame.SetRecordPlayers(0);
 }
