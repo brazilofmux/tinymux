@@ -13,7 +13,7 @@
 %x str
 %%
 
-                 char aQuotedString[10000];
+                 char aQuotedString[65536];
                  char *pQuotedString;
                  int  iPreStrContext;
 
@@ -64,7 +64,7 @@
                  }
   ~[0-9]+        {
                      p6hlval.i = atoi(p6htext+1);
-                     return OBJECTCOUNT;
+                     return SIZEHINT;
                  }
   ![0-9]+        {
                      p6hlval.i = atoi(p6htext+1);

@@ -1,6 +1,27 @@
 #ifndef _T5XGAME_H_
 #define _T5XGAME_H_
 
+#define V_MASK      0x000000ff  /* Database version */
+#define V_ZONE      0x00000100  /* ZONE/DOMAIN field */
+#define V_LINK      0x00000200  /* LINK field (exits from objs) */
+#define V_DATABASE  0x00000400  /* attrs in a separate database */
+#define V_ATRNAME   0x00000800  /* NAME is an attr, not in the hdr */
+#define V_ATRKEY    0x00001000  /* KEY is an attr, not in the hdr */
+#define V_PARENT    0x00002000  /* db has the PARENT field */
+#define V_ATRMONEY  0x00008000  /* Money is kept in an attribute */
+#define V_XFLAGS    0x00010000  /* An extra word of flags */
+#define V_POWERS    0x00020000  /* Powers? */
+#define V_3FLAGS    0x00040000  /* Adding a 3rd flag word */
+#define V_QUOTED    0x00080000  /* Quoted strings, ala PennMUSH */
+
+#define MANDFLAGS_V2  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
+#define OFLAGS_V2     (V_DATABASE|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
+
+#define MANDFLAGS_V3  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED|V_ATRKEY)
+#define OFLAGS_V3     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
+
+#define A_USER_START    256     // Start of user-named attributes.
+
 class T5X_LOCKEXP
 {
 public:
@@ -232,6 +253,8 @@ public:
 
     void Write(FILE *fp, bool bWriteLock);
 
+    void Validate();
+
     T5X_OBJECTINFO()
     {
         m_fRef = false;
@@ -276,13 +299,13 @@ public:
 
     void Write(FILE *fp);
 
-    int m_flags;
+    int  m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
 
-    bool m_fObjects;
-    int  m_nObjects;
-    void SetObjectCount(int nObjects) { m_fObjects = true; m_nObjects = nObjects; }
+    bool m_fSizeHint;
+    int  m_nSizeHint;
+    void SetSizeHint(int nSizeHint) { m_fSizeHint = true; m_nSizeHint = nSizeHint; }
 
     bool m_fNextAttr;
     int  m_nNextAttr;
@@ -301,10 +324,9 @@ public:
     T5X_GAME()
     {
         m_flags = 0;
-        m_fObjects = false;
+        m_fSizeHint = false;
         m_fNextAttr = false;
         m_fRecordPlayers = false;
-        m_nObjects = 0;
     }
     ~T5X_GAME()
     {

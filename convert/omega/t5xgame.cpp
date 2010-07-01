@@ -1,27 +1,6 @@
 #include "omega.h"
 #include "t5xgame.h"
 
-#define V_MASK      0x000000ff  /* Database version */
-#define V_ZONE      0x00000100  /* ZONE/DOMAIN field */
-#define V_LINK      0x00000200  /* LINK field (exits from objs) */
-#define V_DATABASE  0x00000400  /* attrs in a separate database */
-#define V_ATRNAME   0x00000800  /* NAME is an attr, not in the hdr */
-#define V_ATRKEY    0x00001000  /* KEY is an attr, not in the hdr */
-#define V_PARENT    0x00002000  /* db has the PARENT field */
-#define V_ATRMONEY  0x00008000  /* Money is kept in an attribute */
-#define V_XFLAGS    0x00010000  /* An extra word of flags */
-#define V_POWERS    0x00020000  /* Powers? */
-#define V_3FLAGS    0x00040000  /* Adding a 3rd flag word */
-#define V_QUOTED    0x00080000  /* Quoted strings, ala PennMUSH */
-
-#define MANDFLAGS_V2  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
-#define OFLAGS_V2     (V_DATABASE|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
-
-#define MANDFLAGS_V3  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED|V_ATRKEY)
-#define OFLAGS_V3     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
-
-#define A_USER_START    256     // Start of user-named attributes.
-
 typedef struct _t5x_gameflaginfo
 {
     int         mask;
@@ -128,7 +107,7 @@ void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 
 static char *EncodeString(const char *str)
 {
-    static char buf[10000];
+    static char buf[65536];
     char *p = buf;
     while (  '\0' != *str
           && p < buf + sizeof(buf) - 2)
@@ -285,16 +264,29 @@ void T5X_GAME::ValidateFlags()
 
 void T5X_GAME::ValidateObjects()
 {
-    if (!m_fObjects)
+    if (!m_fSizeHint)
     {
-        fprintf(stderr, "WARNING: +S phrase for object count was missing.\n");
+        fprintf(stderr, "WARNING: +S phrase for next object was missing.\n");
     }
     else
     {
-        int n = m_vObjects.size();
-        if (m_nObjects != n)
+        int dbRefMax = 0;
+        for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
         {
-            fprintf(stderr, "WARNING: +S phrase does not agree with actual number of objects.\n");
+            (*it)->Validate();
+            if (dbRefMax < (*it)->m_dbRef)
+            {
+                dbRefMax = (*it)->m_dbRef;
+            }
+        } 
+      
+        if (m_nSizeHint < dbRefMax)
+        {
+            fprintf(stderr, "WARNING: +S phrase does not leave room for the dbrefs.\n");
+        }
+        else if (m_nSizeHint != dbRefMax)
+        {
+            fprintf(stderr, "WARNING: +S phrase does not agree with last object.\n");
         }
     }
 }
@@ -427,6 +419,10 @@ void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock)
     fprintf(fp, "<\n");
 }
 
+void T5X_OBJECTINFO::Validate()
+{
+}
+
 void T5X_ATTRINFO::Write(FILE *fp) const
 {
     if (m_fNumAndValue)
@@ -438,9 +434,9 @@ void T5X_ATTRINFO::Write(FILE *fp) const
 void T5X_GAME::Write(FILE *fp)
 {
     fprintf(fp, "+X%d\n", m_flags);
-    if (m_fObjects)
+    if (m_fSizeHint)
     {
-        fprintf(fp, "+S%d\n", m_nObjects);
+        fprintf(fp, "+S%d\n", m_nSizeHint);
     }
     if (m_fNextAttr)
     {

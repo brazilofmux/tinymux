@@ -13,7 +13,7 @@
 %x str
 %%
 
-                 char aQuotedString[10000];
+                 char aQuotedString[65536];
                  char *pQuotedString;
                  int  iPreStrContext;
 
@@ -27,7 +27,7 @@
 <afterhdr>{
   ^\+S[0-9]+     {
                      t5xlval.i = atoi(t5xtext+2);
-                     return OBJECTCOUNT;
+                     return SIZEHINT;
                  }
   ^\+N[0-9]+     {
                      t5xlval.i = atoi(t5xtext+2);

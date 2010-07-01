@@ -1,5 +1,6 @@
 #include "omega.h"
 #include "p6hgame.h"
+#include "t5xgame.h"
 
 #define DBF_NO_CHAT_SYSTEM      0x00000001
 #define DBF_WARNINGS            0x00000002
@@ -562,11 +563,33 @@ void P6H_GAME::Validate()
     {
         ValidateSavedTime();
     }
+    if (m_fFlags || NULL != m_pvFlags)
+    {
+        if (!m_fFlags)
+        {
+            fprintf(stderr, "WARNING: +FLAG LIST flagcount missing when list of flags is present.\n");
+        }
+        if (NULL == m_pvFlags)
+        {
+            fprintf(stderr, "WARNING: +FLAG LIST list of flags is missing then flagcount is present.\n");
+        }
+        if (m_fFlags && NULL != m_pvFlags)
+        {
+            if (m_nFlags != m_pvFlags->size())
+            {
+                fprintf(stderr, "WARNING: flag count (%d) does not agree with flagcount (%d) in +FLAG LIST\n", m_pvFlags->size(), m_nFlags);
+            }
+        }
+        for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
+        {
+            (*it)->Validate();
+        }
+    }
 }
 
 static char *EncodeString(const char *str)
 {
-    static char buf[10000];
+    static char buf[65536];
     char *p = buf;
     while (  '\0' != *str
           && p < buf + sizeof(buf) - 2)
@@ -1037,6 +1060,92 @@ void P6H_OBJECTINFO::Upgrade()
     }
 }
 
+// In many places, PennMUSH allows any character in a field that the game itself allows.
+//
+bool p6h_IsValidGameCharacter(int ch)
+{
+    return (0 != isgraph(ch));
+}
+
+void P6H_FLAGINFO::Validate()
+{
+    if (NULL != m_pName)
+    {
+        if (strlen(m_pName) <= 1)
+        {
+            fprintf(stderr, "WARNING: Flag name (%s) should be longer than a single character.\n", m_pName);
+        }
+        if (NULL != strchr(m_pName, ' '))
+        {
+            fprintf(stderr, "WARNING: Flag name (%s) should not contain spaces.\n", m_pName);
+        }
+        for (char *p = m_pName; *p; p++)
+        {
+            if (  ' ' != *p
+               && !p6h_IsValidGameCharacter(*p))
+            {
+                fprintf(stderr, "WARNING: Not all characters in flag name '%s' are valid.\n", m_pName);
+                break;
+            }
+        }
+    }
+    if (NULL != m_pLetter)
+    {
+        if (1 < strlen(m_pLetter))
+        {
+            fprintf(stderr, "WARNING: Letter (%s), if used, should be a single character.\n", m_pLetter);
+        }
+        else
+        {
+            if (  '\0' != m_pLetter[0]
+               && !p6h_IsValidGameCharacter(m_pLetter[0]))
+            {
+                fprintf(stderr, "WARNING: Letter (0x%02X) is not valid.\n", m_pLetter[0]);
+            }
+        }
+        if (NULL != strchr(m_pLetter, ' '))
+        {
+            fprintf(stderr, "WARNING: Letter (%s) should not contain spaces.\n", m_pLetter);
+        }
+    }
+    if (NULL != m_pType)
+    {
+        for (char *p = m_pType; *p; p++)
+        {
+            if (  ' ' != *p
+               && !p6h_IsValidGameCharacter(*p))
+            {
+                fprintf(stderr, "WARNING: Not all characters in flag type '%s' are valid.\n", m_pType);
+                break;
+            }
+        }
+    }
+    if (NULL != m_pPerms)
+    {
+        for (char *p = m_pPerms; *p; p++)
+        {
+            if (  ' ' != *p
+               && !p6h_IsValidGameCharacter(*p))
+            {
+                fprintf(stderr, "WARNING: Not all characters in flag permissions '%s' are valid.\n", m_pPerms);
+                break;
+            }
+        }
+    }
+    if (NULL != m_pNegatePerms)
+    {
+        for (char *p = m_pNegatePerms; *p; p++)
+        {
+            if (  ' ' != *p
+               && !p6h_IsValidGameCharacter(*p))
+            {
+                fprintf(stderr, "WARNING: Not all characters in flag negate permissions '%s' are valid.\n", m_pNegatePerms);
+                break;
+            }
+        }
+    }
+}
+
 void P6H_FLAGINFO::Write(FILE *fp)
 {
     if (NULL != m_pName)
@@ -1050,7 +1159,7 @@ void P6H_FLAGINFO::Write(FILE *fp)
         {
             fprintf(fp, "  type \"%s\"\n", EncodeString(m_pType));
         }
-        if (NULL != m_pLetter)
+        if (NULL != m_pPerms)
         {
             fprintf(fp, "  perms \"%s\"\n", EncodeString(m_pPerms));
         }
@@ -1305,9 +1414,9 @@ void P6H_GAME::Write(FILE *fp)
             (*it)->Write(fp);
         }
     }
-    if (m_fObjects)
+    if (m_fSizeHint)
     {
-        fprintf(fp, "~%d\n", m_nObjects);
+        fprintf(fp, "~%d\n", m_nSizeHint);
     }
     bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
@@ -1558,4 +1667,24 @@ void P6H_GAME::Upgrade()
     {
         (*it)->Upgrade();
     } 
+}
+
+void P6H_GAME::ConvertT5X()
+{
+    g_t5xgame.SetFlags(MANDFLAGS_V2 | 2);
+    
+    int dbRefMax = 0;
+    for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    {
+        T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
+        poi->SetRef((*it)->m_dbRef);
+        poi->SetName(StringClone((*it)->m_pName));
+        g_t5xgame.AddObject(poi);
+
+        if (dbRefMax < (*it)->m_dbRef)
+        {
+            dbRefMax = (*it)->m_dbRef;
+        }
+    } 
+    g_t5xgame.SetSizeHint(dbRefMax);
 }

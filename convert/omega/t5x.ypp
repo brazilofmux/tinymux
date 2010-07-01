@@ -16,7 +16,7 @@ void t5xerror(const char *s);
 
 %token EOD 
 %token <p> STRING
-%token <i> INTEGER DBREF OBJECT XHDR OBJECTCOUNT NEXTATTR RECORDPLAYERS
+%token <i> INTEGER DBREF OBJECT XHDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNAME
 %type <pai> attr
 %type <pvai> attrlist
@@ -41,7 +41,7 @@ sections
 section
 :
 |
-    OBJECTCOUNT    { g_t5xgame.SetObjectCount($1); }
+    SIZEHINT       { g_t5xgame.SetSizeHint($1); }
 |
     NEXTATTR       { g_t5xgame.SetNextAttr($1); }
 |

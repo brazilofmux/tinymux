@@ -19,6 +19,8 @@ public:
     char *m_pNegatePerms;
     void SetNegatePerms(char *p);
 
+    void Validate();
+
     void Merge(P6H_FLAGINFO *pfi);
 
     void Write(FILE *fp);
@@ -329,12 +331,6 @@ public:
 class P6H_GAME
 {
 public:
-    void Validate();
-    void ValidateFlags();
-    void ValidateSavedTime();
-
-    void Write(FILE *fp);
-
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
@@ -370,21 +366,29 @@ public:
     vector<P6H_FLAGALIASINFO *> *m_pvPowerAliases;
     void SetPowerAliasList(vector<P6H_FLAGALIASINFO *> *pvpai) { m_pvPowerAliases = pvpai; }
   
-    bool m_fObjects;
-    int  m_nObjects;
-    void SetObjectCount(int nObjects) { m_fObjects = true; m_nObjects = nObjects; }
+    bool m_fSizeHint;
+    int  m_nSizeHint;
+    void SetSizeHint(int nSizeHint) { m_fSizeHint = true; m_nSizeHint = nSizeHint; }
 
     vector<P6H_OBJECTINFO *> m_vObjects;
     void AddObject(P6H_OBJECTINFO *poi);
 
+    void Validate();
+    void ValidateFlags();
+    void ValidateSavedTime();
+
+    void Write(FILE *fp);
+
     void Upgrade();
+
+    void ConvertT5X();
 
     P6H_GAME()
     {
         m_flags = 0;
         m_pSavedTime = NULL;
-        m_fObjects = false;
-        m_nObjects = 0;
+        m_fSizeHint = false;
+        m_nSizeHint = 0;
         m_fFlags = false;
         m_nFlags = 0;
         m_pvFlags = NULL;

@@ -26,7 +26,7 @@ void p6herror(const char *s);
 %token EXITS NEXT PARENT LOCKCOUNT OWNER ZONE PENNIES FLAGS POWERS WARNINGS
 %token CREATED MODIFIED ATTRCOUNT DEREFS VALUE CREATOR KEY EOD
 %token <p> STRING ATTRNAME
-%token <i> INTEGER DBREF OBJECT VHDR OBJECTCOUNT 
+%token <i> INTEGER DBREF OBJECT VHDR SIZEHINT
 %type <pfi> flag flagphrase flagphrases
 %type <pvfi> flags
 %type <pfai> flagalias flagaliasphrase flagaliasphrases
@@ -61,7 +61,7 @@ section
 |
     POWERLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetPowerCount($3); g_p6hgame.SetPowerList($4); g_p6hgame.SetPowerAliasCount($6); g_p6hgame.SetPowerAliasList($7); }
 |
-    OBJECTCOUNT       { g_p6hgame.SetObjectCount($1); }
+    SIZEHINT          { g_p6hgame.SetSizeHint($1); }
 |
     objectlist
 ;
