@@ -1762,9 +1762,10 @@ void P6H_GAME::ConvertT5X()
             {
                 if (NULL != (*itAttr)->m_pName)
                 {
-                    if (AttrNames.find((*itAttr)->m_pName) == AttrNames.end())
+                    char *pAttrName = t5x_ConvertAttributeName((*itAttr)->m_pName);
+                    if (AttrNames.find(pAttrName) == AttrNames.end())
                     {
-                        AttrNames[(*itAttr)->m_pName] = iNextAttr++;
+                        AttrNames[pAttrName] = iNextAttr++;
                     }
                 }
             }
@@ -1778,6 +1779,7 @@ void P6H_GAME::ConvertT5X()
         char buffer[256];
         sprintf(buffer, "%d:%s", 0, it->first);
         g_t5xgame.AddNumAndName(it->second, StringClone(buffer));
+        delete it->first;
     }
     g_t5xgame.SetNextAttr(iNextAttr);
 

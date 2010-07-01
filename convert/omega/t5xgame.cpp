@@ -25,6 +25,92 @@ t5x_gameflaginfo t5x_gameflagnames[] =
 
 T5X_GAME g_t5xgame;
 
+// The first character of an attribute name must be either alphabetic,
+// '_', '#', '.', or '~'. It's handled by the following table.
+//
+// Characters thereafter may be letters, numbers, and characters from
+// the set {'?!`/-_.@#$^&~=+<>()}. Lower-case letters are turned into
+// uppercase before being used, but lower-case letters are valid input.
+//
+bool t5x_AttrNameInitialSet[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,  // 7
+
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // B
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,  // D
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1   // F
+};
+
+bool t5x_AttrNameSet[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1,  // 3
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,  // 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,  // 7
+
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // B
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,  // D
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1   // F
+};
+
+char *t5x_ConvertAttributeName(const char *pName)
+{
+    char aBuffer[256];
+    char *pBuffer = aBuffer;
+    if (  '\0' != *pName
+       && pBuffer < aBuffer + sizeof(aBuffer) - 1)
+    {
+        if (t5x_AttrNameInitialSet[(unsigned char) *pName])
+        {
+            *pBuffer++ = *pName++;
+        }
+        else
+        {
+            *pBuffer++ = 'X';
+        }
+    }
+    while (  '\0' != *pName
+          && pBuffer < aBuffer + sizeof(aBuffer) - 1)
+    {
+        if (t5x_AttrNameSet[(unsigned char) *pName])
+        {
+            *pBuffer++ = *pName++;
+        }
+        else
+        {
+            *pBuffer++ = 'X';
+            pName++;
+        }
+    }
+    *pBuffer = '\0';
+    return StringClone(aBuffer);
+}
+
 void T5X_LOCKEXP::Write(FILE *fp)
 {
     switch (m_op)

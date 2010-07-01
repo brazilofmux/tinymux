@@ -354,4 +354,6 @@ public:
 
 extern T5X_GAME g_t5xgame;
 
+char *t5x_ConvertAttributeName(const char *);
+
 #endif
