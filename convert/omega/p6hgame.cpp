@@ -912,31 +912,16 @@ NameMask upgrade_obj_powers[] =
     { "Can_nspemit",    0x80000000UL },
 };
 
-#define OLD_TYPE_ROOM       0x0
-#define OLD_TYPE_THING      0x1
-#define OLD_TYPE_EXIT       0x2
-#define OLD_TYPE_PLAYER     0x3
-#define OLD_TYPE_GARBAGE    0x6
-#define OLD_NOTYPE          0x7
-#define OLD_TYPE_MASK       0x7
-
-#define TYPE_ROOM           0x1
-#define TYPE_THING          0x2
-#define TYPE_EXIT           0x4
-#define TYPE_PLAYER         0x8
-#define TYPE_GARBAGE        0x10
-#define NOTYPE              0xFFFF
-
 int upgrade_type[8] =
 {
-    TYPE_ROOM,
-    TYPE_THING,
-    TYPE_EXIT,
-    TYPE_PLAYER,
-    NOTYPE,
-    NOTYPE,
-    TYPE_GARBAGE,
-    NOTYPE,
+    P6H_TYPE_ROOM,
+    P6H_TYPE_THING,
+    P6H_TYPE_EXIT,
+    P6H_TYPE_PLAYER,
+    P6H_NOTYPE,
+    P6H_NOTYPE,
+    P6H_TYPE_GARBAGE,
+    P6H_NOTYPE,
 };
 
 void P6H_OBJECTINFO::Upgrade()
@@ -946,7 +931,7 @@ void P6H_OBJECTINFO::Upgrade()
 
     if (m_fFlags)
     {
-        int iTypeCode = m_iFlags & OLD_TYPE_MASK;
+        int iTypeCode = m_iFlags & P6H_OLD_TYPE_MASK;
         int iType = upgrade_type[iTypeCode];
         SetType(iType);
 
@@ -979,22 +964,22 @@ void P6H_OBJECTINFO::Upgrade()
 
             switch (iTypeCode)
             {
-            case OLD_TYPE_ROOM:
+            case P6H_OLD_TYPE_ROOM:
                 pnm = upgrade_obj_toggles_room;
                 nnm = sizeof(upgrade_obj_toggles_room)/sizeof(upgrade_obj_toggles_room[0]);;
                 break;
 
-            case OLD_TYPE_THING:
+            case P6H_OLD_TYPE_THING:
                 pnm = upgrade_obj_toggles_thing;
                 nnm = sizeof(upgrade_obj_toggles_thing)/sizeof(upgrade_obj_toggles_thing[0]);;
                 break;
 
-            case OLD_TYPE_EXIT:
+            case P6H_OLD_TYPE_EXIT:
                 pnm = upgrade_obj_toggles_exit;
                 nnm = sizeof(upgrade_obj_toggles_exit)/sizeof(upgrade_obj_toggles_exit[0]);;
                 break;
 
-            case OLD_TYPE_PLAYER:
+            case P6H_OLD_TYPE_PLAYER:
                 pnm = upgrade_obj_toggles_player;
                 nnm = sizeof(upgrade_obj_toggles_player)/sizeof(upgrade_obj_toggles_player[0]);;
                 break;
@@ -1316,12 +1301,10 @@ NameMask upgrade_attr_flags[] =
 {
     { "no_command",     0x00000020UL },
     { "no_inherit",     0x00000080UL },
-    //{ "private",        0x00000080UL },
     { "no_clone",       0x00000100UL },
     { "wizard",         0x00000004UL },
     { "visual",         0x00000200UL },
     { "mortal_dark",    0x00000040UL },
-    //{ "hidden",         0x00000040UL },
     { "regexp",         0x00000400UL },
     { "case",           0x00000800UL },
     { "locked",         0x00000010UL },
@@ -1422,7 +1405,7 @@ void P6H_GAME::Write(FILE *fp)
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
         (*it)->Write(fp, fLabels);
-    } 
+    }
 
     fprintf(fp, "***END OF DUMP***\n");
 }
@@ -1666,25 +1649,220 @@ void P6H_GAME::Upgrade()
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
         (*it)->Upgrade();
-    } 
+    }
 }
+
+int t5x_convert_type[8] =
+{
+    T5X_TYPE_ROOM,
+    T5X_TYPE_THING,
+    T5X_TYPE_EXIT,
+    T5X_TYPE_PLAYER,
+    T5X_NOTYPE,
+    T5X_NOTYPE,
+    T5X_TYPE_GARBAGE,
+    T5X_NOTYPE,
+};
+
+NameMask t5x_convert_flag1[] =
+{
+    { "TRANSPARENT",    0x00000008UL },
+    { "WIZARD",         0x00000010UL },
+    { "LINK_OK",        0x00000020UL },
+    { "DARK",           0x00000040UL },
+    { "JUMP_OK",        0x00000080UL },
+    { "STICKY",         0x00000100UL },
+    { "DESTROY_OK",     0x00000200UL },
+    { "HAVEN",          0x00000400UL },
+    { "QUIET",          0x00000800UL },
+    { "HALT",           0x00001000UL },
+    { "DEBUG",          0x00002000UL },
+    { "GOING",          0x00004000UL },
+    { "MONITOR",        0x00008000UL },
+    { "MYOPIC",         0x00010000UL },
+    { "PUPPET",         0x00020000UL },
+    { "CHOWN_OK",       0x00040000UL },
+    { "ENTER_OK",       0x00080000UL },
+    { "VISUAL",         0x00100000UL },
+    { "OPAQUE",         0x00800000UL },
+    { "VERBOSE",        0x01000000UL },
+    { "NOSPOOF",        0x04000000UL },
+    { "SAFE",           0x10000000UL },
+    { "ROYALTY",        0x20000000UL },
+    { "AUDIBLE",        0x40000000UL },
+    { "TERSE",          0x80000000UL },
+};
+
+NameMask t5x_convert_flag2[] =
+{
+    { "ABODE",          0x00000002UL },
+    { "FLOATING",       0x00000004UL },
+    { "UNFINDABLE",     0x00000008UL },
+    { "LIGHT",          0x00000020UL },
+    { "ANSI",           0x00000200UL },
+    { "COLOR",          0x00000200UL },
+    { "FIXED",          0x00000800UL },
+    { "UNINSPECTED",    0x00001000UL },
+    { "NO_COMMAND",     0x00002000UL },
+    { "KEEPALIVE",      0x00004000UL },
+    { "GAGGED",         0x00040000UL },
+    { "ON-VACATION",    0x01000000UL },
+    { "SUSPECT",        0x10000000UL },
+    { "NOACCENTS",      0x20000000UL },
+    { "SLAVE",          0x80000000UL },
+};
+
+NameMask t5x_convert_powers1[] =
+{
+    { "Announce",       0x00000004UL },
+    { "Boot",           0x00000008UL },
+    { "Guest",          0x02000000UL },
+    { "Halt",           0x00000010UL },
+    { "Hide",           0x00000800UL },
+    { "Idle",           0x00001000UL },
+    { "Long_Fingers",   0x00004000UL },
+    { "No_Pay",         0x00000200UL },
+    { "No_Quota",       0x00000400UL },
+    { "Poll",           0x00800000UL },
+    { "Quotas",         0x00000001UL },
+    { "Search",         0x00002000UL },
+    { "See_All",        0x00000080UL },
+    { "See_Queue",      0x00100000UL },
+    { "Tport_Anything", 0x40000000UL },
+    { "Tport_Anywhere", 0x20000000UL },
+    { "Unkillable",     0x80000000UL },
+};
+
+NameMask t5x_convert_powers2[] =
+{
+    { "Builder",        0x00000001UL },
+};
 
 void P6H_GAME::ConvertT5X()
 {
     g_t5xgame.SetFlags(MANDFLAGS_V2 | 2);
-    
+
     int dbRefMax = 0;
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
         T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
         poi->SetRef((*it)->m_dbRef);
         poi->SetName(StringClone((*it)->m_pName));
+        if ((*it)->m_fLocation)
+        {
+            poi->SetLocation((*it)->m_dbLocation);
+        }
+        if ((*it)->m_fContents)
+        {
+            poi->SetContents((*it)->m_dbContents);
+        }
+        if ((*it)->m_fExits)
+        {
+            poi->SetExits((*it)->m_dbExits);
+            poi->SetLink((*it)->m_dbExits);
+
+        }
+        if ((*it)->m_fNext)
+        {
+            poi->SetNext((*it)->m_dbNext);
+        }
+        if ((*it)->m_fParent)
+        {
+            poi->SetParent((*it)->m_dbParent);
+        }
+        if ((*it)->m_fOwner)
+        {
+            poi->SetOwner((*it)->m_dbOwner);
+        }
+        if ((*it)->m_fZone)
+        {
+            poi->SetZone((*it)->m_dbZone);
+        }
+        if ((*it)->m_fPennies)
+        {
+            poi->SetPennies((*it)->m_iPennies);
+        }
+
+        // Flagwords
+        //
+        int flags1 = 0;
+        int flags2 = 0;
+        int flags3 = 0;
+        if ((*it)->m_fType)
+        {
+            flags1 |= t5x_convert_type[(*it)->m_iType];
+        }
+        char *pFlags = (*it)->m_pFlags;
+        if (NULL != pFlags)
+        {
+            // First flagword
+            //
+            for (int i = 0; i < sizeof(t5x_convert_flag1)/sizeof(t5x_convert_flag1[0]); i++)
+            {
+                if (NULL != strcasestr(pFlags, t5x_convert_flag1[i].pName))
+                {
+                    flags1 |= t5x_convert_flag1[i].mask;
+                }
+            }
+
+            // Second flagword
+            //
+            for (int i = 0; i < sizeof(t5x_convert_flag2)/sizeof(t5x_convert_flag2[0]); i++)
+            {
+                if (NULL != strcasestr(pFlags, t5x_convert_flag2[i].pName))
+                {
+                    flags2 |= t5x_convert_flag2[i].mask;
+                }
+            }
+        }
+
+        // Powers
+        //
+        int powers1 = 0;
+        int powers2 = 0;
+        char *pPowers = (*it)->m_pPowers;
+        if (NULL != pPowers)
+        {
+            // First powerword
+            //
+            for (int i = 0; i < sizeof(t5x_convert_powers1)/sizeof(t5x_convert_powers1[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, t5x_convert_powers1[i].pName))
+                {
+                    powers1 |= t5x_convert_powers1[i].mask;
+                }
+            }
+
+            // Second powerword
+            //
+            for (int i = 0; i < sizeof(t5x_convert_powers2)/sizeof(t5x_convert_powers2[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, t5x_convert_powers2[i].pName))
+                {
+                    powers2 |= t5x_convert_powers2[i].mask;
+                }
+            }
+
+            // Immortal power is special.
+            //
+            if (NULL != strcasestr(pPowers, "Immortal"))
+            {
+                flags1 |= 0x00200000;
+            }
+        }
+        poi->SetFlags1(flags1);
+        poi->SetFlags2(flags2);
+        poi->SetFlags3(flags3);
+        poi->SetPowers1(powers1);
+        poi->SetPowers2(powers2);
+
         g_t5xgame.AddObject(poi);
 
         if (dbRefMax < (*it)->m_dbRef)
         {
             dbRefMax = (*it)->m_dbRef;
         }
-    } 
+    }
     g_t5xgame.SetSizeHint(dbRefMax);
+    g_t5xgame.SetRecordPlayers(0);
 }

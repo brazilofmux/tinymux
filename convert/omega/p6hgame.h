@@ -1,6 +1,21 @@
 #ifndef _P6HGAME_H_
 #define _P6HGAME_H_
 
+#define P6H_OLD_TYPE_ROOM       0x0
+#define P6H_OLD_TYPE_THING      0x1
+#define P6H_OLD_TYPE_EXIT       0x2
+#define P6H_OLD_TYPE_PLAYER     0x3
+#define P6H_OLD_TYPE_GARBAGE    0x6
+#define P6H_OLD_NOTYPE          0x7
+#define P6H_OLD_TYPE_MASK       0x7
+
+#define P6H_TYPE_ROOM           0x1
+#define P6H_TYPE_THING          0x2
+#define P6H_TYPE_EXIT           0x4
+#define P6H_TYPE_PLAYER         0x8
+#define P6H_TYPE_GARBAGE        0x10
+#define P6H_NOTYPE              0xFFFF
+
 class P6H_FLAGINFO
 {
 public:

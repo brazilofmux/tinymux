@@ -22,6 +22,15 @@
 
 #define A_USER_START    256     // Start of user-named attributes.
 
+/* Object types */
+#define T5X_TYPE_ROOM     0x0
+#define T5X_TYPE_THING    0x1
+#define T5X_TYPE_EXIT     0x2
+#define T5X_TYPE_PLAYER   0x3
+#define T5X_TYPE_GARBAGE  0x5
+#define T5X_NOTYPE        0x7
+#define T5X_TYPE_MASK     0x7
+
 class T5X_LOCKEXP
 {
 public:
