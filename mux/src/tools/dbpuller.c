@@ -233,7 +233,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    spt3 = malloc(MALSIZE_OUT);
+    spt3 = (char *)malloc(MALSIZE_OUT);
     memset(spt3, '\0', MALSIZE_OUT);
     pt3 = spt3;
     fseek(f_muxflat, 0L, SEEK_SET);
