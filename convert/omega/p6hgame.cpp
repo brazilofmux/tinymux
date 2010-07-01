@@ -1557,6 +1557,12 @@ static struct
 
 void P6H_GAME::Upgrade()
 {
+    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
+    if (fLabels)
+    {
+        return;
+    }
+
     // Addition flatfile flags.
     //
     m_flags = m_flags
