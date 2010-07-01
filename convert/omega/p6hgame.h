@@ -396,8 +396,6 @@ public:
 
     void Upgrade();
 
-    void ConvertT5X();
-
     void ResetPassword();
 
     P6H_GAME()

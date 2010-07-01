@@ -174,7 +174,7 @@ int main(int argc, const char *argv[])
         g_p6hgame.Validate();
         g_p6hgame.Upgrade();
         g_p6hgame.Validate();
-        g_p6hgame.ConvertT5X();
+        g_t5xgame.ConvertFromP6H();
         g_t5xgame.Validate();
         if (fResetPassword)
         {

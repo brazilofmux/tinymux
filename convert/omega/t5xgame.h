@@ -330,6 +330,8 @@ public:
 
     void Write(FILE *fp);
 
+    void ConvertFromP6H();
+
     void ResetPassword();
 
     T5X_GAME()
