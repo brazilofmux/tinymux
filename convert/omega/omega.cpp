@@ -36,16 +36,12 @@ void Usage()
     fprintf(stderr, "  --rt-t5x - Round-trip TinyMUX flatfile\n");
     fprintf(stderr, "  --up-p6h - Upgrade pre-1.7.7p40 PennMUSH flatfile\n");
     fprintf(stderr, "  --cv-p6h - Convert PennMUSH flatfile to TinyMUX\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  --reset-password - Reset #1 password to 'potrzebie'\n");
 }
 
 int main(int argc, const char *argv[])
 {
-    if (4 != argc)
-    {
-        Usage();
-        return 1;
-    }
-
     FILE *fpin = NULL;
     FILE *fpout = NULL;
 
@@ -57,41 +53,66 @@ int main(int argc, const char *argv[])
         eModeUPP6H,
         eModeCVP6H,
     } Mode;
+    bool fResetPassword = false;
     Mode mode = eModeNone;
 
-    if (strcmp("--rt-p6h", argv[1]) == 0)
+    int iArg = 1;
+    while (iArg < argc)
     {
-        mode = eModeRTP6H;
+        if (strcmp("--rt-p6h", argv[iArg]) == 0)
+        {
+            mode = eModeRTP6H;
+            iArg++;
+        }
+        else if (strcmp("--rt-t5x", argv[iArg]) == 0)
+        {
+            mode = eModeRTT5X;
+            iArg++;
+        }
+        else if (strcmp("--up-p6h", argv[iArg]) == 0)
+        {
+            mode = eModeUPP6H;
+            iArg++;
+        }
+        else if (strcmp("--cv-p6h", argv[iArg]) == 0)
+        {
+            mode = eModeCVP6H;
+            iArg++;
+        }
+        else if (strcmp("--reset-password", argv[iArg]) == 0)
+        {
+            fResetPassword = true;
+            iArg++;
+        }
+        else
+        {
+            break;
+        }
     }
-    else if (strcmp("--rt-t5x", argv[1]) == 0)
-    {
-        mode = eModeRTT5X;
-    }
-    else if (strcmp("--up-p6h", argv[1]) == 0)
-    {
-        mode = eModeUPP6H;
-    }
-    else if (strcmp("--cv-p6h", argv[1]) == 0)
-    {
-        mode = eModeCVP6H;
-    }
-    else
+
+    if (eModeNone == mode)
     {
         Usage();
         return 1;
     }
 
-    fpin = fopen(argv[2], "rb");
-    if (NULL == fpin)
+    if (iArg + 2 != argc)
     {
-        fprintf(stderr, "Input file, %s, not found.\n", argv[2]);
+        Usage();
         return 1;
     }
-    fpout = fopen(argv[3], "wb");
+
+    fpin = fopen(argv[iArg], "rb");
+    if (NULL == fpin)
+    {
+        fprintf(stderr, "Input file, %s, not found.\n", argv[iArg]);
+        return 1;
+    }
+    fpout = fopen(argv[iArg+1], "wb");
     if (NULL == fpout)
     {
         fclose(fpin);
-        fprintf(stderr, "Output file, %s, not found.\n", argv[3]);
+        fprintf(stderr, "Output file, %s, not found.\n", argv[iArg+1]);
         return 1;
     }
 
@@ -104,6 +125,10 @@ int main(int argc, const char *argv[])
         p6hin = NULL;
 
         g_p6hgame.Validate();
+        if (fResetPassword)
+        {
+            g_p6hgame.ResetPassword();
+        }
         g_p6hgame.Write(fpout);
     }
     else if (eModeRTT5X == mode)
@@ -115,6 +140,10 @@ int main(int argc, const char *argv[])
         t5xin = NULL;
 
         g_t5xgame.Validate();
+        if (fResetPassword)
+        {
+            g_p6hgame.ResetPassword();
+        }
         g_t5xgame.Write(fpout);
     }
     else if (eModeUPP6H == mode)
@@ -128,6 +157,10 @@ int main(int argc, const char *argv[])
         g_p6hgame.Validate();
         g_p6hgame.Upgrade();
         g_p6hgame.Validate();
+        if (fResetPassword)
+        {
+            g_p6hgame.ResetPassword();
+        }
         g_p6hgame.Write(fpout);
     }
     else if (eModeCVP6H == mode)
@@ -143,6 +176,10 @@ int main(int argc, const char *argv[])
         g_p6hgame.Validate();
         g_p6hgame.ConvertT5X();
         g_t5xgame.Validate();
+        if (fResetPassword)
+        {
+            g_t5xgame.ResetPassword();
+        }
         g_t5xgame.Write(fpout);
     }
     fclose(fpout);

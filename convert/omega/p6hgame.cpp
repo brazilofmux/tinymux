@@ -1947,3 +1947,63 @@ void P6H_GAME::ConvertT5X()
     g_t5xgame.SetSizeHint(dbRefMax);
     g_t5xgame.SetRecordPlayers(0);
 }
+
+void P6H_GAME::ResetPassword()
+{
+    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
+
+    for (vector<P6H_OBJECTINFO *>::iterator itObj = m_vObjects.begin(); itObj != m_vObjects.end(); ++itObj)
+    {
+        if (1 == (*itObj)->m_dbRef)
+        {
+            bool fFound = false;
+            if (NULL != (*itObj)->m_pvai)
+            {
+                for (vector<P6H_ATTRINFO *>::iterator itAttr = (*itObj)->m_pvai->begin(); itAttr != (*itObj)->m_pvai->end(); ++itAttr)
+                {
+                    if (strcasecmp("XYXXY", (*itAttr)->m_pName) == 0)
+                    {
+                        // Change it to 'potrzebie'.
+                        //
+                        free((*itAttr)->m_pValue);
+                        (*itAttr)->m_pValue = StringClone("XX41009057111400169070");
+
+                        fFound = true;
+                    }
+                }
+            }
+
+            if (!fFound)
+            {
+                // Add it.
+                //
+                P6H_ATTRINFO *pai = new P6H_ATTRINFO;
+                pai->SetName(StringClone("XYXXY"));
+                pai->SetOwner(1);
+                if (fLabels)
+                {
+                    pai->SetFlags(StringClone("no_command wizard locked internal"));
+                }
+                else
+                {
+                    pai->SetFlags(54);
+                }
+                pai->SetDerefs(0);
+                pai->SetValue(StringClone("XX41009057111400169070"));
+
+                if (NULL == (*itObj)->m_pvai)
+                {
+                    vector<P6H_ATTRINFO *> *pvai = new vector<P6H_ATTRINFO *>;
+                    pvai->push_back(pai);
+                    (*itObj)->SetAttrs(pvai->size(), pvai);
+                }
+                else
+                {
+                    (*itObj)->m_pvai->push_back(pai);
+                    (*itObj)->m_fAttrCount = true;
+                    (*itObj)->m_nAttrCount = (*itObj)->m_pvai->size();
+                }
+            }
+        }
+    } 
+}

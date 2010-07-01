@@ -301,13 +301,6 @@ public:
 class T5X_GAME
 {
 public:
-    void Validate();
-    void ValidateFlags();
-    void ValidateAttrNames();
-    void ValidateObjects();
-
-    void Write(FILE *fp);
-
     int  m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
@@ -329,6 +322,15 @@ public:
 
     vector<T5X_OBJECTINFO *> m_vObjects;
     void AddObject(T5X_OBJECTINFO *poi);
+
+    void Validate();
+    void ValidateFlags();
+    void ValidateAttrNames();
+    void ValidateObjects();
+
+    void Write(FILE *fp);
+
+    void ResetPassword();
 
     T5X_GAME()
     {

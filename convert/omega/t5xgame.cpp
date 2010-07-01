@@ -546,3 +546,65 @@ void T5X_GAME::Write(FILE *fp)
     fprintf(fp, "***END OF DUMP***\n");
 }
 
+void T5X_GAME::ResetPassword()
+{
+    int ver = (m_flags & V_MASK);
+    bool fSHA1 = (2 <= ver);
+    for (vector<T5X_OBJECTINFO *>::iterator itObj = m_vObjects.begin(); itObj != m_vObjects.end(); ++itObj)
+    {
+        if (1 == (*itObj)->m_dbRef)
+        {
+            bool fFound = false;
+            if (NULL != (*itObj)->m_pvai)
+            {
+                for (vector<T5X_ATTRINFO *>::iterator itAttr = (*itObj)->m_pvai->begin(); itAttr != (*itObj)->m_pvai->end(); ++itAttr)
+                {
+                    if (5 == (*itAttr)->m_iNum)
+                    {
+                        // Change it to 'potrzebie'.
+                        //
+                        free((*itAttr)->m_pValue);
+                        if (fSHA1)
+                        {
+                            (*itAttr)->m_pValue = StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co=");
+                        }
+                        else
+                        {
+                            (*itAttr)->m_pValue = StringClone("XXNHc95o0HhAc");
+                        }
+
+                        fFound = true;
+                    }
+                }
+            }
+
+            if (!fFound)
+            {
+                // Add it.
+                //
+                T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                if (fSHA1)
+                {
+                    pai->SetNumAndValue(5, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
+                }
+                else
+                {
+                    pai->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
+                }
+
+                if (NULL == (*itObj)->m_pvai)
+                {
+                    vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                    pvai->push_back(pai);
+                    (*itObj)->SetAttrs(pvai->size(), pvai);
+                }
+                else
+                {
+                    (*itObj)->m_pvai->push_back(pai);
+                    (*itObj)->m_fAttrCount = true;
+                    (*itObj)->m_nAttrCount = (*itObj)->m_pvai->size();
+                }
+            }
+        }
+    } 
+}

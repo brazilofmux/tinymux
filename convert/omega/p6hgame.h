@@ -398,6 +398,8 @@ public:
 
     void ConvertT5X();
 
+    void ResetPassword();
+
     P6H_GAME()
     {
         m_flags = 0;
