@@ -1738,9 +1738,48 @@ NameMask t5x_convert_powers2[] =
     { "Builder",        0x00000001UL },
 };
 
+struct ltstr
+{
+    bool operator()(const char* s1, const char* s2) const
+    {
+        return strcmp(s1, s2) < 0;
+    }
+};
+
 void P6H_GAME::ConvertT5X()
 {
     g_t5xgame.SetFlags(MANDFLAGS_V2 | 2);
+
+    // Build set of attribute names.
+    //
+    int iNextAttr = A_USER_START;
+    map<const char *, int, ltstr> AttrNames;
+    for (vector<P6H_OBJECTINFO *>::iterator itObj = m_vObjects.begin(); itObj != m_vObjects.end(); ++itObj)
+    {
+        if (NULL != (*itObj)->m_pvai)
+        {
+            for (vector<P6H_ATTRINFO *>::iterator itAttr = (*itObj)->m_pvai->begin(); itAttr != (*itObj)->m_pvai->end(); ++itAttr)
+            {
+                if (NULL != (*itAttr)->m_pName)
+                {
+                    if (AttrNames.find((*itAttr)->m_pName) == AttrNames.end())
+                    {
+                        AttrNames[(*itAttr)->m_pName] = iNextAttr++;
+                    }
+                }
+            }
+        }
+    }
+
+    // Add attribute names
+    //
+    for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
+    {
+        char buffer[256];
+        sprintf(buffer, "%d:%s", 0, it->first);
+        g_t5xgame.AddNumAndName(it->second, StringClone(buffer));
+    }
+    g_t5xgame.SetNextAttr(iNextAttr);
 
     int dbRefMax = 0;
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)

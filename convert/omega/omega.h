@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include <vector>
+#include <map>
 using namespace std;
 
 char *StringClone(const char *str);
