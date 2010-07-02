@@ -1,7 +1,7 @@
 all: omega
 
 omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o t5xgame.o lex.t5x.o t5x.tab.o
-	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o t5xgame.o lex.t5x.o t5x.tab.o -lfl
+	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o t5xgame.o lex.t5x.o t5x.tab.o
 
 omega.o: omega.cpp omega.h p6hgame.h t5xgame.h
 	$(CXX) -g -c omega.cpp
