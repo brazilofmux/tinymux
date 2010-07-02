@@ -59,7 +59,7 @@
                      return ALIAS;
                  }
   -?[0-9]+       {
-                     p6hlval.i = atoi(yytext);
+                     p6hlval.i = atoi(p6htext);
                      return INTEGER;
                  }
   ~[0-9]+        {
@@ -82,11 +82,11 @@
                      return NAME;
                  }
   \#-?[0-9]+     {
-                     p6hlval.i = atoi(yytext+1);
+                     p6hlval.i = atoi(p6htext+1);
                      return DBREF;
                  }
   -?[0-9]+       {
-                     p6hlval.i = atoi(yytext);
+                     p6hlval.i = atoi(p6htext);
                      return INTEGER;
                  }
   location       {

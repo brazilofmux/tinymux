@@ -42,7 +42,7 @@
                      return ATTRNAME;
                  }
   -?[0-9]+       {
-                     t5xlval.i = atoi(yytext);
+                     t5xlval.i = atoi(t5xtext);
                      return INTEGER;
                  }
   ![0-9]+        {
@@ -58,11 +58,11 @@
                      return OBJECT;
                  }
   \#-?[0-9]+     {
-                     t5xlval.i = atoi(yytext+1);
+                     t5xlval.i = atoi(t5xtext+1);
                      return DBREF;
                  }
   -?[0-9]+       {
-                     t5xlval.i = atoi(yytext);
+                     t5xlval.i = atoi(t5xtext);
                      return INTEGER;
                  }
   "***END OF DUMP***" {
