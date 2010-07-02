@@ -547,16 +547,25 @@ void T5X_GAME::Write(FILE *fp)
     fprintf(fp, "***END OF DUMP***\n");
 }
 
-int t5x_convert_type[8] =
+int t5x_convert_type[] =
 {
-    T5X_TYPE_ROOM,
-    T5X_TYPE_THING,
-    T5X_TYPE_EXIT,
-    T5X_TYPE_PLAYER,
-    T5X_NOTYPE,
-    T5X_NOTYPE,
-    T5X_TYPE_GARBAGE,
-    T5X_NOTYPE,
+    T5X_NOTYPE,        //  0
+    T5X_TYPE_ROOM,     //  1
+    T5X_TYPE_THING,    //  2
+    T5X_NOTYPE,        //  3
+    T5X_TYPE_EXIT,     //  4
+    T5X_NOTYPE,        //  5
+    T5X_NOTYPE,        //  6
+    T5X_NOTYPE,        //  7
+    T5X_TYPE_PLAYER,   //  8
+    T5X_NOTYPE,        //  9
+    T5X_NOTYPE,        // 10
+    T5X_NOTYPE,        // 11
+    T5X_NOTYPE,        // 12
+    T5X_NOTYPE,        // 13
+    T5X_NOTYPE,        // 14
+    T5X_NOTYPE,        // 15
+    T5X_TYPE_GARBAGE,  // 16
 };
 
 NameMask t5x_convert_flag1[] =
@@ -894,12 +903,31 @@ void T5X_GAME::ConvertFromP6H()
     int dbRefMax = 0;
     for (vector<P6H_OBJECTINFO *>::iterator it = g_p6hgame.m_vObjects.begin(); it != g_p6hgame.m_vObjects.end(); ++it)
     {
+        if (  !(*it)->m_fType
+           || (*it)->m_iType < 0
+           || 16 < (*it)->m_iType)
+        {
+            continue;
+        }
+
         T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
+
+        int iType = t5x_convert_type[(*it)->m_iType];
+
         poi->SetRef((*it)->m_dbRef);
         poi->SetName(StringClone((*it)->m_pName));
         if ((*it)->m_fLocation)
         {
-            poi->SetLocation((*it)->m_dbLocation);
+            int iLocation = (*it)->m_dbLocation;
+            if (  T5X_TYPE_EXIT == iType
+               && -2 == iLocation)
+            {
+                poi->SetLocation(-1);
+            }
+            else
+            {
+                poi->SetLocation(iLocation);
+            }
         }
         if ((*it)->m_fContents)
         {
@@ -907,9 +935,19 @@ void T5X_GAME::ConvertFromP6H()
         }
         if ((*it)->m_fExits)
         {
-            poi->SetExits((*it)->m_dbExits);
-            poi->SetLink((*it)->m_dbExits);
+            switch (iType)
+            {
+            case T5X_TYPE_PLAYER:
+            case T5X_TYPE_THING:
+                poi->SetExits(-1);
+                poi->SetLink((*it)->m_dbExits);
+                break;
 
+            default:
+                poi->SetExits((*it)->m_dbExits);
+                poi->SetLink(-1);
+                break;
+            }
         }
         if ((*it)->m_fNext)
         {
@@ -934,13 +972,9 @@ void T5X_GAME::ConvertFromP6H()
 
         // Flagwords
         //
-        int flags1 = 0;
+        int flags1 = iType;
         int flags2 = 0;
         int flags3 = 0;
-        if ((*it)->m_fType)
-        {
-            flags1 |= t5x_convert_type[(*it)->m_iType];
-        }
         char *pFlags = (*it)->m_pFlags;
         if (NULL != pFlags)
         {
