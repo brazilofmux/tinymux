@@ -693,6 +693,7 @@ static struct
     { "DESCRIBE",        6 }, // rename DESCRIBE to DESC
     { "DEFAULTLOCK",    -1 }, // rename DEFAULTLOCK to XDEFAULTLOCK
     { "DESCFORMAT",    244 },
+    { "DESTINATION",   216 },
     { "DESTROYER",      -1 }, // rename DESTROYER to XDESTROYER
     { "DFAIL",          -1 }, // rename DFAIL to XDFAIL
     { "DROP",            9 },
