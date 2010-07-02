@@ -15,9 +15,9 @@ void t5xerror(const char *s);
 }
 
 %token EOD 
-%token <p> STRING
-%token <i> INTEGER DBREF OBJECT XHDR SIZEHINT NEXTATTR RECORDPLAYERS
-%token <i> ATTRNAME
+%token <p> STRING LTEXT
+%token <i> INTEGER OBJECT XHDR SIZEHINT NEXTATTR RECORDPLAYERS
+%token <i> ATTRNUM
 %type <pai> attr
 %type <pvai> attrlist
 %type <ple> lockexp
@@ -47,7 +47,7 @@ section
 |
     RECORDPLAYERS  { g_t5xgame.SetRecordPlayers($1); }
 |
-    ATTRNAME STRING { g_t5xgame.AddNumAndName($1, $2); }
+    ATTRNUM STRING { g_t5xgame.AddNumAndName($1, $2); }
 |
     objectlist
 ;
@@ -139,13 +139,13 @@ lockexp:
 |
     INTEGER                      { $$ = new T5X_LOCKEXP; $$->SetRef($1);      }
 |
-    STRING ':' STRING            { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+    LTEXT ':' LTEXT              { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
 |
-    INTEGER ':' STRING           { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+    INTEGER ':' LTEXT            { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
 |
-    STRING '/' STRING            { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
+    LTEXT '/' LTEXT              { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
 |
-    INTEGER '/' STRING           { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
+    INTEGER '/' LTEXT            { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
 ;
 
 attrlist

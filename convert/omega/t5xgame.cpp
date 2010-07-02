@@ -167,7 +167,7 @@ void T5X_LOCKEXP::Write(FILE *fp)
         break;
 
     case le_attr1:
-        fprintf(fp, "%s:%s\n", m_p[0], m_p[1]);
+        fprintf(fp, "%s:%s", m_p[0], m_p[1]);
         break;
 
     case le_attr2:
