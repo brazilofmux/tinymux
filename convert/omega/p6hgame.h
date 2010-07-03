@@ -16,6 +16,134 @@
 #define P6H_TYPE_GARBAGE        0x10
 #define P6H_NOTYPE              0xFFFF
 
+class P6H_LOCKEXP
+{
+public:
+    enum
+    {
+        le_is,
+        le_carry,
+        le_indirect,
+        le_indirect2,
+        le_owner,
+        le_and,
+        le_or,
+        le_not,
+        le_attr,
+        le_eval,
+        le_atom,
+        le_ref,
+        le_text,
+        le_class,
+        le_true,
+        le_false,
+        le_none,
+    } m_op;
+
+    P6H_LOCKEXP *m_le[2];
+    int          m_dbRef;
+    char        *m_p[2];
+
+    void SetIs(P6H_LOCKEXP *p)
+    {
+        m_op = le_is;
+        m_le[0] = p;
+    }
+    void SetCarry(P6H_LOCKEXP *p)
+    {
+        m_op = le_carry;
+        m_le[0] = p;
+    }
+    void SetIndir(P6H_LOCKEXP *p)
+    {
+        m_op = le_indirect;
+        m_le[0] = p;
+    }
+    void SetIndir(P6H_LOCKEXP *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_indirect2;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetOwner(P6H_LOCKEXP *p)
+    {
+        m_op = le_owner;
+        m_le[0] = p;
+    }
+    void SetAnd(P6H_LOCKEXP *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_and;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetOr(P6H_LOCKEXP *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_or;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetNot(P6H_LOCKEXP *p)
+    {
+        m_op = le_not;
+        m_le[0] = p;
+    }
+    void SetRef(int dbRef)
+    {
+        m_op = le_ref;
+        m_dbRef = dbRef;
+    }
+    void SetTrue()
+    {
+        m_op = le_true;
+    }
+    void SetFalse()
+    {
+        m_op = le_false;
+    }
+    void SetText(char *p)
+    {
+        m_op = le_text;
+        m_p[0] = p;
+    }
+    void SetAttr(P6H_LOCKEXP *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_attr;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetEval(P6H_LOCKEXP *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_eval;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetClass(char *p, P6H_LOCKEXP *q)
+    {
+        m_op = le_class;
+        m_p[0] = p;
+        m_le[1] = q;
+    }
+
+    void Write(FILE *fp);
+
+    P6H_LOCKEXP()
+    {
+        m_op = le_none;
+        m_le[0] = m_le[1] = NULL;
+        m_p[0] = m_p[1] = NULL;
+        m_dbRef = 0;
+    }
+    ~P6H_LOCKEXP()
+    {
+        delete m_le[0];
+        delete m_le[1];
+        free(m_p[0]);
+        free(m_p[1]);
+        m_le[0] = m_le[1] = NULL;
+        m_p[0] = m_p[1] = NULL;
+    } 
+};
+
 class P6H_FLAGINFO
 {
 public:
@@ -110,6 +238,7 @@ public:
     void SetDerefs(int iDerefs) { m_fDerefs = true; m_iDerefs = iDerefs; }
 
     char *m_pKey;
+    P6H_LOCKEXP *m_pKeyTree;
     void SetKey(char *pKey);
 
     bool m_fFlags;
@@ -117,6 +246,8 @@ public:
     void SetFlags(int iFlags)  { m_fFlags = true; m_iFlags = iFlags; }
 
     void Merge(P6H_LOCKINFO *pli);
+
+    void Validate();
 
     void Write(FILE *fp, bool fLabels) const;
 
@@ -129,6 +260,7 @@ public:
         m_pFlags = NULL;
         m_fDerefs = false;
         m_pKey = NULL;
+        m_pKeyTree = NULL;
         m_fFlags = false;
     }
     ~P6H_LOCKINFO()
@@ -136,9 +268,11 @@ public:
         free(m_pType);
         free(m_pFlags);
         free(m_pKey);
+        delete m_pKeyTree;
         m_pType = NULL;
         m_pFlags = NULL;
         m_pKey = NULL;
+        m_pKeyTree = NULL;
     }
 };
 
@@ -278,6 +412,8 @@ public:
     void SetAttrs(int nAttrCount, vector<P6H_ATTRINFO *> *pvai);
 
     void Merge(P6H_OBJECTINFO *poi);
+
+    void Validate();
 
     void Write(FILE *fp, bool fLabels);
 

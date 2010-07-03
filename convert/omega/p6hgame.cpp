@@ -72,6 +72,7 @@ p6h_gameflaginfo p6h_gameflagnames[] =
 #define P6H_NUM_GAMEFLAGNAMES (sizeof(p6h_gameflagnames)/sizeof(p6h_gameflagnames[0]))
 
 P6H_GAME g_p6hgame;
+P6H_LOCKEXP *p6hl_ParseKey(char *pKey);
 
 void P6H_FLAGINFO::SetName(char *p)
 {
@@ -569,7 +570,7 @@ void P6H_GAME::Validate()
         {
             fprintf(stderr, "WARNING: +FLAG LIST flagcount missing when list of flags is present.\n");
         }
-        if (NULL == m_pvFlags)
+        else if (0 < m_nFlags && NULL == m_pvFlags)
         {
             fprintf(stderr, "WARNING: +FLAG LIST list of flags is missing then flagcount is present.\n");
         }
@@ -579,11 +580,16 @@ void P6H_GAME::Validate()
             {
                 fprintf(stderr, "WARNING: flag count (%d) does not agree with flagcount (%d) in +FLAG LIST\n", m_pvFlags->size(), m_nFlags);
             }
+            for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
+            {
+                (*it)->Validate();
+            }
         }
-        for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
-        {
-            (*it)->Validate();
-        }
+    }
+
+    for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    {
+        (*it)->Validate();
     }
 }
 
@@ -794,6 +800,32 @@ void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
     if (!fLabels)
     {
         fprintf(fp, "<\n");
+    }
+}
+
+void P6H_OBJECTINFO::Validate()
+{
+    if (m_fLockCount || NULL != m_pvli)
+    {
+        if (!m_fLockCount)
+        {
+            fprintf(stderr, "WARNING: lock list missing when list of locks is present.\n");
+        }
+        else if (0 < m_nLockCount && NULL == m_pvli)
+        {
+            fprintf(stderr, "WARNING: list of locks is missing when lockcount is present.\n");
+        }
+        if (m_fLockCount && NULL != m_pvli)
+        {
+            if (m_nLockCount != m_pvli->size())
+            {
+                fprintf(stderr, "WARNING: lock count (%d) does not agree with lockcount (%d)\n", m_pvli->size(), m_nLockCount);
+            }
+            for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
+            {
+                (*it)->Validate();
+            }
+        }
     }
 }
 
@@ -1157,6 +1189,27 @@ void P6H_FLAGALIASINFO::Write(FILE *fp)
         if (NULL != m_pAlias)
         {
             fprintf(fp, "  alias \"%s\"\n", EncodeString(m_pAlias));
+        }
+    }
+}
+
+void P6H_LOCKINFO::Validate()
+{
+    if (NULL != m_pType)
+    {
+        if (NULL != strchr(m_pType, ' '))
+        {
+            fprintf(stderr, "WARNING: Found blank in lock type '%s'.\n", m_pType);
+        }
+    }
+    if (NULL != m_pKey)
+    {
+        delete m_pKeyTree;
+        m_pKeyTree = p6hl_ParseKey(m_pKey);
+        if (NULL == m_pKeyTree)
+        {
+            fprintf(stderr, "WARNING: Lock key '%s'is not valid.\n", m_pKey);
+            exit(1);
         }
     }
 }

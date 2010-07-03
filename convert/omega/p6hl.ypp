@@ -1,0 +1,83 @@
+%{
+#include "omega.h"
+#include "p6hgame.h"
+int  p6hllex();
+void p6hlerror(const char *s);
+
+P6H_LOCKEXP *g_KeyExp = NULL;
+
+%}
+
+%name-prefix="p6hl"
+%debug
+%union {
+    char                       *p;
+    int                         i;
+    P6H_LOCKEXP                *ple;
+}
+
+%token BOOLTRUE BOOLFALSE
+%token <p> LTEXT
+%token <i> INTEGER DBREF
+%type <ple> term factor atom expr
+%start start
+
+%%
+start
+:
+    expr                         { g_KeyExp = $1; };
+;
+
+expr:
+    expr '|' term                { $$ = new P6H_LOCKEXP; $$->SetOr($1,$3);   }
+|
+    term
+;
+
+term:
+    factor '&' term              { $$ = new P6H_LOCKEXP; $$->SetAnd($1,$3);  }
+|
+    factor                       { $$ = $1; }
+;
+
+factor:
+    '(' factor ')'               { $$ = $2; }
+|
+    '!' factor                   { $$ = new P6H_LOCKEXP; $$->SetNot($2);     }
+|
+    '+' atom                     { $$ = new P6H_LOCKEXP; $$->SetCarry($2);   }
+|
+    '$' atom                     { $$ = new P6H_LOCKEXP; $$->SetOwner($2);   }
+|
+    '@' atom                     { $$ = new P6H_LOCKEXP; $$->SetIndir($2);   }
+|
+    '@' atom '/' atom            { $$ = new P6H_LOCKEXP; $$->SetIndir($2,$4); }
+|
+    '=' atom                     { $$ = new P6H_LOCKEXP; $$->SetIs($2);      }
+|
+    atom                         { $$ = $1; }
+|
+    atom ':' atom                { $$ = new P6H_LOCKEXP; $$->SetAttr($1,$3); }
+|
+    atom '/' atom                { $$ = new P6H_LOCKEXP; $$->SetEval($1,$3); }
+|
+    LTEXT '^' atom               { $$ = new P6H_LOCKEXP; $$->SetClass($1,$3); }
+|
+    BOOLTRUE                     { $$ = new P6H_LOCKEXP; $$->SetTrue(); }
+|
+    BOOLFALSE                    { $$ = new P6H_LOCKEXP; $$->SetFalse(); }
+;
+
+atom:
+    DBREF                        { $$ = new P6H_LOCKEXP; $$->SetRef($1);      }
+|
+    LTEXT                        { $$ = new P6H_LOCKEXP; $$->SetText($1);      }
+;
+
+%%
+
+void p6hlerror(const char *s)
+{
+    extern int p6hllineno;
+    fprintf(stderr, "%s near line %d.\n", s, p6hllineno);
+}
