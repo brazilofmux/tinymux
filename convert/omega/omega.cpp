@@ -30,6 +30,7 @@ char *StringClone(const char *str)
 
 void Usage()
 {
+    fprintf(stderr, "Version: %s\n", OMEGA_VERSION);
     fprintf(stderr, "omega <options> <infile> <outfile>\n");
     fprintf(stderr, "Supported options:\n");
     fprintf(stderr, "  --rt-p6h - Round-trip PennMUSH flatfile\n");
