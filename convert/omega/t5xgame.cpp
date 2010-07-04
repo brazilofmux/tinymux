@@ -1169,6 +1169,46 @@ static struct
     { "Open",       225 },
 };
 
+NameMask t5x_attr_flags[] =
+{
+    { "no_command",     0x00000100UL },
+    { "private",        0x00001000UL },
+    { "no_clone",       0x00010000UL },
+    { "wizard",         0x00000004UL },
+    { "visual",         0x00000800UL },
+    { "mortal_dark",    0x00000008UL },
+    { "hidden",         0x00000002UL },
+    { "regexp",         0x00008000UL },
+    { "case",           0x00040000UL },
+    { "locked",         0x00000040UL },
+    { "internal",       0x00000010UL },
+    { "debug",          0x00080000UL },
+    { "noname",         0x00400000UL },
+};
+
+char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
+{
+    // If using the default owner and flags (almost all attributes will),
+    // just store the string.
+    //
+    if (  (  iAttrOwner == iObjOwner
+          || -1 == iAttrOwner)
+       && 0 == iAttrFlags)
+    {
+        return pValue;
+    }
+
+    // Encode owner and flags into the attribute text.
+    //
+    if (-1 == iAttrOwner)
+    {
+        iAttrOwner = iObjOwner;
+    }
+    static char buffer[65536];
+    sprintf(buffer, "%c%d:%d:%s", 0x01, iAttrOwner, iAttrFlags, pValue);
+    return buffer;
+}
+
 struct ltstr
 {
     bool operator()(const char* s1, const char* s2) const
@@ -1383,6 +1423,16 @@ void T5X_GAME::ConvertFromP6H()
                 if (  NULL != (*itAttr)->m_pName
                    && NULL != (*itAttr)->m_pValue)
                 {
+                    char *pAttrFlags = (*itAttr)->m_pFlags;
+                    int iAttrFlags = 0;
+                    for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                    {
+                        if (strcasecmp(t5x_attr_flags[i].pName, pAttrFlags) == 0)
+                        {
+                            iAttrFlags |= t5x_attr_flags[i].mask;
+                        }
+                    }
+                    char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
                     char *pAttrName = t5x_ConvertAttributeName((*itAttr)->m_pName);
                     map<const char *, int , ltstr>::iterator itFound = AttrNamesKnown.find(pAttrName);
                     if (itFound != AttrNamesKnown.end())
@@ -1393,11 +1443,12 @@ void T5X_GAME::ConvertFromP6H()
                         {
                             char buffer[200];
                             sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
-                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(buffer));
+                            pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, buffer);
+                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(pEncodedAttrValue));
                         }
                         else
                         {
-                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone((*itAttr)->m_pValue));
+                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(pEncodedAttrValue));
                         }
                         pvai->push_back(pai);
                     }
@@ -1407,7 +1458,7 @@ void T5X_GAME::ConvertFromP6H()
                         if (itFound != AttrNames.end())
                         {
                             T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                            pai->SetNumAndValue(AttrNames[pAttrName], StringClone((*itAttr)->m_pValue));
+                            pai->SetNumAndValue(AttrNames[pAttrName], StringClone(pEncodedAttrValue));
                             pvai->push_back(pai);
                         }
                     }
