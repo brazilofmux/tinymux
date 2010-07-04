@@ -486,6 +486,7 @@ public:
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
+    bool HasLabels();
 
     char *m_pSavedTime;
     void SetSavedTime(char *p);
@@ -603,5 +604,7 @@ public:
 };
 
 extern P6H_GAME g_p6hgame;
+extern int p6hparse();
+extern FILE *p6hin;
 
 #endif

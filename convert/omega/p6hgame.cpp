@@ -584,10 +584,15 @@ void P6H_GAME::AddObject(P6H_OBJECTINFO *poi)
     m_vObjects.push_back(poi);
 }
 
+bool P6H_GAME::HasLabels()
+{
+    bool fLabels = ((g_p6hgame.m_flags & DBF_LABELS) == DBF_LABELS);
+    return fLabels;
+}
+
 void P6H_GAME::ValidateFlags()
 {
-    int flags = m_flags;
-    bool f177p40 = ((flags & DBF_LABELS) == DBF_LABELS);
+    bool f177p40 = HasLabels();
     if (f177p40)
     {
         fprintf(stderr, "INFO: Flatfile produced by 1.7.7p40 or later.\n");
@@ -597,6 +602,7 @@ void P6H_GAME::ValidateFlags()
         fprintf(stderr, "INFO: Flatfile predates PennMUSH 1.7.7p40\n");
     }
 
+    int flags = m_flags;
     int tflags = flags;
     fprintf(stderr, "INFO: Flatfile flags are ");
     for (int i = 0; i < P6H_NUM_GAMEFLAGNAMES; i++)
@@ -1553,7 +1559,7 @@ void P6H_GAME::Write(FILE *fp)
     {
         fprintf(fp, "~%d\n", m_nSizeHint);
     }
-    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
+    bool fLabels = HasLabels();
     for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
     {
         (*it)->Write(fp, fLabels);
@@ -1709,7 +1715,7 @@ static struct
 
 void P6H_GAME::Upgrade()
 {
-    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
+    bool fLabels = HasLabels();
     if (fLabels)
     {
         return;
@@ -1812,7 +1818,7 @@ void P6H_GAME::Upgrade()
 
 void P6H_GAME::ResetPassword()
 {
-    bool fLabels = ((m_flags & DBF_LABELS) == DBF_LABELS);
+    bool fLabels = HasLabels();
 
     for (vector<P6H_OBJECTINFO *>::iterator itObj = m_vObjects.begin(); itObj != m_vObjects.end(); ++itObj)
     {

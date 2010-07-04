@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <vector>
 #include <map>
@@ -22,6 +23,6 @@ typedef struct
     const int  mask;
 } NameMask;
 
-#define OMEGA_VERSION "1.0.0.0"
+#define OMEGA_VERSION "1.0.0.1"
 
 #endif

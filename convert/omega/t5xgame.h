@@ -365,6 +365,8 @@ public:
 };
 
 extern T5X_GAME g_t5xgame;
+extern int t5xparse();
+extern FILE *t5xin;
 
 char *t5x_ConvertAttributeName(const char *);
 
