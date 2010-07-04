@@ -74,6 +74,100 @@ p6h_gameflaginfo p6h_gameflagnames[] =
 P6H_GAME g_p6hgame;
 P6H_LOCKEXP *p6hl_ParseKey(char *pKey);
 
+char *P6H_LOCKEXP::Write(char *p)
+{
+    switch (m_op)
+    {
+    case le_is:
+        *p++ = '=';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_carry:
+        *p++ = '+';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_indirect:
+        *p++ = '@';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_indirect2:
+        *p++ = '@';
+        p = m_le[0]->Write(p);
+        *p++ = '/';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_owner:
+        *p++ = '$';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_or:
+        p = m_le[0]->Write(p);
+        *p++ = '|';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_not:
+        *p++ = '!';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_attr:
+        p = m_le[0]->Write(p);
+        *p++ = ':';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_eval:
+        p = m_le[0]->Write(p);
+        *p++ = '/';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_and:
+        p = m_le[0]->Write(p);
+        *p++ = '&';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_ref:
+        sprintf(p, "#%d", m_dbRef);
+        p += strlen(p);
+        break;
+
+    case le_text:
+        sprintf(p, "%s", m_p[0]);
+        p += strlen(p);
+        break;
+
+    case le_class:
+        sprintf(p, "%s", m_p[0]);
+        p += strlen(p);
+        *p++ = '^';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_true:
+        sprintf(p, "#true", m_p[0]);
+        p += strlen(p);
+        break;
+
+    case le_false:
+        sprintf(p, "#false", m_p[0]);
+        p += strlen(p);
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return p;
+}
+
 void P6H_FLAGINFO::SetName(char *p)
 {
     if (NULL != m_pName)
@@ -1208,8 +1302,19 @@ void P6H_LOCKINFO::Validate()
         m_pKeyTree = p6hl_ParseKey(m_pKey);
         if (NULL == m_pKeyTree)
         {
-            fprintf(stderr, "WARNING: Lock key '%s'is not valid.\n", m_pKey);
+            fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pKey);
             exit(1);
+        }
+        else
+        {
+            char buffer[65536];
+            char *p = m_pKeyTree->Write(buffer);
+            *p = '\0';
+            if (strcmp(m_pKey, buffer) != 0)
+            {
+                 fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pKey);
+                 exit(1);
+            }
         }
     }
 }

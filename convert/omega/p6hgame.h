@@ -31,7 +31,6 @@ public:
         le_not,
         le_attr,
         le_eval,
-        le_atom,
         le_ref,
         le_text,
         le_class,
@@ -124,7 +123,7 @@ public:
         m_le[1] = q;
     }
 
-    void Write(FILE *fp);
+    char *Write(char *p);
 
     P6H_LOCKEXP()
     {
