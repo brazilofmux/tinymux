@@ -19,7 +19,7 @@
 class P6H_LOCKEXP
 {
 public:
-    enum
+    typedef enum
     {
         le_is,
         le_carry,
@@ -37,7 +37,9 @@ public:
         le_true,
         le_false,
         le_none,
-    } m_op;
+    } P6H_OP;
+
+    P6H_OP m_op;
 
     P6H_LOCKEXP *m_le[2];
     int          m_dbRef;

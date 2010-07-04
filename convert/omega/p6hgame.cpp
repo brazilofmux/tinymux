@@ -78,85 +78,85 @@ char *P6H_LOCKEXP::Write(char *p)
 {
     switch (m_op)
     {
-    case le_is:
+    case P6H_LOCKEXP::le_is:
         *p++ = '=';
         p = m_le[0]->Write(p);
         break;
 
-    case le_carry:
+    case P6H_LOCKEXP::le_carry:
         *p++ = '+';
         p = m_le[0]->Write(p);
         break;
 
-    case le_indirect:
+    case P6H_LOCKEXP::le_indirect:
         *p++ = '@';
         p = m_le[0]->Write(p);
         break;
 
-    case le_indirect2:
+    case P6H_LOCKEXP::le_indirect2:
         *p++ = '@';
         p = m_le[0]->Write(p);
         *p++ = '/';
         p = m_le[1]->Write(p);
         break;
 
-    case le_owner:
+    case P6H_LOCKEXP::le_owner:
         *p++ = '$';
         p = m_le[0]->Write(p);
         break;
 
-    case le_or:
+    case P6H_LOCKEXP::le_or:
         p = m_le[0]->Write(p);
         *p++ = '|';
         p = m_le[1]->Write(p);
         break;
 
-    case le_not:
+    case P6H_LOCKEXP::le_not:
         *p++ = '!';
         p = m_le[0]->Write(p);
         break;
 
-    case le_attr:
+    case P6H_LOCKEXP::le_attr:
         p = m_le[0]->Write(p);
         *p++ = ':';
         p = m_le[1]->Write(p);
         break;
 
-    case le_eval:
+    case P6H_LOCKEXP::le_eval:
         p = m_le[0]->Write(p);
         *p++ = '/';
         p = m_le[1]->Write(p);
         break;
 
-    case le_and:
+    case P6H_LOCKEXP::le_and:
         p = m_le[0]->Write(p);
         *p++ = '&';
         p = m_le[1]->Write(p);
         break;
 
-    case le_ref:
+    case P6H_LOCKEXP::le_ref:
         sprintf(p, "#%d", m_dbRef);
         p += strlen(p);
         break;
 
-    case le_text:
+    case P6H_LOCKEXP::le_text:
         sprintf(p, "%s", m_p[0]);
         p += strlen(p);
         break;
 
-    case le_class:
+    case P6H_LOCKEXP::le_class:
         sprintf(p, "%s", m_p[0]);
         p += strlen(p);
         *p++ = '^';
         p = m_le[1]->Write(p);
         break;
 
-    case le_true:
+    case P6H_LOCKEXP::le_true:
         sprintf(p, "#true", m_p[0]);
         p += strlen(p);
         break;
 
-    case le_false:
+    case P6H_LOCKEXP::le_false:
         sprintf(p, "#false", m_p[0]);
         p += strlen(p);
         break;

@@ -31,10 +31,12 @@
 #define T5X_NOTYPE        0x7
 #define T5X_TYPE_MASK     0x7
 
+class P6H_LOCKEXP;
+
 class T5X_LOCKEXP
 {
 public:
-    enum
+    typedef enum
     {
         le_is,
         le_carry,
@@ -48,7 +50,9 @@ public:
         le_ref,
         le_text,
         le_none,
-    } m_op;
+    } T5X_OP;
+
+    T5X_OP m_op;
 
     T5X_LOCKEXP *m_le[2];
     int          m_dbRef;
@@ -116,6 +120,8 @@ public:
 
     void Write(FILE *fp);
     char *Write(char *p);
+
+    bool ConvertFromP6H(P6H_LOCKEXP *p);
 
     T5X_LOCKEXP()
     {

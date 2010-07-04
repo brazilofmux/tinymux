@@ -117,31 +117,31 @@ void T5X_LOCKEXP::Write(FILE *fp)
 {
     switch (m_op)
     {
-    case le_is:
+    case T5X_LOCKEXP::le_is:
         fprintf(fp, "(=");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case le_carry:
+    case T5X_LOCKEXP::le_carry:
         fprintf(fp, "(+");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case le_indirect:
+    case T5X_LOCKEXP::le_indirect:
         fprintf(fp, "(@");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case le_owner:
+    case T5X_LOCKEXP::le_owner:
         fprintf(fp, "($");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case le_and:
+    case T5X_LOCKEXP::le_and:
         fprintf(fp, "(");
         m_le[0]->Write(fp);
         fprintf(fp, "&");
@@ -149,7 +149,7 @@ void T5X_LOCKEXP::Write(FILE *fp)
         fprintf(fp, ")");
         break;
 
-    case le_or:
+    case T5X_LOCKEXP::le_or:
         fprintf(fp, "(");
         m_le[0]->Write(fp);
         fprintf(fp, "|");
@@ -157,13 +157,13 @@ void T5X_LOCKEXP::Write(FILE *fp)
         fprintf(fp, ")");
         break;
 
-    case le_not:
+    case T5X_LOCKEXP::le_not:
         fprintf(fp, "(!");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case le_attr:
+    case T5X_LOCKEXP::le_attr:
         m_le[0]->Write(fp);
         fprintf(fp, ":");
         m_le[1]->Write(fp);
@@ -172,24 +172,24 @@ void T5X_LOCKEXP::Write(FILE *fp)
         // a beneign typo, but we reproduce it to make regression testing
         // easier.
         //
-        if (m_le[0]->m_op != le_text)
+        if (m_le[0]->m_op != T5X_LOCKEXP::le_text)
         {
             fprintf(fp, "\n");
         }
         break;
 
-    case le_eval:
+    case T5X_LOCKEXP::le_eval:
         m_le[0]->Write(fp);
         fprintf(fp, "/");
         m_le[1]->Write(fp);
         fprintf(fp, "\n");
         break;
 
-    case le_ref:
+    case T5X_LOCKEXP::le_ref:
         fprintf(fp, "%d\n", m_dbRef);
         break;
 
-    case le_text:
+    case T5X_LOCKEXP::le_text:
         fprintf(fp, "%s", m_p[0]);
         break;
     }
@@ -199,69 +199,69 @@ char *T5X_LOCKEXP::Write(char *p)
 {
     switch (m_op)
     {
-    case le_is:
+    case T5X_LOCKEXP::le_is:
         *p++ = '=';
         *p++ = '(';
         p = m_le[0]->Write(p);
         *p++ = ')';
         break;
 
-    case le_carry:
+    case T5X_LOCKEXP::le_carry:
         *p++ = '+';
         *p++ = '(';
         p = m_le[0]->Write(p);
         *p++ = ')';
         break;
 
-    case le_indirect:
+    case T5X_LOCKEXP::le_indirect:
         *p++ = '@';
         *p++ = '(';
         p = m_le[0]->Write(p);
         *p++ = ')';
         break;
 
-    case le_owner:
+    case T5X_LOCKEXP::le_owner:
         *p++ = '$';
         *p++ = '(';
         p = m_le[0]->Write(p);
         *p++ = ')';
         break;
 
-    case le_or:
+    case T5X_LOCKEXP::le_or:
         p = m_le[0]->Write(p);
         *p++ = '|';
         p = m_le[1]->Write(p);
         break;
 
-    case le_not:
+    case T5X_LOCKEXP::le_not:
         *p++ = '!';
         p = m_le[0]->Write(p);
         break;
 
-    case le_attr:
+    case T5X_LOCKEXP::le_attr:
         p = m_le[0]->Write(p);
         *p++ = ':';
         p = m_le[1]->Write(p);
         break;
 
-    case le_eval:
+    case T5X_LOCKEXP::le_eval:
         p = m_le[0]->Write(p);
         *p++ = '/';
         p = m_le[1]->Write(p);
         break;
 
-    case le_and:
+    case T5X_LOCKEXP::le_and:
         p = m_le[0]->Write(p);
         *p++ = '&';
         p = m_le[1]->Write(p);
         break;
 
-    case le_ref:
+    case T5X_LOCKEXP::le_ref:
         sprintf(p, "#%d", m_dbRef);
         p += strlen(p);
         break;
 
-    case le_text:
+    case T5X_LOCKEXP::le_text:
         sprintf(p, "%s", m_p[0]);
         p += strlen(p);
         break;
@@ -271,6 +271,156 @@ char *T5X_LOCKEXP::Write(char *p)
         break;
     }
     return p;
+}
+
+bool T5X_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
+{
+    switch (p->m_op)
+    {
+    case P6H_LOCKEXP::le_is:
+        m_op = T5X_LOCKEXP::le_is;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_carry:
+        m_op = T5X_LOCKEXP::le_carry;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_indirect:
+        m_op = T5X_LOCKEXP::le_indirect;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_indirect2:
+        return false;
+        break;
+
+    case P6H_LOCKEXP::le_owner:
+        m_op = T5X_LOCKEXP::le_owner;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_or:
+        m_op = T5X_LOCKEXP::le_or;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
+           || !m_le[1]->ConvertFromP6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_not:
+        m_op = T5X_LOCKEXP::le_not;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_attr:
+        m_op = T5X_LOCKEXP::le_attr;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
+           || !m_le[1]->ConvertFromP6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_eval:
+        m_op = T5X_LOCKEXP::le_eval;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
+           || !m_le[1]->ConvertFromP6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_and:
+        m_op = T5X_LOCKEXP::le_and;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
+           || !m_le[1]->ConvertFromP6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case P6H_LOCKEXP::le_ref:
+        m_op = T5X_LOCKEXP::le_ref;
+        m_dbRef = p->m_dbRef;
+        break;
+
+    case P6H_LOCKEXP::le_text:
+        m_op = T5X_LOCKEXP::le_text;
+        m_p[0] = StringClone(p->m_p[0]);
+        break;
+
+    case P6H_LOCKEXP::le_class:
+        return false;
+        break;
+
+    case P6H_LOCKEXP::le_true:
+        m_op = T5X_LOCKEXP::le_text;
+        m_p[0] = StringClone("1");
+        break;
+
+    case P6H_LOCKEXP::le_false:
+        m_op = T5X_LOCKEXP::le_text;
+        m_p[0] = StringClone("0");
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return true;
 }
  
 void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
@@ -994,6 +1144,31 @@ static struct
     { "XYXXY",           5 },   // *Password
 };
 
+
+static struct
+{
+    const char *pName;
+    int         iNum;
+} t5x_locknames[] =
+{
+    { "Basic",       42 },
+    { "Enter",       59 },
+    { "Use",         62 },
+    { "Zone",        -1 },
+    { "Page",        61 },
+    { "Teleport",    85 },
+    { "Speech",     209 },
+    { "Parent",      98 },
+    { "Link",        93 },
+    { "Leave",       60 },
+    { "Drop",        86 },
+    { "Give",        63 },
+    { "Receive",     87 },
+    { "Mail",       225 },
+    { "Take",       127 },
+    { "Open",       225 },
+};
+
 struct ltstr
 {
     bool operator()(const char* s1, const char* s2) const
@@ -1245,6 +1420,61 @@ void T5X_GAME::ConvertFromP6H()
                 pvai = NULL;
             }
             delete pvai;
+        }
+
+        if (NULL != (*it)->m_pvli)
+        {
+            for (vector<P6H_LOCKINFO *>::iterator itLock = (*it)->m_pvli->begin(); itLock != (*it)->m_pvli->end(); ++itLock)
+            {
+                if (NULL != (*itLock)->m_pKeyTree)
+                {
+                    bool fFound = false;
+                    int iLock;
+                    for (int i = 0; i < sizeof(t5x_locknames)/sizeof(t5x_locknames[0]); i++)
+                    {
+                        if (strcmp(t5x_locknames[i].pName, (*itLock)->m_pType) == 0)
+                        {
+                            iLock = t5x_locknames[i].iNum;
+                            fFound = true;
+                            break;
+                        }
+                    }
+
+                    if (fFound)
+                    {
+                        T5X_LOCKEXP *pLock = new T5X_LOCKEXP;
+                        if (pLock->ConvertFromP6H((*itLock)->m_pKeyTree))
+                        {
+                            char buffer[65536];
+                            char *p = pLock->Write(buffer);
+                            *p = '\0';
+
+                            // Add it.
+                            //
+                            T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                            pai->SetNumAndValue(iLock, StringClone(buffer));
+
+                            if (NULL == poi->m_pvai)
+                            {
+                                vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                                pvai->push_back(pai);
+                                poi->SetAttrs(pvai->size(), pvai);
+                            }
+                            else
+                            {
+                                poi->m_pvai->push_back(pai);
+                                poi->m_fAttrCount = true;
+                                poi->m_nAttrCount = poi->m_pvai->size();
+                            }
+                        }
+                        else
+                        {
+                            delete pLock;
+                            fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", (*itLock)->m_pType, (*it)->m_dbRef, (*itLock)->m_pKey);
+                        }
+                    }
+                }
+            }
         }
 
         AddObject(poi);
