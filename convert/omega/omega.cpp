@@ -244,12 +244,16 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (  eServerUnknown == eInputType
-       || eServerUnknown == eOutputType)
+    if (eServerUnknown == eInputType)
     {
         fprintf(stderr, "Server type not specified.\n");
         Usage();
         return 1;
+    }
+
+    if (eServerUnknown == eOutputType)
+    {
+        eOutputType = eInputType;
     }
 
     // We should have two remaining arguments (input and output file).
