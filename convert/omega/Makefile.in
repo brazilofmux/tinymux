@@ -1,7 +1,7 @@
 all: omega
 
-omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o
-	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o
+omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o
+	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o
 
 omega.o: omega.cpp omega.h p6hgame.h t5xgame.h
 	$(CXX) -g -c omega.cpp
@@ -47,6 +47,18 @@ t5x.tab.o: t5x.tab.hpp t5x.tab.cpp t5xgame.h
 
 lex.t5x.o: lex.t5x.cpp t5x.tab.hpp t5xgame.h
 	$(CXX) -g -c lex.t5x.cpp
+
+lex.t5xl.cpp: t5xl.ll
+	$(LEX) -8 -olex.t5xl.cpp t5xl.ll
+
+t5xl.tab.cpp t5xl.tab.hpp: t5xl.ypp
+	bison -d t5xl.ypp
+
+t5xl.tab.o: t5xl.tab.hpp t5xl.tab.cpp t5xgame.h
+	$(CXX) -g -c t5xl.tab.cpp
+
+lex.t5xl.o: lex.t5xl.cpp t5xl.tab.hpp t5xgame.h
+	$(CXX) -g -c lex.t5xl.cpp
 
 clean:
 	-rm -f *.o lex.p6h.cpp p6h.tab.cpp p6h.tab.hpp lex.t5x.cpp t5x.tab.cpp t5x.tab.hpp location.hh position.hh stack.hh

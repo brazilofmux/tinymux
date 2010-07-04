@@ -4,7 +4,7 @@
 int  p6hllex();
 void p6hlerror(const char *s);
 
-P6H_LOCKEXP *g_KeyExp = NULL;
+P6H_LOCKEXP *g_p6hKeyExp = NULL;
 
 %}
 
@@ -25,7 +25,7 @@ P6H_LOCKEXP *g_KeyExp = NULL;
 %%
 start
 :
-    expr                         { g_KeyExp = $1; };
+    expr                         { g_p6hKeyExp = $1; };
 ;
 
 expr:

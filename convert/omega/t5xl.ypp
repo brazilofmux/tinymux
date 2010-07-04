@@ -1,0 +1,75 @@
+%{
+#include "omega.h"
+#include "t5xgame.h"
+int  t5xllex();
+void t5xlerror(const char *s);
+
+T5X_LOCKEXP *g_t5xKeyExp = NULL;
+
+%}
+
+%name-prefix="t5xl"
+%debug
+%union {
+    char                       *p;
+    int                         i;
+    T5X_LOCKEXP                *ple;
+}
+
+%token BOOLTRUE BOOLFALSE
+%token <p> LTEXT
+%token <i> DBREF
+%type <ple> term factor atom expr
+%start start
+
+%%
+start
+:
+    expr                         { g_t5xKeyExp = $1; };
+;
+
+expr:
+    expr '|' term                { $$ = new T5X_LOCKEXP; $$->SetOr($1,$3);   }
+|
+    term
+;
+
+term:
+    factor '&' term              { $$ = new T5X_LOCKEXP; $$->SetAnd($1,$3);  }
+|
+    factor                       { $$ = $1; }
+;
+
+factor:
+    '(' factor ')'               { $$ = $2; }
+|
+    '!' factor                   { $$ = new T5X_LOCKEXP; $$->SetNot($2);     }
+|
+    '+' '(' atom ')'             { $$ = new T5X_LOCKEXP; $$->SetCarry($3);   }
+|
+    '$' '(' atom ')'             { $$ = new T5X_LOCKEXP; $$->SetOwner($3);   }
+|
+    '@' '(' atom ')'             { $$ = new T5X_LOCKEXP; $$->SetIndir($3);   }
+|
+    '=' '(' atom ')'             { $$ = new T5X_LOCKEXP; $$->SetIs($3);      }
+|
+    atom                         { $$ = $1; }
+|
+    atom ':' atom                { $$ = new T5X_LOCKEXP; $$->SetAttr($1,$3); }
+|
+    atom '/' atom                { $$ = new T5X_LOCKEXP; $$->SetEval($1,$3); }
+;
+
+atom:
+    DBREF                        { $$ = new T5X_LOCKEXP; $$->SetRef($1);      }
+|
+    LTEXT                        { $$ = new T5X_LOCKEXP; $$->SetText($1);      }
+;
+
+%%
+
+void t5xlerror(const char *s)
+{
+    extern int t5xllineno;
+    fprintf(stderr, "%s near line %d.\n", s, t5xllineno);
+}

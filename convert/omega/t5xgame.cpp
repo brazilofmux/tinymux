@@ -25,6 +25,7 @@ t5x_gameflaginfo t5x_gameflagnames[] =
 #define T5X_NUM_GAMEFLAGNAMES (sizeof(t5x_gameflagnames)/sizeof(t5x_gameflagnames[0]))
 
 T5X_GAME g_t5xgame;
+T5X_LOCKEXP *t5xl_ParseKey(char *pKey);
 
 // The first character of an attribute name must be either alphabetic,
 // '_', '#', '.', or '~'. It's handled by the following table.
@@ -162,26 +163,114 @@ void T5X_LOCKEXP::Write(FILE *fp)
         fprintf(fp, ")");
         break;
 
+    case le_attr:
+        m_le[0]->Write(fp);
+        fprintf(fp, ":");
+        m_le[1]->Write(fp);
+
+        // The code in 2.6 an earlier does not always emit a NL.  It's really
+        // a beneign typo, but we reproduce it to make regression testing
+        // easier.
+        //
+        if (m_le[0]->m_op != le_text)
+        {
+            fprintf(fp, "\n");
+        }
+        break;
+
+    case le_eval:
+        m_le[0]->Write(fp);
+        fprintf(fp, "/");
+        m_le[1]->Write(fp);
+        fprintf(fp, "\n");
+        break;
+
     case le_ref:
         fprintf(fp, "%d\n", m_dbRef);
         break;
 
-    case le_attr1:
-        fprintf(fp, "%s:%s", m_p[0], m_p[1]);
-        break;
-
-    case le_attr2:
-        fprintf(fp, "%d:%s\n", m_dbRef, m_p[1]);
-        break;
-
-    case le_eval1:
-        fprintf(fp, "%s/%s\n", m_p[0], m_p[1]);
-        break;
-
-    case le_eval2:
-        fprintf(fp, "%d/%s\n", m_dbRef, m_p[1]);
+    case le_text:
+        fprintf(fp, "%s", m_p[0]);
         break;
     }
+}
+
+char *T5X_LOCKEXP::Write(char *p)
+{
+    switch (m_op)
+    {
+    case le_is:
+        *p++ = '=';
+        *p++ = '(';
+        p = m_le[0]->Write(p);
+        *p++ = ')';
+        break;
+
+    case le_carry:
+        *p++ = '+';
+        *p++ = '(';
+        p = m_le[0]->Write(p);
+        *p++ = ')';
+        break;
+
+    case le_indirect:
+        *p++ = '@';
+        *p++ = '(';
+        p = m_le[0]->Write(p);
+        *p++ = ')';
+        break;
+
+    case le_owner:
+        *p++ = '$';
+        *p++ = '(';
+        p = m_le[0]->Write(p);
+        *p++ = ')';
+        break;
+
+    case le_or:
+        p = m_le[0]->Write(p);
+        *p++ = '|';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_not:
+        *p++ = '!';
+        p = m_le[0]->Write(p);
+        break;
+
+    case le_attr:
+        p = m_le[0]->Write(p);
+        *p++ = ':';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_eval:
+        p = m_le[0]->Write(p);
+        *p++ = '/';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_and:
+        p = m_le[0]->Write(p);
+        *p++ = '&';
+        p = m_le[1]->Write(p);
+        break;
+
+    case le_ref:
+        sprintf(p, "#%d", m_dbRef);
+        p += strlen(p);
+        break;
+
+    case le_text:
+        sprintf(p, "%s", m_p[0]);
+        p += strlen(p);
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return p;
 }
  
 void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
@@ -255,6 +344,28 @@ void T5X_OBJECTINFO::SetName(char *pName)
     m_pName = pName;
 }
 
+const int t5x_locknums[] =
+{
+     42,  // A_LOCK
+     59,  // A_LENTER
+     60,  // A_LLEAVE
+     61,  // A_LPAGE
+     62,  // A_LUSE
+     63,  // A_LGIVE
+     85,  // A_LTPORT
+     86,  // A_LDROP
+     87,  // A_LRECEIVE
+     93,  // A_LLINK
+     94,  // A_LTELOUT
+     97,  // A_LUSER
+     98,  // A_LPARENT
+    127,  // A_LGET
+    209,  // A_LSPEECH
+    225,  // A_LMAIL
+    226,  // A_LOPEN
+    231,  // A_LVISIBLE
+};
+
 void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
 {
     if (  (  NULL == pvai
@@ -272,6 +383,22 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
         delete m_pvai;
     }
     m_pvai = pvai;
+
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->m_fIsLock = false;
+            for (int i = 0; i < sizeof(t5x_locknums)/sizeof(t5x_locknums[0]); i++)
+            {
+                if (t5x_locknums[i] == (*it)->m_iNum)
+                {
+                    (*it)->m_fIsLock = true;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void T5X_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
@@ -506,8 +633,41 @@ void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     fprintf(fp, "<\n");
 }
 
+void T5X_ATTRINFO::Validate()
+{
+    if (m_fIsLock)
+    {
+        delete m_pKeyTree;
+        m_pKeyTree = t5xl_ParseKey(m_pValue);
+        if (NULL == m_pKeyTree)
+        {
+            fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pValue);
+            exit(1);
+        }
+        else
+        {
+            char buffer[65536];
+            char *p = m_pKeyTree->Write(buffer);
+            *p = '\0';
+            if (strcmp(m_pValue, buffer) != 0)
+            {
+                 fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
+                 exit(1);
+            }
+        }
+    }
+}
+
 void T5X_OBJECTINFO::Validate()
 {
+    if (  m_fAttrCount
+       && NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->Validate();
+        }
+    }
 }
 
 void T5X_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const

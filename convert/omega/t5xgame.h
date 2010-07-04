@@ -43,11 +43,10 @@ public:
         le_and,
         le_or,
         le_not,
+        le_attr,
+        le_eval,
         le_ref,
-        le_attr1,
-        le_attr2,
-        le_eval1,
-        le_eval2,
+        le_text,
         le_none,
     } m_op;
 
@@ -92,37 +91,31 @@ public:
         m_op = le_not;
         m_le[0] = p;
     }
+    void SetAttr(T5X_LOCKEXP *p, T5X_LOCKEXP *q)
+    {
+        m_op = le_attr;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
+    void SetEval(T5X_LOCKEXP *p, T5X_LOCKEXP *q)
+    {
+        m_op = le_eval;
+        m_le[0] = p;
+        m_le[1] = q;
+    }
     void SetRef(int dbRef)
     {
         m_op = le_ref;
         m_dbRef = dbRef;
     }
-    void SetAttr(char *p, char *q)
+    void SetText(char *p)
     {
-        m_op = le_attr1;
+        m_op = le_text;
         m_p[0] = p;
-        m_p[1] = q;
-    }
-    void SetAttr(int dbRef, char *q)
-    {
-        m_op = le_attr2;
-        m_dbRef = dbRef;
-        m_p[1] = q;
-    }
-    void SetEval(char *p, char *q)
-    {
-        m_op = le_eval1;
-        m_p[0] = p;
-        m_p[1] = q;
-    }
-    void SetEval(int dbRef, char *q)
-    {
-        m_op = le_eval2;
-        m_dbRef = dbRef;
-        m_p[1] = q;
     }
 
     void Write(FILE *fp);
+    char *Write(char *p);
 
     T5X_LOCKEXP()
     {
@@ -172,17 +165,26 @@ public:
     char *m_pValue;
     void SetNumAndValue(int iNum, char *pValue);
 
+    bool m_fIsLock;
+    T5X_LOCKEXP *m_pKeyTree;
+
     void Write(FILE *fp, bool fExtraEscapes) const;
+
+    void Validate();
 
     T5X_ATTRINFO()
     {
         m_fNumAndValue = false;
+        m_fIsLock = false;
         m_pValue = NULL;
+        m_pKeyTree = NULL;
     }
     ~T5X_ATTRINFO()
     {
         free(m_pValue);
+        delete m_pKeyTree;
         m_pValue = NULL;
+        m_pKeyTree = NULL;
     }
 };
 

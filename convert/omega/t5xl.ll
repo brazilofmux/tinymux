@@ -1,25 +1,19 @@
 %{
 #include "omega.h"
-#include "p6hgame.h"
-#include "p6hl.tab.hpp"
+#include "t5xgame.h"
+#include "t5xl.tab.hpp"
 %}
 
 %option 8bit 
 %option noyywrap
-%option prefix="p6hl"
+%option prefix="t5xl"
 
 %x str
 %%
 
 \#-?[0-9]+     {
-                   p6hllval.i = atoi(p6hltext+1);
+                   t5xllval.i = atoi(t5xltext+1);
                    return DBREF;
-               }
-\#FALSE        {
-                   return BOOLFALSE;
-               }
-\#TRUE         {
-                   return BOOLTRUE;
                }
 \=             {
                    return '=';
@@ -58,37 +52,36 @@
                    return ')';
                }
 [^()=+@$&|!:/\n\t ]+  {
-                   p6hllval.p = StringClone(p6hltext);
+                   t5xllval.p = StringClone(t5xltext);
                    return LTEXT;
                }
 [\n\t ]+       /* ignore whitespace */ ;
-.              { return EOF; }
 %%
 
-extern P6H_LOCKEXP *g_p6hKeyExp;
-int p6hlparse();
+extern T5X_LOCKEXP *g_t5xKeyExp;
+int t5xlparse();
 
-P6H_LOCKEXP *p6hl_ParseKey(char *pKey)
+T5X_LOCKEXP *t5xl_ParseKey(char *pKey)
 {
-    //extern int p6hl_flex_debug;
-    //extern int p6hldebug;
-    //p6hl_flex_debug = 1;
-    //p6hldebug = 1;
+    //extern int t5xl_flex_debug;
+    //extern int t5xldebug;
+    //t5xl_flex_debug = 1;
+    //t5xldebug = 1;
 
-    delete g_p6hKeyExp;
-    g_p6hKeyExp = NULL;
+    delete g_t5xKeyExp;
+    g_t5xKeyExp = NULL;
     
-    YY_BUFFER_STATE bp = p6hl_scan_string(pKey);
-    p6hl_switch_to_buffer(bp);
-    P6H_LOCKEXP *ple = NULL;
-    if (p6hlparse())
+    YY_BUFFER_STATE bp = t5xl_scan_string(pKey);
+    t5xl_switch_to_buffer(bp);
+    T5X_LOCKEXP *ple = NULL;
+    if (t5xlparse())
     {
-        delete g_p6hKeyExp;
+        delete g_t5xKeyExp;
     }
     else
     {
-        ple = g_p6hKeyExp;
+        ple = g_t5xKeyExp;
     }
-    g_p6hKeyExp = NULL;
+    g_t5xKeyExp = NULL;
     return ple;
 }

@@ -139,13 +139,32 @@ lockexp:
 |
     INTEGER                      { $$ = new T5X_LOCKEXP; $$->SetRef($1);      }
 |
-    LTEXT ':' LTEXT              { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+    LTEXT ':' LTEXT              { T5X_LOCKEXP *p = new T5X_LOCKEXP;
+                                   p->SetText($1);
+                                   T5X_LOCKEXP *q = new T5X_LOCKEXP;
+                                   q->SetText($3);
+                                   $$ = new T5X_LOCKEXP; $$->SetAttr(p, q);
+                                 }
 |
-    INTEGER ':' LTEXT            { $$ = new T5X_LOCKEXP; $$->SetAttr($1, $3); }
+    INTEGER ':' LTEXT            { T5X_LOCKEXP *p = new T5X_LOCKEXP;
+                                   p->SetRef($1);
+                                   T5X_LOCKEXP *q = new T5X_LOCKEXP;
+                                   q->SetText($3);
+                                   $$ = new T5X_LOCKEXP; $$->SetAttr(p, q);
+                                 }
 |
-    LTEXT '/' LTEXT              { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
+    LTEXT '/' LTEXT              { T5X_LOCKEXP *p = new T5X_LOCKEXP;
+                                   p->SetText($1);
+                                   T5X_LOCKEXP *q = new T5X_LOCKEXP;
+                                   q->SetText($3);
+                                   $$ = new T5X_LOCKEXP; $$->SetEval(p, q); }
 |
-    INTEGER '/' LTEXT            { $$ = new T5X_LOCKEXP; $$->SetEval($1, $3); }
+    INTEGER '/' LTEXT            { T5X_LOCKEXP *p = new T5X_LOCKEXP;
+                                   p->SetRef($1);
+                                   T5X_LOCKEXP *q = new T5X_LOCKEXP;
+                                   q->SetText($3);
+                                   $$ = new T5X_LOCKEXP; $$->SetEval(p, q);
+                                 }
 ;
 
 attrlist
