@@ -14,6 +14,9 @@
 #include <map>
 using namespace std;
 
+#define LBUF_SIZE    65536
+#define ESC_CHAR     '\x1b'
+
 char *StringClone(const char *str);
 char *StringCloneLen(const char *str, size_t nStr);
 

@@ -76,7 +76,7 @@ object
                      oi->SetExits($6);
                      oi->SetLink($7);
                      oi->SetNext($8);
-                     oi->SetUseLock($9);
+                     oi->SetDefaultLock($9);
                      oi->SetOwner($10);
                      oi->SetParent($11);
                      oi->SetPennies($12);

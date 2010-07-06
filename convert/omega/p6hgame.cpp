@@ -1721,7 +1721,7 @@ void P6H_GAME::Upgrade()
         return;
     }
 
-    // Addition flatfile flags.
+    // Additional flatfile flags.
     //
     m_flags = m_flags
             | DBF_LABELS

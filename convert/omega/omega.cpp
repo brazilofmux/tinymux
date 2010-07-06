@@ -256,15 +256,6 @@ int main(int argc, char *argv[])
         eOutputType = eInputType;
     }
 
-    // We should have two remaining arguments (input and output file).
-    //
-    if (2 != argc)
-    {
-        fprintf(stderr, "After options, there should be only two command-line arguments left.\n");
-        Usage();
-        return 1;
-    }
-
     if (  eTinyMUSH == eInputType
        || eTinyMUSH == eOutputType)
     {
@@ -298,6 +289,28 @@ int main(int argc, char *argv[])
         Usage();
         return 1;
     }
+
+    if (  (  eTinyMUX == eInputType
+          && eCharsetUnknown != eInputCharset)
+       || (  eTinyMUX == eOutputType
+          && eCharsetUnknown != eOutputCharset))
+    {
+        fprintf(stderr, "It isn't necessary to specify a charset for TinyMUX.  TinyMUX 2.6 flatfiles\n"
+                        "are always Windows-1252 (a superset of Latin-1 which is turn a superset of\n"
+                        "US-ASCII), and TinyMUX 2.7 flatfiles are always UTF-8.\n");
+        Usage();
+        return 1;
+    }
+
+    // We should have two remaining arguments (input and output file).
+    //
+    if (2 != argc)
+    {
+        fprintf(stderr, "After options, there should be only two command-line arguments left.\n");
+        Usage();
+        return 1;
+    }
+
 
     fpin = fopen(argv[0], "rb");
     if (NULL == fpin)
@@ -409,8 +422,8 @@ int main(int argc, char *argv[])
                 switch (eOutputVersion)
                 {
                 case eLatest:
-                    fprintf(stderr, "Omega does not support upgrading to 2.7 flatfiles, but TinyMUX 2.7 will read 2.6 flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Upgrade();
+                    g_t5xgame.Validate();
                     break;
 
                 case eSame:
@@ -428,13 +441,13 @@ int main(int argc, char *argv[])
                 switch (eOutputVersion)
                 {
                 case eLatest:
-                    fprintf(stderr, "Omega does not support upgrading to 2.7 flatfiles, but TinyMUX 2.7 will read 2.6 flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Upgrade();
+                    g_t5xgame.Validate();
                     break;
 
                 case eLegacyOne:
-                    fprintf(stderr, "Omega does not support upgrading to 2.6 flatfiles, but TinyMUX 2.6 will read 1.x flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Upgrade26();
+                    g_t5xgame.Validate();
                     break;
                    
                 case eSame:

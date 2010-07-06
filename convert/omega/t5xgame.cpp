@@ -1613,3 +1613,466 @@ void T5X_GAME::ResetPassword()
         }
     } 
 }
+
+#define T(x)    ((const UTF8 *)x)
+
+#define UTF8_SIZE1     1
+#define UTF8_SIZE2     2
+#define UTF8_SIZE3     3
+#define UTF8_SIZE4     4
+#define UTF8_CONTINUE  5
+#define UTF8_ILLEGAL   6
+
+// This will help decode UTF-8 sequences.
+//
+// 0xxxxxxx ==> 00000000-01111111 ==> 00-7F 1 byte sequence.
+// 10xxxxxx ==> 10000000-10111111 ==> 80-BF continue
+// 110xxxxx ==> 11000000-11011111 ==> C0-DF 2 byte sequence.
+// 1110xxxx ==> 11100000-11101111 ==> E0-EF 3 byte sequence.
+// 11110xxx ==> 11110000-11110111 ==> F0-F7 4 byte sequence.
+//              11111000-11111111 illegal
+//
+// Also, RFC 3629 specifies that 0xC0, 0xC1, and 0xF5-0xFF never
+// appear in a valid sequence.
+//
+// The first byte gives the length of a sequence (UTF8_SIZE1 - UTF8_SIZE4).
+// Bytes in the middle of a sequence map to UTF8_CONTINUE.  Bytes which should
+// not appear map to UTF8_ILLEGAL.
+//
+const unsigned char utf8_FirstByte[256] =
+{
+//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+//
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 0
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 1
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 2
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 3
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 4
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 5
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 6
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 7
+
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // 8
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // 9
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // A
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // B
+    6,  6,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
+    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // D
+    3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  // E
+    4,  4,  4,  4,  4,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6   // F
+};
+
+const bool ANSI_TokenTerminatorTable[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+// The following table maps existing 8-bit characters to their corresponding
+// UTF8 sequences.
+//
+const UTF8 *latin1_utf8[256] =
+{
+   T(""),             T("\x01"),         T("\x02"),         T("\x03"),
+   T("\x04"),         T("\x05"),         T("\x06"),         T("\x07"),
+   T("\x08"),         T("\x09"),         T("\x0A"),         T("\x0B"),
+   T("\x0C"),         T("\x0D"),         T("\x0E"),         T("\x0F"),
+   T("\x10"),         T("\x11"),         T("\x12"),         T("\x13"),
+   T("\x14"),         T("\x15"),         T("\x16"),         T("\x17"),
+   T("\x18"),         T("\x19"),         T("\x1A"),         T("\x1B"),
+   T("\x1C"),         T("\x1D"),         T("\x1E"),         T("\x1F"),
+   T("\x20"),         T("\x21"),         T("\x22"),         T("\x23"),
+   T("\x24"),         T("\x25"),         T("\x26"),         T("\x27"),
+   T("\x28"),         T("\x29"),         T("\x2A"),         T("\x2B"),
+   T("\x2C"),         T("\x2D"),         T("\x2E"),         T("\x2F"),
+   T("\x30"),         T("\x31"),         T("\x32"),         T("\x33"),
+   T("\x34"),         T("\x35"),         T("\x36"),         T("\x37"),
+   T("\x38"),         T("\x39"),         T("\x3A"),         T("\x3B"),
+   T("\x3C"),         T("\x3D"),         T("\x3E"),         T("\x3F"),
+   T("\x40"),         T("\x41"),         T("\x42"),         T("\x43"),
+   T("\x44"),         T("\x45"),         T("\x46"),         T("\x47"),
+   T("\x48"),         T("\x49"),         T("\x4A"),         T("\x4B"),
+   T("\x4C"),         T("\x4D"),         T("\x4E"),         T("\x4F"),
+   T("\x50"),         T("\x51"),         T("\x52"),         T("\x53"),
+   T("\x54"),         T("\x55"),         T("\x56"),         T("\x57"),
+   T("\x58"),         T("\x59"),         T("\x5A"),         T("\x5B"),
+   T("\x5C"),         T("\x5D"),         T("\x5E"),         T("\x5F"),
+   T("\x60"),         T("\x61"),         T("\x62"),         T("\x63"),
+   T("\x64"),         T("\x65"),         T("\x66"),         T("\x67"),
+   T("\x68"),         T("\x69"),         T("\x6A"),         T("\x6B"),
+   T("\x6C"),         T("\x6D"),         T("\x6E"),         T("\x6F"),
+   T("\x70"),         T("\x71"),         T("\x72"),         T("\x73"),
+   T("\x74"),         T("\x75"),         T("\x76"),         T("\x77"),
+   T("\x78"),         T("\x79"),         T("\x7A"),         T("\x7B"),
+   T("\x7C"),         T("\x7D"),         T("\x7E"),         T("\x7F"),
+   T("\xE2\x82\xAC"), T("\xEF\xBF\xBD"), T("\xE2\x80\x9A"), T("\xC6\x92"),
+   T("\xE2\x80\x9E"), T("\xE2\x80\xA6"), T("\xE2\x80\xA0"), T("\xE2\x80\xA1"),
+   T("\xCB\x86"),     T("\xE2\x80\xB0"), T("\xC5\xA0"),     T("\xE2\x80\xB9"),
+   T("\xC5\x92"),     T("\xEF\xBF\xBD"), T("\xC5\xBD"),     T("\xEF\xBF\xBD"),
+   T("\xEF\xBF\xBD"), T("\xE2\x80\x98"), T("\xE2\x80\x99"), T("\xE2\x80\x9C"),
+   T("\xE2\x80\x9D"), T("\xE2\x80\xA2"), T("\xE2\x80\x93"), T("\xE2\x80\x94"),
+   T("\xCB\x9C"),     T("\xE2\x84\xA2"), T("\xC5\xA1"),     T("\xE2\x80\xBA"),
+   T("\xC5\x93"),     T("\xEF\xBF\xBD"), T("\xC5\xBE"),     T("\xC5\xB8"),
+   T("\xC2\xA0"),     T("\xC2\xA1"),     T("\xC2\xA2"),     T("\xC2\xA3"),
+   T("\xC2\xA4"),     T("\xC2\xA5"),     T("\xC2\xA6"),     T("\xC2\xA7"),
+   T("\xC2\xA8"),     T("\xC2\xA9"),     T("\xC2\xAA"),     T("\xC2\xAB"),
+   T("\xC2\xAC"),     T("\xC2\xAD"),     T("\xC2\xAE"),     T("\xC2\xAF"),
+   T("\xC2\xB0"),     T("\xC2\xB1"),     T("\xC2\xB2"),     T("\xC2\xB3"),
+   T("\xC2\xB4"),     T("\xC2\xB5"),     T("\xC2\xB6"),     T("\xC2\xB7"),
+   T("\xC2\xB8"),     T("\xC2\xB9"),     T("\xC2\xBA"),     T("\xC2\xBB"),
+   T("\xC2\xBC"),     T("\xC2\xBD"),     T("\xC2\xBE"),     T("\xC2\xBF"),
+   T("\xC3\x80"),     T("\xC3\x81"),     T("\xC3\x82"),     T("\xC3\x83"),
+   T("\xC3\x84"),     T("\xC3\x85"),     T("\xC3\x86"),     T("\xC3\x87"),
+   T("\xC3\x88"),     T("\xC3\x89"),     T("\xC3\x8A"),     T("\xC3\x8B"),
+   T("\xC3\x8C"),     T("\xC3\x8D"),     T("\xC3\x8E"),     T("\xC3\x8F"),
+   T("\xC3\x90"),     T("\xC3\x91"),     T("\xC3\x92"),     T("\xC3\x93"),
+   T("\xC3\x94"),     T("\xC3\x95"),     T("\xC3\x96"),     T("\xC3\x97"),
+   T("\xC3\x98"),     T("\xC3\x99"),     T("\xC3\x9A"),     T("\xC3\x9B"),
+   T("\xC3\x9C"),     T("\xC3\x9D"),     T("\xC3\x9E"),     T("\xC3\x9F"),
+   T("\xC3\xA0"),     T("\xC3\xA1"),     T("\xC3\xA2"),     T("\xC3\xA3"),
+   T("\xC3\xA4"),     T("\xC3\xA5"),     T("\xC3\xA6"),     T("\xC3\xA7"),
+   T("\xC3\xA8"),     T("\xC3\xA9"),     T("\xC3\xAA"),     T("\xC3\xAB"),
+   T("\xC3\xAC"),     T("\xC3\xAD"),     T("\xC3\xAE"),     T("\xC3\xAF"),
+   T("\xC3\xB0"),     T("\xC3\xB1"),     T("\xC3\xB2"),     T("\xC3\xB3"),
+   T("\xC3\xB4"),     T("\xC3\xB5"),     T("\xC3\xB6"),     T("\xC3\xB7"),
+   T("\xC3\xB8"),     T("\xC3\xB9"),     T("\xC3\xBA"),     T("\xC3\xBB"),
+   T("\xC3\xBC"),     T("\xC3\xBD"),     T("\xC3\xBE"),     T("\xC3\xBF"),
+};
+
+void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
+{
+    size_t nLen;
+    size_t nLeft;
+    if (  NULL == src
+       || UTF8_CONTINUE <= (nLen = utf8_FirstByte[*src])
+       || (nLeft = LBUF_SIZE - (*bufc - buff) - 1) < nLen)
+    {
+        return;
+    }
+    memcpy(*bufc, src, nLen);
+    *bufc += nLen;
+}
+
+#define COLOR_NOTCOLOR   0
+#define COLOR_RESET      "\xEF\x94\x80"    // 1
+#define COLOR_INTENSE    "\xEF\x94\x81"    // 2
+#define COLOR_UNDERLINE  "\xEF\x94\x84"    // 3
+#define COLOR_BLINK      "\xEF\x94\x85"    // 4
+#define COLOR_INVERSE    "\xEF\x94\x87"    // 5
+#define COLOR_FG_BLACK   "\xEF\x98\x80"    // 6
+#define COLOR_FG_RED     "\xEF\x98\x81"    // 7
+#define COLOR_FG_GREEN   "\xEF\x98\x82"    // 8
+#define COLOR_FG_YELLOW  "\xEF\x98\x83"    // 9
+#define COLOR_FG_BLUE    "\xEF\x98\x84"    // 10
+#define COLOR_FG_MAGENTA "\xEF\x98\x85"    // 11
+#define COLOR_FG_CYAN    "\xEF\x98\x86"    // 12
+#define COLOR_FG_WHITE   "\xEF\x98\x87"    // 13
+#define COLOR_BG_BLACK   "\xEF\x9C\x80"    // 14
+#define COLOR_BG_RED     "\xEF\x9C\x81"    // 15
+#define COLOR_BG_GREEN   "\xEF\x9C\x82"    // 16
+#define COLOR_BG_YELLOW  "\xEF\x9C\x83"    // 17
+#define COLOR_BG_BLUE    "\xEF\x9C\x84"    // 18
+#define COLOR_BG_MAGENTA "\xEF\x9C\x85"    // 19
+#define COLOR_BG_CYAN    "\xEF\x9C\x86"    // 20
+#define COLOR_BG_WHITE   "\xEF\x9C\x87"    // 21
+#define COLOR_LAST_CODE  21
+
+#define COLOR_INDEX_RESET       1
+#define COLOR_INDEX_INTENSE     2
+#define COLOR_INDEX_UNDERLINE   3
+#define COLOR_INDEX_BLINK       4
+#define COLOR_INDEX_INVERSE     5
+
+#define COLOR_INDEX_ATTR        2
+#define COLOR_INDEX_FG          6
+#define COLOR_INDEX_BG          14
+
+#define COLOR_INDEX_BLACK       0
+#define COLOR_INDEX_RED         1
+#define COLOR_INDEX_GREEN       2
+#define COLOR_INDEX_YELLOW      3
+#define COLOR_INDEX_BLUE        4
+#define COLOR_INDEX_MAGENTA     5
+#define COLOR_INDEX_CYAN        6
+#define COLOR_INDEX_WHITE       7
+#define COLOR_INDEX_DEFAULT     8
+
+#define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
+
+typedef struct
+{
+    const UTF8 *pUTF;
+    size_t      nUTF;
+} MUX_COLOR_SET;
+
+const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
+{
+    { T(""),               0 },
+    { T(COLOR_RESET),      3 },
+    { T(COLOR_INTENSE),    3 },
+    { T(COLOR_UNDERLINE),  3 },
+    { T(COLOR_BLINK),      3 },
+    { T(COLOR_INVERSE),    3 },
+    { T(COLOR_FG_BLACK),   3 },
+    { T(COLOR_FG_RED),     3 },
+    { T(COLOR_FG_GREEN),   3 },
+    { T(COLOR_FG_YELLOW),  3 },
+    { T(COLOR_FG_BLUE),    3 },
+    { T(COLOR_FG_MAGENTA), 3 },
+    { T(COLOR_FG_CYAN),    3 },
+    { T(COLOR_FG_WHITE),   3 },
+    { T(COLOR_BG_BLACK),   3 },
+    { T(COLOR_BG_RED),     3 },
+    { T(COLOR_BG_GREEN),   3 },
+    { T(COLOR_BG_YELLOW),  3 },
+    { T(COLOR_BG_BLUE),    3 },
+    { T(COLOR_BG_MAGENTA), 3 },
+    { T(COLOR_BG_CYAN),    3 },
+    { T(COLOR_BG_WHITE),   3 },
+};
+
+// We want to remove mal-formed ESC sequences completely and convert the
+// well-formed ones.
+//
+UTF8 *ConvertToUTF8(const char *p)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+
+    while ('\0' != *p)
+    {
+        if (ESC_CHAR != *p)
+        {
+            const UTF8 *q = latin1_utf8[(unsigned char)*p];
+            utf8_safe_chr(q, aBuffer, &pBuffer);
+            p++;
+        }
+        else
+        {
+            // We have an ANSI sequence.
+            //
+            p++;
+            if ('[' == *p)
+            {
+                p++;
+                const char *q = p;
+                while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
+                {
+                    q++;
+                }
+
+                if ('\0' != q[0])
+                {
+                    // The segment [p,q) should contain a list of semi-color delimited codes.
+                    //
+                    const char *r = p;
+                    while (r != q)
+                    {
+                        while (  r != q
+                              && ';' != r[0])
+                        {
+                            r++;
+                        }
+
+                        // The segment [p,r) should contain one code.
+                        //
+                        size_t n = r - p;
+                        const UTF8 *s = NULL;
+                        switch (n)
+                        {
+                        case 1:
+                            if ('0' == *p)
+                            {
+                                s = aColors[COLOR_INDEX_RESET].pUTF;
+                            }
+                            else if ('1' == *p)
+                            {
+                                s = aColors[COLOR_INDEX_INTENSE].pUTF;
+                            }
+                            else if ('4' == *p)
+                            {
+                                s = aColors[COLOR_INDEX_UNDERLINE].pUTF;
+                            }
+                            else if ('5' == *p)
+                            {
+                                s = aColors[COLOR_INDEX_BLINK].pUTF;
+                            }
+                            else if ('7' == *p)
+                            {
+                                s = aColors[COLOR_INDEX_INVERSE].pUTF;
+                            }
+                            break;
+
+                        case 2:
+                            if ('3' == *p)
+                            {
+                                unsigned int iCode = COLOR_INDEX_FG + (p[1] - '0');
+                                if (  COLOR_INDEX_FG <= iCode
+                                   && iCode < COLOR_INDEX_BG)
+                                {
+                                    s = aColors[iCode].pUTF;
+                                }
+                            }
+                            else if ('4' == *p)
+                            {
+                                unsigned int iCode = COLOR_INDEX_BG + (p[1] - '0');
+                                if (  COLOR_INDEX_BG <= iCode
+                                   && iCode <= COLOR_LAST_CODE)
+                                {
+                                    s = aColors[iCode].pUTF;
+                                }
+                            }
+                            break;
+                        }
+
+                        if (NULL != s)
+                        {
+                            utf8_safe_chr(s, aBuffer, &pBuffer);
+                        }
+
+                        while (  r != q
+                              && ';' == r[0])
+                        {
+                            r++;
+                        }
+                        p = r;
+                    }
+
+                    // Eat trailing terminator.
+                    //
+                    p = q + 1;
+                }
+                else
+                {
+                    // Skip to end of mal-formed ANSI sequence.
+                    //
+                    p = q;
+                }
+            }
+        }
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
+void T5X_GAME::Upgrade()
+{
+    int ver = (m_flags & V_MASK);
+    if (3 == ver)
+    {
+        return;
+    }
+    m_flags &= m_flags & V_MASK;
+
+    // Additional flatfile flags.
+    //
+    m_flags = m_flags
+            | V_ATRKEY
+            | 3;
+
+    // Upgrade attribute names.
+    //
+    for (vector<T5X_ATTRNAMEINFO *>::iterator it =  m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    {
+        (*it)->Upgrade();
+    }
+
+    // Upgrade objects.
+    //
+    for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    {
+        (*it)->Upgrade();
+    }
+}
+
+void T5X_ATTRNAMEINFO::Upgrade()
+{
+    char *p = (char *)ConvertToUTF8(m_pName);
+    free(m_pName);
+    m_pName = StringClone(p);
+}
+
+void T5X_OBJECTINFO::Upgrade()
+{
+    // Convert name
+    //
+    char *p = (char *)ConvertToUTF8(m_pName);
+    free(m_pName);
+    m_pName = StringClone(p);
+
+    // Convert default Lock to attribute value
+    //
+    if (NULL != m_ple)
+    {
+        char buffer[65536];
+        char *p = m_ple->Write(buffer);
+        *p = '\0';
+
+        // Add it.
+        //
+        T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+        pai->SetNumAndValue(42, StringClone(buffer));
+
+        if (NULL == m_pvai)
+        {
+            vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+            pvai->push_back(pai);
+            SetAttrs(pvai->size(), pvai);
+        }
+        else
+        {
+            m_pvai->push_back(pai);
+            m_fAttrCount = true;
+            m_nAttrCount = m_pvai->size();
+        }
+
+        delete m_ple;
+        m_ple = NULL;
+    }
+
+    // Convert attribute values.
+    //
+    for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+    {
+        (*it)->Upgrade();
+    }
+}
+
+void T5X_ATTRINFO::Upgrade()
+{
+    char *p = (char *)ConvertToUTF8(m_pValue);
+    free(m_pValue);
+    m_pValue = StringClone(p);
+}
+
+void T5X_GAME::Upgrade26()
+{
+    int ver = (m_flags & V_MASK);
+    if (2 <= ver)
+    {
+        return;
+    }
+    m_flags &= m_flags & V_MASK;
+
+    // Additional flatfile flags.
+    //
+    m_flags = m_flags
+            | 3;
+}
