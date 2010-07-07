@@ -2027,13 +2027,11 @@ void T5X_GAME::Upgrade()
     {
         return;
     }
-    m_flags &= m_flags & V_MASK;
+    m_flags &= ~V_MASK;
 
     // Additional flatfile flags.
     //
-    m_flags = m_flags
-            | V_ATRKEY
-            | 3;
+    m_flags |= V_ATRKEY | 3;
 
     // Upgrade attribute names.
     //
@@ -2097,9 +2095,12 @@ void T5X_OBJECTINFO::Upgrade()
 
     // Convert attribute values.
     //
-    for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+    if (NULL != m_pvai)
     {
-        (*it)->Upgrade();
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->Upgrade();
+        }
     }
 }
 
@@ -2117,10 +2118,9 @@ void T5X_GAME::Upgrade26()
     {
         return;
     }
-    m_flags &= m_flags & V_MASK;
+    m_flags &= ~V_MASK;
 
     // Additional flatfile flags.
     //
-    m_flags = m_flags
-            | 3;
+    m_flags |= V_ATRKEY | 2;
 }
