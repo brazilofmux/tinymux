@@ -407,13 +407,13 @@ int main(int argc, char *argv[])
                     break;
 
                 case eLegacyOne:
-                    fprintf(stderr, "Omega does not support downgrading to TinyMUX 2.6 flatfile, but the TinyMUX 2.6 server will read TinyMUX 2.7 flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Downgrade2();
+                    g_t5xgame.Validate();
                     break;
                    
                 case eLegacyTwo:
-                    fprintf(stderr, "Omega does not support downgrading to TinyMUX 1.x flatfiles, but TinyMUX 2.4 will read TinyMUX 2.6 flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Downgrade1();
+                    g_t5xgame.Validate();
                     break;
                 }
                 break;
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
                 switch (eOutputVersion)
                 {
                 case eLatest:
-                    g_t5xgame.Upgrade();
+                    g_t5xgame.Upgrade3();
                     g_t5xgame.Validate();
                     break;
 
@@ -431,8 +431,8 @@ int main(int argc, char *argv[])
                     break;
                    
                 case eLegacyTwo:
-                    fprintf(stderr, "Omega does not support downgrading to TinyMUX 1.x flatfiles, but TinyMUX 2.4 will read TinyMUX 2.6 flatfiles.\n");
-                    return 1;
+                    g_t5xgame.Downgrade1();
+                    g_t5xgame.Validate();
                     break;
                 }
                 break;
@@ -441,12 +441,12 @@ int main(int argc, char *argv[])
                 switch (eOutputVersion)
                 {
                 case eLatest:
-                    g_t5xgame.Upgrade();
+                    g_t5xgame.Upgrade3();
                     g_t5xgame.Validate();
                     break;
 
                 case eLegacyOne:
-                    g_t5xgame.Upgrade26();
+                    g_t5xgame.Upgrade2();
                     g_t5xgame.Validate();
                     break;
                    

@@ -31,6 +31,8 @@
 #define T5X_NOTYPE        0x7
 #define T5X_TYPE_MASK     0x7
 
+#define ATR_INFO_CHAR 0x01
+
 typedef unsigned char UTF8;
 
 class P6H_LOCKEXP;
@@ -154,6 +156,7 @@ public:
     void Write(FILE *fp, bool fExtraEscapes);
 
     void Upgrade();
+    void Downgrade();
 
     T5X_ATTRNAMEINFO()
     {
@@ -183,6 +186,7 @@ public:
     void Write(FILE *fp, bool fExtraEscapes) const;
 
     void Upgrade();
+    void Downgrade();
 
     T5X_ATTRINFO()
     {
@@ -279,6 +283,7 @@ public:
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
 
     void Upgrade();
+    void Downgrade();
 
     T5X_OBJECTINFO()
     {
@@ -346,8 +351,10 @@ public:
 
     void Write(FILE *fp);
  
-    void Upgrade();
-    void Upgrade26();
+    void Upgrade3();
+    void Upgrade2();
+    void Downgrade1();
+    void Downgrade2();
 
     void ConvertFromP6H();
 
