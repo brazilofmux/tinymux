@@ -61,4 +61,4 @@ lex.t5xl.o: lex.t5xl.cpp t5xl.tab.hpp t5xgame.h
 	$(CXX) -g -c lex.t5xl.cpp
 
 clean:
-	-rm -f *.o lex.p6h.cpp p6h.tab.cpp p6h.tab.hpp lex.t5x.cpp t5x.tab.cpp t5x.tab.hpp location.hh position.hh stack.hh
+	-rm -f *.o lex.p6h.cpp p6h.tab.cpp p6h.tab.hpp lex.p6hl.cpp p6hl.tab.cpp p6hl.tab.hpp lex.t5x.cpp t5x.tab.cpp t5x.tab.hpp lex.t5xl.cpp t5xl.tab.cpp t5xl.tab.hpp location.hh position.hh stack.hh
