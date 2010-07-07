@@ -8,12 +8,35 @@
 %option noyywrap
 %option prefix="t5xl"
 
-%x str
 %%
 
 \#-?[0-9]+     {
-                   t5xllval.i = atoi(t5xltext+1);
+                   T5X_LOCKEXP *ple = new T5X_LOCKEXP;
+                   ple->SetRef(atoi(t5xltext+1));
+                   t5xllval.ple = ple;
                    return DBREF;
+               }
+[^:/&|()]+\/[^&|()]+ {
+                   char *p = strchr(t5xltext, '/');
+                   T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
+                   ple1->SetText(StringCloneLen(t5xltext, p-t5xltext));
+                   T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                   ple2->SetText(StringClone(p+1));
+                   T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                   ple3->SetEval(ple1, ple2);
+                   t5xllval.ple = ple3;
+                   return EVALLIT;
+               }
+[^:/&|()]+:[^&|()]+ {
+                   char *p = strchr(t5xltext, ':');
+                   T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
+                   ple1->SetText(StringCloneLen(t5xltext, p-t5xltext));
+                   T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                   ple2->SetText(StringClone(p+1));
+                   T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                   ple3->SetAttr(ple1, ple2);
+                   t5xllval.ple = ple3;
+                   return ATTRLIT;
                }
 \=             {
                    return '=';
@@ -36,24 +59,11 @@
 \!             {
                    return '!';
                }
-\:             {
-                   return ':';
-               }
-\/             {
-                   return '/';
-               }
-\^             {
-                   return '^';
-               }
 \(             {
                    return '(';
                }
 \)             {
                    return ')';
-               }
-[^()=+@$&|!:/\n\t ]+  {
-                   t5xllval.p = StringClone(t5xltext);
-                   return LTEXT;
                }
 [\n\t ]+       /* ignore whitespace */ ;
 %%

@@ -78,6 +78,4 @@ atom:
 
 void p6hlerror(const char *s)
 {
-    extern int p6hllineno;
-    fprintf(stderr, "%s near line %d.\n", s, p6hllineno);
 }

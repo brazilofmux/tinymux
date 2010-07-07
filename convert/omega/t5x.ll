@@ -3,6 +3,12 @@
 #include "t5xgame.h"
 #include "t5x.tab.hpp"
 static int  iLockNest;
+
+// Because the lock does not start with an open paren in v1 and v2 flatfiles,
+// we rely on the position of the lock within the object header.
+//
+static int  ver;
+static int  iObjectField = -1;
 %}
 
 %option 8bit 
@@ -20,37 +26,38 @@ static int  iLockNest;
                  int  iPreStrContext;
 
 <INITIAL>{
-  ^\+X[0-9]+     {
+  ^\+X[0-9]+[\n] {
                      t5xlval.i = atoi(t5xtext+2);
+                     ver = (t5xlval.i & V_MASK);
                      BEGIN(afterhdr);
                      return XHDR;
                  }
 }
 <afterhdr>{
-  ^\+S[0-9]+     {
+  ^\+S[0-9]+[\n] {
                      t5xlval.i = atoi(t5xtext+2);
                      return SIZEHINT;
                  }
-  ^\+N[0-9]+     {
+  ^\+N[0-9]+[\n] {
                      t5xlval.i = atoi(t5xtext+2);
                      return NEXTATTR;
                  }
-  ^\-R[0-9]+     {
+  ^\-R[0-9]+[\n] {
                      t5xlval.i = atoi(t5xtext+2);
                      return RECORDPLAYERS;
                  }
-  ^\+A[0-9]+     {
+  ^\+A[0-9]+[\n] {
                      t5xlval.i = atoi(t5xtext+2);
                      return ATTRNUM;
                  }
-  -?[0-9]+       {
-                     t5xlval.i = atoi(t5xtext);
-                     return INTEGER;
-                 }
-  ![0-9]+        {
+  ![0-9]+[\n]    {
                      t5xlval.i = atoi(t5xtext+1);
                      BEGIN(object);
-                     return OBJECT;
+                     if (ver <= 2)
+                     {
+                         iObjectField = 1;
+                     }
+                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
                  }
   "***END OF DUMP***" {
                      return EOD;
@@ -58,9 +65,33 @@ static int  iLockNest;
 }
 
 <lock>{
-  -?[0-9]+       {
-                     t5xlval.i = atoi(t5xtext);
-                     return INTEGER;
+ [^:/&|()\n]+\/[^&|()\n]+ {
+                     char *p = strchr(t5xtext, '/');
+                     T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
+                     ple1->SetText(StringCloneLen(t5xtext, p-t5xtext));
+                     T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                     ple2->SetText(StringClone(p+1));
+                     T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                     ple3->SetEval(ple1, ple2);
+                     t5xlval.ple = ple3;
+                     return EVALLIT;
+                 }
+ [^:/&|()\n]+:[^&|()\n]+ {
+                     char *p = strchr(t5xtext, ':');
+                     T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
+                     ple1->SetText(StringCloneLen(t5xtext, p-t5xtext));
+                     T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                     ple2->SetText(StringClone(p+1));
+                     T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                     ple3->SetAttr(ple1, ple2);
+                     t5xlval.ple = ple3;
+                     return ATTRLIT;
+                 }
+ [0-9]+          {
+                     T5X_LOCKEXP *ple = new T5X_LOCKEXP;
+                     ple->SetRef(atoi(t5xtext));
+                     t5xlval.ple = ple;
+                     return DBREF;
                  }
  \(              {
                      iLockNest++;
@@ -94,39 +125,56 @@ static int  iLockNest;
  \!              {
                      return '!';
                  }
- \:              {
-                     return ':';
+ [\n]            {
+                     if (  ver <= 2
+                        && 0 == iLockNest)
+                     {
+                         BEGIN(object);
+                     }
                  }
- \/              {
-                     return '/';
-                 }
- [^()=+@$&|!:/\n\t ]+  {
-                     t5xlval.p = StringClone(t5xtext);
-                     return LTEXT;
-                 }
- [\n\t ]+        /* ignore whitespace */ ;
 }
 
 <object>{
-  ![0-9]+        {
+  ![0-9]+[\n]    {
                      t5xlval.i = atoi(t5xtext+1);
-                     return OBJECT;
+                     if (ver <= 2)
+                     {
+                         iObjectField = 1;
+                     }
+                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
                  }
-  -?[0-9]+       {
+  -?[0-9]+[\n]   {
                      t5xlval.i = atoi(t5xtext);
+                     if (ver <= 2)
+                     {
+                         if (0 < iObjectField)
+                         {
+                             iObjectField++;
+                             if (7 == iObjectField)
+                             {
+                                 iObjectField = -1;
+                                 BEGIN(lock);
+                                 return INTEGER;
+                             }
+                         }
+                     }
                      return INTEGER;
                  }
- \>              {
-                     return '>';
+ \>[0-9]+[\n]    {
+                     t5xlval.i = atoi(t5xtext+1);
+                     if (ver <= 2)
+                     {
+                         iObjectField = -1;
+                     }
+                     return ATTRREF;
                  }
- \<              {
+ \<[\n]          {
+                     if (ver <= 2)
+                     {
+                         iObjectField = -1;
+                     }
                      BEGIN(afterhdr);
                      return '<';
-                 }
- \(              {
-                     iLockNest = 1;
-                     BEGIN(lock);
-                     return '(';
                  }
 }
 
@@ -136,7 +184,7 @@ static int  iLockNest;
                      BEGIN(str);
                  }
 <str>{
-  \"             {
+  \"[\t ]*[\n]   {
                      *pQuotedString = '\0';
                      t5xlval.p = StringClone(aQuotedString);
                      BEGIN(iPreStrContext);
@@ -174,7 +222,12 @@ static int  iLockNest;
                      }
                  }
 }
-
-[\n\t ]+         /* ignore whitespace */ ;
+[\n]             {
+                     if (ver <= 2)
+                     {
+                         iObjectField = -1;
+                     }
+                 }
+[\t ]+           /* ignore whitespace */ ;
 .                { return EOF; }
 %%

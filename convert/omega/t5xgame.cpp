@@ -201,30 +201,54 @@ char *T5X_LOCKEXP::Write(char *p)
     {
     case T5X_LOCKEXP::le_is:
         *p++ = '=';
-        *p++ = '(';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
-        *p++ = ')';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_carry:
         *p++ = '+';
-        *p++ = '(';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
-        *p++ = ')';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_indirect:
         *p++ = '@';
-        *p++ = '(';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
-        *p++ = ')';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_owner:
         *p++ = '$';
-        *p++ = '(';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
-        *p++ = ')';
+        if (le_ref != m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_or:
@@ -235,7 +259,17 @@ char *T5X_LOCKEXP::Write(char *p)
 
     case T5X_LOCKEXP::le_not:
         *p++ = '!';
+        if (  le_and == m_le[0]->m_op
+           || le_or == m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
+        if (  le_and == m_le[0]->m_op
+           || le_or == m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_attr:
@@ -251,13 +285,29 @@ char *T5X_LOCKEXP::Write(char *p)
         break;
 
     case T5X_LOCKEXP::le_and:
+        if (le_or == m_le[0]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[0]->Write(p);
+        if (le_or == m_le[0]->m_op)
+        {
+            *p++ = ')';
+        }
         *p++ = '&';
+        if (le_or == m_le[1]->m_op)
+        {
+            *p++ = '(';
+        }
         p = m_le[1]->Write(p);
+        if (le_or == m_le[1]->m_op)
+        {
+            *p++ = ')';
+        }
         break;
 
     case T5X_LOCKEXP::le_ref:
-        sprintf(p, "#%d", m_dbRef);
+        sprintf(p, "(#%d)", m_dbRef);
         p += strlen(p);
         break;
 
@@ -792,7 +842,6 @@ void T5X_ATTRINFO::Validate()
         if (NULL == m_pKeyTree)
         {
             fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pValue);
-            exit(1);
         }
         else
         {
@@ -802,7 +851,6 @@ void T5X_ATTRINFO::Validate()
             if (strcmp(m_pValue, buffer) != 0)
             {
                  fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
-                 exit(1);
             }
         }
     }
