@@ -168,6 +168,138 @@ char *P6H_LOCKEXP::Write(char *p)
     return p;
 }
 
+bool P6H_LOCKEXP::ConvertFromT5X(T5X_LOCKEXP *p)
+{
+    switch (p->m_op)
+    {
+    case T5X_LOCKEXP::le_is:
+        m_op = P6H_LOCKEXP::le_is;
+        m_le[0] = new P6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_carry:
+        m_op = P6H_LOCKEXP::le_carry;
+        m_le[0] = new P6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_indirect:
+        m_op = P6H_LOCKEXP::le_indirect;
+        m_le[0] = new P6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_owner:
+        m_op = P6H_LOCKEXP::le_owner;
+        m_le[0] = new P6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_or:
+        m_op = P6H_LOCKEXP::le_or;
+        m_le[0] = new P6H_LOCKEXP;
+        m_le[1] = new P6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_not:
+        m_op = P6H_LOCKEXP::le_not;
+        m_le[0] = new P6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_attr:
+        m_op = P6H_LOCKEXP::le_attr;
+        m_le[0] = new P6H_LOCKEXP;
+        m_le[1] = new P6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_eval:
+        m_op = P6H_LOCKEXP::le_eval;
+        m_le[0] = new P6H_LOCKEXP;
+        m_le[1] = new P6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_and:
+        m_op = P6H_LOCKEXP::le_and;
+        m_le[0] = new P6H_LOCKEXP;
+        m_le[1] = new P6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_ref:
+        m_op = P6H_LOCKEXP::le_ref;
+        m_dbRef = p->m_dbRef;
+        break;
+
+    case T5X_LOCKEXP::le_text:
+        m_op = P6H_LOCKEXP::le_text;
+        m_p[0] = StringClone(p->m_p[0]);
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return true;
+}
+
 void P6H_FLAGINFO::SetName(char *p)
 {
     if (NULL != m_pName)
@@ -1873,5 +2005,652 @@ void P6H_GAME::ResetPassword()
                 }
             }
         }
+    }
+}
+
+int t5x_convert_type[] =
+{
+    P6H_TYPE_ROOM,
+    P6H_TYPE_THING,
+    P6H_TYPE_EXIT,
+    P6H_TYPE_PLAYER,
+    P6H_TYPE_GARBAGE,
+    P6H_NOTYPE,
+    P6H_NOTYPE,
+    P6H_NOTYPE,
+};
+
+NameMask t5x_convert_obj_flags1[] =
+{
+    { "TRANSPARENT",    0x00000008UL },
+    { "WIZARD",         0x00000010UL },
+    { "LINK_OK",        0x00000020UL },
+    { "DARK",           0x00000040UL },
+    { "JUMP_OK",        0x00000080UL },
+    { "STICKY",         0x00000100UL },
+    { "DESTROY_OK",     0x00000200UL },
+    { "HAVEN",          0x00000400UL },
+    { "QUIET",          0x00000800UL },
+    { "HALT",           0x00001000UL },
+    { "DEBUG",          0x00002000UL },
+    { "GOING",          0x00004000UL },
+    { "MONITOR",        0x00008000UL },
+    { "MYOPIC",         0x00010000UL },
+    { "PUPPET",         0x00020000UL },
+    { "CHOWN_OK",       0x00040000UL },
+    { "ENTER_OK",       0x00080000UL },
+    { "VISUAL",         0x00100000UL },
+    { "OPAQUE",         0x00800000UL },
+    { "VERBOSE",        0x01000000UL },
+    { "NOSPOOF",        0x04000000UL },
+    { "SAFE",           0x10000000UL },
+    { "ROYALTY",        0x20000000UL },
+    { "AUDIBLE",        0x40000000UL },
+    { "TERSE",          0x80000000UL },
+};
+
+NameMask t5x_convert_obj_flags2[] =
+{
+    { "ABODE",          0x00000002UL },
+    { "FLOATING",       0x00000004UL },
+    { "UNFINDABLE",     0x00000008UL },
+    { "LIGHT",          0x00000020UL },
+    { "ANSI",           0x00000200UL },
+    { "COLOR",          0x00000200UL },
+    { "FIXED",          0x00000800UL },
+    { "UNINSPECTED",    0x00001000UL },
+    { "NO_COMMAND",     0x00002000UL },
+    { "KEEPALIVE",      0x00004000UL },
+    { "GAGGED",         0x00040000UL },
+    { "ON-VACATION",    0x01000000UL },
+    { "SUSPECT",        0x10000000UL },
+    { "NOACCENTS",      0x20000000UL },
+    { "SLAVE",          0x80000000UL },
+};
+
+NameMask t5x_convert_obj_powers1[] =
+{
+    { "Announce",       0x00000004UL },
+    { "Boot",           0x00000008UL },
+    { "Guest",          0x02000000UL },
+    { "Halt",           0x00000010UL },
+    { "Hide",           0x00000800UL },
+    { "Idle",           0x00001000UL },
+    { "Long_Fingers",   0x00004000UL },
+    { "No_Pay",         0x00000200UL },
+    { "No_Quota",       0x00000400UL },
+    { "Poll",           0x00800000UL },
+    { "Quotas",         0x00000001UL },
+    { "Search",         0x00002000UL },
+    { "See_All",        0x00000080UL },
+    { "See_Queue",      0x00100000UL },
+    { "Tport_Anything", 0x40000000UL },
+    { "Tport_Anywhere", 0x20000000UL },
+    { "Unkillable",     0x80000000UL },
+};
+
+NameMask t5x_convert_obj_powers2[] =
+{
+    { "Builder",        0x00000001UL },
+};
+
+static struct
+{
+    const char *pName;
+    int         iNum;
+} t5x_known_attrs[] =
+{
+    { "AAHEAR",         27 },
+    { "ACLONE",         20 },
+    { "ACONNECT",       39 },
+    { "ADESCRIBE",      36 },
+    { "ADISCONNECT",    40 },
+    { "ADROP",          14 },
+    { "AEFAIL",         68 },
+    { "AENTER",         35 },
+    { "AFAILURE",       13 },
+    { "AHEAR",          29 },
+    { "ALEAVE",         52 },
+    { "ALFAIL",         71 },
+    { "ALIAS",          58 },
+    { "AMAIL",         202 },
+    { "AMHEAR",         28 },
+    { "AMOVE",          57 },
+    { "APAYMENT",       21 },
+    { "ASUCCESS",       12 },
+    { "ATPORT",         82 },
+    { "AUFAIL",         77 },
+    { "AUSE",           16 },
+    { "AWAY",           73 },
+    { "CHARGES",        17 },
+    { "COMMENT",        44 },
+    { "CONFORMAT",     242 },
+    { "COST",           24 },
+    { "DESCRIBE",        6 },
+    { "DESCFORMAT",    244 },
+    { "DESTINATION",   216 },
+    { "DROP",            9 },
+    { "EALIAS",         64 },
+    { "EFAIL",          66 },
+    { "ENTER",          33 },
+    { "EXITFORMAT",    241 },
+    { "EXITTO",        216 },
+    { "FAILURE",         3 },
+    { "FILTER",         92 },
+    { "FORWARDLIST",    95 },
+    { "IDESCRIBE",      32 },
+    { "IDLE",           74 },
+    { "INFILTER",       91 },
+    { "INPREFIX",       89 },
+    { "LALIAS",         65 },
+    { "LAST",           30 },
+    { "LASTSITE",       88 },
+    { "LASTIP",        144 },
+    { "LEAVE",          50 },
+    { "LFAIL",          69 },
+    { "LISTEN",         26 },
+    { "MOVE",           55 },
+    { "NAMEFORMAT",    243 },
+    { "ODESCRIBE",      37 },
+    { "ODROP",           8 },
+    { "OEFAIL",         67 },
+    { "OENTER",         53 },
+    { "OFAILURE",        2 },
+    { "OLEAVE",         51 },
+    { "OLFAIL",         70 },
+    { "OMOVE",          56 },
+    { "OPAYMENT",       22 },
+    { "OSUCCESS",        1 },
+    { "OTPORT",         80 },
+    { "OUFAIL",         76 },
+    { "OUSE",           46 },
+    { "OXENTER",        34 },
+    { "OXLEAVE",        54 },
+    { "OXTPORT",        81 },
+    { "PAYMENT",        23 },
+    { "PREFIX",         90 },
+    { "RQUOTA",         38 },
+    { "RUNOUT",         18 },
+    { "SEMAPHORE",      47 },
+    { "SEX",             7 },
+    { "MAILSIGNATURE", 203 },
+    { "STARTUP",        19 },
+    { "SUCC",            4 },
+    { "TPORT",          79 },
+    { "UFAIL",          75 },
+    { "USE",            45 },
+    { "VA",            100 },
+    { "VB",            101 },
+    { "VC",            102 },
+    { "VD",            103 },
+    { "VE",            104 },
+    { "VF",            105 },
+    { "VG",            106 },
+    { "VH",            107 },
+    { "VI",            108 },
+    { "VJ",            109 },
+    { "VK",            110 },
+    { "VL",            111 },
+    { "VM",            112 },
+    { "VRML_URL",      220 },
+    { "VN",            113 },
+    { "VO",            114 },
+    { "VP",            115 },
+    { "VQ",            116 },
+    { "VR",            117 },
+    { "VS",            118 },
+    { "VT",            119 },
+    { "VU",            120 },
+    { "VV",            121 },
+    { "VW",            122 },
+    { "VX",            123 },
+    { "VY",            124 },
+    { "VZ",            125 },
+    { "XYXXY",           5 }, 
+};
+
+NameMask t5x_attr_flags[] =
+{
+    { "no_command",     0x00000100UL },
+    { "private",        0x00001000UL },
+    { "no_clone",       0x00010000UL },
+    { "wizard",         0x00000004UL },
+    { "visual",         0x00000800UL },
+    { "mortal_dark",    0x00000008UL },
+    { "hidden",         0x00000002UL },
+    { "regexp",         0x00008000UL },
+    { "case",           0x00040000UL },
+    { "locked",         0x00000040UL },
+    { "internal",       0x00000010UL },
+    { "debug",          0x00080000UL },
+    { "noname",         0x00400000UL },
+};
+
+static struct
+{
+    const char *pName;
+    int         iNum;
+} t5x_locknames[] =
+{
+    { "Basic",       42 },
+    { "Enter",       59 },
+    { "Use",         62 },
+    { "Zone",        -1 },
+    { "Page",        61 },
+    { "Teleport",    85 },
+    { "Speech",     209 },
+    { "Parent",      98 },
+    { "Link",        93 },
+    { "Leave",       60 },
+    { "Drop",        86 },
+    { "Give",        63 },
+    { "Receive",     87 },
+    { "Mail",       225 },
+    { "Take",       127 },
+    { "Open",       225 },
+};
+
+const char *atr_decode_flags_owner(const char *iattr, int *owner, int *flags)
+{
+    // See if the first char of the attribute is the special character
+    //
+    *flags = 0;
+    if (*iattr != ATR_INFO_CHAR)
+    {
+        return iattr;
+    }
+
+    // It has the special character, crack the attr apart.
+    //
+    const char *cp = iattr + 1;
+
+    // Get the attribute owner
+    //
+    bool neg = false;
+    if (*cp == '-')
+    {
+        neg = true;
+        cp++;
+    }
+    int tmp_owner = 0;
+    unsigned int ch = *cp;
+    while (isdigit(ch))
+    {
+        cp++;
+        tmp_owner = 10*tmp_owner + (ch-'0');
+        ch = *cp;
+    }
+    if (neg)
+    {
+        tmp_owner = -tmp_owner;
+    }
+
+    // If delimiter is not ':', just return attribute
+    //
+    if (*cp++ != ':')
+    {
+        return iattr;
+    }
+
+    // Get the attribute flags.
+    //
+    int tmp_flags = 0;
+    ch = *cp;
+    while (isdigit(ch))
+    {
+        cp++;
+        tmp_flags = 10*tmp_flags + (ch-'0');
+        ch = *cp;
+    }
+
+    // If delimiter is not ':', just return attribute.
+    //
+    if (*cp++ != ':')
+    {
+        return iattr;
+    }
+
+    // Get the attribute text.
+    //
+    if (tmp_owner != -1)
+    {
+        *owner = tmp_owner;
+    }
+    *flags = tmp_flags;
+    return cp;
+}
+
+struct lti
+{
+    bool operator()(int i1, int i2) const
+    {
+        return i1 < i2;
+    }
+};
+
+void P6H_GAME::ConvertFromT5X()
+{
+    SetFlags( DBF_NO_CHAT_SYSTEM
+            | DBF_CREATION_TIMES
+            | DBF_NEW_STRINGS
+            | DBF_TYPE_GARBAGE
+            | DBF_LESS_GARBAGE
+            | DBF_SPIFFY_LOCKS
+            | DBF_NEW_FLAGS
+            | DBF_NEW_POWERS
+            | DBF_LABELS);
+
+    // savedtime
+    //
+    time_t ct;
+    time(&ct);
+    char *pTime = ctime(&ct);
+    if (NULL != pTime)
+    {
+        char *p = strchr(pTime, '\n');
+        if (NULL != p)
+        {
+            size_t n = p - pTime;
+            pTime = StringCloneLen(pTime, n);
+            SetSavedTime(pTime);
+        }
+    }
+
+    // Add Flags
+    //
+    vector<P6H_FLAGINFO *> *pvFlags= new vector<P6H_FLAGINFO *>;
+    for (int i = 0; i < sizeof(upgrade_flags)/sizeof(upgrade_flags[0]); i++)
+    {
+        P6H_FLAGINFO *pfi = new P6H_FLAGINFO;
+        pfi->SetName(StringClone(upgrade_flags[i].pName));
+        pfi->SetLetter(StringClone(upgrade_flags[i].pLetter));
+        pfi->SetType(StringClone(upgrade_flags[i].pType));
+        pfi->SetPerms(StringClone(upgrade_flags[i].pPerms));
+        pfi->SetNegatePerms(StringClone(upgrade_flags[i].pNegatePerms));
+        pvFlags->push_back(pfi);
+    }
+    SetFlagList(pvFlags);
+    pvFlags = NULL;
+    SetFlagCount(sizeof(upgrade_flags)/sizeof(upgrade_flags[0]));
+
+    // Add FlagAliases
+    //
+    vector<P6H_FLAGALIASINFO *> *pvFlagAliases= new vector<P6H_FLAGALIASINFO *>;
+    for (int i = 0; i < sizeof(upgrade_flagaliases)/sizeof(upgrade_flagaliases[0]); i++)
+    {
+        P6H_FLAGALIASINFO *pfai = new P6H_FLAGALIASINFO;
+        pfai->SetName(StringClone(upgrade_flagaliases[i].pName));
+        pfai->SetAlias(StringClone(upgrade_flagaliases[i].pAlias));
+        pvFlagAliases->push_back(pfai);
+    }
+    SetFlagAliasList(pvFlagAliases);
+    pvFlagAliases = NULL;
+    SetFlagAliasCount(sizeof(upgrade_flagaliases)/sizeof(upgrade_flagaliases[0]));
+
+    // Add Powers
+    //
+    pvFlags= new vector<P6H_FLAGINFO *>;
+    for (int i = 0; i < sizeof(upgrade_powers)/sizeof(upgrade_powers[0]); i++)
+    {
+        P6H_FLAGINFO *pfi = new P6H_FLAGINFO;
+        pfi->SetName(StringClone(upgrade_powers[i].pName));
+        pfi->SetLetter(StringClone(upgrade_powers[i].pLetter));
+        pfi->SetType(StringClone(upgrade_powers[i].pType));
+        pfi->SetPerms(StringClone(upgrade_powers[i].pPerms));
+        pfi->SetNegatePerms(StringClone(upgrade_powers[i].pNegatePerms));
+        pvFlags->push_back(pfi);
+    }
+    SetPowerList(pvFlags);
+    pvFlags = NULL;
+    SetPowerCount(sizeof(upgrade_powers)/sizeof(upgrade_powers[0]));
+
+    // Add PowerAliases
+    //
+    pvFlagAliases= new vector<P6H_FLAGALIASINFO *>;
+    for (int i = 0; i < sizeof(upgrade_poweraliases)/sizeof(upgrade_poweraliases[0]); i++)
+    {
+        P6H_FLAGALIASINFO *pfai = new P6H_FLAGALIASINFO;
+        pfai->SetName(StringClone(upgrade_poweraliases[i].pName));
+        pfai->SetAlias(StringClone(upgrade_poweraliases[i].pAlias));
+        pvFlagAliases->push_back(pfai);
+    }
+    SetPowerAliasList(pvFlagAliases);
+    pvFlagAliases = NULL;
+    SetPowerAliasCount(sizeof(upgrade_poweraliases)/sizeof(upgrade_poweraliases[0]));
+
+    // Build internal attribute names.
+    //
+    map<int, const char *, lti> AttrNames;
+    for (int i = 0; i < sizeof(t5x_known_attrs)/sizeof(t5x_known_attrs[0]); i++)
+    {
+        AttrNames[t5x_known_attrs[i].iNum] = StringClone(t5x_known_attrs[i].pName);
+    }
+    for (vector<T5X_ATTRNAMEINFO *>::iterator it = g_t5xgame.m_vAttrNames.begin(); it != g_t5xgame.m_vAttrNames.end(); ++it)
+    {
+        char *p = strchr((*it)->m_pName, ':');
+        if (NULL != p)
+        {
+            AttrNames[(*it)->m_iNum] = StringClone(p+1);
+        }
+    }
+
+    // Upgrade objects.
+    //
+    for (vector<T5X_OBJECTINFO *>::iterator it = g_t5xgame.m_vObjects.begin(); it != g_t5xgame.m_vObjects.end(); ++it)
+    {
+        if (!(*it)->m_fFlags1)
+        {
+            continue;
+        }
+        int iType = ((*it)->m_iFlags1) & T5X_TYPE_MASK; 
+        
+        if (  iType < 0
+           || 7 < iType)
+        {
+            continue;
+        }
+
+        P6H_OBJECTINFO *poi = new P6H_OBJECTINFO;
+
+        poi->SetRef((*it)->m_dbRef);
+        poi->SetName(StringClone((*it)->m_pName));
+        poi->SetLocation((*it)->m_dbLocation);
+        poi->SetContents((*it)->m_dbContents);
+
+        switch (iType)
+        {
+        case T5X_TYPE_PLAYER:
+        case T5X_TYPE_THING:
+            poi->SetExits((*it)->m_dbLink);
+            break;
+
+        default:
+            poi->SetExits((*it)->m_dbExits);
+            break;
+        }
+
+        poi->SetNext((*it)->m_dbNext);
+        poi->SetParent((*it)->m_dbParent);
+        poi->SetOwner((*it)->m_dbOwner);
+        poi->SetZone((*it)->m_dbZone);
+        poi->SetPennies((*it)->m_iPennies);
+#if 0
+        void SetCreated(int iCreated) { m_fCreated = true; m_iCreated = iCreated; }
+        void SetModified(int iModified) { m_fModified = true; m_iModified = iModified; }
+#endif
+        poi->SetType(t5x_convert_type[iType]);
+
+        char aBuffer[1000];
+        char *pBuffer = aBuffer;
+
+        // Convert flags1 and flags2.
+        //
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_convert_obj_flags1)/sizeof(t5x_convert_obj_flags1[0]); i++)
+        {
+            if (t5x_convert_obj_flags1[i].mask & (*it)->m_iFlags1)
+            {
+                if (!fFirst)
+                {
+                    *pBuffer++ = ' ';
+                }
+                fFirst = false;
+                strcpy(pBuffer, t5x_convert_obj_flags1[i].pName);
+                pBuffer += strlen(t5x_convert_obj_flags1[i].pName);
+            }
+        }
+        for (int i = 0; i < sizeof(t5x_convert_obj_flags2)/sizeof(t5x_convert_obj_flags2[0]); i++)
+        {
+            if (t5x_convert_obj_flags2[i].mask & (*it)->m_iFlags2)
+            {
+                if (!fFirst)
+                {
+                    *pBuffer++ = ' ';
+                }
+                fFirst = false;
+                strcpy(pBuffer, t5x_convert_obj_flags2[i].pName);
+                pBuffer += strlen(t5x_convert_obj_flags2[i].pName);
+            }
+        }
+        *pBuffer = '\0';
+        poi->SetFlags(StringClone(aBuffer));
+
+        // Convert powers.
+        //
+        fFirst = true;
+        pBuffer = aBuffer;
+        for (int i = 0; i < sizeof(t5x_convert_obj_powers1)/sizeof(t5x_convert_obj_powers1[0]); i++)
+        {
+            if (t5x_convert_obj_powers1[i].mask & (*it)->m_iPowers1)
+            {
+                if (!fFirst)
+                {
+                    *pBuffer++ = ' ';
+                }
+                fFirst = false;
+                strcpy(pBuffer, t5x_convert_obj_powers1[i].pName);
+                pBuffer += strlen(t5x_convert_obj_powers1[i].pName);
+            }
+        }
+        for (int i = 0; i < sizeof(t5x_convert_obj_powers2)/sizeof(t5x_convert_obj_powers2[0]); i++)
+        {
+            if (t5x_convert_obj_powers2[i].mask & (*it)->m_iPowers2)
+            {
+                if (!fFirst)
+                {
+                    *pBuffer++ = ' ';
+                }
+                fFirst = false;
+                strcpy(pBuffer, t5x_convert_obj_powers2[i].pName);
+                pBuffer += strlen(t5x_convert_obj_powers2[i].pName);
+            }
+        }
+        *pBuffer = '\0';
+        poi->SetPowers(StringClone(aBuffer));
+
+        poi->SetWarnings(StringClone(""));
+
+        if (NULL != (*it)->m_pvai)
+        {
+            vector<P6H_ATTRINFO *> *pvai = new vector<P6H_ATTRINFO *>;
+            vector<P6H_LOCKINFO *> *pvli = new vector<P6H_LOCKINFO *>;
+            for (vector<T5X_ATTRINFO *>::iterator itAttr = (*it)->m_pvai->begin(); itAttr != (*it)->m_pvai->end(); ++itAttr)
+            {
+                if ((*itAttr)->m_fNumAndValue)
+                {
+                    if ((*itAttr)->m_fIsLock)
+                    {
+                        const char *pType = NULL;
+                        for (int i = 0; i < sizeof(t5x_locknames)/sizeof(t5x_locknames[0]); i++)
+                        {
+                            if (t5x_locknames[i].iNum == (*itAttr)->m_iNum)
+                            {
+                                pType = t5x_locknames[i].pName;
+                            }
+                        }
+
+                        if (  NULL != pType
+                           && NULL != (*itAttr)->m_pKeyTree)
+                        {
+                            P6H_LOCKEXP *ple = new P6H_LOCKEXP;
+                            if (ple->ConvertFromT5X((*itAttr)->m_pKeyTree))
+                            {
+                                char *p = ple->Write(aBuffer);
+                                *p = '\0';
+    
+                                P6H_LOCKINFO *pli = new P6H_LOCKINFO;
+                                pli->SetType(StringClone(pType));
+                                pli->SetCreator((*it)->m_dbRef);
+                                pli->SetFlags(StringClone(""));
+                                pli->SetDerefs(0);
+                                pli->SetKey(StringClone(aBuffer));
+    
+                                pvli->push_back(pli);
+                            }
+                            else
+                            {
+                                delete ple;
+                                fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", pType, (*it)->m_dbRef, (*itAttr)->m_pValue);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        map<int, const char *, lti>::iterator itFound = AttrNames.find((*itAttr)->m_iNum);
+                        if (itFound != AttrNames.end())
+                        {
+                            P6H_ATTRINFO *pai = new P6H_ATTRINFO;
+                            pai->SetName(StringClone(itFound->second));
+
+                            int flags, owner;
+                            const char *p = atr_decode_flags_owner((*itAttr)->m_pValue, &owner, &flags);
+                            pai->SetValue(StringClone(p));
+                            pai->SetOwner(owner);
+
+                            pBuffer = aBuffer;
+                            fFirst = true;
+                            for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                            {
+                                if (t5x_attr_flags[i].mask & flags)
+                                {
+                                    if (!fFirst)
+                                    {
+                                        *pBuffer++ = ' ';
+                                    }
+                                    fFirst = false;
+                                    strcpy(pBuffer, t5x_attr_flags[i].pName);
+                                    pBuffer += strlen(t5x_attr_flags[i].pName);
+                                }
+                            }
+                            *pBuffer = '\0';
+                            pai->SetFlags(StringClone(aBuffer));
+
+                            pvai->push_back(pai);
+                        }
+                    }
+                }
+            }
+            if (0 < pvai->size())
+            {
+                poi->SetAttrs(pvai->size(), pvai);
+                pvai = NULL;
+            }
+            if (0 < pvli->size())
+            {
+                poi->SetLocks(pvli->size(), pvli);
+                pvli = NULL;
+            }
+            delete pvai;
+            delete pvli;
+        }
+
+        AddObject(poi);
+    }
+
+    // Release memory that we allocated.
+    //
+    for (map<int, const char *, lti>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
+    {
+        delete it->second;
     }
 }

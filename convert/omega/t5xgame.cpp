@@ -905,7 +905,7 @@ void T5X_GAME::Write(FILE *fp)
     fprintf(fp, "***END OF DUMP***\n");
 }
 
-int t5x_convert_type[] =
+int p6h_convert_type[] =
 {
     T5X_NOTYPE,        //  0
     T5X_TYPE_ROOM,     //  1
@@ -926,7 +926,7 @@ int t5x_convert_type[] =
     T5X_TYPE_GARBAGE,  // 16
 };
 
-NameMask t5x_convert_flag1[] =
+NameMask p6h_convert_obj_flags1[] =
 {
     { "TRANSPARENT",    0x00000008UL },
     { "WIZARD",         0x00000010UL },
@@ -955,7 +955,7 @@ NameMask t5x_convert_flag1[] =
     { "TERSE",          0x80000000UL },
 };
 
-NameMask t5x_convert_flag2[] =
+NameMask p6h_convert_obj_flags2[] =
 {
     { "ABODE",          0x00000002UL },
     { "FLOATING",       0x00000004UL },
@@ -974,7 +974,7 @@ NameMask t5x_convert_flag2[] =
     { "SLAVE",          0x80000000UL },
 };
 
-NameMask t5x_convert_powers1[] =
+NameMask p6h_convert_obj_powers1[] =
 {
     { "Announce",       0x00000004UL },
     { "Boot",           0x00000008UL },
@@ -995,7 +995,7 @@ NameMask t5x_convert_powers1[] =
     { "Unkillable",     0x80000000UL },
 };
 
-NameMask t5x_convert_powers2[] =
+NameMask p6h_convert_obj_powers2[] =
 {
     { "Builder",        0x00000001UL },
 };
@@ -1192,12 +1192,11 @@ static struct
     { "XYXXY",           5 },   // *Password
 };
 
-
 static struct
 {
     const char *pName;
     int         iNum;
-} t5x_locknames[] =
+} p6h_locknames[] =
 {
     { "Basic",       42 },
     { "Enter",       59 },
@@ -1217,7 +1216,7 @@ static struct
     { "Open",       225 },
 };
 
-NameMask t5x_attr_flags[] =
+NameMask p6h_attr_flags[] =
 {
     { "no_command",     0x00000100UL },
     { "private",        0x00001000UL },
@@ -1336,7 +1335,7 @@ void T5X_GAME::ConvertFromP6H()
 
         T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
 
-        int iType = t5x_convert_type[(*it)->m_iType];
+        int iType = p6h_convert_type[(*it)->m_iType];
 
         poi->SetRef((*it)->m_dbRef);
         poi->SetName(StringClone((*it)->m_pName));
@@ -1404,21 +1403,21 @@ void T5X_GAME::ConvertFromP6H()
         {
             // First flagword
             //
-            for (int i = 0; i < sizeof(t5x_convert_flag1)/sizeof(t5x_convert_flag1[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_flags1)/sizeof(p6h_convert_obj_flags1[0]); i++)
             {
-                if (NULL != strcasestr(pFlags, t5x_convert_flag1[i].pName))
+                if (NULL != strcasestr(pFlags, p6h_convert_obj_flags1[i].pName))
                 {
-                    flags1 |= t5x_convert_flag1[i].mask;
+                    flags1 |= p6h_convert_obj_flags1[i].mask;
                 }
             }
 
             // Second flagword
             //
-            for (int i = 0; i < sizeof(t5x_convert_flag2)/sizeof(t5x_convert_flag2[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_flags2)/sizeof(p6h_convert_obj_flags2[0]); i++)
             {
-                if (NULL != strcasestr(pFlags, t5x_convert_flag2[i].pName))
+                if (NULL != strcasestr(pFlags, p6h_convert_obj_flags2[i].pName))
                 {
-                    flags2 |= t5x_convert_flag2[i].mask;
+                    flags2 |= p6h_convert_obj_flags2[i].mask;
                 }
             }
         }
@@ -1432,21 +1431,21 @@ void T5X_GAME::ConvertFromP6H()
         {
             // First powerword
             //
-            for (int i = 0; i < sizeof(t5x_convert_powers1)/sizeof(t5x_convert_powers1[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_powers1)/sizeof(p6h_convert_obj_powers1[0]); i++)
             {
-                if (NULL != strcasestr(pPowers, t5x_convert_powers1[i].pName))
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_powers1[i].pName))
                 {
-                    powers1 |= t5x_convert_powers1[i].mask;
+                    powers1 |= p6h_convert_obj_powers1[i].mask;
                 }
             }
 
             // Second powerword
             //
-            for (int i = 0; i < sizeof(t5x_convert_powers2)/sizeof(t5x_convert_powers2[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_powers2)/sizeof(p6h_convert_obj_powers2[0]); i++)
             {
-                if (NULL != strcasestr(pPowers, t5x_convert_powers2[i].pName))
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_powers2[i].pName))
                 {
-                    powers2 |= t5x_convert_powers2[i].mask;
+                    powers2 |= p6h_convert_obj_powers2[i].mask;
                 }
             }
 
@@ -1473,11 +1472,11 @@ void T5X_GAME::ConvertFromP6H()
                 {
                     char *pAttrFlags = (*itAttr)->m_pFlags;
                     int iAttrFlags = 0;
-                    for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                    for (int i = 0; i < sizeof(p6h_attr_flags)/sizeof(p6h_attr_flags[0]); i++)
                     {
-                        if (strcasecmp(t5x_attr_flags[i].pName, pAttrFlags) == 0)
+                        if (strcasecmp(p6h_attr_flags[i].pName, pAttrFlags) == 0)
                         {
-                            iAttrFlags |= t5x_attr_flags[i].mask;
+                            iAttrFlags |= p6h_attr_flags[i].mask;
                         }
                     }
                     char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
@@ -1529,11 +1528,11 @@ void T5X_GAME::ConvertFromP6H()
                 {
                     bool fFound = false;
                     int iLock;
-                    for (int i = 0; i < sizeof(t5x_locknames)/sizeof(t5x_locknames[0]); i++)
+                    for (int i = 0; i < sizeof(p6h_locknames)/sizeof(p6h_locknames[0]); i++)
                     {
-                        if (strcmp(t5x_locknames[i].pName, (*itLock)->m_pType) == 0)
+                        if (strcmp(p6h_locknames[i].pName, (*itLock)->m_pType) == 0)
                         {
-                            iLock = t5x_locknames[i].iNum;
+                            iLock = p6h_locknames[i].iNum;
                             fFound = true;
                             break;
                         }

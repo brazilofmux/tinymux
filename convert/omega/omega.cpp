@@ -465,6 +465,16 @@ int main(int argc, char *argv[])
         {
             g_t5xgame.ConvertFromP6H();
         }
+        else if (  eTinyMUX == eInputType
+                && ePennMUSH == eOutputType)
+        {
+            // It's easier to convert from 2.6 to Penn.
+            //
+            g_t5xgame.Downgrade2();
+            g_t5xgame.Upgrade2();
+            g_t5xgame.Validate();
+            g_p6hgame.ConvertFromT5X();
+        }
         else
         {
             fprintf(stderr, "Requested conversion is not currently supported.\n");

@@ -16,6 +16,8 @@
 #define P6H_TYPE_GARBAGE        0x10
 #define P6H_NOTYPE              0xFFFF
 
+class T5X_LOCKEXP;
+
 class P6H_LOCKEXP
 {
 public:
@@ -126,6 +128,8 @@ public:
     }
 
     char *Write(char *p);
+
+    bool ConvertFromT5X(T5X_LOCKEXP *p);
 
     P6H_LOCKEXP()
     {
@@ -533,6 +537,8 @@ public:
     void Write(FILE *fp);
 
     void Upgrade();
+
+    void ConvertFromT5X();
 
     void ResetPassword();
 
