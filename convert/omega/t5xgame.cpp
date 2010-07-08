@@ -683,22 +683,22 @@ void T5X_GAME::ValidateFlags() const
 
 void T5X_GAME::ValidateObjects() const
 {
+    int dbRefMax = 0;
+    for (map<int, T5X_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->Validate();
+        if (dbRefMax < it->first)
+        {
+            dbRefMax = it->first;
+        }
+    } 
+      
     if (!m_fSizeHint)
     {
         fprintf(stderr, "WARNING: +S phrase for next object was missing.\n");
     }
     else
     {
-        int dbRefMax = 0;
-        for (map<int, T5X_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
-        {
-            it->second->Validate();
-            if (dbRefMax < it->first)
-            {
-                dbRefMax = it->first;
-            }
-        } 
-      
         if (m_nSizeHint < dbRefMax)
         {
             fprintf(stderr, "WARNING: +S phrase does not leave room for the dbrefs.\n");
@@ -707,6 +707,21 @@ void T5X_GAME::ValidateObjects() const
         {
             fprintf(stderr, "WARNING: +S phrase does not agree with last object.\n");
         }
+    }
+}
+
+void T5X_ATTRNAMEINFO::Validate() const
+{
+    if (m_fNumAndName)
+    {
+        if (m_iNum < A_USER_START)
+        {
+            fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pName, m_iNum, A_USER_START);
+        }
+    }
+    else
+    {
+        fprintf(stderr, "WARNING: Unexpected ATTRNAMEINFO -- internal error.\n");
     }
 }
 
@@ -721,21 +736,14 @@ void T5X_GAME::ValidateAttrNames() const
         int n = 256;
         for (vector<T5X_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
+            (*it)->Validate();
             if ((*it)->m_fNumAndName)
             {
                 int iNum = (*it)->m_iNum;
-                if (iNum < A_USER_START)
-                {
-                    fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", (*it)->m_pName, iNum, A_USER_START);
-                }
                 if (n <= iNum)
                 {
                     n = iNum + 1;
                 }
-            }
-            else
-            {
-                fprintf(stderr, "WARNING: Unexpected ATTRNAMEINFO -- internal error.\n");
             }
         }
         if (m_nNextAttr != n)

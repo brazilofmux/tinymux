@@ -153,6 +153,8 @@ public:
     char *m_pName;
     void  SetNumAndName(int iNum, char *pName);
 
+    void Validate() const;
+
     void Write(FILE *fp, bool fExtraEscapes);
 
     void Upgrade();
