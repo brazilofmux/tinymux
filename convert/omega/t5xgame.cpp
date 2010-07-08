@@ -1171,7 +1171,7 @@ static struct
     { "CONFORMAT",     242 },
     { "CONNINFO",       -1 },
     { "COST",           24 },
-    { "CREATED",        -1 }, // rename CREATED to XCREATED QQQ
+    { "CREATED",        -1 }, // rename CREATED to XCREATED
     { "DAILY",          -1 }, // rename DAILY to XDAILY
     { "DESC",           -1 }, // rename DESC to XDESC
     { "DESCRIBE",        6 }, // rename DESCRIBE to DESC
@@ -1223,7 +1223,7 @@ static struct
     { "MAILSUCC",       -1 }, // rename MAILSUCC to XMAILSUCC
     { "MAILTO",         -1 }, // rename MAILTO to XMAILTO
     { "MFAIL",          -1 }, // rename MFAIL to XMFAIL
-    { "MODIFIED",       -1 }, // rename MODIFIED to XMODIFIED QQQ
+    { "MODIFIED",       -1 }, // rename MODIFIED to XMODIFIED
     { "MONIKER",        -1 }, // rename MONIKER to XMONIKER
     { "MOVE",           55 },
     { "NAME",           -1 }, // rename NAME to XNAME
@@ -1579,6 +1579,72 @@ void T5X_GAME::ConvertFromP6H()
         poi->SetFlags3(flags3);
         poi->SetPowers1(powers1);
         poi->SetPowers2(powers2);
+
+        if (it->second->m_fCreated)
+        {
+            time_t t = it->second->m_iCreated;
+            char *pTime = ctime(&t);
+            if (NULL != pTime)
+            {
+                char *p = strchr(pTime, '\n');
+                if (NULL != p)
+                {
+                    size_t n = p - pTime;
+                    pTime = StringCloneLen(pTime, n);
+
+                    // A_CREATED
+                    //
+                    T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                    pai->SetNumAndValue(218, StringClone(pTime));
+        
+                    if (NULL == poi->m_pvai)
+                    {
+                        vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                        pvai->push_back(pai);
+                        poi->SetAttrs(pvai->size(), pvai);
+                    }
+                    else
+                    {
+                        poi->m_pvai->push_back(pai);
+                        poi->m_fAttrCount = true;
+                        poi->m_nAttrCount = poi->m_pvai->size();
+                    }
+                }
+            }
+        }
+
+        if (it->second->m_fModified)
+        {
+            time_t t = it->second->m_iModified;
+            char *pTime = ctime(&t);
+            if (NULL != pTime)
+            {
+                char *p = strchr(pTime, '\n');
+                if (NULL != p)
+                {
+                    size_t n = p - pTime;
+                    pTime = StringCloneLen(pTime, n);
+
+                    // A_MODIFIED
+                    //
+                    T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                    pai->SetNumAndValue(219, StringClone(pTime));
+        
+                    if (NULL == poi->m_pvai)
+                    {
+                        vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                        pvai->push_back(pai);
+                        poi->SetAttrs(pvai->size(), pvai);
+                    }
+                    else
+                    {
+                        poi->m_pvai->push_back(pai);
+                        poi->m_fAttrCount = true;
+                        poi->m_nAttrCount = poi->m_pvai->size();
+                    }
+                }
+            }
+        }
 
         if (NULL != it->second->m_pvai)
         {
