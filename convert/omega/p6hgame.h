@@ -527,7 +527,7 @@ public:
     int  m_nSizeHint;
     void SetSizeHint(int nSizeHint) { m_fSizeHint = true; m_nSizeHint = nSizeHint; }
 
-    vector<P6H_OBJECTINFO *> m_vObjects;
+    map<int, P6H_OBJECTINFO *, lti> m_mObjects;
     void AddObject(P6H_OBJECTINFO *poi);
 
     void Validate();
@@ -601,11 +601,11 @@ public:
             delete m_pvPowerAliases;
             m_pvPowerAliases = NULL;
         }
-        for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+        for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
-            delete *it;
+            delete it->second;
         } 
-        m_vObjects.clear();
+        m_mObjects.clear();
     }
 };
 

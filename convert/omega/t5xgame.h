@@ -341,7 +341,7 @@ public:
     vector<T5X_ATTRNAMEINFO *> m_vAttrNames;
     void AddNumAndName(int iNum, char *pName);
 
-    vector<T5X_OBJECTINFO *> m_vObjects;
+    map<int, T5X_OBJECTINFO *, lti> m_mObjects;
     void AddObject(T5X_OBJECTINFO *poi);
 
     void Validate();
@@ -374,11 +374,11 @@ public:
             delete *it;
         } 
         m_vAttrNames.clear();
-        for (vector<T5X_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+        for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
-            delete *it;
+            delete it->second;
         } 
-        m_vObjects.clear();
+        m_mObjects.clear();
     }
 };
 

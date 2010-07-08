@@ -713,7 +713,7 @@ void P6H_GAME::SetSavedTime(char *p)
 
 void P6H_GAME::AddObject(P6H_OBJECTINFO *poi)
 {
-    m_vObjects.push_back(poi);
+    m_mObjects[poi->m_dbRef] = poi;
 }
 
 bool P6H_GAME::HasLabels()
@@ -819,9 +819,9 @@ void P6H_GAME::Validate()
         }
     }
 
-    for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        (*it)->Validate();
+        it->second->Validate();
     }
 }
 
@@ -1692,9 +1692,9 @@ void P6H_GAME::Write(FILE *fp)
         fprintf(fp, "~%d\n", m_nSizeHint);
     }
     bool fLabels = HasLabels();
-    for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        (*it)->Write(fp, fLabels);
+        it->second->Write(fp, fLabels);
     }
 
     fprintf(fp, "***END OF DUMP***\n");
@@ -1942,9 +1942,9 @@ void P6H_GAME::Upgrade()
 
     // Upgrade objects.
     //
-    for (vector<P6H_OBJECTINFO *>::iterator it = m_vObjects.begin(); it != m_vObjects.end(); ++it)
+    for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        (*it)->Upgrade();
+        it->second->Upgrade();
     }
 }
 
@@ -1952,14 +1952,14 @@ void P6H_GAME::ResetPassword()
 {
     bool fLabels = HasLabels();
 
-    for (vector<P6H_OBJECTINFO *>::iterator itObj = m_vObjects.begin(); itObj != m_vObjects.end(); ++itObj)
+    for (map<int, P6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
     {
-        if (1 == (*itObj)->m_dbRef)
+        if (1 == itObj->second->m_dbRef)
         {
             bool fFound = false;
-            if (NULL != (*itObj)->m_pvai)
+            if (NULL != itObj->second->m_pvai)
             {
-                for (vector<P6H_ATTRINFO *>::iterator itAttr = (*itObj)->m_pvai->begin(); itAttr != (*itObj)->m_pvai->end(); ++itAttr)
+                for (vector<P6H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
                 {
                     if (strcasecmp("XYXXY", (*itAttr)->m_pName) == 0)
                     {
@@ -1991,17 +1991,17 @@ void P6H_GAME::ResetPassword()
                 pai->SetDerefs(0);
                 pai->SetValue(StringClone("XX41009057111400169070"));
 
-                if (NULL == (*itObj)->m_pvai)
+                if (NULL == itObj->second->m_pvai)
                 {
                     vector<P6H_ATTRINFO *> *pvai = new vector<P6H_ATTRINFO *>;
                     pvai->push_back(pai);
-                    (*itObj)->SetAttrs(pvai->size(), pvai);
+                    itObj->second->SetAttrs(pvai->size(), pvai);
                 }
                 else
                 {
-                    (*itObj)->m_pvai->push_back(pai);
-                    (*itObj)->m_fAttrCount = true;
-                    (*itObj)->m_nAttrCount = (*itObj)->m_pvai->size();
+                    itObj->second->m_pvai->push_back(pai);
+                    itObj->second->m_fAttrCount = true;
+                    itObj->second->m_nAttrCount = itObj->second->m_pvai->size();
                 }
             }
         }
@@ -2428,13 +2428,13 @@ void P6H_GAME::ConvertFromT5X()
 
     // Upgrade objects.
     //
-    for (vector<T5X_OBJECTINFO *>::iterator it = g_t5xgame.m_vObjects.begin(); it != g_t5xgame.m_vObjects.end(); ++it)
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = g_t5xgame.m_mObjects.begin(); it != g_t5xgame.m_mObjects.end(); ++it)
     {
-        if (!(*it)->m_fFlags1)
+        if (!it->second->m_fFlags1)
         {
             continue;
         }
-        int iType = ((*it)->m_iFlags1) & T5X_TYPE_MASK; 
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK; 
         
         if (  iType < 0
            || 7 < iType)
@@ -2444,28 +2444,28 @@ void P6H_GAME::ConvertFromT5X()
 
         P6H_OBJECTINFO *poi = new P6H_OBJECTINFO;
 
-        poi->SetRef((*it)->m_dbRef);
-        poi->SetName(StringClone((*it)->m_pName));
-        poi->SetLocation((*it)->m_dbLocation);
-        poi->SetContents((*it)->m_dbContents);
+        poi->SetRef(it->second->m_dbRef);
+        poi->SetName(StringClone(it->second->m_pName));
+        poi->SetLocation(it->second->m_dbLocation);
+        poi->SetContents(it->second->m_dbContents);
 
         switch (iType)
         {
         case T5X_TYPE_PLAYER:
         case T5X_TYPE_THING:
-            poi->SetExits((*it)->m_dbLink);
+            poi->SetExits(it->second->m_dbLink);
             break;
 
         default:
-            poi->SetExits((*it)->m_dbExits);
+            poi->SetExits(it->second->m_dbExits);
             break;
         }
 
-        poi->SetNext((*it)->m_dbNext);
-        poi->SetParent((*it)->m_dbParent);
-        poi->SetOwner((*it)->m_dbOwner);
-        poi->SetZone((*it)->m_dbZone);
-        poi->SetPennies((*it)->m_iPennies);
+        poi->SetNext(it->second->m_dbNext);
+        poi->SetParent(it->second->m_dbParent);
+        poi->SetOwner(it->second->m_dbOwner);
+        poi->SetZone(it->second->m_dbZone);
+        poi->SetPennies(it->second->m_iPennies);
 #if 0
         void SetCreated(int iCreated) { m_fCreated = true; m_iCreated = iCreated; }
         void SetModified(int iModified) { m_fModified = true; m_iModified = iModified; }
@@ -2480,7 +2480,7 @@ void P6H_GAME::ConvertFromT5X()
         bool fFirst = true;
         for (int i = 0; i < sizeof(t5x_convert_obj_flags1)/sizeof(t5x_convert_obj_flags1[0]); i++)
         {
-            if (t5x_convert_obj_flags1[i].mask & (*it)->m_iFlags1)
+            if (t5x_convert_obj_flags1[i].mask & it->second->m_iFlags1)
             {
                 if (!fFirst)
                 {
@@ -2493,7 +2493,7 @@ void P6H_GAME::ConvertFromT5X()
         }
         for (int i = 0; i < sizeof(t5x_convert_obj_flags2)/sizeof(t5x_convert_obj_flags2[0]); i++)
         {
-            if (t5x_convert_obj_flags2[i].mask & (*it)->m_iFlags2)
+            if (t5x_convert_obj_flags2[i].mask & it->second->m_iFlags2)
             {
                 if (!fFirst)
                 {
@@ -2513,7 +2513,7 @@ void P6H_GAME::ConvertFromT5X()
         pBuffer = aBuffer;
         for (int i = 0; i < sizeof(t5x_convert_obj_powers1)/sizeof(t5x_convert_obj_powers1[0]); i++)
         {
-            if (t5x_convert_obj_powers1[i].mask & (*it)->m_iPowers1)
+            if (t5x_convert_obj_powers1[i].mask & it->second->m_iPowers1)
             {
                 if (!fFirst)
                 {
@@ -2526,7 +2526,7 @@ void P6H_GAME::ConvertFromT5X()
         }
         for (int i = 0; i < sizeof(t5x_convert_obj_powers2)/sizeof(t5x_convert_obj_powers2[0]); i++)
         {
-            if (t5x_convert_obj_powers2[i].mask & (*it)->m_iPowers2)
+            if (t5x_convert_obj_powers2[i].mask & it->second->m_iPowers2)
             {
                 if (!fFirst)
                 {
@@ -2542,11 +2542,11 @@ void P6H_GAME::ConvertFromT5X()
 
         poi->SetWarnings(StringClone(""));
 
-        if (NULL != (*it)->m_pvai)
+        if (NULL != it->second->m_pvai)
         {
             vector<P6H_ATTRINFO *> *pvai = new vector<P6H_ATTRINFO *>;
             vector<P6H_LOCKINFO *> *pvli = new vector<P6H_LOCKINFO *>;
-            for (vector<T5X_ATTRINFO *>::iterator itAttr = (*it)->m_pvai->begin(); itAttr != (*it)->m_pvai->end(); ++itAttr)
+            for (vector<T5X_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
             {
                 if ((*itAttr)->m_fNumAndValue)
                 {
@@ -2572,7 +2572,7 @@ void P6H_GAME::ConvertFromT5X()
     
                                 P6H_LOCKINFO *pli = new P6H_LOCKINFO;
                                 pli->SetType(StringClone(pType));
-                                pli->SetCreator((*it)->m_dbRef);
+                                pli->SetCreator(it->first);
                                 pli->SetFlags(StringClone(""));
                                 pli->SetDerefs(0);
                                 pli->SetKey(StringClone(aBuffer));
@@ -2582,7 +2582,7 @@ void P6H_GAME::ConvertFromT5X()
                             else
                             {
                                 delete ple;
-                                fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", pType, (*it)->m_dbRef, (*itAttr)->m_pValue);
+                                fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", pType, it->first, (*itAttr)->m_pValue);
                             }
                         }
                     }
