@@ -604,6 +604,17 @@ void P6H_LOCKINFO::SetKey(char *pKey)
         free(m_pKey);
     }
     m_pKey = pKey;
+
+    if (NULL != m_pKey)
+    {
+        delete m_pKeyTree;
+        m_pKeyTree = p6hl_ParseKey(m_pKey);
+        if (NULL == m_pKeyTree)
+        {
+            fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pKey);
+            exit(1);
+        }
+    }
 }
 
 void P6H_LOCKINFO::Merge(P6H_LOCKINFO *pli)
@@ -716,13 +727,13 @@ void P6H_GAME::AddObject(P6H_OBJECTINFO *poi)
     m_mObjects[poi->m_dbRef] = poi;
 }
 
-bool P6H_GAME::HasLabels()
+bool P6H_GAME::HasLabels() const
 {
     bool fLabels = ((g_p6hgame.m_flags & DBF_LABELS) == DBF_LABELS);
     return fLabels;
 }
 
-void P6H_GAME::ValidateFlags()
+void P6H_GAME::ValidateFlags() const
 {
     bool f177p40 = HasLabels();
     if (f177p40)
@@ -785,11 +796,11 @@ void P6H_GAME::ValidateFlags()
     }
 }
 
-void P6H_GAME::ValidateSavedTime()
+void P6H_GAME::ValidateSavedTime() const
 {
 }
 
-void P6H_GAME::Validate()
+void P6H_GAME::Validate() const
 {
     ValidateFlags();
     if (NULL != m_pSavedTime)
@@ -819,7 +830,7 @@ void P6H_GAME::Validate()
         }
     }
 
-    for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    for (map<int, P6H_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
         it->second->Validate();
     }
@@ -1035,7 +1046,7 @@ void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
     }
 }
 
-void P6H_OBJECTINFO::Validate()
+void P6H_OBJECTINFO::Validate() const
 {
     if (m_fLockCount || NULL != m_pvli)
     {
@@ -1310,7 +1321,7 @@ bool p6h_IsValidGameCharacter(int ch)
     return (0 != isgraph(ch));
 }
 
-void P6H_FLAGINFO::Validate()
+void P6H_FLAGINFO::Validate() const
 {
     if (NULL != m_pName)
     {
@@ -1425,7 +1436,7 @@ void P6H_FLAGALIASINFO::Write(FILE *fp)
     }
 }
 
-void P6H_LOCKINFO::Validate()
+void P6H_LOCKINFO::Validate() const
 {
     if (NULL != m_pType)
     {
@@ -1434,25 +1445,16 @@ void P6H_LOCKINFO::Validate()
             fprintf(stderr, "WARNING: Found blank in lock type '%s'.\n", m_pType);
         }
     }
-    if (NULL != m_pKey)
+    if (  NULL != m_pKey
+       && NULL != m_pKeyTree)
     {
-        delete m_pKeyTree;
-        m_pKeyTree = p6hl_ParseKey(m_pKey);
-        if (NULL == m_pKeyTree)
+        char buffer[65536];
+        char *p = m_pKeyTree->Write(buffer);
+        *p = '\0';
+        if (strcmp(m_pKey, buffer) != 0)
         {
-            fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pKey);
-            exit(1);
-        }
-        else
-        {
-            char buffer[65536];
-            char *p = m_pKeyTree->Write(buffer);
-            *p = '\0';
-            if (strcmp(m_pKey, buffer) != 0)
-            {
-                 fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pKey);
-                 exit(1);
-            }
+             fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pKey);
+             exit(1);
         }
     }
 }

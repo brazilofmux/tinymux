@@ -181,7 +181,7 @@ public:
     bool m_fIsLock;
     T5X_LOCKEXP *m_pKeyTree;
 
-    void Validate();
+    void Validate() const;
 
     void Write(FILE *fp, bool fExtraEscapes) const;
 
@@ -278,7 +278,7 @@ public:
     T5X_LOCKEXP *m_ple;
     void SetDefaultLock(T5X_LOCKEXP *p) { free(m_ple); m_ple = p; }
 
-    void Validate();
+    void Validate() const;
 
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
 
@@ -344,10 +344,10 @@ public:
     map<int, T5X_OBJECTINFO *, lti> m_mObjects;
     void AddObject(T5X_OBJECTINFO *poi);
 
-    void Validate();
-    void ValidateFlags();
-    void ValidateAttrNames();
-    void ValidateObjects();
+    void Validate() const;
+    void ValidateFlags() const;
+    void ValidateAttrNames() const;
+    void ValidateObjects() const;
 
     void Write(FILE *fp);
  

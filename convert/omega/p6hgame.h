@@ -167,7 +167,7 @@ public:
     char *m_pNegatePerms;
     void SetNegatePerms(char *p);
 
-    void Validate();
+    void Validate() const;
 
     void Merge(P6H_FLAGINFO *pfi);
 
@@ -252,7 +252,7 @@ public:
 
     void Merge(P6H_LOCKINFO *pli);
 
-    void Validate();
+    void Validate() const;
 
     void Write(FILE *fp, bool fLabels) const;
 
@@ -418,7 +418,7 @@ public:
 
     void Merge(P6H_OBJECTINFO *poi);
 
-    void Validate();
+    void Validate() const;
 
     void Write(FILE *fp, bool fLabels);
 
@@ -490,7 +490,7 @@ public:
     int m_flags;
     void SetFlags(int flags) { m_flags = flags; }
     int  GetFlags()          { return m_flags;  }
-    bool HasLabels();
+    bool HasLabels() const;
 
     char *m_pSavedTime;
     void SetSavedTime(char *p);
@@ -530,9 +530,9 @@ public:
     map<int, P6H_OBJECTINFO *, lti> m_mObjects;
     void AddObject(P6H_OBJECTINFO *poi);
 
-    void Validate();
-    void ValidateFlags();
-    void ValidateSavedTime();
+    void Validate() const;
+    void ValidateFlags() const;
+    void ValidateSavedTime() const;
 
     void Write(FILE *fp);
 

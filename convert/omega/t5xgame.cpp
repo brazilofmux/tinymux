@@ -594,6 +594,11 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
                 if (t5x_locknums[i] == (*it)->m_iNum)
                 {
                     (*it)->m_fIsLock = true;
+                    (*it)->m_pKeyTree = t5xl_ParseKey((*it)->m_pValue);
+                    if (NULL == (*it)->m_pKeyTree)
+                    {
+                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValue);
+                    }
                     break;
                 }
             }
@@ -624,7 +629,7 @@ void T5X_GAME::AddObject(T5X_OBJECTINFO *poi)
     m_mObjects[poi->m_dbRef] = poi;
 }
 
-void T5X_GAME::ValidateFlags()
+void T5X_GAME::ValidateFlags() const
 {
     int flags = m_flags;
 
@@ -676,7 +681,7 @@ void T5X_GAME::ValidateFlags()
     }
 }
 
-void T5X_GAME::ValidateObjects()
+void T5X_GAME::ValidateObjects() const
 {
     if (!m_fSizeHint)
     {
@@ -685,7 +690,7 @@ void T5X_GAME::ValidateObjects()
     else
     {
         int dbRefMax = 0;
-        for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+        for (map<int, T5X_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             it->second->Validate();
             if (dbRefMax < it->first)
@@ -705,7 +710,7 @@ void T5X_GAME::ValidateObjects()
     }
 }
 
-void T5X_GAME::ValidateAttrNames()
+void T5X_GAME::ValidateAttrNames() const
 {
     if (!m_fNextAttr)
     {
@@ -714,7 +719,7 @@ void T5X_GAME::ValidateAttrNames()
     else
     {
         int n = 256;
-        for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (vector<T5X_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
             if ((*it)->m_fNumAndName)
             {
@@ -740,7 +745,7 @@ void T5X_GAME::ValidateAttrNames()
     }
 }
 
-void T5X_GAME::Validate()
+void T5X_GAME::Validate() const
 {
     ValidateFlags();
     ValidateAttrNames();
@@ -833,30 +838,23 @@ void T5X_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     fprintf(fp, "<\n");
 }
 
-void T5X_ATTRINFO::Validate()
+void T5X_ATTRINFO::Validate() const
 {
-    if (m_fIsLock)
+    if (  m_fNumAndValue
+       && m_fIsLock
+       && NULL != m_pKeyTree)
     {
-        delete m_pKeyTree;
-        m_pKeyTree = t5xl_ParseKey(m_pValue);
-        if (NULL == m_pKeyTree)
+        char buffer[65536];
+        char *p = m_pKeyTree->Write(buffer);
+        *p = '\0';
+        if (strcmp(m_pValue, buffer) != 0)
         {
-            fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pValue);
-        }
-        else
-        {
-            char buffer[65536];
-            char *p = m_pKeyTree->Write(buffer);
-            *p = '\0';
-            if (strcmp(m_pValue, buffer) != 0)
-            {
-                 fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
-            }
+             fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
         }
     }
 }
 
-void T5X_OBJECTINFO::Validate()
+void T5X_OBJECTINFO::Validate() const
 {
     if (  m_fAttrCount
        && NULL != m_pvai)
