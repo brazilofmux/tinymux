@@ -153,7 +153,7 @@ public:
     char *m_pName;
     void  SetNumAndName(int iNum, char *pName);
 
-    void Validate() const;
+    void Validate(int ver) const;
 
     void Write(FILE *fp, bool fExtraEscapes);
 
@@ -348,7 +348,7 @@ public:
 
     void Validate() const;
     void ValidateFlags() const;
-    void ValidateAttrNames() const;
+    void ValidateAttrNames(int ver) const;
     void ValidateObjects() const;
 
     void Write(FILE *fp);

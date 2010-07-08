@@ -710,13 +710,58 @@ void T5X_GAME::ValidateObjects() const
     }
 }
 
-void T5X_ATTRNAMEINFO::Validate() const
+void T5X_ATTRNAMEINFO::Validate(int ver) const
 {
     if (m_fNumAndName)
     {
         if (m_iNum < A_USER_START)
         {
             fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pName, m_iNum, A_USER_START);
+        }
+        char *p = strchr(m_pName, ':');
+        if (NULL == p)
+        {
+            fprintf(stderr, "WARNING, User attribute (%s) does not contain a flag sub-field.\n", m_pName);
+        }
+        else
+        {
+            char *q = m_pName;
+            while (q != p)
+            {
+                if (!isdigit(*q))
+                {
+                    fprintf(stderr, "WARNING, User attribute (%s) flag sub-field is not numeric.\n", m_pName);
+                    break;
+                }
+                q++;
+            }
+
+            if (ver <= 2)
+            {
+                q = p + 1;
+                bool fValid = true;
+                if (!t5x_AttrNameInitialSet[*q])
+                {
+                    fValid = false;
+                }
+                else if ('\0' != *q)
+                {
+                    q++;
+                    while ('\0' != *q)
+                    {
+                        if (!t5x_AttrNameSet[*q])
+                        {
+                            fValid = false;
+                            break;
+                        }
+                        q++;
+                    }
+                }
+                if (!fValid)
+                {
+                    fprintf(stderr, "WARNING, User attribute (%s) name is not valid.\n", m_pName);
+                }
+            }
         }
     }
     else
@@ -725,7 +770,7 @@ void T5X_ATTRNAMEINFO::Validate() const
     }
 }
 
-void T5X_GAME::ValidateAttrNames() const
+void T5X_GAME::ValidateAttrNames(int ver) const
 {
     if (!m_fNextAttr)
     {
@@ -736,7 +781,7 @@ void T5X_GAME::ValidateAttrNames() const
         int n = 256;
         for (vector<T5X_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
-            (*it)->Validate();
+            (*it)->Validate(ver);
             if ((*it)->m_fNumAndName)
             {
                 int iNum = (*it)->m_iNum;
@@ -755,8 +800,9 @@ void T5X_GAME::ValidateAttrNames() const
 
 void T5X_GAME::Validate() const
 {
+    int ver = (m_flags & V_MASK);
     ValidateFlags();
-    ValidateAttrNames();
+    ValidateAttrNames(ver);
     ValidateObjects();
 }
 
