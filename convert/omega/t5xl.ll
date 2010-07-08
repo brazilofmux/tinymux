@@ -66,6 +66,7 @@
                    return ')';
                }
 [\n\t ]+       /* ignore whitespace */ ;
+.              { return EOF; }
 %%
 
 extern T5X_LOCKEXP *g_t5xKeyExp;
