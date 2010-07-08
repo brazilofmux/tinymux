@@ -2320,14 +2320,6 @@ const char *atr_decode_flags_owner(const char *iattr, int *owner, int *flags)
     return cp;
 }
 
-struct lti
-{
-    bool operator()(int i1, int i2) const
-    {
-        return i1 < i2;
-    }
-};
-
 void P6H_GAME::ConvertFromT5X()
 {
     SetFlags( DBF_NO_CHAT_SYSTEM

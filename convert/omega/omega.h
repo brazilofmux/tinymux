@@ -26,6 +26,22 @@ typedef struct
     const int  mask;
 } NameMask;
 
+struct ltstr
+{
+    bool operator()(const char* s1, const char* s2) const
+    {
+        return strcmp(s1, s2) < 0;
+    }
+};
+
+struct lti
+{
+    bool operator()(int i1, int i2) const
+    {
+        return i1 < i2;
+    }
+};
+
 #define OMEGA_VERSION "1.0.1.2"
 
 #endif

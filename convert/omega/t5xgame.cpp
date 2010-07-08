@@ -1256,14 +1256,6 @@ char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValu
     return buffer;
 }
 
-struct ltstr
-{
-    bool operator()(const char* s1, const char* s2) const
-    {
-        return strcmp(s1, s2) < 0;
-    }
-};
-
 void T5X_GAME::ConvertFromP6H()
 {
     SetFlags(MANDFLAGS_V2 | 2);
