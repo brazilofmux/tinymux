@@ -903,13 +903,87 @@ void T5X_ATTRINFO::Validate() const
         *p = '\0';
         if (strcmp(m_pValue, buffer) != 0)
         {
-             fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
+            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
         }
     }
 }
 
 void T5X_OBJECTINFO::Validate() const
 {
+    map<int, T5X_OBJECTINFO *, lti>::const_iterator itFound;
+    if (  m_fLocation
+       && -1 != m_dbLocation)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbLocation);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Location (#%d) of object #%d does not exist.\n", m_dbLocation, m_dbRef);
+        }
+    }
+    if (  m_fContents
+       && -1 != m_dbContents)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbContents);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Contents (#%d) of object #%d does not exist.\n", m_dbContents, m_dbRef);
+        }
+    }
+    if (  m_fExits
+       && -1 != m_dbExits)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbExits);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Exits (#%d) of object #%d does not exist.\n", m_dbExits, m_dbRef);
+        }
+    }
+    if (  m_fNext
+       && -1 != m_dbNext)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbNext);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Next (#%d) of object #%d does not exist.\n", m_dbNext, m_dbRef);
+        }
+    }
+    if (  m_fParent
+       && -1 != m_dbParent)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbParent);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Parent (#%d) of object #%d does not exist.\n", m_dbParent, m_dbRef);
+        }
+    }
+    if (  m_fOwner
+       && -1 != m_dbOwner)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbOwner);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Owner (#%d) of object #%d does not exist.\n", m_dbOwner, m_dbRef);
+        }
+    }
+    if (  m_fZone
+       && -1 != m_dbZone)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbZone);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Zone (#%d) of object #%d does not exist.\n", m_dbZone, m_dbRef);
+        }
+    }
+    if (  m_fLink
+       && -1 != m_dbLink)
+    {
+        itFound = g_t5xgame.m_mObjects.find(m_dbLink);
+        if (itFound == g_t5xgame.m_mObjects.end())
+        {
+            fprintf(stderr, "WARNING: Link (#%d) of object #%d does not exist.\n", m_dbLink, m_dbRef);
+        }
+    }
+
     if (  m_fAttrCount
        && NULL != m_pvai)
     {
