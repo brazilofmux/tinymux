@@ -26,6 +26,6 @@ typedef struct
     const int  mask;
 } NameMask;
 
-#define OMEGA_VERSION "1.0.0.1"
+#define OMEGA_VERSION "1.0.1.2"
 
 #endif
