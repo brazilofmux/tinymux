@@ -1,6 +1,7 @@
 #include "omega.h"
 #include "t5xgame.h"
 #include "p6hgame.h"
+#include "t6hgame.h"
 
 typedef struct _t5x_gameflaginfo
 {
@@ -464,6 +465,138 @@ bool T5X_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
     case P6H_LOCKEXP::le_false:
         m_op = T5X_LOCKEXP::le_text;
         m_p[0] = StringClone("0");
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return true;
+}
+
+bool T5X_LOCKEXP::ConvertFromT6H(T6H_LOCKEXP *p)
+{
+    switch (p->m_op)
+    {
+    case T6H_LOCKEXP::le_is:
+        m_op = T5X_LOCKEXP::le_is;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromT6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_carry:
+        m_op = T5X_LOCKEXP::le_carry;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromT6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_indirect:
+        m_op = T5X_LOCKEXP::le_indirect;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromT6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_owner:
+        m_op = T5X_LOCKEXP::le_owner;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromT6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_or:
+        m_op = T5X_LOCKEXP::le_or;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT6H(p->m_le[0])
+           || !m_le[1]->ConvertFromT6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_not:
+        m_op = T5X_LOCKEXP::le_not;
+        m_le[0] = new T5X_LOCKEXP;
+        if (!m_le[0]->ConvertFromT6H(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_attr:
+        m_op = T5X_LOCKEXP::le_attr;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT6H(p->m_le[0])
+           || !m_le[1]->ConvertFromT6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_eval:
+        m_op = T5X_LOCKEXP::le_eval;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT6H(p->m_le[0])
+           || !m_le[1]->ConvertFromT6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_and:
+        m_op = T5X_LOCKEXP::le_and;
+        m_le[0] = new T5X_LOCKEXP;
+        m_le[1] = new T5X_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT6H(p->m_le[0])
+           || !m_le[1]->ConvertFromT6H(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T6H_LOCKEXP::le_ref:
+        m_op = T5X_LOCKEXP::le_ref;
+        m_dbRef = p->m_dbRef;
+        break;
+
+    case T6H_LOCKEXP::le_text:
+        m_op = T5X_LOCKEXP::le_text;
+        m_p[0] = StringClone(p->m_p[0]);
         break;
 
     default:
@@ -1778,6 +1911,229 @@ void T5X_GAME::ConvertFromP6H()
         delete it->first;
     }
 
+    SetSizeHint(dbRefMax);
+    SetRecordPlayers(0);
+}
+
+void T5X_GAME::ConvertFromT6H()
+{
+    SetFlags(T5X_MANDFLAGS_V2 | 2);
+
+    // Attribute names
+    //
+    for (vector<T6H_ATTRNAMEINFO *>::iterator it =  g_t6hgame.m_vAttrNames.begin(); it != g_t6hgame.m_vAttrNames.end(); ++it)
+    {
+        AddNumAndName((*it)->m_iNum, StringClone((*it)->m_pName));
+    }
+    if (!m_fNextAttr)
+    {
+        SetNextAttr(g_t6hgame.m_nNextAttr);
+    }
+
+    int dbRefMax = 0;
+    for (map<int, T6H_OBJECTINFO *, lti>::iterator it = g_t6hgame.m_mObjects.begin(); it != g_t6hgame.m_mObjects.end(); ++it)
+    {
+        if (!it->second->m_fFlags1)
+        {
+            continue;
+        }
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK; 
+        
+        if (  iType < 0
+           || 7 < iType)
+        {
+            continue;
+        }
+
+
+        T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
+
+        poi->SetRef(it->first);
+        poi->SetName(StringClone(it->second->m_pName));
+        if (it->second->m_fLocation)
+        {
+            int iLocation = it->second->m_dbLocation;
+            if (  T5X_TYPE_EXIT == iType
+               && -2 == iLocation)
+            {
+                poi->SetLocation(-1);
+            }
+            else
+            {
+                poi->SetLocation(iLocation);
+            }
+        }
+        if (it->second->m_fContents)
+        {
+            poi->SetContents(it->second->m_dbContents);
+        }
+        if (it->second->m_fExits)
+        {
+            switch (iType)
+            {
+            case T5X_TYPE_PLAYER:
+            case T5X_TYPE_THING:
+                poi->SetExits(-1);
+                poi->SetLink(it->second->m_dbExits);
+                break;
+
+            default:
+                poi->SetExits(it->second->m_dbExits);
+                poi->SetLink(-1);
+                break;
+            }
+        }
+        if (it->second->m_fNext)
+        {
+            poi->SetNext(it->second->m_dbNext);
+        }
+        if (it->second->m_fParent)
+        {
+            poi->SetParent(it->second->m_dbParent);
+        }
+        if (it->second->m_fOwner)
+        {
+            poi->SetOwner(it->second->m_dbOwner);
+        }
+        if (it->second->m_fZone)
+        {
+            poi->SetZone(it->second->m_dbZone);
+        }
+        if (it->second->m_fPennies)
+        {
+            poi->SetPennies(it->second->m_iPennies);
+        }
+
+        // Flagwords
+        //
+        int flags1 = iType;
+        int flags2 = 0;
+        int flags3 = 0;
+        if (it->second->m_fFlags1)
+        {
+            flags1 |= (it->second->m_iFlags1 & ~T6H_TYPE_MASK);
+        }
+        if (it->second->m_fFlags2)
+        {
+            flags2 = it->second->m_iFlags2;
+        }
+        if (it->second->m_fFlags3)
+        {
+            flags3 = it->second->m_iFlags3;
+        }
+
+        // Powers
+        //
+        int powers1 = 0;
+        int powers2 = 0;
+        if (it->second->m_fPowers1)
+        {
+            powers1 |= it->second->m_iPowers1;
+        }
+        if (it->second->m_fPowers2)
+        {
+            powers2 = it->second->m_iPowers2;
+        }
+        
+        poi->SetFlags1(flags1);
+        poi->SetFlags2(flags2);
+        poi->SetFlags3(flags3);
+        poi->SetPowers1(powers1);
+        poi->SetPowers2(powers2);
+
+        if (it->second->m_fCreated)
+        {
+            time_t t = it->second->m_iCreated;
+            char *pTime = ctime(&t);
+            if (NULL != pTime)
+            {
+                char *p = strchr(pTime, '\n');
+                if (NULL != p)
+                {
+                    size_t n = p - pTime;
+                    pTime = StringCloneLen(pTime, n);
+
+                    // A_CREATED
+                    //
+                    T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                    pai->SetNumAndValue(218, StringClone(pTime));
+        
+                    if (NULL == poi->m_pvai)
+                    {
+                        vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                        pvai->push_back(pai);
+                        poi->SetAttrs(pvai->size(), pvai);
+                    }
+                    else
+                    {
+                        poi->m_pvai->push_back(pai);
+                        poi->m_fAttrCount = true;
+                        poi->m_nAttrCount = poi->m_pvai->size();
+                    }
+                }
+            }
+        }
+
+        if (it->second->m_fModified)
+        {
+            time_t t = it->second->m_iModified;
+            char *pTime = ctime(&t);
+            if (NULL != pTime)
+            {
+                char *p = strchr(pTime, '\n');
+                if (NULL != p)
+                {
+                    size_t n = p - pTime;
+                    pTime = StringCloneLen(pTime, n);
+
+                    // A_MODIFIED
+                    //
+                    T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                    pai->SetNumAndValue(219, StringClone(pTime));
+        
+                    if (NULL == poi->m_pvai)
+                    {
+                        vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                        pvai->push_back(pai);
+                        poi->SetAttrs(pvai->size(), pvai);
+                    }
+                    else
+                    {
+                        poi->m_pvai->push_back(pai);
+                        poi->m_fAttrCount = true;
+                        poi->m_nAttrCount = poi->m_pvai->size();
+                    }
+                }
+            }
+        }
+
+        if (NULL != it->second->m_pvai)
+        {
+            vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+            for (vector<T6H_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
+            {
+                if ((*itAttr)->m_fNumAndValue)
+                {
+                    T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                    pai->SetNumAndValue((*itAttr)->m_iNum, StringClone((*itAttr)->m_pValue));
+                    pvai->push_back(pai);
+                }
+            }
+            if (0 < pvai->size())
+            {
+                poi->SetAttrs(pvai->size(), pvai);
+                pvai = NULL;
+            }
+            delete pvai;
+        }
+
+        AddObject(poi);
+
+        if (dbRefMax < it->first)
+        {
+            dbRefMax = it->first;
+        }
+    }
     SetSizeHint(dbRefMax);
     SetRecordPlayers(0);
 }

@@ -382,122 +382,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Conversions, upgrades, and downgrades.
+    // Conversions
     //
-    if (eInputType == eOutputType)
-    {
-        if (ePennMUSH == eInputType)
-        {
-            bool fLabels = g_p6hgame.HasLabels();
-            if (fLabels)
-            {
-                switch (eOutputVersion)
-                {
-                case eSame:
-                case eLatest:
-                    break;
-
-                case eLegacyOne:
-                    fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                    return 1;
-                    break;
-                   
-                case eLegacyTwo:
-                    fprintf(stderr, "There is no parser for PennMUSH flaDowngrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                    return 1;
-                    break;
-                }
-            }
-            else
-            {
-                switch (eOutputVersion)
-                {
-                case eLatest:
-                    g_p6hgame.Upgrade();
-                    g_p6hgame.Validate();
-                    break;
-
-                case eSame:
-                case eLegacyOne:
-                    break;
-                   
-                case eLegacyTwo:
-                    fprintf(stderr, "There is no parser for PennMUSH flaDowngrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                    return 1;
-                    break;
-                }
-            }
-        }
-        else if (eTinyMUX == eInputType)
-        {
-            int ver = (g_t5xgame.m_flags & T5X_V_MASK);
-            switch (ver)
-            {
-            case 3:
-                switch (eOutputVersion)
-                {
-                case eSame:
-                case eLatest:
-                    break;
-
-                case eLegacyOne:
-                    g_t5xgame.Downgrade2();
-                    g_t5xgame.Validate();
-                    break;
-                   
-                case eLegacyTwo:
-                    g_t5xgame.Downgrade1();
-                    g_t5xgame.Validate();
-                    break;
-                }
-                break;
-
-            case 2:
-                switch (eOutputVersion)
-                {
-                case eLatest:
-                    g_t5xgame.Upgrade3();
-                    g_t5xgame.Validate();
-                    break;
-
-                case eSame:
-                case eLegacyOne:
-                    break;
-                   
-                case eLegacyTwo:
-                    g_t5xgame.Downgrade1();
-                    g_t5xgame.Validate();
-                    break;
-                }
-                break;
-
-            case 1:
-                switch (eOutputVersion)
-                {
-                case eLatest:
-                    g_t5xgame.Upgrade3();
-                    g_t5xgame.Validate();
-                    break;
-
-                case eLegacyOne:
-                    g_t5xgame.Upgrade2();
-                    g_t5xgame.Validate();
-                    break;
-                   
-                case eSame:
-                case eLegacyTwo:
-                    break;
-                }
-                break;
-            }
-        }
-    }
-    else
+    if (eInputType != eOutputType)
     {
         if (  ePennMUSH == eInputType
            && eTinyMUX == eOutputType)
         {
             g_t5xgame.ConvertFromP6H();
+            g_t5xgame.Validate();
         }
         else if (  eTinyMUX == eInputType
                 && ePennMUSH == eOutputType)
@@ -508,11 +401,19 @@ int main(int argc, char *argv[])
             g_t5xgame.Upgrade2();
             g_t5xgame.Validate();
             g_p6hgame.ConvertFromT5X();
+            g_p6hgame.Validate();
         }
         else if (  ePennMUSH == eInputType
                 && eTinyMUSH == eOutputType)
         {
             g_t6hgame.ConvertFromP6H();
+            g_t6hgame.Validate();
+        }
+        else if (  eTinyMUSH == eInputType
+                && eTinyMUX  == eOutputType)
+        {
+            g_t5xgame.ConvertFromT6H();
+            g_t5xgame.Validate();
         }
         else
         {
@@ -521,6 +422,113 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Upgrades and downgrades.
+    //
+    if (ePennMUSH == eOutputType)
+    {
+        bool fLabels = g_p6hgame.HasLabels();
+        if (fLabels)
+        {
+            switch (eOutputVersion)
+            {
+            case eSame:
+            case eLatest:
+                break;
+
+            case eLegacyOne:
+                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
+                return 1;
+                break;
+               
+            case eLegacyTwo:
+                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
+                return 1;
+                break;
+            }
+        }
+        else
+        {
+            switch (eOutputVersion)
+            {
+            case eLatest:
+                g_p6hgame.Upgrade();
+                g_p6hgame.Validate();
+                break;
+
+            case eSame:
+            case eLegacyOne:
+                break;
+               
+            case eLegacyTwo:
+                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
+                return 1;
+                break;
+            }
+        }
+    }
+    else if (eTinyMUX == eOutputType)
+    {
+        int ver = (g_t5xgame.m_flags & T5X_V_MASK);
+        switch (ver)
+        {
+        case 3:
+            switch (eOutputVersion)
+            {
+            case eSame:
+            case eLatest:
+                break;
+
+            case eLegacyOne:
+                g_t5xgame.Downgrade2();
+                g_t5xgame.Validate();
+                break;
+               
+            case eLegacyTwo:
+                g_t5xgame.Downgrade1();
+                g_t5xgame.Validate();
+                break;
+            }
+            break;
+
+        case 2:
+            switch (eOutputVersion)
+            {
+            case eLatest:
+                g_t5xgame.Upgrade3();
+                g_t5xgame.Validate();
+                break;
+
+            case eSame:
+            case eLegacyOne:
+                break;
+               
+            case eLegacyTwo:
+                g_t5xgame.Downgrade1();
+                g_t5xgame.Validate();
+                break;
+            }
+            break;
+
+        case 1:
+            switch (eOutputVersion)
+            {
+            case eLatest:
+                g_t5xgame.Upgrade3();
+                g_t5xgame.Validate();
+                break;
+
+            case eLegacyOne:
+                g_t5xgame.Upgrade2();
+                g_t5xgame.Validate();
+                break;
+               
+            case eSame:
+            case eLegacyTwo:
+                break;
+            }
+            break;
+        }
+    }
 
     // Optionally reset password.
     //

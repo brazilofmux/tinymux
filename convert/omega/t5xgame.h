@@ -36,6 +36,7 @@
 typedef unsigned char UTF8;
 
 class P6H_LOCKEXP;
+class T6H_LOCKEXP;
 
 class T5X_LOCKEXP
 {
@@ -126,6 +127,7 @@ public:
     char *Write(char *p);
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
+    bool ConvertFromT6H(T6H_LOCKEXP *p);
 
     T5X_LOCKEXP()
     {
@@ -359,6 +361,7 @@ public:
     void Downgrade2();
 
     void ConvertFromP6H();
+    void ConvertFromT6H();
 
     void ResetPassword();
 
