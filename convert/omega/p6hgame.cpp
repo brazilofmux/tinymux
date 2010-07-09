@@ -2579,6 +2579,19 @@ void P6H_GAME::ConvertFromT5X()
                 pBuffer += strlen(t5x_convert_obj_powers2[i].pName);
             }
         }
+
+        // Immortal power is special.
+        //
+        if (0x00200000 & it->second->m_iFlags1)
+        {
+            if (!fFirst)
+            {
+                *pBuffer++ = ' ';
+            }
+            fFirst = false;
+            strcpy(pBuffer, "Immortal");
+            pBuffer += strlen("Immortal");
+        }
         *pBuffer = '\0';
         poi->SetPowers(StringClone(aBuffer));
 
