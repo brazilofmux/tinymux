@@ -62,7 +62,6 @@
                    return LTEXT;
                }
 [\n\t ]+       /* ignore whitespace */ ;
-.              { return EOF; }
 %%
 
 extern P6H_LOCKEXP *g_p6hKeyExp;
