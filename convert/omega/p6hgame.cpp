@@ -612,7 +612,6 @@ void P6H_LOCKINFO::SetKey(char *pKey)
         if (NULL == m_pKeyTree)
         {
             fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", m_pKey);
-            exit(1);
         }
     }
 }
@@ -2208,7 +2207,7 @@ static struct
     { "VX",            123 },
     { "VY",            124 },
     { "VZ",            125 },
-    { "XYXXY",           5 }, 
+    { "XYXXY",           5 },
 };
 
 NameMask t5x_attr_flags[] =
@@ -2320,6 +2319,51 @@ const char *atr_decode_flags_owner(const char *iattr, int *owner, int *flags)
     }
     *flags = tmp_flags;
     return cp;
+}
+
+bool ConvertTimeString(char *pTime, time_t *pt)
+{
+    char buffer[100];
+    char *p = buffer;
+
+    while (  '\0' != *pTime
+          && '.'  != *pTime
+          && p < buffer + sizeof(buffer) - 1)
+    {
+        *p++ = *pTime++;
+    }
+
+    while (  '\0' != *pTime
+          && !isspace(*pTime))
+    {
+        pTime++;
+    }
+
+    if (  isspace(*pTime)
+       && p < buffer + sizeof(buffer) - 1)
+    {
+       *p++ = *pTime++;
+    }
+
+    while (  '\0' != *pTime
+          && p < buffer + sizeof(buffer) - 1)
+    {
+        *p++ = *pTime++;
+    }
+    *pTime = '\0';
+
+    struct tm tm;
+    if (strptime(buffer, "%a %b %d %H:%M:%S %Y", &tm) != NULL)
+    {
+        tm.tm_isdst = -1;
+        time_t t = mktime(&tm);
+        if (-1 != t)
+        {
+            *pt = t;
+            return true;
+        }
+    }
+    return false;
 }
 
 void P6H_GAME::ConvertFromT5X()
@@ -2436,8 +2480,8 @@ void P6H_GAME::ConvertFromT5X()
         {
             continue;
         }
-        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK; 
-        
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK;
+
         if (  iType < 0
            || 7 < iType)
         {
@@ -2468,10 +2512,6 @@ void P6H_GAME::ConvertFromT5X()
         poi->SetOwner(it->second->m_dbOwner);
         poi->SetZone(it->second->m_dbZone);
         poi->SetPennies(it->second->m_iPennies);
-#if 0
-        void SetCreated(int iCreated) { m_fCreated = true; m_iCreated = iCreated; }
-        void SetModified(int iModified) { m_fModified = true; m_iModified = iModified; }
-#endif
         poi->SetType(t5x_convert_type[iType]);
 
         char aBuffer[1000];
@@ -2571,14 +2611,14 @@ void P6H_GAME::ConvertFromT5X()
                             {
                                 char *p = ple->Write(aBuffer);
                                 *p = '\0';
-    
+
                                 P6H_LOCKINFO *pli = new P6H_LOCKINFO;
                                 pli->SetType(StringClone(pType));
                                 pli->SetCreator(it->first);
                                 pli->SetFlags(StringClone(""));
                                 pli->SetDerefs(0);
                                 pli->SetKey(StringClone(aBuffer));
-    
+
                                 pvli->push_back(pli);
                             }
                             else
@@ -2590,36 +2630,54 @@ void P6H_GAME::ConvertFromT5X()
                     }
                     else
                     {
-                        map<int, const char *, lti>::iterator itFound = AttrNames.find((*itAttr)->m_iNum);
-                        if (itFound != AttrNames.end())
+                        if (  218 == (*itAttr)->m_iNum
+                           || 219 == (*itAttr)->m_iNum)
                         {
-                            P6H_ATTRINFO *pai = new P6H_ATTRINFO;
-                            pai->SetName(StringClone(itFound->second));
-
-                            int flags, owner;
-                            const char *p = atr_decode_flags_owner((*itAttr)->m_pValue, &owner, &flags);
-                            pai->SetValue(StringClone(p));
-                            pai->SetOwner(owner);
-
-                            pBuffer = aBuffer;
-                            fFirst = true;
-                            for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                            // A_CREATED is 218, A_MODIFIED is 219
+                            // Fri Jan 18 23:14:58 2002
+                            time_t t;
+                            if (ConvertTimeString((*itAttr)->m_pValue, &t))
                             {
-                                if (t5x_attr_flags[i].mask & flags)
+                                switch ((*itAttr)->m_iNum)
                                 {
-                                    if (!fFirst)
-                                    {
-                                        *pBuffer++ = ' ';
-                                    }
-                                    fFirst = false;
-                                    strcpy(pBuffer, t5x_attr_flags[i].pName);
-                                    pBuffer += strlen(t5x_attr_flags[i].pName);
+                                case 218: poi->SetCreated(t); break;
+                                case 219: poi->SetModified(t); break;
                                 }
                             }
-                            *pBuffer = '\0';
-                            pai->SetFlags(StringClone(aBuffer));
+                        }
+                        else
+                        {
+                            map<int, const char *, lti>::iterator itFound = AttrNames.find((*itAttr)->m_iNum);
+                            if (itFound != AttrNames.end())
+                            {
+                                P6H_ATTRINFO *pai = new P6H_ATTRINFO;
+                                pai->SetName(StringClone(itFound->second));
 
-                            pvai->push_back(pai);
+                                int flags, owner;
+                                const char *p = atr_decode_flags_owner((*itAttr)->m_pValue, &owner, &flags);
+                                pai->SetValue(StringClone(p));
+                                pai->SetOwner(owner);
+
+                                pBuffer = aBuffer;
+                                fFirst = true;
+                                for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                                {
+                                    if (t5x_attr_flags[i].mask & flags)
+                                    {
+                                        if (!fFirst)
+                                        {
+                                            *pBuffer++ = ' ';
+                                        }
+                                        fFirst = false;
+                                        strcpy(pBuffer, t5x_attr_flags[i].pName);
+                                        pBuffer += strlen(t5x_attr_flags[i].pName);
+                                    }
+                                }
+                                *pBuffer = '\0';
+                                pai->SetFlags(StringClone(aBuffer));
+
+                                pvai->push_back(pai);
+                            }
                         }
                     }
                 }

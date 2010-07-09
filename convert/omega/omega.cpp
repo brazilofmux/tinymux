@@ -397,9 +397,11 @@ int main(int argc, char *argv[])
         {
             // It's easier to convert from 2.6 to Penn.
             //
-            g_t5xgame.Downgrade2();
-            g_t5xgame.Upgrade2();
-            g_t5xgame.Validate();
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Validate();
+            }
             g_p6hgame.ConvertFromT5X();
             g_p6hgame.Validate();
         }

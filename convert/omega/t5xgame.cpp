@@ -2559,12 +2559,12 @@ UTF8 *ConvertToUTF8(const char *p)
     return aBuffer;
 }
 
-void T5X_GAME::Upgrade3()
+bool T5X_GAME::Upgrade3()
 {
     int ver = (m_flags & T5X_V_MASK);
     if (3 == ver)
     {
-        return;
+        return false;
     }
     m_flags &= ~T5X_V_MASK;
 
@@ -2585,6 +2585,7 @@ void T5X_GAME::Upgrade3()
     {
         it->second->Upgrade();
     }
+    return true;
 }
 
 void T5X_ATTRNAMEINFO::Upgrade()
@@ -2650,18 +2651,19 @@ void T5X_ATTRINFO::Upgrade()
     m_pValue = StringClone(p);
 }
 
-void T5X_GAME::Upgrade2()
+bool T5X_GAME::Upgrade2()
 {
     int ver = (m_flags & T5X_V_MASK);
     if (2 <= ver)
     {
-        return;
+        return false;
     }
     m_flags &= ~T5X_V_MASK;
 
     // Additional flatfile flags.
     //
     m_flags |= T5X_V_ATRKEY | 2;
+    return true;
 }
 
 #define ANSI_NORMAL   "\033[0m"
@@ -2943,12 +2945,12 @@ char *ConvertToLatin(const UTF8 *pString)
     return buffer;
 }
 
-void T5X_GAME::Downgrade2()
+bool T5X_GAME::Downgrade2()
 {
     int ver = (m_flags & T5X_V_MASK);
     if (ver <= 2)
     {
-        return;
+        return false;
     }
     m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
 
@@ -2969,21 +2971,23 @@ void T5X_GAME::Downgrade2()
     {
         it->second->Downgrade();
     }
+    return true;
 }
 
-void T5X_GAME::Downgrade1()
+bool T5X_GAME::Downgrade1()
 {
     Downgrade2();
     int ver = (m_flags & T5X_V_MASK);
     if (1 == ver)
     {
-        return;
+        return false;
     }
     m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
 
     // Additional flatfile flags.
     //
     m_flags |= 1;
+    return true;
 }
 
 void T5X_ATTRNAMEINFO::Downgrade()

@@ -355,10 +355,10 @@ public:
 
     void Write(FILE *fp);
  
-    void Upgrade3();
-    void Upgrade2();
-    void Downgrade1();
-    void Downgrade2();
+    bool Upgrade3();
+    bool Upgrade2();
+    bool Downgrade1();
+    bool Downgrade2();
 
     void ConvertFromP6H();
     void ConvertFromT6H();
