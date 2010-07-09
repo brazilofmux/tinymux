@@ -45,6 +45,7 @@ void Usage()
 
 typedef enum
 {
+    eAuto,
     ePennMUSH,
     eTinyMUX,
     eRhostMUSH,
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
     FILE *fpout = NULL;
 
     bool fResetPassword = false;
-    ServerType eInputType = eServerUnknown;
+    ServerType eInputType = eAuto;
     ServerType eOutputType = eServerUnknown;
     ServerVersion eOutputVersion = eSame;
     Charset eInputCharset = eCharsetUnknown;
@@ -245,24 +246,73 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (eServerUnknown == eInputType)
+    // We should have two remaining arguments (input and output file).
+    //
+    if (2 != argc)
     {
-        fprintf(stderr, "Server type not specified.\n");
+        fprintf(stderr, "After options, there should be only two command-line arguments left.\n");
         Usage();
+        return 1;
+    }
+
+    fpin = fopen(argv[0], "rb");
+    if (NULL == fpin)
+    {
+        fprintf(stderr, "Input file, %s, not found.\n", argv[0]);
+        return 1;
+    }
+    fpout = fopen(argv[1], "wb");
+    if (NULL == fpout)
+    {
+        fclose(fpin);
+        fprintf(stderr, "Output file, %s, not found.\n", argv[1]);
+        return 1;
+    }
+
+    if (eAuto == eInputType)
+    {
+        // PennMUSH is +Vn where (n & 0xFF) == 2
+        // TinyMUX is +Xn
+        // TinyMUSH is +Tn
+        // RhostMUSH is +Vn where (n & 0xFF) >= 7
+        //
+        char buffer[100];
+        fgets(buffer, sizeof(buffer), fpin);
+        fseek(fpin, 0, SEEK_SET);
+        if ('+' == buffer[0])
+        {
+            if ('V' == buffer[1])
+            {
+                int n = 255 & atoi(buffer+2);
+                if (2 == n)
+                {
+                    eInputType = ePennMUSH;
+                }
+                else if (7 <= n)
+                {
+                    eInputType = eRhostMUSH;
+                }
+            }
+            else if ('T' == buffer[1])
+            {
+                eInputType = eTinyMUSH;
+            }
+            else if ('X' == buffer[1])
+            {
+                eInputType = eTinyMUX;
+            }
+        }
+    }
+
+    if (eAuto == eInputType)
+    {
+        fprintf(stderr, "Could not automatically determine flatfile type.\n");
         return 1;
     }
 
     if (eServerUnknown == eOutputType)
     {
         eOutputType = eInputType;
-    }
-
-    if (  eRhostMUSH == eInputType
-       || eRhostMUSH == eOutputType)
-    {
-        fprintf(stderr, "RhostMUSH is not currently supported by this convertor. Ashen-Shugar will need to provide some input.\n");
-        Usage();
-        return 1;
     }
 
     if (  eOutputVersion == eLegacyTwo
@@ -295,27 +345,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // We should have two remaining arguments (input and output file).
-    //
-    if (2 != argc)
+    if (  eRhostMUSH == eInputType
+       || eRhostMUSH == eOutputType)
     {
-        fprintf(stderr, "After options, there should be only two command-line arguments left.\n");
+        fprintf(stderr, "RhostMUSH is not currently supported by this converter. Ashen-Shugar will need to provide some input.\n");
         Usage();
-        return 1;
-    }
-
-
-    fpin = fopen(argv[0], "rb");
-    if (NULL == fpin)
-    {
-        fprintf(stderr, "Input file, %s, not found.\n", argv[0]);
-        return 1;
-    }
-    fpout = fopen(argv[1], "wb");
-    if (NULL == fpout)
-    {
-        fclose(fpin);
-        fprintf(stderr, "Output file, %s, not found.\n", argv[1]);
         return 1;
     }
 
