@@ -1,6 +1,7 @@
 #include "omega.h"
 #include "p6hgame.h"
 #include "t5xgame.h"
+#include "t6hgame.h"
 
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
@@ -256,14 +257,6 @@ int main(int argc, char *argv[])
         eOutputType = eInputType;
     }
 
-    if (  eTinyMUSH == eInputType
-       || eTinyMUSH == eOutputType)
-    {
-        fprintf(stderr, "TinyMUSH is not currently supported by this convertor. Use the tm3tomux converter under tinymux/convert/tinymush instead.\n");
-        Usage();
-        return 1;
-    }
-
     if (  eRhostMUSH == eInputType
        || eRhostMUSH == eOutputType)
     {
@@ -342,6 +335,13 @@ int main(int argc, char *argv[])
         t5xin = NULL;
         g_t5xgame.Validate();
     }
+    else if (eTinyMUSH == eInputType)
+    {
+        t6hin = fpin;
+        t6hparse();
+        t6hin = NULL;
+        g_t6hgame.Validate();
+    }
     else
     {
         fprintf(stderr, "Requested input type is not currently supported.\n");
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
         }
         else if (eTinyMUX == eInputType)
         {
-            int ver = (g_t5xgame.m_flags & V_MASK);
+            int ver = (g_t5xgame.m_flags & T5X_V_MASK);
             switch (ver)
             {
             case 3:
@@ -475,6 +475,11 @@ int main(int argc, char *argv[])
             g_t5xgame.Validate();
             g_p6hgame.ConvertFromT5X();
         }
+        else if (  ePennMUSH == eInputType
+                && eTinyMUSH == eOutputType)
+        {
+            g_t6hgame.ConvertFromP6H();
+        }
         else
         {
             fprintf(stderr, "Requested conversion is not currently supported.\n");
@@ -491,9 +496,13 @@ int main(int argc, char *argv[])
         {
             g_p6hgame.ResetPassword();
         }
-        else
+        else if (eTinyMUX == eOutputType)
         {
             g_t5xgame.ResetPassword();
+        }
+        else
+        {
+            fprintf(stderr, "Requested password reset is not currently supported.\n");
         }
     }
 
@@ -506,6 +515,10 @@ int main(int argc, char *argv[])
     else if (eTinyMUX == eOutputType)
     {
         g_t5xgame.Write(fpout);
+    }
+    else if (eTinyMUSH == eOutputType)
+    {
+        g_t6hgame.Write(fpout);
     }
 
     fclose(fpout);

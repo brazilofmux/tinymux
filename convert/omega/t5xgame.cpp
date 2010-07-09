@@ -10,17 +10,17 @@ typedef struct _t5x_gameflaginfo
 
 t5x_gameflaginfo t5x_gameflagnames[] =
 {
-    { V_ZONE,     "V_ZONE"     },
-    { V_LINK,     "V_LINK"     },
-    { V_DATABASE, "V_DATABASE" },
-    { V_ATRNAME,  "V_ATRNAME"  },
-    { V_ATRKEY,   "V_ATRKEY"   },
-    { V_PARENT,   "V_PARENT"   },
-    { V_ATRMONEY, "V_ATRMONEY" },
-    { V_XFLAGS,   "V_XFLAGS"   },
-    { V_POWERS,   "V_POWERS"   },
-    { V_3FLAGS,   "V_3FLAGS"   },
-    { V_QUOTED,   "V_QUOTED"   },
+    { T5X_V_ZONE,     "V_ZONE"     },
+    { T5X_V_LINK,     "V_LINK"     },
+    { T5X_V_DATABASE, "V_DATABASE" },
+    { T5X_V_ATRNAME,  "V_ATRNAME"  },
+    { T5X_V_ATRKEY,   "V_ATRKEY"   },
+    { T5X_V_PARENT,   "V_PARENT"   },
+    { T5X_V_ATRMONEY, "V_ATRMONEY" },
+    { T5X_V_XFLAGS,   "V_XFLAGS"   },
+    { T5X_V_POWERS,   "V_POWERS"   },
+    { T5X_V_3FLAGS,   "V_3FLAGS"   },
+    { T5X_V_QUOTED,   "V_QUOTED"   },
 };
 #define T5X_NUM_GAMEFLAGNAMES (sizeof(t5x_gameflagnames)/sizeof(t5x_gameflagnames[0]))
 
@@ -633,13 +633,13 @@ void T5X_GAME::ValidateFlags() const
 {
     int flags = m_flags;
 
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
     if (ver < 1 || 3 < ver)
     {
         fprintf(stderr, "WARNING: Expecting version to be between 1 and 3.\n");
     }
-    flags &= ~V_MASK;
+    flags &= ~T5X_V_MASK;
     int tflags = flags;
 
     fprintf(stderr, "INFO: Flatfile flags are ");
@@ -661,21 +661,21 @@ void T5X_GAME::ValidateFlags() const
     // Validate mandatory flags are present.
     //
     if (  2 == ver
-       && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
+       && (flags & T5X_MANDFLAGS_V2) != T5X_MANDFLAGS_V2)
     {
         fprintf(stderr, "WARNING: Not all mandatory flags for v2 are present.\n");
     }
     else if (  3 == ver
-            && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
+            && (flags & T5X_MANDFLAGS_V3) != T5X_MANDFLAGS_V3)
     {
         fprintf(stderr, "WARNING: Not all mandatory flags for v3 are present.\n");
     }
 
     // Validate that this is a flatfile and not a structure file.
     //
-    if (  (flags & V_DATABASE) != 0
-       || (flags & V_ATRNAME) != 0
-       || (flags & V_ATRMONEY) != 0)
+    if (  (flags & T5X_V_DATABASE) != 0
+       || (flags & T5X_V_ATRNAME) != 0
+       || (flags & T5X_V_ATRMONEY) != 0)
     {
         fprintf(stderr, "WARNING: Expected a flatfile (with strings) instead of a structure file (with only object anchors).\n");
     }
@@ -800,7 +800,7 @@ void T5X_GAME::ValidateAttrNames(int ver) const
 
 void T5X_GAME::Validate() const
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     ValidateFlags();
     ValidateAttrNames(ver);
     ValidateObjects();
@@ -1004,7 +1004,7 @@ void T5X_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 
 void T5X_GAME::Write(FILE *fp)
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     bool fExtraEscapes = (2 <= ver);
     fprintf(fp, "+X%d\n", m_flags);
     if (m_fSizeHint)
@@ -1025,13 +1025,13 @@ void T5X_GAME::Write(FILE *fp)
     } 
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Write(fp, (m_flags & V_ATRKEY) == 0, fExtraEscapes);
+        it->second->Write(fp, (m_flags & T5X_V_ATRKEY) == 0, fExtraEscapes);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");
 }
 
-int p6h_convert_type[] =
+static int p6h_convert_type[] =
 {
     T5X_NOTYPE,        //  0
     T5X_TYPE_ROOM,     //  1
@@ -1052,7 +1052,7 @@ int p6h_convert_type[] =
     T5X_TYPE_GARBAGE,  // 16
 };
 
-NameMask p6h_convert_obj_flags1[] =
+static NameMask p6h_convert_obj_flags1[] =
 {
     { "TRANSPARENT",    0x00000008UL },
     { "WIZARD",         0x00000010UL },
@@ -1081,7 +1081,7 @@ NameMask p6h_convert_obj_flags1[] =
     { "TERSE",          0x80000000UL },
 };
 
-NameMask p6h_convert_obj_flags2[] =
+static NameMask p6h_convert_obj_flags2[] =
 {
     { "ABODE",          0x00000002UL },
     { "FLOATING",       0x00000004UL },
@@ -1100,7 +1100,7 @@ NameMask p6h_convert_obj_flags2[] =
     { "SLAVE",          0x80000000UL },
 };
 
-NameMask p6h_convert_obj_powers1[] =
+static NameMask p6h_convert_obj_powers1[] =
 {
     { "Announce",       0x00000004UL },
     { "Boot",           0x00000008UL },
@@ -1121,7 +1121,7 @@ NameMask p6h_convert_obj_powers1[] =
     { "Unkillable",     0x80000000UL },
 };
 
-NameMask p6h_convert_obj_powers2[] =
+static NameMask p6h_convert_obj_powers2[] =
 {
     { "Builder",        0x00000001UL },
 };
@@ -1342,7 +1342,7 @@ static struct
     { "Open",       225 },
 };
 
-NameMask p6h_attr_flags[] =
+static NameMask p6h_attr_flags[] =
 {
     { "no_command",     0x00000100UL },
     { "private",        0x00001000UL },
@@ -1359,7 +1359,7 @@ NameMask p6h_attr_flags[] =
     { "noname",         0x00400000UL },
 };
 
-char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
+static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
 {
     // If using the default owner and flags (almost all attributes will),
     // just store the string.
@@ -1384,7 +1384,7 @@ char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValu
 
 void T5X_GAME::ConvertFromP6H()
 {
-    SetFlags(MANDFLAGS_V2 | 2);
+    SetFlags(T5X_MANDFLAGS_V2 | 2);
 
     // Build internal attribute names.
     //
@@ -1784,7 +1784,7 @@ void T5X_GAME::ConvertFromP6H()
 
 void T5X_GAME::ResetPassword()
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     bool fSHA1 = (2 <= ver);
     for (map<int, T5X_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
     {
@@ -2205,16 +2205,16 @@ UTF8 *ConvertToUTF8(const char *p)
 
 void T5X_GAME::Upgrade3()
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     if (3 == ver)
     {
         return;
     }
-    m_flags &= ~V_MASK;
+    m_flags &= ~T5X_V_MASK;
 
     // Additional flatfile flags.
     //
-    m_flags |= V_ATRKEY | 3;
+    m_flags |= T5X_V_ATRKEY | 3;
 
     // Upgrade attribute names.
     //
@@ -2296,16 +2296,16 @@ void T5X_ATTRINFO::Upgrade()
 
 void T5X_GAME::Upgrade2()
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     if (2 <= ver)
     {
         return;
     }
-    m_flags &= ~V_MASK;
+    m_flags &= ~T5X_V_MASK;
 
     // Additional flatfile flags.
     //
-    m_flags |= V_ATRKEY | 2;
+    m_flags |= T5X_V_ATRKEY | 2;
 }
 
 #define ANSI_NORMAL   "\033[0m"
@@ -2589,12 +2589,12 @@ char *ConvertToLatin(const UTF8 *pString)
 
 void T5X_GAME::Downgrade2()
 {
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     if (ver <= 2)
     {
         return;
     }
-    m_flags &= ~(V_MASK|V_ATRKEY);
+    m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
 
     // Additional flatfile flags.
     //
@@ -2618,12 +2618,12 @@ void T5X_GAME::Downgrade2()
 void T5X_GAME::Downgrade1()
 {
     Downgrade2();
-    int ver = (m_flags & V_MASK);
+    int ver = (m_flags & T5X_V_MASK);
     if (1 == ver)
     {
         return;
     }
-    m_flags &= ~(V_MASK|V_ATRKEY);
+    m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
 
     // Additional flatfile flags.
     //

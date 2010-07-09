@@ -1,0 +1,237 @@
+%{
+#include "omega.h"
+#include "t6hgame.h"
+int t6hlex();
+void t6herror(const char *s);
+%}
+
+%name-prefix="t6h"
+%union {
+    char                   *p;
+    int                     i;
+    T6H_ATTRINFO           *pai;
+    vector<T6H_ATTRINFO *> *pvai;
+    T6H_LOCKEXP            *ple;
+}
+
+%token EOD 
+%token <p> STRING LTEXT
+%token <i> INTEGER OBJECT_V1 OBJECT_V1_TS OBJECT_V1_TS_CT THDR SIZEHINT NEXTATTR RECORDPLAYERS
+%token <i> ATTRNUM ATTRREF
+%token <ple> ATTRLIT EVALLIT DBREF
+%type <pai> attr
+%type <pvai> attrlist
+%type <ple> lockterm lockfactor lockexpr locknested_r locknested_ra
+%start start
+
+%%
+start
+:
+    THDR        { g_t6hgame.SetFlags($1); }
+    sections
+    EOD
+;
+
+sections
+:
+    section
+|
+    sections section
+;
+
+section
+:
+|
+    SIZEHINT       { g_t6hgame.SetSizeHint($1); }
+|
+    NEXTATTR       { g_t6hgame.SetNextAttr($1); }
+|
+    RECORDPLAYERS  { g_t6hgame.SetRecordPlayers($1); }
+|
+    ATTRNUM STRING { g_t6hgame.AddNumAndName($1, $2); }
+|
+    objectlist
+;
+
+objectlist
+:
+    object
+|
+    objectlist object
+;
+
+object
+:
+    OBJECT_V1_TS_CT STRING INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    lockexpr
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER
+    attrlist '<' {
+                     T6H_OBJECTINFO *oi = new T6H_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetZone($4);
+                     oi->SetContents($5);
+                     oi->SetExits($6);
+                     oi->SetLink($7);
+                     oi->SetNext($8);
+                     oi->SetDefaultLock($9);
+                     oi->SetOwner($10);
+                     oi->SetParent($11);
+                     oi->SetPennies($12);
+                     oi->SetFlags1($13);
+                     oi->SetFlags2($14);
+                     oi->SetFlags3($15);
+                     oi->SetPowers1($16);
+                     oi->SetPowers2($17);
+                     oi->SetAccessed($18);
+                     oi->SetModified($19);
+                     oi->SetCreated($20);
+                     if (NULL != $21)
+                     {
+                         oi->SetAttrs($21->size(), $21);
+                     }
+                     g_t6hgame.AddObject(oi);
+                 } 
+|
+    OBJECT_V1_TS STRING INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    lockexpr
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER 
+    attrlist '<' {
+                     T6H_OBJECTINFO *oi = new T6H_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetZone($4);
+                     oi->SetContents($5);
+                     oi->SetExits($6);
+                     oi->SetLink($7);
+                     oi->SetNext($8);
+                     oi->SetDefaultLock($9);
+                     oi->SetOwner($10);
+                     oi->SetParent($11);
+                     oi->SetPennies($12);
+                     oi->SetFlags1($13);
+                     oi->SetFlags2($14);
+                     oi->SetFlags3($15);
+                     oi->SetPowers1($16);
+                     oi->SetPowers2($17);
+                     oi->SetAccessed($18);
+                     oi->SetModified($19);
+                     //oi->SetCreated($18);
+                     if (NULL != $20)
+                     {
+                         oi->SetAttrs($20->size(), $20);
+                     }
+                     g_t6hgame.AddObject(oi);
+                 } 
+|
+    OBJECT_V1 STRING INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    lockexpr
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    attrlist '<' {
+                     T6H_OBJECTINFO *oi = new T6H_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetZone($4);
+                     oi->SetContents($5);
+                     oi->SetExits($6);
+                     oi->SetLink($7);
+                     oi->SetNext($8);
+                     oi->SetDefaultLock($9);
+                     oi->SetOwner($10);
+                     oi->SetParent($11);
+                     oi->SetPennies($12);
+                     oi->SetFlags1($13);
+                     oi->SetFlags2($14);
+                     oi->SetFlags3($15);
+                     oi->SetPowers1($16);
+                     oi->SetPowers2($17);
+                     //oi->SetAccessed($18);
+                     //oi->SetModified($19);
+                     //oi->SetCreated($18);
+                     if (NULL != $18)
+                     {
+                         oi->SetAttrs($18->size(), $18);
+                     }
+                     g_t6hgame.AddObject(oi);
+                 } 
+;
+
+lockexpr:
+    lockexpr '|' lockterm            { $$ = new T6H_LOCKEXP; $$->SetOr($1,$3);     }
+|
+    lockterm                         { $$ = $1; }
+|
+                                     { $$ = NULL; }
+;
+
+lockterm:
+    lockfactor '&' lockterm          { $$ = new T6H_LOCKEXP; $$->SetAnd($1,$3);    }
+|
+    lockfactor                       { $$ = $1; }
+;
+
+lockfactor:
+    '!' lockfactor                   { $$ = new T6H_LOCKEXP; $$->SetNot($2);       }
+|
+    '@' locknested_r                 { $$ = new T6H_LOCKEXP; $$->SetIndir($2);     }
+|
+    '=' locknested_ra                { $$ = new T6H_LOCKEXP; $$->SetIs($2);        }
+|
+    '+' locknested_ra                { $$ = new T6H_LOCKEXP; $$->SetCarry($2);     }
+|
+    '$' locknested_r                 { $$ = new T6H_LOCKEXP; $$->SetOwner($2);     }
+|
+    '(' lockexpr ')'                 { $$ = $2; }
+|
+    ATTRLIT                          { $$ = $1; }
+|
+    EVALLIT                          { $$ = $1; }
+|
+    DBREF                            { $$ = $1; }
+;
+
+locknested_r:
+    DBREF                            { $$ = $1; }
+|
+    '(' locknested_r  ')'            { $$ = $2; }
+;
+
+locknested_ra:
+    DBREF                            { $$ = $1; }
+|
+    ATTRLIT                          { $$ = $1; }
+|
+    '(' locknested_ra  ')'           { $$ = $2; }
+;
+
+attrlist
+:
+    attrlist attr       { $$ = $1; if (NULL == $$) { $$ = new vector<T6H_ATTRINFO *>; } $$->push_back($2); }
+|
+                        { $$ = NULL; }
+;
+
+
+attr
+:
+    ATTRREF STRING  { $$ = new T6H_ATTRINFO; $$->SetNumAndValue($1, $2); }
+;
+
+%%
+
+void t6herror(const char *s)
+{
+    extern int t6hlineno;
+    fprintf(stderr, "%s near line %d.\n", s, t6hlineno);
+}

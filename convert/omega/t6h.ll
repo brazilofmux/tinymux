@@ -1,20 +1,39 @@
 %{
 #include "omega.h"
-#include "t5xgame.h"
-#include "t5x.tab.hpp"
+#include "t6hgame.h"
+#include "t6h.tab.hpp"
 static int  iLockNest;
 
-// Because the lock does not start with an open paren in v1 and v2 flatfiles,
+// Because the lock does not start with an open paren,
 // we rely on the position of the lock within the object header.
 //
-static int  ver;
+static int  flags;
 static int  iObjectField = -1;
+
+static int ObjectToken()
+{
+    if (flags & T6H_V_TIMESTAMPS)
+    {
+        if (flags & T6H_V_CREATETIME)
+        {
+            return OBJECT_V1_TS_CT;
+        }
+        else
+        {
+            return OBJECT_V1_TS;
+        }
+    }
+    else
+    {
+        return OBJECT_V1;
+    }
+}
 %}
 
 %option 8bit 
 %option yylineno
 %option noyywrap
-%option prefix="t5x"
+%option prefix="t6h"
 
 %s afterhdr object
 %x lock
@@ -26,38 +45,35 @@ static int  iObjectField = -1;
                  int  iPreStrContext;
 
 <INITIAL>{
-  ^\+X[0-9]+[\n] {
-                     t5xlval.i = atoi(t5xtext+2);
-                     ver = (t5xlval.i & T5X_V_MASK);
+  ^\+T[0-9]+[\n] {
+                     t6hlval.i = atoi(t6htext+2);
+                     flags = t6hlval.i;
                      BEGIN(afterhdr);
-                     return XHDR;
+                     return THDR;
                  }
 }
 <afterhdr>{
   ^\+S[0-9]+[\n] {
-                     t5xlval.i = atoi(t5xtext+2);
+                     t6hlval.i = atoi(t6htext+2);
                      return SIZEHINT;
                  }
   ^\+N[0-9]+[\n] {
-                     t5xlval.i = atoi(t5xtext+2);
+                     t6hlval.i = atoi(t6htext+2);
                      return NEXTATTR;
                  }
   ^\-R[0-9]+[\n] {
-                     t5xlval.i = atoi(t5xtext+2);
+                     t6hlval.i = atoi(t6htext+2);
                      return RECORDPLAYERS;
                  }
   ^\+A[0-9]+[\n] {
-                     t5xlval.i = atoi(t5xtext+2);
+                     t6hlval.i = atoi(t6htext+2);
                      return ATTRNUM;
                  }
   ![0-9]+[\n]    {
-                     t5xlval.i = atoi(t5xtext+1);
+                     t6hlval.i = atoi(t6htext+1);
                      BEGIN(object);
-                     if (ver <= 2)
-                     {
-                         iObjectField = 1;
-                     }
-                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
+                     iObjectField = 1;
+                     return ObjectToken();
                  }
   "***END OF DUMP***" {
                      return EOD;
@@ -66,31 +82,31 @@ static int  iObjectField = -1;
 
 <lock>{
  [^:/&|()\n]+\/[^&|()\n]+ {
-                     char *p = strchr(t5xtext, '/');
-                     T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
-                     ple1->SetText(StringCloneLen(t5xtext, p-t5xtext));
-                     T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                     char *p = strchr(t6htext, '/');
+                     T6H_LOCKEXP *ple1 = new T6H_LOCKEXP;
+                     ple1->SetText(StringCloneLen(t6htext, p-t6htext));
+                     T6H_LOCKEXP *ple2 = new T6H_LOCKEXP;
                      ple2->SetText(StringClone(p+1));
-                     T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                     T6H_LOCKEXP *ple3 = new T6H_LOCKEXP;
                      ple3->SetEval(ple1, ple2);
-                     t5xlval.ple = ple3;
+                     t6hlval.ple = ple3;
                      return EVALLIT;
                  }
  [^:/&|()\n]+:[^&|()\n]+ {
-                     char *p = strchr(t5xtext, ':');
-                     T5X_LOCKEXP *ple1 = new T5X_LOCKEXP;
-                     ple1->SetText(StringCloneLen(t5xtext, p-t5xtext));
-                     T5X_LOCKEXP *ple2 = new T5X_LOCKEXP;
+                     char *p = strchr(t6htext, ':');
+                     T6H_LOCKEXP *ple1 = new T6H_LOCKEXP;
+                     ple1->SetText(StringCloneLen(t6htext, p-t6htext));
+                     T6H_LOCKEXP *ple2 = new T6H_LOCKEXP;
                      ple2->SetText(StringClone(p+1));
-                     T5X_LOCKEXP *ple3 = new T5X_LOCKEXP;
+                     T6H_LOCKEXP *ple3 = new T6H_LOCKEXP;
                      ple3->SetAttr(ple1, ple2);
-                     t5xlval.ple = ple3;
+                     t6hlval.ple = ple3;
                      return ATTRLIT;
                  }
  [0-9]+          {
-                     T5X_LOCKEXP *ple = new T5X_LOCKEXP;
-                     ple->SetRef(atoi(t5xtext));
-                     t5xlval.ple = ple;
+                     T6H_LOCKEXP *ple = new T6H_LOCKEXP;
+                     ple->SetRef(atoi(t6htext));
+                     t6hlval.ple = ple;
                      return DBREF;
                  }
  \(              {
@@ -126,8 +142,7 @@ static int  iObjectField = -1;
                      return '!';
                  }
  [\n]            {
-                     if (  ver <= 2
-                        && 0 == iLockNest)
+                     if (0 == iLockNest)
                      {
                          BEGIN(object);
                      }
@@ -136,43 +151,31 @@ static int  iObjectField = -1;
 
 <object>{
   ![0-9]+[\n]    {
-                     t5xlval.i = atoi(t5xtext+1);
-                     if (ver <= 2)
-                     {
-                         iObjectField = 1;
-                     }
-                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
+                     t6hlval.i = atoi(t6htext+1);
+                     iObjectField = 1;
+                     return ObjectToken();
                  }
   -?[0-9]+[\n]   {
-                     t5xlval.i = atoi(t5xtext);
-                     if (ver <= 2)
+                     t6hlval.i = atoi(t6htext);
+                     if (0 < iObjectField)
                      {
-                         if (0 < iObjectField)
+                         iObjectField++;
+                         if (7 == iObjectField)
                          {
-                             iObjectField++;
-                             if (7 == iObjectField)
-                             {
-                                 iObjectField = -1;
-                                 BEGIN(lock);
-                                 return INTEGER;
-                             }
+                             iObjectField = -1;
+                             BEGIN(lock);
+                             return INTEGER;
                          }
                      }
                      return INTEGER;
                  }
  \>[0-9]+[\n]    {
-                     t5xlval.i = atoi(t5xtext+1);
-                     if (ver <= 2)
-                     {
-                         iObjectField = -1;
-                     }
+                     t6hlval.i = atoi(t6htext+1);
+                     iObjectField = -1;
                      return ATTRREF;
                  }
  \<[\n]          {
-                     if (ver <= 2)
-                     {
-                         iObjectField = -1;
-                     }
+                     iObjectField = -1;
                      BEGIN(afterhdr);
                      return '<';
                  }
@@ -186,14 +189,14 @@ static int  iObjectField = -1;
 <str>{
   \"[\t ]*[\n]   {
                      *pQuotedString = '\0';
-                     t5xlval.p = StringClone(aQuotedString);
+                     t6hlval.p = StringClone(aQuotedString);
                      BEGIN(iPreStrContext);
                      return STRING;
                  }
   \\[enrt\\\"] {
                      if (pQuotedString < aQuotedString + sizeof(aQuotedString) - 1)
                      {
-                         switch (t5xtext[1])
+                         switch (t6htext[1])
                          {
                          case 'r':
                              *pQuotedString++ = '\r';
@@ -208,13 +211,13 @@ static int  iObjectField = -1;
                              *pQuotedString++ = '\t';
                              break;
                          default:
-                             *pQuotedString++ = t5xtext[1];
+                             *pQuotedString++ = t6htext[1];
                              break;
                          }
                      }
                  }
   [^\\\"]+       {
-                     char *p = t5xtext;
+                     char *p = t6htext;
                      while (  '\0' != *p
                            && pQuotedString < aQuotedString + sizeof(aQuotedString) - 1)
                      {
@@ -223,10 +226,7 @@ static int  iObjectField = -1;
                  }
 }
 [\n]             {
-                     if (ver <= 2)
-                     {
-                         iObjectField = -1;
-                     }
+                     iObjectField = -1;
                  }
 [\t ]+           /* ignore whitespace */ ;
 .                { return EOF; }
