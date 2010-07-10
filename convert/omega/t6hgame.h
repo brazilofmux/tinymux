@@ -304,7 +304,11 @@ public:
         m_fOwner = false;
         m_fZone = false;
         m_fPennies = false;
-        m_fPennies = false;
+        m_fFlags1 = false;
+        m_fFlags2 = false;
+        m_fFlags3 = false;
+        m_fPowers1 = false;
+        m_fPowers2 = false;
         m_fAttrCount = false;
         m_fAccessed = false;
         m_fModified = false;
@@ -315,7 +319,9 @@ public:
     ~T6H_OBJECTINFO()
     {
         free(m_pName);
+        delete m_ple;
         m_pName = NULL;
+        m_ple = NULL;
         if (NULL != m_pvai)
         {
             for (vector<T6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)

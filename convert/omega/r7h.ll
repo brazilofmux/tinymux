@@ -51,7 +51,7 @@ static int  iObjectField = -1;
                      return ATTRNUM;
                  }
   ^[0-9+]+:[^\n]+[\n] {
-                     r7hlval.p = StringClone(r7htext);
+                     r7hlval.p = StringCloneLen(r7htext, strlen(r7htext)-1);
                      return ATTRNAME;
                  }
   ![0-9]+[\n]    {

@@ -530,7 +530,7 @@ void R7H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
 {
     if (m_fNumAndName)
     {
-        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "+A%d\n%s\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
     }
 }
 
@@ -805,7 +805,7 @@ void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     fprintf(fp, "!%d\n", m_dbRef);
     if (NULL != m_pName)
     {
-        fprintf(fp, "\"%s\"\n", EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "%s\n", EncodeString(m_pName, fExtraEscapes));
     }
     if (m_fLocation)
     {
@@ -867,25 +867,49 @@ void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     {
         fprintf(fp, "%d\n", m_iFlags3);
     }
-    if (m_fPowers1)
+    if (m_fFlags4)
     {
-        fprintf(fp, "%d\n", m_iPowers1);
+        fprintf(fp, "%d\n", m_iFlags4);
     }
-    if (m_fPowers2)
+    if (m_fToggles1)
     {
-        fprintf(fp, "%d\n", m_iPowers2);
+        fprintf(fp, "%d\n", m_iToggles1);
     }
-    if (m_fAccessed)
+    if (m_fToggles2)
     {
-        fprintf(fp, "%d\n", m_iAccessed);
+        fprintf(fp, "%d\n", m_iToggles2);
     }
-    if (m_fModified)
+    if (m_fToggles3)
     {
-        fprintf(fp, "%d\n", m_iModified);
+        fprintf(fp, "%d\n", m_iToggles3);
     }
-    if (m_fCreated)
+    if (m_fToggles4)
     {
-        fprintf(fp, "%d\n", m_iCreated);
+        fprintf(fp, "%d\n", m_iToggles4);
+    }
+    if (m_fToggles5)
+    {
+        fprintf(fp, "%d\n", m_iToggles5);
+    }
+    if (m_fToggles6)
+    {
+        fprintf(fp, "%d\n", m_iToggles6);
+    }
+    if (m_fToggles7)
+    {
+        fprintf(fp, "%d\n", m_iToggles7);
+    }
+    if (m_fToggles8)
+    {
+        fprintf(fp, "%d\n", m_iToggles8);
+    }
+    if (  m_fZones
+       && NULL != m_pvz)
+    {
+        for (vector<int>::iterator it = m_pvz->begin(); it != m_pvz->end(); ++it)
+        {
+            fprintf(fp, "%d\n", (*it));
+        }
     }
     if (  m_fAttrCount
        && NULL != m_pvai)
@@ -1004,7 +1028,7 @@ void R7H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 {
     if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValue, fExtraEscapes));
+        fprintf(fp, ">%d\n%s\n", m_iNum, EncodeString(m_pValue, fExtraEscapes));
     }
 }
 
@@ -1584,8 +1608,8 @@ void R7H_GAME::ConvertFromP6H()
         poi->SetFlags1(flags1);
         poi->SetFlags2(flags2);
         poi->SetFlags3(flags3);
-        poi->SetPowers1(powers1);
-        poi->SetPowers2(powers2);
+        //poi->SetPowers1(powers1);
+        //poi->SetPowers2(powers2);
 
         if (it->second->m_fCreated)
         {

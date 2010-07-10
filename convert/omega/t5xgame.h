@@ -309,7 +309,9 @@ public:
     ~T5X_OBJECTINFO()
     {
         free(m_pName);
+        delete m_ple;
         m_pName = NULL;
+        m_ple = NULL;
         if (NULL != m_pvai)
         {
             for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)

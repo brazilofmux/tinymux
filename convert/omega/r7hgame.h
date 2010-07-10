@@ -248,13 +248,45 @@ public:
     int  m_iFlags3;
     void SetFlags3(int iFlags3) { m_fFlags3 = true; m_iFlags3 = iFlags3; }
 
-    bool m_fPowers1;
-    int  m_iPowers1;
-    void SetPowers1(int iPowers1) { m_fPowers1 = true; m_iPowers1 = iPowers1; }
+    bool m_fFlags4;
+    int  m_iFlags4;
+    void SetFlags4(int iFlags4) { m_fFlags4 = true; m_iFlags4 = iFlags4; }
 
-    bool m_fPowers2;
-    int  m_iPowers2;
-    void SetPowers2(int iPowers2) { m_fPowers2 = true; m_iPowers2 = iPowers2; }
+    bool m_fToggles1;
+    int  m_iToggles1;
+    void SetToggles1(int iToggles1) { m_fToggles1 = true; m_iToggles1 = iToggles1; }
+
+    bool m_fToggles2;
+    int  m_iToggles2;
+    void SetToggles2(int iToggles2) { m_fToggles2 = true; m_iToggles2 = iToggles2; }
+
+    bool m_fToggles3;
+    int  m_iToggles3;
+    void SetToggles3(int iToggles3) { m_fToggles3 = true; m_iToggles3 = iToggles3; }
+
+    bool m_fToggles4;
+    int  m_iToggles4;
+    void SetToggles4(int iToggles4) { m_fToggles4 = true; m_iToggles4 = iToggles4; }
+
+    bool m_fToggles5;
+    int  m_iToggles5;
+    void SetToggles5(int iToggles5) { m_fToggles5 = true; m_iToggles5 = iToggles5; }
+
+    bool m_fToggles6;
+    int  m_iToggles6;
+    void SetToggles6(int iToggles6) { m_fToggles6 = true; m_iToggles6 = iToggles6; }
+
+    bool m_fToggles7;
+    int  m_iToggles7;
+    void SetToggles7(int iToggles7) { m_fToggles7 = true; m_iToggles7 = iToggles7; }
+
+    bool m_fToggles8;
+    int  m_iToggles8;
+    void SetToggles8(int iToggles8) { m_fToggles8 = true; m_iToggles8 = iToggles8; }
+
+    bool m_fZones;
+    vector<int> *m_pvz;
+    void SetZones(vector<int> *pvz) { m_fZones = true; delete m_pvz; m_pvz = pvz; }
 
     bool m_fLink;
     int  m_dbLink;
@@ -266,19 +298,7 @@ public:
     void SetAttrs(int nAttrCount, vector<R7H_ATTRINFO *> *pvai);
 
     R7H_LOCKEXP *m_ple;
-    void SetDefaultLock(R7H_LOCKEXP *p) { free(m_ple); m_ple = p; }
-
-    bool m_fAccessed;
-    int  m_iAccessed;
-    void SetAccessed(int iAccessed) { m_fAccessed = true; m_iAccessed = iAccessed; }
-
-    bool m_fModified;
-    int  m_iModified;
-    void SetModified(int iModified) { m_fModified = true; m_iModified = iModified; }
-
-    bool m_fCreated;
-    int  m_iCreated;
-    void SetCreated(int iCreated) { m_fCreated = true; m_iCreated = iCreated; }
+    void SetDefaultLock(R7H_LOCKEXP *p) { delete m_ple; m_ple = p; }
 
     void Validate() const;
 
@@ -296,18 +316,31 @@ public:
         m_fOwner = false;
         m_fZone = false;
         m_fPennies = false;
-        m_fPennies = false;
+        m_fFlags1 = false;
+        m_fFlags2 = false;
+        m_fFlags3 = false;
+        m_fFlags4 = false;
+        m_fToggles1 = false;
+        m_fToggles2 = false;
+        m_fToggles3 = false;
+        m_fToggles4 = false;
+        m_fToggles5 = false;
+        m_fToggles6 = false;
+        m_fToggles7 = false;
+        m_fToggles8 = false;
         m_fAttrCount = false;
-        m_fAccessed = false;
-        m_fModified = false;
-        m_fCreated = false;
         m_pvai = NULL;
         m_ple = NULL;
+        m_pvz = NULL;
     }
     ~R7H_OBJECTINFO()
     {
         free(m_pName);
+        delete m_ple;
+        delete m_pvz;
         m_pName = NULL;
+        m_ple = NULL;
+        m_pvz = NULL;
         if (NULL != m_pvai)
         {
             for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
@@ -319,7 +352,6 @@ public:
         }
     }
 };
-
 
 class R7H_GAME
 {

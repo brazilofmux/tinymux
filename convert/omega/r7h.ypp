@@ -88,16 +88,16 @@ object
                      oi->SetFlags1($12);
                      oi->SetFlags2($13);
                      oi->SetFlags3($14);
-                     //oi->SetFlags4($15);
-                     //oi->SetToggles1($16);
-                     //oi->SetToggles2($17);
-                     //oi->SetToggles3($18);
-                     //oi->SetToggles4($19);
-                     //oi->SetToggles5($20);
-                     //oi->SetToggles6($21);
-                     //oi->SetToggles7($22);
-                     //oi->SetToggles8($23);
-                     //oi->SetZones($24);
+                     oi->SetFlags4($15);
+                     oi->SetToggles1($16);
+                     oi->SetToggles2($17);
+                     oi->SetToggles3($18);
+                     oi->SetToggles4($19);
+                     oi->SetToggles5($20);
+                     oi->SetToggles6($21);
+                     oi->SetToggles7($22);
+                     oi->SetToggles8($23);
+                     oi->SetZones($24);
                      if (NULL != $25)
                      {
                          oi->SetAttrs($25->size(), $25);
