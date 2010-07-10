@@ -544,6 +544,14 @@ int main(int argc, char *argv[])
         {
             g_t5xgame.ResetPassword();
         }
+        else if (eTinyMUSH == eOutputType)
+        {
+            g_t6hgame.ResetPassword();
+        }
+        else if (eRhostMUSH == eOutputType)
+        {
+            g_r7hgame.ResetPassword();
+        }
         else
         {
             fprintf(stderr, "Requested password reset is not currently supported.\n");
