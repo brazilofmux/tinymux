@@ -1,0 +1,182 @@
+%{
+#include "omega.h"
+#include "r6hgame.h"
+int r6hlex();
+void r6herror(const char *s);
+%}
+
+%name-prefix="r6h"
+%union {
+    char                   *p;
+    int                     i;
+    R6H_ATTRINFO           *pai;
+    vector<R6H_ATTRINFO *> *pvai;
+    R6H_LOCKEXP            *ple;
+    vector<int>            *pvz;
+}
+
+%token EOD 
+%token <p> STRING ATTRNAME OBJNAME
+%token <i> INTEGER OBJECT VHDR SIZEHINT NEXTATTR RECORDPLAYERS
+%token <i> ATTRNUM ATTRREF
+%token <ple> ATTRLIT EVALLIT DBREF
+%type <pai> attr
+%type <pvai> attrlist
+%type <ple> lockterm lockfactor lockexpr locknested_r locknested_ra
+%type <pvz> zones
+%start start
+
+%%
+start
+:
+    VHDR        { g_r6hgame.SetFlags($1); }
+    sections
+    EOD
+;
+
+sections
+:
+    section
+|
+    sections section
+;
+
+section
+:
+|
+    SIZEHINT       { g_r6hgame.SetSizeHint($1); }
+|
+    NEXTATTR       { g_r6hgame.SetNextAttr($1); }
+|
+    RECORDPLAYERS  { g_r6hgame.SetRecordPlayers($1); }
+|
+    ATTRNUM ATTRNAME { g_r6hgame.AddNumAndName($1, $2); }
+|
+    objectlist
+;
+
+objectlist
+:
+    object
+|
+    objectlist object
+;
+
+object
+:
+    OBJECT OBJNAME INTEGER INTEGER
+    INTEGER INTEGER INTEGER
+    lockexpr
+    INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    INTEGER INTEGER INTEGER INTEGER
+    zones
+    attrlist '<' {
+                     R6H_OBJECTINFO *oi = new R6H_OBJECTINFO;
+                     oi->SetRef($1);
+                     oi->SetName($2);
+                     oi->SetLocation($3);
+                     oi->SetContents($4);
+                     oi->SetExits($5);
+                     oi->SetLink($6);
+                     oi->SetNext($7);
+                     oi->SetDefaultLock($8);
+                     oi->SetOwner($9);
+                     oi->SetParent($10);
+                     oi->SetPennies($11);
+                     oi->SetFlags1($12);
+                     oi->SetFlags2($13);
+                     oi->SetFlags3($14);
+                     //oi->SetFlags4($15);
+                     //oi->SetToggles1($16);
+                     //oi->SetToggles2($17);
+                     //oi->SetToggles3($18);
+                     //oi->SetToggles4($19);
+                     //oi->SetToggles5($20);
+                     //oi->SetToggles6($21);
+                     //oi->SetToggles7($22);
+                     //oi->SetToggles8($23);
+                     //oi->SetZones($24);
+                     if (NULL != $25)
+                     {
+                         oi->SetAttrs($25->size(), $25);
+                     }
+                     g_r6hgame.AddObject(oi);
+                 } 
+;
+
+zones:
+    zones INTEGER                    { $$->push_back($2);                          }
+|
+    INTEGER                          { $$ = new vector<int>; $$->push_back($1);    }
+;
+
+lockexpr:
+    lockexpr '|' lockterm            { $$ = new R6H_LOCKEXP; $$->SetOr($1,$3);     }
+|
+    lockterm                         { $$ = $1; }
+|
+                                     { $$ = NULL; }
+;
+
+lockterm:
+    lockfactor '&' lockterm          { $$ = new R6H_LOCKEXP; $$->SetAnd($1,$3);    }
+|
+    lockfactor                       { $$ = $1; }
+;
+
+lockfactor:
+    '!' lockfactor                   { $$ = new R6H_LOCKEXP; $$->SetNot($2);       }
+|
+    '@' locknested_r                 { $$ = new R6H_LOCKEXP; $$->SetIndir($2);     }
+|
+    '=' locknested_ra                { $$ = new R6H_LOCKEXP; $$->SetIs($2);        }
+|
+    '+' locknested_ra                { $$ = new R6H_LOCKEXP; $$->SetCarry($2);     }
+|
+    '$' locknested_r                 { $$ = new R6H_LOCKEXP; $$->SetOwner($2);     }
+|
+    '(' lockexpr ')'                 { $$ = $2; }
+|
+    ATTRLIT                          { $$ = $1; }
+|
+    EVALLIT                          { $$ = $1; }
+|
+    DBREF                            { $$ = $1; }
+;
+
+locknested_r:
+    DBREF                            { $$ = $1; }
+|
+    '(' locknested_r  ')'            { $$ = $2; }
+;
+
+locknested_ra:
+    DBREF                            { $$ = $1; }
+|
+    ATTRLIT                          { $$ = $1; }
+|
+    '(' locknested_ra  ')'           { $$ = $2; }
+;
+
+attrlist
+:
+    attrlist attr       { $$ = $1; if (NULL == $$) { $$ = new vector<R6H_ATTRINFO *>; } $$->push_back($2); }
+|
+                        { $$ = NULL; }
+;
+
+
+attr
+:
+    ATTRREF STRING  { $$ = new R6H_ATTRINFO; $$->SetNumAndValue($1, $2); }
+;
+
+%%
+
+void r6herror(const char *s)
+{
+    extern int r6hlineno;
+    fprintf(stderr, "%s near line %d.\n", s, r6hlineno);
+}

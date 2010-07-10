@@ -15,7 +15,7 @@ void t5xerror(const char *s);
 }
 
 %token EOD 
-%token <p> STRING LTEXT
+%token <p> STRING
 %token <i> INTEGER OBJECT_V12 OBJECT_V3 XHDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNUM ATTRREF
 %token <ple> ATTRLIT EVALLIT DBREF

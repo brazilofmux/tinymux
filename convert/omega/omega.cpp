@@ -2,6 +2,7 @@
 #include "p6hgame.h"
 #include "t5xgame.h"
 #include "t6hgame.h"
+#include "r6hgame.h"
 
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
@@ -345,14 +346,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (  eRhostMUSH == eInputType
-       || eRhostMUSH == eOutputType)
-    {
-        fprintf(stderr, "RhostMUSH is not currently supported by this converter. Ashen-Shugar will need to provide some input.\n");
-        Usage();
-        return 1;
-    }
-
     // Input handling. After this, we will have the specific flatfile version.
     //
     if (ePennMUSH == eInputType)
@@ -375,6 +368,13 @@ int main(int argc, char *argv[])
         t6hparse();
         t6hin = NULL;
         g_t6hgame.Validate();
+    }
+    else if (eRhostMUSH == eInputType)
+    {
+        r6hin = fpin;
+        r6hparse();
+        r6hin = NULL;
+        g_r6hgame.Validate();
     }
     else
     {

@@ -15,7 +15,7 @@ void t6herror(const char *s);
 }
 
 %token EOD 
-%token <p> STRING LTEXT
+%token <p> STRING
 %token <i> INTEGER OBJECT_V1 OBJECT_V1_TS OBJECT_V1_TS_CT THDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNUM ATTRREF
 %token <ple> ATTRLIT EVALLIT DBREF

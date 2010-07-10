@@ -1,0 +1,77 @@
+%{
+#include "omega.h"
+#include "r6hgame.h"
+int  r6hllex();
+void r6hlerror(const char *s);
+
+R6H_LOCKEXP *g_r6hKeyExp = NULL;
+
+%}
+
+%name-prefix="r6hl"
+%debug
+%union {
+    R6H_LOCKEXP                *ple;
+}
+
+%token <ple> EVALLIT ATTRLIT DBREF
+%type  <ple> term factor expr nested_r nested_ra
+%start start
+
+%%
+start
+:
+    expr                         { g_r6hKeyExp = $1; };
+;
+
+expr:
+    expr '|' term                { $$ = new R6H_LOCKEXP; $$->SetOr($1,$3);     }
+|
+    term                         { $$ = $1; }
+;
+
+term:
+    factor '&' term              { $$ = new R6H_LOCKEXP; $$->SetAnd($1,$3);    }
+|
+    factor                       { $$ = $1; }
+;
+
+factor:
+    '!' factor                   { $$ = new R6H_LOCKEXP; $$->SetNot($2);       }
+|
+    '@' nested_r                 { $$ = new R6H_LOCKEXP; $$->SetIndir($2);     }
+|
+    '=' nested_ra                { $$ = new R6H_LOCKEXP; $$->SetIs($2);        }
+|
+    '+' nested_ra                { $$ = new R6H_LOCKEXP; $$->SetCarry($2); }
+|
+    '$' nested_r                 { $$ = new R6H_LOCKEXP; $$->SetOwner($2);     }
+|
+    '(' expr ')'                 { $$ = $2; }
+|
+    ATTRLIT                      { $$ = $1; }
+|
+    EVALLIT                      { $$ = $1; }
+|
+    DBREF                        { $$ = $1; }
+;
+
+nested_r:
+    DBREF                        { $$ = $1; }
+|
+    '(' nested_r  ')'            { $$ = $2; }
+;
+
+nested_ra:
+    DBREF                        { $$ = $1; }
+|
+    ATTRLIT                      { $$ = $1; }
+|
+    '(' nested_ra  ')'           { $$ = $2; }
+;
+
+%%
+
+void r6hlerror(const char *s)
+{
+}
