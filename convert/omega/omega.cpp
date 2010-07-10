@@ -564,6 +564,10 @@ int main(int argc, char *argv[])
     {
         g_t6hgame.Write(fpout);
     }
+    else if (eRhostMUSH == eOutputType)
+    {
+        g_r6hgame.Write(fpout);
+    }
 
     fclose(fpout);
     fclose(fpin);
