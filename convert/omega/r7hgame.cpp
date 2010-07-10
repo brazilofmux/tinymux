@@ -1,30 +1,30 @@
 #include "omega.h"
 #include "p6hgame.h"
-#include "r6hgame.h"
+#include "r7hgame.h"
 
-typedef struct _r6h_gameflaginfo
+typedef struct _r7h_gameflaginfo
 {
     int         mask;
     const char *pName;
-} r6h_gameflaginfo;
+} r7h_gameflaginfo;
 
-r6h_gameflaginfo r6h_gameflagnames[] =
+r7h_gameflaginfo r7h_gameflagnames[] =
 {
-    { R6H_V_ZONE,         "V_ZONE"        },
-    { R6H_V_LINK,         "V_LINK"        },
-    { R6H_V_GDBM,         "V_GDBM"        },
-    { R6H_V_ATRNAME,      "V_ATRNAME"     },
-    { R6H_V_ATRKEY,       "V_ATRKEY"      },
-    { R6H_V_PERNKEY,      "V_PERNEY"      },
-    { R6H_V_PARENT,       "V_PARENT"      },
-    { R6H_V_COMM,         "V_COMM"        },
-    { R6H_V_ATRMONEY,     "V_ATRMONEY"    },
-    { R6H_V_XFLAGS,       "V_XFLAGS"      },
+    { R7H_V_ZONE,         "V_ZONE"        },
+    { R7H_V_LINK,         "V_LINK"        },
+    { R7H_V_GDBM,         "V_GDBM"        },
+    { R7H_V_ATRNAME,      "V_ATRNAME"     },
+    { R7H_V_ATRKEY,       "V_ATRKEY"      },
+    { R7H_V_PERNKEY,      "V_PERNEY"      },
+    { R7H_V_PARENT,       "V_PARENT"      },
+    { R7H_V_COMM,         "V_COMM"        },
+    { R7H_V_ATRMONEY,     "V_ATRMONEY"    },
+    { R7H_V_XFLAGS,       "V_XFLAGS"      },
 };
-#define R6H_NUM_GAMEFLAGNAMES (sizeof(r6h_gameflagnames)/sizeof(r6h_gameflagnames[0]))
+#define R7H_NUM_GAMEFLAGNAMES (sizeof(r7h_gameflagnames)/sizeof(r7h_gameflagnames[0]))
 
-R6H_GAME g_r6hgame;
-R6H_LOCKEXP *r6hl_ParseKey(char *pKey);
+R7H_GAME g_r7hgame;
+R7H_LOCKEXP *r7hl_ParseKey(char *pKey);
 
 // The first character of an attribute name must be either alphabetic,
 // '_', '#', '.', or '~'. It's handled by the following table.
@@ -33,7 +33,7 @@ R6H_LOCKEXP *r6hl_ParseKey(char *pKey);
 // the set {'?!`/-_.@#$^&~=+<>()}. Lower-case letters are turned into
 // uppercase before being used, but lower-case letters are valid input.
 //
-bool r6h_AttrNameInitialSet[256] =
+bool r7h_AttrNameInitialSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -56,7 +56,7 @@ bool r6h_AttrNameInitialSet[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1   // F
 };
 
-bool r6h_AttrNameSet[256] =
+bool r7h_AttrNameSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -79,14 +79,14 @@ bool r6h_AttrNameSet[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1   // F
 };
 
-char *r6h_ConvertAttributeName(const char *pName)
+char *r7h_ConvertAttributeName(const char *pName)
 {
     char aBuffer[256];
     char *pBuffer = aBuffer;
     if (  '\0' != *pName
        && pBuffer < aBuffer + sizeof(aBuffer) - 1)
     {
-        if (r6h_AttrNameInitialSet[(unsigned char) *pName])
+        if (r7h_AttrNameInitialSet[(unsigned char) *pName])
         {
             *pBuffer++ = *pName++;
         }
@@ -98,7 +98,7 @@ char *r6h_ConvertAttributeName(const char *pName)
     while (  '\0' != *pName
           && pBuffer < aBuffer + sizeof(aBuffer) - 1)
     {
-        if (r6h_AttrNameSet[(unsigned char) *pName])
+        if (r7h_AttrNameSet[(unsigned char) *pName])
         {
             *pBuffer++ = *pName++;
         }
@@ -112,35 +112,35 @@ char *r6h_ConvertAttributeName(const char *pName)
     return StringClone(aBuffer);
 }
 
-void R6H_LOCKEXP::Write(FILE *fp)
+void R7H_LOCKEXP::Write(FILE *fp)
 {
     switch (m_op)
     {
-    case R6H_LOCKEXP::le_is:
+    case R7H_LOCKEXP::le_is:
         fprintf(fp, "(=");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_carry:
+    case R7H_LOCKEXP::le_carry:
         fprintf(fp, "(+");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_indirect:
+    case R7H_LOCKEXP::le_indirect:
         fprintf(fp, "(@");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_owner:
+    case R7H_LOCKEXP::le_owner:
         fprintf(fp, "($");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_and:
+    case R7H_LOCKEXP::le_and:
         fprintf(fp, "(");
         m_le[0]->Write(fp);
         fprintf(fp, "&");
@@ -148,7 +148,7 @@ void R6H_LOCKEXP::Write(FILE *fp)
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_or:
+    case R7H_LOCKEXP::le_or:
         fprintf(fp, "(");
         m_le[0]->Write(fp);
         fprintf(fp, "|");
@@ -156,13 +156,13 @@ void R6H_LOCKEXP::Write(FILE *fp)
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_not:
+    case R7H_LOCKEXP::le_not:
         fprintf(fp, "(!");
         m_le[0]->Write(fp);
         fprintf(fp, ")");
         break;
 
-    case R6H_LOCKEXP::le_attr:
+    case R7H_LOCKEXP::le_attr:
         m_le[0]->Write(fp);
         fprintf(fp, ":");
         m_le[1]->Write(fp);
@@ -171,34 +171,34 @@ void R6H_LOCKEXP::Write(FILE *fp)
         // a beneign typo, but we reproduce it to make regression testing
         // easier.
         //
-        if (m_le[0]->m_op != R6H_LOCKEXP::le_text)
+        if (m_le[0]->m_op != R7H_LOCKEXP::le_text)
         {
             fprintf(fp, "\n");
         }
         break;
 
-    case R6H_LOCKEXP::le_eval:
+    case R7H_LOCKEXP::le_eval:
         m_le[0]->Write(fp);
         fprintf(fp, "/");
         m_le[1]->Write(fp);
         fprintf(fp, "\n");
         break;
 
-    case R6H_LOCKEXP::le_ref:
+    case R7H_LOCKEXP::le_ref:
         fprintf(fp, "%d", m_dbRef);
         break;
 
-    case R6H_LOCKEXP::le_text:
+    case R7H_LOCKEXP::le_text:
         fprintf(fp, "%s", m_p[0]);
         break;
     }
 }
 
-char *R6H_LOCKEXP::Write(char *p)
+char *R7H_LOCKEXP::Write(char *p)
 {
     switch (m_op)
     {
-    case R6H_LOCKEXP::le_is:
+    case R7H_LOCKEXP::le_is:
         *p++ = '=';
         if (le_ref != m_le[0]->m_op)
         {
@@ -211,7 +211,7 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_carry:
+    case R7H_LOCKEXP::le_carry:
         *p++ = '+';
         if (le_ref != m_le[0]->m_op)
         {
@@ -224,7 +224,7 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_indirect:
+    case R7H_LOCKEXP::le_indirect:
         *p++ = '@';
         if (le_ref != m_le[0]->m_op)
         {
@@ -237,7 +237,7 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_owner:
+    case R7H_LOCKEXP::le_owner:
         *p++ = '$';
         if (le_ref != m_le[0]->m_op)
         {
@@ -250,13 +250,13 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_or:
+    case R7H_LOCKEXP::le_or:
         p = m_le[0]->Write(p);
         *p++ = '|';
         p = m_le[1]->Write(p);
         break;
 
-    case R6H_LOCKEXP::le_not:
+    case R7H_LOCKEXP::le_not:
         *p++ = '!';
         if (  le_and == m_le[0]->m_op
            || le_or == m_le[0]->m_op)
@@ -271,19 +271,19 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_attr:
+    case R7H_LOCKEXP::le_attr:
         p = m_le[0]->Write(p);
         *p++ = ':';
         p = m_le[1]->Write(p);
         break;
 
-    case R6H_LOCKEXP::le_eval:
+    case R7H_LOCKEXP::le_eval:
         p = m_le[0]->Write(p);
         *p++ = '/';
         p = m_le[1]->Write(p);
         break;
 
-    case R6H_LOCKEXP::le_and:
+    case R7H_LOCKEXP::le_and:
         if (le_or == m_le[0]->m_op)
         {
             *p++ = '(';
@@ -305,12 +305,12 @@ char *R6H_LOCKEXP::Write(char *p)
         }
         break;
 
-    case R6H_LOCKEXP::le_ref:
+    case R7H_LOCKEXP::le_ref:
         sprintf(p, "(#%d)", m_dbRef);
         p += strlen(p);
         break;
 
-    case R6H_LOCKEXP::le_text:
+    case R7H_LOCKEXP::le_text:
         sprintf(p, "%s", m_p[0]);
         p += strlen(p);
         break;
@@ -322,13 +322,13 @@ char *R6H_LOCKEXP::Write(char *p)
     return p;
 }
 
-bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
+bool R7H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
 {
     switch (p->m_op)
     {
     case P6H_LOCKEXP::le_is:
-        m_op = R6H_LOCKEXP::le_is;
-        m_le[0] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_is;
+        m_le[0] = new R7H_LOCKEXP;
         if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
         {
             delete m_le[0];
@@ -338,8 +338,8 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_carry:
-        m_op = R6H_LOCKEXP::le_carry;
-        m_le[0] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_carry;
+        m_le[0] = new R7H_LOCKEXP;
         if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
         {
             delete m_le[0];
@@ -349,8 +349,8 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_indirect:
-        m_op = R6H_LOCKEXP::le_indirect;
-        m_le[0] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_indirect;
+        m_le[0] = new R7H_LOCKEXP;
         if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
         {
             delete m_le[0];
@@ -364,8 +364,8 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_owner:
-        m_op = R6H_LOCKEXP::le_owner;
-        m_le[0] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_owner;
+        m_le[0] = new R7H_LOCKEXP;
         if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
         {
             delete m_le[0];
@@ -375,9 +375,9 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_or:
-        m_op = R6H_LOCKEXP::le_or;
-        m_le[0] = new R6H_LOCKEXP;
-        m_le[1] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_or;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
         if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
            || !m_le[1]->ConvertFromP6H(p->m_le[1]))
         {
@@ -389,8 +389,8 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_not:
-        m_op = R6H_LOCKEXP::le_not;
-        m_le[0] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_not;
+        m_le[0] = new R7H_LOCKEXP;
         if (!m_le[0]->ConvertFromP6H(p->m_le[0]))
         {
             delete m_le[0];
@@ -400,9 +400,9 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_attr:
-        m_op = R6H_LOCKEXP::le_attr;
-        m_le[0] = new R6H_LOCKEXP;
-        m_le[1] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_attr;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
         if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
            || !m_le[1]->ConvertFromP6H(p->m_le[1]))
         {
@@ -414,9 +414,9 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_eval:
-        m_op = R6H_LOCKEXP::le_eval;
-        m_le[0] = new R6H_LOCKEXP;
-        m_le[1] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_eval;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
         if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
            || !m_le[1]->ConvertFromP6H(p->m_le[1]))
         {
@@ -428,9 +428,9 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_and:
-        m_op = R6H_LOCKEXP::le_and;
-        m_le[0] = new R6H_LOCKEXP;
-        m_le[1] = new R6H_LOCKEXP;
+        m_op = R7H_LOCKEXP::le_and;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
         if (  !m_le[0]->ConvertFromP6H(p->m_le[0])
            || !m_le[1]->ConvertFromP6H(p->m_le[1]))
         {
@@ -442,12 +442,12 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_ref:
-        m_op = R6H_LOCKEXP::le_ref;
+        m_op = R7H_LOCKEXP::le_ref;
         m_dbRef = p->m_dbRef;
         break;
 
     case P6H_LOCKEXP::le_text:
-        m_op = R6H_LOCKEXP::le_text;
+        m_op = R7H_LOCKEXP::le_text;
         m_p[0] = StringClone(p->m_p[0]);
         break;
 
@@ -456,12 +456,12 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
         break;
 
     case P6H_LOCKEXP::le_true:
-        m_op = R6H_LOCKEXP::le_text;
+        m_op = R7H_LOCKEXP::le_text;
         m_p[0] = StringClone("1");
         break;
 
     case P6H_LOCKEXP::le_false:
-        m_op = R6H_LOCKEXP::le_text;
+        m_op = R7H_LOCKEXP::le_text;
         m_p[0] = StringClone("0");
         break;
 
@@ -472,7 +472,7 @@ bool R6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
     return true;
 }
  
-void R6H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
+void R7H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
     m_iNum = iNum;
@@ -526,7 +526,7 @@ static char *EncodeString(const char *str, bool fExtraEscapes)
     return buf;
 }
 
-void R6H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
+void R7H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
 {
     if (m_fNumAndName)
     {
@@ -534,7 +534,7 @@ void R6H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
     }
 }
 
-void R6H_OBJECTINFO::SetName(char *pName)
+void R7H_OBJECTINFO::SetName(char *pName)
 {
     if (NULL != m_pName)
     {
@@ -543,7 +543,7 @@ void R6H_OBJECTINFO::SetName(char *pName)
     m_pName = pName;
 }
 
-const int r6h_locknums[] =
+const int r7h_locknums[] =
 {
      42,  // A_LOCK
      59,  // A_LENTER
@@ -565,7 +565,7 @@ const int r6h_locknums[] =
     231,  // A_LVISIBLE
 };
 
-void R6H_OBJECTINFO::SetAttrs(int nAttrs, vector<R6H_ATTRINFO *> *pvai)
+void R7H_OBJECTINFO::SetAttrs(int nAttrs, vector<R7H_ATTRINFO *> *pvai)
 {
     if (  (  NULL == pvai
           && 0 != nAttrs)
@@ -585,15 +585,15 @@ void R6H_OBJECTINFO::SetAttrs(int nAttrs, vector<R6H_ATTRINFO *> *pvai)
 
     if (NULL != m_pvai)
     {
-        for (vector<R6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
             (*it)->m_fIsLock = false;
-            for (int i = 0; i < sizeof(r6h_locknums)/sizeof(r6h_locknums[0]); i++)
+            for (int i = 0; i < sizeof(r7h_locknums)/sizeof(r7h_locknums[0]); i++)
             {
-                if (r6h_locknums[i] == (*it)->m_iNum)
+                if (r7h_locknums[i] == (*it)->m_iNum)
                 {
                     (*it)->m_fIsLock = true;
-                    (*it)->m_pKeyTree = r6hl_ParseKey((*it)->m_pValue);
+                    (*it)->m_pKeyTree = r7hl_ParseKey((*it)->m_pValue);
                     if (NULL == (*it)->m_pKeyTree)
                     {
                        fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValue);
@@ -605,7 +605,7 @@ void R6H_OBJECTINFO::SetAttrs(int nAttrs, vector<R6H_ATTRINFO *> *pvai)
     }
 }
 
-void R6H_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
+void R7H_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
 {
     m_fNumAndValue = true;
     m_iNum = iNum;
@@ -616,38 +616,38 @@ void R6H_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
     m_pValue = pValue;
 }
 
-void R6H_GAME::AddNumAndName(int iNum, char *pName)
+void R7H_GAME::AddNumAndName(int iNum, char *pName)
 {
-    R6H_ATTRNAMEINFO *pani = new R6H_ATTRNAMEINFO;
+    R7H_ATTRNAMEINFO *pani = new R7H_ATTRNAMEINFO;
     pani->SetNumAndName(iNum, pName);
     m_vAttrNames.push_back(pani);
 }
 
-void R6H_GAME::AddObject(R6H_OBJECTINFO *poi)
+void R7H_GAME::AddObject(R7H_OBJECTINFO *poi)
 {
     m_mObjects[poi->m_dbRef] = poi;
 }
 
-void R6H_GAME::ValidateFlags() const
+void R7H_GAME::ValidateFlags() const
 {
     int flags = m_flags;
 
-    int ver = (m_flags & R6H_V_MASK);
+    int ver = (m_flags & R7H_V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
     if (ver < 7 || 7 < ver)
     {
         fprintf(stderr, "WARNING: Expecting version to be 7.\n");
     }
-    flags &= ~R6H_V_MASK;
+    flags &= ~R7H_V_MASK;
     int tflags = flags;
 
     fprintf(stderr, "INFO: Flatfile flags are ");
-    for (int i = 0; i < R6H_NUM_GAMEFLAGNAMES; i++)
+    for (int i = 0; i < R7H_NUM_GAMEFLAGNAMES; i++)
     {
-        if (r6h_gameflagnames[i].mask & tflags)
+        if (r7h_gameflagnames[i].mask & tflags)
         {
-            fprintf(stderr, "%s ", r6h_gameflagnames[i].pName);
-            tflags &= ~r6h_gameflagnames[i].mask;
+            fprintf(stderr, "%s ", r7h_gameflagnames[i].pName);
+            tflags &= ~r7h_gameflagnames[i].mask;
         }
     }
     fprintf(stderr, "\n");
@@ -660,25 +660,25 @@ void R6H_GAME::ValidateFlags() const
     // Validate mandatory flags are present.
     //
     if (  7 == ver
-       && (flags & R6H_MANDFLAGS) != R6H_MANDFLAGS)
+       && (flags & R7H_MANDFLAGS) != R7H_MANDFLAGS)
     {
         fprintf(stderr, "WARNING: Not all mandatory flags for v7 are present.\n");
     }
 
     // Validate that this is a flatfile and not a structure file.
     //
-    if (  (flags & R6H_V_GDBM) != 0
-       || (flags & R6H_V_ATRNAME) != 0
-       || (flags & R6H_V_ATRMONEY) != 0)
+    if (  (flags & R7H_V_GDBM) != 0
+       || (flags & R7H_V_ATRNAME) != 0
+       || (flags & R7H_V_ATRMONEY) != 0)
     {
         fprintf(stderr, "WARNING: Expected a flatfile (with strings) instead of a structure file (with only object anchors).\n");
     }
 }
 
-void R6H_GAME::ValidateObjects() const
+void R7H_GAME::ValidateObjects() const
 {
     int dbRefMax = 0;
-    for (map<int, R6H_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    for (map<int, R7H_OBJECTINFO *, lti>::const_iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
         it->second->Validate();
         if (dbRefMax < it->first)
@@ -704,7 +704,7 @@ void R6H_GAME::ValidateObjects() const
     }
 }
 
-void R6H_ATTRNAMEINFO::Validate(int ver) const
+void R7H_ATTRNAMEINFO::Validate(int ver) const
 {
     if (m_fNumAndName)
     {
@@ -734,7 +734,7 @@ void R6H_ATTRNAMEINFO::Validate(int ver) const
             {
                 q = p + 1;
                 bool fValid = true;
-                if (!r6h_AttrNameInitialSet[*q])
+                if (!r7h_AttrNameInitialSet[*q])
                 {
                     fValid = false;
                 }
@@ -743,7 +743,7 @@ void R6H_ATTRNAMEINFO::Validate(int ver) const
                     q++;
                     while ('\0' != *q)
                     {
-                        if (!r6h_AttrNameSet[*q])
+                        if (!r7h_AttrNameSet[*q])
                         {
                             fValid = false;
                             break;
@@ -764,7 +764,7 @@ void R6H_ATTRNAMEINFO::Validate(int ver) const
     }
 }
 
-void R6H_GAME::ValidateAttrNames(int ver) const
+void R7H_GAME::ValidateAttrNames(int ver) const
 {
     if (!m_fNextAttr)
     {
@@ -773,7 +773,7 @@ void R6H_GAME::ValidateAttrNames(int ver) const
     else
     {
         int n = 256;
-        for (vector<R6H_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (vector<R7H_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
             (*it)->Validate(ver);
             if ((*it)->m_fNumAndName)
@@ -792,15 +792,15 @@ void R6H_GAME::ValidateAttrNames(int ver) const
     }
 }
 
-void R6H_GAME::Validate() const
+void R7H_GAME::Validate() const
 {
-    int ver = (m_flags & R6H_V_MASK);
+    int ver = (m_flags & R7H_V_MASK);
     ValidateFlags();
     ValidateAttrNames(ver);
     ValidateObjects();
 }
 
-void R6H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
+void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
 {
     fprintf(fp, "!%d\n", m_dbRef);
     if (NULL != m_pName)
@@ -890,7 +890,7 @@ void R6H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     if (  m_fAttrCount
        && NULL != m_pvai)
     {
-        for (vector<R6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
             (*it)->Write(fp, fExtraEscapes);
         }
@@ -898,7 +898,7 @@ void R6H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     fprintf(fp, "<\n");
 }
 
-void R6H_ATTRINFO::Validate() const
+void R7H_ATTRINFO::Validate() const
 {
     if (  m_fNumAndValue
        && m_fIsLock
@@ -914,14 +914,14 @@ void R6H_ATTRINFO::Validate() const
     }
 }
 
-void R6H_OBJECTINFO::Validate() const
+void R7H_OBJECTINFO::Validate() const
 {
-    map<int, R6H_OBJECTINFO *, lti>::const_iterator itFound;
+    map<int, R7H_OBJECTINFO *, lti>::const_iterator itFound;
     if (  m_fLocation
        && -1 != m_dbLocation)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbLocation);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbLocation);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Location (#%d) of object #%d does not exist.\n", m_dbLocation, m_dbRef);
         }
@@ -929,8 +929,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fContents
        && -1 != m_dbContents)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbContents);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbContents);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Contents (#%d) of object #%d does not exist.\n", m_dbContents, m_dbRef);
         }
@@ -938,8 +938,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fExits
        && -1 != m_dbExits)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbExits);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbExits);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Exits (#%d) of object #%d does not exist.\n", m_dbExits, m_dbRef);
         }
@@ -947,8 +947,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fNext
        && -1 != m_dbNext)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbNext);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbNext);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Next (#%d) of object #%d does not exist.\n", m_dbNext, m_dbRef);
         }
@@ -956,8 +956,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fParent
        && -1 != m_dbParent)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbParent);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbParent);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Parent (#%d) of object #%d does not exist.\n", m_dbParent, m_dbRef);
         }
@@ -965,8 +965,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fOwner
        && -1 != m_dbOwner)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbOwner);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbOwner);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Owner (#%d) of object #%d does not exist.\n", m_dbOwner, m_dbRef);
         }
@@ -974,8 +974,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fZone
        && -1 != m_dbZone)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbZone);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbZone);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Zone (#%d) of object #%d does not exist.\n", m_dbZone, m_dbRef);
         }
@@ -983,8 +983,8 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fLink
        && -1 != m_dbLink)
     {
-        itFound = g_r6hgame.m_mObjects.find(m_dbLink);
-        if (itFound == g_r6hgame.m_mObjects.end())
+        itFound = g_r7hgame.m_mObjects.find(m_dbLink);
+        if (itFound == g_r7hgame.m_mObjects.end())
         {
             fprintf(stderr, "WARNING: Link (#%d) of object #%d does not exist.\n", m_dbLink, m_dbRef);
         }
@@ -993,14 +993,14 @@ void R6H_OBJECTINFO::Validate() const
     if (  m_fAttrCount
        && NULL != m_pvai)
     {
-        for (vector<R6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
             (*it)->Validate();
         }
     }
 }
 
-void R6H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
+void R7H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 {
     if (m_fNumAndValue)
     {
@@ -1008,7 +1008,7 @@ void R6H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
     }
 }
 
-void R6H_GAME::Write(FILE *fp)
+void R7H_GAME::Write(FILE *fp)
 {
     // TIMESTAMPS and escapes occured near the same time, but are not related.
     //
@@ -1026,13 +1026,13 @@ void R6H_GAME::Write(FILE *fp)
     {
         fprintf(fp, "-R%d\n", m_nRecordPlayers);
     }
-    for (vector<R6H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    for (vector<R7H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
         (*it)->Write(fp, fExtraEscapes);
     } 
-    for (map<int, R6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    for (map<int, R7H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Write(fp, (m_flags & R6H_V_ATRKEY) == 0, fExtraEscapes);
+        it->second->Write(fp, (m_flags & R7H_V_ATRKEY) == 0, fExtraEscapes);
     } 
 
     fprintf(fp, "***END OF DUMP***\n");
@@ -1040,23 +1040,23 @@ void R6H_GAME::Write(FILE *fp)
 
 static int p6h_convert_type[] =
 {
-    R6H_NOTYPE,        //  0
-    R6H_TYPE_ROOM,     //  1
-    R6H_TYPE_THING,    //  2
-    R6H_NOTYPE,        //  3
-    R6H_TYPE_EXIT,     //  4
-    R6H_NOTYPE,        //  5
-    R6H_NOTYPE,        //  6
-    R6H_NOTYPE,        //  7
-    R6H_TYPE_PLAYER,   //  8
-    R6H_NOTYPE,        //  9
-    R6H_NOTYPE,        // 10
-    R6H_NOTYPE,        // 11
-    R6H_NOTYPE,        // 12
-    R6H_NOTYPE,        // 13
-    R6H_NOTYPE,        // 14
-    R6H_NOTYPE,        // 15
-    R6H_TYPE_GARBAGE,  // 16
+    R7H_NOTYPE,        //  0
+    R7H_TYPE_ROOM,     //  1
+    R7H_TYPE_THING,    //  2
+    R7H_NOTYPE,        //  3
+    R7H_TYPE_EXIT,     //  4
+    R7H_NOTYPE,        //  5
+    R7H_NOTYPE,        //  6
+    R7H_NOTYPE,        //  7
+    R7H_TYPE_PLAYER,   //  8
+    R7H_NOTYPE,        //  9
+    R7H_NOTYPE,        // 10
+    R7H_NOTYPE,        // 11
+    R7H_NOTYPE,        // 12
+    R7H_NOTYPE,        // 13
+    R7H_NOTYPE,        // 14
+    R7H_NOTYPE,        // 15
+    R7H_TYPE_GARBAGE,  // 16
 };
 
 static NameMask p6h_convert_obj_flags1[] =
@@ -1137,7 +1137,7 @@ static struct
 {
     const char *pName;
     int         iNum;
-} r6h_known_attrs[] =
+} r7h_known_attrs[] =
 {
     { "AAHEAR",         27 },
     { "ACLONE",         20 },
@@ -1389,16 +1389,16 @@ static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char
     return buffer;
 }
 
-void R6H_GAME::ConvertFromP6H()
+void R7H_GAME::ConvertFromP6H()
 {
-    SetFlags(R6H_MANDFLAGS | 7);
+    SetFlags(R7H_MANDFLAGS | 7);
 
     // Build internal attribute names.
     //
     map<const char *, int, ltstr> AttrNamesKnown;
-    for (int i = 0; i < sizeof(r6h_known_attrs)/sizeof(r6h_known_attrs[0]); i++)
+    for (int i = 0; i < sizeof(r7h_known_attrs)/sizeof(r7h_known_attrs[0]); i++)
     {
-        AttrNamesKnown[StringClone(r6h_known_attrs[i].pName)] = r6h_known_attrs[i].iNum;
+        AttrNamesKnown[StringClone(r7h_known_attrs[i].pName)] = r7h_known_attrs[i].iNum;
     }
 
     // Build set of attribute names.
@@ -1413,7 +1413,7 @@ void R6H_GAME::ConvertFromP6H()
             {
                 if (NULL != (*itAttr)->m_pName)
                 {
-                    char *pAttrName = r6h_ConvertAttributeName((*itAttr)->m_pName);
+                    char *pAttrName = r7h_ConvertAttributeName((*itAttr)->m_pName);
                     map<const char *, int , ltstr>::iterator itFound = AttrNamesKnown.find(pAttrName);
                     if (itFound != AttrNamesKnown.end())
                     {
@@ -1458,7 +1458,7 @@ void R6H_GAME::ConvertFromP6H()
             continue;
         }
 
-        R6H_OBJECTINFO *poi = new R6H_OBJECTINFO;
+        R7H_OBJECTINFO *poi = new R7H_OBJECTINFO;
 
         int iType = p6h_convert_type[it->second->m_iType];
 
@@ -1467,7 +1467,7 @@ void R6H_GAME::ConvertFromP6H()
         if (it->second->m_fLocation)
         {
             int iLocation = it->second->m_dbLocation;
-            if (  R6H_TYPE_EXIT == iType
+            if (  R7H_TYPE_EXIT == iType
                && -2 == iLocation)
             {
                 poi->SetLocation(-1);
@@ -1485,8 +1485,8 @@ void R6H_GAME::ConvertFromP6H()
         {
             switch (iType)
             {
-            case R6H_TYPE_PLAYER:
-            case R6H_TYPE_THING:
+            case R7H_TYPE_PLAYER:
+            case R7H_TYPE_THING:
                 poi->SetExits(-1);
                 poi->SetLink(it->second->m_dbExits);
                 break;
@@ -1601,12 +1601,12 @@ void R6H_GAME::ConvertFromP6H()
 
                     // A_CREATED
                     //
-                    R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                    R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(218, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {
-                        vector<R6H_ATTRINFO *> *pvai = new vector<R6H_ATTRINFO *>;
+                        vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
                         pvai->push_back(pai);
                         poi->SetAttrs(pvai->size(), pvai);
                     }
@@ -1634,12 +1634,12 @@ void R6H_GAME::ConvertFromP6H()
 
                     // A_MODIFIED
                     //
-                    R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                    R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(219, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {
-                        vector<R6H_ATTRINFO *> *pvai = new vector<R6H_ATTRINFO *>;
+                        vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
                         pvai->push_back(pai);
                         poi->SetAttrs(pvai->size(), pvai);
                     }
@@ -1655,7 +1655,7 @@ void R6H_GAME::ConvertFromP6H()
 
         if (NULL != it->second->m_pvai)
         {
-            vector<R6H_ATTRINFO *> *pvai = new vector<R6H_ATTRINFO *>;
+            vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
             for (vector<P6H_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
             {
                 if (  NULL != (*itAttr)->m_pName
@@ -1671,11 +1671,11 @@ void R6H_GAME::ConvertFromP6H()
                         }
                     }
                     char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
-                    char *pAttrName = r6h_ConvertAttributeName((*itAttr)->m_pName);
+                    char *pAttrName = r7h_ConvertAttributeName((*itAttr)->m_pName);
                     map<const char *, int , ltstr>::iterator itFound = AttrNamesKnown.find(pAttrName);
                     if (itFound != AttrNamesKnown.end())
                     {
-                        R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                        R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                         int iNum = AttrNamesKnown[pAttrName];
                         if (5 == iNum)
                         {
@@ -1695,7 +1695,7 @@ void R6H_GAME::ConvertFromP6H()
                         itFound = AttrNames.find(pAttrName);
                         if (itFound != AttrNames.end())
                         {
-                            R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                            R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                             pai->SetNumAndValue(AttrNames[pAttrName], StringClone(pEncodedAttrValue));
                             pvai->push_back(pai);
                         }
@@ -1731,7 +1731,7 @@ void R6H_GAME::ConvertFromP6H()
 
                     if (fFound)
                     {
-                        R6H_LOCKEXP *pLock = new R6H_LOCKEXP;
+                        R7H_LOCKEXP *pLock = new R7H_LOCKEXP;
                         if (pLock->ConvertFromP6H((*itLock)->m_pKeyTree))
                         {
                             char buffer[65536];
@@ -1740,12 +1740,12 @@ void R6H_GAME::ConvertFromP6H()
 
                             // Add it.
                             //
-                            R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                            R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                             pai->SetNumAndValue(iLock, StringClone(buffer));
 
                             if (NULL == poi->m_pvai)
                             {
-                                vector<R6H_ATTRINFO *> *pvai = new vector<R6H_ATTRINFO *>;
+                                vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
                                 pvai->push_back(pai);
                                 poi->SetAttrs(pvai->size(), pvai);
                             }
@@ -1789,16 +1789,16 @@ void R6H_GAME::ConvertFromP6H()
     SetRecordPlayers(0);
 }
 
-void R6H_GAME::ResetPassword()
+void R7H_GAME::ResetPassword()
 {
-    for (map<int, R6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    for (map<int, R7H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
     {
         if (1 == itObj->first)
         {
             bool fFound = false;
             if (NULL != itObj->second->m_pvai)
             {
-                for (vector<R6H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
+                for (vector<R7H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
                 {
                     if (5 == (*itAttr)->m_iNum)
                     {
@@ -1816,12 +1816,12 @@ void R6H_GAME::ResetPassword()
             {
                 // Add it.
                 //
-                R6H_ATTRINFO *pai = new R6H_ATTRINFO;
+                R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                 pai->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
 
                 if (NULL == itObj->second->m_pvai)
                 {
-                    vector<R6H_ATTRINFO *> *pvai = new vector<R6H_ATTRINFO *>;
+                    vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
                     pvai->push_back(pai);
                     itObj->second->SetAttrs(pvai->size(), pvai);
                 }

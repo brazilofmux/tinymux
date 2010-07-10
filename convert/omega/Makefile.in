@@ -1,7 +1,7 @@
 all: omega
 
-omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r6hgame.o lex.r6h.o r6h.tab.o lex.r6hl.o r6hl.tab.o
-	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r6hgame.o lex.r6h.o r6h.tab.o lex.r6hl.o r6hl.tab.o
+omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r7hgame.o lex.r7h.o r7h.tab.o lex.r7hl.o r7hl.tab.o
+	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r7hgame.o lex.r7h.o r7h.tab.o lex.r7hl.o r7hl.tab.o
 
 omega.o: omega.cpp omega.h p6hgame.h t5xgame.h
 	$(CXX) -g -c omega.cpp
@@ -87,32 +87,32 @@ t6hl.tab.o: t6hl.tab.hpp t6hl.tab.cpp t6hgame.h
 lex.t6hl.o: lex.t6hl.cpp t6hl.tab.hpp t6hgame.h
 	$(CXX) -g -c lex.t6hl.cpp
 
-r6hgame.o: r6hgame.cpp omega.h r6hgame.h
-	$(CXX) -g -c r6hgame.cpp
+r7hgame.o: r7hgame.cpp omega.h r7hgame.h
+	$(CXX) -g -c r7hgame.cpp
 
-lex.r6h.cpp: r6h.ll
-	$(LEX) -8 -olex.r6h.cpp r6h.ll
+lex.r7h.cpp: r7h.ll
+	$(LEX) -8 -olex.r7h.cpp r7h.ll
 
-r6h.tab.cpp r6h.tab.hpp: r6h.ypp
-	bison -d r6h.ypp
+r7h.tab.cpp r7h.tab.hpp: r7h.ypp
+	bison -d r7h.ypp
 
-r6h.tab.o: r6h.tab.hpp r6h.tab.cpp r6hgame.h
-	$(CXX) -g -c r6h.tab.cpp
+r7h.tab.o: r7h.tab.hpp r7h.tab.cpp r7hgame.h
+	$(CXX) -g -c r7h.tab.cpp
 
-lex.r6h.o: lex.r6h.cpp r6h.tab.hpp r6hgame.h
-	$(CXX) -g -c lex.r6h.cpp
+lex.r7h.o: lex.r7h.cpp r7h.tab.hpp r7hgame.h
+	$(CXX) -g -c lex.r7h.cpp
 
-lex.r6hl.cpp: r6hl.ll
-	$(LEX) -8 -olex.r6hl.cpp r6hl.ll
+lex.r7hl.cpp: r7hl.ll
+	$(LEX) -8 -olex.r7hl.cpp r7hl.ll
 
-r6hl.tab.cpp r6hl.tab.hpp: r6hl.ypp
-	bison -d r6hl.ypp
+r7hl.tab.cpp r7hl.tab.hpp: r7hl.ypp
+	bison -d r7hl.ypp
 
-r6hl.tab.o: r6hl.tab.hpp r6hl.tab.cpp r6hgame.h
-	$(CXX) -g -c r6hl.tab.cpp
+r7hl.tab.o: r7hl.tab.hpp r7hl.tab.cpp r7hgame.h
+	$(CXX) -g -c r7hl.tab.cpp
 
-lex.r6hl.o: lex.r6hl.cpp r6hl.tab.hpp r6hgame.h
-	$(CXX) -g -c lex.r6hl.cpp
+lex.r7hl.o: lex.r7hl.cpp r7hl.tab.hpp r7hgame.h
+	$(CXX) -g -c lex.r7hl.cpp
 
 clean:
-	-rm -f *.o lex.p6h.cpp p6h.tab.cpp p6h.tab.hpp lex.p6hl.cpp p6hl.tab.cpp p6hl.tab.hpp lex.t5x.cpp t5x.tab.cpp t5x.tab.hpp lex.t5xl.cpp t5xl.tab.cpp t5xl.tab.hpp lex.t6h.cpp t6h.tab.cpp t6h.tab.hpp lex.t6hl.cpp t6hl.tab.cpp t6hl.tab.hpp lex.r6h.cpp r6h.tab.cpp r6h.tab.hpp lex.r6hl.cpp r6hl.tab.cpp r6hl.tab.hpp location.hh position.hh stack.hh
+	-rm -f *.o lex.p6h.cpp p6h.tab.cpp p6h.tab.hpp lex.p6hl.cpp p6hl.tab.cpp p6hl.tab.hpp lex.t5x.cpp t5x.tab.cpp t5x.tab.hpp lex.t5xl.cpp t5xl.tab.cpp t5xl.tab.hpp lex.t6h.cpp t6h.tab.cpp t6h.tab.hpp lex.t6hl.cpp t6hl.tab.cpp t6hl.tab.hpp lex.r7h.cpp r7h.tab.cpp r7h.tab.hpp lex.r7hl.cpp r7hl.tab.cpp r7hl.tab.hpp location.hh position.hh stack.hh

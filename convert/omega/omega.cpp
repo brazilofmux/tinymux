@@ -2,7 +2,7 @@
 #include "p6hgame.h"
 #include "t5xgame.h"
 #include "t6hgame.h"
-#include "r6hgame.h"
+#include "r7hgame.h"
 
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
@@ -35,8 +35,8 @@ void Usage()
     fprintf(stderr, "Version: %s\n", OMEGA_VERSION);
     fprintf(stderr, "omega <options> <infile> <outfile>\n");
     fprintf(stderr, "Supported options:\n");
-    fprintf(stderr, "  -i <type>      Input file type (p6h, r6h, t5x, t6h)\n");
-    fprintf(stderr, "  -o <type>      Output file type (p6h, r6h, t5x, t6h)\n");
+    fprintf(stderr, "  -i <type>      Input file type (p6h, r7h, t5x, t6h)\n");
+    fprintf(stderr, "  -o <type>      Output file type (p6h, r7h, t5x, t6h)\n");
     fprintf(stderr, "  -v <ver>       Output version\n");
     fprintf(stderr, "  -c <charset>   Input charset\n");
     fprintf(stderr, "  -d <charset>   Output charset\n");
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
             {
                 eInputType = eTinyMUX;
             }
-            else if (  strcasecmp(optarg, "r6h") == 0
+            else if (  strcasecmp(optarg, "r7h") == 0
                     || strcasecmp(optarg, "rhostmush") == 0)
             {
                 eInputType = eRhostMUSH;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                fprintf(stderr, "Input type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r6h), or tinymush (t6h).\n");
+                fprintf(stderr, "Input type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r7h), or tinymush (t6h).\n");
                 Usage();
                 return 1;
             }
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
             {
                 eOutputType = eTinyMUX;
             }
-            else if (  strcasecmp(optarg, "r6h") == 0
+            else if (  strcasecmp(optarg, "r7h") == 0
                     || strcasecmp(optarg, "rhostmush") == 0)
             {
                 eOutputType = eRhostMUSH;
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                fprintf(stderr, "Output type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r6h), or tinymush (t6h).\n");
+                fprintf(stderr, "Output type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r7h), or tinymush (t6h).\n");
                 Usage();
                 return 1;
             }
@@ -371,10 +371,10 @@ int main(int argc, char *argv[])
     }
     else if (eRhostMUSH == eInputType)
     {
-        r6hin = fpin;
-        r6hparse();
-        r6hin = NULL;
-        g_r6hgame.Validate();
+        r7hin = fpin;
+        r7hparse();
+        r7hin = NULL;
+        g_r7hgame.Validate();
     }
     else
     {
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
     }
     else if (eRhostMUSH == eOutputType)
     {
-        g_r6hgame.Write(fpout);
+        g_r7hgame.Write(fpout);
     }
 
     fclose(fpout);

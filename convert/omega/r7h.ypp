@@ -1,17 +1,17 @@
 %{
 #include "omega.h"
-#include "r6hgame.h"
-int r6hlex();
-void r6herror(const char *s);
+#include "r7hgame.h"
+int r7hlex();
+void r7herror(const char *s);
 %}
 
-%name-prefix="r6h"
+%name-prefix="r7h"
 %union {
     char                   *p;
     int                     i;
-    R6H_ATTRINFO           *pai;
-    vector<R6H_ATTRINFO *> *pvai;
-    R6H_LOCKEXP            *ple;
+    R7H_ATTRINFO           *pai;
+    vector<R7H_ATTRINFO *> *pvai;
+    R7H_LOCKEXP            *ple;
     vector<int>            *pvz;
 }
 
@@ -29,7 +29,7 @@ void r6herror(const char *s);
 %%
 start
 :
-    VHDR        { g_r6hgame.SetFlags($1); }
+    VHDR        { g_r7hgame.SetFlags($1); }
     sections
     EOD
 ;
@@ -44,13 +44,13 @@ sections
 section
 :
 |
-    SIZEHINT       { g_r6hgame.SetSizeHint($1); }
+    SIZEHINT       { g_r7hgame.SetSizeHint($1); }
 |
-    NEXTATTR       { g_r6hgame.SetNextAttr($1); }
+    NEXTATTR       { g_r7hgame.SetNextAttr($1); }
 |
-    RECORDPLAYERS  { g_r6hgame.SetRecordPlayers($1); }
+    RECORDPLAYERS  { g_r7hgame.SetRecordPlayers($1); }
 |
-    ATTRNUM ATTRNAME { g_r6hgame.AddNumAndName($1, $2); }
+    ATTRNUM ATTRNAME { g_r7hgame.AddNumAndName($1, $2); }
 |
     objectlist
 ;
@@ -73,7 +73,7 @@ object
     INTEGER INTEGER INTEGER INTEGER
     zones
     attrlist '<' {
-                     R6H_OBJECTINFO *oi = new R6H_OBJECTINFO;
+                     R7H_OBJECTINFO *oi = new R7H_OBJECTINFO;
                      oi->SetRef($1);
                      oi->SetName($2);
                      oi->SetLocation($3);
@@ -102,7 +102,7 @@ object
                      {
                          oi->SetAttrs($25->size(), $25);
                      }
-                     g_r6hgame.AddObject(oi);
+                     g_r7hgame.AddObject(oi);
                  } 
 ;
 
@@ -113,7 +113,7 @@ zones:
 ;
 
 lockexpr:
-    lockexpr '|' lockterm            { $$ = new R6H_LOCKEXP; $$->SetOr($1,$3);     }
+    lockexpr '|' lockterm            { $$ = new R7H_LOCKEXP; $$->SetOr($1,$3);     }
 |
     lockterm                         { $$ = $1; }
 |
@@ -121,21 +121,21 @@ lockexpr:
 ;
 
 lockterm:
-    lockfactor '&' lockterm          { $$ = new R6H_LOCKEXP; $$->SetAnd($1,$3);    }
+    lockfactor '&' lockterm          { $$ = new R7H_LOCKEXP; $$->SetAnd($1,$3);    }
 |
     lockfactor                       { $$ = $1; }
 ;
 
 lockfactor:
-    '!' lockfactor                   { $$ = new R6H_LOCKEXP; $$->SetNot($2);       }
+    '!' lockfactor                   { $$ = new R7H_LOCKEXP; $$->SetNot($2);       }
 |
-    '@' locknested_r                 { $$ = new R6H_LOCKEXP; $$->SetIndir($2);     }
+    '@' locknested_r                 { $$ = new R7H_LOCKEXP; $$->SetIndir($2);     }
 |
-    '=' locknested_ra                { $$ = new R6H_LOCKEXP; $$->SetIs($2);        }
+    '=' locknested_ra                { $$ = new R7H_LOCKEXP; $$->SetIs($2);        }
 |
-    '+' locknested_ra                { $$ = new R6H_LOCKEXP; $$->SetCarry($2);     }
+    '+' locknested_ra                { $$ = new R7H_LOCKEXP; $$->SetCarry($2);     }
 |
-    '$' locknested_r                 { $$ = new R6H_LOCKEXP; $$->SetOwner($2);     }
+    '$' locknested_r                 { $$ = new R7H_LOCKEXP; $$->SetOwner($2);     }
 |
     '(' lockexpr ')'                 { $$ = $2; }
 |
@@ -162,7 +162,7 @@ locknested_ra:
 
 attrlist
 :
-    attrlist attr       { $$ = $1; if (NULL == $$) { $$ = new vector<R6H_ATTRINFO *>; } $$->push_back($2); }
+    attrlist attr       { $$ = $1; if (NULL == $$) { $$ = new vector<R7H_ATTRINFO *>; } $$->push_back($2); }
 |
                         { $$ = NULL; }
 ;
@@ -170,13 +170,13 @@ attrlist
 
 attr
 :
-    ATTRREF STRING  { $$ = new R6H_ATTRINFO; $$->SetNumAndValue($1, $2); }
+    ATTRREF STRING  { $$ = new R7H_ATTRINFO; $$->SetNumAndValue($1, $2); }
 ;
 
 %%
 
-void r6herror(const char *s)
+void r7herror(const char *s)
 {
-    extern int r6hlineno;
-    fprintf(stderr, "%s near line %d.\n", s, r6hlineno);
+    extern int r7hlineno;
+    fprintf(stderr, "%s near line %d.\n", s, r7hlineno);
 }

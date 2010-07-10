@@ -1,7 +1,7 @@
 %{
 #include "omega.h"
-#include "r6hgame.h"
-#include "r6h.tab.hpp"
+#include "r7hgame.h"
+#include "r7h.tab.hpp"
 static int  iLockNest;
 
 // Because the lock does not start with an open paren,
@@ -15,7 +15,7 @@ static int  iObjectField = -1;
 %option 8bit 
 %option yylineno
 %option noyywrap
-%option prefix="r6h"
+%option prefix="r7h"
 
 %s afterhdr object
 %x lock name value
@@ -27,35 +27,35 @@ static int  iObjectField = -1;
 
 <INITIAL>{
   ^\+V[0-9]+[\n] {
-                     r6hlval.i = atoi(r6htext+2);
-                     flags = r6hlval.i;
+                     r7hlval.i = atoi(r7htext+2);
+                     flags = r7hlval.i;
                      BEGIN(afterhdr);
                      return VHDR;
                  }
 }
 <afterhdr>{
   ^\+S[0-9]+[\n] {
-                     r6hlval.i = atoi(r6htext+2);
+                     r7hlval.i = atoi(r7htext+2);
                      return SIZEHINT;
                  }
   ^\+N[0-9]+[\n] {
-                     r6hlval.i = atoi(r6htext+2);
+                     r7hlval.i = atoi(r7htext+2);
                      return NEXTATTR;
                  }
   ^\-R[0-9]+[\n] {
-                     r6hlval.i = atoi(r6htext+2);
+                     r7hlval.i = atoi(r7htext+2);
                      return RECORDPLAYERS;
                  }
   ^\+A[0-9]+[\n] {
-                     r6hlval.i = atoi(r6htext+2);
+                     r7hlval.i = atoi(r7htext+2);
                      return ATTRNUM;
                  }
   ^[0-9+]+:[^\n]+[\n] {
-                     r6hlval.p = StringClone(r6htext);
+                     r7hlval.p = StringClone(r7htext);
                      return ATTRNAME;
                  }
   ![0-9]+[\n]    {
-                     r6hlval.i = atoi(r6htext+1);
+                     r7hlval.i = atoi(r7htext+1);
                      BEGIN(name);
                      iObjectField = 1;
                      return OBJECT;
@@ -67,7 +67,7 @@ static int  iObjectField = -1;
 
 <name>{
   ^[^\n]+[\n]    {
-                     r6hlval.p = StringCloneLen(r6htext, strlen(r6htext)-1);
+                     r7hlval.p = StringCloneLen(r7htext, strlen(r7htext)-1);
                      BEGIN(object);
                      return OBJNAME;
                  }
@@ -75,7 +75,7 @@ static int  iObjectField = -1;
 
 <value>{
   ^([^\n]|\r\n)+[\n]    {
-                     r6hlval.p = StringCloneLen(r6htext, strlen(r6htext)-1);
+                     r7hlval.p = StringCloneLen(r7htext, strlen(r7htext)-1);
                      BEGIN(object);
                      return STRING;
                  }
@@ -83,31 +83,31 @@ static int  iObjectField = -1;
 
 <lock>{
  [^:/&|()\n]+\/[^&|()\n]+ {
-                     char *p = strchr(r6htext, '/');
-                     R6H_LOCKEXP *ple1 = new R6H_LOCKEXP;
-                     ple1->SetText(StringCloneLen(r6htext, p-r6htext));
-                     R6H_LOCKEXP *ple2 = new R6H_LOCKEXP;
+                     char *p = strchr(r7htext, '/');
+                     R7H_LOCKEXP *ple1 = new R7H_LOCKEXP;
+                     ple1->SetText(StringCloneLen(r7htext, p-r7htext));
+                     R7H_LOCKEXP *ple2 = new R7H_LOCKEXP;
                      ple2->SetText(StringClone(p+1));
-                     R6H_LOCKEXP *ple3 = new R6H_LOCKEXP;
+                     R7H_LOCKEXP *ple3 = new R7H_LOCKEXP;
                      ple3->SetEval(ple1, ple2);
-                     r6hlval.ple = ple3;
+                     r7hlval.ple = ple3;
                      return EVALLIT;
                  }
  [^:/&|()\n]+:[^&|()\n]+ {
-                     char *p = strchr(r6htext, ':');
-                     R6H_LOCKEXP *ple1 = new R6H_LOCKEXP;
-                     ple1->SetText(StringCloneLen(r6htext, p-r6htext));
-                     R6H_LOCKEXP *ple2 = new R6H_LOCKEXP;
+                     char *p = strchr(r7htext, ':');
+                     R7H_LOCKEXP *ple1 = new R7H_LOCKEXP;
+                     ple1->SetText(StringCloneLen(r7htext, p-r7htext));
+                     R7H_LOCKEXP *ple2 = new R7H_LOCKEXP;
                      ple2->SetText(StringClone(p+1));
-                     R6H_LOCKEXP *ple3 = new R6H_LOCKEXP;
+                     R7H_LOCKEXP *ple3 = new R7H_LOCKEXP;
                      ple3->SetAttr(ple1, ple2);
-                     r6hlval.ple = ple3;
+                     r7hlval.ple = ple3;
                      return ATTRLIT;
                  }
  [0-9]+          {
-                     R6H_LOCKEXP *ple = new R6H_LOCKEXP;
-                     ple->SetRef(atoi(r6htext));
-                     r6hlval.ple = ple;
+                     R7H_LOCKEXP *ple = new R7H_LOCKEXP;
+                     ple->SetRef(atoi(r7htext));
+                     r7hlval.ple = ple;
                      return DBREF;
                  }
  \(              {
@@ -152,13 +152,13 @@ static int  iObjectField = -1;
 
 <object>{
   ![0-9]+[\n]    {
-                     r6hlval.i = atoi(r6htext+1);
+                     r7hlval.i = atoi(r7htext+1);
                      iObjectField = 1;
                      BEGIN(name);
                      return OBJECT;
                  }
   -?[0-9]+[\n]   {
-                     r6hlval.i = atoi(r6htext);
+                     r7hlval.i = atoi(r7htext);
                      if (0 < iObjectField)
                      {
                          iObjectField++;
@@ -172,7 +172,7 @@ static int  iObjectField = -1;
                      return INTEGER;
                  }
  \>[0-9]+[\n]    {
-                     r6hlval.i = atoi(r6htext+1);
+                     r7hlval.i = atoi(r7htext+1);
                      iObjectField = -1;
                      BEGIN(value);
                      return ATTRREF;

@@ -1,37 +1,37 @@
-#ifndef _R6HGAME_H_
-#define _R6HGAME_H_
+#ifndef _R7HGAME_H_
+#define _R7HGAME_H_
 
-#define R6H_V_MASK          0x000000ff      /* Database version */
-#define R6H_V_ZONE          0x00000100      /* ZONE/DOMAIN field */
-#define R6H_V_LINK          0x00000200      /* LINK field (exits from objs) */
-#define R6H_V_GDBM          0x00000400      /* attrs are in a gdbm db, not here */
-#define R6H_V_ATRNAME       0x00000800      /* NAME is an attr, not in the hdr */
-#define R6H_V_ATRKEY        0x00001000      /* KEY is an attr, not in the hdr */
-#define R6H_V_PERNKEY       0x00001000      /* PERN: Extra locks in object hdr */
-#define R6H_V_PARENT        0x00002000      /* db has the PARENT field */
-#define R6H_V_COMM          0x00004000      /* PERN: Comm status in header */
-#define R6H_V_ATRMONEY      0x00008000      /* Money is kept in an attribute */
-#define R6H_V_XFLAGS        0x00010000      /* An extra word of flags */
+#define R7H_V_MASK          0x000000ff      /* Database version */
+#define R7H_V_ZONE          0x00000100      /* ZONE/DOMAIN field */
+#define R7H_V_LINK          0x00000200      /* LINK field (exits from objs) */
+#define R7H_V_GDBM          0x00000400      /* attrs are in a gdbm db, not here */
+#define R7H_V_ATRNAME       0x00000800      /* NAME is an attr, not in the hdr */
+#define R7H_V_ATRKEY        0x00001000      /* KEY is an attr, not in the hdr */
+#define R7H_V_PERNKEY       0x00001000      /* PERN: Extra locks in object hdr */
+#define R7H_V_PARENT        0x00002000      /* db has the PARENT field */
+#define R7H_V_COMM          0x00004000      /* PERN: Comm status in header */
+#define R7H_V_ATRMONEY      0x00008000      /* Money is kept in an attribute */
+#define R7H_V_XFLAGS        0x00010000      /* An extra word of flags */
 
-#define R6H_MANDFLAGS  (R6H_V_LINK|R6H_V_PARENT|R6H_V_XFLAGS)
-#define R6H_OFLAGS     (R6H_V_GDBM|R6HV_ATRKEY|R6H_V_ATRNAME|R6H_V_ATRMONEY)
+#define R7H_MANDFLAGS  (R7H_V_LINK|R7H_V_PARENT|R7H_V_XFLAGS)
+#define R7H_OFLAGS     (R7H_V_GDBM|R7HV_ATRKEY|R7H_V_ATRNAME|R7H_V_ATRMONEY)
 
 #define A_USER_START    256     // Start of user-named attributes.
 
 /* Object types */
-#define R6H_TYPE_ROOM     0x0
-#define R6H_TYPE_THING    0x1
-#define R6H_TYPE_EXIT     0x2
-#define R6H_TYPE_PLAYER   0x3
-#define R6H_TYPE_GARBAGE  0x5
-#define R6H_NOTYPE        0x7
-#define R6H_TYPE_MASK     0x7
+#define R7H_TYPE_ROOM     0x0
+#define R7H_TYPE_THING    0x1
+#define R7H_TYPE_EXIT     0x2
+#define R7H_TYPE_PLAYER   0x3
+#define R7H_TYPE_GARBAGE  0x5
+#define R7H_NOTYPE        0x7
+#define R7H_TYPE_MASK     0x7
 
 #define ATR_INFO_CHAR 0x01
 
 class P6H_LOCKEXP;
 
-class R6H_LOCKEXP
+class R7H_LOCKEXP
 {
 public:
     typedef enum
@@ -48,58 +48,58 @@ public:
         le_ref,
         le_text,
         le_none,
-    } R6H_OP;
+    } R7H_OP;
 
-    R6H_OP m_op;
+    R7H_OP m_op;
 
-    R6H_LOCKEXP *m_le[2];
+    R7H_LOCKEXP *m_le[2];
     int          m_dbRef;
     char        *m_p[2];
 
-    void SetIs(R6H_LOCKEXP *p)
+    void SetIs(R7H_LOCKEXP *p)
     {
         m_op = le_is;
         m_le[0] = p;
     }
-    void SetCarry(R6H_LOCKEXP *p)
+    void SetCarry(R7H_LOCKEXP *p)
     {
         m_op = le_carry;
         m_le[0] = p;
     }
-    void SetIndir(R6H_LOCKEXP *p)
+    void SetIndir(R7H_LOCKEXP *p)
     {
         m_op = le_indirect;
         m_le[0] = p;
     }
-    void SetOwner(R6H_LOCKEXP *p)
+    void SetOwner(R7H_LOCKEXP *p)
     {
         m_op = le_owner;
         m_le[0] = p;
     }
-    void SetAnd(R6H_LOCKEXP *p, R6H_LOCKEXP *q)
+    void SetAnd(R7H_LOCKEXP *p, R7H_LOCKEXP *q)
     {
         m_op = le_and;
         m_le[0] = p;
         m_le[1] = q;
     }
-    void SetOr(R6H_LOCKEXP *p, R6H_LOCKEXP *q)
+    void SetOr(R7H_LOCKEXP *p, R7H_LOCKEXP *q)
     {
         m_op = le_or;
         m_le[0] = p;
         m_le[1] = q;
     }
-    void SetNot(R6H_LOCKEXP *p)
+    void SetNot(R7H_LOCKEXP *p)
     {
         m_op = le_not;
         m_le[0] = p;
     }
-    void SetAttr(R6H_LOCKEXP *p, R6H_LOCKEXP *q)
+    void SetAttr(R7H_LOCKEXP *p, R7H_LOCKEXP *q)
     {
         m_op = le_attr;
         m_le[0] = p;
         m_le[1] = q;
     }
-    void SetEval(R6H_LOCKEXP *p, R6H_LOCKEXP *q)
+    void SetEval(R7H_LOCKEXP *p, R7H_LOCKEXP *q)
     {
         m_op = le_eval;
         m_le[0] = p;
@@ -121,14 +121,14 @@ public:
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
 
-    R6H_LOCKEXP()
+    R7H_LOCKEXP()
     {
         m_op = le_none;
         m_le[0] = m_le[1] = NULL;
         m_p[0] = m_p[1] = NULL;
         m_dbRef = 0;
     }
-    ~R6H_LOCKEXP()
+    ~R7H_LOCKEXP()
     {
         delete m_le[0];
         delete m_le[1];
@@ -139,7 +139,7 @@ public:
     } 
 };
 
-class R6H_ATTRNAMEINFO
+class R7H_ATTRNAMEINFO
 {
 public:
     bool  m_fNumAndName;
@@ -151,19 +151,19 @@ public:
 
     void Write(FILE *fp, bool fExtraEscapes);
 
-    R6H_ATTRNAMEINFO()
+    R7H_ATTRNAMEINFO()
     {
         m_fNumAndName = false;
         m_pName = NULL;
     }
-    ~R6H_ATTRNAMEINFO()
+    ~R7H_ATTRNAMEINFO()
     {
         free(m_pName);
         m_pName = NULL;
     }
 };
 
-class R6H_ATTRINFO
+class R7H_ATTRINFO
 {
 public:
     bool m_fNumAndValue;
@@ -172,20 +172,20 @@ public:
     void SetNumAndValue(int iNum, char *pValue);
 
     bool m_fIsLock;
-    R6H_LOCKEXP *m_pKeyTree;
+    R7H_LOCKEXP *m_pKeyTree;
 
     void Validate() const;
 
     void Write(FILE *fp, bool fExtraEscapes) const;
 
-    R6H_ATTRINFO()
+    R7H_ATTRINFO()
     {
         m_fNumAndValue = false;
         m_fIsLock = false;
         m_pValue = NULL;
         m_pKeyTree = NULL;
     }
-    ~R6H_ATTRINFO()
+    ~R7H_ATTRINFO()
     {
         free(m_pValue);
         delete m_pKeyTree;
@@ -194,7 +194,7 @@ public:
     }
 };
 
-class R6H_OBJECTINFO
+class R7H_OBJECTINFO
 {
 public:
     bool m_fRef;
@@ -262,11 +262,11 @@ public:
 
     bool m_fAttrCount;
     int  m_nAttrCount;
-    vector<R6H_ATTRINFO *> *m_pvai;
-    void SetAttrs(int nAttrCount, vector<R6H_ATTRINFO *> *pvai);
+    vector<R7H_ATTRINFO *> *m_pvai;
+    void SetAttrs(int nAttrCount, vector<R7H_ATTRINFO *> *pvai);
 
-    R6H_LOCKEXP *m_ple;
-    void SetDefaultLock(R6H_LOCKEXP *p) { free(m_ple); m_ple = p; }
+    R7H_LOCKEXP *m_ple;
+    void SetDefaultLock(R7H_LOCKEXP *p) { free(m_ple); m_ple = p; }
 
     bool m_fAccessed;
     int  m_iAccessed;
@@ -284,7 +284,7 @@ public:
 
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
 
-    R6H_OBJECTINFO()
+    R7H_OBJECTINFO()
     {
         m_fRef = false;
         m_pName = NULL;
@@ -304,13 +304,13 @@ public:
         m_pvai = NULL;
         m_ple = NULL;
     }
-    ~R6H_OBJECTINFO()
+    ~R7H_OBJECTINFO()
     {
         free(m_pName);
         m_pName = NULL;
         if (NULL != m_pvai)
         {
-            for (vector<R6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+            for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
             {
                delete *it;
             } 
@@ -321,7 +321,7 @@ public:
 };
 
 
-class R6H_GAME
+class R7H_GAME
 {
 public:
     int  m_flags;
@@ -340,11 +340,11 @@ public:
     int  m_nRecordPlayers;
     void SetRecordPlayers(int nRecordPlayers) { m_fRecordPlayers = true; m_nRecordPlayers = nRecordPlayers; }
 
-    vector<R6H_ATTRNAMEINFO *> m_vAttrNames;
+    vector<R7H_ATTRNAMEINFO *> m_vAttrNames;
     void AddNumAndName(int iNum, char *pName);
 
-    map<int, R6H_OBJECTINFO *, lti> m_mObjects;
-    void AddObject(R6H_OBJECTINFO *poi);
+    map<int, R7H_OBJECTINFO *, lti> m_mObjects;
+    void AddObject(R7H_OBJECTINFO *poi);
 
     void Validate() const;
     void ValidateFlags() const;
@@ -357,21 +357,21 @@ public:
 
     void ResetPassword();
 
-    R6H_GAME()
+    R7H_GAME()
     {
         m_flags = 0;
         m_fSizeHint = false;
         m_fNextAttr = false;
         m_fRecordPlayers = false;
     }
-    ~R6H_GAME()
+    ~R7H_GAME()
     {
-        for (vector<R6H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (vector<R7H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
             delete *it;
         } 
         m_vAttrNames.clear();
-        for (map<int, R6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+        for (map<int, R7H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;
         } 
@@ -379,10 +379,10 @@ public:
     }
 };
 
-extern R6H_GAME g_r6hgame;
-extern int r6hparse();
-extern FILE *r6hin;
+extern R7H_GAME g_r7hgame;
+extern int r7hparse();
+extern FILE *r7hin;
 
-char *r6h_ConvertAttributeName(const char *);
+char *r7h_ConvertAttributeName(const char *);
 
 #endif
