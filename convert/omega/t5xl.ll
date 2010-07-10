@@ -74,11 +74,6 @@ int t5xlparse();
 
 T5X_LOCKEXP *t5xl_ParseKey(char *pKey)
 {
-    //extern int t5xl_flex_debug;
-    //extern int t5xldebug;
-    //t5xl_flex_debug = 1;
-    //t5xldebug = 1;
-
     delete g_t5xKeyExp;
     g_t5xKeyExp = NULL;
     
@@ -93,6 +88,7 @@ T5X_LOCKEXP *t5xl_ParseKey(char *pKey)
     {
         ple = g_t5xKeyExp;
     }
+    t5xl_delete_buffer(bp);
     g_t5xKeyExp = NULL;
     return ple;
 }

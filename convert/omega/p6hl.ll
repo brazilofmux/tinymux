@@ -69,11 +69,6 @@ int p6hlparse();
 
 P6H_LOCKEXP *p6hl_ParseKey(char *pKey)
 {
-    //extern int p6hl_flex_debug;
-    //extern int p6hldebug;
-    //p6hl_flex_debug = 1;
-    //p6hldebug = 1;
-
     delete g_p6hKeyExp;
     g_p6hKeyExp = NULL;
     
@@ -88,6 +83,7 @@ P6H_LOCKEXP *p6hl_ParseKey(char *pKey)
     {
         ple = g_p6hKeyExp;
     }
+    p6hl_delete_buffer(bp);
     g_p6hKeyExp = NULL;
     return ple;
 }

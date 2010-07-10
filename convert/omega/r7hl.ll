@@ -74,11 +74,6 @@ int r7hlparse();
 
 R7H_LOCKEXP *r7hl_ParseKey(char *pKey)
 {
-    //extern int r7hl_flex_debug;
-    //extern int r7hldebug;
-    //r7hl_flex_debug = 1;
-    //r7hldebug = 1;
-
     delete g_r7hKeyExp;
     g_r7hKeyExp = NULL;
     
@@ -93,6 +88,7 @@ R7H_LOCKEXP *r7hl_ParseKey(char *pKey)
     {
         ple = g_r7hKeyExp;
     }
+    r7hl_delete_buffer(bp);
     g_r7hKeyExp = NULL;
     return ple;
 }
