@@ -2167,7 +2167,14 @@ void T5X_GAME::ConvertFromT6H()
         }
     }
     SetSizeHint(dbRefMax);
-    SetRecordPlayers(0);
+    if (g_t6hgame.m_fRecordPlayers)
+    {
+        SetRecordPlayers(g_t6hgame.m_nRecordPlayers);
+    }
+    else
+    {
+        SetRecordPlayers(0);
+    }
 }
 
 void T5X_GAME::ResetPassword()
