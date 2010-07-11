@@ -1598,68 +1598,12 @@ void T6H_GAME::ConvertFromP6H()
 
         if (it->second->m_fCreated)
         {
-            time_t t = it->second->m_iCreated;
-            char *pTime = ctime(&t);
-            if (NULL != pTime)
-            {
-                char *p = strchr(pTime, '\n');
-                if (NULL != p)
-                {
-                    size_t n = p - pTime;
-                    pTime = StringCloneLen(pTime, n);
-
-                    // A_CREATED
-                    //
-                    T6H_ATTRINFO *pai = new T6H_ATTRINFO;
-                    pai->SetNumAndValue(218, StringClone(pTime));
-
-                    if (NULL == poi->m_pvai)
-                    {
-                        vector<T6H_ATTRINFO *> *pvai = new vector<T6H_ATTRINFO *>;
-                        pvai->push_back(pai);
-                        poi->SetAttrs(pvai->size(), pvai);
-                    }
-                    else
-                    {
-                        poi->m_pvai->push_back(pai);
-                        poi->m_fAttrCount = true;
-                        poi->m_nAttrCount = poi->m_pvai->size();
-                    }
-                }
-            }
+            poi->SetCreated(it->second->m_iCreated);
         }
 
         if (it->second->m_fModified)
         {
-            time_t t = it->second->m_iModified;
-            char *pTime = ctime(&t);
-            if (NULL != pTime)
-            {
-                char *p = strchr(pTime, '\n');
-                if (NULL != p)
-                {
-                    size_t n = p - pTime;
-                    pTime = StringCloneLen(pTime, n);
-
-                    // A_MODIFIED
-                    //
-                    T6H_ATTRINFO *pai = new T6H_ATTRINFO;
-                    pai->SetNumAndValue(219, StringClone(pTime));
-
-                    if (NULL == poi->m_pvai)
-                    {
-                        vector<T6H_ATTRINFO *> *pvai = new vector<T6H_ATTRINFO *>;
-                        pvai->push_back(pai);
-                        poi->SetAttrs(pvai->size(), pvai);
-                    }
-                    else
-                    {
-                        poi->m_pvai->push_back(pai);
-                        poi->m_fAttrCount = true;
-                        poi->m_nAttrCount = poi->m_pvai->size();
-                    }
-                }
-            }
+            poi->SetModified(it->second->m_iModified);
         }
 
         if (NULL != it->second->m_pvai)
