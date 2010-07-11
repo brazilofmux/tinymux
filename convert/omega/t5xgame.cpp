@@ -1917,6 +1917,31 @@ void T5X_GAME::ConvertFromP6H()
     SetRecordPlayers(0);
 }
 
+char *convert_p6h_quota(char *p)
+{
+    int maxquota = 0;
+    for (;;)
+    {
+        maxquota = max(maxquota, atoi(p));
+        p = strchr(p, ' ');
+        if (NULL != p)
+        {
+            while (isspace(*p))
+            {
+                p++;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    static char buffer[100];
+    sprintf(buffer, "%d", maxquota);
+    return buffer;
+}
+
 void T5X_GAME::ConvertFromT6H()
 {
     SetFlags(T5X_MANDFLAGS_V2 | 2);
@@ -2117,8 +2142,18 @@ void T5X_GAME::ConvertFromT6H()
                 if ((*itAttr)->m_fNumAndValue)
                 {
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumAndValue((*itAttr)->m_iNum, StringClone((*itAttr)->m_pValue));
-                    pvai->push_back(pai);
+                    if (T6H_A_QUOTA == (*itAttr)->m_iNum)
+                    {
+                        // Typed quota needs to be converted to single quota.
+                        //
+                        pai->SetNumAndValue((*itAttr)->m_iNum, StringClone(convert_p6h_quota((*itAttr)->m_pValue)));
+                        pvai->push_back(pai);
+                    }
+                    else
+                    {
+                        pai->SetNumAndValue((*itAttr)->m_iNum, StringClone((*itAttr)->m_pValue));
+                        pvai->push_back(pai);
+                    }
                 }
             }
             if (0 < pvai->size())

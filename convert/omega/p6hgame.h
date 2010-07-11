@@ -16,6 +16,8 @@
 #define P6H_TYPE_GARBAGE        0x10
 #define P6H_NOTYPE              0xFFFF
 
+#define T6H_A_QUOTA 49
+
 class T5X_LOCKEXP;
 
 class P6H_LOCKEXP
