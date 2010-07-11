@@ -1727,10 +1727,8 @@ void T5X_GAME::ConvertFromP6H()
                     size_t n = p - pTime;
                     pTime = StringCloneLen(pTime, n);
 
-                    // A_CREATED
-                    //
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumAndValue(218, StringClone(pTime));
+                    pai->SetNumAndValue(T5X_A_CREATED, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {
@@ -1763,7 +1761,7 @@ void T5X_GAME::ConvertFromP6H()
                     // A_MODIFIED
                     //
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumAndValue(219, StringClone(pTime));
+                    pai->SetNumAndValue(T5X_A_MODIFIED, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {
@@ -2080,10 +2078,8 @@ void T5X_GAME::ConvertFromT6H()
                     size_t n = p - pTime;
                     pTime = StringCloneLen(pTime, n);
 
-                    // A_CREATED
-                    //
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumAndValue(218, StringClone(pTime));
+                    pai->SetNumAndValue(T5X_A_CREATED, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {
@@ -2113,10 +2109,8 @@ void T5X_GAME::ConvertFromT6H()
                     size_t n = p - pTime;
                     pTime = StringCloneLen(pTime, n);
 
-                    // A_MODIFIED
-                    //
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumAndValue(219, StringClone(pTime));
+                    pai->SetNumAndValue(T5X_A_MODIFIED, StringClone(pTime));
         
                     if (NULL == poi->m_pvai)
                     {

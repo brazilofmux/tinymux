@@ -2645,18 +2645,16 @@ void P6H_GAME::ConvertFromT5X()
                     }
                     else
                     {
-                        if (  218 == (*itAttr)->m_iNum
-                           || 219 == (*itAttr)->m_iNum)
+                        if (  T5X_A_CREATED == (*itAttr)->m_iNum
+                           || T5X_A_MODIFIED  == (*itAttr)->m_iNum)
                         {
-                            // A_CREATED is 218, A_MODIFIED is 219
-                            // Fri Jan 18 23:14:58 2002
                             time_t t;
                             if (ConvertTimeString((*itAttr)->m_pValue, &t))
                             {
                                 switch ((*itAttr)->m_iNum)
                                 {
-                                case 218: poi->SetCreated(t); break;
-                                case 219: poi->SetModified(t); break;
+                                case T5X_A_CREATED: poi->SetCreated(t); break;
+                                case T5X_A_MODIFIED: poi->SetModified(t); break;
                                 }
                             }
                         }
