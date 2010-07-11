@@ -14,7 +14,7 @@ void t6herror(const char *s);
     T6H_LOCKEXP            *ple;
 }
 
-%token EOD 
+%token EOD
 %token <p> STRING
 %token <i> INTEGER OBJECT_V1 OBJECT_V1_TS OBJECT_V1_TS_CT THDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNUM ATTRREF
@@ -95,14 +95,14 @@ object
                          oi->SetAttrs($21->size(), $21);
                      }
                      g_t6hgame.AddObject(oi);
-                 } 
+                 }
 |
     OBJECT_V1_TS STRING INTEGER INTEGER
     INTEGER INTEGER INTEGER INTEGER
     lockexpr
     INTEGER INTEGER INTEGER INTEGER
     INTEGER INTEGER INTEGER INTEGER
-    INTEGER INTEGER 
+    INTEGER INTEGER
     attrlist '<' {
                      T6H_OBJECTINFO *oi = new T6H_OBJECTINFO;
                      oi->SetRef($1);
@@ -130,7 +130,7 @@ object
                          oi->SetAttrs($20->size(), $20);
                      }
                      g_t6hgame.AddObject(oi);
-                 } 
+                 }
 |
     OBJECT_V1 STRING INTEGER INTEGER
     INTEGER INTEGER INTEGER INTEGER
@@ -164,7 +164,7 @@ object
                          oi->SetAttrs($18->size(), $18);
                      }
                      g_t6hgame.AddObject(oi);
-                 } 
+                 }
 ;
 
 lockexpr:

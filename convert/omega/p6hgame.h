@@ -146,7 +146,7 @@ public:
         free(m_p[1]);
         m_le[0] = m_le[1] = NULL;
         m_p[0] = m_p[1] = NULL;
-    } 
+    }
 };
 
 class P6H_FLAGINFO
@@ -467,7 +467,7 @@ public:
             for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvli;
             m_pvli = NULL;
         }
@@ -476,7 +476,7 @@ public:
             for (vector<P6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvai;
             m_pvai = NULL;
         }
@@ -508,7 +508,7 @@ public:
 
     vector<P6H_FLAGALIASINFO *> *m_pvFlagAliases;
     void SetFlagAliasList(vector<P6H_FLAGALIASINFO *> *pvfai) { m_pvFlagAliases = pvfai; }
-  
+
     bool m_fPowers;
     int  m_nPowers;
     void SetPowerCount(int nPowers)  { m_fPowers = true; m_nPowers = nPowers; }
@@ -519,10 +519,10 @@ public:
     bool m_fPowerAliases;
     int  m_nPowerAliases;
     void SetPowerAliasCount(int nPowerAliases)  { m_fPowerAliases = true; m_nPowerAliases = nPowerAliases; }
-  
+
     vector<P6H_FLAGALIASINFO *> *m_pvPowerAliases;
     void SetPowerAliasList(vector<P6H_FLAGALIASINFO *> *pvpai) { m_pvPowerAliases = pvpai; }
-  
+
     bool m_fSizeHint;
     int  m_nSizeHint;
     void SetSizeHint(int nSizeHint) { m_fSizeHint = true; m_nSizeHint = nSizeHint; }
@@ -570,7 +570,7 @@ public:
             for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvFlags;
             m_pvFlags = NULL;
         }
@@ -579,7 +579,7 @@ public:
             for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvFlagAliases->begin(); it != m_pvFlagAliases->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvFlagAliases;
             m_pvFlagAliases = NULL;
         }
@@ -588,7 +588,7 @@ public:
             for (vector<P6H_FLAGINFO *>::iterator it = m_pvPowers->begin(); it != m_pvPowers->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvPowers;
             m_pvPowers = NULL;
         }
@@ -597,14 +597,14 @@ public:
             for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvPowerAliases->begin(); it != m_pvPowerAliases->end(); ++it)
             {
                 delete *it;
-            } 
+            }
             delete m_pvPowerAliases;
             m_pvPowerAliases = NULL;
         }
         for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;
-        } 
+        }
         m_mObjects.clear();
     }
 };

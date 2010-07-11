@@ -12,7 +12,7 @@ static int  iObjectField = -1;
 
 %}
 
-%option 8bit 
+%option 8bit
 %option yylineno
 %option noyywrap
 %option prefix="r7h"

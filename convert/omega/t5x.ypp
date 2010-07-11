@@ -14,7 +14,7 @@ void t5xerror(const char *s);
     T5X_LOCKEXP            *ple;
 }
 
-%token EOD 
+%token EOD
 %token <p> STRING
 %token <i> INTEGER OBJECT_V12 OBJECT_V3 XHDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNUM ATTRREF
@@ -91,7 +91,7 @@ object
                          oi->SetAttrs($18->size(), $18);
                      }
                      g_t5xgame.AddObject(oi);
-                 } 
+                 }
 |
     OBJECT_V3 STRING INTEGER INTEGER
     INTEGER INTEGER INTEGER INTEGER
@@ -120,7 +120,7 @@ object
                          oi->SetAttrs($17->size(), $17);
                      }
                      g_t5xgame.AddObject(oi);
-                 } 
+                 }
 ;
 
 lockexpr:

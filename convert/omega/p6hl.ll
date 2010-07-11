@@ -4,7 +4,7 @@
 #include "p6hl.tab.hpp"
 %}
 
-%option 8bit 
+%option 8bit
 %option noyywrap
 %option prefix="p6hl"
 
@@ -71,7 +71,7 @@ P6H_LOCKEXP *p6hl_ParseKey(char *pKey)
 {
     delete g_p6hKeyExp;
     g_p6hKeyExp = NULL;
-    
+
     YY_BUFFER_STATE bp = p6hl_scan_string(pKey);
     p6hl_switch_to_buffer(bp);
     P6H_LOCKEXP *ple = NULL;

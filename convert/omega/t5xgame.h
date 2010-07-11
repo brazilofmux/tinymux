@@ -174,7 +174,7 @@ public:
         free(m_p[1]);
         m_le[0] = m_le[1] = NULL;
         m_p[0] = m_p[1] = NULL;
-    } 
+    }
 };
 
 class T5X_ATTRNAMEINFO
@@ -347,7 +347,7 @@ public:
             for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
             {
                delete *it;
-            } 
+            }
             delete m_pvai;
             m_pvai = NULL;
         }
@@ -386,7 +386,7 @@ public:
     void ValidateObjects() const;
 
     void Write(FILE *fp);
- 
+
     bool Upgrade3();
     bool Upgrade2();
     bool Downgrade1();
@@ -409,12 +409,12 @@ public:
         for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
             delete *it;
-        } 
+        }
         m_vAttrNames.clear();
         for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;
-        } 
+        }
         m_mObjects.clear();
     }
 };

@@ -15,7 +15,7 @@ void r7herror(const char *s);
     vector<int>            *pvz;
 }
 
-%token EOD 
+%token EOD
 %token <p> STRING ATTRNAME OBJNAME
 %token <i> INTEGER OBJECT VHDR SIZEHINT NEXTATTR RECORDPLAYERS
 %token <i> ATTRNUM ATTRREF
@@ -103,7 +103,7 @@ object
                          oi->SetAttrs($25->size(), $25);
                      }
                      g_r7hgame.AddObject(oi);
-                 } 
+                 }
 ;
 
 zones:

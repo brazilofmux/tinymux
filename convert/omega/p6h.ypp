@@ -156,7 +156,7 @@ object
                                              oi->SetAttrs($19->size(), $19);
                                          }
                                          g_p6hgame.AddObject(oi);
-                                     } 
+                                     }
 ;
 
 objectphrases

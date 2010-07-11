@@ -4,7 +4,7 @@
 #include "r7hl.tab.hpp"
 %}
 
-%option 8bit 
+%option 8bit
 %option noyywrap
 %option prefix="r7hl"
 
@@ -76,7 +76,7 @@ R7H_LOCKEXP *r7hl_ParseKey(char *pKey)
 {
     delete g_r7hKeyExp;
     g_r7hKeyExp = NULL;
-    
+
     YY_BUFFER_STATE bp = r7hl_scan_string(pKey);
     r7hl_switch_to_buffer(bp);
     R7H_LOCKEXP *ple = NULL;

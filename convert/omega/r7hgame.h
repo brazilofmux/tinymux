@@ -136,7 +136,7 @@ public:
         free(m_p[1]);
         m_le[0] = m_le[1] = NULL;
         m_p[0] = m_p[1] = NULL;
-    } 
+    }
 };
 
 class R7H_ATTRNAMEINFO
@@ -346,7 +346,7 @@ public:
             for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
             {
                delete *it;
-            } 
+            }
             delete m_pvai;
             m_pvai = NULL;
         }
@@ -384,7 +384,7 @@ public:
     void ValidateObjects() const;
 
     void Write(FILE *fp);
- 
+
     void ConvertFromP6H();
 
     void ResetPassword();
@@ -401,12 +401,12 @@ public:
         for (vector<R7H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
         {
             delete *it;
-        } 
+        }
         m_vAttrNames.clear();
         for (map<int, R7H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;
-        } 
+        }
         m_mObjects.clear();
     }
 };

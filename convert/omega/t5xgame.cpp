@@ -605,7 +605,7 @@ bool T5X_LOCKEXP::ConvertFromT6H(T6H_LOCKEXP *p)
     }
     return true;
 }
- 
+
 void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
@@ -824,8 +824,8 @@ void T5X_GAME::ValidateObjects() const
         {
             dbRefMax = it->first;
         }
-    } 
-      
+    }
+
     if (!m_fSizeHint)
     {
         fprintf(stderr, "WARNING: +S phrase for next object was missing.\n");
@@ -1157,11 +1157,11 @@ void T5X_GAME::Write(FILE *fp)
     for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
         (*it)->Write(fp, fExtraEscapes);
-    } 
+    }
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
         it->second->Write(fp, (m_flags & T5X_V_ATRKEY) == 0, fExtraEscapes);
-    } 
+    }
 
     fprintf(fp, "***END OF DUMP***\n");
 }
@@ -1729,7 +1729,7 @@ void T5X_GAME::ConvertFromP6H()
 
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                     pai->SetNumAndValue(T5X_A_CREATED, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
@@ -1762,7 +1762,7 @@ void T5X_GAME::ConvertFromP6H()
                     //
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                     pai->SetNumAndValue(T5X_A_MODIFIED, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
@@ -1962,8 +1962,8 @@ void T5X_GAME::ConvertFromT6H()
         {
             continue;
         }
-        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK; 
-        
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK;
+
         if (  iType < 0
            || 7 < iType)
         {
@@ -2059,7 +2059,7 @@ void T5X_GAME::ConvertFromT6H()
         {
             powers2 = it->second->m_iPowers2;
         }
-        
+
         poi->SetFlags1(flags1);
         poi->SetFlags2(flags2);
         poi->SetFlags3(flags3);
@@ -2080,7 +2080,7 @@ void T5X_GAME::ConvertFromT6H()
 
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                     pai->SetNumAndValue(T5X_A_CREATED, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
@@ -2111,7 +2111,7 @@ void T5X_GAME::ConvertFromT6H()
 
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                     pai->SetNumAndValue(T5X_A_MODIFIED, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
@@ -2229,7 +2229,7 @@ void T5X_GAME::ResetPassword()
                 }
             }
         }
-    } 
+    }
 }
 
 #define T(x)    ((const UTF8 *)x)

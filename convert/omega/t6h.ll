@@ -30,7 +30,7 @@ static int ObjectToken()
 }
 %}
 
-%option 8bit 
+%option 8bit
 %option yylineno
 %option noyywrap
 %option prefix="t6h"

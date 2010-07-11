@@ -4,7 +4,7 @@
 #include "p6h.tab.hpp"
 %}
 
-%option 8bit 
+%option 8bit
 %option yylineno
 %option noyywrap
 %option prefix="p6h"

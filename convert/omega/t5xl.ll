@@ -4,7 +4,7 @@
 #include "t5xl.tab.hpp"
 %}
 
-%option 8bit 
+%option 8bit
 %option noyywrap
 %option prefix="t5xl"
 
@@ -76,7 +76,7 @@ T5X_LOCKEXP *t5xl_ParseKey(char *pKey)
 {
     delete g_t5xKeyExp;
     g_t5xKeyExp = NULL;
-    
+
     YY_BUFFER_STATE bp = t5xl_scan_string(pKey);
     t5xl_switch_to_buffer(bp);
     T5X_LOCKEXP *ple = NULL;

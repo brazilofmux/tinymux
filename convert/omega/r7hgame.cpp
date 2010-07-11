@@ -471,7 +471,7 @@ bool R7H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
     }
     return true;
 }
- 
+
 void R7H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
@@ -685,8 +685,8 @@ void R7H_GAME::ValidateObjects() const
         {
             dbRefMax = it->first;
         }
-    } 
-      
+    }
+
     if (!m_fSizeHint)
     {
         fprintf(stderr, "WARNING: +S phrase for next object was missing.\n");
@@ -1055,11 +1055,11 @@ void R7H_GAME::Write(FILE *fp)
     for (vector<R7H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
         (*it)->Write(fp, fExtraEscapes);
-    } 
+    }
     for (map<int, R7H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
         it->second->Write(fp, (m_flags & R7H_V_ATRKEY) == 0, fExtraEscapes);
-    } 
+    }
 
     fprintf(fp, "***END OF DUMP***\n");
 }
@@ -1629,7 +1629,7 @@ void R7H_GAME::ConvertFromP6H()
                     //
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(218, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
@@ -1662,7 +1662,7 @@ void R7H_GAME::ConvertFromP6H()
                     //
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(219, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
@@ -1859,5 +1859,5 @@ void R7H_GAME::ResetPassword()
                 }
             }
         }
-    } 
+    }
 }
