@@ -26,7 +26,8 @@
 
 #define A_USER_START    256     // Start of user-named attributes.
 
-/* Object types */
+// Object types
+//
 #define T6H_TYPE_ROOM     0x0
 #define T6H_TYPE_THING    0x1
 #define T6H_TYPE_EXIT     0x2
@@ -36,6 +37,35 @@
 #define T6H_TYPE_MASK     0x7
 
 #define ATR_INFO_CHAR 0x01
+
+// Attribute flags.
+//
+#define T6H_AF_ODARK        0x00000001
+#define T6H_AF_DARK         0x00000002
+#define T6H_AF_WIZARD       0x00000004
+#define T6H_AF_MDARK        0x00000008
+#define T6H_AF_INTERNAL     0x00000010
+#define T6H_AF_NOCMD        0x00000020
+#define T6H_AF_LOCK         0x00000040
+#define T6H_AF_DELETED      0x00000080
+#define T6H_AF_NOPROG       0x00000100
+#define T6H_AF_GOD          0x00000200
+#define T6H_AF_IS_LOCK      0x00000400
+#define T6H_AF_VISUAL       0x00000800
+#define T6H_AF_PRIVATE      0x00001000
+#define T6H_AF_HTML         0x00002000
+#define T6H_AF_NOPARSE      0x00004000
+#define T6H_AF_REGEXP       0x00008000
+#define T6H_AF_NOCLONE      0x00010000
+#define T6H_AF_CONST        0x00020000
+#define T6H_AF_CASE         0x00040000
+#define T6H_AF_STRUCTURE    0x00080000
+#define T6H_AF_DIRTY        0x00100000
+#define T6H_AF_DEFAULT      0x00200000
+#define T6H_AF_NONAME       0x00400000
+#define T6H_AF_RMATCH       0x00800000
+#define T6H_AF_NOW          0x01000000
+#define T6H_AF_TRACE        0x02000000
 
 // Attribute numbers
 //
