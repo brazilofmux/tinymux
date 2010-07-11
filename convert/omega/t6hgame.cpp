@@ -801,6 +801,8 @@ void T6H_GAME::ValidateAttrNames(int ver) const
 
 void T6H_GAME::Validate() const
 {
+    fprintf(stderr, "TinyMUSH\n");
+
     int ver = (m_flags & T6H_V_MASK);
     ValidateFlags();
     ValidateAttrNames(ver);

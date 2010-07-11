@@ -801,6 +801,8 @@ void P6H_GAME::ValidateSavedTime() const
 
 void P6H_GAME::Validate() const
 {
+    fprintf(stderr, "PennMUSH\n");
+
     ValidateFlags();
     if (NULL != m_pSavedTime)
     {

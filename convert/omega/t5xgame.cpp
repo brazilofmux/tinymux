@@ -933,6 +933,8 @@ void T5X_GAME::ValidateAttrNames(int ver) const
 
 void T5X_GAME::Validate() const
 {
+    fprintf(stderr, "TinyMUX\n");
+
     int ver = (m_flags & T5X_V_MASK);
     ValidateFlags();
     ValidateAttrNames(ver);

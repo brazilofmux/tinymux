@@ -794,6 +794,8 @@ void R7H_GAME::ValidateAttrNames(int ver) const
 
 void R7H_GAME::Validate() const
 {
+    fprintf(stderr, "RhostMUSH\n");
+
     int ver = (m_flags & R7H_V_MASK);
     ValidateFlags();
     ValidateAttrNames(ver);
