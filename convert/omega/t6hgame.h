@@ -37,6 +37,10 @@
 
 #define ATR_INFO_CHAR 0x01
 
+// Attribute numbers
+//
+#define T6H_A_QUOTA 49
+
 class P6H_LOCKEXP;
 
 class T6H_LOCKEXP
