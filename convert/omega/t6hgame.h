@@ -69,7 +69,8 @@
 
 // Attribute numbers
 //
-#define T6H_A_QUOTA 49
+#define T6H_A_QUOTA    49
+#define T6H_A_NEWOBJS 213
 
 class P6H_LOCKEXP;
 
