@@ -18,7 +18,8 @@
 
 #define A_USER_START    256     // Start of user-named attributes.
 
-/* Object types */
+// Object types
+//
 #define R7H_TYPE_ROOM     0x0
 #define R7H_TYPE_THING    0x1
 #define R7H_TYPE_EXIT     0x2
@@ -26,6 +27,45 @@
 #define R7H_TYPE_GARBAGE  0x5
 #define R7H_NOTYPE        0x7
 #define R7H_TYPE_MASK     0x7
+
+// Attribute flags
+//
+#define R7H_AF_ODARK        0x00000001
+#define R7H_AF_DARK         0x00000002
+#define R7H_AF_WIZARD       0x00000004
+#define R7H_AF_MDARK        0x00000008
+#define R7H_AF_INTERNAL     0x00000010
+#define R7H_AF_NOCMD        0x00000020
+#define R7H_AF_LOCK         0x00000040
+#define R7H_AF_DELETED      0x00000080
+#define R7H_AF_NOPROG       0x00000100
+#define R7H_AF_GOD          0x00000200
+#define R7H_AF_ADMIN        0x00000400
+#define R7H_AF_BUILDER      0x00000800
+#define R7H_AF_IS_LOCK      0x00001000
+#define R7H_AF_GUILDMASTER  0x00002000
+#define R7H_AF_IMMORTAL     0x00004000
+#define R7H_AF_PRIVATE      0x00008000
+#define R7H_AF_NONBLOCKING  0x00010000
+#define R7H_AF_VISUAL       0x00020000
+#define R7H_AF_NOANSI       0x00040000
+#define R7H_AF_PINVIS       0x00080000
+#define R7H_AF_NORETURN     0x00100000
+#define R7H_AF_NOCLONE      0x00200000
+#define R7H_AF_NOPARSE      0x00400000
+#define R7H_AF_SAFE         0x00800000
+#define R7H_AF_USELOCK      0x01000000
+#define R7H_AF_SINGLETHREAD 0x02000000
+#define R7H_AF_DEFAULT      0x04000000
+#define R7H_AF_ATRLOCK      0x08000000
+#define R7H_AF_LOGGED       0x10000000
+
+
+// Attribute Numbers
+//
+#define R7H_A_MODIFY_TIME   227
+#define R7H_A_CREATED_TIME  228
+
 
 #define ATR_INFO_CHAR 0x01
 

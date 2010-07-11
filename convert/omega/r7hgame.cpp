@@ -1625,11 +1625,9 @@ void R7H_GAME::ConvertFromP6H()
                     size_t n = p - pTime;
                     pTime = StringCloneLen(pTime, n);
 
-                    // A_CREATED
-                    //
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
-                    pai->SetNumAndValue(218, StringClone(pTime));
-
+                    pai->SetNumAndValue(R7H_A_CREATED_TIME, StringClone(pTime));
+        
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
@@ -1658,11 +1656,9 @@ void R7H_GAME::ConvertFromP6H()
                     size_t n = p - pTime;
                     pTime = StringCloneLen(pTime, n);
 
-                    // A_MODIFIED
-                    //
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
-                    pai->SetNumAndValue(219, StringClone(pTime));
-
+                    pai->SetNumAndValue(R7H_A_MODIFY_TIME, StringClone(pTime));
+        
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
