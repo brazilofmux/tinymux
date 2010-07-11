@@ -22,7 +22,8 @@
 
 #define A_USER_START    256     // Start of user-named attributes.
 
-/* Object types */
+// Object types
+//
 #define T5X_TYPE_ROOM     0x0
 #define T5X_TYPE_THING    0x1
 #define T5X_TYPE_EXIT     0x2
