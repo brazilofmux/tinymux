@@ -2054,21 +2054,21 @@ NameMask t5x_convert_obj_flags1[] =
 
 NameMask t5x_convert_obj_flags2[] =
 {
-    { "ABODE",          0x00000002UL },
-    { "FLOATING",       0x00000004UL },
-    { "UNFINDABLE",     0x00000008UL },
-    { "LIGHT",          0x00000020UL },
-    { "ANSI",           0x00000200UL },
-    { "COLOR",          0x00000200UL },
-    { "FIXED",          0x00000800UL },
-    { "UNINSPECTED",    0x00001000UL },
-    { "NO_COMMAND",     0x00002000UL },
-    { "KEEPALIVE",      0x00004000UL },
-    { "GAGGED",         0x00040000UL },
-    { "ON-VACATION",    0x01000000UL },
-    { "SUSPECT",        0x10000000UL },
-    { "NOACCENTS",      0x20000000UL },
-    { "SLAVE",          0x80000000UL },
+    { "ABODE",          T5X_ABODE       },
+    { "FLOATING",       T5X_FLOATING    },
+    { "UNFINDABLE",     T5X_UNFINDABLE  },
+    { "LIGHT",          T5X_LIGHT       },
+    { "ANSI",           T5X_ANSI        },
+    { "COLOR",          T5X_ANSI        },
+    { "FIXED",          T5X_FIXED       },
+    { "UNINSPECTED",    T5X_UNINSPECTED },
+    { "NO_COMMAND",     T5X_NO_COMMAND  },
+    { "KEEPALIVE",      T5X_CKEEPALIVE  },
+    { "GAGGED",         T5X_GAGGED      },
+    { "ON-VACATION",    T5X_VACATION    },
+    { "SUSPECT",        T5X_SUSPECT     },
+    { "NOACCENTS",      T5X_ASCII       },
+    { "SLAVE",          T5X_SLAVE       },
 };
 
 NameMask t5x_convert_obj_powers1[] =
