@@ -832,11 +832,11 @@ void T5X_GAME::ValidateObjects() const
     }
     else
     {
-        if (m_nSizeHint < dbRefMax)
+        if (m_nSizeHint < dbRefMax+1)
         {
             fprintf(stderr, "WARNING: +S phrase does not leave room for the dbrefs.\n");
         }
-        else if (m_nSizeHint != dbRefMax)
+        else if (m_nSizeHint != dbRefMax+1)
         {
             fprintf(stderr, "WARNING: +S phrase does not agree with last object.\n");
         }
@@ -1911,7 +1911,7 @@ void T5X_GAME::ConvertFromP6H()
         delete it->first;
     }
 
-    SetSizeHint(dbRefMax);
+    SetSizeHint(dbRefMax+1);
     SetRecordPlayers(0);
 }
 
@@ -2240,7 +2240,7 @@ void T5X_GAME::ConvertFromT6H()
             dbRefMax = it->first;
         }
     }
-    SetSizeHint(dbRefMax);
+    SetSizeHint(dbRefMax+1);
     if (g_t6hgame.m_fRecordPlayers)
     {
         SetRecordPlayers(g_t6hgame.m_nRecordPlayers);
