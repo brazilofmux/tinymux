@@ -1994,7 +1994,7 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
        || T5X_A_LMAIL == iNum
        || T5X_A_LOPEN == iNum
        || T5X_A_LASTWHISPER == iNum
-       || T5X_A_LVISIBLE)
+       || T5X_A_LVISIBLE == iNum)
     {
         return false;
     }
