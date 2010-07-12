@@ -52,6 +52,9 @@
 #
 # Test Case #3 - Vary number of arguments.
 #
+# On 2.6, ldelete(%b,1) -->
+# On 2.7 and later, ldelete(%b,1) --> %b
+#
 &tr.tc003 test_ldelete_fn=
   @if strmatch(
         setr(0,sha1(
@@ -60,7 +63,7 @@
             [iter(3 2 1 0 -1,ldelete(a|a,##,|))]
             [iter(4 3 2 1 0 -1,ldelete(a|a|a|a,##,|))]
             [iter(1 0 -1,ldelete(,##))]
-            [iter(1 0 -1,ldelete(%b,##))]
+            [iter(0 -1,ldelete(%b,##))]
             [iter(2 1 0 -1,ldelete(a,##))]
             [iter(3 2 1 0,ldelete(a b,##))]
             [iter(4 3 2 1 0,ldelete(a b c,##))]
@@ -71,7 +74,7 @@
             [iter(9 8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g h,##))]
           )
         ),
-        C1F008407FA522FD1D7F786AE374DBEE6B6B735E
+        77C716845DC2D91C4BA1DEF5D91506CAF69C5121
       )=
   {
     @log smoke=TC003: Vary number of arguments. Succeeded.
