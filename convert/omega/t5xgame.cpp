@@ -2010,11 +2010,70 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
 
 int convert_t6h_flags1(int f)
 {
+    f &= T5X_SEETHRU
+       | T5X_WIZARD
+       | T5X_LINK_OK
+       | T5X_DARK
+       | T5X_JUMP_OK
+       | T5X_STICKY
+       | T5X_DESTROY_OK
+       | T5X_HAVEN
+       | T5X_QUIET
+       | T5X_HALT
+       | T5X_TRACE
+       | T5X_GOING
+       | T5X_MONITOR
+       | T5X_MYOPIC
+       | T5X_PUPPET
+       | T5X_CHOWN_OK
+       | T5X_ENTER_OK
+       | T5X_VISUAL
+       | T5X_IMMORTAL
+       | T5X_HAS_STARTUP
+       | T5X_MUX_OPAQUE
+       | T5X_VERBOSE
+       | T5X_INHERIT
+       | T5X_NOSPOOF
+       | T5X_ROBOT
+       | T5X_SAFE
+       | T5X_ROYALTY
+       | T5X_HEARTHRU
+       | T5X_TERSE;
     return f;
 }
 
 int convert_t6h_flags2(int f)
 {
+    f &= T5X_KEY
+       | T5X_ABODE
+       | T5X_FLOATING
+       | T5X_UNFINDABLE
+       | T5X_PARENT_OK
+       | T5X_LIGHT
+       | T5X_HAS_LISTEN
+       | T5X_HAS_FWDLIST
+       | T5X_AUDITORIUM
+       | T5X_ANSI
+       | T5X_HEAD_FLAG
+       | T5X_FIXED
+       | T5X_UNINSPECTED
+       | T5X_NOBLEED
+       | T5X_STAFF
+       | T5X_HAS_DAILY
+       | T5X_GAGGED
+       | T5X_VACATION
+       | T5X_PLAYER_MAILS
+       | T5X_HTML
+       | T5X_BLIND
+       | T5X_SUSPECT
+       | T5X_CONNECTED
+       | T5X_SLAVE;
+
+    if ((f & T6H_HAS_COMMANDS) == 0)
+    {
+        f |= T5X_NO_COMMAND;
+    }
+
     return f;
 }
 
@@ -2133,7 +2192,7 @@ void T5X_GAME::ConvertFromT6H()
         int flags3 = 0;
         if (it->second->m_fFlags1)
         {
-            flags1 = (it->second->m_iFlags1 & ~T6H_TYPE_MASK) | convert_t6h_flags1(it->second->m_iFlags1);
+            flags1 |= convert_t6h_flags1(it->second->m_iFlags1);
         }
         if (it->second->m_fFlags2)
         {
