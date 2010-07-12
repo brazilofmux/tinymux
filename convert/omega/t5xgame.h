@@ -1,18 +1,18 @@
 #ifndef _T5XGAME_H_
 #define _T5XGAME_H_
 
-#define T5X_V_MASK      0x000000ff  /* Database version */
-#define T5X_V_ZONE      0x00000100  /* ZONE/DOMAIN field */
-#define T5X_V_LINK      0x00000200  /* LINK field (exits from objs) */
-#define T5X_V_DATABASE  0x00000400  /* attrs in a separate database */
-#define T5X_V_ATRNAME   0x00000800  /* NAME is an attr, not in the hdr */
-#define T5X_V_ATRKEY    0x00001000  /* KEY is an attr, not in the hdr */
-#define T5X_V_PARENT    0x00002000  /* db has the PARENT field */
-#define T5X_V_ATRMONEY  0x00008000  /* Money is kept in an attribute */
-#define T5X_V_XFLAGS    0x00010000  /* An extra word of flags */
-#define T5X_V_POWERS    0x00020000  /* Powers? */
-#define T5X_V_3FLAGS    0x00040000  /* Adding a 3rd flag word */
-#define T5X_V_QUOTED    0x00080000  /* Quoted strings, ala PennMUSH */
+#define T5X_V_MASK      0x000000FFUL
+#define T5X_V_ZONE      0x00000100UL
+#define T5X_V_LINK      0x00000200UL
+#define T5X_V_DATABASE  0x00000400UL
+#define T5X_V_ATRNAME   0x00000800UL
+#define T5X_V_ATRKEY    0x00001000UL
+#define T5X_V_PARENT    0x00002000UL
+#define T5X_V_ATRMONEY  0x00008000UL
+#define T5X_V_XFLAGS    0x00010000UL
+#define T5X_V_POWERS    0x00020000UL
+#define T5X_V_3FLAGS    0x00040000UL
+#define T5X_V_QUOTED    0x00080000UL
 
 #define T5X_MANDFLAGS_V2  (T5X_V_LINK|T5X_V_PARENT|T5X_V_XFLAGS|T5X_V_ZONE|T5X_V_POWERS|T5X_V_3FLAGS|T5X_V_QUOTED)
 #define T5X_OFLAGS_V2     (T5X_V_DATABASE|T5X_V_ATRKEY|T5X_V_ATRNAME|T5X_V_ATRMONEY)
@@ -87,6 +87,85 @@
 #define T5X_A_CONFORMAT     242
 #define T5X_A_NAMEFORMAT    243
 #define T5X_A_DESCFORMAT    244
+
+// Object Flagword 1
+//
+#define T5X_SEETHRU      0x00000008UL
+#define T5X_WIZARD       0x00000010UL
+#define T5X_LINK_OK      0x00000020UL
+#define T5X_DARK         0x00000040UL
+#define T5X_JUMP_OK      0x00000080UL
+#define T5X_STICKY       0x00000100UL
+#define T5X_DESTROY_OK   0x00000200UL
+#define T5X_HAVEN        0x00000400UL
+#define T5X_QUIET        0x00000800UL
+#define T5X_HALT         0x00001000UL
+#define T5X_TRACE        0x00002000UL
+#define T5X_GOING        0x00004000UL
+#define T5X_MONITOR      0x00008000UL
+#define T5X_MYOPIC       0x00010000UL
+#define T5X_PUPPET       0x00020000UL
+#define T5X_CHOWN_OK     0x00040000UL
+#define T5X_ENTER_OK     0x00080000UL
+#define T5X_VISUAL       0x00100000UL
+#define T5X_IMMORTAL     0x00200000UL
+#define T5X_HAS_STARTUP  0x00400000UL
+#define T5X_MUX_OPAQUE   0x00800000UL
+#define T5X_VERBOSE      0x01000000UL
+#define T5X_INHERIT      0x02000000UL
+#define T5X_NOSPOOF      0x04000000UL
+#define T5X_ROBOT        0x08000000UL
+#define T5X_SAFE         0x10000000UL
+#define T5X_ROYALTY      0x20000000UL
+#define T5X_HEARTHRU     0x40000000UL
+#define T5X_TERSE        0x80000000UL
+
+// Object Flagword 2
+//
+#define T5X_KEY          0x00000001UL
+#define T5X_ABODE        0x00000002UL
+#define T5X_FLOATING     0x00000004UL
+#define T5X_UNFINDABLE   0x00000008UL
+#define T5X_PARENT_OK    0x00000010UL
+#define T5X_LIGHT        0x00000020UL
+#define T5X_HAS_LISTEN   0x00000040UL
+#define T5X_HAS_FWDLIST  0x00000080UL
+#define T5X_AUDITORIUM   0x00000100UL
+#define T5X_ANSI         0x00000200UL
+#define T5X_HEAD_FLAG    0x00000400UL
+#define T5X_FIXED        0x00000800UL
+#define T5X_UNINSPECTED  0x00001000UL
+#define T5X_NO_COMMAND   0x00002000UL
+#define T5X_CKEEPALIVE   0x00004000UL
+#define T5X_NOBLEED      0x00008000UL
+#define T5X_STAFF        0x00010000UL
+#define T5X_HAS_DAILY    0x00020000UL
+#define T5X_GAGGED       0x00040000UL
+#define T5X_OPEN_OK      0x00080000UL
+#define T5X_VACATION     0x01000000UL
+#define T5X_PLAYER_MAILS 0x02000000UL
+#define T5X_HTML         0x04000000UL
+#define T5X_BLIND        0x08000000UL
+#define T5X_SUSPECT      0x10000000UL
+#define T5X_ASCII        0x20000000UL
+#define T5X_CONNECTED    0x40000000UL
+#define T5X_SLAVE        0x80000000UL
+
+// Object Flagword 3
+//
+#define T5X_SITEMON      0x00000400UL
+#define T5X_CMDCHECK     0x00000800UL
+#define T5X_MUX_UNICODE  0x00001000UL
+#define T5X_MARK_0       0x00400000UL
+#define T5X_MARK_1       0x00800000UL
+#define T5X_MARK_2       0x01000000UL
+#define T5X_MARK_3       0x02000000UL
+#define T5X_MARK_4       0x04000000UL
+#define T5X_MARK_5       0x08000000UL
+#define T5X_MARK_6       0x10000000UL
+#define T5X_MARK_7       0x20000000UL
+#define T5X_MARK_8       0x40000000UL
+#define T5X_MARK_9       0x80000000UL
 
 typedef unsigned char UTF8;
 
