@@ -179,11 +179,11 @@
             [elements(-b--,0 -1 1 2,-)]
             [elements(a--b-,0 2 3 -1 1,-)]
             [elements(-a--b,1 2 3 0 -1,-)]
-            [elements(--a-,1 -1 0 2-)]
+            [elements(--a-,1 -1 0 2,-)]
             [elements(---a,-1 2 0 1,-)]
           )
         ),
-        D24631ACF1C08F94D5FC5BCF62A18B0AB1A7F574
+        2524BF4D3ABE7934D319D11A31E9ADD54C6CDD64
       )=
   {
     @log smoke=TC007: elements walk two elements through single-hyphens. Succeeded.
