@@ -1942,6 +1942,12 @@ char *convert_t6h_quota(char *p)
 
 bool convert_t6h_attr_num(int iNum, int *piNum)
 {
+    if (A_USER_START <= iNum)
+    {
+        *piNum = iNum;
+        return true;
+    }
+
     // T6H attribute numbers with no corresponding T5X attribute.
     //
     if (  T6H_A_NEWOBJS == iNum
