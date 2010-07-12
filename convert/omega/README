@@ -1,40 +1,96 @@
 Omega: README
 Last Update: July 2010
 
-This is intended to be the 'last' flatfile convertor.  It currently consumes
-and produces PennMUSH and TinyMUX 2.7 flatfiles, but the plan is to add
-parsers for other formats.
+This is intended to be the 'last' flatfile convertor with the ability to
+recognize and manipulate flatfiles for all four MUSH codebases.
 
-This can eventually be used to validate backups (lint for your flatfile) --
-including which server version should be able to consume it.  It can also
-be used to extract a @decomp of specific objects for re-quoting into games.
-Finally, it can be used to convert from one format to another in a lossy
-fashion.
 
-Tested:
+FEATURE: Validation (Level 1)
 
-2010-06-27 - Tested that a large flatfile produced by PennMUSH 1.8.0p6
-             (12/12/2005, 1008000009) is parsed and re-generated exactly the
-             same.
+Omega automatically recognizes and parses flatfiles for PennMUSH, TinyMUX,
+TinyMUSH, and RhostMUSH.  This shows whether the elements of the flatfile are
+present, in the proper order, and whether the flatfile is complete.  Locks are
+also parsed and validated whether they appear in the object header or in
+attribute values.  For TinyMUX, and TinyMUSH, it also validates that the
+flatfile is not just a structure flatfile -- that all the attribute values are
+present.
 
-             Round-trip tested minimal+ flatfile produced by PennMUSH 1.8.4p0
-             (05/09/2010, 1008004000)
+If anyone has ever asked you to look for the END OF DUMP line at the end of
+the flatfile, this level of validation is better than that.
 
-             Round-trip tested minimal+ flatfile produced by PennMUSH 1.8.0p0
-             (01/01/2005, 001008008000)
+Notes: The list of attributes locks for RhostMUSH and TinyMUSH isn't
+completely updated, but the lock parser works for the ones it does have.
+The list just needs to be updated.
 
-2010-06-28 - Round-trip tested a large TinyMUX 2.7 database. Checked and fixed
-             memory leaks in p6h and t5x paths.
 
-             Round-trip tested the TinyMUX 2.6 SGP minimal database.
+FEATURE: Validation (Level 2)
 
-2010-06-29 - Round-trip an older PennMUSH flatfile (1.7.5p0 or after, but
-             before 1.7.7p40).
+Omega can cross-reference dbrefs and attribute names, validate that all flags
+are known.  It can also break down certain things and validate the pieces.
+This is an open-ended area of work, and to a degree each server is already
+performing much of this type of validation as well.
 
-             Added ability to convert a from pre-1.7.7p40 flatfile to 1.7.7p40
-             flatfile.
+Currently, Omega is validating the dbrefs in the object header for all
+four MUSH flavors. It is not validating dbrefs or attribute names in locks.
+It is not validating dbref uniqueness or attribute name uniqueness.
 
-2010-07-01 - While locks, attribute flags, attribute owners do not yet pass
-             through, the conversion produces a loadable flatfile which passes
-             the server tests.  There is also some addition work that can be
-             done with variable exits and optimal renaming of attribute names.
+
+FEATURE: Validation (Level 3)
+
+It is possible to inspect softcode on attributes and develop some educated
+guesses about how color is expressed, whether or not Unicode is used, use of
+functions which may or may not be available on the servers that can consume
+the flatfile. This level of validation is not yet performed for any MUSH
+flavor.
+
+FEATURE: Round-trip
+
+Omega can consume and produce flatfiles for all for all four MUSH flavors. It
+in each, it should produce exactly what it consumes.
+
+
+FEATURE: Password reset
+
+Omega can reset the password of #1 to 'potrzebie' for all four MUSH flavors.
+
+
+FEATURE: Upgrades and Downgrades
+
+Each MUSH flavor can usually support more than one type of flatfile.
+Sometimes, the differences are minor, sometimes these differences are major.
+
+Omega can upgrade PennMUSH from 'old' to 'new' style flatfiles.
+
+Omega can upgrade or downgrade between TinyMUX flatfiles from TinyMUX 2.0
+through TinyMUX 2.9.  It may also be able to accept TinyMUX 1.6, but
+flatfiles from that era were more varied in the flatfile options.  Your 1.6
+flatfile may use options which Omega doesn't expect.  It is best to run it
+through TinyMUX 2.0 first.
+
+The differences between TinyMUSH 3.0 and 3.1 are minor, but there is no
+support yet for upgrading/downgrading.
+
+Only one version of RhostMUSH flatfile is known.
+
+
+FEATURE: Extraction
+
+Extracting individual objects or clusters of objects from a flatfile is not
+yet supported for any MUSH flavor.
+
+
+FEATURE: Conversion
+
+The conversion between PennMUSH and TinyMUX is pretty solid.  I think the
+TinyMUX-to-PennMUSH conversion needs more testing.  There is also a
+PennMUSH-to-TinyMUSH and PennMUSH-to-RhostMUSH path, but they still need
+updating to map attributes correctly and map object and attribute flags.
+The TinyMUSH-to-TinyMUX path still needs conversion of object flags
+and attribute flags.
+
+
+FEATURE: Charset conversions
+
+Currently, the only charset conversions in Omega are between TinyMUX 2.6 and
+TinyMUX 2.7.  Latin-1 is assumed for everything else.  In general, PennMUSH
+flatfile can be localized into other locales, but this is not yet supported.
