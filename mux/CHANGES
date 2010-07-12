@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: May 2010
+Last Update: July 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,6 +50,11 @@ Bug Fixes:
     is set on player object (Issue 623).
  -- db_check could potentially crash if exit destination is HOME.
  -- Stricter parsing of telnet options.
+ -- Special case for space delimiter (Issues 620, 628, 629, 630, 631,
+    632, 633, and 634).
+ -- Change CXXCPP to CXX in modules sub-build.
+ -- Clean target should not remove sqlproxy.so or sqlslave.so.
+ -- Protect ConvertToLatin() from buffer overflow.
 
 
 Performance Enhancements:
@@ -61,6 +66,14 @@ Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Change default fixed_tel_message and fixed_home_message
     (Issue 579).
+ -- Fix @dolist help topic (Issue 593)
+ -- Change reference to no_program which should be no_command.
+ -- Topic reference should be to 'regexp syntax'.
+ -- Fix typo in substitutions3 (Issue 605).
+ -- Fix typo on help @lock compound (Issue 606).
+ -- Clarify use of see_all @power (Issue 584).
+ -- Remove reference to STRINGS in FAILURE help topic.
+ -- Fix connects/disconnects typo in @ADISCONNECT topic.
 
 
 Miscellaneous:
@@ -75,10 +88,4 @@ Miscellaneous:
  -- Move CLog from svdhash.cpp to log.cpp.
  -- Fix compiler warnings in CLog about unused return values.
  -- Let indent have a little of its way with log.cpp.
- -- Fix @dolist help topic (Issue 593)
- -- Change reference to no_program which should be no_command.
- -- Topic reference should be to 'regexp syntax'.
- -- Fix typo in substitutions3 (Issue 605).
- -- Fix typo on help @lock compound (Issue 606).
  -- Simplify is_prefix_cmd().
- -- Clarify use of see_all @power (Issue 584).
