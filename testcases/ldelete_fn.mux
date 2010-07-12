@@ -1,0 +1,240 @@
+#
+# ldelete_fn.mux - Test Cases for ldelete().
+# $Id$
+#
+@create test_ldelete_fn
+-
+@set test_ldelete_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ldelete_fn=
+  @log smoke=Beginning ldelete() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ldelete(This is not a test, 3)]
+            [ldelete(Yet@Another@Mundane@List, 3, @)]
+          )
+        ),
+        127972D9CE563040CA8DB078CF5AB308C7C51E76
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Regressions.
+#
+&tr.tc002 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ldelete(%bThis is not a test,3)]]
+          )
+        ),
+        44C72B112A8E0D9E04A5E625DEA442B6DA99FB6C
+      )=
+  {
+    @log smoke=TC002: ldelete regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: ldelete regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Vary number of arguments.
+#
+&tr.tc003 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(-1 0 1,ldelete(,##,|))]
+            [iter(2 1 0 -1,ldelete(a,##,|))]
+            [iter(3 2 1 0 -1,ldelete(a|a,##,|))]
+            [iter(4 3 2 1 0 -1,ldelete(a|a|a|a,##,|))]
+            [iter(1 0 -1,ldelete(,##))]
+            [iter(1 0 -1,ldelete(%b,##))]
+            [iter(2 1 0 -1,ldelete(a,##))]
+            [iter(3 2 1 0,ldelete(a b,##))]
+            [iter(4 3 2 1 0,ldelete(a b c,##))]
+            [iter(5 4 3 2 1 0,ldelete(a b c d,##))]
+            [iter(6 5 4 3 2 1 0,ldelete(a b c d e,##))]
+            [iter(7 6 5 4 3 2 1 0,ldelete(a b c d e f,##))]
+            [iter(8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g,##))]
+            [iter(9 8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g h,##))]
+          )
+        ),
+        C1F008407FA522FD1D7F786AE374DBEE6B6B735E
+      )=
+  {
+    @log smoke=TC003: Vary number of arguments. Succeeded.
+  },
+  {
+    @log smoke=TC003: Vary number of arguments. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Walk two elements through whitespace.
+#
+&tr.tc004 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(-1 1 2 0,ldelete(%b%b%b,##)]
+            [iter(-1 1 2 0,ldelete(b%b%b%b,##)]
+            [iter(-1 1 2 0,ldelete(%bb%b%b,##)]
+            [iter(-1 1 2 0,ldelete(a%b%bb%b,##)]
+            [iter(-1 1 2 0,ldelete(%ba%b%bb,##)]
+            [iter(-1 1 2 0,ldelete(%b%ba%b,##)]
+            [iter(-1 1 2 0,ldelete(%b%b%ba,##)]
+          )
+        ),
+        7BB55CB078E198FABD34110BAD8D3C97EC8764F1
+      )=
+  {
+    @log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.
+  },
+  {
+    @log smoke=TC004: ldelete walk two elements through whitespace. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Walk whitespace through elements
+#
+&tr.tc005 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(1 2 3 8 -1 6 0 9 5 4 7,ldelete(a b c d e f g h,##))]
+            [iter(5 0 -1 8 1 3 4 2 9 7 6,ldelete(%ba b c d e f g h,##))]
+            [iter(5 2 7 4 0 -1 9 8 1 6 3,ldelete(a%bb c d e f g h,##))]
+            [iter(5 1 4 8 3 9 -1 6 0 7 2,ldelete(a b%bc d e f g h,##))]
+            [iter(0 6 3 -1 5 1 2 4 8 9 7,ldelete(a b c%bd e f g h,##))]
+            [iter(-1 2 9 8 3 1 5 4 7 6 0,ldelete(a b c d%be f g h,##))]
+            [iter(6 0 9 5 4 8 2 -1 3 1 7,ldelete(a b c d e%bf g h,##))]
+            [iter(4 7 2 1 0 9 -1 8 6 5 3,ldelete(a b c d e f%bg h,##))]
+            [iter(-1 4 1 6 3 7 9 8 0 2 5,ldelete(a b c d e f g%bh,##))]
+            [iter(-1 4 5 0 3 9 1 6 7 2 8,ldelete(a b c d e f g h%b,##))]
+            [iter(1 7 6 2 3 4 0 -1 5 8 9,ldelete(%b%ba b c d e f g h,##))]
+            [iter(2 6 1 -1 0 5 7 9 4 8 3,ldelete(a%b%bb c d e f g h,##))]
+            [iter(5 7 1 4 6 9 0 3 -1 2 8,ldelete(a b%b%bc d e f g h,##))]
+            [iter(6 -1 8 5 0 2 4 3 1 7 9,ldelete(a b c%b%bd e f g h,##))]
+            [iter(4 -1 2 5 6 7 8 1 0 9 3,ldelete(a b c d%b%be f g h,##))]
+            [iter(1 9 6 8 2 -1 7 3 0 5 4,ldelete(a b c d e%b%bf g h,##))]
+            [iter(6 7 2 5 1 -1 3 8 0 9 4,ldelete(a b c d e f%b%bg h,##))]
+            [iter(1 -1 3 2 7 4 9 8 5 0 6,ldelete(a b c d e f g%b%bh,##))]
+            [iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))]
+          )
+        ),
+        FE04D719B34FD31B40A9ABD211930AC69E3CB312
+      )=
+  {
+    @log smoke=TC005: ldelete walk whitespace through elements. Succeeded.
+  },
+  {
+    @log smoke=TC005: ldelete walk whitespace through elements. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Vary number of elements with single hyphen delimiter.
+#
+&tr.tc006 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(1 0 -1,ldelete(,##,-))]
+            [iter(1 -1 0,ldelete(-,##,-))]
+            [iter(-1 0 1 2,ldelete(a,##,-))]
+            [iter(3 -1 1 0 2,ldelete(a-b,##,-))]
+            [iter(3 -1 1 0 2 4,ldelete(a-b-c,##,-))]
+            [iter(4 5 0 3 -1 2 1,ldelete(a-b-c-d,##,-))]
+            [iter(1 5 0 -1 2 4 6 3,ldelete(a-b-c-d-e,##,-))]
+            [iter(6 5 1 7 -1 4 3 2 0,ldelete(a-b-c-d-e-f,##,-))]
+            [iter(7 1 2 3 4 6 -1 0 8 5,ldelete(a-b-c-d-e-f-g,##,-))]
+            [iter(2 7 6 9 3 8 -1 4 5 0 1,ldelete(a-b-c-d-e-f-g-h,##,-))]
+          )
+        ),
+        3B634BB220F534E1C9739D8C6A62BCF28FCFC655
+      )=
+  {
+    @log smoke=TC006: ldelete vary elements with single-hyphen delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC006: ldelete vary elements with single-hypehn delimiter. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Walk two elements through single-hyphens.
+#
+&tr.tc007 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(-1 0 1,ldelete(---,##,-))]
+            [iter(2 0 -1 1,ldelete(b---,##,-))]
+            [iter(0 -1 1 2,ldelete(-b--,##,-))]
+            [iter(0 2 3 -1 1,ldelete(a--b-,##,-))]
+            [iter(1 2 3 0 -1,ldelete(-a--b,##,-))]
+            [iter(1 -1 0 2,ldelete(--a-,##,-))]
+            [iter(-1 2 0 1,ldelete(---a,##,-))]
+          )
+        ),
+        B016A8EFCC6DF4325CA87867E0B9A2568F780D53
+      )=
+  {
+    @log smoke=TC007: ldelete walk two elements through single-hyphens. Succeeded.
+  },
+  {
+    @log smoke=TC007: ldelete walk two elements through single-hyphens. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Walk single-hyphens through elements
+#
+&tr.tc008 test_ldelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iter(1 2 9 3 4 6 0 5 -1 7 8,ldelete(a-b-c-d-e-f-g-h,i##,-))]
+            [iter(4 0 6 7 8 3 -1 9 1 2 5,ldelete(-a-b-c-d-e-f-g-h,##,-))]
+            [iter(3 5 -1 7 8 2 0 1 9 4 6,ldelete(a--b-c-d-e-f-g-h,##,-))]
+            [iter(4 -1 0 6 7 3 8 5 2 1 9,ldelete(a-b--c-d-e-f-g-h,##,-))]
+            [iter(9 5 1 3 7 2 8 0 6 4 -1,ldelete(a-b-c--d-e-f-g-h,##,-))]
+            [iter(7 3 8 5 -1 9 0 4 6 2 1,ldelete(a-b-c-d--e-f-g-h,##,-))]
+            [iter(0 7 4 9 2 5 3 6 8 1 -1,ldelete(a-b-c-d-e--f-g-h,##,-))]
+            [iter(4 9 2 8 3 7 0 5 -1 6 1,ldelete(a-b-c-d-e-f--g-h,##,-))]
+            [iter(9 7 4 5 6 0 3 -1 2 1 8,ldelete(a-b-c-d-e-f-g--h,##,-))]
+            [iter(8 9 3 5 1 7 6 2 0 -1 4,ldelete(a-b-c-d-e-f-g-h-,##,-))]
+            [iter(4 7 6 0 2 5 1 8 -1 3 9,ldelete(--a-b-c-d-e-f-g-h,##,-))]
+            [iter(6 2 -1 9 0 8 3 1 4 5 7,ldelete(a---b-c-d-e-f-g-h,##,-))]
+            [iter(1 -1 6 5 0 9 8 7 2 3 4,ldelete(a-b---c-d-e-f-g-h,##,-))]
+            [iter(-1 0 4 1 5 8 9 3 6 7 2,ldelete(a-b-c---d-e-f-g-h,##,-))]
+            [iter(2 -1 4 5 9 8 6 7 1 3 0,ldelete(a-b-c-d---e-f-g-h,##,-))]
+            [iter(2 1 4 8 7 -1 5 3 0 6 9,ldelete(a-b-c-d-e---f-g-h,##,-))]
+            [iter(3 0 7 8 6 9 4 1 5 -1 2,ldelete(a-b-c-d-e-f---g-h,##,-))]
+            [iter(4 3 8 5 2 7 1 9 0 6 -1,ldelete(a-b-c-d-e-f-g---h,##,-))]
+            [iter(3 0 8 1 4 7 6 2 9 -1 5,ldelete(a-b-c-d-e-f-g-h--,##,-))]
+          )
+        ),
+        1D849DDB28A0C8E94299F32F8009D390BB2148FA
+      )=
+  {
+    @log smoke=TC008: ldelete walk single-hypens through elements. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: ldelete walk single-hypens through elements. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ldelete_fn=
+  @log smoke=End ldelete() test cases.;
+  @notify smoke
+-
+drop test_ldelete_fn
+-
+#
+# End of Test Cases
+#

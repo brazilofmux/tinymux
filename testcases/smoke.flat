@@ -1,5 +1,5 @@
 +X992002
-+S34
++S35
 +N273
 -R1
 +A256
@@ -40,7 +40,7 @@
 "Limbo"
 -1
 -1
-33
+34
 -1
 -1
 -1
@@ -438,7 +438,7 @@
 >263
 "@if strmatch(setr(0,sha1([elements(,1 0 -1,-)][elements(-,1 -1 0,-)][elements(a,-1 0 1 2,-)][elements(a-b,3 -1 1 0 2,-)][elements(a-b-c,3 -1 1 0 2 4,-)][elements(a-b-c-d,4 5 0 3 -1 2 1,-)][elements(a-b-c-d-e,1 5 0 -1 2 4 6 3,-)][elements(a-b-c-d-e-f,6 5 1 7 -1 4 3 2 0,-)][elements(a-b-c-d-e-f-g,7 1 2 3 4 6 -1 0 8 5,-)][elements(a-b-c-d-e-f-g-h,2 7 6 9 3 8 -1 4 5 0 1,-)])),FBF8A76D6FFCC7C5B3C46D573C29BF88DA64BFCA)={@log smoke=TC006: elements vary elements with single-hyphen delimiter. Succeeded.},{@log smoke=TC006: elements vary elements with single-hypehn delimiter. Failed (%q0).}"
 >264
-"@if strmatch(setr(0,sha1([elements(---,-1 0 1,-)][elements(b---,2 0 -1 1,-)][elements(-b--,0 -1 1 2,-)][elements(a--b-,0 2 3 -1 1,-)][elements(-a--b,1 2 3 0 -1,-)][elements(--a-,1 -1 0 2-)][elements(---a,-1 2 0 1,-)])),D24631ACF1C08F94D5FC5BCF62A18B0AB1A7F574)={@log smoke=TC007: elements walk two elements through single-hyphens. Succeeded.},{@log smoke=TC007: elements walk two elements through single-hyphens. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([elements(---,-1 0 1,-)][elements(b---,2 0 -1 1,-)][elements(-b--,0 -1 1 2,-)][elements(a--b-,0 2 3 -1 1,-)][elements(-a--b,1 2 3 0 -1,-)][elements(--a-,1 -1 0 2,-)][elements(---a,-1 2 0 1,-)])),2524BF4D3ABE7934D319D11A31E9ADD54C6CDD64)={@log smoke=TC007: elements walk two elements through single-hyphens. Succeeded.},{@log smoke=TC007: elements walk two elements through single-hyphens. Failed (%q0).}"
 >265
 "@if strmatch(setr(0,sha1([elements(a-b-c-d-e-f-g-h,1 2 9 3 4 6 0 5 -1 7 8,-)][elements(-a-b-c-d-e-f-g-h,4 0 6 7 8 3 -1 9 1 2 5,-)][elements(a--b-c-d-e-f-g-h,3 5 -1 7 8 2 0 1 9 4 6,-)][elements(a-b--c-d-e-f-g-h,4 -1 0 6 7 3 8 5 2 1 9,-)][elements(a-b-c--d-e-f-g-h,9 5 1 3 7 2 8 0 6 4 -1,-)][elements(a-b-c-d--e-f-g-h,7 3 8 5 -1 9 0 4 6 2 1,-)][elements(a-b-c-d-e--f-g-h,0 7 4 9 2 5 3 6 8 1 -1,-)][elements(a-b-c-d-e-f--g-h,4 9 2 8 3 7 0 5 -1 6 1,-)][elements(a-b-c-d-e-f-g--h,9 7 4 5 6 0 3 -1 2 1 8,-)][elements(a-b-c-d-e-f-g-h-,8 9 3 5 1 7 6 2 0 -1 4,-)][elements(--a-b-c-d-e-f-g-h,4 7 6 0 2 5 1 8 -1 3 9,-)][elements(a---b-c-d-e-f-g-h,6 2 -1 9 0 8 3 1 4 5 7,-)][elements(a-b---c-d-e-f-g-h,1 -1 6 5 0 9 8 7 2 3 4,-)][elements(a-b-c---d-e-f-g-h,-1 0 4 1 5 8 9 3 6 7 2,-)][elements(a-b-c-d---e-f-g-h,2 -1 4 5 9 8 6 7 1 3 0,-)][elements(a-b-c-d-e---f-g-h,2 1 4 8 7 -1 5 3 0 6 9,-)][elements(a-b-c-d-e-f---g-h,3 0 7 8 6 9 4 1 5 -1 2,-)][elements(a-b-c-d-e-f-g---h,4 3 8 5 2 7 1 9 0 6 -1,-)][elements(a-b-c-d-e-f-g-h--,3 0 8 1 4 7 6 2 9 -1 5,-)])),EDEA0678367E8E6C80543BDC7E62FF588D590934)={@log smoke=TC008: elements walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: elements walk single-hypens through elements. Failed (%q0).;@trig me/tr.done}"
 >259
@@ -641,13 +641,55 @@
 "@log smoke=End last() test cases.;@notify smoke"
 <
 !17
-"test_ljust_fn"
+"test_ldelete_fn"
 0
 -1
 -1
 -1
 0
 16
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning ldelete() test cases."
+>257
+"@if strmatch(setr(0,sha1([ldelete(This is not a test, 3)][ldelete(Yet@Another@Mundane@List, 3, @)])),127972D9CE563040CA8DB078CF5AB308C7C51E76)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1([ldelete(%bThis is not a test,3)]])),44C72B112A8E0D9E04A5E625DEA442B6DA99FB6C)={@log smoke=TC002: ldelete regressions. Succeeded.},{@log smoke=TC002: ldelete regressions. Failed (%q0).}"
+>260
+"@if strmatch(setr(0,sha1([iter(-1 0 1,ldelete(,##,|))][iter(2 1 0 -1,ldelete(a,##,|))][iter(3 2 1 0 -1,ldelete(a|a,##,|))][iter(4 3 2 1 0 -1,ldelete(a|a|a|a,##,|))][iter(1 0 -1,ldelete(,##))][iter(1 0 -1,ldelete(%b,##))][iter(2 1 0 -1,ldelete(a,##))][iter(3 2 1 0,ldelete(a b,##))][iter(4 3 2 1 0,ldelete(a b c,##))][iter(5 4 3 2 1 0,ldelete(a b c d,##))][iter(6 5 4 3 2 1 0,ldelete(a b c d e,##))][iter(7 6 5 4 3 2 1 0,ldelete(a b c d e f,##))][iter(8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g,##))][iter(9 8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g h,##))])),C1F008407FA522FD1D7F786AE374DBEE6B6B735E)={@log smoke=TC003: Vary number of arguments. Succeeded.},{@log smoke=TC003: Vary number of arguments. Failed (%q0).}"
+>261
+"@if strmatch(setr(0,sha1([iter(-1 1 2 0,ldelete(%b%b%b,##)][iter(-1 1 2 0,ldelete(b%b%b%b,##)][iter(-1 1 2 0,ldelete(%bb%b%b,##)][iter(-1 1 2 0,ldelete(a%b%bb%b,##)][iter(-1 1 2 0,ldelete(%ba%b%bb,##)][iter(-1 1 2 0,ldelete(%b%ba%b,##)][iter(-1 1 2 0,ldelete(%b%b%ba,##)])),7BB55CB078E198FABD34110BAD8D3C97EC8764F1)={@log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.},{@log smoke=TC004: ldelete walk two elements through whitespace. Failed (%q0).}"
+>262
+"@if strmatch(setr(0,sha1([iter(1 2 3 8 -1 6 0 9 5 4 7,ldelete(a b c d e f g h,##))][iter(5 0 -1 8 1 3 4 2 9 7 6,ldelete(%ba b c d e f g h,##))][iter(5 2 7 4 0 -1 9 8 1 6 3,ldelete(a%bb c d e f g h,##))][iter(5 1 4 8 3 9 -1 6 0 7 2,ldelete(a b%bc d e f g h,##))][iter(0 6 3 -1 5 1 2 4 8 9 7,ldelete(a b c%bd e f g h,##))][iter(-1 2 9 8 3 1 5 4 7 6 0,ldelete(a b c d%be f g h,##))][iter(6 0 9 5 4 8 2 -1 3 1 7,ldelete(a b c d e%bf g h,##))][iter(4 7 2 1 0 9 -1 8 6 5 3,ldelete(a b c d e f%bg h,##))][iter(-1 4 1 6 3 7 9 8 0 2 5,ldelete(a b c d e f g%bh,##))][iter(-1 4 5 0 3 9 1 6 7 2 8,ldelete(a b c d e f g h%b,##))][iter(1 7 6 2 3 4 0 -1 5 8 9,ldelete(%b%ba b c d e f g h,##))][iter(2 6 1 -1 0 5 7 9 4 8 3,ldelete(a%b%bb c d e f g h,##))][iter(5 7 1 4 6 9 0 3 -1 2 8,ldelete(a b%b%bc d e f g h,##))][iter(6 -1 8 5 0 2 4 3 1 7 9,ldelete(a b c%b%bd e f g h,##))][iter(4 -1 2 5 6 7 8 1 0 9 3,ldelete(a b c d%b%be f g h,##))][iter(1 9 6 8 2 -1 7 3 0 5 4,ldelete(a b c d e%b%bf g h,##))][iter(6 7 2 5 1 -1 3 8 0 9 4,ldelete(a b c d e f%b%bg h,##))][iter(1 -1 3 2 7 4 9 8 5 0 6,ldelete(a b c d e f g%b%bh,##))][iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))])),FE04D719B34FD31B40A9ABD211930AC69E3CB312)={@log smoke=TC005: ldelete walk whitespace through elements. Succeeded.},{@log smoke=TC005: ldelete walk whitespace through elements. Failed (%q0).}"
+>263
+"@if strmatch(setr(0,sha1([iter(1 0 -1,ldelete(,##,-))][iter(1 -1 0,ldelete(-,##,-))][iter(-1 0 1 2,ldelete(a,##,-))][iter(3 -1 1 0 2,ldelete(a-b,##,-))][iter(3 -1 1 0 2 4,ldelete(a-b-c,##,-))][iter(4 5 0 3 -1 2 1,ldelete(a-b-c-d,##,-))][iter(1 5 0 -1 2 4 6 3,ldelete(a-b-c-d-e,##,-))][iter(6 5 1 7 -1 4 3 2 0,ldelete(a-b-c-d-e-f,##,-))][iter(7 1 2 3 4 6 -1 0 8 5,ldelete(a-b-c-d-e-f-g,##,-))][iter(2 7 6 9 3 8 -1 4 5 0 1,ldelete(a-b-c-d-e-f-g-h,##,-))])),3B634BB220F534E1C9739D8C6A62BCF28FCFC655)={@log smoke=TC006: ldelete vary elements with single-hyphen delimiter. Succeeded.},{@log smoke=TC006: ldelete vary elements with single-hypehn delimiter. Failed (%q0).}"
+>264
+"@if strmatch(setr(0,sha1([iter(-1 0 1,ldelete(---,##,-))][iter(2 0 -1 1,ldelete(b---,##,-))][iter(0 -1 1 2,ldelete(-b--,##,-))][iter(0 2 3 -1 1,ldelete(a--b-,##,-))][iter(1 2 3 0 -1,ldelete(-a--b,##,-))][iter(1 -1 0 2,ldelete(--a-,##,-))][iter(-1 2 0 1,ldelete(---a,##,-))])),B016A8EFCC6DF4325CA87867E0B9A2568F780D53)={@log smoke=TC007: ldelete walk two elements through single-hyphens. Succeeded.},{@log smoke=TC007: ldelete walk two elements through single-hyphens. Failed (%q0).}"
+>265
+"@if strmatch(setr(0,sha1([iter(1 2 9 3 4 6 0 5 -1 7 8,ldelete(a-b-c-d-e-f-g-h,i##,-))][iter(4 0 6 7 8 3 -1 9 1 2 5,ldelete(-a-b-c-d-e-f-g-h,##,-))][iter(3 5 -1 7 8 2 0 1 9 4 6,ldelete(a--b-c-d-e-f-g-h,##,-))][iter(4 -1 0 6 7 3 8 5 2 1 9,ldelete(a-b--c-d-e-f-g-h,##,-))][iter(9 5 1 3 7 2 8 0 6 4 -1,ldelete(a-b-c--d-e-f-g-h,##,-))][iter(7 3 8 5 -1 9 0 4 6 2 1,ldelete(a-b-c-d--e-f-g-h,##,-))][iter(0 7 4 9 2 5 3 6 8 1 -1,ldelete(a-b-c-d-e--f-g-h,##,-))][iter(4 9 2 8 3 7 0 5 -1 6 1,ldelete(a-b-c-d-e-f--g-h,##,-))][iter(9 7 4 5 6 0 3 -1 2 1 8,ldelete(a-b-c-d-e-f-g--h,##,-))][iter(8 9 3 5 1 7 6 2 0 -1 4,ldelete(a-b-c-d-e-f-g-h-,##,-))][iter(4 7 6 0 2 5 1 8 -1 3 9,ldelete(--a-b-c-d-e-f-g-h,##,-))][iter(6 2 -1 9 0 8 3 1 4 5 7,ldelete(a---b-c-d-e-f-g-h,##,-))][iter(1 -1 6 5 0 9 8 7 2 3 4,ldelete(a-b---c-d-e-f-g-h,##,-))][iter(-1 0 4 1 5 8 9 3 6 7 2,ldelete(a-b-c---d-e-f-g-h,##,-))][iter(2 -1 4 5 9 8 6 7 1 3 0,ldelete(a-b-c-d---e-f-g-h,##,-))][iter(2 1 4 8 7 -1 5 3 0 6 9,ldelete(a-b-c-d-e---f-g-h,##,-))][iter(3 0 7 8 6 9 4 1 5 -1 2,ldelete(a-b-c-d-e-f---g-h,##,-))][iter(4 3 8 5 2 7 1 9 0 6 -1,ldelete(a-b-c-d-e-f-g---h,##,-))][iter(3 0 8 1 4 7 6 2 9 -1 5,ldelete(a-b-c-d-e-f-g-h--,##,-))])),1D849DDB28A0C8E94299F32F8009D390BB2148FA)={@log smoke=TC008: ldelete walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: ldelete walk single-hypens through elements. Failed (%q0).;@trig me/tr.done}"
+>259
+"@log smoke=End ldelete() test cases.;@notify smoke"
+<
+!18
+"test_ljust_fn"
+0
+-1
+-1
+-1
+0
+17
 
 1
 -1
@@ -676,14 +718,14 @@
 >259
 "@log smoke=End ljust() test cases.;@notify smoke"
 <
-!18
+!19
 "test_lpad_fn"
 0
 -1
 -1
 -1
 0
-17
+18
 
 1
 -1
@@ -712,14 +754,14 @@
 >259
 "@log smoke=End lpad() test cases.;@notify smoke"
 <
-!19
+!20
 "test_merge_fn"
 0
 -1
 -1
 -1
 0
-18
+19
 
 1
 -1
@@ -764,14 +806,14 @@
 >259
 "@log smoke=End merge() test cases.;@notify smoke"
 <
-!20
+!21
 "test_mid_fn"
 0
 -1
 -1
 -1
 0
-19
+20
 
 1
 -1
@@ -792,14 +834,14 @@
 >259
 "@log smoke=End mid() test cases.;@notify smoke"
 <
-!21
+!22
 "test_pickrand_fn"
 0
 -1
 -1
 -1
 0
-20
+21
 
 1
 -1
@@ -834,14 +876,14 @@
 >259
 "@log smoke=End pickrand() test cases.;@notify smoke"
 <
-!22
+!23
 "test_rest_fn"
 0
 -1
 -1
 -1
 0
-21
+22
 
 1
 -1
@@ -876,14 +918,14 @@
 >259
 "@log smoke=End rest() test cases.;@notify smoke"
 <
-!23
+!24
 "test_rjust_fn"
 0
 -1
 -1
 -1
 0
-22
+23
 
 1
 -1
@@ -912,14 +954,14 @@
 >259
 "@log smoke=End rjust() test cases.;@notify smoke"
 <
-!24
+!25
 "test_rpad_fn"
 0
 -1
 -1
 -1
 0
-23
+24
 
 1
 -1
@@ -948,14 +990,14 @@
 >259
 "@log smoke=End rpad() test cases.;@notify smoke"
 <
-!25
+!26
 "test_secure_fn"
 0
 -1
 -1
 -1
 0
-24
+25
 
 1
 -1
@@ -982,14 +1024,14 @@
 >259
 "@log smoke=End secure() test cases.;@notify smoke"
 <
-!26
+!27
 "test_sha1_fn"
 0
 -1
 -1
 -1
 0
-25
+26
 
 1
 -1
@@ -1014,14 +1056,14 @@
 >259
 "@log smoke=End sha1() test cases.;@notify smoke"
 <
-!27
+!28
 "test_shl_fn"
 0
 -1
 -1
 -1
 0
-26
+27
 
 1
 -1
@@ -1046,14 +1088,14 @@
 >259
 "@log smoke=End shl() test cases.;@notify smoke"
 <
-!28
+!29
 "test_shuffle_fn"
 0
 -1
 -1
 -1
 0
-27
+28
 
 1
 -1
@@ -1090,32 +1132,8 @@
 >259
 "@log smoke=End shuffle() test cases.;@notify smoke"
 <
-!29
-"test_shutdown"
-0
--1
--1
--1
-0
-28
-
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
-<
 !30
-"test_sin_fn"
+"test_shutdown"
 0
 -1
 -1
@@ -1136,20 +1154,44 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning sin() test cases."
->257
-"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
->259
-"@log smoke=End sin() test cases.;@notify smoke"
+"@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
 !31
-"smoke"
+"test_sin_fn"
 0
 -1
 -1
 -1
 0
 30
+
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning sin() test cases."
+>257
+"@if strmatch(setr(0,sha1([round(sin(270,d),6)][round(sin(fdiv(pi(),2)),6)][round(sin(fdiv(pi(),4)),6)][round(sin(fdiv(pi(),6)),6)])),FDF382C82E22F03A4D0E5F927B2BEC715CC842C9)={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (%q0).;@trig me/tr.done}"
+>259
+"@log smoke=End sin() test cases.;@notify smoke"
+<
+!32
+"smoke"
+0
+-1
+-1
+-1
+0
+31
 
 1
 -1
@@ -1164,20 +1206,20 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >271
-"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn extract_fn first_fn insert_fn last_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn wrap_fn shutdown"
+"accent_fn atan2_fn center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn elements_fn escape_fn extract_fn first_fn insert_fn last_fn ldelete_fn ljust_fn lpad_fn merge_fn mid_fn pickrand_fn rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn wrap_fn shutdown"
 >19
 "@log smoke=Starting SmokeMUX;@drain me;@dolist v(suite.list)={@trig me/suite.tr=##};@notify me"
 >272
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
-!32
+!33
 "test_sqrt_fn"
 0
 -1
 -1
 -1
 0
-31
+32
 
 1
 -1
@@ -1198,14 +1240,14 @@
 >259
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <
-!33
+!34
 "test_wrap_fn"
 0
 -1
 -1
 -1
 0
-32
+33
 
 1
 -1
