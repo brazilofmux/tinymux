@@ -2008,6 +2008,31 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
     return true;
 }
 
+int convert_t6h_flags1(int f)
+{
+    return f;
+}
+
+int convert_t6h_flags2(int f)
+{
+    return f;
+}
+
+int convert_t6h_flags3(int f)
+{
+    f &= T5X_MARK_0
+       | T5X_MARK_1
+       | T5X_MARK_2
+       | T5X_MARK_3
+       | T5X_MARK_4
+       | T5X_MARK_5
+       | T5X_MARK_6
+       | T5X_MARK_7
+       | T5X_MARK_8
+       | T5X_MARK_9;
+    return f;
+}
+
 void T5X_GAME::ConvertFromT6H()
 {
     SetFlags(T5X_MANDFLAGS_V2 | 2);
@@ -2108,15 +2133,15 @@ void T5X_GAME::ConvertFromT6H()
         int flags3 = 0;
         if (it->second->m_fFlags1)
         {
-            flags1 |= (it->second->m_iFlags1 & ~T6H_TYPE_MASK);
+            flags1 = (it->second->m_iFlags1 & ~T6H_TYPE_MASK) | convert_t6h_flags1(it->second->m_iFlags1);
         }
         if (it->second->m_fFlags2)
         {
-            flags2 = it->second->m_iFlags2;
+            flags2 = convert_t6h_flags2(it->second->m_iFlags2);
         }
         if (it->second->m_fFlags3)
         {
-            flags3 = it->second->m_iFlags3;
+            flags3 = convert_t6h_flags3(it->second->m_iFlags3);
         }
 
         // Powers
