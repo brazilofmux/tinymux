@@ -2463,7 +2463,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                        || isPlayer(thing)))
             {
                 UTF8 *p = alloc_lbuf("did_it.2");
-                linewrap_general(buff, 70, p, LBUF_SIZE-1, T("     "), 5);
+                linewrap_general(buff, 71, p, LBUF_SIZE-1, T("     "), 5);
                 notify(player, p);
                 free_lbuf(p);
             }
