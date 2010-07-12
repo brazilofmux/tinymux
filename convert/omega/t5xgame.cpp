@@ -1915,7 +1915,7 @@ void T5X_GAME::ConvertFromP6H()
     SetRecordPlayers(0);
 }
 
-char *convert_p6h_quota(char *p)
+char *convert_t6h_quota(char *p)
 {
     int maxquota = 0;
     for (;;)
@@ -1938,6 +1938,68 @@ char *convert_p6h_quota(char *p)
     static char buffer[100];
     sprintf(buffer, "%d", maxquota);
     return buffer;
+}
+
+bool convert_t6h_attr_num(int iNum, int *piNum)
+{
+    // T6H attribute numbers with no corresponding T5X attribute.
+    //
+    if (  T6H_A_NEWOBJS == iNum
+       || T6H_A_MAILCC == iNum
+       || T6H_A_MAILBCC == iNum
+       || T6H_A_LKNOWN == iNum
+       || T6H_A_LHEARD == iNum)
+    {
+        return false;
+    }
+
+    if (T6H_A_LEXITS_FMT == iNum)
+    {
+        iNum = T5X_A_EXITFORMAT;
+    }
+    else if (T6H_A_NAME_FMT == iNum)
+    {
+        iNum = T5X_A_NAMEFORMAT;
+    }
+    else if (T6H_A_LASTIP == iNum)
+    {
+        iNum = T5X_A_LASTIP;
+    }
+    else if (T6H_A_SPEECHFMT == iNum)
+    {
+        iNum = T5X_A_SPEECHMOD;
+    }
+    else if (T6H_A_LCON_FMT == iNum)
+    {
+        iNum = T5X_A_CONFORMAT;
+    }
+
+    // T5X attributes with no corresponding T6H attribute, and nothing
+    // in T6H currently uses the number, but it might be assigned later.
+    //
+    if (  T5X_A_LGET == iNum
+       || T5X_A_MFAIL == iNum
+       || T5X_A_LASTIP == iNum
+       || T5X_A_COMJOIN == iNum
+       || T5X_A_COMLEAVE == iNum
+       || T5X_A_COMON == iNum
+       || T5X_A_COMOFF == iNum
+       || T5X_A_CMDCHECK == iNum
+       || T5X_A_MONIKER == iNum
+       || T5X_A_CONNINFO == iNum
+       || T5X_A_IDLETMOUT == iNum
+       || T5X_A_ADESTROY == iNum
+       || T5X_A_APARENT == iNum
+       || T5X_A_ACREATE == iNum
+       || T5X_A_LMAIL == iNum
+       || T5X_A_LOPEN == iNum
+       || T5X_A_LASTWHISPER == iNum
+       || T5X_A_LVISIBLE)
+    {
+        return false;
+    }
+    *piNum = iNum;
+    return true;
 }
 
 void T5X_GAME::ConvertFromT6H()
@@ -2133,20 +2195,22 @@ void T5X_GAME::ConvertFromT6H()
             vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
             for (vector<T6H_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
             {
-                if ((*itAttr)->m_fNumAndValue)
+                int iNum;
+                if (  (*itAttr)->m_fNumAndValue
+                   && convert_t6h_attr_num((*itAttr)->m_iNum, &iNum))
                 {
-                    if (T6H_A_QUOTA == (*itAttr)->m_iNum)
+                    if (T5X_A_QUOTA == iNum)
                     {
                         // Typed quota needs to be converted to single quota.
                         //
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                        pai->SetNumAndValue((*itAttr)->m_iNum, StringClone(convert_p6h_quota((*itAttr)->m_pValue)));
+                        pai->SetNumAndValue(T5X_A_QUOTA, StringClone(convert_t6h_quota((*itAttr)->m_pValue)));
                         pvai->push_back(pai);
                     }
-                    else if (T6H_A_NEWOBJS != (*itAttr)->m_iNum)
+                    else
                     {
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                        pai->SetNumAndValue((*itAttr)->m_iNum, StringClone((*itAttr)->m_pValue));
+                        pai->SetNumAndValue(iNum, StringClone((*itAttr)->m_pValue));
                         pvai->push_back(pai);
                     }
                 }

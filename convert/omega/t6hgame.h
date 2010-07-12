@@ -69,8 +69,24 @@
 
 // Attribute numbers
 //
-#define T6H_A_QUOTA    49
-#define T6H_A_NEWOBJS 213
+#define T6H_A_QUOTA          49
+#define T6H_A_MAILCC        198
+#define T6H_A_MAILBCC       199
+#define T6H_A_NEWOBJS       213
+#define T6H_A_LCON_FMT      214
+#define T6H_A_LEXITS_FMT    215
+#define T6H_A_LASTIP        218
+#define T6H_A_LDARK         219
+#define T6H_A_NAME_FMT      222
+#define T6H_A_LKNOWN        223
+#define T6H_A_LHEARD        224
+#define T6H_A_LMOVED        225
+#define T6H_A_LKNOWS        226
+#define T6H_A_LHEARS        227
+#define T6H_A_LMOVES        228
+#define T6H_A_SPEECHFMT     229
+#define T6H_A_PAGEGROUP     230
+#define T6H_A_PROPDIR       231
 
 class P6H_LOCKEXP;
 

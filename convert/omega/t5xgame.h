@@ -61,8 +61,32 @@
 
 // Attribute numbers
 //
+#define T5X_A_QUOTA          49
+#define T5X_A_LGET          127
+#define T5X_A_MFAIL         128
+#define T5X_A_LASTIP        144
+#define T5X_A_COMJOIN       149
+#define T5X_A_COMLEAVE      150
+#define T5X_A_COMON         151
+#define T5X_A_COMOFF        152
+#define T5X_A_CMDCHECK      198
+#define T5X_A_MONIKER       199
+#define T5X_A_SPEECHMOD     215
 #define T5X_A_CREATED       218
 #define T5X_A_MODIFIED      219
+#define T5X_A_CONNINFO      224
+#define T5X_A_LMAIL         225
+#define T5X_A_LOPEN         226
+#define T5X_A_LASTWHISPER   227
+#define T5X_A_ADESTROY      228
+#define T5X_A_APARENT       229
+#define T5X_A_ACREATE       230
+#define T5X_A_LVISIBLE      231
+#define T5X_A_IDLETMOUT     240
+#define T5X_A_EXITFORMAT    241
+#define T5X_A_CONFORMAT     242
+#define T5X_A_NAMEFORMAT    243
+#define T5X_A_DESCFORMAT    244
 
 typedef unsigned char UTF8;
 
