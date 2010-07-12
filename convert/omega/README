@@ -20,7 +20,10 @@ the flatfile, this level of validation is better than that.
 
 Notes: The list of attributes locks for RhostMUSH and TinyMUSH isn't
 completely updated, but the lock parser works for the ones it does have.
-The list just needs to be updated.
+The list just needs to be updated.  The lock parsers TinyMUSH, TinyMUX, and
+RhostMUSH are the third generation/revision, and they are holding up well.
+The lock parser for PennMUSH is on generation/revision earlier, and it needs
+to be compared again to the recursive-descent lock parser in PennMUSH.
 
 
 FEATURE: Validation (Level 2)
@@ -82,11 +85,27 @@ yet supported for any MUSH flavor.
 FEATURE: Conversion
 
 The conversion between PennMUSH and TinyMUX is pretty solid.  I think the
-TinyMUX-to-PennMUSH conversion needs more testing.  There is also a
-PennMUSH-to-TinyMUSH and PennMUSH-to-RhostMUSH path, but they still need
-updating to map attributes correctly and map object and attribute flags.
-The TinyMUSH-to-TinyMUX path still needs conversion of object flags
-and attribute flags.
+TinyMUX-to-PennMUSH conversion needs more testing.  The TinyMUSH-to-TinyMUX
+path still needs conversion of object flags and attribute flags.
+
+Here's table which summarizes the states of the different conversion paths:
+
+                              To:
+From:        PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
+PennMUSH        -         C,D,E,F       A        C,D,E,F
+TinyMUSH        I           -         D,E,F         I
+TinyMUX         B           I           -           I
+RhostMUSH       I           I           G           -  
+
+A: It should work.
+B: Attribute re-numbering could probably be better.
+C: Attribute mapping needs updating.
+D: Object flag mapping needs updating.
+E: Attribute flag mapping needs updating.
+F: Power mapping needs updating.
+G: Placeholder.
+H: Not command-line enabled.
+I: Doesn't exist, yet.
 
 
 FEATURE: Charset conversions
