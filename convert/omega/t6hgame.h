@@ -1,25 +1,25 @@
 #ifndef _T6HGAME_H_
 #define _T6HGAME_H_
 
-#define T6H_V_MASK          0x000000ff      /* Database version */
-#define T6H_V_ZONE          0x00000100      /* ZONE/DOMAIN field */
-#define T6H_V_LINK          0x00000200      /* LINK field (exits from objs) */
-#define T6H_V_GDBM          0x00000400      /* attrs are in a gdbm db, not here */
-#define T6H_V_ATRNAME       0x00000800      /* NAME is an attr, not in the hdr */
-#define T6H_V_ATRKEY        0x00001000      /* KEY is an attr, not in the hdr */
-#define T6H_V_PERNKEY       0x00001000      /* PERN: Extra locks in object hdr */
-#define T6H_V_PARENT        0x00002000      /* db has the PARENT field */
-#define T6H_V_COMM          0x00004000      /* PERN: Comm status in header */
-#define T6H_V_ATRMONEY      0x00008000      /* Money is kept in an attribute */
-#define T6H_V_XFLAGS        0x00010000      /* An extra word of flags */
-#define T6H_V_POWERS        0x00020000      /* Powers? */
-#define T6H_V_3FLAGS        0x00040000      /* Adding a 3rd flag word */
-#define T6H_V_QUOTED        0x00080000      /* Quoted strings, ala PennMUSH */
-#define T6H_V_TQUOTAS       0x00100000      /* Typed quotas */
-#define T6H_V_TIMESTAMPS    0x00200000      /* Timestamps */
-#define T6H_V_VISUALATTRS   0x00400000      /* ODark-to-Visual attr flags */
-#define T6H_V_CREATETIME    0x00800000      /* Create time */
-#define T6H_V_DBCLEAN       0x80000000      /* Option to clean attr table */
+#define T6H_V_MASK          0x000000ffUL
+#define T6H_V_ZONE          0x00000100UL
+#define T6H_V_LINK          0x00000200UL
+#define T6H_V_GDBM          0x00000400UL
+#define T6H_V_ATRNAME       0x00000800UL
+#define T6H_V_ATRKEY        0x00001000UL
+#define T6H_V_PERNKEY       0x00001000UL
+#define T6H_V_PARENT        0x00002000UL
+#define T6H_V_COMM          0x00004000UL
+#define T6H_V_ATRMONEY      0x00008000UL
+#define T6H_V_XFLAGS        0x00010000UL
+#define T6H_V_POWERS        0x00020000UL
+#define T6H_V_3FLAGS        0x00040000UL
+#define T6H_V_QUOTED        0x00080000UL
+#define T6H_V_TQUOTAS       0x00100000UL
+#define T6H_V_TIMESTAMPS    0x00200000UL
+#define T6H_V_VISUALATTRS   0x00400000UL
+#define T6H_V_CREATETIME    0x00800000UL
+#define T6H_V_DBCLEAN       0x80000000UL
 
 #define T6H_MANDFLAGS_V1  (T6H_V_LINK|T6H_V_PARENT|T6H_V_XFLAGS|T6H_V_ZONE|T6H_V_POWERS|T6H_V_3FLAGS|T6H_V_QUOTED)
 #define T6H_OFLAGS_V1     (T6H_V_GDBM|T6H_V_ATRKEY|T6H_V_ATRNAME|T6H_V_ATRMONEY)
@@ -40,32 +40,32 @@
 
 // Attribute flags.
 //
-#define T6H_AF_ODARK        0x00000001
-#define T6H_AF_DARK         0x00000002
-#define T6H_AF_WIZARD       0x00000004
-#define T6H_AF_MDARK        0x00000008
-#define T6H_AF_INTERNAL     0x00000010
-#define T6H_AF_NOCMD        0x00000020
-#define T6H_AF_LOCK         0x00000040
-#define T6H_AF_DELETED      0x00000080
-#define T6H_AF_NOPROG       0x00000100
-#define T6H_AF_GOD          0x00000200
-#define T6H_AF_IS_LOCK      0x00000400
-#define T6H_AF_VISUAL       0x00000800
-#define T6H_AF_PRIVATE      0x00001000
-#define T6H_AF_HTML         0x00002000
-#define T6H_AF_NOPARSE      0x00004000
-#define T6H_AF_REGEXP       0x00008000
-#define T6H_AF_NOCLONE      0x00010000
-#define T6H_AF_CONST        0x00020000
-#define T6H_AF_CASE         0x00040000
-#define T6H_AF_STRUCTURE    0x00080000
-#define T6H_AF_DIRTY        0x00100000
-#define T6H_AF_DEFAULT      0x00200000
-#define T6H_AF_NONAME       0x00400000
-#define T6H_AF_RMATCH       0x00800000
-#define T6H_AF_NOW          0x01000000
-#define T6H_AF_TRACE        0x02000000
+#define T6H_AF_ODARK        0x00000001UL
+#define T6H_AF_DARK         0x00000002UL
+#define T6H_AF_WIZARD       0x00000004UL
+#define T6H_AF_MDARK        0x00000008UL
+#define T6H_AF_INTERNAL     0x00000010UL
+#define T6H_AF_NOCMD        0x00000020UL
+#define T6H_AF_LOCK         0x00000040UL
+#define T6H_AF_DELETED      0x00000080UL
+#define T6H_AF_NOPROG       0x00000100UL
+#define T6H_AF_GOD          0x00000200UL
+#define T6H_AF_IS_LOCK      0x00000400UL
+#define T6H_AF_VISUAL       0x00000800UL
+#define T6H_AF_PRIVATE      0x00001000UL
+#define T6H_AF_HTML         0x00002000UL
+#define T6H_AF_NOPARSE      0x00004000UL
+#define T6H_AF_REGEXP       0x00008000UL
+#define T6H_AF_NOCLONE      0x00010000UL
+#define T6H_AF_CONST        0x00020000UL
+#define T6H_AF_CASE         0x00040000UL
+#define T6H_AF_STRUCTURE    0x00080000UL
+#define T6H_AF_DIRTY        0x00100000UL
+#define T6H_AF_DEFAULT      0x00200000UL
+#define T6H_AF_NONAME       0x00400000UL
+#define T6H_AF_RMATCH       0x00800000UL
+#define T6H_AF_NOW          0x01000000UL
+#define T6H_AF_TRACE        0x02000000UL
 
 // Attribute numbers
 //
@@ -87,6 +87,95 @@
 #define T6H_A_SPEECHFMT     229
 #define T6H_A_PAGEGROUP     230
 #define T6H_A_PROPDIR       231
+
+// Object Flagword 1
+//
+#define T6H_SEETHRU         0x00000008UL
+#define T6H_WIZARD          0x00000010UL
+#define T6H_LINK_OK         0x00000020UL
+#define T6H_DARK            0x00000040UL
+#define T6H_JUMP_OK         0x00000080UL
+#define T6H_STICKY          0x00000100UL
+#define T6H_DESTROY_OK      0x00000200UL
+#define T6H_HAVEN           0x00000400UL
+#define T6H_QUIET           0x00000800UL
+#define T6H_HALT            0x00001000UL
+#define T6H_TRACE           0x00002000UL
+#define T6H_GOING           0x00004000UL
+#define T6H_MONITOR         0x00008000UL
+#define T6H_MYOPIC          0x00010000UL
+#define T6H_PUPPET          0x00020000UL
+#define T6H_CHOWN_OK        0x00040000UL
+#define T6H_ENTER_OK        0x00080000UL
+#define T6H_VISUAL          0x00100000UL
+#define T6H_IMMORTAL        0x00200000UL
+#define T6H_HAS_STARTUP     0x00400000UL
+#define T6H_OPAQUE          0x00800000UL
+#define T6H_VERBOSE         0x01000000UL
+#define T6H_INHERIT         0x02000000UL
+#define T6H_NOSPOOF         0x04000000UL
+#define T6H_ROBOT           0x08000000UL
+#define T6H_SAFE            0x10000000UL
+#define T6H_ROYALTY         0x20000000UL
+#define T6H_HEARTHRU        0x40000000UL
+#define T6H_TERSE           0x80000000UL
+
+// Object Flagword 2
+//
+#define T6H_KEY             0x00000001UL
+#define T6H_ABODE           0x00000002UL
+#define T6H_FLOATING        0x00000004UL
+#define T6H_UNFINDABLE      0x00000008UL
+#define T6H_PARENT_OK       0x00000010UL
+#define T6H_LIGHT           0x00000020UL
+#define T6H_HAS_LISTEN      0x00000040UL
+#define T6H_HAS_FWDLIST     0x00000080UL
+#define T6H_AUDITORIUM      0x00000100UL
+#define T6H_ANSI            0x00000200UL
+#define T6H_HEAD_FLAG       0x00000400UL
+#define T6H_FIXED           0x00000800UL
+#define T6H_UNINSPECTED     0x00001000UL
+#define T6H_ZONE_PARENT     0x00002000UL
+#define T6H_DYNAMIC         0x00004000UL
+#define T6H_NOBLEED         0x00008000UL
+#define T6H_STAFF           0x00010000UL
+#define T6H_HAS_DAILY       0x00020000UL
+#define T6H_GAGGED          0x00040000UL
+#define T6H_HAS_COMMANDS    0x00080000UL
+#define T6H_STOP_MATCH      0x00100000UL
+#define T6H_BOUNCE          0x00200000UL
+#define T6H_CONTROL_OK      0x00400000UL
+#define T6H_CONSTANT_ATTRS  0x00800000UL
+#define T6H_VACATION        0x01000000UL
+#define T6H_PLAYER_MAILS    0x02000000UL
+#define T6H_HTML            0x04000000UL
+#define T6H_BLIND           0x08000000UL
+#define T6H_SUSPECT         0x10000000UL
+#define T6H_WATCHER         0x20000000UL
+#define T6H_CONNECTED       0x40000000UL
+#define T6H_SLAVE           0x80000000UL
+
+// Object Flagword 3
+//
+#define T6H_REDIR_OK        0x00000001UL
+#define T6H_HAS_REDIRECT    0x00000002UL
+#define T6H_ORPHAN          0x00000004UL
+#define T6H_HAS_DARKLOCK    0x00000008UL
+#define T6H_DIRTY           0x00000010UL
+#define T6H_NODEFAULT       0x00000020UL
+#define T6H_PRESENCE        0x00000040UL
+#define T6H_HAS_SPEECHMOD   0x00000080UL
+#define T6H_HAS_PROPDIR     0X00000100UL
+#define T6H_MARK_0          0x00400000UL
+#define T6H_MARK_1          0x00800000UL
+#define T6H_MARK_2          0x01000000UL
+#define T6H_MARK_3          0x02000000UL
+#define T6H_MARK_4          0x04000000UL
+#define T6H_MARK_5          0x08000000UL
+#define T6H_MARK_6          0x10000000UL
+#define T6H_MARK_7          0x20000000UL
+#define T6H_MARK_8          0x40000000UL
+#define T6H_MARK_9          0x80000000UL
 
 class P6H_LOCKEXP;
 

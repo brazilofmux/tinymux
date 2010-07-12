@@ -2030,14 +2030,18 @@ void T5X_GAME::ConvertFromT6H()
         {
             continue;
         }
-        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK;
 
-        if (  iType < 0
-           || 7 < iType)
+        // ROOM, THING, EXIT, and PLAYER types are the same between T6H and
+        // T5X.  No mapping is required.
+        //
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK;
+        if (  T5X_TYPE_ROOM != iType
+           && T5X_TYPE_THING != iType
+           && T5X_TYPE_EXIT != iType
+           && T5X_TYPE_PLAYER != iType)
         {
             continue;
         }
-
 
         T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
 
