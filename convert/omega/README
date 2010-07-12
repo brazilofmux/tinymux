@@ -90,8 +90,8 @@ path still needs conversion of object flags and attribute flags.
 
 Here's table which summarizes the states of the different conversion paths:
 
-                              To:
-From:        PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
+             ---------------- To: -----------------------
+From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
 PennMUSH        -         C,D,E,F       A        C,D,E,F
 TinyMUSH        I           -         D,E,F         I
 TinyMUX         B           I           -           I
