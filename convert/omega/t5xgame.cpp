@@ -2150,19 +2150,11 @@ void T5X_GAME::ConvertFromT6H()
         }
         if (it->second->m_fExits)
         {
-            switch (iType)
-            {
-            case T5X_TYPE_PLAYER:
-            case T5X_TYPE_THING:
-                poi->SetExits(-1);
-                poi->SetLink(it->second->m_dbExits);
-                break;
-
-            default:
-                poi->SetExits(it->second->m_dbExits);
-                poi->SetLink(-1);
-                break;
-            }
+            poi->SetExits(it->second->m_dbExits);
+        }
+        if (it->second->m_fLink)
+        {
+            poi->SetLink(it->second->m_dbLink);
         }
         if (it->second->m_fNext)
         {
