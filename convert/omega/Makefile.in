@@ -1,3 +1,8 @@
+CC = @CC@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+LIBS = @LIBS@
+
 all: omega
 
 omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r7hgame.o lex.r7h.o r7h.tab.o lex.r7hl.o r7hl.tab.o
