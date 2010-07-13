@@ -676,7 +676,9 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
         if (  (loc = Location(executor)) != NOTHING
            && !Dark(executor)
-           && !Dark(loc))
+           && !Dark(loc)
+           && !Blind(executor)
+           && !Blind(loc))
         {
             // Tell all
             //

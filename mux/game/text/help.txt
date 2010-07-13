@@ -4941,10 +4941,15 @@ BLIND
 
   FLAG: BLIND(B)
 
-  This flag suppresses the '<who> has arrived.' and '<who> has left.' messages.
-  When set on a player, the messages caused by their movement are suppressed.
-  When set on a location, the messages for everyone entering or leaving that
-  location are suppressed.
+  When set on an object that can move, the '<object> has arrived.',
+  '<object> has left.', and '<object> goes home' messages that would normally
+  be generated and delivered to the new and old locations are suppressed.
+
+  When set on an object with location, the '<object> has arrived.',
+  '<object> has left.', '<object> goes home', '<player> has connected.',
+  '<player> has disconnected.', and '<player> has partially disconnected.'
+  messages are that would normally be generated and delivered to everyone at
+  that location are suppressed.
 
   This flag can only be set by Wizards.
 
