@@ -1558,6 +1558,9 @@ static NameMask p6h_attr_flags[] =
 
 void T6H_GAME::ConvertFromP6H()
 {
+    time_t tNow;
+    time(&tNow);
+
     SetFlags(T6H_MANDFLAGS_V1 | T6H_V_TIMESTAMPS | T6H_V_VISUALATTRS | 1);
     m_fExtraEscapes = true;
 
@@ -1755,14 +1758,30 @@ void T6H_GAME::ConvertFromP6H()
         poi->SetPowers1(powers1);
         poi->SetPowers2(powers2);
 
-        if (it->second->m_fCreated)
+        if (m_flags && T6H_V_TIMESTAMPS)
         {
-            poi->SetCreated(it->second->m_iCreated);
+            if (it->second->m_fModified)
+            {
+                poi->SetModified(it->second->m_iModified);
+                poi->SetAccessed(it->second->m_iModified);
+            }
+            else
+            {
+                poi->SetModified(tNow);
+                poi->SetAccessed(tNow);
+            }
         }
 
-        if (it->second->m_fModified)
+        if (m_flags && T6H_V_CREATETIME)
         {
-            poi->SetModified(it->second->m_iModified);
+            if (it->second->m_fCreated)
+            {
+                poi->SetCreated(it->second->m_iCreated);
+            }
+            else
+            {
+                poi->SetCreated(tNow);
+            }
         }
 
         if (NULL != it->second->m_pvai)
