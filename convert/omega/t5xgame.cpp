@@ -2415,13 +2415,13 @@ void T5X_GAME::ConvertFromT6H()
                         // Typed quota needs to be converted to single quota.
                         //
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                        pai->SetNumAndValue(T5X_A_QUOTA, StringClone(convert_t6h_quota((*itAttr)->m_pValue)));
+                        pai->SetNumAndValue(T5X_A_QUOTA, StringClone(convert_t6h_quota((*itAttr)->m_pValueUnencoded)));
                         pvai->push_back(pai);
                     }
                     else
                     {
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                        pai->SetNumAndValue(iNum, StringClone((*itAttr)->m_pValue));
+                        pai->SetNumAndValue(iNum, StringClone((*itAttr)->m_pValueUnencoded));
                         pvai->push_back(pai);
                     }
                 }

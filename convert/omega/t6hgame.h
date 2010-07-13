@@ -37,6 +37,7 @@
 #define T6H_TYPE_MASK     0x7
 
 #define ATR_INFO_CHAR 0x01
+#define T6H_NOTHING   (-1)
 
 // Attribute flags.
 //
@@ -315,13 +316,28 @@ public:
 class T6H_ATTRINFO
 {
 public:
+    char *m_pAllocated;
+
     bool m_fNumAndValue;
     int  m_iNum;
-    char *m_pValue;
+    char *m_pValueEncoded;
     void SetNumAndValue(int iNum, char *pValue);
+
+    int  m_iFlags;
+    int  m_dbOwner;
+    char *m_pValueUnencoded;
+    void SetNumOwnerFlagsAndValue(int iNum, int iFlags, int dbOwner, char *pValue);
 
     bool m_fIsLock;
     T6H_LOCKEXP *m_pKeyTree;
+
+    enum
+    {
+        kNone,
+        kEncode,
+        kDecode,
+    } m_kState;
+    void EncodeDecode(int dbObj);
 
     void Validate() const;
 
@@ -330,16 +346,24 @@ public:
     T6H_ATTRINFO()
     {
         m_fNumAndValue = false;
+        m_pAllocated = NULL;
+        m_pValueEncoded = NULL;
+        m_pValueUnencoded = NULL;
         m_fIsLock = false;
-        m_pValue = NULL;
         m_pKeyTree = NULL;
+        m_iFlags = 0;
+        m_dbOwner = T6H_NOTHING;
     }
     ~T6H_ATTRINFO()
     {
-        free(m_pValue);
+        free(m_pAllocated);
         delete m_pKeyTree;
-        m_pValue = NULL;
+        m_pAllocated = NULL;
+        m_pValueEncoded = NULL;
+        m_pValueUnencoded = NULL;
         m_pKeyTree = NULL;
+        m_iFlags = 0;
+        m_dbOwner = T6H_NOTHING;
     }
 };
 
@@ -500,6 +524,8 @@ public:
 
     map<int, T6H_OBJECTINFO *, lti> m_mObjects;
     void AddObject(T6H_OBJECTINFO *poi);
+
+    void Pass2();
 
     void Validate() const;
     void ValidateFlags() const;

@@ -368,6 +368,7 @@ int main(int argc, char *argv[])
         t6hin = fpin;
         t6hparse();
         t6hin = NULL;
+        g_t6hgame.Pass2();
         g_t6hgame.Validate();
     }
     else if (eRhostMUSH == eInputType)
@@ -412,6 +413,7 @@ int main(int argc, char *argv[])
                 && eTinyMUSH == eOutputType)
         {
             g_t6hgame.ConvertFromP6H();
+            g_t6hgame.Pass2();
             g_t6hgame.Validate();
         }
         else if (  eTinyMUSH == eInputType
@@ -558,6 +560,7 @@ int main(int argc, char *argv[])
         else if (eTinyMUSH == eOutputType)
         {
             g_t6hgame.ResetPassword();
+            g_t6hgame.Pass2();
         }
         else if (eRhostMUSH == eOutputType)
         {
