@@ -199,17 +199,25 @@ static int ObjectToken()
                          switch (t6htext[1])
                          {
                          case 'r':
+                             g_t6hgame.SawExtraEscapes();
                              *pQuotedString++ = '\r';
                              break;
+
                          case 'n':
+                             g_t6hgame.SawExtraEscapes();
                              *pQuotedString++ = '\n';
                              break;
+
                          case 'e':
+                             g_t6hgame.SawExtraEscapes();
                              *pQuotedString++ = 0x1B;
                              break;
+
                          case 't':
+                             g_t6hgame.SawExtraEscapes();
                              *pQuotedString++ = '\t';
                              break;
+
                          default:
                              *pQuotedString++ = t6htext[1];
                              break;

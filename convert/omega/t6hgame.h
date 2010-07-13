@@ -570,6 +570,9 @@ public:
     map<int, T6H_OBJECTINFO *, lti> m_mObjects;
     void AddObject(T6H_OBJECTINFO *poi);
 
+    bool m_fExtraEscapes;
+    void SawExtraEscapes() { m_fExtraEscapes = true; }
+
     void Pass2();
 
     void Validate() const;
@@ -589,6 +592,7 @@ public:
         m_fSizeHint = false;
         m_fNextAttr = false;
         m_fRecordPlayers = false;
+        m_fExtraEscapes = false;
     }
     ~T6H_GAME()
     {

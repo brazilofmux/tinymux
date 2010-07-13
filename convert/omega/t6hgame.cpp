@@ -2,6 +2,16 @@
 #include "t6hgame.h"
 #include "p6hgame.h"
 
+//
+// The differences between TinyMUSH 3.x flatfiles are minor.
+//
+// TinyMUSH 3.1p0 introduced V_TIMESTAMPS and V_VISUALATTRS.  TinyMUSH 3.1p5
+// added support for escaping CR, LF, and ESC in strings, but there is no
+// corresponding flatfile flag which advertises this.  V_CREATETIME has been
+// defined but not released.  Omega will consume V_CREATETIME but it will
+// not generate it.
+//
+
 typedef struct _t6h_gameflaginfo
 {
     int         mask;
@@ -775,7 +785,6 @@ void T6H_GAME::AddObject(T6H_OBJECTINFO *poi)
 void T6H_GAME::ValidateFlags() const
 {
     int flags = m_flags;
-
     int ver = (m_flags & T6H_V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
     if (ver < 1 || 1 < ver)
@@ -784,6 +793,30 @@ void T6H_GAME::ValidateFlags() const
     }
     flags &= ~T6H_V_MASK;
     int tflags = flags;
+
+    const int Mask31p0 = T6H_V_TIMESTAMPS
+                       | T6H_V_VISUALATTRS;
+    const int Mask32   = Mask31p0
+                       | T6H_V_CREATETIME;
+    if ((m_flags & Mask32) == Mask32)
+    {
+        fprintf(stderr, "INFO: Flatfile contains unreleased behavior.\n");
+    }
+    else if ((m_flags & Mask31p0) == Mask31p0)
+    {
+        if (m_fExtraEscapes)
+        {
+            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p5 or later.\n");
+        }
+        else
+        {
+            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p0 or later.\n");
+        }
+    }
+    else
+    {
+        fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.0.\n");
+    }
 
     fprintf(stderr, "INFO: Flatfile flags are ");
     for (int i = 0; i < T6H_NUM_GAMEFLAGNAMES; i++)
@@ -1170,9 +1203,6 @@ void T6H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 
 void T6H_GAME::Write(FILE *fp)
 {
-    // TIMESTAMPS and escapes occured near the same time, but are not related.
-    //
-    bool fExtraEscapes = (m_flags & T6H_V_TIMESTAMPS);
     fprintf(fp, "+T%d\n", m_flags);
     if (m_fSizeHint)
     {
@@ -1188,11 +1218,11 @@ void T6H_GAME::Write(FILE *fp)
     }
     for (vector<T6H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
-        (*it)->Write(fp, fExtraEscapes);
+        (*it)->Write(fp, m_fExtraEscapes);
     }
     for (map<int, T6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Write(fp, (m_flags & T6H_V_ATRKEY) == 0, fExtraEscapes);
+        it->second->Write(fp, (m_flags & T6H_V_ATRKEY) == 0, m_fExtraEscapes);
     }
 
     fprintf(fp, "***END OF DUMP***\n");
@@ -1528,7 +1558,8 @@ static NameMask p6h_attr_flags[] =
 
 void T6H_GAME::ConvertFromP6H()
 {
-    SetFlags(T6H_MANDFLAGS_V1 | 1);
+    SetFlags(T6H_MANDFLAGS_V1 | T6H_V_TIMESTAMPS | T6H_V_VISUALATTRS | 1);
+    m_fExtraEscapes = true;
 
     // Build internal attribute names.
     //
