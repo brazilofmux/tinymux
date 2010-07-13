@@ -726,11 +726,12 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
             {
                 if (t5x_locknums[i] == (*it)->m_iNum)
                 {
+                    char *pValue = (NULL != (*it)->m_pValueUnencoded) ? (*it)->m_pValueUnencoded : (*it)->m_pValueEncoded;
                     (*it)->m_fIsLock = true;
-                    (*it)->m_pKeyTree = t5xl_ParseKey((*it)->m_pValueEncoded);
+                    (*it)->m_pKeyTree = t5xl_ParseKey(pValue);
                     if (NULL == (*it)->m_pKeyTree)
                     {
-                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValueUnencoded);
+                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", pValue);
                     }
                     break;
                 }
@@ -739,7 +740,7 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
     }
 }
 
-void T5X_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int iAttrFlags, int dbAttrOwner, char *pValue)
+void T5X_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int dbAttrOwner, int iAttrFlags, char *pValue)
 {
     m_fNumAndValue = true;
     free(m_pAllocated);
@@ -873,11 +874,11 @@ void T5X_ATTRINFO::EncodeDecode(int dbObjOwner)
         //
         if (tmp_owner < 0)
         {
-            m_dbOwner = tmp_owner;
+            m_dbOwner = dbObjOwner;
         }
         else
         {
-            m_dbOwner = dbObjOwner;
+            m_dbOwner = tmp_owner;
         }
         m_iFlags = tmp_flags;
         m_pValueUnencoded = cp;
@@ -2169,7 +2170,8 @@ int convert_t6h_flags1(int f)
 
 int convert_t6h_flags2(int f)
 {
-    f &= T5X_KEY
+    int g = f;
+    g &= T5X_KEY
        | T5X_ABODE
        | T5X_FLOATING
        | T5X_UNFINDABLE
@@ -2196,10 +2198,10 @@ int convert_t6h_flags2(int f)
 
     if ((f & T6H_HAS_COMMANDS) == 0)
     {
-        f |= T5X_NO_COMMAND;
+        g |= T5X_NO_COMMAND;
     }
 
-    return f;
+    return g;
 }
 
 int convert_t6h_flags3(int f)
@@ -2215,6 +2217,37 @@ int convert_t6h_flags3(int f)
        | T5X_MARK_8
        | T5X_MARK_9;
     return f;
+}
+
+int convert_t6h_attr_flags(int f)
+{
+    int g = f;
+    g &= T5X_AF_ODARK
+       | T5X_AF_DARK
+       | T5X_AF_WIZARD
+       | T5X_AF_MDARK
+       | T5X_AF_INTERNAL
+       | T5X_AF_NOCMD
+       | T5X_AF_LOCK
+       | T5X_AF_DELETED
+       | T5X_AF_NOPROG
+       | T5X_AF_GOD
+       | T5X_AF_IS_LOCK
+       | T5X_AF_VISUAL
+       | T5X_AF_PRIVATE
+       | T5X_AF_HTML
+       | T5X_AF_NOPARSE
+       | T5X_AF_REGEXP
+       | T5X_AF_NOCLONE
+       | T5X_AF_CONST
+       | T5X_AF_CASE
+       | T5X_AF_NONAME;
+
+    if (f & T6H_AF_TRACE)
+    {
+        g |= T5X_AF_TRACE;
+    }
+    return g;
 }
 
 void T5X_GAME::ConvertFromT6H()
@@ -2421,7 +2454,7 @@ void T5X_GAME::ConvertFromT6H()
                     else
                     {
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                        pai->SetNumAndValue(iNum, StringClone((*itAttr)->m_pValueUnencoded));
+                        pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner, convert_t6h_attr_flags((*itAttr)->m_iFlags), StringClone((*itAttr)->m_pValueUnencoded));
                         pvai->push_back(pai);
                     }
                 }

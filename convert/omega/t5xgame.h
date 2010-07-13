@@ -323,7 +323,7 @@ public:
     int  m_iFlags;
     int  m_dbOwner;
     char *m_pValueUnencoded;
-    void SetNumOwnerFlagsAndValue(int iNum, int iFlags, int dbOwner, char *pValue);
+    void SetNumOwnerFlagsAndValue(int iNum, int dbOwner, int iFlags, char *pValue);
 
     bool m_fIsLock;
     T5X_LOCKEXP *m_pKeyTree;
@@ -353,6 +353,7 @@ public:
         m_pKeyTree = NULL;
         m_iFlags = 0;
         m_dbOwner = T5X_NOTHING;
+        m_kState = kNone;
     }
     ~T5X_ATTRINFO()
     {

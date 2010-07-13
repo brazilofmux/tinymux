@@ -599,11 +599,12 @@ void T6H_OBJECTINFO::SetAttrs(int nAttrs, vector<T6H_ATTRINFO *> *pvai)
             {
                 if (t6h_locknums[i] == (*it)->m_iNum)
                 {
+                    char *pValue = (NULL != (*it)->m_pValueUnencoded) ? (*it)->m_pValueUnencoded : (*it)->m_pValueEncoded;
                     (*it)->m_fIsLock = true;
-                    (*it)->m_pKeyTree = t6hl_ParseKey((*it)->m_pValueUnencoded);
+                    (*it)->m_pKeyTree = t6hl_ParseKey(pValue);
                     if (NULL == (*it)->m_pKeyTree)
                     {
-                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValueUnencoded);
+                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", pValue);
                     }
                     break;
                 }
@@ -612,7 +613,7 @@ void T6H_OBJECTINFO::SetAttrs(int nAttrs, vector<T6H_ATTRINFO *> *pvai)
     }
 }
 
-void T6H_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int iAttrFlags, int dbAttrOwner, char *pValue)
+void T6H_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int dbAttrOwner, int iAttrFlags, char *pValue)
 {
     m_fNumAndValue = true;
     free(m_pAllocated);
@@ -746,11 +747,11 @@ void T6H_ATTRINFO::EncodeDecode(int dbObjOwner)
         //
         if (tmp_owner < 0)
         {
-            m_dbOwner = tmp_owner;
+            m_dbOwner = dbObjOwner;
         }
         else
         {
-            m_dbOwner = dbObjOwner;
+            m_dbOwner = tmp_owner;
         }
         m_iFlags = tmp_flags;
         m_pValueUnencoded = cp;

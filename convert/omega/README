@@ -93,7 +93,7 @@ Here's table which summarizes the states of the different conversion paths:
              ---------------- To: -----------------------
 From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
 PennMUSH        -        C,D,E,F        A        C,D,E,F
-TinyMUSH        I           -          E,F          I
+TinyMUSH        I           -           F           I
 TinyMUX         B           I           -           I
 RhostMUSH       I           I           G           -  
 
