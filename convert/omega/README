@@ -85,8 +85,7 @@ yet supported for any MUSH flavor.
 FEATURE: Conversion
 
 The conversion between PennMUSH and TinyMUX is pretty solid.  I think the
-TinyMUX-to-PennMUSH conversion needs more testing.  The TinyMUSH-to-TinyMUX
-path still needs conversion of object flags and attribute flags.
+TinyMUX-to-PennMUSH conversion needs more testing.
 
 Here's table which summarizes the states of the different conversion paths:
 
