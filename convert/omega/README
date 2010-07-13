@@ -82,12 +82,10 @@ Extracting individual objects or clusters of objects from a flatfile is not
 yet supported for any MUSH flavor.
 
 
-FEATURE: Conversion
+FEATURE: Conversions
 
-The conversion between PennMUSH and TinyMUX is pretty solid.  I think the
-TinyMUX-to-PennMUSH conversion needs more testing.
-
-Here's table which summarizes the states of the different conversion paths:
+It will take time to cover all possible conversions, but here's a table which
+summarizes the status of the different conversion paths:
 
              ---------------- To: -----------------------
 From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
@@ -96,14 +94,14 @@ TinyMUSH        I           -           A           I
 TinyMUX         B           I           -           I
 RhostMUSH       I           I           G           -  
 
-A: It should work.
-B: Attribute re-numbering could probably be better.
-C: Attribute mapping needs updating.
-D: Object flag mapping needs updating.
-E: Attribute flag mapping needs updating.
-F: Power mapping needs updating.
-G: Placeholder.
-H: Not command-line enabled.
+A: Fully functional.
+B: Attribute re-numbering could be better.
+C: Attribute numbers/names are not mapped correctly.
+D: Object flags are not mapped correctly.
+E: Attribute flags are not mapped correctly.
+F: Powers are not mapped correctly.
+G: Placeholder only.
+H: Code started, but it is not command-line enabled.
 I: Doesn't exist, yet.
 
 
