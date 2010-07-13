@@ -1963,3 +1963,63 @@ void T6H_GAME::ResetPassword()
         }
     }
 }
+
+void T6H_GAME::Upgrade()
+{
+    m_fExtraEscapes = true;
+
+    time_t tNow;
+    time(&tNow);
+
+    m_flags |= T6H_V_TIMESTAMPS|T6H_V_VISUALATTRS;
+    m_flags &= ~T6H_V_CREATETIME;
+    for (map<int, T6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        itObj->second->m_fCreated = false;
+        if (!itObj->second->m_fModified)
+        {
+            itObj->second->SetModified(tNow);
+        }
+        if (!itObj->second->m_fAccessed)
+        {
+            itObj->second->SetAccessed(tNow);
+        }
+    }
+}
+
+void T6H_GAME::Midgrade()
+{
+    m_fExtraEscapes = false;
+
+    time_t tNow;
+    time(&tNow);
+
+    m_flags |= T6H_V_TIMESTAMPS|T6H_V_VISUALATTRS;
+    m_flags &= ~T6H_V_CREATETIME;
+    for (map<int, T6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        itObj->second->m_fCreated = false;
+        if (!itObj->second->m_fModified)
+        {
+            itObj->second->SetModified(tNow);
+        }
+        if (!itObj->second->m_fAccessed)
+        {
+            itObj->second->SetAccessed(tNow);
+        }
+    }
+}
+
+void T6H_GAME::Downgrade()
+{
+    m_flags |= T6H_MANDFLAGS_V1;
+    m_flags &= ~(T6H_V_CREATETIME|T6H_V_TIMESTAMPS|T6H_V_VISUALATTRS);
+    m_fExtraEscapes = false;
+    for (map<int, T6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        itObj->second->m_fCreated = false;
+        itObj->second->m_fModified = false;
+        itObj->second->m_fAccessed = false;
+    }
+}
+

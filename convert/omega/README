@@ -70,8 +70,8 @@ flatfiles from that era were more varied in the flatfile options.  Your 1.6
 flatfile may use options which Omega doesn't expect.  It is best to run it
 through TinyMUX 2.0 first.
 
-The differences between TinyMUSH 3.0 and 3.1 are minor, but there is no
-support yet for upgrading/downgrading.
+Omega can upgrade or downgrade between TinyMUSH flatfiles from TinyMUSH 3.0p0
+through 3.1p6.
 
 Only one version of RhostMUSH flatfile is known.
 

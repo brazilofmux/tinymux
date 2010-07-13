@@ -318,10 +318,9 @@ int main(int argc, char *argv[])
 
     if (  eOutputVersion == eLegacyTwo
        && (  ePennMUSH == eOutputType
-          || eRhostMUSH == eOutputType
-          || eTinyMUSH == eOutputType))
+          || eRhostMUSH == eOutputType))
     {
-        fprintf(stderr, "PennMUSH, RhostMUSH, and TinyMUSH do not currently have support for flatfiles earlier than their chosen legacy version.\n");
+        fprintf(stderr, "PennMUSH and RhostMUSH do not currently have support for flatfiles earlier than their chosen legacy version.\n");
         Usage();
         return 1;
     }
@@ -540,6 +539,32 @@ int main(int argc, char *argv[])
             case eLegacyTwo:
                 break;
             }
+            break;
+        }
+    }
+    else if (eTinyMUSH== eOutputType)
+    {
+        switch (eOutputVersion)
+        {
+        case eSame:
+            break;
+
+        case eLatest:
+            g_t6hgame.Upgrade();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
+            break;
+
+        case eLegacyOne:
+            g_t6hgame.Midgrade();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
+            break;
+
+        case eLegacyTwo:
+            g_t6hgame.Downgrade();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
             break;
         }
     }

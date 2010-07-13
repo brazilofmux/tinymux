@@ -584,6 +584,10 @@ public:
 
     void ConvertFromP6H();
 
+    void Upgrade();
+    void Midgrade();
+    void Downgrade();
+
     void ResetPassword();
 
     T6H_GAME()
