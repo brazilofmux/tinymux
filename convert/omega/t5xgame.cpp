@@ -2250,6 +2250,46 @@ int convert_t6h_attr_flags(int f)
     return g;
 }
 
+int convert_t6h_power1(int f)
+{
+    f &= T5X_POW_CHG_QUOTAS
+       | T5X_POW_CHOWN_ANY
+       | T5X_POW_ANNOUNCE
+       | T5X_POW_BOOT
+       | T5X_POW_HALT
+       | T5X_POW_CONTROL_ALL
+       | T5X_POW_WIZARD_WHO
+       | T5X_POW_EXAM_ALL
+       | T5X_POW_FIND_UNFIND
+       | T5X_POW_FREE_MONEY
+       | T5X_POW_FREE_QUOTA
+       | T5X_POW_HIDE
+       | T5X_POW_IDLE
+       | T5X_POW_SEARCH
+       | T5X_POW_LONGFINGERS
+       | T5X_POW_PROG
+       | T5X_POW_COMM_ALL
+       | T5X_POW_SEE_QUEUE
+       | T5X_POW_SEE_HIDDEN
+       | T5X_POW_MONITOR
+       | T5X_POW_POLL
+       | T5X_POW_NO_DESTROY
+       | T5X_POW_GUEST
+       | T5X_POW_PASS_LOCKS
+       | T5X_POW_STAT_ANY
+       | T5X_POW_STEAL
+       | T5X_POW_TEL_ANYWHR
+       | T5X_POW_TEL_UNRST
+       | T5X_POW_UNKILLABLE;
+    return f;
+}
+
+int convert_t6h_power2(int f)
+{
+    f &= T5X_POW_BUILDER;
+    return f;
+}
+
 void T5X_GAME::ConvertFromT6H()
 {
     SetFlags(T5X_MANDFLAGS_V2 | 2);
@@ -2359,11 +2399,11 @@ void T5X_GAME::ConvertFromT6H()
         int powers2 = 0;
         if (it->second->m_fPowers1)
         {
-            powers1 |= it->second->m_iPowers1;
+            powers1 = convert_t6h_power1(it->second->m_iPowers1);
         }
         if (it->second->m_fPowers2)
         {
-            powers2 = it->second->m_iPowers2;
+            powers2 = convert_t6h_power2(it->second->m_iPowers2);
         }
 
         poi->SetFlags1(flags1);
