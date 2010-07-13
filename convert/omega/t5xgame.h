@@ -62,6 +62,7 @@
 
 // Attribute numbers
 //
+#define T5X_A_PASS            5
 #define T5X_A_QUOTA          49
 #define T5X_A_LGET          127
 #define T5X_A_MFAIL         128

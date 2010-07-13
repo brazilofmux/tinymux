@@ -1630,7 +1630,7 @@ void T6H_GAME::ConvertFromP6H()
                     {
                         T6H_ATTRINFO *pai = new T6H_ATTRINFO;
                         int iNum = AttrNamesKnown[pAttrName];
-                        if (5 == iNum)
+                        if (T6H_A_PASS == iNum)
                         {
                             char buffer[200];
                             sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
@@ -1753,7 +1753,7 @@ void T6H_GAME::ResetPassword()
             {
                 for (vector<T6H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
                 {
-                    if (5 == (*itAttr)->m_iNum)
+                    if (T6H_A_PASS == (*itAttr)->m_iNum)
                     {
                         // Change it to 'potrzebie'.
                         //
@@ -1770,7 +1770,7 @@ void T6H_GAME::ResetPassword()
                 // Add it.
                 //
                 T6H_ATTRINFO *pai = new T6H_ATTRINFO;
-                pai->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
+                pai->SetNumAndValue(T6H_A_PASS, StringClone("XXNHc95o0HhAc"));
 
                 if (NULL == itObj->second->m_pvai)
                 {

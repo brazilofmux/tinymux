@@ -1929,7 +1929,7 @@ void T5X_GAME::ConvertFromP6H()
                     {
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                         int iNum = AttrNamesKnown[pAttrName];
-                        if (5 == iNum)
+                        if (T5X_A_PASS == iNum)
                         {
                             char buffer[200];
                             sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
@@ -2465,17 +2465,17 @@ void T5X_GAME::ResetPassword()
             {
                 for (vector<T5X_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
                 {
-                    if (5 == (*itAttr)->m_iNum)
+                    if (T5X_A_PASS == (*itAttr)->m_iNum)
                     {
                         // Change it to 'potrzebie'.
                         //
                         if (fSHA1)
                         {
-                            (*itAttr)->SetNumAndValue(5, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
+                            (*itAttr)->SetNumAndValue(T5X_A_PASS, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
                         }
                         else
                         {
-                            (*itAttr)->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
+                            (*itAttr)->SetNumAndValue(T5X_A_PASS, StringClone("XXNHc95o0HhAc"));
                         }
 
                         fFound = true;
@@ -2490,11 +2490,11 @@ void T5X_GAME::ResetPassword()
                 T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                 if (fSHA1)
                 {
-                    pai->SetNumAndValue(5, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
+                    pai->SetNumAndValue(T5X_A_PASS, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
                 }
                 else
                 {
-                    pai->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
+                    pai->SetNumAndValue(T5X_A_PASS, StringClone("XXNHc95o0HhAc"));
                 }
 
                 if (NULL == itObj->second->m_pvai)

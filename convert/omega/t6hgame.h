@@ -69,6 +69,7 @@
 
 // Attribute numbers
 //
+#define T6H_A_PASS            5
 #define T6H_A_QUOTA          49
 #define T6H_A_MAILCC        198
 #define T6H_A_MAILBCC       199
