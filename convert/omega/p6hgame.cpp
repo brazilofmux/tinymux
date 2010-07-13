@@ -2253,76 +2253,6 @@ static struct
     { "Open",       225 },
 };
 
-const char *atr_decode_flags_owner(const char *iattr, int *owner, int *flags)
-{
-    // See if the first char of the attribute is the special character
-    //
-    *flags = 0;
-    if (*iattr != ATR_INFO_CHAR)
-    {
-        return iattr;
-    }
-
-    // It has the special character, crack the attr apart.
-    //
-    const char *cp = iattr + 1;
-
-    // Get the attribute owner
-    //
-    bool neg = false;
-    if (*cp == '-')
-    {
-        neg = true;
-        cp++;
-    }
-    int tmp_owner = 0;
-    unsigned int ch = *cp;
-    while (isdigit(ch))
-    {
-        cp++;
-        tmp_owner = 10*tmp_owner + (ch-'0');
-        ch = *cp;
-    }
-    if (neg)
-    {
-        tmp_owner = -tmp_owner;
-    }
-
-    // If delimiter is not ':', just return attribute
-    //
-    if (*cp++ != ':')
-    {
-        return iattr;
-    }
-
-    // Get the attribute flags.
-    //
-    int tmp_flags = 0;
-    ch = *cp;
-    while (isdigit(ch))
-    {
-        cp++;
-        tmp_flags = 10*tmp_flags + (ch-'0');
-        ch = *cp;
-    }
-
-    // If delimiter is not ':', just return attribute.
-    //
-    if (*cp++ != ':')
-    {
-        return iattr;
-    }
-
-    // Get the attribute text.
-    //
-    if (tmp_owner != -1)
-    {
-        *owner = tmp_owner;
-    }
-    *flags = tmp_flags;
-    return cp;
-}
-
 bool ConvertTimeString(char *pTime, time_t *pt)
 {
     char buffer[100];
@@ -2639,7 +2569,7 @@ void P6H_GAME::ConvertFromT5X()
                             else
                             {
                                 delete ple;
-                                fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", pType, it->first, (*itAttr)->m_pValue);
+                                fprintf(stderr, "WARNING: Could not convert '%s' lock on #%d containing '%s'.\n", pType, it->first, (*itAttr)->m_pValueUnencoded);
                             }
                         }
                     }
@@ -2649,7 +2579,7 @@ void P6H_GAME::ConvertFromT5X()
                            || T5X_A_MODIFIED  == (*itAttr)->m_iNum)
                         {
                             time_t t;
-                            if (ConvertTimeString((*itAttr)->m_pValue, &t))
+                            if (ConvertTimeString((*itAttr)->m_pValueUnencoded, &t))
                             {
                                 switch ((*itAttr)->m_iNum)
                                 {
@@ -2666,16 +2596,14 @@ void P6H_GAME::ConvertFromT5X()
                                 P6H_ATTRINFO *pai = new P6H_ATTRINFO;
                                 pai->SetName(StringClone(itFound->second));
 
-                                int flags, owner;
-                                const char *p = atr_decode_flags_owner((*itAttr)->m_pValue, &owner, &flags);
-                                pai->SetValue(StringClone(p));
-                                pai->SetOwner(owner);
+                                pai->SetValue(StringClone((*itAttr)->m_pValueUnencoded));
+                                pai->SetOwner((*itAttr)->m_dbOwner);
 
                                 pBuffer = aBuffer;
                                 fFirst = true;
                                 for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
                                 {
-                                    if (t5x_attr_flags[i].mask & flags)
+                                    if (t5x_attr_flags[i].mask & (*itAttr)->m_iFlags)
                                     {
                                         if (!fFirst)
                                         {

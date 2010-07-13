@@ -727,10 +727,10 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
                 if (t5x_locknums[i] == (*it)->m_iNum)
                 {
                     (*it)->m_fIsLock = true;
-                    (*it)->m_pKeyTree = t5xl_ParseKey((*it)->m_pValue);
+                    (*it)->m_pKeyTree = t5xl_ParseKey((*it)->m_pValueEncoded);
                     if (NULL == (*it)->m_pKeyTree)
                     {
-                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValue);
+                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValueUnencoded);
                     }
                     break;
                 }
@@ -739,15 +739,151 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
     }
 }
 
+void T5X_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int iAttrFlags, int dbAttrOwner, char *pValue)
+{
+    m_fNumAndValue = true;
+    free(m_pAllocated);
+    m_pAllocated = pValue;
+
+    m_iNum    = iNum;
+    m_pValueUnencoded  = pValue;
+    m_pValueEncoded = NULL;
+    m_iFlags  = iAttrFlags;
+    m_dbOwner = dbAttrOwner;
+
+    m_kState  = kEncode;
+}
+
 void T5X_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
 {
     m_fNumAndValue = true;
-    m_iNum = iNum;
-    if (NULL != m_pValue)
+    free(m_pAllocated);
+    m_pAllocated = pValue;
+
+    m_iNum    = iNum;
+    m_pValueUnencoded  = NULL;
+    m_pValueEncoded = pValue;
+    m_iFlags  = 0;
+    m_dbOwner = T5X_NOTHING;
+
+    m_kState  = kDecode;
+}
+
+void T5X_ATTRINFO::EncodeDecode(int dbObjOwner)
+{
+    if (kEncode == m_kState)
     {
-        free(m_pValue);
+        // If using the default owner and flags (almost all attributes will),
+        // just store the string.
+        //
+        if (  (  m_dbOwner == dbObjOwner
+              || T5X_NOTHING == m_dbOwner)
+           && 0 == m_iFlags)
+        {
+            m_pValueEncoded = m_pValueUnencoded;
+        }
+        else
+        {
+            // Encode owner and flags into the attribute text.
+            //
+            if (T5X_NOTHING == m_dbOwner)
+            {
+                m_dbOwner = dbObjOwner;
+            }
+
+            char buffer[65536];
+            sprintf(buffer, "%c%d:%d:", ATR_INFO_CHAR, m_dbOwner, m_iFlags);
+            size_t n = strlen(buffer);
+            sprintf(buffer + n, "%s", m_pValueUnencoded);
+
+            delete m_pAllocated;
+            m_pAllocated = StringClone(buffer);
+
+            m_pValueEncoded = m_pAllocated;
+            m_pValueUnencoded = m_pAllocated + n;
+        }
+        m_kState = kNone;
     }
-    m_pValue = pValue;
+    else if (kDecode == m_kState)
+    {
+        // See if the first char of the attribute is the special character
+        //
+        m_iFlags = 0;
+        if (ATR_INFO_CHAR != *m_pValueEncoded)
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+        }
+
+        // It has the special character, crack the attr apart.
+        //
+        char *cp = m_pValueEncoded + 1;
+
+        // Get the attribute owner
+        //
+        bool neg = false;
+        if (*cp == '-')
+        {
+            neg = true;
+            cp++;
+        }
+        int tmp_owner = 0;
+        unsigned int ch = *cp;
+        while (isdigit(ch))
+        {
+            cp++;
+            tmp_owner = 10*tmp_owner + (ch-'0');
+            ch = *cp;
+        }
+        if (neg)
+        {
+            tmp_owner = -tmp_owner;
+        }
+
+        // If delimiter is not ':', just return attribute
+        //
+        if (*cp++ != ':')
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+            return;
+        }
+
+        // Get the attribute flags.
+        //
+        int tmp_flags = 0;
+        ch = *cp;
+        while (isdigit(ch))
+        {
+            cp++;
+            tmp_flags = 10*tmp_flags + (ch-'0');
+            ch = *cp;
+        }
+
+        // If delimiter is not ':', just return attribute.
+        //
+        if (*cp++ != ':')
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+            return;
+        }
+
+        // Get the attribute text.
+        //
+        if (tmp_owner < 0)
+        {
+            m_dbOwner = tmp_owner;
+        }
+        else
+        {
+            m_dbOwner = dbObjOwner;
+        }
+        m_iFlags = tmp_flags;
+        m_pValueUnencoded = cp;
+
+        m_kState = kNone;
+    }
 }
 
 void T5X_GAME::AddNumAndName(int iNum, char *pName)
@@ -811,6 +947,20 @@ void T5X_GAME::ValidateFlags() const
        || (flags & T5X_V_ATRMONEY) != 0)
     {
         fprintf(stderr, "WARNING: Expected a flatfile (with strings) instead of a structure file (with only object anchors).\n");
+    }
+}
+
+void T5X_GAME::Pass2()
+{
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        if (NULL != itObj->second->m_pvai)
+        {
+            for (vector<T5X_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
+            {
+                (*itAttr)->EncodeDecode(itObj->second->m_dbOwner);
+            }
+        }
     }
 }
 
@@ -1036,9 +1186,9 @@ void T5X_ATTRINFO::Validate() const
         char buffer[65536];
         char *p = m_pKeyTree->Write(buffer);
         *p = '\0';
-        if (strcmp(m_pValue, buffer) != 0)
+        if (strcmp(m_pValueUnencoded, buffer) != 0)
         {
-            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
+            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValueUnencoded);
         }
     }
 }
@@ -1133,7 +1283,7 @@ void T5X_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
 {
     if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValue, fExtraEscapes));
+        fprintf(fp, ">%d\n\"%s\"\n", m_iNum, EncodeString(m_pValueEncoded, fExtraEscapes));
     }
 }
 
@@ -1494,29 +1644,6 @@ static NameMask p6h_attr_flags[] =
     { "noname",         0x00400000UL },
 };
 
-static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
-{
-    // If using the default owner and flags (almost all attributes will),
-    // just store the string.
-    //
-    if (  (  iAttrOwner == iObjOwner
-          || -1 == iAttrOwner)
-       && 0 == iAttrFlags)
-    {
-        return pValue;
-    }
-
-    // Encode owner and flags into the attribute text.
-    //
-    if (-1 == iAttrOwner)
-    {
-        iAttrOwner = iObjOwner;
-    }
-    static char buffer[65536];
-    sprintf(buffer, "%c%d:%d:%s", ATR_INFO_CHAR, iAttrOwner, iAttrFlags, pValue);
-    return buffer;
-}
-
 void T5X_GAME::ConvertFromP6H()
 {
     SetFlags(T5X_MANDFLAGS_V2 | 2);
@@ -1796,7 +1923,6 @@ void T5X_GAME::ConvertFromP6H()
                             iAttrFlags |= p6h_attr_flags[i].mask;
                         }
                     }
-                    char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
                     char *pAttrName = t5x_ConvertAttributeName((*itAttr)->m_pName);
                     map<const char *, int , ltstr>::iterator itFound = AttrNamesKnown.find(pAttrName);
                     if (itFound != AttrNamesKnown.end())
@@ -1807,12 +1933,11 @@ void T5X_GAME::ConvertFromP6H()
                         {
                             char buffer[200];
                             sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
-                            pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, buffer);
-                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(pEncodedAttrValue));
+                            pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone(buffer));
                         }
                         else
                         {
-                            pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(pEncodedAttrValue));
+                            pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((*itAttr)->m_pValue));
                         }
                         pvai->push_back(pai);
                     }
@@ -1822,7 +1947,7 @@ void T5X_GAME::ConvertFromP6H()
                         if (itFound != AttrNames.end())
                         {
                             T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                            pai->SetNumAndValue(AttrNames[pAttrName], StringClone(pEncodedAttrValue));
+                            pai->SetNumOwnerFlagsAndValue(AttrNames[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((*itAttr)->m_pValue));
                             pvai->push_back(pai);
                         }
                     }
@@ -2344,14 +2469,13 @@ void T5X_GAME::ResetPassword()
                     {
                         // Change it to 'potrzebie'.
                         //
-                        free((*itAttr)->m_pValue);
                         if (fSHA1)
                         {
-                            (*itAttr)->m_pValue = StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co=");
+                            (*itAttr)->SetNumAndValue(5, StringClone("$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="));
                         }
                         else
                         {
-                            (*itAttr)->m_pValue = StringClone("XXNHc95o0HhAc");
+                            (*itAttr)->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
                         }
 
                         fFound = true;
@@ -2835,9 +2959,8 @@ void T5X_OBJECTINFO::Upgrade()
 
 void T5X_ATTRINFO::Upgrade()
 {
-    char *p = (char *)ConvertToUTF8(m_pValue);
-    free(m_pValue);
-    m_pValue = StringClone(p);
+    char *p = (char *)ConvertToUTF8(m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
 }
 
 bool T5X_GAME::Upgrade2()
@@ -3205,9 +3328,8 @@ void T5X_OBJECTINFO::Downgrade()
             {
                 delete m_ple;
                 m_ple = (*it)->m_pKeyTree;
-                delete (*it)->m_pValue;
                 (*it)->m_pKeyTree = NULL;
-                (*it)->m_pValue;
+                delete (*it);
                 m_pvai->erase(it);
                 break;
             }
@@ -3232,18 +3354,6 @@ void T5X_OBJECTINFO::Downgrade()
 
 void T5X_ATTRINFO::Downgrade()
 {
-    char *p = (char *)convert_color((UTF8 *)m_pValue);
-    if (ATR_INFO_CHAR != *p)
-    {
-        p = (char *)ConvertToLatin((UTF8 *)p);
-    }
-    else
-    {
-        char buffer[65536];
-        sprintf(buffer, "%c%s", ATR_INFO_CHAR, (char *)ConvertToLatin((UTF8 *)(p+1)));
-        p = buffer;
-    }
-    free(m_pValue);
-    m_pValue = StringClone(p);
+    char *p = (char *)convert_color((UTF8 *)m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, (char *)ConvertToLatin((UTF8 *)p));
 }
-
