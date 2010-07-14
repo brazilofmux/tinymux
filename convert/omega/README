@@ -89,7 +89,7 @@ summarizes the status of the different conversion paths:
 
              ---------------- To: -----------------------
 From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
-PennMUSH        -        C,D,E,F        A           A
+PennMUSH        -           A           A           A
 TinyMUSH        H           -           A           H
 TinyMUX         B           H           -           H
 RhostMUSH       H           H           H           -  
