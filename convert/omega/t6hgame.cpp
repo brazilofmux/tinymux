@@ -575,6 +575,7 @@ const int t6h_locknums[] =
      94,  // A_LTELOUT
      97,  // A_LUSER
      98,  // A_LPARENT
+     99,  // A_LCONTROL
     127,  // A_LGET
     209,  // A_LSPEECH
     225,  // A_LMAIL

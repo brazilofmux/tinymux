@@ -90,9 +90,9 @@ summarizes the status of the different conversion paths:
              ---------------- To: -----------------------
 From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
 PennMUSH        -        C,D,E,F        A        C,D,E,F
-TinyMUSH        I           -           A           I
-TinyMUX         B           I           -           I
-RhostMUSH       I           I           G           -  
+TinyMUSH        H           -           A           H
+TinyMUX         B           H           -           H
+RhostMUSH       H           H           H           -  
 
 A: Fully functional.
 B: Attribute re-numbering could be better.
@@ -100,9 +100,7 @@ C: Attribute numbers/names are not mapped correctly.
 D: Object flags are not mapped correctly.
 E: Attribute flags are not mapped correctly.
 F: Powers are not mapped correctly.
-G: Placeholder only.
-H: Code started, but it is not command-line enabled.
-I: Doesn't exist, yet.
+H: Doesn't exist, yet.
 
 
 FEATURE: Charset conversions

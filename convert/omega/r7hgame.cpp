@@ -556,13 +556,26 @@ const int r7h_locknums[] =
      87,  // A_LRECEIVE
      93,  // A_LLINK
      94,  // A_LTELOUT
+     96,  // A_LCONTROL
      97,  // A_LUSER
      98,  // A_LPARENT
-    127,  // A_LGET
+    157,  // A_LMAIL
+    158,  // A_LSHARE
+    188,  // A_LZONEWIZ
+    189,  // A_LZONETO
+    190,  // A_LTWINK
+    199,  // A_LSPEECH
+    203,  // A_LDARK
     209,  // A_LSPEECH
+    216,  // A_LDROPTO
+    217,  // A_LOPEN
+    218,  // A_LCHOWN
     225,  // A_LMAIL
     226,  // A_LOPEN
+    230,  // A_LALTNAME
     231,  // A_LVISIBLE
+    234,  // A_LGIVETO
+    235,  // A_LGETFROM
 };
 
 void R7H_OBJECTINFO::SetAttrs(int nAttrs, vector<R7H_ATTRINFO *> *pvai)
