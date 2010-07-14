@@ -1485,19 +1485,14 @@ static struct
 
 static NameMask p6h_attr_flags[] =
 {
-    { "no_command",     0x00000100UL },
-    { "private",        0x00001000UL },
-    { "no_clone",       0x00010000UL },
-    { "wizard",         0x00000004UL },
-    { "visual",         0x00000800UL },
-    { "mortal_dark",    0x00000008UL },
-    { "hidden",         0x00000002UL },
-    { "regexp",         0x00008000UL },
-    { "case",           0x00040000UL },
-    { "locked",         0x00000040UL },
-    { "internal",       0x00000010UL },
-    { "debug",          0x00080000UL },
-    { "noname",         0x00400000UL },
+    { "private",        R7H_AF_PRIVATE  },
+    { "no_clone",       R7H_AF_NOCLONE  },
+    { "wizard",         R7H_AF_WIZARD   },
+    { "visual",         R7H_AF_VISUAL   },
+    { "mortal_dark",    R7H_AF_MDARK    },
+    { "hidden",         R7H_AF_DARK     },
+    { "locked",         R7H_AF_LOCK     },
+    { "internal",       R7H_AF_INTERNAL },
 };
 
 static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
