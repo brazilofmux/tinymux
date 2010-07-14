@@ -162,7 +162,6 @@
 #define R7H_A_LPARENT        98
 #define R7H_A_LAMBDA         99
 #define R7H_A_VA            100
-
 #define R7H_A_CHANNEL       126
 #define R7H_A_GUILD         127
 #define R7H_A_ZA            129

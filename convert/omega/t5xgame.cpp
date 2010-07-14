@@ -2688,44 +2688,212 @@ bool convert_r7h_attr_num(int iNum, int *piNum)
         return true;
     }
 
-    // T6H attribute numbers with no corresponding T5X attribute.
+    // R7H attribute numbers with no corresponding T5X attribute.
     //
-    if (  T6H_A_NEWOBJS == iNum
-       || T6H_A_MAILCC == iNum
-       || T6H_A_MAILBCC == iNum
-       || T6H_A_LKNOWN == iNum
-       || T6H_A_LHEARD == iNum)
+    if (  R7H_A_SPAMPROTECT == iNum
+       || R7H_A_RLEVEL == iNum
+       || R7H_A_DESTVATTRMAX == iNum
+       || R7H_A_TEMPBUFFER == iNum
+       || R7H_A_PROGPROMPTBUF == iNum
+       || R7H_A_PROGPROMPT == iNum
+       || R7H_A_PROGBUFFER == iNum
+       || R7H_A_SAVESENDMAIL == iNum
+       || R7H_A_LAMBDA == iNum
+       || R7H_A_CHANNEL == iNum
+       || R7H_A_GUILD == iNum
+       || (R7H_A_ZA <= iNum && iNum <= R7H_A_ZA + 25)
+       || R7H_A_BCCMAIL == iNum
+       || R7H_A_EMAIL == iNum
+       || R7H_A_LSHARE == iNum
+       || R7H_A_AOTFAIL == iNum
+       || R7H_A_MPASS == iNum
+       || R7H_A_MPSET == iNum
+       || R7H_A_LASTPAGE == iNum
+       || R7H_A_RETPAGE == iNum
+       || R7H_A_RECTIME == iNum
+       || R7H_A_MCURR == iNum
+       || R7H_A_MQUOTA == iNum
+       || R7H_A_LQUOTA == iNum
+       || R7H_A_TQUOTA == iNum
+       || R7H_A_MTIME == iNum
+       || R7H_A_MSAVEMAX == iNum
+       || R7H_A_MSAVECUR == iNum
+       || R7H_A_IDENT == iNum
+       || R7H_A_LZONEWIZ == iNum
+       || R7H_A_LZONETO == iNum
+       || R7H_A_LTWINK == iNum
+       || R7H_A_SITEGOOD == iNum
+       || R7H_A_SITEBAD == iNum
+       || R7H_A_ADESC2 == iNum
+       || R7H_A_PAYLIM == iNum
+       || R7H_A_DESC2 == iNum
+       || R7H_A_RACE == iNum
+       || R7H_A_SFAIL == iNum
+       || R7H_A_ASFAIL == iNum
+       || R7H_A_AUTOREG == iNum
+       || R7H_A_LDARK == iNum
+       || R7H_A_STOUCH == iNum
+       || R7H_A_SATOUCH == iNum
+       || R7H_A_SOTOUCH == iNum
+       || R7H_A_SLISTEN == iNum
+       || R7H_A_SALISTEN == iNum
+       || R7H_A_SOLISTEN == iNum
+       || R7H_A_STASTE == iNum
+       || R7H_A_SATASTE == iNum
+       || R7H_A_SOTASTE == iNum
+       || R7H_A_SSMELL == iNum
+       || R7H_A_SASMELL == iNum
+       || R7H_A_SOSMELL == iNum
+       || R7H_A_LDROPTO == iNum
+       || R7H_A_CAPTION == iNum
+       || R7H_A_TOTCMDS == iNum
+       || R7H_A_LSTCMDS == iNum
+       || R7H_A_RECEIVELIM == iNum
+       || R7H_A_LDEXIT_FMT == iNum
+       || R7H_A_ALTNAME == iNum
+       || R7H_A_LALTNAME == iNum
+       || R7H_A_INVTYPE == iNum
+       || R7H_A_TOTCHARIN == iNum
+       || R7H_A_TOTCHAROUT == iNum
+       || R7H_A_LGIVETO == iNum
+       || R7H_A_LASTCREATE == iNum)
     {
         return false;
     }
 
-    if (T6H_A_LEXITS_FMT == iNum)
-    {
-        iNum = T5X_A_EXITFORMAT;
-    }
-    else if (T6H_A_NAME_FMT == iNum)
+    if (R7H_A_NAME_FMT == iNum)
     {
         iNum = T5X_A_NAMEFORMAT;
     }
-    else if (T6H_A_LASTIP == iNum)
+    else if (R7H_A_LASTIP == iNum)
     {
         iNum = T5X_A_LASTIP;
     }
-    else if (T6H_A_SPEECHFMT == iNum)
-    {
-        iNum = T5X_A_SPEECHMOD;
-    }
-    else if (T6H_A_LCON_FMT == iNum)
+    else if (R7H_A_LCON_FMT == iNum)
     {
         iNum = T5X_A_CONFORMAT;
     }
+    else if (R7H_A_EXITTO == iNum)
+    {
+        iNum = T5X_A_EXITVARDEST;
+    }
+    else if (R7H_A_LCONTROL == iNum)
+    {
+        iNum = T5X_A_LCONTROL;
+    }
+    else if (R7H_A_LMAIL == iNum)
+    {
+        iNum = T5X_A_LMAIL;
+    }
+    else if (R7H_A_LGETFROM == iNum)
+    {
+        iNum = T5X_A_LGET;
+    }
+    else if (R7H_A_GFAIL == iNum)
+    {
+        iNum = T5X_A_GFAIL;
+    }
+    else if (R7H_A_OGFAIL == iNum)
+    {
+        iNum = T5X_A_OGFAIL;
+    }
+    else if (R7H_A_AGFAIL == iNum)
+    {
+        iNum = T5X_A_AGFAIL;
+    }
+    else if (R7H_A_RFAIL == iNum)
+    {
+        iNum = T5X_A_RFAIL;
+    }
+    else if (R7H_A_ORFAIL == iNum)
+    {
+        iNum = T5X_A_ORFAIL;
+    }
+    else if (R7H_A_ARFAIL == iNum)
+    {
+        iNum = T5X_A_ARFAIL;
+    }
+    else if (R7H_A_DFAIL == iNum)
+    {
+        iNum = T5X_A_DFAIL;
+    }
+    else if (R7H_A_ODFAIL == iNum)
+    {
+        iNum = T5X_A_ODFAIL;
+    }
+    else if (R7H_A_ADFAIL == iNum)
+    {
+        iNum = T5X_A_ADFAIL;
+    }
+    else if (R7H_A_TFAIL == iNum)
+    {
+        iNum = T5X_A_TFAIL;
+    }
+    else if (R7H_A_OTFAIL == iNum)
+    {
+        iNum = T5X_A_OTFAIL;
+    }
+    else if (R7H_A_ATFAIL == iNum)
+    {
+        iNum = T5X_A_ATFAIL;
+    }
+    else if (R7H_A_TOFAIL == iNum)
+    {
+        iNum = T5X_A_TOFAIL;
+    }
+    else if (R7H_A_OTOFAIL == iNum)
+    {
+        iNum = T5X_A_OTOFAIL;
+    }
+    else if (R7H_A_ATOFAIL == iNum)
+    {
+        iNum = T5X_A_ATOFAIL;
+    }
+    else if (R7H_A_MAILSIG == iNum)
+    {
+        iNum = T5X_A_SIGNATURE;
+    }
+    else if (R7H_A_LSPEECH == iNum)
+    {
+        iNum = T5X_A_LSPEECH;
+    }
+    else if (R7H_A_ANSINAME == iNum)
+    {
+        iNum = T5X_A_MONIKER;
+    }
+    else if (R7H_A_LOPEN == iNum)
+    {
+        iNum = T5X_A_LOPEN;
+    }
+    else if (R7H_A_LCHOWN == iNum)
+    {
+        iNum = T5X_A_LCHOWN;
+    }
+    else if (R7H_A_LCON_FMT == iNum)
+    {
+        iNum = T5X_A_CONFORMAT;
+    }
+    else if (R7H_A_LEXIT_FMT == iNum)
+    {
+        iNum = T5X_A_EXITFORMAT;
+    }
+    else if (R7H_A_MODIFY_TIME == iNum)
+    {
+        iNum = T5X_A_MODIFIED;
+    }
+    else if (R7H_A_CREATED_TIME == iNum)
+    {
+        iNum = T5X_A_CREATED;
+    }
+    else if (R7H_A_SAYSTRING == iNum)
+    {
+        iNum = T5X_A_SAYSTRING;
+    }
 
-    // T5X attributes with no corresponding T6H attribute, and nothing
-    // in T6H currently uses the number, but it might be assigned later.
+    // T5X attributes with no corresponding R7H attribute, and nothing
+    // in R7H currently uses the number, but it might be assigned later.
     //
-    if (  T5X_A_LGET == iNum
-       || T5X_A_MFAIL == iNum
-       || T5X_A_LASTIP == iNum
+    if (  T5X_A_MFAIL == iNum
        || T5X_A_COMJOIN == iNum
        || T5X_A_COMLEAVE == iNum
        || T5X_A_COMON == iNum
@@ -2740,7 +2908,29 @@ bool convert_r7h_attr_num(int iNum, int *piNum)
        || T5X_A_LMAIL == iNum
        || T5X_A_LOPEN == iNum
        || T5X_A_LASTWHISPER == iNum
-       || T5X_A_LVISIBLE == iNum)
+       || T5X_A_LVISIBLE == iNum
+       || T5X_A_LASTPAGE == iNum
+       || T5X_A_MAIL == iNum
+       || T5X_A_AMAIL == iNum
+       || T5X_A_DAILY == iNum
+       || T5X_A_MAILTO == iNum
+       || T5X_A_MAILMSG == iNum
+       || T5X_A_MAILSUB == iNum
+       || T5X_A_MAILCURF == iNum
+       || T5X_A_PROGCMD == iNum
+       || T5X_A_MAILFLAGS == iNum
+       || T5X_A_DESTROYER == iNum
+       || T5X_A_NEWOBJS == iNum
+       || T5X_A_SPEECHMOD == iNum
+       || T5X_A_VRML_URL == iNum
+       || T5X_A_HTDESC == iNum
+       || T5X_A_REASON == iNum
+       || T5X_A_REGINFO == iNum
+       || T5X_A_CONNINFO == iNum
+       || T5X_A_LVISIBLE == iNum
+       || T5X_A_IDLETMOUT == iNum
+       || T5X_A_NAMEFORMAT == iNum
+       || T5X_A_DESCFORMAT == iNum)
     {
         return false;
     }
@@ -2810,11 +3000,6 @@ int convert_r7h_flags2(int f)
        | T5X_CONNECTED
        | T5X_SLAVE;
 
-    if ((f & T6H_HAS_COMMANDS) == 0)
-    {
-        g |= T5X_NO_COMMAND;
-    }
-
     return g;
 }
 
@@ -2857,10 +3042,6 @@ int convert_r7h_attr_flags(int f)
        | T5X_AF_CASE
        | T5X_AF_NONAME;
 
-    if (f & T6H_AF_TRACE)
-    {
-        g |= T5X_AF_TRACE;
-    }
     return g;
 }
 
