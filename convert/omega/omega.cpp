@@ -430,6 +430,13 @@ int main(int argc, char *argv[])
             g_r7hgame.Pass2();
             g_r7hgame.Validate();
         }
+        else if (  eRhostMUSH == eInputType
+                && eTinyMUX  == eOutputType)
+        {
+            g_t5xgame.ConvertFromR7H();
+            g_t5xgame.Pass2();
+            g_t5xgame.Validate();
+        }
         else
         {
             fprintf(stderr, "Requested conversion is not currently supported.\n");

@@ -348,6 +348,7 @@ typedef unsigned char UTF8;
 
 class P6H_LOCKEXP;
 class T6H_LOCKEXP;
+class R7H_LOCKEXP;
 
 class T5X_LOCKEXP
 {
@@ -439,6 +440,7 @@ public:
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
     bool ConvertFromT6H(T6H_LOCKEXP *p);
+    bool ConvertFromR7H(R7H_LOCKEXP *p);
 
     T5X_LOCKEXP()
     {
@@ -701,6 +703,7 @@ public:
 
     void ConvertFromP6H();
     void ConvertFromT6H();
+    void ConvertFromR7H();
 
     void ResetPassword();
 
