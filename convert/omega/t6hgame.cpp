@@ -1861,26 +1861,33 @@ void T6H_GAME::ConvertFromP6H()
                         T6H_LOCKEXP *pLock = new T6H_LOCKEXP;
                         if (pLock->ConvertFromP6H((*itLock)->m_pKeyTree))
                         {
-                            char buffer[65536];
-                            char *p = pLock->Write(buffer);
-                            *p = '\0';
-
-                            // Add it.
-                            //
-                            T6H_ATTRINFO *pai = new T6H_ATTRINFO;
-                            pai->SetNumAndValue(iLock, StringClone(buffer));
-
-                            if (NULL == poi->m_pvai)
+                            if (T6H_A_LOCK == iLock)
                             {
-                                vector<T6H_ATTRINFO *> *pvai = new vector<T6H_ATTRINFO *>;
-                                pvai->push_back(pai);
-                                poi->SetAttrs(pvai->size(), pvai);
+                                poi->SetDefaultLock(pLock);
                             }
                             else
                             {
-                                poi->m_pvai->push_back(pai);
-                                poi->m_fAttrCount = true;
-                                poi->m_nAttrCount = poi->m_pvai->size();
+                                char buffer[65536];
+                                char *p = pLock->Write(buffer);
+                                *p = '\0';
+
+                                // Add it.
+                                //
+                                T6H_ATTRINFO *pai = new T6H_ATTRINFO;
+                                pai->SetNumAndValue(iLock, StringClone(buffer));
+
+                                if (NULL == poi->m_pvai)
+                                {
+                                    vector<T6H_ATTRINFO *> *pvai = new vector<T6H_ATTRINFO *>;
+                                    pvai->push_back(pai);
+                                    poi->SetAttrs(pvai->size(), pvai);
+                                }
+                                else
+                                {
+                                    poi->m_pvai->push_back(pai);
+                                    poi->m_fAttrCount = true;
+                                    poi->m_nAttrCount = poi->m_pvai->size();
+                                }
                             }
                         }
                         else

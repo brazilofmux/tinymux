@@ -1846,7 +1846,7 @@ void R7H_GAME::ConvertFromP6H()
 
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(R7H_A_CREATED_TIME, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
@@ -1877,7 +1877,7 @@ void R7H_GAME::ConvertFromP6H()
 
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                     pai->SetNumAndValue(R7H_A_MODIFY_TIME, StringClone(pTime));
-        
+
                     if (NULL == poi->m_pvai)
                     {
                         vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
@@ -1975,26 +1975,33 @@ void R7H_GAME::ConvertFromP6H()
                         R7H_LOCKEXP *pLock = new R7H_LOCKEXP;
                         if (pLock->ConvertFromP6H((*itLock)->m_pKeyTree))
                         {
-                            char buffer[65536];
-                            char *p = pLock->Write(buffer);
-                            *p = '\0';
-
-                            // Add it.
-                            //
-                            R7H_ATTRINFO *pai = new R7H_ATTRINFO;
-                            pai->SetNumAndValue(iLock, StringClone(buffer));
-
-                            if (NULL == poi->m_pvai)
+                            if (R7H_A_LOCK == iLock)
                             {
-                                vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
-                                pvai->push_back(pai);
-                                poi->SetAttrs(pvai->size(), pvai);
+                                poi->SetDefaultLock(pLock);
                             }
                             else
                             {
-                                poi->m_pvai->push_back(pai);
-                                poi->m_fAttrCount = true;
-                                poi->m_nAttrCount = poi->m_pvai->size();
+                                char buffer[65536];
+                                char *p = pLock->Write(buffer);
+                                *p = '\0';
+
+                                // Add it.
+                                //
+                                R7H_ATTRINFO *pai = new R7H_ATTRINFO;
+                                pai->SetNumAndValue(iLock, StringClone(buffer));
+
+                                if (NULL == poi->m_pvai)
+                                {
+                                    vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
+                                    pvai->push_back(pai);
+                                    poi->SetAttrs(pvai->size(), pvai);
+                                }
+                                else
+                                {
+                                    poi->m_pvai->push_back(pai);
+                                    poi->m_fAttrCount = true;
+                                    poi->m_nAttrCount = poi->m_pvai->size();
+                                }
                             }
                         }
                         else

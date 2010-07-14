@@ -1754,7 +1754,7 @@ static struct
     { "Speech",      T5X_A_LSPEECH  },
     { "Parent",      T5X_A_LPARENT  },
     { "Link",        T5X_A_LLINK    },
-    { "Leave",       60 },
+    { "Leave",       T5X_A_LLEAVE   },
     { "Drop",        T5X_A_LDROP    },
     { "Give",        T5X_A_LGIVE    },
     { "Receive",     T5X_A_LRECEIVE },
@@ -2121,26 +2121,33 @@ void T5X_GAME::ConvertFromP6H()
                         T5X_LOCKEXP *pLock = new T5X_LOCKEXP;
                         if (pLock->ConvertFromP6H((*itLock)->m_pKeyTree))
                         {
-                            char buffer[65536];
-                            char *p = pLock->Write(buffer);
-                            *p = '\0';
-
-                            // Add it.
-                            //
-                            T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                            pai->SetNumAndValue(iLock, StringClone(buffer));
-
-                            if (NULL == poi->m_pvai)
+                            if (T5X_A_LOCK == iLock)
                             {
-                                vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
-                                pvai->push_back(pai);
-                                poi->SetAttrs(pvai->size(), pvai);
+                                poi->SetDefaultLock(pLock);
                             }
                             else
                             {
-                                poi->m_pvai->push_back(pai);
-                                poi->m_fAttrCount = true;
-                                poi->m_nAttrCount = poi->m_pvai->size();
+                                char buffer[65536];
+                                char *p = pLock->Write(buffer);
+                                *p = '\0';
+
+                                // Add it.
+                                //
+                                T5X_ATTRINFO *pai = new T5X_ATTRINFO;
+                                pai->SetNumAndValue(iLock, StringClone(buffer));
+
+                                if (NULL == poi->m_pvai)
+                                {
+                                    vector<T5X_ATTRINFO *> *pvai = new vector<T5X_ATTRINFO *>;
+                                    pvai->push_back(pai);
+                                    poi->SetAttrs(pvai->size(), pvai);
+                                }
+                                else
+                                {
+                                    poi->m_pvai->push_back(pai);
+                                    poi->m_fAttrCount = true;
+                                    poi->m_nAttrCount = poi->m_pvai->size();
+                                }
                             }
                         }
                         else
@@ -2642,6 +2649,19 @@ void T5X_GAME::ConvertFromT6H()
             delete pvai;
         }
 
+        if (it->second->m_ple)
+        {
+            T5X_LOCKEXP *ple = new T5X_LOCKEXP;
+            if (ple->ConvertFromT6H(it->second->m_ple))
+            {
+                poi->SetDefaultLock(ple);
+            }
+            else
+            {
+                delete ple;
+            }
+        }
+
         AddObject(poi);
 
         if (dbRefMax < it->first)
@@ -3026,6 +3046,19 @@ void T5X_GAME::ConvertFromR7H()
                 pvai = NULL;
             }
             delete pvai;
+        }
+
+        if (it->second->m_ple)
+        {
+            T5X_LOCKEXP *ple = new T5X_LOCKEXP;
+            if (ple->ConvertFromR7H(it->second->m_ple))
+            {
+                poi->SetDefaultLock(ple);
+            }
+            else
+            {
+                delete ple;
+            }
         }
 
         AddObject(poi);
