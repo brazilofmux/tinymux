@@ -1297,173 +1297,170 @@ static struct
     { "AHEAR",          R7H_A_AHEAR       },
     { "AKILL",          -1                }, // rename AKILL to XAKILL
     { "ALEAVE",         R7H_A_ALEAVE      },
-    { "ALFAIL",         71 },
-    { "ALIAS",          58 },
+    { "ALFAIL",         R7H_A_ALFAIL      },
+    { "ALIAS",          R7H_A_ALIAS       },
     { "ALLOWANCE",      -1 },
-    { "AMAIL",         202 },
-    { "AMHEAR",         28 },
-    { "AMOVE",          57 },
-    { "APAY",           -1 }, // rename APAY to XAPAY
-    { "APAYMENT",       21 }, // rename APAYMENT to APAY
-    { "ARFAIL",         -1 },
-    { "ASUCC",          -1 }, // rename ASUCC to XASUCC
-    { "ASUCCESS",       12 }, // rename AUCCESS to ASUCC
-    { "ATFAIL",         -1 }, // rename ATFAIL to XATFAIL
-    { "ATPORT",         82 },
-    { "ATOFAIL",        -1 }, // rename ATOFAIL to XATOFAIL
-    { "AUFAIL",         77 },
-    { "AUSE",           16 },
-    { "AWAY",           73 },
-    { "CHARGES",        17 },
-    { "CMDCHECK",       -1 }, // rename CMDCHECK to XCMDCHECK
-    { "COMMENT",        44 },
-    { "CONFORMAT",     242 },
-    { "CONNINFO",       -1 },
-    { "COST",           24 },
-    { "CREATED",        -1 }, // rename CREATED to XCREATED
-    { "DAILY",          -1 }, // rename DAILY to XDAILY
-    { "DESC",           -1 }, // rename DESC to XDESC
-    { "DESCRIBE",        6 }, // rename DESCRIBE to DESC
-    { "DEFAULTLOCK",    -1 }, // rename DEFAULTLOCK to XDEFAULTLOCK
-    { "DESCFORMAT",    244 },
-    { "DESTROYER",      -1 }, // rename DESTROYER to XDESTROYER
-    { "DFAIL",          -1 }, // rename DFAIL to XDFAIL
-    { "DROP",            9 },
-    { "DROPLOCK",       -1 }, // rename DROPLOCK to XDROPLOCK
-    { "EALIAS",         64 },
-    { "EFAIL",          66 },
-    { "ENTER",          33 },
-    { "ENTERLOCK",      -1 }, // rename ENTERLOCK to XENTERLOCK
-    { "EXITFORMAT",    241 },
-    { "EXITTO",        216 },
-    { "FAIL",           -1 }, // rename FAIL to XFAIL
-    { "FAILURE",         3 }, // rename FAILURE to FAIL
-    { "FILTER",         92 },
-    { "FORWARDLIST",    95 },
-    { "GETFROMLOCK",    -1 }, // rename GETFROMLOCK to XGETFROMLOCK
-    { "GFAIL",          -1 }, // rename GFAIL to XGFAIL
-    { "GIVELOCK",       -1 }, // rename GIVELOCK to XGIVELOCK
-    { "HTDESC",         -1 }, // rename HTDESC to XHTDESC
-    { "IDESC",          -1 }, // rename IDESC to XIDESC
-    { "IDESCRIBE",      32 }, // rename IDESCRIBE to IDESC
-    { "IDLE",           74 },
-    { "IDLETIMEOUT",    -1 }, // rename IDLETIMEOUT to XIDLETIMEOUT
-    { "INFILTER",       91 },
-    { "INPREFIX",       89 },
-    { "KILL",           -1 }, // rename KILL to XKILL
-    { "LALIAS",         65 },
-    { "LAST",           30 },
-    { "LASTPAGE",       -1 }, // rename LASTPAGE to XLASTPAGE
-    { "LASTSITE",       88 },
-    { "LASTIP",        144 },
-    { "LEAVE",          50 },
-    { "LEAVELOCK",      -1 }, // rename LEAVELOCK to XLEAVELOCK
-    { "LFAIL",          69 },
-    { "LINKLOCK",       -1 }, // rename LINKLOCK to XLINKLOCK
-    { "LISTEN",         26 },
-    { "LOGINDATA",      -1 }, // rename LOGINDATA to XLOGINDATA
-    { "MAILCURF",       -1 }, // rename MAILCURF to XMAILCURF
-    { "MAILFLAGS",      -1 }, // rename MAILFLAGS to XMAILFLAGS
-    { "MAILFOLDERS",    -1 }, // rename MAILFOLDERS to XMAILFOLDERS
-    { "MAILLOCK",       -1 }, // rename MAILLOCK to XMAILLOCK
-    { "MAILMSG",        -1 }, // rename MAILMSG to XMAILMSG
-    { "MAILSUB",        -1 }, // rename MAILSUB to XMAILSUB
-    { "MAILSUCC",       -1 }, // rename MAILSUCC to XMAILSUCC
-    { "MAILTO",         -1 }, // rename MAILTO to XMAILTO
-    { "MFAIL",          -1 }, // rename MFAIL to XMFAIL
-    { "MODIFIED",       -1 }, // rename MODIFIED to XMODIFIED
-    { "MONIKER",        -1 }, // rename MONIKER to XMONIKER
-    { "MOVE",           55 },
-    { "NAME",           -1 }, // rename NAME to XNAME
-    { "NAMEFORMAT",    243 },
-    { "ODESC",          -1 }, // rename ODESC to XODESC
-    { "ODESCRIBE",      37 }, // rename ODESCRIBE to ODESC
-    { "ODFAIL",         -1 }, // rename ODFAIL to XODFAIL
-    { "ODROP",           8 },
-    { "OEFAIL",         67 },
-    { "OENTER",         53 },
-    { "OFAIL",          -1 }, // rename OFAIL to XOFAIL
-    { "OFAILURE",        2 }, // rename OFAILURE to OFAIL
-    { "OGFAIL",         -1 }, // rename OGFAIL to XOGFAIL
-    { "OKILL",          -1 }, // rename OKILL to XOKILL
-    { "OLEAVE",         51 },
-    { "OLFAIL",         70 },
-    { "OMOVE",          56 },
-    { "OPAY",           -1 }, // rename OPAY to XOPAY
-    { "OPAYMENT",       22 }, // rename OPAYMENT to OPAY
-    { "OPENLOCK",       -1 }, // rename OPENLOCK to XOPENLOCK
-    { "ORFAIL",         -1 }, // rename ORFAIL to XORFAIL
-    { "OSUCC",          -1 }, // rename OSUCC to XSUCC
-    { "OSUCCESS",        1 }, // rename OSUCCESS to OSUCC
-    { "OTFAIL",         -1 }, // rename OTFAIL to XOTFAIL
-    { "OTPORT",         80 },
-    { "OTOFAIL",        -1 }, // rename OTOFAIL to XOTOFAIL
-    { "OUFAIL",         76 },
-    { "OUSE",           46 },
-    { "OXENTER",        34 },
-    { "OXLEAVE",        54 },
-    { "OXTPORT",        81 },
-    { "PAGELOCK",       -1 }, // rename PAGELOCK to XPAGELOCK
-    { "PARENTLOCK",     -1 }, // rename PARENTLOCK to XPARENTLOCK
-    { "PAY",            -1 }, // rename PAY to XPAY
-    { "PAYMENT",        23 }, // rename PAYMENT to PAY
-    { "PREFIX",         90 },
-    { "PROGCMD",        -1 }, // rename PROGCMD to XPROGCMD
-    { "QUEUEMAX",       -1 }, // rename QUEUEMAX to XQUEUEMAX
-    { "QUOTA",          -1 }, // rename QUOTA to XQUOTA
-    { "RECEIVELOCK",    -1 },
-    { "REJECT",         -1 }, // rename REJECT to XREJECT
-    { "REASON",         -1 }, // rename REASON to XREASON
-    { "RFAIL",          -1 }, // rename RFAIL to XRFAIL
-    { "RQUOTA",         38 },
-    { "RUNOUT",         18 },
-    { "SAYSTRING",      -1 }, // rename SAYSTRING to XSAYSTRING
-    { "SEMAPHORE",      47 },
-    { "SEX",             7 },
-    { "SIGNATURE",      -1 }, // rename SIGNATURE to XSIGNATURE
-    { "MAILSIGNATURE", 203 }, // rename MAILSIGNATURE to SIGNATURE
-    { "SPEECHMOD",      -1 }, // rename SPEECHMOD to XSPEECHMOD
-    { "SPEECHLOCK",     -1 }, // rename SPEECHLOCK to XSPEECHLOCK
-    { "STARTUP",        19 },
-    { "SUCC",            4 },
-    { "TELOUTLOCK",     -1 }, // rename TELOUTLOCK to XTELOUTLOCK
-    { "TFAIL",          -1 }, // rename TFAIL to XTFAIL
-    { "TIMEOUT",        -1 }, // rename TIMEOUT to XTIMEOUT
-    { "TPORT",          79 },
-    { "TPORTLOCK",      -1 }, // rename TPORTLOCK to XTPORTLOCK
-    { "TOFAIL",         -1 }, // rename TOFAIL to XTOFAIL
-    { "UFAIL",          75 },
-    { "USE",            45 },
-    { "USELOCK",        -1 },
-    { "USERLOCK",       -1 },
-    { "VA",            100 },
-    { "VB",            101 },
-    { "VC",            102 },
-    { "VD",            103 },
-    { "VE",            104 },
-    { "VF",            105 },
-    { "VG",            106 },
-    { "VH",            107 },
-    { "VI",            108 },
-    { "VJ",            109 },
-    { "VK",            110 },
-    { "VL",            111 },
-    { "VM",            112 },
-    { "VRML_URL",      220 },
-    { "VN",            113 },
-    { "VO",            114 },
-    { "VP",            115 },
-    { "VQ",            116 },
-    { "VR",            117 },
-    { "VS",            118 },
-    { "VT",            119 },
-    { "VU",            120 },
-    { "VV",            121 },
-    { "VW",            122 },
-    { "VX",            123 },
-    { "VY",            124 },
-    { "VZ",            125 },
-    { "XYXXY",         R7H_A_PASS },   // *Password
+    { "AMHEAR",         R7H_A_AMHEAR      },
+    { "AMOVE",          R7H_A_AMOVE       },
+    { "APAY",           -1                }, // rename APAY to XAPAY
+    { "APAYMENT",       R7H_A_APAY        }, // rename APAYMENT to APAY
+    { "ARFAIL",         -1                },
+    { "ASUCC",          -1                }, // rename ASUCC to XASUCC
+    { "ASUCCESS",       R7H_A_ASUCC       }, // rename ASUCCESS to ASUCC
+    { "ATFAIL",         -1                }, // rename ATFAIL to XATFAIL
+    { "ATPORT",         R7H_A_ATPORT      },
+    { "ATOFAIL",        -1                }, // rename ATOFAIL to XATOFAIL
+    { "AUFAIL",         R7H_A_AUFAIL      },
+    { "AUSE",           R7H_A_AUSE        },
+    { "AWAY",           R7H_A_AWAY        },
+    { "CHARGES",        R7H_A_CHARGES     },
+    { "CMDCHECK",       -1                }, // rename CMDCHECK to XCMDCHECK
+    { "COMMENT",        R7H_A_COMMENT     },
+    { "CONFORMAT",      R7H_A_LCON_FMT    },
+    { "CONNINFO",       -1                },
+    { "COST",           R7H_A_COST        },
+    { "CREATED",        -1                }, // rename CREATED to XCREATED
+    { "DAILY",          -1                }, // rename DAILY to XDAILY
+    { "DESC",           -1                }, // rename DESC to XDESC
+    { "DESCRIBE",       R7H_A_DESC        }, // rename DESCRIBE to DESC
+    { "DEFAULTLOCK",    -1                }, // rename DEFAULTLOCK to XDEFAULTLOCK
+    { "DESTROYER",      -1                }, // rename DESTROYER to XDESTROYER
+    { "DFAIL",          -1                }, // rename DFAIL to XDFAIL
+    { "DROP",           R7H_A_DROP        },
+    { "DROPLOCK",       -1                }, // rename DROPLOCK to XDROPLOCK
+    { "EALIAS",         R7H_A_EALIAS      },
+    { "EFAIL",          R7H_A_EFAIL       },
+    { "ENTER",          R7H_A_ENTER       },
+    { "ENTERLOCK",      -1                }, // rename ENTERLOCK to XENTERLOCK
+    { "EXITFORMAT",     R7H_A_LEXIT_FMT   },
+    { "EXITTO",         R7H_A_EXITTO      },
+    { "FAIL",           -1                }, // rename FAIL to XFAIL
+    { "FAILURE",        R7H_A_FAIL        }, // rename FAILURE to FAIL
+    { "FILTER",         R7H_A_FILTER      },
+    { "FORWARDLIST",    R7H_A_FORWARDLIST },
+    { "GETFROMLOCK",    -1                }, // rename GETFROMLOCK to XGETFROMLOCK
+    { "GFAIL",          -1                }, // rename GFAIL to XGFAIL
+    { "GIVELOCK",       -1                }, // rename GIVELOCK to XGIVELOCK
+    { "HTDESC",         -1                }, // rename HTDESC to XHTDESC
+    { "IDESC",          -1                }, // rename IDESC to XIDESC
+    { "IDESCRIBE",      R7H_A_IDESC       }, // rename IDESCRIBE to IDESC
+    { "IDLE",           R7H_A_IDLE        },
+    { "IDLETIMEOUT",    -1                }, // rename IDLETIMEOUT to XIDLETIMEOUT
+    { "INFILTER",       R7H_A_INFILTER    },
+    { "INPREFIX",       R7H_A_INPREFIX    },
+    { "KILL",           -1                }, // rename KILL to XKILL
+    { "LALIAS",         R7H_A_LALIAS      },
+    { "LAST",           R7H_A_LAST        },
+    { "LASTPAGE",       -1                }, // rename LASTPAGE to XLASTPAGE
+    { "LASTSITE",       R7H_A_LASTSITE    },
+    { "LASTIP",         R7H_A_LASTIP      },
+    { "LEAVE",          R7H_A_LEAVE       },
+    { "LEAVELOCK",      -1                }, // rename LEAVELOCK to XLEAVELOCK
+    { "LFAIL",          R7H_A_LFAIL       },
+    { "LINKLOCK",       -1                }, // rename LINKLOCK to XLINKLOCK
+    { "LISTEN",         R7H_A_LISTEN      },
+    { "LOGINDATA",      -1                }, // rename LOGINDATA to XLOGINDATA
+    { "MAILCURF",       -1                }, // rename MAILCURF to XMAILCURF
+    { "MAILFLAGS",      -1                }, // rename MAILFLAGS to XMAILFLAGS
+    { "MAILFOLDERS",    -1                }, // rename MAILFOLDERS to XMAILFOLDERS
+    { "MAILLOCK",       -1                }, // rename MAILLOCK to XMAILLOCK
+    { "MAILMSG",        -1                }, // rename MAILMSG to XMAILMSG
+    { "MAILSUB",        -1                }, // rename MAILSUB to XMAILSUB
+    { "MAILSUCC",       -1                }, // rename MAILSUCC to XMAILSUCC
+    { "MAILTO",         -1                }, // rename MAILTO to XMAILTO
+    { "MFAIL",          -1                }, // rename MFAIL to XMFAIL
+    { "MODIFIED",       -1                }, // rename MODIFIED to XMODIFIED
+    { "MONIKER",        -1                }, // rename MONIKER to XMONIKER
+    { "MOVE",           R7H_A_MOVE        },
+    { "NAME",           -1                }, // rename NAME to XNAME
+    { "NAMEFORMAT",     R7H_A_NAME_FMT    },
+    { "ODESC",          -1                }, // rename ODESC to XODESC
+    { "ODESCRIBE",      R7H_A_ODESC       }, // rename ODESCRIBE to ODESC
+    { "ODFAIL",         -1                }, // rename ODFAIL to XODFAIL
+    { "ODROP",          R7H_A_ODROP       },
+    { "OEFAIL",         R7H_A_OEFAIL      },
+    { "OENTER",         R7H_A_OENTER      },
+    { "OFAIL",          -1                }, // rename OFAIL to XOFAIL
+    { "OFAILURE",       R7H_A_OFAIL       }, // rename OFAILURE to OFAIL
+    { "OGFAIL",         -1                }, // rename OGFAIL to XOGFAIL
+    { "OKILL",          -1                }, // rename OKILL to XOKILL
+    { "OLEAVE",         R7H_A_OLEAVE      },
+    { "OLFAIL",         R7H_A_OLFAIL      },
+    { "OMOVE",          R7H_A_OMOVE       },
+    { "OPAY",           -1                }, // rename OPAY to XOPAY
+    { "OPAYMENT",       R7H_A_OPAY        }, // rename OPAYMENT to OPAY
+    { "OPENLOCK",       -1                }, // rename OPENLOCK to XOPENLOCK
+    { "ORFAIL",         -1                }, // rename ORFAIL to XORFAIL
+    { "OSUCC",          -1                }, // rename OSUCC to XSUCC
+    { "OSUCCESS",       R7H_A_OSUCC       }, // rename OSUCCESS to OSUCC
+    { "OTFAIL",         -1                }, // rename OTFAIL to XOTFAIL
+    { "OTPORT",         R7H_A_OTPORT      },
+    { "OTOFAIL",        -1                }, // rename OTOFAIL to XOTOFAIL
+    { "OUFAIL",         R7H_A_OUFAIL      },
+    { "OUSE",           R7H_A_OUSE        },
+    { "OXENTER",        R7H_A_OXENTER     },
+    { "OXLEAVE",        R7H_A_OXLEAVE     },
+    { "OXTPORT",        R7H_A_OXTPORT     },
+    { "PAGELOCK",       -1                }, // rename PAGELOCK to XPAGELOCK
+    { "PARENTLOCK",     -1                }, // rename PARENTLOCK to XPARENTLOCK
+    { "PAY",            -1                }, // rename PAY to XPAY
+    { "PAYMENT",        R7H_A_PAY         }, // rename PAYMENT to PAY
+    { "PREFIX",         R7H_A_PREFIX      },
+    { "PROGCMD",        -1                }, // rename PROGCMD to XPROGCMD
+    { "QUEUEMAX",       -1                }, // rename QUEUEMAX to XQUEUEMAX
+    { "QUOTA",          -1                }, // rename QUOTA to XQUOTA
+    { "RECEIVELOCK",    -1                },
+    { "REJECT",         -1                }, // rename REJECT to XREJECT
+    { "REASON",         -1                }, // rename REASON to XREASON
+    { "RFAIL",          -1                }, // rename RFAIL to XRFAIL
+    { "RQUOTA",         R7H_A_RQUOTA      },
+    { "RUNOUT",         R7H_A_RUNOUT      },
+    { "SAYSTRING",      -1                }, // rename SAYSTRING to XSAYSTRING
+    { "SEMAPHORE",      R7H_A_SEMAPHORE   },
+    { "SEX",            R7H_A_SEX         },
+    { "SIGNATURE",      -1                }, // rename SIGNATURE to XSIGNATURE
+    { "MAILSIGNATURE",  R7H_A_MAILSIG     }, // rename MAILSIGNATURE to SIGNATURE
+    { "SPEECHMOD",      -1                }, // rename SPEECHMOD to XSPEECHMOD
+    { "SPEECHLOCK",     -1                }, // rename SPEECHLOCK to XSPEECHLOCK
+    { "STARTUP",        R7H_A_STARTUP     },
+    { "SUCC",           R7H_A_SUCC        },
+    { "TELOUTLOCK",     -1                }, // rename TELOUTLOCK to XTELOUTLOCK
+    { "TFAIL",          -1                }, // rename TFAIL to XTFAIL
+    { "TIMEOUT",        -1                }, // rename TIMEOUT to XTIMEOUT
+    { "TPORT",          R7H_A_TPORT       },
+    { "TPORTLOCK",      -1                }, // rename TPORTLOCK to XTPORTLOCK
+    { "TOFAIL",         -1                }, // rename TOFAIL to XTOFAIL
+    { "UFAIL",          R7H_A_UFAIL       },
+    { "USE",            R7H_A_USE         },
+    { "USELOCK",        -1                },
+    { "USERLOCK",       -1                },
+    { "VA",             R7H_A_VA          },
+    { "VB",             R7H_A_VA+1        },
+    { "VC",             R7H_A_VA+2        },
+    { "VD",             R7H_A_VA+3        },
+    { "VE",             R7H_A_VA+4        },
+    { "VF",             R7H_A_VA+5        },
+    { "VG",             R7H_A_VA+6        },
+    { "VH",             R7H_A_VA+7        },
+    { "VI",             R7H_A_VA+8        },
+    { "VJ",             R7H_A_VA+9        },
+    { "VK",             R7H_A_VA+10       },
+    { "VL",             R7H_A_VA+11       },
+    { "VM",             R7H_A_VA+12       },
+    { "VN",             R7H_A_VA+13       },
+    { "VO",             R7H_A_VA+14       },
+    { "VP",             R7H_A_VA+15       },
+    { "VQ",             R7H_A_VA+16       },
+    { "VR",             R7H_A_VA+17       },
+    { "VS",             R7H_A_VA+18       },
+    { "VT",             R7H_A_VA+19       },
+    { "VU",             R7H_A_VA+20       },
+    { "VV",             R7H_A_VA+21       },
+    { "VW",             R7H_A_VA+22       },
+    { "VX",             R7H_A_VA+23       },
+    { "VY",             R7H_A_VA+24       },
+    { "VZ",             R7H_A_VA+25       },
+    { "XYXXY",          R7H_A_PASS        },   // *Password
 };
 
 static struct
