@@ -480,57 +480,11 @@ void R7H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
     m_pName = pName;
 }
 
-static char *EncodeString(const char *str, bool fExtraEscapes)
-{
-    static char buf[65536];
-    char *p = buf;
-    while (  '\0' != *str
-          && p < buf + sizeof(buf) - 2)
-    {
-        if (  '\\' == *str
-           || '"' == *str)
-        {
-            *p++ = '\\';
-            *p++ = *str++;
-        }
-        else if (fExtraEscapes && '\r' == *str)
-        {
-            *p++ = '\\';
-            *p++ = 'r';
-            str++;
-        }
-        else if (fExtraEscapes && '\n' == *str)
-        {
-            *p++ = '\\';
-            *p++ = 'n';
-            str++;
-        }
-        else if (fExtraEscapes && '\t' == *str)
-        {
-            *p++ = '\\';
-            *p++ = 't';
-            str++;
-        }
-        else if (fExtraEscapes && '\x1B' == *str)
-        {
-            *p++ = '\\';
-            *p++ = 'e';
-            str++;
-        }
-        else
-        {
-            *p++ = *str++;
-        }
-    }
-    *p = '\0';
-    return buf;
-}
-
-void R7H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
+void R7H_ATTRNAMEINFO::Write(FILE *fp)
 {
     if (m_fNumAndName)
     {
-        fprintf(fp, "+A%d\n%s\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "+A%d\n%s\n", m_iNum, m_pName);
     }
 }
 
@@ -815,12 +769,12 @@ void R7H_GAME::Validate() const
     ValidateObjects();
 }
 
-void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
+void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock)
 {
     fprintf(fp, "!%d\n", m_dbRef);
     if (NULL != m_pName)
     {
-        fprintf(fp, "%s\n", EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "%s\n", m_pName);
     }
     if (m_fLocation)
     {
@@ -931,7 +885,7 @@ void R7H_OBJECTINFO::Write(FILE *fp, bool bWriteLock, bool fExtraEscapes)
     {
         for (vector<R7H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            (*it)->Write(fp, fExtraEscapes);
+            (*it)->Write(fp);
         }
     }
     fprintf(fp, "<\n");
@@ -1039,11 +993,11 @@ void R7H_OBJECTINFO::Validate() const
     }
 }
 
-void R7H_ATTRINFO::Write(FILE *fp, bool fExtraEscapes) const
+void R7H_ATTRINFO::Write(FILE *fp) const
 {
     if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n%s\n", m_iNum, EncodeString(m_pValue, fExtraEscapes));
+        fprintf(fp, ">%d\n%s\n", m_iNum, m_pValue);
     }
 }
 
@@ -1051,7 +1005,6 @@ void R7H_GAME::Write(FILE *fp)
 {
     // TIMESTAMPS and escapes occured near the same time, but are not related.
     //
-    bool fExtraEscapes = false;
     fprintf(fp, "+V%d\n", m_flags);
     if (m_fSizeHint)
     {
@@ -1067,11 +1020,11 @@ void R7H_GAME::Write(FILE *fp)
     }
     for (vector<R7H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
     {
-        (*it)->Write(fp, fExtraEscapes);
+        (*it)->Write(fp);
     }
     for (map<int, R7H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Write(fp, (m_flags & R7H_V_ATRKEY) == 0, fExtraEscapes);
+        it->second->Write(fp, (m_flags & R7H_V_ATRKEY) == 0);
     }
 
     fprintf(fp, "***END OF DUMP***\n");

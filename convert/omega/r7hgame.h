@@ -315,7 +315,7 @@ public:
 
     void Validate(int ver) const;
 
-    void Write(FILE *fp, bool fExtraEscapes);
+    void Write(FILE *fp);
 
     R7H_ATTRNAMEINFO()
     {
@@ -342,7 +342,7 @@ public:
 
     void Validate() const;
 
-    void Write(FILE *fp, bool fExtraEscapes) const;
+    void Write(FILE *fp) const;
 
     R7H_ATTRINFO()
     {
@@ -468,7 +468,7 @@ public:
 
     void Validate() const;
 
-    void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
+    void Write(FILE *fp, bool bWriteLock);
 
     R7H_OBJECTINFO()
     {
