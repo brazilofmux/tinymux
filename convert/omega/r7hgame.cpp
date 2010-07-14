@@ -1100,50 +1100,51 @@ static int p6h_convert_type[] =
 
 static NameMask p6h_convert_obj_flags1[] =
 {
-    { "TRANSPARENT",    0x00000008UL },
-    { "WIZARD",         0x00000010UL },
-    { "LINK_OK",        0x00000020UL },
-    { "DARK",           0x00000040UL },
-    { "JUMP_OK",        0x00000080UL },
-    { "STICKY",         0x00000100UL },
-    { "DESTROY_OK",     0x00000200UL },
-    { "HAVEN",          0x00000400UL },
-    { "QUIET",          0x00000800UL },
-    { "HALT",           0x00001000UL },
-    { "DEBUG",          0x00002000UL },
-    { "GOING",          0x00004000UL },
-    { "MONITOR",        0x00008000UL },
-    { "MYOPIC",         0x00010000UL },
-    { "PUPPET",         0x00020000UL },
-    { "CHOWN_OK",       0x00040000UL },
-    { "ENTER_OK",       0x00080000UL },
-    { "VISUAL",         0x00100000UL },
-    { "OPAQUE",         0x00800000UL },
-    { "VERBOSE",        0x01000000UL },
-    { "NOSPOOF",        0x04000000UL },
-    { "SAFE",           0x10000000UL },
-    { "ROYALTY",        0x20000000UL },
-    { "AUDIBLE",        0x40000000UL },
-    { "TERSE",          0x80000000UL },
+    { "TRANSPARENT",    R7H_SEETHRU    },
+    { "WIZARD",         R7H_WIZARD     },
+    { "LINK_OK",        R7H_LINK_OK    },
+    { "DARK",           R7H_DARK       },
+    { "JUMP_OK",        R7H_JUMP_OK    },
+    { "STICKY",         R7H_STICKY     },
+    { "DESTROY_OK",     R7H_DESTROY_OK },
+    { "HAVEN",          R7H_HAVEN      },
+    { "QUIET",          R7H_QUIET      },
+    { "HALT",           R7H_HALT       },
+    { "DEBUG",          R7H_TRACE      },
+    { "GOING",          R7H_GOING      },
+    { "MONITOR",        R7H_MONITOR    },
+    { "MYOPIC",         R7H_MYOPIC     },
+    { "PUPPET",         R7H_PUPPET     },
+    { "CHOWN_OK",       R7H_CHOWN_OK   },
+    { "ENTER_OK",       R7H_ENTER_OK   },
+    { "VISUAL",         R7H_VISUAL     },
+    { "OPAQUE",         R7H_OPAQUE     },
+    { "VERBOSE",        R7H_VERBOSE    },
+    { "NOSPOOF",        R7H_NOSPOOF    },
+    { "SAFE",           R7H_SAFE       },
+    { "AUDIBLE",        R7H_HEARTHRU   },
+    { "TERSE",          R7H_TERSE      },
 };
 
 static NameMask p6h_convert_obj_flags2[] =
 {
-    { "ABODE",          0x00000002UL },
-    { "FLOATING",       0x00000004UL },
-    { "UNFINDABLE",     0x00000008UL },
-    { "LIGHT",          0x00000020UL },
-    { "ANSI",           0x00000200UL },
-    { "COLOR",          0x00000200UL },
-    { "FIXED",          0x00000800UL },
-    { "UNINSPECTED",    0x00001000UL },
-    { "NO_COMMAND",     0x00002000UL },
-    { "KEEPALIVE",      0x00004000UL },
-    { "GAGGED",         0x00040000UL },
-    { "ON-VACATION",    0x01000000UL },
-    { "SUSPECT",        0x10000000UL },
-    { "NOACCENTS",      0x20000000UL },
-    { "SLAVE",          0x80000000UL },
+    { "ABODE",          R7H_ABODE      },
+    { "FLOATING",       R7H_FLOATING   },
+    { "UNFINDABLE",     R7H_UNFINDABLE },
+    { "LIGHT",          R7H_LIGHT      },
+    { "ANSI",           R7H_ANSI|R7H_ANSICOLOR },
+    { "COLOR",          R7H_ANSI|R7H_ANSICOLOR },
+    { "SUSPECT",        R7H_SUSPECT    },
+    { "SLAVE",          R7H_SLAVE      },
+};
+
+static NameMask p6h_convert_obj_flags3[] =
+{
+    { "NO_COMMAND",     R7H_NOCOMMAND  },
+};
+
+static NameMask p6h_convert_obj_flags4[] =
+{
 };
 
 static NameMask p6h_convert_obj_powers1[] =
@@ -1169,7 +1170,6 @@ static NameMask p6h_convert_obj_powers1[] =
 
 static NameMask p6h_convert_obj_powers2[] =
 {
-    { "Builder",        0x00000001UL },
 };
 
 static struct
@@ -1613,18 +1613,20 @@ void R7H_GAME::ConvertFromP6H()
                 }
             }
 
-            // Immortal power is special.
+            // Immortal and Builder powers are special.
             //
             if (NULL != strcasestr(pPowers, "Immortal"))
             {
-                flags1 |= 0x00200000;
+                flags1 |= R7H_IMMORTAL;
+            }
+            if (NULL != strcasestr(pPowers, "Builder"))
+            {
+                flags2 |= R7H_BUILDER;
             }
         }
         poi->SetFlags1(flags1);
         poi->SetFlags2(flags2);
         poi->SetFlags3(flags3);
-        //poi->SetPowers1(powers1);
-        //poi->SetPowers2(powers2);
 
         if (it->second->m_fCreated)
         {
