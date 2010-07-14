@@ -560,10 +560,10 @@ void R7H_OBJECTINFO::SetAttrs(int nAttrs, vector<R7H_ATTRINFO *> *pvai)
                 if (r7h_locknums[i] == (*it)->m_iNum)
                 {
                     (*it)->m_fIsLock = true;
-                    (*it)->m_pKeyTree = r7hl_ParseKey((*it)->m_pValue);
+                    (*it)->m_pKeyTree = r7hl_ParseKey((*it)->m_pValueEncoded);
                     if (NULL == (*it)->m_pKeyTree)
                     {
-                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValue);
+                       fprintf(stderr, "WARNING: Lock key '%s' is not valid.\n", (*it)->m_pValueEncoded);
                     }
                     break;
                 }
@@ -572,15 +572,151 @@ void R7H_OBJECTINFO::SetAttrs(int nAttrs, vector<R7H_ATTRINFO *> *pvai)
     }
 }
 
+void R7H_ATTRINFO::SetNumOwnerFlagsAndValue(int iNum, int dbAttrOwner, int iAttrFlags, char *pValue)
+{
+    m_fNumAndValue = true;
+    free(m_pAllocated);
+    m_pAllocated = pValue;
+
+    m_iNum    = iNum;
+    m_pValueUnencoded  = pValue;
+    m_pValueEncoded = NULL;
+    m_iFlags  = iAttrFlags;
+    m_dbOwner = dbAttrOwner;
+
+    m_kState  = kEncode;
+}
+
 void R7H_ATTRINFO::SetNumAndValue(int iNum, char *pValue)
 {
     m_fNumAndValue = true;
-    m_iNum = iNum;
-    if (NULL != m_pValue)
+    free(m_pAllocated);
+    m_pAllocated = pValue;
+
+    m_iNum    = iNum;
+    m_pValueUnencoded  = NULL;
+    m_pValueEncoded = pValue;
+    m_iFlags  = 0;
+    m_dbOwner = R7H_NOTHING;
+
+    m_kState  = kDecode;
+}
+
+void R7H_ATTRINFO::EncodeDecode(int dbObjOwner)
+{
+    if (kEncode == m_kState)
     {
-        free(m_pValue);
+        // If using the default owner and flags (almost all attributes will),
+        // just store the string.
+        //
+        if (  (  m_dbOwner == dbObjOwner
+              || R7H_NOTHING == m_dbOwner)
+           && 0 == m_iFlags)
+        {
+            m_pValueEncoded = m_pValueUnencoded;
+        }
+        else
+        {
+            // Encode owner and flags into the attribute text.
+            //
+            if (R7H_NOTHING == m_dbOwner)
+            {
+                m_dbOwner = dbObjOwner;
+            }
+
+            char buffer[65536];
+            sprintf(buffer, "%c%d:%d:", ATR_INFO_CHAR, m_dbOwner, m_iFlags);
+            size_t n = strlen(buffer);
+            sprintf(buffer + n, "%s", m_pValueUnencoded);
+
+            delete m_pAllocated;
+            m_pAllocated = StringClone(buffer);
+
+            m_pValueEncoded = m_pAllocated;
+            m_pValueUnencoded = m_pAllocated + n;
+        }
+        m_kState = kNone;
     }
-    m_pValue = pValue;
+    else if (kDecode == m_kState)
+    {
+        // See if the first char of the attribute is the special character
+        //
+        m_iFlags = 0;
+        if (ATR_INFO_CHAR != *m_pValueEncoded)
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+        }
+
+        // It has the special character, crack the attr apart.
+        //
+        char *cp = m_pValueEncoded + 1;
+
+        // Get the attribute owner
+        //
+        bool neg = false;
+        if (*cp == '-')
+        {
+            neg = true;
+            cp++;
+        }
+        int tmp_owner = 0;
+        unsigned int ch = *cp;
+        while (isdigit(ch))
+        {
+            cp++;
+            tmp_owner = 10*tmp_owner + (ch-'0');
+            ch = *cp;
+        }
+        if (neg)
+        {
+            tmp_owner = -tmp_owner;
+        }
+
+        // If delimiter is not ':', just return attribute
+        //
+        if (*cp++ != ':')
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+            return;
+        }
+
+        // Get the attribute flags.
+        //
+        int tmp_flags = 0;
+        ch = *cp;
+        while (isdigit(ch))
+        {
+            cp++;
+            tmp_flags = 10*tmp_flags + (ch-'0');
+            ch = *cp;
+        }
+
+        // If delimiter is not ':', just return attribute.
+        //
+        if (*cp++ != ':')
+        {
+            m_dbOwner = dbObjOwner;
+            m_pValueUnencoded = m_pValueEncoded;
+            return;
+        }
+
+        // Get the attribute text.
+        //
+        if (tmp_owner < 0)
+        {
+            m_dbOwner = dbObjOwner;
+        }
+        else
+        {
+            m_dbOwner = tmp_owner;
+        }
+        m_iFlags = tmp_flags;
+        m_pValueUnencoded = cp;
+
+        m_kState = kNone;
+    }
 }
 
 void R7H_GAME::AddNumAndName(int iNum, char *pName)
@@ -639,6 +775,20 @@ void R7H_GAME::ValidateFlags() const
        || (flags & R7H_V_ATRMONEY) != 0)
     {
         fprintf(stderr, "WARNING: Expected a flatfile (with strings) instead of a structure file (with only object anchors).\n");
+    }
+}
+
+void R7H_GAME::Pass2()
+{
+    for (map<int, R7H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        if (NULL != itObj->second->m_pvai)
+        {
+            for (vector<R7H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
+            {
+                (*itAttr)->EncodeDecode(itObj->second->m_dbOwner);
+            }
+        }
     }
 }
 
@@ -900,9 +1050,9 @@ void R7H_ATTRINFO::Validate() const
         char buffer[65536];
         char *p = m_pKeyTree->Write(buffer);
         *p = '\0';
-        if (strcmp(m_pValue, buffer) != 0)
+        if (strcmp(m_pValueUnencoded, buffer) != 0)
         {
-            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValue);
+            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValueUnencoded);
         }
     }
 }
@@ -997,7 +1147,7 @@ void R7H_ATTRINFO::Write(FILE *fp) const
 {
     if (m_fNumAndValue)
     {
-        fprintf(fp, ">%d\n%s\n", m_iNum, m_pValue);
+        fprintf(fp, ">%d\n%s\n", m_iNum, m_pValueEncoded);
     }
 }
 
@@ -1131,22 +1281,22 @@ static struct
     int         iNum;
 } r7h_known_attrs[] =
 {
-    { "AAHEAR",         27 },
-    { "ACLONE",         20 },
-    { "ACONNECT",       39 },
-    { "ADESC",          -1 },  // rename ADESC to XADESC
-    { "ADESCRIBE",      36 },  // rename ADESCRIBE to ADESC
-    { "ADFAIL",         -1 },  // rename ADFAIL to XADFAIL
-    { "ADISCONNECT",    40 },
-    { "ADROP",          14 },
-    { "AEFAIL",         68 },
-    { "AENTER",         35 },
-    { "AFAIL",          -1 }, // rename AFAIL to XAFAIL
-    { "AFAILURE",       13 }, // rename AFAILURE to AFAIL
-    { "AGFAIL",         -1 }, // rename AGFAIL to XAGFAIL
-    { "AHEAR",          29 },
-    { "AKILL",          -1 }, // rename AKILL to XAKILL
-    { "ALEAVE",         52 },
+    { "AAHEAR",         R7H_A_AAHEAR      },
+    { "ACLONE",         R7H_A_ACLONE      },
+    { "ACONNECT",       R7H_A_ACONNECT    },
+    { "ADESC",          -1                },  // rename ADESC to XADESC
+    { "ADESCRIBE",      R7H_A_ADESC       },  // rename ADESCRIBE to ADESC
+    { "ADFAIL",         -1                },  // rename ADFAIL to XADFAIL
+    { "ADISCONNECT",    R7H_A_ADISCONNECT },
+    { "ADROP",          R7H_A_ADROP       },
+    { "AEFAIL",         R7H_A_AEFAIL      },
+    { "AENTER",         R7H_A_AENTER      },
+    { "AFAIL",          -1                }, // rename AFAIL to XAFAIL
+    { "AFAILURE",       R7H_A_AFAIL       }, // rename AFAILURE to AFAIL
+    { "AGFAIL",         -1                }, // rename AGFAIL to XAGFAIL
+    { "AHEAR",          R7H_A_AHEAR       },
+    { "AKILL",          -1                }, // rename AKILL to XAKILL
+    { "ALEAVE",         R7H_A_ALEAVE      },
     { "ALFAIL",         71 },
     { "ALIAS",          58 },
     { "ALLOWANCE",      -1 },
@@ -1176,7 +1326,6 @@ static struct
     { "DESCRIBE",        6 }, // rename DESCRIBE to DESC
     { "DEFAULTLOCK",    -1 }, // rename DEFAULTLOCK to XDEFAULTLOCK
     { "DESCFORMAT",    244 },
-    { "DESTINATION",   216 },
     { "DESTROYER",      -1 }, // rename DESTROYER to XDESTROYER
     { "DFAIL",          -1 }, // rename DFAIL to XDFAIL
     { "DROP",            9 },
@@ -1314,7 +1463,7 @@ static struct
     { "VX",            123 },
     { "VY",            124 },
     { "VZ",            125 },
-    { "XYXXY",           5 },   // *Password
+    { "XYXXY",         R7H_A_PASS },   // *Password
 };
 
 static struct
@@ -1667,7 +1816,7 @@ void R7H_GAME::ConvertFromP6H()
                     {
                         R7H_ATTRINFO *pai = new R7H_ATTRINFO;
                         int iNum = AttrNamesKnown[pAttrName];
-                        if (5 == iNum)
+                        if (R7H_A_PASS == iNum)
                         {
                             char buffer[200];
                             sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
@@ -1790,12 +1939,11 @@ void R7H_GAME::ResetPassword()
             {
                 for (vector<R7H_ATTRINFO *>::iterator itAttr = itObj->second->m_pvai->begin(); itAttr != itObj->second->m_pvai->end(); ++itAttr)
                 {
-                    if (5 == (*itAttr)->m_iNum)
+                    if (R7H_A_PASS == (*itAttr)->m_iNum)
                     {
                         // Change it to 'potrzebie'.
                         //
-                        free((*itAttr)->m_pValue);
-                        (*itAttr)->m_pValue = StringClone("XXNHc95o0HhAc");
+                        (*itAttr)->SetNumAndValue(R7H_A_PASS, StringClone("XXNHc95o0HhAc"));
 
                         fFound = true;
                     }
@@ -1807,7 +1955,7 @@ void R7H_GAME::ResetPassword()
                 // Add it.
                 //
                 R7H_ATTRINFO *pai = new R7H_ATTRINFO;
-                pai->SetNumAndValue(5, StringClone("XXNHc95o0HhAc"));
+                pai->SetNumAndValue(R7H_A_PASS, StringClone("XXNHc95o0HhAc"));
 
                 if (NULL == itObj->second->m_pvai)
                 {

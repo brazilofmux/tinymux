@@ -375,6 +375,7 @@ int main(int argc, char *argv[])
         r7hin = fpin;
         r7hparse();
         r7hin = NULL;
+        g_r7hgame.Pass2();
         g_r7hgame.Validate();
     }
     else
@@ -421,6 +422,13 @@ int main(int argc, char *argv[])
             g_t5xgame.ConvertFromT6H();
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
+        }
+        else if (  ePennMUSH == eInputType
+                && eRhostMUSH == eOutputType)
+        {
+            g_r7hgame.ConvertFromP6H();
+            g_r7hgame.Pass2();
+            g_r7hgame.Validate();
         }
         else
         {
@@ -542,7 +550,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    else if (eTinyMUSH== eOutputType)
+    else if (eTinyMUSH == eOutputType)
     {
         switch (eOutputVersion)
         {
@@ -590,6 +598,7 @@ int main(int argc, char *argv[])
         else if (eRhostMUSH == eOutputType)
         {
             g_r7hgame.ResetPassword();
+            g_r7hgame.Pass2();
         }
         else
         {
