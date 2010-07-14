@@ -2966,15 +2966,14 @@ int convert_r7h_flags1(int f)
        | T5X_NOSPOOF
        | T5X_ROBOT
        | T5X_SAFE
-       | T5X_ROYALTY
        | T5X_HEARTHRU
        | T5X_TERSE;
     return f;
 }
 
-int convert_r7h_flags2(int f)
+int convert_r7h_flags2(int f2, int f3, int f4)
 {
-    int g = f;
+    int g = f2;
     g &= T5X_KEY
        | T5X_ABODE
        | T5X_FLOATING
@@ -2983,39 +2982,70 @@ int convert_r7h_flags2(int f)
        | T5X_LIGHT
        | T5X_HAS_LISTEN
        | T5X_HAS_FWDLIST
-       | T5X_AUDITORIUM
-       | T5X_ANSI
-       | T5X_HEAD_FLAG
-       | T5X_FIXED
-       | T5X_UNINSPECTED
-       | T5X_NOBLEED
-       | T5X_STAFF
-       | T5X_HAS_DAILY
-       | T5X_GAGGED
-       | T5X_VACATION
-       | T5X_PLAYER_MAILS
-       | T5X_HTML
-       | T5X_BLIND
        | T5X_SUSPECT
        | T5X_CONNECTED
        | T5X_SLAVE;
 
+    if (f2 & R7H_ADMIN)
+    {
+        g |= T5X_STAFF;
+    }
+    if (f2 & (R7H_ANSI|R7H_ANSICOLOR))
+    {
+        g |= T5X_ANSI;
+    }
+    if (f3 & R7H_NOCOMMAND)
+    {
+        g |= T5X_NO_COMMAND;
+    }
+    if (f4 & R7H_BLIND)
+    {
+        g |= T5X_BLIND;
+    }
+
     return g;
 }
 
-int convert_r7h_flags3(int f)
+int convert_r7h_flags3(int f3, int f4)
 {
-    f &= T5X_MARK_0
-       | T5X_MARK_1
-       | T5X_MARK_2
-       | T5X_MARK_3
-       | T5X_MARK_4
-       | T5X_MARK_5
-       | T5X_MARK_6
-       | T5X_MARK_7
-       | T5X_MARK_8
-       | T5X_MARK_9;
-    return f;
+    int g = 0;
+    if (f3 & R7H_MARKER0)
+    {
+        g |= T5X_MARK_0;
+    }
+    if (f3 & R7H_MARKER1)
+    {
+        g |= T5X_MARK_1;
+    }
+    if (f3 & R7H_MARKER2)
+    {
+        g |= T5X_MARK_2;
+    }
+    if (f3 & R7H_MARKER3)
+    {
+        g |= T5X_MARK_3;
+    }
+    if (f3 & R7H_MARKER4)
+    {
+        g |= T5X_MARK_4;
+    }
+    if (f3 & R7H_MARKER5)
+    {
+        g |= T5X_MARK_5;
+    }
+    if (f3 & R7H_MARKER6)
+    {
+        g |= T5X_MARK_6;
+    }
+    if (f3 & R7H_MARKER7)
+    {
+        g |= T5X_MARK_7;
+    }
+    if (f3 & R7H_MARKER8)
+    {
+        g |= T5X_MARK_8;
+    }
+    return g;
 }
 
 int convert_r7h_attr_flags(int f)
@@ -3181,11 +3211,11 @@ void T5X_GAME::ConvertFromR7H()
         }
         if (it->second->m_fFlags2)
         {
-            flags2 = convert_r7h_flags2(it->second->m_iFlags2);
+            flags2 = convert_r7h_flags2(it->second->m_iFlags2, it->second->m_iFlags3, it->second->m_iFlags4);
         }
         if (it->second->m_fFlags3)
         {
-            flags3 = convert_r7h_flags3(it->second->m_iFlags3);
+            flags3 = convert_r7h_flags3(it->second->m_iFlags3, it->second->m_iFlags4);
         }
 
         // Powers
