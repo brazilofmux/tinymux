@@ -163,12 +163,12 @@
 #define R7H_A_LAMBDA         99
 #define R7H_A_VA            100
 
-#define R7H_A_CHANNEL       126    
-#define R7H_A_GUILD         127    
+#define R7H_A_CHANNEL       126
+#define R7H_A_GUILD         127
 #define R7H_A_ZA            129
-#define R7H_A_BCCMAIL       155    
-#define R7H_A_EMAIL         156    
-#define R7H_A_LMAIL         157    
+#define R7H_A_BCCMAIL       155
+#define R7H_A_EMAIL         156
+#define R7H_A_LMAIL         157
 #define R7H_A_LSHARE        158
 #define R7H_A_GFAIL         159
 #define R7H_A_OGFAIL        160
@@ -185,7 +185,7 @@
 #define R7H_A_TOFAIL        171
 #define R7H_A_OTOFAIL       172
 #define R7H_A_AOTFAIL       173
-#define R7H_A_ATOFAIL       174    
+#define R7H_A_ATOFAIL       174
 #define R7H_A_MPASS         175
 #define R7H_A_MPSET         176
 #define R7H_A_LASTPAGE      177
@@ -208,7 +208,7 @@
 #define R7H_A_ADESC2        194
 #define R7H_A_PAYLIM        195
 #define R7H_A_DESC2         196
-#define R7H_A_RACE          197    
+#define R7H_A_RACE          197
 #define R7H_A_CMDCHECK      198
 #define R7H_A_LSPEECH       199
 #define R7H_A_SFAIL         200
@@ -230,34 +230,34 @@
 #define R7H_A_LDROPTO       216
 #define R7H_A_LOPEN         217
 #define R7H_A_LCHOWN        218
-#define R7H_A_CAPTION       219    
-#define R7H_A_ANSINAME      220    
-#define R7H_A_TOTCMDS       221    
-#define R7H_A_LSTCMDS       222    
-#define R7H_A_RECEIVELIM    223    
-#define R7H_A_LCON_FMT      224    
+#define R7H_A_CAPTION       219
+#define R7H_A_ANSINAME      220
+#define R7H_A_TOTCMDS       221
+#define R7H_A_LSTCMDS       222
+#define R7H_A_RECEIVELIM    223
+#define R7H_A_LCON_FMT      224
 #define R7H_A_LEXIT_FMT     225
 #define R7H_A_LDEXIT_FMT    226
 #define R7H_A_MODIFY_TIME   227
 #define R7H_A_CREATED_TIME  228
-#define R7H_A_ALTNAME       229    
-#define R7H_A_LALTNAME      230    
-#define R7H_A_INVTYPE       231    
-#define R7H_A_TOTCHARIN     232    
-#define R7H_A_TOTCHAROUT    233    
-#define R7H_A_LGIVETO       234    
-#define R7H_A_LGETFROM      235    
-#define R7H_A_SAYSTRING     236    
-#define R7H_A_LASTCREATE    237    
-#define R7H_A_SAVESENDMAIL  238    
-#define R7H_A_PROGBUFFER    239    
-#define R7H_A_PROGPROMPT    240    
-#define R7H_A_PROGPROMPTBUF 241    
-#define R7H_A_TEMPBUFFER    242    
+#define R7H_A_ALTNAME       229
+#define R7H_A_LALTNAME      230
+#define R7H_A_INVTYPE       231
+#define R7H_A_TOTCHARIN     232
+#define R7H_A_TOTCHAROUT    233
+#define R7H_A_LGIVETO       234
+#define R7H_A_LGETFROM      235
+#define R7H_A_SAYSTRING     236
+#define R7H_A_LASTCREATE    237
+#define R7H_A_SAVESENDMAIL  238
+#define R7H_A_PROGBUFFER    239
+#define R7H_A_PROGPROMPT    240
+#define R7H_A_PROGPROMPTBUF 241
+#define R7H_A_TEMPBUFFER    242
 #define R7H_A_DESTVATTRMAX  243
 #define R7H_A_RLEVEL        244
 #define R7H_A_NAME_FMT      245
-#define R7H_A_LASTIP        246    
+#define R7H_A_LASTIP        246
 #define R7H_A_SPAMPROTECT   247
 #define R7H_A_EXITTO        248
 #define R7H_A_VLIST         252
@@ -391,6 +391,16 @@
 #define R7H_SPAMMONITOR     0x00080000UL
 #define R7H_BLIND           0x00100000UL
 #define R7H_NOCODE          0x00200000UL
+
+// Object Toggleword 1
+//
+// ...
+
+// Object Toggleword 2
+//
+// ...
+#define R7H_TOG_KEEPALIVE   0x00010000UL
+// ...
 
 #define ATR_INFO_CHAR 0x01
 #define R7H_NOTHING   (-1)

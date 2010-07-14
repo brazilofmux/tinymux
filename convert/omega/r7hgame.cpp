@@ -1246,28 +1246,35 @@ static NameMask p6h_convert_obj_flags4[] =
 {
 };
 
-static NameMask p6h_convert_obj_powers1[] =
+static NameMask p6h_convert_obj_toggles1[] =
 {
-    { "Announce",       0x00000004UL },
-    { "Boot",           0x00000008UL },
-    { "Guest",          0x02000000UL },
-    { "Halt",           0x00000010UL },
-    { "Hide",           0x00000800UL },
-    { "Idle",           0x00001000UL },
-    { "Long_Fingers",   0x00004000UL },
-    { "No_Pay",         0x00000200UL },
-    { "No_Quota",       0x00000400UL },
-    { "Poll",           0x00800000UL },
-    { "Quotas",         0x00000001UL },
-    { "Search",         0x00002000UL },
-    { "See_All",        0x00000080UL },
-    { "See_Queue",      0x00100000UL },
-    { "Tport_Anything", 0x40000000UL },
-    { "Tport_Anywhere", 0x20000000UL },
-    { "Unkillable",     0x80000000UL },
 };
 
-static NameMask p6h_convert_obj_powers2[] =
+static NameMask p6h_convert_obj_toggles2[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles3[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles4[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles5[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles6[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles7[] =
+{
+};
+
+static NameMask p6h_convert_obj_toggles8[] =
 {
 };
 
@@ -1647,12 +1654,21 @@ void R7H_GAME::ConvertFromP6H()
             poi->SetPennies(it->second->m_iPennies);
         }
 
+        int flags1   = iType;
+        int flags2   = 0;
+        int flags3   = 0;
+        int flags4   = 0;
+        int toggles1 = 0;
+        int toggles2 = 0;
+        int toggles3 = 0;
+        int toggles4 = 0;
+        int toggles5 = 0;
+        int toggles6 = 0;
+        int toggles7 = 0;
+        int toggles8 = 0;
+
         // Flagwords
         //
-        int flags1 = iType;
-        int flags2 = 0;
-        int flags3 = 0;
-        int flags4 = 0;
         char *pFlags = it->second->m_pFlags;
         if (NULL != pFlags)
         {
@@ -1695,36 +1711,101 @@ void R7H_GAME::ConvertFromP6H()
                     flags4 |= p6h_convert_obj_flags4[i].mask;
                 }
             }
+
+            // KEEPALIVE flag is special.
+            //
+            if (NULL != strcasestr(pFlags, "KEEPALIVE"))
+            {
+                toggles2 |= R7H_TOG_KEEPALIVE;
+            }
         }
 
         // Powers
         //
-        int powers1 = 0;
-        int powers2 = 0;
         char *pPowers = it->second->m_pPowers;
         if (NULL != pPowers)
         {
-            // First powerword
+            // First toggleword
             //
-            for (int i = 0; i < sizeof(p6h_convert_obj_powers1)/sizeof(p6h_convert_obj_powers1[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles1)/sizeof(p6h_convert_obj_toggles1[0]); i++)
             {
-                if (NULL != strcasestr(pPowers, p6h_convert_obj_powers1[i].pName))
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles1[i].pName))
                 {
-                    powers1 |= p6h_convert_obj_powers1[i].mask;
+                    toggles1 |= p6h_convert_obj_toggles1[i].mask;
                 }
             }
 
-            // Second powerword
+            // Second toggleword
             //
-            for (int i = 0; i < sizeof(p6h_convert_obj_powers2)/sizeof(p6h_convert_obj_powers2[0]); i++)
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles2)/sizeof(p6h_convert_obj_toggles2[0]); i++)
             {
-                if (NULL != strcasestr(pPowers, p6h_convert_obj_powers2[i].pName))
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles2[i].pName))
                 {
-                    powers2 |= p6h_convert_obj_powers2[i].mask;
+                    toggles2 |= p6h_convert_obj_toggles2[i].mask;
                 }
             }
 
-            // Immortal and Builder powers are special.
+            // Third toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles3)/sizeof(p6h_convert_obj_toggles3[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles3[i].pName))
+                {
+                    toggles3 |= p6h_convert_obj_toggles3[i].mask;
+                }
+            }
+
+            // Fourth toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles4)/sizeof(p6h_convert_obj_toggles4[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles4[i].pName))
+                {
+                    toggles4 |= p6h_convert_obj_toggles4[i].mask;
+                }
+            }
+
+            // Fifth toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles5)/sizeof(p6h_convert_obj_toggles5[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles5[i].pName))
+                {
+                    toggles5 |= p6h_convert_obj_toggles5[i].mask;
+                }
+            }
+
+            // Sixth toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles6)/sizeof(p6h_convert_obj_toggles6[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles6[i].pName))
+                {
+                    toggles6 |= p6h_convert_obj_toggles6[i].mask;
+                }
+            }
+
+            // Seventh toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles7)/sizeof(p6h_convert_obj_toggles7[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles7[i].pName))
+                {
+                    toggles7 |= p6h_convert_obj_toggles7[i].mask;
+                }
+            }
+
+            // Eighth toggleword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_toggles8)/sizeof(p6h_convert_obj_toggles8[0]); i++)
+            {
+                if (NULL != strcasestr(pPowers, p6h_convert_obj_toggles8[i].pName))
+                {
+                    toggles8 |= p6h_convert_obj_toggles8[i].mask;
+                }
+            }
+
+            // Immortal, Builder, and Guest powers are special.
             //
             if (NULL != strcasestr(pPowers, "Immortal"))
             {
@@ -1734,10 +1815,22 @@ void R7H_GAME::ConvertFromP6H()
             {
                 flags2 |= R7H_BUILDER;
             }
+            if (NULL != strcasestr(pPowers, "Guest"))
+            {
+                flags2 |= R7H_GUEST_FLAG;
+            }
         }
         poi->SetFlags1(flags1);
         poi->SetFlags2(flags2);
         poi->SetFlags3(flags3);
+        poi->SetToggles1(toggles1);
+        poi->SetToggles2(toggles2);
+        poi->SetToggles3(toggles3);
+        poi->SetToggles4(toggles4);
+        poi->SetToggles5(toggles5);
+        poi->SetToggles6(toggles6);
+        poi->SetToggles7(toggles7);
+        poi->SetToggles8(toggles8);
 
         if (it->second->m_fCreated)
         {
