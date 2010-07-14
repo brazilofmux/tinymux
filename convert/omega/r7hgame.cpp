@@ -499,37 +499,33 @@ void R7H_OBJECTINFO::SetName(char *pName)
 
 const int r7h_locknums[] =
 {
-     42,  // A_LOCK
-     59,  // A_LENTER
-     60,  // A_LLEAVE
-     61,  // A_LPAGE
-     62,  // A_LUSE
-     63,  // A_LGIVE
-     85,  // A_LTPORT
-     86,  // A_LDROP
-     87,  // A_LRECEIVE
-     93,  // A_LLINK
-     94,  // A_LTELOUT
-     96,  // A_LCONTROL
-     97,  // A_LUSER
-     98,  // A_LPARENT
-    157,  // A_LMAIL
-    158,  // A_LSHARE
-    188,  // A_LZONEWIZ
-    189,  // A_LZONETO
-    190,  // A_LTWINK
-    199,  // A_LSPEECH
-    203,  // A_LDARK
-    209,  // A_LSPEECH
-    216,  // A_LDROPTO
-    217,  // A_LOPEN
-    218,  // A_LCHOWN
-    225,  // A_LMAIL
-    226,  // A_LOPEN
-    230,  // A_LALTNAME
-    231,  // A_LVISIBLE
-    234,  // A_LGIVETO
-    235,  // A_LGETFROM
+    R7H_A_LOCK,
+    R7H_A_LENTER,
+    R7H_A_LLEAVE,
+    R7H_A_LPAGE,
+    R7H_A_LUSE,
+    R7H_A_LGIVE,
+    R7H_A_LTPORT,
+    R7H_A_LDROP,
+    R7H_A_LRECEIVE,
+    R7H_A_LLINK,
+    R7H_A_LTELOUT,
+    R7H_A_LCONTROL,
+    R7H_A_LUSER,
+    R7H_A_LPARENT,
+    R7H_A_LMAIL,
+    R7H_A_LSHARE,
+    R7H_A_LZONEWIZ,
+    R7H_A_LZONETO,
+    R7H_A_LTWINK,
+    R7H_A_LSPEECH,
+    R7H_A_LDARK,
+    R7H_A_LDROPTO,
+    R7H_A_LOPEN,
+    R7H_A_LCHOWN,
+    R7H_A_LALTNAME,
+    R7H_A_LGIVETO,
+    R7H_A_LGETFROM,
 };
 
 void R7H_OBJECTINFO::SetAttrs(int nAttrs, vector<R7H_ATTRINFO *> *pvai)
@@ -1469,22 +1465,22 @@ static struct
     int         iNum;
 } p6h_locknames[] =
 {
-    { "Basic",       42 },
-    { "Enter",       59 },
-    { "Use",         62 },
-    { "Zone",        -1 },
-    { "Page",        61 },
-    { "Teleport",    85 },
-    { "Speech",     209 },
-    { "Parent",      98 },
-    { "Link",        93 },
-    { "Leave",       60 },
-    { "Drop",        86 },
-    { "Give",        63 },
-    { "Receive",     87 },
-    { "Mail",       225 },
-    { "Take",       235 },
-    { "Open",       226 },
+    { "Basic",       R7H_A_LOCK     },
+    { "Enter",       R7H_A_LENTER   },
+    { "Use",         R7H_A_LUSE     },
+    { "Zone",        -1             },
+    { "Page",        R7H_A_LPAGE    },
+    { "Teleport",    R7H_A_LTPORT   },
+    { "Speech",      R7H_A_LSPEECH  },
+    { "Parent",      R7H_A_LPARENT  },
+    { "Link",        R7H_A_LLINK    },
+    { "Leave",       R7H_A_LLEAVE   },
+    { "Drop",        R7H_A_LDROP    },
+    { "Give",        R7H_A_LGIVE    },
+    { "Receive",     R7H_A_LRECEIVE },
+    { "Mail",        R7H_A_LMAIL    },
+    { "Take",        R7H_A_LGETFROM },
+    { "Open",        R7H_A_LOPEN    },
 };
 
 static NameMask p6h_attr_flags[] =
