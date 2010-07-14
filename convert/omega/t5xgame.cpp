@@ -679,25 +679,25 @@ void T5X_OBJECTINFO::SetName(char *pName)
 
 const int t5x_locknums[] =
 {
-     42,  // A_LOCK
-     59,  // A_LENTER
-     60,  // A_LLEAVE
-     61,  // A_LPAGE
-     62,  // A_LUSE
-     63,  // A_LGIVE
-     85,  // A_LTPORT
-     86,  // A_LDROP
-     87,  // A_LRECEIVE
-     93,  // A_LLINK
-     94,  // A_LTELOUT
-     97,  // A_LUSER
-     98,  // A_LPARENT
-     99,  // A_LCONTROL
-    127,  // A_LGET
-    209,  // A_LSPEECH
-    225,  // A_LMAIL
-    226,  // A_LOPEN
-    231,  // A_LVISIBLE
+    T5X_A_LOCK,
+    T5X_A_LENTER,
+    T5X_A_LLEAVE,
+    T5X_A_LPAGE,
+    T5X_A_LUSE,
+    T5X_A_LGIVE,
+    T5X_A_LTPORT,
+    T5X_A_LDROP,
+    T5X_A_LRECEIVE,
+    T5X_A_LLINK,
+    T5X_A_LTELOUT,
+    T5X_A_LUSER,
+    T5X_A_LPARENT,
+    T5X_A_LCONTROL,
+    T5X_A_LGET,
+    T5X_A_LSPEECH,
+    T5X_A_LMAIL,
+    T5X_A_LOPEN,
+    T5X_A_LVISIBLE,
 };
 
 void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
@@ -1341,76 +1341,76 @@ static int p6h_convert_type[] =
 
 static NameMask p6h_convert_obj_flags1[] =
 {
-    { "TRANSPARENT",    0x00000008UL },
-    { "WIZARD",         0x00000010UL },
-    { "LINK_OK",        0x00000020UL },
-    { "DARK",           0x00000040UL },
-    { "JUMP_OK",        0x00000080UL },
-    { "STICKY",         0x00000100UL },
-    { "DESTROY_OK",     0x00000200UL },
-    { "HAVEN",          0x00000400UL },
-    { "QUIET",          0x00000800UL },
-    { "HALT",           0x00001000UL },
-    { "DEBUG",          0x00002000UL },
-    { "GOING",          0x00004000UL },
-    { "MONITOR",        0x00008000UL },
-    { "MYOPIC",         0x00010000UL },
-    { "PUPPET",         0x00020000UL },
-    { "CHOWN_OK",       0x00040000UL },
-    { "ENTER_OK",       0x00080000UL },
-    { "VISUAL",         0x00100000UL },
-    { "OPAQUE",         0x00800000UL },
-    { "VERBOSE",        0x01000000UL },
-    { "NOSPOOF",        0x04000000UL },
-    { "SAFE",           0x10000000UL },
-    { "ROYALTY",        0x20000000UL },
-    { "AUDIBLE",        0x40000000UL },
-    { "TERSE",          0x80000000UL },
+    { "TRANSPARENT",    T5X_SEETHRU     },
+    { "WIZARD",         T5X_WIZARD      },
+    { "LINK_OK",        T5X_LINK_OK     },
+    { "DARK",           T5X_DARK        },
+    { "JUMP_OK",        T5X_JUMP_OK     },
+    { "STICKY",         T5X_STICKY      },
+    { "DESTROY_OK",     T5X_DESTROY_OK  },
+    { "HAVEN",          T5X_HAVEN       },
+    { "QUIET",          T5X_QUIET       },
+    { "HALT",           T5X_HALT        },
+    { "DEBUG",          T5X_TRACE       },
+    { "GOING",          T5X_GOING       },
+    { "MONITOR",        T5X_MONITOR     },
+    { "MYOPIC",         T5X_MYOPIC      },
+    { "PUPPET",         T5X_PUPPET      },
+    { "CHOWN_OK",       T5X_CHOWN_OK    },
+    { "ENTER_OK",       T5X_ENTER_OK    },
+    { "VISUAL",         T5X_VISUAL      },
+    { "OPAQUE",         T5X_OPAQUE      },
+    { "VERBOSE",        T5X_VERBOSE     },
+    { "NOSPOOF",        T5X_NOSPOOF     },
+    { "SAFE",           T5X_SAFE        },
+    { "ROYALTY",        T5X_ROYALTY     },
+    { "AUDIBLE",        T5X_HEARTHRU    },
+    { "TERSE",          T5X_TERSE       },
 };
 
 static NameMask p6h_convert_obj_flags2[] =
 {
-    { "ABODE",          0x00000002UL },
-    { "FLOATING",       0x00000004UL },
-    { "UNFINDABLE",     0x00000008UL },
-    { "LIGHT",          0x00000020UL },
-    { "ANSI",           0x00000200UL },
-    { "COLOR",          0x00000200UL },
-    { "FIXED",          0x00000800UL },
-    { "UNINSPECTED",    0x00001000UL },
-    { "NO_COMMAND",     0x00002000UL },
-    { "KEEPALIVE",      0x00004000UL },
-    { "GAGGED",         0x00040000UL },
-    { "ON-VACATION",    0x01000000UL },
-    { "SUSPECT",        0x10000000UL },
-    { "NOACCENTS",      0x20000000UL },
-    { "SLAVE",          0x80000000UL },
+    { "ABODE",          T5X_ABODE       },
+    { "FLOATING",       T5X_FLOATING    },
+    { "UNFINDABLE",     T5X_UNFINDABLE  },
+    { "LIGHT",          T5X_LIGHT       },
+    { "ANSI",           T5X_ANSI        },
+    { "COLOR",          T5X_ANSI        },
+    { "FIXED",          T5X_FIXED       },
+    { "UNINSPECTED",    T5X_UNINSPECTED },
+    { "NO_COMMAND",     T5X_NO_COMMAND  },
+    { "KEEPALIVE",      T5X_KEEPALIVE   },
+    { "GAGGED",         T5X_GAGGED      },
+    { "ON-VACATION",    T5X_VACATION    },
+    { "SUSPECT",        T5X_SUSPECT     },
+    { "NOACCENTS",      T5X_ASCII       },
+    { "SLAVE",          T5X_SLAVE       },
 };
 
 static NameMask p6h_convert_obj_powers1[] =
 {
-    { "Announce",       0x00000004UL },
-    { "Boot",           0x00000008UL },
-    { "Guest",          0x02000000UL },
-    { "Halt",           0x00000010UL },
-    { "Hide",           0x00000800UL },
-    { "Idle",           0x00001000UL },
-    { "Long_Fingers",   0x00004000UL },
-    { "No_Pay",         0x00000200UL },
-    { "No_Quota",       0x00000400UL },
-    { "Poll",           0x00800000UL },
-    { "Quotas",         0x00000001UL },
-    { "Search",         0x00002000UL },
-    { "See_All",        0x00000080UL },
-    { "See_Queue",      0x00100000UL },
-    { "Tport_Anything", 0x40000000UL },
-    { "Tport_Anywhere", 0x20000000UL },
-    { "Unkillable",     0x80000000UL },
+    { "Announce",       T5X_POW_ANNOUNCE    },
+    { "Boot",           T5X_POW_BOOT        },
+    { "Guest",          T5X_POW_GUEST       },
+    { "Halt",           T5X_POW_HALT        },
+    { "Hide",           T5X_POW_HIDE        },
+    { "Idle",           T5X_POW_IDLE        },
+    { "Long_Fingers",   T5X_POW_LONGFINGERS },
+    { "No_Pay",         T5X_POW_FREE_MONEY  },
+    { "No_Quota",       T5X_POW_FREE_QUOTA  },
+    { "Poll",           T5X_POW_POLL        },
+    { "Quotas",         T5X_POW_CHG_QUOTAS  },
+    { "Search",         T5X_POW_SEARCH      },
+    { "See_All",        T5X_POW_EXAM_ALL    },
+    { "See_Queue",      T5X_POW_SEE_QUEUE   },
+    { "Tport_Anything", T5X_POW_TEL_UNRST   },
+    { "Tport_Anywhere", T5X_POW_TEL_ANYWHR  },
+    { "Unkillable",     T5X_POW_UNKILLABLE  },
 };
 
 static NameMask p6h_convert_obj_powers2[] =
 {
-    { "Builder",        0x00000001UL },
+    { "Builder",        T5X_POW_BUILDER     },
 };
 
 static struct
@@ -1419,190 +1419,190 @@ static struct
     int         iNum;
 } t5x_known_attrs[] =
 {
-    { "AAHEAR",         27 },
-    { "ACLONE",         20 },
-    { "ACONNECT",       39 },
-    { "ADESC",          -1 },  // rename ADESC to XADESC
-    { "ADESCRIBE",      36 },  // rename ADESCRIBE to ADESC
-    { "ADFAIL",         -1 },  // rename ADFAIL to XADFAIL
-    { "ADISCONNECT",    40 },
-    { "ADROP",          14 },
-    { "AEFAIL",         68 },
-    { "AENTER",         35 },
-    { "AFAIL",          -1 }, // rename AFAIL to XAFAIL
-    { "AFAILURE",       13 }, // rename AFAILURE to AFAIL
-    { "AGFAIL",         -1 }, // rename AGFAIL to XAGFAIL
-    { "AHEAR",          29 },
-    { "AKILL",          -1 }, // rename AKILL to XAKILL
-    { "ALEAVE",         52 },
-    { "ALFAIL",         71 },
-    { "ALIAS",          58 },
-    { "ALLOWANCE",      -1 },
-    { "AMAIL",         202 },
-    { "AMHEAR",         28 },
-    { "AMOVE",          57 },
-    { "APAY",           -1 }, // rename APAY to XAPAY
-    { "APAYMENT",       21 }, // rename APAYMENT to APAY
-    { "ARFAIL",         -1 },
-    { "ASUCC",          -1 }, // rename ASUCC to XASUCC
-    { "ASUCCESS",       12 }, // rename AUCCESS to ASUCC
-    { "ATFAIL",         -1 }, // rename ATFAIL to XATFAIL
-    { "ATPORT",         82 },
-    { "ATOFAIL",        -1 }, // rename ATOFAIL to XATOFAIL
-    { "AUFAIL",         77 },
-    { "AUSE",           16 },
-    { "AWAY",           73 },
-    { "CHARGES",        17 },
-    { "CMDCHECK",       -1 }, // rename CMDCHECK to XCMDCHECK
-    { "COMMENT",        44 },
-    { "CONFORMAT",     242 },
-    { "CONNINFO",       -1 },
-    { "COST",           24 },
-    { "CREATED",        -1 }, // rename CREATED to XCREATED
-    { "DAILY",          -1 }, // rename DAILY to XDAILY
-    { "DESC",           -1 }, // rename DESC to XDESC
-    { "DESCRIBE",        6 }, // rename DESCRIBE to DESC
-    { "DEFAULTLOCK",    -1 }, // rename DEFAULTLOCK to XDEFAULTLOCK
-    { "DESCFORMAT",    244 },
-    { "DESTINATION",   216 },
-    { "DESTROYER",      -1 }, // rename DESTROYER to XDESTROYER
-    { "DFAIL",          -1 }, // rename DFAIL to XDFAIL
-    { "DROP",            9 },
-    { "DROPLOCK",       -1 }, // rename DROPLOCK to XDROPLOCK
-    { "EALIAS",         64 },
-    { "EFAIL",          66 },
-    { "ENTER",          33 },
-    { "ENTERLOCK",      -1 }, // rename ENTERLOCK to XENTERLOCK
-    { "EXITFORMAT",    241 },
-    { "EXITTO",        216 },
-    { "FAIL",           -1 }, // rename FAIL to XFAIL
-    { "FAILURE",         3 }, // rename FAILURE to FAIL
-    { "FILTER",         92 },
-    { "FORWARDLIST",    95 },
-    { "GETFROMLOCK",    -1 }, // rename GETFROMLOCK to XGETFROMLOCK
-    { "GFAIL",          -1 }, // rename GFAIL to XGFAIL
-    { "GIVELOCK",       -1 }, // rename GIVELOCK to XGIVELOCK
-    { "HTDESC",         -1 }, // rename HTDESC to XHTDESC
-    { "IDESC",          -1 }, // rename IDESC to XIDESC
-    { "IDESCRIBE",      32 }, // rename IDESCRIBE to IDESC
-    { "IDLE",           74 },
-    { "IDLETIMEOUT",    -1 }, // rename IDLETIMEOUT to XIDLETIMEOUT
-    { "INFILTER",       91 },
-    { "INPREFIX",       89 },
-    { "KILL",           -1 }, // rename KILL to XKILL
-    { "LALIAS",         65 },
-    { "LAST",           30 },
-    { "LASTPAGE",       -1 }, // rename LASTPAGE to XLASTPAGE
-    { "LASTSITE",       88 },
-    { "LASTIP",        144 },
-    { "LEAVE",          50 },
-    { "LEAVELOCK",      -1 }, // rename LEAVELOCK to XLEAVELOCK
-    { "LFAIL",          69 },
-    { "LINKLOCK",       -1 }, // rename LINKLOCK to XLINKLOCK
-    { "LISTEN",         26 },
-    { "LOGINDATA",      -1 }, // rename LOGINDATA to XLOGINDATA
-    { "MAILCURF",       -1 }, // rename MAILCURF to XMAILCURF
-    { "MAILFLAGS",      -1 }, // rename MAILFLAGS to XMAILFLAGS
-    { "MAILFOLDERS",    -1 }, // rename MAILFOLDERS to XMAILFOLDERS
-    { "MAILLOCK",       -1 }, // rename MAILLOCK to XMAILLOCK
-    { "MAILMSG",        -1 }, // rename MAILMSG to XMAILMSG
-    { "MAILSUB",        -1 }, // rename MAILSUB to XMAILSUB
-    { "MAILSUCC",       -1 }, // rename MAILSUCC to XMAILSUCC
-    { "MAILTO",         -1 }, // rename MAILTO to XMAILTO
-    { "MFAIL",          -1 }, // rename MFAIL to XMFAIL
-    { "MODIFIED",       -1 }, // rename MODIFIED to XMODIFIED
-    { "MONIKER",        -1 }, // rename MONIKER to XMONIKER
-    { "MOVE",           55 },
-    { "NAME",           -1 }, // rename NAME to XNAME
-    { "NAMEFORMAT",    243 },
-    { "ODESC",          -1 }, // rename ODESC to XODESC
-    { "ODESCRIBE",      37 }, // rename ODESCRIBE to ODESC
-    { "ODFAIL",         -1 }, // rename ODFAIL to XODFAIL
-    { "ODROP",           8 },
-    { "OEFAIL",         67 },
-    { "OENTER",         53 },
-    { "OFAIL",          -1 }, // rename OFAIL to XOFAIL
-    { "OFAILURE",        2 }, // rename OFAILURE to OFAIL
-    { "OGFAIL",         -1 }, // rename OGFAIL to XOGFAIL
-    { "OKILL",          -1 }, // rename OKILL to XOKILL
-    { "OLEAVE",         51 },
-    { "OLFAIL",         70 },
-    { "OMOVE",          56 },
-    { "OPAY",           -1 }, // rename OPAY to XOPAY
-    { "OPAYMENT",       22 }, // rename OPAYMENT to OPAY
-    { "OPENLOCK",       -1 }, // rename OPENLOCK to XOPENLOCK
-    { "ORFAIL",         -1 }, // rename ORFAIL to XORFAIL
-    { "OSUCC",          -1 }, // rename OSUCC to XSUCC
-    { "OSUCCESS",        1 }, // rename OSUCCESS to OSUCC
-    { "OTFAIL",         -1 }, // rename OTFAIL to XOTFAIL
-    { "OTPORT",         80 },
-    { "OTOFAIL",        -1 }, // rename OTOFAIL to XOTOFAIL
-    { "OUFAIL",         76 },
-    { "OUSE",           46 },
-    { "OXENTER",        34 },
-    { "OXLEAVE",        54 },
-    { "OXTPORT",        81 },
-    { "PAGELOCK",       -1 }, // rename PAGELOCK to XPAGELOCK
-    { "PARENTLOCK",     -1 }, // rename PARENTLOCK to XPARENTLOCK
-    { "PAY",            -1 }, // rename PAY to XPAY
-    { "PAYMENT",        23 }, // rename PAYMENT to PAY
-    { "PREFIX",         90 },
-    { "PROGCMD",        -1 }, // rename PROGCMD to XPROGCMD
-    { "QUEUEMAX",       -1 }, // rename QUEUEMAX to XQUEUEMAX
-    { "QUOTA",          -1 }, // rename QUOTA to XQUOTA
-    { "RECEIVELOCK",    -1 },
-    { "REJECT",         -1 }, // rename REJECT to XREJECT
-    { "REASON",         -1 }, // rename REASON to XREASON
-    { "RFAIL",          -1 }, // rename RFAIL to XRFAIL
-    { "RQUOTA",         38 },
-    { "RUNOUT",         18 },
-    { "SAYSTRING",      -1 }, // rename SAYSTRING to XSAYSTRING
-    { "SEMAPHORE",      47 },
-    { "SEX",             7 },
-    { "SIGNATURE",      -1 }, // rename SIGNATURE to XSIGNATURE
-    { "MAILSIGNATURE", 203 }, // rename MAILSIGNATURE to SIGNATURE
-    { "SPEECHMOD",      -1 }, // rename SPEECHMOD to XSPEECHMOD
-    { "SPEECHLOCK",     -1 }, // rename SPEECHLOCK to XSPEECHLOCK
-    { "STARTUP",        19 },
-    { "SUCC",            4 },
-    { "TELOUTLOCK",     -1 }, // rename TELOUTLOCK to XTELOUTLOCK
-    { "TFAIL",          -1 }, // rename TFAIL to XTFAIL
-    { "TIMEOUT",        -1 }, // rename TIMEOUT to XTIMEOUT
-    { "TPORT",          79 },
-    { "TPORTLOCK",      -1 }, // rename TPORTLOCK to XTPORTLOCK
-    { "TOFAIL",         -1 }, // rename TOFAIL to XTOFAIL
-    { "UFAIL",          75 },
-    { "USE",            45 },
-    { "USELOCK",        -1 },
-    { "USERLOCK",       -1 },
-    { "VA",            100 },
-    { "VB",            101 },
-    { "VC",            102 },
-    { "VD",            103 },
-    { "VE",            104 },
-    { "VF",            105 },
-    { "VG",            106 },
-    { "VH",            107 },
-    { "VI",            108 },
-    { "VJ",            109 },
-    { "VK",            110 },
-    { "VL",            111 },
-    { "VM",            112 },
-    { "VRML_URL",      220 },
-    { "VN",            113 },
-    { "VO",            114 },
-    { "VP",            115 },
-    { "VQ",            116 },
-    { "VR",            117 },
-    { "VS",            118 },
-    { "VT",            119 },
-    { "VU",            120 },
-    { "VV",            121 },
-    { "VW",            122 },
-    { "VX",            123 },
-    { "VY",            124 },
-    { "VZ",            125 },
-    { "XYXXY",           5 },   // *Password
+    { "AAHEAR",         T5X_A_AAHEAR      },
+    { "ACLONE",         T5X_A_ACLONE      },
+    { "ACONNECT",       T5X_A_ACONNECT    },
+    { "ADESC",          -1                },  // rename ADESC to XADESC
+    { "ADESCRIBE",      T5X_A_ADESC       },  // rename ADESCRIBE to ADESC
+    { "ADFAIL",         -1                },  // rename ADFAIL to XADFAIL
+    { "ADISCONNECT",    T5X_A_ADISCONNECT },
+    { "ADROP",          T5X_A_ADROP       },
+    { "AEFAIL",         T5X_A_AEFAIL      },
+    { "AENTER",         T5X_A_AENTER      },
+    { "AFAIL",          -1                }, // rename AFAIL to XAFAIL
+    { "AFAILURE",       T5X_A_AFAIL       }, // rename AFAILURE to AFAIL
+    { "AGFAIL",         -1                }, // rename AGFAIL to XAGFAIL
+    { "AHEAR",          T5X_A_AHEAR       },
+    { "AKILL",          -1                }, // rename AKILL to XAKILL
+    { "ALEAVE",         T5X_A_ALEAVE      },
+    { "ALFAIL",         T5X_A_ALFAIL      },
+    { "ALIAS",          T5X_A_ALIAS       },
+    { "ALLOWANCE",      -1                },
+    { "AMAIL",          T5X_A_AMAIL       },
+    { "AMHEAR",         T5X_A_AMHEAR      },
+    { "AMOVE",          T5X_A_AMOVE       },
+    { "APAY",           -1                }, // rename APAY to XAPAY
+    { "APAYMENT",       T5X_A_APAY        }, // rename APAYMENT to APAY
+    { "ARFAIL",         -1                },
+    { "ASUCC",          -1                }, // rename ASUCC to XASUCC
+    { "ASUCCESS",       T5X_A_ASUCC       }, // rename AUCCESS to ASUCC
+    { "ATFAIL",         -1                }, // rename ATFAIL to XATFAIL
+    { "ATPORT",         T5X_A_ATPORT      },
+    { "ATOFAIL",        -1                }, // rename ATOFAIL to XATOFAIL
+    { "AUFAIL",         T5X_A_AUFAIL      },
+    { "AUSE",           T5X_A_AUSE        },
+    { "AWAY",           T5X_A_AWAY        },
+    { "CHARGES",        T5X_A_CHARGES     },
+    { "CMDCHECK",       -1                }, // rename CMDCHECK to XCMDCHECK
+    { "COMMENT",        T5X_A_COMMENT     },
+    { "CONFORMAT",      T5X_A_CONFORMAT   },
+    { "CONNINFO",       -1                },
+    { "COST",           T5X_A_COST        },
+    { "CREATED",        -1                }, // rename CREATED to XCREATED
+    { "DAILY",          -1                }, // rename DAILY to XDAILY
+    { "DESC",           -1                }, // rename DESC to XDESC
+    { "DESCRIBE",       T5X_A_DESC        }, // rename DESCRIBE to DESC
+    { "DEFAULTLOCK",    -1                }, // rename DEFAULTLOCK to XDEFAULTLOCK
+    { "DESCFORMAT",     T5X_A_DESCFORMAT  },
+    { "DESTINATION",    T5X_A_EXITVARDEST },
+    { "DESTROYER",      -1                }, // rename DESTROYER to XDESTROYER
+    { "DFAIL",          -1                }, // rename DFAIL to XDFAIL
+    { "DROP",           T5X_A_DROP        },
+    { "DROPLOCK",       -1                }, // rename DROPLOCK to XDROPLOCK
+    { "EALIAS",         T5X_A_EALIAS      },
+    { "EFAIL",          T5X_A_EFAIL       },
+    { "ENTER",          T5X_A_ENTER       },
+    { "ENTERLOCK",      -1                }, // rename ENTERLOCK to XENTERLOCK
+    { "EXITFORMAT",     T5X_A_EXITFORMAT  },
+    { "EXITTO",         T5X_A_EXITVARDEST },
+    { "FAIL",           -1                }, // rename FAIL to XFAIL
+    { "FAILURE",        T5X_A_FAIL        }, // rename FAILURE to FAIL
+    { "FILTER",         T5X_A_FILTER      },
+    { "FORWARDLIST",    T5X_A_FORWARDLIST },
+    { "GETFROMLOCK",    -1                }, // rename GETFROMLOCK to XGETFROMLOCK
+    { "GFAIL",          -1                }, // rename GFAIL to XGFAIL
+    { "GIVELOCK",       -1                }, // rename GIVELOCK to XGIVELOCK
+    { "HTDESC",         -1                }, // rename HTDESC to XHTDESC
+    { "IDESC",          -1                }, // rename IDESC to XIDESC
+    { "IDESCRIBE",      T5X_A_IDESC       }, // rename IDESCRIBE to IDESC
+    { "IDLE",           T5X_A_IDLE        },
+    { "IDLETIMEOUT",    -1                }, // rename IDLETIMEOUT to XIDLETIMEOUT
+    { "INFILTER",       T5X_A_INFILTER    },
+    { "INPREFIX",       T5X_A_INPREFIX    },
+    { "KILL",           -1                }, // rename KILL to XKILL
+    { "LALIAS",         T5X_A_LALIAS      },
+    { "LAST",           T5X_A_LAST        },
+    { "LASTPAGE",       -1                }, // rename LASTPAGE to XLASTPAGE
+    { "LASTSITE",       T5X_A_LASTSITE    },
+    { "LASTIP",         T5X_A_LASTIP      },
+    { "LEAVE",          T5X_A_LEAVE       },
+    { "LEAVELOCK",      -1                }, // rename LEAVELOCK to XLEAVELOCK
+    { "LFAIL",          T5X_A_LFAIL       },
+    { "LINKLOCK",       -1                }, // rename LINKLOCK to XLINKLOCK
+    { "LISTEN",         T5X_A_LISTEN      },
+    { "LOGINDATA",      -1                }, // rename LOGINDATA to XLOGINDATA
+    { "MAILCURF",       -1                }, // rename MAILCURF to XMAILCURF
+    { "MAILFLAGS",      -1                }, // rename MAILFLAGS to XMAILFLAGS
+    { "MAILFOLDERS",    -1                }, // rename MAILFOLDERS to XMAILFOLDERS
+    { "MAILLOCK",       -1                }, // rename MAILLOCK to XMAILLOCK
+    { "MAILMSG",        -1                }, // rename MAILMSG to XMAILMSG
+    { "MAILSUB",        -1                }, // rename MAILSUB to XMAILSUB
+    { "MAILSUCC",       -1                }, // rename MAILSUCC to XMAILSUCC
+    { "MAILTO",         -1                }, // rename MAILTO to XMAILTO
+    { "MFAIL",          -1                }, // rename MFAIL to XMFAIL
+    { "MODIFIED",       -1                }, // rename MODIFIED to XMODIFIED
+    { "MONIKER",        -1                }, // rename MONIKER to XMONIKER
+    { "MOVE",           T5X_A_MOVE        },
+    { "NAME",           -1                }, // rename NAME to XNAME
+    { "NAMEFORMAT",     T5X_A_NAMEFORMAT  },
+    { "ODESC",          -1                }, // rename ODESC to XODESC
+    { "ODESCRIBE",      T5X_A_ODESC       }, // rename ODESCRIBE to ODESC
+    { "ODFAIL",         -1                }, // rename ODFAIL to XODFAIL
+    { "ODROP",          T5X_A_ODROP       },
+    { "OEFAIL",         T5X_A_OEFAIL      },
+    { "OENTER",         T5X_A_OENTER      },
+    { "OFAIL",          -1                }, // rename OFAIL to XOFAIL
+    { "OFAILURE",       T5X_A_OFAIL       }, // rename OFAILURE to OFAIL
+    { "OGFAIL",         -1                }, // rename OGFAIL to XOGFAIL
+    { "OKILL",          -1                }, // rename OKILL to XOKILL
+    { "OLEAVE",         T5X_A_OLEAVE      },
+    { "OLFAIL",         T5X_A_OLFAIL      },
+    { "OMOVE",          T5X_A_OMOVE       },
+    { "OPAY",           -1                }, // rename OPAY to XOPAY
+    { "OPAYMENT",       T5X_A_OPAY        }, // rename OPAYMENT to OPAY
+    { "OPENLOCK",       -1                }, // rename OPENLOCK to XOPENLOCK
+    { "ORFAIL",         -1                }, // rename ORFAIL to XORFAIL
+    { "OSUCC",          -1                }, // rename OSUCC to XSUCC
+    { "OSUCCESS",       T5X_A_OSUCC       }, // rename OSUCCESS to OSUCC
+    { "OTFAIL",         -1                }, // rename OTFAIL to XOTFAIL
+    { "OTPORT",         T5X_A_OTPORT      },
+    { "OTOFAIL",        -1                }, // rename OTOFAIL to XOTOFAIL
+    { "OUFAIL",         T5X_A_OUFAIL      },
+    { "OUSE",           T5X_A_OUSE        },
+    { "OXENTER",        T5X_A_OXENTER     },
+    { "OXLEAVE",        T5X_A_OXLEAVE     },
+    { "OXTPORT",        T5X_A_OXTPORT     },
+    { "PAGELOCK",       -1                }, // rename PAGELOCK to XPAGELOCK
+    { "PARENTLOCK",     -1                }, // rename PARENTLOCK to XPARENTLOCK
+    { "PAY",            -1                }, // rename PAY to XPAY
+    { "PAYMENT",        T5X_A_PAY         }, // rename PAYMENT to PAY
+    { "PREFIX",         T5X_A_PREFIX      },
+    { "PROGCMD",        -1                }, // rename PROGCMD to XPROGCMD
+    { "QUEUEMAX",       -1                }, // rename QUEUEMAX to XQUEUEMAX
+    { "QUOTA",          -1                }, // rename QUOTA to XQUOTA
+    { "RECEIVELOCK",    -1                },
+    { "REJECT",         -1                }, // rename REJECT to XREJECT
+    { "REASON",         -1                }, // rename REASON to XREASON
+    { "RFAIL",          -1                }, // rename RFAIL to XRFAIL
+    { "RQUOTA",         T5X_A_RQUOTA      },
+    { "RUNOUT",         T5X_A_RUNOUT      },
+    { "SAYSTRING",      -1                }, // rename SAYSTRING to XSAYSTRING
+    { "SEMAPHORE",      T5X_A_SEMAPHORE   },
+    { "SEX",            T5X_A_SEX         },
+    { "SIGNATURE",      -1                }, // rename SIGNATURE to XSIGNATURE
+    { "MAILSIGNATURE",  T5X_A_SIGNATURE   }, // rename MAILSIGNATURE to SIGNATURE
+    { "SPEECHMOD",      -1                }, // rename SPEECHMOD to XSPEECHMOD
+    { "SPEECHLOCK",     -1                }, // rename SPEECHLOCK to XSPEECHLOCK
+    { "STARTUP",        T5X_A_STARTUP     },
+    { "SUCC",           T5X_A_SUCC        },
+    { "TELOUTLOCK",     -1                }, // rename TELOUTLOCK to XTELOUTLOCK
+    { "TFAIL",          -1                }, // rename TFAIL to XTFAIL
+    { "TIMEOUT",        -1                }, // rename TIMEOUT to XTIMEOUT
+    { "TPORT",          T5X_A_TPORT       },
+    { "TPORTLOCK",      -1                }, // rename TPORTLOCK to XTPORTLOCK
+    { "TOFAIL",         -1                }, // rename TOFAIL to XTOFAIL
+    { "UFAIL",          T5X_A_UFAIL       },
+    { "USE",            T5X_A_USE         },
+    { "USELOCK",        -1                },
+    { "USERLOCK",       -1                },
+    { "VA",             T5X_A_VA          },
+    { "VB",             T5X_A_VA+1        },
+    { "VC",             T5X_A_VA+2        },
+    { "VD",             T5X_A_VA+3        },
+    { "VE",             T5X_A_VA+4        },
+    { "VF",             T5X_A_VA+5        },
+    { "VG",             T5X_A_VA+6        },
+    { "VH",             T5X_A_VA+7        },
+    { "VI",             T5X_A_VA+8        },
+    { "VJ",             T5X_A_VA+9        },
+    { "VK",             T5X_A_VA+10       },
+    { "VL",             T5X_A_VA+11       },
+    { "VM",             T5X_A_VA+12       },
+    { "VRML_URL",       T5X_A_VRML_URL    },
+    { "VN",             T5X_A_VA+13       },
+    { "VO",             T5X_A_VA+14       },
+    { "VP",             T5X_A_VA+15       },
+    { "VQ",             T5X_A_VA+16       },
+    { "VR",             T5X_A_VA+17       },
+    { "VS",             T5X_A_VA+18       },
+    { "VT",             T5X_A_VA+19       },
+    { "VU",             T5X_A_VA+20       },
+    { "VV",             T5X_A_VA+21       },
+    { "VW",             T5X_A_VA+22       },
+    { "VX",             T5X_A_VA+23       },
+    { "VY",             T5X_A_VA+24       },
+    { "VZ",             T5X_A_VA+25       },
+    { "XYXXY",          T5X_A_PASS        },   // *Password
 };
 
 static struct
@@ -1611,39 +1611,39 @@ static struct
     int         iNum;
 } p6h_locknames[] =
 {
-    { "Basic",       42 },
-    { "Enter",       59 },
-    { "Use",         62 },
-    { "Zone",        -1 },
-    { "Page",        61 },
-    { "Teleport",    85 },
-    { "Speech",     209 },
-    { "Parent",      98 },
-    { "Link",        93 },
+    { "Basic",       T5X_A_LOCK     },
+    { "Enter",       T5X_A_LENTER   },
+    { "Use",         T5X_A_LUSE     },
+    { "Zone",        -1             },
+    { "Page",        T5X_A_LPAGE    },
+    { "Teleport",    T5X_A_LTPORT   },
+    { "Speech",      T5X_A_LSPEECH  },
+    { "Parent",      T5X_A_LPARENT  },
+    { "Link",        T5X_A_LLINK    },
     { "Leave",       60 },
-    { "Drop",        86 },
-    { "Give",        63 },
-    { "Receive",     87 },
-    { "Mail",       225 },
-    { "Take",       127 },
-    { "Open",       225 },
+    { "Drop",        T5X_A_LDROP    },
+    { "Give",        T5X_A_LGIVE    },
+    { "Receive",     T5X_A_LRECEIVE },
+    { "Mail",        T5X_A_LMAIL    },
+    { "Take",        T5X_A_LGET     },
+    { "Open",        T5X_A_LOPEN    },
 };
 
 static NameMask p6h_attr_flags[] =
 {
-    { "no_command",     0x00000100UL },
-    { "private",        0x00001000UL },
-    { "no_clone",       0x00010000UL },
-    { "wizard",         0x00000004UL },
-    { "visual",         0x00000800UL },
-    { "mortal_dark",    0x00000008UL },
-    { "hidden",         0x00000002UL },
-    { "regexp",         0x00008000UL },
-    { "case",           0x00040000UL },
-    { "locked",         0x00000040UL },
-    { "internal",       0x00000010UL },
-    { "debug",          0x00080000UL },
-    { "noname",         0x00400000UL },
+    { "no_command",     T5X_AF_NOCMD    },
+    { "private",        T5X_AF_PRIVATE  },
+    { "no_clone",       T5X_AF_NOCLONE  },
+    { "wizard",         T5X_AF_WIZARD   },
+    { "visual",         T5X_AF_VISUAL   },
+    { "mortal_dark",    T5X_AF_MDARK    },
+    { "hidden",         T5X_AF_DARK     },
+    { "regexp",         T5X_AF_REGEXP   },
+    { "case",           T5X_AF_CASE     },
+    { "locked",         T5X_AF_LOCK     },
+    { "internal",       T5X_AF_INTERNAL },
+    { "debug",          T5X_AF_TRACE    },
+    { "noname",         T5X_AF_NONAME   },
 };
 
 void T5X_GAME::ConvertFromP6H()
@@ -1835,7 +1835,7 @@ void T5X_GAME::ConvertFromP6H()
             //
             if (NULL != strcasestr(pPowers, "Immortal"))
             {
-                flags1 |= 0x00200000;
+                flags1 |= T5X_IMMORTAL;
             }
         }
         poi->SetFlags1(flags1);
@@ -2157,7 +2157,7 @@ int convert_t6h_flags1(int f)
        | T5X_VISUAL
        | T5X_IMMORTAL
        | T5X_HAS_STARTUP
-       | T5X_MUX_OPAQUE
+       | T5X_OPAQUE
        | T5X_VERBOSE
        | T5X_INHERIT
        | T5X_NOSPOOF
