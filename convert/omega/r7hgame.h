@@ -1,17 +1,17 @@
 #ifndef _R7HGAME_H_
 #define _R7HGAME_H_
 
-#define R7H_V_MASK          0x000000ff      /* Database version */
-#define R7H_V_ZONE          0x00000100      /* ZONE/DOMAIN field */
-#define R7H_V_LINK          0x00000200      /* LINK field (exits from objs) */
-#define R7H_V_GDBM          0x00000400      /* attrs are in a gdbm db, not here */
-#define R7H_V_ATRNAME       0x00000800      /* NAME is an attr, not in the hdr */
-#define R7H_V_ATRKEY        0x00001000      /* KEY is an attr, not in the hdr */
-#define R7H_V_PERNKEY       0x00001000      /* PERN: Extra locks in object hdr */
-#define R7H_V_PARENT        0x00002000      /* db has the PARENT field */
-#define R7H_V_COMM          0x00004000      /* PERN: Comm status in header */
-#define R7H_V_ATRMONEY      0x00008000      /* Money is kept in an attribute */
-#define R7H_V_XFLAGS        0x00010000      /* An extra word of flags */
+#define R7H_V_MASK          0x000000ff
+#define R7H_V_ZONE          0x00000100
+#define R7H_V_LINK          0x00000200
+#define R7H_V_GDBM          0x00000400
+#define R7H_V_ATRNAME       0x00000800
+#define R7H_V_ATRKEY        0x00001000
+#define R7H_V_PERNKEY       0x00001000
+#define R7H_V_PARENT        0x00002000
+#define R7H_V_COMM          0x00004000
+#define R7H_V_ATRMONEY      0x00008000
+#define R7H_V_XFLAGS        0x00010000
 
 #define R7H_MANDFLAGS  (R7H_V_LINK|R7H_V_PARENT|R7H_V_XFLAGS)
 #define R7H_OFLAGS     (R7H_V_GDBM|R7HV_ATRKEY|R7H_V_ATRNAME|R7H_V_ATRMONEY)
@@ -66,6 +66,132 @@
 #define R7H_A_MODIFY_TIME   227
 #define R7H_A_CREATED_TIME  228
 
+// Object Flagword 1
+//
+#define R7H_SEETHRU         0x00000008UL
+#define R7H_WIZARD          0x00000010UL
+#define R7H_LINK_OK         0x00000020UL
+#define R7H_DARK            0x00000040UL
+#define R7H_JUMP_OK         0x00000080UL
+#define R7H_STICKY          0x00000100UL
+#define R7H_DESTROY_OK      0x00000200UL
+#define R7H_HAVEN           0x00000400UL
+#define R7H_QUIET           0x00000800UL
+#define R7H_HALT            0x00001000UL
+#define R7H_TRACE           0x00002000UL
+#define R7H_GOING           0x00004000UL
+#define R7H_MONITOR         0x00008000UL
+#define R7H_MYOPIC          0x00010000UL
+#define R7H_PUPPET          0x00020000UL
+#define R7H_CHOWN_OK        0x00040000UL
+#define R7H_ENTER_OK        0x00080000UL
+#define R7H_VISUAL          0x00100000UL
+#define R7H_IMMORTAL        0x00200000UL
+#define R7H_HAS_STARTUP     0x00400000UL
+#define R7H_OPAQUE          0x00800000UL
+#define R7H_VERBOSE         0x01000000UL
+#define R7H_INHERIT         0x02000000UL
+#define R7H_NOSPOOF         0x04000000UL
+#define R7H_ROBOT           0x08000000UL
+#define R7H_SAFE            0x10000000UL
+#define R7H_CONTROL_OK      0x20000000UL
+#define R7H_HEARTHRU        0x40000000UL
+#define R7H_TERSE           0x80000000UL
+
+// Object Flagword 2
+//
+#define R7H_KEY             0x00000001UL
+#define R7H_ABODE           0x00000002UL
+#define R7H_FLOATING        0x00000004UL
+#define R7H_UNFINDABLE      0x00000008UL
+#define R7H_PARENT_OK       0x00000010UL
+#define R7H_LIGHT           0x00000020UL
+#define R7H_HAS_LISTEN      0x00000040UL
+#define R7H_HAS_FWDLIST     0x00000080UL
+#define R7H_ADMIN           0x00000100UL
+#define R7H_GUILDOBJ        0x00000200UL
+#define R7H_GUILDMASTER     0x00000400UL
+#define R7H_NO_WALLS        0x00000800UL
+#define R7H_OLD_TEMPLE      0x00001000UL
+#define R7H_OLD_NOROBOT     0x00002000UL
+#define R7H_SCLOAK          0x00004000UL
+#define R7H_CLOAK           0x00008000UL
+#define R7H_FUBAR           0x00010000UL
+#define R7H_INDESTRUCTABLE  0x00020000UL
+#define R7H_NO_YELL         0x00040000UL
+#define R7H_NO_TEL          0x00080000UL
+#define R7H_FREE            0x00100000UL
+#define R7H_GUEST_FLAG      0x00200000UL
+#define R7H_RECOVER         0x00400000UL
+#define R7H_BYEROOM         0x00800000UL
+#define R7H_WANDERER        0x01000000UL
+#define R7H_ANSI            0x02000000UL
+#define R7H_ANSICOLOR       0x04000000UL
+#define R7H_NOFLASH         0x08000000UL
+#define R7H_SUSPECT         0x10000000UL
+#define R7H_BUILDER         0x20000000UL
+#define R7H_CONNECTED       0x40000000UL
+#define R7H_SLAVE           0x80000000UL
+
+// Object Flagword 3
+//
+#define R7H_NOCONNECT       0x00000001UL
+#define R7H_DPSHIFT         0x00000002UL
+#define R7H_NOPOSSESS       0x00000004UL
+#define R7H_COMBAT          0x00000008UL
+#define R7H_IC              0x00000010UL
+#define R7H_ZONEMASTER      0x00000020UL
+#define R7H_ALTQUOTA        0x00000040UL
+#define R7H_NOEXAMINE       0x00000080UL
+#define R7H_NOMODIFY        0x00000100UL
+#define R7H_CMDCHECK        0x00000200UL
+#define R7H_DOORRED         0x00000400UL
+#define R7H_PRIVATE         0x00000800UL
+#define R7H_NOMOVE          0x00001000UL
+#define R7H_STOP            0x00002000UL
+#define R7H_NOSTOP          0x00004000UL
+#define R7H_NOCOMMAND       0x00008000UL
+#define R7H_AUDIT           0x00010000UL
+#define R7H_SEE_OEMIT       0x00020000UL
+#define R7H_NO_GOBJ         0x00040000UL
+#define R7H_NO_PESTER       0x00080000UL
+#define R7H_LRFLAG          0x00100000UL
+#define R7H_TELOK           0x00200000UL
+#define R7H_NO_OVERRIDE     0x00400000UL
+#define R7H_NO_USELOCK      0x00800000UL
+#define R7H_DR_PURGE        0x01000000UL
+#define R7H_NO_ANSINAME     0x02000000UL
+#define R7H_SPOOF           0x04000000UL
+#define R7H_SIDEFX          0x08000000UL
+#define R7H_ZONECONTENTS    0x10000000UL
+#define R7H_NOWHO           0x20000000UL
+#define R7H_ANONYMOUS       0x40000000UL
+#define R7H_BACKSTAGE       0x80000000UL
+
+// Object Flagword 4
+//
+#define R7H_NOBACKSTAGE     0x00000001UL
+#define R7H_LOGIN           0x00000002UL
+#define R7H_INPROGRAM       0x00000004UL
+#define R7H_COMMANDS        0x00000008UL
+#define R7H_MARKER0         0x00000010UL
+#define R7H_MARKER1         0x00000020UL
+#define R7H_MARKER2         0x00000040UL
+#define R7H_MARKER3         0x00000080UL
+#define R7H_MARKER4         0x00000100UL
+#define R7H_MARKER5         0x00000200UL
+#define R7H_MARKER6         0x00000400UL
+#define R7H_MARKER7         0x00000800UL
+#define R7H_MARKER8         0x00001000UL
+#define R7H_MARKER9         0x00002000UL
+#define R7H_BOUNCE          0x00004000UL
+#define R7H_SHOWFAILCMD     0x00008000UL
+#define R7H_NOUNDERLINE     0x00010000UL
+#define R7H_NONAME          0x00020000UL
+#define R7H_ZONEPARENT      0x00040000UL
+#define R7H_SPAMMONITOR     0x00080000UL
+#define R7H_BLIND           0x00100000UL
+#define R7H_NOCODE          0x00200000UL
 
 #define ATR_INFO_CHAR 0x01
 
