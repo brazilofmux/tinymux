@@ -1657,6 +1657,7 @@ void R7H_GAME::ConvertFromP6H()
         int flags1 = iType;
         int flags2 = 0;
         int flags3 = 0;
+        int flags4 = 0;
         char *pFlags = it->second->m_pFlags;
         if (NULL != pFlags)
         {
@@ -1677,6 +1678,26 @@ void R7H_GAME::ConvertFromP6H()
                 if (NULL != strcasestr(pFlags, p6h_convert_obj_flags2[i].pName))
                 {
                     flags2 |= p6h_convert_obj_flags2[i].mask;
+                }
+            }
+
+            // Third flagword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_flags3)/sizeof(p6h_convert_obj_flags3[0]); i++)
+            {
+                if (NULL != strcasestr(pFlags, p6h_convert_obj_flags3[i].pName))
+                {
+                    flags3 |= p6h_convert_obj_flags3[i].mask;
+                }
+            }
+
+            // Fourth flagword
+            //
+            for (int i = 0; i < sizeof(p6h_convert_obj_flags4)/sizeof(p6h_convert_obj_flags4[0]); i++)
+            {
+                if (NULL != strcasestr(pFlags, p6h_convert_obj_flags4[i].pName))
+                {
+                    flags4 |= p6h_convert_obj_flags4[i].mask;
                 }
             }
         }
