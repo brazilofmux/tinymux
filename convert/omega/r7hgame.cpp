@@ -1384,8 +1384,8 @@ static struct
     { "Give",        63 },
     { "Receive",     87 },
     { "Mail",       225 },
-    { "Take",       127 },
-    { "Open",       225 },
+    { "Take",       235 },
+    { "Open",       226 },
 };
 
 static NameMask p6h_attr_flags[] =
