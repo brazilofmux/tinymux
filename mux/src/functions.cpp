@@ -9680,8 +9680,8 @@ static void GeneralTimeConversion
 //     digit_format  (23 bytes) uses TimeBuffer80,
 //     time_format_1 (12 bytes) uses TimeBuffer80,
 //     time_format_2 (17 bytes) uses TimeBuffer64,
-//     expand_time   (33 bytes) uses TimeBuffer64,
-//     write_time    (69 bytes) uses TimeBuffer80.
+//     expand_time   (34 bytes) uses TimeBuffer64,
+//     write_time    (76 bytes) uses TimeBuffer80.
 //
 // time_format_1 and time_format_2 are called from within the same
 // printf, so they must use different buffers.
@@ -9835,10 +9835,10 @@ const UTF8 *time_format_2(int Seconds)
 //
 static const UTF8 *expand_time(int Seconds)
 {
-    // 2^63/2592000 is 3558399705577 which is at most 13 digits.
-    // '(13)M (1)w (1)d (2)h (2)m (2)s\0' is at most 33 characters.
+    // 2^63/31556926 is 292277265436 which is at most 12 digits.
+    // '(12)Y (2)M (1)w (1)d (2)h (2)m (2)s\0' is at most 34 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IMONTHS, ISECONDS, false, false);
+    GeneralTimeConversion(TimeBuffer64, Seconds, IYEARS, ISECONDS, false, false);
     return TimeBuffer64;
 }
 
@@ -9846,11 +9846,11 @@ static const UTF8 *expand_time(int Seconds)
 //
 static const UTF8 *write_time(int Seconds)
 {
-    // 2^63/2592000 is 3558399705577 which is at most 13 digits.
-    // '(13) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
-    // at most 69 characters.
+    // 2^63/31556926 is 292277265436 which is at most 12 digits.
+    // '(12) years (2) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
+    // at most 76 characters.
     //
-    GeneralTimeConversion(TimeBuffer80, Seconds, IMONTHS, ISECONDS, false, true);
+    GeneralTimeConversion(TimeBuffer80, Seconds, IYEARS, ISECONDS, false, true);
     return TimeBuffer80;
 }
 
