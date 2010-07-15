@@ -42,6 +42,7 @@ void Usage()
     fprintf(stderr, "  -d <charset>   Output charset\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -1             Reset #1 password to 'potrzebie'\n");
+    fprintf(stderr, "  -x <dbref>     Extract <dbref> in @decomp format\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "If no <outfile> is given, output is directed to standard out.\n");
 }
@@ -78,6 +79,8 @@ int main(int argc, char *argv[])
     FILE *fpout = NULL;
 
     bool fResetPassword = false;
+    bool fExtract = false;
+    int  dbExtract;
     ServerType eInputType = eAuto;
     ServerType eOutputType = eServerUnknown;
     ServerVersion eOutputVersion = eSame;
@@ -85,7 +88,7 @@ int main(int argc, char *argv[])
     Charset eOutputCharset = eCharsetUnknown;
 
     int ch;
-    while ((ch = getopt(argc, argv, "1i:o:v:c:d:")) != -1)
+    while ((ch = getopt(argc, argv, "1i:o:v:c:d:x:")) != -1)
     {
         switch (ch)
         {
@@ -235,6 +238,18 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Output charset not recognized.  Expected latin1, cp437, or Windows1252.\n");
                 Usage();
                 return 1;
+            }
+            break;
+
+        case 'x':
+            {
+                fExtract = true;
+                char *p = optarg;
+                if ('#' == *p)
+                {
+                    p++;
+                }
+                dbExtract = atoi(p);
             }
             break;
 
@@ -625,21 +640,43 @@ int main(int argc, char *argv[])
 
     // Output stage.
     //
-    if (ePennMUSH == eOutputType)
+    if (fExtract)
     {
-        g_p6hgame.Write(fpout);
+        if (ePennMUSH == eOutputType)
+        {
+            g_p6hgame.Extract(fpout, dbExtract);
+        }
+        else if (eTinyMUX == eOutputType)
+        {
+            g_t5xgame.Extract(fpout, dbExtract);
+        }
+        else if (eTinyMUSH == eOutputType)
+        {
+            g_t6hgame.Extract(fpout, dbExtract);
+        }
+        else if (eRhostMUSH == eOutputType)
+        {
+            g_r7hgame.Extract(fpout, dbExtract);
+        }
     }
-    else if (eTinyMUX == eOutputType)
+    else
     {
-        g_t5xgame.Write(fpout);
-    }
-    else if (eTinyMUSH == eOutputType)
-    {
-        g_t6hgame.Write(fpout);
-    }
-    else if (eRhostMUSH == eOutputType)
-    {
-        g_r7hgame.Write(fpout);
+        if (ePennMUSH == eOutputType)
+        {
+            g_p6hgame.Write(fpout);
+        }
+        else if (eTinyMUX == eOutputType)
+        {
+            g_t5xgame.Write(fpout);
+        }
+        else if (eTinyMUSH == eOutputType)
+        {
+            g_t6hgame.Write(fpout);
+        }
+        else if (eRhostMUSH == eOutputType)
+        {
+            g_r7hgame.Write(fpout);
+        }
     }
 
     if (2 == argc)

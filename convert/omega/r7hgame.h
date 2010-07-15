@@ -935,6 +935,7 @@ public:
     void ValidateObjects() const;
 
     void Write(FILE *fp);
+    void Extract(FILE *fp, int dbExtract);
 
     void ConvertFromP6H();
 

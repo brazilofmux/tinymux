@@ -2028,3 +2028,7 @@ void T6H_GAME::Downgrade()
     }
 }
 
+void T6H_GAME::Extract(FILE *fp, int dbExtract)
+{
+    fprintf(fp, "Extracting %d.\n", dbExtract);
+}

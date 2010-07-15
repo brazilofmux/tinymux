@@ -516,6 +516,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool fExtraEscapes) const;
+    void Extract(FILE *fp, char *pName) const;
 
     void Upgrade();
     void Downgrade();
@@ -622,6 +623,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
+    void Extract(FILE *fp) const;
 
     void Upgrade();
     void Downgrade();
@@ -695,6 +697,7 @@ public:
     void ValidateObjects() const;
 
     void Write(FILE *fp);
+    void Extract(FILE *fp, int dbExtract) const;
 
     bool Upgrade3();
     bool Upgrade2();

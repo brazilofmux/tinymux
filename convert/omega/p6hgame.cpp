@@ -2647,3 +2647,8 @@ void P6H_GAME::ConvertFromT5X()
         delete it->second;
     }
 }
+
+void P6H_GAME::Extract(FILE *fp, int dbExtract)
+{
+    fprintf(fp, "Extracting %d.\n", dbExtract);
+}

@@ -4260,3 +4260,273 @@ void T5X_ATTRINFO::Downgrade()
     char *p = (char *)convert_color((UTF8 *)m_pValueUnencoded);
     SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, (char *)ConvertToLatin((UTF8 *)p));
 }
+
+void T5X_GAME::Extract(FILE *fp, int dbExtract) const
+{
+    map<int, T5X_OBJECTINFO *, lti>::const_iterator itFound;
+    itFound = g_t5xgame.m_mObjects.find(dbExtract);
+    if (itFound == g_t5xgame.m_mObjects.end())
+    {
+        fprintf(stderr, "WARNING: Object #%d does not exist in the database.\n", dbExtract);
+    }
+    else
+    {
+        itFound->second->Extract(fp);
+    }
+}
+
+void T5X_OBJECTINFO::Extract(FILE *fp) const
+{
+    fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
+    if (NULL != m_pName)
+    {
+        fprintf(fp, "@@ %s\n", m_pName);
+    }
+
+    // Extract attribute values.
+    //
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->Extract(fp, m_pName);
+        }
+    }
+}
+
+static struct
+{
+    int         iNum;
+    const char *pName;
+} t5x_attr_names[] =
+{
+    {   1, "Osucc" },
+    {   2, "Ofail" },
+    {   3, "Fail" },
+    {   4, "Succ" },
+    {   5, "*Password" },
+    {   6, "Desc" },
+    {   7, "Sex" },
+    {   8, "Odrop" },
+    {   9, "Drop" },
+    {  10, "Okill" },
+    {  11, "Kill" },
+    {  12, "Asucc" },
+    {  13, "Afail" },
+    {  14, "Adrop" },
+    {  15, "Akill" },
+    {  16, "Ause" },
+    {  17, "Charges" },
+    {  18, "Runout" },
+    {  19, "Startup" },
+    {  20, "Aclone" },
+    {  21, "Apay" },
+    {  22, "Opay" },
+    {  23, "Pay" },
+    {  24, "Cost" },
+    {  25, "*Money" },
+    {  26, "Listen" },
+    {  27, "Aahear" },
+    {  28, "Amhear" },
+    {  29, "Ahear" },
+    {  30, "Last" },
+    {  31, "QueueMax" },
+    {  32, "Idesc" },
+    {  33, "Enter" },
+    {  34, "Oxenter" },
+    {  35, "Aenter" },
+    {  36, "Adesc" },
+    {  37, "Odesc" },
+    {  38, "Rquota" },
+    {  39, "Aconnect" },
+    {  40, "Adisconnect" },
+    {  41, "Allowance" },
+    {  42, "DefaultLock" },
+    {  43, "Name" },
+    {  44, "Comment" },
+    {  45, "Use" },
+    {  46, "Ouse" },
+    {  47, "Semaphore" },
+    {  48, "Timeout" },
+    {  49, "Quota" },
+    {  50, "Leave" },
+    {  51, "Oleave" },
+    {  52, "Aleave" },
+    {  53, "Oenter" },
+    {  54, "Oxleave" },
+    {  55, "Move" },
+    {  56, "Omove" },
+    {  57, "Amove" },
+    {  58, "Alias" },
+    {  59, "EnterLock" },
+    {  60, "LeaveLock" },
+    {  61, "PageLock" },
+    {  62, "UseLock" },
+    {  63, "GiveLock" },
+    {  64, "Ealias" },
+    {  65, "Lalias" },
+    {  66, "Efail" },
+    {  67, "Oefail" },
+    {  68, "Aefail" },
+    {  69, "Lfail" },
+    {  70, "Olfail" },
+    {  71, "Alfail" },
+    {  72, "Reject" },
+    {  73, "Away" },
+    {  74, "Idle" },
+    {  75, "Ufail" },
+    {  76, "Oufail" },
+    {  77, "Aufail" },
+    {  78, "PFAIL" },
+    {  79, "Tport" },
+    {  80, "Otport" },
+    {  81, "Oxtport" },
+    {  82, "Atport" },
+    {  83, "*Privileges" },
+    {  84, "Logindata" },
+    {  85, "TportLock" },
+    {  86, "DropLock" },
+    {  87, "ReceiveLock" },
+    {  88, "Lastsite" },
+    {  89, "Inprefix" },
+    {  90, "Prefix" },
+    {  91, "Infilter" },
+    {  92, "Filter" },
+    {  93, "LinkLock" },
+    {  94, "TeloutLock" },
+    {  95, "Forwardlist" },
+    {  96, "Mailfolders" },
+    {  97, "UserLock" },
+    {  98, "ParentLock" },
+    {  99, "LCONTROL" },
+    { 100, "VA" },
+    { 101, "VB" },
+    { 102, "VC" },
+    { 103, "VD" },
+    { 104, "VE" },
+    { 105, "VF" },
+    { 106, "VG" },
+    { 107, "VH" },
+    { 108, "VI" },
+    { 109, "VJ" },
+    { 110, "VK" },
+    { 111, "VL" },
+    { 112, "VM" },
+    { 113, "VN" },
+    { 114, "VO" },
+    { 115, "VP" },
+    { 116, "VQ" },
+    { 117, "VR" },
+    { 118, "VS" },
+    { 119, "VT" },
+    { 120, "VU" },
+    { 121, "VV" },
+    { 122, "VW" },
+    { 123, "VX" },
+    { 124, "VY" },
+    { 125, "VZ" },
+    { 127, "GetFromLock" },
+    { 128, "Mfail" },
+    { 129, "Gfail" },
+    { 130, "Ogfail" },
+    { 131, "Agfail" },
+    { 132, "Rfail" },
+    { 133, "Orfail" },
+    { 134, "Arfail" },
+    { 135, "Dfail" },
+    { 136, "Odfail" },
+    { 137, "Adfail" },
+    { 138, "Tfail" },
+    { 139, "Otfail" },
+    { 140, "Atfail" },
+    { 141, "Tofail" },
+    { 142, "Otofail" },
+    { 143, "Atofail" },
+    { 144, "LastIP" },
+    { 145, "UMBRADESC" },
+    { 146, "WRAITHDESC" },
+    { 147, "FAEDESC" },
+    { 148, "MATRIXDESC" },
+    { 149, "ComJoin" },
+    { 150, "ComLeave" },
+    { 151, "ComOn" },
+    { 152, "ComOff" },
+    { 198, "CmdCheck" },
+    { 199, "Moniker" },
+    { 200, "Lastpage" },
+    { 201, "Mailsucc" },
+    { 202, "Amail" },
+    { 203, "Signature" },
+    { 204, "Daily" },
+    { 205, "Mailto" },
+    { 206, "Mailmsg" },
+    { 207, "Mailsub" },
+    { 208, "Mailcurf" },
+    { 209, "SpeechLock" },
+    { 210, "ProgCmd" },
+    { 211, "Mailflags" },
+    { 212, "Destroyer" },
+    { 213, "NEWOBJS" },
+    { 214, "SayString" },
+    { 215, "SpeechMod" },
+    { 216, "ExitTo" },
+    { 217, "LCHOWN" },
+    { 218, "Created" },
+    { 219, "Modified" },
+    { 220, "VRML_URL" },
+    { 221, "HTDesc" },
+    { 222, "Reason" },
+    { 223, "RegInfo" },
+    { 224, "ConnInfo" },
+    { 225, "MailLock" },
+    { 226, "OpenLock" },
+    { 227, "LastWhisper" },
+    { 229, "AParent" },
+    { 230, "ACreate" },
+    { 231, "LVisible" },
+    { 236, "Color" },
+    { 237, "Alead" },
+    { 238, "Lead" },
+    { 239, "Olead" },
+    { 240, "IdleTimeout" },
+    { 241, "ExitFormat" },
+    { 242, "ConFormat" },
+    { 243, "NameFormat" },
+    { 244, "DescFormat" },
+    { 250, "RLevel" },
+};
+
+void T5X_ATTRINFO::Extract(FILE *fp, char *pObjName) const
+{
+    if (m_fNumAndValue)
+    {
+        if (m_iNum < A_USER_START)
+        {
+            for (int i = 0; i < sizeof(t5x_attr_names)/sizeof(t5x_attr_names[0]); i++)
+            {
+                if (t5x_attr_names[i].iNum == m_iNum)
+                {
+                    fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, m_pValueUnencoded);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for (vector<T5X_ATTRNAMEINFO *>::iterator itName =  g_t5xgame.m_vAttrNames.begin(); itName != g_t5xgame.m_vAttrNames.end(); ++itName)
+            {
+                if (  (*itName)->m_fNumAndName
+                   && (*itName)->m_iNum == m_iNum)
+                {
+                    char *pAttrName = strchr((*itName)->m_pName, ':');
+                    if (NULL != pAttrName)
+                    {
+                        pAttrName++;
+                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, m_pValueUnencoded);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
