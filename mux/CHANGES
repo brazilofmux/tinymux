@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: June 2010
+Last Update: July 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,6 +12,9 @@ Feature Additions:
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
  -- Add pairs for ACCENT() through U+017F.
+ -- Extend BLIND flag to connection/disconnection and 'goes home'
+    emits.
+ -- Extend writetime() and exptime() to show years.
 
 
 Bug Fixes:
