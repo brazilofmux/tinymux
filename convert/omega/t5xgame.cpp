@@ -3060,17 +3060,28 @@ int convert_r7h_attr_flags(int f)
        | T5X_AF_LOCK
        | T5X_AF_DELETED
        | T5X_AF_NOPROG
-       | T5X_AF_GOD
-       | T5X_AF_IS_LOCK
-       | T5X_AF_VISUAL
-       | T5X_AF_PRIVATE
-       | T5X_AF_HTML
-       | T5X_AF_NOPARSE
-       | T5X_AF_REGEXP
-       | T5X_AF_NOCLONE
-       | T5X_AF_CONST
-       | T5X_AF_CASE
-       | T5X_AF_NONAME;
+       | T5X_AF_GOD;
+
+    if (f & R7H_AF_IS_LOCK)
+    {
+        g |= T5X_AF_IS_LOCK;
+    }
+    if (f & R7H_AF_PRIVATE)
+    {
+        g |= T5X_AF_PRIVATE;
+    }
+    if (f & R7H_AF_VISUAL)
+    {
+        g |= T5X_AF_VISUAL;
+    }
+    if (f & R7H_AF_NOCLONE)
+    {
+        g |= T5X_AF_NOCLONE;
+    }
+    if (f & R7H_AF_NOPARSE)
+    {
+        g |= T5X_AF_NOPARSE;
+    }
 
     return g;
 }
