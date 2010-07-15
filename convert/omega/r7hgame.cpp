@@ -1248,14 +1248,27 @@ static NameMask p6h_convert_obj_flags4[] =
 
 static NameMask p6h_convert_obj_toggles1[] =
 {
+    { "Boot",          1 << R7H_POWER_BOOT          },
+    { "Long_Fingers",  1 << R7H_POWER_LONG_FINGERS  },
+    { "No_Quota",      1 << R7H_POWER_FREE_QUOTA    },
+    { "Quotas",        1 << R7H_POWER_CHANGE_QUOTAS },
+    { "See_All",       1 << R7H_POWER_EX_ALL        },
+    { "See_Queue",     (1 << R7H_POWER_SEE_QUEUE) | (1 << R7H_POWER_SEE_QUEUE_ALL) },
 };
 
 static NameMask p6h_convert_obj_toggles2[] =
 {
+    { "Announce",  1 << R7H_POWER_FREE_WALL },
+    { "Halt",     (1 << R7H_POWER_HALT_QUEUE) | (1 << R7H_POWER_HALT_QUEUE_ALL) },
+    { "Search",    1 << R7H_POWER_SEARCH_ANY },
+    { "Tport_Anything", 1 << R7H_POWER_TEL_ANYTHING },
+    { "Tport_Anywhere", 1 << R7H_POWER_TEL_ANYWHERE },
+    { "Unkillable",     1 << R7H_POWER_NOKILL  },
 };
 
 static NameMask p6h_convert_obj_toggles3[] =
 {
+    { "Hide", 1 << R7H_POWER_HIDEBIT },
 };
 
 static NameMask p6h_convert_obj_toggles4[] =
