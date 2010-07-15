@@ -3086,44 +3086,98 @@ int convert_r7h_attr_flags(int f)
     return g;
 }
 
-int convert_r7h_power1(int f)
+bool AnyLevel(int tog, int i)
 {
-    f &= T5X_POW_CHG_QUOTAS
-       | T5X_POW_CHOWN_ANY
-       | T5X_POW_ANNOUNCE
-       | T5X_POW_BOOT
-       | T5X_POW_HALT
-       | T5X_POW_CONTROL_ALL
-       | T5X_POW_WIZARD_WHO
-       | T5X_POW_EXAM_ALL
-       | T5X_POW_FIND_UNFIND
-       | T5X_POW_FREE_MONEY
-       | T5X_POW_FREE_QUOTA
-       | T5X_POW_HIDE
-       | T5X_POW_IDLE
-       | T5X_POW_SEARCH
-       | T5X_POW_LONGFINGERS
-       | T5X_POW_PROG
-       | T5X_POW_COMM_ALL
-       | T5X_POW_SEE_QUEUE
-       | T5X_POW_SEE_HIDDEN
-       | T5X_POW_MONITOR
-       | T5X_POW_POLL
-       | T5X_POW_NO_DESTROY
-       | T5X_POW_GUEST
-       | T5X_POW_PASS_LOCKS
-       | T5X_POW_STAT_ANY
-       | T5X_POW_STEAL
-       | T5X_POW_TEL_ANYWHR
-       | T5X_POW_TEL_UNRST
-       | T5X_POW_UNKILLABLE;
-    return f;
+    return (tog & (3 << i)) != 0;
 }
 
-int convert_r7h_power2(int f)
+int convert_r7h_power1(int t3, int t4, int t5)
 {
-    f &= T5X_POW_BUILDER;
-    return f;
+    int g = 0;
+    if (AnyLevel(t3, R7H_POWER_CHANGE_QUOTAS))
+    {
+        g |= T5X_POW_CHG_QUOTAS;
+    }
+    if (AnyLevel(t3, R7H_POWER_CHOWN_OTHER))
+    {
+        g |= T5X_POW_CHOWN_ANY;
+    }
+    if (AnyLevel(t4, R7H_POWER_FREE_WALL))
+    {
+        g |= T5X_POW_ANNOUNCE;
+    }
+    if (AnyLevel(t3, R7H_POWER_BOOT))
+    {
+        g |= T5X_POW_BOOT;
+    }
+    if (  AnyLevel(t4, R7H_POWER_HALT_QUEUE)
+       || AnyLevel(t4, R7H_POWER_HALT_QUEUE_ALL))
+    {
+        g |= T5X_POW_HALT;
+    }
+    if (AnyLevel(t3, R7H_POWER_WIZ_WHO))
+    {
+        g |= T5X_POW_WIZARD_WHO;
+    }
+    if (AnyLevel(t5, R7H_POWER_EX_FULL))
+    {
+        g |= T5X_POW_EXAM_ALL;
+    }
+    if (AnyLevel(t4, R7H_POWER_WHO_UNFIND))
+    {
+        g |= T5X_POW_FIND_UNFIND;
+    }
+    if (AnyLevel(t3, R7H_POWER_FREE_QUOTA))
+    {
+        g |= T5X_POW_FREE_QUOTA;
+    }
+    if (AnyLevel(t5, R7H_POWER_HIDEBIT))
+    {
+        g |= T5X_POW_HIDE;
+    }
+    if (AnyLevel(t4, R7H_POWER_SEARCH_ANY))
+    {
+        g |= T5X_POW_SEARCH;
+    }
+    if (AnyLevel(t3, R7H_POWER_LONG_FINGERS))
+    {
+        g |= T5X_POW_LONGFINGERS;
+    }
+    if (AnyLevel(t3, R7H_POWER_SEE_QUEUE))
+    {
+        g |= T5X_POW_SEE_QUEUE;
+    }
+    if (AnyLevel(t4, R7H_POWER_STAT_ANY))
+    {
+        g |= T5X_POW_STAT_ANY;
+    }
+    if (AnyLevel(t3, R7H_POWER_STEAL))
+    {
+        g |= T5X_POW_STEAL;
+    }
+    if (AnyLevel(t4, R7H_POWER_TEL_ANYWHERE))
+    {
+        g |= T5X_POW_TEL_ANYWHR;
+    }
+    if (AnyLevel(t4, R7H_POWER_TEL_ANYTHING))
+    {
+        g |= T5X_POW_TEL_UNRST;
+    }
+    if (AnyLevel(t4, R7H_POWER_NOKILL))
+    {
+        g |= T5X_POW_UNKILLABLE;
+    }
+    return g;
+}
+
+int convert_r7h_power2(int f2)
+{
+    int g = 0;
+    if (f2 & R7H_BUILDER)
+    {
+         g |= T5X_POW_BUILDER;
+    }
+    return g;
 }
 
 void T5X_GAME::ConvertFromR7H()
@@ -3235,11 +3289,11 @@ void T5X_GAME::ConvertFromR7H()
         int powers2 = 0;
         if (it->second->m_fToggles1)
         {
-            powers1 = convert_r7h_power1(it->second->m_iToggles1);
+            powers1 = convert_r7h_power1(it->second->m_iToggles3, it->second->m_iToggles4, it->second->m_iToggles5);
         }
         if (it->second->m_fToggles2)
         {
-            powers2 = convert_r7h_power2(it->second->m_fToggles2);
+            powers2 = convert_r7h_power2(it->second->m_iFlags2);
         }
 
         poi->SetFlags1(flags1);

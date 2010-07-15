@@ -393,13 +393,163 @@
 
 // Object Toggleword 1
 //
-// ...
+#define R7H_TOG_MONITOR             0x00000001UL
+#define R7H_TOG_MONITOR_USERID      0x00000002UL
+#define R7H_TOG_MONITOR_SITE        0x00000004UL
+#define R7H_TOG_MONITOR_STATS       0x00000008UL
+#define R7H_TOG_MONITOR_FAIL        0x00000010UL
+#define R7H_TOG_MONITOR_CONN        0x00000020UL
+#define R7H_TOG_VANILLA_ERRORS      0x00000040UL
+#define R7H_TOG_NO_ANSI_EX          0x00000080UL
+#define R7H_TOG_CPUTIME             0x00000100UL
+#define R7H_TOG_MONITOR_DISREASON   0x00000200UL
+#define R7H_TOG_MONITOR_VLIMIT      0x00000400UL
+#define R7H_TOG_NOTIFY_LINK         0x00000800UL
+#define R7H_TOG_MONITOR_AREG        0x00001000UL
+#define R7H_TOG_MONITOR_TIME        0x00002000UL
+#define R7H_TOG_CLUSTER             0x00004000UL
+#define R7H_TOG_NOANSI_PLAYER       0x00010000UL
+#define R7H_TOG_NOANSI_THING        0x00020000UL
+#define R7H_TOG_NOANSI_ROOM         0x00040000UL
+#define R7H_TOG_NOANSI_EXIT         0x00080000UL
+#define R7H_TOG_NO_TIMESTAMP        0x00100000UL
+#define R7H_TOG_NO_FORMAT           0x00200000UL
+#define R7H_TOG_ZONE_AUTOADD        0x00400000UL
+#define R7H_TOG_ZONE_AUTOADDALL     0x00800000UL
+#define R7H_TOG_WIELDABLE           0x01000000UL
+#define R7H_TOG_WEARABLE            0x02000000UL
+#define R7H_TOG_SEE_SUSPECT         0x04000000UL
+#define R7H_TOG_MONITOR_CPU         0x08000000UL
+#define R7H_TOG_BRANDY_MAIL         0x10000000UL
+#define R7H_TOG_FORCEHALTED         0x20000000UL
+#define R7H_TOG_PROG                0x40000000UL
+#define R7H_TOG_NOSHELLPROG         0x80000000UL
 
 // Object Toggleword 2
 //
-// ...
-#define R7H_TOG_KEEPALIVE   0x00010000UL
-// ...
+#define R7H_TOG_EXTANSI             0x00000001UL
+#define R7H_TOG_IMMPROG             0x00000002UL
+#define R7H_TOG_MONITOR_BFAIL       0x00000004UL
+#define R7H_TOG_PROG_ON_CONNECT     0x00000008UL
+#define R7H_TOG_MAIL_STRIPRETURN    0x00000010UL
+#define R7H_TOG_PENN_MAIL           0x00000020UL
+#define R7H_TOG_SILENTEFFECTS       0x00000040UL
+#define R7H_TOG_IGNOREZONE          0x00000080UL
+#define R7H_TOG_VPAGE               0x00000100UL
+#define R7H_TOG_PAGELOCK            0x00000200UL
+#define R7H_TOG_MAIL_NOPARSE        0x00000400UL
+#define R7H_TOG_MAIL_LOCKDOWN       0x00000800UL
+#define R7H_TOG_MUXPAGE             0x00001000UL
+#define R7H_TOG_NOZONEPARENT        0x00002000UL
+#define R7H_TOG_ATRUSE              0x00004000UL
+#define R7H_TOG_VARIABLE            0x00008000UL
+#define R7H_TOG_KEEPALIVE           0x00010000UL
+#define R7H_TOG_CHKREALITY          0x00020000UL
+#define R7H_TOG_NOISY               0x00040000UL
+#define R7H_TOG_ZONECMDCHK          0x00080000UL
+#define R7H_TOG_HIDEIDLE            0x00100000UL
+#define R7H_TOG_MORTALREALITY       0x00200000UL
+#define R7H_TOG_ACCENTS             0x00400000UL
+#define R7H_TOG_PREMAILVALIDATE     0x00800000UL
+#define R7H_TOG_SAFELOG             0x01000000UL
+#define R7H_TOG_NODEFAULT           0x08000000UL
+#define R7H_TOG_EXFULLWIZATTR       0x10000000UL
+#define R7H_TOG_LOGROOM             0x40000000UL
+#define R7H_TOG_NOGLOBPARENT        0x80000000UL
+
+// Object toggleword 3 (powerword 1)
+// Two bits per power at given position.
+//
+#define R7H_POWER_CHANGE_QUOTAS        0
+#define R7H_POWER_CHOWN_ME             2
+#define R7H_POWER_CHOWN_ANYWHERE       4
+#define R7H_POWER_CHOWN_OTHER          6
+#define R7H_POWER_WIZ_WHO              8
+#define R7H_POWER_EX_ALL              10
+#define R7H_POWER_NOFORCE             12
+#define R7H_POWER_SEE_QUEUE_ALL       14
+#define R7H_POWER_FREE_QUOTA          16
+#define R7H_POWER_GRAB_PLAYER         18
+#define R7H_POWER_JOIN_PLAYER         20
+#define R7H_POWER_LONG_FINGERS        22
+#define R7H_POWER_NO_BOOT             24
+#define R7H_POWER_BOOT                26
+#define R7H_POWER_STEAL               28
+#define R7H_POWER_SEE_QUEUE           30
+
+// Object toggleword 4 (powerword 2)
+// Two bits per power at given position.
+//
+#define R7H_POWER_SHUTDOWN             0
+#define R7H_POWER_TEL_ANYWHERE         2
+#define R7H_POWER_TEL_ANYTHING         4
+#define R7H_POWER_PCREATE              6
+#define R7H_POWER_STAT_ANY             8
+#define R7H_POWER_FREE_WALL           10
+#define R7H_POWER_FREE_PAGE           14
+#define R7H_POWER_HALT_QUEUE          16
+#define R7H_POWER_HALT_QUEUE_ALL      18
+#define R7H_POWER_NOKILL              22
+#define R7H_POWER_SEARCH_ANY          24
+#define R7H_POWER_SECURITY            26
+#define R7H_POWER_WHO_UNFIND          28
+#define R7H_POWER_WRAITH              30
+
+// Object toggleword 5 (powerword 3)
+// Two bits per power at given position.
+//
+#define R7H_POWER_OPURGE               0
+#define R7H_POWER_HIDEBIT              2
+#define R7H_POWER_NOWHO                4
+#define R7H_POWER_FULLTEL_ANYWHERE     6
+#define R7H_POWER_EX_FULL              8
+
+// Object toggleword 6 (depowerword 1)
+// Two bits per depower at given position.
+//
+#define R7H_DP_WALL                    0
+#define R7H_DP_LONG_FINGERS            2
+#define R7H_DP_STEAL                   4
+#define R7H_DP_CREATE                  6
+#define R7H_DP_WIZ_WHO                 8
+#define R7H_DP_CLOAK                  10
+#define R7H_DP_BOOT                   12
+#define R7H_DP_PAGE                   14
+#define R7H_DP_FORCE                  16
+#define R7H_DP_LOCKS                  18
+#define R7H_DP_COM                    20
+#define R7H_DP_COMMAND                22
+#define R7H_DP_MASTER                 24
+#define R7H_DP_EXAMINE                26
+#define R7H_DP_NUKE                   28
+#define R7H_DP_FREE                   30
+
+// Object toggleword 7 (depowerword 2)
+// Two bits per depower at given position.
+//
+#define R7H_DP_OVERRIDE                0
+#define R7H_DP_TEL_ANYWHERE            2
+#define R7H_DP_TEL_ANYTHING            4
+#define R7H_DP_PCREATE                 6
+#define R7H_DP_POWER                   8
+#define R7H_DP_QUOTA                  10
+#define R7H_DP_MODIFY                 12
+#define R7H_DP_CHOWN_ME               14
+#define R7H_DP_CHOWN_OTHER            16
+#define R7H_DP_ABUSE                  18
+#define R7H_DP_UNL_QUOTA              20
+#define R7H_DP_SEARCH_ANY             22
+#define R7H_DP_GIVE                   24
+#define R7H_DP_RECEIVE                26
+#define R7H_DP_NOGOLD                 28
+#define R7H_DP_NOSTEAL                30
+
+// Object toggleword 8 (depowerword 3)
+// Two bits per depower at given position.
+//
+#define R7H_DP_PASSWORD                0
+#define R7H_DP_MORTAL_EXAMINE          2
+#define R7H_DP_PERSONAL_COMMANDS       4
 
 #define ATR_INFO_CHAR 0x01
 #define R7H_NOTHING   (-1)
