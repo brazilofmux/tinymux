@@ -6,9 +6,11 @@ AC_CONFIG_SRCDIR([omega.cpp])
 AC_CONFIG_HEADER([autoconf.h])
 
 # Checks for programs.
-AC_PROG_YACC
 AC_PROG_CXX
+AC_PROG_CXXCPP
 AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_YACC
 AC_PROG_LEX
 
 # Checks for libraries.
