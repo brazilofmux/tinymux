@@ -33,7 +33,7 @@ char *StringClone(const char *str)
 void Usage()
 {
     fprintf(stderr, "Version: %s\n", OMEGA_VERSION);
-    fprintf(stderr, "omega <options> <infile> <outfile>\n");
+    fprintf(stderr, "omega <options> <infile> [<outfile>]\n");
     fprintf(stderr, "Supported options:\n");
     fprintf(stderr, "  -i <type>      Input file type (p6h, r7h, t5x, t6h)\n");
     fprintf(stderr, "  -o <type>      Output file type (p6h, r7h, t5x, t6h)\n");
@@ -41,7 +41,9 @@ void Usage()
     fprintf(stderr, "  -c <charset>   Input charset\n");
     fprintf(stderr, "  -d <charset>   Output charset\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -1   Reset #1 password to 'potrzebie'\n");
+    fprintf(stderr, "  -1             Reset #1 password to 'potrzebie'\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "If no <outfile> is given, output is directed to standard out.\n");
 }
 
 typedef enum
@@ -249,9 +251,10 @@ int main(int argc, char *argv[])
 
     // We should have two remaining arguments (input and output file).
     //
-    if (2 != argc)
+    if (  1 != argc
+       && 2 != argc)
     {
-        fprintf(stderr, "After options, there should be only two command-line arguments left.\n");
+        fprintf(stderr, "After the options, there should be one or two command-line arguments left.\n");
         Usage();
         return 1;
     }
@@ -262,12 +265,19 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Input file, %s, not found.\n", argv[0]);
         return 1;
     }
-    fpout = fopen(argv[1], "wb");
-    if (NULL == fpout)
+    if (1 == argc)
     {
-        fclose(fpin);
-        fprintf(stderr, "Output file, %s, not found.\n", argv[1]);
-        return 1;
+        fpout = stdout;
+    }
+    else
+    {
+        fpout = fopen(argv[1], "wb");
+        if (NULL == fpout)
+        {
+            fclose(fpin);
+            fprintf(stderr, "Output file, %s, not found.\n", argv[1]);
+            return 1;
+        }
     }
 
     if (eAuto == eInputType)
@@ -632,7 +642,10 @@ int main(int argc, char *argv[])
         g_r7hgame.Write(fpout);
     }
 
-    fclose(fpout);
+    if (2 == argc)
+    {
+        fclose(fpout);
+    }
     fclose(fpin);
     return 0;
 }
