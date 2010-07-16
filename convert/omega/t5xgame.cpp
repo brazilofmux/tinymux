@@ -4663,6 +4663,79 @@ static char *StripColor(bool fUnicode, char *p)
     return buffer;
 }
 
+static NameMask t5x_flags1[] =
+{
+    { "TRANSPARENT", T5X_SEETHRU      },
+    { "WIZARD",      T5X_WIZARD       },
+    { "LINK_OK",     T5X_LINK_OK      },
+    { "DARK",        T5X_DARK         },
+    { "JUMP_OK",     T5X_JUMP_OK      },
+    { "STICKY",      T5X_STICKY       },
+    { "DESTROY_OK",  T5X_DESTROY_OK   },
+    { "HAVE",        T5X_HAVEN        },
+    { "QUIET",       T5X_QUIET        },
+    { "HALT",        T5X_HALT         },
+    { "TRACE",       T5X_TRACE        },
+    { "MONITOR",     T5X_MONITOR      },
+    { "MYOPIC",      T5X_MYOPIC       },
+    { "PUPPET",      T5X_PUPPET       },
+    { "CHOWN_OK",    T5X_CHOWN_OK     },
+    { "ENTER_OK",    T5X_ENTER_OK     },
+    { "VISUAL",      T5X_VISUAL       },
+    { "IMMORTAL",    T5X_IMMORTAL     },
+    { "OPAQUE",      T5X_OPAQUE       },
+    { "VERBOSE",     T5X_VERBOSE      },
+    { "INHERIT",     T5X_INHERIT      },
+    { "NOSPOOF",     T5X_NOSPOOF      },
+    { "SAFE",        T5X_SAFE         },
+    { "ROYALTY",     T5X_ROYALTY      },
+    { "AUDIBLE",     T5X_HEARTHRU     },
+    { "TERSE",       T5X_TERSE        },
+};
+
+static NameMask t5x_flags2[] =
+{
+    { "KEY",         T5X_KEY          },
+    { "ABODE",       T5X_ABODE        },
+    { "FLOATING",    T5X_FLOATING     },
+    { "UNFINDABLE",  T5X_UNFINDABLE   },
+    { "PARENT_OK",   T5X_PARENT_OK    },
+    { "LIGHT",       T5X_LIGHT        },
+    { "AUDITORIUM",  T5X_AUDITORIUM   },
+    { "ANSI",        T5X_ANSI         },
+    { "HEAD",        T5X_HEAD_FLAG    },
+    { "FIXED",       T5X_FIXED        },
+    { "UNINSPECTED", T5X_UNINSPECTED  },
+    { "NO_COMMAND",  T5X_NO_COMMAND   },
+    { "KEEPALIVE",   T5X_KEEPALIVE    },
+    { "NOBLEED",     T5X_NOBLEED      },
+    { "STAFF",       T5X_STAFF        },
+    { "GAGGED",      T5X_GAGGED       },
+    { "OPEN_OK",     T5X_OPEN_OK      },
+    { "VACATION",    T5X_VACATION     },
+    { "HTML",        T5X_HTML         },
+    { "BLIND",       T5X_BLIND        },
+    { "SUSPECT",     T5X_SUSPECT      },
+    { "ASCII",       T5X_ASCII        },
+    { "SLAVE",       T5X_SLAVE        },
+};
+
+static NameMask t5x_flags3[] =
+{
+    { "SITEMON", T5X_SITEMON          },
+    { "UNICODE", T5X_UNICODE          },
+    { "MARKER0", T5X_MARK_0           },
+    { "MARKER1", T5X_MARK_1           },
+    { "MARKER2", T5X_MARK_2           },
+    { "MARKER3", T5X_MARK_3           },
+    { "MARKER4", T5X_MARK_4           },
+    { "MARKER5", T5X_MARK_5           },
+    { "MARKER6", T5X_MARK_6           },
+    { "MARKER7", T5X_MARK_7           },
+    { "MARKER8", T5X_MARK_8           },
+    { "MARKER9", T5X_MARK_9           },
+};
+
 void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
@@ -4678,10 +4751,87 @@ void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
     {
         fprintf(fp, "@@ %s\n", EncodeSubstitutions(fUnicode, m_pName));
     }
+    char *pStrippedObjName = StringClone(StripColor(fUnicode, m_pName));
+
+    // Object flags.
+    //
+    if (m_fFlags1)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_flags1)/sizeof(t5x_flags1[0]); i++)
+        {
+            if (m_iFlags1 & t5x_flags1[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t5x_flags1[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fFlags2)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_flags2)/sizeof(t5x_flags2[0]); i++)
+        {
+            if (m_iFlags2 & t5x_flags2[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t5x_flags2[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fFlags3)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_flags3)/sizeof(t5x_flags3[0]); i++)
+        {
+            if (m_iFlags3 & t5x_flags3[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t5x_flags3[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
 
     // Extract attribute values.
     //
-    char *pStrippedObjName = StringClone(StripColor(fUnicode, m_pName));
     if (NULL != m_pvai)
     {
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
