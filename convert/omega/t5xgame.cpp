@@ -4282,7 +4282,7 @@ void T5X_GAME::Extract(FILE *fp, int dbExtract) const
     }
 }
 
-bool scanpoints(const char *p, const char **pend, const char **q, size_t *qn)
+static bool scanpoints(const char *p, const char **pend, const char **q, size_t *qn)
 {
     *q = NULL;
     if ('\xEF' == p[0])
@@ -4399,7 +4399,7 @@ bool scanpoints(const char *p, const char **pend, const char **q, size_t *qn)
     }
 }
 
-bool scanansi(const char *p, const char **pend, const char **q, size_t *qn)
+static bool scanansi(const char *p, const char **pend, const char **q, size_t *qn)
 {
     *q = NULL;
     if (ESC_CHAR == p[0])

@@ -255,6 +255,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool fLabels) const;
+    void Extract(FILE *fp, char *pObjName) const;
 
     void Upgrade();
 
@@ -308,6 +309,7 @@ public:
     void Merge(P6H_ATTRINFO *pai);
 
     void Write(FILE *fp, bool fLabels) const;
+    void Extract(FILE *fp, char *pObjName) const;
 
     void Upgrade();
 
@@ -421,6 +423,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool fLabels);
+    void Extract(FILE *fp) const;
 
     void Upgrade();
 
@@ -535,7 +538,7 @@ public:
     void ValidateSavedTime() const;
 
     void Write(FILE *fp);
-    void Extract(FILE *fp, int dbExtract);
+    void Extract(FILE *fp, int dbExtract) const;
 
     void Upgrade();
 
