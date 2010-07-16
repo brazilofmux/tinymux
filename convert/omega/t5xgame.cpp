@@ -811,27 +811,31 @@ void T5X_OBJECTINFO::SetName(char *pName)
     m_pName = pName;
 }
 
-const int t5x_locknums[] =
+static struct
 {
-    T5X_A_LOCK,
-    T5X_A_LENTER,
-    T5X_A_LLEAVE,
-    T5X_A_LPAGE,
-    T5X_A_LUSE,
-    T5X_A_LGIVE,
-    T5X_A_LTPORT,
-    T5X_A_LDROP,
-    T5X_A_LRECEIVE,
-    T5X_A_LLINK,
-    T5X_A_LTELOUT,
-    T5X_A_LUSER,
-    T5X_A_LPARENT,
-    T5X_A_LCONTROL,
-    T5X_A_LGET,
-    T5X_A_LSPEECH,
-    T5X_A_LMAIL,
-    T5X_A_LOPEN,
-    T5X_A_LVISIBLE,
+    const char *pName;
+    int         iNum;
+} t5x_locks[] =
+{
+    { "defaultlock", T5X_A_LOCK     },
+    { "enterlock",   T5X_A_LENTER   },
+    { "leavelock",   T5X_A_LLEAVE   },
+    { "pagelock",    T5X_A_LPAGE    },
+    { "uselock",     T5X_A_LUSE     },
+    { "givelock",    T5X_A_LGIVE    },
+    { "tportlock",   T5X_A_LTPORT   },
+    { "droplock",    T5X_A_LDROP    },
+    { "receivelock", T5X_A_LRECEIVE },
+    { "linklock",    T5X_A_LLINK    },
+    { "teloutlock",  T5X_A_LTELOUT  },
+    { "userlock",    T5X_A_LUSER    },
+    { "parentlock",  T5X_A_LPARENT  },
+    { "controllock", T5X_A_LCONTROL },
+    { "getfromlock", T5X_A_LGET     },
+    { "speechlock",  T5X_A_LSPEECH  },
+    { "maillock",    T5X_A_LMAIL    },
+    { "openlock",    T5X_A_LOPEN    },
+    { "visiblelock", T5X_A_LVISIBLE },
 };
 
 void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
@@ -857,9 +861,9 @@ void T5X_OBJECTINFO::SetAttrs(int nAttrs, vector<T5X_ATTRINFO *> *pvai)
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
             (*it)->m_fIsLock = false;
-            for (int i = 0; i < sizeof(t5x_locknums)/sizeof(t5x_locknums[0]); i++)
+            for (int i = 0; i < sizeof(t5x_locks)/sizeof(t5x_locks[0]); i++)
             {
-                if (t5x_locknums[i] == (*it)->m_iNum)
+                if (t5x_locks[i].iNum == (*it)->m_iNum)
                 {
                     char *pValue = (NULL != (*it)->m_pValueUnencoded) ? (*it)->m_pValueUnencoded : (*it)->m_pValueEncoded;
                     (*it)->m_fIsLock = true;
@@ -4896,12 +4900,26 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
     {
         if (m_iNum < A_USER_START)
         {
-            for (int i = 0; i < sizeof(t5x_attr_names)/sizeof(t5x_attr_names[0]); i++)
+            if (m_fIsLock)
             {
-                if (t5x_attr_names[i].iNum == m_iNum)
+                for (int i = 0; i < sizeof(t5x_locks)/sizeof(t5x_locks[0]); i++)
                 {
-                    fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
-                    break;
+                    if (t5x_locks[i].iNum == m_iNum)
+                    {
+                        fprintf(fp, "@lock/%s %s=%s\n", t5x_locks[i].pName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < sizeof(t5x_attr_names)/sizeof(t5x_attr_names[0]); i++)
+                {
+                    if (t5x_attr_names[i].iNum == m_iNum)
+                    {
+                        fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
+                        break;
+                    }
                 }
             }
         }
