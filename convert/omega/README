@@ -78,8 +78,8 @@ Only one version of RhostMUSH flatfile is known.
 
 FEATURE: Extraction
 
-Extracting individual objects or clusters of objects from a flatfile is not
-yet supported for any MUSH flavor.
+Extracting individual objects from a flatfile works for TinyMUX flatfiles.
+PennMUSH, TinyMUSH, and RhostMUSH are not yet supported.
 
 
 FEATURE: Conversions
@@ -92,7 +92,7 @@ From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
 PennMUSH        -           A           A           A
 TinyMUSH        H           -           A           H
 TinyMUX         B           H           -           H
-RhostMUSH       H           H           H           -  
+RhostMUSH       H           H           A           -  
 
 A: Fully functional.
 B: Attribute re-numbering could be better.
