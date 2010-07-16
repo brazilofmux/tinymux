@@ -78,8 +78,8 @@ Only one version of RhostMUSH flatfile is known.
 
 FEATURE: Extraction
 
-Extracting individual objects from a flatfile works for TinyMUX flatfiles.
-PennMUSH, TinyMUSH, and RhostMUSH are not yet supported.
+Extracting individual objects from a flatfile works for PennMUSH, TinyMUX,
+and TinyMUSH flatfiles.  RhostMUSH is not supported, yet.
 
 
 FEATURE: Conversions
