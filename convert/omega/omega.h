@@ -42,6 +42,6 @@ struct lti
     }
 };
 
-#define OMEGA_VERSION "1.0.6.7"
+#define OMEGA_VERSION "1.0.7.8"
 
 #endif
