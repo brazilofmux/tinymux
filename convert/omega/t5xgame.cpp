@@ -4263,35 +4263,429 @@ void T5X_ATTRINFO::Downgrade()
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const
 {
+    int ver = (m_flags & T5X_V_MASK);
+    bool fUnicode = (3 == ver);
+
     map<int, T5X_OBJECTINFO *, lti>::const_iterator itFound;
-    itFound = g_t5xgame.m_mObjects.find(dbExtract);
-    if (itFound == g_t5xgame.m_mObjects.end())
+    itFound = m_mObjects.find(dbExtract);
+    if (itFound == m_mObjects.end())
     {
         fprintf(stderr, "WARNING: Object #%d does not exist in the database.\n", dbExtract);
     }
     else
     {
-        itFound->second->Extract(fp);
+        itFound->second->Extract(fp, fUnicode);
     }
 }
 
-void T5X_OBJECTINFO::Extract(FILE *fp) const
+bool scanpoints(const char *p, const char **pend, const char **q, size_t *qn)
+{
+    *q = NULL;
+    if ('\xEF' == p[0])
+    {
+        *pend = p + 3;
+        *qn = 3;
+        if ('\x94' == p[1])
+        {
+            if ('\x80' == p[2])
+            {
+                *q = "%xn";
+            }
+            else if ('\x81' == p[2])
+            {
+                *q = "%xh";
+            }
+            else if ('\x84' == p[2])
+            {
+                *q = "%xu";
+            }
+            else if ('\x85' == p[2])
+            {
+                *q = "%xf";
+            }
+            else if ('\x87' == p[2])
+            {
+                *q = "%xi";
+            }
+        }
+        else if ('\x98' == p[1])
+        {
+            if ('\x80' == p[2])
+            {
+                *q = "%xx";
+            }
+            else if ('\x81' == p[2])
+            {
+                *q = "%xr";
+            }
+            else if ('\x82' == p[2])
+            {
+                *q = "%xg";
+            }
+            else if ('\x83' == p[2])
+            {
+                *q = "%xy";
+            }
+            else if ('\x84' == p[2])
+            {
+                *q = "%xb";
+            }
+            else if ('\x85' == p[2])
+            {
+                *q = "%xm";
+            }
+            else if ('\x86' == p[2])
+            {
+                *q = "%xc";
+            }
+            else if ('\x87' == p[2])
+            {
+                *q = "%xw";
+            }
+        }
+        else if ('\x9C' == p[1])
+        {
+            if ('\x80' == p[2])
+            {
+                *q = "%xX";
+            }
+            else if ('\x81' == p[2])
+            {
+                *q = "%xR";
+            }
+            else if ('\x82' == p[2])
+            {
+                *q = "%xG";
+            }
+            else if ('\x83' == p[2])
+            {
+                *q = "%xY";
+            }
+            else if ('\x84' == p[2])
+            {
+                *q = "%xB";
+            }
+            else if ('\x85' == p[2])
+            {
+                *q = "%xM";
+            }
+            else if ('\x86' == p[2])
+            {
+                *q = "%xC";
+            }
+            else if ('\x87' == p[2])
+            {
+                *q = "%xW";
+            }
+        }
+    }
+
+    if (NULL != *q)
+    {
+        return true;
+    }
+    else
+    {
+        *pend = strchr(p, '\xEF');
+        if (NULL == *pend)
+        {
+            *pend = p + strlen(p);
+        }
+        return false;
+    }
+}
+
+bool scanansi(const char *p, const char **pend, const char **q, size_t *qn)
+{
+    *q = NULL;
+    if (ESC_CHAR == p[0])
+    {
+        *qn = 3;
+        if (  '[' == p[1]
+           && '\0' != p[2]
+           && 'm' == p[3])
+        {
+            *pend = p + 4;
+            if ('0' == p[2])
+            {
+                *q = "%xn";
+            }
+            else if ('1' == p[2])
+            {
+                *q = "%xh";
+            }
+            else if ('4' == p[2])
+            {
+                *q = "%xu";
+            }
+            else if ('5' == p[2])
+            {
+                *q = "%xf";
+            }
+            else if ('7' == p[2])
+            {
+                *q = "%xi";
+            }
+        }
+        else if (  '[' == p[1]
+                && '\0' != p[2]
+                && '\0' != p[3]
+                && 'm' == p[4])
+        {
+            *pend = p + 5;
+            if ('3' == p[2])
+            {
+                if ('0' == p[3])
+                {
+                    *q = "%xx";
+                }
+                else if ('1' == p[3])
+                {
+                    *q = "%xr";
+                }
+                else if ('2' == p[3])
+                {
+                    *q = "%xg";
+                }
+                else if ('3' == p[3])
+                {
+                    *q = "%xy";
+                }
+                else if ('4' == p[3])
+                {
+                    *q = "%xb";
+                }
+                else if ('5' == p[3])
+                {
+                    *q = "%xm";
+                }
+                else if ('6' == p[3])
+                {
+                    *q = "%xc";
+                }
+                else if ('7' == p[3])
+                {
+                    *q = "%xw";
+                }
+            }
+            else if ('4' == p[2])
+            {
+                if ('0' == p[3])
+                {
+                    *q = "%xX";
+                }
+                else if ('1' == p[3])
+                {
+                    *q = "%xR";
+                }
+                else if ('2' == p[3])
+                {
+                    *q = "%xG";
+                }
+                else if ('3' == p[3])
+                {
+                    *q = "%xY";
+                }
+                else if ('4' == p[3])
+                {
+                    *q = "%xB";
+                }
+                else if ('5' == p[3])
+                {
+                    *q = "%xM";
+                }
+                else if ('6' == p[3])
+                {
+                    *q = "%xC";
+                }
+                else if ('7' == p[3])
+                {
+                    *q = "%xW";
+                }
+            }
+        }
+    }
+
+    if (NULL != *q)
+    {
+        return true;
+    }
+    else
+    {
+        *pend = strchr(p, ESC_CHAR);
+        if (NULL == *pend)
+        {
+            *pend = p + strlen(p);
+        }
+        return false;
+    }
+}
+
+char *EncodeSubstitutions(bool fUnicode, char *p)
+{
+    static char buffer[65536];
+    char *q = buffer;
+
+    if (fUnicode)
+    {
+        while (  '\0' != *p
+              && q < buffer + sizeof(buffer) - 1)
+        {
+            const char *pSub;
+            const char *pEnd;
+            size_t nSub;
+            size_t pn;
+            if (scanpoints(p, &pEnd, &pSub, &nSub))
+            {
+                size_t ncpy = nSub;
+                size_t nskp = pEnd - p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, pSub, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+            else
+            {
+                size_t ncpy = pEnd-p;
+                size_t nskp = pEnd-p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, p, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+        }
+    }
+    else
+    {
+        while (  '\0' != *p
+              && q < buffer + sizeof(buffer) - 1)
+        {
+            const char *pSub;
+            const char *pEnd;
+            size_t nSub;
+            size_t pn;
+            if (scanansi(p, &pEnd, &pSub, &nSub))
+            {
+                size_t ncpy = nSub;
+                size_t nskp = pEnd - p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, pSub, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+            else
+            {
+                size_t ncpy = pEnd-p;
+                size_t nskp = pEnd-p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, p, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+        }
+    }
+    *q = '\0';
+    return buffer;
+}
+
+char *StripColor(bool fUnicode, char *p)
+{
+    static char buffer[65536];
+    char *q = buffer;
+
+    if (fUnicode)
+    {
+        while (  '\0' != *p
+              && q < buffer + sizeof(buffer) - 1)
+        {
+            const char *pSub;
+            const char *pEnd;
+            size_t nSub;
+            size_t pn;
+            if (!scanpoints(p, &pEnd, &pSub, &nSub))
+            {
+                size_t ncpy = pEnd-p;
+                size_t nskp = pEnd-p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, p, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+            else
+            {
+                size_t nskp = pEnd-p;
+                p += nskp;
+            }
+        }
+    }
+    else
+    {
+        while (  '\0' != *p
+              && q < buffer + sizeof(buffer) - 1)
+        {
+            const char *pSub;
+            const char *pEnd;
+            size_t nSub;
+            size_t pn;
+            if (!scanansi(p, &pEnd, &pSub, &nSub))
+            {
+                size_t ncpy = pEnd-p;
+                size_t nskp = pEnd-p;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, p, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
+            else
+            {
+                size_t nskp = pEnd-p;
+                p += nskp;
+            }
+        }
+    }
+    *q = '\0';
+    return buffer;
+}
+
+void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
+    if (fUnicode)
+    {
+        fprintf(fp, "@@ encoding is UTF-8\n", m_dbRef);
+    }
+    else
+    {
+        fprintf(fp, "@@ encoding is latin-1\n", m_dbRef);
+    }
     if (NULL != m_pName)
     {
-        fprintf(fp, "@@ %s\n", m_pName);
+        fprintf(fp, "@@ %s\n", EncodeSubstitutions(fUnicode, m_pName));
     }
 
     // Extract attribute values.
     //
+    char *pStrippedObjName = StringClone(StripColor(fUnicode, m_pName));
     if (NULL != m_pvai)
     {
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            (*it)->Extract(fp, m_pName);
+            (*it)->Extract(fp, fUnicode, pStrippedObjName);
         }
     }
+    free(pStrippedObjName);
 }
 
 static struct
@@ -4496,7 +4890,7 @@ static struct
     { 250, "RLevel" },
 };
 
-void T5X_ATTRINFO::Extract(FILE *fp, char *pObjName) const
+void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
 {
     if (m_fNumAndValue)
     {
@@ -4506,7 +4900,7 @@ void T5X_ATTRINFO::Extract(FILE *fp, char *pObjName) const
             {
                 if (t5x_attr_names[i].iNum == m_iNum)
                 {
-                    fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, m_pValueUnencoded);
+                    fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
                     break;
                 }
             }
@@ -4522,7 +4916,8 @@ void T5X_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                     if (NULL != pAttrName)
                     {
                         pAttrName++;
-                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, m_pValueUnencoded);
+                        fprintf(fp, "&%s %s=", pAttrName, EncodeSubstitutions(fUnicode, pObjName));
+                        fprintf(fp, "%s\n", EncodeSubstitutions(fUnicode, m_pValueUnencoded));
                     }
                     break;
                 }
