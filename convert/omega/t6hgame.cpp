@@ -2244,6 +2244,84 @@ static char *StripColor(char *p)
     return buffer;
 }
 
+static NameMask t6h_flags1[] =
+{
+    { "TRANSPARENT", T6H_SEETHRU      },
+    { "WIZARD",      T6H_WIZARD       },
+    { "LINK_OK",     T6H_LINK_OK      },
+    { "DARK",        T6H_DARK         },
+    { "JUMP_OK",     T6H_JUMP_OK      },
+    { "STICKY",      T6H_STICKY       },
+    { "DESTROY_OK",  T6H_DESTROY_OK   },
+    { "HAVE",        T6H_HAVEN        },
+    { "QUIET",       T6H_QUIET        },
+    { "HALT",        T6H_HALT         },
+    { "TRACE",       T6H_TRACE        },
+    { "MONITOR",     T6H_MONITOR      },
+    { "MYOPIC",      T6H_MYOPIC       },
+    { "PUPPET",      T6H_PUPPET       },
+    { "CHOWN_OK",    T6H_CHOWN_OK     },
+    { "ENTER_OK",    T6H_ENTER_OK     },
+    { "VISUAL",      T6H_VISUAL       },
+    { "IMMORTAL",    T6H_IMMORTAL     },
+    { "OPAQUE",      T6H_OPAQUE       },
+    { "VERBOSE",     T6H_VERBOSE      },
+    { "INHERIT",     T6H_INHERIT      },
+    { "NOSPOOF",     T6H_NOSPOOF      },
+    { "SAFE",        T6H_SAFE         },
+    { "ROYALTY",     T6H_ROYALTY      },
+    { "AUDIBLE",     T6H_HEARTHRU     },
+    { "TERSE",       T6H_TERSE        },
+};
+
+static NameMask t6h_flags2[] =
+{
+    { "KEY",         T6H_KEY          },
+    { "ABODE",       T6H_ABODE        },
+    { "FLOATING",    T6H_FLOATING     },
+    { "UNFINDABLE",  T6H_UNFINDABLE   },
+    { "PARENT_OK",   T6H_PARENT_OK    },
+    { "LIGHT",       T6H_LIGHT        },
+    { "AUDITORIUM",  T6H_AUDITORIUM   },
+    { "ANSI",        T6H_ANSI         },
+    { "HEAD",        T6H_HEAD_FLAG    },
+    { "FIXED",       T6H_FIXED        },
+    { "UNINSPECTED", T6H_UNINSPECTED  },
+    { "COMMANDS",    T6H_HAS_COMMANDS },
+    { "NOBLEED",     T6H_NOBLEED      },
+    { "STAFF",       T6H_STAFF        },
+    { "GAGGED",      T6H_GAGGED       },
+    { "VACATION",    T6H_VACATION     },
+    { "HTML",        T6H_HTML         },
+    { "BLIND",       T6H_BLIND        },
+    { "SUSPECT",     T6H_SUSPECT      },
+    { "SLAVE",       T6H_SLAVE        },
+    { "ZONE",        T6H_ZONE_PARENT  },
+    { "STOP",        T6H_STOP_MATCH   },
+    { "BOUNCE",      T6H_BOUNCE       },
+    { "CONTROL_OK",  T6H_CONTROL_OK   },
+    { "WATCHER",     T6H_WATCHER      },
+    { "CONSTANT",    T6H_CONSTANT_ATTRS },
+};
+
+static NameMask t6h_flags3[] =
+{
+    { "REDIR_OK", T6H_ORPHAN     },
+    { "ORPHAN",   T6H_ORPHAN     },
+    { "FREE",     T6H_NODEFAULT  },
+    { "PRESENCE", T6H_PRESENCE   },
+    { "MARKER0",  T6H_MARK_0     },
+    { "MARKER1",  T6H_MARK_1     },
+    { "MARKER2",  T6H_MARK_2     },
+    { "MARKER3",  T6H_MARK_3     },
+    { "MARKER4",  T6H_MARK_4     },
+    { "MARKER5",  T6H_MARK_5     },
+    { "MARKER6",  T6H_MARK_6     },
+    { "MARKER7",  T6H_MARK_7     },
+    { "MARKER8",  T6H_MARK_8     },
+    { "MARKER9",  T6H_MARK_9     },
+};
+
 void T6H_OBJECTINFO::Extract(FILE *fp) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
@@ -2252,10 +2330,87 @@ void T6H_OBJECTINFO::Extract(FILE *fp) const
     {
         fprintf(fp, "@@ %s\n", EncodeSubstitutions(m_pName));
     }
+    char *pStrippedObjName = StringClone(StripColor(m_pName));
+
+    // Object flags.
+    //
+    if (m_fFlags1)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t6h_flags1)/sizeof(t6h_flags1[0]); i++)
+        {
+            if (m_iFlags1 & t6h_flags1[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t6h_flags1[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fFlags2)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t6h_flags2)/sizeof(t6h_flags2[0]); i++)
+        {
+            if (m_iFlags2 & t6h_flags2[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t6h_flags2[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fFlags3)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t6h_flags3)/sizeof(t6h_flags3[0]); i++)
+        {
+            if (m_iFlags3 & t6h_flags3[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@set %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t6h_flags3[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
 
     // Extract attribute values.
     //
-    char *pStrippedObjName = StringClone(StripColor(m_pName));
     if (NULL != m_pvai)
     {
         for (vector<T6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
