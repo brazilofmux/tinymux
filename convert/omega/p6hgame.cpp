@@ -2868,10 +2868,21 @@ void P6H_OBJECTINFO::Extract(FILE *fp) const
     {
         fprintf(fp, "@@ %s\n", EncodeSubstitutions(m_pName));
     }
+    char *pStrippedObjName = StringClone(StripColor(m_pName));
+
+    // Object flags.
+    //
+    if (NULL != m_pFlags)
+    {
+        fprintf(fp, "@set %s=%s\n", pStrippedObjName, m_pFlags);
+    }
+    if (m_fFlags)
+    {
+        fprintf(fp, "@@ Omega doesn't support extracting object flags from older flatfiles versions, yet.\n");
+    }
 
     // Extract attribute values.
     //
-    char *pStrippedObjName = StringClone(StripColor(m_pName));
     if (NULL != m_pvai)
     {
         for (vector<P6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
