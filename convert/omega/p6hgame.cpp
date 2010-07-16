@@ -2788,7 +2788,7 @@ static bool scanansi(const char *p, const char **pend, const char **q, size_t *q
     }
 }
 
-char *EncodeSubstitutions(char *p)
+static char *EncodeSubstitutions(char *p)
 {
     static char buffer[65536];
     char *q = buffer;
@@ -2827,7 +2827,7 @@ char *EncodeSubstitutions(char *p)
     return buffer;
 }
 
-char *StripColor(char *p)
+static char *StripColor(char *p)
 {
     static char buffer[65536];
     char *q = buffer;

@@ -2098,5 +2098,5 @@ void R7H_GAME::ResetPassword()
 
 void R7H_GAME::Extract(FILE *fp, int dbExtract)
 {
-    fprintf(fp, "Extracting %d.\n", dbExtract);
+    fprintf(fp, "Extraction is not currently supported for this flatfile format.\n");
 }

@@ -560,31 +560,35 @@ void T6H_OBJECTINFO::SetName(char *pName)
     m_pName = pName;
 }
 
-const int t6h_locknums[] =
+static struct
 {
-    T6H_A_LCHOWN,
-    T6H_A_LCONTROL,
-    T6H_A_LDARK,
-    T6H_A_LOCK,
-    T6H_A_LDROP,
-    T6H_A_LENTER,
-    T6H_A_LGIVE,
-    T6H_A_LHEARD,
-    T6H_A_LHEARS,
-    T6H_A_LKNOWN,
-    T6H_A_LKNOWS,
-    T6H_A_LLEAVE,
-    T6H_A_LLINK,
-    T6H_A_LMOVED,
-    T6H_A_LMOVES,
-    T6H_A_LPAGE,
-    T6H_A_LPARENT,
-    T6H_A_LRECEIVE,
-    T6H_A_LSPEECH,
-    T6H_A_LTELOUT,
-    T6H_A_LTPORT,
-    T6H_A_LUSE,
-    T6H_A_LUSER,
+    const char *pName;
+    int         iNum;
+} t6h_locks[] =
+{
+    { "chownlock",   T6H_A_LCHOWN    },
+    { "controllock", T6H_A_LCONTROL  },
+    { "defaultlock", T6H_A_LOCK      },
+    { "darklock",    T6H_A_LDARK     },
+    { "droplock",    T6H_A_LDROP     },
+    { "enterlock",   T6H_A_LENTER    },
+    { "givelock",    T6H_A_LGIVE     },
+    { "heardlock",   T6H_A_LHEARD    },
+    { "hearslock",   T6H_A_LHEARS    },
+    { "knownlock",   T6H_A_LKNOWN    },
+    { "knowslock",   T6H_A_LKNOWS    },
+    { "leavelock",   T6H_A_LLEAVE    },
+    { "linklock",    T6H_A_LLINK     },
+    { "movedlock",   T6H_A_LMOVED    },
+    { "moveslock",   T6H_A_LMOVES    },
+    { "pagelock",    T6H_A_LPAGE     },
+    { "parentlock",  T6H_A_LPARENT   },
+    { "receivelock", T6H_A_LRECEIVE  },
+    { "teloutlock",  T6H_A_LTELOUT   },
+    { "tportlock",   T6H_A_LTPORT    },
+    { "uselock",     T6H_A_LUSE      },
+    { "userlock",    T6H_A_LUSER     },
+    { "speechlock",  T6H_A_LSPEECH   },
 };
 
 void T6H_OBJECTINFO::SetAttrs(int nAttrs, vector<T6H_ATTRINFO *> *pvai)
@@ -610,9 +614,9 @@ void T6H_OBJECTINFO::SetAttrs(int nAttrs, vector<T6H_ATTRINFO *> *pvai)
         for (vector<T6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
             (*it)->m_fIsLock = false;
-            for (int i = 0; i < sizeof(t6h_locknums)/sizeof(t6h_locknums[0]); i++)
+            for (int i = 0; i < sizeof(t6h_locks)/sizeof(t6h_locks[0]); i++)
             {
-                if (t6h_locknums[i] == (*it)->m_iNum)
+                if (t6h_locks[i].iNum == (*it)->m_iNum)
                 {
                     char *pValue = (NULL != (*it)->m_pValueUnencoded) ? (*it)->m_pValueUnencoded : (*it)->m_pValueEncoded;
                     (*it)->m_fIsLock = true;
@@ -2028,7 +2032,623 @@ void T6H_GAME::Downgrade()
     }
 }
 
-void T6H_GAME::Extract(FILE *fp, int dbExtract)
+void T6H_GAME::Extract(FILE *fp, int dbExtract) const
 {
-    fprintf(fp, "Extracting %d.\n", dbExtract);
+    map<int, T6H_OBJECTINFO *, lti>::const_iterator itFound;
+    itFound = m_mObjects.find(dbExtract);
+    if (itFound == m_mObjects.end())
+    {
+        fprintf(stderr, "WARNING: Object #%d does not exist in the database.\n", dbExtract);
+    }
+    else
+    {
+        itFound->second->Extract(fp);
+    }
+}
+
+static bool scanansi(const char *p, const char **pend, const char **q, size_t *qn)
+{
+    *q = NULL;
+    if (ESC_CHAR == p[0])
+    {
+        *qn = 3;
+        if (  '[' == p[1]
+           && '\0' != p[2]
+           && 'm' == p[3])
+        {
+            *pend = p + 4;
+            if ('0' == p[2])
+            {
+                *q = "%xn";
+            }
+            else if ('1' == p[2])
+            {
+                *q = "%xh";
+            }
+            else if ('4' == p[2])
+            {
+                *q = "%xu";
+            }
+            else if ('5' == p[2])
+            {
+                *q = "%xf";
+            }
+            else if ('7' == p[2])
+            {
+                *q = "%xi";
+            }
+        }
+        else if (  '[' == p[1]
+                && '\0' != p[2]
+                && '\0' != p[3]
+                && 'm' == p[4])
+        {
+            *pend = p + 5;
+            if ('3' == p[2])
+            {
+                if ('0' == p[3])
+                {
+                    *q = "%xx";
+                }
+                else if ('1' == p[3])
+                {
+                    *q = "%xr";
+                }
+                else if ('2' == p[3])
+                {
+                    *q = "%xg";
+                }
+                else if ('3' == p[3])
+                {
+                    *q = "%xy";
+                }
+                else if ('4' == p[3])
+                {
+                    *q = "%xb";
+                }
+                else if ('5' == p[3])
+                {
+                    *q = "%xm";
+                }
+                else if ('6' == p[3])
+                {
+                    *q = "%xc";
+                }
+                else if ('7' == p[3])
+                {
+                    *q = "%xw";
+                }
+            }
+            else if ('4' == p[2])
+            {
+                if ('0' == p[3])
+                {
+                    *q = "%xX";
+                }
+                else if ('1' == p[3])
+                {
+                    *q = "%xR";
+                }
+                else if ('2' == p[3])
+                {
+                    *q = "%xG";
+                }
+                else if ('3' == p[3])
+                {
+                    *q = "%xY";
+                }
+                else if ('4' == p[3])
+                {
+                    *q = "%xB";
+                }
+                else if ('5' == p[3])
+                {
+                    *q = "%xM";
+                }
+                else if ('6' == p[3])
+                {
+                    *q = "%xC";
+                }
+                else if ('7' == p[3])
+                {
+                    *q = "%xW";
+                }
+            }
+        }
+    }
+
+    if (NULL != *q)
+    {
+        return true;
+    }
+    else
+    {
+        *pend = strchr(p, ESC_CHAR);
+        if (NULL == *pend)
+        {
+            *pend = p + strlen(p);
+        }
+        return false;
+    }
+}
+
+static char *EncodeSubstitutions(char *p)
+{
+    static char buffer[65536];
+    char *q = buffer;
+
+    while (  '\0' != *p
+          && q < buffer + sizeof(buffer) - 1)
+    {
+        const char *pSub;
+        const char *pEnd;
+        size_t nSub;
+        size_t pn;
+        if (scanansi(p, &pEnd, &pSub, &nSub))
+        {
+            size_t ncpy = nSub;
+            size_t nskp = pEnd - p;
+            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            {
+                memcpy(q, pSub, ncpy);
+                q += ncpy;
+            }
+            p += nskp;
+        }
+        else
+        {
+            size_t ncpy = pEnd-p;
+            size_t nskp = pEnd-p;
+            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            {
+                memcpy(q, p, ncpy);
+                q += ncpy;
+            }
+            p += nskp;
+        }
+    }
+    *q = '\0';
+    return buffer;
+}
+
+static char *StripColor(char *p)
+{
+    static char buffer[65536];
+    char *q = buffer;
+
+    while (  '\0' != *p
+          && q < buffer + sizeof(buffer) - 1)
+    {
+        const char *pSub;
+        const char *pEnd;
+        size_t nSub;
+        size_t pn;
+        if (!scanansi(p, &pEnd, &pSub, &nSub))
+        {
+            size_t ncpy = pEnd-p;
+            size_t nskp = pEnd-p;
+            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            {
+                memcpy(q, p, ncpy);
+                q += ncpy;
+            }
+            p += nskp;
+        }
+        else
+        {
+            size_t nskp = pEnd-p;
+            p += nskp;
+        }
+    }
+    *q = '\0';
+    return buffer;
+}
+
+void T6H_OBJECTINFO::Extract(FILE *fp) const
+{
+    fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
+    fprintf(fp, "@@ encoding is ASCII\n", m_dbRef);
+    if (NULL != m_pName)
+    {
+        fprintf(fp, "@@ %s\n", EncodeSubstitutions(m_pName));
+    }
+
+    // Extract attribute values.
+    //
+    char *pStrippedObjName = StringClone(StripColor(m_pName));
+    if (NULL != m_pvai)
+    {
+        for (vector<T6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->Extract(fp, pStrippedObjName);
+        }
+    }
+    free(pStrippedObjName);
+}
+
+static struct
+{
+    const char *pName;
+    int         iNum;
+} t6h_attr_names[] =
+{
+    { "Aahear",        T6H_A_AAHEAR        },
+    { "Aclone",        T6H_A_ACLONE        },
+    { "Aconnect",      T6H_A_ACONNECT      },
+    { "Adesc",         T6H_A_ADESC         },
+    { "Adfail",        T6H_A_ADFAIL        },
+    { "Adisconnect",   T6H_A_ADISCONNECT   },
+    { "Adrop",         T6H_A_ADROP         },
+    { "Aefail",        T6H_A_AEFAIL        },
+    { "Aenter",        T6H_A_AENTER        },
+    { "Afail",         T6H_A_AFAIL         },
+    { "Agfail",        T6H_A_AGFAIL        },
+    { "Ahear",         T6H_A_AHEAR         },
+    { "Akill",         T6H_A_AKILL         },
+    { "Aleave",        T6H_A_ALEAVE        },
+    { "Alfail",        T6H_A_ALFAIL        },
+    { "Alias",         T6H_A_ALIAS         },
+    { "Allowance",     T6H_A_ALLOWANCE     },
+    { "Amail",         T6H_A_AMAIL         },
+    { "Amhear",        T6H_A_AMHEAR        },
+    { "Amove",         T6H_A_AMOVE         },
+    { "Apay",          T6H_A_APAY          },
+    { "Arfail",        T6H_A_ARFAIL        },
+    { "Asucc",         T6H_A_ASUCC         },
+    { "Atfail",        T6H_A_ATFAIL        },
+    { "Atport",        T6H_A_ATPORT        },
+    { "Atofail",       T6H_A_ATOFAIL       },
+    { "Aufail",        T6H_A_AUFAIL        },
+    { "Ause",          T6H_A_AUSE          },
+    { "Away",          T6H_A_AWAY          },
+    { "Charges",       T6H_A_CHARGES       },
+    { "ChownLock",     T6H_A_LCHOWN        },
+    { "Comment",       T6H_A_COMMENT       },
+    { "Conformat",     T6H_A_LCON_FMT      },
+    { "ControlLock",   T6H_A_LCONTROL      },
+    { "Cost",          T6H_A_COST          },
+    { "Daily",         T6H_A_DAILY         },
+    { "DarkLock",      T6H_A_LDARK         },
+    { "Desc",          T6H_A_DESC          },
+    { "DefaultLock",   T6H_A_LOCK          },
+    { "Destroyer",     T6H_A_DESTROYER     },
+    { "Dfail",         T6H_A_DFAIL         },
+    { "Drop",          T6H_A_DROP          },
+    { "DropLock",      T6H_A_LDROP         },
+    { "Ealias",        T6H_A_EALIAS        },
+    { "Efail",         T6H_A_EFAIL         },
+    { "Enter",         T6H_A_ENTER         },
+    { "EnterLock",     T6H_A_LENTER        },
+    { "Exitformat",    T6H_A_LEXITS_FMT    },
+    { "Exitto",        T6H_A_EXITVARDEST   },
+    { "Fail",          T6H_A_FAIL          },
+    { "Filter",        T6H_A_FILTER        },
+    { "Forwardlist",   T6H_A_FORWARDLIST   },
+    { "Gfail",         T6H_A_GFAIL         },
+    { "GiveLock",      T6H_A_LGIVE         },
+    { "HeardLock",     T6H_A_LHEARD        },
+    { "HearsLock",     T6H_A_LHEARS        },
+    { "Idesc",         T6H_A_IDESC         },
+    { "Idle",          T6H_A_IDLE          },
+    { "Infilter",      T6H_A_INFILTER      },
+    { "Inprefix",      T6H_A_INPREFIX      },
+    { "Kill",          T6H_A_KILL          },
+    { "KnownLock",     T6H_A_LKNOWN        },
+    { "KnowsLock",     T6H_A_LKNOWS        },
+    { "Lalias",        T6H_A_LALIAS        },
+    { "Last",          T6H_A_LAST          },
+    { "Lastip",        T6H_A_LASTIP        },
+    { "Lastpage",      T6H_A_LASTPAGE      },
+    { "Lastsite",      T6H_A_LASTSITE      },
+    { "Leave",         T6H_A_LEAVE         },
+    { "LeaveLock",     T6H_A_LLEAVE        },
+    { "Lfail",         T6H_A_LFAIL         },
+    { "LinkLock",      T6H_A_LLINK         },
+    { "Listen",        T6H_A_LISTEN        },
+    { "Logindata",     T6H_A_LOGINDATA     },
+    { "Mailcurf",      T6H_A_MAILCURF      },
+    { "Mailflags",     T6H_A_MAILFLAGS     },
+    { "Mailfolders",   T6H_A_MAILFOLDERS   },
+    { "Mailmsg",       T6H_A_MAILMSG       },
+    { "Mailsub",       T6H_A_MAILSUB       },
+    { "Mailsucc",      T6H_A_MAIL          },
+    { "Mailto",        T6H_A_MAILTO        },
+    { "MovedLock",     T6H_A_LMOVED        },
+    { "MovesLock",     T6H_A_LMOVES        },
+    { "Move",          T6H_A_MOVE          },
+    { "Name",          T6H_A_NAME          },
+    { "Nameformat",    T6H_A_NAME_FMT      },
+    { "Newobjs",       T6H_A_NEWOBJS       },
+    { "Odesc",         T6H_A_ODESC         },
+    { "Odfail",        T6H_A_ODFAIL        },
+    { "Odrop",         T6H_A_ODROP         },
+    { "Oefail",        T6H_A_OEFAIL        },
+    { "Oenter",        T6H_A_OENTER        },
+    { "Ofail",         T6H_A_OFAIL         },
+    { "Ogfail",        T6H_A_OGFAIL        },
+    { "Okill",         T6H_A_OKILL         },
+    { "Oleave",        T6H_A_OLEAVE        },
+    { "Olfail",        T6H_A_OLFAIL        },
+    { "Omove",         T6H_A_OMOVE         },
+    { "Opay",          T6H_A_OPAY          },
+    { "Orfail",        T6H_A_ORFAIL        },
+    { "Osucc",         T6H_A_OSUCC         },
+    { "Otfail",        T6H_A_OTFAIL        },
+    { "Otport",        T6H_A_OTPORT        },
+    { "Otofail",       T6H_A_OTOFAIL       },
+    { "Oufail",        T6H_A_OUFAIL        },
+    { "Ouse",          T6H_A_OUSE          },
+    { "Oxenter",       T6H_A_OXENTER       },
+    { "Oxleave",       T6H_A_OXLEAVE       },
+    { "Oxtport",       T6H_A_OXTPORT       },
+    { "Pagegroup",     T6H_A_PAGEGROUP     },
+    { "PageLock",      T6H_A_LPAGE         },
+    { "ParentLock",    T6H_A_LPARENT       },
+    { "Pay",           T6H_A_PAY           },
+    { "Prefix",        T6H_A_PREFIX        },
+    { "Progcmd",       T6H_A_PROGCMD       },
+    { "Propdir",       T6H_A_PROPDIR       },
+    { "Queuemax",      T6H_A_QUEUEMAX      },
+    { "Quota",         T6H_A_QUOTA         },
+    { "ReceiveLock",   T6H_A_LRECEIVE      },
+    { "Reject",        T6H_A_REJECT        },
+    { "Rfail",         T6H_A_RFAIL         },
+    { "Rquota",        T6H_A_RQUOTA        },
+    { "Runout",        T6H_A_RUNOUT        },
+    { "Semaphore",     T6H_A_SEMAPHORE     },
+    { "Sex",           T6H_A_SEX           },
+    { "Signature",     T6H_A_SIGNATURE     },
+    { "Speechformat",  T6H_A_SPEECHFMT     },
+    { "SpeechLock",    T6H_A_LSPEECH       },
+    { "Startup",       T6H_A_STARTUP       },
+    { "Succ",          T6H_A_SUCC          },
+    { "TeloutLock",    T6H_A_LTELOUT       },
+    { "Tfail",         T6H_A_TFAIL         },
+    { "Timeout",       T6H_A_TIMEOUT       },
+    { "Tport",         T6H_A_TPORT         },
+    { "TportLock",     T6H_A_LTPORT        },
+    { "Tofail",        T6H_A_TOFAIL        },
+    { "Ufail",         T6H_A_UFAIL         },
+    { "Use",           T6H_A_USE           },
+    { "UseLock",       T6H_A_LUSE          },
+    { "UserLock",      T6H_A_LUSER         },
+    { "Va",            T6H_A_VA            },
+    { "Vb",            T6H_A_VA+1          },
+    { "Vc",            T6H_A_VA+2          },
+    { "Vd",            T6H_A_VA+3          },
+    { "Ve",            T6H_A_VA+4          },
+    { "Vf",            T6H_A_VA+5          },
+    { "Vg",            T6H_A_VA+6          },
+    { "Vh",            T6H_A_VA+7          },
+    { "Vi",            T6H_A_VA+8          },
+    { "Vj",            T6H_A_VA+9          },
+    { "Vk",            T6H_A_VA+10         },
+    { "Vl",            T6H_A_VA+11         },
+    { "Vm",            T6H_A_VA+12         },
+    { "Vn",            T6H_A_VA+13         },
+    { "Vo",            T6H_A_VA+14         },
+    { "Vp",            T6H_A_VA+15         },
+    { "Vq",            T6H_A_VA+16         },
+    { "Vr",            T6H_A_VA+17         },
+    { "Vs",            T6H_A_VA+18         },
+    { "Vt",            T6H_A_VA+19         },
+    { "Vu",            T6H_A_VA+20         },
+    { "Vv",            T6H_A_VA+21         },
+    { "Vw",            T6H_A_VA+22         },
+    { "Vx",            T6H_A_VA+23         },
+    { "Vy",            T6H_A_VA+24         },
+    { "Vz",            T6H_A_VA+25         },
+    { "Vrml_url",      T6H_A_VRML_URL      },
+    { "Htdesc",        T6H_A_HTDESC        },
+    { "*Atrlist",      T6H_A_LIST          },
+    { "*Password",     T6H_A_PASS          },
+    { "*Money",        T6H_A_MONEY         },
+    { "*Invalid",      T6H_A_TEMP          },
+};
+
+void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
+{
+    if (m_fNumAndValue)
+    {
+        if (m_iNum < A_USER_START)
+        {
+            if (m_fIsLock)
+            {
+                for (int i = 0; i < sizeof(t6h_locks)/sizeof(t6h_locks[0]); i++)
+                {
+                    if (t6h_locks[i].iNum == m_iNum)
+                    {
+                        fprintf(fp, "@lock/%s %s=%s\n", t6h_locks[i].pName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < sizeof(t6h_attr_names)/sizeof(t6h_attr_names[0]); i++)
+                {
+                    if (t6h_attr_names[i].iNum == m_iNum)
+                    {
+                        if ( m_iFlags
+                           & ( T6H_AF_CONST
+                             | T6H_AF_DARK
+                             | T6H_AF_DEFAULT
+                             | T6H_AF_GOD
+                             | T6H_AF_MDARK
+                             | T6H_AF_NOCMD
+                             | T6H_AF_NOCLONE
+                             | T6H_AF_NOPROG
+                             | T6H_AF_PRIVATE
+                             | T6H_AF_VISUAL
+                             | T6H_AF_WIZARD
+                             | T6H_AF_INTERNAL
+                             | T6H_AF_ODARK))
+                        {
+                            fprintf(fp, "@@ attribute is ");
+                            if (T6H_AF_CONST & m_iFlags)
+                            {
+                                fprintf(fp, "const ");
+                            }
+                            if (T6H_AF_DARK & m_iFlags)
+                            {
+                                fprintf(fp, "dark ");
+                            }
+                            if (T6H_AF_DEFAULT & m_iFlags)
+                            {
+                                fprintf(fp, "default ");
+                            }
+                            if (T6H_AF_GOD & m_iFlags)
+                            {
+                                fprintf(fp, "god ");
+                            }
+                            if (T6H_AF_MDARK & m_iFlags)
+                            {
+                                fprintf(fp, "hidden ");
+                            }
+                            if (T6H_AF_NOCMD & m_iFlags)
+                            {
+                                fprintf(fp, "ignore ");
+                            }
+                            if (T6H_AF_INTERNAL & m_iFlags)
+                            {
+                                fprintf(fp, "internal ");
+                            }
+                            if (T6H_AF_ODARK & m_iFlags)
+                            {
+                                fprintf(fp, "private ");
+                            }
+                            if (T6H_AF_NOCLONE & m_iFlags)
+                            {
+                                fprintf(fp, "no_clone ");
+                            }
+                            if (T6H_AF_NOPROG & m_iFlags)
+                            {
+                                fprintf(fp, "no_command ");
+                            }
+                            if (T6H_AF_NOPROG & m_iFlags)
+                            {
+                                fprintf(fp, "no_command ");
+                            }
+                            if (T6H_AF_NOPROG & m_iFlags)
+                            {
+                                fprintf(fp, "no_inherit ");
+                            }
+                            if (T6H_AF_VISUAL & m_iFlags)
+                            {
+                                fprintf(fp, "no_visual ");
+                            }
+                            if (T6H_AF_WIZARD & m_iFlags)
+                            {
+                                fprintf(fp, "wizard ");
+                            }
+                            fprintf(fp, "\n");
+                        }
+                        fprintf(fp, "@%s %s=%s\n", t6h_attr_names[i].pName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (vector<T6H_ATTRNAMEINFO *>::iterator itName =  g_t6hgame.m_vAttrNames.begin(); itName != g_t6hgame.m_vAttrNames.end(); ++itName)
+            {
+                if (  (*itName)->m_fNumAndName
+                   && (*itName)->m_iNum == m_iNum)
+                {
+                    char *pAttrName = strchr((*itName)->m_pName, ':');
+                    if (NULL != pAttrName)
+                    {
+                        pAttrName++;
+                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        if ( m_iFlags
+                           & ( T6H_AF_CASE
+                             | T6H_AF_DARK
+                             | T6H_AF_MDARK
+                             | T6H_AF_HTML
+                             | T6H_AF_NOPROG
+                             | T6H_AF_PRIVATE
+                             | T6H_AF_NONAME
+                             | T6H_AF_NOPARSE
+                             | T6H_AF_REGEXP
+                             | T6H_AF_TRACE
+                             | T6H_AF_WIZARD
+                             | T6H_AF_NOW
+                             | T6H_AF_RMATCH
+                             | T6H_AF_STRUCTURE
+                             | T6H_AF_VISUAL))
+                        {
+                            fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
+                            if (T6H_AF_CASE & m_iFlags)
+                            {
+                                fprintf(fp, "case ");
+                            }
+                            if (T6H_AF_DARK & m_iFlags)
+                            {
+                                fprintf(fp, "dark ");
+                            }
+                            if (T6H_AF_MDARK & m_iFlags)
+                            {
+                                fprintf(fp, "hidden ");
+                            }
+                            if (T6H_AF_HTML & m_iFlags)
+                            {
+                                fprintf(fp, "html ");
+                            }
+                            if (T6H_AF_NOPROG & m_iFlags)
+                            {
+                                fprintf(fp, "no_command ");
+                            }
+                            if (T6H_AF_PRIVATE & m_iFlags)
+                            {
+                                fprintf(fp, "no_inherit ");
+                            }
+                            if (T6H_AF_NONAME & m_iFlags)
+                            {
+                                fprintf(fp, "no_name ");
+                            }
+                            if (T6H_AF_NOPARSE & m_iFlags)
+                            {
+                                fprintf(fp, "no_parse ");
+                            }
+                            if (T6H_AF_REGEXP & m_iFlags)
+                            {
+                                fprintf(fp, "regexp ");
+                            }
+                            if (T6H_AF_TRACE & m_iFlags)
+                            {
+                                fprintf(fp, "trace ");
+                            }
+                            if (T6H_AF_WIZARD & m_iFlags)
+                            {
+                                fprintf(fp, "wizard ");
+                            }
+                            if (T6H_AF_NOW & m_iFlags)
+                            {
+                                fprintf(fp, "now ");
+                            }
+                            if (T6H_AF_RMATCH & m_iFlags)
+                            {
+                                fprintf(fp, "rmatch ");
+                            }
+                            if (T6H_AF_STRUCTURE & m_iFlags)
+                            {
+                                fprintf(fp, "structure ");
+                            }
+                            if (T6H_AF_VISUAL & m_iFlags)
+                            {
+                                fprintf(fp, "visual ");
+                            }
+                            fprintf(fp, "\n");
+                        }
+                        if (T6H_AF_IS_LOCK & m_iFlags)
+                        {
+                            fprintf(fp, "@lock %s/%s", pObjName, pAttrName);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
 }

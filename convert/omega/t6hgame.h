@@ -517,6 +517,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool fExtraEscapes) const;
+    void Extract(FILE *fp, char *pObjName) const;
 
     T6H_ATTRINFO()
     {
@@ -632,6 +633,7 @@ public:
     void Validate() const;
 
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
+    void Extract(FILE *fp) const;
 
     T6H_OBJECTINFO()
     {
@@ -712,7 +714,7 @@ public:
     void ValidateObjects() const;
 
     void Write(FILE *fp);
-    void Extract(FILE *fp, int dbExtract);
+    void Extract(FILE *fp, int dbExtract) const;
 
     void ConvertFromP6H();
 
