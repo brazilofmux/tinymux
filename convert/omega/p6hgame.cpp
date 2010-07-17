@@ -2881,7 +2881,14 @@ void P6H_OBJECTINFO::Extract(FILE *fp) const
         fprintf(fp, "@@ Omega doesn't support extracting object flags from older flatfiles versions, yet.\n");
     }
 
-    // Extract attribute values.
+    // Object powers.
+    //
+    if (NULL != m_pPowers)
+    {
+        fprintf(fp, "@power %s=%s\n", pStrippedObjName, m_pPowers);
+    }
+
+    // Attribute values.
     //
     if (NULL != m_pvai)
     {
@@ -2927,5 +2934,10 @@ void P6H_LOCKINFO::Extract(FILE *fp, char *pObjName) const
        && NULL != m_pKey)
     {
         fprintf(fp, "@lock/%s %s=%s\n", m_pType, pObjName, EncodeSubstitutions(m_pKey));
+        if (  NULL != m_pFlags
+           && '\0' != *m_pFlags)
+        {
+            fprintf(fp, "@lset %s/%s=%s\n", pObjName, m_pType, m_pFlags);
+        }
     }
 }
