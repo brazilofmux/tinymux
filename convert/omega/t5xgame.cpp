@@ -5028,6 +5028,37 @@ static struct
     { "ConnInfo",    T5X_A_CONNINFO     },
 };
 
+// T5X_AF_ISUSED is not exposed.
+// T5X_AF_LOCK is handled separately.
+//
+static NameMask t5x_attr_flags[] =
+{
+    { "case",        T5X_AF_CASE        },
+    { "dark",        T5X_AF_DARK        },
+    { "private",     T5X_AF_ODARK       },
+    { "hidden",      T5X_AF_MDARK       },
+    { "god",         T5X_AF_GOD         },
+    { "html",        T5X_AF_HTML        },
+    { "no_clone",    T5X_AF_NOCLONE     },
+    { "no_command",  T5X_AF_NOPROG      },
+    { "no_inherit",  T5X_AF_PRIVATE     },
+    { "no_name",     T5X_AF_NONAME      },
+    { "no_parse",    T5X_AF_NOPARSE     },
+    { "regexp",      T5X_AF_REGEXP      },
+    { "trace",       T5X_AF_TRACE       },
+    { "visual",      T5X_AF_VISUAL      },
+    { "wizard",      T5X_AF_WIZARD      },
+};
+
+static NameMask t5x_attr_flags_comment[] =
+{
+    { "const",       T5X_AF_CONST       },
+    { "deleted",     T5X_AF_DELETED     },
+    { "ignore",      T5X_AF_NOCMD       },
+    { "internal",    T5X_AF_INTERNAL    },
+    { "is_lock",     T5X_AF_IS_LOCK     },
+};
+
 void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
 {
     if (m_fNumAndValue)
@@ -5051,42 +5082,53 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                 {
                     if (t5x_attr_names[i].iNum == m_iNum)
                     {
-                        if ( m_iFlags
-                           & ( T5X_AF_CONST
-                             | T5X_AF_DARK
-                             | T5X_AF_GOD
-                             | T5X_AF_NOCMD
-                             | T5X_AF_INTERNAL
-                             | T5X_AF_ODARK))
+                        bool fFirst = true;
+                        for (int j = 0; j < sizeof(t5x_attr_flags_comment)/sizeof(t5x_attr_flags_comment[0]); j++)
                         {
-                            fprintf(fp, "@@ attribute is ");
-                            if (T5X_AF_CONST & m_iFlags)
+                            if (m_iFlags & t5x_attr_flags_comment[j].mask)
                             {
-                                fprintf(fp, "const ");
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@@ attribute is ");
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t5x_attr_flags_comment[j].pName);
                             }
-                            if (T5X_AF_DARK & m_iFlags)
-                            {
-                                fprintf(fp, "dark ");
-                            }
-                            if (T5X_AF_GOD & m_iFlags)
-                            {
-                                fprintf(fp, "god ");
-                            }
-                            if (T5X_AF_NOCMD & m_iFlags)
-                            {
-                                fprintf(fp, "ignore ");
-                            }
-                            if (T5X_AF_INTERNAL & m_iFlags)
-                            {
-                                fprintf(fp, "internal ");
-                            }
-                            if (T5X_AF_ODARK & m_iFlags)
-                            {
-                                fprintf(fp, "private ");
-                            }
+                        }
+                        if (!fFirst)
+                        {
                             fprintf(fp, "\n");
                         }
                         fprintf(fp, "@%s %s=%s\n", t5x_attr_names[i].pName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
+                        fFirst = true;
+                        for (int j = 0; j < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); j++)
+                        {
+                            if (m_iFlags & t5x_attr_flags[j].mask)
+                            {
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@set %s/%s=", pObjName, t5x_attr_names[j]);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t5x_attr_flags[j].pName);
+                            }
+                        }
+                        if (!fFirst)
+                        {
+                            fprintf(fp, "\n");
+                        }
+                        if (T5X_AF_LOCK & m_iFlags)
+                        {
+                            fprintf(fp, "@lock %s/%s\n", pObjName, t5x_attr_names[i].pName);
+                        }
                         break;
                     }
                 }
@@ -5103,75 +5145,52 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                     if (NULL != pAttrName)
                     {
                         pAttrName++;
-                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
-                        if ( m_iFlags
-                           & ( T5X_AF_CASE
-                             | T5X_AF_DARK
-                             | T5X_AF_MDARK
-                             | T5X_AF_HTML
-                             | T5X_AF_NOPROG
-                             | T5X_AF_PRIVATE
-                             | T5X_AF_NONAME
-                             | T5X_AF_NOPARSE
-                             | T5X_AF_REGEXP
-                             | T5X_AF_TRACE
-                             | T5X_AF_WIZARD
-                             | T5X_AF_VISUAL))
+                        bool fFirst = true;
+                        for (int i = 0; i < sizeof(t5x_attr_flags_comment)/sizeof(t5x_attr_flags_comment[0]); i++)
                         {
-                            fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
-                            if (T5X_AF_CASE & m_iFlags)
+                            if (m_iFlags & t5x_attr_flags_comment[i].mask)
                             {
-                                fprintf(fp, "case ");
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@@ attribute is ", pObjName);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t5x_attr_flags_comment[i].pName);
                             }
-                            if (T5X_AF_DARK & m_iFlags)
-                            {
-                                fprintf(fp, "dark ");
-                            }
-                            if (T5X_AF_MDARK & m_iFlags)
-                            {
-                                fprintf(fp, "hidden ");
-                            }
-                            if (T5X_AF_HTML & m_iFlags)
-                            {
-                                fprintf(fp, "html ");
-                            }
-                            if (T5X_AF_NOPROG & m_iFlags)
-                            {
-                                fprintf(fp, "no_command ");
-                            }
-                            if (T5X_AF_PRIVATE & m_iFlags)
-                            {
-                                fprintf(fp, "no_inherit ");
-                            }
-                            if (T5X_AF_NONAME & m_iFlags)
-                            {
-                                fprintf(fp, "no_name ");
-                            }
-                            if (T5X_AF_NOPARSE & m_iFlags)
-                            {
-                                fprintf(fp, "no_parse ");
-                            }
-                            if (T5X_AF_REGEXP & m_iFlags)
-                            {
-                                fprintf(fp, "regexp ");
-                            }
-                            if (T5X_AF_TRACE & m_iFlags)
-                            {
-                                fprintf(fp, "trace ");
-                            }
-                            if (T5X_AF_WIZARD & m_iFlags)
-                            {
-                                fprintf(fp, "wizard ");
-                            }
-                            if (T5X_AF_VISUAL & m_iFlags)
-                            {
-                                fprintf(fp, "visual ");
-                            }
+                        }
+                        if (!fFirst)
+                        {
                             fprintf(fp, "\n");
                         }
-                        if (T5X_AF_IS_LOCK & m_iFlags)
+                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(fUnicode, m_pValueUnencoded));
+                        fFirst = true;
+                        for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
                         {
-                            fprintf(fp, "@lock %s/%s", pObjName, pAttrName);
+                            if (m_iFlags & t5x_attr_flags[i].mask)
+                            {
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t5x_attr_flags[i].pName);
+                            }
+                        }
+                        if (!fFirst)
+                        {
+                            fprintf(fp, "\n");
+                        }
+                        if (T5X_AF_LOCK & m_iFlags)
+                        {
+                            fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
                         }
                     }
                     break;
