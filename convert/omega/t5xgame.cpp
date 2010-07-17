@@ -4736,6 +4736,45 @@ static NameMask t5x_flags3[] =
     { "MARKER9", T5X_MARK_9           },
 };
 
+static NameMask t5x_powers1[] =
+{
+    { "quota",            T5X_POW_CHG_QUOTAS    },
+    { "chown_anything",   T5X_POW_CHOWN_ANY     },
+    { "announce",         T5X_POW_ANNOUNCE      },
+    { "boot",             T5X_POW_BOOT          },
+    { "halt",             T5X_POW_HALT          },
+    { "control_all",      T5X_POW_CONTROL_ALL   },
+    { "expanded_who",     T5X_POW_WIZARD_WHO    },
+    { "see_all",          T5X_POW_EXAM_ALL      },
+    { "find_unfindable",  T5X_POW_FIND_UNFIND   },
+    { "free_money",       T5X_POW_FREE_MONEY    },
+    { "free_quota",       T5X_POW_FREE_QUOTA    },
+    { "hide",             T5X_POW_HIDE          },
+    { "idle",             T5X_POW_IDLE          },
+    { "search",           T5X_POW_SEARCH        },
+    { "long_fingers",     T5X_POW_LONGFINGERS   },
+    { "prog",             T5X_POW_PROG          },
+    { "siteadmin",        T5X_POW_SITEADMIN     },
+    { "comm_all",         T5X_POW_COMM_ALL      },
+    { "see_queue",        T5X_POW_SEE_QUEUE     },
+    { "see_hidden",       T5X_POW_SEE_HIDDEN    },
+    { "monitor",          T5X_POW_MONITOR       },
+    { "poll",             T5X_POW_POLL          },
+    { "no_destroy",       T5X_POW_NO_DESTROY    },
+    { "guest",            T5X_POW_GUEST         },
+    { "pass_locks",       T5X_POW_PASS_LOCKS    },
+    { "stat_any",         T5X_POW_STAT_ANY      },
+    { "steal_money",      T5X_POW_STEAL         },
+    { "tel_anywhere",     T5X_POW_TEL_ANYWHR    },
+    { "tel_anything",     T5X_POW_TEL_UNRST     },
+    { "unkillable",       T5X_POW_UNKILLABLE    },
+};
+
+static NameMask t5x_powers2[] =
+{
+    { "builder",          T5X_POW_BUILDER       },
+};
+
 void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
@@ -4822,6 +4861,56 @@ void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
                     fprintf(fp, " ");
                 }
                 fprintf(fp, "%s", t5x_flags3[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fPowers1)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_powers1)/sizeof(t5x_powers1[0]); i++)
+        {
+            if (m_iPowers1 & t5x_powers1[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@power %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t5x_powers1[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fPowers2)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t5x_powers2)/sizeof(t5x_powers2[0]); i++)
+        {
+            if (m_iPowers2 & t5x_powers2[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@power %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t5x_powers2[i].pName);
             }
         }
         if (!fFirst)
