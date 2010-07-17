@@ -2601,6 +2601,41 @@ static struct
     { "*Invalid",      T6H_A_TEMP          },
 };
 
+// T6H_AF_DIRTY is not exposed.
+// T6H_AF_LOCK is handled separately.
+//
+static NameMask t6h_attr_flags[] =
+{
+    { "case",        T6H_AF_CASE        },
+    { "dark",        T6H_AF_DARK        },
+    { "private",     T6H_AF_ODARK       },
+    { "hidden",      T6H_AF_MDARK       },
+    { "god",         T6H_AF_GOD         },
+    { "html",        T6H_AF_HTML        },
+    { "no_clone",    T6H_AF_NOCLONE     },
+    { "no_command",  T6H_AF_NOPROG      },
+    { "no_inherit",  T6H_AF_PRIVATE     },
+    { "no_name",     T6H_AF_NONAME      },
+    { "no_parse",    T6H_AF_NOPARSE     },
+    { "regexp",      T6H_AF_REGEXP      },
+    { "trace",       T6H_AF_TRACE       },
+    { "visual",      T6H_AF_VISUAL      },
+    { "wizard",      T6H_AF_WIZARD      },
+    { "default",     T6H_AF_DEFAULT     },
+    { "rmatch",      T6H_AF_RMATCH      },
+    { "now",         T6H_AF_NOW         },
+};
+
+static NameMask t6h_attr_flags_comment[] =
+{
+    { "const",       T6H_AF_CONST       },
+    { "deleted",     T6H_AF_DELETED     },
+    { "ignore",      T6H_AF_NOCMD       },
+    { "internal",    T6H_AF_INTERNAL    },
+    { "is_lock",     T6H_AF_IS_LOCK     },
+    { "structure",   T6H_AF_STRUCTURE   },
+};
+
 void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
 {
     if (m_fNumAndValue)
@@ -2624,81 +2659,53 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                 {
                     if (t6h_attr_names[i].iNum == m_iNum)
                     {
-                        if ( m_iFlags
-                           & ( T6H_AF_CONST
-                             | T6H_AF_DARK
-                             | T6H_AF_DEFAULT
-                             | T6H_AF_GOD
-                             | T6H_AF_MDARK
-                             | T6H_AF_NOCMD
-                             | T6H_AF_NOCLONE
-                             | T6H_AF_NOPROG
-                             | T6H_AF_PRIVATE
-                             | T6H_AF_VISUAL
-                             | T6H_AF_WIZARD
-                             | T6H_AF_INTERNAL
-                             | T6H_AF_ODARK))
+                        bool fFirst = true;
+                        for (int j = 0; j < sizeof(t6h_attr_flags_comment)/sizeof(t6h_attr_flags_comment[0]); j++)
                         {
-                            fprintf(fp, "@@ attribute is ");
-                            if (T6H_AF_CONST & m_iFlags)
+                            if (m_iFlags & t6h_attr_flags_comment[j].mask)
                             {
-                                fprintf(fp, "const ");
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@@ attribute is ");
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t6h_attr_flags_comment[j].pName);
                             }
-                            if (T6H_AF_DARK & m_iFlags)
-                            {
-                                fprintf(fp, "dark ");
-                            }
-                            if (T6H_AF_DEFAULT & m_iFlags)
-                            {
-                                fprintf(fp, "default ");
-                            }
-                            if (T6H_AF_GOD & m_iFlags)
-                            {
-                                fprintf(fp, "god ");
-                            }
-                            if (T6H_AF_MDARK & m_iFlags)
-                            {
-                                fprintf(fp, "hidden ");
-                            }
-                            if (T6H_AF_NOCMD & m_iFlags)
-                            {
-                                fprintf(fp, "ignore ");
-                            }
-                            if (T6H_AF_INTERNAL & m_iFlags)
-                            {
-                                fprintf(fp, "internal ");
-                            }
-                            if (T6H_AF_ODARK & m_iFlags)
-                            {
-                                fprintf(fp, "private ");
-                            }
-                            if (T6H_AF_NOCLONE & m_iFlags)
-                            {
-                                fprintf(fp, "no_clone ");
-                            }
-                            if (T6H_AF_NOPROG & m_iFlags)
-                            {
-                                fprintf(fp, "no_command ");
-                            }
-                            if (T6H_AF_NOPROG & m_iFlags)
-                            {
-                                fprintf(fp, "no_command ");
-                            }
-                            if (T6H_AF_NOPROG & m_iFlags)
-                            {
-                                fprintf(fp, "no_inherit ");
-                            }
-                            if (T6H_AF_VISUAL & m_iFlags)
-                            {
-                                fprintf(fp, "no_visual ");
-                            }
-                            if (T6H_AF_WIZARD & m_iFlags)
-                            {
-                                fprintf(fp, "wizard ");
-                            }
+                        }
+                        if (!fFirst)
+                        {
                             fprintf(fp, "\n");
                         }
                         fprintf(fp, "@%s %s=%s\n", t6h_attr_names[i].pName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        fFirst = true;
+                        for (int j = 0; j < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); j++)
+                        {
+                            if (m_iFlags & t6h_attr_flags[j].mask)
+                            {
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t6h_attr_flags[j].pName);
+                            }
+                        }
+                        if (!fFirst)
+                        {
+                            fprintf(fp, "\n");
+                        }
+                        if (T6H_AF_LOCK & m_iFlags)
+                        {
+                            fprintf(fp, "@lock %s/%s\n", pObjName, t6h_attr_names[i].pName);
+                        }
                         break;
                     }
                 }
@@ -2715,90 +2722,52 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                     if (NULL != pAttrName)
                     {
                         pAttrName++;
-                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
-                        if ( m_iFlags
-                           & ( T6H_AF_CASE
-                             | T6H_AF_DARK
-                             | T6H_AF_MDARK
-                             | T6H_AF_HTML
-                             | T6H_AF_NOPROG
-                             | T6H_AF_PRIVATE
-                             | T6H_AF_NONAME
-                             | T6H_AF_NOPARSE
-                             | T6H_AF_REGEXP
-                             | T6H_AF_TRACE
-                             | T6H_AF_WIZARD
-                             | T6H_AF_NOW
-                             | T6H_AF_RMATCH
-                             | T6H_AF_STRUCTURE
-                             | T6H_AF_VISUAL))
+                        bool fFirst = true;
+                        for (int i = 0; i < sizeof(t6h_attr_flags_comment)/sizeof(t6h_attr_flags_comment[0]); i++)
                         {
-                            fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
-                            if (T6H_AF_CASE & m_iFlags)
+                            if (m_iFlags & t6h_attr_flags_comment[i].mask)
                             {
-                                fprintf(fp, "case ");
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@@ attribute is ", pObjName);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t6h_attr_flags_comment[i].pName);
                             }
-                            if (T6H_AF_DARK & m_iFlags)
-                            {
-                                fprintf(fp, "dark ");
-                            }
-                            if (T6H_AF_MDARK & m_iFlags)
-                            {
-                                fprintf(fp, "hidden ");
-                            }
-                            if (T6H_AF_HTML & m_iFlags)
-                            {
-                                fprintf(fp, "html ");
-                            }
-                            if (T6H_AF_NOPROG & m_iFlags)
-                            {
-                                fprintf(fp, "no_command ");
-                            }
-                            if (T6H_AF_PRIVATE & m_iFlags)
-                            {
-                                fprintf(fp, "no_inherit ");
-                            }
-                            if (T6H_AF_NONAME & m_iFlags)
-                            {
-                                fprintf(fp, "no_name ");
-                            }
-                            if (T6H_AF_NOPARSE & m_iFlags)
-                            {
-                                fprintf(fp, "no_parse ");
-                            }
-                            if (T6H_AF_REGEXP & m_iFlags)
-                            {
-                                fprintf(fp, "regexp ");
-                            }
-                            if (T6H_AF_TRACE & m_iFlags)
-                            {
-                                fprintf(fp, "trace ");
-                            }
-                            if (T6H_AF_WIZARD & m_iFlags)
-                            {
-                                fprintf(fp, "wizard ");
-                            }
-                            if (T6H_AF_NOW & m_iFlags)
-                            {
-                                fprintf(fp, "now ");
-                            }
-                            if (T6H_AF_RMATCH & m_iFlags)
-                            {
-                                fprintf(fp, "rmatch ");
-                            }
-                            if (T6H_AF_STRUCTURE & m_iFlags)
-                            {
-                                fprintf(fp, "structure ");
-                            }
-                            if (T6H_AF_VISUAL & m_iFlags)
-                            {
-                                fprintf(fp, "visual ");
-                            }
+                        }
+                        if (!fFirst)
+                        {
                             fprintf(fp, "\n");
                         }
-                        if (T6H_AF_IS_LOCK & m_iFlags)
+                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        fFirst = true;
+                        for (int i = 0; i < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); i++)
                         {
-                            fprintf(fp, "@lock %s/%s", pObjName, pAttrName);
+                            if (m_iFlags & t6h_attr_flags[i].mask)
+                            {
+                                if (fFirst)
+                                {
+                                    fFirst = false;
+                                    fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
+                                }
+                                else
+                                {
+                                    fprintf(fp, " ");
+                                }
+                                fprintf(fp, "%s", t6h_attr_flags[i].pName);
+                            }
+                        }
+                        if (!fFirst)
+                        {
+                            fprintf(fp, "\n");
+                        }
+                        if (T6H_AF_LOCK & m_iFlags)
+                        {
+                            fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
                         }
                     }
                     break;
