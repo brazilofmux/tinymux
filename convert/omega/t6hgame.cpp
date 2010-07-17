@@ -2322,6 +2322,52 @@ static NameMask t6h_flags3[] =
     { "MARKER9",  T6H_MARK_9     },
 };
 
+static NameMask t6h_powers1[] =
+{
+    { "quota",            T6H_POW_CHG_QUOTAS    },
+    { "chown_anything",   T6H_POW_CHOWN_ANY     },
+    { "announce",         T6H_POW_ANNOUNCE      },
+    { "boot",             T6H_POW_BOOT          },
+    { "halt",             T6H_POW_HALT          },
+    { "control_all",      T6H_POW_CONTROL_ALL   },
+    { "expanded_who",     T6H_POW_WIZARD_WHO    },
+    { "see_all",          T6H_POW_EXAM_ALL      },
+    { "find_unfindable",  T6H_POW_FIND_UNFIND   },
+    { "free_money",       T6H_POW_FREE_MONEY    },
+    { "free_quota",       T6H_POW_FREE_QUOTA    },
+    { "hide",             T6H_POW_HIDE          },
+    { "idle",             T6H_POW_IDLE          },
+    { "search",           T6H_POW_SEARCH        },
+    { "long_fingers",     T6H_POW_LONGFINGERS   },
+    { "prog",             T6H_POW_PROG          },
+    { "comm_all",         T6H_POW_COMM_ALL      },
+    { "see_queue",        T6H_POW_SEE_QUEUE     },
+    { "see_hidden",       T6H_POW_SEE_HIDDEN    },
+    { "poll",             T6H_POW_POLL          },
+    { "no_destroy",       T6H_POW_NO_DESTROY    },
+    { "guest",            T6H_POW_GUEST         },
+    { "pass_locks",       T6H_POW_PASS_LOCKS    },
+    { "stat_any",         T6H_POW_STAT_ANY      },
+    { "steal_money",      T6H_POW_STEAL         },
+    { "tel_anywhere",     T6H_POW_TEL_ANYWHR    },
+    { "tel_anything",     T6H_POW_TEL_UNRST     },
+    { "unkillable",       T6H_POW_UNKILLABLE    },
+    { "attr_read",        T6H_POW_MDARK_ATTR    },
+    { "attr_write",       T6H_POW_WIZ_ATTR      },
+    { "watch_logins",     T6H_POW_WATCH         },
+};
+
+static NameMask t6h_powers2[] =
+{
+    { "builder",          T6H_POW_BUILDER       },
+    { "link_variable",    T6H_POW_LINKVAR       },
+    { "link_to_anything", T6H_POW_LINKTOANY     },
+    { "open_anywhere",    T6H_POW_OPENANYLOC    },
+    { "use_sql",          T6H_POW_USE_SQL       },
+    { "link_any_home",    T6H_POW_LINKHOME      },
+    { "cloak",            T6H_POW_CLOAK         },
+};
+
 void T6H_OBJECTINFO::Extract(FILE *fp) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
@@ -2401,6 +2447,56 @@ void T6H_OBJECTINFO::Extract(FILE *fp) const
                     fprintf(fp, " ");
                 }
                 fprintf(fp, "%s", t6h_flags3[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fPowers1)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t6h_powers1)/sizeof(t6h_powers1[0]); i++)
+        {
+            if (m_iPowers1 & t6h_powers1[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@power %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t6h_powers1[i].pName);
+            }
+        }
+        if (!fFirst)
+        {
+            fprintf(fp, "\n");
+        }
+    }
+
+    if (m_fPowers2)
+    {
+        bool fFirst = true;
+        for (int i = 0; i < sizeof(t6h_powers2)/sizeof(t6h_powers2[0]); i++)
+        {
+            if (m_iPowers2 & t6h_powers2[i].mask)
+            {
+                if (fFirst)
+                {
+                    fFirst = false;
+                    fprintf(fp, "@power %s=", pStrippedObjName);
+                }
+                else
+                {
+                    fprintf(fp, " ");
+                }
+                fprintf(fp, "%s", t6h_powers2[i].pName);
             }
         }
         if (!fFirst)
