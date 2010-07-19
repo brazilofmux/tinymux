@@ -2673,41 +2673,41 @@ static struct
     bool        fNeedEval;
 } fragments[] =
 {
-    { "\x1B[0m",      4, true,  false, "%xn",  3, true  },
-    { "\x1B[1m",      4, true,  false, "%xh",  3, true  },
-    { "\x1B[4m",      4, true,  false, "%xu",  3, true  },
-    { "\x1B[5m",      4, true,  false, "%xf",  3, true  },
-    { "\x1B[7m",      4, true,  false, "%xi",  3, true  },
-    { "\x1B[30m",     5, true,  false, "%xx",  3, true  },
-    { "\x1B[31m",     5, true,  false, "%xr",  3, true  },
-    { "\x1B[32m",     5, true,  false, "%xg",  3, true  },
-    { "\x1B[33m",     5, true,  false, "%xy",  3, true  },
-    { "\x1B[34m",     5, true,  false, "%xb",  3, true  },
-    { "\x1B[35m",     5, true,  false, "%xm",  3, true  },
-    { "\x1B[36m",     5, true,  false, "%xc",  3, true  },
-    { "\x1B[37m",     5, true,  false, "%xw",  3, true  },
-    { "\x1B[40m",     5, true,  false, "%xX",  3, true  },
-    { "\x1B[41m",     5, true,  false, "%xR",  3, true  },
-    { "\x1B[42m",     5, true,  false, "%xG",  3, true  },
-    { "\x1B[43m",     5, true,  false, "%xY",  3, true  },
-    { "\x1B[44m",     5, true,  false, "%xB",  3, true  },
-    { "\x1B[45m",     5, true,  false, "%xM",  3, true  },
-    { "\x1B[46m",     5, true,  false, "%xC",  3, true  },
-    { "\x1B[47m",     5, true,  false, "%xW",  3, true  },
+    { "\x1B[0m",      4, true,  false, "n",    1, true  },
+    { "\x1B[1m",      4, true,  false, "h",    1, true  },
+    { "\x1B[4m",      4, true,  false, "u",    1, true  },
+    { "\x1B[5m",      4, true,  false, "f",    1, true  },
+    { "\x1B[7m",      4, true,  false, "i",    1, true  },
+    { "\x1B[30m",     5, true,  false, "x",    1, true  },
+    { "\x1B[31m",     5, true,  false, "r",    1, true  },
+    { "\x1B[32m",     5, true,  false, "g",    1, true  },
+    { "\x1B[33m",     5, true,  false, "y",    1, true  },
+    { "\x1B[34m",     5, true,  false, "b",    1, true  },
+    { "\x1B[35m",     5, true,  false, "m",    1, true  },
+    { "\x1B[36m",     5, true,  false, "c",    1, true  },
+    { "\x1B[37m",     5, true,  false, "w",    1, true  },
+    { "\x1B[40m",     5, true,  false, "X",    1, true  },
+    { "\x1B[41m",     5, true,  false, "R",    1, true  },
+    { "\x1B[42m",     5, true,  false, "G",    1, true  },
+    { "\x1B[43m",     5, true,  false, "Y",    1, true  },
+    { "\x1B[44m",     5, true,  false, "B",    1, true  },
+    { "\x1B[45m",     5, true,  false, "M",    1, true  },
+    { "\x1B[46m",     5, true,  false, "C",    1, true  },
+    { "\x1B[47m",     5, true,  false, "W",    1, true  },
     { "\t",           1, false, false, "%t",   2, true  },
     { "\r\n",         2, false, false, "%r",   2, true  },
     { "\r",           1, false, false, "",     0, false },
     { "\n",           1, false, false, "",     0, false },
     { "  ",           2, false, false, "%b ",  3, true  },
-    { "%",            1, false, true, "\\%",  2, true  },
-    { "\\",           1, false, true, "\\\\", 2, true  },
-    { "[",            1, false, true, "\\[",  2, true  },
-    { "]",            1, false, true, "\\]",  2, true  },
-    { "{",            1, false, true, "\\{",  2, true  },
-    { "}",            1, false, true, "\\}",  2, true  },
-    { ",",            1, false, true, "\\,",  2, true  },
-    { "(",            1, false, true, "\\(",  2, true  },
-    { "$",            1, false, true, "\\$",  2, true  },
+    { "%",            1, false, true, "\\%",   2, true  },
+    { "\\",           1, false, true, "\\\\",  2, true  },
+    { "[",            1, false, true, "\\[",   2, true  },
+    { "]",            1, false, true, "\\]",   2, true  },
+    { "{",            1, false, true, "\\{",   2, true  },
+    { "}",            1, false, true, "\\}",   2, true  },
+    { ",",            1, false, true, "\\,",   2, true  },
+    { "(",            1, false, true, "\\(",   2, true  },
+    { "$",            1, false, true, "\\$",   2, true  },
 };
 
 static bool ScanForFragment(const char *p, bool fEval, int &iFragment, size_t &nSkip)
@@ -2757,8 +2757,13 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
     char *p = pValue;
     bool fEval = false;
 
+    bool aCodes[sizeof(fragments)/sizeof(fragments[0])];
+    bool fInColor = false;
+    char temp[65536];
+    char *qsave;
+
     while (  '\0' != *p
-          && q < buffer + sizeof(buffer) - 1)
+          && q < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
     {
         int iFragment;
         size_t nSkip;
@@ -2768,30 +2773,101 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
                && fragments[iFragment].fNeedEval)
             {
                 fEval = true;
+                fInColor = false;
                 p = pValue;
                 q = buffer;
             }
             else
             {
-                size_t ncpy = fragments[iFragment].nSubstitution;
                 size_t nskp = fragments[iFragment].nFragment;
-                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                if (fragments[iFragment].fColor)
                 {
-                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
-                    q += ncpy;
+                    if ('n' == fragments[iFragment].pSubstitution[0])
+                    {
+                        if (fInColor)
+                        {
+                            size_t n = q - temp;
+                            q = qsave;
+                            if (0 < n)
+                            {
+                                memcpy(q, "[ansi(", 6);
+                                q += 6;
+                                for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+                                {
+                                    if (aCodes[i])
+                                    {
+                                        *q++ = fragments[i].pSubstitution[0];
+                                    }
+                                }
+                                *q++ = ',';
+                                memcpy(q, temp, n);
+                                q += n;
+                                memcpy(q, ")]", 2);
+                                q += 2;
+                            }
+                            fInColor = false;
+                        }
+                    }
+                    else
+                    {
+                        if (!fInColor)
+                        {
+                            qsave = q;
+                            q = temp;
+                            fInColor = true;
+                            for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+                            {
+                                aCodes[i] = false;
+                            }
+                        }
+                        aCodes[iFragment] = true;
+                    }
+                }
+                else
+                {
+                    size_t ncpy = fragments[iFragment].nSubstitution;
+                    if (q + ncpy < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
+                    {
+                        memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+                        q += ncpy;
+                    }
                 }
                 p += nskp;
             }
         }
         else
         {
-            if (q + nSkip < buffer + sizeof(buffer) - 1)
+            if (q + nSkip < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
             {
                 memcpy(q, p, nSkip);
                 q += nSkip;
             }
             p += nSkip;
         }
+    }
+    if (  fInColor
+       && q != temp)
+    {
+        size_t n = q - temp;
+        q = qsave;
+        if (0 < n)
+        {
+            memcpy(q, "[ansi(", 6);
+            q += 6;
+            for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+            {
+                if (aCodes[i])
+                {
+                    *q++ = fragments[i].pSubstitution[0];
+                }
+            }
+            *q++ = ',';
+            memcpy(q, temp, n);
+            q += n;
+            memcpy(q, ")]", 2);
+            q += 2;
+        }
+        fInColor = false;
     }
     *q = '\0';
     fNeedEval = fEval;
