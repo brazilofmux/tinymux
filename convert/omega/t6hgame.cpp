@@ -2046,198 +2046,176 @@ void T6H_GAME::Extract(FILE *fp, int dbExtract) const
     }
 }
 
-static bool scanansi(const char *p, const char **pend, const char **q, size_t *qn)
+static struct
 {
-    *q = NULL;
-    if (ESC_CHAR == p[0])
-    {
-        *qn = 3;
-        if (  '[' == p[1]
-           && '\0' != p[2]
-           && 'm' == p[3])
-        {
-            *pend = p + 4;
-            if ('0' == p[2])
-            {
-                *q = "%xn";
-            }
-            else if ('1' == p[2])
-            {
-                *q = "%xh";
-            }
-            else if ('4' == p[2])
-            {
-                *q = "%xu";
-            }
-            else if ('5' == p[2])
-            {
-                *q = "%xf";
-            }
-            else if ('7' == p[2])
-            {
-                *q = "%xi";
-            }
-        }
-        else if (  '[' == p[1]
-                && '\0' != p[2]
-                && '\0' != p[3]
-                && 'm' == p[4])
-        {
-            *pend = p + 5;
-            if ('3' == p[2])
-            {
-                if ('0' == p[3])
-                {
-                    *q = "%xx";
-                }
-                else if ('1' == p[3])
-                {
-                    *q = "%xr";
-                }
-                else if ('2' == p[3])
-                {
-                    *q = "%xg";
-                }
-                else if ('3' == p[3])
-                {
-                    *q = "%xy";
-                }
-                else if ('4' == p[3])
-                {
-                    *q = "%xb";
-                }
-                else if ('5' == p[3])
-                {
-                    *q = "%xm";
-                }
-                else if ('6' == p[3])
-                {
-                    *q = "%xc";
-                }
-                else if ('7' == p[3])
-                {
-                    *q = "%xw";
-                }
-            }
-            else if ('4' == p[2])
-            {
-                if ('0' == p[3])
-                {
-                    *q = "%xX";
-                }
-                else if ('1' == p[3])
-                {
-                    *q = "%xR";
-                }
-                else if ('2' == p[3])
-                {
-                    *q = "%xG";
-                }
-                else if ('3' == p[3])
-                {
-                    *q = "%xY";
-                }
-                else if ('4' == p[3])
-                {
-                    *q = "%xB";
-                }
-                else if ('5' == p[3])
-                {
-                    *q = "%xM";
-                }
-                else if ('6' == p[3])
-                {
-                    *q = "%xC";
-                }
-                else if ('7' == p[3])
-                {
-                    *q = "%xW";
-                }
-            }
-        }
-    }
+    const char *pFragment;
+    size_t      nFragment;
+    bool        fColor;
+    bool        fEvalOnly;
+    const char *pSubstitution;
+    size_t      nSubstitution;
+    bool        fNeedEval;
+} fragments[] =
+{
+    { "\x1B[0m",      4, true,  false, "%xn",  3, true  },
+    { "\x1B[1m",      4, true,  false, "%xh",  3, true  },
+    { "\x1B[4m",      4, true,  false, "%xu",  3, true  },
+    { "\x1B[5m",      4, true,  false, "%xf",  3, true  },
+    { "\x1B[7m",      4, true,  false, "%xi",  3, true  },
+    { "\x1B[30m",     5, true,  false, "%xx",  3, true  },
+    { "\x1B[31m",     5, true,  false, "%xr",  3, true  },
+    { "\x1B[32m",     5, true,  false, "%xg",  3, true  },
+    { "\x1B[33m",     5, true,  false, "%xy",  3, true  },
+    { "\x1B[34m",     5, true,  false, "%xb",  3, true  },
+    { "\x1B[35m",     5, true,  false, "%xm",  3, true  },
+    { "\x1B[36m",     5, true,  false, "%xc",  3, true  },
+    { "\x1B[37m",     5, true,  false, "%xw",  3, true  },
+    { "\x1B[40m",     5, true,  false, "%xX",  3, true  },
+    { "\x1B[41m",     5, true,  false, "%xR",  3, true  },
+    { "\x1B[42m",     5, true,  false, "%xG",  3, true  },
+    { "\x1B[43m",     5, true,  false, "%xY",  3, true  },
+    { "\x1B[44m",     5, true,  false, "%xB",  3, true  },
+    { "\x1B[45m",     5, true,  false, "%xM",  3, true  },
+    { "\x1B[46m",     5, true,  false, "%xC",  3, true  },
+    { "\x1B[47m",     5, true,  false, "%xW",  3, true  },
+    { "\t",           1, false, false, "%t",   2, true  },
+    { "\r\n",         2, false, false, "%r",   2, true  },
+    { "\r",           1, false, false, "",     0, false },
+    { "\n",           1, false, false, "",     0, false },
+    { "  ",           2, false, false, "%b ",  3, true  },
+    { "%",            1, false, true, "\\%",  2, true  },
+    { "\\",           1, false, true, "\\\\", 2, true  },
+    { "[",            1, false, true, "\\[",  2, true  },
+    { "]",            1, false, true, "\\]",  2, true  },
+    { "{",            1, false, true, "\\{",  2, true  },
+    { "}",            1, false, true, "\\}",  2, true  },
+    { ",",            1, false, true, "\\,",  2, true  },
+    { "(",            1, false, true, "\\(",  2, true  },
+    { "$",            1, false, true, "\\$",  2, true  },
+};
 
-    if (NULL != *q)
+static bool ScanForFragment(const char *p, bool fEval, int &iFragment, size_t &nSkip)
+{
+    if (  NULL == p
+       && '\0' == *p)
     {
-        return true;
-    }
-    else
-    {
-        *pend = strchr(p, ESC_CHAR);
-        if (NULL == *pend)
-        {
-            *pend = p + strlen(p);
-        }
+        nSkip = 0;
         return false;
     }
+
+    for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+    {
+        if (  (  !fragments[i].fEvalOnly
+              || fEval)
+           && strncmp(p, fragments[i].pFragment, fragments[i].nFragment) == 0)
+        {
+            iFragment = i;
+            return true;
+        }
+    }
+    const char *q = p + 1;
+    for ( ; '\0' != *q; q++)
+    {
+        bool fFound = false;
+        for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+        {
+            if (*q == fragments[i].pFragment[0])
+            {
+                fFound = true;
+                break;
+            }
+        }
+        if (fFound)
+        {
+            break;
+        }
+    }
+    nSkip = q - p;
+    return false;
 }
 
-static char *EncodeSubstitutions(char *p)
+static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
 {
     static char buffer[65536];
     char *q = buffer;
+    char *p = pValue;
+    bool fEval = false;
 
     while (  '\0' != *p
           && q < buffer + sizeof(buffer) - 1)
     {
-        const char *pSub;
-        const char *pEnd;
-        size_t nSub;
-        size_t pn;
-        if (scanansi(p, &pEnd, &pSub, &nSub))
+        int iFragment;
+        size_t nSkip;
+        if (ScanForFragment(p, fEval, iFragment, nSkip))
         {
-            size_t ncpy = nSub;
-            size_t nskp = pEnd - p;
-            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            if (  !fEval
+               && fragments[iFragment].fNeedEval)
             {
-                memcpy(q, pSub, ncpy);
-                q += ncpy;
+                fEval = true;
+                p = pValue;
+                q = buffer;
             }
-            p += nskp;
+            else
+            {
+                size_t ncpy = fragments[iFragment].nSubstitution;
+                size_t nskp = fragments[iFragment].nFragment;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+                    q += ncpy;
+                }
+                p += nskp;
+            }
         }
         else
         {
-            size_t ncpy = pEnd-p;
-            size_t nskp = pEnd-p;
-            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            if (q + nSkip < buffer + sizeof(buffer) - 1)
             {
-                memcpy(q, p, ncpy);
-                q += ncpy;
+                memcpy(q, p, nSkip);
+                q += nSkip;
             }
-            p += nskp;
+            p += nSkip;
         }
     }
     *q = '\0';
+    fNeedEval = fEval;
     return buffer;
 }
 
-static char *StripColor(char *p)
+static char *StripColor(char *pValue)
 {
     static char buffer[65536];
     char *q = buffer;
+    char *p = pValue;
+    bool fEval = false;
 
     while (  '\0' != *p
           && q < buffer + sizeof(buffer) - 1)
     {
-        const char *pSub;
-        const char *pEnd;
-        size_t nSub;
-        size_t pn;
-        if (!scanansi(p, &pEnd, &pSub, &nSub))
+        int iFragment;
+        size_t nSkip;
+        if (ScanForFragment(p, fEval, iFragment, nSkip))
         {
-            size_t ncpy = pEnd-p;
-            size_t nskp = pEnd-p;
-            if (q + ncpy < buffer + sizeof(buffer) - 1)
+            size_t nskp = fragments[iFragment].nFragment;
+            if (fragments[iFragment].fColor)
             {
-                memcpy(q, p, ncpy);
-                q += ncpy;
+                size_t ncpy = fragments[iFragment].nSubstitution;
+                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                {
+                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+                    q += ncpy;
+                }
             }
             p += nskp;
         }
         else
         {
-            size_t nskp = pEnd-p;
-            p += nskp;
+            if (q + nSkip < buffer + sizeof(buffer) - 1)
+            {
+                memcpy(q, p, nSkip);
+                q += nSkip;
+            }
+            p += nSkip;
         }
     }
     *q = '\0';
@@ -2374,7 +2352,8 @@ void T6H_OBJECTINFO::Extract(FILE *fp) const
     fprintf(fp, "@@ encoding is ASCII\n", m_dbRef);
     if (NULL != m_pName)
     {
-        fprintf(fp, "@@ %s\n", EncodeSubstitutions(m_pName));
+        bool fNeedEval;
+        fprintf(fp, "@@ %s\n", EncodeSubstitutions(m_pName, fNeedEval));
     }
     char *pStrippedObjName = StringClone(StripColor(m_pName));
 
@@ -2744,7 +2723,16 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                 {
                     if (t6h_locks[i].iNum == m_iNum)
                     {
-                        fprintf(fp, "@lock/%s %s=%s\n", t6h_locks[i].pName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        bool fNeedEval;
+                        const char *p = EncodeSubstitutions(m_pValueUnencoded, fNeedEval);
+                        if (fNeedEval)
+                        {
+                            fprintf(fp, "@wait 0={@lock/%s %s=%s}\n", t6h_locks[i].pName, pObjName, p);
+                        }
+                        else
+                        {
+                            fprintf(fp, "@lock/%s %s=%s\n", t6h_locks[i].pName, pObjName, p);
+                        }
                         break;
                     }
                 }
@@ -2776,7 +2764,16 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                         {
                             fprintf(fp, "\n");
                         }
-                        fprintf(fp, "@%s %s=%s\n", t6h_attr_names[i].pName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        bool fNeedEval;
+                        const char *p = EncodeSubstitutions(m_pValueUnencoded, fNeedEval);
+                        if (fNeedEval)
+                        {
+                            fprintf(fp, "@wait 0={@%s %s=%s}\n", t6h_attr_names[i].pName, pObjName, p);
+                        }
+                        else
+                        {
+                            fprintf(fp, "@%s %s=%s\n", t6h_attr_names[i].pName, pObjName, p);
+                        }
                         fFirst = true;
                         for (int j = 0; j < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); j++)
                         {
@@ -2785,7 +2782,14 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                                 if (fFirst)
                                 {
                                     fFirst = false;
-                                    fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                    if (fNeedEval)
+                                    {
+                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                    }
+                                    else
+                                    {
+                                        fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                    }
                                 }
                                 else
                                 {
@@ -2796,11 +2800,25 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                         }
                         if (!fFirst)
                         {
-                            fprintf(fp, "\n");
+                            if (fNeedEval)
+                            {
+                                fprintf(fp, "}\n");
+                            }
+                            else
+                            {
+                                fprintf(fp, "\n");
+                            }
                         }
                         if (T6H_AF_LOCK & m_iFlags)
                         {
-                            fprintf(fp, "@lock %s/%s\n", pObjName, t6h_attr_names[i].pName);
+                            if (fNeedEval)
+                            {
+                                fprintf(fp, "@wait 0={@lock %s/%s}\n", pObjName, t6h_attr_names[i].pName);
+                            }
+                            else
+                            {
+                                fprintf(fp, "@lock %s/%s\n", pObjName, t6h_attr_names[i].pName);
+                            }
                         }
                         break;
                     }
@@ -2839,7 +2857,16 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                         {
                             fprintf(fp, "\n");
                         }
-                        fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, EncodeSubstitutions(m_pValueUnencoded));
+                        bool fNeedEval;
+                        const char *p = EncodeSubstitutions(m_pValueUnencoded, fNeedEval);
+                        if (fNeedEval)
+                        {
+                            fprintf(fp, "@wait 0={&%s %s=%s}\n", pAttrName, pObjName, p);
+                        }
+                        else
+                        {
+                            fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, p);
+                        }
                         fFirst = true;
                         for (int i = 0; i < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); i++)
                         {
@@ -2848,7 +2875,14 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                                 if (fFirst)
                                 {
                                     fFirst = false;
-                                    fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
+                                    if (fNeedEval)
+                                    {
+                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, pAttrName);
+                                    }
+                                    else
+                                    {
+                                        fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
+                                    }
                                 }
                                 else
                                 {
@@ -2859,11 +2893,25 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                         }
                         if (!fFirst)
                         {
-                            fprintf(fp, "\n");
+                            if (fNeedEval)
+                            {
+                                fprintf(fp, "}\n");
+                            }
+                            else
+                            {
+                                fprintf(fp, "\n");
+                            }
                         }
                         if (T6H_AF_LOCK & m_iFlags)
                         {
-                            fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
+                            if (fNeedEval)
+                            {
+                                fprintf(fp, "@wait 0={@lock %s/%s}\n", pObjName, pAttrName);
+                            }
+                            else
+                            {
+                                fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
+                            }
                         }
                     }
                     break;
