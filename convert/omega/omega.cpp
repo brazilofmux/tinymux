@@ -507,6 +507,13 @@ int main(int argc, char *argv[])
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
         }
+        else if (  eTinyMUX  == eInputType
+                && eTinyMUSH == eOutputType)
+        {
+            g_t6hgame.ConvertFromT5X();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
+        }
         else
         {
             fprintf(stderr, "Requested conversion is not currently supported.\n");

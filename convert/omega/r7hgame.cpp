@@ -847,7 +847,7 @@ void R7H_ATTRNAMEINFO::Validate(int ver) const
             {
                 q = p + 1;
                 bool fValid = true;
-                if (!r7h_AttrNameInitialSet[*q])
+                if (!r7h_AttrNameInitialSet[(unsigned char)*q])
                 {
                     fValid = false;
                 }
@@ -856,7 +856,7 @@ void R7H_ATTRNAMEINFO::Validate(int ver) const
                     q++;
                     while ('\0' != *q)
                     {
-                        if (!r7h_AttrNameSet[*q])
+                        if (!r7h_AttrNameSet[(unsigned char)*q])
                         {
                             fValid = false;
                             break;

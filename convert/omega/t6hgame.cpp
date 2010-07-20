@@ -1,6 +1,7 @@
 #include "omega.h"
 #include "t6hgame.h"
 #include "p6hgame.h"
+#include "t5xgame.h"
 
 //
 // The differences between TinyMUSH 3.x flatfiles are minor.
@@ -489,6 +490,239 @@ bool T6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
     return true;
 }
 
+extern const char *ConvertToAscii(const UTF8 *pString);
+
+const char *ConvertT5XValue(bool fUnicode, char *pValue)
+{
+    if (fUnicode)
+    {
+        return ConvertToAscii((const UTF8 *)pValue);
+    }
+    else
+    {
+        static char buffer[65536];
+        char *p = buffer;
+        while ('\0' != *pValue)
+        {
+            if (*pValue < 0x7F)
+            {
+                *p++ = *pValue;
+            }
+            else
+            {
+                *p++ = '?';
+            }
+            pValue++;
+        }
+        *p = '\0';
+        return buffer;
+    }
+}
+
+const char *ConvertT5XAttrName(bool fUnicode, char *pName)
+{
+    static char buffer[65536];
+    char *p = buffer;
+    if (fUnicode)
+    {
+        const char *pAscii = ConvertToAscii((const UTF8 *)pName);
+        while (  '\0' != *pAscii
+              && isdigit(*pAscii))
+        {
+            *p++ = *pAscii++;
+        }
+        if  (  '\0' != *pAscii
+            && ':' == *pAscii)
+        {
+            *p++ = *pAscii++;
+        }
+        bool fFirst = true;
+        while ('\0' != *pAscii)
+        {
+            if (  (  fFirst
+                  && !t6h_AttrNameInitialSet[(unsigned char)*pAscii])
+               || (  !fFirst
+                  && !t6h_AttrNameSet[(unsigned char)*pAscii]))
+            {
+                *p++ = 'X';
+            }
+            else
+            {
+                *p++ = *pAscii;
+            }
+            fFirst = false;
+            pAscii++;
+        }
+        *p = '\0';
+    }
+    else
+    {
+        char *p = buffer;
+        while (  '\0' != *pName
+              && isdigit(*pName))
+        {
+            *p++ = *pName++;
+        }
+        if  (  '\0' != *pName
+            && ':' == *pName)
+        {
+            *p++ = *pName++;
+        }
+        bool fFirst = true;
+        while ('\0' != *pName)
+        {
+            if (  (  fFirst
+                  && !t6h_AttrNameInitialSet[(unsigned char)*pName])
+               || (  !fFirst
+                  && !t6h_AttrNameSet[(unsigned char)*pName]))
+            {
+                *p++ = 'X';
+            }
+            else
+            {
+                *p++ = *pName;
+            }
+            fFirst = false;
+            pName++;
+        }
+        *p = '\0';
+    }
+    return buffer;
+}
+
+bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, T5X_LOCKEXP *p)
+{
+    switch (p->m_op)
+    {
+    case T5X_LOCKEXP::le_is:
+        m_op = T6H_LOCKEXP::le_is;
+        m_le[0] = new T6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_carry:
+        m_op = T6H_LOCKEXP::le_carry;
+        m_le[0] = new T6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_indirect:
+        m_op = T6H_LOCKEXP::le_indirect;
+        m_le[0] = new T6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_owner:
+        m_op = T6H_LOCKEXP::le_owner;
+        m_le[0] = new T6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_or:
+        m_op = T6H_LOCKEXP::le_or;
+        m_le[0] = new T6H_LOCKEXP;
+        m_le[1] = new T6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(fUnicode, p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_not:
+        m_op = T6H_LOCKEXP::le_not;
+        m_le[0] = new T6H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_attr:
+        m_op = T6H_LOCKEXP::le_attr;
+        m_le[0] = new T6H_LOCKEXP;
+        m_le[1] = new T6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(fUnicode, p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_eval:
+        m_op = T6H_LOCKEXP::le_eval;
+        m_le[0] = new T6H_LOCKEXP;
+        m_le[1] = new T6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(fUnicode, p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_and:
+        m_op = T6H_LOCKEXP::le_and;
+        m_le[0] = new T6H_LOCKEXP;
+        m_le[1] = new T6H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(fUnicode, p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(fUnicode, p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_ref:
+        m_op = T6H_LOCKEXP::le_ref;
+        m_dbRef = p->m_dbRef;
+        break;
+
+    case T5X_LOCKEXP::le_text:
+        m_op = T6H_LOCKEXP::le_text;
+        m_p[0] = StringClone(ConvertT5XValue(fUnicode, p->m_p[0]));
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", m_op);
+        break;
+    }
+    return true;
+}
+
+
 void T6H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
@@ -934,7 +1168,7 @@ void T6H_ATTRNAMEINFO::Validate(int ver) const
             {
                 q = p + 1;
                 bool fValid = true;
-                if (!t6h_AttrNameInitialSet[*q])
+                if (!t6h_AttrNameInitialSet[(unsigned char)*q])
                 {
                     fValid = false;
                 }
@@ -943,7 +1177,7 @@ void T6H_ATTRNAMEINFO::Validate(int ver) const
                     q++;
                     while ('\0' != *q)
                     {
-                        if (!t6h_AttrNameSet[*q])
+                        if (!t6h_AttrNameSet[(unsigned char)*q])
                         {
                             fValid = false;
                             break;
@@ -1945,6 +2179,450 @@ void T6H_GAME::ConvertFromP6H()
     SetSizeHint(dbRefMax+1);
     SetRecordPlayers(0);
 }
+
+char *convert_t5x_quota(char *p)
+{
+    static char buffer[500];
+    int quota = atoi(p);
+    sprintf(buffer, "%d %d %d %d %d", quota, quota, quota, quota, quota);
+    return buffer;
+}
+
+bool convert_t5x_attr_num(int iNum, int *piNum)
+{
+    if (A_USER_START <= iNum)
+    {
+        *piNum = iNum;
+        return true;
+    }
+
+    // T5X attributes with no corresponding T6H attribute.
+    //
+    if (  T5X_A_LGET == iNum
+       || T5X_A_MFAIL == iNum
+       || T5X_A_LASTIP == iNum
+       || T5X_A_COMJOIN == iNum
+       || T5X_A_COMLEAVE == iNum
+       || T5X_A_COMON == iNum
+       || T5X_A_COMOFF == iNum
+       || T5X_A_CMDCHECK == iNum
+       || T5X_A_MONIKER == iNum
+       || T5X_A_CONNINFO == iNum
+       || T5X_A_IDLETMOUT == iNum
+       || T5X_A_ADESTROY == iNum
+       || T5X_A_APARENT == iNum
+       || T5X_A_ACREATE == iNum
+       || T5X_A_LMAIL == iNum
+       || T5X_A_LOPEN == iNum
+       || T5X_A_LASTWHISPER == iNum
+       || T5X_A_LVISIBLE == iNum)
+    {
+        return false;
+    }
+
+    if (T5X_A_EXITFORMAT == iNum)
+    {
+        iNum = T6H_A_LEXITS_FMT;
+    }
+    else if (T5X_A_NAMEFORMAT == iNum)
+    {
+        iNum = T6H_A_NAME_FMT;
+    }
+    else if (T5X_A_LASTIP == iNum)
+    {
+        iNum = T6H_A_LASTIP;
+    }
+    else if (T5X_A_SPEECHMOD == iNum)
+    {
+        iNum = T6H_A_SPEECHFMT;
+    }
+    else if (T5X_A_CONFORMAT == iNum)
+    {
+        iNum = T6H_A_LCON_FMT;
+    }
+
+    // T6H attribute numbers with no corresponding T5X attribute.
+    //
+    if (  T6H_A_NEWOBJS == iNum
+       || T6H_A_MAILCC == iNum
+       || T6H_A_MAILBCC == iNum
+       || T6H_A_LKNOWN == iNum
+       || T6H_A_LHEARD == iNum)
+    {
+        return false;
+    }
+
+    *piNum = iNum;
+    return true;
+}
+
+int convert_t5x_flags1(int f)
+{
+    f &= T6H_SEETHRU
+       | T6H_WIZARD
+       | T6H_LINK_OK
+       | T6H_DARK
+       | T6H_JUMP_OK
+       | T6H_STICKY
+       | T6H_DESTROY_OK
+       | T6H_HAVEN
+       | T6H_QUIET
+       | T6H_HALT
+       | T6H_TRACE
+       | T6H_GOING
+       | T6H_MONITOR
+       | T6H_MYOPIC
+       | T6H_PUPPET
+       | T6H_CHOWN_OK
+       | T6H_ENTER_OK
+       | T6H_VISUAL
+       | T6H_IMMORTAL
+       | T6H_HAS_STARTUP
+       | T6H_OPAQUE
+       | T6H_VERBOSE
+       | T6H_INHERIT
+       | T6H_NOSPOOF
+       | T6H_ROBOT
+       | T6H_SAFE
+       | T6H_ROYALTY
+       | T6H_HEARTHRU
+       | T6H_TERSE;
+    return f;
+}
+
+int convert_t5x_flags2(int f)
+{
+    int g = f;
+    g &= T6H_KEY
+       | T6H_ABODE
+       | T6H_FLOATING
+       | T6H_UNFINDABLE
+       | T6H_PARENT_OK
+       | T6H_LIGHT
+       | T6H_HAS_LISTEN
+       | T6H_HAS_FWDLIST
+       | T6H_AUDITORIUM
+       | T6H_ANSI
+       | T6H_HEAD_FLAG
+       | T6H_FIXED
+       | T6H_UNINSPECTED
+       | T6H_NOBLEED
+       | T6H_STAFF
+       | T6H_HAS_DAILY
+       | T6H_GAGGED
+       | T6H_VACATION
+       | T6H_PLAYER_MAILS
+       | T6H_HTML
+       | T6H_BLIND
+       | T6H_SUSPECT
+       | T6H_CONNECTED
+       | T6H_SLAVE;
+
+    if ((f & T5X_NO_COMMAND) == 0)
+    {
+        g |= T6H_HAS_COMMANDS;
+    }
+
+    return g;
+}
+
+int convert_t5x_flags3(int f)
+{
+    f &= T6H_MARK_0
+       | T6H_MARK_1
+       | T6H_MARK_2
+       | T6H_MARK_3
+       | T6H_MARK_4
+       | T6H_MARK_5
+       | T6H_MARK_6
+       | T6H_MARK_7
+       | T6H_MARK_8
+       | T6H_MARK_9;
+    return f;
+}
+
+int convert_t5x_attr_flags(int f)
+{
+    int g = f;
+    g &= T6H_AF_ODARK
+       | T6H_AF_DARK
+       | T6H_AF_WIZARD
+       | T6H_AF_MDARK
+       | T6H_AF_INTERNAL
+       | T6H_AF_NOCMD
+       | T6H_AF_LOCK
+       | T6H_AF_DELETED
+       | T6H_AF_NOPROG
+       | T6H_AF_GOD
+       | T6H_AF_IS_LOCK
+       | T6H_AF_VISUAL
+       | T6H_AF_PRIVATE
+       | T6H_AF_HTML
+       | T6H_AF_NOPARSE
+       | T6H_AF_REGEXP
+       | T6H_AF_NOCLONE
+       | T6H_AF_CONST
+       | T6H_AF_CASE
+       | T6H_AF_NONAME;
+
+    if (f & T5X_AF_TRACE)
+    {
+        g |= T6H_AF_TRACE;
+    }
+    return g;
+}
+
+int convert_t5x_power1(int f)
+{
+    f &= T6H_POW_CHG_QUOTAS
+       | T6H_POW_CHOWN_ANY
+       | T6H_POW_ANNOUNCE
+       | T6H_POW_BOOT
+       | T6H_POW_HALT
+       | T6H_POW_CONTROL_ALL
+       | T6H_POW_WIZARD_WHO
+       | T6H_POW_EXAM_ALL
+       | T6H_POW_FIND_UNFIND
+       | T6H_POW_FREE_MONEY
+       | T6H_POW_FREE_QUOTA
+       | T6H_POW_HIDE
+       | T6H_POW_IDLE
+       | T6H_POW_SEARCH
+       | T6H_POW_LONGFINGERS
+       | T6H_POW_PROG
+       | T6H_POW_COMM_ALL
+       | T6H_POW_SEE_QUEUE
+       | T6H_POW_SEE_HIDDEN
+       | T6H_POW_WATCH
+       | T6H_POW_POLL
+       | T6H_POW_NO_DESTROY
+       | T6H_POW_GUEST
+       | T6H_POW_PASS_LOCKS
+       | T6H_POW_STAT_ANY
+       | T6H_POW_STEAL
+       | T6H_POW_TEL_ANYWHR
+       | T6H_POW_TEL_UNRST
+       | T6H_POW_UNKILLABLE;
+    return f;
+}
+
+int convert_t5x_power2(int f)
+{
+    f &= T6H_POW_BUILDER;
+    return f;
+}
+
+void T6H_GAME::ConvertFromT5X()
+{
+    int ver = (g_t5xgame.m_flags & T5X_V_MASK);
+    bool fUnicode = (3 == ver);
+
+    time_t tNow;
+    time(&tNow);
+
+    SetFlags(T6H_MANDFLAGS_V1 | T6H_V_TIMESTAMPS | T6H_V_VISUALATTRS | 1);
+    m_fExtraEscapes = true;
+
+    // Attribute names
+    //
+    for (vector<T5X_ATTRNAMEINFO *>::iterator it =  g_t5xgame.m_vAttrNames.begin(); it != g_t5xgame.m_vAttrNames.end(); ++it)
+    {
+        AddNumAndName((*it)->m_iNum, StringClone(ConvertT5XAttrName(fUnicode, (*it)->m_pName)));
+    }
+    if (!m_fNextAttr)
+    {
+        SetNextAttr(g_t5xgame.m_nNextAttr);
+    }
+
+    int dbRefMax = 0;
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = g_t5xgame.m_mObjects.begin(); it != g_t5xgame.m_mObjects.end(); ++it)
+    {
+        if (!it->second->m_fFlags1)
+        {
+            continue;
+        }
+
+        // ROOM, THING, EXIT, and PLAYER types are the same between T6H and
+        // T5X.  No mapping is required.
+        //
+        int iType = (it->second->m_iFlags1) & T6H_TYPE_MASK;
+        if (  T6H_TYPE_ROOM != iType
+           && T6H_TYPE_THING != iType
+           && T6H_TYPE_EXIT != iType
+           && T6H_TYPE_PLAYER != iType)
+        {
+            continue;
+        }
+
+        T6H_OBJECTINFO *poi = new T6H_OBJECTINFO;
+
+        poi->SetRef(it->first);
+        poi->SetName(StringClone(it->second->m_pName));
+        if (it->second->m_fLocation)
+        {
+            int iLocation = it->second->m_dbLocation;
+            poi->SetLocation(iLocation);
+        }
+        if (it->second->m_fContents)
+        {
+            poi->SetContents(it->second->m_dbContents);
+        }
+        if (it->second->m_fExits)
+        {
+            poi->SetExits(it->second->m_dbExits);
+        }
+        if (it->second->m_fLink)
+        {
+            poi->SetLink(it->second->m_dbLink);
+        }
+        if (it->second->m_fNext)
+        {
+            poi->SetNext(it->second->m_dbNext);
+        }
+        if (it->second->m_fParent)
+        {
+            poi->SetParent(it->second->m_dbParent);
+        }
+        if (it->second->m_fOwner)
+        {
+            poi->SetOwner(it->second->m_dbOwner);
+        }
+        if (it->second->m_fZone)
+        {
+            poi->SetZone(it->second->m_dbZone);
+        }
+        if (it->second->m_fPennies)
+        {
+            poi->SetPennies(it->second->m_iPennies);
+        }
+
+        // Flagwords
+        //
+        int flags1 = iType;
+        int flags2 = 0;
+        int flags3 = 0;
+        if (it->second->m_fFlags1)
+        {
+            flags1 |= convert_t5x_flags1(it->second->m_iFlags1);
+        }
+        if (it->second->m_fFlags2)
+        {
+            flags2 = convert_t5x_flags2(it->second->m_iFlags2);
+        }
+        if (it->second->m_fFlags3)
+        {
+            flags3 = convert_t5x_flags3(it->second->m_iFlags3);
+        }
+
+        // Powers
+        //
+        int powers1 = 0;
+        int powers2 = 0;
+        if (it->second->m_fPowers1)
+        {
+            powers1 = convert_t5x_power1(it->second->m_iPowers1);
+        }
+        if (it->second->m_fPowers2)
+        {
+            powers2 = convert_t5x_power2(it->second->m_iPowers2);
+        }
+
+        poi->SetFlags1(flags1);
+        poi->SetFlags2(flags2);
+        poi->SetFlags3(flags3);
+        poi->SetPowers1(powers1);
+        poi->SetPowers2(powers2);
+
+        if (NULL != it->second->m_pvai)
+        {
+            vector<T6H_ATTRINFO *> *pvai = new vector<T6H_ATTRINFO *>;
+            for (vector<T5X_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
+            {
+                int iNum;
+                if (  (*itAttr)->m_fNumAndValue
+                   && convert_t5x_attr_num((*itAttr)->m_iNum, &iNum))
+                {
+                    if (T5X_A_QUOTA == iNum)
+                    {
+                        // Typed quota needs to be converted to single quota.
+                        //
+                        T6H_ATTRINFO *pai = new T6H_ATTRINFO;
+                        pai->SetNumAndValue(T6H_A_QUOTA, StringClone(convert_t5x_quota((*itAttr)->m_pValueUnencoded)));
+                        pvai->push_back(pai);
+                    }
+                    else if (T5X_A_MODIFIED == iNum)
+                    {
+                        time_t t;
+                        if (ConvertTimeString((*itAttr)->m_pValueUnencoded, &t))
+                        {
+                            poi->SetModified(t);
+                        }
+                    }
+                    else if (T5X_A_LOCK == iNum)
+                    {
+                        T6H_LOCKEXP *ple = new T6H_LOCKEXP;
+                        if (ple->ConvertFromT5X(fUnicode, (*itAttr)->m_pKeyTree))
+                        {
+                            poi->SetDefaultLock(ple);
+                        }
+                        else
+                        {
+                            delete ple;
+                        }
+                    }
+                    else
+                    {
+                        T6H_ATTRINFO *pai = new T6H_ATTRINFO;
+                        pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner,
+                            convert_t5x_attr_flags((*itAttr)->m_iFlags),
+                            StringClone(ConvertT5XValue(fUnicode, (*itAttr)->m_pValueUnencoded)));
+                        pvai->push_back(pai);
+                    }
+                }
+            }
+            if (!poi->m_fModified)
+            {
+                poi->SetModified(tNow);
+            }
+            if (0 < pvai->size())
+            {
+                poi->SetAttrs(pvai->size(), pvai);
+                pvai = NULL;
+            }
+            delete pvai;
+        }
+
+        if (it->second->m_ple)
+        {
+            T6H_LOCKEXP *ple = new T6H_LOCKEXP;
+            if (ple->ConvertFromT5X(fUnicode, it->second->m_ple))
+            {
+                poi->SetDefaultLock(ple);
+            }
+            else
+            {
+                delete ple;
+            }
+        }
+
+        AddObject(poi);
+
+        if (dbRefMax < it->first)
+        {
+            dbRefMax = it->first;
+        }
+    }
+    SetSizeHint(dbRefMax+1);
+    if (g_t6hgame.m_fRecordPlayers)
+    {
+        SetRecordPlayers(g_t6hgame.m_nRecordPlayers);
+    }
+    else
+    {
+        SetRecordPlayers(0);
+    }
+}
+
 
 void T6H_GAME::ResetPassword()
 {

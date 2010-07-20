@@ -91,7 +91,7 @@ summarizes the status of the different conversion paths:
 From: ---    PennMUSH    TinyMUSH    TinyMUX    RhoshMUSH
 PennMUSH        -           A           A           A
 TinyMUSH        H           -           A           H
-TinyMUX         B           H           -           H
+TinyMUX         B           A           -           H
 RhostMUSH       H           H           A           -  
 
 A: Fully functional.

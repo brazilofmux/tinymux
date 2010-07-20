@@ -357,6 +357,7 @@
 #define T6H_POW_CLOAK       0x00000040UL
 
 class P6H_LOCKEXP;
+class T5X_LOCKEXP;
 
 class T6H_LOCKEXP
 {
@@ -447,6 +448,7 @@ public:
     char *Write(char *p);
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
+    bool ConvertFromT5X(bool fUnicode, T5X_LOCKEXP *p);
 
     T6H_LOCKEXP()
     {
@@ -719,6 +721,7 @@ public:
     void Extract(FILE *fp, int dbExtract) const;
 
     void ConvertFromP6H();
+    void ConvertFromT5X();
 
     void Upgrade();
     void Midgrade();

@@ -1163,7 +1163,7 @@ void T5X_ATTRNAMEINFO::Validate(int ver) const
             {
                 q = p + 1;
                 bool fValid = true;
-                if (!t5x_AttrNameInitialSet[*q])
+                if (!t5x_AttrNameInitialSet[(unsigned char)*q])
                 {
                     fValid = false;
                 }
@@ -1172,7 +1172,7 @@ void T5X_ATTRNAMEINFO::Validate(int ver) const
                     q++;
                     while ('\0' != *q)
                     {
-                        if (!t5x_AttrNameSet[*q])
+                        if (!t5x_AttrNameSet[(unsigned char)*q])
                         {
                             fValid = false;
                             break;
@@ -3851,7 +3851,7 @@ void T5X_OBJECTINFO::Upgrade()
         // Add it.
         //
         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-        pai->SetNumAndValue(42, StringClone(buffer));
+        pai->SetNumAndValue(T5X_A_LOCK, StringClone(buffer));
 
         if (NULL == m_pvai)
         {
@@ -4744,7 +4744,7 @@ void T5X_OBJECTINFO::Downgrade()
         //
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            if (42 == (*it)->m_iNum)
+            if (T5X_A_LOCK == (*it)->m_iNum)
             {
                 delete m_ple;
                 m_ple = (*it)->m_pKeyTree;
