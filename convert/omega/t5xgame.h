@@ -34,6 +34,7 @@
 
 #define ATR_INFO_CHAR 0x01
 #define T5X_NOTHING   (-1)
+#define T5X_HOME      (-3)
 
 // Attribute flags
 //

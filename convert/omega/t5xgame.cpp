@@ -1335,18 +1335,35 @@ void T5X_ATTRINFO::Validate() const
 
 void T5X_OBJECTINFO::Validate() const
 {
-    map<int, T5X_OBJECTINFO *, lti>::const_iterator itFound;
-    if (  m_fLocation
-       && -1 != m_dbLocation)
+    int iType = -1;
+    if (m_fFlags1)
     {
-        itFound = g_t5xgame.m_mObjects.find(m_dbLocation);
-        if (itFound == g_t5xgame.m_mObjects.end())
+        iType = (m_iFlags1) & T5X_TYPE_MASK;
+    }
+
+    map<int, T5X_OBJECTINFO *, lti>::const_iterator itFound;
+    if (m_fLocation)
+    {
+        if (m_dbLocation < 0)
         {
-            fprintf(stderr, "WARNING: Location (#%d) of object #%d does not exist.\n", m_dbLocation, m_dbRef);
+            if (  m_dbLocation != T5X_NOTHING
+               && (  T5X_TYPE_ROOM != iType
+                  || T5X_HOME      != m_dbLocation))
+            {
+                fprintf(stderr, "WARNING: Location (#%d) of object #%d is unexpected.\n", m_dbLocation, m_dbRef);
+            }
+        }
+        else
+        {
+            itFound = g_t5xgame.m_mObjects.find(m_dbLocation);
+            if (itFound == g_t5xgame.m_mObjects.end())
+            {
+                fprintf(stderr, "WARNING: Location (#%d) of object #%d does not exist.\n", m_dbLocation, m_dbRef);
+            }
         }
     }
     if (  m_fContents
-       && -1 != m_dbContents)
+       && T5X_NOTHING != m_dbContents)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbContents);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1355,7 +1372,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fExits
-       && -1 != m_dbExits)
+       && T5X_NOTHING != m_dbExits)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbExits);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1364,7 +1381,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fNext
-       && -1 != m_dbNext)
+       && T5X_NOTHING != m_dbNext)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbNext);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1373,7 +1390,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fParent
-       && -1 != m_dbParent)
+       && T5X_NOTHING != m_dbParent)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbParent);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1382,7 +1399,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fOwner
-       && -1 != m_dbOwner)
+       && T5X_NOTHING != m_dbOwner)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbOwner);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1391,7 +1408,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fZone
-       && -1 != m_dbZone)
+       && T5X_NOTHING != m_dbZone)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbZone);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1400,7 +1417,7 @@ void T5X_OBJECTINFO::Validate() const
         }
     }
     if (  m_fLink
-       && -1 != m_dbLink)
+       && T5X_NOTHING != m_dbLink)
     {
         itFound = g_t5xgame.m_mObjects.find(m_dbLink);
         if (itFound == g_t5xgame.m_mObjects.end())
@@ -1865,7 +1882,7 @@ void T5X_GAME::ConvertFromP6H()
             if (  T5X_TYPE_EXIT == iType
                && -2 == iLocation)
             {
-                poi->SetLocation(-1);
+                poi->SetLocation(T5X_NOTHING);
             }
             else
             {
@@ -1882,13 +1899,13 @@ void T5X_GAME::ConvertFromP6H()
             {
             case T5X_TYPE_PLAYER:
             case T5X_TYPE_THING:
-                poi->SetExits(-1);
+                poi->SetExits(T5X_NOTHING);
                 poi->SetLink(it->second->m_dbExits);
                 break;
 
             default:
                 poi->SetExits(it->second->m_dbExits);
-                poi->SetLink(-1);
+                poi->SetLink(T5X_NOTHING);
                 break;
             }
         }
@@ -2481,7 +2498,7 @@ void T5X_GAME::ConvertFromT6H()
             if (  T5X_TYPE_EXIT == iType
                && -2 == iLocation)
             {
-                poi->SetLocation(-1);
+                poi->SetLocation(T5X_NOTHING);
             }
             else
             {
@@ -3229,7 +3246,7 @@ void T5X_GAME::ConvertFromR7H()
             if (  T5X_TYPE_EXIT == iType
                && -2 == iLocation)
             {
-                poi->SetLocation(-1);
+                poi->SetLocation(T5X_NOTHING);
             }
             else
             {
