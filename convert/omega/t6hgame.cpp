@@ -1131,7 +1131,9 @@ void T6H_OBJECTINFO::Validate() const
         {
             if (  m_dbLocation != T6H_NOTHING
                && (  T6H_TYPE_ROOM != iType
-                  || T6H_HOME      != m_dbLocation))
+                  || T6H_HOME      != m_dbLocation)
+               && (  T6H_TYPE_EXIT != iType
+                  || T6H_AMBIGUOUS != m_dbLocation))
             {
                 fprintf(stderr, "WARNING: Location (#%d) of object #%d is unexpected.\n", m_dbLocation, m_dbRef);
             }

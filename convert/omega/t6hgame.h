@@ -38,6 +38,7 @@
 
 #define ATR_INFO_CHAR 0x01
 #define T6H_NOTHING   (-1)
+#define T6H_AMBIGUOUS (-2)
 #define T6H_HOME      (-3)
 
 // Attribute flags.
