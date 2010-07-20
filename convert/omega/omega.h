@@ -19,6 +19,7 @@ using namespace std;
 
 char *StringClone(const char *str);
 char *StringCloneLen(const char *str, size_t nStr);
+bool ConvertTimeString(char *pTime, time_t *pt);
 
 typedef struct
 {
