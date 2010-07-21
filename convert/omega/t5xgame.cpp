@@ -5519,6 +5519,9 @@ static struct
     { "HTDesc",      T5X_A_HTDESC       },
     { "Reason",      T5X_A_REASON       },
     { "ConnInfo",    T5X_A_CONNINFO     },
+    { "*Password",   T5X_A_PASS         },
+    { "*Money",      T5X_A_MONEY        },
+    { "*Invalid",    T5X_A_TEMP         },
 };
 
 // T5X_AF_ISUSED is not exposed.
