@@ -5561,7 +5561,7 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                         const char *p = EncodeSubstitutions(fUnicode, m_pValueUnencoded, fNeedEval);
                         if (fNeedEval)
                         {
-                            fprintf(fp, "@wait 0={@lock/%s %s=%s\n}", t5x_locks[i].pName, pObjName, p);
+                            fprintf(fp, "@wait 0={@lock/%s %s=%s}\n", t5x_locks[i].pName, pObjName, p);
                         }
                         else
                         {
@@ -5740,7 +5740,7 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                     {
                         if (fNeedEval)
                         {
-                            fprintf(fp, "@wait 0={@lock %s/%s\n}", pObjName, itName->second->m_pNameUnencoded);
+                            fprintf(fp, "@wait 0={@lock %s/%s}\n", pObjName, itName->second->m_pNameUnencoded);
                         }
                         else
                         {
