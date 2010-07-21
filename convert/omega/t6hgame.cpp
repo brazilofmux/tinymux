@@ -2255,7 +2255,8 @@ bool convert_t5x_attr_num(int iNum, int *piNum)
        || T5X_A_LASTWHISPER == iNum
        || T5X_A_LVISIBLE == iNum
        || T5X_A_CREATED == iNum
-       || T5X_A_MODIFIED == iNum)
+       || T5X_A_MODIFIED == iNum
+       || T5X_A_REASON == iNum)
     {
         return false;
     }
@@ -3525,11 +3526,11 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                                     fFirst = false;
                                     if (fNeedEval)
                                     {
-                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t6h_attr_names[i]);
                                     }
                                     else
                                     {
-                                        fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[j]);
+                                        fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[i]);
                                     }
                                 }
                                 else

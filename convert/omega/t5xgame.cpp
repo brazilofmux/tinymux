@@ -5618,11 +5618,11 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                                     if (  fNeedEval
                                        && m_iNum != T5X_A_MONIKER)
                                     {
-                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t5x_attr_names[j]);
+                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t5x_attr_names[i]);
                                     }
                                     else
                                     {
-                                        fprintf(fp, "@set %s/%s=", pObjName, t5x_attr_names[j]);
+                                        fprintf(fp, "@set %s/%s=", pObjName, t5x_attr_names[i]);
                                     }
                                 }
                                 else
