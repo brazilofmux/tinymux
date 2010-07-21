@@ -2239,7 +2239,6 @@ bool convert_t5x_attr_num(int iNum, int *piNum)
     //
     if (  T5X_A_LGET == iNum
        || T5X_A_MFAIL == iNum
-       || T5X_A_LASTIP == iNum
        || T5X_A_COMJOIN == iNum
        || T5X_A_COMLEAVE == iNum
        || T5X_A_COMON == iNum
@@ -2254,7 +2253,9 @@ bool convert_t5x_attr_num(int iNum, int *piNum)
        || T5X_A_LMAIL == iNum
        || T5X_A_LOPEN == iNum
        || T5X_A_LASTWHISPER == iNum
-       || T5X_A_LVISIBLE == iNum)
+       || T5X_A_LVISIBLE == iNum
+       || T5X_A_CREATED == iNum
+       || T5X_A_MODIFIED == iNum)
     {
         return false;
     }
@@ -2578,10 +2579,9 @@ void T6H_GAME::ConvertFromT5X()
             for (vector<T5X_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
             {
                 int iNum;
-                if (  (*itAttr)->m_fNumAndValue
-                   && convert_t5x_attr_num((*itAttr)->m_iNum, &iNum))
+                if ((*itAttr)->m_fNumAndValue)
                 {
-                    if (T5X_A_QUOTA == iNum)
+                    if (T5X_A_QUOTA == (*itAttr)->m_iNum)
                     {
                         // Typed quota needs to be converted to single quota.
                         //
@@ -2589,7 +2589,7 @@ void T6H_GAME::ConvertFromT5X()
                         pai->SetNumAndValue(T6H_A_QUOTA, StringClone(convert_t5x_quota((*itAttr)->m_pValueUnencoded)));
                         pvai->push_back(pai);
                     }
-                    else if (T5X_A_MODIFIED == iNum)
+                    else if (T5X_A_MODIFIED == (*itAttr)->m_iNum)
                     {
                         time_t t;
                         if (ConvertTimeString((*itAttr)->m_pValueUnencoded, &t))
@@ -2597,7 +2597,7 @@ void T6H_GAME::ConvertFromT5X()
                             poi->SetModified(t);
                         }
                     }
-                    else if (T5X_A_LOCK == iNum)
+                    else if (T5X_A_LOCK == (*itAttr)->m_iNum)
                     {
                         T6H_LOCKEXP *ple = new T6H_LOCKEXP;
                         if (ple->ConvertFromT5X(fUnicode, (*itAttr)->m_pKeyTree))
@@ -2609,7 +2609,7 @@ void T6H_GAME::ConvertFromT5X()
                             delete ple;
                         }
                     }
-                    else
+                    else if (convert_t5x_attr_num((*itAttr)->m_iNum, &iNum))
                     {
                         T6H_ATTRINFO *pai = new T6H_ATTRINFO;
                         pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner,

@@ -2318,7 +2318,6 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
     //
     if (  T5X_A_LGET == iNum
        || T5X_A_MFAIL == iNum
-       || T5X_A_LASTIP == iNum
        || T5X_A_COMJOIN == iNum
        || T5X_A_COMLEAVE == iNum
        || T5X_A_COMON == iNum
@@ -2687,10 +2686,9 @@ void T5X_GAME::ConvertFromT6H()
             for (vector<T6H_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
             {
                 int iNum;
-                if (  (*itAttr)->m_fNumAndValue
-                   && convert_t6h_attr_num((*itAttr)->m_iNum, &iNum))
+                if ((*itAttr)->m_fNumAndValue)
                 {
-                    if (T5X_A_QUOTA == iNum)
+                    if (T6H_A_QUOTA == (*itAttr)->m_iNum)
                     {
                         // Typed quota needs to be converted to single quota.
                         //
@@ -2698,7 +2696,7 @@ void T5X_GAME::ConvertFromT6H()
                         pai->SetNumAndValue(T5X_A_QUOTA, StringClone(convert_t6h_quota((*itAttr)->m_pValueUnencoded)));
                         pvai->push_back(pai);
                     }
-                    else
+                    else if (convert_t6h_attr_num((*itAttr)->m_iNum, &iNum))
                     {
                         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
                         pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner, convert_t6h_attr_flags((*itAttr)->m_iFlags), StringClone((*itAttr)->m_pValueUnencoded));
@@ -5406,7 +5404,7 @@ static struct
     { "Last",        T5X_A_LAST         },
     { "Lastpage",    T5X_A_LASTPAGE     },
     { "Lastsite",    T5X_A_LASTSITE     },
-    { "LastIP",      T5X_A_LASTIP       },
+    { "Lastip",      T5X_A_LASTIP       },
     { "Leave",       T5X_A_LEAVE        },
     { "LeaveLock",   T5X_A_LLEAVE       },
     { "Lfail",       T5X_A_LFAIL        },
