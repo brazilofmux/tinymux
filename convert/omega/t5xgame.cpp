@@ -2503,9 +2503,9 @@ void T5X_GAME::ConvertFromT6H()
 
     // Attribute names
     //
-    for (vector<T6H_ATTRNAMEINFO *>::iterator it =  g_t6hgame.m_vAttrNames.begin(); it != g_t6hgame.m_vAttrNames.end(); ++it)
+    for (map<int, T6H_ATTRNAMEINFO *, lti>::iterator it =  g_t6hgame.m_mAttrNames.begin(); it != g_t6hgame.m_mAttrNames.end(); ++it)
     {
-        AddNumAndName((*it)->m_iNum, StringClone((*it)->m_pName));
+        AddNumAndName(it->second->m_iNum, StringClone(it->second->m_pNameEncoded));
     }
     if (!m_fNextAttr)
     {

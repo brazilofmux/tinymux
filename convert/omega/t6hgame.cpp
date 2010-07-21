@@ -722,13 +722,55 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, T5X_LOCKEXP *p)
     return true;
 }
 
+void T6H_ATTRNAMEINFO::SetNumFlagsAndName(int iNum, int iFlags, char *pName)
+{
+    free(m_pNameEncoded);
+    m_fNumAndName = true;
+    m_iNum = iNum;
+    m_iFlags = iFlags;
+
+    char buffer[65536];
+    sprintf(buffer, "%d:", m_iFlags);
+    size_t n = strlen(buffer);
+    sprintf(buffer + n, "%s", pName);
+    free(pName);
+
+    m_pNameEncoded   = StringClone(buffer);
+    m_pNameUnencoded = m_pNameEncoded + n;
+}
 
 void T6H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
     m_iNum = iNum;
-    free(m_pName);
-    m_pName = pName;
+
+    m_pNameEncoded = pName;
+    m_pNameUnencoded = NULL;
+    m_iFlags = 0;
+
+    // Get the flags.
+    //
+    char *cp = m_pNameEncoded;
+    int tmp_flags = 0;
+    unsigned char ch = *cp;
+    while (isdigit(ch))
+    {
+        cp++;
+        tmp_flags = 10*tmp_flags + (ch-'0');
+        ch = *cp;
+    }
+
+    // If delimiter is not ':', just return attribute.
+    //
+    if (*cp++ != ':')
+    {
+        m_pNameUnencoded = m_pNameEncoded;
+        fprintf(stderr, "WARNING, User attribute (%s) does not contain a flag sub-field.\n", m_pNameEncoded);
+        return;
+    }
+
+    m_iFlags = tmp_flags;
+    m_pNameUnencoded = cp;
 }
 
 static char *EncodeString(const char *str, bool fExtraEscapes)
@@ -781,7 +823,7 @@ void T6H_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
 {
     if (m_fNumAndName)
     {
-        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pNameEncoded, fExtraEscapes));
     }
 }
 
@@ -1017,7 +1059,25 @@ void T6H_GAME::AddNumAndName(int iNum, char *pName)
 {
     T6H_ATTRNAMEINFO *pani = new T6H_ATTRNAMEINFO;
     pani->SetNumAndName(iNum, pName);
-    m_vAttrNames.push_back(pani);
+
+    map<int, T6H_ATTRNAMEINFO *, lti>::iterator itName = m_mAttrNames.find(iNum);
+    if (itName != m_mAttrNames.end())
+    {
+        fprintf(stderr, "WARNING: Duplicate attribute number %s(%d) conflicts with %s(%d)\n",
+            pani->m_pNameUnencoded, iNum, itName->second->m_pNameUnencoded, itName->second->m_iNum);
+        delete pani;
+        return;
+    }
+    map<char *, T6H_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(pani->m_pNameUnencoded);
+    if (itNum != m_mAttrNums.end())
+    {
+        fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+            pani->m_pNameUnencoded, iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        delete pani;
+        return;
+    }
+    m_mAttrNames[iNum] = pani;
+    m_mAttrNums[pani->m_pNameUnencoded] = pani;
 }
 
 void T6H_GAME::AddObject(T6H_OBJECTINFO *poi)
@@ -1144,52 +1204,31 @@ void T6H_ATTRNAMEINFO::Validate(int ver) const
     {
         if (m_iNum < A_USER_START)
         {
-            fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pName, m_iNum, A_USER_START);
+            fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pNameUnencoded, m_iNum, A_USER_START);
         }
-        char *p = strchr(m_pName, ':');
-        if (NULL == p)
+        char *q = m_pNameUnencoded;
+
+        bool fValid = true;
+        if (!t6h_AttrNameInitialSet[(unsigned char)*q])
         {
-            fprintf(stderr, "WARNING, User attribute (%s) does not contain a flag sub-field.\n", m_pName);
+            fValid = false;
         }
-        else
+        else if ('\0' != *q)
         {
-            char *q = m_pName;
-            while (q != p)
+            q++;
+            while ('\0' != *q)
             {
-                if (!isdigit(*q))
+                if (!t6h_AttrNameSet[(unsigned char)*q])
                 {
-                    fprintf(stderr, "WARNING, User attribute (%s) flag sub-field is not numeric.\n", m_pName);
+                    fValid = false;
                     break;
                 }
                 q++;
             }
-
-            if (ver <= 2)
-            {
-                q = p + 1;
-                bool fValid = true;
-                if (!t6h_AttrNameInitialSet[(unsigned char)*q])
-                {
-                    fValid = false;
-                }
-                else if ('\0' != *q)
-                {
-                    q++;
-                    while ('\0' != *q)
-                    {
-                        if (!t6h_AttrNameSet[(unsigned char)*q])
-                        {
-                            fValid = false;
-                            break;
-                        }
-                        q++;
-                    }
-                }
-                if (!fValid)
-                {
-                    fprintf(stderr, "WARNING, User attribute (%s) name is not valid.\n", m_pName);
-                }
-            }
+        }
+        if (!fValid)
+        {
+            fprintf(stderr, "WARNING, User attribute (%s) name is not valid.\n", m_pNameUnencoded);
         }
     }
     else
@@ -1207,12 +1246,12 @@ void T6H_GAME::ValidateAttrNames(int ver) const
     else
     {
         int n = 256;
-        for (vector<T6H_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (map<int, T6H_ATTRNAMEINFO *, lti>::const_iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
         {
-            (*it)->Validate(ver);
-            if ((*it)->m_fNumAndName)
+            it->second->Validate(ver);
+            if (it->second->m_fNumAndName)
             {
-                int iNum = (*it)->m_iNum;
+                int iNum = it->second->m_iNum;
                 if (n <= iNum)
                 {
                     n = iNum + 1;
@@ -1478,9 +1517,9 @@ void T6H_GAME::Write(FILE *fp)
     {
         fprintf(fp, "-R%d\n", m_nRecordPlayers);
     }
-    for (vector<T6H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    for (map<int, T6H_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
-        (*it)->Write(fp, m_fExtraEscapes);
+        it->second->Write(fp, m_fExtraEscapes);
     }
     for (map<int, T6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
@@ -3529,91 +3568,86 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
         }
         else
         {
-            for (vector<T6H_ATTRNAMEINFO *>::iterator itName =  g_t6hgame.m_vAttrNames.begin(); itName != g_t6hgame.m_vAttrNames.end(); ++itName)
+            for (map<int, T6H_ATTRNAMEINFO *, lti>::iterator itName =  g_t6hgame.m_mAttrNames.begin(); itName != g_t6hgame.m_mAttrNames.end(); ++itName)
             {
-                if (  (*itName)->m_fNumAndName
-                   && (*itName)->m_iNum == m_iNum)
+                if (  itName->second->m_fNumAndName
+                   && itName->second->m_iNum == m_iNum)
                 {
-                    char *pAttrName = strchr((*itName)->m_pName, ':');
-                    if (NULL != pAttrName)
+                    bool fFirst = true;
+                    for (int i = 0; i < sizeof(t6h_attr_flags_comment)/sizeof(t6h_attr_flags_comment[0]); i++)
                     {
-                        pAttrName++;
-                        bool fFirst = true;
-                        for (int i = 0; i < sizeof(t6h_attr_flags_comment)/sizeof(t6h_attr_flags_comment[0]); i++)
+                        if (m_iFlags & t6h_attr_flags_comment[i].mask)
                         {
-                            if (m_iFlags & t6h_attr_flags_comment[i].mask)
+                            if (fFirst)
                             {
-                                if (fFirst)
+                                fFirst = false;
+                                fprintf(fp, "@@ attribute is ", pObjName);
+                            }
+                            else
+                            {
+                                fprintf(fp, " ");
+                            }
+                            fprintf(fp, "%s", t6h_attr_flags_comment[i].pName);
+                        }
+                    }
+                    if (!fFirst)
+                    {
+                        fprintf(fp, "\n");
+                    }
+                    bool fNeedEval;
+                    const char *p = EncodeSubstitutions(m_pValueUnencoded, fNeedEval);
+                    if (fNeedEval)
+                    {
+                        fprintf(fp, "@wait 0={&%s %s=%s}\n", itName->second->m_pNameUnencoded, pObjName, p);
+                    }
+                    else
+                    {
+                        fprintf(fp, "&%s %s=%s\n", itName->second->m_pNameUnencoded, pObjName, p);
+                    }
+                    fFirst = true;
+                    for (int i = 0; i < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); i++)
+                    {
+                        if (m_iFlags & t6h_attr_flags[i].mask)
+                        {
+                            if (fFirst)
+                            {
+                                fFirst = false;
+                                if (fNeedEval)
                                 {
-                                    fFirst = false;
-                                    fprintf(fp, "@@ attribute is ", pObjName);
+                                    fprintf(fp, "@wait 0={@set %s/%s=", pObjName, itName->second->m_pNameUnencoded);
                                 }
                                 else
                                 {
-                                    fprintf(fp, " ");
+                                    fprintf(fp, "@set %s/%s=", pObjName, itName->second->m_pNameUnencoded);
                                 }
-                                fprintf(fp, "%s", t6h_attr_flags_comment[i].pName);
                             }
+                            else
+                            {
+                                fprintf(fp, " ");
+                            }
+                            fprintf(fp, "%s", t6h_attr_flags[i].pName);
                         }
-                        if (!fFirst)
-                        {
-                            fprintf(fp, "\n");
-                        }
-                        bool fNeedEval;
-                        const char *p = EncodeSubstitutions(m_pValueUnencoded, fNeedEval);
+                    }
+                    if (!fFirst)
+                    {
                         if (fNeedEval)
                         {
-                            fprintf(fp, "@wait 0={&%s %s=%s}\n", pAttrName, pObjName, p);
+                            fprintf(fp, "}\n");
                         }
                         else
                         {
-                            fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, p);
+                            fprintf(fp, "\n");
                         }
-                        fFirst = true;
-                        for (int i = 0; i < sizeof(t6h_attr_flags)/sizeof(t6h_attr_flags[0]); i++)
+                    }
+                    if (T6H_AF_LOCK & m_iFlags)
+                    {
+                        if (fNeedEval)
                         {
-                            if (m_iFlags & t6h_attr_flags[i].mask)
-                            {
-                                if (fFirst)
-                                {
-                                    fFirst = false;
-                                    if (fNeedEval)
-                                    {
-                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, pAttrName);
-                                    }
-                                    else
-                                    {
-                                        fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
-                                    }
-                                }
-                                else
-                                {
-                                    fprintf(fp, " ");
-                                }
-                                fprintf(fp, "%s", t6h_attr_flags[i].pName);
-                            }
+                            fprintf(fp, "@wait 0={@lock %s/%s}\n", pObjName, itName->second->m_pNameUnencoded);
                         }
-                        if (!fFirst)
+                        else
                         {
-                            if (fNeedEval)
-                            {
-                                fprintf(fp, "}\n");
-                            }
-                            else
-                            {
-                                fprintf(fp, "\n");
-                            }
-                        }
-                        if (T6H_AF_LOCK & m_iFlags)
-                        {
-                            if (fNeedEval)
-                            {
-                                fprintf(fp, "@wait 0={@lock %s/%s}\n", pObjName, pAttrName);
-                            }
-                            else
-                            {
-                                fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
-                            }
+                            fprintf(fp, "@lock %s/%s\n", pObjName, itName->second->m_pNameUnencoded);
                         }
                     }
                     break;

@@ -473,22 +473,32 @@ class T6H_ATTRNAMEINFO
 public:
     bool  m_fNumAndName;
     int   m_iNum;
-    char *m_pName;
+    char *m_pNameEncoded;
     void  SetNumAndName(int iNum, char *pName);
+
+    int  m_iFlags;
+    char *m_pNameUnencoded;
+    void SetNumFlagsAndName(int iNum, int iFlags, char *pName);
 
     void Validate(int ver) const;
 
     void Write(FILE *fp, bool fExtraEscapes);
 
+    void Upgrade();
+    void Downgrade();
+
     T6H_ATTRNAMEINFO()
     {
         m_fNumAndName = false;
-        m_pName = NULL;
+        m_pNameEncoded = NULL;
+        m_pNameUnencoded = NULL;
+        m_iFlags = 0;
     }
     ~T6H_ATTRNAMEINFO()
     {
-        free(m_pName);
-        m_pName = NULL;
+        free(m_pNameEncoded);
+        m_pNameEncoded = NULL;
+        m_pNameUnencoded = NULL;
     }
 };
 
@@ -701,7 +711,8 @@ public:
     int  m_nRecordPlayers;
     void SetRecordPlayers(int nRecordPlayers) { m_fRecordPlayers = true; m_nRecordPlayers = nRecordPlayers; }
 
-    vector<T6H_ATTRNAMEINFO *> m_vAttrNames;
+    map<int, T6H_ATTRNAMEINFO *, lti> m_mAttrNames;
+    map<char *, T6H_ATTRNAMEINFO *, ltstr> m_mAttrNums;
     void AddNumAndName(int iNum, char *pName);
 
     map<int, T6H_OBJECTINFO *, lti> m_mObjects;
@@ -739,11 +750,17 @@ public:
     }
     ~T6H_GAME()
     {
-        for (vector<T6H_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (map<char *, T6H_ATTRNAMEINFO *, ltstr>::iterator it = m_mAttrNums.begin(); it != m_mAttrNums.end(); ++it)
         {
-            delete *it;
+            m_mAttrNames.erase(it->second->m_iNum);
+            delete it->second;
         }
-        m_vAttrNames.clear();
+        m_mAttrNums.clear();
+        for (map<int, T6H_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
+        {
+            delete it->second;
+        }
+        m_mAttrNames.clear();
         for (map<int, T6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;
