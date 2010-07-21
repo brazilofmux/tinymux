@@ -5314,6 +5314,15 @@ void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
         }
     }
 
+    if (NULL != m_ple)
+    {
+        char buffer[65536];
+        char *p = m_ple->Write(buffer);
+        *p = '\0';
+
+        fprintf(fp, "@lock/DefaultLock %s=%s\n", pStrippedObjName, p);
+    }
+
     // Extract attribute values.
     //
     if (NULL != m_pvai)
