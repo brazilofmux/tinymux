@@ -2580,16 +2580,21 @@ void T6H_GAME::ConvertFromT5X()
                     }
                 }
             }
-            if (!poi->m_fModified)
-            {
-                poi->SetModified(tNow);
-            }
             if (0 < pvai->size())
             {
                 poi->SetAttrs(pvai->size(), pvai);
                 pvai = NULL;
             }
             delete pvai;
+        }
+
+        if (!poi->m_fModified)
+        {
+            poi->SetModified(tNow);
+        }
+        if (!poi->m_fAccessed)
+        {
+            poi->SetAccessed(tNow);
         }
 
         if (it->second->m_ple)
