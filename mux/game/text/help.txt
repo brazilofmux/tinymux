@@ -3273,16 +3273,16 @@ Related Topics: @name.
   COMMAND: @pemit[/switches] <what>=<message>
 
   Emits <message> only to <what>, or to <what>'s contents of the /contents
-  switch is given.  <what> must be either in the same location as you or
-  be something you own.  You can also @pemit to distant players if
-  pagelocks allow you to page them, and this costs as much as a page
-  <This feature is not present in all MUXes>.  You cannot @pemit to the
-  contents of something you don't own.
+  switch is given.  <what> must be either in the same location as you or be
+  something you own.  Depending on how this MUX is configured, you can also
+  @pemit to distant players if pagelocks allow you to page them, and this
+  costs as much as a page.  You cannot @pemit to the contents of something
+  you don't own.
 
   The /list switch to this command allows you to @pemit a message to
   a list:  @pemit/list <object 1> [<object 2> <object N>] = <message>
-  There can be any number of objects in the list. The objects must be
-  specified by dbref number. This can be combined with other switches.
+  There can be any number of objects in the list.  This can be combined with
+  other switches.
 
   The following switches are also available:
 
