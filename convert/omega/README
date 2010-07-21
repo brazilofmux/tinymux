@@ -18,12 +18,10 @@ present.
 If anyone has ever asked you to look for the END OF DUMP line at the end of
 the flatfile, this level of validation is better than that.
 
-Notes: The list of attributes locks for RhostMUSH and TinyMUSH isn't
-completely updated, but the lock parser works for the ones it does have.
-The list just needs to be updated.  The lock parsers TinyMUSH, TinyMUX, and
-RhostMUSH are the third generation/revision, and they are holding up well.
-The lock parser for PennMUSH is on generation/revision earlier, and it needs
-to be compared again to the recursive-descent lock parser in PennMUSH.
+Notes: The lock parsers TinyMUSH, TinyMUX, and RhostMUSH are the third
+generation/revision, and they are holding up well.  The lock parser for
+PennMUSH is on generation/revision earlier, and it needs to be compared again
+to the recursive-descent lock parser in PennMUSH.
 
 
 FEATURE: Validation (Level 2)
@@ -35,7 +33,8 @@ performing much of this type of validation as well.
 
 Currently, Omega is validating the dbrefs in the object header for all
 four MUSH flavors. It is not validating dbrefs or attribute names in locks.
-It is not validating dbref uniqueness or attribute name uniqueness.
+For TinyMUSH and TinyMUX, it validates dbref uniqueness and attribute name
+uniqueness, but not yet for PennMUSH or RhostMUSH.
 
 
 FEATURE: Validation (Level 3)
@@ -49,7 +48,7 @@ flavor.
 FEATURE: Round-trip
 
 Omega can consume and produce flatfiles for all for all four MUSH flavors. It
-in each, it should produce exactly what it consumes.
+in each, it produces exactly what it consumes.
 
 
 FEATURE: Password reset
@@ -73,7 +72,7 @@ through TinyMUX 2.0 first.
 Omega can upgrade or downgrade between TinyMUSH flatfiles from TinyMUSH 3.0p0
 through 3.1p6.
 
-Only one version of RhostMUSH flatfile is known.
+Only one version of RhostMUSH flatfile is supported (v7).
 
 
 FEATURE: Extraction
