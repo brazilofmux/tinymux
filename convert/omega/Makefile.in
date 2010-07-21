@@ -8,10 +8,10 @@ all: omega
 omega: omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r7hgame.o lex.r7h.o r7h.tab.o lex.r7hl.o r7hl.tab.o
 	$(CXX) -g -o omega omega.o p6hgame.o lex.p6h.o p6h.tab.o lex.p6hl.o p6hl.tab.o t5xgame.o lex.t5x.o t5x.tab.o lex.t5xl.o t5xl.tab.o t6hgame.o lex.t6h.o t6h.tab.o lex.t6hl.o t6hl.tab.o r7hgame.o lex.r7h.o r7h.tab.o lex.r7hl.o r7hl.tab.o
 
-omega.o: omega.cpp omega.h p6hgame.h t5xgame.h
+omega.o: omega.cpp omega.h p6hgame.h t6hgame.h t5xgame.h r7hgame.h
 	$(CXX) -g -c omega.cpp
 
-p6hgame.o: p6hgame.cpp omega.h p6hgame.h t5xgame.h
+p6hgame.o: p6hgame.cpp omega.h p6hgame.h t6hgame.h t5xgame.h r7hgame.h
 	$(CXX) -g -c p6hgame.cpp
 
 lex.p6h.cpp: p6h.ll
@@ -38,7 +38,7 @@ p6hl.tab.o: p6hl.tab.hpp p6hl.tab.cpp p6hgame.h
 lex.p6hl.o: lex.p6hl.cpp p6hl.tab.hpp p6hgame.h
 	$(CXX) -g -c lex.p6hl.cpp
 
-t5xgame.o: t5xgame.cpp omega.h t5xgame.h
+t5xgame.o: t5xgame.cpp omega.h p6hgame.h t6hgame.h t5xgame.h r7hgame.h
 	$(CXX) -g -c t5xgame.cpp
 
 lex.t5x.cpp: t5x.ll
@@ -65,7 +65,7 @@ t5xl.tab.o: t5xl.tab.hpp t5xl.tab.cpp t5xgame.h
 lex.t5xl.o: lex.t5xl.cpp t5xl.tab.hpp t5xgame.h
 	$(CXX) -g -c lex.t5xl.cpp
 
-t6hgame.o: t6hgame.cpp omega.h t6hgame.h
+t6hgame.o: t6hgame.cpp omega.h p6hgame.h t6hgame.h t5xgame.h r7hgame.h
 	$(CXX) -g -c t6hgame.cpp
 
 lex.t6h.cpp: t6h.ll
@@ -92,7 +92,7 @@ t6hl.tab.o: t6hl.tab.hpp t6hl.tab.cpp t6hgame.h
 lex.t6hl.o: lex.t6hl.cpp t6hl.tab.hpp t6hgame.h
 	$(CXX) -g -c lex.t6hl.cpp
 
-r7hgame.o: r7hgame.cpp omega.h r7hgame.h
+r7hgame.o: r7hgame.cpp omega.h p6hgame.h t6hgame.h t5xgame.h r7hgame.h
 	$(CXX) -g -c r7hgame.cpp
 
 lex.r7h.cpp: r7h.ll
