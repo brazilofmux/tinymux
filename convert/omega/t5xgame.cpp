@@ -739,13 +739,55 @@ bool T5X_LOCKEXP::ConvertFromR7H(R7H_LOCKEXP *p)
     return true;
 }
 
+void T5X_ATTRNAMEINFO::SetNumFlagsAndName(int iNum, int iFlags, char *pName)
+{
+    free(m_pNameEncoded);
+    m_fNumAndName = true;
+    m_iNum = iNum;
+    m_iFlags = iFlags;
+
+    char buffer[65536];
+    sprintf(buffer, "%d:", m_iFlags);
+    size_t n = strlen(buffer);
+    sprintf(buffer + n, "%s", pName);
+    free(pName);
+
+    m_pNameEncoded   = StringClone(buffer);
+    m_pNameUnencoded = m_pNameEncoded + n;
+}
 
 void T5X_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
 {
     m_fNumAndName = true;
     m_iNum = iNum;
-    free(m_pName);
-    m_pName = pName;
+
+    m_pNameEncoded = pName;
+    m_pNameUnencoded = NULL;
+    m_iFlags = 0;
+
+    // Get the flags.
+    //
+    char *cp = m_pNameEncoded;
+    int tmp_flags = 0;
+    unsigned char ch = *cp;
+    while (isdigit(ch))
+    {
+        cp++;
+        tmp_flags = 10*tmp_flags + (ch-'0');
+        ch = *cp;
+    }
+
+    // If delimiter is not ':', just return attribute.
+    //
+    if (*cp++ != ':')
+    {
+        m_pNameUnencoded = m_pNameEncoded;
+        fprintf(stderr, "WARNING, User attribute (%s) does not contain a flag sub-field.\n", m_pNameEncoded);
+        return;
+    }
+
+    m_iFlags = tmp_flags;
+    m_pNameUnencoded = cp;
 }
 
 static char *EncodeString(const char *str, bool fExtraEscapes)
@@ -798,7 +840,7 @@ void T5X_ATTRNAMEINFO::Write(FILE *fp, bool fExtraEscapes)
 {
     if (m_fNumAndName)
     {
-        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pName, fExtraEscapes));
+        fprintf(fp, "+A%d\n\"%s\"\n", m_iNum, EncodeString(m_pNameEncoded, fExtraEscapes));
     }
 }
 
@@ -986,6 +1028,7 @@ void T5X_ATTRINFO::EncodeDecode(int dbObjOwner)
         {
             m_dbOwner = dbObjOwner;
             m_pValueUnencoded = m_pValueEncoded;
+            m_kState = kNone;
             return;
         }
 
@@ -1006,6 +1049,7 @@ void T5X_ATTRINFO::EncodeDecode(int dbObjOwner)
         {
             m_dbOwner = dbObjOwner;
             m_pValueUnencoded = m_pValueEncoded;
+            m_kState = kNone;
             return;
         }
 
@@ -1030,7 +1074,25 @@ void T5X_GAME::AddNumAndName(int iNum, char *pName)
 {
     T5X_ATTRNAMEINFO *pani = new T5X_ATTRNAMEINFO;
     pani->SetNumAndName(iNum, pName);
-    m_vAttrNames.push_back(pani);
+
+    map<int, T5X_ATTRNAMEINFO *, lti>::iterator itName = m_mAttrNames.find(iNum);
+    if (itName != m_mAttrNames.end())
+    {
+        fprintf(stderr, "WARNING: Duplicate attribute number %s(%d) conflicts with %s(%d)\n",
+            pani->m_pNameUnencoded, iNum, itName->second->m_pNameUnencoded, itName->second->m_iNum);
+        delete pani;
+        return;
+    }
+    map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(pani->m_pNameUnencoded);
+    if (itNum != m_mAttrNums.end())
+    {
+        fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+            pani->m_pNameUnencoded, iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        delete pani;
+        return;
+    }
+    m_mAttrNames[iNum] = pani;
+    m_mAttrNums[pani->m_pNameUnencoded] = pani;
 }
 
 void T5X_GAME::AddObject(T5X_OBJECTINFO *poi)
@@ -1139,51 +1201,33 @@ void T5X_ATTRNAMEINFO::Validate(int ver) const
     {
         if (m_iNum < A_USER_START)
         {
-            fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pName, m_iNum, A_USER_START);
+            fprintf(stderr, "WARNING: User attribute (%s) uses an attribute number (%d) which is below %d.\n", m_pNameUnencoded, m_iNum, A_USER_START);
         }
-        char *p = strchr(m_pName, ':');
-        if (NULL == p)
-        {
-            fprintf(stderr, "WARNING, User attribute (%s) does not contain a flag sub-field.\n", m_pName);
-        }
-        else
-        {
-            char *q = m_pName;
-            while (q != p)
-            {
-                if (!isdigit(*q))
-                {
-                    fprintf(stderr, "WARNING, User attribute (%s) flag sub-field is not numeric.\n", m_pName);
-                    break;
-                }
-                q++;
-            }
+        char *q = m_pNameUnencoded;
 
-            if (ver <= 2)
+        if (ver <= 2)
+        {
+            bool fValid = true;
+            if (!t5x_AttrNameInitialSet[(unsigned char)*q])
             {
-                q = p + 1;
-                bool fValid = true;
-                if (!t5x_AttrNameInitialSet[(unsigned char)*q])
+                fValid = false;
+            }
+            else if ('\0' != *q)
+            {
+                q++;
+                while ('\0' != *q)
                 {
-                    fValid = false;
-                }
-                else if ('\0' != *q)
-                {
-                    q++;
-                    while ('\0' != *q)
+                    if (!t5x_AttrNameSet[(unsigned char)*q])
                     {
-                        if (!t5x_AttrNameSet[(unsigned char)*q])
-                        {
-                            fValid = false;
-                            break;
-                        }
-                        q++;
+                        fValid = false;
+                        break;
                     }
+                    q++;
                 }
-                if (!fValid)
-                {
-                    fprintf(stderr, "WARNING, User attribute (%s) name is not valid.\n", m_pName);
-                }
+            }
+            if (!fValid)
+            {
+                fprintf(stderr, "WARNING, User attribute (%s) name is not valid.\n", m_pNameUnencoded);
             }
         }
     }
@@ -1202,12 +1246,12 @@ void T5X_GAME::ValidateAttrNames(int ver) const
     else
     {
         int n = 256;
-        for (vector<T5X_ATTRNAMEINFO *>::const_iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+        for (map<int, T5X_ATTRNAMEINFO *, lti>::const_iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
         {
-            (*it)->Validate(ver);
-            if ((*it)->m_fNumAndName)
+            it->second->Validate(ver);
+            if (it->second->m_fNumAndName)
             {
-                int iNum = (*it)->m_iNum;
+                int iNum = it->second->m_iNum;
                 if (n <= iNum)
                 {
                     n = iNum + 1;
@@ -1461,9 +1505,9 @@ void T5X_GAME::Write(FILE *fp)
     {
         fprintf(fp, "-R%d\n", m_nRecordPlayers);
     }
-    for (vector<T5X_ATTRNAMEINFO *>::iterator it = m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
-        (*it)->Write(fp, fExtraEscapes);
+        it->second->Write(fp, fExtraEscapes);
     }
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
@@ -3811,9 +3855,20 @@ bool T5X_GAME::Upgrade3()
 
     // Upgrade attribute names.
     //
-    for (vector<T5X_ATTRNAMEINFO *>::iterator it =  m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
-        (*it)->Upgrade();
+        m_mAttrNums.erase(it->second->m_pNameEncoded);
+        it->second->Upgrade();
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        if (itNum != m_mAttrNums.end())
+        {
+            fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        }
+        else
+        {
+            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+        }
     }
 
     // Upgrade objects.
@@ -3827,9 +3882,8 @@ bool T5X_GAME::Upgrade3()
 
 void T5X_ATTRNAMEINFO::Upgrade()
 {
-    char *p = (char *)ConvertToUTF8(m_pName);
-    free(m_pName);
-    m_pName = StringClone(p);
+    char *p = (char *)ConvertToUTF8(m_pNameUnencoded);
+    SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
 void T5X_OBJECTINFO::Upgrade()
@@ -4692,9 +4746,20 @@ bool T5X_GAME::Downgrade2()
 
     // Downgrade attribute names.
     //
-    for (vector<T5X_ATTRNAMEINFO *>::iterator it =  m_vAttrNames.begin(); it != m_vAttrNames.end(); ++it)
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
-        (*it)->Downgrade();
+        m_mAttrNums.erase(it->second->m_pNameUnencoded);
+        it->second->Downgrade();
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        if (itNum != m_mAttrNums.end())
+        {
+            fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        }
+        else
+        {
+            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+        }
     }
 
     // Downgrade objects.
@@ -4724,9 +4789,8 @@ bool T5X_GAME::Downgrade1()
 
 void T5X_ATTRNAMEINFO::Downgrade()
 {
-    char *p = (char *)ConvertToLatin1((UTF8 *)m_pName);
-    free(m_pName);
-    m_pName = StringClone(p);
+    char *p = (char *)ConvertToLatin1((UTF8 *)m_pNameUnencoded);
+    SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
 void T5X_OBJECTINFO::Downgrade()
@@ -4775,7 +4839,7 @@ void T5X_OBJECTINFO::Downgrade()
 void T5X_ATTRINFO::Downgrade()
 {
     char *p = (char *)convert_color((UTF8 *)m_pValueUnencoded);
-    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, (char *)ConvertToLatin1((UTF8 *)p));
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)ConvertToLatin1((UTF8 *)p)));
 }
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const
@@ -5601,91 +5665,86 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
         }
         else
         {
-            for (vector<T5X_ATTRNAMEINFO *>::iterator itName =  g_t5xgame.m_vAttrNames.begin(); itName != g_t5xgame.m_vAttrNames.end(); ++itName)
+            for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator itName =  g_t5xgame.m_mAttrNames.begin(); itName != g_t5xgame.m_mAttrNames.end(); ++itName)
             {
-                if (  (*itName)->m_fNumAndName
-                   && (*itName)->m_iNum == m_iNum)
+                if (  itName->second->m_fNumAndName
+                   && itName->second->m_iNum == m_iNum)
                 {
-                    char *pAttrName = strchr((*itName)->m_pName, ':');
-                    if (NULL != pAttrName)
+                    bool fFirst = true;
+                    for (int i = 0; i < sizeof(t5x_attr_flags_comment)/sizeof(t5x_attr_flags_comment[0]); i++)
                     {
-                        pAttrName++;
-                        bool fFirst = true;
-                        for (int i = 0; i < sizeof(t5x_attr_flags_comment)/sizeof(t5x_attr_flags_comment[0]); i++)
+                        if (m_iFlags & t5x_attr_flags_comment[i].mask)
                         {
-                            if (m_iFlags & t5x_attr_flags_comment[i].mask)
+                            if (fFirst)
                             {
-                                if (fFirst)
+                                fFirst = false;
+                                fprintf(fp, "@@ attribute is ", pObjName);
+                            }
+                            else
+                            {
+                                fprintf(fp, " ");
+                            }
+                            fprintf(fp, "%s", t5x_attr_flags_comment[i].pName);
+                        }
+                    }
+                    if (!fFirst)
+                    {
+                        fprintf(fp, "\n");
+                    }
+                    bool fNeedEval;
+                    const char *p = EncodeSubstitutions(fUnicode, m_pValueUnencoded, fNeedEval);
+                    if (fNeedEval)
+                    {
+                        fprintf(fp, "@wait 0={&%s %s=%s}\n", itName->second->m_pNameUnencoded, pObjName, p);
+                    }
+                    else
+                    {
+                        fprintf(fp, "&%s %s=%s\n", itName->second->m_pNameUnencoded, pObjName, p);
+                    }
+                    fFirst = true;
+                    for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                    {
+                        if (m_iFlags & t5x_attr_flags[i].mask)
+                        {
+                            if (fFirst)
+                            {
+                                fFirst = false;
+                                if (fNeedEval)
                                 {
-                                    fFirst = false;
-                                    fprintf(fp, "@@ attribute is ", pObjName);
+                                    fprintf(fp, "@wait 0={@set %s/%s=", pObjName, itName->second->m_pNameUnencoded);
                                 }
                                 else
                                 {
-                                    fprintf(fp, " ");
+                                    fprintf(fp, "@set %s/%s=", pObjName, itName->second->m_pNameUnencoded);
                                 }
-                                fprintf(fp, "%s", t5x_attr_flags_comment[i].pName);
                             }
+                            else
+                            {
+                                fprintf(fp, " ");
+                            }
+                            fprintf(fp, "%s", t5x_attr_flags[i].pName);
                         }
-                        if (!fFirst)
-                        {
-                            fprintf(fp, "\n");
-                        }
-                        bool fNeedEval;
-                        const char *p = EncodeSubstitutions(fUnicode, m_pValueUnencoded, fNeedEval);
+                    }
+                    if (!fFirst)
+                    {
                         if (fNeedEval)
                         {
-                            fprintf(fp, "@wait 0={&%s %s=%s}\n", pAttrName, pObjName, p);
+                            fprintf(fp, "}\n");
                         }
                         else
                         {
-                            fprintf(fp, "&%s %s=%s\n", pAttrName, pObjName, p);
+                            fprintf(fp, "\n");
                         }
-                        fFirst = true;
-                        for (int i = 0; i < sizeof(t5x_attr_flags)/sizeof(t5x_attr_flags[0]); i++)
+                    }
+                    if (T5X_AF_LOCK & m_iFlags)
+                    {
+                        if (fNeedEval)
                         {
-                            if (m_iFlags & t5x_attr_flags[i].mask)
-                            {
-                                if (fFirst)
-                                {
-                                    fFirst = false;
-                                    if (fNeedEval)
-                                    {
-                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, pAttrName);
-                                    }
-                                    else
-                                    {
-                                        fprintf(fp, "@set %s/%s=", pObjName, pAttrName);
-                                    }
-                                }
-                                else
-                                {
-                                    fprintf(fp, " ");
-                                }
-                                fprintf(fp, "%s", t5x_attr_flags[i].pName);
-                            }
+                            fprintf(fp, "@wait 0={@lock %s/%s\n}", pObjName, itName->second->m_pNameUnencoded);
                         }
-                        if (!fFirst)
+                        else
                         {
-                            if (fNeedEval)
-                            {
-                                fprintf(fp, "}\n");
-                            }
-                            else
-                            {
-                                fprintf(fp, "\n");
-                            }
-                        }
-                        if (T5X_AF_LOCK & m_iFlags)
-                        {
-                            if (fNeedEval)
-                            {
-                                fprintf(fp, "@wait 0={@lock %s/%s\n}", pObjName, pAttrName);
-                            }
-                            else
-                            {
-                                fprintf(fp, "@lock %s/%s\n", pObjName, pAttrName);
-                            }
+                            fprintf(fp, "@lock %s/%s\n", pObjName, itName->second->m_pNameUnencoded);
                         }
                     }
                     break;

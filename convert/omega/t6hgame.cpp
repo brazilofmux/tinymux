@@ -2425,9 +2425,9 @@ void T6H_GAME::ConvertFromT5X()
 
     // Attribute names
     //
-    for (vector<T5X_ATTRNAMEINFO *>::iterator it =  g_t5xgame.m_vAttrNames.begin(); it != g_t5xgame.m_vAttrNames.end(); ++it)
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = g_t5xgame.m_vAttrNames.begin(); it != g_t5xgame.m_vAttrNames.end(); ++it)
     {
-        AddNumAndName((*it)->m_iNum, StringClone(ConvertT5XAttrName(fUnicode, (*it)->m_pName)));
+        AddNumAndName(it->second->m_iNum, StringClone(ConvertT5XAttrName(fUnicode, it->second->m_pName)));
     }
     if (!m_fNextAttr)
     {

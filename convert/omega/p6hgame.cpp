@@ -2350,13 +2350,9 @@ void P6H_GAME::ConvertFromT5X()
     {
         AttrNames[t5x_known_attrs[i].iNum] = StringClone(t5x_known_attrs[i].pName);
     }
-    for (vector<T5X_ATTRNAMEINFO *>::iterator it = g_t5xgame.m_vAttrNames.begin(); it != g_t5xgame.m_vAttrNames.end(); ++it)
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = g_t5xgame.m_mAttrNames.begin(); it != g_t5xgame.m_mAttrNames.end(); ++it)
     {
-        char *p = strchr((*it)->m_pName, ':');
-        if (NULL != p)
-        {
-            AttrNames[(*it)->m_iNum] = StringClone(p+1);
-        }
+        AttrNames[it->second->m_iNum] = StringClone(it->second->m_pNameUnencoded);
     }
 
     // Upgrade objects.
