@@ -2283,18 +2283,34 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
 
     // T6H attribute numbers with no corresponding T5X attribute.
     //
-    if (  T6H_A_NEWOBJS == iNum
+    if (  T6H_A_NULL == iNum
+       || T6H_A_NEWOBJS == iNum
        || T6H_A_MAILCC == iNum
        || T6H_A_MAILBCC == iNum
+       || T6H_A_LDARK == iNum
        || T6H_A_LKNOWN == iNum
-       || T6H_A_LHEARD == iNum)
+       || T6H_A_LHEARD == iNum
+       || T6H_A_LMOVED == iNum
+       || T6H_A_LKNOWS == iNum
+       || T6H_A_LHEARS == iNum
+       || T6H_A_LMOVES == iNum
+       || T6H_A_PAGEGROUP == iNum
+       || T6H_A_PROPDIR == iNum)
     {
         return false;
     }
 
-    if (T6H_A_LEXITS_FMT == iNum)
+    if (T6H_A_SPEECHFMT == iNum)
+    {
+        iNum = T5X_A_SPEECHMOD;
+    }
+    else if (T6H_A_LEXITS_FMT == iNum)
     {
         iNum = T5X_A_EXITFORMAT;
+    }
+    else if (T6H_A_LCON_FMT == iNum)
+    {
+        iNum = T5X_A_CONFORMAT;
     }
     else if (T6H_A_NAME_FMT == iNum)
     {
@@ -2304,19 +2320,13 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
     {
         iNum = T5X_A_LASTIP;
     }
-    else if (T6H_A_SPEECHFMT == iNum)
-    {
-        iNum = T5X_A_SPEECHMOD;
-    }
-    else if (T6H_A_LCON_FMT == iNum)
-    {
-        iNum = T5X_A_CONFORMAT;
-    }
 
     // T5X attributes with no corresponding T6H attribute, and nothing
     // in T6H currently uses the number, but it might be assigned later.
     //
-    if (  T5X_A_LGET == iNum
+    if (  T5X_A_PFAIL == iNum
+       || T5X_A_PRIVS == iNum
+       || T5X_A_LGET == iNum
        || T5X_A_MFAIL == iNum
        || T5X_A_COMJOIN == iNum
        || T5X_A_COMLEAVE == iNum
@@ -2324,15 +2334,23 @@ bool convert_t6h_attr_num(int iNum, int *piNum)
        || T5X_A_COMOFF == iNum
        || T5X_A_CMDCHECK == iNum
        || T5X_A_MONIKER == iNum
+       || T5X_A_SAYSTRING == iNum
+       || T5X_A_CREATED == iNum
+       || T5X_A_MODIFIED == iNum
+       || T5X_A_REASON == iNum
+       || T5X_A_REGINFO == iNum
        || T5X_A_CONNINFO == iNum
-       || T5X_A_IDLETMOUT == iNum
-       || T5X_A_ADESTROY == iNum
-       || T5X_A_APARENT == iNum
-       || T5X_A_ACREATE == iNum
        || T5X_A_LMAIL == iNum
        || T5X_A_LOPEN == iNum
        || T5X_A_LASTWHISPER == iNum
-       || T5X_A_LVISIBLE == iNum)
+       || T5X_A_ADESTROY == iNum
+       || T5X_A_APARENT == iNum
+       || T5X_A_ACREATE == iNum
+       || T5X_A_LVISIBLE == iNum
+       || T5X_A_IDLETMOUT == iNum
+       || T5X_A_DESCFORMAT == iNum
+       || T5X_A_VLIST == iNum
+       || T5X_A_STRUCT == iNum)
     {
         return false;
     }
