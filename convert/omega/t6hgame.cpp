@@ -2515,7 +2515,7 @@ void T6H_GAME::ConvertFromT5X()
         T6H_OBJECTINFO *poi = new T6H_OBJECTINFO;
 
         poi->SetRef(it->first);
-        poi->SetName(StringClone(it->second->m_pName));
+        poi->SetName(StringClone(ConvertT5XValue(fUnicode, it->second->m_pName)));
         if (it->second->m_fLocation)
         {
             int iLocation = it->second->m_dbLocation;
