@@ -35,6 +35,8 @@ Bug Fixes:
  -- Protect ConvertToLatin() from buffer overflow (Issue 637).
  -- Return message from shl() and shr() when negative shifts are
     requested.
+ -- Two @program requests to the same player could mix the A_PROGCMD
+    from one with the registers of the other.
 
 
 Performance Enhancements:
