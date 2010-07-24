@@ -1422,6 +1422,19 @@ void do_prog
         notify(player, T("That player is not connected."));
         return;
     }
+
+    // Check to see if the enactor already has an @prog input pending.
+    //
+    DESC *d;
+    DESC_ITER_PLAYER(doer, d)
+    {
+        if (d->program_data != NULL)
+        {
+            notify(player, T("Input already pending."));
+            return;
+        }
+    }
+
     UTF8 *msg = command;
     UTF8 *attrib = parse_to(&msg, ':', 1);
 
@@ -1481,18 +1494,6 @@ void do_prog
     {
         notify(player, T("No such attribute."));
         return;
-    }
-
-    // Check to see if the enactor already has an @prog input pending.
-    //
-    DESC *d;
-    DESC_ITER_PLAYER(doer, d)
-    {
-        if (d->program_data != NULL)
-        {
-            notify(player, T("Input already pending."));
-            return;
-        }
     }
 
     PROG *program = (PROG *)MEMALLOC(sizeof(PROG));
