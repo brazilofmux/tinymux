@@ -110,7 +110,7 @@
 
 &PLACESCLEANUP1 Places_global_object=^* has left.:placescleanup(%#)
 &PLACESCLEANUP2 Places_global_object=^* has disconnected.:placescleanup(%#)
-&PLACESCLEANUPCMD Places_global_object=$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), remove(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}
+&PLACESCLEANUPCMD Places_global_object=$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), setdiff(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}
 
 @@
 @@ @@ Join
@@ -120,16 +120,16 @@
 
 &DO_SIT Places_global_object=$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}} 
 
-&PLACEFUNCTION Places_global_object=@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[U(GETINFO, %0, %2, JOIN)] [r(0)].,oeval_mesg,[U(GETINFO, %0, %2, OJOIN)] [r(0)].;@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]}
+&PLACEFUNCTION Places_global_object=@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[U(GETINFO, %0, %2, JOIN)] [r(0)].,oeval_mesg,[U(GETINFO, %0, %2, OJOIN)] [r(0)].;@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, setunion(r(1),%1), |)]}
 
 
 @@
 @@ @@ Depart
 @@
 
-&DO_DEPART Places_global_object=$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}
+&DO_DEPART Places_global_object=$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [setdiff(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}
 
-&DO_STAND Places_global_object=$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}
+&DO_STAND Places_global_object=$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [setdiff(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}
 
 @@
 @@ @@ Places and Place
@@ -156,7 +156,7 @@
 
 &DO_TTOOC Places_global_object=$ttooc *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,<OOC> [ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],"*,%N says "[delete(%0,0,1)]",|*,delete(%0,0,1),%N says "%0")])])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]
 
-&WHICHPLACE Places_global_object=[match(get(%0/PLACENUMS), *%1%b*, |)]
+&WHICHPLACE Places_global_object=[match(get(%0/PLACENUMS), *%1*, |)]
 
 &GETINFO Places_global_object=[extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIPTION,%2),1,|)]
 
@@ -174,7 +174,7 @@
 
 &FUNC_PLACEINFO Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX,%2),1,|),PERMISSION DENIED)]
 
-&FUNC_WHICHPLACE Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1%b*, |),PERMISSION DENIED)]
+&FUNC_WHICHPLACE Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1*, |),PERMISSION DENIED)]
 @pemit me=[center(*** QUOTE OF PLACES DONE ***,78)]
 
 @@
