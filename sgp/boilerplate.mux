@@ -1,0 +1,30 @@
+@set me=QUIET
+@admin command_quota_increment=1000
+@admin command_quota_max=1000
+@lock me==me
+@lock/use me==me
+@lock/enter me==me
+@dig/teleport Master Room
+@set here=FLOATING
+@@ Password below doesn't matter. It's manually rolled back to the unknown one by editing the resulting flatfile.
+@pcreate Storage Wizard=09jf092j3f
+@lock #3==#3
+@lock/use #3==#3
+@lock/enter #3==#3
+@set #3=WIZARD
+
+@@ --->8--- include SGP-Installer.txt ---8<---
+@@ --->8--- include SGP-RPpack.txt ---8<---
+@@ --->8--- include PLACES-SGP.txt ---8<---
+
+@dig/teleport Auxiliary Room
+@set here=FLOATING
+@tel #3=here
+@dolist #2 #4 #5 #6 #7 #8 #9 #10 #11={@chown ##=#3;@set ##=!HALTED}
+@dolist #4 #10={@tel ##=here}
+@dolist #6 #9={@set ##=INHERIT}
+
+@set me=!QUIET
+
+think Uploaded.
+
