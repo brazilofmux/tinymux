@@ -1,4 +1,4 @@
-+X992001
++X992002
 +S12
 +N451
 -R1
@@ -119,9 +119,9 @@
 +A313
 "1:FN_FINDPC"
 +A314
-"1:FN_ISSTAFF"
-+A315
 "1:FN_MMM-DD-YYYY"
++A315
+"1:FN_ISSTAFF"
 +A316
 "1:FN_ROLL"
 +A317
@@ -401,11 +401,11 @@
 -1
 -1
 
-3
+1
 -1
 0
 0
-4
+0
 0
 0
 0
@@ -417,39 +417,43 @@
 -1
 -1
 0
-4
+-1
 (=1
 )
 1
 -1
-0
+1000
 19
-1073741824
+0
 0
 0
 0
 >218
-"Sat Dec 31 12:58:44.7063216 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 12:58:44.7063216 2005"
+"Fri Jan 01 00:00:00 2010"
 >30
-"Sun Jan 08 15:49:25.2724176 2006"
+"Fri Jan 01 00:00:00 2010"
 >49
 "20"
 >38
 "20"
 >5
-"$SHA1$X0PG0reTn66s$FxO7KKs/CJ+an2rDWgGO4zpo1co="
+"$SHA1$HvbGhcV17U9y$KwSMjZCZZW7tW9HbR6HwZ7ovM/8="
 >88
 "localhost"
 >144
 "127.0.0.1"
 >84
-"#2;localhost;Sun Jan 08 15:49:25.2724176 2006;localhost;Sat Dec 31 12:58:49.9907892 2005;;;;;0;0;;;;;;;"
+"#1;127.0.0.1;Fri Jan 01 00:00:00 2010;;;;;;;0;0;;;;;;;"
 >62
 "=(#1)"
 >59
 "=(#1)"
+>222
+"Shutdown"
+>224
+"0 0 0 0 1262304000"
 <
 !2
 "Master Room"
@@ -464,39 +468,39 @@
 -1
 0
 0
-0
+4
 0
 0
 0
 >218
-"Sat Dec 31 12:58:54.3711296 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 12:58:54.3711296 2005"
+"Fri Jan 01 00:00:00 2010"
 <
 !3
-"Storage"
+"Storage Wizard"
 11
 -1
 -1
 -1
 0
--1
+1
 (=3
 )
 3
 -1
-0
+150
 19
 0
 0
 0
 0
 >218
-"Sat Dec 31 12:59:24.08262 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 12:59:24.08262 2005"
+"Fri Jan 01 00:00:00 2010"
 >30
-"Sat Dec 31 12:59:24.08262 2005"
+"Fri Jan 01 00:00:00 2010"
 >49
 "20"
 >38
@@ -514,27 +518,27 @@
 -1
 -1
 -1
-0
-10
+2
+3
 
 3
 -1
-0
+1
 268435457
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:00:28.3380048 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:51.5484607 2005"
+"Fri Jan 01 00:00:00 2010"
 >257
 "#4|#8|#6|#7|#5|#9|#10"
 >258
-"1.0|RPPack|Dec 31 2005"
+"1.0|RPPack|Aug 02 2010"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Dec 31 2005 |Dec 31 2005 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Aug 02 2010 |Aug 02 2010 RPPack added"
 >6
 "This is the global data object for SGP. All the main global objects read data and write from this object and their code will -not- work without it. Non-command attributes for globals that you add to any of the globals objects should be placed here.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >260
@@ -642,23 +646,23 @@
 -1
 -1
 -1
-0
+2
 -1
 
 3
 -1
-0
-306184193
+1
+272629761
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:00:28.3380048 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:01:11.1001741 2005"
+"Fri Jan 01 00:00:00 2010"
 >258
-"1.0|Base 121600|Dec 31 2005"
+"1.0|Base 121600|Aug 02 2010"
 >259
 "Base Install 121600 [elements(time(),2 3 5)]"
 >6
@@ -678,9 +682,9 @@
 >313
 "[setq(6,locate(%0,%1,aimnpP))][switch(r(6),#-*,locate(%0,*%1,p),r(6))]"
 >314
-"orflags(%0,WZw)"
->315
 "[elements(time(),2 3 5)]"
+>315
+"orflags(%0,WZw)"
 >316
 "[switch(1,gt(%0,24),#-1,lt(%0,1),#-1,[setq(0,dice(%0))][setq(1,words(iter(%q0,switch(1,gte(##,%1),##))))][setq(2,words(iter(%q0,switch(##,1,##))))][sub(%q1,%q2)])]"
 >293
@@ -694,27 +698,27 @@
 -1
 -1
 -1
-0
+2
 5
 
 3
 -1
-0
+1
 301989889
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:00:28.3535932 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:51.3394934 2005"
+"Fri Jan 01 00:00:00 2010"
 >256
 "#4"
 >258
-"1.0|RPPack|Dec 31 2005"
+"1.0|RPPack|Aug 02 2010"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Dec 31 2005 |Dec 31 2005 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Aug 02 2010 |Aug 02 2010 RPPack added"
 >6
 "This is the main globals object for SGP. These are global commands that every player will have access to and use.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >317
@@ -722,7 +726,7 @@
 >318
 "$+beginner:@pemit %#=[center(Commands for Beginning MUSHers,78, )]%R%RMUSH is new to some of you and probably a little daunting. To ease your feelings of panic, we offer a very basic list of commands that will get you looking around and using the various features of the game.%R%R\"<message>[space(16)]You say <message>%RSay <message> [space(12)]See above.%Rooc <message>[space(13)]Makes an OOC statement or pose.%Rpage <person>=<message>[space(3)]Pages <person> with <message>%Rlook[space(22)]Shows you the room you are standing in.%Rlook <object or person>[space(3)]Shows the desc for that object or person%Rpose <message>[space(12)]You pose <message> EX: pose grins.->John Doe grins.%R:<message>[space(16)]See 'pose\" above%RWHO[space(23)]Shows a list of who is connected to the MUSH%R+who[space(22)]Shows a modified WHO.%R+help[space(21)]The global +help system.%R+staff[space(20)]Shows connected Staff%R+staff/all[space(16)]Shows the staff roster.%R%RNOTE: MUSH commands may be case sensitive. You can always page a staffer for help.%R%r\"+beginner\" recalls this file%R"
 >319
-"$+finger *:[setq(0,switch([type(num(%0))],PLAYER,[num(*%0)],[switch([type(num(*%0))],PLAYER,[Num(*%0)],[locate(%#,%0,mp)])]))][setq(9,and(not(and(hasflag(%q0,Dark),not(IsStaff(%#)))),switch(member(lwho(),%q0),0,0,1)))][setq(8,idle(%q0))]; @switch %q0= #-1,@pemit %#=That is not a player.,#-2,@pemit %#=There is more than one %0.,{@pemit %#=[center(---<@%B%B[name(%q0)[switch(isstaff(%#),0,,(%q0) [flags(%q0)])]]%B%B@>---,78,=)]%r[ljust(Alias:%B%B[switch(hasattr(%q0,alias),1,[u(%q0/Alias)],)]%B[switch(hasflag(%q0,Wizard),0,switch(hasflag(%q0,Immortal),0,switch(hasflag(%q0,Builder),0,,(Builder)),(Immortal)),(Wizard))],39)]|[ljust([switch(%q9,0,Last on: [get(%q0/last)],1,On for: [u(v(db)/secs2hrs,conn(%q0))][space(10)]Idle: [u(v(db)/secs2hrs,%q8)])],38)]%R[ljust(Sex: %B%B%B[switch(strlen(get(%q0/sex)),0,None Set,get(%q0/sex))],39)]|[ljust(Mail:%B%B[extract(mail(%q0),2,1)] unread / [extract(mail(%q0),1,1)] total.,38)]%R[ljust([switch(hasattr(%q0,email),1,E-Mail:%B[get(%q0/email)],E-Mail:%B(unlisted))],39)]|[ljust(,38)]%R[u(v(db)/footer)]%R[switch(findable(%#,%q0),1,Location:[space(7)][name(loc(%q0))],[switch(isstaff(%#),1,Location:[space(7)][name(loc(%q0))] (unfindable),Location:[space(7)](unfindable))])][setq(7,[u(v(db)/finger_list)])][iter(%q7,{[switch(1,hasattr(%q0,##),{%r[ljust([index([u(v(db)/finger_list_long)],|,[member(%q7,##,|)],1)]:,16)][u(%q0/##)]})]},|)][iter(lattr(%q0/finger*),%r[ljust(capstr(lcstr(edit(edit(##,FINGER_,),FINGER-,))):,15)]%t[u(%q0/##)])]; @pemit %#=[switch(hasflag(%#,wizard),0,,[repeat(-,78)]%RRegistration:%t%t[get(%q0/registration)]%rLast online from:%t[get(%q0/lastsite)]%r[switch(%q9,0,,Currently online from:%t[get(%q0/lastsite)]%r)])][u(v(db)/footer)];@switch hasflag(%#,DARK)=1,{},{@verb %q0=%#,,,,,afinger,{moniker(%#),%#}}}"
+"$+finger *:[setq(0,switch([type(num(%0))],PLAYER,[num(*%0)],[switch([type(num(*%0))],PLAYER,[Num(*%0)],[locate(%#,%0,mp)])]))][setq(9,and(not(and(hasflag(%q0,Dark),not(IsStaff(%#)))),switch(member(lwho(),%q0),0,0,1)))][setq(8,idle(%q0))]; @switch %q0= #-1,@pemit %#=That is not a player.,#-2,@pemit %#=There is more than one %0.,{@pemit %#=[center(---<@%B%B[name(%q0)[switch(isstaff(%#),0,,(%q0) [flags(%q0)])]]%B%B@>---,78,=)]%r[ljust(Alias:%B%B[switch(hasattr(%q0,alias),1,[u(%q0/Alias)],)]%B[switch(hasflag(%q0,Wizard),0,switch(hasflag(%q0,Immortal),0,switch(hasflag(%q0,Builder),0,,(Builder)),(Immortal)),(Wizard))],39)]|[ljust([switch(%q9,0,Last on: [get(%q0/last)],1,On for: [u(v(db)/secs2hrs,conn(%q0))][space(10)]Idle: [u(v(db)/secs2hrs,%q8)])],38)]%R[ljust(Sex: %B%B%B[switch(strlen(get(%q0/sex)),0,None Set,get(%q0/sex))],39)]|[ljust(Mail:%B%B[extract(mail(%q0),2,1)] unread / [extract(mail(%q0),1,1)] total.,38)]%R[ljust([switch(hasattr(%q0,email),1,E-Mail:%B[get(%q0/email)],E-Mail:%B(unlisted))],39)]|[ljust(,38)]%R[u(v(db)/footer)]%R[switch(findable(%#,%q0),1,Location:[space(7)][name(loc(%q0))],[switch(isstaff(%#),1,Location:[space(7)][name(loc(%q0))] (unfindable),Location:[space(7)](unfindable))])][setq(7,[u(v(db)/finger_list)])][iter(%q7,{[switch(1,hasattr(%q0,##),{%r[ljust([index([u(v(db)/finger_list_long)],|,[member(%q7,##,|)],1)]:,16)][u(%q0/##)]})]},|)][iter(lattr(%q0/finger*),%r[ljust(capstr(lcstr(edit(edit(##,FINGER_,),FINGER-,))):,15)]%t[u(%q0/##)])]; @pemit %#=[switch(hasflag(%#,wizard),0,,[repeat(-,78)]%RRegistration:%t%t[get(%q0/registration)]%rLast online from:%t[get(%q0/lastsite)]%r[switch(%q9,0,,Currently online from:%t[get(%q0/lastsite)]%r)])][u(v(db)/footer)];@switch hasflag(%#,DARK)=1,{},{@verb %q0=%#,,,,,afinger,}}"
 >320
 "$+glance:@pemit %#=[center(%B%BAt a glance around [name(%l)%B%B],78,-)][iter(filter(v(DB)/cansee, lcon(%l)), %r[ljust(mid(name(##),0,20),21)]%B[switch(type(##),player,rjust(elements(u(v(DB)/secs2hrs,idle(##)),1),3))] %b[mid(get(##/short-desc),0,50)])]%r[u(v(db)/footer)]"
 >321
@@ -804,27 +808,27 @@
 -1
 -1
 -1
-0
+2
 6
 
 3
 -1
-0
-306184193
+1
+272629761
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:00:28.3535932 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:51.3778421 2005"
+"Fri Jan 01 00:00:00 2010"
 >256
 "#4"
 >258
-"1.0|RPPack|Dec 31 2005"
+"1.0|RPPack|Aug 02 2010"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Dec 31 2005 |Dec 31 2005 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Aug 02 2010 |Aug 02 2010 RPPack added"
 >6
 "This is the wizard globals object for SGP. These are global commands that only wizards will have access to.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >345
@@ -878,27 +882,27 @@
 -1
 -1
 -1
-0
+2
 7
 
 3
 -1
-0
-301989889
+1
+268435457
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:00:28.3691816 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:51.3588124 2005"
+"Fri Jan 01 00:00:00 2010"
 >256
 "#4"
 >258
-"1.0|RPPack|Dec 31 2005"
+"1.0|RPPack|Aug 02 2010"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Dec 31 2005 |Dec 31 2005 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Aug 02 2010 |Aug 02 2010 RPPack added"
 >6
 "This is the staff globals object for SGP. These are global commands that only staff, as defined in the isstaff() on the global functions object, will have access to. You may substitute ostaff() for isstaff() in the lock setting.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >362
@@ -956,27 +960,27 @@
 -1
 -1
 -1
-0
+2
 8
 
 3
 10
-0
+1
 306184193
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:02:51.4339966 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:52.6986036 2005"
+"Fri Jan 01 00:00:00 2010"
 >6
 "The Places Code. Tables, rugs, beds, ladders, etc."
 >403
 "#10"
 >258
-"SGP-Y2K|Base|Dec 31 2005"
+"SGP-Y2K|Base|Aug 02 2010"
 >259
 "Y2K"
 >404
@@ -994,17 +998,17 @@
 >410
 "^* has disconnected.:placescleanup(%#)"
 >411
-"$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), remove(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}"
+"$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), setdiff(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}"
 >412
 "$join *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0 ;},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >413
 "$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >414
-"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[U(GETINFO, %0, %2, JOIN)] [r(0)].,oeval_mesg,[U(GETINFO, %0, %2, OJOIN)] [r(0)].;@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]}"
+"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[U(GETINFO, %0, %2, JOIN)] [r(0)].,oeval_mesg,[U(GETINFO, %0, %2, OJOIN)] [r(0)].;@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, setunion(r(1),%1), |)]}"
 >415
-"$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}"
+"$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [setdiff(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}"
 >416
-"$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}"
+"$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [setdiff(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[U(GETINFO, %l, r(1), DEPART)] [r(0)].;@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [U(GETINFO, %l, r(1), ODEPART)] [r(0)].}"
 >417
 "$places: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,rest(lnum(add(get(%l/PLACESMAX),1)))))"
 >418
@@ -1014,13 +1018,13 @@
 >420
 "itemize(iter(%0,moniker(itext()),,|),|)"
 >421
-"$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----"
+"$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),moniker(##),,|),a,|,|))][ljust(mid(extract(r(4),1,1,|),0,14),14)] [ljust(mid(extract(r(4),2,1,|),0,14),14)] [ljust(mid(extract(r(4),3,1,|),0,14),14)][switch(gt(words(r(4),|),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999,|)))]%r-----"
 >422
-"%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##))))][ljust(mid(extract(r(2),1,1),0,14),14)] [ljust(mid(extract(r(2),2,1),0,14),14)] [ljust(mid(extract(r(2),3,1),0,14),14)][switch(gt(words(r(2)),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999)))]"
+"%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),moniker(##),,|),a,|,|))][ljust(mid(extract(r(2),1,1,|),0,14),14)] [ljust(mid(extract(r(2),2,1,|),0,14),14)] [ljust(mid(extract(r(2),3,1,|),0,14),14)][switch(gt(words(r(2),|),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999,|)))]"
 >423
-"[fold(NAME_3AUX_FN,rest(%0),%r[space(33)][ljust(mid(first(%0),0,14),15)])]"
+"[fold(NAME_3AUX_FN,rest(%0,|),%r[space(33)][ljust(mid(first(%0,|),0,14),15)],|)]"
 >424
-"%0[switch(mod(words(%0),4),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]"
+"%0[switch(mod(strlen(%0),80),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]"
 >425
 "$plook *:@pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,%r[capstr(ulocal(GETINFO,%l,%0,NAME))]:%r[ulocal(GETINFO,%l,edit(%0,#,),DESCRIPTION)])"
 >426
@@ -1028,7 +1032,7 @@
 >427
 "$ttooc *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,<OOC> [ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],\"*,%N says \"[delete(%0,0,1)]\",|*,delete(%0,0,1),%N says \"%0\")])])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]"
 >428
-"[match(get(%0/PLACENUMS), *%1%b*, |)]"
+"[match(get(%0/PLACENUMS), *%1*, |)]"
 >429
 "[extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIPTION,%2),1,|)]"
 >430
@@ -1040,7 +1044,7 @@
 >435
 "[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX,%2),1,|),PERMISSION DENIED)]"
 >436
-"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1%b*, |),PERMISSION DENIED)]"
+"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1*, |),PERMISSION DENIED)]"
 >437
 "$mutter *=*: @remit [setq(0,locate(%#,%0,nimP))][switch(r(0),#-1,XX,#-2,XX,%l)]={[switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})]})]};@pemit %#[setq(2,edit(edit(%1,<,),>,))]=switch(r(0),#-1,I don't see that here.,#-2,I'm not sure which %0 you mean.,ulocal(MUTTER_FROM_FN,%#,r(0),r(2)));@pemit [switch(r(0),%#,XX,r(0))]=ulocal(MUTTER_TO_FN,%#,r(0),r(2))"
 >438
@@ -1064,23 +1068,23 @@
 -1
 -1
 -1
-0
-3
+2
+4
 
 3
 -1
-0
+1
 268435457
 0
 0
 0
 0
 >218
-"Sat Dec 31 13:02:51.4538775 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:02:52.5867605 2005"
+"Fri Jan 01 00:00:00 2010"
 >258
-"SGP-Y2K|Base|Dec 31 2005"
+"SGP-Y2K|Base|Aug 02 2010"
 >259
 "Y2K"
 >6
@@ -1105,10 +1109,10 @@
 "#1"
 <
 !11
-"Auxilary Room"
+"Auxiliary Room"
 -1
 -1
-1
+10
 -1
 -1
 -1
@@ -1122,8 +1126,8 @@
 0
 0
 >218
-"Sat Dec 31 13:03:41.8093124 2005"
+"Fri Jan 01 00:00:00 2010"
 >219
-"Sat Dec 31 13:07:05.7726402 2005"
+"Fri Jan 01 00:00:00 2010"
 <
 ***END OF DUMP***
