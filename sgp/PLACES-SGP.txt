@@ -143,13 +143,13 @@
 
 &PLACE_LOOK Places_global_object=itemize(iter(%0,moniker(itext()),,|),|)
 
-&DO_PLOOK Places_global_object=$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----
+&DO_PLOOK Places_global_object=$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##),,|),a,|,|))][ljust(mid(extract(r(4),1,1,|),0,14),14)] [ljust(mid(extract(r(4),2,1,|),0,14),14)] [ljust(mid(extract(r(4),3,1,|),0,14),14)][switch(gt(words(r(4),|),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999,|)))]%r-----
 
-&PLOOK_FOLD_FN Places_global_object=%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##))))][ljust(mid(extract(r(2),1,1),0,14),14)] [ljust(mid(extract(r(2),2,1),0,14),14)] [ljust(mid(extract(r(2),3,1),0,14),14)][switch(gt(words(r(2)),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999)))]
+&PLOOK_FOLD_FN Places_global_object=%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##),,|),a,|,|))][ljust(mid(extract(r(2),1,1,|),0,14),14)] [ljust(mid(extract(r(2),2,1,|),0,14),14)] [ljust(mid(extract(r(2),3,1,|),0,14),14)][switch(gt(words(r(2),|),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999,|)))]
 
-&NAME_3COL_FN Places_global_object=[fold(NAME_3AUX_FN,rest(%0),%r[space(33)][ljust(mid(first(%0),0,14),15)])]
+&NAME_3COL_FN Places_global_object=[fold(NAME_3AUX_FN,rest(%0,|),%r[space(33)][ljust(mid(first(%0,|),0,14),15)],|)]
 
-&NAME_3AUX_FN Places_global_object=%0[switch(mod(words(%0),4),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]
+&NAME_3AUX_FN Places_global_object=%0[switch(mod(strlen(%0),80),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]
 &DO_PLOOK_NUMBER Places_global_object=$plook *:@pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,%r[capstr(ulocal(GETINFO,%l,%0,NAME))]:%r[ulocal(GETINFO,%l,edit(%0,#,),DESCRIPTION)])
 
 &DO_TT Places_global_object=$tt *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,[ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],"*,%N says "[delete(%0,0,1)]",|*,delete(%0,0,1),%N says "%0")])])]=[r(1)];@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]
