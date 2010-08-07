@@ -989,36 +989,467 @@ const char *ConvertToLatin2(const UTF8 *pString)
     return buffer;
 }
 
-#define CS_FOREGROUND ((UINT16)0x000F)
-#define CS_FG_BLACK   ((UINT16)0x0000)
-#define CS_FG_RED     ((UINT16)0x0001)
-#define CS_FG_GREEN   ((UINT16)0x0002)
-#define CS_FG_YELLOW  ((UINT16)0x0003)
-#define CS_FG_BLUE    ((UINT16)0x0004)
-#define CS_FG_MAGENTA ((UINT16)0x0005)
-#define CS_FG_CYAN    ((UINT16)0x0006)
-#define CS_FG_WHITE   ((UINT16)0x0007)
-#define CS_FG_DEFAULT ((UINT16)0x0008)
-#define CS_BACKGROUND ((UINT16)0x00F0)
-#define CS_BG_BLACK   ((UINT16)0x0000)
-#define CS_BG_RED     ((UINT16)0x0010)
-#define CS_BG_GREEN   ((UINT16)0x0020)
-#define CS_BG_YELLOW  ((UINT16)0x0030)
-#define CS_BG_BLUE    ((UINT16)0x0040)
-#define CS_BG_MAGENTA ((UINT16)0x0050)
-#define CS_BG_CYAN    ((UINT16)0x0060)
-#define CS_BG_WHITE   ((UINT16)0x0070)
-#define CS_BG_DEFAULT ((UINT16)0x0080)
-#define CS_INTENSE    ((UINT16)0x0100)
-#define CS_INVERSE    ((UINT16)0x0200)
-#define CS_UNDERLINE  ((UINT16)0x0400)
-#define CS_BLINK      ((UINT16)0x0800)
-#define CS_ATTRS      ((UINT16)0x0F00)
-#define CS_ALLBITS    ((UINT16)0xFFFF)
+// 16-bit RGB --> Y'UV
+//
+// Y' = min(abs( 2104R + 4310G +  802B + 4096 +  131072) >> 13, 235)
+// U  = min(abs(-1214R - 2384G + 3598B + 4096 + 1048576) >> 13, 240)
+// V  = min(abs( 3598R - 3013G -  585B + 4096 + 1048576) >> 13, 240)
+
+inline int abs(int x)
+{
+    if (0 < x) return x;
+    else return -x;
+}
+
+inline int min(int x, int y)
+{
+    if (x < y) return x;
+    else return y;
+}
+
+inline void rgb2yuv16(RGB *rgb, YUV *yuv)
+{
+    yuv->y = min(abs( 2104*rgb->r + 4310*rgb->g +  802*rgb->b + 4096 +  131072) >> 13, 235);
+    yuv->u = min(abs(-1214*rgb->r - 2384*rgb->g + 3598*rgb->b + 4096 + 1048576) >> 13, 240);
+    yuv->v = min(abs( 3598*rgb->r - 3013*rgb->g -  585*rgb->b + 4096 + 1048576) >> 13, 240);
+    yuv->y2 = 2*yuv->y;
+}
+
+inline void cs2rgb(unsigned int cs, RGB *rgb)
+{
+    rgb->r = (cs & 0xFF0000) >> 16;
+    rgb->g = (cs & 0x00FF00) >> 8;
+    rgb->b = (cs & 0x0000FF);
+}
+
+typedef struct
+{
+    RGB  rgb;
+    YUV  yuv;
+    int  child[2];
+} PALETTE_ENTRY;
+
+// All 256 entries of the 256-color are included, but elements 16 and 231 are
+// duplicates of element 0 and 15, respectively. They are not included in the
+// kD-trie and no search will return them..
+//
+#define PALETTE_ROOT 105
+#define PALETTE_SIZE (sizeof(palette)/sizeof(palette[0]))
+PALETTE_ENTRY palette[] =
+{
+    { {   0,   0,   0 }, {  16, 128, 128,  32 }, {  -1,  -1 }},
+    { { 187,   0,   0 }, {  64, 100, 210, 128 }, { 130,  88 }},
+    { {   0, 187,   0 }, { 114,  74,  59, 228 }, {  34,  40 }},
+    { { 187, 187,   0 }, { 162,  46, 141, 324 }, { 142, 184 }},
+    { {   0,   0, 187 }, {  34, 210, 115,  68 }, {  -1,  -1 }},
+    { { 187,   0, 187 }, {  82, 182, 197, 164 }, {  89,  93 }},
+    { {   0, 187, 187 }, { 133, 156,  46, 266 }, {  37,  43 }},
+    { { 187, 187, 187 }, { 181, 128, 128, 362 }, { 176, 255 }},
+    { {  85,  85,  85 }, {  91, 128, 128, 182 }, {  -1,  -1 }},
+    { { 255,  85,  85 }, { 135, 103, 203, 270 }, { 202, 203 }},
+    { {  85, 255,  85 }, { 180,  79,  65, 360 }, {  46,  83 }},
+    { { 255, 255,  85 }, { 224,  53, 140, 448 }, { 190, 221 }},
+    { {  85,  85, 255 }, { 108, 203, 116, 216 }, {  32,  68 }},
+    { { 255,  85, 255 }, { 151, 177, 191, 302 }, {  -1,  -1 }},
+    { {  85, 255, 255 }, { 197, 153,  53, 394 }, {  -1,  -1 }},
+    { { 255, 255, 255 }, { 235, 128, 128, 470 }, {  -1,  -1 }},
+    { {   0,   0,   0 }, {  16, 128, 128,  32 }, {  -1,  -1 }},
+    { {   0,   0,  95 }, {  25, 170, 121,  50 }, {  -1,  -1 }},
+    { {   0,   0, 135 }, {  29, 187, 118,  58 }, {  -1,  -1 }},
+    { {   0,   0, 175 }, {  33, 205, 116,  66 }, {  18,   4 }},
+    { {   0,   0, 215 }, {  37, 222, 113,  74 }, {  26,  19 }},
+    { {   0,   0, 255 }, {  41, 240, 110,  82 }, {  -1,  -1 }},
+    { {   0,  95,   0 }, {  66, 100,  93, 132 }, {   0,  28 }},
+    { {   0,  95,  95 }, {  75, 142,  86, 150 }, {  17,  60 }},
+    { {   0,  95, 135 }, {  79, 160,  83, 158 }, {  30,  23 }},
+    { {   0,  95, 175 }, {  83, 177,  81, 166 }, {  -1,  -1 }},
+    { {   0,  95, 215 }, {  87, 195,  78, 174 }, {  21,  27 }},
+    { {   0,  95, 255 }, {  91, 212,  75, 182 }, {  -1,  -1 }},
+    { {   0, 135,   0 }, {  87,  89,  78, 174 }, {  -1,  -1 }},
+    { {   0, 135,  95 }, {  96, 130,  72, 192 }, {  -1,  -1 }},
+    { {   0, 135, 133 }, { 100, 147,  69, 200 }, {  25,  31 }},
+    { {   0, 135, 175 }, { 104, 166,  66, 208 }, {  -1,  -1 }},
+    { {   0, 135, 215 }, { 108, 183,  63, 216 }, {  24,  20 }},
+    { {   0, 135, 255 }, { 112, 201,  60, 224 }, {  -1,  -1 }},
+    { {   0, 175,   0 }, { 108,  77,  64, 216 }, {  -1,  -1 }},
+    { {   0, 175,  95 }, { 117, 119,  57, 234 }, {  -1,  -1 }},
+    { {   0, 175, 135 }, { 121, 136,  54, 242 }, {  35,  42 }},
+    { {   0, 175, 175 }, { 125, 154,  51, 250 }, {  -1,  -1 }},
+    { {   0, 175, 215 }, { 129, 172,  48, 258 }, {  33,  39 }},
+    { {   0, 175, 255 }, { 133, 189,  45, 266 }, {  -1,  -1 }},
+    { {   0, 215,   0 }, { 129,  65,  49, 258 }, {  -1,  -1 }},
+    { {   0, 215,  95 }, { 138, 107,  42, 276 }, {  71,  72 }},
+    { {   0, 215, 135 }, { 142, 125,  39, 284 }, {  -1,  -1 }},
+    { {   0, 215, 175 }, { 146, 142,  36, 292 }, {  -1,  -1 }},
+    { {   0, 215, 215 }, { 150, 160,  34, 300 }, {  -1,  -1 }},
+    { {   0, 215, 255 }, { 154, 177,  31, 308 }, {  44,  51 }},
+    { {   0, 255,   0 }, { 150,  54,  34, 300 }, {  -1,  -1 }},
+    { {   0, 255,  90 }, { 159,  93,  28, 318 }, {  -1,  -1 }},
+    { {   0, 255, 135 }, { 163, 113,  25, 326 }, {  47,  78 }},
+    { {   0, 255, 175 }, { 167, 131,  22, 334 }, {  -1,  -1 }},
+    { {   0, 255, 215 }, { 171, 148,  19, 342 }, {  73,  75 }},
+    { {   0, 255, 255 }, { 175, 166,  16, 350 }, {  -1,  -1 }},
+    { {  95,   0,   0 }, {  40, 114, 170,  80 }, {  -1,  -1 }},
+    { {  95,   0,  95 }, {  50, 156, 163, 100 }, {  -1,  -1 }},
+    { {  95,   0, 135 }, {  54, 173, 160, 108 }, {  53,  90 }},
+    { {  95,   0, 175 }, {  58, 191, 157, 116 }, {  -1,  -1 }},
+    { {  95,   0, 215 }, {  61, 208, 154, 122 }, {  55,  57 }},
+    { {  95,   0, 255 }, {  65, 226, 152, 130 }, {  -1,  -1 }},
+    { {  95,  95,   0 }, {  90,  86, 135, 180 }, {  -1,  -1 }},
+    { {  95,  95,  95 }, { 100, 128, 128, 200 }, {  -1,  -1 }},
+    { {  95,  95, 135 }, { 104, 146, 125, 208 }, {  -1,  -1 }},
+    { {  95,  95, 175 }, { 108, 163, 122, 216 }, {  -1,  -1 }},
+    { {  95,  95, 215 }, { 111, 181, 119, 222 }, {  -1,  -1 }},
+    { {  95,  95, 255 }, { 115, 198, 117, 230 }, {  62,  99 }},
+    { {  95, 135,   0 }, { 111,  75, 120, 222 }, {  -1,  -1 }},
+    { {  95, 135,  95 }, { 121, 116, 113, 242 }, { 242,  66 }},
+    { {  95, 135, 135 }, { 125, 134, 110, 250 }, {  -1,  -1 }},
+    { {  95, 135, 175 }, { 129, 151, 108, 258 }, {   6, 103 }},
+    { {  95, 135, 215 }, { 132, 169, 105, 264 }, {  67,  69 }},
+    { {  95, 135, 255 }, { 136, 187, 102, 272 }, {  38,  63 }},
+    { {  95, 175,   0 }, { 132,  63, 105, 264 }, {  64, 106 }},
+    { {  95, 175,  95 }, { 142, 105,  99, 284 }, {   2,  70 }},
+    { {  95, 175, 135 }, { 146, 122,  96, 292 }, {  36,  65 }},
+    { {  95, 175, 175 }, { 150, 140,  93, 300 }, {  79, 109 }},
+    { {  95, 175, 215 }, { 154, 157,  90, 308 }, {  -1,  -1 }},
+    { {  95, 175, 255 }, { 157, 175,  87, 314 }, {  45, 110 }},
+    { {  95, 215,   0 }, { 154,  51,  91, 308 }, {  -1,  -1 }},
+    { {  95, 215,  95 }, { 163,  93,  84, 326 }, {  48, 108 }},
+    { {  95, 215, 135 }, { 167, 111,  81, 334 }, {  -1,  -1 }},
+    { {  95, 215, 175 }, { 171, 128,  78, 342 }, {  49,  80 }},
+    { {  95, 215, 215 }, { 175, 146,  75, 350 }, {  -1,  -1 }},
+    { {  95, 215, 255 }, { 178, 163,  72, 356 }, {  50, 159 }},
+    { {  95, 255,   0 }, { 175,  40,  76, 350 }, {  10, 112 }},
+    { {  95, 255,  95 }, { 184,  81,  69, 368 }, {  -1,  -1 }},
+    { {  95, 255, 135 }, { 188,  99,  66, 376 }, {  -1,  -1 }},
+    { {  95, 255, 175 }, { 192, 117,  63, 384 }, {  84, 121 }},
+    { {  95, 255, 215 }, { 196, 134,  61, 392 }, { 116, 122 }},
+    { {  95, 255, 255 }, { 200, 152,  58, 400 }, {  14, 123 }},
+    { { 135,   0,   0 }, {  51, 108, 187, 102 }, {  95, 161 }},
+    { { 135,   0,  95 }, {  60, 150, 181, 120 }, {  54, 126 }},
+    { { 135,   0, 135 }, {  64, 167, 178, 128 }, {  -1,  -1 }},
+    { { 135,   0, 175 }, {  68, 185, 175, 136 }, {  -1,  -1 }},
+    { { 135,   0, 215 }, {  72, 202, 172, 144 }, {  91, 128 }},
+    { { 135,   0, 255 }, {  76, 220, 169, 152 }, {  56,  92 }},
+    { { 135,  95,   0 }, { 101,  80, 152, 202 }, {  58, 100 }},
+    { { 135,  95,  95 }, { 110, 122, 146, 220 }, {  52, 131 }},
+    { { 135,  95, 135 }, { 114, 140, 143, 228 }, { 243,  98 }},
+    { { 135,  95, 175 }, { 118, 157, 140, 236 }, {  -1,  -1 }},
+    { { 135,  95, 215 }, { 122, 175, 137, 244 }, {  12, 162 }},
+    { { 135,  95, 255 }, { 126, 192, 134, 252 }, {  -1,  -1 }},
+    { { 135, 135,   0 }, { 122,  69, 138, 244 }, {  -1,  -1 }},
+    { { 135, 135,  95 }, { 131, 110, 131, 262 }, {  -1,  -1 }},
+    { { 135, 135, 135 }, { 135, 128, 128, 270 }, { 244, 245 }},
+    { { 135, 135, 175 }, { 139, 146, 125, 278 }, {  61, 104 }},
+    { { 135, 135, 215 }, { 143, 163, 122, 286 }, {  -1,  -1 }},
+    { { 135, 135, 255 }, { 147, 181, 119, 294 }, {  96, 181 }},
+    { { 135, 175,   0 }, { 143,  57, 123, 286 }, {  -1,  -1 }},
+    { { 135, 175,  95 }, { 152,  99, 116, 304 }, {  -1,  -1 }},
+    { { 135, 175, 135 }, { 156, 116, 113, 312 }, { 107, 114 }},
+    { { 135, 175, 175 }, { 160, 134, 110, 320 }, { 247, 146 }},
+    { { 135, 175, 215 }, { 164, 151, 108, 328 }, {  74, 111 }},
+    { { 135, 175, 255 }, { 168, 169, 105, 336 }, {  -1,  -1 }},
+    { { 135, 215,   0 }, { 164,  45, 108, 328 }, {  76, 149 }},
+    { { 135, 215,  90 }, { 173,  85, 102, 346 }, {  82,  77 }},
+    { { 135, 215, 135 }, { 177, 105,  99, 354 }, {  -1,  -1 }},
+    { { 135, 215, 175 }, { 181, 122,  96, 362 }, {  86, 158 }},
+    { { 135, 215, 215 }, { 185, 140,  93, 370 }, {  -1,  -1 }},
+    { { 135, 215, 255 }, { 189, 157,  90, 378 }, {  87, 153 }},
+    { { 135, 255,   0 }, { 185,  34,  94, 370 }, { 113, 150 }},
+    { { 135, 255,  95 }, { 194,  76,  87, 388 }, {  -1,  -1 }},
+    { { 135, 255, 135 }, { 198,  93,  84, 396 }, { 119, 156 }},
+    { { 135, 255, 175 }, { 202, 111,  81, 404 }, {  -1,  -1 }},
+    { { 135, 255, 215 }, { 206, 128,  78, 412 }, {  -1,  -1 }},
+    { { 135, 255, 255 }, { 210, 146,  75, 420 }, {  -1,  -1 }},
+    { { 175,   0,   0 }, {  61, 102, 205, 122 }, {  -1,  -1 }},
+    { { 175,   0,  95 }, {  70, 144, 198, 140 }, {  -1,  -1 }},
+    { { 175,   0, 135 }, {  74, 161, 195, 148 }, { 125, 127 }},
+    { { 175,   0, 175 }, {  78, 179, 192, 156 }, {  -1,  -1 }},
+    { { 175,   0, 215 }, {  82, 196, 190, 164 }, {  -1,  -1 }},
+    { { 175,   0, 255 }, {  86, 214, 187, 172 }, {  -1,  -1 }},
+    { { 175,  95,   0 }, { 111,  74, 170, 222 }, {  94, 196 }},
+    { { 175,  95,  95 }, { 120, 116, 163, 240 }, {  -1,  -1 }},
+    { { 175,  95, 135 }, { 124, 134, 160, 248 }, {   1, 167 }},
+    { { 175,  95, 175 }, { 128, 151, 157, 256 }, {  97, 134 }},
+    { { 175,  95, 215 }, { 132, 169, 155, 264 }, {  -1,  -1 }},
+    { { 175,  95, 255 }, { 136, 186, 152, 272 }, { 129, 171 }},
+    { { 175, 135,   0 }, { 132,  63, 155, 264 }, { 101, 137 }},
+    { { 175, 135,  95 }, { 141, 105, 148, 282 }, {  -1,  -1 }},
+    { { 175, 135, 135 }, { 145, 122, 146, 290 }, { 168, 204 }},
+    { { 175, 135, 175 }, { 149, 140, 143, 298 }, {  -1,  -1 }},
+    { { 175, 135, 215 }, { 153, 157, 140, 306 }, {  -1,  -1 }},
+    { { 175, 135, 255 }, { 157, 175, 137, 314 }, { 140, 177 }},
+    { { 175, 175,   0 }, { 153,  51, 140, 306 }, {  -1,  -1 }},
+    { { 175, 175,  95 }, { 162,  93, 134, 324 }, {  -1,  -1 }},
+    { { 175, 175, 135 }, { 166, 110, 131, 332 }, { 143, 180 }},
+    { { 175, 175, 175 }, { 170, 128, 128, 340 }, { 139, 249 }},
+    { { 175, 175, 215 }, { 174, 146, 125, 348 }, {  -1,  -1 }},
+    { { 175, 175, 255 }, { 178, 163, 122, 356 }, {  -1,  -1 }},
+    { { 175, 215,   0 }, { 174,  39, 126, 348 }, { 118, 216 }},
+    { { 175, 215,  95 }, { 183,  81, 119, 366 }, {  -1,  -1 }},
+    { { 175, 215, 135 }, { 187,  99, 116, 374 }, { 155, 157 }},
+    { { 175, 215, 175 }, { 191, 116, 113, 382 }, {  -1,  -1 }},
+    { { 175, 215, 215 }, { 195, 134, 110, 390 }, {  -1,  -1 }},
+    { { 175, 215, 255 }, { 199, 151, 108, 398 }, { 147, 189 }},
+    { { 175, 255,   0 }, { 195,  28, 111, 390 }, {  -1,  -1 }},
+    { { 175, 255,  95 }, { 204,  70, 104, 408 }, { 120, 191 }},
+    { { 175, 255, 135 }, { 208,  87, 101, 416 }, {  -1,  -1 }},
+    { { 175, 255, 175 }, { 212, 105,  99, 424 }, {  85, 193 }},
+    { { 175, 255, 215 }, { 216, 122,  96, 432 }, { 152, 195 }},
+    { { 175, 255, 255 }, { 220, 140,  93, 440 }, { 115, 117 }},
+    { { 215,   0,   0 }, {  71,  96, 222, 142 }, {  -1,  -1 }},
+    { { 215,   0,  95 }, {  81, 138, 216, 162 }, { 124, 197 }},
+    { { 215,   0, 135 }, {  84, 155, 213, 168 }, {   5, 163 }},
+    { { 215,   0, 175 }, {  88, 173, 210, 176 }, { 170, 165 }},
+    { { 215,   0, 215 }, {  92, 191, 207, 184 }, {  -1,  -1 }},
+    { { 215,   0, 255 }, {  96, 208, 204, 192 }, { 135, 200 }},
+    { { 215,  95,   0 }, { 121,  68, 187, 242 }, {  -1,  -1 }},
+    { { 215,  95,  95 }, { 131, 110, 181, 262 }, { 172, 246 }},
+    { { 215,  95, 135 }, { 134, 128, 178, 268 }, {  -1,  -1 }},
+    { { 215,  95, 175 }, { 138, 145, 175, 276 }, {  -1,  -1 }},
+    { { 215,  95, 215 }, { 142, 163, 172, 284 }, { 133, 199 }},
+    { { 215,  95, 255 }, { 146, 180, 169, 292 }, {  -1,  -1 }},
+    { { 215, 135,   0 }, { 142,  57, 173, 284 }, { 136,   9 }},
+    { { 215, 135,  90 }, { 151,  96, 166, 302 }, {  -1,  -1 }},
+    { { 215, 135, 135 }, { 155, 116, 163, 310 }, { 144, 209 }},
+    { { 215, 135, 175 }, { 159, 134, 160, 318 }, { 145, 211 }},
+    { { 215, 135, 215 }, { 163, 151, 157, 326 }, { 175, 213 }},
+    { { 215, 135, 255 }, { 167, 169, 155, 334 }, {  -1,  -1 }},
+    { { 215, 175,   0 }, { 163,  45, 158, 326 }, {   3, 214 }},
+    { { 215, 175,  90 }, { 172,  85, 152, 344 }, { 178, 174 }},
+    { { 215, 175, 135 }, { 177, 105, 148, 354 }, {  -1,  -1 }},
+    { { 215, 175, 175 }, { 180, 122, 146, 360 }, { 148, 248 }},
+    { { 215, 175, 215 }, { 184, 140, 143, 368 }, {  -1,  -1 }},
+    { { 215, 175, 255 }, { 188, 157, 140, 376 }, { 182,  15 }},
+    { { 215, 215,   0 }, { 184,  34, 143, 368 }, {  -1,  -1 }},
+    { { 215, 215,  95 }, { 194,  75, 137, 388 }, {  -1,  -1 }},
+    { { 215, 215, 135 }, { 198,  93, 134, 396 }, {  -1,  -1 }},
+    { { 215, 215, 175 }, { 201, 110, 131, 402 }, { 186, 230 }},
+    { { 215, 215, 215 }, { 205, 128, 128, 410 }, { 251, 224 }},
+    { { 215, 215, 255 }, { 209, 146, 125, 418 }, {  -1,  -1 }},
+    { { 215, 255,   0 }, { 205,  22, 129, 410 }, { 185, 227 }},
+    { { 215, 255,  95 }, { 215,  64, 122, 430 }, { 154, 192 }},
+    { { 215, 255, 135 }, { 219,  81, 119, 438 }, {  -1,  -1 }},
+    { { 215, 255, 175 }, { 223,  99, 116, 446 }, { 151, 194 }},
+    { { 215, 255, 215 }, { 226, 116, 113, 452 }, {  -1,  -1 }},
+    { { 215, 255, 255 }, { 230, 134, 110, 460 }, {  -1,  -1 }},
+    { { 255,   0,   0 }, {  81,  90, 240, 162 }, { 160, 166 }},
+    { { 255,   0,  95 }, {  91, 132, 233, 182 }, {  -1,  -1 }},
+    { { 255,   0, 135 }, {  95, 150, 230, 190 }, {  -1,  -1 }},
+    { { 255,   0, 175 }, {  99, 167, 228, 198 }, { 198, 169 }},
+    { { 255,   0, 215 }, { 103, 185, 225, 206 }, { 164, 201 }},
+    { { 255,   0, 255 }, { 106, 202, 222, 212 }, {  -1,  -1 }},
+    { { 255,  95,   0 }, { 131,  63, 205, 262 }, {  -1,  -1 }},
+    { { 255,  95,  95 }, { 141, 104, 198, 282 }, {  -1,  -1 }},
+    { { 255,  95, 135 }, { 145, 122, 195, 290 }, {  -1,  -1 }},
+    { { 255,  95, 175 }, { 149, 139, 193, 298 }, {  -1,  -1 }},
+    { { 255,  95, 215 }, { 153, 157, 190, 306 }, {  13, 207 }},
+    { { 255,  95, 255 }, { 156, 175, 187, 312 }, {  -1,  -1 }},
+    { { 255, 135,   0 }, { 153,  51, 190, 306 }, {  -1,  -1 }},
+    { { 255, 135,  95 }, { 162,  93, 184, 324 }, { 173, 210 }},
+    { { 255, 135, 135 }, { 166, 110, 181, 332 }, {  -1,  -1 }},
+    { { 255, 135, 175 }, { 170, 128, 178, 340 }, { 205, 212 }},
+    { { 255, 135, 215 }, { 174, 145, 175, 348 }, {  -1,  -1 }},
+    { { 255, 135, 255 }, { 177, 163, 172, 354 }, { 141, 206 }},
+    { { 255, 175,   0 }, { 174,  39, 176, 348 }, { 208, 215 }},
+    { { 255, 175,  95 }, { 183,  81, 169, 366 }, {  -1,  -1 }},
+    { { 255, 175, 135 }, { 187,  99, 166, 374 }, { 179, 228 }},
+    { { 255, 175, 175 }, { 191, 116, 163, 382 }, {  -1,  -1 }},
+    { { 255, 175, 215 }, { 195, 134, 160, 390 }, {  -1,  -1 }},
+    { { 255, 175, 255 }, { 199, 151, 157, 398 }, { 218,  -1 }},
+    { { 255, 215,   0 }, { 195,  28, 161, 390 }, {  -1,  -1 }},
+    { { 255, 215,  95 }, { 204,  69, 154, 408 }, { 220, 226 }},
+    { { 255, 215, 135 }, { 208,  87, 151, 416 }, { 217, 223 }},
+    { { 255, 215, 175 }, { 212, 105, 148, 424 }, {  -1,  -1 }},
+    { { 255, 215, 215 }, { 216, 122, 146, 432 }, { 253, 254 }},
+    { { 255, 215, 255 }, { 220, 140, 143, 440 }, { 183, 219 }},
+    { { 255, 255,   0 }, { 216,  16, 146, 432 }, {  -1,  -1 }},
+    { { 255, 255,  95 }, { 225,  58, 139, 450 }, {  -1,  -1 }},
+    { { 255, 255, 135 }, { 229,  75, 137, 458 }, {  11, 229 }},
+    { { 255, 255, 175 }, { 233,  93, 134, 466 }, { 187, 222 }},
+    { { 255, 255, 215 }, { 235, 110, 131, 470 }, {  -1,  -1 }},
+    { { 255, 255, 255 }, { 235, 128, 128, 470 }, {  -1,  -1 }},
+    { {   8,   8,   8 }, {  23, 128, 128,  46 }, {  22, 234 }},
+    { {  18,  18,  18 }, {  32, 128, 128,  64 }, {  -1,  -1 }},
+    { {  28,  28,  28 }, {  41, 128, 128,  82 }, { 233, 235 }},
+    { {  38,  38,  38 }, {  49, 128, 128,  98 }, {  -1,  -1 }},
+    { {  48,  48,  48 }, {  58, 128, 128, 116 }, { 232, 239 }},
+    { {  58,  58,  58 }, {  67, 128, 128, 134 }, {  -1,  -1 }},
+    { {  68,  68,  68 }, {  76, 128, 128, 152 }, { 237,  29 }},
+    { {  78,  78,  78 }, {  85, 128, 128, 170 }, { 238, 240 }},
+    { {  88,  88,  88 }, {  94, 128, 128, 188 }, {   8,  59 }},
+    { {  98,  98,  98 }, { 102, 128, 128, 204 }, { 236,  41 }},
+    { { 108, 108, 108 }, { 111, 128, 128, 222 }, {  -1,  -1 }},
+    { { 118, 118, 118 }, { 120, 128, 128, 240 }, { 241, 132 }},
+    { { 128, 128, 128 }, { 129, 128, 128, 258 }, {  -1,  -1 }},
+    { { 138, 138, 138 }, { 138, 128, 128, 276 }, {  -1,  -1 }},
+    { { 148, 148, 148 }, { 146, 128, 128, 292 }, { 102, 138 }},
+    { { 158, 158, 158 }, { 155, 128, 128, 310 }, {  -1,  -1 }},
+    { { 168, 168, 168 }, { 164, 128, 128, 328 }, {  81,   7 }},
+    { { 178, 178, 178 }, { 173, 128, 128, 346 }, {  -1,  -1 }},
+    { { 188, 188, 188 }, { 182, 128, 128, 364 }, {  -1,  -1 }},
+    { { 198, 198, 198 }, { 190, 128, 128, 380 }, { 250, 252 }},
+    { { 208, 208, 208 }, { 199, 128, 128, 398 }, {  -1,  -1 }},
+    { { 218, 218, 218 }, { 208, 128, 128, 416 }, {  -1,  -1 }},
+    { { 228, 228, 228 }, { 217, 128, 128, 434 }, {  -1,  -1 }},
+    { { 238, 238, 238 }, { 226, 128, 128, 452 }, { 188, 225 }},
+};
+
+INT64 diff(const YUV &yuv1, const YUV &yuv2)
+{
+    // The human eye is twice as sensitive to changes in Y.
+    //
+    INT64 dy = yuv1.y2-yuv2.y2;
+    INT64 du = yuv1.u-yuv2.u;
+    INT64 dv = yuv1.v-yuv2.v;
+
+    INT64 r = dy*dy + du*du + dv*dv;
+    return r;
+}
+
+void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest);
+void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest);
+
+void NearestIndex_tree_y(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+{
+    if (-1 == iHere)
+    {
+        return;
+    }
+
+    if (-1 == iBest)
+    {
+        iBest = iHere;
+        rBest = diff(yuv, palette[iBest].yuv);
+    }
+
+    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    if (rHere < rBest)
+    {
+        iBest = iHere;
+        rBest = rHere;
+    }
+
+    INT64 d = yuv.y2 - palette[iHere].yuv.y2;
+    int iNearChild = (d < 0)?0:1;
+    NearestIndex_tree_u(palette[iHere].child[iNearChild], yuv, iBest, rBest);
+
+    INT64 rAxis = d*d;
+    if (rAxis < rBest)
+    {
+        NearestIndex_tree_u(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
+    }
+}
+
+void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+{
+    if (-1 == iHere)
+    {
+        return;
+    }
+
+    if (-1 == iBest)
+    {
+        iBest = iHere;
+        rBest = diff(yuv, palette[iBest].yuv);
+    }
+
+    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    if (rHere < rBest)
+    {
+        iBest = iHere;
+        rBest = rHere;
+    }
+
+    INT64 d = yuv.u - palette[iHere].yuv.u;
+    int iNearChild = (d < 0)?0:1;
+    NearestIndex_tree_v(palette[iHere].child[iNearChild], yuv, iBest, rBest);
+
+    INT64 rAxis = d*d;
+    if (rAxis < rBest)
+    {
+        NearestIndex_tree_v(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
+    }
+}
+
+void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+{
+    if (-1 == iHere)
+    {
+        return;
+    }
+
+    if (-1 == iBest)
+    {
+        iBest = iHere;
+        rBest = diff(yuv, palette[iBest].yuv);
+    }
+
+    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    if (rHere < rBest)
+    {
+        iBest = iHere;
+        rBest = rHere;
+    }
+
+    INT64 d = yuv.v - palette[iHere].yuv.v;
+    int iNearChild = (d < 0)?0:1;
+    NearestIndex_tree_y(palette[iHere].child[iNearChild], yuv, iBest, rBest);
+
+    INT64 rAxis = d*d;
+    if (rAxis < rBest)
+    {
+        NearestIndex_tree_y(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
+    }
+}
+
+int FindNearestPaletteEntry(RGB &rgb)
+{
+    YUV yuv16;
+    rgb2yuv16(&rgb, &yuv16);
+
+    INT64 d;
+    int j = -1;
+    NearestIndex_tree_y(PALETTE_ROOT, yuv16, j, d);
+    return j;
+}
+
+#define CS_FOREGROUND UINT64_C(0x0000000001FFFFFF)
+#define CS_FG_BLACK   UINT64_C(0x0000000000000000)    // FOREGROUND BLACK (0,0,0)
+#define CS_FG_RED     UINT64_C(0x0000000000BB0000)    // FOREGROUND RED (187,0,0)
+#define CS_FG_GREEN   UINT64_C(0x000000000000BB00)    // FOREGROUND GREEN (0,187,0)
+#define CS_FG_YELLOW  UINT64_C(0x0000000000BBBB00)    // FOREGROUND YELLOW (187,187,0)
+#define CS_FG_BLUE    UINT64_C(0x00000000000000BB)    // FOREGROUND BLUE (0,0,187)
+#define CS_FG_MAGENTA UINT64_C(0x0000000000BB00BB)    // FOREGROUND MAGENTA (187,0,187)
+#define CS_FG_CYAN    UINT64_C(0x000000000000BBBB)    // FOREGROUND CYAN (0,187,187)
+#define CS_FG_WHITE   UINT64_C(0x0000000000BBBBBB)    // FOREGROUND WHITE (187,187,187)
+#define CS_FG(x)      UINT64_C(0x0000000000 ## x ) 
+#define CS_FG_DEFAULT UINT64_C(0x0000000001000000)
+#define CS_BACKGROUND UINT64_C(0x01FFFFFF00000000)
+#define CS_BG_BLACK   UINT64_C(0x0000000000000000)    // BACKGROUND BLACK (0,0,0)
+#define CS_BG_RED     UINT64_C(0x00BB000000000000)    // BACKGROUND RED (187,0,0)
+#define CS_BG_GREEN   UINT64_C(0x0000BB0000000000)    // BACKGROUND GREEN (0,187,0)
+#define CS_BG_YELLOW  UINT64_C(0x00BBBB0000000000)    // BACKGROUND YELLOW (187,187,0)
+#define CS_BG_BLUE    UINT64_C(0x000000BB00000000)    // BACKGROUND BLUE (0,0,187)
+#define CS_BG_MAGENTA UINT64_C(0x00BB00BB00000000)    // BACKGROUND MAGENTA (187,0,187)
+#define CS_BG_CYAN    UINT64_C(0x0000BBBB00000000)    // BACKGROUND CYAN (0,187,187)
+#define CS_BG_WHITE   UINT64_C(0x00BBBBBB00000000)    // BACKGROUND WHITE (187,187,187)
+#define CS_BG(x)      UINT64_C(0x00 ## x ## 00000000) 
+#define CS_BG_DEFAULT UINT64_C(0x0100000000000000)
+#define CS_INTENSE    UINT64_C(0x0000000010000000)
+#define CS_INVERSE    UINT64_C(0x0000000020000000)
+#define CS_UNDERLINE  UINT64_C(0x0000000040000000)
+#define CS_BLINK      UINT64_C(0x0000000080000000)
+#define CS_ATTRS      UINT64_C(0x00000000F0000000)
+#define CS_ALLBITS    UINT64_C(0x01FFFFFFF1FFFFFF)
 
 #define CS_NORMAL     (CS_FG_DEFAULT|CS_BG_DEFAULT)
 #define CS_NOBLEED    (CS_FG_WHITE|CS_BG_DEFAULT)
 
+// XTERM_FG(0) through XTERM_FG(7) is equivalent to ANSI_BLACK...ANSI_WHITE.
+// Even for 256-color-capable clients, the latter are used instead of the former.
+// Similiarly for XTERM_BG(0) through XTERM_BG(0).
+//
 const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
 {
     { 0,             0,             "",            0,                       T(""),               0, T(""),    0}, // COLOR_NOTCOLOR
@@ -1035,6 +1466,254 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_FG_MAGENTA, CS_FOREGROUND, ANSI_MAGENTA,  sizeof(ANSI_MAGENTA)-1,  T(COLOR_FG_MAGENTA), 3, T("%xm"), 3},
     { CS_FG_CYAN,    CS_FOREGROUND, ANSI_CYAN,     sizeof(ANSI_CYAN)-1,     T(COLOR_FG_CYAN),    3, T("%xc"), 3},
     { CS_FG_WHITE,   CS_FOREGROUND, ANSI_WHITE,    sizeof(ANSI_WHITE)-1,    T(COLOR_FG_WHITE),   3, T("%xw"), 3}, // COLOR_INDEX_FG_WHITE
+    { CS_FG(555555), CS_FOREGROUND, XTERM_FG(  8), sizeof(XTERM_FG(  8))-1, T(COLOR_FG_555555),  3, T("%x<#555555>"), 11},
+    { CS_FG(FF5555), CS_FOREGROUND, XTERM_FG(  9), sizeof(XTERM_FG(  9))-1, T(COLOR_FG_FF5555),  3, T("%x<#FF5555>"), 11},
+    { CS_FG(55FF55), CS_FOREGROUND, XTERM_FG( 10), sizeof(XTERM_FG( 10))-1, T(COLOR_FG_55FF55),  3, T("%x<#55FF55>"), 11},
+    { CS_FG(FFFF55), CS_FOREGROUND, XTERM_FG( 11), sizeof(XTERM_FG( 11))-1, T(COLOR_FG_FFFF55),  3, T("%x<#FFFF55>"), 11},
+    { CS_FG(5555FF), CS_FOREGROUND, XTERM_FG( 12), sizeof(XTERM_FG( 12))-1, T(COLOR_FG_5555FF),  3, T("%x<#5555FF>"), 11},
+    { CS_FG(FF55FF), CS_FOREGROUND, XTERM_FG( 13), sizeof(XTERM_FG( 13))-1, T(COLOR_FG_FF55FF),  3, T("%x<#FF55FF>"), 11},
+    { CS_FG(55FFFF), CS_FOREGROUND, XTERM_FG( 14), sizeof(XTERM_FG( 14))-1, T(COLOR_FG_55FFFF),  3, T("%x<#55FFFF>"), 11},
+    { CS_FG(FFFFFF), CS_FOREGROUND, XTERM_FG( 15), sizeof(XTERM_FG( 15))-1, T(COLOR_FG_FFFFFF),  3, T("%x<#FFFFFF>"), 11},
+    { CS_FG(000000), CS_FOREGROUND, XTERM_FG( 16), sizeof(XTERM_FG( 16))-1, T(COLOR_FG_000000),  3, T("%x<#000000>"), 11},
+    { CS_FG(00005F), CS_FOREGROUND, XTERM_FG( 17), sizeof(XTERM_FG( 17))-1, T(COLOR_FG_00005F),  3, T("%x<#00005F>"), 11},
+    { CS_FG(000087), CS_FOREGROUND, XTERM_FG( 18), sizeof(XTERM_FG( 18))-1, T(COLOR_FG_000087),  3, T("%x<#000087>"), 11},
+    { CS_FG(0000AF), CS_FOREGROUND, XTERM_FG( 19), sizeof(XTERM_FG( 19))-1, T(COLOR_FG_0000AF),  3, T("%x<#0000AF>"), 11},
+    { CS_FG(0000D7), CS_FOREGROUND, XTERM_FG( 20), sizeof(XTERM_FG( 20))-1, T(COLOR_FG_0000D7),  3, T("%x<#0000D7>"), 11},
+    { CS_FG(0000FF), CS_FOREGROUND, XTERM_FG( 21), sizeof(XTERM_FG( 21))-1, T(COLOR_FG_0000FF),  3, T("%x<#0000FF>"), 11},
+    { CS_FG(005F00), CS_FOREGROUND, XTERM_FG( 22), sizeof(XTERM_FG( 22))-1, T(COLOR_FG_005F00),  3, T("%x<#005F00>"), 11},
+    { CS_FG(005F5F), CS_FOREGROUND, XTERM_FG( 23), sizeof(XTERM_FG( 23))-1, T(COLOR_FG_005F5F),  3, T("%x<#005F5F>"), 11},
+    { CS_FG(005F87), CS_FOREGROUND, XTERM_FG( 24), sizeof(XTERM_FG( 24))-1, T(COLOR_FG_005F87),  3, T("%x<#005F87>"), 11},
+    { CS_FG(005FAF), CS_FOREGROUND, XTERM_FG( 25), sizeof(XTERM_FG( 25))-1, T(COLOR_FG_005FAF),  3, T("%x<#005FAF>"), 11},
+    { CS_FG(005FD7), CS_FOREGROUND, XTERM_FG( 26), sizeof(XTERM_FG( 26))-1, T(COLOR_FG_005FD7),  3, T("%x<#005FD7>"), 11},
+    { CS_FG(005FFF), CS_FOREGROUND, XTERM_FG( 27), sizeof(XTERM_FG( 27))-1, T(COLOR_FG_005FFF),  3, T("%x<#005FFF>"), 11},
+    { CS_FG(008700), CS_FOREGROUND, XTERM_FG( 28), sizeof(XTERM_FG( 28))-1, T(COLOR_FG_008700),  3, T("%x<#008700>"), 11},
+    { CS_FG(00875F), CS_FOREGROUND, XTERM_FG( 29), sizeof(XTERM_FG( 29))-1, T(COLOR_FG_00875F),  3, T("%x<#00875F>"), 11},
+    { CS_FG(008785), CS_FOREGROUND, XTERM_FG( 30), sizeof(XTERM_FG( 30))-1, T(COLOR_FG_008785),  3, T("%x<#008785>"), 11},
+    { CS_FG(0087AF), CS_FOREGROUND, XTERM_FG( 31), sizeof(XTERM_FG( 31))-1, T(COLOR_FG_0087AF),  3, T("%x<#0087AF>"), 11},
+    { CS_FG(0087D7), CS_FOREGROUND, XTERM_FG( 32), sizeof(XTERM_FG( 32))-1, T(COLOR_FG_0087D7),  3, T("%x<#0087D7>"), 11},
+    { CS_FG(0087FF), CS_FOREGROUND, XTERM_FG( 33), sizeof(XTERM_FG( 33))-1, T(COLOR_FG_0087FF),  3, T("%x<#0087FF>"), 11},
+    { CS_FG(00AF00), CS_FOREGROUND, XTERM_FG( 34), sizeof(XTERM_FG( 34))-1, T(COLOR_FG_00AF00),  3, T("%x<#00AF00>"), 11},
+    { CS_FG(00AF5F), CS_FOREGROUND, XTERM_FG( 35), sizeof(XTERM_FG( 35))-1, T(COLOR_FG_00AF5F),  3, T("%x<#00AF5F>"), 11},
+    { CS_FG(00AF87), CS_FOREGROUND, XTERM_FG( 36), sizeof(XTERM_FG( 36))-1, T(COLOR_FG_00AF87),  3, T("%x<#00AF87>"), 11},
+    { CS_FG(00AFAF), CS_FOREGROUND, XTERM_FG( 37), sizeof(XTERM_FG( 37))-1, T(COLOR_FG_00AFAF),  3, T("%x<#00AFAF>"), 11},
+    { CS_FG(00AFD7), CS_FOREGROUND, XTERM_FG( 38), sizeof(XTERM_FG( 38))-1, T(COLOR_FG_00AFD7),  3, T("%x<#00AFD7>"), 11},
+    { CS_FG(00AFFF), CS_FOREGROUND, XTERM_FG( 39), sizeof(XTERM_FG( 39))-1, T(COLOR_FG_00AFFF),  3, T("%x<#00AFFF>"), 11},
+    { CS_FG(00D700), CS_FOREGROUND, XTERM_FG( 40), sizeof(XTERM_FG( 40))-1, T(COLOR_FG_00D700),  3, T("%x<#00D700>"), 11},
+    { CS_FG(00D75F), CS_FOREGROUND, XTERM_FG( 41), sizeof(XTERM_FG( 41))-1, T(COLOR_FG_00D75F),  3, T("%x<#00D75F>"), 11},
+    { CS_FG(00D787), CS_FOREGROUND, XTERM_FG( 42), sizeof(XTERM_FG( 42))-1, T(COLOR_FG_00D787),  3, T("%x<#00D787>"), 11},
+    { CS_FG(00D7AF), CS_FOREGROUND, XTERM_FG( 43), sizeof(XTERM_FG( 43))-1, T(COLOR_FG_00D7AF),  3, T("%x<#00D7AF>"), 11},
+    { CS_FG(00D7D7), CS_FOREGROUND, XTERM_FG( 44), sizeof(XTERM_FG( 44))-1, T(COLOR_FG_00D7D7),  3, T("%x<#00D7D7>"), 11},
+    { CS_FG(00D7FF), CS_FOREGROUND, XTERM_FG( 45), sizeof(XTERM_FG( 45))-1, T(COLOR_FG_00D7FF),  3, T("%x<#00D7FF>"), 11},
+    { CS_FG(00FF00), CS_FOREGROUND, XTERM_FG( 46), sizeof(XTERM_FG( 46))-1, T(COLOR_FG_00FF00),  3, T("%x<#00FF00>"), 11},
+    { CS_FG(00FF5A), CS_FOREGROUND, XTERM_FG( 47), sizeof(XTERM_FG( 47))-1, T(COLOR_FG_00FF5A),  3, T("%x<#00FF5A>"), 11},
+    { CS_FG(00FF87), CS_FOREGROUND, XTERM_FG( 48), sizeof(XTERM_FG( 48))-1, T(COLOR_FG_00FF87),  3, T("%x<#00FF87>"), 11},
+    { CS_FG(00FFAF), CS_FOREGROUND, XTERM_FG( 49), sizeof(XTERM_FG( 49))-1, T(COLOR_FG_00FFAF),  3, T("%x<#00FFAF>"), 11},
+    { CS_FG(00FFD7), CS_FOREGROUND, XTERM_FG( 50), sizeof(XTERM_FG( 50))-1, T(COLOR_FG_00FFD7),  3, T("%x<#00FFD7>"), 11},
+    { CS_FG(00FFFF), CS_FOREGROUND, XTERM_FG( 51), sizeof(XTERM_FG( 51))-1, T(COLOR_FG_00FFFF),  3, T("%x<#00FFFF>"), 11},
+    { CS_FG(5F0000), CS_FOREGROUND, XTERM_FG( 52), sizeof(XTERM_FG( 52))-1, T(COLOR_FG_5F0000),  3, T("%x<#5F0000>"), 11},
+    { CS_FG(5F005F), CS_FOREGROUND, XTERM_FG( 53), sizeof(XTERM_FG( 53))-1, T(COLOR_FG_5F005F),  3, T("%x<#5F005F>"), 11},
+    { CS_FG(5F0087), CS_FOREGROUND, XTERM_FG( 54), sizeof(XTERM_FG( 54))-1, T(COLOR_FG_5F0087),  3, T("%x<#5F0087>"), 11},
+    { CS_FG(5F00AF), CS_FOREGROUND, XTERM_FG( 55), sizeof(XTERM_FG( 55))-1, T(COLOR_FG_5F00AF),  3, T("%x<#5F00AF>"), 11},
+    { CS_FG(5F00D7), CS_FOREGROUND, XTERM_FG( 56), sizeof(XTERM_FG( 56))-1, T(COLOR_FG_5F00D7),  3, T("%x<#5F00D7>"), 11},
+    { CS_FG(5F00FF), CS_FOREGROUND, XTERM_FG( 57), sizeof(XTERM_FG( 57))-1, T(COLOR_FG_5F00FF),  3, T("%x<#5F00FF>"), 11},
+    { CS_FG(5F5F00), CS_FOREGROUND, XTERM_FG( 58), sizeof(XTERM_FG( 58))-1, T(COLOR_FG_5F5F00),  3, T("%x<#5F5F00>"), 11},
+    { CS_FG(5F5F5F), CS_FOREGROUND, XTERM_FG( 59), sizeof(XTERM_FG( 59))-1, T(COLOR_FG_5F5F5F),  3, T("%x<#5F5F5F>"), 11},
+    { CS_FG(5F5F87), CS_FOREGROUND, XTERM_FG( 60), sizeof(XTERM_FG( 60))-1, T(COLOR_FG_5F5F87),  3, T("%x<#5F5F87>"), 11},
+    { CS_FG(5F5FAF), CS_FOREGROUND, XTERM_FG( 61), sizeof(XTERM_FG( 61))-1, T(COLOR_FG_5F5FAF),  3, T("%x<#5F5FAF>"), 11},
+    { CS_FG(5F5FD7), CS_FOREGROUND, XTERM_FG( 62), sizeof(XTERM_FG( 62))-1, T(COLOR_FG_5F5FD7),  3, T("%x<#5F5FD7>"), 11},
+    { CS_FG(5F5FFF), CS_FOREGROUND, XTERM_FG( 63), sizeof(XTERM_FG( 63))-1, T(COLOR_FG_5F5FFF),  3, T("%x<#5F5FFF>"), 11},
+    { CS_FG(5F8700), CS_FOREGROUND, XTERM_FG( 64), sizeof(XTERM_FG( 64))-1, T(COLOR_FG_5F8700),  3, T("%x<#5F8700>"), 11},
+    { CS_FG(5F875F), CS_FOREGROUND, XTERM_FG( 65), sizeof(XTERM_FG( 65))-1, T(COLOR_FG_5F875F),  3, T("%x<#5F875F>"), 11},
+    { CS_FG(5F8787), CS_FOREGROUND, XTERM_FG( 66), sizeof(XTERM_FG( 66))-1, T(COLOR_FG_5F8787),  3, T("%x<#5F8787>"), 11},
+    { CS_FG(5F87AF), CS_FOREGROUND, XTERM_FG( 67), sizeof(XTERM_FG( 67))-1, T(COLOR_FG_5F87AF),  3, T("%x<#5F87AF>"), 11},
+    { CS_FG(5F87D7), CS_FOREGROUND, XTERM_FG( 68), sizeof(XTERM_FG( 68))-1, T(COLOR_FG_5F87D7),  3, T("%x<#5F87D7>"), 11},
+    { CS_FG(5F87FF), CS_FOREGROUND, XTERM_FG( 69), sizeof(XTERM_FG( 69))-1, T(COLOR_FG_5F87FF),  3, T("%x<#5F87FF>"), 11},
+    { CS_FG(5FAF00), CS_FOREGROUND, XTERM_FG( 70), sizeof(XTERM_FG( 70))-1, T(COLOR_FG_5FAF00),  3, T("%x<#5FAF00>"), 11},
+    { CS_FG(5FAF5F), CS_FOREGROUND, XTERM_FG( 71), sizeof(XTERM_FG( 71))-1, T(COLOR_FG_5FAF5F),  3, T("%x<#5FAF5F>"), 11},
+    { CS_FG(5FAF87), CS_FOREGROUND, XTERM_FG( 72), sizeof(XTERM_FG( 72))-1, T(COLOR_FG_5FAF87),  3, T("%x<#5FAF87>"), 11},
+    { CS_FG(5FAFAF), CS_FOREGROUND, XTERM_FG( 73), sizeof(XTERM_FG( 73))-1, T(COLOR_FG_5FAFAF),  3, T("%x<#5FAFAF>"), 11},
+    { CS_FG(5FAFD7), CS_FOREGROUND, XTERM_FG( 74), sizeof(XTERM_FG( 74))-1, T(COLOR_FG_5FAFD7),  3, T("%x<#5FAFD7>"), 11},
+    { CS_FG(5FAFFF), CS_FOREGROUND, XTERM_FG( 75), sizeof(XTERM_FG( 75))-1, T(COLOR_FG_5FAFFF),  3, T("%x<#5FAFFF>"), 11},
+    { CS_FG(5FD700), CS_FOREGROUND, XTERM_FG( 76), sizeof(XTERM_FG( 76))-1, T(COLOR_FG_5FD700),  3, T("%x<#5FD700>"), 11},
+    { CS_FG(5FD75F), CS_FOREGROUND, XTERM_FG( 77), sizeof(XTERM_FG( 77))-1, T(COLOR_FG_5FD75F),  3, T("%x<#5FD75F>"), 11},
+    { CS_FG(5FD787), CS_FOREGROUND, XTERM_FG( 78), sizeof(XTERM_FG( 78))-1, T(COLOR_FG_5FD787),  3, T("%x<#5FD787>"), 11},
+    { CS_FG(5FD7AF), CS_FOREGROUND, XTERM_FG( 79), sizeof(XTERM_FG( 79))-1, T(COLOR_FG_5FD7AF),  3, T("%x<#5FD7AF>"), 11},
+    { CS_FG(5FD7D7), CS_FOREGROUND, XTERM_FG( 80), sizeof(XTERM_FG( 80))-1, T(COLOR_FG_5FD7D7),  3, T("%x<#5FD7D7>"), 11},
+    { CS_FG(5FD7FF), CS_FOREGROUND, XTERM_FG( 81), sizeof(XTERM_FG( 81))-1, T(COLOR_FG_5FD7FF),  3, T("%x<#5FD7FF>"), 11},
+    { CS_FG(5FFF00), CS_FOREGROUND, XTERM_FG( 82), sizeof(XTERM_FG( 82))-1, T(COLOR_FG_5FFF00),  3, T("%x<#5FFF00>"), 11},
+    { CS_FG(5FFF5F), CS_FOREGROUND, XTERM_FG( 83), sizeof(XTERM_FG( 83))-1, T(COLOR_FG_5FFF5F),  3, T("%x<#5FFF5F>"), 11},
+    { CS_FG(5FFF87), CS_FOREGROUND, XTERM_FG( 84), sizeof(XTERM_FG( 84))-1, T(COLOR_FG_5FFF87),  3, T("%x<#5FFF87>"), 11},
+    { CS_FG(5FFFAF), CS_FOREGROUND, XTERM_FG( 85), sizeof(XTERM_FG( 85))-1, T(COLOR_FG_5FFFAF),  3, T("%x<#5FFFAF>"), 11},
+    { CS_FG(5FFFD7), CS_FOREGROUND, XTERM_FG( 86), sizeof(XTERM_FG( 86))-1, T(COLOR_FG_5FFFD7),  3, T("%x<#5FFFD7>"), 11},
+    { CS_FG(5FFFFF), CS_FOREGROUND, XTERM_FG( 87), sizeof(XTERM_FG( 87))-1, T(COLOR_FG_5FFFFF),  3, T("%x<#5FFFFF>"), 11},
+    { CS_FG(870000), CS_FOREGROUND, XTERM_FG( 88), sizeof(XTERM_FG( 88))-1, T(COLOR_FG_870000),  3, T("%x<#870000>"), 11},
+    { CS_FG(87005F), CS_FOREGROUND, XTERM_FG( 89), sizeof(XTERM_FG( 89))-1, T(COLOR_FG_87005F),  3, T("%x<#87005F>"), 11},
+    { CS_FG(870087), CS_FOREGROUND, XTERM_FG( 90), sizeof(XTERM_FG( 90))-1, T(COLOR_FG_870087),  3, T("%x<#870087>"), 11},
+    { CS_FG(8700AF), CS_FOREGROUND, XTERM_FG( 91), sizeof(XTERM_FG( 91))-1, T(COLOR_FG_8700AF),  3, T("%x<#8700AF>"), 11},
+    { CS_FG(8700D7), CS_FOREGROUND, XTERM_FG( 92), sizeof(XTERM_FG( 92))-1, T(COLOR_FG_8700D7),  3, T("%x<#8700D7>"), 11},
+    { CS_FG(8700FF), CS_FOREGROUND, XTERM_FG( 93), sizeof(XTERM_FG( 93))-1, T(COLOR_FG_8700FF),  3, T("%x<#8700FF>"), 11},
+    { CS_FG(875F00), CS_FOREGROUND, XTERM_FG( 94), sizeof(XTERM_FG( 94))-1, T(COLOR_FG_875F00),  3, T("%x<#875F00>"), 11},
+    { CS_FG(875F5F), CS_FOREGROUND, XTERM_FG( 95), sizeof(XTERM_FG( 95))-1, T(COLOR_FG_875F5F),  3, T("%x<#875F5F>"), 11},
+    { CS_FG(875F87), CS_FOREGROUND, XTERM_FG( 96), sizeof(XTERM_FG( 96))-1, T(COLOR_FG_875F87),  3, T("%x<#875F87>"), 11},
+    { CS_FG(875FAF), CS_FOREGROUND, XTERM_FG( 97), sizeof(XTERM_FG( 97))-1, T(COLOR_FG_875FAF),  3, T("%x<#875FAF>"), 11},
+    { CS_FG(875FD7), CS_FOREGROUND, XTERM_FG( 98), sizeof(XTERM_FG( 98))-1, T(COLOR_FG_875FD7),  3, T("%x<#875FD7>"), 11},
+    { CS_FG(875FFF), CS_FOREGROUND, XTERM_FG( 99), sizeof(XTERM_FG( 99))-1, T(COLOR_FG_875FFF),  3, T("%x<#875FFF>"), 11},
+    { CS_FG(878700), CS_FOREGROUND, XTERM_FG(100), sizeof(XTERM_FG(100))-1, T(COLOR_FG_878700),  3, T("%x<#878700>"), 11},
+    { CS_FG(87875F), CS_FOREGROUND, XTERM_FG(101), sizeof(XTERM_FG(101))-1, T(COLOR_FG_87875F),  3, T("%x<#87875F>"), 11},
+    { CS_FG(878787), CS_FOREGROUND, XTERM_FG(102), sizeof(XTERM_FG(102))-1, T(COLOR_FG_878787),  3, T("%x<#878787>"), 11},
+    { CS_FG(8787AF), CS_FOREGROUND, XTERM_FG(103), sizeof(XTERM_FG(103))-1, T(COLOR_FG_8787AF),  3, T("%x<#8787AF>"), 11},
+    { CS_FG(8787D7), CS_FOREGROUND, XTERM_FG(104), sizeof(XTERM_FG(104))-1, T(COLOR_FG_8787D7),  3, T("%x<#8787D7>"), 11},
+    { CS_FG(8787FF), CS_FOREGROUND, XTERM_FG(105), sizeof(XTERM_FG(105))-1, T(COLOR_FG_8787FF),  3, T("%x<#8787FF>"), 11},
+    { CS_FG(87AF00), CS_FOREGROUND, XTERM_FG(106), sizeof(XTERM_FG(106))-1, T(COLOR_FG_87AF00),  3, T("%x<#87AF00>"), 11},
+    { CS_FG(87AF5F), CS_FOREGROUND, XTERM_FG(107), sizeof(XTERM_FG(107))-1, T(COLOR_FG_87AF5F),  3, T("%x<#87AF5F>"), 11},
+    { CS_FG(87AF87), CS_FOREGROUND, XTERM_FG(108), sizeof(XTERM_FG(108))-1, T(COLOR_FG_87AF87),  3, T("%x<#87AF87>"), 11},
+    { CS_FG(87AFAF), CS_FOREGROUND, XTERM_FG(109), sizeof(XTERM_FG(109))-1, T(COLOR_FG_87AFAF),  3, T("%x<#87AFAF>"), 11},
+    { CS_FG(87AFD7), CS_FOREGROUND, XTERM_FG(110), sizeof(XTERM_FG(110))-1, T(COLOR_FG_87AFD7),  3, T("%x<#87AFD7>"), 11},
+    { CS_FG(87AFFF), CS_FOREGROUND, XTERM_FG(111), sizeof(XTERM_FG(111))-1, T(COLOR_FG_87AFFF),  3, T("%x<#87AFFF>"), 11},
+    { CS_FG(87D700), CS_FOREGROUND, XTERM_FG(112), sizeof(XTERM_FG(112))-1, T(COLOR_FG_87D700),  3, T("%x<#87D700>"), 11},
+    { CS_FG(87D75A), CS_FOREGROUND, XTERM_FG(113), sizeof(XTERM_FG(113))-1, T(COLOR_FG_87D75A),  3, T("%x<#87D75A>"), 11},
+    { CS_FG(87D787), CS_FOREGROUND, XTERM_FG(114), sizeof(XTERM_FG(114))-1, T(COLOR_FG_87D787),  3, T("%x<#87D787>"), 11},
+    { CS_FG(87D7AF), CS_FOREGROUND, XTERM_FG(115), sizeof(XTERM_FG(115))-1, T(COLOR_FG_87D7AF),  3, T("%x<#87D7AF>"), 11},
+    { CS_FG(87D7D7), CS_FOREGROUND, XTERM_FG(116), sizeof(XTERM_FG(116))-1, T(COLOR_FG_87D7D7),  3, T("%x<#87D7D7>"), 11},
+    { CS_FG(87D7FF), CS_FOREGROUND, XTERM_FG(117), sizeof(XTERM_FG(117))-1, T(COLOR_FG_87D7FF),  3, T("%x<#87D7FF>"), 11},
+    { CS_FG(87FF00), CS_FOREGROUND, XTERM_FG(118), sizeof(XTERM_FG(118))-1, T(COLOR_FG_87FF00),  3, T("%x<#87FF00>"), 11},
+    { CS_FG(87FF5F), CS_FOREGROUND, XTERM_FG(119), sizeof(XTERM_FG(119))-1, T(COLOR_FG_87FF5F),  3, T("%x<#87FF5F>"), 11},
+    { CS_FG(87FF87), CS_FOREGROUND, XTERM_FG(120), sizeof(XTERM_FG(120))-1, T(COLOR_FG_87FF87),  3, T("%x<#87FF87>"), 11},
+    { CS_FG(87FFAF), CS_FOREGROUND, XTERM_FG(121), sizeof(XTERM_FG(121))-1, T(COLOR_FG_87FFAF),  3, T("%x<#87FFAF>"), 11},
+    { CS_FG(87FFD7), CS_FOREGROUND, XTERM_FG(122), sizeof(XTERM_FG(122))-1, T(COLOR_FG_87FFD7),  3, T("%x<#87FFD7>"), 11},
+    { CS_FG(87FFFF), CS_FOREGROUND, XTERM_FG(123), sizeof(XTERM_FG(123))-1, T(COLOR_FG_87FFFF),  3, T("%x<#87FFFF>"), 11},
+    { CS_FG(AF0000), CS_FOREGROUND, XTERM_FG(124), sizeof(XTERM_FG(124))-1, T(COLOR_FG_AF0000),  3, T("%x<#AF0000>"), 11},
+    { CS_FG(AF005F), CS_FOREGROUND, XTERM_FG(125), sizeof(XTERM_FG(125))-1, T(COLOR_FG_AF005F),  3, T("%x<#AF005F>"), 11},
+    { CS_FG(AF0087), CS_FOREGROUND, XTERM_FG(126), sizeof(XTERM_FG(126))-1, T(COLOR_FG_AF0087),  3, T("%x<#AF0087>"), 11},
+    { CS_FG(AF00AF), CS_FOREGROUND, XTERM_FG(127), sizeof(XTERM_FG(127))-1, T(COLOR_FG_AF00AF),  3, T("%x<#AF00AF>"), 11},
+    { CS_FG(AF00D7), CS_FOREGROUND, XTERM_FG(128), sizeof(XTERM_FG(128))-1, T(COLOR_FG_AF00D7),  3, T("%x<#AF00D7>"), 11},
+    { CS_FG(AF00FF), CS_FOREGROUND, XTERM_FG(129), sizeof(XTERM_FG(129))-1, T(COLOR_FG_AF00FF),  3, T("%x<#AF00FF>"), 11},
+    { CS_FG(AF5F00), CS_FOREGROUND, XTERM_FG(130), sizeof(XTERM_FG(130))-1, T(COLOR_FG_AF5F00),  3, T("%x<#AF5F00>"), 11},
+    { CS_FG(AF5F5F), CS_FOREGROUND, XTERM_FG(131), sizeof(XTERM_FG(131))-1, T(COLOR_FG_AF5F5F),  3, T("%x<#AF5F5F>"), 11},
+    { CS_FG(AF5F87), CS_FOREGROUND, XTERM_FG(132), sizeof(XTERM_FG(132))-1, T(COLOR_FG_AF5F87),  3, T("%x<#AF5F87>"), 11},
+    { CS_FG(AF5FAF), CS_FOREGROUND, XTERM_FG(133), sizeof(XTERM_FG(133))-1, T(COLOR_FG_AF5FAF),  3, T("%x<#AF5FAF>"), 11},
+    { CS_FG(AF5FD7), CS_FOREGROUND, XTERM_FG(134), sizeof(XTERM_FG(134))-1, T(COLOR_FG_AF5FD7),  3, T("%x<#AF5FD7>"), 11},
+    { CS_FG(AF5FFF), CS_FOREGROUND, XTERM_FG(135), sizeof(XTERM_FG(135))-1, T(COLOR_FG_AF5FFF),  3, T("%x<#AF5FFF>"), 11},
+    { CS_FG(AF8700), CS_FOREGROUND, XTERM_FG(136), sizeof(XTERM_FG(136))-1, T(COLOR_FG_AF8700),  3, T("%x<#AF8700>"), 11},
+    { CS_FG(AF875F), CS_FOREGROUND, XTERM_FG(137), sizeof(XTERM_FG(137))-1, T(COLOR_FG_AF875F),  3, T("%x<#AF875F>"), 11},
+    { CS_FG(AF8787), CS_FOREGROUND, XTERM_FG(138), sizeof(XTERM_FG(138))-1, T(COLOR_FG_AF8787),  3, T("%x<#AF8787>"), 11},
+    { CS_FG(AF87AF), CS_FOREGROUND, XTERM_FG(139), sizeof(XTERM_FG(139))-1, T(COLOR_FG_AF87AF),  3, T("%x<#AF87AF>"), 11},
+    { CS_FG(AF87D7), CS_FOREGROUND, XTERM_FG(140), sizeof(XTERM_FG(140))-1, T(COLOR_FG_AF87D7),  3, T("%x<#AF87D7>"), 11},
+    { CS_FG(AF87FF), CS_FOREGROUND, XTERM_FG(141), sizeof(XTERM_FG(141))-1, T(COLOR_FG_AF87FF),  3, T("%x<#AF87FF>"), 11},
+    { CS_FG(AFAF00), CS_FOREGROUND, XTERM_FG(142), sizeof(XTERM_FG(142))-1, T(COLOR_FG_AFAF00),  3, T("%x<#AFAF00>"), 11},
+    { CS_FG(AFAF5F), CS_FOREGROUND, XTERM_FG(143), sizeof(XTERM_FG(143))-1, T(COLOR_FG_AFAF5F),  3, T("%x<#AFAF5F>"), 11},
+    { CS_FG(AFAF87), CS_FOREGROUND, XTERM_FG(144), sizeof(XTERM_FG(144))-1, T(COLOR_FG_AFAF87),  3, T("%x<#AFAF87>"), 11},
+    { CS_FG(AFAFAF), CS_FOREGROUND, XTERM_FG(145), sizeof(XTERM_FG(145))-1, T(COLOR_FG_AFAFAF),  3, T("%x<#AFAFAF>"), 11},
+    { CS_FG(AFAFD7), CS_FOREGROUND, XTERM_FG(146), sizeof(XTERM_FG(146))-1, T(COLOR_FG_AFAFD7),  3, T("%x<#AFAFD7>"), 11},
+    { CS_FG(AFAFFF), CS_FOREGROUND, XTERM_FG(147), sizeof(XTERM_FG(147))-1, T(COLOR_FG_AFAFFF),  3, T("%x<#AFAFFF>"), 11},
+    { CS_FG(AFD700), CS_FOREGROUND, XTERM_FG(148), sizeof(XTERM_FG(148))-1, T(COLOR_FG_AFD700),  3, T("%x<#AFD700>"), 11},
+    { CS_FG(AFD75F), CS_FOREGROUND, XTERM_FG(149), sizeof(XTERM_FG(149))-1, T(COLOR_FG_AFD75F),  3, T("%x<#AFD75F>"), 11},
+    { CS_FG(AFD787), CS_FOREGROUND, XTERM_FG(150), sizeof(XTERM_FG(150))-1, T(COLOR_FG_AFD787),  3, T("%x<#AFD787>"), 11},
+    { CS_FG(AFD7AF), CS_FOREGROUND, XTERM_FG(151), sizeof(XTERM_FG(151))-1, T(COLOR_FG_AFD7AF),  3, T("%x<#AFD7AF>"), 11},
+    { CS_FG(AFD7D7), CS_FOREGROUND, XTERM_FG(152), sizeof(XTERM_FG(152))-1, T(COLOR_FG_AFD7D7),  3, T("%x<#AFD7D7>"), 11},
+    { CS_FG(AFD7FF), CS_FOREGROUND, XTERM_FG(153), sizeof(XTERM_FG(153))-1, T(COLOR_FG_AFD7FF),  3, T("%x<#AFD7FF>"), 11},
+    { CS_FG(AFFF00), CS_FOREGROUND, XTERM_FG(154), sizeof(XTERM_FG(154))-1, T(COLOR_FG_AFFF00),  3, T("%x<#AFFF00>"), 11},
+    { CS_FG(AFFF5F), CS_FOREGROUND, XTERM_FG(155), sizeof(XTERM_FG(155))-1, T(COLOR_FG_AFFF5F),  3, T("%x<#AFFF5F>"), 11},
+    { CS_FG(AFFF87), CS_FOREGROUND, XTERM_FG(156), sizeof(XTERM_FG(156))-1, T(COLOR_FG_AFFF87),  3, T("%x<#AFFF87>"), 11},
+    { CS_FG(AFFFAF), CS_FOREGROUND, XTERM_FG(157), sizeof(XTERM_FG(157))-1, T(COLOR_FG_AFFFAF),  3, T("%x<#AFFFAF>"), 11},
+    { CS_FG(AFFFD7), CS_FOREGROUND, XTERM_FG(158), sizeof(XTERM_FG(158))-1, T(COLOR_FG_AFFFD7),  3, T("%x<#AFFFD7>"), 11},
+    { CS_FG(AFFFFF), CS_FOREGROUND, XTERM_FG(159), sizeof(XTERM_FG(159))-1, T(COLOR_FG_AFFFFF),  3, T("%x<#AFFFFF>"), 11},
+    { CS_FG(D70000), CS_FOREGROUND, XTERM_FG(160), sizeof(XTERM_FG(160))-1, T(COLOR_FG_D70000),  3, T("%x<#D70000>"), 11},
+    { CS_FG(D7005F), CS_FOREGROUND, XTERM_FG(161), sizeof(XTERM_FG(161))-1, T(COLOR_FG_D7005F),  3, T("%x<#D7005F>"), 11},
+    { CS_FG(D70087), CS_FOREGROUND, XTERM_FG(162), sizeof(XTERM_FG(162))-1, T(COLOR_FG_D70087),  3, T("%x<#D70087>"), 11},
+    { CS_FG(D700AF), CS_FOREGROUND, XTERM_FG(163), sizeof(XTERM_FG(163))-1, T(COLOR_FG_D700AF),  3, T("%x<#D700AF>"), 11},
+    { CS_FG(D700D7), CS_FOREGROUND, XTERM_FG(164), sizeof(XTERM_FG(164))-1, T(COLOR_FG_D700D7),  3, T("%x<#D700D7>"), 11},
+    { CS_FG(D700FF), CS_FOREGROUND, XTERM_FG(165), sizeof(XTERM_FG(165))-1, T(COLOR_FG_D700FF),  3, T("%x<#D700FF>"), 11},
+    { CS_FG(D75F00), CS_FOREGROUND, XTERM_FG(166), sizeof(XTERM_FG(166))-1, T(COLOR_FG_D75F00),  3, T("%x<#D75F00>"), 11},
+    { CS_FG(D75F5F), CS_FOREGROUND, XTERM_FG(167), sizeof(XTERM_FG(167))-1, T(COLOR_FG_D75F5F),  3, T("%x<#D75F5F>"), 11},
+    { CS_FG(D75F87), CS_FOREGROUND, XTERM_FG(168), sizeof(XTERM_FG(168))-1, T(COLOR_FG_D75F87),  3, T("%x<#D75F87>"), 11},
+    { CS_FG(D75FAF), CS_FOREGROUND, XTERM_FG(169), sizeof(XTERM_FG(169))-1, T(COLOR_FG_D75FAF),  3, T("%x<#D75FAF>"), 11},
+    { CS_FG(D75FD7), CS_FOREGROUND, XTERM_FG(170), sizeof(XTERM_FG(170))-1, T(COLOR_FG_D75FD7),  3, T("%x<#D75FD7>"), 11},
+    { CS_FG(D75FFF), CS_FOREGROUND, XTERM_FG(171), sizeof(XTERM_FG(171))-1, T(COLOR_FG_D75FFF),  3, T("%x<#D75FFF>"), 11},
+    { CS_FG(D78700), CS_FOREGROUND, XTERM_FG(172), sizeof(XTERM_FG(172))-1, T(COLOR_FG_D78700),  3, T("%x<#D78700>"), 11},
+    { CS_FG(D7875A), CS_FOREGROUND, XTERM_FG(173), sizeof(XTERM_FG(173))-1, T(COLOR_FG_D7875A),  3, T("%x<#D7875A>"), 11},
+    { CS_FG(D78787), CS_FOREGROUND, XTERM_FG(174), sizeof(XTERM_FG(174))-1, T(COLOR_FG_D78787),  3, T("%x<#D78787>"), 11},
+    { CS_FG(D787AF), CS_FOREGROUND, XTERM_FG(175), sizeof(XTERM_FG(175))-1, T(COLOR_FG_D787AF),  3, T("%x<#D787AF>"), 11},
+    { CS_FG(D787D7), CS_FOREGROUND, XTERM_FG(176), sizeof(XTERM_FG(176))-1, T(COLOR_FG_D787D7),  3, T("%x<#D787D7>"), 11},
+    { CS_FG(D787FF), CS_FOREGROUND, XTERM_FG(177), sizeof(XTERM_FG(177))-1, T(COLOR_FG_D787FF),  3, T("%x<#D787FF>"), 11},
+    { CS_FG(D7AF00), CS_FOREGROUND, XTERM_FG(178), sizeof(XTERM_FG(178))-1, T(COLOR_FG_D7AF00),  3, T("%x<#D7AF00>"), 11},
+    { CS_FG(D7AF5A), CS_FOREGROUND, XTERM_FG(179), sizeof(XTERM_FG(179))-1, T(COLOR_FG_D7AF5A),  3, T("%x<#D7AF5A>"), 11},
+    { CS_FG(D7AF87), CS_FOREGROUND, XTERM_FG(180), sizeof(XTERM_FG(180))-1, T(COLOR_FG_D7AF87),  3, T("%x<#D7AF87>"), 11},
+    { CS_FG(D7AFAF), CS_FOREGROUND, XTERM_FG(181), sizeof(XTERM_FG(181))-1, T(COLOR_FG_D7AFAF),  3, T("%x<#D7AFAF>"), 11},
+    { CS_FG(D7AFD7), CS_FOREGROUND, XTERM_FG(182), sizeof(XTERM_FG(182))-1, T(COLOR_FG_D7AFD7),  3, T("%x<#D7AFD7>"), 11},
+    { CS_FG(D7AFFF), CS_FOREGROUND, XTERM_FG(183), sizeof(XTERM_FG(183))-1, T(COLOR_FG_D7AFFF),  3, T("%x<#D7AFFF>"), 11},
+    { CS_FG(D7D700), CS_FOREGROUND, XTERM_FG(184), sizeof(XTERM_FG(184))-1, T(COLOR_FG_D7D700),  3, T("%x<#D7D700>"), 11},
+    { CS_FG(D7D75F), CS_FOREGROUND, XTERM_FG(185), sizeof(XTERM_FG(185))-1, T(COLOR_FG_D7D75F),  3, T("%x<#D7D75F>"), 11},
+    { CS_FG(D7D787), CS_FOREGROUND, XTERM_FG(186), sizeof(XTERM_FG(186))-1, T(COLOR_FG_D7D787),  3, T("%x<#D7D787>"), 11},
+    { CS_FG(D7D7AF), CS_FOREGROUND, XTERM_FG(187), sizeof(XTERM_FG(187))-1, T(COLOR_FG_D7D7AF),  3, T("%x<#D7D7AF>"), 11},
+    { CS_FG(D7D7D7), CS_FOREGROUND, XTERM_FG(188), sizeof(XTERM_FG(188))-1, T(COLOR_FG_D7D7D7),  3, T("%x<#D7D7D7>"), 11},
+    { CS_FG(D7D7FF), CS_FOREGROUND, XTERM_FG(189), sizeof(XTERM_FG(189))-1, T(COLOR_FG_D7D7FF),  3, T("%x<#D7D7FF>"), 11},
+    { CS_FG(D7FF00), CS_FOREGROUND, XTERM_FG(190), sizeof(XTERM_FG(190))-1, T(COLOR_FG_D7FF00),  3, T("%x<#D7FF00>"), 11},
+    { CS_FG(D7FF5F), CS_FOREGROUND, XTERM_FG(191), sizeof(XTERM_FG(191))-1, T(COLOR_FG_D7FF5F),  3, T("%x<#D7FF5F>"), 11},
+    { CS_FG(D7FF87), CS_FOREGROUND, XTERM_FG(192), sizeof(XTERM_FG(192))-1, T(COLOR_FG_D7FF87),  3, T("%x<#D7FF87>"), 11},
+    { CS_FG(D7FFAF), CS_FOREGROUND, XTERM_FG(193), sizeof(XTERM_FG(193))-1, T(COLOR_FG_D7FFAF),  3, T("%x<#D7FFAF>"), 11},
+    { CS_FG(D7FFD7), CS_FOREGROUND, XTERM_FG(194), sizeof(XTERM_FG(194))-1, T(COLOR_FG_D7FFD7),  3, T("%x<#D7FFD7>"), 11},
+    { CS_FG(D7FFFF), CS_FOREGROUND, XTERM_FG(195), sizeof(XTERM_FG(195))-1, T(COLOR_FG_D7FFFF),  3, T("%x<#D7FFFF>"), 11},
+    { CS_FG(FF0000), CS_FOREGROUND, XTERM_FG(196), sizeof(XTERM_FG(196))-1, T(COLOR_FG_FF0000),  3, T("%x<#FF0000>"), 11},
+    { CS_FG(FF005F), CS_FOREGROUND, XTERM_FG(197), sizeof(XTERM_FG(197))-1, T(COLOR_FG_FF005F),  3, T("%x<#FF005F>"), 11},
+    { CS_FG(FF0087), CS_FOREGROUND, XTERM_FG(198), sizeof(XTERM_FG(198))-1, T(COLOR_FG_FF0087),  3, T("%x<#FF0087>"), 11},
+    { CS_FG(FF00AF), CS_FOREGROUND, XTERM_FG(199), sizeof(XTERM_FG(199))-1, T(COLOR_FG_FF00AF),  3, T("%x<#FF00AF>"), 11},
+    { CS_FG(FF00D7), CS_FOREGROUND, XTERM_FG(200), sizeof(XTERM_FG(200))-1, T(COLOR_FG_FF00D7),  3, T("%x<#FF00D7>"), 11},
+    { CS_FG(FF00FF), CS_FOREGROUND, XTERM_FG(201), sizeof(XTERM_FG(201))-1, T(COLOR_FG_FF00FF),  3, T("%x<#FF00FF>"), 11},
+    { CS_FG(FF5F00), CS_FOREGROUND, XTERM_FG(202), sizeof(XTERM_FG(202))-1, T(COLOR_FG_FF5F00),  3, T("%x<#FF5F00>"), 11},
+    { CS_FG(FF5F5F), CS_FOREGROUND, XTERM_FG(203), sizeof(XTERM_FG(203))-1, T(COLOR_FG_FF5F5F),  3, T("%x<#FF5F5F>"), 11},
+    { CS_FG(FF5F87), CS_FOREGROUND, XTERM_FG(204), sizeof(XTERM_FG(204))-1, T(COLOR_FG_FF5F87),  3, T("%x<#FF5F87>"), 11},
+    { CS_FG(FF5FAF), CS_FOREGROUND, XTERM_FG(205), sizeof(XTERM_FG(205))-1, T(COLOR_FG_FF5FAF),  3, T("%x<#FF5FAF>"), 11},
+    { CS_FG(FF5FD7), CS_FOREGROUND, XTERM_FG(206), sizeof(XTERM_FG(206))-1, T(COLOR_FG_FF5FD7),  3, T("%x<#FF5FD7>"), 11},
+    { CS_FG(FF5FFF), CS_FOREGROUND, XTERM_FG(207), sizeof(XTERM_FG(207))-1, T(COLOR_FG_FF5FFF),  3, T("%x<#FF5FFF>"), 11},
+    { CS_FG(FF8700), CS_FOREGROUND, XTERM_FG(208), sizeof(XTERM_FG(208))-1, T(COLOR_FG_FF8700),  3, T("%x<#FF8700>"), 11},
+    { CS_FG(FF875F), CS_FOREGROUND, XTERM_FG(209), sizeof(XTERM_FG(209))-1, T(COLOR_FG_FF875F),  3, T("%x<#FF875F>"), 11},
+    { CS_FG(FF8787), CS_FOREGROUND, XTERM_FG(210), sizeof(XTERM_FG(210))-1, T(COLOR_FG_FF8787),  3, T("%x<#FF8787>"), 11},
+    { CS_FG(FF87AF), CS_FOREGROUND, XTERM_FG(211), sizeof(XTERM_FG(211))-1, T(COLOR_FG_FF87AF),  3, T("%x<#FF87AF>"), 11},
+    { CS_FG(FF87D7), CS_FOREGROUND, XTERM_FG(212), sizeof(XTERM_FG(212))-1, T(COLOR_FG_FF87D7),  3, T("%x<#FF87D7>"), 11},
+    { CS_FG(FF87FF), CS_FOREGROUND, XTERM_FG(213), sizeof(XTERM_FG(213))-1, T(COLOR_FG_FF87FF),  3, T("%x<#FF87FF>"), 11},
+    { CS_FG(FFAF00), CS_FOREGROUND, XTERM_FG(214), sizeof(XTERM_FG(214))-1, T(COLOR_FG_FFAF00),  3, T("%x<#FFAF00>"), 11},
+    { CS_FG(FFAF5F), CS_FOREGROUND, XTERM_FG(215), sizeof(XTERM_FG(215))-1, T(COLOR_FG_FFAF5F),  3, T("%x<#FFAF5F>"), 11},
+    { CS_FG(FFAF87), CS_FOREGROUND, XTERM_FG(216), sizeof(XTERM_FG(216))-1, T(COLOR_FG_FFAF87),  3, T("%x<#FFAF87>"), 11},
+    { CS_FG(FFAFAF), CS_FOREGROUND, XTERM_FG(217), sizeof(XTERM_FG(217))-1, T(COLOR_FG_FFAFAF),  3, T("%x<#FFAFAF>"), 11},
+    { CS_FG(FFAFD7), CS_FOREGROUND, XTERM_FG(218), sizeof(XTERM_FG(218))-1, T(COLOR_FG_FFAFD7),  3, T("%x<#FFAFD7>"), 11},
+    { CS_FG(FFAFFF), CS_FOREGROUND, XTERM_FG(219), sizeof(XTERM_FG(219))-1, T(COLOR_FG_FFAFFF),  3, T("%x<#FFAFFF>"), 11},
+    { CS_FG(FFD700), CS_FOREGROUND, XTERM_FG(220), sizeof(XTERM_FG(220))-1, T(COLOR_FG_FFD700),  3, T("%x<#FFD700>"), 11},
+    { CS_FG(FFD75F), CS_FOREGROUND, XTERM_FG(221), sizeof(XTERM_FG(221))-1, T(COLOR_FG_FFD75F),  3, T("%x<#FFD75F>"), 11},
+    { CS_FG(FFD787), CS_FOREGROUND, XTERM_FG(222), sizeof(XTERM_FG(222))-1, T(COLOR_FG_FFD787),  3, T("%x<#FFD787>"), 11},
+    { CS_FG(FFD7AF), CS_FOREGROUND, XTERM_FG(223), sizeof(XTERM_FG(223))-1, T(COLOR_FG_FFD7AF),  3, T("%x<#FFD7AF>"), 11},
+    { CS_FG(FFD7D7), CS_FOREGROUND, XTERM_FG(224), sizeof(XTERM_FG(224))-1, T(COLOR_FG_FFD7D7),  3, T("%x<#FFD7D7>"), 11},
+    { CS_FG(FFD7FF), CS_FOREGROUND, XTERM_FG(225), sizeof(XTERM_FG(225))-1, T(COLOR_FG_FFD7FF),  3, T("%x<#FFD7FF>"), 11},
+    { CS_FG(FFFF00), CS_FOREGROUND, XTERM_FG(226), sizeof(XTERM_FG(226))-1, T(COLOR_FG_FFFF00),  3, T("%x<#FFFF00>"), 11},
+    { CS_FG(FFFF5F), CS_FOREGROUND, XTERM_FG(227), sizeof(XTERM_FG(227))-1, T(COLOR_FG_FFFF5F),  3, T("%x<#FFFF5F>"), 11},
+    { CS_FG(FFFF87), CS_FOREGROUND, XTERM_FG(228), sizeof(XTERM_FG(228))-1, T(COLOR_FG_FFFF87),  3, T("%x<#FFFF87>"), 11},
+    { CS_FG(FFFFAF), CS_FOREGROUND, XTERM_FG(229), sizeof(XTERM_FG(229))-1, T(COLOR_FG_FFFFAF),  3, T("%x<#FFFFAF>"), 11},
+    { CS_FG(FFFFD7), CS_FOREGROUND, XTERM_FG(230), sizeof(XTERM_FG(230))-1, T(COLOR_FG_FFFFD7),  3, T("%x<#FFFFD7>"), 11},
+    { CS_FG(FFFFFF), CS_FOREGROUND, XTERM_FG(231), sizeof(XTERM_FG(231))-1, T(COLOR_FG_FFFFFF),  3, T("%x<#FFFFFF>"), 11},
+    { CS_FG(080808), CS_FOREGROUND, XTERM_FG(232), sizeof(XTERM_FG(232))-1, T(COLOR_FG_080808),  3, T("%x<#080808>"), 11},
+    { CS_FG(121212), CS_FOREGROUND, XTERM_FG(233), sizeof(XTERM_FG(233))-1, T(COLOR_FG_121212),  3, T("%x<#121212>"), 11},
+    { CS_FG(1C1C1C), CS_FOREGROUND, XTERM_FG(234), sizeof(XTERM_FG(234))-1, T(COLOR_FG_1C1C1C),  3, T("%x<#1C1C1C>"), 11},
+    { CS_FG(262626), CS_FOREGROUND, XTERM_FG(235), sizeof(XTERM_FG(235))-1, T(COLOR_FG_262626),  3, T("%x<#262626>"), 11},
+    { CS_FG(303030), CS_FOREGROUND, XTERM_FG(236), sizeof(XTERM_FG(236))-1, T(COLOR_FG_303030),  3, T("%x<#303030>"), 11},
+    { CS_FG(3A3A3A), CS_FOREGROUND, XTERM_FG(237), sizeof(XTERM_FG(237))-1, T(COLOR_FG_3A3A3A),  3, T("%x<#3A3A3A>"), 11},
+    { CS_FG(444444), CS_FOREGROUND, XTERM_FG(238), sizeof(XTERM_FG(238))-1, T(COLOR_FG_444444),  3, T("%x<#444444>"), 11},
+    { CS_FG(4E4E4E), CS_FOREGROUND, XTERM_FG(239), sizeof(XTERM_FG(239))-1, T(COLOR_FG_4E4E4E),  3, T("%x<#4E4E4E>"), 11},
+    { CS_FG(585858), CS_FOREGROUND, XTERM_FG(240), sizeof(XTERM_FG(240))-1, T(COLOR_FG_585858),  3, T("%x<#585858>"), 11},
+    { CS_FG(626262), CS_FOREGROUND, XTERM_FG(241), sizeof(XTERM_FG(241))-1, T(COLOR_FG_626262),  3, T("%x<#626262>"), 11},
+    { CS_FG(6C6C6C), CS_FOREGROUND, XTERM_FG(242), sizeof(XTERM_FG(242))-1, T(COLOR_FG_6C6C6C),  3, T("%x<#6C6C6C>"), 11},
+    { CS_FG(767676), CS_FOREGROUND, XTERM_FG(243), sizeof(XTERM_FG(243))-1, T(COLOR_FG_767676),  3, T("%x<#767676>"), 11},
+    { CS_FG(808080), CS_FOREGROUND, XTERM_FG(244), sizeof(XTERM_FG(244))-1, T(COLOR_FG_808080),  3, T("%x<#808080>"), 11},
+    { CS_FG(8A8A8A), CS_FOREGROUND, XTERM_FG(245), sizeof(XTERM_FG(245))-1, T(COLOR_FG_8A8A8A),  3, T("%x<#8A8A8A>"), 11},
+    { CS_FG(949494), CS_FOREGROUND, XTERM_FG(246), sizeof(XTERM_FG(246))-1, T(COLOR_FG_949494),  3, T("%x<#949494>"), 11},
+    { CS_FG(9E9E9E), CS_FOREGROUND, XTERM_FG(247), sizeof(XTERM_FG(247))-1, T(COLOR_FG_9E9E9E),  3, T("%x<#9E9E9E>"), 11},
+    { CS_FG(A8A8A8), CS_FOREGROUND, XTERM_FG(248), sizeof(XTERM_FG(248))-1, T(COLOR_FG_A8A8A8),  3, T("%x<#A8A8A8>"), 11},
+    { CS_FG(B2B2B2), CS_FOREGROUND, XTERM_FG(249), sizeof(XTERM_FG(249))-1, T(COLOR_FG_B2B2B2),  3, T("%x<#B2B2B2>"), 11},
+    { CS_FG(BCBCBC), CS_FOREGROUND, XTERM_FG(250), sizeof(XTERM_FG(250))-1, T(COLOR_FG_BCBCBC),  3, T("%x<#BCBCBC>"), 11},
+    { CS_FG(C6C6C6), CS_FOREGROUND, XTERM_FG(251), sizeof(XTERM_FG(251))-1, T(COLOR_FG_C6C6C6),  3, T("%x<#C6C6C6>"), 11},
+    { CS_FG(D0D0D0), CS_FOREGROUND, XTERM_FG(252), sizeof(XTERM_FG(252))-1, T(COLOR_FG_D0D0D0),  3, T("%x<#D0D0D0>"), 11},
+    { CS_FG(DADADA), CS_FOREGROUND, XTERM_FG(253), sizeof(XTERM_FG(253))-1, T(COLOR_FG_DADADA),  3, T("%x<#DADADA>"), 11},
+    { CS_FG(E4E4E4), CS_FOREGROUND, XTERM_FG(254), sizeof(XTERM_FG(254))-1, T(COLOR_FG_E4E4E4),  3, T("%x<#E4E4E4>"), 11},
+    { CS_FG(EEEEEE), CS_FOREGROUND, XTERM_FG(255), sizeof(XTERM_FG(255))-1, T(COLOR_FG_EEEEEE),  3, T("%x<#EEEEEE>"), 11},
     { CS_BG_BLACK,   CS_BACKGROUND, ANSI_BBLACK,   sizeof(ANSI_BBLACK)-1,   T(COLOR_BG_BLACK),   3, T("%xX"), 3}, // COLOR_INDEX_BG
     { CS_BG_RED,     CS_BACKGROUND, ANSI_BRED,     sizeof(ANSI_BRED)-1,     T(COLOR_BG_RED),     3, T("%xR"), 3},
     { CS_BG_GREEN,   CS_BACKGROUND, ANSI_BGREEN,   sizeof(ANSI_BGREEN)-1,   T(COLOR_BG_GREEN),   3, T("%xG"), 3},
@@ -1042,7 +1721,255 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_BG_BLUE,    CS_BACKGROUND, ANSI_BBLUE,    sizeof(ANSI_BBLUE)-1,    T(COLOR_BG_BLUE),    3, T("%xB"), 3},
     { CS_BG_MAGENTA, CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_MAGENTA), 3, T("%xM"), 3},
     { CS_BG_CYAN,    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_CYAN),    3, T("%xC"), 3},
-    { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}  // COLOR_LAST_CODE
+    { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}, // COLOR_LAST_CODE
+    { CS_BG(555555), CS_BACKGROUND, XTERM_BG(  8), sizeof(XTERM_BG(  8))-1, T(COLOR_BG_555555),  3, T("%X<#555555>"), 11},
+    { CS_BG(FF5555), CS_BACKGROUND, XTERM_BG(  9), sizeof(XTERM_BG(  9))-1, T(COLOR_BG_FF5555),  3, T("%X<#FF5555>"), 11},
+    { CS_BG(55FF55), CS_BACKGROUND, XTERM_BG( 10), sizeof(XTERM_BG( 10))-1, T(COLOR_BG_55FF55),  3, T("%X<#55FF55>"), 11},
+    { CS_BG(FFFF55), CS_BACKGROUND, XTERM_BG( 11), sizeof(XTERM_BG( 11))-1, T(COLOR_BG_FFFF55),  3, T("%X<#FFFF55>"), 11},
+    { CS_BG(5555FF), CS_BACKGROUND, XTERM_BG( 12), sizeof(XTERM_BG( 12))-1, T(COLOR_BG_5555FF),  3, T("%X<#5555FF>"), 11},
+    { CS_BG(FF55FF), CS_BACKGROUND, XTERM_BG( 13), sizeof(XTERM_BG( 13))-1, T(COLOR_BG_FF55FF),  3, T("%X<#FF55FF>"), 11},
+    { CS_BG(55FFFF), CS_BACKGROUND, XTERM_BG( 14), sizeof(XTERM_BG( 14))-1, T(COLOR_BG_55FFFF),  3, T("%X<#55FFFF>"), 11},
+    { CS_BG(FFFFFF), CS_BACKGROUND, XTERM_BG( 15), sizeof(XTERM_BG( 15))-1, T(COLOR_BG_FFFFFF),  3, T("%X<#FFFFFF>"), 11},
+    { CS_BG(000000), CS_BACKGROUND, XTERM_BG( 16), sizeof(XTERM_BG( 16))-1, T(COLOR_BG_000000),  3, T("%X<#000000>"), 11},
+    { CS_BG(00005F), CS_BACKGROUND, XTERM_BG( 17), sizeof(XTERM_BG( 17))-1, T(COLOR_BG_00005F),  3, T("%X<#00005F>"), 11},
+    { CS_BG(000087), CS_BACKGROUND, XTERM_BG( 18), sizeof(XTERM_BG( 18))-1, T(COLOR_BG_000087),  3, T("%X<#000087>"), 11},
+    { CS_BG(0000AF), CS_BACKGROUND, XTERM_BG( 19), sizeof(XTERM_BG( 19))-1, T(COLOR_BG_0000AF),  3, T("%X<#0000AF>"), 11},
+    { CS_BG(0000D7), CS_BACKGROUND, XTERM_BG( 20), sizeof(XTERM_BG( 20))-1, T(COLOR_BG_0000D7),  3, T("%X<#0000D7>"), 11},
+    { CS_BG(0000FF), CS_BACKGROUND, XTERM_BG( 21), sizeof(XTERM_BG( 21))-1, T(COLOR_BG_0000FF),  3, T("%X<#0000FF>"), 11},
+    { CS_BG(005F00), CS_BACKGROUND, XTERM_BG( 22), sizeof(XTERM_BG( 22))-1, T(COLOR_BG_005F00),  3, T("%X<#005F00>"), 11},
+    { CS_BG(005F5F), CS_BACKGROUND, XTERM_BG( 23), sizeof(XTERM_BG( 23))-1, T(COLOR_BG_005F5F),  3, T("%X<#005F5F>"), 11},
+    { CS_BG(005F87), CS_BACKGROUND, XTERM_BG( 24), sizeof(XTERM_BG( 24))-1, T(COLOR_BG_005F87),  3, T("%X<#005F87>"), 11},
+    { CS_BG(005FAF), CS_BACKGROUND, XTERM_BG( 25), sizeof(XTERM_BG( 25))-1, T(COLOR_BG_005FAF),  3, T("%X<#005FAF>"), 11},
+    { CS_BG(005FD7), CS_BACKGROUND, XTERM_BG( 26), sizeof(XTERM_BG( 26))-1, T(COLOR_BG_005FD7),  3, T("%X<#005FD7>"), 11},
+    { CS_BG(005FFF), CS_BACKGROUND, XTERM_BG( 27), sizeof(XTERM_BG( 27))-1, T(COLOR_BG_005FFF),  3, T("%X<#005FFF>"), 11},
+    { CS_BG(008700), CS_BACKGROUND, XTERM_BG( 28), sizeof(XTERM_BG( 28))-1, T(COLOR_BG_008700),  3, T("%X<#008700>"), 11},
+    { CS_BG(00875F), CS_BACKGROUND, XTERM_BG( 29), sizeof(XTERM_BG( 29))-1, T(COLOR_BG_00875F),  3, T("%X<#00875F>"), 11},
+    { CS_BG(008785), CS_BACKGROUND, XTERM_BG( 30), sizeof(XTERM_BG( 30))-1, T(COLOR_BG_008785),  3, T("%X<#008785>"), 11},
+    { CS_BG(0087AF), CS_BACKGROUND, XTERM_BG( 31), sizeof(XTERM_BG( 31))-1, T(COLOR_BG_0087AF),  3, T("%X<#0087AF>"), 11},
+    { CS_BG(0087D7), CS_BACKGROUND, XTERM_BG( 32), sizeof(XTERM_BG( 32))-1, T(COLOR_BG_0087D7),  3, T("%X<#0087D7>"), 11},
+    { CS_BG(0087FF), CS_BACKGROUND, XTERM_BG( 33), sizeof(XTERM_BG( 33))-1, T(COLOR_BG_0087FF),  3, T("%X<#0087FF>"), 11},
+    { CS_BG(00AF00), CS_BACKGROUND, XTERM_BG( 34), sizeof(XTERM_BG( 34))-1, T(COLOR_BG_00AF00),  3, T("%X<#00AF00>"), 11},
+    { CS_BG(00AF5F), CS_BACKGROUND, XTERM_BG( 35), sizeof(XTERM_BG( 35))-1, T(COLOR_BG_00AF5F),  3, T("%X<#00AF5F>"), 11},
+    { CS_BG(00AF87), CS_BACKGROUND, XTERM_BG( 36), sizeof(XTERM_BG( 36))-1, T(COLOR_BG_00AF87),  3, T("%X<#00AF87>"), 11},
+    { CS_BG(00AFAF), CS_BACKGROUND, XTERM_BG( 37), sizeof(XTERM_BG( 37))-1, T(COLOR_BG_00AFAF),  3, T("%X<#00AFAF>"), 11},
+    { CS_BG(00AFD7), CS_BACKGROUND, XTERM_BG( 38), sizeof(XTERM_BG( 38))-1, T(COLOR_BG_00AFD7),  3, T("%X<#00AFD7>"), 11},
+    { CS_BG(00AFFF), CS_BACKGROUND, XTERM_BG( 39), sizeof(XTERM_BG( 39))-1, T(COLOR_BG_00AFFF),  3, T("%X<#00AFFF>"), 11},
+    { CS_BG(00D700), CS_BACKGROUND, XTERM_BG( 40), sizeof(XTERM_BG( 40))-1, T(COLOR_BG_00D700),  3, T("%X<#00D700>"), 11},
+    { CS_BG(00D75F), CS_BACKGROUND, XTERM_BG( 41), sizeof(XTERM_BG( 41))-1, T(COLOR_BG_00D75F),  3, T("%X<#00D75F>"), 11},
+    { CS_BG(00D787), CS_BACKGROUND, XTERM_BG( 42), sizeof(XTERM_BG( 42))-1, T(COLOR_BG_00D787),  3, T("%X<#00D787>"), 11},
+    { CS_BG(00D7AF), CS_BACKGROUND, XTERM_BG( 43), sizeof(XTERM_BG( 43))-1, T(COLOR_BG_00D7AF),  3, T("%X<#00D7AF>"), 11},
+    { CS_BG(00D7D7), CS_BACKGROUND, XTERM_BG( 44), sizeof(XTERM_BG( 44))-1, T(COLOR_BG_00D7D7),  3, T("%X<#00D7D7>"), 11},
+    { CS_BG(00D7FF), CS_BACKGROUND, XTERM_BG( 45), sizeof(XTERM_BG( 45))-1, T(COLOR_BG_00D7FF),  3, T("%X<#00D7FF>"), 11},
+    { CS_BG(00FF00), CS_BACKGROUND, XTERM_BG( 46), sizeof(XTERM_BG( 46))-1, T(COLOR_BG_00FF00),  3, T("%X<#00FF00>"), 11},
+    { CS_BG(00FF5A), CS_BACKGROUND, XTERM_BG( 47), sizeof(XTERM_BG( 47))-1, T(COLOR_BG_00FF5A),  3, T("%X<#00FF5A>"), 11},
+    { CS_BG(00FF87), CS_BACKGROUND, XTERM_BG( 48), sizeof(XTERM_BG( 48))-1, T(COLOR_BG_00FF87),  3, T("%X<#00FF87>"), 11},
+    { CS_BG(00FFAF), CS_BACKGROUND, XTERM_BG( 49), sizeof(XTERM_BG( 49))-1, T(COLOR_BG_00FFAF),  3, T("%X<#00FFAF>"), 11},
+    { CS_BG(00FFD7), CS_BACKGROUND, XTERM_BG( 50), sizeof(XTERM_BG( 50))-1, T(COLOR_BG_00FFD7),  3, T("%X<#00FFD7>"), 11},
+    { CS_BG(00FFFF), CS_BACKGROUND, XTERM_BG( 51), sizeof(XTERM_BG( 51))-1, T(COLOR_BG_00FFFF),  3, T("%X<#00FFFF>"), 11},
+    { CS_BG(5F0000), CS_BACKGROUND, XTERM_BG( 52), sizeof(XTERM_BG( 52))-1, T(COLOR_BG_5F0000),  3, T("%X<#5F0000>"), 11},
+    { CS_BG(5F005F), CS_BACKGROUND, XTERM_BG( 53), sizeof(XTERM_BG( 53))-1, T(COLOR_BG_5F005F),  3, T("%X<#5F005F>"), 11},
+    { CS_BG(5F0087), CS_BACKGROUND, XTERM_BG( 54), sizeof(XTERM_BG( 54))-1, T(COLOR_BG_5F0087),  3, T("%X<#5F0087>"), 11},
+    { CS_BG(5F00AF), CS_BACKGROUND, XTERM_BG( 55), sizeof(XTERM_BG( 55))-1, T(COLOR_BG_5F00AF),  3, T("%X<#5F00AF>"), 11},
+    { CS_BG(5F00D7), CS_BACKGROUND, XTERM_BG( 56), sizeof(XTERM_BG( 56))-1, T(COLOR_BG_5F00D7),  3, T("%X<#5F00D7>"), 11},
+    { CS_BG(5F00FF), CS_BACKGROUND, XTERM_BG( 57), sizeof(XTERM_BG( 57))-1, T(COLOR_BG_5F00FF),  3, T("%X<#5F00FF>"), 11},
+    { CS_BG(5F5F00), CS_BACKGROUND, XTERM_BG( 58), sizeof(XTERM_BG( 58))-1, T(COLOR_BG_5F5F00),  3, T("%X<#5F5F00>"), 11},
+    { CS_BG(5F5F5F), CS_BACKGROUND, XTERM_BG( 59), sizeof(XTERM_BG( 59))-1, T(COLOR_BG_5F5F5F),  3, T("%X<#5F5F5F>"), 11},
+    { CS_BG(5F5F87), CS_BACKGROUND, XTERM_BG( 60), sizeof(XTERM_BG( 60))-1, T(COLOR_BG_5F5F87),  3, T("%X<#5F5F87>"), 11},
+    { CS_BG(5F5FAF), CS_BACKGROUND, XTERM_BG( 61), sizeof(XTERM_BG( 61))-1, T(COLOR_BG_5F5FAF),  3, T("%X<#5F5FAF>"), 11},
+    { CS_BG(5F5FD7), CS_BACKGROUND, XTERM_BG( 62), sizeof(XTERM_BG( 62))-1, T(COLOR_BG_5F5FD7),  3, T("%X<#5F5FD7>"), 11},
+    { CS_BG(5F5FFF), CS_BACKGROUND, XTERM_BG( 63), sizeof(XTERM_BG( 63))-1, T(COLOR_BG_5F5FFF),  3, T("%X<#5F5FFF>"), 11},
+    { CS_BG(5F8700), CS_BACKGROUND, XTERM_BG( 64), sizeof(XTERM_BG( 64))-1, T(COLOR_BG_5F8700),  3, T("%X<#5F8700>"), 11},
+    { CS_BG(5F875F), CS_BACKGROUND, XTERM_BG( 65), sizeof(XTERM_BG( 65))-1, T(COLOR_BG_5F875F),  3, T("%X<#5F875F>"), 11},
+    { CS_BG(5F8787), CS_BACKGROUND, XTERM_BG( 66), sizeof(XTERM_BG( 66))-1, T(COLOR_BG_5F8787),  3, T("%X<#5F8787>"), 11},
+    { CS_BG(5F87AF), CS_BACKGROUND, XTERM_BG( 67), sizeof(XTERM_BG( 67))-1, T(COLOR_BG_5F87AF),  3, T("%X<#5F87AF>"), 11},
+    { CS_BG(5F87D7), CS_BACKGROUND, XTERM_BG( 68), sizeof(XTERM_BG( 68))-1, T(COLOR_BG_5F87D7),  3, T("%X<#5F87D7>"), 11},
+    { CS_BG(5F87FF), CS_BACKGROUND, XTERM_BG( 69), sizeof(XTERM_BG( 69))-1, T(COLOR_BG_5F87FF),  3, T("%X<#5F87FF>"), 11},
+    { CS_BG(5FAF00), CS_BACKGROUND, XTERM_BG( 70), sizeof(XTERM_BG( 70))-1, T(COLOR_BG_5FAF00),  3, T("%X<#5FAF00>"), 11},
+    { CS_BG(5FAF5F), CS_BACKGROUND, XTERM_BG( 71), sizeof(XTERM_BG( 71))-1, T(COLOR_BG_5FAF5F),  3, T("%X<#5FAF5F>"), 11},
+    { CS_BG(5FAF87), CS_BACKGROUND, XTERM_BG( 72), sizeof(XTERM_BG( 72))-1, T(COLOR_BG_5FAF87),  3, T("%X<#5FAF87>"), 11},
+    { CS_BG(5FAFAF), CS_BACKGROUND, XTERM_BG( 73), sizeof(XTERM_BG( 73))-1, T(COLOR_BG_5FAFAF),  3, T("%X<#5FAFAF>"), 11},
+    { CS_BG(5FAFD7), CS_BACKGROUND, XTERM_BG( 74), sizeof(XTERM_BG( 74))-1, T(COLOR_BG_5FAFD7),  3, T("%X<#5FAFD7>"), 11},
+    { CS_BG(5FAFFF), CS_BACKGROUND, XTERM_BG( 75), sizeof(XTERM_BG( 75))-1, T(COLOR_BG_5FAFFF),  3, T("%X<#5FAFFF>"), 11},
+    { CS_BG(5FD700), CS_BACKGROUND, XTERM_BG( 76), sizeof(XTERM_BG( 76))-1, T(COLOR_BG_5FD700),  3, T("%X<#5FD700>"), 11},
+    { CS_BG(5FD75F), CS_BACKGROUND, XTERM_BG( 77), sizeof(XTERM_BG( 77))-1, T(COLOR_BG_5FD75F),  3, T("%X<#5FD75F>"), 11},
+    { CS_BG(5FD787), CS_BACKGROUND, XTERM_BG( 78), sizeof(XTERM_BG( 78))-1, T(COLOR_BG_5FD787),  3, T("%X<#5FD787>"), 11},
+    { CS_BG(5FD7AF), CS_BACKGROUND, XTERM_BG( 79), sizeof(XTERM_BG( 79))-1, T(COLOR_BG_5FD7AF),  3, T("%X<#5FD7AF>"), 11},
+    { CS_BG(5FD7D7), CS_BACKGROUND, XTERM_BG( 80), sizeof(XTERM_BG( 80))-1, T(COLOR_BG_5FD7D7),  3, T("%X<#5FD7D7>"), 11},
+    { CS_BG(5FD7FF), CS_BACKGROUND, XTERM_BG( 81), sizeof(XTERM_BG( 81))-1, T(COLOR_BG_5FD7FF),  3, T("%X<#5FD7FF>"), 11},
+    { CS_BG(5FFF00), CS_BACKGROUND, XTERM_BG( 82), sizeof(XTERM_BG( 82))-1, T(COLOR_BG_5FFF00),  3, T("%X<#5FFF00>"), 11},
+    { CS_BG(5FFF5F), CS_BACKGROUND, XTERM_BG( 83), sizeof(XTERM_BG( 83))-1, T(COLOR_BG_5FFF5F),  3, T("%X<#5FFF5F>"), 11},
+    { CS_BG(5FFF87), CS_BACKGROUND, XTERM_BG( 84), sizeof(XTERM_BG( 84))-1, T(COLOR_BG_5FFF87),  3, T("%X<#5FFF87>"), 11},
+    { CS_BG(5FFFAF), CS_BACKGROUND, XTERM_BG( 85), sizeof(XTERM_BG( 85))-1, T(COLOR_BG_5FFFAF),  3, T("%X<#5FFFAF>"), 11},
+    { CS_BG(5FFFD7), CS_BACKGROUND, XTERM_BG( 86), sizeof(XTERM_BG( 86))-1, T(COLOR_BG_5FFFD7),  3, T("%X<#5FFFD7>"), 11},
+    { CS_BG(5FFFFF), CS_BACKGROUND, XTERM_BG( 87), sizeof(XTERM_BG( 87))-1, T(COLOR_BG_5FFFFF),  3, T("%X<#5FFFFF>"), 11},
+    { CS_BG(870000), CS_BACKGROUND, XTERM_BG( 88), sizeof(XTERM_BG( 88))-1, T(COLOR_BG_870000),  3, T("%X<#870000>"), 11},
+    { CS_BG(87005F), CS_BACKGROUND, XTERM_BG( 89), sizeof(XTERM_BG( 89))-1, T(COLOR_BG_87005F),  3, T("%X<#87005F>"), 11},
+    { CS_BG(870087), CS_BACKGROUND, XTERM_BG( 90), sizeof(XTERM_BG( 90))-1, T(COLOR_BG_870087),  3, T("%X<#870087>"), 11},
+    { CS_BG(8700AF), CS_BACKGROUND, XTERM_BG( 91), sizeof(XTERM_BG( 91))-1, T(COLOR_BG_8700AF),  3, T("%X<#8700AF>"), 11},
+    { CS_BG(8700D7), CS_BACKGROUND, XTERM_BG( 92), sizeof(XTERM_BG( 92))-1, T(COLOR_BG_8700D7),  3, T("%X<#8700D7>"), 11},
+    { CS_BG(8700FF), CS_BACKGROUND, XTERM_BG( 93), sizeof(XTERM_BG( 93))-1, T(COLOR_BG_8700FF),  3, T("%X<#8700FF>"), 11},
+    { CS_BG(875F00), CS_BACKGROUND, XTERM_BG( 94), sizeof(XTERM_BG( 94))-1, T(COLOR_BG_875F00),  3, T("%X<#875F00>"), 11},
+    { CS_BG(875F5F), CS_BACKGROUND, XTERM_BG( 95), sizeof(XTERM_BG( 95))-1, T(COLOR_BG_875F5F),  3, T("%X<#875F5F>"), 11},
+    { CS_BG(875F87), CS_BACKGROUND, XTERM_BG( 96), sizeof(XTERM_BG( 96))-1, T(COLOR_BG_875F87),  3, T("%X<#875F87>"), 11},
+    { CS_BG(875FAF), CS_BACKGROUND, XTERM_BG( 97), sizeof(XTERM_BG( 97))-1, T(COLOR_BG_875FAF),  3, T("%X<#875FAF>"), 11},
+    { CS_BG(875FD7), CS_BACKGROUND, XTERM_BG( 98), sizeof(XTERM_BG( 98))-1, T(COLOR_BG_875FD7),  3, T("%X<#875FD7>"), 11},
+    { CS_BG(875FFF), CS_BACKGROUND, XTERM_BG( 99), sizeof(XTERM_BG( 99))-1, T(COLOR_BG_875FFF),  3, T("%X<#875FFF>"), 11},
+    { CS_BG(878700), CS_BACKGROUND, XTERM_BG(100), sizeof(XTERM_BG(100))-1, T(COLOR_BG_878700),  3, T("%X<#878700>"), 11},
+    { CS_BG(87875F), CS_BACKGROUND, XTERM_BG(101), sizeof(XTERM_BG(101))-1, T(COLOR_BG_87875F),  3, T("%X<#87875F>"), 11},
+    { CS_BG(878787), CS_BACKGROUND, XTERM_BG(102), sizeof(XTERM_BG(102))-1, T(COLOR_BG_878787),  3, T("%X<#878787>"), 11},
+    { CS_BG(8787AF), CS_BACKGROUND, XTERM_BG(103), sizeof(XTERM_BG(103))-1, T(COLOR_BG_8787AF),  3, T("%X<#8787AF>"), 11},
+    { CS_BG(8787D7), CS_BACKGROUND, XTERM_BG(104), sizeof(XTERM_BG(104))-1, T(COLOR_BG_8787D7),  3, T("%X<#8787D7>"), 11},
+    { CS_BG(8787FF), CS_BACKGROUND, XTERM_BG(105), sizeof(XTERM_BG(105))-1, T(COLOR_BG_8787FF),  3, T("%X<#8787FF>"), 11},
+    { CS_BG(87AF00), CS_BACKGROUND, XTERM_BG(106), sizeof(XTERM_BG(106))-1, T(COLOR_BG_87AF00),  3, T("%X<#87AF00>"), 11},
+    { CS_BG(87AF5F), CS_BACKGROUND, XTERM_BG(107), sizeof(XTERM_BG(107))-1, T(COLOR_BG_87AF5F),  3, T("%X<#87AF5F>"), 11},
+    { CS_BG(87AF87), CS_BACKGROUND, XTERM_BG(108), sizeof(XTERM_BG(108))-1, T(COLOR_BG_87AF87),  3, T("%X<#87AF87>"), 11},
+    { CS_BG(87AFAF), CS_BACKGROUND, XTERM_BG(109), sizeof(XTERM_BG(109))-1, T(COLOR_BG_87AFAF),  3, T("%X<#87AFAF>"), 11},
+    { CS_BG(87AFD7), CS_BACKGROUND, XTERM_BG(110), sizeof(XTERM_BG(110))-1, T(COLOR_BG_87AFD7),  3, T("%X<#87AFD7>"), 11},
+    { CS_BG(87AFFF), CS_BACKGROUND, XTERM_BG(111), sizeof(XTERM_BG(111))-1, T(COLOR_BG_87AFFF),  3, T("%X<#87AFFF>"), 11},
+    { CS_BG(87D700), CS_BACKGROUND, XTERM_BG(112), sizeof(XTERM_BG(112))-1, T(COLOR_BG_87D700),  3, T("%X<#87D700>"), 11},
+    { CS_BG(87D75A), CS_BACKGROUND, XTERM_BG(113), sizeof(XTERM_BG(113))-1, T(COLOR_BG_87D75A),  3, T("%X<#87D75A>"), 11},
+    { CS_BG(87D787), CS_BACKGROUND, XTERM_BG(114), sizeof(XTERM_BG(114))-1, T(COLOR_BG_87D787),  3, T("%X<#87D787>"), 11},
+    { CS_BG(87D7AF), CS_BACKGROUND, XTERM_BG(115), sizeof(XTERM_BG(115))-1, T(COLOR_BG_87D7AF),  3, T("%X<#87D7AF>"), 11},
+    { CS_BG(87D7D7), CS_BACKGROUND, XTERM_BG(116), sizeof(XTERM_BG(116))-1, T(COLOR_BG_87D7D7),  3, T("%X<#87D7D7>"), 11},
+    { CS_BG(87D7FF), CS_BACKGROUND, XTERM_BG(117), sizeof(XTERM_BG(117))-1, T(COLOR_BG_87D7FF),  3, T("%X<#87D7FF>"), 11},
+    { CS_BG(87FF00), CS_BACKGROUND, XTERM_BG(118), sizeof(XTERM_BG(118))-1, T(COLOR_BG_87FF00),  3, T("%X<#87FF00>"), 11},
+    { CS_BG(87FF5F), CS_BACKGROUND, XTERM_BG(119), sizeof(XTERM_BG(119))-1, T(COLOR_BG_87FF5F),  3, T("%X<#87FF5F>"), 11},
+    { CS_BG(87FF87), CS_BACKGROUND, XTERM_BG(120), sizeof(XTERM_BG(120))-1, T(COLOR_BG_87FF87),  3, T("%X<#87FF87>"), 11},
+    { CS_BG(87FFAF), CS_BACKGROUND, XTERM_BG(121), sizeof(XTERM_BG(121))-1, T(COLOR_BG_87FFAF),  3, T("%X<#87FFAF>"), 11},
+    { CS_BG(87FFD7), CS_BACKGROUND, XTERM_BG(122), sizeof(XTERM_BG(122))-1, T(COLOR_BG_87FFD7),  3, T("%X<#87FFD7>"), 11},
+    { CS_BG(87FFFF), CS_BACKGROUND, XTERM_BG(123), sizeof(XTERM_BG(123))-1, T(COLOR_BG_87FFFF),  3, T("%X<#87FFFF>"), 11},
+    { CS_BG(AF0000), CS_BACKGROUND, XTERM_BG(124), sizeof(XTERM_BG(124))-1, T(COLOR_BG_AF0000),  3, T("%X<#AF0000>"), 11},
+    { CS_BG(AF005F), CS_BACKGROUND, XTERM_BG(125), sizeof(XTERM_BG(125))-1, T(COLOR_BG_AF005F),  3, T("%X<#AF005F>"), 11},
+    { CS_BG(AF0087), CS_BACKGROUND, XTERM_BG(126), sizeof(XTERM_BG(126))-1, T(COLOR_BG_AF0087),  3, T("%X<#AF0087>"), 11},
+    { CS_BG(AF00AF), CS_BACKGROUND, XTERM_BG(127), sizeof(XTERM_BG(127))-1, T(COLOR_BG_AF00AF),  3, T("%X<#AF00AF>"), 11},
+    { CS_BG(AF00D7), CS_BACKGROUND, XTERM_BG(128), sizeof(XTERM_BG(128))-1, T(COLOR_BG_AF00D7),  3, T("%X<#AF00D7>"), 11},
+    { CS_BG(AF00FF), CS_BACKGROUND, XTERM_BG(129), sizeof(XTERM_BG(129))-1, T(COLOR_BG_AF00FF),  3, T("%X<#AF00FF>"), 11},
+    { CS_BG(AF5F00), CS_BACKGROUND, XTERM_BG(130), sizeof(XTERM_BG(130))-1, T(COLOR_BG_AF5F00),  3, T("%X<#AF5F00>"), 11},
+    { CS_BG(AF5F5F), CS_BACKGROUND, XTERM_BG(131), sizeof(XTERM_BG(131))-1, T(COLOR_BG_AF5F5F),  3, T("%X<#AF5F5F>"), 11},
+    { CS_BG(AF5F87), CS_BACKGROUND, XTERM_BG(132), sizeof(XTERM_BG(132))-1, T(COLOR_BG_AF5F87),  3, T("%X<#AF5F87>"), 11},
+    { CS_BG(AF5FAF), CS_BACKGROUND, XTERM_BG(133), sizeof(XTERM_BG(133))-1, T(COLOR_BG_AF5FAF),  3, T("%X<#AF5FAF>"), 11},
+    { CS_BG(AF5FD7), CS_BACKGROUND, XTERM_BG(134), sizeof(XTERM_BG(134))-1, T(COLOR_BG_AF5FD7),  3, T("%X<#AF5FD7>"), 11},
+    { CS_BG(AF5FFF), CS_BACKGROUND, XTERM_BG(135), sizeof(XTERM_BG(135))-1, T(COLOR_BG_AF5FFF),  3, T("%X<#AF5FFF>"), 11},
+    { CS_BG(AF8700), CS_BACKGROUND, XTERM_BG(136), sizeof(XTERM_BG(136))-1, T(COLOR_BG_AF8700),  3, T("%X<#AF8700>"), 11},
+    { CS_BG(AF875F), CS_BACKGROUND, XTERM_BG(137), sizeof(XTERM_BG(137))-1, T(COLOR_BG_AF875F),  3, T("%X<#AF875F>"), 11},
+    { CS_BG(AF8787), CS_BACKGROUND, XTERM_BG(138), sizeof(XTERM_BG(138))-1, T(COLOR_BG_AF8787),  3, T("%X<#AF8787>"), 11},
+    { CS_BG(AF87AF), CS_BACKGROUND, XTERM_BG(139), sizeof(XTERM_BG(139))-1, T(COLOR_BG_AF87AF),  3, T("%X<#AF87AF>"), 11},
+    { CS_BG(AF87D7), CS_BACKGROUND, XTERM_BG(140), sizeof(XTERM_BG(140))-1, T(COLOR_BG_AF87D7),  3, T("%X<#AF87D7>"), 11},
+    { CS_BG(AF87FF), CS_BACKGROUND, XTERM_BG(141), sizeof(XTERM_BG(141))-1, T(COLOR_BG_AF87FF),  3, T("%X<#AF87FF>"), 11},
+    { CS_BG(AFAF00), CS_BACKGROUND, XTERM_BG(142), sizeof(XTERM_BG(142))-1, T(COLOR_BG_AFAF00),  3, T("%X<#AFAF00>"), 11},
+    { CS_BG(AFAF5F), CS_BACKGROUND, XTERM_BG(143), sizeof(XTERM_BG(143))-1, T(COLOR_BG_AFAF5F),  3, T("%X<#AFAF5F>"), 11},
+    { CS_BG(AFAF87), CS_BACKGROUND, XTERM_BG(144), sizeof(XTERM_BG(144))-1, T(COLOR_BG_AFAF87),  3, T("%X<#AFAF87>"), 11},
+    { CS_BG(AFAFAF), CS_BACKGROUND, XTERM_BG(145), sizeof(XTERM_BG(145))-1, T(COLOR_BG_AFAFAF),  3, T("%X<#AFAFAF>"), 11},
+    { CS_BG(AFAFD7), CS_BACKGROUND, XTERM_BG(146), sizeof(XTERM_BG(146))-1, T(COLOR_BG_AFAFD7),  3, T("%X<#AFAFD7>"), 11},
+    { CS_BG(AFAFFF), CS_BACKGROUND, XTERM_BG(147), sizeof(XTERM_BG(147))-1, T(COLOR_BG_AFAFFF),  3, T("%X<#AFAFFF>"), 11},
+    { CS_BG(AFD700), CS_BACKGROUND, XTERM_BG(148), sizeof(XTERM_BG(148))-1, T(COLOR_BG_AFD700),  3, T("%X<#AFD700>"), 11},
+    { CS_BG(AFD75F), CS_BACKGROUND, XTERM_BG(149), sizeof(XTERM_BG(149))-1, T(COLOR_BG_AFD75F),  3, T("%X<#AFD75F>"), 11},
+    { CS_BG(AFD787), CS_BACKGROUND, XTERM_BG(150), sizeof(XTERM_BG(150))-1, T(COLOR_BG_AFD787),  3, T("%X<#AFD787>"), 11},
+    { CS_BG(AFD7AF), CS_BACKGROUND, XTERM_BG(151), sizeof(XTERM_BG(151))-1, T(COLOR_BG_AFD7AF),  3, T("%X<#AFD7AF>"), 11},
+    { CS_BG(AFD7D7), CS_BACKGROUND, XTERM_BG(152), sizeof(XTERM_BG(152))-1, T(COLOR_BG_AFD7D7),  3, T("%X<#AFD7D7>"), 11},
+    { CS_BG(AFD7FF), CS_BACKGROUND, XTERM_BG(153), sizeof(XTERM_BG(153))-1, T(COLOR_BG_AFD7FF),  3, T("%X<#AFD7FF>"), 11},
+    { CS_BG(AFFF00), CS_BACKGROUND, XTERM_BG(154), sizeof(XTERM_BG(154))-1, T(COLOR_BG_AFFF00),  3, T("%X<#AFFF00>"), 11},
+    { CS_BG(AFFF5F), CS_BACKGROUND, XTERM_BG(155), sizeof(XTERM_BG(155))-1, T(COLOR_BG_AFFF5F),  3, T("%X<#AFFF5F>"), 11},
+    { CS_BG(AFFF87), CS_BACKGROUND, XTERM_BG(156), sizeof(XTERM_BG(156))-1, T(COLOR_BG_AFFF87),  3, T("%X<#AFFF87>"), 11},
+    { CS_BG(AFFFAF), CS_BACKGROUND, XTERM_BG(157), sizeof(XTERM_BG(157))-1, T(COLOR_BG_AFFFAF),  3, T("%X<#AFFFAF>"), 11},
+    { CS_BG(AFFFD7), CS_BACKGROUND, XTERM_BG(158), sizeof(XTERM_BG(158))-1, T(COLOR_BG_AFFFD7),  3, T("%X<#AFFFD7>"), 11},
+    { CS_BG(AFFFFF), CS_BACKGROUND, XTERM_BG(159), sizeof(XTERM_BG(159))-1, T(COLOR_BG_AFFFFF),  3, T("%X<#AFFFFF>"), 11},
+    { CS_BG(D70000), CS_BACKGROUND, XTERM_BG(160), sizeof(XTERM_BG(160))-1, T(COLOR_BG_D70000),  3, T("%X<#D70000>"), 11},
+    { CS_BG(D7005F), CS_BACKGROUND, XTERM_BG(161), sizeof(XTERM_BG(161))-1, T(COLOR_BG_D7005F),  3, T("%X<#D7005F>"), 11},
+    { CS_BG(D70087), CS_BACKGROUND, XTERM_BG(162), sizeof(XTERM_BG(162))-1, T(COLOR_BG_D70087),  3, T("%X<#D70087>"), 11},
+    { CS_BG(D700AF), CS_BACKGROUND, XTERM_BG(163), sizeof(XTERM_BG(163))-1, T(COLOR_BG_D700AF),  3, T("%X<#D700AF>"), 11},
+    { CS_BG(D700D7), CS_BACKGROUND, XTERM_BG(164), sizeof(XTERM_BG(164))-1, T(COLOR_BG_D700D7),  3, T("%X<#D700D7>"), 11},
+    { CS_BG(D700FF), CS_BACKGROUND, XTERM_BG(165), sizeof(XTERM_BG(165))-1, T(COLOR_BG_D700FF),  3, T("%X<#D700FF>"), 11},
+    { CS_BG(D75F00), CS_BACKGROUND, XTERM_BG(166), sizeof(XTERM_BG(166))-1, T(COLOR_BG_D75F00),  3, T("%X<#D75F00>"), 11},
+    { CS_BG(D75F5F), CS_BACKGROUND, XTERM_BG(167), sizeof(XTERM_BG(167))-1, T(COLOR_BG_D75F5F),  3, T("%X<#D75F5F>"), 11},
+    { CS_BG(D75F87), CS_BACKGROUND, XTERM_BG(168), sizeof(XTERM_BG(168))-1, T(COLOR_BG_D75F87),  3, T("%X<#D75F87>"), 11},
+    { CS_BG(D75FAF), CS_BACKGROUND, XTERM_BG(169), sizeof(XTERM_BG(169))-1, T(COLOR_BG_D75FAF),  3, T("%X<#D75FAF>"), 11},
+    { CS_BG(D75FD7), CS_BACKGROUND, XTERM_BG(170), sizeof(XTERM_BG(170))-1, T(COLOR_BG_D75FD7),  3, T("%X<#D75FD7>"), 11},
+    { CS_BG(D75FFF), CS_BACKGROUND, XTERM_BG(171), sizeof(XTERM_BG(171))-1, T(COLOR_BG_D75FFF),  3, T("%X<#D75FFF>"), 11},
+    { CS_BG(D78700), CS_BACKGROUND, XTERM_BG(172), sizeof(XTERM_BG(172))-1, T(COLOR_BG_D78700),  3, T("%X<#D78700>"), 11},
+    { CS_BG(D7875A), CS_BACKGROUND, XTERM_BG(173), sizeof(XTERM_BG(173))-1, T(COLOR_BG_D7875A),  3, T("%X<#D7875A>"), 11},
+    { CS_BG(D78787), CS_BACKGROUND, XTERM_BG(174), sizeof(XTERM_BG(174))-1, T(COLOR_BG_D78787),  3, T("%X<#D78787>"), 11},
+    { CS_BG(D787AF), CS_BACKGROUND, XTERM_BG(175), sizeof(XTERM_BG(175))-1, T(COLOR_BG_D787AF),  3, T("%X<#D787AF>"), 11},
+    { CS_BG(D787D7), CS_BACKGROUND, XTERM_BG(176), sizeof(XTERM_BG(176))-1, T(COLOR_BG_D787D7),  3, T("%X<#D787D7>"), 11},
+    { CS_BG(D787FF), CS_BACKGROUND, XTERM_BG(177), sizeof(XTERM_BG(177))-1, T(COLOR_BG_D787FF),  3, T("%X<#D787FF>"), 11},
+    { CS_BG(D7AF00), CS_BACKGROUND, XTERM_BG(178), sizeof(XTERM_BG(178))-1, T(COLOR_BG_D7AF00),  3, T("%X<#D7AF00>"), 11},
+    { CS_BG(D7AF5A), CS_BACKGROUND, XTERM_BG(179), sizeof(XTERM_BG(179))-1, T(COLOR_BG_D7AF5A),  3, T("%X<#D7AF5A>"), 11},
+    { CS_BG(D7AF87), CS_BACKGROUND, XTERM_BG(180), sizeof(XTERM_BG(180))-1, T(COLOR_BG_D7AF87),  3, T("%X<#D7AF87>"), 11},
+    { CS_BG(D7AFAF), CS_BACKGROUND, XTERM_BG(181), sizeof(XTERM_BG(181))-1, T(COLOR_BG_D7AFAF),  3, T("%X<#D7AFAF>"), 11},
+    { CS_BG(D7AFD7), CS_BACKGROUND, XTERM_BG(182), sizeof(XTERM_BG(182))-1, T(COLOR_BG_D7AFD7),  3, T("%X<#D7AFD7>"), 11},
+    { CS_BG(D7AFFF), CS_BACKGROUND, XTERM_BG(183), sizeof(XTERM_BG(183))-1, T(COLOR_BG_D7AFFF),  3, T("%X<#D7AFFF>"), 11},
+    { CS_BG(D7D700), CS_BACKGROUND, XTERM_BG(184), sizeof(XTERM_BG(184))-1, T(COLOR_BG_D7D700),  3, T("%X<#D7D700>"), 11},
+    { CS_BG(D7D75F), CS_BACKGROUND, XTERM_BG(185), sizeof(XTERM_BG(185))-1, T(COLOR_BG_D7D75F),  3, T("%X<#D7D75F>"), 11},
+    { CS_BG(D7D787), CS_BACKGROUND, XTERM_BG(186), sizeof(XTERM_BG(186))-1, T(COLOR_BG_D7D787),  3, T("%X<#D7D787>"), 11},
+    { CS_BG(D7D7AF), CS_BACKGROUND, XTERM_BG(187), sizeof(XTERM_BG(187))-1, T(COLOR_BG_D7D7AF),  3, T("%X<#D7D7AF>"), 11},
+    { CS_BG(D7D7D7), CS_BACKGROUND, XTERM_BG(188), sizeof(XTERM_BG(188))-1, T(COLOR_BG_D7D7D7),  3, T("%X<#D7D7D7>"), 11},
+    { CS_BG(D7D7FF), CS_BACKGROUND, XTERM_BG(189), sizeof(XTERM_BG(189))-1, T(COLOR_BG_D7D7FF),  3, T("%X<#D7D7FF>"), 11},
+    { CS_BG(D7FF00), CS_BACKGROUND, XTERM_BG(190), sizeof(XTERM_BG(190))-1, T(COLOR_BG_D7FF00),  3, T("%X<#D7FF00>"), 11},
+    { CS_BG(D7FF5F), CS_BACKGROUND, XTERM_BG(191), sizeof(XTERM_BG(191))-1, T(COLOR_BG_D7FF5F),  3, T("%X<#D7FF5F>"), 11},
+    { CS_BG(D7FF87), CS_BACKGROUND, XTERM_BG(192), sizeof(XTERM_BG(192))-1, T(COLOR_BG_D7FF87),  3, T("%X<#D7FF87>"), 11},
+    { CS_BG(D7FFAF), CS_BACKGROUND, XTERM_BG(193), sizeof(XTERM_BG(193))-1, T(COLOR_BG_D7FFAF),  3, T("%X<#D7FFAF>"), 11},
+    { CS_BG(D7FFD7), CS_BACKGROUND, XTERM_BG(194), sizeof(XTERM_BG(194))-1, T(COLOR_BG_D7FFD7),  3, T("%X<#D7FFD7>"), 11},
+    { CS_BG(D7FFFF), CS_BACKGROUND, XTERM_BG(195), sizeof(XTERM_BG(195))-1, T(COLOR_BG_D7FFFF),  3, T("%X<#D7FFFF>"), 11},
+    { CS_BG(FF0000), CS_BACKGROUND, XTERM_BG(196), sizeof(XTERM_BG(196))-1, T(COLOR_BG_FF0000),  3, T("%X<#FF0000>"), 11},
+    { CS_BG(FF005F), CS_BACKGROUND, XTERM_BG(197), sizeof(XTERM_BG(197))-1, T(COLOR_BG_FF005F),  3, T("%X<#FF005F>"), 11},
+    { CS_BG(FF0087), CS_BACKGROUND, XTERM_BG(198), sizeof(XTERM_BG(198))-1, T(COLOR_BG_FF0087),  3, T("%X<#FF0087>"), 11},
+    { CS_BG(FF00AF), CS_BACKGROUND, XTERM_BG(199), sizeof(XTERM_BG(199))-1, T(COLOR_BG_FF00AF),  3, T("%X<#FF00AF>"), 11},
+    { CS_BG(FF00D7), CS_BACKGROUND, XTERM_BG(200), sizeof(XTERM_BG(200))-1, T(COLOR_BG_FF00D7),  3, T("%X<#FF00D7>"), 11},
+    { CS_BG(FF00FF), CS_BACKGROUND, XTERM_BG(201), sizeof(XTERM_BG(201))-1, T(COLOR_BG_FF00FF),  3, T("%X<#FF00FF>"), 11},
+    { CS_BG(FF5F00), CS_BACKGROUND, XTERM_BG(202), sizeof(XTERM_BG(202))-1, T(COLOR_BG_FF5F00),  3, T("%X<#FF5F00>"), 11},
+    { CS_BG(FF5F5F), CS_BACKGROUND, XTERM_BG(203), sizeof(XTERM_BG(203))-1, T(COLOR_BG_FF5F5F),  3, T("%X<#FF5F5F>"), 11},
+    { CS_BG(FF5F87), CS_BACKGROUND, XTERM_BG(204), sizeof(XTERM_BG(204))-1, T(COLOR_BG_FF5F87),  3, T("%X<#FF5F87>"), 11},
+    { CS_BG(FF5FAF), CS_BACKGROUND, XTERM_BG(205), sizeof(XTERM_BG(205))-1, T(COLOR_BG_FF5FAF),  3, T("%X<#FF5FAF>"), 11},
+    { CS_BG(FF5FD7), CS_BACKGROUND, XTERM_BG(206), sizeof(XTERM_BG(206))-1, T(COLOR_BG_FF5FD7),  3, T("%X<#FF5FD7>"), 11},
+    { CS_BG(FF5FFF), CS_BACKGROUND, XTERM_BG(207), sizeof(XTERM_BG(207))-1, T(COLOR_BG_FF5FFF),  3, T("%X<#FF5FFF>"), 11},
+    { CS_BG(FF8700), CS_BACKGROUND, XTERM_BG(208), sizeof(XTERM_BG(208))-1, T(COLOR_BG_FF8700),  3, T("%X<#FF8700>"), 11},
+    { CS_BG(FF875F), CS_BACKGROUND, XTERM_BG(209), sizeof(XTERM_BG(209))-1, T(COLOR_BG_FF875F),  3, T("%X<#FF875F>"), 11},
+    { CS_BG(FF8787), CS_BACKGROUND, XTERM_BG(210), sizeof(XTERM_BG(210))-1, T(COLOR_BG_FF8787),  3, T("%X<#FF8787>"), 11},
+    { CS_BG(FF87AF), CS_BACKGROUND, XTERM_BG(211), sizeof(XTERM_BG(211))-1, T(COLOR_BG_FF87AF),  3, T("%X<#FF87AF>"), 11},
+    { CS_BG(FF87D7), CS_BACKGROUND, XTERM_BG(212), sizeof(XTERM_BG(212))-1, T(COLOR_BG_FF87D7),  3, T("%X<#FF87D7>"), 11},
+    { CS_BG(FF87FF), CS_BACKGROUND, XTERM_BG(213), sizeof(XTERM_BG(213))-1, T(COLOR_BG_FF87FF),  3, T("%X<#FF87FF>"), 11},
+    { CS_BG(FFAF00), CS_BACKGROUND, XTERM_BG(214), sizeof(XTERM_BG(214))-1, T(COLOR_BG_FFAF00),  3, T("%X<#FFAF00>"), 11},
+    { CS_BG(FFAF5F), CS_BACKGROUND, XTERM_BG(215), sizeof(XTERM_BG(215))-1, T(COLOR_BG_FFAF5F),  3, T("%X<#FFAF5F>"), 11},
+    { CS_BG(FFAF87), CS_BACKGROUND, XTERM_BG(216), sizeof(XTERM_BG(216))-1, T(COLOR_BG_FFAF87),  3, T("%X<#FFAF87>"), 11},
+    { CS_BG(FFAFAF), CS_BACKGROUND, XTERM_BG(217), sizeof(XTERM_BG(217))-1, T(COLOR_BG_FFAFAF),  3, T("%X<#FFAFAF>"), 11},
+    { CS_BG(FFAFD7), CS_BACKGROUND, XTERM_BG(218), sizeof(XTERM_BG(218))-1, T(COLOR_BG_FFAFD7),  3, T("%X<#FFAFD7>"), 11},
+    { CS_BG(FFAFFF), CS_BACKGROUND, XTERM_BG(219), sizeof(XTERM_BG(219))-1, T(COLOR_BG_FFAFFF),  3, T("%X<#FFAFFF>"), 11},
+    { CS_BG(FFD700), CS_BACKGROUND, XTERM_BG(220), sizeof(XTERM_BG(220))-1, T(COLOR_BG_FFD700),  3, T("%X<#FFD700>"), 11},
+    { CS_BG(FFD75F), CS_BACKGROUND, XTERM_BG(221), sizeof(XTERM_BG(221))-1, T(COLOR_BG_FFD75F),  3, T("%X<#FFD75F>"), 11},
+    { CS_BG(FFD787), CS_BACKGROUND, XTERM_BG(222), sizeof(XTERM_BG(222))-1, T(COLOR_BG_FFD787),  3, T("%X<#FFD787>"), 11},
+    { CS_BG(FFD7AF), CS_BACKGROUND, XTERM_BG(223), sizeof(XTERM_BG(223))-1, T(COLOR_BG_FFD7AF),  3, T("%X<#FFD7AF>"), 11},
+    { CS_BG(FFD7D7), CS_BACKGROUND, XTERM_BG(224), sizeof(XTERM_BG(224))-1, T(COLOR_BG_FFD7D7),  3, T("%X<#FFD7D7>"), 11},
+    { CS_BG(FFD7FF), CS_BACKGROUND, XTERM_BG(225), sizeof(XTERM_BG(225))-1, T(COLOR_BG_FFD7FF),  3, T("%X<#FFD7FF>"), 11},
+    { CS_BG(FFFF00), CS_BACKGROUND, XTERM_BG(226), sizeof(XTERM_BG(226))-1, T(COLOR_BG_FFFF00),  3, T("%X<#FFFF00>"), 11},
+    { CS_BG(FFFF5F), CS_BACKGROUND, XTERM_BG(227), sizeof(XTERM_BG(227))-1, T(COLOR_BG_FFFF5F),  3, T("%X<#FFFF5F>"), 11},
+    { CS_BG(FFFF87), CS_BACKGROUND, XTERM_BG(228), sizeof(XTERM_BG(228))-1, T(COLOR_BG_FFFF87),  3, T("%X<#FFFF87>"), 11},
+    { CS_BG(FFFFAF), CS_BACKGROUND, XTERM_BG(229), sizeof(XTERM_BG(229))-1, T(COLOR_BG_FFFFAF),  3, T("%X<#FFFFAF>"), 11},
+    { CS_BG(FFFFD7), CS_BACKGROUND, XTERM_BG(230), sizeof(XTERM_BG(230))-1, T(COLOR_BG_FFFFD7),  3, T("%X<#FFFFD7>"), 11},
+    { CS_BG(FFFFFF), CS_BACKGROUND, XTERM_BG(231), sizeof(XTERM_BG(231))-1, T(COLOR_BG_FFFFFF),  3, T("%X<#FFFFFF>"), 11},
+    { CS_BG(080808), CS_BACKGROUND, XTERM_BG(232), sizeof(XTERM_BG(232))-1, T(COLOR_BG_080808),  3, T("%X<#080808>"), 11},
+    { CS_BG(121212), CS_BACKGROUND, XTERM_BG(233), sizeof(XTERM_BG(233))-1, T(COLOR_BG_121212),  3, T("%X<#121212>"), 11},
+    { CS_BG(1C1C1C), CS_BACKGROUND, XTERM_BG(234), sizeof(XTERM_BG(234))-1, T(COLOR_BG_1C1C1C),  3, T("%X<#1C1C1C>"), 11},
+    { CS_BG(262626), CS_BACKGROUND, XTERM_BG(235), sizeof(XTERM_BG(235))-1, T(COLOR_BG_262626),  3, T("%X<#262626>"), 11},
+    { CS_BG(303030), CS_BACKGROUND, XTERM_BG(236), sizeof(XTERM_BG(236))-1, T(COLOR_BG_303030),  3, T("%X<#303030>"), 11},
+    { CS_BG(3A3A3A), CS_BACKGROUND, XTERM_BG(237), sizeof(XTERM_BG(237))-1, T(COLOR_BG_3A3A3A),  3, T("%X<#3A3A3A>"), 11},
+    { CS_BG(444444), CS_BACKGROUND, XTERM_BG(238), sizeof(XTERM_BG(238))-1, T(COLOR_BG_444444),  3, T("%X<#444444>"), 11},
+    { CS_BG(4E4E4E), CS_BACKGROUND, XTERM_BG(239), sizeof(XTERM_BG(239))-1, T(COLOR_BG_4E4E4E),  3, T("%X<#4E4E4E>"), 11},
+    { CS_BG(585858), CS_BACKGROUND, XTERM_BG(240), sizeof(XTERM_BG(240))-1, T(COLOR_BG_585858),  3, T("%X<#585858>"), 11},
+    { CS_BG(626262), CS_BACKGROUND, XTERM_BG(241), sizeof(XTERM_BG(241))-1, T(COLOR_BG_626262),  3, T("%X<#626262>"), 11},
+    { CS_BG(6C6C6C), CS_BACKGROUND, XTERM_BG(242), sizeof(XTERM_BG(242))-1, T(COLOR_BG_6C6C6C),  3, T("%X<#6C6C6C>"), 11},
+    { CS_BG(767676), CS_BACKGROUND, XTERM_BG(243), sizeof(XTERM_BG(243))-1, T(COLOR_BG_767676),  3, T("%X<#767676>"), 11},
+    { CS_BG(808080), CS_BACKGROUND, XTERM_BG(244), sizeof(XTERM_BG(244))-1, T(COLOR_BG_808080),  3, T("%X<#808080>"), 11},
+    { CS_BG(8A8A8A), CS_BACKGROUND, XTERM_BG(245), sizeof(XTERM_BG(245))-1, T(COLOR_BG_8A8A8A),  3, T("%X<#8A8A8A>"), 11},
+    { CS_BG(949494), CS_BACKGROUND, XTERM_BG(246), sizeof(XTERM_BG(246))-1, T(COLOR_BG_949494),  3, T("%X<#949494>"), 11},
+    { CS_BG(9E9E9E), CS_BACKGROUND, XTERM_BG(247), sizeof(XTERM_BG(247))-1, T(COLOR_BG_9E9E9E),  3, T("%X<#9E9E9E>"), 11},
+    { CS_BG(A8A8A8), CS_BACKGROUND, XTERM_BG(248), sizeof(XTERM_BG(248))-1, T(COLOR_BG_A8A8A8),  3, T("%X<#A8A8A8>"), 11},
+    { CS_BG(B2B2B2), CS_BACKGROUND, XTERM_BG(249), sizeof(XTERM_BG(249))-1, T(COLOR_BG_B2B2B2),  3, T("%X<#B2B2B2>"), 11},
+    { CS_BG(BCBCBC), CS_BACKGROUND, XTERM_BG(250), sizeof(XTERM_BG(250))-1, T(COLOR_BG_BCBCBC),  3, T("%X<#BCBCBC>"), 11},
+    { CS_BG(C6C6C6), CS_BACKGROUND, XTERM_BG(251), sizeof(XTERM_BG(251))-1, T(COLOR_BG_C6C6C6),  3, T("%X<#C6C6C6>"), 11},
+    { CS_BG(D0D0D0), CS_BACKGROUND, XTERM_BG(252), sizeof(XTERM_BG(252))-1, T(COLOR_BG_D0D0D0),  3, T("%X<#D0D0D0>"), 11},
+    { CS_BG(DADADA), CS_BACKGROUND, XTERM_BG(253), sizeof(XTERM_BG(253))-1, T(COLOR_BG_DADADA),  3, T("%X<#DADADA>"), 11},
+    { CS_BG(E4E4E4), CS_BACKGROUND, XTERM_BG(254), sizeof(XTERM_BG(254))-1, T(COLOR_BG_E4E4E4),  3, T("%X<#E4E4E4>"), 11},
+    { CS_BG(EEEEEE), CS_BACKGROUND, XTERM_BG(255), sizeof(XTERM_BG(255))-1, T(COLOR_BG_EEEEEE),  3, T("%X<#EEEEEE>"), 11},
 };
 
 /*! \brief Validate ColorState.
@@ -1118,7 +2045,7 @@ static UTF8 *ColorTransitionBinary
         csCurrent = CS_NORMAL;
     }
 
-    UINT16 tmp = csCurrent ^ csNext;
+    ColorState tmp = csCurrent ^ csNext;
     if (CS_ATTRS & tmp)
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
@@ -1131,9 +2058,11 @@ static UTF8 *ColorTransitionBinary
         }
     }
 
+    RGB rgb;
     if (CS_FOREGROUND & tmp)
     {
-        unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
+        cs2rgb(CS_FOREGROUND & csNext, &rgb);
+        unsigned int iForeground = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb);
         if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iForeground].pUTF, aColors[iForeground].nUTF);
@@ -1143,7 +2072,8 @@ static UTF8 *ColorTransitionBinary
 
     if (CS_BACKGROUND & tmp)
     {
-        unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
+        cs2rgb((CS_BACKGROUND & csNext) >> 32, &rgb);
+        unsigned int iBackground = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb);
         if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iBackground].pUTF, aColors[iBackground].nUTF);
@@ -1236,7 +2166,7 @@ static UTF8 *ColorTransitionEscape
         csCurrent = CS_NORMAL;
     }
 
-    UINT16 tmp = csCurrent ^ csNext;
+    ColorState tmp = csCurrent ^ csNext;
     if (CS_ATTRS & tmp)
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
@@ -1249,9 +2179,11 @@ static UTF8 *ColorTransitionEscape
         }
     }
 
+    RGB rgb;
     if (CS_FOREGROUND & tmp)
     {
-        unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
+        cs2rgb(CS_FOREGROUND & csNext, &rgb);
+        unsigned int iForeground = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb);
         if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iForeground].pEscape, aColors[iForeground].nEscape);
@@ -1261,7 +2193,8 @@ static UTF8 *ColorTransitionEscape
 
     if (CS_BACKGROUND & tmp)
     {
-        unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
+        cs2rgb((CS_BACKGROUND & csNext) >> 32, &rgb);
+        unsigned int iBackground = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb);
         if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iBackground].pEscape, aColors[iBackground].nEscape);
@@ -1337,7 +2270,7 @@ static UTF8 *ColorTransitionANSI
         csCurrent = CS_NORMAL;
     }
 
-    UINT16 tmp = csCurrent ^ csNext;
+    ColorState tmp = csCurrent ^ csNext;
     if (CS_ATTRS & tmp)
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
@@ -1350,9 +2283,11 @@ static UTF8 *ColorTransitionANSI
         }
     }
 
+    RGB rgb;
     if (CS_FOREGROUND & tmp)
     {
-        unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
+        cs2rgb(CS_FOREGROUND & csNext, &rgb);
+        unsigned int iForeground = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb);
         if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iForeground].pAnsi, aColors[iForeground].nAnsi);
@@ -1362,7 +2297,8 @@ static UTF8 *ColorTransitionANSI
 
     if (CS_BACKGROUND & tmp)
     {
-        unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
+        cs2rgb((CS_BACKGROUND & csNext) >> 32, &rgb);
+        unsigned int iBackground = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb);
         if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iBackground].pAnsi, aColors[iBackground].nAnsi);

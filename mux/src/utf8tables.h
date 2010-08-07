@@ -203,12 +203,12 @@ extern const string_desc tr_foldmatch_ott[3];
 // utf/tr_Color.txt
 //
 // 517 code points.
-// 5 states, 13 columns, 309 bytes
+// 11 states, 66 columns, 1418 bytes
 //
 #define TR_COLOR_START_STATE (0)
-#define TR_COLOR_ACCEPTING_STATES_START (5)
+#define TR_COLOR_ACCEPTING_STATES_START (11)
 extern const unsigned char tr_color_itt[256];
-extern const unsigned char tr_color_sot[5];
-extern const unsigned char tr_color_sbt[48];
+extern const unsigned short tr_color_sot[11];
+extern const unsigned short tr_color_sbt[570];
 
 #endif // UTF8TABLES_H

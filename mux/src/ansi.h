@@ -35,6 +35,7 @@
 #define ANSI_MAGENTA    "\033[35m"
 #define ANSI_CYAN       "\033[36m"
 #define ANSI_WHITE      "\033[37m"
+#define XTERM_FG(x)     "\033[38;5;" #x "m"
 
 // Background colors.
 //
@@ -46,5 +47,6 @@
 #define ANSI_BMAGENTA   "\033[45m"
 #define ANSI_BCYAN      "\033[46m"
 #define ANSI_BWHITE     "\033[47m"
+#define XTERM_BG(x)     "\033[48;5;" #x "m"
 
 #endif // !_ANSI_H

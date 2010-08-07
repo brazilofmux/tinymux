@@ -1056,8 +1056,8 @@ static const unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0, 22,  0,  0,  0,  0, // 0x20-0x2F
       1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0, 21,  0,  0, // 0x30-0x3F
-     20,145,  7,  6,  0,  0,  0,  0,   0, 24,  0, 23,  9,147,140,144, // 0x40-0x4F
-    143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
+     20,145,  7, 70,  0,  0,  0,  0,   0, 24,  0, 23,  9,147,140,144, // 0x40-0x4F
+    143,130,  5,142,  8,  0,138,  0,  70,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
      20, 17,  7,  6,  0,  0,  0,  0,   0, 24,  0, 23,  9, 19, 12, 16, // 0x60-0x6F
      15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
@@ -1144,6 +1144,73 @@ void PopRegisters(reg_ref **p, int nNeeded)
     }
     //mux_assert(p == pRefsFrame->refs + pRefsFrame->nrefs);
     pRefsFrame->nrefs += nNeeded;
+}
+
+bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
+{
+    UTF8 ch;
+    if (  7 == n
+       && '#' == p[0])
+    {
+        // Look for RRGGBB in hexidecimal.
+        //
+        for (int i = 1; i < 7; i++)
+        {
+            ch = p[i];
+            if (  !('0' <= ch && ch <= '9')
+               && !('a' <= ch && ch <= 'f')
+               && !('A' <= ch && ch <= 'F'))
+            {
+                return false;
+            }
+        }
+
+        rgb.r = (mux_hex2dec(p[1]) << 4) | mux_hex2dec(p[2]);
+        rgb.g = (mux_hex2dec(p[3]) << 4) | mux_hex2dec(p[4]);
+        rgb.b = (mux_hex2dec(p[5]) << 4) | mux_hex2dec(p[6]);
+        return true;
+    }
+
+    int nSpaces = 0;
+    int nDigits = 0;
+    for (int i = 0; i < n; i++)
+    {
+        ch = p[i];
+        if (mux_isspace(ch))
+        {
+            if (  3 < nDigits
+               || 0 == nDigits
+               || 1 < nSpaces)
+            {
+                return false;
+            }
+            if (0 == nSpaces)
+            {
+                rgb.r = mux_atol(p+i-nDigits);
+            }
+            else
+            {
+                rgb.g = mux_atol(p+i-nDigits);
+            }
+            nDigits = 0;
+            nSpaces++;
+        }
+        else if (!mux_isdigit(ch))
+        {
+            return false;
+        }
+        else
+        {
+            nDigits++;
+        }
+    }
+    if (  3 < nDigits
+       || 0 == nDigits)
+    {
+        return false;
+    }
+    rgb.b = mux_atol(p+n-nDigits-1);
+    return true;
 }
 
 void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
@@ -1567,7 +1634,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 ch = pStr[iStr];
                 unsigned char cType_L2 = isSpecial(L2, ch);
                 TempPtr = *bufc;
-                int iCode = cType_L2 & 0x7F;
+                int iCode = cType_L2 & 0x3F;
                 if (iCode == 1)
                 {
                     // 30 31 32 33 34 35 36 37 38 39
@@ -1655,18 +1722,54 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         //
                         // Color
                         //
-                        unsigned int iColor = ColorTable[pStr[iStr + 1]];
-                        if (iColor)
+                        n = 1;
+                        unsigned int iColor;
+                        if ('<' == pStr[iStr + n])
                         {
-                            iStr++;
-                            ansi = true;
-                            safe_str(aColors[iColor].pUTF, buff, bufc);
-                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            n++;
+
+                            while (  '\0' != pStr[iStr + n]
+                                  && '>' != pStr[iStr + n])
+                            {
+                                n++;
+                            }
+                            if (nStr < iStr + n)
+                            {
+                                n = nStr - iStr;
+                            }
+                            if ('>' == pStr[iStr + n])
+                            {
+                                // Adjust for the x< at the beginning.
+                                //
+                                iStr += 2;
+                                n -= 2;
+
+                                RGB rgb;
+                                if (parse_rgb(n, pStr+iStr, rgb))
+                                {
+                                    iColor = FindNearestPaletteEntry(rgb) + ((cType_L2 & 0x40) ? COLOR_INDEX_BG : COLOR_INDEX_FG);
+                                    safe_str(aColors[iColor].pUTF, buff, bufc);
+                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                    ansi = true;
+                                }
+                                iStr += n;
+                            }
                         }
-                        else if (pStr[iStr + 1] && nBufferAvailable)
+                        else
                         {
-                            *(*bufc)++ = pStr[iStr];
-                            nBufferAvailable--;
+                            iColor = ColorTable[pStr[iStr + 1]];
+                            if (iColor)
+                            {
+                                iStr++;
+                                ansi = true;
+                                safe_str(aColors[iColor].pUTF, buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            }
+                            else if (pStr[iStr + 1] && nBufferAvailable)
+                            {
+                                *(*bufc)++ = pStr[iStr];
+                                nBufferAvailable--;
+                            }
                         }
                     }
                     else
