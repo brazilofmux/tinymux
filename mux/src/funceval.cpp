@@ -163,31 +163,6 @@ FUNCTION(fun_beep)
     safe_chr(BEEP_CHAR, buff, bufc);
 }
 
-void SimplifyColorLetters(UTF8 Out[8], UTF8 *pIn)
-{
-    UTF8 *pOut = Out;
-    if (  pIn[0] == 'n'
-       && pIn[1] == '\0')
-    {
-        pOut[0] = 'n';
-        pOut[1] = '\0';
-        return;
-    }
-    ColorState have = 0;
-    size_t nIn = strlen((char *)pIn);
-    for (size_t i = 1; i <= nIn && pIn[nIn - i] != 'n'; i++)
-    {
-        ColorState mask = aColors[ColorTable[pIn[nIn - i]]].csMask;
-        if (  mask
-           && (have & mask) == 0)
-        {
-            *pOut++ = pIn[nIn - i];
-            have |= mask;
-        }
-    }
-    *pOut = '\0';
-}
-
 // This function was originally taken from PennMUSH 1.50
 //
 FUNCTION(fun_ansi)
@@ -202,19 +177,10 @@ FUNCTION(fun_ansi)
     int iArg0;
     for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
     {
-        UTF8   pOut[8];
-        SimplifyColorLetters(pOut, fargs[iArg0]);
         UTF8 tmp[LBUF_SIZE];
         UTF8 *bp = tmp;
 
-        for (size_t i = 0; '\0' != pOut[i]; i++)
-        {
-            unsigned int iColor = ColorTable[pOut[i]];
-            if (0 < iColor)
-            {
-                safe_str(aColors[iColor].pUTF, tmp, &bp);
-            }
-        }
+        safe_str(LettersToBinary(fargs[iArg0]), tmp, &bp);
         safe_str(fargs[iArg0+1], tmp, &bp);
         *bp = '\0';
 

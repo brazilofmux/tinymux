@@ -1358,6 +1358,7 @@ typedef struct
     int y2;
 } YUV;
 int FindNearestPaletteEntry(RGB &rgb);
+UTF8 *LettersToBinary(UTF8 *pLetters);
 
 UTF8 *convert_color(__in const UTF8 *pString, bool bNoBleed);
 UTF8 *strip_color(__in const UTF8 *pString, __out_opt size_t *pnLength = 0, __out_opt size_t *pnPoints = 0);

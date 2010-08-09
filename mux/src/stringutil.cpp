@@ -2360,6 +2360,24 @@ static UTF8 *ColorTransitionANSI
     return Buffer;
 }
 
+void SimplifyColorLetters(ColorState &cs, UTF8 *pIn)
+{
+    cs = CS_NORMAL;
+    for (size_t i = 0; '\0' != pIn[i]; i++)
+    {
+        unsigned int iColor = ColorTable[pIn[i]];
+        cs = UpdateColorState(cs, iColor);
+    }
+}
+
+UTF8 *LettersToBinary(UTF8 *pLetters)
+{
+    size_t n;
+    ColorState cs = CS_NORMAL;
+    SimplifyColorLetters(cs, pLetters);
+    return ColorTransitionBinary(CS_NORMAL, cs, &n);
+}
+
 /*! \brief Convert private color code points within a string to ANSI color
  * sequences.
  *
