@@ -4488,11 +4488,39 @@ ANSI
 
   FLAG: ANSI(X)
 
-  When set on a player, it will enable the player to see ANSI color.
-  Otherwise, MUX will strip the ANSI color codes from text before it's sent to
-  the client.
+  When set on a player, enables at least the 16-color ANSI palette.  If not
+  set, TinyMUX strips all color and other appearance-related attributes from
+  text before it is sent to the client.
 
-  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED.
+  See COLOR256 for how to enable the 256-color palette.
+
+  While TinyMUX uses 24-bit color (i.e., 16777216 colors) internally,
+  currently, only the MXP protocol (via the HTML flag) provides a path for
+  this to clients.  Therefore, for each client, the server must remap each
+  requested color to the nearest palette color.
+
+{ 'help ansi2' for more }
+
+& ANSI2
+ANSI2
+
+  Typically, clients make the 16-color palette user-configurable.  While
+  TinyMUX makes minimal assumptions about the 16-color palette, when colors
+  must be remapped, it uses the following xterm palette:
+
+                     Normal          Intense
+                 Red Green Blue   Red Green Blue
+    black (x)      0    0    0     85   85   85
+    red (r)      187    0    0    255   85   85
+    green (g)      0  187    0     85  255   85
+    yellow (y)   187  187    0    255  255   85
+    blue (b)       0    0  187     85   85  255
+    magenta (m)  187    0  187    255   85  255
+    cyan (c)       0  187  187     85  255  255
+    white (w)    187  187  187    255  255  255
+
+  Related Topics: ansi(), COLOR256, ANSI CODES, ANSI SUBSTITUTION,
+                  NOBLEED.
 
 & ANSI CODES
 ANSI CODES
@@ -4512,23 +4540,25 @@ ANSI CODES
 
   For example, "ansi(fc, Test)" would highlight "Test" in flashing cyan.
 
-  Related Topics: ansi(), ANSI SUBSTITUTION.
+  Related Topics: ansi(), ANSI SUBSTITUTION, COLOR256.
 
 & ANSI SUBSTITUTION
 ANSI SUBSTITUTION
 
-  The percent substitution %x<color code> can be used instead of
-  ansi(), and is more efficient.
-
-  For example, the equivalent to [ansi(rBf,Color!)] would be:
-  %xr%xB%xfColor!%xn
-
-  The %xn (to return to normal) is not necessary, but if it is not
-  specified the ansi color codes will continue to the end of the string.
+  The percent substitution %x<color code> can be used instead of ansi(), and
+  is more efficient.  For example, the equivalent to '[ansi(rBf,Color!)]'
+  would be: '%xr%xB%xfColor!%xn'.  The %xn (return to normal) is understood
+  and therefore optional.
 
   %x is preferred, however %c may also be used. They are equivalent.
 
-  Related Topics: ansi(), ANSI CODES
+  To express a specific RGB (red, green, blue) color value, either of the two
+  forms may be used:
+
+    %x<#RRGGBB> (%x<#000000> through %x<#FFFFFF>) - HTML color codes
+    %x<R G B> (%x<0 0 0> through %x<255 255 255>) - RGB decimal vector
+
+  Related Topics: ansi(), ANSI CODES, COLOR256.
 
 & ANSI()
 ANSI()
@@ -5384,6 +5414,17 @@ CMDS()
     You say, "101"
 
   Related Topics:
+
+& COLOR256
+COLOR256
+
+  FLAG: COLOR256
+
+  When set on a player, enables the use of the 256-color palette.  If ANSI is
+  set but COLOR256 is not, TinyMUX attempts to re-map from the 256-color
+  palette to the 16-color palette.
+
+  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED.
 
 & COLUMNS()
 COLUMNS()

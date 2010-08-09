@@ -77,6 +77,7 @@
 #define HAS_DAILY    0x00020000
 #define GAGGED       0x00040000
 #define OPEN_OK      0x00080000  // You can open exits from here if you pass the openlock.
+#define COLOR256     0x00100000  // Enable XTERM 256-color codes.
 #define VACATION     0x01000000
 #define PLAYER_MAILS 0x02000000
 #define HTML         0x04000000  /* Player supports HTML */
@@ -297,6 +298,7 @@ UTF8 *MakeCanonicalFlagName
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
+#define Color256(x)         ((Flags2(x) & COLOR256) != 0)
 #define Ascii(x)            ((Flags2(x) & ASCII) != 0)
 #define No_Command(x)       ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)          ((Flags2(x) & NOBLEED) != 0)
