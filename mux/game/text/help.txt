@@ -4538,7 +4538,13 @@ ANSI CODES
         c - cyan foreground             C - cyan background
         w - white foreground            W - white background
 
-  For example, "ansi(fc, Test)" would highlight "Test" in flashing cyan.
+        <#RRGGBB> HTML color code
+        <R G B>   RGB decimal vector
+        /         Background indicator prefix
+
+  Examples:
+      ansi(fc, Test) would highlight "Test" is flashing cyan.
+      ansi(<#FF8040>/<#FF8040>, Test) uses Orange on Dark Purple.
 
   Related Topics: ansi(), ANSI SUBSTITUTION, COLOR256.
 

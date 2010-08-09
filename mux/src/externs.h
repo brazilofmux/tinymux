@@ -192,6 +192,7 @@ void PopRegisters(reg_ref **p, int nNeeded);
 
 extern const signed char mux_RegisterSet[256];
 extern const unsigned int ColorTable[256];
+bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb);
 
 #define CJC_CENTER 0
 #define CJC_LJUST  1

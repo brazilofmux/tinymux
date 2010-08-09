@@ -2360,13 +2360,44 @@ static UTF8 *ColorTransitionANSI
     return Buffer;
 }
 
-void SimplifyColorLetters(ColorState &cs, UTF8 *pIn)
+void LettersToColorState(ColorState &cs, UTF8 *pIn)
 {
     cs = CS_NORMAL;
+    bool fBackground = false;
     for (size_t i = 0; '\0' != pIn[i]; i++)
     {
-        unsigned int iColor = ColorTable[pIn[i]];
-        cs = UpdateColorState(cs, iColor);
+        unsigned int iColor;
+        unsigned ch = pIn[i];
+        if ('<' == ch)
+        {
+            i++;
+            size_t j = i;
+            while (  '\0' != (ch = pIn[i])
+                  && '>' != ch)
+            {
+                i++;
+            }
+            RGB rgb;
+            if (parse_rgb(i - j, pIn + j, rgb))
+            {
+                iColor = FindNearestPaletteEntry(rgb) + (fBackground ? COLOR_INDEX_BG : COLOR_INDEX_FG);
+                cs = UpdateColorState(cs, iColor);
+            }
+            fBackground = false;
+        }
+        else if ('/' == ch)
+        {
+            fBackground = true;
+        }
+        else
+        {
+            iColor = ColorTable[pIn[i]];
+            if (iColor)
+            {
+                cs = UpdateColorState(cs, iColor);
+            }
+            fBackground = false;
+        }
     }
 }
 
@@ -2374,7 +2405,7 @@ UTF8 *LettersToBinary(UTF8 *pLetters)
 {
     size_t n;
     ColorState cs = CS_NORMAL;
-    SimplifyColorLetters(cs, pLetters);
+    LettersToColorState(cs, pLetters);
     return ColorTransitionBinary(CS_NORMAL, cs, &n);
 }
 
