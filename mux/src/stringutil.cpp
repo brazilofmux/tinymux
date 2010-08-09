@@ -2143,12 +2143,12 @@ static const UTF8 *ColorBinaryNormal
 // + COLOR_UNDERLINE  "%xu"
 // + COLOR_BLINK      "%xf"
 // + COLOR_INVERSE    "%xi"
-// + COLOR_FG_RED     "%xr"
-// + COLOR_BG_WHITE   "%xW"
+// + COLOR_FG_...     "%x<#FFFFFF>"
+// + COLOR_BG_...     "%x<#FFFFFF>"
 //
-// Each of the seven codes is 3 bytes or 21 bytes total.
+// Each of the five codes is 3 bytes, and two codes are 11 bytes, or 37 bytes total.
 //
-#define COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH 21
+#define COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH 37
 
 // Generate the minimal color %-sequence that will transition from one color state
 // to another.
@@ -2248,12 +2248,12 @@ static UTF8 *ColorTransitionEscape
 // + ANSI_UNDER     "\033[4m"
 // + ANSI_BLINK     "\033[5m"
 // + ANSI_INVERSE   "\033[7m"
-// + ANSI_RED       "\033[31m"
-// + ANSI_BWHITE    "\033[47m"
+// + ANSI_FG_...    "\033[38;5;255m"
+// + ANSI_BWHITE    "\033[48;5;255m"
 //
-// Five of the seven codes are 4 bytes, and two are 5 bytes, or 30 bytes total.
+// Five of the seven codes are 4 bytes, and two are 11 bytes, or 42 bytes total.
 //
-#define COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH 30
+#define COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH 42
 
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
