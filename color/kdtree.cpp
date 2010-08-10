@@ -48,7 +48,7 @@ void rgb2yuv8(RGB *rgb, YUV *yuv)
     yuv->y = ((( 66 * rgb->r + 129 * rgb->g +  25 * rgb->b) + 128 ) >> 8) + 16;
     yuv->u = (((-38 * rgb->r -  74 * rgb->g + 112 * rgb->b) + 128 ) >> 8) + 128;
     yuv->v = (((112 * rgb->r -  94 * rgb->g -  18 * rgb->b) + 128 ) >> 8) + 128;
-    yuv->y2 = 2*yuv->y;
+    yuv->y2 = yuv->y + (yuv->y/2);
 }
 
 void rgb2yuv16(RGB *rgb, YUV *yuv)
@@ -56,7 +56,7 @@ void rgb2yuv16(RGB *rgb, YUV *yuv)
     yuv->y = min(abs( 2104*rgb->r + 4310*rgb->g +  802*rgb->b + 4096 +  131072) >> 13, 235);
     yuv->u = min(abs(-1214*rgb->r - 2384*rgb->g + 3598*rgb->b + 4096 + 1048576) >> 13, 240);
     yuv->v = min(abs( 3598*rgb->r - 3013*rgb->g -  585*rgb->b + 4096 + 1048576) >> 13, 240);
-    yuv->y2 = 2*yuv->y;
+    yuv->y2 = yuv->y + (yuv->y/2);
 }
 
 typedef struct
@@ -66,7 +66,8 @@ typedef struct
     bool fDisable;
     YUV  yuv;
     int  child[2];
-    int  color16;
+    int  color8;     // Nearest color in the 8-color palette (used for background)
+    int  color16;    // Nearest color in the 16-color plaette (used for foreground in combination with highlite).
 } ENTRY;
 
 //red (187,0,0)
@@ -350,7 +351,7 @@ ENTRY table[] =
 
 INT64 diff(const YUV &yuv1, const YUV &yuv2)
 {
-    // The human eye is twice as sensitive to changes in Y.
+    // The human eye is twice as sensitive to changes in Y.  We use 1.5 times.
     //
     INT64 dy = yuv1.y2-yuv2.y2;
     INT64 du = yuv1.u-yuv2.u;
@@ -362,7 +363,7 @@ INT64 diff(const YUV &yuv1, const YUV &yuv2)
 
 INT64 diff_tree(const YUV &yuv1, const YUV &yuv2)
 {
-    // The human eye is twice as sensitive to changes in Y.
+    // The human eye is twice as sensitive to changes in Y.  We use 1.5 times.
     //
     INT64 dy = yuv1.y2-yuv2.y2;
     INT64 du = yuv1.u-yuv2.u;
@@ -732,6 +733,7 @@ void DumpTable(int iRoot16, int iRoot256)
     printf("    RGB  rgb;\n");
     printf("    YUV  yuv;\n");
     printf("    int  child[2];\n");
+    printf("    int  color8;\n");
     printf("    int  color16;\n");
     printf("} PALETTE_ENTRY;\n");
     printf("\n");
@@ -742,7 +744,7 @@ void DumpTable(int iRoot16, int iRoot256)
     printf("{\n");
     for (int i = 0; i < NUM_ENTRIES; i++)
     {
-        printf("    { { %3d, %3d, %3d }, { %3d, %3d, %3d, %3d }, { %3d, %3d }, %2d},\n",
+        printf("    { { %3d, %3d, %3d }, { %3d, %3d, %3d, %3d }, { %3d, %3d }, %2d, %2d},\n",
             table[i].rgb.r,
             table[i].rgb.g,
             table[i].rgb.b,
@@ -752,6 +754,7 @@ void DumpTable(int iRoot16, int iRoot256)
             table[i].yuv.y2,
             table[i].child[0],
             table[i].child[1],
+            table[i].color8,
             table[i].color16
         );
     }
@@ -802,6 +805,25 @@ int main(int argc, char *argv[])
         int j = -1;
         NearestIndex_tree_y(kdroot16, yuv16, j, d);
         table[i].color16 = j;
+    }
+    for (int i = 0; i < NUM_ENTRIES; i++)
+    {
+        YUV yuv16;
+        rgb2yuv16(&table[i].rgb, &yuv16);
+
+        int iNearest = 0;
+        INT64 rNearest = diff(yuv16, table[0].yuv);
+
+        for (int j = 1; j < 8; j++)
+        {
+            INT64 r = diff(yuv16, table[j].yuv);
+            if (r < rNearest)
+            {
+                rNearest = r;
+                iNearest = j;
+            }
+        }
+        table[i].color8 = iNearest;
     }
     //DumpTree(kdroot, 0);
     //ValidateTree(kdroot);
