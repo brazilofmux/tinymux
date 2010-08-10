@@ -1747,7 +1747,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 RGB rgb;
                                 if (parse_rgb(n, pStr+iStr, rgb))
                                 {
-                                    iColor = FindNearestPaletteEntry(rgb) + ((cType_L2 & 0x40) ? COLOR_INDEX_BG : COLOR_INDEX_FG);
+                                    iColor = FindNearestPaletteEntry(rgb, true) + ((cType_L2 & 0x40) ? COLOR_INDEX_BG : COLOR_INDEX_FG);
                                     safe_str(aColors[iColor].pUTF, buff, bufc);
                                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                     ansi = true;
