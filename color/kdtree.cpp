@@ -66,6 +66,7 @@ typedef struct
     bool fDisable;
     YUV  yuv;
     int  child[2];
+    int  color16;
 } ENTRY;
 
 //red (187,0,0)
@@ -724,22 +725,24 @@ void ValidateTree(int iRoot)
     }
 }
 
-void DumpTable(int iRoot)
+void DumpTable(int iRoot16, int iRoot256)
 {
     printf("typedef struct\n");
     printf("{\n");
     printf("    RGB  rgb;\n");
     printf("    YUV  yuv;\n");
     printf("    int  child[2];\n");
+    printf("    int  color16;\n");
     printf("} PALETTE_ENTRY;\n");
     printf("\n");
-    printf("#define PALETTE_ROOT %d\n", iRoot);
+    printf("#define PALETTE16_ROOT %d\n", iRoot16);
+    printf("#define PALETTE256_ROOT %d\n", iRoot256);
     printf("#define PALETTE_SIZE (sizeof(palette)/sizeof(palette[0]))\n");
     printf("PALETTE_ENTRY palette[] =\n");
     printf("{\n");
     for (int i = 0; i < NUM_ENTRIES; i++)
     {
-        printf("    { { %3d, %3d, %3d }, { %3d, %3d, %3d, %3d }, { %3d, %3d }},\n",
+        printf("    { { %3d, %3d, %3d }, { %3d, %3d, %3d, %3d }, { %3d, %3d }, %2d},\n",
             table[i].rgb.r,
             table[i].rgb.g,
             table[i].rgb.b,
@@ -748,7 +751,8 @@ void DumpTable(int iRoot)
             table[i].yuv.v,
             table[i].yuv.y2,
             table[i].child[0],
-            table[i].child[1]
+            table[i].child[1],
+            table[i].color16
         );
     }
     printf("};\n");
@@ -774,20 +778,34 @@ int main(int argc, char *argv[])
     int pts[NUM_ENTRIES];
     for (int i = 0; i < NUM_ENTRIES; i++)
     {
+        if (table[i].fDisable)
+        {
+            pts[npts++] = i;
+        }
+    }
+    int kdroot16 = kdtree(npts, pts, 0);
+    npts = 0;
+    for (int i = 0; i < NUM_ENTRIES; i++)
+    {
         if (!table[i].fDisable)
         {
             pts[npts++] = i;
         }
-        else
-        {
-            table[i].child[0] = -1;
-            table[i].child[1] = -1;
-        }
     }
-    int kdroot = kdtree(npts, pts, 0);
+    int kdroot256 = kdtree(npts, pts, 0);
+    for (int i = 0; i < NUM_ENTRIES; i++)
+    {
+        YUV yuv16;
+        rgb2yuv16(&table[i].rgb, &yuv16);
+
+        INT64 d;
+        int j = -1;
+        NearestIndex_tree_y(kdroot16, yuv16, j, d);
+        table[i].color16 = j;
+    }
     //DumpTree(kdroot, 0);
     //ValidateTree(kdroot);
-    DumpTable(kdroot);
+    DumpTable(kdroot16, kdroot256);
 
     return 0;
 }
