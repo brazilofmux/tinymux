@@ -439,84 +439,6 @@ void OutputList()
     }
 }
 
-void OutputNeighbors()
-{
-    RGB rgb;
-    unsigned char aNeighbor[NUM_ENTRIES][NUM_ENTRIES];
-    unsigned char nNeighbor[NUM_ENTRIES];
-    for (int i = 0; i < NUM_ENTRIES; i++)
-    {
-        nNeighbor[i] = 0;
-    }
-
-    for (rgb.r = 0; rgb.r < 256; rgb.r++)
-    {
-        for (rgb.g = 0; rgb.g < 256; rgb.g++)
-        {
-            for (rgb.b = 0; rgb.b < 256; rgb.b++)
-            {
-                YUV yuv16;
-                rgb2yuv16(&rgb, &yuv16);
-
-                int iNearest = NearestIndex(yuv16);
-
-                for (int dr = -1; dr <= 1; dr++)
-                {
-                    for (int dg = -1; dg <= 1; dg++)
-                    {
-                        for (int db = -1; db <= 1; db++)
-                        {
-                            RGB rgb2;
-                            rgb2.r = rgb.r + dr;
-                            rgb2.g = rgb.g + dg;
-                            rgb2.b = rgb.b + db;
-                            if (  0 <= rgb2.r
-                               && rgb2.r < 256
-                               && 0 <= rgb2.g
-                               && rgb2.g < 256
-                               && 0 <= rgb2.b
-                               && rgb2.b < 256)
-                            {
-                                rgb2yuv16(&rgb2, &yuv16);
-
-                                int iNearest2 = NearestIndex(yuv16);
-                                if (iNearest != iNearest2)
-                                {
-                                    bool fFound = false;
-                                    for (int i = 0; i < nNeighbor[iNearest]; i++)
-                                    {
-                                        if (iNearest2 == aNeighbor[iNearest][i])
-                                        {
-                                            fFound = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!fFound)
-                                    {
-                                        fprintf(stderr, "%d <--> %d\n", iNearest, iNearest2);
-                                        aNeighbor[iNearest][nNeighbor[iNearest]++] = iNearest2;
-                                        aNeighbor[iNearest2][nNeighbor[iNearest2]++] = iNearest;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < NUM_ENTRIES; i++)
-    {
-        printf("%d: ", i);
-        for (int j = 0; j < nNeighbor[i]; j++)
-        {
-            printf("%d ", aNeighbor[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 int y_comp(const void *s1, const void *s2)
 {
     ENTRY *pa = &table[*(int *)s1];
@@ -775,7 +697,6 @@ int main(int argc, char *argv[])
     }
 
     //OutpuList();
-    //OutputNeighbors();
 
     int npts = 0;
     int pts[NUM_ENTRIES];
