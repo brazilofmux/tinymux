@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: July 2010
+Last Update: August 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -8,6 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
+ -- Add 256-color support via COLOR256 flag, %x<>, ansi(), and
+    translate().
  -- Add password_methods configuration option.
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
