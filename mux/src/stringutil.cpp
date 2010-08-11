@@ -1499,14 +1499,14 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_FG_MAGENTA, CS_FOREGROUND, ANSI_MAGENTA,  sizeof(ANSI_MAGENTA)-1,  T(COLOR_FG_MAGENTA), 3, T("%xm"), 3},
     { CS_FG_CYAN,    CS_FOREGROUND, ANSI_CYAN,     sizeof(ANSI_CYAN)-1,     T(COLOR_FG_CYAN),    3, T("%xc"), 3},
     { CS_FG_WHITE,   CS_FOREGROUND, ANSI_WHITE,    sizeof(ANSI_WHITE)-1,    T(COLOR_FG_WHITE),   3, T("%xw"), 3}, // COLOR_INDEX_FG_WHITE
-    { CS_FG(  8),    CS_FOREGROUND, ANSI_BLACK   ANSI_HILITE, sizeof(ANSI_BLACK   ANSI_HILITE)-1, T(COLOR_FG_555555),  3, T("%xx%xh"), 6},
-    { CS_FG(  9),    CS_FOREGROUND, ANSI_RED     ANSI_HILITE, sizeof(ANSI_RED     ANSI_HILITE)-1, T(COLOR_FG_FF5555),  3, T("%xr%xh"), 6},
-    { CS_FG( 10),    CS_FOREGROUND, ANSI_GREEN   ANSI_HILITE, sizeof(ANSI_GREEN   ANSI_HILITE)-1, T(COLOR_FG_55FF55),  3, T("%xg%xh"), 6},
-    { CS_FG( 11),    CS_FOREGROUND, ANSI_YELLOW  ANSI_HILITE, sizeof(ANSI_YELLOW  ANSI_HILITE)-1, T(COLOR_FG_FFFF55),  3, T("%xy%xh"), 6},
-    { CS_FG( 12),    CS_FOREGROUND, ANSI_BLUE    ANSI_HILITE, sizeof(ANSI_BLUE    ANSI_HILITE)-1, T(COLOR_FG_5555FF),  3, T("%xb%xh"), 6},
-    { CS_FG( 13),    CS_FOREGROUND, ANSI_MAGENTA ANSI_HILITE, sizeof(ANSI_MAGENTA ANSI_HILITE)-1, T(COLOR_FG_FF55FF),  3, T("%xm%xh"), 6},
-    { CS_FG( 14),    CS_FOREGROUND, ANSI_CYAN    ANSI_HILITE, sizeof(ANSI_CYAN    ANSI_HILITE)-1, T(COLOR_FG_55FFFF),  3, T("%xc%xh"), 6},
-    { CS_FG( 15),    CS_FOREGROUND, ANSI_WHITE   ANSI_HILITE, sizeof(ANSI_WHITE   ANSI_HILITE)-1, T(COLOR_FG_FFFFFF),  3, T("%xw%xh"), 6},
+    { CS_FG(  8),    CS_FOREGROUND, XTERM_FG(  8), sizeof(XTERM_FG(  8))-1, T(COLOR_FG_555555),  3, T("%xx%xh"), 6},  // These eight are converted into something else.
+    { CS_FG(  9),    CS_FOREGROUND, XTERM_FG(  9), sizeof(XTERM_FG(  9))-1, T(COLOR_FG_FF5555),  3, T("%xr%xh"), 6},  // .
+    { CS_FG( 10),    CS_FOREGROUND, XTERM_FG( 10), sizeof(XTERM_FG( 10))-1, T(COLOR_FG_55FF55),  3, T("%xg%xh"), 6},  // .
+    { CS_FG( 11),    CS_FOREGROUND, XTERM_FG( 11), sizeof(XTERM_FG( 11))-1, T(COLOR_FG_FFFF55),  3, T("%xy%xh"), 6},  // .
+    { CS_FG( 12),    CS_FOREGROUND, XTERM_FG( 12), sizeof(XTERM_FG( 12))-1, T(COLOR_FG_5555FF),  3, T("%xb%xh"), 6},  // .
+    { CS_FG( 13),    CS_FOREGROUND, XTERM_FG( 13), sizeof(XTERM_FG( 13))-1, T(COLOR_FG_FF55FF),  3, T("%xm%xh"), 6},  // .
+    { CS_FG( 14),    CS_FOREGROUND, XTERM_FG( 14), sizeof(XTERM_FG( 14))-1, T(COLOR_FG_55FFFF),  3, T("%xc%xh"), 6},  // .
+    { CS_FG( 15),    CS_FOREGROUND, XTERM_FG( 15), sizeof(XTERM_FG( 15))-1, T(COLOR_FG_FFFFFF),  3, T("%xw%xh"), 6},  // -
     { CS_FG( 16),    CS_FOREGROUND, XTERM_FG( 16), sizeof(XTERM_FG( 16))-1, T(COLOR_FG_000000),  3, T("%x<#000000>"), 11},
     { CS_FG( 17),    CS_FOREGROUND, XTERM_FG( 17), sizeof(XTERM_FG( 17))-1, T(COLOR_FG_00005F),  3, T("%x<#00005F>"), 11},
     { CS_FG( 18),    CS_FOREGROUND, XTERM_FG( 18), sizeof(XTERM_FG( 18))-1, T(COLOR_FG_000087),  3, T("%x<#000087>"), 11},
@@ -1755,14 +1755,14 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_BG_MAGENTA, CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_MAGENTA), 3, T("%xM"), 3},
     { CS_BG_CYAN,    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_CYAN),    3, T("%xC"), 3},
     { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}, // COLOR_LAST_CODE
-    { CS_BG(  8),    CS_BACKGROUND, ANSI_BBLACK,   sizeof(ANSI_BBLACK)-1,   T(COLOR_BG_555555),  3, T("%xx"), 3},
-    { CS_BG(  9),    CS_BACKGROUND, ANSI_BRED,     sizeof(ANSI_BRED)-1,     T(COLOR_BG_FF5555),  3, T("%xr"), 3},
-    { CS_BG( 10),    CS_BACKGROUND, ANSI_BGREEN,   sizeof(ANSI_BGREEN)-1,   T(COLOR_BG_55FF55),  3, T("%xg"), 3},
-    { CS_BG( 11),    CS_BACKGROUND, ANSI_BYELLOW,  sizeof(ANSI_BYELLOW)-1,  T(COLOR_BG_FFFF55),  3, T("%xy"), 3},
-    { CS_BG( 12),    CS_BACKGROUND, ANSI_BBLUE,    sizeof(ANSI_BBLUE)-1,    T(COLOR_BG_5555FF),  3, T("%xb"), 3},
-    { CS_BG( 13),    CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_FF55FF),  3, T("%xm"), 3},
-    { CS_BG( 14),    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_55FFFF),  3, T("%xc"), 3},
-    { CS_BG( 15),    CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_FFFFFF),  3, T("%xw"), 3},
+    { CS_BG(  8),    CS_BACKGROUND, ANSI_BBLACK,   sizeof(ANSI_BBLACK)-1,   T(COLOR_BG_555555),  3, T("%xX"), 3}, // These eight are never used.
+    { CS_BG(  9),    CS_BACKGROUND, ANSI_BRED,     sizeof(ANSI_BRED)-1,     T(COLOR_BG_FF5555),  3, T("%xR"), 3}, // .
+    { CS_BG( 10),    CS_BACKGROUND, ANSI_BGREEN,   sizeof(ANSI_BGREEN)-1,   T(COLOR_BG_55FF55),  3, T("%xG"), 3}, // .
+    { CS_BG( 11),    CS_BACKGROUND, ANSI_BYELLOW,  sizeof(ANSI_BYELLOW)-1,  T(COLOR_BG_FFFF55),  3, T("%xY"), 3}, // .
+    { CS_BG( 12),    CS_BACKGROUND, ANSI_BBLUE,    sizeof(ANSI_BBLUE)-1,    T(COLOR_BG_5555FF),  3, T("%xB"), 3}, // .
+    { CS_BG( 13),    CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_FF55FF),  3, T("%xM"), 3}, // .
+    { CS_BG( 14),    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_55FFFF),  3, T("%xC"), 3}, // .
+    { CS_BG( 15),    CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_FFFFFF),  3, T("%xW"), 3}, // -
     { CS_BG( 16),    CS_BACKGROUND, XTERM_BG( 16), sizeof(XTERM_BG( 16))-1, T(COLOR_BG_000000),  3, T("%X<#000000>"), 11},
     { CS_BG( 17),    CS_BACKGROUND, XTERM_BG( 17), sizeof(XTERM_BG( 17))-1, T(COLOR_BG_00005F),  3, T("%X<#00005F>"), 11},
     { CS_BG( 18),    CS_BACKGROUND, XTERM_BG( 18), sizeof(XTERM_BG( 18))-1, T(COLOR_BG_000087),  3, T("%X<#000087>"), 11},

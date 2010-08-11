@@ -1333,7 +1333,7 @@ typedef struct
 {
     ColorState  cs;
     ColorState  csMask;
-    const char *pAnsi;
+    const char  pAnsi[12];
     size_t      nAnsi;
     const UTF8 *pUTF;
     size_t      nUTF;
