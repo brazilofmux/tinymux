@@ -1187,10 +1187,18 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
             if (0 == nSpaces)
             {
                 rgb.r = mux_atol(p+i-nDigits);
+                if (rgb.r < 0 || 255 < rgb.r)
+                {
+                    return false;
+                }
             }
             else
             {
                 rgb.g = mux_atol(p+i-nDigits);
+                if (rgb.g < 0 || 255 < rgb.g)
+                {
+                    return false;
+                }
             }
             nDigits = 0;
             nSpaces++;
@@ -1210,6 +1218,10 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
         return false;
     }
     rgb.b = mux_atol(p+n-nDigits-1);
+    if (rgb.b < 0 || 255 < rgb.b)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -1747,8 +1759,39 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 RGB rgb;
                                 if (parse_rgb(n, pStr+iStr, rgb))
                                 {
-                                    iColor = FindNearestPaletteEntry(rgb, true) + ((cType_L2 & 0x40) ? COLOR_INDEX_BG : COLOR_INDEX_FG);
-                                    safe_str(aColors[iColor].pUTF, buff, bufc);
+                                    iColor = FindNearestPaletteEntry(rgb, true);
+                                    if (cType_L2 & 0x40)
+                                    {
+                                        safe_str(aColors[iColor + COLOR_INDEX_BG].pUTF, buff, bufc);
+                                        if (palette[iColor].rgb.r != rgb.r)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.r + 0xF0300), buff, bufc);
+                                        }
+                                        if (palette[iColor].rgb.g != rgb.g)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.g + 0xF0400), buff, bufc);
+                                        }
+                                        if (palette[iColor].rgb.b != rgb.b)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.b + 0xF0500), buff, bufc);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        safe_str(aColors[iColor + COLOR_INDEX_FG].pUTF, buff, bufc);
+                                        if (palette[iColor].rgb.r != rgb.r)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.r + 0xF0000), buff, bufc);
+                                        }
+                                        if (palette[iColor].rgb.g != rgb.g)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.g + 0xF0100), buff, bufc);
+                                        }
+                                        if (palette[iColor].rgb.b != rgb.b)
+                                        {
+                                            safe_str(ConvertToUTF8(rgb.b + 0xF0200), buff, bufc);
+                                        }
+                                    }
                                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                     ansi = true;
                                 }

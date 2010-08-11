@@ -1015,21 +1015,21 @@ inline void rgb2yuv16(RGB *rgb, YUV *yuv)
     yuv->y2 = yuv->y + (yuv->y/2);
 }
 
-inline void cs2rgb(unsigned int cs, RGB *rgb)
+inline void cs2rgb(ColorState cs, RGB *rgb)
 {
     rgb->r = (cs & 0xFF0000) >> 16;
     rgb->g = (cs & 0x00FF00) >> 8;
     rgb->b = (cs & 0x0000FF);
 }
 
-typedef struct
+inline ColorState rgb2cs(RGB *rgb)
 {
-    RGB  rgb;
-    YUV  yuv;
-    int  child[2];
-    int  color8;
-    int  color16;
-} PALETTE_ENTRY;
+    ColorState cs;
+    cs = (static_cast<ColorState>(rgb->r) << 16)
+       | (static_cast<ColorState>(rgb->g) << 8)
+       | (static_cast<ColorState>(rgb->b));
+    return cs;
+}
 
 // All 256 entries of the palette are included in this table, but the palette
 // is divided into two non-overlapping trees -- one for when xterm is support,
@@ -1444,6 +1444,9 @@ int FindNearestPalette8Entry(RGB &rgb)
 }
 
 #define CS_FOREGROUND UINT64_C(0x0000000001FFFFFF)
+#define CS_FOREGROUND_RED     UINT64_C(0x0000000000FF0000)
+#define CS_FOREGROUND_GREEN   UINT64_C(0x000000000000FF00)
+#define CS_FOREGROUND_BLUE    UINT64_C(0x00000000000000FF)
 #define CS_FG_BLACK   UINT64_C(0x0000000001000000)    // FOREGROUND BLACK (0,0,0)
 #define CS_FG_RED     UINT64_C(0x0000000001000001)    // FOREGROUND RED (187,0,0)
 #define CS_FG_GREEN   UINT64_C(0x0000000001000002)    // FOREGROUND GREEN (0,187,0)
@@ -1457,6 +1460,9 @@ int FindNearestPalette8Entry(RGB &rgb)
 #define CS_FG_FIELD(x) ((x) & UINT64_C(0x0000000000FFFFFF))
 #define CS_FG_DEFAULT CS_FG(NUM_FG)
 #define CS_BACKGROUND UINT64_C(0x01FFFFFF00000000)
+#define CS_BACKGROUND_RED     UINT64_C(0x00FF000000000000)
+#define CS_BACKGROUND_GREEN   UINT64_C(0x0000FF0000000000)
+#define CS_BACKGROUND_BLUE    UINT64_C(0x000000FF00000000)
 #define CS_BG_BLACK   UINT64_C(0x0100000000000000)    // BACKGROUND BLACK (0,0,0)
 #define CS_BG_RED     UINT64_C(0x0100000100000000)    // BACKGROUND RED (187,0,0)
 #define CS_BG_GREEN   UINT64_C(0x0100000200000000)    // BACKGROUND GREEN (0,187,0)
@@ -2025,6 +2031,53 @@ inline void ValidateColorState(ColorState cs)
 
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
+    if (COLOR_INDEX_FG_24 <= iColorCode)
+    {
+        // In order to apply an RGB 24-bit modification, we need to translate
+        // any indexed color to a value color.
+        //
+        if (iColorCode < COLOR_INDEX_BG_24)
+        {
+            if (CS_FG_INDEXED & cs)
+            {
+                cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD(cs)].rgb);
+            }
+
+            if (iColorCode < COLOR_INDEX_FG_24_GREEN)
+            {
+                cs = (cs & ~CS_FOREGROUND_RED) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_RED) << 16);
+            }
+            else if (iColorCode < COLOR_INDEX_FG_24_BLUE)
+            {
+                cs = (cs & ~CS_FOREGROUND_GREEN) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_GREEN) << 8);
+            }
+            else
+            {
+                cs = (cs & ~CS_FOREGROUND_BLUE) | static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_BLUE);
+            }
+        }
+        else
+        {
+            if (CS_BG_INDEXED & cs)
+            {
+                cs = (cs & ~CS_FOREGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
+            }
+
+            if (iColorCode < COLOR_INDEX_BG_24_GREEN)
+            {
+                cs = (cs & ~CS_BACKGROUND_RED) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_RED) << 48);
+            }
+            else if (iColorCode < COLOR_INDEX_BG_24_BLUE)
+            {
+                cs = (cs & ~CS_BACKGROUND_GREEN) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_GREEN) << 40);
+            }
+            else
+            {
+                cs = (cs & ~CS_BACKGROUND_BLUE) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_BLUE) << 32);
+            }
+        }
+        return cs;
+    }
     return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
 }
 
@@ -2038,9 +2091,9 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 // + COLOR_FG_RED     "\xEF\x98\x81"
 // + COLOR_BG_WHITE   "\xEF\x9C\x87"
 //
-// Each of the seven codes is 3 bytes or 21 bytes total.
+// Each of the seven codes is 3 bytes or 21 bytes total. Plus six 24-bit modifiers (each 4 bytes).
 //
-#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH 21
+#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH (21+4*6)
 
 // Generate the minimal color sequence that will transition from one color state
 // to another.
@@ -2095,37 +2148,83 @@ static UTF8 *ColorTransitionBinary
     unsigned int iColor;
     if (CS_FOREGROUND & tmp)
     {
+        bool fExact;
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+            iColor = CS_FG_FIELD(csNext);
+            fExact = true;
         }
         else
         {
             cs2rgb(CS_FG_FIELD(csNext), &rgb);
-            iColor = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb, true);
+            iColor = FindNearestPaletteEntry(rgb, true);
+            fExact = (  palette[iColor].rgb.r == rgb.r
+                     && palette[iColor].rgb.g == rgb.g
+                     && palette[iColor].rgb.b == rgb.b);
         }
-        if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+        if (iColor < COLOR_INDEX_DEFAULT)
         {
-            memcpy(Buffer + i, aColors[iColor].pUTF, aColors[iColor].nUTF);
-            i += aColors[iColor].nUTF;
+            memcpy(Buffer + i, aColors[COLOR_INDEX_FG + iColor].pUTF, aColors[COLOR_INDEX_FG + iColor].nUTF);
+            i += aColors[COLOR_INDEX_FG + iColor].nUTF;
+            if (!fExact)
+            {
+                if (palette[iColor].rgb.r != rgb.r)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.r + 0xF0000), 4);
+                    i += 4;
+                }
+                if (palette[iColor].rgb.g != rgb.g)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.g + 0xF0100), 4);
+                    i += 4;
+                }
+                if (palette[iColor].rgb.b != rgb.b)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.b + 0xF0200), 4);
+                    i += 4;
+                }
+            }
         }
     }
 
     if (CS_BACKGROUND & tmp)
     {
+        bool fExact;
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+            iColor = CS_BG_FIELD(csNext);
+            fExact = true;
         }
         else
         {
             cs2rgb(CS_BG_FIELD(csNext), &rgb);
-            iColor = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb, true);
+            iColor = FindNearestPaletteEntry(rgb, true);
+            fExact = (  palette[iColor].rgb.r == rgb.r
+                     && palette[iColor].rgb.g == rgb.g
+                     && palette[iColor].rgb.b == rgb.b);
         }
-        if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+        if (iColor < COLOR_INDEX_DEFAULT)
         {
-            memcpy(Buffer + i, aColors[iColor].pUTF, aColors[iColor].nUTF);
-            i += aColors[iColor].nUTF;
+            memcpy(Buffer + i, aColors[COLOR_INDEX_BG + iColor].pUTF, aColors[COLOR_INDEX_BG + iColor].nUTF);
+            i += aColors[COLOR_INDEX_BG + iColor].nUTF;
+            if (!fExact)
+            {
+                if (palette[iColor].rgb.r != rgb.r)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.r + 0xF0300), 4);
+                    i += 4;
+                }
+                if (palette[iColor].rgb.g != rgb.g)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.g + 0xF0400), 4);
+                    i += 4;
+                }
+                if (palette[iColor].rgb.b != rgb.b)
+                {
+                    memcpy(Buffer + i, ConvertToUTF8(rgb.b + 0xF0500), 4);
+                    i += 4;
+                }
+            }
         }
     }
     Buffer[i] = '\0';
@@ -2234,16 +2333,17 @@ static UTF8 *ColorTransitionEscape
         if (CS_FG_INDEXED & csNext)
         {
             iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+            if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+            {
+                memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
+                i += aColors[iColor].nEscape;
+            }
         }
         else
         {
             cs2rgb(CS_FG_FIELD(csNext), &rgb);
-            iColor = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb, true);
-        }
-        if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
-        {
-            memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
-            i += aColors[iColor].nEscape;
+            mux_sprintf(Buffer + i, 12, T("%%x<#%02X%02X%02X>"), rgb.r, rgb.g, rgb.b);
+            i += 11;
         }
     }
 
@@ -2252,16 +2352,17 @@ static UTF8 *ColorTransitionEscape
         if (CS_BG_INDEXED & csNext)
         {
             iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+            if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+            {
+                memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
+                i += aColors[iColor].nEscape;
+            }
         }
         else
         {
             cs2rgb(CS_BG_FIELD(csNext), &rgb);
-            iColor = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb, true);
-        }
-        if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
-        {
-            memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
-            i += aColors[iColor].nEscape;
+            mux_sprintf(Buffer + i, 12, T("%%x<#%02X%02X%02X>"), rgb.r, rgb.g, rgb.b);
+            i += 11;
         }
     }
     Buffer[i] = '\0';
@@ -2348,7 +2449,10 @@ static UTF8 *ColorTransitionANSI
             iColor -= 8;
         }
     }
-    csNext = UpdateColorState(csNext, iColor);
+    if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+    {
+        csNext = UpdateColorState(csNext, iColor);
+    }
 
     // Aproximate Background Color
     //
@@ -2376,7 +2480,10 @@ static UTF8 *ColorTransitionANSI
             iColor = COLOR_INDEX_BG + FindNearestPalette8Entry(rgb);
         }
     }
-    csNext = UpdateColorState(csNext, iColor);
+    if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+    {
+        csNext = UpdateColorState(csNext, iColor);
+    }
 
     if (csClient == csNext)
     {
@@ -2460,8 +2567,18 @@ void LettersToColorState(ColorState &cs, UTF8 *pIn)
             if (  '>' == ch
                && parse_rgb(i - j, pIn + j, rgb))
             {
-                iColor = FindNearestPaletteEntry(rgb, true) + (fBackground ? COLOR_INDEX_BG : COLOR_INDEX_FG);
-                cs = UpdateColorState(cs, iColor);
+                iColor = FindNearestPaletteEntry(rgb, true);
+                bool fExact = (  palette[iColor].rgb.r == rgb.r
+                              && palette[iColor].rgb.g == rgb.g
+                              && palette[iColor].rgb.b == rgb.b);
+                if (fBackground)
+                {
+                    cs = (cs & ~CS_BACKGROUND) | (fExact ? CS_BG(iColor) : (rgb2cs(&rgb) << 32));
+                }
+                else
+                {
+                    cs = (cs & ~CS_FOREGROUND) | (fExact ? CS_FG(iColor) : rgb2cs(&rgb));
+                }
             }
             fBackground = false;
         }

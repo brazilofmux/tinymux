@@ -789,6 +789,14 @@ typedef UINT64 ColorState;
 #define COLOR_INDEX_ATTR        (NUM_OTHER)
 #define COLOR_INDEX_FG          (COLOR_INDEX_ATTR + NUM_ATTR)
 #define COLOR_INDEX_BG          (COLOR_INDEX_FG + NUM_FG)
+#define COLOR_INDEX_FG_24       (COLOR_INDEX_BG + NUM_BG)
+#define COLOR_INDEX_FG_24_RED   (COLOR_INDEX_FG_24)
+#define COLOR_INDEX_FG_24_GREEN (COLOR_INDEX_FG_24_RED   + 256)
+#define COLOR_INDEX_FG_24_BLUE  (COLOR_INDEX_FG_24_GREEN + 256)
+#define COLOR_INDEX_BG_24       (COLOR_INDEX_FG_24_BLUE  + 256)
+#define COLOR_INDEX_BG_24_RED   (COLOR_INDEX_BG_24       + 256)
+#define COLOR_INDEX_BG_24_GREEN (COLOR_INDEX_BG_24_RED   + 256)
+#define COLOR_INDEX_BG_24_BLUE  (COLOR_INDEX_BG_24_GREEN + 256)
 
 #define COLOR_INDEX_RESET       1
 #define COLOR_INDEX_INTENSE     (COLOR_INDEX_ATTR + 0)
@@ -1357,6 +1365,17 @@ typedef struct
     int v;
     int y2;
 } YUV;
+
+typedef struct
+{
+    RGB  rgb;
+    YUV  yuv;
+    int  child[2];
+    int  color8;
+    int  color16;
+} PALETTE_ENTRY;
+extern PALETTE_ENTRY palette[];
+
 int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
 UTF8 *LettersToBinary(UTF8 *pLetters);
 
