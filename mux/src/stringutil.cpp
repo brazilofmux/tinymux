@@ -2288,32 +2288,97 @@ static UTF8 *ColorTransitionEscape
 //
 static UTF8 *ColorTransitionANSI
 (
-    ColorState csCurrent,
+    ColorState &csClient,
     ColorState csNext,
     size_t *nTransition,
     bool fNoBleed,
     bool fColor256
 )
 {
-    ValidateColorState(csCurrent);
+    ValidateColorState(csClient);
     ValidateColorState(csNext);
 
     static UTF8 Buffer[COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH+1];
 
-    if (fNoBleed)
+    // First, modify our sense of what 'normal' is.
+    //
+    if (  fNoBleed
+       && (csNext & CS_FOREGROUND) == CS_FG_DEFAULT)
     {
-        if ((csCurrent & CS_FOREGROUND) == CS_FG_DEFAULT)
-        {
-            csCurrent = (csCurrent & ~CS_FOREGROUND) | CS_FG_WHITE;
-        }
-
-        if ((csNext & CS_FOREGROUND) == CS_FG_DEFAULT)
-        {
-            csNext = (csNext & ~CS_FOREGROUND) | CS_FG_WHITE;
-        }
+        csNext = (csNext & ~CS_FOREGROUND) | CS_FG_WHITE;
     }
 
-    if (csCurrent == csNext)
+    // Approximate Foreground Color
+    //
+    RGB rgb;
+    unsigned int iColor;
+    if (fColor256)
+    {
+        if (CS_FG_INDEXED & csNext)
+        {
+            iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+        }
+        else
+        {
+            cs2rgb(CS_FG_FIELD(csNext), &rgb);
+            iColor = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb, true);
+        }
+    }
+    else
+    {
+        if (CS_FG_INDEXED & csNext)
+        {
+            iColor = COLOR_INDEX_FG + palette[CS_FG_FIELD(csNext)].color16;
+        }
+        else
+        {
+            cs2rgb(CS_FG_FIELD(csNext), &rgb);
+            iColor = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb, false);
+        }
+
+        // For foreground 256-to-16-color down-conversion, we 'borrow' the
+        // highlite capability.  We don't need or want it if the client supports
+        // 256-color, and there is no highlite capability we can borrow for
+        // background color.  This decision is a prerequisite to the 'return
+        // to normal' decision below.
+        //
+        if (COLOR_INDEX_FG + 8 <= iColor && iColor <= COLOR_INDEX_FG + 15)
+        {
+            csNext |= CS_INTENSE;
+            iColor -= 8;
+        }
+    }
+    csNext = UpdateColorState(csNext, iColor);
+
+    // Aproximate Background Color
+    //
+    if (fColor256)
+    {
+        if (CS_BG_INDEXED & csNext)
+        {
+            iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+        }
+        else
+        {
+            cs2rgb(CS_BG_FIELD(csNext), &rgb);
+            iColor = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb, true);
+        }
+    }
+    else
+    {
+        if (CS_BG_INDEXED & csNext)
+        {
+            iColor = COLOR_INDEX_BG + palette[CS_BG_FIELD(csNext)].color8;
+        }
+        else
+        {
+            cs2rgb(CS_BG_FIELD(csNext), &rgb);
+            iColor = COLOR_INDEX_BG + FindNearestPalette8Entry(rgb);
+        }
+    }
+    csNext = UpdateColorState(csNext, iColor);
+
+    if (csClient == csNext)
     {
         *nTransition = 0;
         Buffer[0] = '\0';
@@ -2323,18 +2388,18 @@ static UTF8 *ColorTransitionANSI
 
     // Do we need to go through the normal state?
     //
-    if (  ((csCurrent & ~csNext) & CS_ATTRS)
+    if (  ((csClient & ~csNext) & CS_ATTRS)
        || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
-          && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+          && (csClient & CS_BACKGROUND) != CS_BG_DEFAULT)
        || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
-          && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
+          && (csClient & CS_FOREGROUND) != CS_FG_DEFAULT))
     {
         memcpy(Buffer + i, ANSI_NORMAL, sizeof(ANSI_NORMAL)-1);
         i += sizeof(ANSI_NORMAL)-1;
-        csCurrent = CS_NORMAL;
+        csClient = CS_NORMAL;
     }
 
-    ColorState tmp = csCurrent ^ csNext;
+    ColorState tmp = csClient ^ csNext;
     if (CS_ATTRS & tmp)
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
@@ -2347,26 +2412,11 @@ static UTF8 *ColorTransitionANSI
         }
     }
 
-    RGB rgb;
-    unsigned int iColor;
+    // At this point, all colors are indexed.
+    //
     if (CS_FOREGROUND & tmp)
     {
-        if (CS_FG_INDEXED & csNext)
-        {
-            if (fColor256)
-            {
-                iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
-            }
-            else
-            {
-                iColor = COLOR_INDEX_FG + palette[CS_FG_FIELD(csNext)].color16;
-            }
-        }
-        else
-        {
-            cs2rgb(CS_FG_FIELD(csNext), &rgb);
-            iColor = COLOR_INDEX_FG + FindNearestPaletteEntry(rgb, fColor256);
-        }
+        iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
         if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iColor].pAnsi, aColors[iColor].nAnsi);
@@ -2376,29 +2426,7 @@ static UTF8 *ColorTransitionANSI
 
     if (CS_BACKGROUND & tmp)
     {
-        if (CS_BG_INDEXED & csNext)
-        {
-            if (fColor256)
-            {
-                iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
-            }
-            else
-            {
-                iColor = COLOR_INDEX_BG + palette[CS_BG_FIELD(csNext)].color8;
-            }
-        }
-        else
-        {
-            cs2rgb(CS_BG_FIELD(csNext), &rgb);
-            if (fColor256)
-            {
-                iColor = COLOR_INDEX_BG + FindNearestPaletteEntry(rgb, fColor256);
-            }
-            else
-            {
-                iColor = COLOR_INDEX_BG + FindNearestPalette8Entry(rgb);
-            }
-        }
+        iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
         if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iColor].pAnsi, aColors[iColor].nAnsi);
@@ -2407,6 +2435,7 @@ static UTF8 *ColorTransitionANSI
     }
     Buffer[i] = '\0';
     *nTransition = i;
+    csClient = csNext;
     return Buffer;
 }
 
@@ -2489,6 +2518,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
         nNormal += sizeof(ANSI_WHITE)-1;
     }
 
+    ColorState csClient = (fNoBleed)?CS_FG_WHITE:CS_NORMAL;
     ColorState csPrev = CS_NORMAL;
     ColorState csNext = CS_NORMAL;
     UTF8 *pBuffer = aBuffer;
@@ -2514,7 +2544,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
             {
                 UTF8 *pTransition = NULL;
                 size_t nTransition;
-                pTransition = ColorTransitionANSI( csPrev, csNext,
+                pTransition = ColorTransitionANSI( csClient, csNext,
                                                    &nTransition, fNoBleed, fColor256);
                 if (nTransition)
                 {
@@ -5905,7 +5935,9 @@ UTF8 *mux_string::export_TextConverted
 
     mux_cursor curIn, iCopy;
     size_t iOut = 0, nCopy = 0, nTransition = 0;
-    ColorState csPrev = CS_NORMAL, csCurrent = CS_NORMAL;
+    ColorState csClient = (fNoBleed)?CS_FG_WHITE:CS_NORMAL;
+    ColorState csPrev = CS_NORMAL;
+    ColorState csCurrent = CS_NORMAL;
     UTF8 *pTransition = NULL;
 
     bool bPlentyOfRoom = (m_iLast.m_byte + (COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH * m_ncs) + nNormal + 1) < sizeof(Buffer);
@@ -5925,7 +5957,7 @@ UTF8 *mux_string::export_TextConverted
                     iOut += nCopy;
                     iCopy = curIn;
                 }
-                pTransition = ColorTransitionANSI( csPrev, csCurrent,
+                pTransition = ColorTransitionANSI( csClient, csCurrent,
                                                    &nTransition, fNoBleed, fColor256);
                 if (nTransition)
                 {
@@ -5962,7 +5994,7 @@ UTF8 *mux_string::export_TextConverted
         ValidateColorState(csCurrent);
         if (csPrev != csCurrent)
         {
-            pTransition = ColorTransitionANSI( csPrev, csCurrent,
+            pTransition = ColorTransitionANSI( csClient, csCurrent,
                                                &nTransition, fNoBleed, fColor256);
         }
         else
