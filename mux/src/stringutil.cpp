@@ -1505,14 +1505,14 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_FG_MAGENTA, CS_FOREGROUND, ANSI_MAGENTA,  sizeof(ANSI_MAGENTA)-1,  T(COLOR_FG_MAGENTA), 3, T("%xm"), 3},
     { CS_FG_CYAN,    CS_FOREGROUND, ANSI_CYAN,     sizeof(ANSI_CYAN)-1,     T(COLOR_FG_CYAN),    3, T("%xc"), 3},
     { CS_FG_WHITE,   CS_FOREGROUND, ANSI_WHITE,    sizeof(ANSI_WHITE)-1,    T(COLOR_FG_WHITE),   3, T("%xw"), 3}, // COLOR_INDEX_FG_WHITE
-    { CS_FG(  8),    CS_FOREGROUND, XTERM_FG(  8), sizeof(XTERM_FG(  8))-1, T(COLOR_FG_555555),  3, T("%xx%xh"), 6},  // These eight are converted into something else.
-    { CS_FG(  9),    CS_FOREGROUND, XTERM_FG(  9), sizeof(XTERM_FG(  9))-1, T(COLOR_FG_FF5555),  3, T("%xr%xh"), 6},  // .
-    { CS_FG( 10),    CS_FOREGROUND, XTERM_FG( 10), sizeof(XTERM_FG( 10))-1, T(COLOR_FG_55FF55),  3, T("%xg%xh"), 6},  // .
-    { CS_FG( 11),    CS_FOREGROUND, XTERM_FG( 11), sizeof(XTERM_FG( 11))-1, T(COLOR_FG_FFFF55),  3, T("%xy%xh"), 6},  // .
-    { CS_FG( 12),    CS_FOREGROUND, XTERM_FG( 12), sizeof(XTERM_FG( 12))-1, T(COLOR_FG_5555FF),  3, T("%xb%xh"), 6},  // .
-    { CS_FG( 13),    CS_FOREGROUND, XTERM_FG( 13), sizeof(XTERM_FG( 13))-1, T(COLOR_FG_FF55FF),  3, T("%xm%xh"), 6},  // .
-    { CS_FG( 14),    CS_FOREGROUND, XTERM_FG( 14), sizeof(XTERM_FG( 14))-1, T(COLOR_FG_55FFFF),  3, T("%xc%xh"), 6},  // .
-    { CS_FG( 15),    CS_FOREGROUND, XTERM_FG( 15), sizeof(XTERM_FG( 15))-1, T(COLOR_FG_FFFFFF),  3, T("%xw%xh"), 6},  // -
+    { CS_FG(  8),    CS_FOREGROUND, XTERM_FG(  8), sizeof(XTERM_FG(  8))-1, T(COLOR_FG_555555),  3, T("NU8"), 6},  // These eight are converted into something else.
+    { CS_FG(  9),    CS_FOREGROUND, XTERM_FG(  9), sizeof(XTERM_FG(  9))-1, T(COLOR_FG_FF5555),  3, T("NU9"), 6},  // .
+    { CS_FG( 10),    CS_FOREGROUND, XTERM_FG( 10), sizeof(XTERM_FG( 10))-1, T(COLOR_FG_55FF55),  3, T("NU10"), 6},  // .
+    { CS_FG( 11),    CS_FOREGROUND, XTERM_FG( 11), sizeof(XTERM_FG( 11))-1, T(COLOR_FG_FFFF55),  3, T("NU11"), 6},  // .
+    { CS_FG( 12),    CS_FOREGROUND, XTERM_FG( 12), sizeof(XTERM_FG( 12))-1, T(COLOR_FG_5555FF),  3, T("NU12"), 6},  // .
+    { CS_FG( 13),    CS_FOREGROUND, XTERM_FG( 13), sizeof(XTERM_FG( 13))-1, T(COLOR_FG_FF55FF),  3, T("NU13"), 6},  // .
+    { CS_FG( 14),    CS_FOREGROUND, XTERM_FG( 14), sizeof(XTERM_FG( 14))-1, T(COLOR_FG_55FFFF),  3, T("NU14"), 6},  // .
+    { CS_FG( 15),    CS_FOREGROUND, XTERM_FG( 15), sizeof(XTERM_FG( 15))-1, T(COLOR_FG_FFFFFF_1),3, T("NU15"), 6},  // -
     { CS_FG( 16),    CS_FOREGROUND, XTERM_FG( 16), sizeof(XTERM_FG( 16))-1, T(COLOR_FG_000000),  3, T("%x<#000000>"), 11},
     { CS_FG( 17),    CS_FOREGROUND, XTERM_FG( 17), sizeof(XTERM_FG( 17))-1, T(COLOR_FG_00005F),  3, T("%x<#00005F>"), 11},
     { CS_FG( 18),    CS_FOREGROUND, XTERM_FG( 18), sizeof(XTERM_FG( 18))-1, T(COLOR_FG_000087),  3, T("%x<#000087>"), 11},
@@ -1728,7 +1728,7 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_FG(228),    CS_FOREGROUND, XTERM_FG(228), sizeof(XTERM_FG(228))-1, T(COLOR_FG_FFFF87),  3, T("%x<#FFFF87>"), 11},
     { CS_FG(229),    CS_FOREGROUND, XTERM_FG(229), sizeof(XTERM_FG(229))-1, T(COLOR_FG_FFFFAF),  3, T("%x<#FFFFAF>"), 11},
     { CS_FG(230),    CS_FOREGROUND, XTERM_FG(230), sizeof(XTERM_FG(230))-1, T(COLOR_FG_FFFFD7),  3, T("%x<#FFFFD7>"), 11},
-    { CS_FG(231),    CS_FOREGROUND, XTERM_FG(231), sizeof(XTERM_FG(231))-1, T(COLOR_FG_FFFFFF),  3, T("%x<#FFFFFF>"), 11},
+    { CS_FG(231),    CS_FOREGROUND, XTERM_FG(231), sizeof(XTERM_FG(231))-1, T(COLOR_FG_FFFFFF_2),3, T("%x<#FFFFFF>"), 11},
     { CS_FG(232),    CS_FOREGROUND, XTERM_FG(232), sizeof(XTERM_FG(232))-1, T(COLOR_FG_080808),  3, T("%x<#080808>"), 11},
     { CS_FG(233),    CS_FOREGROUND, XTERM_FG(233), sizeof(XTERM_FG(233))-1, T(COLOR_FG_121212),  3, T("%x<#121212>"), 11},
     { CS_FG(234),    CS_FOREGROUND, XTERM_FG(234), sizeof(XTERM_FG(234))-1, T(COLOR_FG_1C1C1C),  3, T("%x<#1C1C1C>"), 11},
@@ -4060,7 +4060,8 @@ size_t TruncateToBuffer
         // Parse a run of color code points.
         //
         int iCode;
-        while (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
+        while (  (  UTF8_SIZE3 == utf8_FirstByte[p[0]]
+                 || UTF8_SIZE4 == utf8_FirstByte[p[0]])
               && COLOR_NOTCOLOR != (iCode = mux_color(p)))
         {
             csCurrent = UpdateColorState(csCurrent, iCode);
@@ -4076,14 +4077,16 @@ size_t TruncateToBuffer
         for (;;)
         {
             const UTF8 *pEF = (UTF8 *)strchr((char *)p, '\xEF');
-            if (NULL == pEF)
+            const UTF8 *pF3 = (UTF8 *)strchr((char *)p, '\xF3');
+            if (  NULL == pEF
+               && NULL == pF3)
             {
                 size_t n = strlen((char *)pTextRun);
                 nTextRun += n;
                 p += n;
                 break;
             }
-            else
+            else if (NULL != pEF)
             {
                 nTextRun += pEF - p;
                 p = pEF;
@@ -4093,6 +4096,17 @@ size_t TruncateToBuffer
                 }
                 nTextRun += UTF8_SIZE3;
                 p += UTF8_SIZE3;
+            }
+            else if (NULL != pF3)
+            {
+                nTextRun += pF3 - p;
+                p = pF3;
+                if (COLOR_NOTCOLOR != mux_color(p))
+                {
+                    break;
+                }
+                nTextRun += UTF8_SIZE4;
+                p += UTF8_SIZE4;
             }
         }
 

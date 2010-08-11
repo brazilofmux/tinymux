@@ -836,7 +836,7 @@ typedef UINT64 ColorState;
 #define COLOR_FG_5555FF  "\xEF\x98\x8C"    // 18
 #define COLOR_FG_FF55FF  "\xEF\x98\x8D"    // 19
 #define COLOR_FG_55FFFF  "\xEF\x98\x8E"    // 20
-#define COLOR_FG_FFFFFF  "\xEF\x98\x8F"    // 21
+#define COLOR_FG_FFFFFF_1 "\xEF\x98\x8F"    // 21
 #define COLOR_FG_000000  "\xEF\x98\x90"    // 22
 #define COLOR_FG_00005F  "\xEF\x98\x91"    // 23
 #define COLOR_FG_000087  "\xEF\x98\x92"    // 24
@@ -1052,6 +1052,7 @@ typedef UINT64 ColorState;
 #define COLOR_FG_FFFF87  "\xEF\x9B\xA4"    // 234
 #define COLOR_FG_FFFFAF  "\xEF\x9B\xA5"    // 235
 #define COLOR_FG_FFFFD7  "\xEF\x9B\xA6"    // 236
+#define COLOR_FG_FFFFFF_2 "\xEF\x9B\xA7"   // 237
 #define COLOR_FG_080808  "\xEF\x9B\xA8"    // 238
 #define COLOR_FG_121212  "\xEF\x9B\xA9"    // 239
 #define COLOR_FG_1C1C1C  "\xEF\x9B\xAA"    // 240
