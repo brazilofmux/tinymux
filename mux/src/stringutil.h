@@ -1093,7 +1093,7 @@ typedef UINT64 ColorState;
 #define COLOR_BG_5555FF  "\xEF\x9C\x8C"    // 274
 #define COLOR_BG_FF55FF  "\xEF\x9C\x8D"    // 275
 #define COLOR_BG_55FFFF  "\xEF\x9C\x8E"    // 276
-#define COLOR_BG_FFFFFF  "\xEF\x9C\x8F"    // 277
+#define COLOR_BG_FFFFFF_1 "\xEF\x9C\x8F"   // 277
 #define COLOR_BG_000000  "\xEF\x9C\x90"    // 278
 #define COLOR_BG_00005F  "\xEF\x9C\x91"    // 279
 #define COLOR_BG_000087  "\xEF\x9C\x92"    // 280
@@ -1309,6 +1309,7 @@ typedef UINT64 ColorState;
 #define COLOR_BG_FFFF87  "\xEF\x9F\xA4"    // 490
 #define COLOR_BG_FFFFAF  "\xEF\x9F\xA5"    // 491
 #define COLOR_BG_FFFFD7  "\xEF\x9F\xA6"    // 492
+#define COLOR_BG_FFFFFF_2 "\xEF\x9F\xA7"   // 493
 #define COLOR_BG_080808  "\xEF\x9F\xA8"    // 494
 #define COLOR_BG_121212  "\xEF\x9F\xA9"    // 495
 #define COLOR_BG_1C1C1C  "\xEF\x9F\xAA"    // 496
