@@ -2060,7 +2060,7 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
         {
             if (CS_BG_INDEXED & cs)
             {
-                cs = (cs & ~CS_FOREGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
+                cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
             }
 
             if (iColorCode < COLOR_INDEX_BG_24_GREEN)
@@ -2361,7 +2361,7 @@ static UTF8 *ColorTransitionEscape
         else
         {
             cs2rgb(CS_BG_FIELD(csNext), &rgb);
-            mux_sprintf(Buffer + i, 12, T("%%x<#%02X%02X%02X>"), rgb.r, rgb.g, rgb.b);
+            mux_sprintf(Buffer + i, 12, T("%%X<#%02X%02X%02X>"), rgb.r, rgb.g, rgb.b);
             i += 11;
         }
     }
@@ -2550,7 +2550,8 @@ void LettersToColorState(ColorState &cs, UTF8 *pIn)
 {
     cs = CS_NORMAL;
     bool fBackground = false;
-    for (size_t i = 0; '\0' != pIn[i]; i++)
+    size_t i = 0;
+    while ('\0' != pIn[i])
     {
         unsigned int iColor;
         unsigned ch = pIn[i];
@@ -2564,27 +2565,31 @@ void LettersToColorState(ColorState &cs, UTF8 *pIn)
                 i++;
             }
             RGB rgb;
-            if (  '>' == ch
-               && parse_rgb(i - j, pIn + j, rgb))
+            if ('>' == ch)
             {
-                iColor = FindNearestPaletteEntry(rgb, true);
-                bool fExact = (  palette[iColor].rgb.r == rgb.r
-                              && palette[iColor].rgb.g == rgb.g
-                              && palette[iColor].rgb.b == rgb.b);
-                if (fBackground)
+                if (parse_rgb(i - j, pIn + j, rgb))
                 {
-                    cs = (cs & ~CS_BACKGROUND) | (fExact ? CS_BG(iColor) : (rgb2cs(&rgb) << 32));
+                    iColor = FindNearestPaletteEntry(rgb, true);
+                    bool fExact = (  palette[iColor].rgb.r == rgb.r
+                                  && palette[iColor].rgb.g == rgb.g
+                                  && palette[iColor].rgb.b == rgb.b);
+                    if (fBackground)
+                    {
+                        cs = (cs & ~CS_BACKGROUND) | (fExact ? CS_BG(iColor) : (rgb2cs(&rgb) << 32));
+                    }
+                    else
+                    {
+                        cs = (cs & ~CS_FOREGROUND) | (fExact ? CS_FG(iColor) : rgb2cs(&rgb));
+                    }
                 }
-                else
-                {
-                    cs = (cs & ~CS_FOREGROUND) | (fExact ? CS_FG(iColor) : rgb2cs(&rgb));
-                }
+                i++;
             }
             fBackground = false;
         }
         else if ('/' == ch)
         {
             fBackground = true;
+            i++;
         }
         else
         {
@@ -2594,6 +2599,7 @@ void LettersToColorState(ColorState &cs, UTF8 *pIn)
                 cs = UpdateColorState(cs, iColor);
             }
             fBackground = false;
+            i++;
         }
     }
 }
@@ -4076,17 +4082,8 @@ size_t TruncateToBuffer
         const UTF8 *pTextRun = p;
         for (;;)
         {
-            const UTF8 *pEF = (UTF8 *)strchr((char *)p, '\xEF');
-            const UTF8 *pF3 = (UTF8 *)strchr((char *)p, '\xF3');
-            if (  NULL == pEF
-               && NULL == pF3)
-            {
-                size_t n = strlen((char *)pTextRun);
-                nTextRun += n;
-                p += n;
-                break;
-            }
-            else if (NULL != pEF)
+            const UTF8 *pEF, *pF3;
+            if (NULL != (pEF = (UTF8 *)strchr((char *)p, '\xEF')))
             {
                 nTextRun += pEF - p;
                 p = pEF;
@@ -4097,7 +4094,7 @@ size_t TruncateToBuffer
                 nTextRun += UTF8_SIZE3;
                 p += UTF8_SIZE3;
             }
-            else if (NULL != pF3)
+            else if (NULL != (pF3 = (UTF8 *)strchr((char *)p, '\xF3')))
             {
                 nTextRun += pF3 - p;
                 p = pF3;
@@ -4107,6 +4104,13 @@ size_t TruncateToBuffer
                 }
                 nTextRun += UTF8_SIZE4;
                 p += UTF8_SIZE4;
+            }
+            else
+            {
+                size_t n = strlen((char *)pTextRun);
+                nTextRun += n;
+                p += n;
+                break;
             }
         }
 
