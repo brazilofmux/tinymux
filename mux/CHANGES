@@ -10,6 +10,8 @@ Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Add 256-color support via COLOR256 flag, %x<>, ansi(), and
     translate().
+ -- Add 24-bit color support.  That is, the database and string
+    functions can represent 24-bit color.
  -- Add password_methods configuration option.
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
