@@ -1334,8 +1334,6 @@ typedef UINT64 ColorState;
 #define COLOR_BG_E4E4E4  "\xEF\x9F\xBE"    // 516
 #define COLOR_BG_EEEEEE  "\xEF\x9F\xBF"    // 517
 
-#define COLOR_LAST_CODE  (NUM_OTHER + NUM_ATTR + NUM_FG + NUM_BG)
-
 #define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
 
 typedef struct

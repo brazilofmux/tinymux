@@ -1001,7 +1001,7 @@ inline int abs(int x)
     else return -x;
 }
 
-inline int min(int x, int y)
+inline int mux_min(int x, int y)
 {
     if (x < y) return x;
     else return y;
@@ -1009,17 +1009,17 @@ inline int min(int x, int y)
 
 inline void rgb2yuv16(RGB *rgb, YUV *yuv)
 {
-    yuv->y = min(abs( 2104*rgb->r + 4310*rgb->g +  802*rgb->b + 4096 +  131072) >> 13, 235);
-    yuv->u = min(abs(-1214*rgb->r - 2384*rgb->g + 3598*rgb->b + 4096 + 1048576) >> 13, 240);
-    yuv->v = min(abs( 3598*rgb->r - 3013*rgb->g -  585*rgb->b + 4096 + 1048576) >> 13, 240);
+    yuv->y = mux_min(abs( 2104*rgb->r + 4310*rgb->g +  802*rgb->b + 4096 +  131072) >> 13, 235);
+    yuv->u = mux_min(abs(-1214*rgb->r - 2384*rgb->g + 3598*rgb->b + 4096 + 1048576) >> 13, 240);
+    yuv->v = mux_min(abs( 3598*rgb->r - 3013*rgb->g -  585*rgb->b + 4096 + 1048576) >> 13, 240);
     yuv->y2 = yuv->y + (yuv->y/2);
 }
 
 inline void cs2rgb(ColorState cs, RGB *rgb)
 {
-    rgb->r = (cs & 0xFF0000) >> 16;
-    rgb->g = (cs & 0x00FF00) >> 8;
-    rgb->b = (cs & 0x0000FF);
+    rgb->r = static_cast<int>((cs & 0xFF0000) >> 16);
+    rgb->g = static_cast<int>((cs & 0x00FF00) >> 8);
+    rgb->b = static_cast<int>((cs & 0x0000FF));
 }
 
 inline ColorState rgb2cs(RGB *rgb)
@@ -1489,7 +1489,7 @@ int FindNearestPalette8Entry(RGB &rgb)
 // Even for 256-color-capable clients, the latter are used instead of the former.
 // Similiarly for XTERM_BG(0) through XTERM_BG(0).
 //
-const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
+const MUX_COLOR_SET aColors[] =
 {
     { 0,             0,             "",            0,                       T(""),               0, T(""),    0}, // COLOR_NOTCOLOR
     { CS_NORMAL,     CS_ALLBITS,    ANSI_NORMAL,   sizeof(ANSI_NORMAL)-1,   T(COLOR_RESET),      3, T("%xn"), 3}, // COLOR_INDEX_RESET
@@ -1760,7 +1760,7 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_BG_BLUE,    CS_BACKGROUND, ANSI_BBLUE,    sizeof(ANSI_BBLUE)-1,    T(COLOR_BG_BLUE),    3, T("%xB"), 3},
     { CS_BG_MAGENTA, CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_MAGENTA), 3, T("%xM"), 3},
     { CS_BG_CYAN,    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_CYAN),    3, T("%xC"), 3},
-    { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}, // COLOR_LAST_CODE
+    { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3},
     { CS_BG(  8),    CS_BACKGROUND, ANSI_BBLACK,   sizeof(ANSI_BBLACK)-1,   T(COLOR_BG_555555),  3, T("%xX"), 3}, // These eight are never used.
     { CS_BG(  9),    CS_BACKGROUND, ANSI_BRED,     sizeof(ANSI_BRED)-1,     T(COLOR_BG_FF5555),  3, T("%xR"), 3}, // .
     { CS_BG( 10),    CS_BACKGROUND, ANSI_BGREEN,   sizeof(ANSI_BGREEN)-1,   T(COLOR_BG_55FF55),  3, T("%xG"), 3}, // .
@@ -2151,7 +2151,7 @@ static UTF8 *ColorTransitionBinary
         bool fExact;
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = CS_FG_FIELD(csNext);
+            iColor = static_cast<unsigned int>(CS_FG_FIELD(csNext));
             fExact = true;
         }
         else
@@ -2192,7 +2192,7 @@ static UTF8 *ColorTransitionBinary
         bool fExact;
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = CS_BG_FIELD(csNext);
+            iColor = static_cast<unsigned int>(CS_BG_FIELD(csNext));
             fExact = true;
         }
         else
@@ -2332,7 +2332,7 @@ static UTF8 *ColorTransitionEscape
     {
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+            iColor = COLOR_INDEX_FG + static_cast<unsigned int>(CS_FG_FIELD(csNext));
             if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
             {
                 memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
@@ -2351,7 +2351,7 @@ static UTF8 *ColorTransitionEscape
     {
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+            iColor = COLOR_INDEX_BG + static_cast<unsigned int>(CS_BG_FIELD(csNext));
             if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
             {
                 memcpy(Buffer + i, aColors[iColor].pEscape, aColors[iColor].nEscape);
@@ -2417,7 +2417,7 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+            iColor = COLOR_INDEX_FG + static_cast<unsigned int>(CS_FG_FIELD(csNext));
         }
         else
         {
@@ -2460,7 +2460,7 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+            iColor = COLOR_INDEX_BG + static_cast<unsigned int>(CS_BG_FIELD(csNext));
         }
         else
         {
@@ -2523,7 +2523,7 @@ static UTF8 *ColorTransitionANSI
     //
     if (CS_FOREGROUND & tmp)
     {
-        iColor = COLOR_INDEX_FG + CS_FG_FIELD(csNext);
+        iColor = COLOR_INDEX_FG + static_cast<unsigned int>(CS_FG_FIELD(csNext));
         if (iColor < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iColor].pAnsi, aColors[iColor].nAnsi);
@@ -2533,7 +2533,7 @@ static UTF8 *ColorTransitionANSI
 
     if (CS_BACKGROUND & tmp)
     {
-        iColor = COLOR_INDEX_BG + CS_BG_FIELD(csNext);
+        iColor = COLOR_INDEX_BG + static_cast<unsigned int>(CS_BG_FIELD(csNext));
         if (iColor < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[iColor].pAnsi, aColors[iColor].nAnsi);
@@ -3662,7 +3662,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                             {
                                 unsigned int iCode = COLOR_INDEX_FG + (p[1] - '0');
                                 if (  COLOR_INDEX_FG <= iCode
-                                   && iCode < COLOR_INDEX_BG)
+                                   && iCode < COLOR_INDEX_FG + 7)
                                 {
                                     s = aColors[iCode].pUTF;
                                 }
@@ -3671,7 +3671,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                             {
                                 unsigned int iCode = COLOR_INDEX_BG + (p[1] - '0');
                                 if (  COLOR_INDEX_BG <= iCode
-                                   && iCode <= COLOR_LAST_CODE)
+                                   && iCode <= COLOR_INDEX_BG + 7)
                                 {
                                     s = aColors[iCode].pUTF;
                                 }

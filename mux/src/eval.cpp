@@ -1173,7 +1173,7 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
 
     int nSpaces = 0;
     int nDigits = 0;
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
     {
         ch = p[i];
         if (mux_isspace(ch))
