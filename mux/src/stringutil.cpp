@@ -2686,6 +2686,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
                 break;
             }
             memcpy(pBuffer, pString + iCopy, i - iCopy);
+            pBuffer += i - iCopy;
             iCopy = i;
         }
 
