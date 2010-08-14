@@ -2654,6 +2654,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
     }
     while ('\0' != pString[i])
     {
+        iCopy = i;
         while (  '\0' != pString[i]
               && COLOR_NOTCOLOR == iCode)
         {
