@@ -2640,6 +2640,330 @@ UTF8 *LettersToBinary(UTF8 *pLetters)
     return ColorTransitionBinary(CS_NORMAL, cs, &n);
 }
 
+typedef enum
+{
+    kIntense,
+    kUnderline,
+    kBlink,
+    kInverse,
+    kColor,
+    kNormal,
+} HTMLtag;
+
+typedef struct
+{
+    bool       fBeginEnd;
+    HTMLtag    kTag;
+    ColorState cs;
+    size_t     iStart;
+} tag_node;
+
+UTF8 *convert_to_html(const UTF8 *pString)
+{
+    // Converting to HTML is performed in two passes. The first pass
+    // determines an optimal nesting order of tags. The second pass generates
+    // the HTML.
+    //
+    tag_node List[LBUF_SIZE];
+    int      nList = 0;
+    int      Stack[10];
+    int      nStack = 0;
+
+    HTMLtag tagmap[5] = { kIntense, kUnderline, kBlink, kInverse, kColor };
+
+    size_t iCopy;
+    size_t i = 0;
+    ColorState csPrev = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
+    unsigned int iCode = COLOR_NOTCOLOR;
+
+    if ('\0' != pString[i])
+    {
+        iCode = mux_color(pString + i);
+        if (COLOR_NOTCOLOR == iCode)
+        {
+            List[nList].fBeginEnd = true;
+            List[nList].kTag = kNormal;
+            List[nList].cs = CS_NORMAL;
+            List[nList].iStart = i;
+            nList++;
+        }
+    }
+    while ('\0' != pString[i])
+    {
+        iCopy = i;
+        while (  '\0' != pString[i]
+              && COLOR_NOTCOLOR == iCode)
+        {
+            i += utf8_FirstByte[pString[i]];
+            iCode = mux_color(pString + i);
+        }
+
+        if (csNext != csPrev)
+        {
+            for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG + 1; iAttr++)
+            {
+                ColorState tmp = csNext ^ csPrev;
+                HTMLtag kNext = tagmap[iAttr - COLOR_INDEX_ATTR];
+                bool fOpen = false;
+                bool fClose = false;
+
+                if (iAttr < COLOR_INDEX_FG)
+                {
+                    // Attribute
+                    //
+                    if (tmp & aColors[iAttr].csMask)
+                    {
+                        if (csNext & aColors[iAttr].csMask)
+                        {
+                            fOpen = true;
+                        }
+                        else
+                        {
+                            fClose = true;
+                        }
+                    }
+                }
+                else
+                {
+                    // Color
+                    //
+                    if (tmp & CS_FOREGROUND)
+                    {
+                        if (  (csPrev & CS_FOREGROUND) == CS_FG_DEFAULT
+                           && (csNext & CS_FOREGROUND) != CS_FG_DEFAULT)
+                        {
+                            fOpen = true;
+                        }
+                        else if (  (csPrev & CS_FOREGROUND) != CS_FG_DEFAULT
+                                && (csNext & CS_FOREGROUND) == CS_FG_DEFAULT)
+                        {
+                            fClose = true;
+                        }
+                        else
+                        {
+                            fOpen = true;
+                            fClose = true;
+                        }
+                    }
+                    if (tmp & CS_BACKGROUND)
+                    {
+                        if (  (csPrev & CS_BACKGROUND) == CS_BG_DEFAULT
+                           && (csNext & CS_BACKGROUND) != CS_BG_DEFAULT)
+                        {
+                            fOpen = true;
+                        }
+                        else if (  (csPrev & CS_BACKGROUND) != CS_BG_DEFAULT
+                                && (csNext & CS_BACKGROUND) == CS_BG_DEFAULT)
+                        {
+                            fClose = true;
+                        }
+                        else
+                        {
+                            fOpen = true;
+                            fClose = true;
+                        }
+                    }
+                }
+
+                if (fClose)
+                {
+                    for (int j = nStack - 1; 0 <= j; j--)
+                    {
+                        if (List[Stack[j]].kTag == kNext)
+                        {
+                            if (List[Stack[j]].iStart == List[Stack[nStack-1]].iStart)
+                            {
+                                if (j != nStack - 1)
+                                {
+                                    // Change the order of tags which open at the
+                                    // same position so that the one we want to
+                                    // close can be popped.
+                                    //
+                                    tag_node t = List[Stack[j]];
+                                    List[Stack[j]] = List[Stack[nStack-1]];
+                                    List[Stack[nStack-1]] = t;
+                                    j = nStack - 1;
+                                }
+
+                                List[nList] = List[Stack[j]];
+                                List[nList].fBeginEnd = false;
+                                nList++;
+                            }
+                            else
+                            {
+                                for (int k = nStack - 1; j <= k; k--)
+                                {
+                                    List[nList] = List[Stack[k]];
+                                    List[nList].fBeginEnd = false;
+
+                                    switch(List[nList].kTag)
+                                    {
+                                    case kIntense:
+                                        csPrev &= ~CS_INTENSE;
+                                        break;
+
+                                    case kUnderline:
+                                        csPrev &= ~CS_UNDERLINE;
+                                        break;
+
+                                    case kBlink:
+                                        csPrev &= ~CS_BLINK;
+                                        break;
+
+                                    case kInverse:
+                                        csPrev &= ~CS_INVERSE;
+                                        break;
+
+                                    case kColor:
+                                        csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+                                        break;
+                                    }
+                                    nList++;
+                                }
+                            }
+                            nStack--;
+                            if (0 == nStack)
+                            {
+                                List[nList].fBeginEnd = true;
+                                List[nList].kTag = kNormal;
+                                List[nList].cs = CS_NORMAL;
+                                List[nList].iStart = i;
+                                nList++;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (fOpen)
+                {
+                    List[nList].fBeginEnd = true;
+                    List[nList].cs = csNext;
+                    List[nList].kTag = kNext;
+                    List[nList].iStart = iCopy;
+                    Stack[nStack++] = nList++;
+                }
+            }
+
+            csPrev = csNext;
+        }
+
+        while (  '\0' != pString[i]
+              && COLOR_NOTCOLOR != iCode)
+        {
+            csNext = UpdateColorState(csNext, iCode);
+            i += utf8_FirstByte[pString[i]];
+            iCode = mux_color(pString + i);
+        }
+    }
+
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+
+    for (int iList = 0; iList < nList; iList++)
+    {
+        if (kNormal != List[iList].kTag)
+        {
+            *pBuffer++ = '<';
+            if (!List[iList].fBeginEnd)
+            {
+                *pBuffer++ = '/';
+            }
+
+            switch (List[iList].kTag)
+            {
+            case kIntense:
+                *pBuffer++ = 'H';
+                break;
+
+            case kUnderline:
+                *pBuffer++ = 'U';
+                break;
+
+            case kBlink:
+                *pBuffer++ = 'B';
+                break;
+
+            case kInverse:
+                *pBuffer++ = 'I';
+                break;
+
+            case kColor:
+                if (List[iList].fBeginEnd)
+                {
+                    ColorState cs = List[iList].cs;
+                    if (  (CS_FOREGROUND & cs) != CS_FG_DEFAULT
+                       && (CS_FG_INDEXED & cs))
+                    {
+                       cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD(cs)].rgb);
+                    }
+
+                    if (  (CS_BACKGROUND & cs) != CS_BG_DEFAULT
+                       && (CS_BG_INDEXED & cs))
+                    {
+                        cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
+                    }
+
+                    if ((CS_FOREGROUND & cs) == CS_FG_DEFAULT)
+                    {
+                        if ((CS_BACKGROUND & cs) != CS_BG_DEFAULT)
+                        {
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR BACK=#%08X"), CS_BG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                    }
+                    else
+                    {
+                        if ((CS_BACKGROUND & cs) == CS_BG_DEFAULT)
+                        {
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%08X"), CS_FG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                        else
+                        {
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%08X #%08X"), CS_FG_FIELD(cs), CS_BG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                    }
+                }
+                else
+                {
+                    mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR"));
+                    pBuffer += strlen((char *)pBuffer);
+                }
+                break;
+            }
+            *pBuffer++ = '>';
+        }
+
+        if (List[iList].fBeginEnd)
+        {
+            iCopy = i = List[iList].iStart;
+            if ('\0' != pString[i])
+            {
+                iCode = mux_color(pString + i);
+            }
+            while (  '\0' != pString[i]
+                  && COLOR_NOTCOLOR == iCode)
+            {
+                i += utf8_FirstByte[pString[i]];
+                iCode = mux_color(pString + i);
+            }
+            size_t n = i - iCopy;
+
+            if (0 < n)
+            {
+                memcpy(pBuffer, pString + List[iList].iStart, n);
+                pBuffer += n;
+            }
+        }
+    }
+
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
 /*! \brief Convert private color code points within a string to ANSI color
  * sequences.
  *

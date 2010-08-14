@@ -1379,6 +1379,7 @@ extern PALETTE_ENTRY palette[];
 int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
 UTF8 *LettersToBinary(UTF8 *pLetters);
 
+UTF8 *convert_to_html(const UTF8 *pString);
 UTF8 *convert_color(__in const UTF8 *pString, bool fNoBleed, bool fColor256);
 UTF8 *strip_color(__in const UTF8 *pString, __out_opt size_t *pnLength = 0, __out_opt size_t *pnPoints = 0);
 UTF8 *munge_space(__in const UTF8 *);
