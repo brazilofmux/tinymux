@@ -2788,6 +2788,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
 
                                 List[nList] = List[Stack[j]];
                                 List[nList].fBeginEnd = false;
+                                List[nList].iStart = iCopy;
                                 nList++;
                             }
                             else
@@ -2796,6 +2797,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
                                 {
                                     List[nList] = List[Stack[k]];
                                     List[nList].fBeginEnd = false;
+                                    List[nList].iStart = iCopy;
 
                                     switch(List[nList].kTag)
                                     {
@@ -2828,7 +2830,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
                                 List[nList].fBeginEnd = true;
                                 List[nList].kTag = kNormal;
                                 List[nList].cs = CS_NORMAL;
-                                List[nList].iStart = i;
+                                List[nList].iStart = iCopy;
                                 nList++;
                             }
                             break;
@@ -2937,26 +2939,23 @@ UTF8 *convert_to_html(const UTF8 *pString)
             *pBuffer++ = '>';
         }
 
-        if (List[iList].fBeginEnd)
+        iCopy = i = List[iList].iStart;
+        if ('\0' != pString[i])
         {
-            iCopy = i = List[iList].iStart;
-            if ('\0' != pString[i])
-            {
-                iCode = mux_color(pString + i);
-            }
-            while (  '\0' != pString[i]
-                  && COLOR_NOTCOLOR == iCode)
-            {
-                i += utf8_FirstByte[pString[i]];
-                iCode = mux_color(pString + i);
-            }
-            size_t n = i - iCopy;
+            iCode = mux_color(pString + i);
+        }
+        while (  '\0' != pString[i]
+              && COLOR_NOTCOLOR == iCode)
+        {
+            i += utf8_FirstByte[pString[i]];
+            iCode = mux_color(pString + i);
+        }
+        size_t n = i - iCopy;
 
-            if (0 < n)
-            {
-                memcpy(pBuffer, pString + List[iList].iStart, n);
-                pBuffer += n;
-            }
+        if (0 < n)
+        {
+            memcpy(pBuffer, pString + List[iList].iStart, n);
+            pBuffer += n;
         }
     }
 
