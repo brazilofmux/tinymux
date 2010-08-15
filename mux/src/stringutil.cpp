@@ -2963,7 +2963,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     {
                         if ((CS_BACKGROUND & cs) != CS_BG_DEFAULT)
                         {
-                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR BACK=#%08X"), CS_BG_FIELD(cs));
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR BACK=#%06X"), CS_BG_FIELD(cs));
                             pBuffer += strlen((char *)pBuffer);
                         }
                     }
@@ -2971,12 +2971,12 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     {
                         if ((CS_BACKGROUND & cs) == CS_BG_DEFAULT)
                         {
-                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%08X"), CS_FG_FIELD(cs));
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%06X"), CS_FG_FIELD(cs));
                             pBuffer += strlen((char *)pBuffer);
                         }
                         else
                         {
-                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%08X #%08X"), CS_FG_FIELD(cs), CS_BG_FIELD(cs));
+                            mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR #%06X #%06X"), CS_FG_FIELD(cs), CS_BG_FIELD(cs));
                             pBuffer += strlen((char *)pBuffer);
                         }
                     }
