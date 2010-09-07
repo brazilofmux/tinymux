@@ -1055,7 +1055,7 @@
   commands added under that particular command name. Without it, lists all
   added commands.
 
-  Related Topics: @addcommand, @listcommands.
+  Related Topics: @addcommand, @delcommand.
 
 & @LISTMOTD
 @LISTMOTD
