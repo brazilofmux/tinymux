@@ -742,7 +742,7 @@ const int g_trimoffset[4][4] =
 
 const char *ConvertToAscii(const UTF8 *pString)
 {
-    static char buffer[LBUF_SIZE];
+    static char buffer[2*LBUF_SIZE];
     char *q = buffer;
 
     while ('\0' != *pString)
