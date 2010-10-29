@@ -2417,7 +2417,14 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_FG + static_cast<unsigned int>(CS_FG_FIELD(csNext));
+            if (CS_FG_FIELD(csNext) < COLOR_INDEX_DEFAULT)
+            {
+                iColor = COLOR_INDEX_FG + static_cast<unsigned int>(CS_FG_FIELD(csNext));
+            }
+            else
+            {
+                iColor = COLOR_INDEX_FG + COLOR_INDEX_DEFAULT;
+            }
         }
         else
         {
@@ -2429,7 +2436,14 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_FG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_FG + palette[CS_FG_FIELD(csNext)].color16;
+            if (CS_FG_FIELD(csNext) < COLOR_INDEX_DEFAULT)
+            {
+                iColor = COLOR_INDEX_FG + palette[CS_FG_FIELD(csNext)].color16;
+            }
+            else
+            {
+                iColor = COLOR_INDEX_FG + COLOR_INDEX_DEFAULT;
+            }
         }
         else
         {
@@ -2460,7 +2474,14 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_BG + static_cast<unsigned int>(CS_BG_FIELD(csNext));
+            if (CS_BG_FIELD(csNext) < COLOR_INDEX_DEFAULT)
+            {
+                iColor = COLOR_INDEX_BG + static_cast<unsigned int>(CS_BG_FIELD(csNext));
+            }
+            else
+            {
+                iColor = COLOR_INDEX_BG + COLOR_INDEX_DEFAULT;
+            }
         }
         else
         {
@@ -2472,7 +2493,14 @@ static UTF8 *ColorTransitionANSI
     {
         if (CS_BG_INDEXED & csNext)
         {
-            iColor = COLOR_INDEX_BG + palette[CS_BG_FIELD(csNext)].color8;
+            if (CS_BG_FIELD(csNext) < COLOR_INDEX_DEFAULT)
+            {
+                iColor = COLOR_INDEX_BG + palette[CS_BG_FIELD(csNext)].color8;
+            }
+            else
+            {
+                iColor = COLOR_INDEX_BG + COLOR_INDEX_DEFAULT;
+            }
         }
         else
         {
