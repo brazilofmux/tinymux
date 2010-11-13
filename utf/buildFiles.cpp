@@ -749,11 +749,12 @@ void UniData::LoadUnicodeDataFile(void)
                             char Hangul[1024];
                             if (T == TBase)
                             {
-                                sprintf(Hangul, "%04X %04X", L, V);
+                                sprintf(Hangul, "%04X %04X", static_cast<unsigned int>(L), static_cast<unsigned int>(V));
                             }
                             else
                             {
-                                sprintf(Hangul, "%04X %04X %04X", L, V, T);
+                                sprintf(Hangul, "%04X %04X %04X", static_cast<unsigned int>(L), static_cast<unsigned int>(V),
+                                    static_cast<unsigned int>(T));
                             }
                             aFields1[5] = Hangul;
                             LoadUnicodeDataLine(pt, nFields1, aFields1);
@@ -804,7 +805,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
 
             if (!bValid)
             {
-                printf("***ERROR: Invalid Category %s for U+%04X\n", aFields[2], codepoint);
+                printf("***ERROR: Invalid Category %s for U+%04X\n", aFields[2], static_cast<unsigned int>(codepoint));
                 exit(1);
             }
         }
@@ -836,7 +837,7 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
 
             if (!bValid)
             {
-                printf("***ERROR: Invalid BiDi %s for U+%04X\n", aFields[4], codepoint);
+                printf("***ERROR: Invalid BiDi %s for U+%04X\n", aFields[4], static_cast<unsigned int>(codepoint));
                 exit(1);
             }
         }
@@ -919,7 +920,8 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
 
             if (!bValid)
             {
-                printf("***ERROR: Invalid Decomposition Type, '%s', or Mapping, '%s', for U+%04X\n", pDecomposition_Type, pDecomposition_Mapping, codepoint);
+                printf("***ERROR: Invalid Decomposition Type, '%s', or Mapping, '%s', for U+%04X\n", pDecomposition_Type,
+                    pDecomposition_Mapping, static_cast<unsigned int>(codepoint));
                 exit(1);
             }
         }
@@ -1073,14 +1075,14 @@ void UniData::SaveDecompositions()
 
             if (nPoints != 1 || pts[0] != pt)
             {
-                fprintf(fp, "%04X;", pt);
+                fprintf(fp, "%04X;", static_cast<unsigned int>(pt));
                 for (UTF32 pt2 = 0; pt2 < nPoints; pt2++)
                 {
                     if (pt2 != 0)
                     {
                         fprintf(fp, " ");
                     }
-                    fprintf(fp, "%04X", pts[pt2]);
+                    fprintf(fp, "%04X", static_cast<unsigned int>(pts[pt2]));
                 }
                 fprintf(fp, ";%s\n", cp[pt].GetDescription());
             }
@@ -1166,7 +1168,7 @@ void UniData::SaveCombiningClass()
             {
                 if (table[i] == cc)
                 {
-                    fprintf(fp, "%04X;%u;%s\n", pt, i, cp[pt].GetDescription());
+                    fprintf(fp, "%04X;%u;%s\n", static_cast<unsigned int>(pt), i, cp[pt].GetDescription());
                     break;
                 }
             }
@@ -1189,7 +1191,7 @@ void UniData::SaveMappings()
         {
             return;
         }
-    
+
         for (UTF32 pt = 0; pt <= codepoints; pt++)
         {
             if (cp[pt].IsDefined())
@@ -1197,7 +1199,7 @@ void UniData::SaveMappings()
                 int   nPoints = 0;
                 UTF32 pts[100];
                 GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
-    
+
                 unsigned char ch;
                 UTF32 pt2;
                 int cnt = 0;
@@ -1208,12 +1210,12 @@ void UniData::SaveMappings()
                         cnt++;
                     }
                 }
-    
+
                 if (  1 == cnt
                    && cp[pts[0]].IsMapping(MappingTypeTable[iMapping].Type, ch))
                 {
                     char *pUnicode1Name = cp[pt].GetUnicode1Name();
-                    fprintf(fp, "%04X;%u;%s;%s\n", pt, ch,
+                    fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
                         cp[pt].GetDescription(),
                         (NULL == pUnicode1Name) ? "" : pUnicode1Name);
                 }
@@ -1242,7 +1244,8 @@ void UniData::SaveTranslateToUpper(void)
                && !cp[ptUpper].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptUpper, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptUpper),
+                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
             }
         }
     }
@@ -1268,7 +1271,8 @@ void UniData::SaveTranslateToLower(void)
                && !cp[ptLower].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptLower, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptLower),
+                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
             }
         }
     }
@@ -1294,7 +1298,8 @@ void UniData::SaveTranslateToTitle(void)
                && !cp[ptTitle].IsProhibited())
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", pt, ptTitle, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptTitle),
+                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
             }
         }
     }
@@ -1318,7 +1323,7 @@ void UniData::SaveTranslateDecimalValue(void)
             if (cp[pt].GetDecimalDigitValue(&n))
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%u;%s;%s\n", pt, n, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), n, cp[pt].GetDescription(), (NULL == p) ? "" : p);
             }
         }
     }
@@ -1337,7 +1342,7 @@ void UniData::SaveMasterFile(void)
     {
         if (cp[pt].IsDefined())
         {
-            fprintf(fp, "%04X;%s;%s;%u;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+            fprintf(fp, "%04X;%s;%s;%u;%s", static_cast<unsigned int>(pt), cp[pt].GetDescription(), cp[pt].GetCategoryName(),
                 cp[pt].GetCombiningClass(), cp[pt].GetBiDiName());
 
             char DecompBuffer[1024];
@@ -1368,7 +1373,7 @@ void UniData::SaveMasterFile(void)
                     }
 
                     char buf[12];
-                    sprintf(buf, "%04X", pts[i]);
+                    sprintf(buf, "%04X", static_cast<unsigned int>(pts[i]));
                     strcat(DecompBuffer, buf);
                 }
             }
@@ -1435,7 +1440,7 @@ void UniData::SaveMasterFile(void)
             UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
             if (UNI_EOF != ptUpper)
             {
-                fprintf(fp, ";%04X", ptUpper);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptUpper));
             }
             else
             {
@@ -1445,7 +1450,7 @@ void UniData::SaveMasterFile(void)
             UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
             if (UNI_EOF != ptLower)
             {
-                fprintf(fp, ";%04X", ptLower);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptLower));
             }
             else
             {
@@ -1455,7 +1460,7 @@ void UniData::SaveMasterFile(void)
             UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
             if (UNI_EOF != ptTitle)
             {
-                fprintf(fp, ";%04X", ptTitle);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptTitle));
             }
             else
             {
@@ -1483,7 +1488,7 @@ void UniData::Prohibit(void)
 
             if (cp[pt].GetCategory() == (CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE))
             {
-                if (  (  0xE000 <= pt 
+                if (  (  0xE000 <= pt
                       && pt <= 0xE0FF)
                    || ( 0xF8D0 <= pt
                       && pt <= 0xF8FF))
@@ -1515,7 +1520,7 @@ void UniData::SaveClassifyPrintable(void)
         if (  cp[pt].IsDefined()
            && !cp[pt].IsProhibited())
         {
-            fprintf(fp, "%04X;%s;%s;%u;%s", pt, cp[pt].GetDescription(), cp[pt].GetCategoryName(),
+            fprintf(fp, "%04X;%s;%s;%u;%s", static_cast<unsigned int>(pt), cp[pt].GetDescription(), cp[pt].GetCategoryName(),
                 cp[pt].GetCombiningClass(), cp[pt].GetBiDiName());
 
             char DecompBuffer[1024];
@@ -1546,7 +1551,7 @@ void UniData::SaveClassifyPrintable(void)
                     }
 
                     char buf[12];
-                    sprintf(buf, "%04X", pts[i]);
+                    sprintf(buf, "%04X", static_cast<unsigned int>(pts[i]));
                     strcat(DecompBuffer, buf);
                 }
             }
@@ -1613,7 +1618,7 @@ void UniData::SaveClassifyPrintable(void)
             UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
             if (UNI_EOF != ptUpper)
             {
-                fprintf(fp, ";%04X", ptUpper);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptUpper));
             }
             else
             {
@@ -1623,7 +1628,7 @@ void UniData::SaveClassifyPrintable(void)
             UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
             if (UNI_EOF != ptLower)
             {
-                fprintf(fp, ";%04X", ptLower);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptLower));
             }
             else
             {
@@ -1633,7 +1638,7 @@ void UniData::SaveClassifyPrintable(void)
             UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
             if (UNI_EOF != ptTitle)
             {
-                fprintf(fp, ";%04X", ptTitle);
+                fprintf(fp, ";%04X", static_cast<unsigned int>(ptTitle));
             }
             else
             {
@@ -1659,7 +1664,7 @@ void UniData::SaveClassifyPrivateUse()
         if (  cp[pt].IsDefined()
            && (CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE) == cp[pt].GetCategory())
         {
-            fprintf(fp, "%04X;%s\n", pt, cp[pt].GetDescription());
+            fprintf(fp, "%04X;%s\n", static_cast<unsigned int>(pt), cp[pt].GetDescription());
         }
     }
     fclose(fp);
@@ -1745,8 +1750,8 @@ void UniData::LoadUnicodeHanFile(void)
                     char hex[32];
                     char desc[1024];
 
-                    sprintf(hex, "%04X", pt);
-                    sprintf(desc, "%s CHARACTER %04X", aFields[1], pt);
+                    sprintf(hex, "%04X", static_cast<unsigned int>(pt));
+                    sprintf(desc, "%s CHARACTER %04X", aFields[1], static_cast<unsigned int>(pt));
 
                     int nFields1 = 15;
                     char *aFields1[15];

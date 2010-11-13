@@ -166,7 +166,7 @@ void TestTable(FILE *fp)
                 nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
-                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", nextcode);
+                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", static_cast<unsigned int>(nextcode));
                     exit(0);
                 }
             }
@@ -217,7 +217,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
                 nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
-                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", nextcode);
+                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", static_cast<unsigned int>(nextcode));
                     exit(0);
                 }
             }

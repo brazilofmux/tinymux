@@ -190,7 +190,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     UTF32 nextcode = ReadCodePointAndValue(fp, Value);
     if (Value < 0)
     {
-        fprintf(stderr, "Value missing from code U-%06X\n", nextcode);
+        fprintf(stderr, "Value missing from code U-%06X\n", static_cast<unsigned int>(nextcode));
         exit(0);
     }
 
@@ -222,7 +222,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
         else if (  UNI_EOF != nextcode2
                 && Value < 0)
         {
-            fprintf(stderr, "Value missing from code U-%06X\n", nextcode2);
+            fprintf(stderr, "Value missing from code U-%06X\n", static_cast<unsigned int>(nextcode2));
             exit(0);
         }
         nextcode = nextcode2;

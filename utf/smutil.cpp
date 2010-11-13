@@ -800,7 +800,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                             goto CleanUp;
                         }
                         piBlob[nBlob++] = kLastValue;
- 
+
                         piCopy[0] = k;
                         kCopyCount = 1;
                         kRunCount = 0;
