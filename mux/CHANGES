@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  July 2010
+Last Update:  November 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,6 +375,7 @@ Bug Fixes:
     the list items to be dbrefs.
  -- The 'Input already pending.' check in @program must occur before
     A_PROGCMD is set.
+ -- Protect ConvertToAscii() from buffer overflow.
 
 
 Performance Enhancements:
