@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: July 2010
+Last Update: November 2010
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,6 +55,13 @@ Bug Fixes:
  -- Change CXXCPP to CXX in modules sub-build.
  -- Clean target should not remove sqlproxy.so or sqlslave.so.
  -- Protect ConvertToLatin() from buffer overflow.
+ -- LINEWRAP needs to be 71 character to be compatible with existing
+    FiranMUX content.
+ -- Update @pemit topic to reflect that @pemit/list does not require
+    the list items to be dbrefs.
+ -- The 'Input already pending.' check in @program must occur before
+    A_PROGCMD is set.
+ -- Protect ConvertToAscii() from buffer overflow.
 
 
 Performance Enhancements:
