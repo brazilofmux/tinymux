@@ -10285,7 +10285,7 @@ MUNGE()
     > say [munge(sort_alpha,v(places),v(dbrefs))]
     You say, "#9000 #20 #5000"
 
-  Related Topics: sortby().
+  Related Topics: sort(), sortby().
 
 & MYOPIC
 MYOPIC
@@ -12628,7 +12628,7 @@ SORT()
     > say sort(foo-bar-bletch,,-,|)
     You say, "bar|bletch|foo"
 
-  Related Topics: munge, sortby
+  Related Topics: munge(), sortby()
 
 & SORTBY()
 SORTBY()
@@ -12654,7 +12654,7 @@ SORTBY()
   this limit is exceeded, the function will fail _silently_. List and
   function sizes should be kept reasonable.
 
-  Related Topics:
+  Related Topics: munge(), sort()
 
 & SPACE()
 SPACE()
@@ -12685,7 +12685,7 @@ SPELLNUM()
 & SPLICE()
 SPLICE()
 
-  FUNCTION: splice(<list1>, <list2>, <word>[, <idelim>[, <odelilm>]])
+  FUNCTION: splice(<list1>, <list2>, <word>[, <idelim>[, <odelim>]])
 
   This function splices <list1> and <list2> together. <list1> and <list2>
   are space-separated lists of words
