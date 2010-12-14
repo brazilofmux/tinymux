@@ -1213,7 +1213,8 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
         }
     }
     if (  3 < nDigits
-       || 0 == nDigits)
+       || 0 == nDigits
+	   || 2 != nSpaces)
     {
         return false;
     }
