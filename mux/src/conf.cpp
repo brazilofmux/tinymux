@@ -330,6 +330,7 @@ void cf_init(void)
     mudstate.curr_cmd  = T("< none >");
     mux_strncpy(mudstate.doing_hdr, T("Doing"), sizeof(mudstate.doing_hdr)-1);
     mudstate.badname_head = NULL;
+    mudstate.attrperm_list = NULL;
     mudstate.mstat_ixrss[0] = 0;
     mudstate.mstat_ixrss[1] = 0;
     mudstate.mstat_idrss[0] = 0;
@@ -1767,7 +1768,7 @@ static CONFPARM conftable[] =
     {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
     {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       NULL,               0},
-    {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
+    {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, (int *)&mudstate.attrperm_list,  attraccess_nametab, 0},
     {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
     {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {T("attr_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.attr_name_charset,      allow_charset_nametab, 0},

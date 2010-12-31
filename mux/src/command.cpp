@@ -3120,10 +3120,10 @@ CF_HAND(cf_acmd_access)
 //
 CF_HAND(cf_attr_access)
 {
-    UNUSED_PARAMETER(vp);
-
     ATTR *ap;
     UTF8 *sp;
+
+    ATTRPERM **ppv = (ATTRPERM **)vp;
 
     for (sp = str; *sp && !mux_isspace(*sp); sp++)
     {
@@ -3141,12 +3141,62 @@ CF_HAND(cf_attr_access)
     ap = atr_str((UTF8 *)str);
     if (ap)
     {
+        // This is a straight-out built-in attribute, so we'll just modify directly.
+        //
         return cf_modify_bits(&(ap->flags), sp, pExtra, nExtra, player, cmd);
     }
     else
     {
-        cf_log_notfound(player, cmd, T("Attribute"), str);
-        return -1;
+        // This is either a wildcard or a vattr, so should be added to the table.
+        //
+        ATTRPERM *perm = NULL;
+        try
+        {
+            perm = new ATTRPERM;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == perm)
+        {
+            cf_log_syntax(player, cmd, T("Out of memory."));
+            return -1;
+        }
+
+        perm->wildcard = StringClone(str);
+        perm->flags = 0;
+
+        ATTRPERM *head = *ppv;
+
+        // Add our permission to the list.
+        //
+        if (mudstate.bReadingConfiguration)
+        {
+            if (NULL == head)
+            {
+                *ppv = perm;
+            }
+            else
+            {
+                ATTRPERM *last;
+                for (last = head; last->next; last = last->next)
+                {
+                    ; // Nothing.
+                }
+                last->next = perm;
+            }
+        }
+        else
+        {
+            perm->next = head;
+            *ppv = perm;
+        }
+
+        // Call the standard permission parser.
+        //
+        return cf_modify_bits(&(perm->flags), sp, pExtra, nExtra, player, cmd);
     }
 }
 

@@ -2049,8 +2049,23 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
         atr_get_info(target, tattr->number, &aowner, &aflags);
     }
 
+    int test_flags = tattr->flags;
+
+    if (mudstate.attrperm_list)
+    {
+        ATTRPERM *perm_walk = mudstate.attrperm_list;
+        while (NULL != perm_walk)
+        {
+            if (quick_wild(perm_walk->wildcard, tattr->name))
+            {
+                test_flags |= perm_walk->flags;
+            }
+            perm_walk = perm_walk->next;
+        }
+    }
+
     int mAllow = AF_VISUAL;
-    if (  (tattr->flags & mAllow)
+    if (  (test_flags & mAllow)
        || (aflags & mAllow))
     {
         if (  mudstate.bStandAlone
@@ -2080,7 +2095,7 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
     }
     if (mDeny)
     {
-        if (  (tattr->flags & mDeny)
+        if (  (test_flags & mDeny)
            || (aflags & mDeny))
         {
             return false;
@@ -2123,12 +2138,27 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
 
     dbref aowner;
     int aflags;
-    if (  (tattr->flags & mDeny)
+    bool info = atr_get_info(target, tattr->number, &aowner, &aflags);
+    int test_flags = tattr->flags;
+
+    if (mudstate.attrperm_list)
+    {
+        ATTRPERM *perm_walk = mudstate.attrperm_list;
+        while (NULL != perm_walk)
+        {
+            if (quick_wild(perm_walk->wildcard,tattr->name))
+            {
+                test_flags |= perm_walk->flags;
+            }
+            perm_walk = perm_walk->next;
+        }
+    }
+
+    if (  (test_flags & mDeny)
 #ifdef FIRANMUX
        || Immutable(target)
 #endif
-       || (  atr_get_info(target, tattr->number, &aowner, &aflags)
-          && (aflags & mDeny)))
+       || (info && (aflags & mDeny)))
     {
         return false;
     }
@@ -2164,8 +2194,24 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
 
     dbref aowner;
     int aflags;
-    if (  (tattr->flags & mDeny)
-       || !atr_get_info(target, tattr->number, &aowner, &aflags)
+    bool info = atr_get_info(target, tattr->number, &aowner, &aflags);
+    int test_flags = tattr->flags;
+
+    if (mudstate.attrperm_list)
+    {
+        ATTRPERM *perm_walk = mudstate.attrperm_list;
+        while (NULL != perm_walk)
+        {
+            if (quick_wild(perm_walk->wildcard,tattr->name))
+            {
+                test_flags |= perm_walk->flags;
+            }
+            perm_walk = perm_walk->next;
+        }
+    }
+
+    if (  (test_flags & mDeny)
+       || !info
        || (aflags & mDeny))
     {
         return false;
