@@ -1188,20 +1188,20 @@ static Bigint *d2b(double d, int *e, int *bits)
         {
             x[0] = y;
         }
-#ifndef Sudden_Underflow
-        i =
+        x[1] = z;
+        b->wds = (x[1]) ? 2 : 1;
+#ifndef Sudden_Overflow
+        i = b->wds;
 #endif
-            x[1] = z;
-            b->wds = (x[1]) ? 2 : 1;
     }
     else
     {
         k = lo0bits(&z);
         x[0] = z;
-#ifndef Sudden_Underflow
-        i =
+        b->wds = 1;
+#ifndef Sudden_Overflow
+        i = b->wds;
 #endif
-            b->wds = 1;
         k += 32;
     }
 #else
