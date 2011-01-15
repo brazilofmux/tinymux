@@ -297,7 +297,7 @@ static bool get_list(FILE *f, dbref i)
                 //
                 size_t nBufferUnicode;
                 UTF8 *pBufferUnicode;
-                if (3 == g_version)
+                if (3 <= g_version)
                 {
                     pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
                 }
@@ -488,14 +488,16 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
                     // Due to potential UTF-8 characters in attribute names,
                     // we do not support parsing A_LOCK from the header. After
-                    // converting from v2 to v3, this should never be needed
+                    // converting from v2 to v4, this should never be needed
                     // anyway.
                     //
                     mux_assert(  (  (  1 == g_version
                                     || 2 == g_version)
                                  && (g_flags & MANDFLAGS_V2) == MANDFLAGS_V2)
                               || (  3 == g_version
-                                 && (g_flags & MANDFLAGS_V3) == MANDFLAGS_V3));
+                                 && (g_flags & MANDFLAGS_V3) == MANDFLAGS_V3)
+                              || (  4 == g_version
+                                 && (g_flags & MANDFLAGS_V4) == MANDFLAGS_V4));
 
                     // Otherwise extract feature flags
                     //

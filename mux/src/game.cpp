@@ -2220,7 +2220,9 @@ static void info(int fmt, int flags, int ver)
                   || 2 == ver)
                && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
             || (  3 == ver
-               && (flags & MANDFLAGS_V3) != MANDFLAGS_V3))
+               && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
+            || (  4 == ver
+               && (flags & MANDFLAGS_V4) != MANDFLAGS_V4))
     {
         Log.WriteString(T(" Unsupported flags"));
         exit(1);
