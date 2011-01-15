@@ -7705,6 +7705,65 @@ static FUNCTION(fun_width)
     safe_ltoa(nWidth, buff, bufc);
 }
 
+static FUNCTION(fun_colordepth)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int nDepth = 0;
+    dbref target = NOTHING;
+    if (is_rational(fargs[0]))
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        DESC *d;
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                target = d->player;
+                break;
+            }
+        }
+    }
+    else
+    {
+        UTF8 *pTargetName = fargs[0];
+        if ('*' == *pTargetName)
+        {
+            pTargetName++;
+        }
+        target = lookup_player(executor, pTargetName, true);
+    }
+
+    if (Good_obj(target))
+    {
+        if (Ansi(target))
+        {
+            if (Html(target))
+            {
+                nDepth = 24;
+            }
+            else if (Color256(target))
+            {
+                nDepth = 8;
+            }
+            else
+            {
+                nDepth = 4;
+            }
+        }
+        else
+        {
+            nDepth = 0;
+        }
+    }
+    safe_ltoa(nDepth, buff, bufc);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_idle, fun_conn: return seconds idle or connected.
@@ -10870,6 +10929,7 @@ static FUN builtin_function_list[] =
     {T("CHOOSE"),      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CHR"),         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CMDS"),        fun_cmds,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("COLORDEPTH"),  fun_colordepth, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("COLUMNS"),     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("COMALIAS"),    fun_comalias,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("COMP"),        fun_comp,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
