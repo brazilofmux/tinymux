@@ -448,7 +448,7 @@ public:
     char *Write(char *p);
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
-    bool ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP *p);
+    bool ConvertFromT5X(T5X_LOCKEXP *p);
 
     T6H_LOCKEXP()
     {

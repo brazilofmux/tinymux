@@ -490,127 +490,69 @@ bool T6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
     return true;
 }
 
-extern const char *ConvertToAscii(const UTF8 *pString);
-extern UTF8 *ConvertColorToANSI(const UTF8 *pString);
-extern UTF8 *RestrictToColor16(const UTF8 *pString);
-
-const char *ConvertT5XValue(bool fUnicode, bool fRestrictColor, char *pValue)
-{
-    if (fUnicode)
-    {
-        if (fRestrictColor)
-        {
-            const UTF8 *pRestrictedValue = ::RestrictToColor16((const UTF8 *)pValue);
-            const UTF8 *pAnsiUnicode = ::ConvertColorToANSI((const UTF8 *)pRestrictedValue);
-            return ConvertToAscii(pAnsiUnicode);
-        }
-        else
-        {
-            const UTF8 *pAnsiUnicode = ::ConvertColorToANSI((const UTF8 *)pValue);
-            return ConvertToAscii(pAnsiUnicode);
-        }
-    }
-    else
-    {
-        static char buffer[65536];
-        char *p = buffer;
-        while ('\0' != *pValue)
-        {
-            if (*pValue < 0x7F)
-            {
-                *p++ = *pValue;
-            }
-            else
-            {
-                *p++ = '?';
-            }
-            pValue++;
-        }
-        *p = '\0';
-        return buffer;
-    }
-}
-
-const char *ConvertT5XAttrName(bool fUnicode, char *pName)
+const char *ConvertT5XValue(char *pValue)
 {
     static char buffer[65536];
     char *p = buffer;
-    if (fUnicode)
+    while ('\0' != *pValue)
     {
-        const UTF8 *pAnsiUnicode = ::ConvertColorToANSI((const UTF8 *)pName);
-        const char *pAscii = ConvertToAscii(pAnsiUnicode);
-        while (  '\0' != *pAscii
-              && isdigit(*pAscii))
+        if (*pValue < 0x7F)
         {
-            *p++ = *pAscii++;
+            *p++ = *pValue;
         }
-        if  (  '\0' != *pAscii
-            && ':' == *pAscii)
+        else
         {
-            *p++ = *pAscii++;
+            *p++ = '?';
         }
-        bool fFirst = true;
-        while ('\0' != *pAscii)
-        {
-            if (  (  fFirst
-                  && !t6h_AttrNameInitialSet[(unsigned char)*pAscii])
-               || (  !fFirst
-                  && !t6h_AttrNameSet[(unsigned char)*pAscii]))
-            {
-                *p++ = 'X';
-            }
-            else
-            {
-                *p++ = *pAscii;
-            }
-            fFirst = false;
-            pAscii++;
-        }
-        *p = '\0';
+        pValue++;
     }
-    else
-    {
-        char *p = buffer;
-        while (  '\0' != *pName
-              && isdigit(*pName))
-        {
-            *p++ = *pName++;
-        }
-        if  (  '\0' != *pName
-            && ':' == *pName)
-        {
-            *p++ = *pName++;
-        }
-        bool fFirst = true;
-        while ('\0' != *pName)
-        {
-            if (  (  fFirst
-                  && !t6h_AttrNameInitialSet[(unsigned char)*pName])
-               || (  !fFirst
-                  && !t6h_AttrNameSet[(unsigned char)*pName]))
-            {
-                *p++ = 'X';
-            }
-            else
-            {
-                *p++ = *pName;
-            }
-            fFirst = false;
-            pName++;
-        }
-        *p = '\0';
-    }
+    *p = '\0';
     return buffer;
 }
 
-bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP *p)
+const char *ConvertT5XAttrName(char *pName)
+{
+    static char buffer[65536];
+    char *p = buffer;
+    while (  '\0' != *pName
+          && isdigit(*pName))
+    {
+        *p++ = *pName++;
+    }
+    if  (  '\0' != *pName
+        && ':' == *pName)
+    {
+        *p++ = *pName++;
+    }
+    bool fFirst = true;
+    while ('\0' != *pName)
+    {
+        if (  (  fFirst
+              && !t6h_AttrNameInitialSet[(unsigned char)*pName])
+           || (  !fFirst
+              && !t6h_AttrNameSet[(unsigned char)*pName]))
+        {
+            *p++ = 'X';
+        }
+        else
+        {
+            *p++ = *pName;
+        }
+        fFirst = false;
+        pName++;
+    }
+    *p = '\0';
+    return buffer;
+}
+
+bool T6H_LOCKEXP::ConvertFromT5X(T5X_LOCKEXP *p)
 {
     switch (p->m_op)
     {
     case T5X_LOCKEXP::le_is:
         m_op = T6H_LOCKEXP::le_is;
         m_le[0] = new T6H_LOCKEXP;
-        if (!m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0]))
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
         {
             delete m_le[0];
             m_le[0] = NULL;
@@ -621,7 +563,7 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
     case T5X_LOCKEXP::le_carry:
         m_op = T6H_LOCKEXP::le_carry;
         m_le[0] = new T6H_LOCKEXP;
-        if (!m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0]))
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
         {
             delete m_le[0];
             m_le[0] = NULL;
@@ -632,7 +574,7 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
     case T5X_LOCKEXP::le_indirect:
         m_op = T6H_LOCKEXP::le_indirect;
         m_le[0] = new T6H_LOCKEXP;
-        if (!m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0]))
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
         {
             delete m_le[0];
             m_le[0] = NULL;
@@ -643,7 +585,7 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
     case T5X_LOCKEXP::le_owner:
         m_op = T6H_LOCKEXP::le_owner;
         m_le[0] = new T6H_LOCKEXP;
-        if (!m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0]))
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
         {
             delete m_le[0];
             m_le[0] = NULL;
@@ -655,8 +597,8 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
         m_op = T6H_LOCKEXP::le_or;
         m_le[0] = new T6H_LOCKEXP;
         m_le[1] = new T6H_LOCKEXP;
-        if (  !m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0])
-           || !m_le[1]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[1]))
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
         {
             delete m_le[0];
             delete m_le[1];
@@ -668,7 +610,7 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
     case T5X_LOCKEXP::le_not:
         m_op = T6H_LOCKEXP::le_not;
         m_le[0] = new T6H_LOCKEXP;
-        if (!m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0]))
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
         {
             delete m_le[0];
             m_le[0] = NULL;
@@ -680,8 +622,8 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
         m_op = T6H_LOCKEXP::le_attr;
         m_le[0] = new T6H_LOCKEXP;
         m_le[1] = new T6H_LOCKEXP;
-        if (  !m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0])
-           || !m_le[1]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[1]))
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
         {
             delete m_le[0];
             delete m_le[1];
@@ -694,8 +636,8 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
         m_op = T6H_LOCKEXP::le_eval;
         m_le[0] = new T6H_LOCKEXP;
         m_le[1] = new T6H_LOCKEXP;
-        if (  !m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0])
-           || !m_le[1]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[1]))
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
         {
             delete m_le[0];
             delete m_le[1];
@@ -708,8 +650,8 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
         m_op = T6H_LOCKEXP::le_and;
         m_le[0] = new T6H_LOCKEXP;
         m_le[1] = new T6H_LOCKEXP;
-        if (  !m_le[0]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[0])
-           || !m_le[1]->ConvertFromT5X(fUnicode, fRestrictColor, p->m_le[1]))
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
         {
             delete m_le[0];
             delete m_le[1];
@@ -725,7 +667,7 @@ bool T6H_LOCKEXP::ConvertFromT5X(bool fUnicode, bool fRestrictColor, T5X_LOCKEXP
 
     case T5X_LOCKEXP::le_text:
         m_op = T6H_LOCKEXP::le_text;
-        m_p[0] = StringClone(ConvertT5XValue(fUnicode, fRestrictColor, p->m_p[0]));
+        m_p[0] = StringClone(ConvertT5XValue(p->m_p[0]));
         break;
 
     default:
@@ -2483,8 +2425,6 @@ int convert_t5x_power2(int f)
 void T6H_GAME::ConvertFromT5X()
 {
     int ver = (g_t5xgame.m_flags & T5X_V_MASK);
-    bool fUnicode = (3 <= ver);
-    bool fRestrictColor = (4 == ver);
 
     time_t tNow;
     time(&tNow);
@@ -2496,7 +2436,7 @@ void T6H_GAME::ConvertFromT5X()
     //
     for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = g_t5xgame.m_mAttrNames.begin(); it != g_t5xgame.m_mAttrNames.end(); ++it)
     {
-        AddNumAndName(it->second->m_iNum, StringClone(ConvertT5XAttrName(fUnicode, it->second->m_pNameEncoded)));
+        AddNumAndName(it->second->m_iNum, StringClone(ConvertT5XAttrName(it->second->m_pNameEncoded)));
     }
     if (!m_fNextAttr)
     {
@@ -2526,7 +2466,7 @@ void T6H_GAME::ConvertFromT5X()
         T6H_OBJECTINFO *poi = new T6H_OBJECTINFO;
 
         poi->SetRef(it->first);
-        poi->SetName(StringClone(ConvertT5XValue(fUnicode, fRestrictColor, it->second->m_pName)));
+        poi->SetName(StringClone(ConvertT5XValue(it->second->m_pName)));
         if (it->second->m_fLocation)
         {
             int iLocation = it->second->m_dbLocation;
@@ -2629,7 +2569,7 @@ void T6H_GAME::ConvertFromT5X()
                     else if (T5X_A_LOCK == (*itAttr)->m_iNum)
                     {
                         T6H_LOCKEXP *ple = new T6H_LOCKEXP;
-                        if (ple->ConvertFromT5X(fUnicode, fRestrictColor, (*itAttr)->m_pKeyTree))
+                        if (ple->ConvertFromT5X((*itAttr)->m_pKeyTree))
                         {
                             poi->SetDefaultLock(ple);
                         }
@@ -2643,7 +2583,7 @@ void T6H_GAME::ConvertFromT5X()
                         T6H_ATTRINFO *pai = new T6H_ATTRINFO;
                         pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner,
                             convert_t5x_attr_flags((*itAttr)->m_iFlags),
-                            StringClone(ConvertT5XValue(fUnicode, fRestrictColor, (*itAttr)->m_pValueUnencoded)));
+                            StringClone(ConvertT5XValue((*itAttr)->m_pValueUnencoded)));
                         pvai->push_back(pai);
                     }
                 }
@@ -2668,7 +2608,7 @@ void T6H_GAME::ConvertFromT5X()
         if (it->second->m_ple)
         {
             T6H_LOCKEXP *ple = new T6H_LOCKEXP;
-            if (ple->ConvertFromT5X(fUnicode, fRestrictColor, it->second->m_ple))
+            if (ple->ConvertFromT5X(it->second->m_ple))
             {
                 poi->SetDefaultLock(ple);
             }
@@ -3563,11 +3503,11 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                                     fFirst = false;
                                     if (fNeedEval)
                                     {
-                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t6h_attr_names[i]);
+                                        fprintf(fp, "@wait 0={@set %s/%s=", pObjName, t6h_attr_names[i].pName);
                                     }
                                     else
                                     {
-                                        fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[i]);
+                                        fprintf(fp, "@set %s/%s=", pObjName, t6h_attr_names[i].pName);
                                     }
                                 }
                                 else

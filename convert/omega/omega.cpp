@@ -516,6 +516,14 @@ int main(int argc, char *argv[])
         else if (  eTinyMUX  == eInputType
                 && eTinyMUSH == eOutputType)
         {
+            // It's easier to convert from 2.6.
+            //
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
             g_t6hgame.ConvertFromT5X();
             g_t6hgame.Pass2();
             g_t6hgame.Validate();
