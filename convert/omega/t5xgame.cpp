@@ -4858,7 +4858,7 @@ void T5X_ATTRNAMEINFO::ConvertToLatin1()
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
-UTF8 *RestrictToColor16(UTF8 *p)
+const UTF8 *RestrictToColor16(const UTF8 *p)
 {
     // Not implemented, yet.
     //
