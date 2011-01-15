@@ -380,6 +380,8 @@ int NearestIndex(YUV &yuv)
 
     for (int i = 1; i < NUM_ENTRIES; i++)
     {
+        if (table[i].fDisable) continue;
+
         INT64 r = diff(yuv, table[i].yuv);
         if (r < rNearest)
         {
@@ -640,7 +642,10 @@ void ValidateTree(int iRoot)
                 if (  i != j
                    && diff(yuv16, table[i].yuv) != diff_tree(yuv16, table[j].yuv))
                 {
-                    printf("(%d,%d,%d) gives %d (%d,%d,%d)(%f) versus %d (%d,%d,%d)(%f)\n", yuv16.y, yuv16.u, yuv16.v, i, table[i].yuv.y, table[i].yuv.u, table[i].yuv.v, diff(yuv16, table[i].yuv), j, table[j].yuv.y, table[j].yuv.u, table[j].yuv.v, diff(yuv16, table[j].yuv));
+                    printf("(%d,%d,%d) gives %d (%d,%d,%d)(%lld) versus %d (%d,%d,%d)(%lld)\n",
+                        yuv16.y, yuv16.u, yuv16.v,
+                        i, table[i].yuv.y, table[i].yuv.u, table[i].yuv.v, diff(yuv16, table[i].yuv),
+                        j, table[j].yuv.y, table[j].yuv.u, table[j].yuv.v, diff(yuv16, table[j].yuv));
                     //abort();
                 }
             }
@@ -747,7 +752,7 @@ int main(int argc, char *argv[])
         table[i].color8 = iNearest;
     }
     //DumpTree(kdroot, 0);
-    //ValidateTree(kdroot);
+    //ValidateTree(kdroot256);
     DumpTable(kdroot16, kdroot256);
 
     return 0;
