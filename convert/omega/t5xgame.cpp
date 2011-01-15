@@ -1106,9 +1106,9 @@ void T5X_GAME::ValidateFlags() const
 
     int ver = (m_flags & T5X_V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
-    if (ver < 1 || 3 < ver)
+    if (ver < 1 || 4 < ver)
     {
-        fprintf(stderr, "WARNING: Expecting version to be between 1 and 3.\n");
+        fprintf(stderr, "WARNING: Expecting version to be between 1 and 4.\n");
     }
     flags &= ~T5X_V_MASK;
     int tflags = flags;
@@ -1140,6 +1140,11 @@ void T5X_GAME::ValidateFlags() const
             && (flags & T5X_MANDFLAGS_V3) != T5X_MANDFLAGS_V3)
     {
         fprintf(stderr, "WARNING: Not all mandatory flags for v3 are present.\n");
+    }
+    else if (  4 == ver
+            && (flags & T5X_MANDFLAGS_V4) != T5X_MANDFLAGS_V4)
+    {
+        fprintf(stderr, "WARNING: Not all mandatory flags for v4 are present.\n");
     }
 
     // Validate that this is a flatfile and not a structure file.
@@ -3856,6 +3861,23 @@ UTF8 *ConvertToUTF8(const char *p)
     return aBuffer;
 }
 
+bool T5X_GAME::Upgrade4()
+{
+    Upgrade3();
+    int ver = (m_flags & T5X_V_MASK);
+    if (4 == ver)
+    {
+        return false;
+    }
+    m_flags &= ~T5X_V_MASK;
+
+    // Additional flatfile flags.
+    //
+    m_flags |= 4;
+
+    return true;
+}
+
 bool T5X_GAME::Upgrade3()
 {
     int ver = (m_flags & T5X_V_MASK);
@@ -3874,7 +3896,7 @@ bool T5X_GAME::Upgrade3()
     for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
         m_mAttrNums.erase(it->second->m_pNameEncoded);
-        it->second->Upgrade();
+        it->second->ConvertToUTF8();
         map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
         if (itNum != m_mAttrNums.end())
         {
@@ -3891,25 +3913,19 @@ bool T5X_GAME::Upgrade3()
     //
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Upgrade();
+        it->second->ConvertToUTF8();
     }
     return true;
 }
 
-void T5X_ATTRNAMEINFO::Upgrade()
+void T5X_ATTRNAMEINFO::ConvertToUTF8()
 {
-    char *p = (char *)ConvertToUTF8(m_pNameUnencoded);
+    char *p = (char *)::ConvertToUTF8(m_pNameUnencoded);
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
-void T5X_OBJECTINFO::Upgrade()
+void T5X_OBJECTINFO::UpgradeDefaultLock()
 {
-    // Convert name
-    //
-    char *p = (char *)ConvertToUTF8(m_pName);
-    free(m_pName);
-    m_pName = StringClone(p);
-
     // Convert default Lock to attribute value
     //
     if (NULL != m_ple)
@@ -3939,6 +3955,15 @@ void T5X_OBJECTINFO::Upgrade()
         delete m_ple;
         m_ple = NULL;
     }
+}
+
+void T5X_OBJECTINFO::ConvertToUTF8()
+{
+    // Convert name
+    //
+    char *p = (char *)::ConvertToUTF8(m_pName);
+    free(m_pName);
+    m_pName = StringClone(p);
 
     // Convert attribute values.
     //
@@ -3946,14 +3971,14 @@ void T5X_OBJECTINFO::Upgrade()
     {
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            (*it)->Upgrade();
+            (*it)->ConvertToUTF8();
         }
     }
 }
 
-void T5X_ATTRINFO::Upgrade()
+void T5X_ATTRINFO::ConvertToUTF8()
 {
-    char *p = (char *)ConvertToUTF8(m_pValueUnencoded);
+    char *p = (char *)::ConvertToUTF8(m_pValueUnencoded);
     SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
 }
 
@@ -4098,7 +4123,7 @@ const unsigned char tr_color_stt[5][13] =
     {   5,  19,  20,  21,  22,  23,  24,  25,  26,   5,   5,   5,   5}
 };
 
-UTF8 *convert_color(const UTF8 *pString)
+UTF8 *ConvertColorToANSI(const UTF8 *pString)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
@@ -4747,8 +4772,31 @@ const char *ConvertToAscii(const UTF8 *pString)
     return buffer;
 }
 
+bool T5X_GAME::Downgrade3()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (ver <= 3)
+    {
+        return false;
+    }
+    m_flags &= ~T5X_V_MASK;
+
+    // Additional flatfile flags.
+    //
+    m_flags |= 3;
+
+    // Downgrade objects by reducing color depth from 24-bit and 256-color down to ANSI-level -- highlight with 8 colors.
+    //
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->RestrictToColor16();
+    }
+    return true;
+}
+
 bool T5X_GAME::Downgrade2()
 {
+    Downgrade3();
     int ver = (m_flags & T5X_V_MASK);
     if (ver <= 2)
     {
@@ -4765,7 +4813,7 @@ bool T5X_GAME::Downgrade2()
     for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
         m_mAttrNums.erase(it->second->m_pNameUnencoded);
-        it->second->Downgrade();
+        it->second->ConvertToLatin1();
         map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
         if (itNum != m_mAttrNums.end())
         {
@@ -4782,7 +4830,8 @@ bool T5X_GAME::Downgrade2()
     //
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
-        it->second->Downgrade();
+        it->second->ConvertToLatin1();
+        it->second->DowngradeDefaultLock();
     }
     return true;
 }
@@ -4803,21 +4852,40 @@ bool T5X_GAME::Downgrade1()
     return true;
 }
 
-void T5X_ATTRNAMEINFO::Downgrade()
+void T5X_ATTRNAMEINFO::ConvertToLatin1()
 {
-    char *p = (char *)ConvertToLatin1((UTF8 *)m_pNameUnencoded);
+    char *p = (char *)::ConvertToLatin1((UTF8 *)m_pNameUnencoded);
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
-void T5X_OBJECTINFO::Downgrade()
+UTF8 *RestrictToColor16(UTF8 *p)
 {
-    // Convert name
+    // Not implemented, yet.
     //
-    char *p = (char *)convert_color((UTF8 *)m_pName);
-    p = (char *)ConvertToLatin1((UTF8 *)p);
+    return p;
+}
+
+void T5X_OBJECTINFO::RestrictToColor16()
+{
+    // Restrict name color
+    //
+    char *p = (char *)::RestrictToColor16((UTF8 *)m_pName);
     free(m_pName);
     m_pName = StringClone(p);
 
+    // Restrict attribute color.
+    //
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->RestrictToColor16();
+        }
+    }
+}
+
+void T5X_OBJECTINFO::DowngradeDefaultLock()
+{
     if (NULL != m_pvai)
     {
         // Convert A_LOCK if it exists.
@@ -4840,6 +4908,16 @@ void T5X_OBJECTINFO::Downgrade()
             m_pvai = NULL;
         }
     }
+}
+
+void T5X_OBJECTINFO::ConvertToLatin1()
+{
+    // Convert name
+    //
+    char *p = (char *)ConvertColorToANSI((UTF8 *)m_pName);
+    p = (char *)::ConvertToLatin1((UTF8 *)p);
+    free(m_pName);
+    m_pName = StringClone(p);
 
     // Convert attribute values.
     //
@@ -4847,15 +4925,20 @@ void T5X_OBJECTINFO::Downgrade()
     {
         for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
-            (*it)->Downgrade();
+            (*it)->ConvertToLatin1();
         }
     }
 }
 
-void T5X_ATTRINFO::Downgrade()
+void T5X_ATTRINFO::ConvertToLatin1()
 {
-    char *p = (char *)convert_color((UTF8 *)m_pValueUnencoded);
-    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)ConvertToLatin1((UTF8 *)p)));
+    char *p = (char *)ConvertColorToANSI((UTF8 *)m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)::ConvertToLatin1((UTF8 *)p)));
+}
+
+void T5X_ATTRINFO::RestrictToColor16()
+{
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)::RestrictToColor16((UTF8 *)m_pValueUnencoded)));
 }
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const

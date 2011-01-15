@@ -57,7 +57,7 @@ static int  iObjectField = -1;
                      {
                          iObjectField = 1;
                      }
-                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
+                     return (3 == ver || 4 == ver)? OBJECT_V34 : OBJECT_V12;
                  }
   "***END OF DUMP***" {
                      return EOD;
@@ -141,7 +141,7 @@ static int  iObjectField = -1;
                      {
                          iObjectField = 1;
                      }
-                     return (3 == ver)? OBJECT_V3 : OBJECT_V12;
+                     return (3 == ver || 4 == ver)? OBJECT_V34 : OBJECT_V12;
                  }
   -?[0-9]+[\n]   {
                      t5xlval.i = atoi(t5xtext);

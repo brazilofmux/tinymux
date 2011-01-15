@@ -491,13 +491,13 @@ bool T6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
 }
 
 extern const char *ConvertToAscii(const UTF8 *pString);
-extern UTF8 *convert_color(const UTF8 *pString);
+extern UTF8 *ConvertColorToANSI(const UTF8 *pString);
 
 const char *ConvertT5XValue(bool fUnicode, char *pValue)
 {
     if (fUnicode)
     {
-        const UTF8 *pAnsiUnicode = convert_color((const UTF8 *)pValue);
+        const UTF8 *pAnsiUnicode = ::ConvertColorToANSI((const UTF8 *)pValue);
         return ConvertToAscii(pAnsiUnicode);
     }
     else
@@ -527,7 +527,7 @@ const char *ConvertT5XAttrName(bool fUnicode, char *pName)
     char *p = buffer;
     if (fUnicode)
     {
-        const UTF8 *pAnsiUnicode = convert_color((const UTF8 *)pName);
+        const UTF8 *pAnsiUnicode = ::ConvertColorToANSI((const UTF8 *)pName);
         const char *pAscii = ConvertToAscii(pAnsiUnicode);
         while (  '\0' != *pAscii
               && isdigit(*pAscii))

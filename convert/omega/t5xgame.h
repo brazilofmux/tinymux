@@ -20,6 +20,9 @@
 #define T5X_MANDFLAGS_V3  (T5X_V_LINK|T5X_V_PARENT|T5X_V_XFLAGS|T5X_V_ZONE|T5X_V_POWERS|T5X_V_3FLAGS|T5X_V_QUOTED|T5X_V_ATRKEY)
 #define T5X_OFLAGS_V3     (T5X_V_DATABASE|T5X_V_ATRNAME|T5X_V_ATRMONEY)
 
+#define T5X_MANDFLAGS_V4  (T5X_V_LINK|T5X_V_PARENT|T5X_V_XFLAGS|T5X_V_ZONE|T5X_V_POWERS|T5X_V_3FLAGS|T5X_V_QUOTED|T5X_V_ATRKEY)
+#define T5X_OFLAGS_V4     (T5X_V_DATABASE|T5X_V_ATRNAME|T5X_V_ATRMONEY)
+
 #define A_USER_START    256     // Start of user-named attributes.
 
 // Object types
@@ -478,8 +481,8 @@ public:
 
     void Write(FILE *fp, bool fExtraEscapes);
 
-    void Upgrade();
-    void Downgrade();
+    void ConvertToUTF8();
+    void ConvertToLatin1();
 
     T5X_ATTRNAMEINFO()
     {
@@ -527,8 +530,9 @@ public:
     void Write(FILE *fp, bool fExtraEscapes) const;
     void Extract(FILE *fp, bool fUnicode, char *pName) const;
 
-    void Upgrade();
-    void Downgrade();
+    void ConvertToUTF8();
+    void ConvertToLatin1();
+    void RestrictToColor16();
 
     T5X_ATTRINFO()
     {
@@ -632,8 +636,11 @@ public:
     void Write(FILE *fp, bool bWriteLock, bool fExtraEscapes);
     void Extract(FILE *fp, bool fUnicode) const;
 
-    void Upgrade();
-    void Downgrade();
+    void UpgradeDefaultLock();
+    void ConvertToUTF8();
+    void ConvertToLatin1();
+    void DowngradeDefaultLock();
+    void RestrictToColor16();
 
     T5X_OBJECTINFO()
     {
@@ -707,10 +714,12 @@ public:
     void Write(FILE *fp);
     void Extract(FILE *fp, int dbExtract) const;
 
+    bool Upgrade4();
     bool Upgrade3();
     bool Upgrade2();
     bool Downgrade1();
     bool Downgrade2();
+    bool Downgrade3();
 
     void ConvertFromP6H();
     void ConvertFromT6H();

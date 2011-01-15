@@ -108,6 +108,7 @@ typedef enum
     eLatest,
     eLegacyOne,
     eLegacyTwo,
+    eLegacyThree,
 } ServerVersion;
 
 typedef enum
@@ -212,6 +213,10 @@ int main(int argc, char *argv[])
             {
                 eOutputVersion = eLegacyTwo;
             }
+            else if (strcasecmp(optarg, "legacyaltalt") == 0)
+            {
+                eOutputVersion = eLegacyThree;
+            }
             else
             {
                 fprintf(stderr, "Output version not recognized.\n");
@@ -224,9 +229,10 @@ int main(int argc, char *argv[])
                 if (  eServerUnknown == eOutputType
                    || eTinyMUX == eOutputType)
                 {
-                    fprintf(stderr, "TinyMUX 'latest' is version 3 (produced since 2.7).\n");
-                    fprintf(stderr, "TinyMUX 'legacy' is version 2 (produced by 2.6).\n");
-                    fprintf(stderr, "TinyMUX 'legacyalt' is version 1 (produced by 1.x through 2.4).\n");
+                    fprintf(stderr, "TinyMUX 'latest' is version 4 (produced since 2.10).\n");
+                    fprintf(stderr, "TinyMUX 'legacy' is version 3 (produced since 2.7).\n");
+                    fprintf(stderr, "TinyMUX 'legacyalt' is version 2 (produced by 2.6).\n");
+                    fprintf(stderr, "TinyMUX 'legacyaltalt' is version 1 (produced by 1.x through 2.4).\n");
                 }
                 if (  eServerUnknown == eOutputType
                    || eRhostMUSH == eOutputType)
@@ -395,7 +401,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (  eOutputVersion == eLegacyOne
+    if (  eOutputVersion != eLatest
        && eRhostMUSH == eOutputType)
     {
         fprintf(stderr, "There is only one known RhostMUSH flatfie version.\n");
@@ -570,20 +576,53 @@ int main(int argc, char *argv[])
         int ver = (g_t5xgame.m_flags & T5X_V_MASK);
         switch (ver)
         {
-        case 3:
+        case 4:
             switch (eOutputVersion)
             {
-            case eSame:
             case eLatest:
+            case eSame:
                 break;
 
             case eLegacyOne:
-                g_t5xgame.Downgrade2();
+                g_t5xgame.Downgrade3();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
                 break;
 
             case eLegacyTwo:
+                g_t5xgame.Downgrade2();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+
+            case eLegacyThree:
+                g_t5xgame.Downgrade1();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+            }
+            break;
+
+        case 3:
+            switch (eOutputVersion)
+            {
+            case eLatest:
+                g_t5xgame.Upgrade4();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+
+            case eSame:
+            case eLegacyOne:
+                break;
+
+            case eLegacyTwo:
+                g_t5xgame.Downgrade2();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+
+            case eLegacyThree:
                 g_t5xgame.Downgrade1();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
@@ -595,16 +634,22 @@ int main(int argc, char *argv[])
             switch (eOutputVersion)
             {
             case eLatest:
+                g_t5xgame.Upgrade4();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+
+            case eLegacyOne:
                 g_t5xgame.Upgrade3();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
                 break;
 
             case eSame:
-            case eLegacyOne:
+            case eLegacyTwo:
                 break;
 
-            case eLegacyTwo:
+            case eLegacyThree:
                 g_t5xgame.Downgrade1();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
@@ -616,19 +661,25 @@ int main(int argc, char *argv[])
             switch (eOutputVersion)
             {
             case eLatest:
-                g_t5xgame.Upgrade3();
+                g_t5xgame.Upgrade4();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
                 break;
 
             case eLegacyOne:
+                g_t5xgame.Upgrade3();
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+                break;
+
+            case eLegacyTwo:
                 g_t5xgame.Upgrade2();
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
                 break;
 
             case eSame:
-            case eLegacyTwo:
+            case eLegacyThree:
                 break;
             }
             break;
