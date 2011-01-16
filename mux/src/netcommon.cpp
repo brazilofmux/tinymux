@@ -576,19 +576,16 @@ static const char *encode_iac(const char *szString)
 void queue_string(DESC *d, const UTF8 *s)
 {
     const UTF8 *p;
-    if (d->flags & DS_CONNECTED)
+    if (  (d->flags & DS_CONNECTED)
+       && Ansi(d->player))
     {
         if (Html(d->player))
         {
             p = convert_to_html(s);
         }
-        else if (Ansi(d->player))
-        {
-            p = convert_color(s, NoBleed(d->player), Color256(d->player));
-        }
         else
         {
-            p = strip_color(s);
+            p = convert_color(s, NoBleed(d->player), Color256(d->player));
         }
     }
     else
