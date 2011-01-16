@@ -1762,8 +1762,10 @@ public:
     (
         bool fColor,
         bool fNoBleed,
-        bool fColor256
+        bool fColor256,
+        bool fHtml
     ) const;
+    void export_TextHtml(size_t nBuffer, UTF8 *aBuffer) const;
     LBUF_OFFSET export_TextPlain
     (
         UTF8 *pBuffer,

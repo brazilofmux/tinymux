@@ -6458,14 +6458,21 @@ UTF8 *mux_string::export_TextConverted
 (
     bool fColor,
     bool fNoBleed,
-    bool fColor256
+    bool fColor256,
+    bool fHtml
 ) const
 {
     static UTF8 Buffer[2*LBUF_SIZE];
     if (  0 == m_ncs
+       || 0 == m_iLast.m_point
        || !fColor)
     {
         export_TextPlain(Buffer);
+        return Buffer;
+    }
+    else if (fHtml)
+    {
+        export_TextHtml(sizeof(Buffer), Buffer);
         return Buffer;
     }
 
@@ -6589,6 +6596,347 @@ UTF8 *mux_string::export_TextConverted
     }
     Buffer[iOut] = '\0';
     return Buffer;
+}
+
+void mux_string::export_TextHtml
+(
+    size_t nBuffer,
+    UTF8  *aBuffer
+) const
+{
+    if (  0 == m_ncs
+       || 0 == m_iLast.m_point)
+    {
+        export_TextPlain(aBuffer);
+    }
+
+    // Converting to HTML is performed in two passes. The first pass
+    // determines an optimal nesting order of tags. The second pass generates
+    // the HTML.
+    //
+    tag_node List[(LBUF_SIZE-1)/3];
+    int      nList = 0;
+    int      Stack[10];
+    int      nStack = 0;
+
+    HTMLtag tagmap[5] = { kIntense, kUnderline, kBlink, kInverse, kColor };
+
+    if (CS_NORMAL == m_pcs[0])
+    {
+        List[nList].fBeginEnd = true;
+        List[nList].kTag = kNormal;
+        List[nList].cs = CS_NORMAL;
+        List[nList].iStart = -1;
+        nList++;
+    }
+
+    ColorState csPrev = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
+
+    for (size_t i = 0; i < m_ncs; i++)
+    {
+        csNext = m_pcs[i];
+        while (csNext != csPrev)
+        {
+            for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG + 1; iAttr++)
+            {
+                ColorState tmp = csNext ^ csPrev;
+                HTMLtag kNext = tagmap[iAttr - COLOR_INDEX_ATTR];
+                bool fOpen = false;
+                bool fClose = false;
+
+                if (iAttr < COLOR_INDEX_FG)
+                {
+                    // Attribute
+                    //
+                    if (tmp & aColors[iAttr].csMask)
+                    {
+                        if (csNext & aColors[iAttr].csMask)
+                        {
+                            fOpen = true;
+                        }
+                        else
+                        {
+                            fClose = true;
+                        }
+                    }
+                }
+                else
+                {
+                    // Color
+                    //
+                    if (tmp & CS_FOREGROUND)
+                    {
+                        if (  (csPrev & CS_FOREGROUND) == CS_FG_DEFAULT
+                           && (csNext & CS_FOREGROUND) != CS_FG_DEFAULT)
+                        {
+                            fOpen = true;
+                        }
+                        else if (  (csPrev & CS_FOREGROUND) != CS_FG_DEFAULT
+                                && (csNext & CS_FOREGROUND) == CS_FG_DEFAULT)
+                        {
+                            fClose = true;
+                        }
+                        else
+                        {
+                            fOpen = true;
+                            fClose = true;
+                        }
+                    }
+                    if (tmp & CS_BACKGROUND)
+                    {
+                        if (  (csPrev & CS_BACKGROUND) == CS_BG_DEFAULT
+                           && (csNext & CS_BACKGROUND) != CS_BG_DEFAULT)
+                        {
+                            fOpen = true;
+                        }
+                        else if (  (csPrev & CS_BACKGROUND) != CS_BG_DEFAULT
+                                && (csNext & CS_BACKGROUND) == CS_BG_DEFAULT)
+                        {
+                            fClose = true;
+                        }
+                        else
+                        {
+                            fOpen = true;
+                            fClose = true;
+                        }
+                    }
+                }
+
+                if (fClose)
+                {
+                    for (int j = nStack - 1; 0 <= j; j--)
+                    {
+                        if (List[Stack[j]].kTag == kNext)
+                        {
+                            if (List[Stack[j]].iStart != List[Stack[nStack-1]].iStart)
+                            {
+                                // Pop other tags and mark in csPrev that they are gone.  We'll add them back in the next
+                                // iteration of the loop.  We stop at the point where tags can be swapped with the one
+                                // we're interested in.
+                                //
+                                for (int k = nStack - 1; j < k  && List[Stack[j]].iStart != List[Stack[nStack-1]].iStart; k--)
+                                {
+                                    List[nList] = List[Stack[k]];
+                                    List[nList].fBeginEnd = false;
+                                    List[nList].iStart = i;
+
+                                    switch (List[nList].kTag)
+                                    {
+                                    case kIntense:
+                                        csPrev &= ~CS_INTENSE;
+                                        break;
+
+                                    case kUnderline:
+                                        csPrev &= ~CS_UNDERLINE;
+                                        break;
+
+                                    case kBlink:
+                                        csPrev &= ~CS_BLINK;
+                                        break;
+
+                                    case kInverse:
+                                        csPrev &= ~CS_INVERSE;
+                                        break;
+
+                                    case kColor:
+                                        csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+                                        break;
+                                    }
+                                    nList++;
+                                    nStack--;
+                                }
+                            }
+
+                            if (j != nStack - 1)
+                            {
+                                // Change the order of tags which open at the
+                                // same position so that the one we want to
+                                // close can be popped.
+                                //
+                                tag_node t = List[Stack[j]];
+                                List[Stack[j]] = List[Stack[nStack-1]];
+                                List[Stack[nStack-1]] = t;
+                                j = nStack - 1;
+                            }
+
+                            List[nList] = List[Stack[j]];
+                            List[nList].fBeginEnd = false;
+                            List[nList].iStart = i;
+                            switch (List[nList].kTag)
+                            {
+                            case kIntense:
+                                csPrev &= ~CS_INTENSE;
+                                break;
+                            
+                            case kUnderline:
+                                csPrev &= ~CS_UNDERLINE;
+                                break;
+                            
+                            case kBlink:
+                                csPrev &= ~CS_BLINK;
+                                break;
+                            
+                            case kInverse:
+                                csPrev &= ~CS_INVERSE;
+                                break;
+                            
+                            case kColor:
+                                csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+                                break;
+                            }
+                            nList++;
+
+                            nStack--;
+                            if (0 == nStack)
+                            {
+                                List[nList].fBeginEnd = true;
+                                List[nList].kTag = kNormal;
+                                List[nList].cs = CS_NORMAL;
+                                List[nList].iStart = i;
+                                nList++;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (fOpen)
+                {
+                    List[nList].fBeginEnd = true;
+                    List[nList].cs = csNext;
+                    List[nList].kTag = kNext;
+                    List[nList].iStart = i;
+                    switch (List[nList].kTag)
+                    {
+                    case kIntense:
+                        csPrev |= CS_INTENSE;
+                        break;
+                    
+                    case kUnderline:
+                        csPrev |= CS_UNDERLINE;
+                        break;
+                    
+                    case kBlink:
+                        csPrev |= CS_BLINK;
+                        break;
+                    
+                    case kInverse:
+                        csPrev |= CS_INVERSE;
+                        break;
+                    
+                    case kColor:
+                        csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
+                        csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
+                        break;
+                    }
+                    Stack[nStack++] = nList++;
+                }
+            }
+        }
+    }
+
+    UTF8 *pBuffer = aBuffer;
+    for (int iList = 0; iList < nList; iList++)
+    {
+        if (kNormal != List[iList].kTag)
+        {
+            *pBuffer++ = '<';
+            if (!List[iList].fBeginEnd)
+            {
+                *pBuffer++ = '/';
+            }
+
+            switch (List[iList].kTag)
+            {
+            case kIntense:
+                *pBuffer++ = 'B';
+                break;
+
+            case kUnderline:
+                *pBuffer++ = 'U';
+                break;
+
+            case kBlink:
+                *pBuffer++ = 'I';
+                break;
+
+            case kInverse:
+                *pBuffer++ = 'S';
+                break;
+
+            case kColor:
+                if (List[iList].fBeginEnd)
+                {
+                    ColorState cs = List[iList].cs;
+                    if (  (CS_FOREGROUND & cs) != CS_FG_DEFAULT
+                       && (CS_FG_INDEXED & cs))
+                    {
+                       cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD(cs)].rgb);
+                    }
+
+                    if (  (CS_BACKGROUND & cs) != CS_BG_DEFAULT
+                       && (CS_BG_INDEXED & cs))
+                    {
+                        cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
+                    }
+
+                    if ((CS_FOREGROUND & cs) == CS_FG_DEFAULT)
+                    {
+                        if ((CS_BACKGROUND & cs) != CS_BG_DEFAULT)
+                        {
+                            mux_sprintf(pBuffer, nBuffer - (pBuffer - aBuffer) - 1, T("COLOR BACK=#%06X"), CS_BG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                    }
+                    else
+                    {
+                        if ((CS_BACKGROUND & cs) == CS_BG_DEFAULT)
+                        {
+                            mux_sprintf(pBuffer, nBuffer - (pBuffer - aBuffer) - 1, T("COLOR #%06X"), CS_FG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                        else
+                        {
+                            mux_sprintf(pBuffer, nBuffer - (pBuffer - aBuffer) - 1, T("COLOR #%06X #%06X"), CS_FG_FIELD(cs), CS_BG_FIELD(cs));
+                            pBuffer += strlen((char *)pBuffer);
+                        }
+                    }
+                }
+                else
+                {
+                    mux_sprintf(pBuffer, nBuffer - (pBuffer - aBuffer) - 1, T("COLOR"));
+                    pBuffer += strlen((char *)pBuffer);
+                }
+                break;
+            }
+            *pBuffer++ = '>';
+        }
+
+        int iCopy = List[iList].iStart;
+        if (0 <= iCopy)
+        {
+            mux_cursor curStart;
+            if (cursor_from_point(curStart, iCopy))
+            {
+                mux_cursor cur = curStart;
+                do
+                {
+                    cursor_next(cur);
+                } while (  cur < m_iLast
+                        && m_pcs[curStart.m_point] == m_pcs[cur.m_point]);
+
+                size_t n = cur.m_byte - curStart.m_byte;
+                if (0 < n)
+                {
+                    memcpy(pBuffer, &m_autf[curStart.m_byte], n);
+                    pBuffer += n;
+                }
+            }
+        }
+    }
+
+    *pBuffer = '\0';
 }
 
 /*! \brief Outputs ANSI-stripped string from internal form.

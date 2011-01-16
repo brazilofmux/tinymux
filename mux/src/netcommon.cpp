@@ -624,7 +624,7 @@ void queue_string(DESC *d, const UTF8 *s)
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    const UTF8 *p = s.export_TextConverted((d->flags & DS_CONNECTED) && Ansi(d->player), NoBleed(d->player), Color256(d->player));
+    const UTF8 *p = s.export_TextConverted((d->flags & DS_CONNECTED) && Ansi(d->player), NoBleed(d->player), Color256(d->player), Html(d->player));
 
     const char *q;
     if (CHARSET_UTF8 == d->encoding)
