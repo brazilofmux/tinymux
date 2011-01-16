@@ -1,9 +1,9 @@
 TinyMUX 2.10: CHANGES
-Last Update: August 2010
+Last Update: January 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- None.
 
 
 Feature Additions:
@@ -12,6 +12,7 @@ Feature Additions:
     translate().
  -- Add 24-bit color support.  That is, the database and string
     functions can represent 24-bit color.
+ -- Support for MXP/HTML-style tags representing 24-bit color.
  -- Add password_methods configuration option.
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
@@ -19,6 +20,7 @@ Feature Additions:
  -- Extend BLIND flag to connection/disconnection and 'goes home'
     emits.
  -- Extend writetime() and exptime() to show years.
+ -- Add colordepth() - reflects how much color a target can accept.
 
 
 Bug Fixes:
@@ -45,7 +47,7 @@ Bug Fixes:
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- None.
 
 
 Cosmetic Changes:
