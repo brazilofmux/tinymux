@@ -5356,11 +5356,6 @@ UTF8 *ConvertColorToANSI(const UTF8 *pString)
         }
         else
         {
-            if (  iCode < 0
-               || sizeof(aColors)/sizeof(aColors[0]) < iCode)
-            {
-                abort();
-            }
             memcpy(pBuffer, aColors[iCode].pAnsi, aColors[iCode].nAnsi);
             pBuffer += aColors[iCode].nAnsi;
         }
@@ -6766,7 +6761,6 @@ static UTF8 *ColorTransition
     return Buffer;
 }
 
-
 const UTF8 *RestrictToColor16(const UTF8 *pString)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
@@ -6795,11 +6789,6 @@ const UTF8 *RestrictToColor16(const UTF8 *pString)
         }
         else
         {
-            if (  iCode < 0
-               || sizeof(aColors)/sizeof(aColors[0]) < iCode)
-            {
-                abort();
-            }
             csCurrent = UpdateColorState(csCurrent, iCode);
         }
         pString = utf8_NextCodePoint(pString);
