@@ -6765,7 +6765,8 @@ const UTF8 *RestrictToColor16(const UTF8 *pString)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
     ColorState csClient = CS_NORMAL;
-    ColorState csCurrent = CS_NORMAL;
+    ColorState csPrev = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
     UTF8 *pBuffer = aBuffer;
     while (  '\0' != *pString
           && pBuffer < aBuffer + sizeof(aBuffer) - sizeof(COLOR_RESET) - 1)
@@ -6775,26 +6776,26 @@ const UTF8 *RestrictToColor16(const UTF8 *pString)
         {
             UTF8  *pTransition = NULL;
             size_t nTransition = 0;
-            if (csClient != csCurrent)
+            if (csPrev != csNext)
             {
-                pTransition = ColorTransition(csClient, csCurrent, &nTransition);
+                pTransition = ColorTransition(csClient, csNext, &nTransition);
                 if (nTransition)
                 {
                     memcpy(pBuffer, pTransition, nTransition);
                     pBuffer += nTransition;
-                    csClient = csCurrent;
                 }
+                csPrev = csNext;
             }
             utf8_safe_chr(pString, aBuffer, &pBuffer);
         }
         else
         {
-            csCurrent = UpdateColorState(csCurrent, iCode);
+            csNext = UpdateColorState(csNext, iCode);
         }
         pString = utf8_NextCodePoint(pString);
     }
 
-    if (csClient != CS_NORMAL)
+    if (csNext != CS_NORMAL)
     {
         memcpy(pBuffer, COLOR_RESET, sizeof(COLOR_RESET));
         pBuffer += sizeof(COLOR_RESET);
