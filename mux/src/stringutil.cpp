@@ -6801,14 +6801,6 @@ void mux_string::export_TextHtml
                             nList++;
 
                             nStack--;
-                            if (0 == nStack)
-                            {
-                                List[nList].fBeginEnd = true;
-                                List[nList].kTag = kNormal;
-                                List[nList].cs = CS_NORMAL;
-                                List[nList].iStart = i;
-                                nList++;
-                            }
                             break;
                         }
                     }
@@ -6848,6 +6840,39 @@ void mux_string::export_TextHtml
                 }
             }
         }
+    }
+
+    while (0 < nStack)
+    {
+        List[nList] = List[Stack[nStack-1]];
+        List[nList].fBeginEnd = false;
+        List[nList].iStart = m_iLast.m_point;
+        switch (List[nList].kTag)
+        {
+        case kIntense:
+            csPrev &= ~CS_INTENSE;
+            break;
+        
+        case kUnderline:
+            csPrev &= ~CS_UNDERLINE;
+            break;
+        
+        case kBlink:
+            csPrev &= ~CS_BLINK;
+            break;
+        
+        case kInverse:
+            csPrev &= ~CS_INVERSE;
+            break;
+        
+        case kColor:
+            csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+            break;
+        }
+        mux_assert((csPrev & ~CS_ALLBITS) == 0);
+        nList++;
+
+        nStack--;
     }
 
     UTF8 *pBuffer = aBuffer;
@@ -6928,7 +6953,9 @@ void mux_string::export_TextHtml
         }
 
         int iCopy = List[iList].iStart;
-        if (0 <= iCopy)
+        if (  0 <= iCopy
+           && (  iList == nList - 1
+              || List[iList].iStart != List[iList+1].iStart))
         {
             mux_cursor curStart;
             if (cursor_from_point(curStart, iCopy))
