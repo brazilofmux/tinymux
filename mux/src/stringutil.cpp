@@ -6629,7 +6629,7 @@ void mux_string::export_TextHtml
         List[nList].fBeginEnd = true;
         List[nList].kTag = kNormal;
         List[nList].cs = CS_NORMAL;
-        List[nList].iStart = -1;
+        List[nList].iStart = 0;
         nList++;
     }
 
