@@ -2031,6 +2031,7 @@ inline void ValidateColorState(ColorState cs)
 
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
+    mux_assert(0 <= iColorCode &&  iColorCode <= COLOR_INDEX_LAST);
     if (COLOR_INDEX_FG_24 <= iColorCode)
     {
         // In order to apply an RGB 24-bit modification, we need to translate
@@ -2076,8 +2077,10 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
                 cs = (cs & ~CS_BACKGROUND_BLUE) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_BLUE) << 32);
             }
         }
+        mux_assert((cs & ~CS_ALLBITS) == 0);
         return cs;
     }
+    mux_assert(iColorCode < sizeof(aColors)/sizeof(aColors[0]));
     return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
 }
 
@@ -6633,14 +6636,22 @@ void mux_string::export_TextHtml
     ColorState csPrev = CS_NORMAL;
     ColorState csNext = CS_NORMAL;
 
-    for (size_t i = 0; i < m_ncs; i++)
+    for (size_t i = 0; i < m_iLast.m_point; i++)
     {
         csNext = m_pcs[i];
+        if (0 != (csNext & ~CS_ALLBITS))
+        {
+            STARTLOG(LOG_BUGS, "BUG", "INFO");
+            Log.tinyprintf(T("csNext = 0x%08llX, (csNext & CS_ALLBITS) = 0x%08llX, %d, %d" ENDLINE), csNext, csNext & CS_ALLBITS, i, m_iLast.m_point);
+            ENDLOG;
+        }
+        mux_assert((csNext & ~CS_ALLBITS) == 0);
         while (csNext != csPrev)
         {
             for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG + 1; iAttr++)
             {
                 ColorState tmp = csNext ^ csPrev;
+                mux_assert((tmp & ~CS_ALLBITS) == 0);
                 HTMLtag kNext = tagmap[iAttr - COLOR_INDEX_ATTR];
                 bool fOpen = false;
                 bool fClose = false;
@@ -6743,6 +6754,7 @@ void mux_string::export_TextHtml
                                         csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                         break;
                                     }
+                                    mux_assert((csPrev & ~CS_ALLBITS) == 0);
                                     nList++;
                                     nStack--;
                                 }
@@ -6785,6 +6797,7 @@ void mux_string::export_TextHtml
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
                             }
+                            mux_assert((csPrev & ~CS_ALLBITS) == 0);
                             nList++;
 
                             nStack--;
@@ -6830,6 +6843,7 @@ void mux_string::export_TextHtml
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
                         break;
                     }
+                    mux_assert((csPrev & ~CS_ALLBITS) == 0);
                     Stack[nStack++] = nList++;
                 }
             }
