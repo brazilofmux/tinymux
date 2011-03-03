@@ -3108,7 +3108,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
             iCode = mux_color(pString + i);
         }
     }
-    if (csNext != CS_NORMAL)
+    if (csPrev != CS_NORMAL)
     {
         memcpy(pBuffer, pNormal, nNormal);
         pBuffer += nNormal;
