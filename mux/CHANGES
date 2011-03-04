@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: January 2011
+Last Update: March 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,6 +43,11 @@ Bug Fixes:
     requested.
  -- Two @program requests to the same player could mix the A_PROGCMD
     from one with the registers of the other.
+ -- Fix color bleed regression (Issue 650).
+ -- Add potential fix for hang in export_TextHtml (Issue 652).
+ -- Fix the 'doubling' of text that sometimes occurs in HTML
+    conversion.
+ -- Fix lack of normal text at beginning in HTML conversion.
 
 
 Performance Enhancements:
