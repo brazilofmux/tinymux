@@ -13409,7 +13409,7 @@ TERMINFO()
   Players can use terminfo() by <descriptor> on their own connections.
   Specifying connections via <descriptor> on other's connections is restricted
   to Wizards.  However, anyone can use it by <player> on anyone else as long
-  as they aren't hidding.
+  as they aren't hiding.
 
 & TERSE
 TERSE
