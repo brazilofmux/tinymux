@@ -4544,7 +4544,7 @@ ANSI CODES
 
   Examples:
       ansi(fc, Test) would highlight "Test" is flashing cyan.
-      ansi(<#FF8040>/<#FF8040>, Test) uses Orange on Dark Purple.
+      ansi(<#FF8040>/<#800080>, Test) uses Orange on Dark Purple.
 
   Related Topics: ansi(), ANSI SUBSTITUTION, COLOR256.
 
