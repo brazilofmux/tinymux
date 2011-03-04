@@ -45,10 +45,10 @@ else
 fi
 
 VERSION_LINE=`head -n 1 $RECENT_DB`
-if [ $VERSION_LINE = "+X996099" ]; then
+if [ $VERSION_LINE = "+X996100" ]; then
     cp $RECENT_DB $GAME_DB
 else
-    if [ $VERSION_LINE = "+X1031939" ]; then
+    if [ $VERSION_LINE = "+X1031940" ]; then
         LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
         DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
         LIBPATH=$BIN; export LIBPATH
