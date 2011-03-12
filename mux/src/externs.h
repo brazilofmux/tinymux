@@ -937,6 +937,7 @@ extern const UTF8 *FUNC_NOT_FOUND;
 extern const UTF8 *FUNC_AMBIGUOUS;
 extern const UTF8 *FUNC_NOPERM_MESSAGE;
 extern const UTF8 *OUT_OF_MEMORY;
+extern const UTF8 *NOT_CONNECTED;
 
 #define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p))
 #define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p))
@@ -944,6 +945,7 @@ extern const UTF8 *OUT_OF_MEMORY;
 #define safe_range(b,p)     safe_copy_buf(OUT_OF_RANGE,16,(b),(p))
 #define safe_ambiguous(b,p) safe_copy_buf(FUNC_AMBIGUOUS,13,(b),(p))
 #define safe_notfound(b,p)  safe_copy_buf(FUNC_NOT_FOUND,13,(b),(p))
+#define safe_notconnected(b,p)  safe_copy_buf(NOT_CONNECTED,17,(b),(p))
 
 int  ReplaceFile(UTF8 *old_name, UTF8 *new_name);
 void RemoveFile(UTF8 *name);

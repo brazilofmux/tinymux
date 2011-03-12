@@ -7884,22 +7884,21 @@ static FUNCTION(fun_terminfo)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        bool bFound = false;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
         DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
-                bFound = true;
                 break;
             }
         }
-        if (  bFound
+
+        if (  NULL != d
            && (  d->player != executor
               && !Wizard_Who(executor)))
         {
-            safe_str(T("#-1 PERMISSION DENIED"),buff, bufc);
+            safe_noperm(buff, bufc);
             return;
         }
     }
@@ -7915,9 +7914,12 @@ static FUNCTION(fun_terminfo)
            && !(  !Hidden(target)
               || See_Hidden(executor)))
         {
-            safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+            // Obscure state of Hidden things.
+            //
+            safe_notconnected(buff, bufc);
             return;
         }
+
         DESC_ITER_CONN(d)
         {
             if (d->player == target)
@@ -7927,9 +7929,9 @@ static FUNCTION(fun_terminfo)
         }
     }
 
-    if (!d)
+    if (NULL == d)
     {
-        safe_str(T("#-1 NOT CONNECTED"), buff, bufc);
+        safe_notconnected(buff, bufc);
         return;
     }
 
