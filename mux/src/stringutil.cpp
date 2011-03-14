@@ -2692,7 +2692,9 @@ UTF8 *convert_to_html(const UTF8 *pString)
             nList++;
         }
     }
-    while ('\0' != pString[i])
+
+    while ( '\0' != pString[i]
+          || csNext != csPrev)
     {
         iCopy = i;
         while (  '\0' != pString[i]
