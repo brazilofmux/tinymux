@@ -48,6 +48,13 @@ Bug Fixes:
  -- Fix the 'doubling' of text that sometimes occurs in HTML
     conversion.
  -- Fix lack of normal text at beginning in HTML conversion.
+ -- Add asserts and potential fix for hang in export_TextHtml (Issue 652).
+ -- Fix the 'doubling' of text that sometimes occurs in HTML conversion.
+ -- Fix lack of normal text at beginning.
+ -- Change the version headers in ./Backup.
+ -- For terminfo(), report #-1 NOT CONNECTED for Hidden things.
+ -- Should use %llX instead of %X for 64-bit type (Issue 656).
+ -- Fix HTML color bleed via @mail (Issue 653).
 
 
 Performance Enhancements:
@@ -69,3 +76,5 @@ Miscellaneous:
  -- Add and use testcases for shuffle, pickrand, columns, and
     elements.
  -- Document defaults for log and log_options.
+ -- Dark Purple is #800080.
+ -- Typo. Should be hiding instead of hidding (Issue 654).
