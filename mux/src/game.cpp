@@ -727,27 +727,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 msgFinal->import(*msg_ns);
                 if (Html(target))
                 {
-                    mux_string *sFrom = new mux_string;
-                    mux_string *sTo = new mux_string;
-
-                    sFrom->import(T("&"), 1);
-                    sTo->import(T("&amp;"), 5);
-                    msgFinal->edit(*sFrom, *sTo);
-
-                    sFrom->import(T("<"), 1);
-                    sTo->import(T("&lt;"), 4);
-                    msgFinal->edit(*sFrom, *sTo);
-
-                    sFrom->import(T(">"), 1);
-                    sTo->import(T("&gt;"), 4);
-                    msgFinal->edit(*sFrom, *sTo);
-
-                    sFrom->import(T("\""), 1);
-                    sTo->import(T("&quot;"), 6);
-                    msgFinal->edit(*sFrom, *sTo);
-
-                    delete sFrom;
-                    delete sTo;
+                    msgFinal->encode_Html();
                 }
                 raw_notify(target, *msgFinal);
             }

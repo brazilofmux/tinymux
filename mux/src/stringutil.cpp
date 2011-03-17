@@ -6227,6 +6227,51 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
 }
 
+void mux_string::encode_Html(void)
+{
+    mux_cursor iPos = CursorMin;
+    mux_string *sTo = new mux_string;
+    while (iPos < m_iLast)
+    {
+        const UTF8 *pTo = NULL;
+        switch (m_autf[iPos.m_byte])
+        {
+        case '&':
+            pTo = T("&amp;");
+            break;
+
+        case '<':
+            pTo = T("&lt;");
+            break;
+
+        case '>':
+            pTo = T("&gt;");
+            break;
+
+        case '\"':
+            pTo = T("&quot;");
+            break;
+        }
+
+        if (NULL != pTo)
+        {
+            sTo->import(pTo);
+            if (NULL != m_pcs)
+            {
+                ColorState cs = m_pcs[iPos.m_point];
+                sTo->realloc_m_pcs(sTo->m_iLast.m_point);
+                for (size_t i = 0; i < sTo->m_iLast.m_point; i++)
+                {
+                    sTo->m_pcs[i] = cs;
+                }
+            }
+            replace_Chars(*sTo, iPos, mux_cursor(1, 1));
+        }
+        cursor_next(iPos);
+    }
+    delete sTo;
+}
+
 // This function is deprecated.
 //
 UTF8 mux_string::export_Char(size_t n) const
