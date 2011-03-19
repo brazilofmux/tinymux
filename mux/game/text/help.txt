@@ -7070,7 +7070,7 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |                  |       UNICODE    |
+                   |       COLOR256   |       UNICODE    |
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
