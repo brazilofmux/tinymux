@@ -1053,8 +1053,7 @@ static void announce_connect(dbref player, DESC *d)
     int key = MSG_INV;
     if (  loc != NOTHING
        && !(  Hidden(player)
-           && Can_Hide(player))
-       && !Blind(loc))
+           && Can_Hide(player)))
     {
         key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
     }
@@ -1201,8 +1200,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
-               && Can_Hide(player))
-           && !Blind(loc))
+               && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
@@ -1350,8 +1348,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
-               && Can_Hide(player))
-           && !Blind(loc))
+               && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
