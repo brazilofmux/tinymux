@@ -1032,7 +1032,7 @@ inline ColorState rgb2cs(RGB *rgb)
 }
 
 // All 256 entries of the palette are included in this table, but the palette
-// is divided into two non-overlapping trees -- one for when xterm is support,
+// is divided into two non-overlapping trees -- one for when xterm is supported,
 // and one for when it is not.
 //
 // Since elements 0 through 15 do not have dependable RGB vales, we usually
