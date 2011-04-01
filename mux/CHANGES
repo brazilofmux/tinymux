@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: January 2011
+Last Update: March 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,6 +43,18 @@ Bug Fixes:
     requested.
  -- Two @program requests to the same player could mix the A_PROGCMD
     from one with the registers of the other.
+ -- Fix color bleed regression (Issue 650).
+ -- Add potential fix for hang in export_TextHtml (Issue 652).
+ -- Fix the 'doubling' of text that sometimes occurs in HTML
+    conversion.
+ -- Fix lack of normal text at beginning in HTML conversion.
+ -- Add asserts and potential fix for hang in export_TextHtml (Issue 652).
+ -- Fix the 'doubling' of text that sometimes occurs in HTML conversion.
+ -- Fix lack of normal text at beginning.
+ -- Change the version headers in ./Backup.
+ -- For terminfo(), report #-1 NOT CONNECTED for Hidden things.
+ -- Should use %llX instead of %X for 64-bit type (Issue 656).
+ -- Fix HTML color bleed via @mail (Issue 653).
 
 
 Performance Enhancements:
@@ -64,3 +76,5 @@ Miscellaneous:
  -- Add and use testcases for shuffle, pickrand, columns, and
     elements.
  -- Document defaults for log and log_options.
+ -- Dark Purple is #800080.
+ -- Typo. Should be hiding instead of hidding (Issue 654).
