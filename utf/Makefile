@@ -2,16 +2,10 @@
 #
 UNICODE=~/unicode
 
-all: classify integers strings utf8tables.cpp.txt utf8tables.h.txt SpecialCasing.txt CaseFolding.txt Decompositions.txt buildFiles
+all: classify integers strings utf8tables.cpp.txt utf8tables.h.txt Decompositions.txt buildFiles
 
 UnicodeData.txt:
 	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
-
-SpecialCasing.txt:
-	( if [ -f $(UNICODE)/UNIDATA/SpecialCasing.txt ]; then ln -s $(UNICODE)/UNIDATA/SpecialCasing.txt SpecialCasing.txt; else wget http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt; fi )
-
-CaseFolding.txt:
-	( if [ -f $(UNICODE)/UNIDATA/CaseFolding.txt ]; then ln -s $(UNICODE)/UNIDATA/CaseFolding.txt CaseFolding.txt; else wget http://www.unicode.org/Public/UNIDATA/CaseFolding.txt; fi )
 
 UnicodeMaster.txt tr_totitle.txt tr_tolower.txt tr_toupper.txt cl_PrivateUse.txt Decompositions.txt cl_Printable.txt tr_decimal_value.txt: UnicodeData.txt UnicodeHan.txt buildFiles
 	./buildFiles
