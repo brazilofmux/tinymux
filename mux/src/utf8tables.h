@@ -17,14 +17,14 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 100312 included, 1013800 excluded, 0 errors.
-// 198 states, 95 columns, 3622 bytes
+// 106866 included, 1007246 excluded, 0 errors.
+// 215 states, 95 columns, 3949 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (198)
+#define CL_PRINT_ACCEPTING_STATES_START (215)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned short cl_print_sot[198];
-extern const unsigned char cl_print_sbt[2970];
+extern const unsigned short cl_print_sot[215];
+extern const unsigned char cl_print_sbt[3263];
 
 // utf/cl_AttrNameInitial.txt
 //
@@ -138,51 +138,51 @@ extern const unsigned short tr_latin2_sbt[3286];
 
 // utf/tr_tolower.txt
 //
-// 1023 code points.
-// 46 states, 86 columns, 1701 bytes
+// 1029 code points.
+// 46 states, 86 columns, 1713 bytes
 //
 #define TR_TOLOWER_START_STATE (0)
 #define TR_TOLOWER_ACCEPTING_STATES_START (46)
 extern const unsigned char tr_tolower_itt[256];
 extern const unsigned short tr_tolower_sot[46];
-extern const unsigned char tr_tolower_sbt[1353];
+extern const unsigned char tr_tolower_sbt[1365];
 
 #define TR_TOLOWER_DEFAULT (0)
 #define TR_TOLOWER_LITERAL_START (1)
-#define TR_TOLOWER_XOR_START (13)
-extern const string_desc tr_tolower_ott[97];
+#define TR_TOLOWER_XOR_START (16)
+extern const string_desc tr_tolower_ott[100];
 
 // utf/tr_toupper.txt
 //
-// 1030 code points.
-// 48 states, 90 columns, 1796 bytes
+// 1036 code points.
+// 48 states, 90 columns, 1810 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
 #define TR_TOUPPER_ACCEPTING_STATES_START (48)
 extern const unsigned char tr_toupper_itt[256];
 extern const unsigned short tr_toupper_sot[48];
-extern const unsigned char tr_toupper_sbt[1444];
+extern const unsigned char tr_toupper_sbt[1458];
 
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (11)
-extern const string_desc tr_toupper_ott[102];
+#define TR_TOUPPER_XOR_START (14)
+extern const string_desc tr_toupper_ott[105];
 
 // utf/tr_totitle.txt
 //
-// 1034 code points.
-// 48 states, 90 columns, 1797 bytes
+// 1040 code points.
+// 48 states, 90 columns, 1811 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
 #define TR_TOTITLE_ACCEPTING_STATES_START (48)
 extern const unsigned char tr_totitle_itt[256];
 extern const unsigned short tr_totitle_sot[48];
-extern const unsigned char tr_totitle_sbt[1445];
+extern const unsigned char tr_totitle_sbt[1459];
 
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (11)
-extern const string_desc tr_totitle_ott[100];
+#define TR_TOTITLE_XOR_START (14)
+extern const string_desc tr_totitle_ott[103];
 
 // utf/tr_foldmatch.txt
 //
