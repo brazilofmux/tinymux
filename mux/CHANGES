@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: March 2011
+Last Update: April 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,8 +17,6 @@ Feature Additions:
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
  -- Add pairs for ACCENT() through U+017F.
- -- Extend BLIND flag to connection/disconnection and 'goes home'
-    emits.
  -- Extend writetime() and exptime() to show years.
  -- Add colordepth() - reflects how much color a target can accept.
 
@@ -55,6 +53,10 @@ Bug Fixes:
  -- For terminfo(), report #-1 NOT CONNECTED for Hidden things.
  -- Should use %llX instead of %X for 64-bit type (Issue 656).
  -- Fix HTML color bleed via @mail (Issue 653).
+ -- Fix color use in text snippets containing &, <, >, and " for HTML
+    clients (Issue 655)
+ -- Map BULLET (U+2022) which Word uses to an asterik.
+ -- Add COLOR256 flag to flag list topic.
 
 
 Performance Enhancements:
