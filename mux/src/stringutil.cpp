@@ -8025,6 +8025,7 @@ void mux_string::truncate(mux_cursor iEnd)
 
 void mux_string::UpperCase(void)
 {
+    mux_string *sTo = NULL;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
@@ -8036,7 +8037,9 @@ void mux_string::UpperCase(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
-                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
+                // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
+                // as long as the bytes remain equal.
                 //
                 size_t j;
                 for (j = 0; j < m; j++)
@@ -8046,15 +8049,38 @@ void mux_string::UpperCase(void)
             }
             else
             {
-                // TODO: The string must be expanded or contracted in terms of points and bytes.
+                // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
+                // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
+                if (NULL == sTo)
+                {
+                    try
+                    {
+                        sTo = new mux_string();
+                    }
+                    catch (...)
+                    {
+                        ; // Nothing.
+                    }
+                }
+                if (NULL != sTo)
+                {
+                    mux_cursor len;
+                    len.m_byte = utf8_FirstByte[*p];
+                    len.m_point = 1;
+                    sTo->import(qDesc->p);
+                    replace_Chars(*sTo, i, len);
+                }
             }
         }
     }
+    delete sTo;
+    sTo = NULL;
 }
 
 void mux_string::LowerCase(void)
 {
+    mux_string *sTo = NULL;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
@@ -8066,7 +8092,9 @@ void mux_string::LowerCase(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
-                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
+                // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
+                // as long as the bytes remain equal.
                 //
                 size_t j;
                 for (j = 0; j < m; j++)
@@ -8076,15 +8104,38 @@ void mux_string::LowerCase(void)
             }
             else
             {
-                // TODO: The string must be expanded or contracted in terms of points and bytes.
+                // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
+                // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
+                if (NULL == sTo)
+                {
+                    try
+                    {
+                        sTo = new mux_string();
+                    }
+                    catch (...)
+                    {
+                        ; // Nothing.
+                    }
+                }
+                if (NULL != sTo)
+                {
+                    mux_cursor len;
+                    len.m_byte = utf8_FirstByte[*p];
+                    len.m_point = 1;
+                    sTo->import(qDesc->p);
+                    replace_Chars(*sTo, i, len);
+                }
             }
         }
     }
+    delete sTo;
+    sTo = NULL;
 }
 
 void mux_string::UpperCaseFirst(void)
 {
+    mux_string *sTo = NULL;
     mux_cursor i = CursorMin;
     if (i < m_iLast)
     {
@@ -8097,7 +8148,9 @@ void mux_string::UpperCaseFirst(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
-                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
+                // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
+                // as long as the bytes remain equal.
                 //
                 size_t j;
                 for (j = 0; j < m; j++)
@@ -8107,11 +8160,33 @@ void mux_string::UpperCaseFirst(void)
             }
             else
             {
-                // TODO: The string must be expanded or contracted in terms of points and bytes.
+                // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
+                // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
+                if (NULL == sTo)
+                {
+                    try
+                    {
+                        sTo = new mux_string();
+                    }
+                    catch (...)
+                    {
+                        ; // Nothing.
+                    }
+                }
+                if (NULL != sTo)
+                {
+                    mux_cursor len;
+                    len.m_byte = utf8_FirstByte[*p];
+                    len.m_point = 1;
+                    sTo->import(qDesc->p);
+                    replace_Chars(*sTo, i, len);
+                }
             }
         }
     }
+    delete sTo;
+    sTo = NULL;
 }
 
 void mux_string::FoldForMatching(void)
