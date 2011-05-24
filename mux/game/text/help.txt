@@ -4280,7 +4280,7 @@ ACCENT() (continued)
 
   Examples:
 
-    > think accent(Aule, ---:)
+    > think accent(Aule, ===:)
     Aul(e-with-diaeresis)
 
     > think accent(The Nina was a ship, The Ni~a was a ship)
