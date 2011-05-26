@@ -4286,7 +4286,7 @@ ACCENT() (continued)
     > think accent(The Nina was a ship, The Ni~a was a ship)
     The Ni(n-with-~)a was a ship
 
-    > think accent(Khazad ai-menu!, Khaz^d ai-m^nu!)
+    > think accent(Khazad ai-menu!, Khaz^d ai-m^n=!)
     Khaz(a-with-^)d ai-m(e-with-^)nu!
 
   Related Topics: ASCII, chr(), ord(), stripaccents().
