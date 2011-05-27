@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: April 2011
+Last Update: May 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,6 +19,7 @@ Feature Additions:
  -- Add pairs for ACCENT() through U+017F.
  -- Extend writetime() and exptime() to show years.
  -- Add colordepth() - reflects how much color a target can accept.
+ -- Update to Unicodd 5.2.
 
 
 Bug Fixes:
@@ -57,6 +58,8 @@ Bug Fixes:
     clients (Issue 655)
  -- Map BULLET (U+2022) which Word uses to an asterik.
  -- Add COLOR256 flag to flag list topic.
+ -- Add upper/lower-case support for a handful characters including U+1E9E
+    and U+00DF (Issue 661).
 
 
 Performance Enhancements:
