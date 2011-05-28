@@ -19,7 +19,7 @@ Feature Additions:
  -- Add pairs for ACCENT() through U+017F.
  -- Extend writetime() and exptime() to show years.
  -- Add colordepth() - reflects how much color a target can accept.
- -- Update to Unicodd 5.2.
+ -- Update to Unicode 5.2.
 
 
 Bug Fixes:
@@ -56,7 +56,7 @@ Bug Fixes:
  -- Fix HTML color bleed via @mail (Issue 653).
  -- Fix color use in text snippets containing &, <, >, and " for HTML
     clients (Issue 655)
- -- Map BULLET (U+2022) which Word uses to an asterik.
+ -- Map BULLET (U+2022) which Word uses to an asterisk.
  -- Add COLOR256 flag to flag list topic.
  -- Add upper/lower-case support for a handful characters including U+1E9E
     and U+00DF (Issue 661).
@@ -78,7 +78,7 @@ Miscellaneous:
  -- Removed search class type=GARBAGE.
  -- Switch to Intel Compiler v11.1.
  -- Update and freshen autoconf to v2.62.
- -- Add and use testcases for shuffle, pickrand, columns, and
+ -- Add and use test cases for shuffle, pickrand, columns, and
     elements.
  -- Document defaults for log and log_options.
  -- Dark Purple is #800080.
