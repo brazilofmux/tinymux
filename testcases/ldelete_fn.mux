@@ -89,16 +89,16 @@
 &tr.tc004 test_ldelete_fn=
   @if strmatch(
         setr(0,sha1(
-            [iter(-1 1 2 0,ldelete(%b%b%b,##)]
-            [iter(-1 1 2 0,ldelete(b%b%b%b,##)]
-            [iter(-1 1 2 0,ldelete(%bb%b%b,##)]
-            [iter(-1 1 2 0,ldelete(a%b%bb%b,##)]
-            [iter(-1 1 2 0,ldelete(%ba%b%bb,##)]
-            [iter(-1 1 2 0,ldelete(%b%ba%b,##)]
-            [iter(-1 1 2 0,ldelete(%b%b%ba,##)]
+            [iter(-1 1 2 0,ldelete(%b%b%b,##))]
+            [iter(-1 1 2 0,ldelete(b%b%b%b,##))]
+            [iter(-1 1 2 0,ldelete(%bb%b%b,##))]
+            [iter(-1 1 2 0,ldelete(a%b%bb%b,##))]
+            [iter(-1 1 2 0,ldelete(%ba%b%bb,##))]
+            [iter(-1 1 2 0,ldelete(%b%ba%b,##))]
+            [iter(-1 1 2 0,ldelete(%b%b%ba,##))]
           )
         ),
-        7BB55CB078E198FABD34110BAD8D3C97EC8764F1
+        C8FF871B92CA6E1C05A818D6E90D35776EE43C81
       )=
   {
     @log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.
