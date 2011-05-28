@@ -1,13 +1,21 @@
 TinyMUX 2.10: BETA
-Last Update: January 2010
+Last Update: May 2011
 
 Welcome
 ~~~~~~~
 
-We have invested many lives and much treasure to ensure this Beta release is
-complete, fast, and of high quality.  More so than previous years, this year
-has tackled a large set of difficult features.  This will be a real beta
-with real problems.  Be careful, and leave yourself a way out.
+The usual care and effort has been invested to ensure the quality of this
+year's Beta.  Also, at least three games have been running it for five months.
+One of these games is quite large.  This year's main feature is color --
+specifically xterm-style, 256-color as well as MXP/HTML-style, 24-bit color.
+
+This BETA contains at least one crash-bug.  We have not been able as of yet,
+to find or reproduce it.
+
+Be careful, and leave yourself a way out.  Due to the addition of rich color,
+the only path for down-converting a 2.10 database to 2.9 is the use of the
+Omega flatfile utility.  TinyMUX 2.9 is not able to consume a 2.10 database.
+
 
 General Cautions During the Beta Period:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,8 +25,9 @@ helpful to you.  If they are not helpful, then please help us improve
 the documentation by suggesting specific changes.  Documentation bugs
 can usually be fixed more rapidly than any other type of bug.
 
-If you port an existing game to this BETA:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whether you start a new game or port an existing one to this BETA:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     - Make frequent backups.  We cannot stress this enough.  The included
       Backup script is your friend and should make this process effortless.
@@ -27,25 +36,6 @@ If you port an existing game to this BETA:
       comsystems.
 
     - Store your backups off site.  This was always prudent anyway.
-
-    - Run your game as usual.
-
-    - Report Bugs to brazilofmux@gmail.com following the procedure in README.
-
-
-If you start a new game to this BETA:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    - Make frequent backups.  We cannot stress this enough.  The included
-      Backup script is your friend and should make this process effortless.
-
-    - Make complete backups of all of your config, text, mail, and
-      comsystems.
-
-    - Store your backups off site.  This was always prudent anyway.
-
-    - Keep decompiles of anything really big, unique, or irreplaceable
-      softcode.  This is good coding practice anyway.
 
     - Run your game as usual.
 
