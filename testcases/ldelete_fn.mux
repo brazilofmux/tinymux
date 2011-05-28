@@ -86,6 +86,16 @@
 #
 # Test Case #4 - Walk two elements through whitespace.
 #
+# When no element is removed from a space-delimited list, 2.6 cleans the list
+# a little anyway -- removing spaces from the end.  In the same situations,
+# 2.7 passes the list through unchanged.
+#
+#                         2.6    2.7
+# ldelete(%b%b%b,1)  -->  ''    '   '
+# ldelete(b%b%b%b,2) -->  'b'   'b   '
+# ldelete(%bb%b%b,2) --> ' b'   ' b  '
+# ldelete(%b%ba%b,2) --> '  a'  '  a '
+#
 &tr.tc004 test_ldelete_fn=
   @if strmatch(
         setr(0,sha1(
@@ -98,7 +108,7 @@
             [iter(-1 1 2 0,ldelete(%b%b%ba,##))]
           )
         ),
-        C8FF871B92CA6E1C05A818D6E90D35776EE43C81
+        6A56ABAE6A58DDB125FECC6439ABDBAF833AF896
       )=
   {
     @log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.
@@ -109,6 +119,10 @@
 -
 #
 # Test Case #5 - Walk whitespace through elements
+#
+# When no element is removed from a space-delimited list, 2.6 cleans the list
+# a little anyway -- removing spaces from the end.  In the same situations,
+# 2.7 passes the list through unchanged.
 #
 &tr.tc005 test_ldelete_fn=
   @if strmatch(
@@ -134,7 +148,7 @@
             [iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))]
           )
         ),
-        FE04D719B34FD31B40A9ABD211930AC69E3CB312
+        77A699A69B8178E34460FE1F2E3A07B711A55A2F
       )=
   {
     @log smoke=TC005: ldelete walk whitespace through elements. Succeeded.
