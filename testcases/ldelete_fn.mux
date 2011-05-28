@@ -52,8 +52,14 @@
 #
 # Test Case #3 - Vary number of arguments.
 #
-# On 2.6, ldelete(%b,1) -->
-# On 2.7 and later, ldelete(%b,1) --> %b
+# On 2.10 and later, space-delimited lists are always cleaned up.
+#
+#                         2.6    2.7    2.10
+# ldelete(%b%b%b,1)  -->  ''    '   '    ''
+# ldelete(b%b%b%b,2) -->  'b'   'b   '   'b'
+# ldelete(%bb%b%b,2) --> ' b'   ' b  '   'b'
+# ldelete(%b%ba%b,2) --> '  a'  '  a '   'a'
+#
 #
 &tr.tc003 test_ldelete_fn=
   @if strmatch(
@@ -74,7 +80,7 @@
             [iter(9 8 7 6 5 4 3 2 1 0,ldelete(a b c d e f g h,##))]
           )
         ),
-        77C716845DC2D91C4BA1DEF5D91506CAF69C5121
+        26C3FC056F1ADD75F7ECBA8195391FCA1CBBBEBA
       )=
   {
     @log smoke=TC003: Vary number of arguments. Succeeded.
@@ -85,16 +91,6 @@
 -
 #
 # Test Case #4 - Walk two elements through whitespace.
-#
-# When no element is removed from a space-delimited list, 2.6 cleans the list
-# a little anyway -- removing spaces from the end.  In the same situations,
-# 2.7 passes the list through unchanged.
-#
-#                         2.6    2.7
-# ldelete(%b%b%b,1)  -->  ''    '   '
-# ldelete(b%b%b%b,2) -->  'b'   'b   '
-# ldelete(%bb%b%b,2) --> ' b'   ' b  '
-# ldelete(%b%ba%b,2) --> '  a'  '  a '
 #
 &tr.tc004 test_ldelete_fn=
   @if strmatch(
@@ -108,7 +104,7 @@
             [iter(-1 1 2 0,ldelete(%b%b%ba,##))]
           )
         ),
-        6A56ABAE6A58DDB125FECC6439ABDBAF833AF896
+        B1292CD962492400216C51C039BC39D3827C3158
       )=
   {
     @log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.
@@ -148,7 +144,7 @@
             [iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))]
           )
         ),
-        77A699A69B8178E34460FE1F2E3A07B711A55A2F
+        E29B31DDEA94A0180EB3D26BAAC62760499E71E9
       )=
   {
     @log smoke=TC005: ldelete walk whitespace through elements. Succeeded.
