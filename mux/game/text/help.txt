@@ -6278,7 +6278,7 @@ DELETE()
     > say delete(Would you like coffee or perhaps tea?, 15, 18)
     You say, "Would you like tea?"
 
-  Related Topics:
+  Related Topics: mid(), ldelete()
 
 & DESTROY()
 DESTROY()
@@ -8252,15 +8252,15 @@ INHERIT
 & INSERT()
 INSERT()
 
-  FUNCTION: insert(<list>, <pos>, <word>[, <delim>])
+  FUNCTION: insert(<list>, <positions>, <word>[, <input delim> [, <output delim>]])
 
-  This function inserts a word into <list> so that the word becomes the
-  <pos>'th element of the list, and all subsequent list elements are moved
-  down.  This means that it appears between the <pos-1>'th and <pos>'th
-  elements of the original list.  This function may also be used to append
-  a word to a list.
+  This function inserts <word> at the given <positions(s)> within <list> so
+  that each new word becomes the word at that <position>.  All subsequent list 
+  elements are moved to the right.  This function may also be used to append a 
+  word to a list.
 
-  <delim> may be used to specify a delimiter other than a space.
+  Elements of the returned list are separated by <output delim> which defaults to 
+  <input delim> which defaults to a space.
 
   Examples:
     > say insert(This is a test, 4, new)
@@ -8804,19 +8804,26 @@ LCSTR()
 & LDELETE()
 LDELETE()
 
-  FUNCTION: ldelete(<list>, <pos>[, <delim>])
+  FUNCTION: ldelete(<list>, <positions>[, <input delim> [, <output delim>]])
 
-  This function removes a word from <list> by position.
+  This function removes elements(s) from <list> at the given <positions>.  
+  Elements of <list> are delimited by <input delim>.  Elements of <positions>
+  are always delimited by a space.
 
-  <delim> may be used to specify a delimiter other than a space.
+  Elements of the returned list are separated by <output delim> which
+  defaults to <input delim> which defaults to a space.
 
   Examples:
     > say ldelete(This is not a test, 3)
     You say, "This is a test"
     > say ldelete(Yet@Another@Mundane@List, 3, @)
     You say, "Yet@Another@List"
+    > say ldelete(lemon|orange|pear|apple,2 3,|)
+    You say, "lemon|apple"
+    > say ldelete(foo bar baz boing,3,,%b~%b)
+    You say, "foo ~ bar ~ boing"
 
-  Related Topics: extract(), insert(), replace().
+  Related Topics: delete(), extract(), insert(), remove(), replace().
 
 & LEAVE
 LEAVE
@@ -9977,7 +9984,7 @@ MID()
 
   Left() is supported as an alias for strtrunc().
 
-  Related Topics: right(), strtrunc().
+  Related Topics: delete(), right(), strtrunc().
 
 & MIN()
 MIN()
@@ -11583,15 +11590,14 @@ REPEAT()
 & REPLACE()
 REPLACE()
 
-  FUNCTION: replace(<list>, <pos>, <word>[, <delim>])
+  FUNCTION: replace(<list>, <positions>, <word>[, <input delim> [, <output delim>]])
 
-  This function inserts a word into <list> so that the word becomes the
-  <pos>'th element of the list, and the word previously in that position
-  is removed.  This means that it appears between the <pos-1>'th and
-  <pos+1>'th elements of the original list, replacing the word at that
-  position.  This function may not be used to append a word to a list.
+  This function replaces elements(s) from <list> with <word> at the given
+  <positions>.  Elements of <list> are delimited by <input delim>.  Elements
+  of <positions> are always delimited by a space.
 
-  <delim> may be used to specify a delimiter other than a space.
+  Elements of the returned list are separated by <output delim> which
+  defaults to <input delim> which defaults to a space.
 
   Examples:
     > say replace(This is a test, 4, quiz)
@@ -11599,7 +11605,7 @@ REPLACE()
     > say replace(Yet@Another@Mundane@List, 3, Funky, @)
     You say, "Yet@Another@Funky@List"
 
-  Related Topics: extract(), insert(), ldelete().
+  Related Topics: extract(), insert(), ldelete(), setdiff(), splice().
 
 & REPORT
 REPORT

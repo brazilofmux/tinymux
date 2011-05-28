@@ -4201,6 +4201,19 @@ static FUNCTION(fun_lpos)
     delete sPat;
 }
 
+static int DCL_CDECL i_comp(const void *s1, const void *s2)
+{
+    if (*((int *)s1) > *((int *)s2))
+    {
+        return 1;
+    }
+    else if (*((int *)s1) < *((int *)s2))
+    {
+        return -1;
+    }
+    return 0;
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * ldelete: Remove a word from a string by place
@@ -4217,30 +4230,48 @@ static FUNCTION(fun_lpos)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *sList, int iWord,
-                        mux_string *sWord, __in const SEP &sep, int flag)
+static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *sList,
+   int nPositions, int aPositions[], mux_string *sWord, __in const SEP &sep,
+   const SEP &osep, int flag)
 {
-    // If passed a null string return an empty string, except that we
-    // are allowed to append to a null string.
-    //
-    if (  NULL == sList
-       || (  0 == sList->length_byte()
-          && (  flag != IF_INSERT
-             || iWord != 1)))
+    int j;
+    if (NULL == sList)
     {
+        // Return an empty string if passed a null string.
+        //
         return;
     }
-
-    // We can't fiddle with anything before the first position.
-    //
-    if (iWord < 1)
+    else if (0 == sList->length_byte())
     {
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sList->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        return;
-    }
-    iWord--;
+        if (IF_INSERT != flag)
+        {
+            // Return an empty string if performing a non-insert on an empty string.
+            //
+            return;
+        }
+        else
+        {
+            // For an insert operation on an empty string, the only valid position is 1.
+            //
+            bool fFoundOne = false;
+            for (j = 0; j < nPositions; j++)
+            {
+                if (1 == aPositions[j])
+                {
+                    fFoundOne = true;
+                    break;
+                }
+            }
 
+            if (!fFoundOne)
+            {
+                return;
+            }
+        }
+    }
+
+    // Parse list into words
+    //
     mux_words *words = NULL;
     try
     {
@@ -4258,80 +4289,96 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
 
     LBUF_OFFSET nWords = words->find_Words(sep.str, true);
 
-    if (  nWords <= iWord
-       && (  flag != IF_INSERT
-          || nWords < iWord))
+    // Remove positions which are out of bounds.
+    //
+    for (j = 0; j < nPositions; j++)
     {
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sList->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        delete words;
-        return;
+        aPositions[j]--;
+        if (  aPositions[j] < 0
+           || (  nWords <= aPositions[j]
+              && (  flag != IF_INSERT
+                 || nWords < aPositions[j])))
+        {
+            // Remove position from list.
+            //
+            aPositions[j] = aPositions[nPositions - 1];
+            nPositions--;
+        }
     }
 
-    bool bFirst = true;
-    LBUF_OFFSET i;
+    // Sort remaining positions.
+    //
+    qsort(aPositions, nPositions, sizeof(int), i_comp);
 
-    for (i = 0; i < static_cast<LBUF_OFFSET>(iWord); i++)
+    bool fFirst = true;
+    LBUF_OFFSET i = 0;
+
+    for (j = 0; j < nPositions; j++)
     {
-        if (!bFirst)
+        while (i < static_cast<LBUF_OFFSET>(aPositions[j]))
         {
-            print_sep(sep, buff, bufc);
-        }
-        else
-        {
-            bFirst = false;
-        }
-        words->export_WordColor(i, buff, bufc);
-    }
-
-    if (flag != IF_DELETE)
-    {
-        if (!bFirst)
-        {
-            print_sep(sep, buff, bufc);
-        }
-        else
-        {
-            bFirst = false;
-        }
-
-        if (sWord)
-        {
-            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-            *bufc += sWord->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        }
-
-        if (flag == IF_INSERT)
-        {
-            if (i < words->Count())
+            if (!fFirst)
             {
-                if (!bFirst)
-                {
-                    print_sep(sep, buff, bufc);
-                }
-                else
-                {
-                    bFirst = false;
-                }
+                print_sep(osep, buff, bufc);
             }
-            words->export_WordColor(i, buff, bufc);
+            else
+            {
+                fFirst = false;
+            }
+            words->export_WordColor(i++, buff, bufc);
+        }
+
+        if (IF_DELETE != flag)
+        {
+            if (!fFirst)
+            {
+                print_sep(osep, buff, bufc);
+            }
+            else
+            {
+                fFirst = false;
+            }
+
+            if (sWord)
+            {
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                *bufc += sWord->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+            }
+        }
+
+        if (IF_INSERT != flag)
+        {
+            i++;
         }
     }
 
-    for (i++; i < nWords; i++)
+    while (i < nWords)
     {
-        if (!bFirst)
+        if (!fFirst)
         {
-            print_sep(sep, buff, bufc);
+            print_sep(osep, buff, bufc);
         }
         else
         {
-            bFirst = false;
+            fFirst = false;
         }
-        words->export_WordColor(i, buff, bufc);
+        words->export_WordColor(i++, buff, bufc);
     }
 
     delete words;
+}
+
+int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[])
+{
+    int n = 0;
+    UTF8 *cp = trim_space_sep(pIntegerList, sepSpace);
+    while (  cp
+          && n < MAX_WORDS)
+    {
+        UTF8 *curr = split_token(&cp, sepSpace);
+        ai[n++] = mux_atol(curr);
+    }
+    return n;
 }
 
 static FUNCTION(fun_ldelete)
@@ -4342,11 +4389,19 @@ static FUNCTION(fun_ldelete)
         return;
     }
 
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
     mux_string *sList = new mux_string(fargs[0]);
+    int ai[MAX_WORDS];
+    int nai = DecodeListOfIntegers(fargs[1], ai);
 
     // Delete a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), NULL, sep, IF_DELETE);
+    do_itemfuns(buff, bufc, sList, nai, ai, NULL, sep, osep, IF_DELETE);
 
     delete sList;
 }
@@ -4355,6 +4410,12 @@ static FUNCTION(fun_replace)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4376,7 +4437,9 @@ static FUNCTION(fun_replace)
     if (  NULL != sList
        && NULL != sWord)
     {
-        do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, sep, IF_REPLACE);
+        int ai[MAX_WORDS];
+        int nai = DecodeListOfIntegers(fargs[1], ai);
+        do_itemfuns(buff, bufc, sList, nai, ai, sWord, sep, osep, IF_REPLACE);
     }
 
     delete sList;
@@ -4387,6 +4450,12 @@ static FUNCTION(fun_insert)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4422,9 +4491,12 @@ static FUNCTION(fun_insert)
         return;
     }
 
+    int ai[MAX_WORDS];
+    int nai = DecodeListOfIntegers(fargs[1], ai);
+
     // Insert a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, sep, IF_INSERT);
+    do_itemfuns(buff, bufc, sList, nai, ai, sWord, sep, osep, IF_INSERT);
 
     delete sList;
     delete sWord;
@@ -8011,7 +8083,7 @@ static int DCL_CDECL f_comp(const void *s1, const void *s2)
     return 0;
 }
 
-static int DCL_CDECL i_comp(const void *s1, const void *s2)
+static int DCL_CDECL l_comp(const void *s1, const void *s2)
 {
     if (((q_rec *) s1)->u.l > ((q_rec *) s2)->u.l)
     {
@@ -8094,7 +8166,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                 psc->m_ptrs[i].str = s[i];
                 psc->m_ptrs[i].u.l = dbnum(s[i]);
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), i_comp);
+            qsort(psc->m_ptrs, n, sizeof(q_rec), l_comp);
             break;
 
         case FLOAT_LIST:
@@ -8337,7 +8409,7 @@ static void handle_sets
         break;
 
     case DBREF_LIST:
-        cf = i_comp;
+        cf = l_comp;
         break;
 
     case FLOAT_LIST:
@@ -11038,7 +11110,7 @@ static FUN builtin_function_list[] =
     {T("IMUL"),        fun_imul,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("INC"),         fun_inc,        MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("INDEX"),       fun_index,      MAX_ARG, 4,       4,         0, CA_PUBLIC},
-    {T("INSERT"),      fun_insert,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {T("INSERT"),      fun_insert,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {T("INUM"),        fun_inum,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("INZONE"),      fun_inzone,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISDBREF"),     fun_isdbref,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
@@ -11067,7 +11139,7 @@ static FUN builtin_function_list[] =
     {T("LCMDS"),       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LCON"),        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LCSTR"),       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
-    {T("LDELETE"),     fun_ldelete,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("LDELETE"),     fun_ldelete,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("LEXITS"),      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LFLAGS"),      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LINK"),        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -11169,7 +11241,7 @@ static FUN builtin_function_list[] =
     {T("REMIT"),       fun_remit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("REMOVE"),      fun_remove,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("REPEAT"),      fun_repeat,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {T("REPLACE"),     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {T("REPLACE"),     fun_replace,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {T("REST"),        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("RESTARTS"),    fun_restarts,   MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("RESTARTSECS"), fun_restartsecs, MAX_ARG, 0,      0,         0, CA_PUBLIC},
