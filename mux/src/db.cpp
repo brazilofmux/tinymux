@@ -1917,7 +1917,7 @@ static const UTF8 *atr_encode(const UTF8 *iattr, dbref thing, dbref owner, int f
 // atr_decode_flags_owner: Decode the owner and flags (if present) and
 // return a pointer to the attribute text.
 //
-static const UTF8 *atr_decode_flags_owner(const UTF8 *iattr, dbref *owner, int *flags)
+const UTF8 *atr_decode_flags_owner(const UTF8 *iattr, dbref *owner, int *flags)
 {
     // See if the first char of the attribute is the special character
     //

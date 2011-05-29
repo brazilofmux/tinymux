@@ -88,7 +88,9 @@ static void pcache_reload1(dbref player, PCACHE *pp)
     cp = atr_get_raw(player, A_QUEUEMAX);
     if (cp && *cp)
     {
-        m = mux_atol(cp);
+        dbref aowner;
+        int   aflags;
+        m = mux_atol(atr_decode_flags_owner(cp, &aowner, &aflags));
         if (m < 0)
         {
             m = -1;
