@@ -1,30 +1,29 @@
 #
-# insert_fn.mux - Test Cases for insert().
-# $Id$
+# replace_fn.mux - Test Cases for replace().
 #
-# Strategy: Exercise color and UTF-8 in combination with insert() behaviors.
+# Strategy: Exercise color and UTF-8 in combination with replace() behaviors.
 #
-@create test_insert_fn
+@create test_replace_fn
 -
-@set test_insert_fn=INHERIT QUIET
+@set test_replace_fn=INHERIT QUIET
 -
 #
 # Beginning of Test Cases
 #
-&tr.tc000 test_insert_fn=
-  @log smoke=Beginning insert() test cases.
+&tr.tc000 test_replace_fn=
+  @log smoke=Beginning replace() test cases.
 -
 #
 # Test Case #1 - Help file examples.
 #
-&tr.tc001 test_insert_fn=
+&tr.tc001 test_replace_fn=
   @if strmatch(
         setr(0,sha1(
-            [insert(This is a test, 4, new)]
-            [insert(Yet@Another@List, 3, Funky, @)]
+            [replace(This is a test, 4, quiz)]
+            [insert(Yet@Another@Mundane@List, 3, Funky, @)]
           )
         ),
-        406626B7163831461CDED124D892909E9E351FCB
+        928F739D325B8C8882EE7C4E32E6D5764AA08626
       )=
   {
     @log smoke=TC001: Help file examples. Succeeded.
@@ -36,13 +35,13 @@
 #
 # Test Case #2 - Empty list. ASCII. Positive positions.
 #
-&tr.tc002 test_insert_fn=
+&tr.tc002 test_replace_fn=
   @if strmatch(
         setr(0,sha1(
-            [iter(0 1 2,## [insert(,##,Pear,|)])]
+            [iter(0 1 2,## [replace(,##,Pear,|)])]
           )
         ),
-        6A543151C6BDF80889FEAF3A53079DE952657E2A
+        6E58F1F3A34A9082AD078C3706E3067C0B22FE6E
       )=
   {
     @log smoke=TC002: Empty list, ASCII, positive positions. Succeeded.
@@ -54,15 +53,15 @@
 #
 # Test Case #3 - Non-empty lists. ASCII. Positive positions.
 #
-&tr.tc003 test_insert_fn=
+&tr.tc003 test_replace_fn=
   @if strmatch(
         setr(0,sha1(
-            [iter(0 1 2 3,## [insert(|,##,Pear,|)])]
-            [iter(0 1 2 3 4,## [insert(||,##,Pear,|)])]
-            [iter(0 1 2 3 4 5,## [insert(|||,##,Pear,|)])]
+            [iter(0 1 2 3,## [replace(|,##,Pear,|)])]
+            [iter(0 1 2 3 4,## [replace(||,##,Pear,|)])]
+            [iter(0 1 2 3 4 5,## [replace(|||,##,Pear,|)])]
           )
         ),
-        7CEB5283E8F723EF34A3468AE1CAD76D36517DCF
+        40A8E0B4CA8FF2E2C9956AE9C09F9C68C8A16673
       )=
   {
     @log smoke=TC003: Non-empty lists, ASCII, positive positions. Succeeded.
@@ -74,13 +73,13 @@
 #
 # Test Case #4 - Empty list. ASCII. Negative positions.
 #
-&tr.tc004 test_insert_fn=
+&tr.tc004 test_replace_fn=
   @if strmatch(
         setr(0,sha1(
-            [iter(-2 -1,## [insert(,##,Pear,|)])]
+            [iter(-2 -1,## [replace(,##,Pear,|)])]
           )
         ),
-        FF317BAF06BA80EED00C1E604E5A94C16EADAA8F
+        5F364FF7EEEC93E30C5709B5184501A17046BDEA
       )=
   {
     @log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.
@@ -92,15 +91,15 @@
 #
 # Test Case #5 - Non-empty lists. ASCII. Negative positions.
 #
-&tr.tc005 test_insert_fn=
+&tr.tc005 test_replace_fn=
   @if strmatch(
         setr(0,sha1(
-            [iter(-3 -2 -1,## [insert(|,##,Pear,|)])]
-            [iter(-4 -3 -2 -1,## [insert(||,##,Pear,|)])]
-            [iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)])]
+            [iter(-3 -2 -1,## [replace(|,##,Pear,|)])]
+            [iter(-4 -3 -2 -1,## [replace(||,##,Pear,|)])]
+            [iter(-5 -4 -3 -2 -1,## [replace(|||,##,Pear,|)])]
           )
         ),
-        377189E5484C2F769375C40A0540080FF649CE2F
+        29B941B8D4EE1193E602E3DDB0ED55DA5F86EFC9
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
@@ -111,11 +110,11 @@
     @trig me/tr.done
   }
 -
-&tr.done test_insert_fn=
-  @log smoke=End insert() test cases.;
+&tr.done test_replace_fn=
+  @log smoke=End replace() test cases.;
   @notify smoke
 -
-drop test_insert_fn
+drop test_replace_fn
 -
 #
 # End of Test Cases
