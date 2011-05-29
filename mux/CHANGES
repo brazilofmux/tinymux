@@ -20,6 +20,8 @@ Feature Additions:
  -- Extend writetime() and exptime() to show years.
  -- Add colordepth() - reflects how much color a target can accept.
  -- Update to Unicode 5.2.
+ -- insert(), ldelete(), and remove() updated to take output delimiter, list
+    of positions, and negative positions.
 
 
 Bug Fixes:
