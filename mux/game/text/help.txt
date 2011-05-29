@@ -8255,9 +8255,11 @@ INSERT()
   FUNCTION: insert(<list>, <positions>, <word>[, <input delim> [, <output delim>]])
 
   This function inserts <word> at the given <positions(s)> within <list> so
-  that each new word becomes the word at that <position>.  All subsequent list 
-  elements are moved to the right.  This function may also be used to append a 
-  word to a list.
+  that each new word becomes the word at that <position>.  Negative
+  <positions> are relative to the end of the list.  List elements are moved to
+  the right to make room for the new elements.
+
+  This function may also be used to append a word to a list.
 
   Elements of the returned list are separated by <output delim> which defaults to 
   <input delim> which defaults to a space.
@@ -8806,9 +8808,10 @@ LDELETE()
 
   FUNCTION: ldelete(<list>, <positions>[, <input delim> [, <output delim>]])
 
-  This function removes elements(s) from <list> at the given <positions>.  
-  Elements of <list> are delimited by <input delim>.  Elements of <positions>
-  are always delimited by a space.
+  This function removes elements(s) from <list> at the given <positions>.
+  Negative <positions> are relative to the end of the list.  Elements of
+  <list> are delimited by <input delim>.  Elements of <positions> are always
+  delimited by a space.
 
   Elements of the returned list are separated by <output delim> which
   defaults to <input delim> which defaults to a space.
@@ -11593,8 +11596,9 @@ REPLACE()
   FUNCTION: replace(<list>, <positions>, <word>[, <input delim> [, <output delim>]])
 
   This function replaces elements(s) from <list> with <word> at the given
-  <positions>.  Elements of <list> are delimited by <input delim>.  Elements
-  of <positions> are always delimited by a space.
+  <positions>.  Negative <positions> are relative to the end of the list.
+  Elements of <list> are delimited by <input delim>.  Elements of <positions>
+  are always delimited by a space.
 
   Elements of the returned list are separated by <output delim> which
   defaults to <input delim> which defaults to a space.

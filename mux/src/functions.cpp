@@ -4251,12 +4251,13 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
         }
         else
         {
-            // For an insert operation on an empty string, the only valid position is 1.
+            // For an insert operation on an empty string, the only valid positions are 1 and -1.
             //
             bool fFoundOne = false;
             for (j = 0; j < nPositions; j++)
             {
-                if (1 == aPositions[j])
+                if (   1 == aPositions[j]
+                   || -1 == aPositions[j])
                 {
                     fFoundOne = true;
                     break;
@@ -4293,7 +4294,20 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
     //
     for (j = 0; j < nPositions; j++)
     {
-        aPositions[j]--;
+        // Transform negative positions and translate to zero-origin.
+        //
+        if (aPositions[j] < 0)
+        {
+            if (IF_INSERT == flag)
+            {
+                aPositions[j] += nWords + 1;
+            }
+            else
+            {
+                aPositions[j] += nWords;
+            }
+        }
+
         if (  aPositions[j] < 0
            || (  nWords <= aPositions[j]
               && (  flag != IF_INSERT
