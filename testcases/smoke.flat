@@ -648,7 +648,7 @@
 >256
 "@log smoke=Beginning ldelete() test cases."
 >257
-"@if strmatch(setr(0,sha1([ldelete(This is not a test, 3)][ldelete(Yet@Another@Mundane@List, 3, @)])),127972D9CE563040CA8DB078CF5AB308C7C51E76)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([ldelete(This is not a test, 3)][ldelete(Yet@Another@Mundane@List, 3, @)][ldelete(lemon|orange|pear|apple,2 3,|)][ldelete(foo bar baz boing,3,,%b~%b)])),969E5FCAE972DC163F920E5EA1351F5E36247A4F)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
 >258
 "@if strmatch(setr(0,sha1([ldelete(%bThis is not a test,3)]])),44C72B112A8E0D9E04A5E625DEA442B6DA99FB6C)={@log smoke=TC002: ldelete regressions. Succeeded.},{@log smoke=TC002: ldelete regressions. Failed (%q0).}"
 >260

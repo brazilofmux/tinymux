@@ -20,9 +20,11 @@
         setr(0,sha1(
             [ldelete(This is not a test, 3)]
             [ldelete(Yet@Another@Mundane@List, 3, @)]
+            [ldelete(lemon|orange|pear|apple,2 3,|)]
+            [ldelete(foo bar baz boing,3,,%b~%b)]
           )
         ),
-        127972D9CE563040CA8DB078CF5AB308C7C51E76
+        969E5FCAE972DC163F920E5EA1351F5E36247A4F
       )=
   {
     @log smoke=TC001: Help file examples. Succeeded.
