@@ -80,7 +80,7 @@
             iter(-2 -1,## [insert(,##,Pear,|)])
           )
         ),
-        5F364FF7EEEC93E30C5709B5184501A17046BDEA
+        FF317BAF06BA80EED00C1E604E5A94C16EADAA8F
       )=
   {
     @log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.
@@ -100,7 +100,7 @@
             iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)])
           )
         ),
-        148A471E93499E3B65FEBD56EA9A82F25912037A
+        AA1255843386F29403032C2A238745291C562B90
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;

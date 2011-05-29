@@ -4307,6 +4307,10 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
                 aPositions[j] += nWords;
             }
         }
+        else
+        {
+            aPositions[j] -= 1;
+        }
 
         if (  aPositions[j] < 0
            || (  nWords <= aPositions[j]
