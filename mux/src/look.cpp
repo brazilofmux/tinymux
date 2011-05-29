@@ -2535,24 +2535,18 @@ void do_decomp
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    BOOLEXP *pBoolExp;
-    UTF8 *got, *thingname, *ltext, *buff;
-    dbref aowner, thing;
-    int val, aflags, ca;
-    ATTR *pattr;
-    NAMETAB *np;
-    bool wild_decomp;
-
     // Check for obj/attr first.
     //
+    bool fWildDecomp;
     olist_push();
+    dbref thing;
     if (parse_attrib_wild(executor, name, &thing, false, true, false))
     {
-        wild_decomp = true;
+        fWildDecomp = true;
     }
     else
     {
-        wild_decomp = false;
+        fWildDecomp = false;
         init_match(executor, name, TYPE_THING);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
@@ -2560,7 +2554,7 @@ void do_decomp
 
     // get result
     //
-    if (thing == NOTHING)
+    if (NOTHING == thing)
     {
         olist_pop();
         return;
@@ -2574,107 +2568,119 @@ void do_decomp
         return;
     }
 
-    thingname = atr_get("do_decomp.2551", thing, A_LOCK, &aowner, &aflags);
-    pBoolExp = parse_boolexp(executor, thingname, true);
+    dbref aowner;
+    int   aflags;
+    UTF8 *pDefaultLock = atr_get("do_decomp.2573", thing, A_LOCK, &aowner, &aflags);
+    BOOLEXP *pBoolExp = parse_boolexp(executor, pDefaultLock, true);
+    free_lbuf(pDefaultLock);
+    pDefaultLock = NULL;
 
-    // Determine the name of the thing to use in reporting and then
-    // report the command to make the thing.
-    //
-    if (qual && *qual)
+    UTF8 *got = NULL;
+    const UTF8 *pName = NULL;
+    UTF8 *pShortName = NULL;
+
+    if (  NULL != qual
+       && '\0' != qual[0])
     {
-        mux_strncpy(thingname, qual, LBUF_SIZE-1);
+        pName = qual;
     }
     else
     {
         if (key == DECOMP_DBREF)
         {
-            mux_strncpy(thingname, tprintf(T("#%d"), thing), LBUF_SIZE-1);
+            pName = tprintf(T("#%d"), thing);
         }
         else
         {
-            switch (Typeof(thing))
+            if (  TYPE_PLAYER == Typeof(thing)
+               && executor == thing)
             {
-            case TYPE_THING:
-                mux_strncpy(thingname, translate_string(Moniker(thing),true),
-                    LBUF_SIZE-1);
-                val = OBJECT_DEPOSIT(Pennies(thing));
-                notify(executor, tprintf(T("@create %s=%d"), thingname, val));
-                break;
+                pName = T("me");
+            }
+            else
+            {
+                pName = Moniker(thing);
 
-            case TYPE_ROOM:
-                mux_strncpy(thingname, T("here"), LBUF_SIZE-1);
-                notify(executor, tprintf(T("@dig/teleport %s"),
-                    translate_string(Moniker(thing), true)));
-                mux_strncpy(thingname, translate_string(Moniker(thing), true),
-                        LBUF_SIZE-1);
-                break;
-
-            case TYPE_EXIT:
-                mux_strncpy(thingname, translate_string(Moniker(thing), true),
-                        LBUF_SIZE-1);
-                notify(executor, tprintf(T("@open %s"), thingname));
-                for (got = thingname; *got; got++)
+                if (TYPE_EXIT == Typeof(thing))
                 {
-                    if (EXIT_DELIMITER == *got)
+                    pShortName = alloc_lbuf("do_decomp.2606");
+                    mux_strncpy(pShortName, pName, LBUF_SIZE-1);
+                    for (got = pShortName; *got; got++)
                     {
-                        *got = '\0';
-                        break;
+                        if (EXIT_DELIMITER == *got)
+                        {
+                            *got = '\0';
+                            break;
+                        }
                     }
                 }
-                break;
-
-            case TYPE_PLAYER:
-                if (executor == thing)
-                {
-                    mux_strncpy(thingname, T("me"), LBUF_SIZE-1);
-                }
-                else
-                {
-                    mux_strncpy(thingname, translate_string(Name(thing), true),
-                        LBUF_SIZE-1);
-                }
-                break;
             }
         }
     }
 
-    // Strip out ANSI in one place rather than have it done in
-    // several places.
+    UTF8 *pShortAndStrippedName = alloc_lbuf("do_decomp.2620");
+    UTF8 *pTranslatedFullName = alloc_lbuf("do_decomp.2621");
+
+    // Strip and translate color in one place.
     //
     size_t len;
-    UTF8 *p = strip_color(thingname, &len);
-    memcpy(thingname, p, len+1);
+    UTF8 *p = strip_color((NULL != pShortName) ? pShortName : pName, &len);
+    memcpy(pShortAndStrippedName, p, len+1);
+    mux_strncpy(pTranslatedFullName, translate_string(pName, true), LBUF_SIZE-1);
+
+    // Determine the name of the thing to use in reporting and then
+    // report the command to make the thing.
+    //
+    if (  (  NULL == qual
+          || '\0' == qual[0])
+       && DECOMP_DBREF != key)
+    {
+        switch (Typeof(thing))
+        {
+        case TYPE_THING:
+            {
+                int val = OBJECT_DEPOSIT(Pennies(thing));
+                notify(executor, tprintf(T("@create %s=%d"), pTranslatedFullName, val));
+            }
+            break;
+
+        case TYPE_ROOM:
+            notify(executor, tprintf(T("@dig/teleport %s"), pTranslatedFullName));
+            break;
+
+        case TYPE_EXIT:
+            notify(executor, tprintf(T("@open %s"), pTranslatedFullName));
+            break;
+        }
+    }
 
     // Report the lock (if any).
     //
-    if (  !wild_decomp
-       && pBoolExp != TRUE_BOOLEXP)
+    if (  !fWildDecomp
+       && TRUE_BOOLEXP != pBoolExp)
     {
-        notify(executor, tprintf(T("@lock %s=%s"), thingname,
-            translate_string(unparse_boolexp_decompile(executor, pBoolExp),true)));
+        notify(executor, tprintf(T("@lock %s=%s"), pShortAndStrippedName,
+            translate_string(unparse_boolexp_decompile(executor, pBoolExp), true)));
     }
     free_boolexp(pBoolExp);
+    pBoolExp = NULL;
 
     // Report attributes.
     //
+    int ca;
     unsigned char *as;
-    buff = alloc_mbuf("do_decomp.attr_name");
-    for (ca = (wild_decomp ? olist_first() : atr_head(thing, &as));
-        (wild_decomp) ? (ca != NOTHING) : (ca != 0);
-        ca = (wild_decomp ? olist_next() : atr_next(&as)))
+    UTF8 *buff = alloc_mbuf("do_decomp.attr_name");
+    for (  ca = (fWildDecomp ? olist_first() : atr_head(thing, &as));
+           fWildDecomp ? (NOTHING != ca) : (0 != ca);
+           ca = (fWildDecomp ? olist_next() : atr_next(&as)))
     {
-        if (  ca == A_NAME
-           || ca == A_LOCK)
-        {
-            continue;
-        }
-        pattr = atr_num(ca);
+        ATTR *pattr = atr_num(ca);
         if (!pattr)
         {
             continue;
         }
-        if (  (pattr->flags & AF_NOCMD)
-           && !(pattr->flags & AF_IS_LOCK))
+
+        if (pattr->flags & AF_NODECOMP)
         {
             continue;
         }
@@ -2685,64 +2691,73 @@ void do_decomp
             if (pattr->flags & AF_IS_LOCK)
             {
                 pBoolExp = parse_boolexp(executor, got, true);
-                ltext = unparse_boolexp_decompile(executor, pBoolExp);
+                UTF8 *ltext = unparse_boolexp_decompile(executor, pBoolExp);
                 free_boolexp(pBoolExp);
                 notify(executor, tprintf(T("@lock/%s %s=%s"), pattr->name,
-                    thingname, ltext));
+                    pShortAndStrippedName, ltext));
             }
             else
             {
                 mux_strncpy(buff, pattr->name, MBUF_SIZE-1);
                 notify(executor, tprintf(T("%c%s %s=%s"), ((ca < A_USER_START) ?
-                    '@' : '&'), buff, thingname, got));
-                for (np = indiv_attraccess_nametab; np->name; np++)
+                    '@' : '&'), buff, pShortAndStrippedName, translate_string(got, true)));
+                for (NAMETAB *np = indiv_attraccess_nametab; np->name; np++)
                 {
                     if (  (aflags & np->flag)
                        && check_access(executor, np->perm)
                        && (!(np->perm & CA_NO_DECOMP)))
                     {
-                        notify(executor, tprintf(T("@set %s/%s = %s"), thingname,
+                        notify(executor, tprintf(T("@set %s/%s = %s"), pShortAndStrippedName,
                             buff, np->name));
                     }
                 }
 
                 if (aflags & AF_LOCK)
                 {
-                    notify(executor, tprintf(T("@lock %s/%s"), thingname, buff));
+                    notify(executor, tprintf(T("@lock %s/%s"), pShortAndStrippedName, buff));
                 }
             }
         }
         free_lbuf(got);
     }
     free_mbuf(buff);
+    buff = NULL;
 
-    if (!wild_decomp)
+    if (!fWildDecomp)
     {
-        decompile_flags(executor, thing, thingname);
-        decompile_powers(executor, thing, thingname);
+        decompile_flags(executor, thing, pShortAndStrippedName);
+        decompile_powers(executor, thing, pShortAndStrippedName);
 #ifdef REALITY_LVLS
-        decompile_rlevels(executor, thing, thingname);
+        decompile_rlevels(executor, thing, pShortAndStrippedName);
 #endif // REALITY_LVLS
     }
 
     // If the object has a parent, report it.
     //
-    if (  !wild_decomp
+    if (  !fWildDecomp
        && (Parent(thing) != NOTHING))
     {
-        notify(executor, tprintf(T("@parent %s=#%d"), thingname, Parent(thing)));
+        notify(executor, tprintf(T("@parent %s=#%d"), pShortAndStrippedName, Parent(thing)));
     }
 
     // If the object has a zone, report it.
     //
     int zone;
-    if (  !wild_decomp
+    if (  !fWildDecomp
        && Good_obj(zone = Zone(thing)))
     {
-        notify(executor, tprintf(T("@chzone %s=#%d"), thingname, zone));
+        notify(executor, tprintf(T("@chzone %s=#%d"), pShortAndStrippedName, zone));
     }
 
-    free_lbuf(thingname);
+    free_lbuf(pShortAndStrippedName);
+    pShortAndStrippedName = NULL;
+    free_lbuf(pTranslatedFullName);
+    pTranslatedFullName = NULL;
+    if (NULL != pShortName)
+    {
+        free_lbuf(pShortName);
+        pShortName = NULL;
+    }
     olist_pop();
 }
 
