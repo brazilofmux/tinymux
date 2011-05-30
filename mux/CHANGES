@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  November 2010
+Last Update:  May 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -376,6 +376,7 @@ Bug Fixes:
  -- The 'Input already pending.' check in @program must occur before
     A_PROGCMD is set.
  -- Protect ConvertToAscii() from buffer overflow.
+ -- Fix potential crash in floating-point code.
 
 
 Performance Enhancements:
