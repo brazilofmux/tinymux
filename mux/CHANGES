@@ -20,8 +20,8 @@ Feature Additions:
  -- Extend writetime() and exptime() to show years.
  -- Add colordepth() - reflects how much color a target can accept.
  -- Update to Unicode 5.2.
- -- insert(), ldelete(), and remove() updated to take output delimiter, list
-    of positions, and negative positions.
+ -- insert(), ldelete(), and remove() updated to take output delimiter,
+    list of positions, and negative positions.
 
 
 Bug Fixes:
@@ -49,7 +49,8 @@ Bug Fixes:
  -- Fix the 'doubling' of text that sometimes occurs in HTML
     conversion.
  -- Fix lack of normal text at beginning in HTML conversion.
- -- Add asserts and potential fix for hang in export_TextHtml (Issue 652).
+ -- Add asserts and potential fix for hang in export_TextHtml
+    (Issue 652).
  -- Fix the 'doubling' of text that sometimes occurs in HTML conversion.
  -- Fix lack of normal text at beginning.
  -- Change the version headers in ./Backup.
@@ -60,8 +61,11 @@ Bug Fixes:
     clients (Issue 655)
  -- Map BULLET (U+2022) which Word uses to an asterisk.
  -- Add COLOR256 flag to flag list topic.
- -- Add upper/lower-case support for a handful characters including U+1E9E
-    and U+00DF (Issue 661).
+ -- Add upper/lower-case support for a handful characters including
+    U+1E9E and U+00DF (Issue 661).
+ -- Fix @QueueMax (Issue 651).
+ -- Fix @decompile with colored names, @moniker, and @alias (Issue 577
+    and 602).
 
 
 Performance Enhancements:
