@@ -2631,9 +2631,7 @@ void do_decomp
     // Determine the name of the thing to use in reporting and then
     // report the command to make the thing.
     //
-    if (  (  NULL == qual
-          || '\0' == qual[0])
-       && DECOMP_DBREF != key)
+    if (DECOMP_DBREF != key)
     {
         switch (Typeof(thing))
         {
@@ -2650,6 +2648,14 @@ void do_decomp
 
         case TYPE_EXIT:
             notify(executor, tprintf(T("@open %s"), pTranslatedFullName));
+            if (Good_obj(Location(thing)))
+            {
+                notify(executor, tprintf(T("@@ @link %s=#%d"), pShortAndStrippedName, Location(thing)));
+            }
+            else if (HOME == Location(thing))
+            {
+                notify(executor, tprintf(T("@@ @link %s=home"), pShortAndStrippedName));
+            }
             break;
         }
     }
