@@ -4292,7 +4292,7 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
 
     // Remove positions which are out of bounds.
     //
-    for (j = 0; j < nPositions; j++)
+    for (j = 0; j < nPositions; )
     {
         // Transform negative positions and translate to zero-origin.
         //
@@ -4321,6 +4321,10 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
             //
             aPositions[j] = aPositions[nPositions - 1];
             nPositions--;
+        }
+        else
+        {
+            j++;
         }
     }
 
@@ -4367,6 +4371,16 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
         if (IF_INSERT != flag)
         {
             i++;
+
+            // For IF_DELETE and IF_REPLACE, skip duplicate positions. Once a
+            // position has been deleted or replaced, it cannot be deleted or
+            // replaced again.
+            //
+            while (  j < nPositions-1
+                  && aPositions[j] == aPositions[j+1])
+            {
+                j++;
+            }
         }
     }
 
