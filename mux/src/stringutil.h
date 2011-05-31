@@ -1419,6 +1419,7 @@ UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
 void mux_strncpy(__out_ecount(nSizeOfBuffer-1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer);
 bool matches_exit_from_list(__in const UTF8 *, __in const UTF8 *);
 UTF8 *translate_string(__in const UTF8 *, bool);
+bool IsDecompFriendly(const UTF8 *pString);
 int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b);
 int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n);
 UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n);

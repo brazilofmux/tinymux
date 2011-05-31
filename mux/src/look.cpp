@@ -2705,8 +2705,22 @@ void do_decomp
             else
             {
                 mux_strncpy(buff, pattr->name, MBUF_SIZE-1);
-                notify(executor, tprintf(T("%c%s %s=%s"), ((ca < A_USER_START) ?
-                    '@' : '&'), buff, pShortAndStrippedName, translate_string(got, true)));
+                if (IsDecompFriendly(got))
+                {
+                    notify(executor, tprintf(T("%c%s %s=%s"), ((ca < A_USER_START) ?
+                        '@' : '&'), buff, pShortAndStrippedName, got));
+                }
+                else if (A_MONIKER == pattr->number)
+                {
+                    notify(executor, tprintf(T("%c%s %s=%s"), ((ca < A_USER_START) ?
+                        '@' : '&'), buff, pShortAndStrippedName, translate_string(got, true)));
+                }
+                else
+                {
+                    notify(executor, tprintf(T("@wait 0={%c%s %s=%s}"), ((ca < A_USER_START) ?
+                        '@' : '&'), buff, pShortAndStrippedName, translate_string(got, true)));
+                }
+
                 for (NAMETAB *np = indiv_attraccess_nametab; np->name; np++)
                 {
                     if (  (aflags & np->flag)

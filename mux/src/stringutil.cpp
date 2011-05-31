@@ -3166,6 +3166,7 @@ typedef struct
     const UTF8 *p;
 } LITERAL_STRING_STRUCT;
 
+#define NUM_WS_SUBS 6
 #define NUM_MU_SUBS 14
 static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
 {
@@ -3289,6 +3290,60 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
     }
     *pTranslatedString = '\0';
     return szTranslatedString;
+}
+
+bool IsDecompFriendly(const UTF8 *pString)
+{
+    bool fFriendly = true;
+    if (!pString)
+    {
+        return fFriendly;
+    }
+
+    const UTF8 *MU_EscapeChar = MU_EscapeConvert;
+    while (  '\0' != *pString
+          && fFriendly)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (COLOR_NOTCOLOR == iCode)
+        {
+            UTF8 ch = pString[0];
+            unsigned char code = MU_EscapeChar[ch];
+            if (  0 < code
+               && code < NUM_WS_SUBS)
+            {
+                if (' ' == ch)
+                {
+                    if (' ' == pString[1])
+                    {
+                        // Two adjacent spaces are not @decomp-friendly.
+                        //
+                        fFriendly = false;
+                        break;
+                    }
+
+                    // An isolated space is still @decomp-friendly.
+                    //
+                }
+                else
+                {
+                    // Raw tabs and newlines are not @decomp-friendly.
+                    //
+                    fFriendly = false;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // Raw color codes are not @decomp-friendly.
+            //
+            fFriendly = false;
+            break;
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    return fFriendly;
 }
 
 /* ---------------------------------------------------------------------------
