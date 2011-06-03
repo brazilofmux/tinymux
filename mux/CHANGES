@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: May 2011
+Last Update: June 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,6 +66,11 @@ Bug Fixes:
  -- Fix @QueueMax (Issue 651).
  -- Fix @decompile with colored names, @moniker, and @alias (Issue 577
     and 602).
+ -- Don't @decomp @mail-related attributes.
+ -- Include BETA file and remove ALPHA file.
+ -- For ldelete() and replace(), ignore duplicate positions.
+ -- Fix @decomp so it avoids translating every attribute -- wrapping
+    those that need it in @wait 0={} to make quoting work right.
 
 
 Performance Enhancements:
