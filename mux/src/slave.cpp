@@ -1,5 +1,5 @@
 /*! \file slave.cpp
- * \brief This slave does iptoname conversions, and identquery lookups.
+ * \brief This slave does iptoname conversions.
  *
  * $Id$
  *
@@ -44,21 +44,10 @@
 pid_t parent_pid;
 
 #define MAX_STRING 1000
-char *arg_for_errors;
 
 #ifndef INADDR_NONE
 #define INADDR_NONE ((in_addr_t)-1)
 #endif
-
-char *format_inet_addr(char *dest, long addr)
-{
-    sprintf(dest, "%ld.%ld.%ld.%ld",
-        (addr & 0xFF000000) >> 24,
-        (addr & 0x00FF0000) >> 16,
-        (addr & 0x0000FF00) >> 8,
-        (addr & 0x000000FF));
-    return (dest + strlen(dest));
-}
 
 //
 // copy a string, returning pointer to the null terminator of dest
@@ -78,25 +67,9 @@ RETSIGTYPE child_timeout_signal(int iSig)
     exit(1);
 }
 
-int query(char *ip, char *orig_arg)
+int query(char *ip)
 {
-    char *comma;
-    char *port_pair;
-    struct hostent *hp;
-    struct sockaddr_in sin;
-    int s;
-    FILE *f;
-    char result[MAX_STRING];
-    char buf[MAX_STRING * 2];
-    char buf2[MAX_STRING * 2];
-    char buf3[MAX_STRING * 4];
-    char arg[MAX_STRING];
-    size_t len;
-    ssize_t written;
-    char *p;
-    in_addr_t addr;
-
-    addr = inet_addr(ip);
+    in_addr_t addr = inet_addr(ip);
     if (addr == INADDR_NONE)
     {
         return -1;
@@ -104,135 +77,23 @@ int query(char *ip, char *orig_arg)
     const char *pHName = ip;
 
 #ifdef HAVE_GETHOSTBYADDR
-    hp = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
-    if (  hp
+    struct hostent *hp = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
+    if (  NULL != hp
        && strlen(hp->h_name) < MAX_STRING)
     {
         pHName = hp->h_name;
     }
 #endif // HAVE_GETHOSTBYADDR
 
-    p = stpcpy(buf, ip);
+    char buf[MAX_STRING * 2];
+    char *p = stpcpy(buf, ip);
     *p++ = ' ';
     p = stpcpy(p, pHName);
     *p++ = '\n';
     *p++ = '\0';
 
-    arg_for_errors = orig_arg;
-    strcpy(arg, orig_arg);
-    comma = (char *) strrchr(arg, ',');
-    if (comma == NULL)
-    {
-        return -1;
-    }
-
-    *comma = 0;
-    port_pair = (char *) strrchr(arg, ',');
-    if (port_pair == NULL)
-    {
-        return -1;
-    }
-    *port_pair++ = 0;
-    *comma = ',';
-
-#ifdef HAVE_GETHOSTBYNAME
-    hp = gethostbyname(arg);
-    if (hp == NULL)
-#endif // HAVE_GETHOSTBYNAME
-    {
-        static struct hostent def;
-        static struct in_addr defaddr;
-        static char *alist[1];
-        static char namebuf[MAX_STRING];
-
-        defaddr.s_addr = inet_addr(arg);
-        if (defaddr.s_addr == INADDR_NONE)
-        {
-            return -1;
-        }
-        strcpy(namebuf, arg);
-        def.h_name = namebuf;
-        def.h_addr_list = alist;
-        def.h_addr = (char *) &defaddr;
-        def.h_length = sizeof(struct in_addr);
-
-        def.h_addrtype = AF_INET;
-        def.h_aliases = 0;
-        hp = &def;
-    }
-    sin.sin_family = hp->h_addrtype;
-    bcopy(hp->h_addr, (char *) &sin.sin_addr, hp->h_length);
-    sin.sin_port = htons(113); // ident port
-    s = socket(hp->h_addrtype, SOCK_STREAM, 0);
-    if (s < 0)
-    {
-        return -1;
-    }
-
-    if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
-        if (   errno != ECONNREFUSED
-            && errno != ETIMEDOUT
-            && errno != ENETUNREACH
-            && errno != EHOSTUNREACH)
-        {
-            close(s);
-            return -1;
-        }
-        buf2[0] = '\0';
-    }
-    else
-    {
-        len = strlen(port_pair);
-        written = write(s, port_pair, len);
-        if (  written < 0
-           || len != (size_t)written)
-        {
-            close(s);
-            return (-1);
-        }
-
-        written = write(s, "\r\n", 2);
-        if (  written < 0
-           || 2 != written)
-        {
-            close(s);
-            return (-1);
-        }
-
-        f = fdopen(s, "r");
-        {
-            int c;
-
-            p = result;
-            while ((c = fgetc(f)) != EOF)
-            {
-                if (c == '\n')
-                {
-                    break;
-                }
-
-                if (0x20 <= c && c <= 0x7E)
-                {
-                    *p++ = c;
-                    if (p - result == MAX_STRING - 1)
-                    {
-                        break;
-                    }
-                }
-            }
-            *p = '\0';
-        }
-        fclose(f);
-        p = (char *) format_inet_addr(buf2, ntohl(sin.sin_addr.s_addr));
-        *p++ = ' ';
-        p = stpcpy(p, result);
-        *p++ = '\n';
-        *p++ = '\0';
-    }
-
-    sprintf(buf3, "%s%s", buf, buf2);
-    len = strlen(buf3);
-    written = write(1, buf3, len);
+    size_t len = strlen(buf);
+    ssize_t written = write(1, buf, len);
     if (  written < 0
        || len != (size_t)written)
     {
@@ -284,7 +145,6 @@ RETSIGTYPE child_signal(int iSig)
 int main(int argc, char *argv[])
 {
     char arg[MAX_STRING];
-    char *p;
     int len;
     pid_t child;
 
@@ -318,13 +178,7 @@ int main(int argc, char *argv[])
             }
             break;
         }
-
         arg[len] = '\0';
-        p = strchr(arg, '\n');
-        if (p)
-        {
-            *p = '\0';
-        }
 
         child = fork();
         switch (child)
@@ -347,7 +201,7 @@ int main(int argc, char *argv[])
                 signal(SIGALRM, CAST_SIGNAL_FUNC child_timeout_signal);
                 setitimer(ITIMER_REAL, &itime, 0);
             }
-            exit(query(arg, p + 1) != 0);
+            exit(query(arg) != 0);
             break;
         }
 

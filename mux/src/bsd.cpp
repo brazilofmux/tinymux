@@ -95,7 +95,6 @@ typedef struct
 {
     UTF8 host[MAX_STRING];
     UTF8 token[MAX_STRING];
-    UTF8 ident[MAX_STRING];
 } SLAVE_RESULT;
 
 static HANDLE hSlaveResultStackSemaphore;
@@ -192,21 +191,10 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
             // Ok, we have complete control of this address, now, so let's
-            // do the host/ident thing.
+            // do the reverse-DNS thing.
             //
 
 #ifdef HAVE_GETHOSTBYADDR
-            // Take note of what time it is.
-            //
-#define IDENT_PROTOCOL_TIMEOUT 5*60 // 5 minutes expressed in seconds.
-            CLinearTimeAbsolute ltaTimeoutOrigin;
-            ltaTimeoutOrigin.GetUTC();
-            CLinearTimeDelta ltdTimeout;
-            ltdTimeout.SetSeconds(IDENT_PROTOCOL_TIMEOUT);
-            CLinearTimeAbsolute ltaTimeoutForward(ltaTimeoutOrigin, ltdTimeout);
-            ltdTimeout.SetSeconds(-IDENT_PROTOCOL_TIMEOUT);
-            CLinearTimeAbsolute ltaTimeoutBackward(ltaTimeoutOrigin, ltdTimeout);
-
             addr = req.sa_in.sin_addr.S_un.S_addr;
             hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
             if (  NULL != hp
@@ -216,111 +204,11 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                 UTF8 host[MAX_STRING];
                 UTF8 token[MAX_STRING];
-                UTF8 szIdent[MAX_STRING];
-                struct sockaddr_in sin;
-                memset(&sin, 0, sizeof(sin));
-                SOCKET s;
 
                 // We have a host name.
                 //
                 mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host)-1);
                 mux_strncpy(token, (UTF8 *)hp->h_name, sizeof(token)-1);
-
-                // Setup ident port.
-                //
-                sin.sin_family = hp->h_addrtype;
-                memcpy(&sin.sin_addr, hp->h_addr, hp->h_length);
-                sin.sin_port = htons(113);
-
-                szIdent[0] = 0;
-                s = socket(hp->h_addrtype, SOCK_STREAM, 0);
-                SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                if (s != INVALID_SOCKET)
-                {
-                    SlaveThreadInfo[iSlave].iDoing = __LINE__;
-
-                    DebugTotalSockets++;
-                    if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) == SOCKET_ERROR)
-                    {
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        shutdown(s, SD_BOTH);
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        if (0 == closesocket(s))
-                        {
-                            DebugTotalSockets--;
-                        }
-                        s = INVALID_SOCKET;
-                    }
-                    else
-                    {
-                        int TurnOn = 1;
-                        setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&TurnOn, sizeof(TurnOn));
-
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        UTF8 szPortPair[128];
-                        mux_sprintf(szPortPair, sizeof(szPortPair), T("%d, %d\r\n"),
-                            ntohs(req.sa_in.sin_port), req.port_in);
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        size_t nPortPair = strlen((char *)szPortPair);
-
-                        CLinearTimeAbsolute ltaCurrent;
-                        ltaCurrent.GetUTC();
-                        if (  ltaTimeoutBackward < ltaCurrent
-                           && ltaCurrent < ltaTimeoutForward
-                           && send(s, (char *)szPortPair, static_cast<int>(nPortPair), 0) != SOCKET_ERROR)
-                        {
-                            SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                            int nIdent = 0;
-                            int cc;
-
-                            char szIdentBuffer[MAX_STRING];
-                            szIdentBuffer[0] = 0;
-                            bool bAllDone = false;
-
-                            ltaCurrent.GetUTC();
-                            while (  !bAllDone
-                                  && nIdent < sizeof(szIdent)-1
-                                  && ltaTimeoutBackward < ltaCurrent
-                                  && ltaCurrent < ltaTimeoutForward
-                                  && (cc = recv(s, szIdentBuffer, sizeof(szIdentBuffer)-1, 0)) != SOCKET_ERROR
-                                  && cc != 0)
-                            {
-                                SlaveThreadInfo[iSlave].iDoing = __LINE__;
-
-                                int nIdentBuffer = cc;
-                                szIdentBuffer[nIdentBuffer] = 0;
-
-                                char *p = szIdentBuffer;
-                                for (; nIdent < sizeof(szIdent)-1;)
-                                {
-                                    if (  *p == '\0'
-                                       || *p == '\r'
-                                       || *p == '\n')
-                                    {
-                                        bAllDone = true;
-                                        break;
-                                    }
-                                    if (mux_isprint_ascii(*p))
-                                    {
-                                        szIdent[nIdent++] = *p;
-                                    }
-                                    p++;
-                                }
-                                szIdent[nIdent] = '\0';
-
-                                ltaCurrent.GetUTC();
-                            }
-                        }
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        shutdown(s, SD_BOTH);
-                        SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        if (0 == closesocket(s))
-                        {
-                            DebugTotalSockets--;
-                        }
-                        s = INVALID_SOCKET;
-                    }
-                }
 
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
@@ -331,7 +219,6 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         mux_strncpy(SlaveResults[iSlaveResult].host, host, sizeof(SlaveResults[iSlaveResult].host)-1);
                         mux_strncpy(SlaveResults[iSlaveResult].token, token, sizeof(SlaveResults[iSlaveResult].token)-1);
-                        mux_strncpy(SlaveResults[iSlaveResult].ident, szIdent, sizeof(SlaveResults[iSlaveResult].ident)-1);
                         iSlaveResult++;
                     }
                     else
@@ -395,11 +282,6 @@ static int get_slave_result(void)
 {
     UTF8 host[MAX_STRING];
     UTF8 token[MAX_STRING];
-    UTF8 ident[MAX_STRING];
-    UTF8 os[MAX_STRING];
-    UTF8 userid[MAX_STRING];
-    DESC *d;
-    int local_port, remote_port;
 
     // Go take the result off the stack, but not if it takes more
     // than 5 seconds to do it. Skip it if we time out.
@@ -419,7 +301,6 @@ static int get_slave_result(void)
     iSlaveResult--;
     mux_strncpy(host, SlaveResults[iSlaveResult].host, sizeof(host)-1);
     mux_strncpy(token, SlaveResults[iSlaveResult].token, sizeof(token)-1);
-    mux_strncpy(ident, SlaveResults[iSlaveResult].ident, sizeof(ident)-1);
     ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
 
     // At this point, we have a host name on our own stack.
@@ -428,7 +309,8 @@ static int get_slave_result(void)
     {
         return 1;
     }
-    for (d = descriptor_list; d; d = d->next)
+
+    for (DESC *d = descriptor_list; d; d = d->next)
     {
         if (strcmp((char *)d->addr, (char *)host))
         {
@@ -450,29 +332,6 @@ static int get_slave_result(void)
         }
     }
 
-#if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
-    if (sscanf_s((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port,
-                    token, MAX_STRING, os, MAX_STRING, userid, MAX_STRING) != 5)
-#else
-    if (sscanf((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port,
-        token, os, userid) != 5)
-#endif
-    {
-        return 1;
-    }
-    for (d = descriptor_list; d; d = d->next)
-    {
-        if (ntohs((d->address).sin_port) != remote_port)
-        {
-            continue;
-        }
-
-        mux_strncpy(d->username, userid, sizeof(d->username)-1);
-        if (d->player != 0)
-        {
-            atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"), d->username, d->addr));
-        }
-    }
     return 1;
 }
 
@@ -883,7 +742,6 @@ failure:
 //
 static int get_slave_result(void)
 {
-    int local_port, remote_port;
     DESC *d;
 
     UTF8 *buf = alloc_lbuf("slave_buf");
@@ -917,7 +775,6 @@ static int get_slave_result(void)
 
     UTF8 *token = alloc_lbuf("slave_token");
     UTF8 *os = alloc_lbuf("slave_os");
-    UTF8 *userid = alloc_lbuf("slave_userid");
     UTF8 *host = alloc_lbuf("slave_host");
     UTF8 *p;
     if (sscanf((char *)buf, "%s %s", host, token) != 2)
@@ -957,30 +814,10 @@ static int get_slave_result(void)
         }
     }
 
-    if (sscanf((char *)p + 1, "%s %d , %d : %s : %s : %s",
-           host,
-           &remote_port, &local_port,
-           token, os, userid) != 6)
-    {
-        goto Done;
-    }
-    for (d = descriptor_list; d; d = d->next)
-    {
-        if (ntohs((d->address).sin_port) != remote_port)
-            continue;
-        strncpy((char *)d->username, (char *)userid, 10);
-        d->username[10] = '\0';
-        if (d->player != 0)
-        {
-            atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"),
-                             d->username, d->addr));
-        }
-    }
 Done:
     free_lbuf(buf);
     free_lbuf(token);
     free_lbuf(os);
-    free_lbuf(userid);
     free_lbuf(host);
     return 0;
 }
