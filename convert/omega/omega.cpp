@@ -242,8 +242,10 @@ int main(int argc, char *argv[])
                 if (  eServerUnknown == eOutputType
                    || eTinyMUSH == eOutputType)
                 {
-                    fprintf(stderr, "TinyMUSH 'latest' is produced by 3.1.\n");
-                    fprintf(stderr, "TinyMUSH 'legacy' is produced by 3.0.\n");
+                    fprintf(stderr, "TinyMUSH 'latest' is produced by 3.2.\n");
+                    fprintf(stderr, "TinyMUSH 'legacy' is produced by 3.1p5 or 3.1p6.\n");
+                    fprintf(stderr, "TinyMUSH 'legacyalt' is produced by 3.1p0 to 3.1p4.\n");
+                    fprintf(stderr, "TinyMUSH 'legacyaltalt' is produced by 3.0.\n");
                 }
                 Usage();
                 return 1;
@@ -392,19 +394,21 @@ int main(int argc, char *argv[])
         eOutputType = eInputType;
     }
 
-    if (  eOutputVersion == eLegacyTwo
-       && (  ePennMUSH == eOutputType
-          || eRhostMUSH == eOutputType))
+    if (  ePennMUSH == eOutputType
+       && (  eOutputVersion == eLegacyTwo
+          || eOutputVersion == eLegacyOne))
     {
-        fprintf(stderr, "PennMUSH and RhostMUSH do not currently have support for flatfiles earlier than their chosen legacy version.\n");
+        fprintf(stderr, "PennMUSH has only one legacy flatfile formats:\n");
+        fprintf(stderr, "PennMUSH 'latest' is everything since 1.7.7p40.\n");
+        fprintf(stderr, "PennMUSH 'legacy' is everything between 1.7.5p0 and 1.7.7p40.\n");
         Usage();
         return 1;
     }
 
-    if (  eOutputVersion != eLatest
-       && eRhostMUSH == eOutputType)
+    if (  eRhostMUSH == eOutputType
+       && eOutputVersion != eLatest)
     {
-        fprintf(stderr, "There is only one known RhostMUSH flatfie version.\n");
+        fprintf(stderr, "There is only one know RhostMUSH flatfile version.\n");
         Usage();
         return 1;
     }
@@ -415,7 +419,7 @@ int main(int argc, char *argv[])
           && eCharsetUnknown != eOutputCharset))
     {
         fprintf(stderr, "It isn't necessary to specify a charset for TinyMUX.  TinyMUX 2.6 flatfiles\n"
-                        "are always Windows-1252 (a superset of Latin-1 which is turn a superset of\n"
+                        "are always Windows-1252 (a superset of Latin-1 which in turn is a superset of\n"
                         "US-ASCII), and TinyMUX 2.7 flatfiles are always UTF-8.\n");
         Usage();
         return 1;
@@ -701,18 +705,24 @@ int main(int argc, char *argv[])
             break;
 
         case eLatest:
-            g_t6hgame.Upgrade();
+            g_t6hgame.Upgrade32();
             g_t6hgame.Pass2();
             g_t6hgame.Validate();
             break;
 
         case eLegacyOne:
-            g_t6hgame.Midgrade();
+            g_t6hgame.Upgrade31b();
             g_t6hgame.Pass2();
             g_t6hgame.Validate();
             break;
 
         case eLegacyTwo:
+            g_t6hgame.Upgrade31a();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
+            break;
+
+        case eLegacyThree:
             g_t6hgame.Downgrade();
             g_t6hgame.Pass2();
             g_t6hgame.Validate();

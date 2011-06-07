@@ -1058,17 +1058,17 @@ void T6H_GAME::ValidateFlags() const
                        | T6H_V_CREATETIME;
     if ((m_flags & Mask32) == Mask32)
     {
-        fprintf(stderr, "INFO: Flatfile contains unreleased behavior.\n");
+        fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.2 or later.\n");
     }
     else if ((m_flags & Mask31p0) == Mask31p0)
     {
         if (m_fExtraEscapes)
         {
-            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p5 or later.\n");
+            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p5 or 3.1p6\n");
         }
         else
         {
-            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p0 or later.\n");
+            fprintf(stderr, "INFO: Flatfile produced by TinyMUSH 3.1p0 to 3.1p4\n");
         }
     }
     else
@@ -2683,7 +2683,32 @@ void T6H_GAME::ResetPassword()
     }
 }
 
-void T6H_GAME::Upgrade()
+void T6H_GAME::Upgrade32()
+{
+    m_fExtraEscapes = true;
+
+    time_t tNow;
+    time(&tNow);
+
+    m_flags |= T6H_V_TIMESTAMPS|T6H_V_VISUALATTRS|T6H_V_CREATETIME;
+    for (map<int, T6H_OBJECTINFO *, lti>::iterator itObj = m_mObjects.begin(); itObj != m_mObjects.end(); ++itObj)
+    {
+        if (!itObj->second->m_fModified)
+        {
+            itObj->second->SetModified(tNow);
+        }
+        if (!itObj->second->m_fAccessed)
+        {
+            itObj->second->SetAccessed(tNow);
+        }
+        if (!itObj->second->m_fCreated)
+        {
+            itObj->second->SetCreated(min(itObj->second->m_iModified, itObj->second->m_iAccessed));
+        }
+    }
+}
+
+void T6H_GAME::Upgrade31b()
 {
     m_fExtraEscapes = true;
 
@@ -2706,7 +2731,7 @@ void T6H_GAME::Upgrade()
     }
 }
 
-void T6H_GAME::Midgrade()
+void T6H_GAME::Upgrade31a()
 {
     m_fExtraEscapes = false;
 

@@ -734,8 +734,9 @@ public:
     void ConvertFromP6H();
     void ConvertFromT5X();
 
-    void Upgrade();
-    void Midgrade();
+    void Upgrade32();
+    void Upgrade31b();
+    void Upgrade31a();
     void Downgrade();
 
     void ResetPassword();
