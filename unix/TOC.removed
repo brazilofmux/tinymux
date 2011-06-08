@@ -3,3 +3,7 @@ src/table.cpp
 src/table.h
 src/configure.in
 src/modules/configure.in
+src/tools/dbpuller.c
+src/tools/muxattrs.dat
+src/tools/muxlocks.dat
+src/tools/README.muxdbpuller
