@@ -50,6 +50,10 @@ int iMod(int x, int y)
     {
         if (x <= 0)
         {
+            if (INT_MIN == x && -1 == y)
+            {
+                return 0;
+            }
             return x % y;
         }
         else
@@ -76,6 +80,10 @@ INT64 i64Mod(INT64 x, INT64 y)
     {
         if (x <= 0)
         {
+            if (INT64_MIN_VALUE == x && -1 == y)
+            {
+                return 0;
+            }
             return x % y;
         }
         else
@@ -100,6 +108,10 @@ INT64 i64Mod(INT64 x, INT64 y)
 //
 inline int iRemainder(int x, int y)
 {
+    if (INT_MIN == x && -1 == y)
+    {
+        return 0;
+    }
     return x % y;
 }
 
@@ -170,7 +182,14 @@ int iFloorDivisionMod(int x, int y, int *piMod)
     {
         if (x <= 0)
         {
-            *piMod = x % y;
+            if (INT_MIN == x && -1 == y)
+            {
+                *piMod = 0;
+            }
+            else
+            {
+                *piMod = x % y;
+            }
             return x / y;
         }
         else
@@ -200,7 +219,14 @@ static INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
     {
         if (x <= 0)
         {
-            *piMod = x % y;
+            if (INT64_MIN_VALUE == x && -1 == y)
+            {
+                *piMod = 0;
+            }
+            else
+            {
+                *piMod = x % y;
+            }
             return x / y;
         }
         else
@@ -256,6 +282,10 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
 //
 inline int iMod(int x, int y)
 {
+    if (INT_MIN == x && -1 == y)
+    {
+        return 0;
+    }
     return x % y;
 }
 
@@ -267,6 +297,10 @@ int iRemainder(int x, int y)
     {
         if (x <= 0)
         {
+            if (INT_MIN == x && -1 == y)
+            {
+                return 0;
+            }
             return x % y;
         }
         else
@@ -293,6 +327,10 @@ INT64 i64Remainder(INT64 x, INT64 y)
     {
         if (x <= 0)
         {
+            if (INT64_MIN_VALUE == x && -1 == y)
+            {
+                return 0;
+            }
             return x % y;
         }
         else
@@ -376,7 +414,14 @@ inline int iFloorDivision(int x, int y)
 
 inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 {
-    *piMod = x % y;
+    if (INT64_MIN_VALUE == x && -1 == y)
+    {
+        *piMod = 0;
+    }
+    else
+    {
+        *piMod = x % y;
+    }
     return x / y;
 }
 #endif // LARGEST_INT_LTE_NEG_QUOTIENT
