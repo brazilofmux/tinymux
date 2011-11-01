@@ -740,7 +740,7 @@ failure:
 
 // Get a result from the slave
 //
-int get_slave_result(void)
+static int get_slave_result(void)
 {
     DESC *d;
 
