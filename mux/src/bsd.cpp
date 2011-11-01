@@ -740,7 +740,7 @@ failure:
 
 // Get a result from the slave
 //
-static int get_slave_result(void)
+int get_slave_result(void)
 {
     DESC *d;
 
@@ -774,7 +774,6 @@ static int get_slave_result(void)
     buf[len] = '\0';
 
     UTF8 *token = alloc_lbuf("slave_token");
-    UTF8 *os = alloc_lbuf("slave_os");
     UTF8 *host = alloc_lbuf("slave_host");
     UTF8 *p;
     if (sscanf((char *)buf, "%s %s", host, token) != 2)
@@ -817,7 +816,6 @@ static int get_slave_result(void)
 Done:
     free_lbuf(buf);
     free_lbuf(token);
-    free_lbuf(os);
     free_lbuf(host);
     return 0;
 }
@@ -2081,8 +2079,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
            && mudconf.use_hostname)
         {
             UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
-            mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n%s,%d,%d\n"), pBuffM2, pBuffM2, usPort,
-                Port->port);
+            mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n"), pBuffM2);
             len = strlen((char *)pBuffL1);
             if (mux_write(slave_socket, pBuffL1, len) < 0)
             {
