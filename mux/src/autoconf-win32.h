@@ -1,6 +1,9 @@
 /* autoconf.h.  Generated from autoconf.h.in by configure.  */
 /* autoconf.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if building universal (internal helper macro) */
+/* #undef AC_APPLE_UNIVERSAL_BUILD */
+
 /* Define if unaligned int access is allowed. */
 #define CAN_UNALIGN_INT
 
@@ -184,7 +187,7 @@
 /* Define if signal handlers have a struct sigcontext as their third arg. */
 /* #undef HAVE_STRUCT_SIGCONTEXT */
 
-/* Define to 1 if `tm_zone' is member of `struct tm'. */
+/* Define to 1 if `tm_zone' is a member of `struct tm'. */
 /* #undef HAVE_STRUCT_TM_TM_ZONE */
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
@@ -311,22 +314,22 @@
 /* #undef NO_IEEE_FP_SNAN */
 
 /* Define to the address where bug reports for this package should be sent. */
-/* #undef PACKAGE_BUGREPORT */
+#define PACKAGE_BUGREPORT "tinymux@googlegroups.com"
 
 /* Define to the full name of this package. */
-/* #undef PACKAGE_NAME */
+#define PACKAGE_NAME "TinyMUX"
 
 /* Define to the full name and version of this package. */
-/* #undef PACKAGE_STRING */
+#define PACKAGE_STRING "TinyMUX 2.10"
 
 /* Define to the one symbol short name of this package. */
-/* #undef PACKAGE_TARNAME */
+#define PACKAGE_TARNAME "tinymux"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-/* #undef PACKAGE_VERSION */
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
+#define PACKAGE_VERSION "2.10"
 
 /* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow. */
 /* #undef SIGNAL_SIGCHLD_BRAINDAMAGE */
@@ -386,30 +389,6 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel and VAX). */
-#if defined __BIG_ENDIAN__
-/* # undef WORDS_BIGENDIAN */
-#elif ! defined __LITTLE_ENDIAN__
-/* # undef WORDS_BIGENDIAN */
-#endif
-
-/* Define if Little Endian. */
-#define WORDS_LITTLEENDIAN
-
-/* Define if Unknown Endian. */
-/* #undef WORDS_UNKNOWN */
-
-/* Define to 1 if on MINIX. */
-/* #undef _MINIX */
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-/* #undef _POSIX_1_SOURCE */
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-/* #undef _POSIX_SOURCE */
-
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 /* # undef _ALL_SOURCE */
@@ -431,6 +410,34 @@
 /* # undef __EXTENSIONS__ */
 #endif
 
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+/* #undef WORDS_BIGENDIAN */
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+/* #undef WORDS_BIGENDIAN */
+# endif
+#endif
+
+/* Define if Little Endian. */
+#define WORDS_LITTLEENDIAN
+
+/* Define if Unknown Endian. */
+/* #undef WORDS_UNKNOWN /*
+
+/* Define to 1 if on MINIX. */
+/* #undef _MINIX */
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+/* #undef _POSIX_1_SOURCE */
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+/* #undef _POSIX_SOURCE */
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

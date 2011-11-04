@@ -4807,7 +4807,7 @@ void LogStatBuf(int stat_buf, const char *Name)
 
 #endif  // UNIX_SIGNALS
 
-static RETSIGTYPE DCL_CDECL sighandler(int sig)
+static void DCL_CDECL sighandler(int sig)
 {
 #if defined(UNIX_SIGNALS)
     int stat_buf;
