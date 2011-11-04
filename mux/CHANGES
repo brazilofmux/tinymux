@@ -22,6 +22,7 @@ Feature Additions:
  -- Update to Unicode 5.2.
  -- insert(), ldelete(), and remove() updated to take output delimiter,
     list of positions, and negative positions.
+ -- log() accepts an optional base parameter.
 
 
 Bug Fixes:

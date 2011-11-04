@@ -11184,7 +11184,7 @@ static FUN builtin_function_list[] =
     {T("LOCALIZE"),    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("LOCATE"),      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("LOCK"),        fun_lock,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {T("LOG"),         fun_log,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("LOG"),         fun_log,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LOR"),         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LPAD"),        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("LPARENT"),     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
