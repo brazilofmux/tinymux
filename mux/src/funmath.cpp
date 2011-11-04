@@ -1871,10 +1871,12 @@ FUNCTION(fun_log)
     if (val < 0.0)
     {
         safe_str(T("Ind"), buff, bufc);
+        return;
     }
     else if (0.0 == val)
     {
         safe_str(T("-Inf"), buff, bufc);
+        return;
     }
     else
 #endif
