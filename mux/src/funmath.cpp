@@ -1833,7 +1833,7 @@ FUNCTION(fun_log)
     {
         safe_str(T("Ind"), buff, bufc);
     }
-    else if (val == 0.0 || base == 0.0)
+    else if (0.0 == val || 0.0 == base)
     {
         safe_str(T("-Inf"), buff, bufc);
     }
