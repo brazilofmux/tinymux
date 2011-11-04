@@ -1815,54 +1815,85 @@ FUNCTION(fun_log)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    double val;
-    double base;
+    typedef enum
+    {
+        kNatural,
+        kCommon,
+        kOther
+    } logarithm_base;
 
-    val = mux_atof(fargs[0]);
+    logarithm_base kBase;
+
+    double val = mux_atof(fargs[0]);
+
+    double base;
     if (2 == nfargs)
     {
-        base = mux_atof(fargs[1]);
+        int nDigits;
+        if (  is_integer(fargs[1], &nDigits)
+           && 2 == nDigits)
+        {
+            int iBase = mux_atol(fargs[1]);
+            if (10 == iBase)
+            {
+                kBase = kCommon;
+            }
+            else
+            {
+                kBase = kOther;
+                base = mux_atof(fargs[1]);
+            }
+        }
+        else if (  'e' == fargs[1][0] 
+                && '\0' == fargs[1][1])
+        {
+            kBase = kNatural;
+        }
+        else
+        {
+            kBase = kOther;
+            base = mux_atof(fargs[1]);
+        }
     }
     else
     {
-        base = 10.0;
+        kBase = kCommon;
+    }
+
+    if (  kOther == kBase
+       && base <= 1)
+    {
+        safe_str(T("#-1 BASE OUT OF RANGE"), buff, bufc);
+        return;
     }
 
 #ifndef HAVE_IEEE_FP_SNAN
-    if (val < 0.0 || base < 0.0)
+    if (val < 0.0)
     {
         safe_str(T("Ind"), buff, bufc);
     }
-    else if (0.0 == val || 0.0 == base)
+    else if (0.0 == val)
     {
         safe_str(T("-Inf"), buff, bufc);
     }
     else
+#endif
     {
         mux_FPRestore();
-        if (10.0 == base)
+        if (kCommon == kBase)
         {
             val = log10(val);
+        }
+        else if (kNatural == kBase)
+        {
+            val = log(val);
         }
         else
         {
             val = log(val)/log(base);
         }
-
         mux_FPSet();
     }
-#else
-    mux_FPRestore();
-    if (10.0 == base)
-    {
-        val = log10(val);
-    }
-    else
-    {
-        val = log(val)/log(base);
-    }
-    mux_FPSet();
-#endif
     fval(buff, bufc, val);
 }
 

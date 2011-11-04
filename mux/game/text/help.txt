@@ -9236,8 +9236,8 @@ LOG()
 
   By default, this returns the common (base 10) logarithm of <number>.  You
   may optionally specify a different <base>, however for a natural logarithm,
-  see ln() below.  <number> may be a floating point number, and a floating
-  point result is returned.
+  use 'e' for <base> or see ln() below.  <number> may be a floating point
+  number, and a floating point result is returned.
 
   Examples:
     > say log(0)
