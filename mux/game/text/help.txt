@@ -9232,11 +9232,13 @@ LOCK()
 & LOG()
 LOG()
 
-  FUNCTION: log(<number>)
+  FUNCTION: log(<number> [,<base>])
 
   Returns the result of taking the common logarithm (base 10) of <number>.
   <number> may be a floating point number, and a floating point result
   is returned.
+
+  You may specify an optional base (besides the default of 10) for the log.
 
   Examples:
     > say log(0)

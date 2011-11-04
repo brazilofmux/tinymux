@@ -1816,26 +1816,52 @@ FUNCTION(fun_log)
     UNUSED_PARAMETER(ncargs);
 
     double val;
+    double base;
 
     val = mux_atof(fargs[0]);
+
+    if(is_number(fargs[1]))
+    {
+        base = mux_atol(fargs[1]);
+    }
+    else
+    {
+        base = 10.0;
+    }
+
 #ifndef HAVE_IEEE_FP_SNAN
-    if (val < 0.0)
+    if (val < 0.0 || base < 0.0)
     {
         safe_str(T("Ind"), buff, bufc);
     }
-    else if (val == 0.0)
+    else if (val == 0.0 || base == 0.0)
     {
         safe_str(T("-Inf"), buff, bufc);
     }
     else
     {
         mux_FPRestore();
-        val = log10(val);
+        if (base == 10.0)
+        {
+            val = log10(val);
+        }
+        else
+        {
+            val = log(val)/log(base);
+        }
+
         mux_FPSet();
     }
 #else
     mux_FPRestore();
-    val = log10(val);
+    if (base == 10.0)
+    {
+        val = log10(val);
+    }
+    else
+    {
+        val = log(val)/log(base);
+    }
     mux_FPSet();
 #endif
     fval(buff, bufc, val);
