@@ -1819,10 +1819,9 @@ FUNCTION(fun_log)
     double base;
 
     val = mux_atof(fargs[0]);
-
-    if(is_number(fargs[1]))
+    if (2 == nfargs)
     {
-        base = mux_atol(fargs[1]);
+        base = mux_atof(fargs[1]);
     }
     else
     {
