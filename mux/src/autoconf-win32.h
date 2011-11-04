@@ -130,6 +130,9 @@
 /* Define to 1 if you have the `localtime_r' function. */
 /* #undef HAVE_LOCALTIME_R */
 
+/* Define to 1 if you have the `log2' function. */
+/* #undef HAVE_LOG2 */
+
 /* Define to 1 if you have the <malloc.h> header file. */
 /* #undef HAVE_MALLOC_H */
 

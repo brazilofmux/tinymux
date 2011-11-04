@@ -1817,6 +1817,9 @@ FUNCTION(fun_log)
 
     typedef enum
     {
+#ifdef HAVE_LOG2
+        kBinary,
+#endif
         kNatural,
         kCommon,
         kOther
@@ -1831,13 +1834,19 @@ FUNCTION(fun_log)
     {
         int nDigits;
         if (  is_integer(fargs[1], &nDigits)
-           && 2 == nDigits)
+           && nDigits <= 2)
         {
             int iBase = mux_atol(fargs[1]);
             if (10 == iBase)
             {
                 kBase = kCommon;
             }
+#ifdef HAVE_LOG2
+            else if (2 == iBase)
+            {
+                kBase = kBinary;
+            }
+#endif
             else
             {
                 kBase = kOther;
@@ -1890,6 +1899,12 @@ FUNCTION(fun_log)
         {
             val = log(val);
         }
+#ifdef HAVE_LOG2
+        else if (kBinary == kBase)
+        {
+            val = log2(val);
+        }
+#endif
         else
         {
             val = log(val)/log(base);
