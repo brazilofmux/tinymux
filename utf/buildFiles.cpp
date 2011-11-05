@@ -1,10 +1,13 @@
+#include "autoconf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif
 
 #include "ConvertUTF.h"
 #include "smutil.h"
