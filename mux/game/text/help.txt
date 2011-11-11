@@ -214,7 +214,7 @@ $-COMMANDS
         that room's contents.
 
   Example:
-    > @aconnect me = check.my.mailbox
+    > @aconnect me=@mail
 
   Related Topics: @adisconnect.
 
