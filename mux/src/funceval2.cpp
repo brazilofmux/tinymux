@@ -1217,91 +1217,7 @@ FUNCTION(fun_dumping)
 #endif // HAVE_WORKING_FORK
 }
 
-// The following table contains 64 symbols, so this supports -a-
-// radix-64 encoding. It is not however 'unix-to-unix' encoding.
-// All of the following characters are valid for an attribute
-// name, but not for the first character of an attribute name.
-//
-static UTF8 aRadixTable[] =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$";
-
-FUNCTION(fun_unpack)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    // Validate radix if present.
-    //
-    INT64 iRadix = 64;
-    if (nfargs == 2)
-    {
-        if (  !is_integer(fargs[1], NULL)
-           || (iRadix = mux_atoi64(fargs[1])) < 2
-           || 64 < iRadix)
-        {
-            safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
-            return;
-        }
-    }
-
-    // Build Table of valid characters.
-    //
-    UTF8 MatchTable[256];
-    memset(MatchTable, 0, sizeof(MatchTable));
-    for (int i = 0; i < iRadix; i++)
-    {
-        MatchTable[(unsigned char)aRadixTable[i]] = static_cast<UTF8>(i + 1);
-    }
-
-    // Validate that first argument contains only characters from the
-    // subset of permitted characters.
-    //
-    UTF8 *pString = fargs[0];
-    INT64 sum;
-    int c;
-    int LeadingCharacter;
-
-    // Leading whitespace
-    //
-    while (mux_isspace(*pString))
-    {
-        pString++;
-    }
-
-    // Possible sign
-    //
-    LeadingCharacter = c = *pString++;
-    if (c == '-' || c == '+')
-    {
-        c = *pString++;
-    }
-
-    sum = 0;
-
-    // Convert symbols
-    //
-    for (int iValue = MatchTable[(unsigned int)c];
-         iValue;
-         iValue = MatchTable[(unsigned int)c])
-    {
-        sum = iRadix * sum + iValue - 1;
-        c = *pString++;
-    }
-
-    // Interpret sign
-    //
-    if (LeadingCharacter == '-')
-    {
-        sum = -sum;
-    }
-    safe_i64toa(sum, buff, bufc);
-}
-
-static size_t mux_Pack(INT64 val, int iRadix, UTF8 *buf)
+static size_t mux_Pack0(INT64 val, int iRadix, UTF8 symbols[], UTF8 *buf)
 {
     UTF8 *p = buf;
 
@@ -1319,9 +1235,9 @@ static size_t mux_Pack(INT64 val, int iRadix, UTF8 *buf)
         INT64 iDiv  = val / iRadix;
         INT64 iTerm = val - iDiv * iRadix;
         val = iDiv;
-        *p++ = aRadixTable[iTerm];
+        *p++ = symbols[iTerm];
     }
-    *p++ = aRadixTable[val];
+    *p++ = symbols[val];
 
     size_t nLength = p - buf;
     *p-- = '\0';
@@ -1349,6 +1265,205 @@ static size_t mux_Pack(INT64 val, int iRadix, UTF8 *buf)
     return nLength;
 }
 
+// The following table contains 64 symbols, so this supports -a-
+// radix-64 encoding. It is not however 'unix-to-unix' encoding.
+// All of the following characters are valid for an attribute
+// name, but not for the first character of an attribute name.
+//
+static UTF8 aRadix64[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$";
+
+// These sets are for compatibility with PennMUSH.
+//
+static UTF8 aRadixPenn36[] =
+    "0123456789abcdefghijklmnopqrstuvwxyz";
+
+static UTF8 aRadixPenn64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+static bool mux_Unpack(UTF8 *p, INT64 &val, int iRadixFrom, int iRadixTo, bool fPennBehavior)
+{
+    if (10 == iRadixFrom)
+    {
+        val = mux_atoi64(p);
+        return true;
+    }
+
+    bool fPlusSlash = false;
+    bool fNegativeNumbers = true;
+    UTF8 *symbols = aRadix64;
+    if (fPennBehavior)
+    {
+        fNegativeNumbers = iRadixFrom < 63 && iRadixTo < 63;
+        if (iRadixFrom <= 36)
+        {
+            symbols = aRadixPenn36;
+        }
+        else if (iRadixFrom < 64)
+        {
+            symbols = aRadixPenn64;
+        }
+        else
+        {
+            fPlusSlash = true;
+            symbols = aRadixPenn64;
+        }
+    }
+
+    // Build Table of valid characters.
+    //
+    UTF8 MatchTable[256];
+    memset(MatchTable, 0, sizeof(MatchTable));
+    for (int i = 0; i < iRadixFrom; i++)
+    {
+        MatchTable[(unsigned char)symbols[i]] = static_cast<UTF8>(i + 1);
+    }
+
+    if (fPlusSlash)
+    {
+        MatchTable[(unsigned char)'+'] = static_cast<UTF8>(62 + 1);
+        MatchTable[(unsigned char)'/'] = static_cast<UTF8>(63 + 1);
+    }
+
+    // Leading whitespace
+    //
+    while (mux_isspace(*p))
+    {
+        p++;
+    }
+
+    // Possible sign
+    //
+    int LeadingCharacter = '\0';
+    if (fNegativeNumbers)
+    {
+        LeadingCharacter = *p;
+        if (  '-' == LeadingCharacter
+           || '+' == LeadingCharacter)
+        {
+            p++;
+        }
+    }
+
+    // Validate that string contains only characters from the subset of permitted characters.
+    //
+    int c;
+    UTF8 *q = p;
+    while (  '\0' != *q
+          && !mux_isspace(*q))
+    {
+        c = *q;
+        if (0 == MatchTable[(unsigned int)c])
+        {
+            return false;
+        }
+        q++;
+    }
+
+    // Verify trailing spaces.
+    //
+    while ('\0' != *q)
+    {
+        c = *q;
+        if (!mux_isspace(c))
+        {
+            return false;
+        }
+        q++;
+    }
+
+    // Convert symbols
+    //
+    val = 0;
+    c = *p++;
+    for (int iValue = MatchTable[(unsigned int)c];
+         iValue;
+         iValue = MatchTable[(unsigned int)c])
+    {
+        val = iRadixFrom * val + iValue - 1;
+        c = *p++;
+    }
+
+    // Interpret sign
+    //
+    if ('-' == LeadingCharacter)
+    {
+        val = -val;
+    }
+    return true;
+}
+
+static void mux_Pack1(INT64 val, int iRadixTo, bool fPennBehavior, UTF8 *buff, UTF8 **bufc)
+{
+    if (10 == iRadixTo)
+    {
+        safe_i64toa(val, buff, bufc);
+    }
+    else if (  val < 0
+            && 63 <= iRadixTo)
+    {
+        safe_str(T("#-1 NEGATIVE NUMBER IS NOT REPRESENTABLE IN OUTPUT RADIX"), buff, bufc);
+    }
+    else
+    {
+        UTF8 *symbols = aRadix64;
+        if (fPennBehavior)
+        {
+            if (iRadixTo <= 36)
+            {
+                symbols = aRadixPenn36;
+            }
+            else
+            {
+                symbols = aRadixPenn64;
+            }
+        }
+        UTF8 TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
+        size_t nLength = mux_Pack0(val, iRadixTo, symbols, TempBuffer);
+        safe_copy_buf(TempBuffer, nLength, buff, bufc);
+    }
+}
+
+FUNCTION(fun_unpack)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    // Validate radix if present.
+    //
+    int iRadix = 64;
+    if (2 <= nfargs)
+    {
+        if (  !is_integer(fargs[1], NULL)
+           || (iRadix = mux_atol(fargs[1])) < 2
+           || 64 < iRadix)
+        {
+            safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+            return;
+        }
+    }
+
+    bool fPennBehavior = false;
+    if (3 <= nfargs)
+    {
+        fPennBehavior = xlate(fargs[2]);
+    }
+
+    INT64 val;
+    if (!mux_Unpack(fargs[0], val, iRadix, 10, fPennBehavior))
+    {
+        safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
+    }
+    else
+    {
+        safe_i64toa(val, buff, bufc);
+    }
+}
+
 FUNCTION(fun_pack)
 {
     UNUSED_PARAMETER(executor);
@@ -1361,29 +1476,78 @@ FUNCTION(fun_pack)
     // Validate the arguments are numeric.
     //
     if (  !is_integer(fargs[0], NULL)
-       || (nfargs == 2 && !is_integer(fargs[1], NULL)))
+       || (2 <= nfargs && !is_integer(fargs[1], NULL)))
     {
         safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
     }
     INT64 val = mux_atoi64(fargs[0]);
 
-    // Validate the radix is between 2 and 64.
+    // Validate that the radix is between 2 and 64.
     //
     int iRadix = 64;
-    if (nfargs == 2)
+    if (2 <= nfargs)
     {
         iRadix = mux_atol(fargs[1]);
-        if (iRadix < 2 || 64 < iRadix)
+        if (  iRadix < 2
+           || 64 < iRadix)
         {
             safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
             return;
         }
     }
 
-    UTF8 TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
-    size_t nLength = mux_Pack(val, iRadix, TempBuffer);
-    safe_copy_buf(TempBuffer, nLength, buff, bufc);
+    bool fPennBehavior = false;
+    if (3 <= nfargs)
+    {
+        fPennBehavior = xlate(fargs[2]);
+    }
+
+    mux_Pack1(val, iRadix, fPennBehavior, buff, bufc);
+}
+
+FUNCTION(fun_baseconv)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    // Validate that input and output radix are integers.
+    //
+    if (  !is_integer(fargs[1], NULL)
+       || !is_integer(fargs[2], NULL))
+    {
+        safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
+        return;
+    }
+
+    int iRadixFrom = mux_atol(fargs[1]);
+    if (  iRadixFrom < 2
+       || 64 < iRadixFrom)
+    {
+        safe_str(T("#-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+        return;
+    }
+    int iRadixTo = mux_atol(fargs[2]);
+    if (  iRadixTo < 2
+       || 64 < iRadixTo)
+    {
+        safe_str(T("#-1 OUTPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+        return;
+    }
+
+    INT64 val;
+    if (!mux_Unpack(fargs[0], val, iRadixFrom, iRadixTo, true))
+    {
+        safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
+    }
+    else
+    {
+        mux_Pack1(val, iRadixTo, true, buff, bufc);
+    }
 }
 
 FUNCTION(fun_strcat)

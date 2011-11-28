@@ -125,6 +125,7 @@ XFUNCTION(fun_alphamin);
 XFUNCTION(fun_andflags);
 XFUNCTION(fun_ansi);
 XFUNCTION(fun_beep);
+XFUNCTION(fun_baseconv);
 XFUNCTION(fun_children);
 XFUNCTION(fun_columns);
 XFUNCTION(fun_cwho);
