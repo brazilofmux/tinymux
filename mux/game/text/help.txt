@@ -4916,11 +4916,11 @@ BASECONV()
   63, respectively.
 
   Bases 36 and under use the following symbols:
-  
+
     0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
-	
+
   Bases over 36 use base64 url string:
-  
+
     ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
 
   Related Topics: pack(), unpack()
@@ -5466,8 +5466,8 @@ COLORDEPTH()
   idle time is returned.
 
   Even though the function accepts a port number, there is currently no means
-  to negotiation client color depth, so the result is always based upon player 
-  flags which are the same in every session. The flags are ANSI, COLOR256, and 
+  to negotiation client color depth, so the result is always based upon player
+  flags which are the same in every session. The flags are ANSI, COLOR256, and
   HTML.
 
   You and any object with the See_All @power may obtain the color depth of
@@ -7295,9 +7295,9 @@ FUNCTION CLASSES
 
   Arithmetic:                ABS ADD BAND BASECONV BNAND BOR BXOR CEIL CRC32
                              DEC DIE DIGEST DISTRIBUTE FDIV FLOORDIV FMOD IABS
-							 IADD IDIV IMUL INC ISIGN ISUB MOD MUL PACK POWER
-							 RAND REMAINDER SHA1 SHL SHR SIGN SUB SUCCESSES
-							 SQRT UNPACK
+                             IADD IDIV IMUL INC ISIGN ISUB MOD MUL PACK POWER
+                             RAND REMAINDER SHA1 SHL SHR SIGN SUB SUCCESSES
+                             SQRT UNPACK
 
   Comsystem Information:     CHANNELS CHANOBJ COMALIAS COMTITLE CWHO
 
@@ -7393,80 +7393,80 @@ FUNCTION LIST
     ALPHAMAX()  ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()
     APOSS()     ART()       ASIN()      ATAN()      ATAN2()     ATTRCNT()
     BAND()      BASECONV()  BEEP()      BEFORE()    BITTYPE()   BNAND()
-	BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()
+    BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()
     CASE()      CAT()       CEIL()      CENTER()    CHANNELS()  CHANOBJ()
-	CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
-	COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
-	CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
-	CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
-	CPAD()      CRC32()     CREATE()    CTIME()     CTU()       CWHO()
-	DEC()       DECRYPT()   DEFAULT()   DELETE()    DESTROY()   DIE()
-	DIGEST()    DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
-	DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
-	EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()
+    CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
+    COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
+    CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
+    CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
+    CPAD()      CRC32()     CREATE()    CTIME()     CTU()       CWHO()
+    DEC()       DECRYPT()   DEFAULT()   DELETE()    DESTROY()   DIE()
+    DIGEST()    DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
+    DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
+    EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()
     ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()
-	FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()
-	FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()
+    FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()
+    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-	FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
-	GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
-	HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
-	HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
-	IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
-	INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
-	ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITER()
-	LADD()      LAND()      LAST()      LASTCREATE()LATTR()     LATTRCMDS()
-	LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
+    GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
+    HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
+    HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
+    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
+    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITER()
+    LADD()      LAND()      LAST()      LASTCREATE()LATTR()     LATTRCMDS()
+    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
     LFLAGS()    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()
-	LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-	LOG()       LOR()       LPAD()      LPARENT()   LPORTS()    LPOS()
-	LRAND()     LROOMS()    LT()        LTE()       LWHO()      MAIL()
-	MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()       MATCH()
-	MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-	MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
-	MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-	NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
+    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
+    LOG()       LOR()       LPAD()      LPARENT()   LPORTS()    LPOS()
+    LRAND()     LROOMS()    LT()        LTE()       LWHO()      MAIL()
+    MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()       MATCH()
+    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
+    MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
+    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
+    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-	OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
-	OWNER()     PACK()      PARENT()    PARSE()     PEMIT()     PFIND()
-	PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      PORTS()
-	POS()       POSS()      POWER()     POWERS()    R()         RAND()
-	REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
-	REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
-	RESTARTS()  RESTARTSECS()           RESTARTTIME()           REVERSE()
-	REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
-	ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()  SEARCH()
+    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
+    OWNER()     PACK()      PARENT()    PARSE()     PEMIT()     PFIND()
+    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      PORTS()
+    POS()       POSS()      POWER()     POWERS()    R()         RAND()
+    REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    RESTARTS()  RESTARTSECS()           RESTARTTIME()           REVERSE()
+    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
+    ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()  SEARCH()
     SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETNAME()
-	SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()      SHL()
-	SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
-	SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()       SQRT()
-	SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()      STRCAT()
+    SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()      SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()       SQRT()
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()      STRCAT()
     STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
-	STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SUCCESSES()
-	SWITCH()    T()         TABLE()     TAN()       TEL()       TERMINFO()
-	TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TR()
+    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SUCCESSES()
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TERMINFO()
+    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TR()
 
 ("help function list4" for more)
 
 & FUNCTION LIST4
 FUNCTION LIST (continued)
 
-	TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
-	UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-	VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-	VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
-	WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
-	XOR()       ZFUN()      ZONE()      ZWHO()
+    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
+    WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7511,7 +7511,7 @@ GARBAGE
   It is best to leave garbage alone, and softcode should see these gaps between
   valid dbrefs in the same way as if they were accessing dbrefs beyond the end
   of the valid database.
- 
+
   Related Topics: @stats, stats()
 
 & GENDER
@@ -8282,7 +8282,7 @@ INSERT()
 
   This function may also be used to append a word to a list.
 
-  Elements of the returned list are separated by <output delim> which defaults to 
+  Elements of the returned list are separated by <output delim> which defaults to
   <input delim> which defaults to a space.
 
   Examples:
@@ -10701,7 +10701,7 @@ PACK()
 
   This set is not the same as Unix-to-Unix copy (uuencode).  Optionally, with
   boolean <baseconv>, the behavior changes to be compatible with baseconv().
-  
+
   Examples:
     >think pack(629126998)
     bVxTM
