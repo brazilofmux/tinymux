@@ -341,8 +341,9 @@ int main(int argc, char *argv[])
             }
             else
             {
-                wchar_t buffer[100];
-                swprintf(buffer, sizeof(buffer), L"[0x%08X]", chin);
+                const int nBuffer = 100;
+                wchar_t buffer[nBuffer];
+                swprintf(buffer, nBuffer-1, L"[0x%08X]", chin);
                 output.AppendLine(buffer);
             }
         }
