@@ -136,7 +136,7 @@ void Input::Redraw(void)
 {
     wmove(m_w, 0, 0);
     werase(m_w);
-wcwidth(wchar_t)
+    //wcwidth(wchar_t)
     // TODO: Draw the buffer to the window.
 }
 
