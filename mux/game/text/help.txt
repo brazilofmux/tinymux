@@ -4551,20 +4551,29 @@ ANSI CODES
 & ANSI SUBSTITUTION
 ANSI SUBSTITUTION
 
-  The percent substitution %x<color code> can be used instead of ansi(), and
-  is more efficient.  For example, the equivalent to '[ansi(rBf,Color!)]'
-  would be: '%xr%xB%xfColor!%xn'.  The %xn (return to normal) is understood
-  and therefore optional.
+  The ANSI percent substitutions (%x, %X, %c, and %C) can be used instead of
+  ansi(), and they are more efficient.  For example, the equivalent to
+  '[ansi(rBf,Color!)]' would be: '%xr%xB%xfColor!%xn'.  The %xn (return to
+  normal) is understood and therefore optional.
 
-  %x is preferred, however %c may also be used. They are equivalent.
+  %x is equivalent to %c, and %X is equivalent to %C, however, translate()
+  always produces sequences of %x and %X. So, %x and %X are 'preferred'.
 
-  To express a specific RGB (red, green, blue) color value, either of the two
-  forms may be used:
+  The color code following %x or %X can be:
 
-    %x<#RRGGBB> (%x<#000000> through %x<#FFFFFF>) - HTML color codes
-    %x<R G B> (%x<0 0 0> through %x<255 255 255>) - RGB decimal vector
+    Single letter (b, c, f, g, h, i, m, n, r, u, w, x, y, B, C, G, M, R, W,
+      X, or Y)
 
-  Related Topics: ansi(), ANSI CODES, COLOR256.
+    HTML color code (%x<#RRGGBB> or %x<#000000> through %x<#FFFFFF>)
+
+    RGB decimal vector (%x<R G B> or %x<0 0 0> through %x<255 255 255>)
+
+  For the single-letter form, the case of the letter determines whether the
+  color specifies foreground (lower-case) or background (upper-case).  For the
+  HTML and decimal-vector forms, the case of the %x or %X determines whether
+  the specified color is foreground or background.
+
+  Related Topics: ansi(), ANSI CODES, COLOR256, translate().
 
 & ANSI()
 ANSI()
