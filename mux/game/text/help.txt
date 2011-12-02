@@ -4561,12 +4561,14 @@ ANSI SUBSTITUTION
 
   The color code following %x or %X can be:
 
-    Single letter (b, c, f, g, h, i, m, n, r, u, w, x, y, B, C, G, M, R, W,
-      X, or Y)
+    Single letter (%xb, %xc, %xf, %xg, %xh, %xi, %xm, %xn, %xr, %xu, %xw, %xx,
+      %xy, %xB, %xC, %xG, %xM, %xR, %xW, %xX, and %xY)
 
     HTML color code (%x<#RRGGBB> or %x<#000000> through %x<#FFFFFF>)
 
     RGB decimal vector (%x<R G B> or %x<0 0 0> through %x<255 255 255>)
+
+  Reg, Green, and Blue are abbreviated as R, G, and B.
 
   For the single-letter form, the case of the letter determines whether the
   color specifies foreground (lower-case) or background (upper-case).  For the
