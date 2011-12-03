@@ -209,7 +209,8 @@ static dbref absolute_named_reference(UTF8 *name)
         pReferenceName, nReferenceName, &mudstate.reference_htab);
     free_lbuf(pReferenceName);
 
-    if (NULL != result)
+    if (  NULL != result
+       && Good_obj(result->target))
     {
         return result->target;
     }

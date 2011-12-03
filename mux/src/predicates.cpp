@@ -2877,7 +2877,6 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
 {
     dbref target = NOTHING;
     bool global_only = false;
-    CHashTable* htab = &mudstate.reference_htab;
     mux_string refstr(reference_name);
 
     if (  NULL == reference_name
@@ -2910,13 +2909,15 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
     reference_entry *htab_entry;
     bool match_found = false;
 
+    CHashTable* htab = &mudstate.reference_htab;
     for (  htab_entry = (struct reference_entry *) hash_firstentry(htab);
            NULL != htab_entry;
            htab_entry = (struct reference_entry *) hash_nextentry(htab))
     {
         if (  (  global_only
               && '_' == htab_entry->name[0])
-           || target == htab_entry->owner)
+           || (  !global_only
+              && target == htab_entry->owner))
         {
             if (!Good_obj(htab_entry->target))
             {
@@ -2974,10 +2975,6 @@ void do_reference
     UNUSED_PARAMETER(ncargs);
     UNUSED_PARAMETER(cargs);
 
-    dbref target = NOTHING;
-    mux_string refstr(reference_name);
-    UTF8 tbuf[LBUF_SIZE];
-
     if (key & REFERENCE_LIST)
     {
         ListReferences(executor, reference_name);
@@ -2986,6 +2983,7 @@ void do_reference
 
     // References can only be set on objects the executor can examine.
     //
+    dbref target = NOTHING;
     if (  NULL != object_name
        && '\0' != object_name[0])
     {
@@ -2996,19 +2994,14 @@ void do_reference
             notify(executor, NOMATCH_MESSAGE);
             return;
         }
-
-        if (!Examinable(executor, target))
+        else if (!Examinable(executor, target))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
         }
-
-    }
-    else
-    {
-        target = NOTHING;
     }
 
+    mux_string refstr(reference_name);
     if ('_' == reference_name[0])
     {
         if (!Wizard(executor))
@@ -3023,6 +3016,7 @@ void do_reference
         refstr.append(executor);
     }
 
+    UTF8 tbuf[LBUF_SIZE];
     size_t tbuf_len = refstr.export_TextPlain(tbuf);
     struct reference_entry *result = (reference_entry *)hashfindLEN(
         tbuf, tbuf_len, &mudstate.reference_htab);
