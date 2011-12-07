@@ -466,36 +466,33 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
 //
 bool wild_match(UTF8 *tstr, const UTF8 *dstr)
 {
-    switch (*tstr)
+    PARSE_FLOAT_RESULT pfr;
+    UTF8 ch = *tstr;
+    if (  '>' == ch
+       || '<' == ch)
     {
-    case '>':
-
         tstr++;
-        if (  mux_isdigit(*tstr)
-           || *tstr == '-')
+        if (  ParseFloat(&pfr, dstr, true)
+           && ParseFloat(&pfr, tstr, true))
         {
-            long lt = mux_atol(tstr);
-            long ld = mux_atol(dstr);
-            return (lt < ld);
+            double dd = mux_atof(dstr);
+            double dt = mux_atof(tstr);
+            if ('<' == ch)
+            {
+                return (dd < dt);
+            }
+            else
+            {
+                return (dd > dt);
+            }
         }
-        else
+        else if ('<' == ch)
         {
-            return (strcmp((char *)tstr, (char *)dstr) < 0);
+            return (strcmp((char *)dstr, (char *)tstr) < 0);
         }
-
-    case '<':
-
-        tstr++;
-        if (  mux_isdigit(*tstr)
-           || *tstr == '-')
+        else // if ('>' == ch)
         {
-            long lt = mux_atol(tstr);
-            long ld = mux_atol(dstr);
-            return (lt > ld);
-        }
-        else
-        {
-            return (strcmp((char *)tstr, (char *)dstr) > 0);
+            return (strcmp((char *)dstr, (char *)tstr) > 0);
         }
     }
     mudstate.wild_invk_ctr = 0;
