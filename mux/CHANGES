@@ -1,9 +1,9 @@
 TinyMUX 2.10: CHANGES
-Last Update: June 2011
+Last Update: December 2011
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- None.
+ -- Removed dbpuller tool. Use Omega flatfile tool instead.
 
 
 Feature Additions:
@@ -22,7 +22,9 @@ Feature Additions:
  -- Update to Unicode 5.2.
  -- insert(), ldelete(), and remove() updated to take output delimiter,
     list of positions, and negative positions.
- -- log() accepts an optional base parameter.
+ -- Updated log() to accept optional base parameter.
+ -- Add baseconv() and update pack() and unpack() to provide
+    compatibility options with PennMUSH.
 
 
 Bug Fixes:
@@ -72,6 +74,12 @@ Bug Fixes:
  -- For ldelete() and replace(), ignore duplicate positions.
  -- Fix @decomp so it avoids translating every attribute -- wrapping
     those that need it in @wait 0={} to make quoting work right.
+ -- Disallow %` (Issue 664).
+ -- Avoid operation outside the domain of modulus.
+ -- Using @mail is clearer than check.my.mail.
+ -- Re-write ANSI SUBSTITUTIONS to document %X (upper-case).
+ -- Don't returned a dbref for a @reference if the dbref is not
+    garbage.
 
 
 Performance Enhancements:
@@ -95,3 +103,4 @@ Miscellaneous:
  -- Document defaults for log and log_options.
  -- Dark Purple is #800080.
  -- Typo. Should be hiding instead of hidding (Issue 654).
+ -- Remove IDENT query. Everyone blocks it these days.
