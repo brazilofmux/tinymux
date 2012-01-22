@@ -199,11 +199,11 @@ void T6H_LOCKEXP::Write(FILE *fp)
             fprintf(fp, ":");
             m_le[1]->Write(fp);
 
-            // The code in 2.6 and earlier does not always emit a NL.  It's really
-            // a beneign typo, but we reproduce it to make regression testing
-            // easier.
+            // The legacy behavior (from TinyMUX 1.6) not always emit a NL.
+            // It's really a beneign typo, but we reproduce it to make
+            // regression testing easier.
             //
-            if (m_le[0]->m_op != T6H_LOCKEXP::le_text)
+            if (!fText)
             {
                 fprintf(fp, "\n");
             }

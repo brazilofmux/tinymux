@@ -199,7 +199,7 @@ void T5X_LOCKEXP::Write(FILE *fp)
             // a beneign typo, but we reproduce it to make regression testing
             // easier.
             //
-            if (m_le[0]->m_op != T5X_LOCKEXP::le_text)
+            if (!fText)
             {
                 fprintf(fp, "\n");
             }
