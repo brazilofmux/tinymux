@@ -937,7 +937,7 @@ void T6H_ATTRINFO::EncodeDecode(int dbObjOwner)
             size_t n = strlen(buffer);
             sprintf(buffer + n, "%s", m_pValueUnencoded);
 
-            delete m_pAllocated;
+            free(m_pAllocated);
             m_pAllocated = StringClone(buffer);
 
             m_pValueEncoded = m_pAllocated;

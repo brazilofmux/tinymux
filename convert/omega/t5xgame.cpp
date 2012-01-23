@@ -1006,7 +1006,7 @@ void T5X_ATTRINFO::EncodeDecode(int dbObjOwner)
             size_t n = strlen(buffer);
             sprintf(buffer + n, "%s", m_pValueUnencoded);
 
-            delete m_pAllocated;
+            free(m_pAllocated);
             m_pAllocated = StringClone(buffer);
 
             m_pValueEncoded = m_pAllocated;
@@ -5012,21 +5012,27 @@ bool T5X_GAME::Upgrade3()
 
     // Upgrade attribute names.
     //
+    map<int, T5X_ATTRNAMEINFO *, lti> new_mAttrNames;
+    m_mAttrNums.clear();
     for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
     {
-        m_mAttrNums.erase(it->second->m_pNameEncoded);
-        it->second->ConvertToUTF8();
-        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        T5X_ATTRNAMEINFO *pani = it->second;
+        it->second = NULL;
+        pani->ConvertToUTF8();
+        new_mAttrNames[pani->m_iNum] = pani;
+
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(pani->m_pNameUnencoded);
         if (itNum != m_mAttrNums.end())
         {
             fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
-                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+                pani->m_pNameUnencoded, pani->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
         }
         else
         {
-            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+            m_mAttrNums[pani->m_pNameUnencoded] = pani;
         }
     }
+    m_mAttrNames = new_mAttrNames;
 
     // Upgrade objects.
     //
