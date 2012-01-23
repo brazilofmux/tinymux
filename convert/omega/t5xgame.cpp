@@ -5038,6 +5038,7 @@ bool T5X_GAME::Upgrade3()
     //
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
+        it->second->UpgradeDefaultLock();
         it->second->ConvertToUTF8();
     }
     return true;
@@ -5103,8 +5104,16 @@ void T5X_OBJECTINFO::ConvertToUTF8()
 
 void T5X_ATTRINFO::ConvertToUTF8()
 {
-    char *p = (char *)::ConvertToUTF8(m_pValueUnencoded);
-    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
+    if (kEncode == m_kState)
+    {
+        char *p = (char *)::ConvertToUTF8(m_pValueUnencoded);
+        SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
+    }
+    else
+    {
+        char *p = (char *)::ConvertToUTF8(m_pValueEncoded);
+        SetNumAndValue(m_iNum, StringClone(p));
+    }
 }
 
 bool T5X_GAME::Upgrade2()
