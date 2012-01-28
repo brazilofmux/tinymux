@@ -4568,7 +4568,7 @@ ANSI SUBSTITUTION
 
     RGB decimal vector (%x<R G B> or %x<0 0 0> through %x<255 255 255>)
 
-  Reg, Green, and Blue are abbreviated as R, G, and B.
+  Red, Green, and Blue are abbreviated as R, G, and B.
 
   For the single-letter form, the case of the letter determines whether the
   color specifies foreground (lower-case) or background (upper-case).  For the
