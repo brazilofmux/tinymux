@@ -45,10 +45,6 @@ pid_t parent_pid;
 
 #define MAX_STRING 1000
 
-#ifndef INADDR_NONE
-#define INADDR_NONE ((in_addr_t)-1)
-#endif
-
 //
 // copy a string, returning pointer to the null terminator of dest
 //
@@ -69,21 +65,55 @@ void child_timeout_signal(int iSig)
 
 int query(char *ip)
 {
+    const char *pHName = ip;
+
+#if defined(HAVE_GETADDRINFO) && defined(HAVE_GETNAMEINFO)
+
+    // Let getaddrinfo() fill out the addrinfo structure for us.
+    //
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_V4MAPPED|AI_ADDRCONFIG;
+
+    struct addrinfo *servinfo;
+    char host[MAX_STRING];
+    if (0 == getaddrinfo(ip, NULL, &hints, &servinfo))
+    {
+        for (struct addrinfo *p = servinfo; NULL != p; p = p->ai_next)
+        {
+            if (0 == getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof(host), NULL, 0, NI_NUMERICSERV))
+            {
+                pHName = host;
+                break;
+            }
+        }
+        freeaddrinfo(servinfo);
+    }
+
+#else
+
+#ifndef INADDR_NONE
+#define INADDR_NONE ((in_addr_t)-1)
+#endif
+
     in_addr_t addr = inet_addr(ip);
-    if (addr == INADDR_NONE)
+    if (INADDR_NONE == addr)
     {
         return -1;
     }
-    const char *pHName = ip;
 
-#ifdef HAVE_GETHOSTBYADDR
+#if defined(HAVE_GETHOSTBYADDR)
     struct hostent *hp = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
     if (  NULL != hp
        && strlen(hp->h_name) < MAX_STRING)
     {
         pHName = hp->h_name;
     }
-#endif // HAVE_GETHOSTBYADDR
+#endif
+#endif
 
     char buf[MAX_STRING * 2];
     char *p = stpcpy(buf, ip);
