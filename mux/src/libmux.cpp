@@ -77,7 +77,7 @@ typedef struct
 {
     CLASS_INFO    ci;
     MODULE_INFO  *pModule;
-} CLASS_INFO_PRIVATE;
+} MUX_CLASS_INFO_PRIVATE;
 
 static MODULE_INFO *g_pModuleList = NULL;
 static MODULE_INFO *g_pModuleLast = NULL;
@@ -95,9 +95,9 @@ static MODULE_INFO  g_MainModule =
     false
 };
 
-static int                  g_nClasses = 0;
-static int                  g_nClassesAllocated = 0;
-static CLASS_INFO_PRIVATE  *g_pClasses = NULL;
+static int                      g_nClasses = 0;
+static int                      g_nClassesAllocated = 0;
+static MUX_CLASS_INFO_PRIVATE  *g_pClasses = NULL;
 
 static MODULE_INFO *g_pModule = NULL;
 
@@ -317,7 +317,7 @@ static void ClassAdd(CLASS_INFO *pci, MODULE_INFO *pModule)
     {
         memmove( g_pClasses + i + 1,
                  g_pClasses + i,
-                 (g_nClasses - i) * sizeof(CLASS_INFO_PRIVATE));
+                 (g_nClasses - i) * sizeof(MUX_CLASS_INFO_PRIVATE));
     }
     g_nClasses++;
 
@@ -342,7 +342,7 @@ static void ClassRemove(MUX_CID cid)
         {
             memmove( g_pClasses + i,
                      g_pClasses + i + 1,
-                     (g_nClasses - i) * sizeof(CLASS_INFO_PRIVATE));
+                     (g_nClasses - i) * sizeof(MUX_CLASS_INFO_PRIVATE));
         }
     }
 }
@@ -796,10 +796,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS
     {
         UINT32 nAllocate = GrowByFactor(g_nClasses + nci);
 
-        CLASS_INFO_PRIVATE *pNewClasses = NULL;
+        MUX_CLASS_INFO_PRIVATE *pNewClasses = NULL;
         try
         {
-            pNewClasses = new CLASS_INFO_PRIVATE[nAllocate];
+            pNewClasses = new MUX_CLASS_INFO_PRIVATE[nAllocate];
         }
         catch (...)
         {
