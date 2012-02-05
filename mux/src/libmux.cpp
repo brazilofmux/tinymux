@@ -71,18 +71,18 @@ typedef struct mod_info
 #endif // UNIX_FILES
     bool             bLoaded;
     ModuleState      eState;
-} MODULE_INFO;
+} MUX_MODULE_INFO_PRIVATE;
 
 typedef struct
 {
-    MUX_CLASS_INFO    ci;
-    MODULE_INFO  *pModule;
+    MUX_CLASS_INFO            ci;
+    MUX_MODULE_INFO_PRIVATE  *pModule;
 } MUX_CLASS_INFO_PRIVATE;
 
-static MODULE_INFO *g_pModuleList = NULL;
-static MODULE_INFO *g_pModuleLast = NULL;
+static MUX_MODULE_INFO_PRIVATE *g_pModuleList = NULL;
+static MUX_MODULE_INFO_PRIVATE *g_pModuleLast = NULL;
 
-static MODULE_INFO  g_MainModule =
+static MUX_MODULE_INFO_PRIVATE  g_MainModule =
 {
     NULL,
     NULL,
@@ -99,7 +99,7 @@ static int                      g_nClasses = 0;
 static int                      g_nClassesAllocated = 0;
 static MUX_CLASS_INFO_PRIVATE  *g_pClasses = NULL;
 
-static MODULE_INFO *g_pModule = NULL;
+static MUX_MODULE_INFO_PRIVATE *g_pModule = NULL;
 
 static int                  g_nInterfaces = 0;
 static int                  g_nInterfacesAllocated = 0;
@@ -220,7 +220,7 @@ static int ClassFind(MUX_CID cid)
  * \return      Pointer to module.
  */
 
-static MODULE_INFO *ModuleFindFromCID(MUX_CID cid)
+static MUX_MODULE_INFO_PRIVATE *ModuleFindFromCID(MUX_CID cid)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
@@ -240,9 +240,9 @@ static MODULE_INFO *ModuleFindFromCID(MUX_CID cid)
  * \return           Corresponding module record or NULL if not found.
  */
 
-static MODULE_INFO *ModuleFindFromName(const UTF8 aModuleName[])
+static MUX_MODULE_INFO_PRIVATE *ModuleFindFromName(const UTF8 aModuleName[])
 {
-    MODULE_INFO *pModule = g_pModuleList;
+    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
     while (NULL != pModule)
     {
         if (strcmp((const char *)aModuleName, (const char *)pModule->pModuleName) == 0)
@@ -264,12 +264,12 @@ static MODULE_INFO *ModuleFindFromName(const UTF8 aModuleName[])
  */
 
 #if defined(WINDOWS_FILES)
-static MODULE_INFO *ModuleFindFromFileName(const UTF16 aFileName[])
+static MUX_MODULE_INFO_PRIVATE *ModuleFindFromFileName(const UTF16 aFileName[])
 #elif defined(UNIX_FILES)
-static MODULE_INFO *ModuleFindFromFileName(const UTF8 aFileName[])
+static MUX_MODULE_INFO_PRIVATE *ModuleFindFromFileName(const UTF8 aFileName[])
 #endif // UNIX_FILES
 {
-    MODULE_INFO *pModule = g_pModuleList;
+    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
     while (NULL != pModule)
     {
         if (strcmp((const char *)aFileName, (const char *)pModule->pFileName) == 0)
@@ -304,7 +304,7 @@ static UINT32 GrowByFactor(UINT32 i)
  * \return           None.
  */
 
-static void ClassAdd(MUX_CLASS_INFO *pci, MODULE_INFO *pModule)
+static void ClassAdd(MUX_CLASS_INFO *pci, MUX_MODULE_INFO_PRIVATE *pModule)
 {
     int i = ClassFind(pci->cid);
     if (  i < g_nClasses
@@ -417,26 +417,26 @@ static void InterfaceRemove(MUX_IID iid)
  */
 
 #if defined(WINDOWS_FILES)
-static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
+static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
 #elif defined(UNIX_FILES)
-static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
+static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // UNIX_FILES
 {
     // If the module name or file name is already being used, we won't add it
     // again.  This does not handle file-system links, but that will be caught
     // when the module tries to register its class ids.
     //
-    MODULE_INFO *pModuleFromMN = ModuleFindFromName(aModuleName);
-    MODULE_INFO *pModuleFromFN = ModuleFindFromFileName(aFileName);
+    MUX_MODULE_INFO_PRIVATE *pModuleFromMN = ModuleFindFromName(aModuleName);
+    MUX_MODULE_INFO_PRIVATE *pModuleFromFN = ModuleFindFromFileName(aFileName);
     if (  NULL == pModuleFromMN
        && NULL == pModuleFromFN)
     {
-        // Ensure that enough room is available to append a new MODULE_INFO.
+        // Ensure that enough room is available to append a new MUX_MODULE_INFO_PRIVATE.
         //
-        MODULE_INFO *pModule = NULL;
+        MUX_MODULE_INFO_PRIVATE *pModule = NULL;
         try
         {
-            pModule = new MODULE_INFO;
+            pModule = new MUX_MODULE_INFO_PRIVATE;
         }
         catch (...)
         {
@@ -448,7 +448,7 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
             return NULL;
         }
 
-        // Fill in new MODULE_INFO
+        // Fill in new MUX_MODULE_INFO_PRIVATE
         //
         pModule->fpGetClassObject = NULL;
         pModule->fpCanUnloadNow = NULL;
@@ -467,7 +467,7 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         if (  NULL != pModule->pModuleName
            && NULL != pModule->pFileName)
         {
-            // Add new MODULE_INFO to the end of the list.
+            // Add new MUX_MODULE_INFO_PRIVATE to the end of the list.
             //
             pModule->pNext = NULL;
             if (NULL == g_pModuleLast)
@@ -508,10 +508,10 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
  * \param pModule      Module context record to remove and destroy.
  */
 
-static void ModuleRemove(MODULE_INFO *pModule)
+static void ModuleRemove(MUX_MODULE_INFO_PRIVATE *pModule)
 {
-    MODULE_INFO *p = g_pModuleList;
-    MODULE_INFO *q = NULL;
+    MUX_MODULE_INFO_PRIVATE *p = g_pModuleList;
+    MUX_MODULE_INFO_PRIVATE *q = NULL;
 
     while (NULL != p)
     {
@@ -569,7 +569,7 @@ static void ModuleRemove(MODULE_INFO *pModule)
  * \param pModule   Module context record.
  */
 
-static void ModuleLoad(MODULE_INFO *pModule)
+static void ModuleLoad(MUX_MODULE_INFO_PRIVATE *pModule)
 {
     if (  pModule->bLoaded
        || eModuleUnloadable == pModule->eState)
@@ -615,7 +615,7 @@ static void ModuleLoad(MODULE_INFO *pModule)
  * \param pModule   Module context record.
  */
 
-static void ModuleUnload(MODULE_INFO *pModule)
+static void ModuleUnload(MUX_MODULE_INFO_PRIVATE *pModule)
 {
     if (pModule->bLoaded)
     {
@@ -653,7 +653,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
     {
         // In-proc component.
         //
-        MODULE_INFO *pModule = ModuleFindFromCID(cid);
+        MUX_MODULE_INFO_PRIVATE *pModule = ModuleFindFromCID(cid);
         if (NULL != pModule)
         {
             if (pModule == &g_MainModule)
@@ -760,7 +760,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
 
     // Verify that the requested class ids are not already registered.
     //
-    MODULE_INFO *pModule = NULL;
+    MUX_MODULE_INFO_PRIVATE *pModule = NULL;
     int i;
     for (i = 0; i < nci; i++)
     {
@@ -771,8 +771,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
         }
     }
 
-    // Find corresponding MODULE_INFO. Since we're the one that requested the
-    // module to register its classes, we know which module is registering.
+    // Find corresponding MUX_MODULE_INFO_PRIVATE. Since we're the one that requested the module to register its classes, we know
+    // which module is registering.
     //
     pModule = g_pModule;
     if (NULL == pModule)
@@ -865,11 +865,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
 
     // Verify that all class ids in this request are handled by the same module.
     //
-    MODULE_INFO *pModule = NULL;
+    MUX_MODULE_INFO_PRIVATE *pModule = NULL;
     int i;
     for (i = 0; i < nci; i++)
     {
-        MODULE_INFO *q = ModuleFindFromCID(aci[i].cid);
+        MUX_MODULE_INFO_PRIVATE *q = ModuleFindFromCID(aci[i].cid);
         if (NULL == q)
         {
             // Attempt to revoke a class ids which were never registered.
@@ -1005,9 +1005,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     MUX_RESULT mr = MUX_S_OK;
     if (NULL == g_pModule)
     {
-        // Create new MODULE_INFO.
+        // Create new MUX_MODULE_INFO_PRIVATE.
         //
-        MODULE_INFO *pModule = ModuleAdd(aModuleName, aFileName);
+        MUX_MODULE_INFO_PRIVATE *pModule = ModuleAdd(aModuleName, aFileName);
         if (NULL != pModule)
         {
             // Ask module to register its classes.
@@ -1038,7 +1038,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     return mr;
 }
 
-static MUX_RESULT RemoveModule(MODULE_INFO *pModule)
+static MUX_RESULT RemoveModule(MUX_MODULE_INFO_PRIVATE *pModule)
 {
     MUX_RESULT mr = MUX_S_OK;
 
@@ -1116,7 +1116,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
     MUX_RESULT mr MUX_S_OK;
     if (NULL == g_pModule)
     {
-        MODULE_INFO *pModule = ModuleFindFromName(aModuleName);
+        MUX_MODULE_INFO_PRIVATE *pModule = ModuleFindFromName(aModuleName);
         if (NULL != pModule)
         {
             mr = RemoveModule(pModule);
@@ -1152,7 +1152,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
         return MUX_E_INVALIDARG;
     }
 
-    MODULE_INFO *pModule = g_pModuleList;
+    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
     while (NULL != pModule)
     {
         if (0 == iModule)
@@ -1184,7 +1184,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 
     // We can query each loaded module and unload the ones that are unloadable.
     //
-    MODULE_INFO *pModule = g_pModuleList;
+    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
     while (NULL != pModule)
     {
         if (pModule->bLoaded)
@@ -1250,7 +1250,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 
         // Give each module a chance to unregister.
         //
-        MODULE_INFO *pModule = NULL;
+        MUX_MODULE_INFO_PRIVATE *pModule = NULL;
         bool bFound = false;
         do
         {
