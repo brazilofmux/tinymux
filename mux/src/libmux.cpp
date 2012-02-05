@@ -103,7 +103,7 @@ static MODULE_INFO *g_pModule = NULL;
 
 static int                  g_nInterfaces = 0;
 static int                  g_nInterfacesAllocated = 0;
-static INTERFACE_INFO      *g_pInterfaces = NULL;
+static MUX_INTERFACE_INFO  *g_pInterfaces = NULL;
 
 static PipePump   *g_fpPipePump = NULL;
 static QUEUE_INFO *g_pQueue_In  = NULL;
@@ -373,7 +373,7 @@ static int InterfaceFind(MUX_IID iid)
     return lo;
 }
 
-static void InterfaceAdd(INTERFACE_INFO *pii)
+static void InterfaceAdd(MUX_INTERFACE_INFO *pii)
 {
     int i = InterfaceFind(pii->iid);
     if (  i < g_nInterfaces
@@ -386,7 +386,7 @@ static void InterfaceAdd(INTERFACE_INFO *pii)
     {
         memmove( g_pInterfaces + i + 1,
                  g_pInterfaces + i,
-                 (g_nInterfaces - i) * sizeof(INTERFACE_INFO));
+                 (g_nInterfaces - i) * sizeof(MUX_INTERFACE_INFO));
     }
     g_nInterfaces++;
 
@@ -404,7 +404,7 @@ static void InterfaceRemove(MUX_IID iid)
         {
             memmove( g_pInterfaces + i,
                      g_pInterfaces + i + 1,
-                     (g_nInterfaces - i) * sizeof(INTERFACE_INFO));
+                     (g_nInterfaces - i) * sizeof(MUX_INTERFACE_INFO));
         }
     }
 }
@@ -905,7 +905,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_I
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFACE_INFO aii[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INTERFACE_INFO aii[])
 {
     if (eLibraryInitialized != g_LibraryState)
     {
@@ -924,10 +924,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFA
     {
         int nAllocate = GrowByFactor(g_nInterfaces + nii);
 
-        INTERFACE_INFO *pNewInterfaces = NULL;
+        MUX_INTERFACE_INFO *pNewInterfaces = NULL;
         try
         {
-            pNewInterfaces = new INTERFACE_INFO[nAllocate];
+            pNewInterfaces = new MUX_INTERFACE_INFO[nAllocate];
         }
         catch (...)
         {
@@ -962,7 +962,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFA
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE_INFO aii[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTERFACE_INFO aii[])
 {
     if (eLibraryDown == g_LibraryState)
     {
