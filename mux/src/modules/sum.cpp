@@ -15,7 +15,7 @@ static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
 #define NUM_CLASSES 1
-static CLASS_INFO sum_classes[NUM_CLASSES] =
+static MUX_CLASS_INFO sum_classes[NUM_CLASSES] =
 {
     { CID_Sum }
 };

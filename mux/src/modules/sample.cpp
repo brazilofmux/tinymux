@@ -17,7 +17,7 @@ static INT32 g_cServerLocks = 0;
 static ISample *g_pISample = NULL;
 
 #define NUM_CLASSES 2
-static CLASS_INFO sample_classes[NUM_CLASSES] =
+static MUX_CLASS_INFO sample_classes[NUM_CLASSES] =
 {
     { CID_Sample },
     { CID_SumProxy }

@@ -75,7 +75,7 @@ typedef struct mod_info
 
 typedef struct
 {
-    CLASS_INFO    ci;
+    MUX_CLASS_INFO    ci;
     MODULE_INFO  *pModule;
 } MUX_CLASS_INFO_PRIVATE;
 
@@ -304,7 +304,7 @@ static UINT32 GrowByFactor(UINT32 i)
  * \return           None.
  */
 
-static void ClassAdd(CLASS_INFO *pci, MODULE_INFO *pModule)
+static void ClassAdd(MUX_CLASS_INFO *pci, MODULE_INFO *pModule)
 {
     int i = ClassFind(pci->cid);
     if (  i < g_nClasses
@@ -731,7 +731,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
  * \return                     MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *fpGetClassObject)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_CLASS_INFO aci[], FPGETCLASSOBJECT *fpGetClassObject)
 {
     if (eLibraryInitialized != g_LibraryState)
     {
@@ -850,7 +850,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS
  * \return       MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLASS_INFO aci[])
 {
     if (eLibraryDown == g_LibraryState)
     {

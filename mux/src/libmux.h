@@ -206,7 +206,7 @@ extern "C"
 typedef struct
 {
     MUX_CID cid;
-} CLASS_INFO;
+} MUX_CLASS_INFO;
 
 // It is not required that all interfaces be registered.  However, if an
 // interface needs to be marshalled using Standard Marshaling, it must have an
@@ -221,8 +221,8 @@ typedef struct
 // APIs available to main program (netmux or stubslave) and dynamic modules.
 //
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *pfGetClassObject);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_CLASS_INFO aci[], FPGETCLASSOBJECT *pfGetClassObject);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLASS_INFO aci[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx);

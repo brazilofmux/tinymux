@@ -18,7 +18,7 @@ QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
 
 #define NUM_CLASSES 1
-static CLASS_INFO stubslave_classes[NUM_CLASSES] =
+static MUX_CLASS_INFO stubslave_classes[NUM_CLASSES] =
 {
     { CID_StubSlave }
 };
