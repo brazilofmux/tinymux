@@ -68,6 +68,9 @@ pid_t game_pid;
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
 FGETPROCESSTIMES *fpGetProcessTimes = NULL;
+FGETNAMEINFO *fpGetNameInfo = NULL;
+FGETADDRINFO *fpGetAddrInfo = NULL;
+FFREEADDRINFO *fpFreeAddrInfo = NULL;
 HANDLE CompletionPort;    // IOs are queued up on this port
 bool  bUseCompletionPorts = true;
 static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs

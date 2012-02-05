@@ -3100,6 +3100,102 @@ static void cpu_init(void)
 
 #endif // __INTEL_COMPILER
 
+#if defined(WINDOWS_NETWORKING)
+void DetectWindowsCapabilities()
+{
+    // Get a handle to ws2_32.dll
+    //
+    HINSTANCE hInstWs2_32 = LoadLibrary(L"ws2_32");
+    if (NULL != hInstWs2_32)
+    {
+        fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWs2_32, "getnameinfo");
+        fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWs2_32, "getaddrinfo");
+        fpFreeAddrInfo = (FFREEADDRINFO *)GetProcAddress(hInstWs2_32, "freeaddrinfo");
+
+        // These interfaces are all-or-nothing.
+        //
+        if (  NULL == fpGetNameInfo
+           || NULL == fpGetAddrInfo
+           || NULL == fpFreeAddrInfo)
+        {
+            fpGetNameInfo = NULL;
+            fpGetAddrInfo = NULL;
+            fpFreeAddrInfo = NULL;
+            FreeLibrary(hInstWs2_32);
+            hInstWs2_32 = NULL;
+        }
+    }
+
+    if (NULL == hInstWs2_32)
+    {
+        // Get a handle to wship6.dll (part of the Windows 2000 IPv6 technology preview).
+        //
+        HINSTANCE hInstWship6 = LoadLibrary(L"wship6");
+        if (NULL != hInstWship6)
+        {
+            fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWship6, "getnameinfo");
+            fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWship6, "getaddrinfo");
+            fpFreeAddrInfo = (FFREEADDRINFO *)GetProcAddress(hInstWship6, "freeaddrinfo");
+
+            // These interfaces are all-or-nothing.
+            //
+            if (  NULL == fpGetNameInfo
+               || NULL == fpGetAddrInfo
+               || NULL == fpFreeAddrInfo)
+            {
+                fpGetNameInfo = NULL;
+                fpGetAddrInfo = NULL;
+                fpFreeAddrInfo = NULL;
+                FreeLibrary(hInstWship6);
+                hInstWship6 = NULL;
+            }
+        }
+    }
+
+    // Get a handle to the kernel32 DLL
+    //
+    HINSTANCE hInstKernel32 = LoadLibrary(L"kernel32");
+    if (NULL == hInstKernel32)
+    {
+        Log.WriteString(T("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE));
+        bUseCompletionPorts = false;
+    }
+    else
+    {
+        if (bUseCompletionPorts)
+        {
+            // Find the entry point for CancelIO so we can use it. This is done
+            // dynamically because Windows 95/98 doesn't have a CancelIO entry
+            // point. If it were done at load time, it would always fail on
+            // Windows 95/98...even though we don't use it or depend on it in
+            // that case.
+            //
+            fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
+            if (NULL == fpCancelIo)
+            {
+                Log.WriteString(T("GetProcAddress of _CancelIo failed." ENDLINE));
+                bUseCompletionPorts = false;
+            }
+        }
+
+        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
+        if (NULL == fpGetProcessTimes)
+        {
+            // We can work with or without GetProcessTimes().
+            //
+            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that\xE2\x80\x99s OK." ENDLINE));
+        }
+
+        if (  NULL == fpCancelIo
+           && NULL == fpGetProcessTimes)
+        {
+            FreeLibrary(hInstKernel32);
+            hInstKernel32 = NULL;
+        }
+    }
+}
+#endif // WINDOWS_NETWORKING
+
 #define DBCONVERT_NAME1 T("dbconvert")
 #define DBCONVERT_NAME2 T("dbconvert.exe")
 
@@ -3230,41 +3326,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #if defined(WINDOWS_NETWORKING)
 
     hGameProcess = GetCurrentProcess();
-
-    // Get a handle to the kernel32 DLL
-    //
-    HINSTANCE hInstKernel32 = LoadLibrary(L"kernel32");
-    if (!hInstKernel32)
-    {
-        Log.WriteString(T("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE));
-        bUseCompletionPorts = false;
-    }
-    else
-    {
-        if (bUseCompletionPorts)
-        {
-            // Find the entry point for CancelIO so we can use it. This is done
-            // dynamically because Windows 95/98 doesn't have a CancelIO entry
-            // point. If it were done at load time, it would always fail on
-            // Windows 95/98...even though we don't use it or depend on it in
-            // that case.
-            //
-            fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
-            if (NULL == fpCancelIo)
-            {
-                Log.WriteString(T("GetProcAddress of _CancelIo failed." ENDLINE));
-                bUseCompletionPorts = false;
-            }
-        }
-
-        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
-        if (NULL == fpGetProcessTimes)
-        {
-            // We can work with or without GetProcessTimes().
-            //
-            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that\xE2\x80\x99s OK." ENDLINE));
-        }
-    }
+    DetectWindowsCapabilities();
 
     if (bUseCompletionPorts)
     {
