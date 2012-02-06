@@ -85,7 +85,7 @@ static bool bDescriptorListInit = false;
 
 typedef struct
 {
-    int                port_in;
+    int                listen_port;
     struct sockaddr_in sa_in;
 } SLAVE_REQUEST;
 
@@ -96,8 +96,8 @@ static int iSlaveRequest = 0;
 #define MAX_STRING 514
 typedef struct
 {
-    UTF8 host[MAX_STRING];
-    UTF8 token[MAX_STRING];
+    UTF8 host_address[MAX_STRING];
+    UTF8 host_name[MAX_STRING];
 } SLAVE_RESULT;
 
 static HANDLE hSlaveResultStackSemaphore;
@@ -193,38 +193,19 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
-            UTF8 host[MAX_STRING];
-            mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host)-1);
-
             // Ok, we have complete control of this address, now, so let's
             // do the reverse-DNS thing.
             //
+            UTF8 host_address[MAX_STRING];
+            UTF8 host_name[MAX_STRING];
             bool fHaveResult = false;
-            UTF8 token[MAX_STRING];
 
             if (NULL != fpGetNameInfo)
             {
-                // Let getaddrinfo() fill out the sockinfo structure for us.
-                //
-                struct addrinfo hints;
-                memset(&hints, 0, sizeof(hints));
-                hints.ai_family   = AF_INET;
-                hints.ai_socktype = SOCK_STREAM;
-                hints.ai_protocol = IPPROTO_TCP;
-                hints.ai_flags = AI_V4MAPPED|AI_ADDRCONFIG;
-
-                struct addrinfo *servinfo;
-                if (0 == fpGetAddrInfo((char *)host, NULL, &hints, &servinfo))
+                if (  0 == fpGetNameInfo((struct sockaddr *)&req.sa_in, sizeof(req.sa_in), (char *)host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
+                   && 0 == fpGetNameInfo((struct sockaddr *)&req.sa_in, sizeof(req.sa_in), (char *)host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
                 {
-                    for (struct addrinfo *p = servinfo; NULL != p; p = p->ai_next)
-                    {
-                        if (0 == fpGetNameInfo(p->ai_addr, p->ai_addrlen, (char *)token, sizeof(token), NULL, 0, NI_NUMERICSERV))
-                        {
-                            fHaveResult = true;
-                            break;
-                        }
-                    }
-                    fpFreeAddrInfo(servinfo);
+                    fHaveResult = true;
                 }
             }
 #ifdef HAVE_GETHOSTBYADDR
@@ -239,7 +220,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                     // We have a host name.
                     //
-                    mux_strncpy(token, (UTF8 *)hp->h_name, sizeof(token)-1);
+                    mux_strncpy(host_name, (UTF8 *)hp->h_name, sizeof(host_name)-1);
+                    mux_strncpy(host_address, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host_address)-1);
                     fHaveResult = true;
                 }
             }
@@ -254,8 +236,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     if (iSlaveResult < SLAVE_RESULT_STACK_SIZE)
                     {
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        mux_strncpy(SlaveResults[iSlaveResult].host, host, sizeof(SlaveResults[iSlaveResult].host)-1);
-                        mux_strncpy(SlaveResults[iSlaveResult].token, token, sizeof(SlaveResults[iSlaveResult].token)-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].host_address, host_address, sizeof(SlaveResults[iSlaveResult].host_address)-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].host_name, host_name, sizeof(SlaveResults[iSlaveResult].host_name)-1);
                         iSlaveResult++;
                     }
                     else
@@ -316,8 +298,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
 static int get_slave_result(void)
 {
-    UTF8 host[MAX_STRING];
-    UTF8 token[MAX_STRING];
+    UTF8 host_address[MAX_STRING];
+    UTF8 host_name[MAX_STRING];
 
     // Go take the result off the stack, but not if it takes more
     // than 5 seconds to do it. Skip it if we time out.
@@ -335,8 +317,8 @@ static int get_slave_result(void)
         return 1;
     }
     iSlaveResult--;
-    mux_strncpy(host, SlaveResults[iSlaveResult].host, sizeof(host)-1);
-    mux_strncpy(token, SlaveResults[iSlaveResult].token, sizeof(token)-1);
+    mux_strncpy(host_address, SlaveResults[iSlaveResult].host_address, sizeof(host_address)-1);
+    mux_strncpy(host_name, SlaveResults[iSlaveResult].host_name, sizeof(host_name)-1);
     ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
 
     // At this point, we have a host name on our own stack.
@@ -348,12 +330,12 @@ static int get_slave_result(void)
 
     for (DESC *d = descriptor_list; d; d = d->next)
     {
-        if (strcmp((char *)d->addr, (char *)host))
+        if (strcmp((char *)d->addr, (char *)host_address))
         {
             continue;
         }
 
-        mux_strncpy(d->addr, token, sizeof(d->addr)-1);
+        mux_strncpy(d->addr, host_name, sizeof(d->addr)-1);
         if (d->player != 0)
         {
             if (d->username[0])
@@ -2090,7 +2072,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 // There is room on the stack, so make the request.
                 //
                 SlaveRequests[iSlaveRequest].sa_in = addr;
-                SlaveRequests[iSlaveRequest].port_in = Port->port;
+                SlaveRequests[iSlaveRequest].listen_port = Port->port;
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
@@ -5317,7 +5299,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
                 // There is room on the stack, so make the request.
                 //
                 SlaveRequests[iSlaveRequest].sa_in = SockAddr;
-                SlaveRequests[iSlaveRequest].port_in = mudconf.ports.pi[0];
+                SlaveRequests[iSlaveRequest].listen_port = mudconf.ports.pi[0];
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
