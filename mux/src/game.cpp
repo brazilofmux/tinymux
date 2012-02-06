@@ -3550,7 +3550,7 @@ int DCL_CDECL main(int argc, char *argv[])
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL, mudconf.ip_address);
 #endif
 
-#if defined(HAVE_WORKING_FORK)
+#if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
     boot_slave(GOD, GOD, GOD, 0, 0);
 #endif // HAVE_WORKING_FORK
 
