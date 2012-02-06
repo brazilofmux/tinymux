@@ -69,7 +69,7 @@ int query(char *ip)
 
 #if defined(HAVE_GETADDRINFO) && defined(HAVE_GETNAMEINFO)
 
-    // Let getaddrinfo() fill out the addrinfo structure for us.
+    // Let getaddrinfo() fill out the sockinfo structure for us.
     //
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
