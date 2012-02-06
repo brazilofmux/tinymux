@@ -346,7 +346,7 @@ static int get_slave_result(void)
             {
                 atr_add_raw(d->player, A_LASTSITE, d->addr);
             }
-            atr_add_raw(d->player, A_LASTIP, (UTF8 *)inet_ntoa((d->address).sin_addr));
+            atr_add_raw(d->player, A_LASTIP, host_address);
         }
     }
 
@@ -1999,6 +1999,25 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 
 #endif // UNIX_NETWORKING
 
+void mux_inet_ntop(sockaddr_in *psin, UTF8 *p, size_t n)
+{
+    p[0] = '\0';
+#if defined(WINDOWS_NETWORKING)
+    if (NULL != fpGetNameInfo)
+    {
+        fpGetNameInfo((struct sockaddr *)psin, sizeof(sockaddr_in), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
+    }
+    else
+    {
+        mux_strncpy(p, (UTF8 *)inet_ntoa(psin->sin_addr), n-1);
+    }
+#elif defined(HAVE_GETNAMEINFO) && defined(UNIX_NETWORKING)
+    getnameinfo((struct sockaddr *)psin, sizeof(sockaddr_in), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
+#else
+    mux_strncpy(p, (UTF8 *)inet_ntoa(psin->sin_addr), n-1);
+#endif
+}
+
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
@@ -2026,7 +2045,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     }
 
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
-    mux_strncpy(pBuffM2, (UTF8 *)inet_ntoa(addr.sin_addr), MBUF_SIZE-1);
+    mux_inet_ntop(&addr, pBuffM2, MBUF_SIZE);
     unsigned short usPort = ntohs(addr.sin_port);
 
     DebugTotalSockets++;
@@ -2673,7 +2692,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
-    mux_strncpy(d->addr, (UTF8 *)inet_ntoa(a->sin_addr), sizeof(d->addr)-1);
+    mux_inet_ntop(a, d->addr, sizeof(d->addr));
 
 #if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from
@@ -5264,10 +5283,12 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         DebugTotalSockets++;
         if (site_check(SockAddr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
         {
+            UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
             unsigned short us = ntohs(SockAddr.sin_port);
+            mux_inet_ntop(&SockAddr, host_address, sizeof(host_address));
             Log.tinyprintf(T("[%d/%s] Connection refused.  (Remote port %d)"),
-                socketClient, inet_ntoa(SockAddr.sin_addr), us);
+                socketClient, host_address, us);
             ENDLOG;
 
             // The following are commented out for thread-safety, but
@@ -5579,7 +5600,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         else if (lpo == &lpo_welcome)
         {
             UTF8 *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
-            mux_strncpy(buff, (UTF8 *)inet_ntoa(d->address.sin_addr), MBUF_SIZE-1);
+            mux_inet_ntop(&d->address, buff, MBUF_SIZE);
 
             // If the socket is invalid, the we were unable to queue a read
             // request, and the port was shutdown while this packet was in

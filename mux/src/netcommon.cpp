@@ -1159,8 +1159,9 @@ static void announce_connect(dbref player, DESC *d)
     ltaNow.GetLocal();
     UTF8 *time_str = ltaNow.ReturnDateString(7);
 
-    record_login(player, true, time_str, d->addr, d->username,
-        (UTF8 *)inet_ntoa((d->address).sin_addr));
+    UTF8 host_address[MBUF_SIZE];
+    mux_inet_ntop(&d->address, host_address, sizeof(host_address));
+    record_login(player, true, time_str, d->addr, d->username, host_address);
     if (mudconf.have_mailer)
     {
         check_mail(player, 0, false);
@@ -2406,7 +2407,9 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
         }
 
-        player = connect_player(user, password, d->addr, d->username, (UTF8 *)inet_ntoa((d->address).sin_addr));
+        UTF8 host_address[MBUF_SIZE];
+        mux_inet_ntop(&d->address, host_address, sizeof(host_address));
+        player = connect_player(user, password, d->addr, d->username, host_address);
         if (  player == NOTHING
            || (!isGuest && Guest.CheckGuest(player)))
         {
@@ -3051,25 +3054,35 @@ static const UTF8 *stat_string(int strtype, int flag)
 
 static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, int stat_type)
 {
-    UTF8 *buff, *buff1;
-    const UTF8 *str;
-    SITE *this0;
+    UTF8 *sAddress = alloc_mbuf("list_sites.addr");
+    UTF8 *sMask = alloc_mbuf("list_sites.mask");
+    UTF8 *sLine = alloc_lbuf("list_sites.line");
 
-    buff = alloc_mbuf("list_sites.buff");
-    buff1 = alloc_sbuf("list_sites.addr");
-    mux_sprintf(buff, MBUF_SIZE, T("----- %s -----"), header_txt);
-    notify(player, buff);
+    mux_sprintf(sLine, MBUF_SIZE, T("----- %s -----"), header_txt);
+    notify(player, sLine);
+
     notify(player, T("Address              Mask                 Status"));
-    for (this0 = site_list; this0; this0 = this0->next)
+    for (SITE *p = site_list; NULL != p; p = p->next)
     {
-        str = stat_string(stat_type, this0->flag);
-        mux_strncpy(buff1, (UTF8 *)inet_ntoa(this0->mask), SBUF_SIZE-1);
-        mux_sprintf(buff, MBUF_SIZE, T("%-20s %-20s %s"), inet_ntoa(this0->address), buff1,
-            str);
-        notify(player, buff);
+        const UTF8 *str = stat_string(stat_type, p->flag);
+        sockaddr_in saiAddress;
+        memset(&saiAddress, 0, sizeof(saiAddress));
+        saiAddress.sin_family = AF_INET;
+        saiAddress.sin_addr = p->address;
+        mux_inet_ntop(&saiAddress, sAddress, MBUF_SIZE);
+
+        sockaddr_in saiMask;
+        memset(&saiMask, 0, sizeof(saiMask));
+        saiMask.sin_family = AF_INET;
+        saiMask.sin_addr = p->mask;
+        mux_inet_ntop(&saiMask, sMask, MBUF_SIZE);
+
+        mux_sprintf(sLine, LBUF_SIZE, T("%-20s %-20s %s"), sAddress, sMask, str);
+        notify(player, sLine);
     }
-    free_mbuf(buff);
-    free_sbuf(buff1);
+    free_mbuf(sAddress);
+    free_mbuf(sMask);
+    free_lbuf(sLine);
 }
 
 /* ---------------------------------------------------------------------------

@@ -20,6 +20,7 @@
 // From bsd.cpp.
 //
 void close_sockets(bool emergency, const UTF8 *message);
+void mux_inet_ntop(sockaddr_in *psin, UTF8 *p, size_t n);
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
 void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 #endif
