@@ -193,26 +193,60 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
+            UTF8 host[MAX_STRING];
+            mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host)-1);
+
             // Ok, we have complete control of this address, now, so let's
             // do the reverse-DNS thing.
             //
+            bool fHaveResult = false;
+            UTF8 token[MAX_STRING];
 
-#ifdef HAVE_GETHOSTBYADDR
-            addr = req.sa_in.sin_addr.S_un.S_addr;
-            hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-            if (  NULL != hp
-               && strlen(hp->h_name) < MAX_STRING)
+            if (NULL != fpGetNameInfo)
             {
-                SlaveThreadInfo[iSlave].iDoing = __LINE__;
-
-                UTF8 host[MAX_STRING];
-                UTF8 token[MAX_STRING];
-
-                // We have a host name.
+                // Let getaddrinfo() fill out the addrinfo structure for us.
                 //
-                mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host)-1);
-                mux_strncpy(token, (UTF8 *)hp->h_name, sizeof(token)-1);
+                struct addrinfo hints;
+                memset(&hints, 0, sizeof(hints));
+                hints.ai_family   = AF_INET;
+                hints.ai_socktype = SOCK_STREAM;
+                hints.ai_protocol = IPPROTO_TCP;
+                hints.ai_flags = AI_V4MAPPED|AI_ADDRCONFIG;
 
+                struct addrinfo *servinfo;
+                if (0 == fpGetAddrInfo((char *)host, NULL, &hints, &servinfo))
+                {
+                    for (struct addrinfo *p = servinfo; NULL != p; p = p->ai_next)
+                    {
+                        if (0 == fpGetNameInfo(p->ai_addr, p->ai_addrlen, (char *)token, sizeof(token), NULL, 0, NI_NUMERICSERV))
+                        {
+                            fHaveResult = true;
+                            break;
+                        }
+                    }
+                    fpFreeAddrInfo(servinfo);
+                }
+            }
+#ifdef HAVE_GETHOSTBYADDR
+            else
+            {
+                addr = req.sa_in.sin_addr.S_un.S_addr;
+                hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
+                if (  NULL != hp
+                   && strlen(hp->h_name) < MAX_STRING)
+                {
+                    SlaveThreadInfo[iSlave].iDoing = __LINE__;
+
+                    // We have a host name.
+                    //
+                    mux_strncpy(token, (UTF8 *)hp->h_name, sizeof(token)-1);
+                    fHaveResult = true;
+                }
+            }
+#endif // HAVE_GETHOSTBYADDR
+
+            if (fHaveResult)
+            {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
                 {
@@ -244,7 +278,6 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     return 1;
                 }
             }
-#endif // HAVE_GETHOSTBYADDR
         }
     }
     //SlaveThreadInfo[iSlave].iDoing = __LINE__;
