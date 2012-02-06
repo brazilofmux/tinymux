@@ -791,10 +791,10 @@ static int get_slave_result(void)
     }
     buf[len] = '\0';
 
-    UTF8 *token = alloc_lbuf("slave_token");
-    UTF8 *host = alloc_lbuf("slave_host");
+    UTF8 *host_name = alloc_lbuf("slave_host_name");
+    UTF8 *host_address = alloc_lbuf("slave_host_address");
     UTF8 *p;
-    if (sscanf((char *)buf, "%s %s", host, token) != 2)
+    if (sscanf((char *)buf, "%s %s", host_address, host_name) != 2)
     {
         goto Done;
     }
@@ -808,12 +808,12 @@ static int get_slave_result(void)
     {
         for (d = descriptor_list; d; d = d->next)
         {
-            if (strcmp((char *)d->addr, (char *)host) != 0)
+            if (strcmp((char *)d->addr, (char *)host_address) != 0)
             {
                 continue;
             }
 
-            strncpy((char *)d->addr, (char *)token, 50);
+            strncpy((char *)d->addr, (char *)host_name, 50);
             d->addr[50] = '\0';
             if (d->player != 0)
             {
@@ -826,15 +826,15 @@ static int get_slave_result(void)
                 {
                     atr_add_raw(d->player, A_LASTSITE, d->addr);
                 }
-                atr_add_raw(d->player, A_LASTIP, (UTF8 *)inet_ntoa((d->address).sin_addr));
+                atr_add_raw(d->player, A_LASTIP, host_address);
             }
         }
     }
 
 Done:
     free_lbuf(buf);
-    free_lbuf(token);
-    free_lbuf(host);
+    free_lbuf(host_name);
+    free_lbuf(host_address);
     return 0;
 }
 
