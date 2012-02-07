@@ -178,6 +178,15 @@
 /* Define to 1 if you have the `setrlimit' function. */
 /* #undef HAVE_SETRLIMIT */
 
+/* Define if your system has the sockaddr_in type. */
+#define HAVE_SOCKADDR_IN
+
+/* Define if your system has the sockaddr_in6 type. */
+#define HAVE_SOCKADDR_IN6
+
+/* Define if your system has the sockaddr_storage type. */
+#define HAVE_SOCKADDR_STORAGE
+
 /* Define to 1 if you have the `socket' function. */
 /* #undef HAVE_SOCKET */
 

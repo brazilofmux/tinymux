@@ -411,6 +411,36 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <netinet/in.h>
 #endif]],[[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T], [], [Define if your system has the in_addr_t type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+AC_MSG_CHECKING([for sockaddr_in])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[struct sockaddr_in sa;]])],[AC_DEFINE([HAVE_SOCKADDR_IN], [], [Define if your system has the sockaddr_in type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+AC_MSG_CHECKING([for sockaddr_in6])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[struct sockaddr_in6 sa6;]])],[AC_DEFINE([HAVE_SOCKADDR_IN6], [], [Define if your system has the sockaddr_in6 type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+AC_MSG_CHECKING([for sockaddr_storage])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[struct sockaddr_storage ss;]])],[AC_DEFINE([HAVE_SOCKADDR_STORAGE], [], [Define if your system has the sockaddr_storage type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 
 # Checks for library functions.
 #
