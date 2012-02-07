@@ -131,6 +131,28 @@ extern int getdtablesize(void);
 #include <sys/wait.h>
 #endif
 
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif // HAVE_NETINET_IN_H
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif // HAVE_ARPA_INET_H
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif // HAVE_NETDB_H
+
+#if defined(UNIX_NETWORKING_EPOLL) && defined(HAVE_SYS_EPOLL_H)
+#include <sys/epoll.h>
+#endif // UNIX_NETWORKING_EPOLL && HAVE_SYS_EPOLL_H
+
+#if defined(UNIX_NETWORKING_SELECT) && defined(HAVE_SYS_SELECT_H)
+#include <sys/select.h>
+#endif // UNIX_NETWORKING_SELECT && HAVE_SYS_SELECT_H
+
+#ifdef UNIX_SSL
+#include <openssl/ssl.h>
+#endif
+
 #ifdef HAVE_GETPAGESIZE
 
 #ifdef NEED_GETPAGESIZE_DECL
@@ -480,6 +502,18 @@ typedef int SOCKET;
 #define ENDLINE "\n"
 
 #endif // WIN32
+
+typedef union mux_sockaddr MUX_SOCKADDR;
+union mux_sockaddr
+{
+    struct sockaddr      sa;
+#if defined(HAVE_SOCKADDR_IN)
+    struct sockaddr_in   sai;
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
+    struct sockaddr_in6  sai6;
+#endif
+};
 
 #define INT64_MAX_VALUE  INT64_C(9223372036854775807)
 #define INT64_MIN_VALUE  (INT64_C(-9223372036854775807) - 1)

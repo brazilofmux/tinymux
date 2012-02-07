@@ -13,10 +13,6 @@
 #include "utf8tables.h"
 #include "stringutil.h"
 
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif // HAVE_NETINET_IN_H
-
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
 

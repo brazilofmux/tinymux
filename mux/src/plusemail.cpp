@@ -20,10 +20,6 @@
 #include "externs.h"
 #include "mathutil.h"
 
-#ifdef HAVE_NETDB_H
-#include <netdb.h>
-#endif // HAVE_NETDB_H
-
 #include "_build.h"
 
 // Encode mail body such that CRLF.CRLF only appears at the end of the
@@ -512,15 +508,15 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     struct hostent *conhost = gethostbyname((char *)conhostname);
     if (NULL != conhost)
     {
-        struct sockaddr_in name;
-        name.sin_port = htons(port);
-        name.sin_family = AF_INET;
-        memcpy((char *)&name.sin_addr, (char *)conhost->h_addr, conhost->h_length);
+        mux_sockaddr name;
+        name.sai.sin_port = htons(port);
+        name.sai.sin_family = AF_INET;
+        memcpy((char *)&name.sai.sin_addr, (char *)conhost->h_addr, conhost->h_length);
         SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
-        int addr_len = sizeof(name);
+        int addr_len = sizeof(name.sai);
 
         cc = -2;
-        if (0 == connect(mysock, (struct sockaddr *)&name, addr_len))
+        if (0 == connect(mysock, &name.sa, addr_len))
         {
             *sock = mysock;
             cc = 0;

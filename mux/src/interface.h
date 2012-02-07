@@ -10,30 +10,6 @@
 #ifndef __INTERFACE__H
 #define __INTERFACE__H
 
-#include <sys/types.h>
-
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif // HAVE_NETINET_IN_H
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif // HAVE_ARPA_INET_H
-#ifdef HAVE_NETDB_H
-#include <netdb.h>
-#endif // HAVE_NETDB_H
-
-#if defined(UNIX_NETWORKING_EPOLL) && defined(HAVE_SYS_EPOLL_H)
-#include <sys/epoll.h>
-#endif // UNIX_NETWORKING_EPOLL && HAVE_SYS_EPOLL_H
-
-#if defined(UNIX_NETWORKING_SELECT) && defined(HAVE_SYS_SELECT_H)
-#include <sys/select.h>
-#endif // UNIX_NETWORKING_SELECT && HAVE_SYS_SELECT_H
-
-#ifdef UNIX_SSL
-#include <openssl/ssl.h>
-#endif
-
 /* these symbols must be defined by the interface */
 
 /* Disconnection reason codes */
@@ -234,7 +210,7 @@ struct descriptor_data
   struct descriptor_data *next;
   struct descriptor_data **prev;
 
-  struct sockaddr_in address;   /* added 3/6/90 SCG */
+  mux_sockaddr address;   /* added 3/6/90 SCG */
 
   UTF8 addr[51];
   UTF8 username[11];

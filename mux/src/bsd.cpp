@@ -16,10 +16,6 @@
 #include <sys/ioctl.h>
 #endif // HAVE_SYS_IOCTL_H
 
-#ifdef UNIX_SSL
-#include <openssl/ssl.h>
-#endif
-
 #include <signal.h>
 
 #include "attrs.h"
@@ -52,7 +48,7 @@ DESC *descriptor_list = NULL;
 
 static void TelnetSetup(DESC *d);
 static void SiteMonSend(SOCKET, const UTF8 *, DESC *, const UTF8 *);
-static DESC *initializesock(SOCKET, struct sockaddr_in *);
+static DESC *initializesock(SOCKET, mux_sockaddr *msa);
 static DESC *new_connection(PortInfo *Port, int *piError);
 static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
@@ -85,8 +81,8 @@ static bool bDescriptorListInit = false;
 
 typedef struct
 {
-    int                listen_port;
-    struct sockaddr_in sa_in;
+    int           listen_port;
+    mux_sockaddr  msa;
 } SLAVE_REQUEST;
 
 static HANDLE hSlaveRequestStackSemaphore;
@@ -202,8 +198,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
             if (NULL != fpGetNameInfo)
             {
-                if (  0 == fpGetNameInfo((struct sockaddr *)&req.sa_in, sizeof(req.sa_in), (char *)host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
-                   && 0 == fpGetNameInfo((struct sockaddr *)&req.sa_in, sizeof(req.sa_in), (char *)host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
+                if (  0 == fpGetNameInfo(&req.msa.sa, sizeof(req.msa.sai), (char *)host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
+                   && 0 == fpGetNameInfo(&req.msa.sa, sizeof(req.msa.sai), (char *)host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
                 {
                     fHaveResult = true;
                 }
@@ -211,7 +207,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 #ifdef HAVE_GETHOSTBYADDR
             else
             {
-                addr = req.sa_in.sin_addr.S_un.S_addr;
+                addr = req.msa.sai.sin_addr.S_un.S_addr;
                 hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
                 if (  NULL != hp
                    && strlen(hp->h_name) < MAX_STRING)
@@ -221,7 +217,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     // We have a host name.
                     //
                     mux_strncpy(host_name, (UTF8 *)hp->h_name, sizeof(host_name)-1);
-                    mux_strncpy(host_address, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), sizeof(host_address)-1);
+                    mux_strncpy(host_address, (UTF8 *)inet_ntoa(req.msa.sai.sin_addr), sizeof(host_address)-1);
                     fHaveResult = true;
                 }
             }
@@ -998,7 +994,7 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 static void make_socket(PortInfo *Port, const UTF8 *ip_address)
 {
     SOCKET s;
-    struct sockaddr_in server;
+    mux_sockaddr server;
     int opt = 1;
     Port->socket = INVALID_SOCKET;
 
@@ -1122,18 +1118,18 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
     }
 
     in_addr_t ulNetBits;
-    server.sin_family = AF_INET;
+    server.sai.sin_family = AF_INET;
     if (MakeCanonicalIPv4(ip_address, &ulNetBits))
     {
-        server.sin_addr.s_addr = ulNetBits;
+        server.sai.sin_addr.s_addr = ulNetBits;
     }
     else
     {
-        server.sin_addr.s_addr = INADDR_ANY;
+        server.sai.sin_addr.s_addr = INADDR_ANY;
     }
-    server.sin_port = htons((unsigned short)(Port->port));
+    server.sai.sin_port = htons((unsigned short)(Port->port));
 
-    int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
+    int cc  = bind(s, &server.sa, sizeof(server.sai));
     if (IS_SOCKET_ERROR(cc))
     {
         log_perror(T("NET"), T("FAIL"), NULL, T("bind"));
@@ -1999,29 +1995,29 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 
 #endif // UNIX_NETWORKING
 
-void mux_inet_ntop(sockaddr_in *psin, UTF8 *p, size_t n)
+void mux_inet_ntop(mux_sockaddr *pmsa, UTF8 *p, size_t n)
 {
     p[0] = '\0';
 #if defined(WINDOWS_NETWORKING)
     if (NULL != fpGetNameInfo)
     {
-        fpGetNameInfo((struct sockaddr *)psin, sizeof(sockaddr_in), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
+        fpGetNameInfo(&pmsa->sa, sizeof(pmsa->sai), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
     }
     else
     {
-        mux_strncpy(p, (UTF8 *)inet_ntoa(psin->sin_addr), n-1);
+        mux_strncpy(p, (UTF8 *)inet_ntoa(pmsa->sai.sin_addr), n-1);
     }
 #elif defined(HAVE_GETNAMEINFO) && defined(UNIX_NETWORKING)
-    getnameinfo((struct sockaddr *)psin, sizeof(sockaddr_in), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
+    getnameinfo(&pmsa->sa, sizeof(pmsa->sai), (char *)p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
 #else
-    mux_strncpy(p, (UTF8 *)inet_ntoa(psin->sin_addr), n-1);
+    mux_strncpy(p, (UTF8 *)inet_ntoa(pmsa->sai.sin_addr), n-1);
 #endif
 }
 
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
-    struct sockaddr_in addr;
+    mux_sockaddr addr;
 #ifdef SOCKLEN_T_DCL
     socklen_t addr_len;
 #else // SOCKLEN_T_DCL
@@ -2033,9 +2029,9 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< new_connection >");
-    addr_len = sizeof(struct sockaddr);
+    addr_len = sizeof(addr.sai);
 
-    SOCKET newsock = accept(Port->socket, (struct sockaddr *)&addr, &addr_len);
+    SOCKET newsock = accept(Port->socket, &addr.sa, &addr_len);
 
     if (IS_INVALID_SOCKET(newsock))
     {
@@ -2046,10 +2042,10 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
     mux_inet_ntop(&addr, pBuffM2, MBUF_SIZE);
-    unsigned short usPort = ntohs(addr.sin_port);
+    unsigned short usPort = ntohs(addr.sai.sin_port);
 
     DebugTotalSockets++;
-    if (site_check(addr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
+    if (site_check(addr.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
@@ -2090,7 +2086,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             {
                 // There is room on the stack, so make the request.
                 //
-                SlaveRequests[iSlaveRequest].sa_in = addr;
+                SlaveRequests[iSlaveRequest].msa = addr;
                 SlaveRequests[iSlaveRequest].listen_port = Port->port;
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
@@ -2233,7 +2229,7 @@ void shutdownsock(DESC *d, int reason)
     DESC *dtemp;
 
     if (  (reason == R_LOGOUT)
-       && (site_check((d->address).sin_addr, mudstate.access_list) == H_FORBIDDEN))
+       && (site_check(d->address.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN))
     {
         reason = R_QUIT;
     }
@@ -2408,8 +2404,8 @@ void shutdownsock(DESC *d, int reason)
         d->doing[0] = '\0';
         d->quota = mudconf.cmd_quota_max;
         d->last_time = d->connected_at;
-        int AccessFlag = site_check((d->address).sin_addr, mudstate.access_list);
-        int SuspectFlag = site_check((d->address).sin_addr, mudstate.suspect_list);
+        int AccessFlag = site_check(d->address.sai.sin_addr, mudstate.access_list);
+        int SuspectFlag = site_check(d->address.sai.sin_addr, mudstate.suspect_list);
         d->host_info = AccessFlag | SuspectFlag;
         d->input_tot = d->input_size;
         d->output_tot = 0;
@@ -2618,7 +2614,7 @@ static void config_socket(SOCKET s)
 
 // This function must be thread safe WinNT
 //
-DESC *initializesock(SOCKET s, struct sockaddr_in *a)
+DESC *initializesock(SOCKET s, mux_sockaddr *msa)
 {
     DESC *d;
 
@@ -2652,8 +2648,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->ssl_session = NULL;
 #endif
 
-    int AccessFlag = site_check((*a).sin_addr, mudstate.access_list);
-    int SuspectFlag = site_check((*a).sin_addr, mudstate.suspect_list);
+    int AccessFlag = site_check(msa->sai.sin_addr, mudstate.access_list);
+    int SuspectFlag = site_check(msa->sai.sin_addr, mudstate.suspect_list);
     d->host_info = AccessFlag | SuspectFlag;
 
     // Be sure #0 isn't wizard. Shouldn't be.
@@ -2691,8 +2687,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
-    d->address = *a;
-    mux_inet_ntop(a, d->addr, sizeof(d->addr));
+    d->address = *msa;
+    mux_inet_ntop(msa, d->addr, sizeof(d->addr));
 
 #if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from

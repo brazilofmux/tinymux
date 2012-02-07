@@ -3065,17 +3065,17 @@ static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, in
     for (SITE *p = site_list; NULL != p; p = p->next)
     {
         const UTF8 *str = stat_string(stat_type, p->flag);
-        sockaddr_in saiAddress;
-        memset(&saiAddress, 0, sizeof(saiAddress));
-        saiAddress.sin_family = AF_INET;
-        saiAddress.sin_addr = p->address;
-        mux_inet_ntop(&saiAddress, sAddress, MBUF_SIZE);
+        mux_sockaddr msaAddress;
+        memset(&msaAddress, 0, sizeof(msaAddress));
+        msaAddress.sai.sin_family = AF_INET;
+        msaAddress.sai.sin_addr = p->address;
+        mux_inet_ntop(&msaAddress, sAddress, MBUF_SIZE);
 
-        sockaddr_in saiMask;
-        memset(&saiMask, 0, sizeof(saiMask));
-        saiMask.sin_family = AF_INET;
-        saiMask.sin_addr = p->mask;
-        mux_inet_ntop(&saiMask, sMask, MBUF_SIZE);
+        mux_sockaddr msaMask;
+        memset(&msaMask, 0, sizeof(msaMask));
+        msaMask.sai.sin_family = AF_INET;
+        msaMask.sai.sin_addr = p->mask;
+        mux_inet_ntop(&msaMask, sMask, MBUF_SIZE);
 
         mux_sprintf(sLine, LBUF_SIZE, T("%-20s %-20s %s"), sAddress, sMask, str);
         notify(player, sLine);
