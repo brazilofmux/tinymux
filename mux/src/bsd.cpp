@@ -1042,16 +1042,16 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
 
         // Fill in the the address structure
         //
-        server.sin_port = htons((unsigned short)(Port->port));
-        server.sin_family = AF_INET;
+        server.sai.sin_port = htons((unsigned short)(Port->port));
+        server.sai.sin_family = AF_INET;
         in_addr_t ulNetBits;
         if (MakeCanonicalIPv4(ip_address, &ulNetBits))
         {
-            server.sin_addr.s_addr = ulNetBits;
+            server.sai.sin_addr.s_addr = ulNetBits;
         }
         else
         {
-            server.sin_addr.s_addr = INADDR_ANY;
+            server.sai.sin_addr.s_addr = INADDR_ANY;
         }
 
         // bind our name to the socket
@@ -5248,9 +5248,9 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 {
     PortInfo *Port = (PortInfo *)pVoid;
 
-    SOCKADDR_IN SockAddr;
-    int         nLen;
-    BOOL        b;
+    mux_sockaddr SockAddr;
+    int          nLen;
+    BOOL         b;
 
     struct descriptor_data * d;
 
@@ -5277,11 +5277,11 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         }
 
         DebugTotalSockets++;
-        if (site_check(SockAddr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
+        if (site_check(SockAddr.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN)
         {
             UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            unsigned short us = ntohs(SockAddr.sin_port);
+            unsigned short us = ntohs(SockAddr.sai.sin_port);
             mux_inet_ntop(&SockAddr, host_address, sizeof(host_address));
             Log.tinyprintf(T("[%d/%s] Connection refused.  (Remote port %d)"),
                 socketClient, host_address, us);
@@ -5315,7 +5315,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
             {
                 // There is room on the stack, so make the request.
                 //
-                SlaveRequests[iSlaveRequest].sa_in = SockAddr;
+                SlaveRequests[iSlaveRequest].msa = SockAddr;
                 SlaveRequests[iSlaveRequest].listen_port = mudconf.ports.pi[0];
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
@@ -5610,7 +5610,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf(T("[%s/%s] Connection opened (remote port %d)"),
                 bInvalidSocket ? T("UNKNOWN") : lDesc, buff,
-                ntohs(d->address.sin_port));
+                ntohs(d->address.sai.sin_port));
             ENDLOG;
 
             SiteMonSend(d->descriptor, buff, d, T("Connection"));
@@ -5621,7 +5621,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC");
                 Log.tinyprintf(T("[UNKNOWN/%s] Connection closed prematurely (remote port %d)"),
-                    buff, ntohs(d->address.sin_port));
+                    buff, ntohs(d->address.sai.sin_port));
                 ENDLOG;
 
                 SiteMonSend(d->descriptor, buff, d, T("Connection closed prematurely"));
