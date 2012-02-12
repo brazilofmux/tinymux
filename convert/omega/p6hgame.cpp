@@ -2265,6 +2265,8 @@ void P6H_GAME::ConvertFromT5X()
             | DBF_SPIFFY_LOCKS
             | DBF_NEW_FLAGS
             | DBF_NEW_POWERS
+            | DBF_NO_TEMPLE
+            | DBF_SPLIT_IMMORTAL
             | DBF_LABELS);
 
     // savedtime
