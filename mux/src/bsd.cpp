@@ -5270,7 +5270,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         }
 
         DebugTotalSockets++;
-        if (mudstate.access_list.check(SockAddr.sai.sin_addr) & H_FORBIDDEN)
+        if (mudstate.access_list.isForbid(&SockAddr))
         {
             UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
@@ -5682,7 +5682,7 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     // Build the msg.
     //
     UTF8 *sendMsg;
-    bool bSuspect = (host_info & HI_SUSPECT);
+    bool bSuspect = (0 != (host_info & HI_SUSPECT));
     if (IS_INVALID_SOCKET(port))
     {
         sendMsg = tprintf(T("SITEMON: [UNKNOWN] %s from %s.%s"), msg, address,

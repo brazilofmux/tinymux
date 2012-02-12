@@ -4020,8 +4020,11 @@ mux_subnet_node *mux_subnets::rotr(mux_subnet_node *msnRoot)
 
 mux_subnet_node *mux_subnets::rollallr(mux_subnet_node *msnRoot)
 {
-    msnRoot->pnLeft = rollallr(msnRoot->pnLeft);
-    msnRoot = rotr(msnRoot);
+    if (NULL != msnRoot->pnLeft)
+    {
+        msnRoot->pnLeft = rollallr(msnRoot->pnLeft);
+        msnRoot = rotr(msnRoot);
+    }
     return msnRoot;
 }
 
@@ -4079,59 +4082,69 @@ bool mux_subnets::permit(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_PERMIT);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::registered(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_REGISTER);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::forbid(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_FORBID);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::nositemon(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOSITEMON);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::sitemon(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SITEMON);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::noguest(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOGUEST);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::guest(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_GUEST);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::suspect(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SUSPECT);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::trust(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_TRUST);
     insert(&msnRoot, msn);
+    return true;
 }
 
 bool mux_subnets::reset(mux_subnet *msn_arg)
 {
     mux_subnet_node *msn = remove(msnRoot, msn_arg);
+    return true;
 }
 
 static struct access_keyword
@@ -4216,19 +4229,19 @@ bool mux_subnets::isRegistered(mux_sockaddr *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
-    return (ulInfo & HI_REGISTER);
+    return 0 != (ulInfo & HI_REGISTER);
 }
 
 bool mux_subnets::isForbid(mux_sockaddr *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
-    return (ulInfo & HI_FORBID);
+    return 0 != (ulInfo & HI_FORBID);
 }
 
 bool mux_subnets::isSuspect(mux_sockaddr *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
-    return (ulInfo & HI_SUSPECT);
+    return 0 != (ulInfo & HI_SUSPECT);
 }
