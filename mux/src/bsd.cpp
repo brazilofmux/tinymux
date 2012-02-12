@@ -1056,7 +1056,7 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
 
         // bind our name to the socket
         //
-        nRet = bind(s, (LPSOCKADDR) &server, sizeof server);
+        nRet = bind(s, &server.sa, sizeof(server.sa));
 
         if (IS_SOCKET_ERROR(nRet))
         {
@@ -2045,7 +2045,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     unsigned short usPort = ntohs(addr.sai.sin_port);
 
     DebugTotalSockets++;
-    if (site_check(addr.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN)
+    if (mudstate.access_list.isForbid(&addr))
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
@@ -2228,8 +2228,8 @@ void shutdownsock(DESC *d, int reason)
     int i, num;
     DESC *dtemp;
 
-    if (  (reason == R_LOGOUT)
-       && (site_check(d->address.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN))
+    if (  R_LOGOUT == reason
+       && mudstate.access_list.isForbid(&d->address))
     {
         reason = R_QUIT;
     }
@@ -2404,9 +2404,6 @@ void shutdownsock(DESC *d, int reason)
         d->doing[0] = '\0';
         d->quota = mudconf.cmd_quota_max;
         d->last_time = d->connected_at;
-        int AccessFlag = site_check(d->address.sai.sin_addr, mudstate.access_list);
-        int SuspectFlag = site_check(d->address.sai.sin_addr, mudstate.suspect_list);
-        d->host_info = AccessFlag | SuspectFlag;
         d->input_tot = d->input_size;
         d->output_tot = 0;
         d->encoding = d->negotiated_encoding;
@@ -2647,10 +2644,6 @@ DESC *initializesock(SOCKET s, mux_sockaddr *msa)
 #ifdef UNIX_SSL
     d->ssl_session = NULL;
 #endif
-
-    int AccessFlag = site_check(msa->sai.sin_addr, mudstate.access_list);
-    int SuspectFlag = site_check(msa->sai.sin_addr, mudstate.suspect_list);
-    d->host_info = AccessFlag | SuspectFlag;
 
     // Be sure #0 isn't wizard. Shouldn't be.
     //
@@ -5277,7 +5270,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         }
 
         DebugTotalSockets++;
-        if (site_check(SockAddr.sai.sin_addr, mudstate.access_list) == H_FORBIDDEN)
+        if (mudstate.access_list.check(SockAddr.sai.sin_addr) & H_FORBIDDEN)
         {
             UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
@@ -5673,10 +5666,15 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
 void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
+    int host_info = 0;
+    if (NULL != d)
+    {
+        host_info = mudstate.access_list.check(&d->address);
+    }
+
     // Don't do sitemon for blocked sites.
     //
-    if (  d != NULL
-       && (d->host_info & H_NOSITEMON))
+    if (host_info & HI_NOSITEMON)
     {
         return;
     }
@@ -5684,7 +5682,7 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     // Build the msg.
     //
     UTF8 *sendMsg;
-    bool bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
+    bool bSuspect = (host_info & HI_SUSPECT);
     if (IS_INVALID_SOCKET(port))
     {
         sendMsg = tprintf(T("SITEMON: [UNKNOWN] %s from %s.%s"), msg, address,

@@ -759,7 +759,7 @@ static void desc_delhash(DESC *d)
 
 void welcome_user(DESC *d)
 {
-    if (d->host_info & H_REGISTRATION)
+    if (mudstate.access_list.isRegistered(&d->address))
     {
         fcache_dump(d, FC_CONN_REG);
     }
@@ -1032,7 +1032,7 @@ static void announce_connect(dbref player, DESC *d)
             pMonitorAnnounceFmt = T("GAME: %s has connected.");
         }
         if (  Suspect(player)
-           || (d->host_info & H_SUSPECT))
+           || mudstate.access_list.isSuspect(&d->address))
         {
             raw_broadcast(WIZARD, T("[Suspect] %s has connected."), Moniker(player));
         }
@@ -1042,7 +1042,7 @@ static void announce_connect(dbref player, DESC *d)
         pRoomAnnounceFmt = T("%s has reconnected.");
         pMonitorAnnounceFmt = T("GAME: %s has reconnected.");
         if (  Suspect(player)
-           || (d->host_info & H_SUSPECT))
+           || mudstate.access_list.isSuspect(&d->address))
         {
             raw_broadcast(WIZARD, T("[Suspect] %s has reconnected."), Moniker(player));
         }
@@ -1191,7 +1191,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
     if (num < 2)
     {
         if (  Suspect(player)
-           || (d->host_info & H_SUSPECT))
+           || mudstate.access_list.isSuspect(&d->address))
         {
             raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."), Moniker(player));
         }
@@ -1340,7 +1340,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
     else
     {
         if (  Suspect(player)
-           || (d->host_info & H_SUSPECT))
+           || mudstate.access_list.isSuspect(&d->address))
         {
             raw_broadcast(WIZARD, T("[Suspect] %s has partially disconnected."), Moniker(player));
         }
@@ -1889,19 +1889,20 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                         safe_copy_chr_ascii('+', flist, &fp, sizeof(flist)-1);
                     }
                 }
-                if (d->host_info & H_FORBIDDEN)
+                int host_info = mudstate.access_list.check(&d->address);
+                if (host_info & HI_FORBID)
                 {
                     safe_copy_chr_ascii('F', slist, &sp, sizeof(slist)-1);
                 }
-                if (d->host_info & H_REGISTRATION)
+                if (host_info & HI_REGISTER)
                 {
                     safe_copy_chr_ascii('R', slist, &sp, sizeof(slist)-1);
                 }
-                if (d->host_info & H_SUSPECT)
+                if (host_info & HI_SUSPECT)
                 {
                     safe_copy_chr_ascii('+', slist, &sp, sizeof(slist)-1);
                 }
-                if (d->host_info & H_GUEST)
+                if (host_info & HI_NOGUEST)
                 {
                     safe_copy_chr_ascii('G', slist, &sp, sizeof(slist)-1);
                 }
@@ -2337,6 +2338,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
     UTF8 *password = alloc_lbuf("check_conn.pass");
     parse_connect(msg, command, user, password);
 
+    int host_info = mudstate.access_list.check(&d->address);
+
     // At this point, command, user, and password are all less than
     // MBUF_SIZE.
     //
@@ -2345,9 +2348,9 @@ static bool check_connect(DESC *d, UTF8 *msg)
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
-            if (  (d->host_info & H_GUEST)
+            if (  (host_info & HI_NOGUEST)
                || (   !mudconf.allow_guest_from_registered_site
-                  && (d->host_info & H_REGISTRATION)))
+                  && (host_info & HI_REGISTER)))
             {
                 // Someone from an IP with guest restrictions is
                 // trying to use a guest account. Give them the blurb
@@ -2459,9 +2462,9 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // following orders. ;)
             //
             if (  Guest(player)
-               && (  (d->host_info & H_GUEST)
+               && (  (host_info & HI_NOGUEST)
                   || (   !mudconf.allow_guest_from_registered_site
-                     && (d->host_info & H_REGISTRATION))))
+                     && (host_info & HI_REGISTER))))
             {
                 failconn(T("CON"), T("Connect"), T("Guest Site Forbidden"), d,
                     R_GAMEDOWN, player, FC_CONN_SITE,
@@ -2596,7 +2599,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 cmdsave);
             return false;
         }
-        if (d->host_info & H_REGISTRATION)
+        if (host_info & HI_REGISTER)
         {
             fcache_dump(d, FC_CREA_REG);
         }
@@ -2975,124 +2978,12 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 }
 
 /* ---------------------------------------------------------------------------
- * site_check: Check for site flags in a site list.
- */
-
-int site_check(struct in_addr host, SITE *site_list)
-{
-    SITE *this0;
-
-    for (this0 = site_list; this0; this0 = this0->next)
-    {
-        if ((host.s_addr & this0->mask.s_addr) == this0->address.s_addr)
-        {
-            return this0->flag;
-        }
-    }
-    return 0;
-}
-
-/* --------------------------------------------------------------------------
- * list_sites: Display information in a site list
- */
-
-#define S_SUSPECT   1
-#define S_ACCESS    2
-
-static const UTF8 *stat_string(int strtype, int flag)
-{
-    const UTF8 *str;
-
-    switch (strtype)
-    {
-    case S_SUSPECT:
-        if (flag)
-        {
-            str = T("Suspected");
-        }
-        else
-        {
-            str = T("Trusted");
-        }
-        break;
-
-    case S_ACCESS:
-        switch (flag)
-        {
-        case H_FORBIDDEN:
-            str = T("Forbidden");
-            break;
-
-        case H_REGISTRATION:
-            str = T("Registration");
-            break;
-
-        case H_GUEST:
-            str = T("NoGuest");
-            break;
-
-        case H_NOSITEMON:
-            str = T("NoSiteMon");
-            break;
-
-        case 0:
-            str = T("Unrestricted");
-            break;
-
-        default:
-            str = T("Strange");
-            break;
-        }
-        break;
-
-    default:
-        str = T("Strange");
-        break;
-    }
-    return str;
-}
-
-static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, int stat_type)
-{
-    UTF8 *sAddress = alloc_mbuf("list_sites.addr");
-    UTF8 *sMask = alloc_mbuf("list_sites.mask");
-    UTF8 *sLine = alloc_lbuf("list_sites.line");
-
-    mux_sprintf(sLine, MBUF_SIZE, T("----- %s -----"), header_txt);
-    notify(player, sLine);
-
-    notify(player, T("Address              Mask                 Status"));
-    for (SITE *p = site_list; NULL != p; p = p->next)
-    {
-        const UTF8 *str = stat_string(stat_type, p->flag);
-        mux_sockaddr msaAddress;
-        memset(&msaAddress, 0, sizeof(msaAddress));
-        msaAddress.sai.sin_family = AF_INET;
-        msaAddress.sai.sin_addr = p->address;
-        mux_inet_ntop(&msaAddress, sAddress, MBUF_SIZE);
-
-        mux_sockaddr msaMask;
-        memset(&msaMask, 0, sizeof(msaMask));
-        msaMask.sai.sin_family = AF_INET;
-        msaMask.sai.sin_addr = p->mask;
-        mux_inet_ntop(&msaMask, sMask, MBUF_SIZE);
-
-        mux_sprintf(sLine, LBUF_SIZE, T("%-20s %-20s %s"), sAddress, sMask, str);
-        notify(player, sLine);
-    }
-    free_mbuf(sAddress);
-    free_mbuf(sMask);
-    free_lbuf(sLine);
-}
-
-/* ---------------------------------------------------------------------------
  * list_siteinfo: List information about specially-marked sites.
  */
 
 void list_siteinfo(dbref player)
 {
-    list_sites(player, mudstate.access_list,  T("Site Access"), S_ACCESS);
-    list_sites(player, mudstate.suspect_list, T("Suspected Sites"), S_SUSPECT);
+    mudstate.access_list.listinfo(player);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3363,26 +3254,29 @@ FUNCTION(fun_siteinfo)
             }
         }
     }
+
     if (bFound)
     {
-        if (d->host_info & H_FORBIDDEN)
+        int host_info = mudstate.access_list.check(&d->address);
+        if (host_info & HI_FORBID)
         {
             safe_chr('F', buff, bufc);
         }
-        if (d->host_info & H_REGISTRATION)
+        if (host_info & HI_REGISTER)
         {
             safe_chr('R', buff, bufc);
         }
-        if (d->host_info & H_SUSPECT)
+        if (host_info & HI_SUSPECT)
         {
             safe_chr('+', buff, bufc);
         }
-        if (d->host_info & H_GUEST)
+        if (host_info & HI_NOGUEST)
         {
             safe_chr('G', buff, bufc);
         }
         return;
     }
+
     if (isPort)
     {
         safe_str(T("#-1 NOT AN ACTIVE PORT"), buff, bufc);
@@ -3510,4 +3404,831 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
     }
     free_lbuf(pConnInfo);
     return lta;
+}
+
+// Subnets
+//
+
+typedef struct
+{
+    int    nShift;
+    UINT32 maxValue;
+    size_t maxOctLen;
+    size_t maxDecLen;
+    size_t maxHexLen;
+} DECODEIPV4;
+
+static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
+{
+    static DECODEIPV4 DecodeIPv4Table[4] =
+    {
+        { 8,         255UL,  3,  3, 2 },
+        { 16,      65535UL,  6,  5, 4 },
+        { 24,   16777215UL,  8,  8, 6 },
+        { 32, 4294967295UL, 11, 10, 8 }
+    };
+
+    *pu32  = (*pu32 << DecodeIPv4Table[nType].nShift) & 0xFFFFFFFFUL;
+    if (len == 0)
+    {
+        return false;
+    }
+    in_addr_t ul = 0;
+    in_addr_t ul2;
+    if (  len >= 3
+       && p[0] == '0'
+       && (  'x' == p[1]
+          || 'X' == p[1]))
+    {
+        // Hexadecimal Path
+        //
+        // Skip the leading zeros.
+        //
+        p += 2;
+        len -= 2;
+        while (*p == '0' && len)
+        {
+            p++;
+            len--;
+        }
+        if (len > DecodeIPv4Table[nType].maxHexLen)
+        {
+            return false;
+        }
+        while (len)
+        {
+            UTF8 ch = *p;
+            ul2 = ul;
+            ul  = (ul << 4) & 0xFFFFFFFFUL;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return false;
+            }
+            if ('0' <= ch && ch <= '9')
+            {
+                ul |= ch - '0';
+            }
+            else if ('A' <= ch && ch <= 'F')
+            {
+                ul |= ch - 'A';
+            }
+            else if ('a' <= ch && ch <= 'f')
+            {
+                ul |= ch - 'a';
+            }
+            else
+            {
+                return false;
+            }
+            p++;
+            len--;
+        }
+    }
+    else if (len >= 1 && p[0] == '0')
+    {
+        // Octal Path
+        //
+        // Skip the leading zeros.
+        //
+        p++;
+        len--;
+        while (*p == '0' && len)
+        {
+            p++;
+            len--;
+        }
+        if (len > DecodeIPv4Table[nType].maxOctLen)
+        {
+            return false;
+        }
+        while (len)
+        {
+            UTF8 ch = *p;
+            ul2 = ul;
+            ul  = (ul << 3) & 0xFFFFFFFFUL;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return false;
+            }
+            if ('0' <= ch && ch <= '7')
+            {
+                ul |= ch - '0';
+            }
+            else
+            {
+                return false;
+            }
+            p++;
+            len--;
+        }
+    }
+    else
+    {
+        // Decimal Path
+        //
+        if (len > DecodeIPv4Table[nType].maxDecLen)
+        {
+            return false;
+        }
+        while (len)
+        {
+            UTF8 ch = *p;
+            ul2 = ul;
+            ul  = (ul * 10) & 0xFFFFFFFFUL;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return false;
+            }
+            ul2 = ul;
+            if ('0' <= ch && ch <= '9')
+            {
+                ul += ch - '0';
+            }
+            else
+            {
+                return false;
+            }
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return false;
+            }
+            p++;
+            len--;
+        }
+    }
+    if (ul > DecodeIPv4Table[nType].maxValue)
+    {
+        return false;
+    }
+    *pu32 |= ul;
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// MakeCanonicalIPv4: inet_addr() does not do reasonable checking for sane
+// syntax on all platforms. On certain operating systems, if passed less than
+// four octets, it will cause a segmentation violation. Furthermore, there is
+// confusion between return values for valid input "255.255.255.255" and
+// return values for invalid input (INADDR_NONE as -1). To overcome these
+// problems, it appears necessary to re-implement inet_addr() with a different
+// interface.
+//
+// n8.n8.n8.n8  Class A format. 0 <= n8 <= 255.
+//
+// Supported Berkeley IP formats:
+//
+//    n8.n8.n16  Class B 128.net.host format. 0 <= n16 <= 65535.
+//    n8.n24     Class A net.host format. 0 <= n24 <= 16777215.
+//    n32        Single 32-bit number. 0 <= n32 <= 4294967295.
+//
+// Each element may be expressed in decimal, octal or hexadecimal. '0' is the
+// octal prefix. '0x' or '0X' is the hexadecimal prefix. Otherwise the number
+// is taken as decimal.
+//
+//    08  Octal
+//    0x8 Hexadecimal
+//    0X8 Hexadecimal
+//    8   Decimal
+//
+bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
+{
+    *pnIP = 0;
+    if (!str)
+    {
+        return false;
+    }
+
+    // Skip leading spaces.
+    //
+    const UTF8 *q = str;
+    while (*q == ' ')
+    {
+        q++;
+    }
+
+    const UTF8 *p = (UTF8 *)strchr((char *)q, '.');
+    int n = 0;
+    while (p)
+    {
+        // Decode
+        //
+        n++;
+        if (n > 3)
+        {
+            return false;
+        }
+        if (!DecodeN(0, p-q, q, pnIP))
+        {
+            return false;
+        }
+        q = p + 1;
+        p = (UTF8 *)strchr((char *)q, '.');
+    }
+
+    // Decode last element.
+    //
+    size_t len = strlen((char *)q);
+    if (!DecodeN(3-n, len, q, pnIP))
+    {
+        return false;
+    }
+    *pnIP = htonl(*pnIP);
+    return true;
+}
+
+// Given a host-ordered mask, this function will determine whether it is a
+// valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
+// a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
+//
+static bool isValidIPv4SubnetMask(in_addr_t ulMask, int *pnLeadingBits)
+{
+    in_addr_t ulTest = 0xFFFFFFFFUL;
+    for (int i = 0; i <= 32; i++)
+    {
+        if (ulMask == ulTest)
+        {
+            *pnLeadingBits = i;
+            return true;
+        }
+        ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
+    }
+    return false;
+}
+
+// Parse IPv4/netmask notation in either standard or CIDR prefix notation
+//
+bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
+{
+    in_addr_t ulMask, ulNetBits;
+    UTF8 *addr_txt;
+    UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
+    if (NULL == mask_txt)
+    {
+        // Standard IP range and netmask notation.
+        //
+        MUX_STRTOK_STATE tts;
+        mux_strtok_src(&tts, str);
+        mux_strtok_ctl(&tts, T(" \t=,"));
+        addr_txt = mux_strtok_parse(&tts);
+        if (NULL != addr_txt)
+        {
+            mask_txt = mux_strtok_parse(&tts);
+        }
+
+        if (  NULL == addr_txt
+           || '\0' == *addr_txt
+           || NULL == mask_txt
+           || '\0' == *mask_txt)
+        {
+            cf_log_syntax(player, cmd, T("Missing host address or mask."));
+            return false;
+        }
+
+        if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
+           || !isValidIPv4SubnetMask(ulMask = ntohl(ulNetBits), &m_iLeadingBits))
+        {
+            cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
+            return false;
+        }
+        m_iaMask.s_addr = ulNetBits;
+    }
+    else
+    {
+        // RFC 1517, 1518, 1519, 1520: CIDR IP prefix notation
+        //
+        addr_txt = str;
+        *mask_txt++ = '\0';
+        if (!is_integer(mask_txt, NULL))
+        {
+            cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
+            return false;
+        }
+
+        m_iLeadingBits = mux_atol(mask_txt);
+        if (  m_iLeadingBits < 0
+           || 32 < m_iLeadingBits)
+        {
+            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), m_iLeadingBits);
+            return false;
+        }
+        else
+        {
+            // << [0,31] works. << 32 is problematic on some systems.
+            //
+            ulMask = 0;
+            if (m_iLeadingBits > 0)
+            {
+                ulMask = (0xFFFFFFFFUL << (32 - m_iLeadingBits)) & 0xFFFFFFFFUL;
+            }
+            m_iaMask.s_addr = htonl(ulMask);
+        }
+    }
+
+    if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
+    {
+        cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
+        return false;
+    }
+    m_iaBase.s_addr = ulNetBits;
+    in_addr_t ulAddr = ntohl(m_iaBase.s_addr);
+
+    if (ulAddr & ~ulMask)
+    {
+        // The given subnet address contains 'one' bits which are outside
+        // the given subnet mask. If we don't clear these bits, they will
+        // interfere with the subnet tests in site_check. The subnet spec
+        // would be defunct and useless.
+        //
+        cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
+        ulAddr &= ulMask;
+        m_iaBase.s_addr = htonl(ulAddr);
+    }
+
+    m_iaEnd.s_addr = htonl(ulAddr | ~ulMask);
+
+    return true;
+}
+
+bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits)
+{
+    // Base Address
+    //
+    mux_sockaddr msaAddress;
+    memset(&msaAddress, 0, sizeof(msaAddress));
+    msaAddress.sai.sin_family = AF_INET;
+    msaAddress.sai.sin_addr = m_iaBase;
+    mux_inet_ntop(&msaAddress, sAddress, LBUF_SIZE);
+
+    // Leading significant bits
+    //
+    *pnLeadingBits = m_iLeadingBits;
+
+    return true;
+}
+
+mux_in_subnet::~mux_in_subnet()
+{
+}
+
+mux_subnets::mux_subnets()
+{
+    msnRoot = NULL;
+}
+
+mux_subnets::~mux_subnets()
+{
+    delete msnRoot;
+}
+
+mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg)
+{
+    if (MUX_IPV4 == msn_arg->getFamily())
+    {
+        mux_in_subnet *t = (mux_in_subnet *)msn_arg;
+        if (ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaBase.s_addr))
+        {
+            // this > t
+            //
+            return mux_subnet::kGreaterThan;
+        }
+        else if (ntohl(m_iaEnd.s_addr) < ntohl(t->m_iaBase.s_addr))
+        {
+            // this < t
+            //
+            return mux_subnet::kLessThan;
+        }
+        else if (  ntohl(m_iaBase.s_addr) < ntohl(t->m_iaBase.s_addr)
+                && ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaEnd.s_addr))
+        {
+            // this contains t
+            //
+            return mux_subnet::kContains;
+        }
+        else if (  ntohl(m_iaBase.s_addr) == ntohl(t->m_iaBase.s_addr)
+                && m_iLeadingBits == t->m_iLeadingBits)
+        {
+            // this == t
+            //
+            return mux_subnet::kEqual;
+        }
+        else
+        {
+            // this is contained by t
+            //
+            return mux_subnet::kContainedBy;
+        }
+    }
+    else
+    {
+        // IPv4 < IPv6
+        //
+        return mux_subnet::kGreaterThan;
+    }
+}
+
+mux_subnet::Comparison mux_in_subnet::CompareTo(mux_sockaddr *msa)
+{
+    if (AF_INET == msa->sa.sa_family)
+    {
+        if (ntohl(msa->sai.sin_addr.s_addr) < ntohl(m_iaBase.s_addr))
+        {
+            // this > t
+            //
+            return mux_subnet::kGreaterThan;
+        }
+        else if (ntohl(m_iaEnd.s_addr) < ntohl(msa->sai.sin_addr.s_addr))
+        {
+            // this < t
+            //
+            return mux_subnet::kLessThan;
+        }
+        else
+        {
+            // this contains t
+            //
+            return mux_subnet::kContains;
+        }
+    }
+    else
+    {
+        // IPv4 < IPv6
+        //
+        return mux_subnet::kGreaterThan;
+    }
+}
+
+mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_arg)
+{
+    msn = msn_arg;
+    pnLeft = NULL;
+    pnInside = NULL;
+    pnRight = NULL;
+    ulControl = ulControl_arg;
+}
+
+mux_subnet_node::~mux_subnet_node()
+{
+    delete msn;
+    delete pnLeft;
+    delete pnInside;
+    delete pnRight;
+}
+
+void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
+{
+    if (NULL == *msnRoot)
+    {
+        *msnRoot = msn_arg;
+        return;
+    }
+
+    mux_subnet::Comparison ct = (*msnRoot)->msn->CompareTo(msn_arg->msn);
+    switch (ct)
+    {
+    case mux_subnet::kLessThan:
+        insert(&(*msnRoot)->pnRight, msn_arg);
+        break;
+
+    case mux_subnet::kEqual:
+        if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
+        {
+            (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
+        }
+
+        if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
+        {
+            (*msnRoot)->ulControl &= ~(HC_NOSITEMON|HC_SITEMON);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_NOSITEMON|HC_SITEMON);
+        }
+
+        if (0 != ((HC_NOGUEST|HC_GUEST) & msn_arg->ulControl))
+        {
+            (*msnRoot)->ulControl &= ~(HC_NOGUEST|HC_GUEST);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_NOGUEST|HC_GUEST);
+        }
+
+        if (0 != ((HC_SUSPECT|HC_TRUST) & msn_arg->ulControl))
+        {
+            (*msnRoot)->ulControl &= ~(HC_SUSPECT|HC_TRUST);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_SUSPECT|HC_TRUST);
+        }
+
+        delete msn_arg;
+        break;
+
+    case mux_subnet::kContains:
+        insert(&(*msnRoot)->pnInside, msn_arg);
+        break;
+
+    case mux_subnet::kContainedBy:
+        {
+            msn_arg->pnInside = *msnRoot;
+            msn_arg->pnLeft = (*msnRoot)->pnLeft;
+            msn_arg->pnRight = (*msnRoot)->pnRight;
+            (*msnRoot)->pnLeft = NULL;
+            (*msnRoot)->pnRight = NULL;
+            *msnRoot = msn_arg;
+        }
+        break;
+
+    case mux_subnet::kGreaterThan:
+        insert(&(*msnRoot)->pnLeft, msn_arg);
+        break;
+    }
+}
+
+void mux_subnets::search(mux_subnet_node *msnRoot, mux_sockaddr *msa, unsigned long *pulInfo)
+{
+    if (NULL == msnRoot)
+    {
+        return;
+    }
+
+    mux_subnet::Comparison ct = msnRoot->msn->CompareTo(msa);
+    switch (ct)
+    {
+    case mux_subnet::kLessThan:
+        search(msnRoot->pnRight, msa, pulInfo);
+        break;
+
+    case mux_subnet::kContains:
+        if (HC_PERMIT & msnRoot->ulControl)
+        {
+            *pulInfo &= ~(HI_REGISTER|HI_FORBID);
+        }
+        else if (HC_REGISTER & msnRoot->ulControl)
+        {
+            *pulInfo |= HI_REGISTER;
+        }
+        else if (HC_FORBID & msnRoot->ulControl)
+        {
+            *pulInfo |= HI_FORBID;
+        }
+
+        if (HC_NOSITEMON & msnRoot->ulControl)
+        {
+            *pulInfo |= HI_NOSITEMON;
+        }
+        else if (HC_SITEMON & msnRoot->ulControl)
+        {
+            *pulInfo &= ~(HI_NOSITEMON);
+        }
+
+        if (HC_NOGUEST & msnRoot->ulControl)
+        {
+            *pulInfo |= HI_NOGUEST;
+        }
+        else if (HC_GUEST & msnRoot->ulControl)
+        {
+            *pulInfo &= ~(HI_NOGUEST);
+        }
+
+        if (HC_SUSPECT & msnRoot->ulControl)
+        {
+            *pulInfo |= HI_SUSPECT;
+        }
+        else if (HC_TRUST & msnRoot->ulControl)
+        {
+            *pulInfo &= ~(HI_SUSPECT);
+        }
+
+        search(msnRoot->pnInside, msa, pulInfo);
+        break;
+
+    case mux_subnet::kGreaterThan:
+        search(msnRoot->pnLeft, msa, pulInfo);
+        break;
+    }
+}
+
+mux_subnet_node *mux_subnets::rotr(mux_subnet_node *msnRoot)
+{
+    mux_subnet_node *x = msnRoot->pnLeft;
+    msnRoot->pnLeft = x->pnRight;
+    x->pnRight = msnRoot;
+    return x;
+}
+
+mux_subnet_node *mux_subnets::rollallr(mux_subnet_node *msnRoot)
+{
+    msnRoot->pnLeft = rollallr(msnRoot->pnLeft);
+    msnRoot = rotr(msnRoot);
+    return msnRoot;
+}
+
+mux_subnet_node *mux_subnets::joinlr(mux_subnet_node *a, mux_subnet_node *b)
+{
+    if (NULL == b)
+    {
+        return a;
+    }
+    b = rollallr(b);
+    b->pnLeft = a;
+    return b;
+}
+
+mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_arg)
+{
+    if (NULL == msnRoot)
+    {
+        return NULL;
+    }
+    mux_subnet::Comparison ct = msnRoot->msn->CompareTo(msn_arg);
+    switch (ct)
+    {
+    case mux_subnet::kLessThan:
+        msnRoot->pnRight = remove(msnRoot->pnRight, msn_arg);
+        break;
+
+    case mux_subnet::kEqual:
+        {
+            mux_subnet_node *x = msnRoot;
+            delete msnRoot->pnInside;
+            msnRoot->pnInside = NULL;
+            msnRoot = joinlr(msnRoot->pnLeft, msnRoot->pnRight);
+            delete x;
+        }
+        break;
+
+    case mux_subnet::kContains:
+        msnRoot->pnInside = remove(msnRoot->pnInside, msn_arg);
+        break;
+
+    case mux_subnet::kContainedBy:
+        delete msnRoot;
+        msnRoot = NULL;
+        break;
+
+    case mux_subnet::kGreaterThan:
+        msnRoot->pnLeft = remove(msnRoot->pnLeft, msn_arg);
+        break;
+    }
+    return msnRoot;
+}
+
+bool mux_subnets::permit(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_PERMIT);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::registered(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_REGISTER);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::forbid(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_FORBID);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::nositemon(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOSITEMON);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::sitemon(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SITEMON);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::noguest(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOGUEST);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::guest(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_GUEST);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::suspect(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SUSPECT);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::trust(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_TRUST);
+    insert(&msnRoot, msn);
+}
+
+bool mux_subnets::reset(mux_subnet *msn_arg)
+{
+    mux_subnet_node *msn = remove(msnRoot, msn_arg);
+}
+
+static struct access_keyword
+{
+    unsigned long  m;
+    const UTF8    *s;
+} access_keywords[] =
+{
+    { HC_PERMIT,     T("Permit")    },
+    { HC_REGISTER,   T("Register")  },
+    { HC_FORBID,     T("Forbid")    },
+    { HC_NOSITEMON,  T("NoSiteMon") },
+    { HC_SITEMON,    T("SiteMon")   },
+    { HC_NOGUEST,    T("NoGuest")   },
+    { HC_GUEST,      T("Guest")     },
+    { HC_SUSPECT,    T("Suspect")   },
+    { HC_TRUST,      T("Trust")     },
+};
+
+void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sControl, mux_subnet_node *p)
+{
+    if (NULL == p)
+    {
+        return;
+    }
+    listinfo(player, sLine, sAddress, sControl, p->pnLeft);
+
+    int nLeadingBits;
+    p->msn->listinfo(sLine, &nLeadingBits);
+
+    bool fFirst = true;
+    UTF8* bufc = sControl;
+    for (int i = 0; i < sizeof(access_keywords)/sizeof(access_keywords[0]); i++)
+    {
+        if (fFirst)
+        {
+            fFirst = false;
+        }
+        else
+        {
+            safe_chr(' ', sControl, &bufc);
+        }
+
+        if (p->ulControl & access_keywords[i].m)
+        {
+            safe_str(access_keywords[i].s, sControl, &bufc);
+        }
+    }
+
+    mux_sprintf(sAddress, LBUF_SIZE, T("%45s/%3d"), sLine, nLeadingBits);
+    mux_sprintf(sLine, LBUF_SIZE, T("%-49s %s"), sAddress, sControl);
+    notify(player, sLine);
+
+    listinfo(player, sLine, sAddress, sControl, p->pnInside);
+    listinfo(player, sLine, sAddress, sControl, p->pnRight);
+}
+
+void mux_subnets::listinfo(dbref player)
+{
+    notify(player, T("----- Site Access -----"));
+    notify(player, T("Address              Mask                 Status"));
+
+    UTF8 *sAddress = alloc_lbuf("list_sites.addr");
+    UTF8 *sControl = alloc_lbuf("list_sites.control");
+    UTF8 *sLine = alloc_lbuf("list_sites.line");
+
+    listinfo(player, sLine, sAddress, sControl, msnRoot);
+
+    free_lbuf(sLine);
+    free_lbuf(sControl);
+    free_lbuf(sAddress);
+}
+
+int mux_subnets::check(mux_sockaddr *msa)
+{
+    unsigned long ulInfo = HI_PERMIT;
+    search(msnRoot, msa, &ulInfo);
+    return ulInfo;
+}
+
+bool mux_subnets::isRegistered(mux_sockaddr *msa)
+{
+    unsigned long ulInfo = HI_PERMIT;
+    search(msnRoot, msa, &ulInfo);
+    return (ulInfo & HI_REGISTER);
+}
+
+bool mux_subnets::isForbid(mux_sockaddr *msa)
+{
+    unsigned long ulInfo = HI_PERMIT;
+    search(msnRoot, msa, &ulInfo);
+    return (ulInfo & HI_FORBID);
+}
+
+bool mux_subnets::isSuspect(mux_sockaddr *msa)
+{
+    unsigned long ulInfo = HI_PERMIT;
+    search(msnRoot, msa, &ulInfo);
+    return (ulInfo & HI_SUSPECT);
 }

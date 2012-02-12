@@ -176,7 +176,6 @@ struct descriptor_data
   int retries_left;
   int command_count;
   int timeout;
-  int host_info;
   dbref player;
   UTF8 *output_prefix;
   UTF8 *output_suffix;
@@ -287,7 +286,6 @@ extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
-extern int site_check(struct in_addr, SITE *);
 extern dbref  find_connected_name(dbref, UTF8 *);
 extern void do_command(DESC *, UTF8 *);
 extern void desc_addhash(DESC *);

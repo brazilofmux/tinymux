@@ -411,6 +411,16 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <netinet/in.h>
 #endif]],[[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T], [], [Define if your system has the in_addr_t type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+AC_MSG_CHECKING([for in_addr])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[struct in_addr ia;]])],[AC_DEFINE([HAVE_IN_ADDR], [], [Define if your system has the in_addr type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for sockaddr_in])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #if STDC_HEADERS
@@ -420,6 +430,16 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct sockaddr_in sa;]])],[AC_DEFINE([HAVE_SOCKADDR_IN], [], [Define if your system has the sockaddr_in type.])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+AC_MSG_CHECKING([for in6_addr])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif]],[[struct in6_addr i6a;]])],[AC_DEFINE([HAVE_IN6_ADDR], [], [Define if your system has the in6_addr type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for sockaddr_in6])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>

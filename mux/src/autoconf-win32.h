@@ -115,6 +115,9 @@
 /* Define if your IEEE floating-point library can generate NaN. */
 #define HAVE_IEEE_FP_SNAN
 
+/* Define if your system has the in6_addr type. */
+#define HAVE_IN6_ADDR
+
 /* Define to 1 if you have the `inet_ntop' function. */
 #define HAVE_INET_NTOP 1
 
@@ -123,6 +126,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
+
+/* Define if your system has the in_addr type. */
+#define HAVE_IN_ADDR
 
 /* Define if your system has the in_addr_t type. */
 /* #undef HAVE_IN_ADDR_T */

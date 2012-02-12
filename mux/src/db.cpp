@@ -3625,7 +3625,7 @@ void dump_restart_db(void)
         putref(f, d->connected_at.ReturnSeconds());
         putref(f, d->command_count);
         putref(f, d->timeout);
-        putref(f, d->host_info);
+        putref(f, 0);
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
@@ -3746,7 +3746,7 @@ void load_restart_db(void)
         d->connected_at.SetSeconds(getref(f));
         d->command_count = getref(f);
         d->timeout = getref(f);
-        d->host_info = getref(f);
+        getref(f); // Eat host_info
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
         memset(d->nvt_him_state, OPTION_NO, 256);
