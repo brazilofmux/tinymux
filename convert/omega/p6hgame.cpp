@@ -769,6 +769,8 @@ void P6H_GAME::ValidateFlags() const
                          | DBF_NEW_STRINGS
                          | DBF_TYPE_GARBAGE
                          | DBF_LESS_GARBAGE
+                         | DBF_NO_TEMPLE
+                         | DBF_SPLIT_IMMORTAL
                          | DBF_SPIFFY_LOCKS;
 
     const int iMand177p40 = DBF_NEW_FLAGS
