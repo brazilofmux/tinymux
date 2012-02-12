@@ -2550,7 +2550,7 @@ void P6H_GAME::ConvertFromT5X()
                             {
                                 P6H_ATTRINFO *pai = new P6H_ATTRINFO;
                                 pai->SetName(StringClone(itFound->second));
-
+                                pai->SetDerefs(0);
                                 pai->SetValue(StringClone((*itAttr)->m_pValueUnencoded));
                                 pai->SetOwner((*itAttr)->m_dbOwner);
 
