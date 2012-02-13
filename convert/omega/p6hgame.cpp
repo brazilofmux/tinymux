@@ -2595,6 +2595,10 @@ void P6H_GAME::ConvertFromT5X()
         AddObject(poi);
     }
 
+    // Set database size hints.
+    //
+    SetSizeHint(g_t5xgame.m_mObjects.size());
+
     // Release memory that we allocated.
     //
     for (map<int, const char *, lti>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
