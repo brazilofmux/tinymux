@@ -80,6 +80,6 @@ bool is_real(__in_z const UTF8 *str);
 extern const UTF8 *mux_FPStrings[8];
 extern const UTF8 Digits16U[17];
 extern const UTF8 Digits16L[17];
-
+extern void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc);
 
 #endif

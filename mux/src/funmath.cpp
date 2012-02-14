@@ -2791,7 +2791,7 @@ FUNCTION(fun_crc32)
     safe_i64toa(ulCRC32, buff, bufc);
 }
 
-void safe_hex(UINT8 md[], size_t len, __in UTF8 *buff, __deref_inout UTF8 **bufc)
+void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc)
 {
     UTF8 *buf = NULL;
     try
@@ -2809,11 +2809,12 @@ void safe_hex(UINT8 md[], size_t len, __in UTF8 *buff, __deref_inout UTF8 **bufc
     }
 
     int bufoffset = 0;
+    const UTF8 *Digits16 = bUpper ? Digits16U : Digits16L;
     for (size_t i = 0; i < len; i++)
     {
         UINT8 c = md[i];
-        buf[bufoffset++] = Digits16U[(c >> 4) & 0x0F];
-        buf[bufoffset++] = Digits16U[(c     ) & 0x0F];
+        buf[bufoffset++] = Digits16[(c >> 4) & 0x0F];
+        buf[bufoffset++] = Digits16[(c     ) & 0x0F];
     }
     buf[bufoffset] = '\0';
     safe_str(buf, buff, bufc);
@@ -2830,7 +2831,7 @@ void sha1_helper(int nfargs, __in UTF8 *fargs[], __in UTF8 *buff, __deref_inout 
     }
     UINT8 md[SHA_DIGEST_LENGTH];
     SHA1_Final(md, &shac);
-    safe_hex(md, SHA_DIGEST_LENGTH, buff, bufc);
+    safe_hex(md, SHA_DIGEST_LENGTH, true, buff, bufc);
 }
 
 FUNCTION(fun_sha1)
@@ -2875,7 +2876,7 @@ FUNCTION(fun_digest)
     unsigned int len = 0;
     UINT8 md[EVP_MAX_MD_SIZE];
     EVP_DigestFinal(&ctx, md, &len);
-    safe_hex(md, len, buff, bufc);
+    safe_hex(md, len, true, buff, bufc);
 #else
     if (mux_stricmp(fargs[0], T("sha1")) == 0)
     {

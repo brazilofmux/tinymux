@@ -303,11 +303,14 @@ const UTF8 szSHA512Prefix[] = "$6$";
 #define SHA512_PREFIX_LENGTH (sizeof(szSHA512Prefix)-1)
 #define SHA512_SALT_LENGTH 16
 
-#ifdef UNIX_DIGEST
 const UTF8 szP6HPrefix[] = "$P6H$";
 #define P6H_PREFIX_LENGTH (sizeof(szP6HPrefix)-1)
-#define P6H_ENCODED_HASH_LENGTH_MAX 40
-#endif
+#define P6H_XX_HASH_LENGTH_MAX 40
+
+const UTF8 szP6HPrefix1SHA1[] = "$P6H$$1:sha1:";
+#define P6H_VAHT_1SHA1_PREFIX_LENGTH (sizeof(szP6HPrefix1SHA1)-1)
+#define P6H_VAHT_HASH_LENGTH_MAX (2*SHA1_HASH_LENGTH)
+#define P6H_VAHT_TIMESTAMP_LENGTH_MAX 11
 
 // These are known but passed through as CRYPT_OTHER:
 //
@@ -420,7 +423,7 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
 }
 
 #ifdef UNIX_DIGEST
-UTF8 *p6h_crypt(const UTF8 *szPassword)
+const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 {
     // Calculate SHA-0 Hash.
     //
@@ -434,7 +437,7 @@ UTF8 *p6h_crypt(const UTF8 *szPassword)
     // 1234567890123456789012345678
     // $P6H$$XXhhhhhhhhhhhhhhhhhhhh
     //
-    static UTF8 buf[P6H_PREFIX_LENGTH + 1 + P6H_ENCODED_HASH_LENGTH_MAX + 1 + 16];
+    static UTF8 buf[P6H_PREFIX_LENGTH + 1 + P6H_XX_HASH_LENGTH_MAX + 1 + 16];
     mux_strncpy(buf, szP6HPrefix, P6H_PREFIX_LENGTH);
     buf[P6H_PREFIX_LENGTH] = '$';
 
@@ -448,10 +451,42 @@ UTF8 *p6h_crypt(const UTF8 *szPassword)
                    | ((unsigned int)szHashRaw[6]) <<  8
                    | ((unsigned int)szHashRaw[7]);
 
-    mux_sprintf(buf + P6H_PREFIX_LENGTH + 1, P6H_ENCODED_HASH_LENGTH_MAX, T("XX%lu%lu"), a, b);
+    mux_sprintf(buf + P6H_PREFIX_LENGTH + 1, P6H_XX_HASH_LENGTH_MAX, T("XX%lu%lu"), a, b);
     return buf;
 }
 #endif
+
+const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
+{
+    size_t nSetting = strlen((char *)szSetting);
+    if (  P6H_VAHT_1SHA1_PREFIX_LENGTH <= nSetting
+       && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0)
+    {
+        // Calculate SHA-1 Hash.
+        //
+        SHA_CTX shac;
+        UTF8 md[SHA_DIGEST_LENGTH];
+        SHA1_Init(&shac);
+        SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
+        SHA1_Final(md, &shac);
+
+        //          1         2         3         4         5         6
+        // 123456789012345678901234567890123456789012345678901234567890123456
+        // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
+        //
+        static UTF8 buff[LBUF_SIZE];
+        UTF8 *bufc = buff;
+
+        safe_str(szP6HPrefix1SHA1, buff, &bufc);
+        safe_hex(md, SHA_DIGEST_LENGTH, false, buff, &bufc);
+        safe_chr(':', buff, &bufc);
+        safe_str(szSetting + P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1, buff, &bufc);
+        *bufc = '\0';
+
+        return buff;
+    }
+    return szFail;
+}
 
 // There is no longer any support for DES-encrypted passwords on the Windows
 // build.  To convert these, using #1 to @newpassword, go through an older
@@ -506,13 +541,20 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
             {
                 *piType = CRYPT_SHA512;
             }
-#ifdef UNIX_DIGEST
             else if (  nAlgo == P6H_PREFIX_LENGTH
                     && memcmp(szSetting, szP6HPrefix, P6H_PREFIX_LENGTH) == 0)
             {
-                *piType = CRYPT_P6H;
-            }
+#ifdef UNIX_DIGEST
+                if ('X' == p[0] && 'X' == p[1])
+                {
+                    *piType = CRYPT_P6H_XX;
+                }
+                else
 #endif
+                {
+                    *piType = CRYPT_P6H_VAHT;
+                }
+            }
             else
             {
                 *piType = CRYPT_OTHER;
@@ -557,9 +599,11 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
         return szPassword;
 
 #ifdef UNIX_DIGEST
-    case CRYPT_P6H:
-        return p6h_crypt(szPassword);
+    case CRYPT_P6H_XX:
+        return p6h_xx_crypt(szPassword);
 #endif
+    case CRYPT_P6H_VAHT:
+        return p6h_vaht_crypt(szPassword, szSetting);
 
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
