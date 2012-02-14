@@ -22,6 +22,20 @@
 
 #if defined(WIN32)
 
+// Build Options
+//
+#define WINDOWS_NETWORKING
+#define WINDOWS_SIGNALS
+#define WINDOWS_PROCESSES
+#define WINDOWS_FILES
+#define WINDOWS_DYNALIB
+#define WINDOWS_CRYPT
+#define WINDOWS_TIME
+#define WINDOWS_THREADS
+#define WINDOWS_INSTRINSICS
+//#define WINDOWS_SSL
+#define TINYMUX_MODULES
+
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
 #include <SpecStrings.h>
@@ -37,6 +51,25 @@
 #include <share.h>
 #include <io.h>
 #include <process.h>
+
+#else  // WIN32
+
+// Build Options
+//
+#define UNIX_NETWORKING
+#define UNIX_SIGNALS
+#define UNIX_PROCESSES
+#define UNIX_FILES
+#define UNIX_CRYPT
+#define UNIX_TIME
+#if defined(HAVE_DLOPEN)
+#define UNIX_DYNALIB
+#define TINYMUX_MODULES
+#endif // HAVE_DLOPEN
+#if defined(SSL_ENABLED)
+#define UNIX_SSL
+#define UNIX_DIGEST
+#endif // SSL_ENABLED
 
 #endif // WIN32
 
@@ -361,20 +394,6 @@ typedef char  boolexp_type;
 
 #ifdef WIN32
 
-// Build Options
-//
-#define WINDOWS_NETWORKING
-#define WINDOWS_SIGNALS
-#define WINDOWS_PROCESSES
-#define WINDOWS_FILES
-#define WINDOWS_DYNALIB
-#define WINDOWS_CRYPT
-#define WINDOWS_TIME
-#define WINDOWS_THREADS
-#define WINDOWS_INSTRINSICS
-//#define WINDOWS_SSL
-#define TINYMUX_MODULES
-
 #define DCL_CDECL  __cdecl
 #define DCL_EXPORT __declspec(dllexport)
 #define DCL_API    __stdcall
@@ -429,23 +448,6 @@ typedef unsigned __int64 UINT64;
 #define ENDLINE "\r\n"
 
 #else // WIN32
-
-// Build Options
-//
-#define UNIX_NETWORKING
-#define UNIX_SIGNALS
-#define UNIX_PROCESSES
-#define UNIX_FILES
-#define UNIX_CRYPT
-#define UNIX_TIME
-#if defined(HAVE_DLOPEN)
-#define UNIX_DYNALIB
-#define TINYMUX_MODULES
-#endif // HAVE_DLOPEN
-#if defined(SSL_ENABLED)
-#define UNIX_SSL
-#define UNIX_DIGEST
-#endif // SSL_ENABLED
 
 #if defined(HAVE_SYS_SELECT_H) && defined(HAVE_SELECT)
 #define UNIX_NETWORKING_SELECT
