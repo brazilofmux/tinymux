@@ -3151,39 +3151,6 @@ void DetectWindowsCapabilities()
             }
         }
     }
-
-    // Get a handle to the kernel32 DLL
-    //
-    HINSTANCE hInstKernel32 = LoadLibrary(L"kernel32");
-    if (NULL == hInstKernel32)
-    {
-        Log.WriteString(T("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE));
-        bUseCompletionPorts = false;
-    }
-    else
-    {
-        if (bUseCompletionPorts)
-        {
-            // Find the entry point for CancelIO so we can use it. This is done
-            // dynamically because Windows 95/98 doesn't have a CancelIO entry
-            // point. If it were done at load time, it would always fail on
-            // Windows 95/98...even though we don't use it or depend on it in
-            // that case.
-            //
-            fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
-            if (NULL == fpCancelIo)
-            {
-                Log.WriteString(T("GetProcAddress of _CancelIo failed." ENDLINE));
-                bUseCompletionPorts = false;
-            }
-        }
-
-        if (NULL == fpCancelIo)
-        {
-            FreeLibrary(hInstKernel32);
-            hInstKernel32 = NULL;
-        }
-    }
 }
 #endif // WINDOWS_NETWORKING
 

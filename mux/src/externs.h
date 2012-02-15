@@ -1046,14 +1046,12 @@ extern bool bUseCompletionPorts;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
-typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
 typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
     DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
 typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
     PADDRINFOA *ppResult);
 typedef void __stdcall FFREEADDRINFO(PADDRINFOA pAddrInfo);
 
-extern FCANCELIO *fpCancelIo;
 extern FGETNAMEINFO *fpGetNameInfo;
 extern FGETADDRINFO *fpGetAddrInfo;
 extern FFREEADDRINFO *fpFreeAddrInfo;

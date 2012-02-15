@@ -62,7 +62,6 @@ pid_t game_pid;
 // by Stephen Dennis <brazilofmux@gmail.com>.
 //
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
-FCANCELIO *fpCancelIo = NULL;
 FGETNAMEINFO *fpGetNameInfo = NULL;
 FGETADDRINFO *fpGetAddrInfo = NULL;
 FFREEADDRINFO *fpFreeAddrInfo = NULL;
@@ -2505,7 +2504,7 @@ static void shutdownsock_brief(DESC *d)
 
     // cancel any pending reads or writes on this socket
     //
-    if (!fpCancelIo((HANDLE) d->descriptor))
+    if (!CancelIo((HANDLE) d->descriptor))
     {
         Log.tinyprintf(T("Error %ld on CancelIo" ENDLINE), GetLastError());
     }
@@ -5392,7 +5391,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
 
         // Cancel any pending reads or writes on this socket
         //
-        if (!fpCancelIo((HANDLE) d->descriptor))
+        if (!CancelIo((HANDLE) d->descriptor))
         {
             Log.tinyprintf(T("Error %ld on CancelIo" ENDLINE), GetLastError());
         }
