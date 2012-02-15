@@ -1447,7 +1447,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-void shovechars_select(int nPorts, PortInfo aPorts[])
+void shovechars(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
@@ -2256,7 +2256,7 @@ void shutdownsock(DESC *d, int reason)
                 PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
         }
     }
-#elif
+#elif defined(UNIX_NETWORKING)
 
 #ifdef UNIX_SSL
         if (d->ssl_session)
