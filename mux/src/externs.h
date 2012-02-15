@@ -1042,7 +1042,6 @@ extern long DebugTotalFiles;
 extern long DebugTotalSockets;
 
 #if defined(WINDOWS_NETWORKING)
-extern bool bUseCompletionPorts;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;

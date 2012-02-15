@@ -2473,7 +2473,6 @@ long DebugTotalMemory = 0;
 #define CLI_DO_BASENAME    CLI_USER+9
 #define CLI_DO_PID_FILE    CLI_USER+10
 #define CLI_DO_ERRORPATH   CLI_USER+11
-#define CLI_DO_SELECT      CLI_USER+12
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
@@ -2497,9 +2496,6 @@ static CLI_OptionEntry OptionTable[] =
     { "u", CLI_NONE,     CLI_DO_UNLOAD      },
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
 #endif // MEMORY_BASED
-#if defined(WINDOWS_NETWORKING)
-    { "n", CLI_NONE,     CLI_DO_SELECT      },
-#endif // WINDOWS_NETWORKING
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
@@ -2534,12 +2530,6 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
             bServerOption = true;
             pErrorBasename = (UTF8 *)pValue;
             break;
-
-#if defined(WINDOWS_NETWORKING)
-        case CLI_DO_SELECT:
-            bUseCompletionPorts = false;
-            break;
-#endif // WINDOWS_NETWORKING
 
 #ifndef MEMORY_BASED
         case CLI_DO_INFILE:
@@ -3251,9 +3241,6 @@ int DCL_CDECL main(int argc, char *argv[])
             mux_fprintf(stderr, T("  -h  Display this help." ENDLINE));
             mux_fprintf(stderr, T("  -p  Specify process ID file." ENDLINE));
             mux_fprintf(stderr, T("  -s  Start with a minimal database." ENDLINE));
-#if defined(WINDOWS_NETWORKING)
-            mux_fprintf(stderr, T("  -n  Disable use of NT I/O Completion Ports." ENDLINE));
-#endif // WINDOWS_NETWORKING
             mux_fprintf(stderr, T("  -v  Display version string." ENDLINE ENDLINE));
         }
         return 1;
@@ -3286,15 +3273,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hGameProcess = GetCurrentProcess();
     DetectWindowsCapabilities();
 
-    if (bUseCompletionPorts)
-    {
-        Log.WriteString(T("Using NT I/O Completion Ports for networking." ENDLINE));
-    }
-    else
-    {
-        Log.WriteString(T("Using select() for networking." ENDLINE));
-    }
-
     // Initialize WinSock.
     //
     WORD wVersionRequested = MAKEWORD(2,2);
@@ -3316,17 +3294,7 @@ int DCL_CDECL main(int argc, char *argv[])
         //return 102;
     }
 
-    if (bUseCompletionPorts)
-    {
-        process_output = process_output_ntio;
-    }
-    else
-    {
-        process_output = process_output_unix;
-    }
-#elif defined(UNIX_NETWORKING)
-    process_output = process_output_unix;
-#endif // UNIX_NETWORKING
+#endif // WINDOWS_NETWORKING
 #if defined(WINDOWS_CRYPT)
     if (!bCryptoAPI)
     {
@@ -3572,18 +3540,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     init_timer();
 
-#if defined(WINDOWS_NETWORKING)
-    if (bUseCompletionPorts)
-    {
-        shovecharsNT(nMainGamePorts, aMainGamePorts);
-    }
-    else
-    {
-        shovechars9x(nMainGamePorts, aMainGamePorts);
-    }
-#elif defined(UNIX_NETWORKING_SELECT)
-    shovechars_select(nMainGamePorts, aMainGamePorts);
-#endif // UNIX_NETWORKING
+    shovechars(nMainGamePorts, aMainGamePorts);
 
 #ifdef INLINESQL
      if (mush_database)
@@ -3638,10 +3595,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #if defined(WINDOWS_NETWORKING)
     // Critical section not needed any more.
     //
-    if (bUseCompletionPorts)
-    {
-        DeleteCriticalSection(&csDescriptorList);
-    }
+    DeleteCriticalSection(&csDescriptorList);
     WSACleanup();
 #endif // WINDOWS_NETWORKING
 

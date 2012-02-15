@@ -512,8 +512,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
     // should be kick-started the next time shovechars() is looking at this
     // descriptor.
     //
-    if (  bUseCompletionPorts
-       && !d->bConnectionDropped
+    if (  !d->bConnectionDropped
        && NULL != d->output_head
        && 0 == (d->output_head->hdr.flags & TBLK_FLAG_LOCKED))
     {

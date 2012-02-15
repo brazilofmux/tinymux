@@ -66,7 +66,6 @@ FGETNAMEINFO *fpGetNameInfo = NULL;
 FGETADDRINFO *fpGetAddrInfo = NULL;
 FFREEADDRINFO *fpFreeAddrInfo = NULL;
 HANDLE CompletionPort;    // IOs are queued up on this port
-bool  bUseCompletionPorts = true;
 static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 static OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
 static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
@@ -1001,106 +1000,102 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
     // If we are running Windows NT we must create a completion port,
     // and start up a listening thread for new connections
     //
-    if (bUseCompletionPorts)
+    int nRet;
+
+    // create initial IO completion port, so threads have something to wait on
+    //
+    CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+
+    if (!CompletionPort)
     {
-        int nRet;
-
-        // create initial IO completion port, so threads have something to wait on
-        //
-        CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
-
-        if (!CompletionPort)
-        {
-            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
-            return;
-        }
-
-        // Initialize the critical section
-        //
-        if (!bDescriptorListInit)
-        {
-            InitializeCriticalSection(&csDescriptorList);
-            bDescriptorListInit = true;
-        }
-
-        // Create a TCP/IP stream socket
-        //
-        s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (IS_INVALID_SOCKET(s))
-        {
-            log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
-            return;
-        }
-
-        DebugTotalSockets++;
-        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-        {
-            log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
-        }
-
-        // Fill in the the address structure
-        //
-        server.sai.sin_port = htons((unsigned short)(Port->port));
-        server.sai.sin_family = AF_INET;
-        in_addr_t ulNetBits;
-        if (MakeCanonicalIPv4(ip_address, &ulNetBits))
-        {
-            server.sai.sin_addr.s_addr = ulNetBits;
-        }
-        else
-        {
-            server.sai.sin_addr.s_addr = INADDR_ANY;
-        }
-
-        // bind our name to the socket
-        //
-        nRet = bind(s, &server.sa, sizeof(server.sa));
-
-        if (IS_SOCKET_ERROR(nRet))
-        {
-            Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
-            if (0 == SOCKET_CLOSE(s))
-            {
-                DebugTotalSockets--;
-            }
-            s = INVALID_SOCKET;
-            return;
-        }
-
-        // Set the socket to listen
-        //
-        nRet = listen(s, SOMAXCONN);
-
-        if (nRet)
-        {
-            Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
-            if (0 == SOCKET_CLOSE(s))
-            {
-                DebugTotalSockets--;
-            }
-            s = INVALID_SOCKET;
-            return;
-        }
-
-        // Create the MUD listening thread
-        //
-        HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
-        if (NULL == hThread)
-        {
-            log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
-            if (0 == SOCKET_CLOSE(s))
-            {
-                DebugTotalSockets--;
-            }
-            s = INVALID_SOCKET;
-            return;
-        }
-
-        Port->socket = s;
-        Log.tinyprintf(T("Listening (NT-style) on port %d" ENDLINE), Port->port);
+        Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
         return;
     }
-#endif // WINDOWS_NETWORKING
+
+    // Initialize the critical section
+    //
+    if (!bDescriptorListInit)
+    {
+        InitializeCriticalSection(&csDescriptorList);
+        bDescriptorListInit = true;
+    }
+
+    // Create a TCP/IP stream socket
+    //
+    s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (IS_INVALID_SOCKET(s))
+    {
+        log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
+        return;
+    }
+
+    DebugTotalSockets++;
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
+    }
+
+    // Fill in the the address structure
+    //
+    server.sai.sin_port = htons((unsigned short)(Port->port));
+    server.sai.sin_family = AF_INET;
+    in_addr_t ulNetBits;
+    if (MakeCanonicalIPv4(ip_address, &ulNetBits))
+    {
+        server.sai.sin_addr.s_addr = ulNetBits;
+    }
+    else
+    {
+        server.sai.sin_addr.s_addr = INADDR_ANY;
+    }
+
+    // bind our name to the socket
+    //
+    nRet = bind(s, &server.sa, sizeof(server.sa));
+
+    if (IS_SOCKET_ERROR(nRet))
+    {
+        Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
+        if (0 == SOCKET_CLOSE(s))
+        {
+            DebugTotalSockets--;
+        }
+        s = INVALID_SOCKET;
+        return;
+    }
+
+    // Set the socket to listen
+    //
+    nRet = listen(s, SOMAXCONN);
+
+    if (nRet)
+    {
+        Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
+        if (0 == SOCKET_CLOSE(s))
+        {
+            DebugTotalSockets--;
+        }
+        s = INVALID_SOCKET;
+        return;
+    }
+
+    // Create the MUD listening thread
+    //
+    HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
+    if (NULL == hThread)
+    {
+        log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
+        if (0 == SOCKET_CLOSE(s))
+        {
+            DebugTotalSockets--;
+        }
+        s = INVALID_SOCKET;
+        return;
+    }
+
+    Port->socket = s;
+
+#elif defined(UNIX_NETWORKING)
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
@@ -1146,6 +1141,7 @@ static void make_socket(PortInfo *Port, const UTF8 *ip_address)
 #else
     Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
 #endif
+#endif // WINDOWS_NETWORKING
 }
 
 #if defined(UNIX_NETWORKING)
@@ -1314,190 +1310,6 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 
 #if defined(WINDOWS_NETWORKING)
 
-// Private version of FD_ISSET:
-//
-// The following routine is only used on Win9x. Ordinarily, FD_ISSET
-// maps to a __WSAFDIsSet call, however, the Intel compiler encounters
-// an internal error at link time when some of the higher-order
-// optimizations are requested (-Qipo). Including this function is a
-// workaround.
-//
-inline bool FD_ISSET_priv(SOCKET fd, fd_set *set)
-{
-    unsigned int i;
-    for (i = 0; i < set->fd_count; i++)
-    {
-        if (set->fd_array[i] == fd)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-inline void FD_ZERO_priv(fd_set *set)
-{
-    set->fd_count = 0;
-}
-
-inline void FD_SET_priv(SOCKET fd, fd_set *set)
-{
-    if (set->fd_count < FD_SETSIZE)
-    {
-        set->fd_array[set->fd_count++] = fd;
-    }
-}
-
-#define CheckInput(x)   FD_ISSET_priv(x, &input_set)
-#define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
-
-void shovechars9x(int nPorts, PortInfo aPorts[])
-{
-    fd_set input_set, output_set;
-    int found;
-    DESC *d, *dnext, *newd;
-
-    mudstate.debug_cmd = T("< shovechars9x >");
-
-    CLinearTimeAbsolute ltaLastSlice;
-    ltaLastSlice.GetUTC();
-
-    while (!mudstate.shutdown_flag)
-    {
-        CLinearTimeAbsolute ltaCurrent;
-        ltaCurrent.GetUTC();
-        update_quotas(ltaLastSlice, ltaCurrent);
-
-        // Before processing a possible QUIT command, be sure to give the slave
-        // a chance to report it's findings.
-        //
-        if (iSlaveResult) get_slave_result();
-
-        // Check the scheduler. Run a little ahead into the future so that
-        // we tend to sleep longer.
-        //
-        scheduler.RunTasks(ltaCurrent);
-        CLinearTimeAbsolute ltaWakeUp;
-        if (!scheduler.WhenNext(&ltaWakeUp))
-        {
-            CLinearTimeDelta ltd = time_30m;
-            ltaWakeUp = ltaCurrent + ltd;
-        }
-        else if (ltaWakeUp < ltaCurrent)
-        {
-            ltaWakeUp = ltaCurrent;
-        }
-
-        if (mudstate.shutdown_flag)
-        {
-            break;
-        }
-
-        FD_ZERO_priv(&input_set);
-        FD_ZERO_priv(&output_set);
-
-        // Listen for new connections.
-        //
-        int i;
-        for (i = 0; i < nPorts; i++)
-        {
-            FD_SET_priv(aPorts[i].socket, &input_set);
-        }
-
-        // Mark sockets that we want to test for change in status.
-        //
-        DESC_ITER_ALL(d)
-        {
-            if (!d->input_head)
-            {
-                FD_SET_priv(d->descriptor, &input_set);
-            }
-            if (d->output_head)
-            {
-                FD_SET_priv(d->descriptor, &output_set);
-            }
-        }
-
-        // Wait for something to happen
-        //
-        struct timeval timeout;
-        CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
-        ltdTimeout.ReturnTimeValueStruct(&timeout);
-        found = select(0, &input_set, &output_set, (fd_set *) NULL, &timeout);
-
-        switch (found)
-        {
-        case SOCKET_ERROR:
-            {
-                STARTLOG(LOG_NET, "NET", "CONN");
-                log_text(T("shovechars: Socket error."));
-                ENDLOG;
-            }
-
-        case 0:
-            continue;
-        }
-
-        // Check for new connection requests.
-        //
-        for (i = 0; i < nPorts; i++)
-        {
-            if (CheckInput(aPorts[i].socket))
-            {
-                int iSocketError;
-                newd = new_connection(aPorts+i, &iSocketError);
-                if (!newd)
-                {
-                    if (  iSocketError
-                       && iSocketError != SOCKET_EINTR)
-                    {
-                        log_perror(T("NET"), T("FAIL"), NULL, T("new_connection"));
-                    }
-                }
-            }
-        }
-
-        // Check for activity on user sockets
-        //
-        DESC_SAFEITER_ALL(d, dnext)
-        {
-            // Process input from sockets with pending input
-            //
-            if (CheckInput(d->descriptor))
-            {
-                // Undo autodark
-                //
-                if (d->flags & DS_AUTODARK)
-                {
-                    // Clear the DS_AUTODARK on every related session.
-                    //
-                    DESC *d1;
-                    DESC_ITER_PLAYER(d->player, d1)
-                    {
-                        d1->flags &= ~DS_AUTODARK;
-                    }
-                    db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
-                }
-
-                // Process received data
-                //
-                if (!process_input(d))
-                {
-                    shutdownsock(d, R_SOCKDIED);
-                    continue;
-                }
-            }
-
-            // Process output for sockets with pending output
-            //
-            if (CheckOutput(d->descriptor))
-            {
-                process_output(d, true);
-            }
-        }
-    }
-}
-
 static LRESULT WINAPI mux_WindowProc
 (
     HWND   hWin,
@@ -1558,7 +1370,7 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     return 1;
 }
 
-void shovecharsNT(int nPorts, PortInfo aPorts[])
+void shovechars(int nPorts, PortInfo aPorts[])
 {
     UNUSED_PARAMETER(nPorts);
     UNUSED_PARAMETER(aPorts);
@@ -1628,9 +1440,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     }
 }
 
-#endif // WINDOWS_NETWORKING
-
-#if defined(UNIX_NETWORKING)
+#elif defined(UNIX_NETWORKING)
 
 #if defined(UNIX_NETWORKING_SELECT)
 
@@ -2415,41 +2225,38 @@ void shutdownsock(DESC *d, int reason)
         scheduler.CancelTask(Task_ProcessCommand, d, 0);
 
 #if defined(WINDOWS_NETWORKING)
-        if (bUseCompletionPorts)
+        // Don't close down the socket twice.
+        //
+        if (!d->bConnectionShutdown)
         {
-            // Don't close down the socket twice.
+            // Make sure we don't try to initiate or process any
+            // outstanding IOs
             //
-            if (!d->bConnectionShutdown)
+            d->bConnectionShutdown = true;
+
+            // Protect removing the descriptor from our linked list from
+            // any interference from the listening thread.
+            //
+            EnterCriticalSection(&csDescriptorList);
+            *d->prev = d->next;
+            if (d->next)
             {
-                // Make sure we don't try to initiate or process any
-                // outstanding IOs
-                //
-                d->bConnectionShutdown = true;
-
-                // Protect removing the descriptor from our linked list from
-                // any interference from the listening thread.
-                //
-                EnterCriticalSection(&csDescriptorList);
-                *d->prev = d->next;
-                if (d->next)
-                {
-                    d->next->prev = d->prev;
-                }
-                LeaveCriticalSection(&csDescriptorList);
-
-                // This descriptor may hang around awhile, clear out the links.
-                //
-                d->next = 0;
-                d->prev = 0;
-
-                // Close the connection in 5 seconds.
-                //
-                scheduler.DeferTask(ltaNow + time_5s,
-                    PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
+                d->next->prev = d->prev;
             }
-            return;
+            LeaveCriticalSection(&csDescriptorList);
+
+            // This descriptor may hang around awhile, clear out the links.
+            //
+            d->next = 0;
+            d->prev = 0;
+
+            // Close the connection in 5 seconds.
+            //
+            scheduler.DeferTask(ltaNow + time_5s,
+                PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
         }
-#endif // WINDOWS_NETWORKING
+    }
+#elif
 
 #ifdef UNIX_SSL
         if (d->ssl_session)
@@ -2484,6 +2291,7 @@ void shutdownsock(DESC *d, int reason)
         free_desc(d);
         ndescriptors--;
     }
+#endif // WINDOWS_NETWORKING
 }
 
 #if defined(WINDOWS_NETWORKING)
@@ -2617,19 +2425,13 @@ DESC *initializesock(SOCKET s, mux_sockaddr *msa)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
-    if (bUseCompletionPorts)
-    {
-        EnterCriticalSection(&csDescriptorList);
-    }
+    EnterCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
     d = alloc_desc("init_sock");
 
 #if defined(WINDOWS_NETWORKING)
-    if (bUseCompletionPorts)
-    {
-        LeaveCriticalSection(&csDescriptorList);
-    }
+    LeaveCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
     d->descriptor = s;
@@ -2685,10 +2487,7 @@ DESC *initializesock(SOCKET s, mux_sockaddr *msa)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
-    if (bUseCompletionPorts)
-    {
-        EnterCriticalSection (&csDescriptorList);
-    }
+    EnterCriticalSection (&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
     ndescriptors++;
@@ -2705,23 +2504,18 @@ DESC *initializesock(SOCKET s, mux_sockaddr *msa)
 #if defined(WINDOWS_NETWORKING)
     // ok to continue now
     //
-    if (bUseCompletionPorts)
-    {
-        LeaveCriticalSection (&csDescriptorList);
+    LeaveCriticalSection (&csDescriptorList);
 
-        d->OutboundOverlapped.hEvent = NULL;
-        d->InboundOverlapped.hEvent = NULL;
-        d->InboundOverlapped.Offset = 0;
-        d->InboundOverlapped.OffsetHigh = 0;
-        d->bConnectionShutdown = false; // not shutdown yet
-        d->bConnectionDropped = false; // not dropped yet
-        d->bCallProcessOutputLater = false;
-    }
+    d->OutboundOverlapped.hEvent = NULL;
+    d->InboundOverlapped.hEvent = NULL;
+    d->InboundOverlapped.Offset = 0;
+    d->InboundOverlapped.OffsetHigh = 0;
+    d->bConnectionShutdown = false; // not shutdown yet
+    d->bConnectionDropped = false; // not dropped yet
+    d->bCallProcessOutputLater = false;
 #endif // WINDOWS_NETWORKING
     return d;
 }
-
-FTASK *process_output = NULL;
 
 #if defined(WINDOWS_NETWORKING)
 
@@ -2745,7 +2539,7 @@ FTASK *process_output = NULL;
  * \return                  None.
  */
 
-void process_output_ntio(void *dvoid, int bHandleShutdown)
+void process_output(void *dvoid, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
@@ -2852,7 +2646,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#endif // WINDOWS_NETWORKING
+#elif defined(UNIX_NETWORKING)
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
@@ -2867,7 +2661,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
  * \return                  None.
  */
 
-void process_output_unix(void *dvoid, int bHandleShutdown)
+void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
 
@@ -2936,6 +2730,8 @@ void process_output_unix(void *dvoid, int bHandleShutdown)
 
     mudstate.debug_cmd = cmdsave;
 }
+
+#endif // UNIX_NETWORKING
 
 /*! \brief Table to quickly classify characters recieved from the wire with
  * their Telnet meaning.
@@ -5245,8 +5041,6 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
     struct descriptor_data * d;
 
-    Log.tinyprintf(T("Starting NT-style listening on port %d" ENDLINE), Port->port);
-
     //
     // Loop forever accepting connections
     //
@@ -5360,7 +5154,6 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
             }
         }
     }
-    Log.tinyprintf(T("End of NT-style listening on port %d" ENDLINE), Port->port);
     return 1;
 }
 

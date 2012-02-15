@@ -242,18 +242,11 @@ extern int mux_socket_read(DESC *d, char* buffer, int nBytes, int flags);
 extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
-#if defined(WINDOWS_NETWORKING)
-extern void shovechars9x(int nPorts, PortInfo aPorts[]);
-extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
-void process_output_ntio(void *, int);
-#elif defined(UNIX_NETWORKING_SELECT)
-extern void shovechars_select(int nPorts, PortInfo aPorts[]);
-#endif
+extern void shovechars(int nPorts, PortInfo aPorts[]);
+void process_output(void *, int);
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK
-extern FTASK *process_output;
-void process_output_unix(void *, int);
 
 extern void BuildSignalNamesTable(void);
 extern void set_signals(void);
