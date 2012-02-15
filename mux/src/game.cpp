@@ -3178,16 +3178,7 @@ void DetectWindowsCapabilities()
             }
         }
 
-        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
-        if (NULL == fpGetProcessTimes)
-        {
-            // We can work with or without GetProcessTimes().
-            //
-            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that\xE2\x80\x99s OK." ENDLINE));
-        }
-
-        if (  NULL == fpCancelIo
-           && NULL == fpGetProcessTimes)
+        if (NULL == fpCancelIo)
         {
             FreeLibrary(hInstKernel32);
             hInstKernel32 = NULL;

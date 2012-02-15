@@ -1047,9 +1047,6 @@ extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
 typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
-typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
-    LPFILETIME pftCreate, LPFILETIME pftExit, LPFILETIME pftKernel,
-    LPFILETIME pftUser);
 typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
     DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
 typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
@@ -1057,7 +1054,6 @@ typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const AD
 typedef void __stdcall FFREEADDRINFO(PADDRINFOA pAddrInfo);
 
 extern FCANCELIO *fpCancelIo;
-extern FGETPROCESSTIMES *fpGetProcessTimes;
 extern FGETNAMEINFO *fpGetNameInfo;
 extern FGETADDRINFO *fpGetAddrInfo;
 extern FFREEADDRINFO *fpFreeAddrInfo;

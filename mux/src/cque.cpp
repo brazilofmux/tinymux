@@ -26,36 +26,31 @@ static CLinearTimeDelta GetProcessorUsage(void)
 {
     CLinearTimeDelta ltd;
 #if defined(WINDOWS_PROCESSES)
-    if (fpGetProcessTimes)
-    {
-        FILETIME ftCreate;
-        FILETIME ftExit;
-        FILETIME ftKernel;
-        FILETIME ftUser;
-        fpGetProcessTimes(hGameProcess, &ftCreate, &ftExit, &ftKernel, &ftUser);
-        ltd.Set100ns(*(INT64 *)(&ftUser));
-        return ltd;
-    }
+
+    FILETIME ftCreate;
+    FILETIME ftExit;
+    FILETIME ftKernel;
+    FILETIME ftUser;
+    GetProcessTimes(hGameProcess, &ftCreate, &ftExit, &ftKernel, &ftUser);
+    ltd.Set100ns(*(INT64 *)(&ftUser));
+
 #endif // WINDOWS_PROCESSES
 
-#if defined(UNIX_PROCESSES) && defined(HAVE_GETRUSAGE)
+#if defined(UNIX_PROCESSES)
+#if defined(HAVE_GETRUSAGE)
 
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
     ltd.SetTimeValueStruct(&usage.ru_utime);
-    return ltd;
 
 #else
 
-    // Either this Unix doesn't have getrusage or this is a
-    // fall-through case for Windows.
-    //
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     ltd = ltaNow - mudstate.start_time;
-    return ltd;
-
 #endif
+#endif
+    return ltd;
 }
 
 // ---------------------------------------------------------------------------
