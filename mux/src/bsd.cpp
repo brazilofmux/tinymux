@@ -111,8 +111,6 @@ static HANDLE hSlaveThreadsSemaphore;
 static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 {
     SLAVE_REQUEST req;
-    unsigned long addr;
-    struct hostent *hp;
     size_t iSlave = reinterpret_cast<size_t>(lpParameter);
 
     if (NUM_SLAVE_THREADS <= iSlave)
@@ -191,36 +189,9 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             //
             UTF8 host_address[MAX_STRING];
             UTF8 host_name[MAX_STRING];
-            bool fHaveResult = false;
 
-            if (NULL != fpGetNameInfo)
-            {
-                if (  0 == fpGetNameInfo(&req.msa.sa, sizeof(req.msa.sai), (char *)host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
-                   && 0 == fpGetNameInfo(&req.msa.sa, sizeof(req.msa.sai), (char *)host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
-                {
-                    fHaveResult = true;
-                }
-            }
-#ifdef HAVE_GETHOSTBYADDR
-            else
-            {
-                addr = req.msa.sai.sin_addr.S_un.S_addr;
-                hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-                if (  NULL != hp
-                   && strlen(hp->h_name) < MAX_STRING)
-                {
-                    SlaveThreadInfo[iSlave].iDoing = __LINE__;
-
-                    // We have a host name.
-                    //
-                    mux_strncpy(host_name, (UTF8 *)hp->h_name, sizeof(host_name)-1);
-                    mux_strncpy(host_address, (UTF8 *)inet_ntoa(req.msa.sai.sin_addr), sizeof(host_address)-1);
-                    fHaveResult = true;
-                }
-            }
-#endif // HAVE_GETHOSTBYADDR
-
-            if (fHaveResult)
+            if (  0 == mux_getnameinfo(&req.msa, sizeof(req.msa.sai), host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
+               && 0 == mux_getnameinfo(&req.msa, sizeof(req.msa.sai), host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
@@ -6287,6 +6258,7 @@ static bool try_name(const char *name, UTF8 *host, size_t hostlen, int *status)
 static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostlen, int flags)
 {
     UTF8 *bufc;
+#ifdef HAVE_GETHOSTBYADDR
     if (0 == (flags & NI_NUMERICHOST))
     {
         struct hostent *he = gethostbyaddr((const char *)addr, sizeof(struct in_addr), AF_INET);
@@ -6314,6 +6286,7 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
             }
         }
     }
+#endif
 
     bufc = host;
     safe_str((UTF8 *)inet_ntoa(*addr), host, &bufc);
