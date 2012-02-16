@@ -1145,31 +1145,8 @@ static void make_socket(PortInfo *Port)
 
 #ifdef WIN32
 
-    // If we are running Windows NT we must create a completion port,
-    // and start up a listening thread for new connections
-    //
     if (bUseCompletionPorts)
     {
-        int nRet;
-
-        // create initial IO completion port, so threads have something to wait on
-        //
-        CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
-
-        if (!CompletionPort)
-        {
-            Log.tinyprintf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
-            return;
-        }
-
-        // Initialize the critical section
-        //
-        if (!bDescriptorListInit)
-        {
-            InitializeCriticalSection(&csDescriptorList);
-            bDescriptorListInit = true;
-        }
-
         // Create a TCP/IP stream socket
         //
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -1193,7 +1170,7 @@ static void make_socket(PortInfo *Port)
 
         // bind our name to the socket
         //
-        nRet = bind(s, (LPSOCKADDR) &server, sizeof server);
+        int nRet = bind(s, (LPSOCKADDR) &server, sizeof server);
 
         if (IS_SOCKET_ERROR(nRet))
         {
@@ -1295,6 +1272,30 @@ bool ValidSocket(SOCKET s)
 
 void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL)
 {
+#ifdef WIN32
+    if (bUseCompletionPorts)
+    {
+        // If we are running Windows NT we must create a completion port and start up a listening thread for each port.
+        // Create initial I/O completion port so threads have something to wait on.
+        //
+        CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+
+        if (!CompletionPort)
+        {
+            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
+            return;
+        }
+
+        // Initialize the critical section
+        //
+        if (!bDescriptorListInit)
+        {
+            InitializeCriticalSection(&csDescriptorList);
+            bDescriptorListInit = true;
+        }
+    }
+#endif
+
     // Any existing open port which does not appear in the requested set
     // should be closed.
     //
