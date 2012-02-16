@@ -3295,12 +3295,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 
 #endif // WINDOWS_NETWORKING
-#if defined(WINDOWS_CRYPT)
-    if (!bCryptoAPI)
-    {
-        Log.WriteString(T("Crypto API unavailable.\r\n"));
-    }
-#endif // WINDOWS_CYPT
 
     mudstate.restart_time.GetUTC();
     mudstate.start_time = mudstate.restart_time;

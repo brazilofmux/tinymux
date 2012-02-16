@@ -13,10 +13,6 @@
 
 #if defined(WINDOWS_CRYPT)
 #include <wincrypt.h>
-typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
-typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
-typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
-bool bCryptoAPI = false;
 #endif // WINDOWS_CRYPT
 
 // Seed the generator.
@@ -55,47 +51,15 @@ void SeedRandomNumberGenerator(void)
     }
 #endif // HAVE_DEV_URANDOM
 #if defined(WINDOWS_CRYPT)
-    // The Cryto API became available on Windows with Win95 OSR2. Using Crypto
-    // API as follows lets us to fallback gracefully when running on pre-OSR2
-    // Win95.
-    //
-    bCryptoAPI = false;
-    HINSTANCE hAdvAPI32 = LoadLibrary(L"advapi32");
-    if (hAdvAPI32)
+    HCRYPTPROV hProv;
+    if (  CryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0)
+       || CryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, CRYPT_NEWKEYSET))
     {
-        FCRYPTACQUIRECONTEXT *fpCryptAcquireContext;
-        FCRYPTRELEASECONTEXT *fpCryptReleaseContext;
-        FCRYPTGENRANDOM *fpCryptGenRandom;
-
-        // Find the entry points for CryptoAcquireContext, CrytpoGenRandom,
-        // and CryptoReleaseContext.
-        //
-        fpCryptAcquireContext = (FCRYPTACQUIRECONTEXT *)
-            GetProcAddress(hAdvAPI32, "CryptAcquireContextA");
-        fpCryptReleaseContext = (FCRYPTRELEASECONTEXT *)
-            GetProcAddress(hAdvAPI32, "CryptReleaseContext");
-        fpCryptGenRandom = (FCRYPTGENRANDOM *)
-            GetProcAddress(hAdvAPI32, "CryptGenRandom");
-
-        if (  fpCryptAcquireContext
-           && fpCryptReleaseContext
-           && fpCryptGenRandom)
+        if (CryptGenRandom(hProv, sizeof(aRandomSystemBytes), (BYTE *)aRandomSystemBytes))
         {
-            HCRYPTPROV hProv;
-
-            if (  fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0)
-               || fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, CRYPT_NEWKEYSET))
-            {
-                if (fpCryptGenRandom(hProv, sizeof aRandomSystemBytes,
-                    (BYTE *)aRandomSystemBytes))
-                {
-                    nRandomSystemBytes = NUM_RANDOM_UINT32;
-                    bCryptoAPI = true;
-                }
-                fpCryptReleaseContext(hProv, 0);
-            }
+            nRandomSystemBytes = sizeof(aRandomSystemBytes);
         }
-        FreeLibrary(hAdvAPI32);
+        CryptReleaseContext(hProv, 0);
     }
 #endif // WINDOWS_CRYPT
 
