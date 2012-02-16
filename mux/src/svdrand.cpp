@@ -57,7 +57,7 @@ void SeedRandomNumberGenerator(void)
     {
         if (CryptGenRandom(hProv, sizeof(aRandomSystemBytes), (BYTE *)aRandomSystemBytes))
         {
-            nRandomSystemBytes = sizeof(aRandomSystemBytes);
+            nRandomSystemBytes = NUM_RANDOM_UINT32;
         }
         CryptReleaseContext(hProv, 0);
     }
