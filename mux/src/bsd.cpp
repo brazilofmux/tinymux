@@ -5952,6 +5952,199 @@ void mux_inet_ntop(MUX_SOCKADDR *msa, UTF8 *p, size_t n)
         p[0] = '\0';
     }
 }
+
+#if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
+static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, struct in_addr addr, unsigned short port)
+{
+    struct addrinfo *ai = (struct addrinfo *)MEMALLOC(sizeof(*ai));
+    if (NULL == ai)
+    {
+        return NULL;
+    }
+    ai->ai_addr = (sockaddr *)MEMALLOC(sizeof(struct sockaddr_in));
+    if (NULL == ai->ai_addr)
+    {
+        free(ai);
+        return NULL;
+    }
+    ai->ai_next = NULL;
+    if (NULL == canonical)
+    {
+        ai->ai_canonname = NULL;
+    }
+    else
+    {
+        ai->ai_canonname = (char *)StringClone(canonical);
+        if (NULL == ai->ai_canonname)
+        {
+            mux_freeaddrinfo(ai);
+            return NULL;
+        }
+    }
+    memset(ai->ai_addr, 0, sizeof(struct sockaddr_in));
+    ai->ai_flags = 0;
+    ai->ai_family = AF_INET;
+    ai->ai_socktype = socktype;
+    ai->ai_protocol = (socktype == SOCK_DGRAM) ? IPPROTO_UDP : IPPROTO_TCP;
+    ai->ai_addrlen = sizeof(struct sockaddr_in);
+    ((struct sockaddr_in *) ai->ai_addr)->sin_family = AF_INET;
+    ((struct sockaddr_in *) ai->ai_addr)->sin_addr = addr;
+    ((struct sockaddr_in *) ai->ai_addr)->sin_port = htons(port);
+    return ai;
+}
+
+static bool convert_service(const UTF8 *string, long *result)
+{
+    if ('\0' == *string)
+    {
+        return false;
+    }
+    *result = mux_atol(string);
+    if (*result < 0)
+    {
+        return false;
+    }
+    return true;
+}
+
+static int gai_service(const UTF8 *servname, int flags, int *type, unsigned short *port)
+{
+    long value;
+    if (convert_service(servname, &value))
+    {
+        if (value > (1L << 16) - 1)
+        {
+            return EAI_SERVICE;
+        }
+        *port = static_cast<unsigned short>(value);
+    }
+    else
+    {
+        if (flags & AI_NUMERICSERV)
+        {
+            return EAI_NONAME;
+        }
+        const UTF8 *protocol;
+        if (0 != *type)
+            protocol = (SOCK_DGRAM == *type) ? T("udp") : T("tcp");
+        else
+            protocol = NULL;
+
+        struct servent *servent = getservbyname((const char *)servname, (const char *)protocol);
+        if (NULL == servent)
+        {
+            return EAI_NONAME;
+        }
+        if (strcmp(servent->s_proto, "udp") == 0)
+        {
+            *type = SOCK_DGRAM;
+        }
+        else if (strcmp(servent->s_proto, "tcp") == 0)
+        {
+            *type = SOCK_STREAM;
+        }
+        else
+        {
+            return EAI_SERVICE;
+        }
+        *port = htons(servent->s_port);
+    }
+    return 0;
+}
+
+static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned short port, struct addrinfo **res)
+{
+    struct addrinfo *ai, *first, *prev;
+    struct in_addr addr;
+    struct hostent *host;
+    const UTF8 *canonical;
+    int i;
+
+    in_addr_t ulAddr;
+    if (MakeCanonicalIPv4(nodename, &ulAddr))
+    {
+        addr.s_addr = ulAddr;
+        canonical = (flags & AI_CANONNAME) ? nodename : NULL;
+        ai = gai_addrinfo_new(socktype, canonical, addr, port);
+        if (NULL == ai)
+        {
+            return EAI_MEMORY;
+        }
+        *res = ai;
+        return 0;
+    }
+    else
+    {
+        if (flags & AI_NUMERICHOST)
+        {
+            return EAI_NONAME;
+        }
+        host = gethostbyname((const char *)nodename);
+        if (NULL == host)
+        {
+            switch (h_errno)
+            {
+            case HOST_NOT_FOUND:
+                return EAI_NONAME;
+            case TRY_AGAIN:
+            case NO_DATA:
+                return EAI_AGAIN;
+            default:
+                return EAI_FAIL;
+            }
+        }
+        if (NULL == host->h_addr_list[0])
+        {
+            return EAI_FAIL;
+        }
+        if (flags & AI_CANONNAME)
+        {
+            if (NULL != host->h_name)
+            {
+                canonical = (UTF8 *)host->h_name;
+            }
+            else
+            {
+                canonical = nodename;
+            }
+        }
+        else
+        {
+            canonical = NULL;
+        }
+        first = NULL;
+        prev = NULL;
+        for (i = 0; host->h_addr_list[i] != NULL; i++)
+        {
+            if (host->h_length != sizeof(addr))
+            {
+                mux_freeaddrinfo(first);
+                return EAI_FAIL;
+            }
+            memcpy(&addr, host->h_addr_list[i], sizeof(addr));
+            ai = gai_addrinfo_new(socktype, canonical, addr, port);
+            if (NULL == ai)
+            {
+                mux_freeaddrinfo(first);
+                return EAI_MEMORY;
+            }
+            if (first == NULL)
+            {
+                first = ai;
+                prev = ai;
+            }
+            else
+            {
+                prev->ai_next = ai;
+                prev = ai;
+            }
+        }
+        *res = first;
+        return 0;
+    }
+}
+
+#endif
  
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res)
 {
@@ -5964,7 +6157,88 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
     }
 #endif
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
-#error Not supported, yet.
+    struct addrinfo *ai;
+    struct in_addr addr;
+    unsigned short port;
+
+    int flags;
+    int socktype;
+    if (NULL != hints)
+    {
+        flags = hints->ai_flags;
+        socktype = hints->ai_socktype;
+        if ((flags & (AI_PASSIVE|AI_CANONNAME|AI_NUMERICHOST|AI_NUMERICSERV|AI_ADDRCONFIG|AI_V4MAPPED)) != flags)
+        {
+            return EAI_BADFLAGS;
+        }
+
+        if (  hints->ai_family != AF_UNSPEC
+           && hints->ai_family != AF_INET)
+        {
+            return EAI_FAMILY;
+        }
+
+        if (  0 != socktype
+           && SOCK_STREAM != socktype
+           && SOCK_DGRAM != socktype)
+        {
+            return EAI_SOCKTYPE;
+        }
+
+        if (0 != hints->ai_protocol)
+        {
+            if (  IPPROTO_TCP != hints->ai_protocol
+               && IPPROTO_UDP != hints->ai_protocol)
+            {
+                return EAI_SOCKTYPE;
+            }
+        }
+    }
+    else
+    {
+        flags = 0;
+        socktype = 0;
+    }
+
+    int status;
+    if (NULL == service)
+    {
+        port = 0;
+    }
+    else
+    {
+        status = gai_service(service, flags, &socktype, &port);
+        if (0 != status)
+        {
+            return status;
+        }
+    }
+    if (node != NULL)
+    {
+        return gai_lookup(node, flags, socktype, port, res);
+    }
+    else
+    {
+        if (NULL == service)
+        {
+            return EAI_NONAME;
+        }
+        if ((flags & AI_PASSIVE) == AI_PASSIVE)
+        {
+            addr.s_addr = INADDR_ANY;
+        }
+        else
+        {
+            addr.s_addr = htonl(0x7f000001UL);
+        }
+        ai = gai_addrinfo_new(socktype, NULL, addr, port);
+        if (NULL == ai)
+        {
+            return EAI_MEMORY;
+        }
+        *res = ai;
+        return 0;
+    }
 #endif
 }
 
@@ -5973,7 +6247,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #if defined(UNIX_NETWORKING) && defined(HAVE_FREEADDRINFO)
     freeaddrinfo(res);
 #elif defined(WINDOWS_NETWORKING)
-    if (NULL != fpGetFreeAddrInfo)
+    if (NULL != fpFreeAddrInfo)
     {
         fpFreeAddrInfo(res);
     }
@@ -6015,7 +6289,7 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
     UTF8 *bufc;
     if (0 == (flags & NI_NUMERICHOST))
     {
-        struct hostent *he = gethostbyaddr(addr, sizeof(struct in_addr), AF_INET);
+        struct hostent *he = gethostbyaddr((const char *)addr, sizeof(struct in_addr), AF_INET);
         if (NULL == he)
         {
             if (flags & NI_NAMEREQD)
@@ -6077,7 +6351,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t ho
 #elif defined(WINDOWS_NETWORKING)
     if (NULL != fpGetNameInfo)
     {
-        return fpGetNameInfo(&sa->sa, salen, (char *)host, hostlen, (char *)serv, servlen, flags);
+        return fpGetNameInfo(&msa->sa, salen, (char *)host, hostlen, (char *)serv, servlen, flags);
     }
 #endif
 
@@ -6100,7 +6374,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t ho
     if (  NULL != host
        && 0 < hostlen)
     {
-        status = lookup_hostname(msa->sai.sin_addr), host, hostlen, flags);
+        status = lookup_hostname(&msa->sai.sin_addr, host, hostlen, flags);
         if (0 != status)
         {
             return status;
