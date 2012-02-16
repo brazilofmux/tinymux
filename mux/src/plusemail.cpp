@@ -435,48 +435,9 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
 {
     int cc = -1;
 
-#if defined(WINDOWS_NETWORKING)
-
-    if (NULL != fpGetAddrInfo)
-    {
-        // Let getaddrinfo() fill out the sockaddr structure for us.
-        //
-        struct addrinfo hints;
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family   = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_protocol = IPPROTO_TCP;
-        hints.ai_flags = AI_V4MAPPED|AI_ADDRCONFIG;
-
-        UTF8 sPort[SBUF_SIZE];
-        mux_ltoa(port, sPort);
-
-        struct addrinfo *servinfo;
-        if (0 == fpGetAddrInfo((char *)conhostname, (char *)sPort, &hints, &servinfo))
-        {
-            for (struct addrinfo *p = servinfo; NULL != p; p = p->ai_next)
-            {
-                cc = -2;
-                SOCKET mysock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-                if (0 == connect(mysock, p->ai_addr, p->ai_addrlen))
-                {
-                    *sock = mysock;
-                    cc = 0;
-                }
-                break;
-            }
-            fpFreeAddrInfo(servinfo);
-        }
-        return cc;
-    }
-
-#endif
-
-#if defined(HAVE_GETADDRINFO) && defined(UNIX_NETWORKING)
-
     // Let getaddrinfo() fill out the sockaddr structure for us.
     //
-    struct addrinfo hints;
+    MUX_ADDRINFO hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -486,10 +447,10 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     UTF8 sPort[SBUF_SIZE];
     mux_ltoa(port, sPort);
 
-    struct addrinfo *servinfo;
-    if (0 == getaddrinfo((char *)conhostname, (char *)sPort, &hints, &servinfo))
+    MUX_ADDRINFO *servinfo;
+    if (mux_getaddrinfo(conhostname, sPort, &hints, &servinfo))
     {
-        for (struct addrinfo *p = servinfo; NULL != p; p = p->ai_next)
+        for (MUX_ADDRINFO *p = servinfo; NULL != p; p = p->ai_next)
         {
             cc = -2;
             SOCKET mysock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
@@ -500,30 +461,8 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
             }
             break;
         }
-        freeaddrinfo(servinfo);
+        mux_freeaddrinfo(servinfo);
     }
-
-#elif defined(HAVE_GETHOSTBYNAME)
-
-    struct hostent *conhost = gethostbyname((char *)conhostname);
-    if (NULL != conhost)
-    {
-        mux_sockaddr name;
-        name.sai.sin_port = htons(port);
-        name.sai.sin_family = AF_INET;
-        memcpy((char *)&name.sai.sin_addr, (char *)conhost->h_addr, conhost->h_length);
-        SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
-        int addr_len = sizeof(name.sai);
-
-        cc = -2;
-        if (0 == connect(mysock, &name.sa, addr_len))
-        {
-            *sock = mysock;
-            cc = 0;
-        }
-    }
-#endif // HAVE_GETHOSTBYNAME
-
     return cc;
 }
 

@@ -280,99 +280,6 @@ struct confdata
 
 extern CONFDATA mudconf;
 
-#define MUX_IPV4 1
-#define MUX_IPV6 2
-
-// Abstract
-//
-class mux_addr
-{
-public:
-    mux_addr();
-    virtual ~mux_addr();
-
-    virtual int getFamily() = 0;
-};
-
-class mux_subnet
-{
-public:
-    enum Comparison
-    {
-        kLessThan,
-        kEqual,
-        kContains,
-        kContainedBy,
-        kGreaterThan
-    };
-
-    virtual int getFamily() = 0;
-    virtual bool Parse(UTF8 *str, dbref player, UTF8 *cmd) = 0;
-    virtual Comparison CompareTo(mux_subnet *msn) = 0;
-    virtual Comparison CompareTo(mux_sockaddr *msa) = 0;
-    virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) = 0;
-};
-
-// IPv4
-//
-#if defined(HAVE_IN_ADDR)
-class mux_in_addr : public mux_addr
-{
-public:
-    mux_in_addr(struct in_addr);
-    virtual ~mux_in_addr();
-
-    int getFamily() { return MUX_IPV4; }
-
-private:
-    struct in_addr;
-};
-
-class mux_in_subnet : public mux_subnet
-{
-public:
-    virtual ~mux_in_subnet();
-
-    int getFamily() { return MUX_IPV4; }
-    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
-    mux_subnet::Comparison CompareTo(mux_subnet *msn);
-    mux_subnet::Comparison CompareTo(mux_sockaddr *msa);
-    bool listinfo(UTF8 *sAddress, int *pnLeadingBits);
-
-private:
-    struct in_addr m_iaBase;
-    struct in_addr m_iaMask;
-    struct in_addr m_iaEnd;
-    int            m_iLeadingBits;
-};
-#endif
-
-// IPv6
-//
-#if defined(HAVE_IN6_ADDR)
-class mux_in6_addr : mux_addr
-{
-public:
-    mux_in6_addr(struct in6_addr);
-    virtual ~mux_in6_addr();
-
-    int getFamily() { return MUX_IPV6; }
-    
-private:
-    struct in6_addr;
-};
-
-class mux_in6_subnet : mux_subnet
-{
-public:
-    mux_in6_subnet();
-    virtual ~mux_in6_subnet();
-
-    int getFamily() { return MUX_IPV6; }
-    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
-};
-#endif
-
 // Subnets
 //
 class mux_subnet_node
@@ -443,15 +350,15 @@ public:
 
     // Queries: registered, forbid, suspect, noguest, nositemon.
     //
-    bool isRegistered(mux_sockaddr *pmsa);
-    bool isForbid(mux_sockaddr *pmsa);
-    bool isSuspect(mux_sockaddr *pmsa);
-    bool isNoGuest(mux_sockaddr *pmsa);
-    bool isNoSiteMon(mux_sockaddr *pmsa);
+    bool isRegistered(MUX_SOCKADDR *pmsa);
+    bool isForbid(MUX_SOCKADDR *pmsa);
+    bool isSuspect(MUX_SOCKADDR *pmsa);
+    bool isNoGuest(MUX_SOCKADDR *pmsa);
+    bool isNoSiteMon(MUX_SOCKADDR *pmsa);
 
     // Returns hosting information codes corresponding to all the above queries at once time.
     //
-    int  check(mux_sockaddr *pmsa);
+    int  check(MUX_SOCKADDR *pmsa);
 
     void listinfo(dbref player);
     void listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sControl, mux_subnet_node *p);
@@ -462,7 +369,7 @@ public:
 private:
     mux_subnet_node *msnRoot;
     void insert(mux_subnet_node **msnRoot, mux_subnet_node *msn);
-    void search(mux_subnet_node *msnRoot, mux_sockaddr *msa, unsigned long *pulInfo);
+    void search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned long *pulInfo);
     mux_subnet_node *remove(mux_subnet_node *msnRoot, mux_subnet *msn_arg);
 
     mux_subnet_node *rotr(mux_subnet_node *msnRoot);

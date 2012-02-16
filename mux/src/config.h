@@ -425,17 +425,6 @@ typedef unsigned __int64 UINT64;
 #error TinyMUX Requires at least version 6.0 of Visual C++.
 #endif
 
-#define SIZEOF_PATHNAME (_MAX_PATH + 1)
-#define SOCKET_WRITE(s,b,n,f) send(s,b,static_cast<int>(n),f)
-#define SOCKET_READ(s,b,n,f) recv(s,b,static_cast<int>(n),f)
-#define SOCKET_CLOSE(s) closesocket(s)
-#define IS_SOCKET_ERROR(cc) ((cc) == SOCKET_ERROR)
-#define IS_INVALID_SOCKET(s) ((s) == INVALID_SOCKET)
-#define SOCKET_LAST_ERROR (WSAGetLastError())
-#define SOCKET_EINTR       (WSAEINTR)
-#define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
-#define SOCKET_EBADF       (WSAEBADF)
-
 #define popen       _popen
 #define pclose      _pclose
 #define mux_tzset   _tzset
@@ -473,27 +462,6 @@ typedef unsigned long long UINT64;
 #define UINT64_C(c)      (c ## ull)
 #endif
 
-typedef int SOCKET;
-#ifdef PATH_MAX
-#define SIZEOF_PATHNAME (PATH_MAX + 1)
-#else // PATH_MAX
-#define SIZEOF_PATHNAME (4095 + 1)
-#endif // PATH_MAX
-#define SOCKET_WRITE(s,b,n,f) mux_write(s,b,n)
-#define SOCKET_READ(s,b,n,f) mux_read(s,b,n)
-#define SOCKET_CLOSE(s) mux_close(s)
-#define IS_SOCKET_ERROR(cc) ((cc) < 0)
-#define IS_INVALID_SOCKET(s) ((s) < 0)
-#define SOCKET_LAST_ERROR (errno)
-#define SOCKET_EINTR       (EINTR)
-#define SOCKET_EWOULDBLOCK (EWOULDBLOCK)
-#ifdef EAGAIN
-#define SOCKET_EAGAIN      (EAGAIN)
-#endif // EAGAIN
-#define SOCKET_EBADF       (EBADF)
-#define INVALID_SOCKET (-1)
-#define SD_BOTH (2)
-
 #define mux_tzset   tzset
 #define mux_getpid  getpid
 #define mux_close   close
@@ -505,17 +473,6 @@ typedef int SOCKET;
 
 #endif // WIN32
 
-typedef union mux_sockaddr MUX_SOCKADDR;
-union mux_sockaddr
-{
-    struct sockaddr      sa;
-#if defined(HAVE_SOCKADDR_IN)
-    struct sockaddr_in   sai;
-#endif
-#if defined(HAVE_SOCKADDR_IN6)
-    struct sockaddr_in6  sai6;
-#endif
-};
 
 #define INT64_MAX_VALUE  INT64_C(9223372036854775807)
 #define INT64_MIN_VALUE  (INT64_C(-9223372036854775807) - 1)
@@ -680,5 +637,149 @@ extern "C" unsigned int __intel_cpu_indicator;
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+
+#if defined(WIN32)
+
+#define SIZEOF_PATHNAME (_MAX_PATH + 1)
+#define SOCKET_WRITE(s,b,n,f) send(s,b,static_cast<int>(n),f)
+#define SOCKET_READ(s,b,n,f) recv(s,b,static_cast<int>(n),f)
+#define SOCKET_CLOSE(s) closesocket(s)
+#define IS_SOCKET_ERROR(cc) ((cc) == SOCKET_ERROR)
+#define IS_INVALID_SOCKET(s) ((s) == INVALID_SOCKET)
+#define SOCKET_LAST_ERROR (WSAGetLastError())
+#define SOCKET_EINTR       (WSAEINTR)
+#define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
+#define SOCKET_EBADF       (WSAEBADF)
+
+#else
+
+typedef int SOCKET;
+#ifdef PATH_MAX
+#define SIZEOF_PATHNAME (PATH_MAX + 1)
+#else // PATH_MAX
+#define SIZEOF_PATHNAME (4095 + 1)
+#endif // PATH_MAX
+#define SOCKET_WRITE(s,b,n,f) mux_write(s,b,n)
+#define SOCKET_READ(s,b,n,f) mux_read(s,b,n)
+#define SOCKET_CLOSE(s) mux_close(s)
+#define IS_SOCKET_ERROR(cc) ((cc) < 0)
+#define IS_INVALID_SOCKET(s) ((s) < 0)
+#define SOCKET_LAST_ERROR (errno)
+#define SOCKET_EINTR       (EINTR)
+#define SOCKET_EWOULDBLOCK (EWOULDBLOCK)
+#ifdef EAGAIN
+#define SOCKET_EAGAIN      (EAGAIN)
+#endif // EAGAIN
+#define SOCKET_EBADF       (EBADF)
+#define INVALID_SOCKET (-1)
+#define SD_BOTH (2)
+
+#endif
+
+typedef union mux_sockaddr
+{
+    struct sockaddr      sa;
+#if defined(HAVE_SOCKADDR_IN)
+    struct sockaddr_in   sai;
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
+    struct sockaddr_in6  sai6;
+#endif
+} MUX_SOCKADDR;
+
+#define MUX_IPV4 1
+#define MUX_IPV6 2
+
+// Abstract
+//
+class mux_addr
+{
+public:
+    mux_addr();
+    virtual ~mux_addr();
+
+    virtual int getFamily() = 0;
+};
+
+class mux_subnet
+{
+public:
+    enum Comparison
+    {
+        kLessThan,
+        kEqual,
+        kContains,
+        kContainedBy,
+        kGreaterThan
+    };
+
+    virtual int getFamily() = 0;
+    virtual bool Parse(UTF8 *str, dbref player, UTF8 *cmd) = 0;
+    virtual Comparison CompareTo(mux_subnet *msn) = 0;
+    virtual Comparison CompareTo(MUX_SOCKADDR *msa) = 0;
+    virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) = 0;
+};
+
+// IPv4
+//
+#if defined(HAVE_IN_ADDR)
+class mux_in_addr : public mux_addr
+{
+public:
+    mux_in_addr(struct in_addr);
+    virtual ~mux_in_addr();
+
+    int getFamily() { return MUX_IPV4; }
+
+private:
+    struct in_addr;
+};
+
+class mux_in_subnet : public mux_subnet
+{
+public:
+    virtual ~mux_in_subnet();
+
+    int getFamily() { return MUX_IPV4; }
+    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
+    mux_subnet::Comparison CompareTo(mux_subnet *msn);
+    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa);
+    bool listinfo(UTF8 *sAddress, int *pnLeadingBits);
+
+private:
+    struct in_addr m_iaBase;
+    struct in_addr m_iaMask;
+    struct in_addr m_iaEnd;
+    int            m_iLeadingBits;
+};
+#endif
+
+// IPv6
+//
+#if defined(HAVE_IN6_ADDR)
+class mux_in6_addr : mux_addr
+{
+public:
+    mux_in6_addr(struct in6_addr);
+    virtual ~mux_in6_addr();
+
+    int getFamily() { return MUX_IPV6; }
+    
+private:
+    struct in6_addr;
+};
+
+class mux_in6_subnet : mux_subnet
+{
+public:
+    mux_in6_subnet();
+    virtual ~mux_in6_subnet();
+
+    int getFamily() { return MUX_IPV6; }
+    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
+};
+#endif
+
+typedef struct addrinfo MUX_ADDRINFO;
 
 #endif // !CONFIG_H

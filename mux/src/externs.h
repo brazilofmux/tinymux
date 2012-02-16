@@ -21,6 +21,9 @@
 //
 void close_sockets(bool emergency, const UTF8 *message);
 void mux_inet_ntop(mux_sockaddr *pmsa, UTF8 *p, size_t n);
+int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
+void mux_freeaddrinfo(MUX_ADDRINFO *res);
+int mux_getnameinfo(const MUX_SOCKADDR *sa, size_t salen, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
 void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 #endif

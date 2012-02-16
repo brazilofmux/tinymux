@@ -3405,378 +3405,6 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
     return lta;
 }
 
-// Subnets
-//
-
-typedef struct
-{
-    int    nShift;
-    UINT32 maxValue;
-    size_t maxOctLen;
-    size_t maxDecLen;
-    size_t maxHexLen;
-} DECODEIPV4;
-
-static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
-{
-    static DECODEIPV4 DecodeIPv4Table[4] =
-    {
-        { 8,         255UL,  3,  3, 2 },
-        { 16,      65535UL,  6,  5, 4 },
-        { 24,   16777215UL,  8,  8, 6 },
-        { 32, 4294967295UL, 11, 10, 8 }
-    };
-
-    *pu32  = (*pu32 << DecodeIPv4Table[nType].nShift) & 0xFFFFFFFFUL;
-    if (len == 0)
-    {
-        return false;
-    }
-    in_addr_t ul = 0;
-    in_addr_t ul2;
-    if (  len >= 3
-       && p[0] == '0'
-       && (  'x' == p[1]
-          || 'X' == p[1]))
-    {
-        // Hexadecimal Path
-        //
-        // Skip the leading zeros.
-        //
-        p += 2;
-        len -= 2;
-        while (*p == '0' && len)
-        {
-            p++;
-            len--;
-        }
-        if (len > DecodeIPv4Table[nType].maxHexLen)
-        {
-            return false;
-        }
-        while (len)
-        {
-            UTF8 ch = *p;
-            ul2 = ul;
-            ul  = (ul << 4) & 0xFFFFFFFFUL;
-            if (ul < ul2)
-            {
-                // Overflow
-                //
-                return false;
-            }
-            if ('0' <= ch && ch <= '9')
-            {
-                ul |= ch - '0';
-            }
-            else if ('A' <= ch && ch <= 'F')
-            {
-                ul |= ch - 'A';
-            }
-            else if ('a' <= ch && ch <= 'f')
-            {
-                ul |= ch - 'a';
-            }
-            else
-            {
-                return false;
-            }
-            p++;
-            len--;
-        }
-    }
-    else if (len >= 1 && p[0] == '0')
-    {
-        // Octal Path
-        //
-        // Skip the leading zeros.
-        //
-        p++;
-        len--;
-        while (*p == '0' && len)
-        {
-            p++;
-            len--;
-        }
-        if (len > DecodeIPv4Table[nType].maxOctLen)
-        {
-            return false;
-        }
-        while (len)
-        {
-            UTF8 ch = *p;
-            ul2 = ul;
-            ul  = (ul << 3) & 0xFFFFFFFFUL;
-            if (ul < ul2)
-            {
-                // Overflow
-                //
-                return false;
-            }
-            if ('0' <= ch && ch <= '7')
-            {
-                ul |= ch - '0';
-            }
-            else
-            {
-                return false;
-            }
-            p++;
-            len--;
-        }
-    }
-    else
-    {
-        // Decimal Path
-        //
-        if (len > DecodeIPv4Table[nType].maxDecLen)
-        {
-            return false;
-        }
-        while (len)
-        {
-            UTF8 ch = *p;
-            ul2 = ul;
-            ul  = (ul * 10) & 0xFFFFFFFFUL;
-            if (ul < ul2)
-            {
-                // Overflow
-                //
-                return false;
-            }
-            ul2 = ul;
-            if ('0' <= ch && ch <= '9')
-            {
-                ul += ch - '0';
-            }
-            else
-            {
-                return false;
-            }
-            if (ul < ul2)
-            {
-                // Overflow
-                //
-                return false;
-            }
-            p++;
-            len--;
-        }
-    }
-    if (ul > DecodeIPv4Table[nType].maxValue)
-    {
-        return false;
-    }
-    *pu32 |= ul;
-    return true;
-}
-
-// ---------------------------------------------------------------------------
-// MakeCanonicalIPv4: inet_addr() does not do reasonable checking for sane
-// syntax on all platforms. On certain operating systems, if passed less than
-// four octets, it will cause a segmentation violation. Furthermore, there is
-// confusion between return values for valid input "255.255.255.255" and
-// return values for invalid input (INADDR_NONE as -1). To overcome these
-// problems, it appears necessary to re-implement inet_addr() with a different
-// interface.
-//
-// n8.n8.n8.n8  Class A format. 0 <= n8 <= 255.
-//
-// Supported Berkeley IP formats:
-//
-//    n8.n8.n16  Class B 128.net.host format. 0 <= n16 <= 65535.
-//    n8.n24     Class A net.host format. 0 <= n24 <= 16777215.
-//    n32        Single 32-bit number. 0 <= n32 <= 4294967295.
-//
-// Each element may be expressed in decimal, octal or hexadecimal. '0' is the
-// octal prefix. '0x' or '0X' is the hexadecimal prefix. Otherwise the number
-// is taken as decimal.
-//
-//    08  Octal
-//    0x8 Hexadecimal
-//    0X8 Hexadecimal
-//    8   Decimal
-//
-bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
-{
-    *pnIP = 0;
-    if (!str)
-    {
-        return false;
-    }
-
-    // Skip leading spaces.
-    //
-    const UTF8 *q = str;
-    while (*q == ' ')
-    {
-        q++;
-    }
-
-    const UTF8 *p = (UTF8 *)strchr((char *)q, '.');
-    int n = 0;
-    while (p)
-    {
-        // Decode
-        //
-        n++;
-        if (n > 3)
-        {
-            return false;
-        }
-        if (!DecodeN(0, p-q, q, pnIP))
-        {
-            return false;
-        }
-        q = p + 1;
-        p = (UTF8 *)strchr((char *)q, '.');
-    }
-
-    // Decode last element.
-    //
-    size_t len = strlen((char *)q);
-    if (!DecodeN(3-n, len, q, pnIP))
-    {
-        return false;
-    }
-    *pnIP = htonl(*pnIP);
-    return true;
-}
-
-// Given a host-ordered mask, this function will determine whether it is a
-// valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
-// a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
-//
-static bool isValidIPv4SubnetMask(in_addr_t ulMask, int *pnLeadingBits)
-{
-    in_addr_t ulTest = 0xFFFFFFFFUL;
-    for (int i = 0; i <= 32; i++)
-    {
-        if (ulMask == ulTest)
-        {
-            *pnLeadingBits = i;
-            return true;
-        }
-        ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
-    }
-    return false;
-}
-
-// Parse IPv4/netmask notation in either standard or CIDR prefix notation
-//
-bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
-{
-    in_addr_t ulMask, ulNetBits;
-    UTF8 *addr_txt;
-    UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
-    if (NULL == mask_txt)
-    {
-        // Standard IP range and netmask notation.
-        //
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, str);
-        mux_strtok_ctl(&tts, T(" \t=,"));
-        addr_txt = mux_strtok_parse(&tts);
-        if (NULL != addr_txt)
-        {
-            mask_txt = mux_strtok_parse(&tts);
-        }
-
-        if (  NULL == addr_txt
-           || '\0' == *addr_txt
-           || NULL == mask_txt
-           || '\0' == *mask_txt)
-        {
-            cf_log_syntax(player, cmd, T("Missing host address or mask."));
-            return false;
-        }
-
-        if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
-           || !isValidIPv4SubnetMask(ulMask = ntohl(ulNetBits), &m_iLeadingBits))
-        {
-            cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
-            return false;
-        }
-        m_iaMask.s_addr = ulNetBits;
-    }
-    else
-    {
-        // RFC 1517, 1518, 1519, 1520: CIDR IP prefix notation
-        //
-        addr_txt = str;
-        *mask_txt++ = '\0';
-        if (!is_integer(mask_txt, NULL))
-        {
-            cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
-            return false;
-        }
-
-        m_iLeadingBits = mux_atol(mask_txt);
-        if (  m_iLeadingBits < 0
-           || 32 < m_iLeadingBits)
-        {
-            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), m_iLeadingBits);
-            return false;
-        }
-        else
-        {
-            // << [0,31] works. << 32 is problematic on some systems.
-            //
-            ulMask = 0;
-            if (m_iLeadingBits > 0)
-            {
-                ulMask = (0xFFFFFFFFUL << (32 - m_iLeadingBits)) & 0xFFFFFFFFUL;
-            }
-            m_iaMask.s_addr = htonl(ulMask);
-        }
-    }
-
-    if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
-    {
-        cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
-        return false;
-    }
-    m_iaBase.s_addr = ulNetBits;
-    in_addr_t ulAddr = ntohl(m_iaBase.s_addr);
-
-    if (ulAddr & ~ulMask)
-    {
-        // The given subnet address contains 'one' bits which are outside
-        // the given subnet mask. If we don't clear these bits, they will
-        // interfere with the subnet tests in site_check. The subnet spec
-        // would be defunct and useless.
-        //
-        cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
-        ulAddr &= ulMask;
-        m_iaBase.s_addr = htonl(ulAddr);
-    }
-
-    m_iaEnd.s_addr = htonl(ulAddr | ~ulMask);
-
-    return true;
-}
-
-bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits)
-{
-    // Base Address
-    //
-    mux_sockaddr msaAddress;
-    memset(&msaAddress, 0, sizeof(msaAddress));
-    msaAddress.sai.sin_family = AF_INET;
-    msaAddress.sai.sin_addr = m_iaBase;
-    mux_inet_ntop(&msaAddress, sAddress, LBUF_SIZE);
-
-    // Leading significant bits
-    //
-    *pnLeadingBits = m_iLeadingBits;
-
-    return true;
-}
-
-mux_in_subnet::~mux_in_subnet()
-{
-}
-
 mux_subnets::mux_subnets()
 {
     msnRoot = NULL;
@@ -3785,83 +3413,6 @@ mux_subnets::mux_subnets()
 mux_subnets::~mux_subnets()
 {
     delete msnRoot;
-}
-
-mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg)
-{
-    if (MUX_IPV4 == msn_arg->getFamily())
-    {
-        mux_in_subnet *t = (mux_in_subnet *)msn_arg;
-        if (ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaBase.s_addr))
-        {
-            // this > t
-            //
-            return mux_subnet::kGreaterThan;
-        }
-        else if (ntohl(m_iaEnd.s_addr) < ntohl(t->m_iaBase.s_addr))
-        {
-            // this < t
-            //
-            return mux_subnet::kLessThan;
-        }
-        else if (  ntohl(m_iaBase.s_addr) < ntohl(t->m_iaBase.s_addr)
-                && ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaEnd.s_addr))
-        {
-            // this contains t
-            //
-            return mux_subnet::kContains;
-        }
-        else if (  ntohl(m_iaBase.s_addr) == ntohl(t->m_iaBase.s_addr)
-                && m_iLeadingBits == t->m_iLeadingBits)
-        {
-            // this == t
-            //
-            return mux_subnet::kEqual;
-        }
-        else
-        {
-            // this is contained by t
-            //
-            return mux_subnet::kContainedBy;
-        }
-    }
-    else
-    {
-        // IPv4 < IPv6
-        //
-        return mux_subnet::kGreaterThan;
-    }
-}
-
-mux_subnet::Comparison mux_in_subnet::CompareTo(mux_sockaddr *msa)
-{
-    if (AF_INET == msa->sa.sa_family)
-    {
-        if (ntohl(msa->sai.sin_addr.s_addr) < ntohl(m_iaBase.s_addr))
-        {
-            // this > t
-            //
-            return mux_subnet::kGreaterThan;
-        }
-        else if (ntohl(m_iaEnd.s_addr) < ntohl(msa->sai.sin_addr.s_addr))
-        {
-            // this < t
-            //
-            return mux_subnet::kLessThan;
-        }
-        else
-        {
-            // this contains t
-            //
-            return mux_subnet::kContains;
-        }
-    }
-    else
-    {
-        // IPv4 < IPv6
-        //
-        return mux_subnet::kGreaterThan;
-    }
 }
 
 mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_arg)
@@ -3945,7 +3496,7 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
     }
 }
 
-void mux_subnets::search(mux_subnet_node *msnRoot, mux_sockaddr *msa, unsigned long *pulInfo)
+void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned long *pulInfo)
 {
     if (NULL == msnRoot)
     {
@@ -4217,28 +3768,28 @@ void mux_subnets::listinfo(dbref player)
     free_lbuf(sAddress);
 }
 
-int mux_subnets::check(mux_sockaddr *msa)
+int mux_subnets::check(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
     return ulInfo;
 }
 
-bool mux_subnets::isRegistered(mux_sockaddr *msa)
+bool mux_subnets::isRegistered(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
     return 0 != (ulInfo & HI_REGISTER);
 }
 
-bool mux_subnets::isForbid(mux_sockaddr *msa)
+bool mux_subnets::isForbid(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
     return 0 != (ulInfo & HI_FORBID);
 }
 
-bool mux_subnets::isSuspect(mux_sockaddr *msa)
+bool mux_subnets::isSuspect(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
     search(msnRoot, msa, &ulInfo);
