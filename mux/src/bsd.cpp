@@ -959,137 +959,106 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 }
 
 
-static void make_socket(PortInfo *Port, const UTF8 *ip_address)
+void make_socket(PortInfo *Port, const UTF8 *ip_address)
 {
-    SOCKET s;
-    MUX_SOCKADDR server;
-    int opt = 1;
     Port->socket = INVALID_SOCKET;
+
+    MUX_ADDRINFO hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    if (NULL == ip_address)
+    {
+        hints.ai_flags = AI_PASSIVE;
+    }
+
+    UTF8 sPort[20];
+    UTF8 *bufc = sPort;
+    safe_ltoa(Port->port, sPort, &bufc);
+    *bufc = '\0';
+
+    MUX_ADDRINFO *servinfo;
+    if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
+    {
+        for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+        {
+            // Create a TCP/IP stream socket
+            //
+            SOCKET s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+            if (IS_INVALID_SOCKET(s))
+            {
+                log_perror(T("NET"), T("FAIL"), NULL, T("creating socket"));
+                return;
+            }
+            DebugTotalSockets++;
+
+            int opt = 1;
+            if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+            {
+                log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
+            }
+
+            // bind our name to the socket
+            //
+            int nRet = bind(s, ai->ai_addr, ai->ai_addrlen);
+            if (IS_SOCKET_ERROR(nRet))
+            {
+                Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
+                if (0 == SOCKET_CLOSE(s))
+                {
+                    DebugTotalSockets--;
+                }
+                s = INVALID_SOCKET;
+                return;
+            }
+
+            // Set the socket to listen
+            //
+            nRet = listen(s, SOMAXCONN);
+
+            if (nRet)
+            {
+                Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
+                if (0 == SOCKET_CLOSE(s))
+                {
+                    DebugTotalSockets--;
+                }
+                s = INVALID_SOCKET;
+                return;
+            }
+
 
 #if defined(WINDOWS_NETWORKING)
 
-    // Create a TCP/IP stream socket
-    //
-    s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (IS_INVALID_SOCKET(s))
-    {
-        log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
-        return;
-    }
+            // Create the MUD listening thread
+            //
+            HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
+            if (NULL == hThread)
+            {
+                log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
+                if (0 == SOCKET_CLOSE(s))
+                {
+                    DebugTotalSockets--;
+                }
+                s = INVALID_SOCKET;
+                return;
+            }
 
-    DebugTotalSockets++;
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
-    }
-
-    // Fill in the the address structure
-    //
-    server.sai.sin_port = htons((unsigned short)(Port->port));
-    server.sai.sin_family = AF_INET;
-    in_addr_t ulNetBits;
-    if (MakeCanonicalIPv4(ip_address, &ulNetBits))
-    {
-        server.sai.sin_addr.s_addr = ulNetBits;
-    }
-    else
-    {
-        server.sai.sin_addr.s_addr = INADDR_ANY;
-    }
-
-    // bind our name to the socket
-    //
-    int nRet = bind(s, &server.sa, sizeof(server.sa));
-
-    if (IS_SOCKET_ERROR(nRet))
-    {
-        Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        s = INVALID_SOCKET;
-        return;
-    }
-
-    // Set the socket to listen
-    //
-    nRet = listen(s, SOMAXCONN);
-
-    if (nRet)
-    {
-        Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        s = INVALID_SOCKET;
-        return;
-    }
-
-    // Create the MUD listening thread
-    //
-    HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
-    if (NULL == hThread)
-    {
-        log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        s = INVALID_SOCKET;
-        return;
-    }
-
-    Port->socket = s;
-
-#elif defined(UNIX_NETWORKING)
-
-    s = socket(AF_INET, SOCK_STREAM, 0);
-    if (IS_INVALID_SOCKET(s))
-    {
-        log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
-        return;
-    }
-
-    DebugTotalSockets++;
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
-    }
-
-    in_addr_t ulNetBits;
-    server.sai.sin_family = AF_INET;
-    if (MakeCanonicalIPv4(ip_address, &ulNetBits))
-    {
-        server.sai.sin_addr.s_addr = ulNetBits;
-    }
-    else
-    {
-        server.sai.sin_addr.s_addr = INADDR_ANY;
-    }
-    server.sai.sin_port = htons((unsigned short)(Port->port));
-
-    int cc  = bind(s, &server.sa, sizeof(server.sai));
-    if (IS_SOCKET_ERROR(cc))
-    {
-        log_perror(T("NET"), T("FAIL"), NULL, T("bind"));
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        s = INVALID_SOCKET;
-        return;
-    }
-
-    listen(s, SOMAXCONN);
-    Port->socket = s;
-#ifdef UNIX_SSL
-    Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->fSSL ? "SSL" : "plaintext");
-#else
-    Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
 #endif
-#endif // WINDOWS_NETWORKING
+
+            Port->socket = s;
+
+#ifdef UNIX_SSL
+            Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->fSSL ? "SSL" : "plaintext");
+#else
+            Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
+#endif
+            break;
+        }
+
+        mux_freeaddrinfo(servinfo);
+    }
 }
 
 #if defined(UNIX_NETWORKING)
@@ -6115,7 +6084,7 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
 }
 
 #endif
- 
+
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res)
 {
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETADDRINFO)

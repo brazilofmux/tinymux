@@ -61,7 +61,7 @@ void cf_init(void)
     mudconf.status_file = StringClone(T("shutdown.status"));
     mudconf.max_cache_size = 1*1024*1024;
 
-    mudconf.ip_address = StringClone(T("0.0.0.0"));
+    mudconf.ip_address = NULL;
     mudconf.ports.n = 1;
     mudconf.ports.pi = new int[1];
     if (NULL != mudconf.ports.pi)

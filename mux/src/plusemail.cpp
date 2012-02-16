@@ -448,7 +448,7 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     mux_ltoa(port, sPort);
 
     MUX_ADDRINFO *servinfo;
-    if (mux_getaddrinfo(conhostname, sPort, &hints, &servinfo))
+    if (0 == mux_getaddrinfo(conhostname, sPort, &hints, &servinfo))
     {
         for (MUX_ADDRINFO *p = servinfo; NULL != p; p = p->ai_next)
         {
