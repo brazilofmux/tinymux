@@ -2836,19 +2836,19 @@ UTF8 *convert_to_html(const UTF8 *pString)
                             case kIntense:
                                 csPrev &= ~CS_INTENSE;
                                 break;
-                            
+
                             case kUnderline:
                                 csPrev &= ~CS_UNDERLINE;
                                 break;
-                            
+
                             case kBlink:
                                 csPrev &= ~CS_BLINK;
                                 break;
-                            
+
                             case kInverse:
                                 csPrev &= ~CS_INVERSE;
                                 break;
-                            
+
                             case kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
@@ -2880,19 +2880,19 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     case kIntense:
                         csPrev |= CS_INTENSE;
                         break;
-                    
+
                     case kUnderline:
                         csPrev |= CS_UNDERLINE;
                         break;
-                    
+
                     case kBlink:
                         csPrev |= CS_BLINK;
                         break;
-                    
+
                     case kInverse:
                         csPrev |= CS_INVERSE;
                         break;
-                    
+
                     case kColor:
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
@@ -6882,19 +6882,19 @@ void mux_string::export_TextHtml
                             case kIntense:
                                 csPrev &= ~CS_INTENSE;
                                 break;
-                            
+
                             case kUnderline:
                                 csPrev &= ~CS_UNDERLINE;
                                 break;
-                            
+
                             case kBlink:
                                 csPrev &= ~CS_BLINK;
                                 break;
-                            
+
                             case kInverse:
                                 csPrev &= ~CS_INVERSE;
                                 break;
-                            
+
                             case kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
@@ -6919,19 +6919,19 @@ void mux_string::export_TextHtml
                     case kIntense:
                         csPrev |= CS_INTENSE;
                         break;
-                    
+
                     case kUnderline:
                         csPrev |= CS_UNDERLINE;
                         break;
-                    
+
                     case kBlink:
                         csPrev |= CS_BLINK;
                         break;
-                    
+
                     case kInverse:
                         csPrev |= CS_INVERSE;
                         break;
-                    
+
                     case kColor:
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
@@ -6954,19 +6954,19 @@ void mux_string::export_TextHtml
         case kIntense:
             csPrev &= ~CS_INTENSE;
             break;
-        
+
         case kUnderline:
             csPrev &= ~CS_UNDERLINE;
             break;
-        
+
         case kBlink:
             csPrev &= ~CS_BLINK;
             break;
-        
+
         case kInverse:
             csPrev &= ~CS_INVERSE;
             break;
-        
+
         case kColor:
             csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
             break;

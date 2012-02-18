@@ -1853,7 +1853,7 @@ FUNCTION(fun_log)
                 base = mux_atof(fargs[1]);
             }
         }
-        else if (  'e' == fargs[1][0] 
+        else if (  'e' == fargs[1][0]
                 && '\0' == fargs[1][1])
         {
             kBase = kNatural;

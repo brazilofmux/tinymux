@@ -764,7 +764,7 @@ public:
     virtual ~mux_in6_addr();
 
     int getFamily() { return MUX_IPV6; }
-    
+
 private:
     struct in6_addr;
 };

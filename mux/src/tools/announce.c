@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     }
     opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-    {   
+    {
         perror("setsockopt");
     }
     if (bind(s, (struct sockaddr *)&sin, sizeof sin) < 0)

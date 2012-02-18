@@ -1747,7 +1747,7 @@ public:
     void compress_Spaces(void);
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
     void edit(mux_string &sFrom, const mux_string &sTo);
-	void encode_Html(void);
+    void encode_Html(void);
     UTF8 export_Char(size_t n) const; // Deprecated.
     LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
     ColorState export_Color(size_t n) const;

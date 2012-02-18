@@ -342,7 +342,7 @@ public:
     //
     bool noguest(mux_subnet *msn);
     bool guest(mux_subnet *msn);
-  
+
     // Suspect Group: suspect, trust
     //
     bool suspect(mux_subnet *msn);
