@@ -1194,20 +1194,34 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                 k = *pnPorts;
                 aPorts[k].port = piaSSL->pi[j];
                 aPorts[k].fSSL = true;
-                make_socket(aPorts+k, ip_address);
-                if (  !IS_INVALID_SOCKET(aPorts[k].socket)
-#if defined(UNIX_NETWORKING)
-                   && ValidSocket(aPorts[k].socket)
-#endif // UNIX_NETWORKING
-                   )
+
+                UTF8 *bufc = sPort;
+                safe_ltoa(aPorts[k].port, sPort, &bufc);
+                *bufc = '\0';
+
+                MUX_ADDRINFO *servinfo;
+                if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
                 {
-#if defined(UNIX_NETWORKING_SELECT)
-                    if (maxd <= aPorts[k].socket)
+                    for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
                     {
-                        maxd = aPorts[k].socket + 1;
-                    }
+                        if (  make_socket(&aPorts[k].socket, ai)
+                           && !IS_INVALID_SOCKET(aPorts[k].socket)
+#if defined(UNIX_NETWORKING)
+                           && ValidSocket(aPorts[k].socket)
+#endif // UNIX_NETWORKING
+                           )
+                        {
+#if defined(UNIX_NETWORKING_SELECT)
+                            if (maxd <= aPorts[k].socket)
+                            {
+                                maxd = aPorts[k].socket + 1;
+                            }
 #endif // UNIX_NETWORKING_SELECT
-                    (*pnPorts)++;
+                            (*pnPorts)++;
+                        }
+                        break;
+                    }
+                    mux_freeaddrinfo(servinfo);
                 }
             }
         }
