@@ -72,7 +72,7 @@ static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 static OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
 static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
-static DWORD WINAPI MUDListenThread(LPVOID pVoid);
+static DWORD WINAPI MUXListenThread(LPVOID pVoid);
 static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 static bool bDescriptorListInit = false;
 
@@ -959,106 +959,68 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 }
 
 
-void make_socket(PortInfo *Port, const UTF8 *ip_address)
+bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
 {
-    Port->socket = INVALID_SOCKET;
-
-    MUX_ADDRINFO hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    if (NULL == ip_address)
+    // Create a TCP/IP stream socket
+    //
+    SOCKET s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (IS_INVALID_SOCKET(s))
     {
-        hints.ai_flags = AI_PASSIVE;
+        log_perror(T("NET"), T("FAIL"), NULL, T("creating socket"));
+        return false;
+    }
+    DebugTotalSockets++;
+
+    int opt = 1;
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
     }
 
-    UTF8 sPort[20];
-    UTF8 *bufc = sPort;
-    safe_ltoa(Port->port, sPort, &bufc);
-    *bufc = '\0';
-
-    MUX_ADDRINFO *servinfo;
-    if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
+    // bind our name to the socket
+    //
+    int nRet = bind(s, ai->ai_addr, ai->ai_addrlen);
+    if (IS_SOCKET_ERROR(nRet))
     {
-        for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+        Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
+        if (0 == SOCKET_CLOSE(s))
         {
-            // Create a TCP/IP stream socket
-            //
-            SOCKET s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-            if (IS_INVALID_SOCKET(s))
-            {
-                log_perror(T("NET"), T("FAIL"), NULL, T("creating socket"));
-                return;
-            }
-            DebugTotalSockets++;
+            DebugTotalSockets--;
+        }
+        return false;
+    }
 
-            int opt = 1;
-            if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-            {
-                log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
-            }
+    // Set the socket to listen
+    //
+    nRet = listen(s, SOMAXCONN);
 
-            // bind our name to the socket
-            //
-            int nRet = bind(s, ai->ai_addr, ai->ai_addrlen);
-            if (IS_SOCKET_ERROR(nRet))
-            {
-                Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
-                if (0 == SOCKET_CLOSE(s))
-                {
-                    DebugTotalSockets--;
-                }
-                s = INVALID_SOCKET;
-                return;
-            }
-
-            // Set the socket to listen
-            //
-            nRet = listen(s, SOMAXCONN);
-
-            if (nRet)
-            {
-                Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
-                if (0 == SOCKET_CLOSE(s))
-                {
-                    DebugTotalSockets--;
-                }
-                s = INVALID_SOCKET;
-                return;
-            }
-
+    if (nRet)
+    {
+        Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
+        if (0 == SOCKET_CLOSE(s))
+        {
+            DebugTotalSockets--;
+        }
+        return false;
+    }
+    *ps = s;
 
 #if defined(WINDOWS_NETWORKING)
 
-            // Create the MUD listening thread
-            //
-            HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
-            if (NULL == hThread)
-            {
-                log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
-                if (0 == SOCKET_CLOSE(s))
-                {
-                    DebugTotalSockets--;
-                }
-                s = INVALID_SOCKET;
-                return;
-            }
-
-#endif
-
-            Port->socket = s;
-
-#ifdef UNIX_SSL
-            Log.tinyprintf(T("Listening on port %d (%s)" ENDLINE), Port->port, Port->fSSL ? "SSL" : "plaintext");
-#else
-            Log.tinyprintf(T("Listening on port %d" ENDLINE), Port->port);
-#endif
-            break;
+    // Create the listening thread.
+    //
+    HANDLE hThread = CreateThread(NULL, 0, MUXListenThread, (LPVOID)ps, 0, NULL);
+    if (NULL == hThread)
+    {
+        log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
+        if (0 == SOCKET_CLOSE(s))
+        {
+            DebugTotalSockets--;
         }
-
-        mux_freeaddrinfo(servinfo);
+        return false;
     }
+#endif
+    return true;
 }
 
 #if defined(UNIX_NETWORKING)
@@ -1150,6 +1112,15 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         }
     }
 
+    MUX_ADDRINFO hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    UTF8 sPort[20];
+
     // Any requested port which does not appear in the existing open set
     // of ports should be opened.
     //
@@ -1172,20 +1143,33 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 #ifdef UNIX_SSL
             aPorts[k].fSSL = false;
 #endif
-            make_socket(aPorts+k, ip_address);
-            if (  !IS_INVALID_SOCKET(aPorts[k].socket)
-#if defined(UNIX_NETWORKING)
-               && ValidSocket(aPorts[k].socket)
-#endif // UNIX_NETWORKING
-               )
+            UTF8 *bufc = sPort;
+            safe_ltoa(aPorts[k].port, sPort, &bufc);
+            *bufc = '\0';
+
+            MUX_ADDRINFO *servinfo;
+            if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
             {
-#if defined(UNIX_NETWORKING_SELECT)
-                if (maxd <= aPorts[k].socket)
+                for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
                 {
-                    maxd = aPorts[k].socket + 1;
-                }
+                    if (  make_socket(&aPorts[k].socket, ai)
+                       && !IS_INVALID_SOCKET(aPorts[k].socket)
+#if defined(UNIX_NETWORKING)
+                       && ValidSocket(aPorts[k].socket)
+#endif // UNIX_NETWORKING
+                       )
+                    {
+#if defined(UNIX_NETWORKING_SELECT)
+                        if (maxd <= aPorts[k].socket)
+                        {
+                            maxd = aPorts[k].socket + 1;
+                        }
 #endif // UNIX_NETWORKING_SELECT
-                (*pnPorts)++;
+                        (*pnPorts)++;
+                    }
+                    break;
+                }
+                mux_freeaddrinfo(servinfo);
             }
         }
     }
@@ -4948,12 +4932,13 @@ void list_system_resources(dbref player)
 #if defined(WINDOWS_NETWORKING)
 
 // ---------------------------------------------------------------------------
-// Thread to listen on MUD port - for Windows NT
+// Thread to listen on port - for Windows NT
 // ---------------------------------------------------------------------------
 //
-static DWORD WINAPI MUDListenThread(LPVOID pVoid)
+static DWORD WINAPI MUXListenThread(LPVOID pVoid)
 {
-    PortInfo *Port = (PortInfo *)pVoid;
+    SOCKET *ps = (SOCKET *)pVoid;
+    SOCKET s = *ps;
 
     MUX_SOCKADDR SockAddr;
     int          nLen;
@@ -4970,8 +4955,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
         // Block on accept()
         //
         nLen = sizeof(SOCKADDR_IN);
-        SOCKET socketClient = accept(Port->socket, (LPSOCKADDR) &SockAddr,
-            &nLen);
+        SOCKET socketClient = accept(s, (LPSOCKADDR) &SockAddr, &nLen);
 
         if (socketClient == INVALID_SOCKET)
         {
