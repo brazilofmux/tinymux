@@ -676,16 +676,43 @@ typedef int SOCKET;
 
 #endif
 
-typedef union mux_sockaddr
+class mux_addr;
+
+#define MUX_SOCKADDR mux_sockaddr
+class mux_sockaddr
 {
-    struct sockaddr      sa;
+public:
+    void Clear();
+    void SetAddress(in_addr ia);
+    void SetAddress(in6_addr ia);
+    void SetPort(unsigned short port);
+
+    unsigned short Family() const;
+    //mux_addr Address() const;
+    unsigned short Port() const;
+    void ntop(UTF8 *sAddress, size_t len) const;
+
+    struct sockaddr *sa();
+    const struct sockaddr *saro() const;
+    struct sockaddr_in *sai();
+    const struct sockaddr_in *sairo() const;
+    struct sockaddr_in6 *sai6();
+    const struct sockaddr_in6 *sai6ro() const;
+    size_t salen() const;
+    size_t maxaddrlen() const;
+
+private:
+    union
+    {
+        struct sockaddr      sa;
 #if defined(HAVE_SOCKADDR_IN)
-    struct sockaddr_in   sai;
+        struct sockaddr_in   sai;
 #endif
 #if defined(HAVE_SOCKADDR_IN6)
-    struct sockaddr_in6  sai6;
+        struct sockaddr_in6  sai6;
 #endif
-} MUX_SOCKADDR;
+    } u;
+};
 
 #define MUX_IPV4 1
 #define MUX_IPV6 2

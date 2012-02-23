@@ -190,8 +190,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             UTF8 host_address[MAX_STRING];
             UTF8 host_name[MAX_STRING];
 
-            if (  0 == mux_getnameinfo(&req.msa, sizeof(req.msa.sai), host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
-               && 0 == mux_getnameinfo(&req.msa, sizeof(req.msa.sai), host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
+            if (  0 == mux_getnameinfo(&req.msa, host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
+               && 0 == mux_getnameinfo(&req.msa, host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
@@ -1743,7 +1743,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
-    MUX_SOCKADDR addr;
+    mux_sockaddr addr;
 #ifdef SOCKLEN_T_DCL
     socklen_t addr_len;
 #else // SOCKLEN_T_DCL
@@ -1755,9 +1755,9 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< new_connection >");
-    addr_len = sizeof(addr.sai);
+    addr_len = addr.maxaddrlen();
 
-    SOCKET newsock = accept(Port->socket, &addr.sa, &addr_len);
+    SOCKET newsock = accept(Port->socket, addr.sa(), &addr_len);
 
     if (IS_INVALID_SOCKET(newsock))
     {
@@ -1767,8 +1767,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     }
 
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
-    mux_inet_ntop(&addr, pBuffM2, MBUF_SIZE);
-    unsigned short usPort = ntohs(addr.sai.sin_port);
+    addr.ntop(pBuffM2, MBUF_SIZE);
+    unsigned short usPort = addr.Port();
 
     DebugTotalSockets++;
     if (mudstate.access_list.isForbid(&addr))
@@ -2399,7 +2399,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *msa;
-    mux_inet_ntop(msa, d->addr, sizeof(d->addr));
+    msa->ntop(d->addr, sizeof(d->addr));
 
 #if defined(WINDOWS_NETWORKING)
     // protect adding the descriptor from the linked list from
@@ -4954,7 +4954,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
     SOCKET *ps = (SOCKET *)pVoid;
     SOCKET s = *ps;
 
-    MUX_SOCKADDR SockAddr;
+    mux_sockaddr SockAddr;
     int          nLen;
     BOOL         b;
 
@@ -4968,8 +4968,8 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
         //
         // Block on accept()
         //
-        nLen = sizeof(SOCKADDR_IN);
-        SOCKET socketClient = accept(s, (LPSOCKADDR) &SockAddr, &nLen);
+        nLen = SockAddr.maxaddrlen();
+        SOCKET socketClient = accept(s, SockAddr.sa(), &nLen);
 
         if (socketClient == INVALID_SOCKET)
         {
@@ -4984,8 +4984,8 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
         {
             UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            unsigned short us = ntohs(SockAddr.sai.sin_port);
-            mux_inet_ntop(&SockAddr, host_address, sizeof(host_address));
+            unsigned short us = SockAddr.Port();
+            SockAddr.ntop(host_address, sizeof(host_address));
             Log.tinyprintf(T("[%d/%s] Connection refused.  (Remote port %d)"),
                 socketClient, host_address, us);
             ENDLOG;
@@ -5298,7 +5298,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         else if (lpo == &lpo_welcome)
         {
             UTF8 *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
-            mux_inet_ntop(&d->address, buff, MBUF_SIZE);
+            d->address.ntop(buff, MBUF_SIZE);
 
             // If the socket is invalid, the we were unable to queue a read
             // request, and the port was shutdown while this packet was in
@@ -5312,7 +5312,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf(T("[%s/%s] Connection opened (remote port %d)"),
                 bInvalidSocket ? T("UNKNOWN") : lDesc, buff,
-                ntohs(d->address.sai.sin_port));
+                d->address.Port());
             ENDLOG;
 
             SiteMonSend(d->descriptor, buff, d, T("Connection"));
@@ -5323,7 +5323,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC");
                 Log.tinyprintf(T("[UNKNOWN/%s] Connection closed prematurely (remote port %d)"),
-                    buff, ntohs(d->address.sai.sin_port));
+                    buff, d->address.Port());
                 ENDLOG;
 
                 SiteMonSend(d->descriptor, buff, d, T("Connection closed prematurely"));
@@ -5770,11 +5770,10 @@ bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits)
 {
     // Base Address
     //
-    MUX_SOCKADDR msaAddress;
-    memset(&msaAddress, 0, sizeof(msaAddress));
-    msaAddress.sai.sin_family = AF_INET;
-    msaAddress.sai.sin_addr = m_iaBase;
-    mux_inet_ntop(&msaAddress, sAddress, LBUF_SIZE);
+    mux_sockaddr msa;
+    msa.Clear();
+    msa.SetAddress(m_iaBase);
+    msa.ntop(sAddress, LBUF_SIZE);
 
     // Leading significant bits
     //
@@ -5835,15 +5834,15 @@ mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg)
 
 mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa)
 {
-    if (AF_INET == msa->sa.sa_family)
+    if (AF_INET == msa->Family())
     {
-        if (ntohl(msa->sai.sin_addr.s_addr) < ntohl(m_iaBase.s_addr))
+        if (ntohl(msa->sai()->sin_addr.s_addr) < ntohl(m_iaBase.s_addr))
         {
             // this > t
             //
             return mux_subnet::kGreaterThan;
         }
-        else if (ntohl(m_iaEnd.s_addr) < ntohl(msa->sai.sin_addr.s_addr))
+        else if (ntohl(m_iaEnd.s_addr) < ntohl(msa->sai()->sin_addr.s_addr))
         {
             // this < t
             //
@@ -5861,32 +5860,6 @@ mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa)
         // IPv4 < IPv6
         //
         return mux_subnet::kGreaterThan;
-    }
-}
-
-void mux_inet_ntop(MUX_SOCKADDR *msa, UTF8 *p, size_t n)
-{
-    size_t salen;
-    switch (msa->sa.sa_family)
-    {
-#if defined(HAVE_SOCKADDR_IN)
-    case AF_INET:
-        salen = sizeof(msa->sai);
-        break;
-#endif
-#if defined(HAVE_SOCKADDR_IN6)
-    case AF_INET6:
-        salen = sizeof(msa->sai6);
-        break;
-#endif
-    default:
-        p[0] = '\0';
-        return;
-    }
-
-    if (0 != mux_getnameinfo(msa, salen, p, n, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV))
-    {
-        p[0] = '\0';
     }
 }
 
@@ -6284,14 +6257,14 @@ static int lookup_servicename(unsigned short port, UTF8 *serv, size_t servlen, i
 }
 #endif
 
-int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags)
+int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags)
 {
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETNAMEINFO)
-    return getnameinfo(&msa->sa, salen, (char *)host, hostlen, (char *)serv, servlen, flags);
+    return getnameinfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
 #elif defined(WINDOWS_NETWORKING)
     if (NULL != fpGetNameInfo)
     {
-        return fpGetNameInfo(&msa->sa, salen, (char *)host, hostlen, (char *)serv, servlen, flags);
+        return fpGetNameInfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
     }
 #endif
 
@@ -6304,8 +6277,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t ho
         return EAI_NONAME;
     }
 
-    if (  AF_INET != msa->sa.sa_family
-       || sizeof(msa->sai) != salen)
+    if (AF_INET != msa->Family())
     {
         return EAI_FAMILY;
     }
@@ -6314,7 +6286,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t ho
     if (  NULL != host
        && 0 < hostlen)
     {
-        status = lookup_hostname(&msa->sai.sin_addr, host, hostlen, flags);
+        status = lookup_hostname(&msa->sairo()->sin_addr, host, hostlen, flags);
         if (0 != status)
         {
             return status;
@@ -6324,10 +6296,87 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, size_t salen, UTF8 *host, size_t ho
     if (  NULL != serv
        && 0 < servlen)
     {
-        unsigned short port = ntohs(msa->sai.sin_port);
+        unsigned short port = msa->Port();
         return lookup_servicename(port, serv, servlen, flags);
     }
     return 0;
 #endif
 }
 
+unsigned short mux_sockaddr::Port() const
+{
+    switch (u.sa.sa_family)
+    {
+    case AF_INET:
+        return  ntohs(u.sai.sin_port);
+
+    case AF_INET6:
+        return ntohs(u.sai6.sin6_port);
+
+    default:
+        return 0;
+    }
+}
+
+struct sockaddr *mux_sockaddr::sa()
+{
+    return &u.sa;
+}
+
+size_t mux_sockaddr::maxaddrlen() const
+{
+    return sizeof(u);
+}
+
+void mux_sockaddr::ntop(UTF8 *sAddress, size_t len) const
+{
+    if (0 != mux_getnameinfo(this, sAddress, len, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV))
+    {
+        sAddress[0] = '\0';
+    }
+}
+
+void mux_sockaddr::SetAddress(struct in_addr ia)
+{
+    u.sai.sin_family = AF_INET;
+    u.sai.sin_addr = ia;
+}
+void mux_sockaddr::Clear()
+{
+    memset(&u, 0, sizeof(u));
+}
+
+struct sockaddr_in *mux_sockaddr::sai()
+{
+    return &u.sai;
+}
+
+unsigned short mux_sockaddr::Family() const
+{
+    return u.sa.sa_family;
+}
+
+struct sockaddr_in const *mux_sockaddr::sairo() const
+{
+    return &u.sai;
+}
+
+struct sockaddr const *mux_sockaddr::saro() const
+{
+    return &u.sa;
+}
+
+size_t mux_sockaddr::salen() const
+{
+    switch (u.sa.sa_family)
+    {
+    case AF_INET:
+        return sizeof(u.sai);
+
+    case AF_INET6:
+        return sizeof(u.sai6);
+        
+    default:
+        return 0;
+    }
+}

@@ -1159,7 +1159,7 @@ static void announce_connect(dbref player, DESC *d)
     UTF8 *time_str = ltaNow.ReturnDateString(7);
 
     UTF8 host_address[MBUF_SIZE];
-    mux_inet_ntop(&d->address, host_address, sizeof(host_address));
+    d->address.ntop(host_address, sizeof(host_address));
     record_login(player, true, time_str, d->addr, d->username, host_address);
     if (mudconf.have_mailer)
     {
@@ -2410,7 +2410,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         }
 
         UTF8 host_address[MBUF_SIZE];
-        mux_inet_ntop(&d->address, host_address, sizeof(host_address));
+        d->address.ntop(host_address, sizeof(host_address));
         player = connect_player(user, password, d->addr, d->username, host_address);
         if (  player == NOTHING
            || (!isGuest && Guest.CheckGuest(player)))
