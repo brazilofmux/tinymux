@@ -17,36 +17,6 @@
 #include "mudconf.h"
 #include "svdrand.h"
 
-// From bsd.cpp.
-//
-void close_sockets(bool emergency, const UTF8 *message);
-void mux_inet_ntop(mux_sockaddr *pmsa, UTF8 *p, size_t n);
-int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
-void mux_freeaddrinfo(MUX_ADDRINFO *res);
-int mux_getnameinfo(const MUX_SOCKADDR *sa, size_t salen, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
-#if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
-void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
-#endif
-#if defined(HAVE_WORKING_FORK)
-void CleanUpSlaveSocket(void);
-void CleanUpSlaveProcess(void);
-#ifdef STUB_SLAVE
-void CleanUpStubSlaveSocket(void);
-void WaitOnStubSlaveProcess(void);
-void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
-extern "C" MUX_RESULT DCL_API pipepump(void);
-#endif // STUB_SLAVE
-#endif // HAVE_WORKING_FORK
-#ifdef UNIX_SSL
-void CleanUpSSLConnections(void);
-#endif
-
-#if defined(WINDOWS_NETWORKING)
-extern CRITICAL_SECTION csDescriptorList;
-#endif // WINDOWS_NETWORKING
-
-extern NAMETAB sigactions_nametab[];
-
 // From conf.cpp
 //
 void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
@@ -1015,59 +985,12 @@ void list_system_resources(dbref player);
 int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
 #endif // WOD_REALMS
 
-typedef struct
-{
-    int    port;
-    SOCKET socket;
-#ifdef UNIX_SSL
-    bool   fSSL;
-#endif
-} PortInfo;
-
-#define MAX_LISTEN_PORTS 10
-#ifdef UNIX_SSL
-extern bool initialize_ssl();
-extern void shutdown_ssl();
-
-extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
-#else
-extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
-#endif
-extern int      nMainGamePorts;
-
-#if defined(UNIX_NETWORKING_SELECT)
-extern int maxd;
-#endif // UNIX_NETWORKING_SELECT
-
-extern unsigned int ndescriptors;
-
 extern long DebugTotalFiles;
-extern long DebugTotalSockets;
-
-#if defined(WINDOWS_NETWORKING)
-extern long DebugTotalThreads;
-extern long DebugTotalSemaphores;
-extern HANDLE hGameProcess;
-typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
-    DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
-typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
-    PADDRINFOA *ppResult);
-typedef void __stdcall FFREEADDRINFO(PADDRINFOA pAddrInfo);
-
-extern FGETNAMEINFO *fpGetNameInfo;
-extern FGETADDRINFO *fpGetAddrInfo;
-extern FFREEADDRINFO *fpFreeAddrInfo;
-#endif // WINDOWS_NETWORKING
-
 extern pid_t game_pid;
 
 // From timer.cpp
 //
 void init_timer(void);
-#if defined(WINDOWS_NETWORKING)
-void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
-void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
-#endif // WINDOWS_NETWORKING
 void dispatch_DatabaseDump(void *pUnused, int iUnused);
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
 void dispatch_IdleCheck(void *pUnused, int iUnused);
@@ -1075,7 +998,6 @@ void dispatch_CheckEvents(void *pUnused, int iUnused);
 #ifndef MEMORY_BASED
 void dispatch_CacheTick(void *pUnused, int iUnused);
 #endif
-
 
 // Using a heap as the data structure for representing this priority
 // has some attributes which we depend on:

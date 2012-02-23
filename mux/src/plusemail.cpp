@@ -18,6 +18,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 #include "mathutil.h"
 
 #include "_build.h"

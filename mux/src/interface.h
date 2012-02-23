@@ -233,6 +233,30 @@ void DisableUs(DESC *d, unsigned char chOption);
 #define DS_PUEBLOCLIENT 0x0004      // Client is Pueblo-enhanced.
 
 extern DESC *descriptor_list;
+extern unsigned int ndescriptors;
+#if defined(WINDOWS_NETWORKING)
+extern CRITICAL_SECTION csDescriptorList;
+#endif // WINDOWS_NETWORKING
+
+typedef struct
+{
+    int    port;
+    SOCKET socket;
+#ifdef UNIX_SSL
+    bool   fSSL;
+#endif
+} PortInfo;
+
+#define MAX_LISTEN_PORTS 10
+#ifdef UNIX_SSL
+extern bool initialize_ssl();
+extern void shutdown_ssl();
+
+extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
+#else
+extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+#endif
+extern int      nMainGamePorts;
 
 /* from the net interface */
 
@@ -312,5 +336,59 @@ extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
     for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->next : NULL))
+
+// From bsd.cpp.
+//
+void close_sockets(bool emergency, const UTF8 *message);
+void mux_inet_ntop(mux_sockaddr *pmsa, UTF8 *p, size_t n);
+int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
+void mux_freeaddrinfo(MUX_ADDRINFO *res);
+int mux_getnameinfo(const MUX_SOCKADDR *sa, size_t salen, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
+#if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
+#endif
+#if defined(HAVE_WORKING_FORK)
+void CleanUpSlaveSocket(void);
+void CleanUpSlaveProcess(void);
+#ifdef STUB_SLAVE
+void CleanUpStubSlaveSocket(void);
+void WaitOnStubSlaveProcess(void);
+void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
+extern "C" MUX_RESULT DCL_API pipepump(void);
+#endif // STUB_SLAVE
+#endif // HAVE_WORKING_FORK
+#ifdef UNIX_SSL
+void CleanUpSSLConnections(void);
+#endif
+
+extern NAMETAB sigactions_nametab[];
+
+#if defined(UNIX_NETWORKING_SELECT)
+extern int maxd;
+#endif // UNIX_NETWORKING_SELECT
+
+extern long DebugTotalSockets;
+
+#if defined(WINDOWS_NETWORKING)
+extern long DebugTotalThreads;
+extern long DebugTotalSemaphores;
+extern HANDLE hGameProcess;
+typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
+    DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
+typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
+    PADDRINFOA *ppResult);
+typedef void __stdcall FFREEADDRINFO(PADDRINFOA pAddrInfo);
+
+extern FGETNAMEINFO *fpGetNameInfo;
+extern FGETADDRINFO *fpGetAddrInfo;
+extern FFREEADDRINFO *fpFreeAddrInfo;
+#endif // WINDOWS_NETWORKING
+
+// From timer.cpp
+//
+#if defined(WINDOWS_NETWORKING)
+void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
+#endif // WINDOWS_NETWORKING
 
 #endif // !__INTERFACE__H
