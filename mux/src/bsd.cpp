@@ -6189,6 +6189,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
     if (NULL != fpFreeAddrInfo)
     {
         fpFreeAddrInfo(res);
+        return;
     }
 #endif
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_FREEADDRINFO))
