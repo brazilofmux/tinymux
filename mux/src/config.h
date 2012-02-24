@@ -685,7 +685,6 @@ public:
     void Clear();
     void SetAddress(in_addr ia);
     void SetAddress(in6_addr ia);
-    void SetPort(unsigned short port);
 
     unsigned short Family() const;
     //mux_addr Address() const;

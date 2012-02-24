@@ -1071,7 +1071,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         bFound = false;
         for (j = 0; j < pia->n; j++)
         {
-            if (aPorts[i].port == pia->pi[j])
+            if (aPorts[i].msa.Port() == pia->pi[j])
             {
                 bFound = true;
                 break;
@@ -1083,7 +1083,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         {
             for (j = 0; j < piaSSL->n; j++)
             {
-                if (aPorts[i].port == piaSSL->pi[j])
+                if (aPorts[i].msa.Port() == piaSSL->pi[j])
                 {
                     bFound = true;
                     break;
@@ -1106,7 +1106,6 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                 {
                     aPorts[i] = aPorts[k];
                 }
-                aPorts[k].port = 0;
                 aPorts[k].socket = INVALID_SOCKET;
             }
         }
@@ -1129,7 +1128,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         bFound = false;
         for (i = 0; i < *pnPorts; i++)
         {
-            if (aPorts[i].port == pia->pi[j])
+            if (aPorts[i].msa.Port() == pia->pi[j])
             {
                 bFound = true;
                 break;
@@ -1139,12 +1138,12 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         if (!bFound)
         {
             k = *pnPorts;
-            aPorts[k].port = pia->pi[j];
+            unsigned short usPort = pia->pi[j];
 #ifdef UNIX_SSL
             aPorts[k].fSSL = false;
 #endif
             UTF8 *bufc = sPort;
-            safe_ltoa(aPorts[k].port, sPort, &bufc);
+            safe_ltoa(usPort, sPort, &bufc);
             *bufc = '\0';
 
             MUX_ADDRINFO *servinfo;
@@ -1165,6 +1164,8 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                             maxd = aPorts[k].socket + 1;
                         }
 #endif // UNIX_NETWORKING_SELECT
+                        socklen_t len = aPorts[k].msa.maxaddrlen();
+                        getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
                         (*pnPorts)++;
                     }
                     break;
@@ -1182,7 +1183,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
             bFound = false;
             for (i = 0; i < *pnPorts; i++)
             {
-                if (aPorts[i].port == piaSSL->pi[j])
+                if (aPorts[i].msa.Port() == piaSSL->pi[j])
                 {
                     bFound = true;
                     break;
@@ -1192,11 +1193,11 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
             if (!bFound)
             {
                 k = *pnPorts;
-                aPorts[k].port = piaSSL->pi[j];
+                unsigned short usPort = piaSSL->pi[j];
                 aPorts[k].fSSL = true;
 
                 UTF8 *bufc = sPort;
-                safe_ltoa(aPorts[k].port, sPort, &bufc);
+                safe_ltoa(usPort, sPort, &bufc);
                 *bufc = '\0';
 
                 MUX_ADDRINFO *servinfo;
@@ -1217,6 +1218,8 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                                 maxd = aPorts[k].socket + 1;
                             }
 #endif // UNIX_NETWORKING_SELECT
+                            socklen_t len = aPorts[k].msa.maxaddrlen();
+                            getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
                             (*pnPorts)++;
                         }
                         break;
@@ -6308,7 +6311,7 @@ unsigned short mux_sockaddr::Port() const
     switch (u.sa.sa_family)
     {
     case AF_INET:
-        return  ntohs(u.sai.sin_port);
+        return ntohs(u.sai.sin_port);
 
     case AF_INET6:
         return ntohs(u.sai6.sin6_port);

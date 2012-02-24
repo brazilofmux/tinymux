@@ -240,7 +240,7 @@ extern CRITICAL_SECTION csDescriptorList;
 
 typedef struct
 {
-    int    port;
+    mux_sockaddr msa;
     SOCKET socket;
 #ifdef UNIX_SSL
     bool   fSSL;
