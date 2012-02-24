@@ -49,7 +49,9 @@ DESC *descriptor_list = NULL;
 static void TelnetSetup(DESC *d);
 static void SiteMonSend(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
+#if defined(UNIX_NETWORKING)
 static DESC *new_connection(PortInfo *Port, int *piError);
+#endif
 static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
 
@@ -78,7 +80,6 @@ static bool bDescriptorListInit = false;
 
 typedef struct
 {
-    int           listen_port;
     MUX_SOCKADDR  msa;
 } SLAVE_REQUEST;
 
@@ -1741,8 +1742,6 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 }
 #endif // HAVE_WORKINGFORK && STUB_SLAVE
 
-#endif // UNIX_NETWORKING
-
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
@@ -1800,40 +1799,6 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     }
     else
     {
-#if defined(WINDOWS_NETWORKING)
-        // Make slave request
-        //
-        // Go take control of the stack, but don't bother if it takes
-        // longer than 5 seconds to do it.
-        //
-        if (  bSlaveBooted
-           && WAIT_OBJECT_0 == WaitForSingleObject(hSlaveRequestStackSemaphore, 5000))
-        {
-            // We have control of the stack. Skip the request if the stack is full.
-            //
-            if (iSlaveRequest < SLAVE_REQUEST_STACK_SIZE)
-            {
-                // There is room on the stack, so make the request.
-                //
-                SlaveRequests[iSlaveRequest].msa = addr;
-                SlaveRequests[iSlaveRequest].listen_port = Port->port;
-                iSlaveRequest++;
-                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
-
-                // Wake up a single slave thread. Event automatically resets itself.
-                //
-                ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
-            }
-            else
-            {
-                // No room on the stack, so skip it.
-                //
-                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
-            }
-        }
-#endif // WINDOWS_NETWORKING
-
-#if defined(UNIX_NETWORKING)
 #if defined(HAVE_WORKING_FORK)
         // Make slave request
         //
@@ -1855,7 +1820,6 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             free_lbuf(pBuffL1);
         }
 #endif // HAVE_WORKING_FORK
-#endif // UNIX_NETWORKING
 
         STARTLOG(LOG_NET, "NET", "CONN");
         UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
@@ -1916,6 +1880,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     mudstate.debug_cmd = cmdsave;
     return d;
 }
+
+#endif // UNIX_NETWORKING
 
 // Disconnect reasons that get written to the logfile
 //
@@ -5022,7 +4988,6 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
                 // There is room on the stack, so make the request.
                 //
                 SlaveRequests[iSlaveRequest].msa = SockAddr;
-                SlaveRequests[iSlaveRequest].listen_port = mudconf.ports.pi[0];
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
