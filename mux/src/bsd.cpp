@@ -1038,8 +1038,109 @@ bool ValidSocket(SOCKET s)
 
 #endif // UNIX_NETWORKING
 
+void PortInfoClose(int *pnPorts, PortInfo aPorts[], int i)
+{
+    if (0 == SOCKET_CLOSE(aPorts[i].socket))
+    {
+        DebugTotalSockets--;
+        (*pnPorts)--;
+        int k = *pnPorts;
+        if (i != k)
+        {
+            aPorts[i] = aPorts[k];
+        }
+        aPorts[k].socket = INVALID_SOCKET;
+        aPorts[k].fMatched = false;
+    }
+}
+
+void PortInfoOpen(int *pnPorts, PortInfo aPorts[], MUX_ADDRINFO *ai, bool fSSL)
+{
+    int k = *pnPorts;
+    if (  k < MAX_LISTEN_PORTS
+       && make_socket(&aPorts[k].socket, ai)
+       && !IS_INVALID_SOCKET(aPorts[k].socket)
+#if defined(UNIX_NETWORKING)
+       && ValidSocket(aPorts[k].socket)
+#endif // UNIX_NETWORKING
+       )
+    {
+#if defined(UNIX_NETWORKING_SELECT)
+        if (maxd <= aPorts[k].socket)
+        {
+            maxd = aPorts[k].socket + 1;
+        }
+#endif // UNIX_NETWORKING_SELECT
+        socklen_t len = aPorts[k].msa.maxaddrlen();
+        getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
+        aPorts[k].fMatched = true;
+#ifdef UNIX_SSL
+        aPorts[k].fSSL = fSSL;
+#else
+        UNUSED_PARAMETER(fSSL);
+#endif
+        (*pnPorts)++;
+    }
+}
+
+void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF8 *ip_address, bool fSSL)
+{
+    MUX_ADDRINFO hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    UTF8 sPort[20];
+    for (int j = 0; j < pia->n; j++)
+    {
+        unsigned short usPort = pia->pi[j];
+        UTF8 *bufc = sPort;
+        safe_ltoa(usPort, sPort, &bufc);
+        *bufc = '\0';
+
+        MUX_ADDRINFO *servinfo;
+        if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
+        {
+            for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+            {
+                int n = 0;
+                for (int i = 0; i < *pnPorts; i++)
+                {
+                    mux_sockaddr msa(ai->ai_addr);
+                    if (aPorts[i].msa == msa)
+                    {
+                        if (0 == n)
+                        {
+                            aPorts[i].fMatched = true;
+                        }
+                        else
+                        {
+                            // We do not need more than one socket for this address.
+                            //
+                            PortInfoClose(pnPorts, aPorts, i);
+                        }
+                        n++;
+                    }
+                }
+
+                if (0 == n)
+                {
+                    PortInfoOpen(pnPorts, aPorts, ai, fSSL);
+                }
+            }
+            mux_freeaddrinfo(servinfo);
+        }
+    }
+}
+
 void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address)
 {
+#if !defined(UNIX_SSL)
+    UNUSED_PARAMETER(piaSSL);
+#endif
+
 #if defined(WINDOWS_NETWORKING)
     // If we are running Windows NT we must create a completion port,
     // and start up a listening thread for new connections.  Create
@@ -1062,175 +1163,48 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     }
 #endif
 
-    // Any existing open port which does not appear in the requested set
-    // should be closed.
+    for (int i = 0; i < *pnPorts; i++)
+    {
+        aPorts[i].fMatched = false;
+    }
+
+    UTF8 *sAddress = NULL;
+    UTF8 *sp = NULL;
+
+    // If ip_address is NULL, we pass NULL to mux_getaddrinfo() once. Otherwise, we pass each address (separated by space
+    // delimiter).
     //
-    int i, j, k;
-    bool bFound;
-    for (i = 0; i < *pnPorts; i++)
+    MUX_STRTOK_STATE tts;
+    if (NULL != ip_address)
     {
-        bFound = false;
-        for (j = 0; j < pia->n; j++)
-        {
-            if (aPorts[i].msa.Port() == pia->pi[j])
-            {
-                bFound = true;
-                break;
-            }
-        }
-
-#ifdef UNIX_SSL
-        if (!bFound && piaSSL && ssl_ctx)
-        {
-            for (j = 0; j < piaSSL->n; j++)
-            {
-                if (aPorts[i].msa.Port() == piaSSL->pi[j])
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
-#else
-        UNUSED_PARAMETER(piaSSL);
-#endif
-
-
-        if (!bFound)
-        {
-            if (0 == SOCKET_CLOSE(aPorts[i].socket))
-            {
-                DebugTotalSockets--;
-                (*pnPorts)--;
-                k = *pnPorts;
-                if (i != k)
-                {
-                    aPorts[i] = aPorts[k];
-                }
-                aPorts[k].socket = INVALID_SOCKET;
-            }
-        }
+        sAddress = StringClone(ip_address);
+        mux_strtok_src(&tts, sAddress);
+        mux_strtok_ctl(&tts, T(" \t"));
+        sp = mux_strtok_parse(&tts);
     }
 
-    MUX_ADDRINFO hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    UTF8 sPort[20];
-
-    // Any requested port which does not appear in the existing open set
-    // of ports should be opened.
-    //
-    for (j = 0; j < pia->n; j++)
+    do
     {
-        bFound = false;
-        for (i = 0; i < *pnPorts; i++)
+        PortInfoOpenClose(pnPorts, aPorts, pia, sp, false);
+#if defined(UNIX_SSL)
+        if (piaSSL && ssl_ctx)
         {
-            if (aPorts[i].msa.Port() == pia->pi[j])
-            {
-                bFound = true;
-                break;
-            }
+            PortInfoOpenClose(pnPorts, aPorts, piaSSL, sp, true);
         }
-
-        if (!bFound)
-        {
-            k = *pnPorts;
-            unsigned short usPort = pia->pi[j];
-#ifdef UNIX_SSL
-            aPorts[k].fSSL = false;
 #endif
-            UTF8 *bufc = sPort;
-            safe_ltoa(usPort, sPort, &bufc);
-            *bufc = '\0';
 
-            MUX_ADDRINFO *servinfo;
-            if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
-            {
-                for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
-                {
-                    if (  make_socket(&aPorts[k].socket, ai)
-                       && !IS_INVALID_SOCKET(aPorts[k].socket)
-#if defined(UNIX_NETWORKING)
-                       && ValidSocket(aPorts[k].socket)
-#endif // UNIX_NETWORKING
-                       )
-                    {
-#if defined(UNIX_NETWORKING_SELECT)
-                        if (maxd <= aPorts[k].socket)
-                        {
-                            maxd = aPorts[k].socket + 1;
-                        }
-#endif // UNIX_NETWORKING_SELECT
-                        socklen_t len = aPorts[k].msa.maxaddrlen();
-                        getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
-                        (*pnPorts)++;
-                    }
-                    break;
-                }
-                mux_freeaddrinfo(servinfo);
-            }
+        if (NULL != ip_address)
+        {
+            sp = mux_strtok_parse(&tts);
         }
-    }
 
-#ifdef UNIX_SSL
-    if (piaSSL && ssl_ctx)
+    } while (NULL != sp);
+    
+    if (NULL != sAddress)
     {
-        for (j = 0; j < piaSSL->n; j++)
-        {
-            bFound = false;
-            for (i = 0; i < *pnPorts; i++)
-            {
-                if (aPorts[i].msa.Port() == piaSSL->pi[j])
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-
-            if (!bFound)
-            {
-                k = *pnPorts;
-                unsigned short usPort = piaSSL->pi[j];
-                aPorts[k].fSSL = true;
-
-                UTF8 *bufc = sPort;
-                safe_ltoa(usPort, sPort, &bufc);
-                *bufc = '\0';
-
-                MUX_ADDRINFO *servinfo;
-                if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
-                {
-                    for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
-                    {
-                        if (  make_socket(&aPorts[k].socket, ai)
-                           && !IS_INVALID_SOCKET(aPorts[k].socket)
-#if defined(UNIX_NETWORKING)
-                           && ValidSocket(aPorts[k].socket)
-#endif // UNIX_NETWORKING
-                           )
-                        {
-#if defined(UNIX_NETWORKING_SELECT)
-                            if (maxd <= aPorts[k].socket)
-                            {
-                                maxd = aPorts[k].socket + 1;
-                            }
-#endif // UNIX_NETWORKING_SELECT
-                            socklen_t len = aPorts[k].msa.maxaddrlen();
-                            getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
-                            (*pnPorts)++;
-                        }
-                        break;
-                    }
-                    mux_freeaddrinfo(servinfo);
-                }
-            }
-        }
+        MEMFREE(sAddress);
+        sAddress = NULL;
     }
-#endif
 
     // If we were asked to listen on at least one port, but we aren't
     // listening to at least one port, we should bring the game down.
@@ -5739,7 +5713,6 @@ bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits)
     // Base Address
     //
     mux_sockaddr msa;
-    msa.Clear();
     msa.SetAddress(m_iaBase);
     msa.ntop(sAddress, LBUF_SIZE);
 
@@ -6347,4 +6320,55 @@ size_t mux_sockaddr::salen() const
     default:
         return 0;
     }
+}
+
+mux_sockaddr::mux_sockaddr()
+{
+    Clear();
+}
+
+mux_sockaddr::mux_sockaddr(const sockaddr *sa)
+{
+    switch (sa->sa_family)
+    {
+    case AF_INET:
+        memcpy(&u.sai, sa, sizeof(u.sai));
+        break;
+
+    case AF_INET6:
+        memcpy(&u.sai6, sa, sizeof(u.sai6));
+        break;
+    }
+}
+
+bool mux_sockaddr::operator==(const mux_sockaddr &it) const
+{
+    if (it.u.sa.sa_family != u.sa.sa_family)
+    {
+        return false;
+    }
+
+    switch (u.sa.sa_family)
+    {
+    case AF_INET:
+        if (  memcmp(&it.u.sai.sin_addr, &u.sai.sin_addr, sizeof(u.sai.sin_addr)) == 0
+           && it.u.sai.sin_family == u.sai.sin_family
+           && it.u.sai.sin_port == u.sai.sin_port)
+        {
+            return true;
+        }
+        break;
+
+    case AF_INET6:
+        // Intentionally ignoring sin6_flowinfo, sin6_scopeid, and others for now.
+        //
+        if (  memcmp(&it.u.sai6.sin6_addr, &u.sai6.sin6_addr, sizeof(u.sai6.sin6_family)) == 0
+           && it.u.sai6.sin6_family == u.sai6.sin6_family
+           && it.u.sai6.sin6_port == u.sai6.sin6_port)
+        {
+            return true;
+        }
+        break;
+    }
+    return false;
 }

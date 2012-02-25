@@ -240,6 +240,7 @@ extern CRITICAL_SECTION csDescriptorList;
 
 typedef struct
 {
+    bool fMatched;
     mux_sockaddr msa;
     SOCKET socket;
 #ifdef UNIX_SSL
@@ -247,7 +248,7 @@ typedef struct
 #endif
 } PortInfo;
 
-#define MAX_LISTEN_PORTS 10
+#define MAX_LISTEN_PORTS 30
 #ifdef UNIX_SSL
 extern bool initialize_ssl();
 extern void shutdown_ssl();

@@ -682,12 +682,12 @@ class mux_addr;
 class mux_sockaddr
 {
 public:
-    void Clear();
+    mux_sockaddr();
+    mux_sockaddr(const sockaddr *);
     void SetAddress(in_addr ia);
     void SetAddress(in6_addr ia);
 
     unsigned short Family() const;
-    //mux_addr Address() const;
     unsigned short Port() const;
     void ntop(UTF8 *sAddress, size_t len) const;
 
@@ -700,7 +700,10 @@ public:
     size_t salen() const;
     size_t maxaddrlen() const;
 
+    bool operator==(const mux_sockaddr &it) const;
+
 private:
+    void Clear();
     union
     {
         struct sockaddr      sa;
