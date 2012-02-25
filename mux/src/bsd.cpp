@@ -975,8 +975,19 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
     int opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {
-        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
+        log_perror(T("NET"), T("FAIL"), NULL, T("SO_REUSEADDR"));
     }
+
+#if defined(HAVE_SOCKADDR_IN6)
+    if (AF_INET6 == ai->ai_family)
+    {
+        opt = 1;
+        if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)) < 0)
+        {
+            log_perror(T("NET"), T("FAIL"), NULL, T("IPV6_V6ONLY"));
+        }
+    }
+#endif
 
     // bind our name to the socket
     //
@@ -1087,7 +1098,7 @@ void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF
 {
     MUX_ADDRINFO hints;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
