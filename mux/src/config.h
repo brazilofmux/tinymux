@@ -41,8 +41,9 @@
 #include <SpecStrings.h>
 #endif
 
-#define _WIN32_WINNT 0x0400
-#define FD_SETSIZE      512
+// Targeting Windows 2000 or later.
+//
+#define _WIN32_WINNT 0x0500
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
@@ -650,6 +651,10 @@ void init_rlimit(void);
 #define SOCKET_EINTR       (WSAEINTR)
 #define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
 #define SOCKET_EBADF       (WSAEBADF)
+
+// IPPROTO_IPV6 is not defined unless _WIN32_WINNT >= 0x0501, so the following hack is necessary.
+//
+#define IPPROTO_IPV6        ((IPPROTO)41)
 
 #else
 
