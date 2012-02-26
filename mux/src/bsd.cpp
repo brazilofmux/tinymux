@@ -1217,6 +1217,14 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         sAddress = NULL;
     }
 
+    for (int i = 0; i < *pnPorts; i++)
+    {
+        if (!aPorts[i].fMatched)
+        {
+            PortInfoClose(pnPorts, aPorts, i);
+        }
+    }
+
     // If we were asked to listen on at least one port, but we aren't
     // listening to at least one port, we should bring the game down.
     //
