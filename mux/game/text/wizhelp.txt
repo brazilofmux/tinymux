@@ -1001,31 +1001,39 @@
     Mask    - The mask that is ANDed to both the input address and the address
               in the entry when checking to see if this entry is to be used.
     Status  - Indicates what type of access or restriction is to be applied.
-              The following statuses may occur in the site access list:
 
-                Forbidden    - Connections from this site are rejected.
-                Registration - Connections from this site are accepted,
-                               new characters may not be created with the
-                               'create' command, players wanting a character
-                               must get a wizard to create one for them.
-                Unrestricted - Connections from this site are accepted,
-                               new characters may be created with the 'create'
-                               command.
+  The following statuses may occur in the site access list:
+
+      Forbid       - Connections from this site are rejected.
+      Guest        - Connections from this site are allowed to connect as
+                     guests.
+      NoGuest      - Connections from this site are not allowed to connect as
+                     guests.
+      NoSitemon    - Surpress notifications normally given to those with the
+                     SITEMON flag.
+      Permit       - Allow connections from this site.
+      Register     - Connections from this site are accepted, new characters
+                     may not be created with the 'create' command, players
+                     wanting a character must get a wizard to create one for
+                     them.
 
 { 'wizhelp @list site_information2' for more }
 
 & @LIST SITE_INFORMATION2
 @LIST SITE_INFORMATION (continued)
 
-              The following statuses may occur in the site suspect list:
+      Sitemon      - Notify those with the SITEMON flag of network connections
+                     and disconnections along with the network address.
+      Suspect      - Notify logged-in wizards of any connects or disconnects
+                     from this site.
+      Trust        - Don't notify wizards of connects or disconnects from this
+                     site.
 
-                Suspected    - Notify logged-in wizards of any connects or
-                               disconnects from this site.
-                Trusted      - Don't notify wizards of connects or disconnects
-                               from this site.
+  Default site attributes are: Guest, Permit, Sitemon, and Trust.
 
-  Related Topics: forbid_site, permit_site, register_site, suspect_site,
-                  trust_site, nositemon_site, guest_site.
+  Related Topics: forbid_site, guest_site, permit_site, register_site,
+                  reset_site, suspect_site, trust_site, nositemon_site,
+                  noguest_site.
 
 & @LIST SWITCHES
 @LIST SWITCHES
@@ -1469,7 +1477,7 @@ ALLOW_GUEST_FROM_REGISTERED_SITE
   may be interested in turn this option off. However, game which are
   register_only will probably want to leave this option as defaulted.
 
-  Related Topics: register_site, SITE LISTS
+  Related Topics: register_site, SITE LIST
 
 & ARTICLE_RULE
 ARTICLE_RULE
@@ -1892,7 +1900,7 @@ CONFIG PARAMETERS (continued)
   mail_per_hour  mail_sendaddr  mail_sendname  mail_server  mail_subject
   master_room  match_own_commands  max_cache_size  max_players  min_guests
   module  money_name_plural  money_name_singular  motd_file  motd_message
-  mud_name  newuser_file  nositemon_site  notify_recursion_limit
+  mud_name  newuser_file  noguest_site  nositemon_site  notify_recursion_limit
   number_guests  open_cost  output_database  output_limit  page_cost
   paranoid_allocate  parent_recursion_limit  password_methods  paycheck
   pcreate_per_hour  pemit_any_object  pemit_far_players  permit_site
@@ -1909,18 +1917,18 @@ CONFIG PARAMETERS (continued)
   pueblo_message  queue_active_chunk  queue_idle_chunk  quiet_look
   quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
   read_remote_name  reality_level  references_per_hour  register_create_file
-  register_site  reset_players  restrict_home  retry_limit  robot_cost
-  robot_flags  robot_speech  room_flags  room_name_charset  room_parent
-  room_quota  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe
-  safer_passwords  search_cost  see_owned_dark  signal_action  site_chars
-  space_compress  sql_database  sql_password  sql_server  sql_user
-  stack_limit  starting_money  starting_quota  status_file  stripped_flags
-  suspect_site  sweep_dark  switch_default_all  terse_shows_contents
-  terse_shows_exits  terse_shows_move_messages  thing_flags
-  thing_name_charset  thing_parent  thing_quota  timeslice  toad_recipient
-  trace_output_limit  trace_topdown  trust_site  uncompress_program
-  unowned_safe  user_attr_access  user_attr_per_hour  wait_cost
-  wizard_motd_file  wizard_motd_message  zone_recursion_limit
+  register_site  reset_players  reset_site  restrict_home  retry_limit
+  robot_cost  robot_flags  robot_speech  room_flags  room_name_charset
+  room_parent  room_quota  run_startup  sacrifice_adjust  sacrifice_factor
+  safe_wipe  safer_passwords  search_cost  see_owned_dark  signal_action
+  site_chars  space_compress  sql_database  sql_password  sql_server
+  sql_user  stack_limit  starting_money  starting_quota  status_file
+  stripped_flags  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_name_charset  thing_parent  thing_quota  timeslice
+  toad_recipient  trace_output_limit  trace_topdown  trust_site
+  uncompress_program  unowned_safe  user_attr_access  user_attr_per_hour
+  wait_cost  wizard_motd_file  wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -2569,8 +2577,9 @@ FORBID_SITE
   prevent access from troublemaking sites.  The default is for all sites to
   be allowed to connect, none forbidden.
 
-  Related Topics: badsite_file, permit_site, register_site, guest_site,
-                  SITE LISTS, SITE NOTATION,
+  Related Topics: badsite_file, guest_site, noguest_site, nositemon-site,
+                  permit_site, register_site, reset_site, suspect_site,
+                  trust_site, SITE LIST, SITE NOTATION,
 
 & FORK_DUMP
 FORK_DUMP
@@ -2859,12 +2868,12 @@ GUEST_SITE
 
   CONFIG PARAMETER: guest_site <site>
 
-  Indicates that connections to guests from this site should be rejected.
-  Players will be able to connect normally and create if set.
+  Indicates that connections to guests from this site will be accepted.  This
+  is used in conjunction with noguest_site.
 
-  Related Topics: badsite_file, permit_site, register_site, forbid_site,
-                  SITE LISTS, SITE NOTATION,
-                  allow_guest_from_registered_site.
+  Related Topics: allow_guest_from_registered_site, badsite_file, forbid_site,
+                  noguest_site, permit_site, register_site, reset_site,
+                  SITE LIST, SITE NOTATION.
 
 & HAVE_COMSYS
 HAVE_COMSYS
@@ -3727,6 +3736,19 @@ NEWUSER_FILE
 
   Related Topics: @readcache, motd_file.
 
+& NOGUEST_SITE
+NOGUEST_SITE
+
+  CONFIG PARAMETER: noguest_site <site>
+
+  Indicates that connections to guests from this site should be rejected.
+  Players will be able to connect normally and create if set.  This used
+  in conjunction with guest_site.
+
+  Related Topics: allow_guest_from_registered_site, badsite_file, forbid_site,
+                  guest_site, permit_site, register_site, reset_site,
+                  SITE LIST, SITE NOTATION,
+
 & NOSITEMON_SITE
 NOSITEMON_SITE
 
@@ -3735,7 +3757,7 @@ NOSITEMON_SITE
   Indicates that sites that match <site> are not to be reported to players
   with the SITEMON flag.
 
-  Related Topics: register_site, REGISTRATION, SITE LISTS, SITE NOTATION.
+  Related Topics: register_site, REGISTRATION, SITE LIST, SITE NOTATION.
 
 & NOTIFY_RECURSION_LIMIT
 NOTIFY_RECURSION_LIMIT
@@ -3987,8 +4009,8 @@ PERMIT_SITE
   or subnets that would otherwise be disallowed by a forbid_site directive.
   The default is all sites permitted, none forbidden.
 
-  Related Topics: badsite_file, forbid_site, register_site, guest_site
-                  SITE LISTS, SITE NOTATION.
+  Related Topics: badsite_file, forbid_site, guest_site, noguest_site,
+                  register_site, reset_site, SITE LIST, SITE NOTATION.
 
 & PLAYER_FLAGS
 PLAYER_FLAGS
@@ -4370,13 +4392,13 @@ REGISTER_SITE
   Indicates that registration is to be enforced for sites whose address
   matches the specified <site>.
 
-  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION,
-                  SITE LISTS, SITE NOTATION.
+  Related Topics: forbid_site, guest_site, noguest_site, permit_site,
+                  reset_site, REGISTRATION, SITE LIST, SITE NOTATION.
 
 & REGISTRATION
 REGISTRATION
 
-  Related Topics: SITE LISTS
+  Related Topics: SITE LIST
 
 & RESET_PLAYERS
 RESET_PLAYERS
@@ -4388,6 +4410,18 @@ RESET_PLAYERS
   affect at @restart or ./Startmux.
 
   Related Topics: connrecord().
+
+& RESET_SITE
+RESET_SITE
+
+  CONFIG PARAMETER: reset_site <site>
+
+  Remove any previously-made site restrictions contained within <site>.
+
+  Related Topics: badsite_file, forbid_site, guest_site, noguest_site,
+                  nositemon_site, permit_site, register_site, reset_site,
+                  sitemon_site, suspect_site, trust_site, SITE LIST,
+                  SITE NOTATION.
 
 & RESTRICT_HOME
 RESTRICT_HOME
@@ -4667,36 +4701,32 @@ SIGNAL_ACTION
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-& SITE LISTS
-SITE LISTS
+& SITE LIST
+SITE LIST
 
-  Site lists match the numeric IP address of the connecting player, and help
-  to manage client access to the MUX.
+  The site list matches the numeric IP address of the connecting player, and
+  helps to manage client access to the MUX.  The restrictions work in groups:
 
-  There are two site lists:
+     - Forbid, Register, Permit (forbid_site, permit_site, register_site)
+     - Guest, NoGuest (guest_site, noguest_site)
+     - Suspect, Trust (suspect_site, trust_site)
+     - Sitemon, NoSitemon (sitemon_site, nositemon_site)
 
-      Access Control List  - forbid_site, permit_site, register_site,
-                             guest_site, nositemon_site.
-      Suspects             - suspect_site and trust_site
+  Finally, reset_site itself it not a site restriction. It is used to remove
+  previously-made site restrictions.
 
-  Both contain an ordered list of 'sites', 'subnets', or 'hosts' specified
-  with a notation explained in the 'SITE NOTATION' topic.
+  These restrictions are ordered by address and use a notation explained in
+  the 'SITE NOTATION' topic.
 
-  Each site in the list is matched in the order it appears in the
-  configuration file, and the first one that matches is used.  Therefore, you
-  should put the more narrowly-defined sites before the more broadly-defined
-  ones. Otherwise, the more narrowly-defined site (the one covering a subset
-  of IP addresses within the more broadly-defined site) will never be in
-  force.
+  The order in which these restrictions appears in the configuration file
+  (or later via the @admin command) is not important.
 
-  Additions made to the lists after startup with the @admin command are put
-  at the front of the list, and are checked before entries from the config
-  file and previous entries made by the @admin command.
+  Any site which exactly matches an existing site restriction replaces it.
 
-{ 'wizhelp site lists2' for more }
+{ 'wizhelp site list2' for more }
 
-& SITE LISTS2
-SITE LISTS (continued)
+& SITE LIST2
+SITE LIST (continued)
 
   Example:  Restricting Access
 
@@ -4713,9 +4743,10 @@ SITE LISTS (continued)
   for those sites), while people connecting from elsewhere on the 135.246
   net are allowed to create their own characters.
 
-  Related Topics: @admin, forbid_site, @list site_information, permit_site,
-                  register_site, SITE NOTATION, suspect_site, trust_site,
-                  guest_site, nositemon_site..
+  Related Topics: @admin, forbid_site, guest_site, @list site_information,
+                  noguest_site, nositemon_site, permit_site, register_site,
+                  reset_site, sitemon_site, suspect_site, trust_site,
+                  SITE NOTATION.
 
 & SITE NOTATION
 SITE NOTATION
@@ -4723,28 +4754,31 @@ SITE NOTATION
  Site notation specifies a range of numeric IP addresses.  A particular range
  can include a single IP address or the entire Internet.
 
- There are several variations:
+ There are two variations:
 
-   <address> <mask>    - The <address> and <mask> are both dotted IPv4
-                         notation, but the <mask> is further restricted that
-                         it's '1' bits are all together and form a prefix.
-                         The <mask> specifies which bits in the <address> are
-                         significant.
+   <address> <mask>  - Each '1' bit in the <mask> indicates which
+                       corresponding bit of the <address> is signficant.
 
-   <address>/<N>       - The <address> is a dotted IPv4 number, but <N> is an
-                         integer from 0 to 32 that specifies the number of
-                         significant bits in left-most part of the <address>.
-                         This notation is called CIDR IP prefix notation or
-                         'slash notation'.
+   <address>/<N>     - <N> is an integer that specifices the number of
+                       significant bits in the left-most part of the <address>.
+                       This notation is called CIDR IP prefix notation or
+                       'slash notation'.
+
+ Both <address> and <mask> above use the same format (appear as either IPv4
+ or IPv6 addresses).  The <mask> is additionally restricted in that its
+ leading bits are '1' while its trailing bits are '0'.
+
+ For IPv4 addresses, <N> is a number from 0 to 32.  For IPv6 addresses, <N>
+ is a number from 0 to 128.
 
 { 'wizhelp site notation2' for more }
 
-& SITE NOTATION2
-SITE NOTATION (continued)
+& IPV4
+IPV4
 
  Four forms of dotted IPv4 addresses are allowed:
 
-   8.8.8.8, 8.8.16, 8.24 and 32.
+   8.8.8.8, 8.8.16, 8.24, and 32.
 
  8 means an 8-bit integer from 0 to 255, 16 means a 16-bit integer
  from 65536, etc. The 8.8.8.8 form is the most common. The latter three
@@ -4756,6 +4790,45 @@ SITE NOTATION (continued)
 
  Examples:
 
+    127.0.0.1
+    192.168.1.1
+    0xC0.0xA8.0x01.0x01
+    192.168.257
+    192.11010305
+    3232235777
+
+ Related Topics: IPV6, SITE NOTATION
+
+& IPV6
+IPV6
+
+ IPv6 addresses are much larger than IPv4 addresses.  And IPv6 address is
+ broken down into 8 groups of 16 bits with each group expressed with four
+ hexidecimal digits.  For example:
+
+     fe80:0000:0000:0000:001a:93ab:1420:1a27
+
+ Leading zeros may be surpressed.  For example:
+
+     fe80:0:0:0:1a:93ab:1420:1a27
+
+ Groups of zeros may be replaced with '::'.  For example:
+
+     fe80::1a:93ab:1420:1a27
+
+ The address for localhost is 0:0:0:0:0:0:0:1 which reduces to ::1.  Finally,
+ you may see a IPv4-mapped address.  For examples:
+
+    192.168.1.1 is mapped to ::ffff:c0a8:0101 but may be expressed as
+    ::ffff:192.168.1.1
+
+ Related Topics: IPV4, SITE NOTATION
+
+& SITE NOTATION2
+SITE NOTATION (continued)
+ 
+ Examples:
+
    135.246.4.40 255.255.255.255   - Single host.
    135.246.4.0  0xFF.255.0777.0   - Class C subnet.
    135.246.4.0/24                 - Same as above in CIDR IP format.
@@ -4763,6 +4836,8 @@ SITE NOTATION (continued)
    135.0/8                        - Class A subnet in CIDR IP format.
    0 0                            - The entire Internet
    0/0                            - Same as above in CIDR IP format.
+
+  Related Topics: IPV4, IPV6
 
 & SITE_CHARS
 SITE_CHARS
@@ -4937,7 +5012,7 @@ SUSPECT_SITE
   considered suspect, and any player creates, connects and disconnects are to
   be reported to all logged-in wizards.
 
-  Related Topics: trust_site, SITE LISTS, SITE NOTATION.
+  Related Topics: trust_site, SITE LIST, SITE NOTATION.
 
 & SWEEP_DARK
 SWEEP_DARK
@@ -5109,7 +5184,7 @@ TOPICS
 
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
-  PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LISTS
+  PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LIST
 
 & TRACE_OUTPUT_LIMIT
 TRACE_OUTPUT_LIMIT
@@ -5149,7 +5224,7 @@ TRUST_SITE
   Indicates that sites whose address matches the specified <site> are not to
   be considered suspect.
 
-  Related Topics: suspect_site, SITE LISTS, SITE NOTATION.
+  Related Topics: suspect_site, SITE LIST, SITE NOTATION.
 
 & UNCOMPRESS_PROGRAM
 UNCOMPRESS_PROGRAM
