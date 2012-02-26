@@ -747,11 +747,11 @@ public:
         kGreaterThan
     };
 
-    virtual int getFamily() = 0;
+    virtual int getFamily() const = 0;
     virtual bool Parse(UTF8 *str, dbref player, UTF8 *cmd) = 0;
-    virtual Comparison CompareTo(mux_subnet *msn) = 0;
-    virtual Comparison CompareTo(MUX_SOCKADDR *msa) = 0;
-    virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) = 0;
+    virtual Comparison CompareTo(mux_subnet *msn) const = 0;
+    virtual Comparison CompareTo(MUX_SOCKADDR *msa) const = 0;
+    virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const = 0;
 };
 
 // IPv4
@@ -774,11 +774,11 @@ class mux_in_subnet : public mux_subnet
 public:
     virtual ~mux_in_subnet();
 
-    int getFamily() { return MUX_IPV4; }
+    int getFamily() const { return MUX_IPV4; }
     bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
-    mux_subnet::Comparison CompareTo(mux_subnet *msn);
-    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa);
-    bool listinfo(UTF8 *sAddress, int *pnLeadingBits);
+    mux_subnet::Comparison CompareTo(mux_subnet *msn) const;
+    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa) const;
+    bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
 
 private:
     struct in_addr m_iaBase;
@@ -806,11 +806,19 @@ private:
 class mux_in6_subnet : mux_subnet
 {
 public:
-    mux_in6_subnet();
     virtual ~mux_in6_subnet();
 
-    int getFamily() { return MUX_IPV6; }
+    int getFamily() const { return MUX_IPV6; }
     bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
+    mux_subnet::Comparison CompareTo(mux_subnet *msn) const;
+    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa) const;
+    bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
+
+private:
+    struct in6_addr m_iaBase;
+    struct in6_addr m_iaMask;
+    struct in6_addr m_iaEnd;
+    int             m_iLeadingBits;
 };
 #endif
 

@@ -1220,89 +1220,94 @@ static CF_HAND(cf_site)
 {
     UNUSED_PARAMETER(pExtra);
 
-    mux_in_subnet *pipv4subnet = new mux_in_subnet;;
-    if (!pipv4subnet->Parse(str, player, cmd))
+    mux_subnet *pSubnet = (mux_subnet *)(new mux_in_subnet);
+    if (!pSubnet->Parse(str, player, cmd))
     {
-        delete pipv4subnet;
-        return -1;
+        delete pSubnet;
+        pSubnet = (mux_subnet *)(new mux_in6_subnet);
+        if (!pSubnet->Parse(str, player, cmd))
+        {
+            delete pSubnet;
+            return -1;
+        }
     }
 
     mux_subnets *subnets = (mux_subnets *)vp;
     switch (nExtra)
     {
     case HC_PERMIT:
-        if (!subnets->permit(pipv4subnet))
+        if (!subnets->permit(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_REGISTER:
-        if (!subnets->registered(pipv4subnet))
+        if (!subnets->registered(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_FORBID:
-        if (!subnets->forbid(pipv4subnet))
+        if (!subnets->forbid(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_NOSITEMON:
-        if (!subnets->nositemon(pipv4subnet))
+        if (!subnets->nositemon(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_SITEMON:
-        if (!subnets->sitemon(pipv4subnet))
+        if (!subnets->sitemon(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_NOGUEST:
-        if (!subnets->noguest(pipv4subnet))
+        if (!subnets->noguest(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_GUEST:
-        if (!subnets->guest(pipv4subnet))
+        if (!subnets->guest(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_SUSPECT:
-        if (!subnets->suspect(pipv4subnet))
+        if (!subnets->suspect(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_TRUST:
-        if (!subnets->trust(pipv4subnet))
+        if (!subnets->trust(pSubnet))
         {
             return -1;
         }
         break;
 
     case HC_RESET:
-        if (!subnets->reset(pipv4subnet))
+        if (!subnets->reset(pSubnet))
         {
-            delete pipv4subnet;
+            delete pSubnet;
             return -1;
         }
         break;
 
     default:
-        delete pipv4subnet;
+        delete pSubnet;
         return -1;
     }
 

@@ -5719,7 +5719,7 @@ bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
     return true;
 }
 
-bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits)
+bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
 {
     // Base Address
     //
@@ -5738,7 +5738,7 @@ mux_in_subnet::~mux_in_subnet()
 {
 }
 
-mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg)
+mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg) const
 {
     if (MUX_IPV4 == msn_arg->getFamily())
     {
@@ -5784,7 +5784,7 @@ mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg)
     }
 }
 
-mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa)
+mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa) const
 {
     if (AF_INET == msa->Family())
     {
@@ -5813,6 +5813,43 @@ mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa)
         //
         return mux_subnet::kGreaterThan;
     }
+}
+
+mux_in6_subnet::~mux_in6_subnet()
+{
+}
+
+mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_sockaddr *) const
+{
+    // TODO
+    return mux_subnet::kGreaterThan;
+}
+
+mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_subnet *) const
+{
+    // TODO
+    return mux_subnet::kGreaterThan;
+}
+
+bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
+{
+    // TODO
+    return false;
+}
+
+bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
+{
+    // Base Address
+    //
+    mux_sockaddr msa;
+    msa.SetAddress(m_iaBase);
+    msa.ntop(sAddress, LBUF_SIZE);
+
+    // Leading significant bits
+    //
+    *pnLeadingBits = m_iLeadingBits;
+
+    return true;
 }
 
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
@@ -6293,6 +6330,13 @@ void mux_sockaddr::SetAddress(struct in_addr ia)
     u.sai.sin_family = AF_INET;
     u.sai.sin_addr = ia;
 }
+
+void mux_sockaddr::SetAddress(struct in6_addr ia6)
+{
+    u.sai6.sin6_family = AF_INET6;
+    u.sai6.sin6_addr = ia6;
+}
+
 void mux_sockaddr::Clear()
 {
     memset(&u, 0, sizeof(u));
