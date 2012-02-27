@@ -151,6 +151,10 @@ src/timeutil.cpp
 src/timeutil.h
 src/timezone.cpp
 src/tools/announce.c
+src/tools/autoconf.h.in
+src/tools/configure
+src/tools/configure.ac
+src/tools/Makefile
 src/unparse.cpp
 src/unsplit.cpp
 src/utf8tables.cpp
