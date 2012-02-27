@@ -177,7 +177,8 @@ int main(int argc, char *argv[])
                 freeaddrinfo(servinfo);
                 child(s);
             }
-
+            fprintf(stderr, "announce: pid %d running on port %s\n", foo, sPort);
+            close(s);
         }
         freeaddrinfo(servinfo);
     }
