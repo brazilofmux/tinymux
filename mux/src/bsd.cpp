@@ -5376,9 +5376,7 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     }
 }
 
-// Subnets
-//
-
+#if defined(HAVE_IN_ADDR)
 typedef struct
 {
     int    nShift;
@@ -5633,6 +5631,20 @@ bool mux_in_addr::isValidMask(int *pnLeadingBits) const
     return false;
 }
 
+void mux_in_addr::makeMask(int nLeadingBits)
+{
+    // << [0,31] works. << 32 is problematic on some systems.
+    //
+    in_addr_t ulMask = 0;
+    if (nLeadingBits > 0)
+    {
+        ulMask = (0xFFFFFFFFUL << (32 - nLeadingBits)) & 0xFFFFFFFFUL;
+    }
+    m_ia.s_addr = htonl(ulMask);
+}
+#endif
+
+#if defined(HAVE_IN6_ADDR)
 bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 {
     const unsigned char allones = 0xFF;
@@ -5685,18 +5697,6 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
     return true;
 }
 
-void mux_in_addr::makeMask(int nLeadingBits)
-{
-    // << [0,31] works. << 32 is problematic on some systems.
-    //
-    in_addr_t ulMask = 0;
-    if (nLeadingBits > 0)
-    {
-        ulMask = (0xFFFFFFFFUL << (32 - nLeadingBits)) & 0xFFFFFFFFUL;
-    }
-    m_ia.s_addr = htonl(ulMask);
-}
-
 void mux_in6_addr::makeMask(int nLeadingBits)
 {
     const unsigned char allones = 0xFF;
@@ -5716,8 +5716,9 @@ void mux_in6_addr::makeMask(int nLeadingBits)
         }
     }
 }
+#endif
 
-bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
+bool mux_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
 {
     // Base Address
     //
@@ -5730,10 +5731,6 @@ bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
     *pnLeadingBits = m_iLeadingBits;
 
     return true;
-}
-
-mux_in_subnet::~mux_in_subnet()
-{
 }
 
 mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
@@ -5775,17 +5772,29 @@ mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
 mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 {
     mux_addr *ma = NULL;
-    if (AF_INET == msa->Family())
+    switch (msa->Family())
     {
-        struct in_addr ia;
-        msa->GetAddress(&ia);
-        ma = (mux_addr *)(new mux_in_addr(&ia));
-    }
-    else
-    {
-        struct in6_addr ia6;
-        msa->GetAddress(&ia6);
-        ma = (mux_addr *)(new mux_in6_addr(&ia6));
+#if defined(HAVE_IN_ADDR)
+    case AF_INET:
+        {
+            struct in_addr ia;
+            msa->GetAddress(&ia);
+            ma = (mux_addr *)(new mux_in_addr(&ia));
+        }
+        break;
+#endif
+
+#if defined(HAVE_IN6_ADDR)
+    case AF_INET6:
+        {
+            struct in6_addr ia6;
+            msa->GetAddress(&ia6);
+            ma = (mux_addr *)(new mux_in6_addr(&ia6));
+        }
+        break;
+#endif
+    default:
+        return mux_subnet::kGreaterThan;
     }
         
     if (ma < m_iaBase)
@@ -5856,26 +5865,39 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
             for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
             {
                 delete maMask;
-                if (AF_INET == ai->ai_family)
+                switch (ai->ai_family)
                 {
-                    struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
-                    maMask = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
-                }
-                else
-                {
-                    struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
-                    maMask = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+#if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
+                case AF_INET:
+                    {
+                        struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
+                        maMask = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+                    }
+                    break;
+#endif
+#if defined(HAVE_SOCKADDR_IN6) && defined(HAVE_IN6_ADDR)
+                case AF_INET6:
+                    {
+                        struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
+                        maMask = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+                    }
+                    break;
+#endif
+                default:
+                    return NULL;
                 }
                 n++;
             }
             mux_freeaddrinfo(servinfo);
         }
+#if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
         else if (MakeCanonicalIPv4(mask_txt, &ulNetBits))
         {
             delete maMask;
             maMask = (mux_addr *)(new mux_in_addr(ulNetBits));
             n++;
         }
+#endif
 
         if (  1 != n
            || !maMask->isValidMask(&nLeadingBits))
@@ -5906,26 +5928,40 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
         {
             delete maBase;
-            if (AF_INET == ai->ai_family)
+            switch (ai->ai_family)
             {
-                struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
-                maBase = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
-            }
-            else
-            {
-                struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
-                maBase = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+#if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
+            case AF_INET:
+                {
+                    struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
+                    maBase = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+                }
+                break;
+#endif
+#if defined(HAVE_SOCKADDR_IN6) &&  defined(HAVE_IN6_ADDR)
+            case AF_INET6:
+                {
+                    struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
+                    maBase = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+                }
+                break;
+#endif
+            default:
+                delete maMask;
+                return NULL;
             }
             n++;
         }
         mux_freeaddrinfo(servinfo);
     }
+#if defined(HAVE_IN_ADDR)
     else if (MakeCanonicalIPv4(addr_txt, &ulNetBits))
     {
         delete maBase;
         maBase = (mux_addr *)(new mux_in_addr(ulNetBits));
         n++;
     }
+#endif
 
     if (1 != n)
     {
@@ -5938,23 +5974,30 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     if (NULL == maMask)
     {
         bool fOutOfRange = false;
-        if (MUX_IPV4 == maBase->getFamily())
+        switch (maBase->getFamily())
         {
+#if defined(HAVE_IN_ADDR)
+        case AF_INET:
             maMask = (mux_addr *)(new mux_in_addr());
             if (  nLeadingBits < 0
                || 32 < nLeadingBits)
             {
                 fOutOfRange = true;
             }
-        }
-        else
-        {
+            break;
+#endif
+#if defined(HAVE_IN6_ADDR)
+        case AF_INET6:
             maMask = (mux_addr *)(new mux_in6_addr());
             if (  nLeadingBits < 0
                || 128 < nLeadingBits)
             {
                 fOutOfRange = true;
             }
+            break;
+#endif
+        default:
+            return NULL;
         }
 
         if (fOutOfRange)
@@ -5983,15 +6026,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     delete maEnd;
     maEnd = maBase->calculateEnd(*maMask);
 
-    mux_subnet *msn = NULL;
-    if (MUX_IPV4 == maBase->getFamily())
-    {
-        msn = (mux_subnet *)(new mux_in_subnet());
-    }
-    else
-    {
-        msn = (mux_subnet *)(new mux_in6_subnet());
-    }
+    mux_subnet *msn = new mux_subnet();
     msn->m_iaBase = maBase;
     msn->m_iaMask = maMask;
     msn->m_iaEnd = maEnd;
@@ -5999,26 +6034,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     return msn;
 }
 
-bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
-{
-    // Base Address
-    //
-    mux_sockaddr msa;
-    msa.SetAddress(m_iaBase);
-    msa.ntop(sAddress, LBUF_SIZE);
-
-    // Leading significant bits
-    //
-    *pnLeadingBits = m_iLeadingBits;
-
-    return true;
-}
-
-mux_in6_subnet::~mux_in6_subnet()
-{
-}
-
-#if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
+#if (defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))) && defined(HAVE_IN_ADDR)
 static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, struct in_addr addr, unsigned short port)
 {
     struct addrinfo *ai = (struct addrinfo *)MEMALLOC(sizeof(*ai));
@@ -6221,7 +6237,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
         return fpGetAddrInfo((const char *)node, (const char *)service, hints, res);
     }
 #endif
-#if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
+#if (defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))) && defined(HAVE_IN_ADDR)
     struct addrinfo *ai;
     struct in_addr addr;
     unsigned short port;
@@ -6462,11 +6478,15 @@ unsigned short mux_sockaddr::Port() const
 {
     switch (u.sa.sa_family)
     {
+#if defined(HAVE_SOCKADDR_IN)
     case AF_INET:
         return ntohs(u.sai.sin_port);
+#endif
 
+#if defined(HAVE_SOCKADDR_IN6)
     case AF_INET6:
         return ntohs(u.sai6.sin6_port);
+#endif
 
     default:
         return 0;
@@ -6491,37 +6511,28 @@ void mux_sockaddr::ntop(UTF8 *sAddress, size_t len) const
     }
 }
 
-void mux_sockaddr::SetAddress(struct in_addr ia)
-{
-    u.sai.sin_family = AF_INET;
-    u.sai.sin_addr = ia;
-}
-
-void mux_sockaddr::SetAddress(struct in6_addr ia6)
-{
-    u.sai6.sin6_family = AF_INET6;
-    u.sai6.sin6_addr = ia6;
-}
-
 void mux_sockaddr::SetAddress(mux_addr *ma)
 {
     switch (ma->getFamily())
     {
-    case MUX_IPV4:
+#if defined(HAVE_IN_ADDR)
+    case AF_INET:
         {
             mux_in_addr *mia = (mux_in_addr *)ma;
             u.sai.sin_family = AF_INET;
             u.sai.sin_addr = mia->m_ia;
         }
         break;
-
-    case MUX_IPV6:
+#endif
+#if defined(HAVE_IN6_ADDR)
+    case AF_INET6:
         {
             mux_in6_addr *mia6 = (mux_in6_addr *)ma;
             u.sai6.sin6_family = AF_INET6;
             u.sai6.sin6_addr = mia6->m_ia6;
         }
         break;
+#endif
     }
 }
 
@@ -6530,19 +6541,21 @@ void mux_sockaddr::Clear()
     memset(&u, 0, sizeof(u));
 }
 
+#if defined(HAVE_SOCKADDR_IN)
 struct sockaddr_in *mux_sockaddr::sai()
 {
     return &u.sai;
 }
 
-unsigned short mux_sockaddr::Family() const
-{
-    return u.sa.sa_family;
-}
-
 struct sockaddr_in const *mux_sockaddr::sairo() const
 {
     return &u.sai;
+}
+#endif
+
+unsigned short mux_sockaddr::Family() const
+{
+    return u.sa.sa_family;
 }
 
 struct sockaddr const *mux_sockaddr::saro() const
@@ -6554,11 +6567,14 @@ size_t mux_sockaddr::salen() const
 {
     switch (u.sa.sa_family)
     {
+#if defined(HAVE_SOCKADDR_IN)
     case AF_INET:
         return sizeof(u.sai);
-
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
     case AF_INET6:
         return sizeof(u.sai6);
+#endif
         
     default:
         return 0;
@@ -6574,13 +6590,16 @@ mux_sockaddr::mux_sockaddr(const sockaddr *sa)
 {
     switch (sa->sa_family)
     {
+#if defined(HAVE_SOCKADDR_IN)
     case AF_INET:
         memcpy(&u.sai, sa, sizeof(u.sai));
         break;
-
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
     case AF_INET6:
         memcpy(&u.sai6, sa, sizeof(u.sai6));
         break;
+#endif
     }
 }
 
@@ -6593,6 +6612,7 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
 
     switch (u.sa.sa_family)
     {
+#if defined(HAVE_SOCKADDR_IN)
     case AF_INET:
         if (  memcmp(&it.u.sai.sin_addr, &u.sai.sin_addr, sizeof(u.sai.sin_addr)) == 0
            && it.u.sai.sin_family == u.sai.sin_family
@@ -6601,7 +6621,8 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
             return true;
         }
         break;
-
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
     case AF_INET6:
         // Intentionally ignoring sin6_flowinfo, sin6_scopeid, and others for now.
         //
@@ -6612,6 +6633,7 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
             return true;
         }
         break;
+#endif
     }
     return false;
 }
@@ -6620,22 +6642,14 @@ mux_addr::~mux_addr()
 {
 }
 
+#if defined(HAVE_IN_ADDR)
 mux_in_addr::~mux_in_addr()
-{
-}
-
-mux_in6_addr::~mux_in6_addr()
 {
 }
 
 mux_in_addr::mux_in_addr(in_addr *ia)
 {
     m_ia = *ia;
-}
-
-mux_in6_addr::mux_in6_addr(in6_addr *ia6)
-{
-    m_ia6 = *ia6;
 }
 
 mux_in_addr::mux_in_addr(unsigned int ulBits)
@@ -6648,14 +6662,9 @@ void mux_sockaddr::GetAddress(in_addr *ia) const
     *ia = u.sai.sin_addr;
 }
 
-void mux_sockaddr::GetAddress(in6_addr *ia6) const
-{
-    *ia6 = u.sai6.sin6_addr;
-}
-
 bool mux_in_addr::operator<(const mux_addr &it) const
 {
-    if (MUX_IPV4 == it.getFamily())
+    if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
         return (m_ia.s_addr < t->m_ia.s_addr);
@@ -6665,7 +6674,7 @@ bool mux_in_addr::operator<(const mux_addr &it) const
 
 bool mux_in_addr::operator==(const mux_addr &it) const
 {
-    if (MUX_IPV4 == it.getFamily())
+    if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
         return (m_ia.s_addr == t->m_ia.s_addr);
@@ -6675,7 +6684,7 @@ bool mux_in_addr::operator==(const mux_addr &it) const
 
 bool mux_in_addr::clearOutsideMask(const mux_addr &it)
 {
-    if (MUX_IPV4 == it.getFamily())
+    if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
         if (m_ia.s_addr & ~t->m_ia.s_addr)
@@ -6690,7 +6699,7 @@ bool mux_in_addr::clearOutsideMask(const mux_addr &it)
 
 mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
 {
-    if (MUX_IPV4 == it.getFamily())
+    if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
         mux_in_addr *e = new mux_in_addr();
@@ -6699,10 +6708,26 @@ mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
     }
     return NULL;
 }
+#endif
+
+#if defined(HAVE_IN6_ADDR)
+mux_in6_addr::~mux_in6_addr()
+{
+}
+
+mux_in6_addr::mux_in6_addr(in6_addr *ia6)
+{
+    m_ia6 = *ia6;
+}
+
+void mux_sockaddr::GetAddress(in6_addr *ia6) const
+{
+    *ia6 = u.sai6.sin6_addr;
+}
 
 bool mux_in6_addr::operator<(const mux_addr &it) const
 {
-    if (MUX_IPV6 == it.getFamily())
+    if (AF_INET6 == it.getFamily())
     {
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
         for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
@@ -6718,7 +6743,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
 
 bool mux_in6_addr::operator==(const mux_addr &it) const
 {
-    if (MUX_IPV6 == it.getFamily())
+    if (AF_INET6 == it.getFamily())
     {
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
         return (m_ia6.s6_addr == t->m_ia6.s6_addr);
@@ -6728,7 +6753,7 @@ bool mux_in6_addr::operator==(const mux_addr &it) const
 
 bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
 {
-    if (MUX_IPV6 == it.getFamily())
+    if (AF_INET6 == it.getFamily())
     {
         bool fOutside = false;
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
@@ -6747,7 +6772,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
 
 mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
 {
-    if (MUX_IPV6 == it.getFamily())
+    if (AF_INET6 == it.getFamily())
     {
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
         mux_in6_addr *e = new mux_in6_addr();
@@ -6759,3 +6784,4 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
     }
     return NULL;
 }
+#endif
