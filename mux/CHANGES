@@ -1,9 +1,10 @@
 TinyMUX 2.10: CHANGES
-Last Update: December 2011
+Last Update: December 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- Removed dbpuller tool. Use Omega flatfile tool instead.
+ -- guest_site configuration option is renamed to noguest_site.
 
 
 Feature Additions:
@@ -13,6 +14,7 @@ Feature Additions:
  -- Add 24-bit color support.  That is, the database and string
     functions can represent 24-bit color.
  -- Support for MXP/HTML-style tags representing 24-bit color.
+ -- IPv6 support.
  -- Add password_methods configuration option.
  -- Add default_charset configuration option (Issue 575).
  -- Add ATAN2().
