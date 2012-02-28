@@ -691,6 +691,7 @@ public:
     mux_sockaddr(const sockaddr *);
     void SetAddress(in_addr ia);
     void SetAddress(in6_addr ia);
+    void SetAddress(mux_addr *ma);
 
     unsigned short Family() const;
     unsigned short Port() const;
@@ -704,6 +705,8 @@ public:
     const struct sockaddr_in6 *sai6ro() const;
     size_t salen() const;
     size_t maxaddrlen() const;
+    void GetAddress(struct in_addr *ia) const;
+    void GetAddress(struct in6_addr *ia6) const;
 
     bool operator==(const mux_sockaddr &it) const;
 
@@ -729,10 +732,16 @@ private:
 class mux_addr
 {
 public:
-    mux_addr();
+    mux_addr() { }
     virtual ~mux_addr();
 
-    virtual int getFamily() = 0;
+    virtual int getFamily() const = 0;
+    virtual bool isValidMask(int *pnLeadingBits) const = 0;
+    virtual void makeMask(int nLeadingBits) = 0;
+    virtual bool clearOutsideMask(const mux_addr &itMask) = 0;
+    virtual mux_addr *calculateEnd(const mux_addr &itMask) const = 0;
+    virtual bool operator<(const mux_addr &it) const = 0;
+    virtual bool operator==(const mux_addr &it) const = 0;
 };
 
 class mux_subnet
@@ -747,11 +756,18 @@ public:
         kGreaterThan
     };
 
+    mux_subnet() : m_iaBase(NULL), m_iaMask(NULL), m_iaEnd(NULL) { }
     virtual int getFamily() const = 0;
     virtual bool Parse(UTF8 *str, dbref player, UTF8 *cmd) = 0;
-    virtual Comparison CompareTo(mux_subnet *msn) const = 0;
-    virtual Comparison CompareTo(MUX_SOCKADDR *msa) const = 0;
+    Comparison CompareTo(mux_subnet *msn) const;
+    Comparison CompareTo(MUX_SOCKADDR *msa) const;
     virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const = 0;
+
+protected:
+    mux_addr *m_iaBase;
+    mux_addr *m_iaMask;
+    mux_addr *m_iaEnd;
+    int      m_iLeadingBits;
 };
 
 // IPv4
@@ -760,13 +776,23 @@ public:
 class mux_in_addr : public mux_addr
 {
 public:
-    mux_in_addr(struct in_addr);
+    mux_in_addr() { }
+    mux_in_addr(struct in_addr *ia);
+    mux_in_addr(in_addr_t ulBits);
     virtual ~mux_in_addr();
 
-    int getFamily() { return MUX_IPV4; }
+    int getFamily() const { return MUX_IPV4; }
+    bool isValidMask(int *pnLeadingBits) const;
+    void makeMask(int nLeadingBits);
+    bool clearOutsideMask(const mux_addr &itMask);
+    mux_addr *calculateEnd(const mux_addr &itMask) const;
+    bool operator<(const mux_addr &it) const;
+    bool operator==(const mux_addr &it) const;
 
 private:
-    struct in_addr;
+    struct in_addr m_ia;
+
+    friend class mux_sockaddr;
 };
 
 class mux_in_subnet : public mux_subnet
@@ -776,15 +802,7 @@ public:
 
     int getFamily() const { return MUX_IPV4; }
     bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
-    mux_subnet::Comparison CompareTo(mux_subnet *msn) const;
-    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa) const;
     bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
-
-private:
-    struct in_addr m_iaBase;
-    struct in_addr m_iaMask;
-    struct in_addr m_iaEnd;
-    int            m_iLeadingBits;
 };
 #endif
 
@@ -794,13 +812,22 @@ private:
 class mux_in6_addr : mux_addr
 {
 public:
-    mux_in6_addr(struct in6_addr);
+    mux_in6_addr() { }
+    mux_in6_addr(struct in6_addr *ia6);
     virtual ~mux_in6_addr();
 
-    int getFamily() { return MUX_IPV6; }
+    int getFamily() const { return MUX_IPV6; }
+    bool isValidMask(int *pnLeadingBits) const;
+    void makeMask(int nLeadingBits);
+    bool clearOutsideMask(const mux_addr &itMask);
+    mux_addr *calculateEnd(const mux_addr &itMask) const;
+    bool operator<(const mux_addr &it) const;
+    bool operator==(const mux_addr &it) const;
 
 private:
-    struct in6_addr;
+    struct in6_addr m_ia6;
+
+    friend class mux_sockaddr;
 };
 
 class mux_in6_subnet : mux_subnet
@@ -810,15 +837,7 @@ public:
 
     int getFamily() const { return MUX_IPV6; }
     bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
-    mux_subnet::Comparison CompareTo(mux_subnet *msn) const;
-    mux_subnet::Comparison CompareTo(MUX_SOCKADDR *msa) const;
     bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
-
-private:
-    struct in6_addr m_iaBase;
-    struct in6_addr m_iaMask;
-    struct in6_addr m_iaEnd;
-    int             m_iLeadingBits;
 };
 #endif
 

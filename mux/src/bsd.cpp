@@ -5610,7 +5610,6 @@ bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
     {
         return false;
     }
-    *pnIP = htonl(*pnIP);
     return true;
 }
 
@@ -5618,9 +5617,10 @@ bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
 // valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
 // a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
 //
-static bool isValidIPv4SubnetMask(in_addr_t ulMask, int *pnLeadingBits)
+bool mux_in_addr::isValidMask(int *pnLeadingBits) const
 {
     in_addr_t ulTest = 0xFFFFFFFFUL;
+    in_addr_t ulMask = m_ia.s_addr;
     for (int i = 0; i <= 32; i++)
     {
         if (ulMask == ulTest)
@@ -5633,14 +5633,14 @@ static bool isValidIPv4SubnetMask(in_addr_t ulMask, int *pnLeadingBits)
     return false;
 }
 
-static bool isValidIPv6SubnetMask(in6_addr *piaMask, int *pnLeadingBits)
+bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 {
     const unsigned char allones = 0xFF;
     unsigned char ucMask;
     int i;
-    for (i = 0; i < 128/8; i++)
+    for (i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
     {
-        ucMask = piaMask->s6_addr[i];
+        ucMask = m_ia6.s6_addr[i];
         if (allones != ucMask)
         {
             break;
@@ -5649,7 +5649,7 @@ static bool isValidIPv6SubnetMask(in6_addr *piaMask, int *pnLeadingBits)
 
     int nLeadingBits = 8*i;
 
-    if (i < 128/8)
+    if (i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
     {
         if (0 != ucMask)
         {
@@ -5673,9 +5673,9 @@ static bool isValidIPv6SubnetMask(in6_addr *piaMask, int *pnLeadingBits)
             i++;
         }
 
-        for ( ; i < 128/8; i++)
+        for ( ; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
-            ucMask = piaMask->s6_addr[i];
+            ucMask = m_ia6.s6_addr[i];
             if (0 != ucMask)
             {
                 return false;
@@ -5683,6 +5683,38 @@ static bool isValidIPv6SubnetMask(in6_addr *piaMask, int *pnLeadingBits)
         }
     }
     return true;
+}
+
+void mux_in_addr::makeMask(int nLeadingBits)
+{
+    // << [0,31] works. << 32 is problematic on some systems.
+    //
+    in_addr_t ulMask = 0;
+    if (nLeadingBits > 0)
+    {
+        ulMask = (0xFFFFFFFFUL << (32 - nLeadingBits)) & 0xFFFFFFFFUL;
+    }
+    m_ia.s_addr = htonl(ulMask);
+}
+
+void mux_in6_addr::makeMask(int nLeadingBits)
+{
+    const unsigned char allones = 0xFF;
+    memset(&m_ia6, 0, sizeof(m_ia6));
+    int iBytes = nLeadingBits / 8;
+    for (int i = 0; i < iBytes; i++)
+    {
+        m_ia6.s6_addr[i] = allones;
+    }
+
+    if (iBytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
+    {
+        int iBits = nLeadingBits % 8;
+        if (iBits > 0)
+        {
+            m_ia6.s6_addr[iBytes] = (allones << (8 - iBits)) & allones;
+        }
+    }
 }
 
 // Parse IPv4/netmask notation in either standard or CIDR prefix notation
@@ -5714,13 +5746,22 @@ bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
             return false;
         }
 
-        if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
-           || !isValidIPv4SubnetMask(ulMask = ntohl(ulNetBits), &m_iLeadingBits))
+        if (MakeCanonicalIPv4(mask_txt, &ulNetBits))
+        {
+            delete m_iaMask;
+            m_iaMask = new mux_in_addr(ulNetBits);
+            if (!m_iaMask->isValidMask(&m_iLeadingBits))
+            {
+                delete m_iaMask;
+                m_iaMask = NULL;
+            }
+        }
+
+        if (NULL == m_iaMask)
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
             return false;
         }
-        m_iaMask.s_addr = ulNetBits;
     }
     else
     {
@@ -5743,14 +5784,9 @@ bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         }
         else
         {
-            // << [0,31] works. << 32 is problematic on some systems.
-            //
-            ulMask = 0;
-            if (m_iLeadingBits > 0)
-            {
-                ulMask = (0xFFFFFFFFUL << (32 - m_iLeadingBits)) & 0xFFFFFFFFUL;
-            }
-            m_iaMask.s_addr = htonl(ulMask);
+            delete m_iaMask;
+            m_iaMask = new mux_in_addr();
+            m_iaMask->makeMask(m_iLeadingBits);
         }
     }
 
@@ -5759,22 +5795,19 @@ bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
         return false;
     }
-    m_iaBase.s_addr = ulNetBits;
-    in_addr_t ulAddr = ntohl(m_iaBase.s_addr);
 
-    if (ulAddr & ~ulMask)
+    delete m_iaBase;
+    m_iaBase = new mux_in_addr(ulNetBits);
+    if (m_iaBase->clearOutsideMask(*m_iaMask))
     {
-        // The given subnet address contains 'one' bits which are outside
-        // the given subnet mask. If we don't clear these bits, they will
-        // interfere with the subnet tests in site_check. The subnet spec
-        // would be defunct and useless.
+        // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
+        // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
         //
         cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
-        ulAddr &= ulMask;
-        m_iaBase.s_addr = htonl(ulAddr);
     }
 
-    m_iaEnd.s_addr = htonl(ulAddr | ~ulMask);
+    delete m_iaEnd;
+    m_iaEnd = m_iaBase->calculateEnd(*m_iaMask);
 
     return true;
 }
@@ -5798,80 +5831,75 @@ mux_in_subnet::~mux_in_subnet()
 {
 }
 
-mux_subnet::Comparison mux_in_subnet::CompareTo(mux_subnet *msn_arg) const
+mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
 {
-    if (MUX_IPV4 == msn_arg->getFamily())
+    if (*(t->m_iaEnd) < *m_iaBase)
     {
-        mux_in_subnet *t = (mux_in_subnet *)msn_arg;
-        if (ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaBase.s_addr))
-        {
-            // this > t
-            //
-            return mux_subnet::kGreaterThan;
-        }
-        else if (ntohl(m_iaEnd.s_addr) < ntohl(t->m_iaBase.s_addr))
-        {
-            // this < t
-            //
-            return mux_subnet::kLessThan;
-        }
-        else if (  ntohl(m_iaBase.s_addr) < ntohl(t->m_iaBase.s_addr)
-                && ntohl(t->m_iaEnd.s_addr) < ntohl(m_iaEnd.s_addr))
-        {
-            // this contains t
-            //
-            return mux_subnet::kContains;
-        }
-        else if (  ntohl(m_iaBase.s_addr) == ntohl(t->m_iaBase.s_addr)
-                && m_iLeadingBits == t->m_iLeadingBits)
-        {
-            // this == t
-            //
-            return mux_subnet::kEqual;
-        }
-        else
-        {
-            // this is contained by t
-            //
-            return mux_subnet::kContainedBy;
-        }
+        // this > t
+        //
+        return mux_subnet::kGreaterThan;
+    }
+    else if (*m_iaEnd < *(t->m_iaBase))
+    {
+        // this < t
+        //
+        return mux_subnet::kLessThan;
+    }
+    else if (  *m_iaBase < *(t->m_iaBase)
+            && *(t->m_iaEnd) < *m_iaEnd)
+    {
+        // this contains t
+        //
+        return mux_subnet::kContains;
+    }
+    else if (  *m_iaBase == *(t->m_iaBase)
+            && m_iLeadingBits == t->m_iLeadingBits)
+    {
+        // this == t
+        //
+        return mux_subnet::kEqual;
     }
     else
     {
-        // IPv4 < IPv6
+        // this is contained by t
         //
-        return mux_subnet::kGreaterThan;
+        return mux_subnet::kContainedBy;
     }
 }
 
-mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa) const
+mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 {
+    mux_addr *ma = NULL;
     if (AF_INET == msa->Family())
     {
-        if (ntohl(msa->sai()->sin_addr.s_addr) < ntohl(m_iaBase.s_addr))
-        {
-            // this > t
-            //
-            return mux_subnet::kGreaterThan;
-        }
-        else if (ntohl(m_iaEnd.s_addr) < ntohl(msa->sai()->sin_addr.s_addr))
-        {
-            // this < t
-            //
-            return mux_subnet::kLessThan;
-        }
-        else
-        {
-            // this contains t
-            //
-            return mux_subnet::kContains;
-        }
+        struct in_addr ia;
+        msa->GetAddress(&ia);
+        ma = (mux_addr *)(new mux_in_addr(&ia));
     }
     else
     {
-        // IPv4 < IPv6
+        struct in6_addr ia6;
+        msa->GetAddress(&ia6);
+        ma = (mux_addr *)(new mux_in6_addr(&ia6));
+    }
+        
+    if (ma < m_iaBase)
+    {
+        // this > t
         //
         return mux_subnet::kGreaterThan;
+    }
+    else if (m_iaEnd < ma)
+    {
+        // this < t
+        //
+        return mux_subnet::kLessThan;
+    }
+    else
+    {
+        // this contains t
+        //
+        return mux_subnet::kContains;
     }
 }
 
@@ -5916,14 +5944,15 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         {
             for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
             {
-                memcpy(&m_iaMask, ai->ai_addr, ai->ai_addrlen);
+                delete m_iaMask;
+                m_iaMask = (mux_addr *)(new mux_in6_addr((struct in6_addr *)(ai->ai_addr)));
                 n++;
             }
             mux_freeaddrinfo(servinfo);
         }
 
         if (  1 != n
-           || !isValidIPv6SubnetMask(&m_iaMask, &m_iLeadingBits))
+           || !m_iaMask->isValidMask(&m_iLeadingBits))
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
             return false;
@@ -5950,22 +5979,9 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         }
         else
         {
-            const unsigned char allones = 0xFF;
-            memset(&m_iaMask, 0, sizeof(m_iaMask));
-            int iBytes = m_iLeadingBits / 8;
-            for (i = 0; i < iBytes; i++)
-            {
-                m_iaMask.s6_addr[i] = allones;
-            }
-
-            if (iBytes < 128/8)
-            {
-                int iBits = m_iLeadingBits % 8;
-                if (iBits > 0)
-                {
-                    m_iaMask.s6_addr[iBytes] = (allones << (8 - iBits)) & allones;
-                }
-            }
+            delete m_iaMask;
+            m_iaMask = (mux_addr *)(new mux_in6_addr());
+            m_iaMask->makeMask(m_iLeadingBits);
         }
     }
 
@@ -5974,7 +5990,8 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
     {
         for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
         {
-            memcpy(&m_iaBase, ai->ai_addr, ai->ai_addrlen);
+            delete m_iaBase;
+            m_iaBase = (mux_addr *)(new mux_in6_addr((struct in6_addr *)ai->ai_addr));
             n++;
         }
         mux_freeaddrinfo(servinfo);
@@ -5986,24 +6003,16 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         return false;
     }
 
-    bool fOutside = false;
-    for (i = 0; i < 128/8; i++)
-    {
-        if (m_iaBase.s6_addr[i] & ~m_iaMask.s6_addr[i])
-        {
-            fOutside = true;
-            m_iaBase.s6_addr[i] &= m_iaMask.s6_addr[i];
-        }
-        m_iaEnd.s6_addr[i] = m_iaBase.s6_addr[i] | ~m_iaMask.s6_addr[i];
-    }
-
-    if (fOutside)
+    if (m_iaBase->clearOutsideMask(*m_iaMask))
     {
         // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
         // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
         //
         cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
     }
+
+    delete m_iaEnd;
+    m_iaEnd = m_iaBase->calculateEnd(*m_iaMask);
 
     return true;
 }
@@ -6025,18 +6034,6 @@ bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
 
 mux_in6_subnet::~mux_in6_subnet()
 {
-}
-
-mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_subnet *) const
-{
-    // TODO
-    return mux_subnet::kGreaterThan;
-}
-
-mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_sockaddr *) const
-{
-    // TODO
-    return mux_subnet::kGreaterThan;
 }
 
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
@@ -6524,6 +6521,28 @@ void mux_sockaddr::SetAddress(struct in6_addr ia6)
     u.sai6.sin6_addr = ia6;
 }
 
+void mux_sockaddr::SetAddress(mux_addr *ma)
+{
+    switch (ma->getFamily())
+    {
+    case MUX_IPV4:
+        {
+            mux_in_addr *mia = (mux_in_addr *)ma;
+            u.sai.sin_family = AF_INET;
+            u.sai.sin_addr = mia->m_ia;
+        }
+        break;
+
+    case MUX_IPV6:
+        {
+            mux_in6_addr *mia6 = (mux_in6_addr *)ma;
+            u.sai6.sin6_family = AF_INET6;
+            u.sai6.sin6_addr = mia6->m_ia6;
+        }
+        break;
+    }
+}
+
 void mux_sockaddr::Clear()
 {
     memset(&u, 0, sizeof(u));
@@ -6613,4 +6632,148 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
         break;
     }
     return false;
+}
+
+mux_addr::~mux_addr()
+{
+}
+
+mux_in_addr::~mux_in_addr()
+{
+}
+
+mux_in6_addr::~mux_in6_addr()
+{
+}
+
+mux_in_addr::mux_in_addr(in_addr *ia)
+{
+    m_ia = *ia;
+}
+
+mux_in6_addr::mux_in6_addr(in6_addr *ia6)
+{
+    m_ia6 = *ia6;
+}
+
+mux_in_addr::mux_in_addr(unsigned int ulBits)
+{
+    m_ia.s_addr = htonl(ulBits);
+}
+
+void mux_sockaddr::GetAddress(in_addr *ia) const
+{
+    *ia = u.sai.sin_addr;
+}
+
+void mux_sockaddr::GetAddress(in6_addr *ia6) const
+{
+    *ia6 = u.sai6.sin6_addr;
+}
+
+bool mux_in_addr::operator<(const mux_addr &it) const
+{
+    if (MUX_IPV4 == it.getFamily())
+    {
+        const mux_in_addr *t = (const mux_in_addr *)&it;
+        return (m_ia.s_addr < t->m_ia.s_addr);
+    }
+    return true;
+}
+
+bool mux_in_addr::operator==(const mux_addr &it) const
+{
+    if (MUX_IPV4 == it.getFamily())
+    {
+        const mux_in_addr *t = (const mux_in_addr *)&it;
+        return (m_ia.s_addr == t->m_ia.s_addr);
+    }
+    return false;
+}
+
+bool mux_in_addr::clearOutsideMask(const mux_addr &it)
+{
+    if (MUX_IPV4 == it.getFamily())
+    {
+        const mux_in_addr *t = (const mux_in_addr *)&it;
+        if (m_ia.s_addr & ~t->m_ia.s_addr)
+        {
+            m_ia.s_addr &= ~t->m_ia.s_addr;
+            return true;
+        }
+        return false;
+    }
+    return true;
+}
+
+mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
+{
+    if (MUX_IPV4 == it.getFamily())
+    {
+        const mux_in_addr *t = (const mux_in_addr *)&it;
+        mux_in_addr *e = new mux_in_addr();
+        e->m_ia.s_addr = m_ia.s_addr | ~t->m_ia.s_addr;
+        return (mux_addr *)e;
+    }
+    return NULL;
+}
+
+bool mux_in6_addr::operator<(const mux_addr &it) const
+{
+    if (MUX_IPV6 == it.getFamily())
+    {
+        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        {
+            if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool mux_in6_addr::operator==(const mux_addr &it) const
+{
+    if (MUX_IPV6 == it.getFamily())
+    {
+        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        return (m_ia6.s6_addr == t->m_ia6.s6_addr);
+    }
+    return false;
+}
+
+bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
+{
+    if (MUX_IPV6 == it.getFamily())
+    {
+        bool fOutside = false;
+        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        {
+            if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
+            {
+                fOutside = true;
+                m_ia6.s6_addr[i] &= ~t->m_ia6.s6_addr[i];
+            }
+        }
+        return fOutside;
+    }
+    return true;
+}
+
+mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
+{
+    if (MUX_IPV6 == it.getFamily())
+    {
+        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        mux_in6_addr *e = new mux_in6_addr();
+        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        {
+            e->m_ia6.s6_addr[i] = m_ia6.s6_addr[i] | ~t->m_ia6.s6_addr[i];
+        }
+        return (mux_addr *)e;
+    }
+    return NULL;
 }

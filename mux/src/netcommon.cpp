@@ -3743,8 +3743,9 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
             safe_str(access_keywords[i].s, sControl, &bufc);
         }
     }
+    *bufc = '\0';
 
-    mux_sprintf(sAddress, LBUF_SIZE, T("%45s/%3d"), sLine, nLeadingBits);
+    mux_sprintf(sAddress, LBUF_SIZE, T("%s/%d"), sLine, nLeadingBits);
     mux_sprintf(sLine, LBUF_SIZE, T("%-49s %s"), sAddress, sControl);
     notify(player, sLine);
 
@@ -3755,7 +3756,7 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
 void mux_subnets::listinfo(dbref player)
 {
     notify(player, T("----- Site Access -----"));
-    notify(player, T("Address              Mask                 Status"));
+    notify(player, T("Address              Mask                          Status"));
 
     UTF8 *sAddress = alloc_lbuf("list_sites.addr");
     UTF8 *sControl = alloc_lbuf("list_sites.control");
