@@ -6680,7 +6680,7 @@ bool mux_in_addr::clearOutsideMask(const mux_addr &it)
         const mux_in_addr *t = (const mux_in_addr *)&it;
         if (m_ia.s_addr & ~t->m_ia.s_addr)
         {
-            m_ia.s_addr &= ~t->m_ia.s_addr;
+            m_ia.s_addr &= t->m_ia.s_addr;
             return true;
         }
         return false;
@@ -6737,7 +6737,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
             if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
             {
                 fOutside = true;
-                m_ia6.s6_addr[i] &= ~t->m_ia6.s6_addr[i];
+                m_ia6.s6_addr[i] &= t->m_ia6.s6_addr[i];
             }
         }
         return fOutside;
