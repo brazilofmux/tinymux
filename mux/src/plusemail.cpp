@@ -440,7 +440,7 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     //
     MUX_ADDRINFO hints;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_INET;
+    hints.ai_family   = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_ADDRCONFIG;
@@ -459,8 +459,9 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
             {
                 *sock = mysock;
                 cc = 0;
+                break;
             }
-            break;
+            close(mysock);
         }
         mux_freeaddrinfo(servinfo);
     }
