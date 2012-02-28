@@ -5633,6 +5633,58 @@ static bool isValidIPv4SubnetMask(in_addr_t ulMask, int *pnLeadingBits)
     return false;
 }
 
+static bool isValidIPv6SubnetMask(in6_addr *piaMask, int *pnLeadingBits)
+{
+    const unsigned char allones = 0xFF;
+    unsigned char ucMask;
+    int i;
+    for (i = 0; i < 128/8; i++)
+    {
+        ucMask = piaMask->s6_addr[i];
+        if (allones != ucMask)
+        {
+            break;
+        }
+    }
+
+    int nLeadingBits = 8*i;
+
+    if (i < 128/8)
+    {
+        if (0 != ucMask)
+        {
+            bool fFound = false;
+            unsigned char ucTest = allones;
+            for (int j = 0; j <= 8 && !fFound; j++)
+            {
+                if (ucMask == ucTest)
+                {
+                    nLeadingBits += j;
+                    fFound = true;
+                    break;
+                }
+                ucTest = (ucTest << 1) & allones;
+            }
+
+            if (!fFound)
+            {
+                return false;
+            }
+            i++;
+        }
+
+        for ( ; i < 128/8; i++)
+        {
+            ucMask = piaMask->s6_addr[i];
+            if (0 != ucMask)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 // Parse IPv4/netmask notation in either standard or CIDR prefix notation
 //
 bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
@@ -5823,26 +5875,137 @@ mux_subnet::Comparison mux_in_subnet::CompareTo(MUX_SOCKADDR *msa) const
     }
 }
 
-mux_in6_subnet::~mux_in6_subnet()
-{
-}
-
-mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_sockaddr *) const
-{
-    // TODO
-    return mux_subnet::kGreaterThan;
-}
-
-mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_subnet *) const
-{
-    // TODO
-    return mux_subnet::kGreaterThan;
-}
-
 bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
 {
-    // TODO
-    return false;
+    MUX_ADDRINFO hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET6;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = 0;
+
+    int i, n;
+    MUX_ADDRINFO *servinfo;
+
+    UTF8 *addr_txt;
+    UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
+    if (NULL == mask_txt)
+    {
+        // Standard IP range and netmask notation.
+        //
+        MUX_STRTOK_STATE tts;
+        mux_strtok_src(&tts, str);
+        mux_strtok_ctl(&tts, T(" \t=,"));
+        addr_txt = mux_strtok_parse(&tts);
+        if (NULL != addr_txt)
+        {
+            mask_txt = mux_strtok_parse(&tts);
+        }
+
+        if (  NULL == addr_txt
+           || '\0' == *addr_txt
+           || NULL == mask_txt
+           || '\0' == *mask_txt)
+        {
+            cf_log_syntax(player, cmd, T("Missing host address or mask."));
+            return false;
+        }
+
+        n = 0;
+        if (0 == mux_getaddrinfo(mask_txt, NULL, &hints, &servinfo))
+        {
+            for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+            {
+                memcpy(&m_iaMask, ai->ai_addr, ai->ai_addrlen);
+                n++;
+            }
+            mux_freeaddrinfo(servinfo);
+        }
+
+        if (  1 != n
+           || !isValidIPv6SubnetMask(&m_iaMask, &m_iLeadingBits))
+        {
+            cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
+            return false;
+        }
+    }
+    else
+    {
+        // RFC 1517, 1518, 1519, 1520: CIDR IP prefix notation
+        //
+        addr_txt = str;
+        *mask_txt++ = '\0';
+        if (!is_integer(mask_txt, NULL))
+        {
+            cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
+            return false;
+        }
+
+        m_iLeadingBits = mux_atol(mask_txt);
+        if (  m_iLeadingBits < 0
+           || 128 < m_iLeadingBits)
+        {
+            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), m_iLeadingBits);
+            return false;
+        }
+        else
+        {
+            const unsigned char allones = 0xFF;
+            memset(&m_iaMask, 0, sizeof(m_iaMask));
+            int iBytes = m_iLeadingBits / 8;
+            for (i = 0; i < iBytes; i++)
+            {
+                m_iaMask.s6_addr[i] = allones;
+            }
+
+            if (iBytes < 128/8)
+            {
+                int iBits = m_iLeadingBits % 8;
+                if (iBits > 0)
+                {
+                    m_iaMask.s6_addr[iBytes] = (allones << (8 - iBits)) & allones;
+                }
+            }
+        }
+    }
+
+    n = 0;
+    if (0 == mux_getaddrinfo(addr_txt, NULL, &hints, &servinfo))
+    {
+        for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+        {
+            memcpy(&m_iaBase, ai->ai_addr, ai->ai_addrlen);
+            n++;
+        }
+        mux_freeaddrinfo(servinfo);
+    }
+
+    if (1 != n)
+    {
+        cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
+        return false;
+    }
+
+    bool fOutside = false;
+    for (i = 0; i < 128/8; i++)
+    {
+        if (m_iaBase.s6_addr[i] & ~m_iaMask.s6_addr[i])
+        {
+            fOutside = true;
+            m_iaBase.s6_addr[i] &= m_iaMask.s6_addr[i];
+        }
+        m_iaEnd.s6_addr[i] = m_iaBase.s6_addr[i] | ~m_iaMask.s6_addr[i];
+    }
+
+    if (fOutside)
+    {
+        // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
+        // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
+        //
+        cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
+    }
+
+    return true;
 }
 
 bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
@@ -5858,6 +6021,22 @@ bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
     *pnLeadingBits = m_iLeadingBits;
 
     return true;
+}
+
+mux_in6_subnet::~mux_in6_subnet()
+{
+}
+
+mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_subnet *) const
+{
+    // TODO
+    return mux_subnet::kGreaterThan;
+}
+
+mux_subnet::Comparison mux_in6_subnet::CompareTo(mux_sockaddr *) const
+{
+    // TODO
+    return mux_subnet::kGreaterThan;
 }
 
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
