@@ -758,7 +758,6 @@ public:
 
     mux_subnet() : m_iaBase(NULL), m_iaMask(NULL), m_iaEnd(NULL) { }
     virtual int getFamily() const = 0;
-    virtual bool Parse(UTF8 *str, dbref player, UTF8 *cmd) = 0;
     Comparison CompareTo(mux_subnet *msn) const;
     Comparison CompareTo(MUX_SOCKADDR *msa) const;
     virtual bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const = 0;
@@ -768,7 +767,11 @@ protected:
     mux_addr *m_iaMask;
     mux_addr *m_iaEnd;
     int      m_iLeadingBits;
+
+    friend mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd);
 };
+
+mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd);
 
 // IPv4
 //
@@ -801,7 +804,6 @@ public:
     virtual ~mux_in_subnet();
 
     int getFamily() const { return MUX_IPV4; }
-    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
     bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
 };
 #endif
@@ -836,7 +838,6 @@ public:
     virtual ~mux_in6_subnet();
 
     int getFamily() const { return MUX_IPV6; }
-    bool Parse(UTF8 *str, dbref player, UTF8 *cmd);
     bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
 };
 #endif

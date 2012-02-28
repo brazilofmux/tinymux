@@ -5717,101 +5717,6 @@ void mux_in6_addr::makeMask(int nLeadingBits)
     }
 }
 
-// Parse IPv4/netmask notation in either standard or CIDR prefix notation
-//
-bool mux_in_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
-{
-    in_addr_t ulMask, ulNetBits;
-    UTF8 *addr_txt;
-    UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
-    if (NULL == mask_txt)
-    {
-        // Standard IP range and netmask notation.
-        //
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, str);
-        mux_strtok_ctl(&tts, T(" \t=,"));
-        addr_txt = mux_strtok_parse(&tts);
-        if (NULL != addr_txt)
-        {
-            mask_txt = mux_strtok_parse(&tts);
-        }
-
-        if (  NULL == addr_txt
-           || '\0' == *addr_txt
-           || NULL == mask_txt
-           || '\0' == *mask_txt)
-        {
-            cf_log_syntax(player, cmd, T("Missing host address or mask."));
-            return false;
-        }
-
-        if (MakeCanonicalIPv4(mask_txt, &ulNetBits))
-        {
-            delete m_iaMask;
-            m_iaMask = new mux_in_addr(ulNetBits);
-            if (!m_iaMask->isValidMask(&m_iLeadingBits))
-            {
-                delete m_iaMask;
-                m_iaMask = NULL;
-            }
-        }
-
-        if (NULL == m_iaMask)
-        {
-            cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
-            return false;
-        }
-    }
-    else
-    {
-        // RFC 1517, 1518, 1519, 1520: CIDR IP prefix notation
-        //
-        addr_txt = str;
-        *mask_txt++ = '\0';
-        if (!is_integer(mask_txt, NULL))
-        {
-            cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
-            return false;
-        }
-
-        m_iLeadingBits = mux_atol(mask_txt);
-        if (  m_iLeadingBits < 0
-           || 32 < m_iLeadingBits)
-        {
-            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), m_iLeadingBits);
-            return false;
-        }
-        else
-        {
-            delete m_iaMask;
-            m_iaMask = new mux_in_addr();
-            m_iaMask->makeMask(m_iLeadingBits);
-        }
-    }
-
-    if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
-    {
-        cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
-        return false;
-    }
-
-    delete m_iaBase;
-    m_iaBase = new mux_in_addr(ulNetBits);
-    if (m_iaBase->clearOutsideMask(*m_iaMask))
-    {
-        // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
-        // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
-        //
-        cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
-    }
-
-    delete m_iaEnd;
-    m_iaEnd = m_iaBase->calculateEnd(*m_iaMask);
-
-    return true;
-}
-
 bool mux_in_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
 {
     // Base Address
@@ -5903,16 +5808,22 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
     }
 }
 
-bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
+mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 {
+    mux_addr *maMask = NULL;
+    mux_addr *maBase = NULL;
+    mux_addr *maEnd  = NULL;
+    int nLeadingBits = 0;
+
     MUX_ADDRINFO hints;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET6;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = 0;
+    hints.ai_flags = AI_NUMERICHOST|AI_NUMERICSERV;
 
-    int i, n;
+    int n;
+    in_addr_t ulNetBits;
     MUX_ADDRINFO *servinfo;
 
     UTF8 *addr_txt;
@@ -5936,7 +5847,7 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
            || '\0' == *mask_txt)
         {
             cf_log_syntax(player, cmd, T("Missing host address or mask."));
-            return false;
+            return NULL;
         }
 
         n = 0;
@@ -5944,18 +5855,34 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         {
             for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
             {
-                delete m_iaMask;
-                m_iaMask = (mux_addr *)(new mux_in6_addr((struct in6_addr *)(ai->ai_addr)));
+                delete maMask;
+                if (AF_INET == ai->ai_family)
+                {
+                    struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
+                    maMask = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+                }
+                else
+                {
+                    struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
+                    maMask = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+                }
                 n++;
             }
             mux_freeaddrinfo(servinfo);
         }
+        else if (MakeCanonicalIPv4(mask_txt, &ulNetBits))
+        {
+            delete maMask;
+            maMask = (mux_addr *)(new mux_in_addr(ulNetBits));
+            n++;
+        }
 
         if (  1 != n
-           || !m_iaMask->isValidMask(&m_iLeadingBits))
+           || !maMask->isValidMask(&nLeadingBits))
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
-            return false;
+            delete maMask;
+            return NULL;
         }
     }
     else
@@ -5970,19 +5897,7 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
             return false;
         }
 
-        m_iLeadingBits = mux_atol(mask_txt);
-        if (  m_iLeadingBits < 0
-           || 128 < m_iLeadingBits)
-        {
-            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), m_iLeadingBits);
-            return false;
-        }
-        else
-        {
-            delete m_iaMask;
-            m_iaMask = (mux_addr *)(new mux_in6_addr());
-            m_iaMask->makeMask(m_iLeadingBits);
-        }
+        nLeadingBits = mux_atol(mask_txt);
     }
 
     n = 0;
@@ -5990,20 +5905,74 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
     {
         for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
         {
-            delete m_iaBase;
-            m_iaBase = (mux_addr *)(new mux_in6_addr((struct in6_addr *)ai->ai_addr));
+            delete maBase;
+            if (AF_INET == ai->ai_family)
+            {
+                struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
+                maBase = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+            }
+            else
+            {
+                struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
+                maBase = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+            }
             n++;
         }
         mux_freeaddrinfo(servinfo);
+    }
+    else if (MakeCanonicalIPv4(addr_txt, &ulNetBits))
+    {
+        delete maBase;
+        maBase = (mux_addr *)(new mux_in_addr(ulNetBits));
+        n++;
     }
 
     if (1 != n)
     {
         cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
-        return false;
+        delete maMask;
+        delete maBase;
+        return NULL;
     }
 
-    if (m_iaBase->clearOutsideMask(*m_iaMask))
+    if (NULL == maMask)
+    {
+        bool fOutOfRange = false;
+        if (MUX_IPV4 == maBase->getFamily())
+        {
+            maMask = (mux_addr *)(new mux_in_addr());
+            if (  nLeadingBits < 0
+               || 32 < nLeadingBits)
+            {
+                fOutOfRange = true;
+            }
+        }
+        else
+        {
+            maMask = (mux_addr *)(new mux_in6_addr());
+            if (  nLeadingBits < 0
+               || 128 < nLeadingBits)
+            {
+                fOutOfRange = true;
+            }
+        }
+
+        if (fOutOfRange)
+        {
+            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), nLeadingBits);
+            return NULL;
+        }
+        maMask->makeMask(nLeadingBits);
+    }
+    else if (maBase->getFamily() != maMask->getFamily())
+    {
+        cf_log_syntax(player, cmd, T("Mask type is not compatible with address type: %s %s"), addr_txt, mask_txt);
+        delete maMask;
+        delete maBase;
+        return NULL;
+    }
+
+    if (maBase->clearOutsideMask(*maMask))
     {
         // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
         // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
@@ -6011,10 +5980,23 @@ bool mux_in6_subnet::Parse(UTF8 *str, dbref player, UTF8 *cmd)
         cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
     }
 
-    delete m_iaEnd;
-    m_iaEnd = m_iaBase->calculateEnd(*m_iaMask);
+    delete maEnd;
+    maEnd = maBase->calculateEnd(*maMask);
 
-    return true;
+    mux_subnet *msn = NULL;
+    if (MUX_IPV4 == maBase->getFamily())
+    {
+        msn = (mux_subnet *)(new mux_in_subnet());
+    }
+    else
+    {
+        msn = (mux_subnet *)(new mux_in6_subnet());
+    }
+    msn->m_iaBase = maBase;
+    msn->m_iaMask = maMask;
+    msn->m_iaEnd = maEnd;
+    msn->m_iLeadingBits = nLeadingBits;
+    return msn;
 }
 
 bool mux_in6_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const

@@ -1220,16 +1220,10 @@ static CF_HAND(cf_site)
 {
     UNUSED_PARAMETER(pExtra);
 
-    mux_subnet *pSubnet = (mux_subnet *)(new mux_in_subnet);
-    if (!pSubnet->Parse(str, player, cmd))
+    mux_subnet *pSubnet = ParseSubnet(str, player, cmd);
+    if (NULL == pSubnet)
     {
-        delete pSubnet;
-        pSubnet = (mux_subnet *)(new mux_in6_subnet);
-        if (!pSubnet->Parse(str, player, cmd))
-        {
-            delete pSubnet;
-            return -1;
-        }
+        return -1;
     }
 
     mux_subnets *subnets = (mux_subnets *)vp;

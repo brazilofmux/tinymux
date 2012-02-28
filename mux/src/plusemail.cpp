@@ -443,7 +443,7 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_V4MAPPED|AI_ADDRCONFIG;
+    hints.ai_flags = AI_ADDRCONFIG;
 
     UTF8 sPort[SBUF_SIZE];
     mux_ltoa(port, sPort);
