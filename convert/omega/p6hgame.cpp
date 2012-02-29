@@ -2551,7 +2551,16 @@ void P6H_GAME::ConvertFromT5X()
                                 P6H_ATTRINFO *pai = new P6H_ATTRINFO;
                                 pai->SetName(StringClone(itFound->second));
                                 pai->SetDerefs(0);
-                                pai->SetValue(StringClone((*itAttr)->m_pValueUnencoded));
+                                char *pValue = (*itAttr)->m_pValueUnencoded;
+                                if (T5X_A_PASS == (*itAttr)->m_iNum)
+                                {
+                                    const char sP6HPrefix[] = "$P6H$$";
+                                    if (memcmp(pValue, sP6HPrefix, sizeof(sP6HPrefix)-1) == 0)
+                                    {
+                                        pValue += sizeof(sP6HPrefix) - 1;
+                                    }
+                                }
+                                pai->SetValue(StringClone(pValue));
                                 pai->SetOwner((*itAttr)->m_dbOwner);
 
                                 pBuffer = aBuffer;
