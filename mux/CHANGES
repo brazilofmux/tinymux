@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: December 2012
+Last Update: March 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,3 +106,5 @@ Miscellaneous:
  -- Dark Purple is #800080.
  -- Typo. Should be hiding instead of hidding (Issue 654).
  -- Remove IDENT query. Everyone blocks it these days.
+ -- Windows 2000 is now the oldest supported version.  Note: The
+    pre-built binaries haven't supported pre-Win2k for some time.
