@@ -4790,7 +4790,6 @@ static void DCL_CDECL sighandler(int sig)
 
         // Coredump.
         //
-        check_panicking(sig);
         log_signal(sig);
         report();
 
@@ -4798,12 +4797,10 @@ static void DCL_CDECL sighandler(int sig)
         WSACleanup();
 #endif // WINDOWS_NETWORKING
 
-        unset_signals();
-        signal(sig, SIG_DFL);
         exit(1);
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
-    mudstate.panicking = 0;
+    mudstate.panicking = false;
 }
 
 NAMETAB sigactions_nametab[] =

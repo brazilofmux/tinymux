@@ -2869,6 +2869,10 @@ bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
             abort();
         }
     }
+    else
+    {
+        abort();
+    }
     mudstate.asserting--;
     return false;
 }
