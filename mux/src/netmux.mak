@@ -129,7 +129,7 @@ CPP_PROJ=/nologo /MT /Qopenmp-link:static /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "N
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.10 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib advapi32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.10 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alarm.obj" \
@@ -310,7 +310,7 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CON
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib advapi32.lib "$(OUTDIR)\libmux.lib" /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alarm.obj" \
