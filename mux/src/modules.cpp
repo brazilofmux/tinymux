@@ -12,6 +12,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 
 #if defined(TINYMUX_MODULES)
 
