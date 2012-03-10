@@ -6664,7 +6664,7 @@ bool mux_in_addr::operator<(const mux_addr &it) const
     if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
-        return (m_ia.s_addr < t->m_ia.s_addr);
+        return (ntohl(m_ia.s_addr) < ntohl(t->m_ia.s_addr));
     }
     return true;
 }
@@ -6674,7 +6674,7 @@ bool mux_in_addr::operator==(const mux_addr &it) const
     if (AF_INET == it.getFamily())
     {
         const mux_in_addr *t = (const mux_in_addr *)&it;
-        return (m_ia.s_addr == t->m_ia.s_addr);
+        return (ntohl(m_ia.s_addr) == ntohl(t->m_ia.s_addr));
     }
     return false;
 }
