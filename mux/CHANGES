@@ -81,6 +81,7 @@ Bug Fixes:
  -- Using @mail is clearer than check.my.mail.
  -- Re-write ANSI SUBSTITUTIONS to document %X (upper-case).
  -- Don't returned a dbref for a @reference if the dbref is garbage.
+ -- Fixes to site list handling.
 
 
 Performance Enhancements:
