@@ -5794,13 +5794,13 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
         return mux_subnet::kGreaterThan;
     }
         
-    if (ma < m_iaBase)
+    if (*ma < *m_iaBase)
     {
         // this > t
         //
         return mux_subnet::kGreaterThan;
     }
-    else if (m_iaEnd < ma)
+    else if (*m_iaEnd < *ma)
     {
         // this < t
         //
