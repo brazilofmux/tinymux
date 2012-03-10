@@ -3451,7 +3451,7 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
         {
             (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_PERMIT|HC_REGISTER|HC_FORBID);
         }
 
         if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
