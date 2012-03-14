@@ -1210,7 +1210,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         }
 
     } while (NULL != sp);
-    
+
     if (NULL != sAddress)
     {
         MEMFREE(sAddress);
@@ -5793,25 +5793,27 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
     default:
         return mux_subnet::kGreaterThan;
     }
-        
+
+    mux_subnet::Comparison fComp;
     if (*ma < *m_iaBase)
     {
         // this > t
         //
-        return mux_subnet::kGreaterThan;
+        fComp = mux_subnet::kGreaterThan;
     }
     else if (*m_iaEnd < *ma)
     {
         // this < t
         //
-        return mux_subnet::kLessThan;
+        fComp = mux_subnet::kLessThan;
     }
     else
     {
         // this contains t
         //
-        return mux_subnet::kContains;
+        fComp = mux_subnet::kContains;
     }
+    delete ma;
 }
 
 mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
@@ -6572,7 +6574,7 @@ size_t mux_sockaddr::salen() const
     case AF_INET6:
         return sizeof(u.sai6);
 #endif
-        
+
     default:
         return 0;
     }
