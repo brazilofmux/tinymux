@@ -780,6 +780,42 @@ void s_Name(dbref thing, const UTF8 *s)
     }
 }
 
+void free_Name(dbref thing)
+{
+#ifndef MEMORY_BASED
+    if (db[thing].name)
+    {
+        if (mudconf.cache_names)
+        {
+            if (db[thing].name == db[thing].purename)
+            {
+                db[thing].purename = NULL;
+            }
+            if (db[thing].name == db[thing].moniker)
+            {
+                db[thing].moniker = NULL;
+            }
+        }
+        MEMFREE(db[thing].name);
+        db[thing].name = NULL;
+    }
+#endif // !MEMORY_BASED
+
+    if (mudconf.cache_names)
+    {
+        if (db[thing].purename)
+        {
+            MEMFREE(db[thing].purename);
+            db[thing].purename = NULL;
+        }
+        if (db[thing].moniker)
+        {
+            MEMFREE(db[thing].moniker);
+            db[thing].moniker = NULL;
+        }
+    }
+}
+
 void s_Moniker(dbref thing, const UTF8 *s)
 {
     atr_add_raw(thing, A_MONIKER, s);
@@ -3031,6 +3067,11 @@ void db_grow(dbref newtop)
 void db_free(void)
 {
     delete_all_player_names();
+    for (dbref thing = 0; thing < mudstate.db_top; thing++)
+    {
+        free_Name(thing);
+    }
+
     if (db != NULL)
     {
         db -= SIZE_HACK;
