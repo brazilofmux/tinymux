@@ -752,6 +752,7 @@ public:
     };
 
     mux_subnet() : m_iaBase(NULL), m_iaMask(NULL), m_iaEnd(NULL) { }
+    ~mux_subnet();
     int getFamily() const { return m_iaBase->getFamily(); }
     Comparison CompareTo(mux_subnet *msn) const;
     Comparison CompareTo(MUX_SOCKADDR *msa) const;

@@ -5715,6 +5715,13 @@ void mux_in6_addr::makeMask(int nLeadingBits)
 }
 #endif
 
+mux_subnet::~mux_subnet()
+{
+    delete m_iaBase;
+    delete m_iaMask;
+    delete m_iaEnd;
+}
+
 bool mux_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
 {
     // Base Address
