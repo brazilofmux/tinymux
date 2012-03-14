@@ -3030,12 +3030,11 @@ void db_grow(dbref newtop)
 
 void db_free(void)
 {
-    char *cp;
-
+    delete_all_player_names();
     if (db != NULL)
     {
         db -= SIZE_HACK;
-        cp = (char *)db;
+        char *cp = (char *)db;
         MEMFREE(cp);
         cp = NULL;
         db = NULL;

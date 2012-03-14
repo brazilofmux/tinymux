@@ -340,6 +340,7 @@ dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isr
 void AddToPublicChannel(dbref player);
 bool add_player_name(dbref player, const UTF8 *name, bool bAlias);
 bool delete_player_name(dbref player, const UTF8 *name, bool bAlias);
+void delete_all_player_names();
 dbref lookup_player_name(UTF8 *name, bool &bAlias);
 dbref lookup_player(dbref doer, UTF8 *name, bool check_who);
 void load_player_names(void);
