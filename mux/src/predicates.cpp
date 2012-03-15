@@ -935,7 +935,7 @@ void do_addcommand
         {
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
-        cmd->hookmask = 0;
+        cmd->flags = CEF_ALLOC;
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         ISOUTOFMEMORY(add);
         add->thing = thing;

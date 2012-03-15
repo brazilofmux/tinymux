@@ -163,7 +163,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    int     hookmask;
+    int     flags;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key);
 } CMDENT_NO_ARG;
 
@@ -174,7 +174,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    int     hookmask;
+    int     flags;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs);
 } CMDENT_ONE_ARG;
 
@@ -185,7 +185,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    int     hookmask;
+    int     flags;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG;
 
@@ -196,7 +196,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    int     hookmask;
+    int     flags;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG_ARGV;
 
@@ -216,7 +216,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    int     hookmask;
+    int     flags;
     union
     {
         void (*handler)(void);
@@ -229,7 +229,8 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
 void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);
-void init_cmdtab(void);
+void init_cmdtab();
+void finish_cmdtab();
 
 extern NAMETAB access_nametab[];
 extern NAMETAB attraccess_nametab[];

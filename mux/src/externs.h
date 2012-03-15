@@ -621,15 +621,23 @@ extern int anum_alc_top;
 //#define GLOB_LIST       3   /* key to list */
 #define HALT_ALL        1   /* halt everything */
 
-#define HOOK_BEFORE     1   /* BEFORE hook */
-#define HOOK_AFTER      2   /* AFTER hook */
-#define HOOK_PERMIT     4   /* PERMIT hook */
-#define HOOK_IGNORE     8   /* IGNORE hook */
-#define HOOK_IGSWITCH   16  /* BFAIL hook */
-#define HOOK_AFAIL      32  /* AFAIL hook */
-#define HOOK_CLEAR      64  /* CLEAR hook */
-#define HOOK_LIST       128 /* LIST hooks */
-#define HOOK_ARGS       256 /* ARGS hooks */
+#define CEF_HOOK_BEFORE    0x00000001UL  /* BEFORE hook */
+#define CEF_HOOK_AFTER     0x00000002UL  /* AFTER hook */
+#define CEF_HOOK_PERMIT    0x00000004UL  /* PERMIT hook */
+#define CEF_HOOK_IGNORE    0x00000008UL  /* IGNORE hook */
+#define CEF_HOOK_IGSWITCH  0x00000010UL  /* BFAIL hook */
+#define CEF_HOOK_AFAIL     0x00000020UL  /* AFAIL hook */
+#define CEF_HOOK_CLEAR     0x00000040UL  /* CLEAR hook */
+#define CEF_HOOK_LIST      0x00000080UL  /* LIST hooks */
+#define CEF_HOOK_ARGS      0x00000100UL  /* ARGS hooks */
+#define CEF_HOOK_MASK      (  CEF_HOOK_BEFORE|CEF_HOOK_AFTER|CEF_HOOK_PERMIT|CEF_HOOK_IGNORE \
+                           |  CEF_HOOK_IGSWITCH|CEF_HOOK_AFAIL|CEF_HOOK_CLEAR|CEF_HOOK_LIST  \
+                           |  CEF_HOOK_ARGS)
+#define HOOKMASK(x)        ((x) & CEF_HOOK_MASK)
+
+#define CEF_ALLOC          0x00000200UL  // CMDENT was allocated.
+#define CEF_VISITED        0x00000400UL  // CMDENT was visted during finish_cmdtab.
+
 #define ICMD_DISABLE    0
 #define ICMD_IGNORE     1
 #define ICMD_ON         2

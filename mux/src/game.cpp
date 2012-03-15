@@ -3584,6 +3584,7 @@ int DCL_CDECL main(int argc, char *argv[])
         helpindex_clean(i);
     }
 
+    finish_cmdtab();
     db_free();
 
 #if defined(WINDOWS_NETWORKING)

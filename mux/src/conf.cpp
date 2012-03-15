@@ -1414,7 +1414,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
         cmdp->cmdname = StringClone(pCmdName);
         cmdp->extra = mudstate.nHelpDesc;
         cmdp->handler = do_help;
-        cmdp->hookmask = 0;
+        cmdp->flags = CEF_ALLOC;
         cmdp->perms = CA_PUBLIC;
         cmdp->switches = NULL;
 
@@ -1466,13 +1466,13 @@ static CF_HAND(cf_raw_helpfile)
 //
 static NAMETAB hook_names[] =
 {
-    {T("after"),      3, 0, HOOK_AFTER},
-    {T("before"),     3, 0, HOOK_BEFORE},
-    {T("fail"),       3, 0, HOOK_AFAIL},
-    {T("ignore"),     3, 0, HOOK_IGNORE},
-    {T("igswitch"),   3, 0, HOOK_IGSWITCH},
-    {T("permit"),     3, 0, HOOK_PERMIT},
-    {T("args"),       3, 0, HOOK_ARGS},
+    {T("after"),      3, 0, CEF_HOOK_AFTER},
+    {T("before"),     3, 0, CEF_HOOK_BEFORE},
+    {T("fail"),       3, 0, CEF_HOOK_AFAIL},
+    {T("ignore"),     3, 0, CEF_HOOK_IGNORE},
+    {T("igswitch"),   3, 0, CEF_HOOK_IGSWITCH},
+    {T("permit"),     3, 0, CEF_HOOK_PERMIT},
+    {T("args"),       3, 0, CEF_HOOK_ARGS},
     {(UTF8 *)NULL,    0, 0, 0}
 };
 
@@ -1508,7 +1508,7 @@ static CF_HAND(cf_hook)
        return retval;
     }
 
-    int t = cmdp->hookmask;
+    int t = cmdp->flags;
     mux_strncpy(playbuff, str, sizeof(playbuff)-1);
     hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
@@ -1532,7 +1532,7 @@ static CF_HAND(cf_hook)
        }
        hookptr = mux_strtok_parse(&tts);
     }
-    cmdp->hookmask = t;
+    cmdp->flags = t;
     return retval;
 }
 
