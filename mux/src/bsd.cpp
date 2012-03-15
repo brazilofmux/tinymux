@@ -5821,6 +5821,7 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
         fComp = mux_subnet::kContains;
     }
     delete ma;
+    return fComp;
 }
 
 mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
