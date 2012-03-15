@@ -2370,7 +2370,9 @@ static void dbconvert(void)
         fclose(fpOut);
     }
     CLOSE;
+#ifdef SELFCHECK
     db_free();
+#endif
     exit(0);
 }
 #endif // MEMORY_BASED
@@ -3575,6 +3577,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif
 #endif // HAVE_WORKING_FORK
 
+#ifdef SELFCHECK
     // Go ahead and explicitly free the memory for these things so
     // that it's easy to spot unintentional memory leaks.
     //
@@ -3587,6 +3590,7 @@ int DCL_CDECL main(int argc, char *argv[])
     finish_mail();
     finish_cmdtab();
     db_free();
+#endif
 
 #if defined(WINDOWS_NETWORKING)
     // Critical section not needed any more.

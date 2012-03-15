@@ -2426,6 +2426,7 @@ static void do_mail_nuke(dbref player)
     raw_notify(player, T("You annihilate the post office. All messages cleared."));
 }
 
+#ifdef SELFCHECK
 void finish_mail()
 {
     dbref thing;
@@ -2442,6 +2443,7 @@ void finish_mail()
         mail_list = NULL;
     }
 }
+#endif
 
 static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
 {

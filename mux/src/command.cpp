@@ -906,6 +906,7 @@ void clear_prefix_cmds()
     }
 }
 
+#ifdef SELFCHECK
 void finish_cmdtab()
 {
     clear_prefix_cmds();
@@ -958,6 +959,7 @@ void finish_cmdtab()
         }
     }
 }
+#endif
 
 /*! \brief Fills in the table of single-character prefix commands.
  *

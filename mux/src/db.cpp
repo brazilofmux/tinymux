@@ -3044,11 +3044,13 @@ void db_grow(dbref newtop)
 
 void db_free(void)
 {
+#ifdef SELFCHECK
     delete_all_player_names();
     for (dbref thing = 0; thing < mudstate.db_top; thing++)
     {
         free_Names(&db[thing]);
     }
+#endif
 
     if (db != NULL)
     {

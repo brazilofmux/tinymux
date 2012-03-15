@@ -1032,6 +1032,7 @@ bool delete_player_name(dbref player, const UTF8 *name, bool bAlias)
     return true;
 }
 
+#ifdef SELFCHECK
 void delete_all_player_names()
 {
     player_name_entry *pne;
@@ -1044,6 +1045,7 @@ void delete_all_player_names()
     }
     hashflush(&mudstate.player_htab);
 }
+#endif
 
 dbref lookup_player_name(UTF8 *name, bool &bAlias)
 {
