@@ -240,7 +240,7 @@ void hashreplall(const void *old, void *new0, CHashTable *htab)
 }
 
 /*
- * Returns the key for the first hash entry in 'htab'.
+ * Returns the first hash entry in 'htab'.
  */
 
 void *hash_firstentry(CHashTable *htab)
@@ -264,6 +264,10 @@ void *hash_nextentry(CHashTable *htab)
     }
     return NULL;
 }
+
+/*
+ * Returns the key for the first hash entry in 'htab'.
+ */
 
 void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
