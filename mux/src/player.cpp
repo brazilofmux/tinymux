@@ -1042,7 +1042,7 @@ void delete_all_player_names()
         delete pne;
         pne = NULL;
     }
-    hashreset(&mudstate.player_htab);
+    hashflush(&mudstate.player_htab);
 }
 
 dbref lookup_player_name(UTF8 *name, bool &bAlias)
