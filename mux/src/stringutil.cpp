@@ -7101,7 +7101,7 @@ void mux_string::transform
     {
         // This is the more general case.  We use a hash table for mapping.
         //
-        hashreset(&mudstate.scratch_htab);
+        hashflush(&mudstate.scratch_htab);
 
         mux_cursor iFromSet, iToSet;
         sFromSet.cursor_start(iFromSet);
@@ -7131,7 +7131,7 @@ void mux_string::transform
                     && i.m_point < nStart+nLen);
         }
 
-        hashreset(&mudstate.scratch_htab);
+        hashflush(&mudstate.scratch_htab);
     }
 }
 
