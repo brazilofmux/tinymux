@@ -4562,7 +4562,7 @@ size_t TruncateToBuffer
             const UTF8 *pEF = (UTF8 *)strchr((char *)p, '\xEF');
             if (NULL == pEF)
             {
-                size_t n = strlen((char *)pTextRun);
+                size_t n = strlen((char *)p);
                 nTextRun += n;
                 p += n;
                 break;
