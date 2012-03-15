@@ -461,7 +461,7 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
                 cc = 0;
                 break;
             }
-            close(mysock);
+            SOCKET_CLOSE(mysock);
         }
         mux_freeaddrinfo(servinfo);
     }
