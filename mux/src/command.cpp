@@ -3130,7 +3130,15 @@ CF_HAND(cf_cmd_alias)
         {
             // Create the new command table entry.
             //
-            cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
+            cmd2 = NULL;
+            try
+            {
+                cmd2 = new CMDENT;
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
             ISOUTOFMEMORY(cmd2);
             cmd2->cmdname = StringClone(alias);
             cmd2->switches = cmdp->switches;

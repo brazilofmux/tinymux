@@ -912,7 +912,15 @@ void do_addcommand
             hashdeleteLEN(pName, strlen((char *)pName), &mudstate.command_htab);
         }
 
-        cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
+        cmd = NULL;
+        try
+        {
+            cmd = new CMDENT;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
         ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(pName);
         cmd->switches = NULL;
