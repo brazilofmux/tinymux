@@ -80,6 +80,7 @@ UTF8 *MakeCanonicalMailAliasDesc
 const UTF8 *MessageFetch(int number);
 #endif // FIRANMUX
 size_t MessageFetchSize(int number);
+void finish_mail();
 
 // From netcommon.cpp.
 //
