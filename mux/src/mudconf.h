@@ -113,7 +113,6 @@ struct confdata
     int     exit_quota;         /* quota needed to make an exit */
     int     func_invk_lim;      /* Max funcs invoked by a command */
     int     func_nest_lim;      /* Max nesting of functions */
-    int     hook_cmd;           // @hooks to be initialized.
     int     idle_interval;      /* when to check for idle users */
     int     idle_timeout;       /* Boot off players idle this long in secs */
     int     init_size;          // initial db size.
