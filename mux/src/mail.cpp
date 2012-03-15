@@ -5058,13 +5058,10 @@ void MailList::RemoveAll(void)
     struct mail *miNext;
     for (mi = miHead; NULL != mi; mi = miNext)
     {
-        if (mi == miHead)
+        miNext = mi->next;
+        if (miNext == miHead)
         {
             miNext = NULL;
-        }
-        else
-        {
-            miNext = mi->next;
         }
         MessageReferenceDec(mi->number);
         MEMFREE(mi->subject);
