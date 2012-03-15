@@ -679,7 +679,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("-"),             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_postpend},
     {T("~"),             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_prepend},
     {T("#"),             NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK, 0, CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
-    {(UTF8 *)NULL,            NULL,       0,                          0,    0,                  0, NULL}
+    {(UTF8 *)NULL,       NULL,       0,                          0,    0,                  0, NULL}
 };
 
 static CMDENT_TWO_ARG command_table_two_arg[] =
@@ -770,7 +770,7 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {T("@switch"),     switch_sw,  CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_switch},
     {T("@trigger"),    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             0, do_trigger},
     {T("@verb"),       verb_sw,    CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
-    {(UTF8 *)NULL,          NULL,       0,                                    0,  0,              0, NULL}
+    {(UTF8 *)NULL,     NULL,       0,                                    0,  0,                              0, NULL}
 };
 
 static CMDENT *goto_cmdp;
