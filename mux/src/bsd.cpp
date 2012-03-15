@@ -6331,7 +6331,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
 
 void mux_freeaddrinfo(MUX_ADDRINFO *res)
 {
-#if defined(UNIX_NETWORKING) && defined(HAVE_FREEADDRINFO)
+#if defined(UNIX_NETWORKING) && defined(HAVE_GETADDRINFO)
     freeaddrinfo(res);
 #elif defined(WINDOWS_NETWORKING)
     if (NULL != fpFreeAddrInfo)
@@ -6340,7 +6340,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
         return;
     }
 #endif
-#if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_FREEADDRINFO))
+#if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
     MUX_ADDRINFO *next;
     while (NULL != res)
     {
