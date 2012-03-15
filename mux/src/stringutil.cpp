@@ -4575,7 +4575,7 @@ size_t TruncateToBuffer
             }
             else
             {
-                size_t n = strlen((char *)pTextRun);
+                size_t n = strlen((char *)p);
                 nTextRun += n;
                 p += n;
                 break;
