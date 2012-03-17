@@ -82,6 +82,11 @@ Bug Fixes:
  -- Re-write ANSI SUBSTITUTIONS to document %X (upper-case).
  -- Don't returned a dbref for a @reference if the dbref is garbage.
  -- Fixes to site list handling.
+ -- Fix crashbug in TruncateToBuffer.
+ -- Fix memory leaks from recent code.
+ -- Fix tr() so transformations don't accumulate.
+ -- Fix mail-loading bug from TinyMUX 1.6.
+ -- Make older code valgrind-friendly and AppVerifier-friendly.
 
 
 Performance Enhancements:
