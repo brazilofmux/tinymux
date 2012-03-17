@@ -3576,6 +3576,9 @@ int DCL_CDECL main(int argc, char *argv[])
     WaitOnStubSlaveProcess();
 #endif
 #endif // HAVE_WORKING_FORK
+#if defined(WINDOWS_NETWORKING)
+    shutdown_slave();
+#endif
 
 #ifdef SELFCHECK
     // Go ahead and explicitly free the memory for these things so

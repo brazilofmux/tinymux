@@ -347,6 +347,9 @@ int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *s
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
 void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 #endif
+#if defined(WINDOWS_THREADS)
+void shutdown_slave();
+#endif
 #if defined(HAVE_WORKING_FORK)
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);

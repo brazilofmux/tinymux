@@ -106,9 +106,12 @@ typedef struct tagSlaveThreadsInfo
     unsigned iDoing;
     DWORD    iError;
     DWORD    hThreadId;
+    HANDLE   hThread;
 } SLAVETHREADINFO;
 static SLAVETHREADINFO SlaveThreadInfo[NUM_SLAVE_THREADS];
 static HANDLE hSlaveThreadsSemaphore;
+static bool fSlaveBooted = false;
+static bool fSlaveShutdown = false;
 
 static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 {
@@ -123,6 +126,11 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
     SlaveThreadInfo[iSlave].iDoing = __LINE__;
     for (;;)
     {
+        if (fSlaveShutdown)
+        {
+            return 1;
+        }
+
         // Go to sleep until there's something useful to do.
         //
         SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -151,6 +159,11 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
         SlaveThreadInfo[iSlave].iDoing = __LINE__;
         for (;;)
         {
+            if (fSlaveShutdown)
+            {
+                return 1;
+            }
+
             // Go take the request off the stack, but not if it takes more
             // than 5 seconds to do it. Go back to sleep if we time out. The
             // request can wait: either another thread will pick it up, or
@@ -195,6 +208,10 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             if (  0 == mux_getnameinfo(&req.msa, host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
                && 0 == mux_getnameinfo(&req.msa, host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
             {
+                if (fSlaveShutdown)
+                {
+                    return 1;
+                }
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
                 {
@@ -232,7 +249,6 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
     //return 1;
 }
 
-static bool bSlaveBooted = false;
 void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(executor);
@@ -241,7 +257,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    if (bSlaveBooted)
+    if (fSlaveBooted || fSlaveShutdown)
     {
         return;
     }
@@ -254,13 +270,26 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
     {
         SlaveThreadInfo[iSlave].iDoing = 0;
         SlaveThreadInfo[iSlave].iError = 0;
-        CreateThread(NULL, 0, SlaveProc, reinterpret_cast<LPVOID>(iSlave), 0,
+        SlaveThreadInfo[iSlave].hThread = CreateThread(NULL, 0, SlaveProc, reinterpret_cast<LPVOID>(iSlave), 0,
             &SlaveThreadInfo[iSlave].hThreadId);
         DebugTotalThreads++;
     }
-    bSlaveBooted = true;
+    fSlaveBooted = true;
 }
 
+void shutdown_slave()
+{
+    size_t iSlave;
+    fSlaveShutdown = true;
+    for (iSlave = 0; iSlave < NUM_SLAVE_THREADS*2; iSlave++)
+    {
+        ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
+    }
+    for (iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
+    {
+        WaitForSingleObject(SlaveThreadInfo[iSlave].hThread, INFINITE);
+    }
+}
 
 static int get_slave_result(void)
 {
@@ -4976,7 +5005,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
         // Go take control of the stack, but don't bother if it takes
         // longer than 5 seconds to do it.
         //
-        if (bSlaveBooted && (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveRequestStackSemaphore, 5000)))
+        if (fSlaveBooted && (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveRequestStackSemaphore, 5000)))
         {
             // We have control of the stack. Skip the request if the stack is full.
             //
