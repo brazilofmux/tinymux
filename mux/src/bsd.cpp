@@ -77,6 +77,7 @@ CRITICAL_SECTION csDescriptorList;      // for thread synchronization
 static DWORD WINAPI MUXListenThread(LPVOID pVoid);
 static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 static bool bDescriptorListInit = false;
+HWND g_hWnd = NULL;
 
 typedef struct
 {
@@ -1257,7 +1258,7 @@ static LRESULT WINAPI mux_WindowProc
     case WM_CLOSE:
         mudstate.shutdown_flag = true;
         PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
-        return 0;
+        break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -1288,11 +1289,11 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 
     RegisterClass(&wc);
 
-    HWND hWnd = CreateWindow(szApp, szApp, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+    g_hWnd = CreateWindow(szApp, szApp, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, 0, NULL);
 
-    ShowWindow(hWnd, SW_HIDE);
-    UpdateWindow(hWnd);
+    ShowWindow(g_hWnd, SW_HIDE);
+    UpdateWindow(g_hWnd);
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
@@ -1311,7 +1312,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
     mudstate.debug_cmd = T("< shovecharsNT >");
 
-    CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
+    HANDLE hCloseProc = CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1371,6 +1372,12 @@ void shovechars(int nPorts, PortInfo aPorts[])
         CLinearTimeDelta ltdTimeOut = ltaWakeUp - ltaCurrent;
         unsigned int iTimeout = ltdTimeOut.ReturnMilliseconds();
         ProcessWindowsTCP(iTimeout);
+    }
+
+    if (IsWindow(g_hWnd))
+    {
+        PostMessage(g_hWnd, WM_CLOSE, 0, 0);
+        WaitForSingleObject(hCloseProc, INFINITE);
     }
 }
 
