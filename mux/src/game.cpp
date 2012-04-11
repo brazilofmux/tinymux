@@ -697,6 +697,18 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 msg_ns->append_TextPlain(T(",comsys"));
                 break;
 
+            case MSG_SRC_KILL:
+                msg_ns->append_TextPlain(T(",kill"));
+                break;
+
+            case MSG_SRC_GIVE:
+                msg_ns->append_TextPlain(T(",give"));
+                break;
+
+            case MSG_SRC_PAGE:
+                msg_ns->append_TextPlain(T(",page"));
+                break;
+
             default:
                 if (key & MSG_SAYPOSE)
                 {

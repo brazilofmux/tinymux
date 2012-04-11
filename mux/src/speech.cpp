@@ -495,16 +495,16 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
 
             UTF8 *p = tprintf(T("%s message from %s: %s"), tag,
                 Moniker(target), str2);
-            notify_with_cause_ooc(player, target, p);
+            notify_with_cause_ooc(player, target, p, MSG_SRC_PAGE);
             p = tprintf(T("[%d:%02d] %s message sent to %s."), ft.iHour,
                 ft.iMinute, tag, Moniker(player));
-            notify_with_cause_ooc(target, player, p);
+            notify_with_cause_ooc(target, player, p, MSG_SRC_PAGE);
         }
         free_lbuf(str2);
     }
     else if (dflt && *dflt)
     {
-        notify_with_cause_ooc(player, target, dflt);
+        notify_with_cause_ooc(player, target, dflt, MSG_SRC_PAGE);
     }
     free_lbuf(str);
 }
@@ -931,7 +931,7 @@ void do_page
         dbref target = aPlayers[i];
         if (target != NOTHING)
         {
-            notify_with_cause_ooc(target, executor, omessage);
+            notify_with_cause_ooc(target, executor, omessage, MSG_SRC_PAGE);
             int target_idle = fetch_idle(target);
             int target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)

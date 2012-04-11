@@ -194,7 +194,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
 #define notify_html(p,m)                    notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
 #define notify_quiet(p,m)                   notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME)
 #define notify_with_cause(p,c,m)            notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)
-#define notify_with_cause_ooc(p,c,m)        notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC)
+#define notify_with_cause_ooc(p,c,m,s)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC|(s))
 #define notify_with_cause_html(p,c,m)       notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
 #define notify_quiet_with_cause(p,c,m)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME)
 #define notify_all(p,c,m)                   notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS)
@@ -868,9 +868,12 @@ extern NAMETAB method_nametab[];
 #define MSG_OOC         0x00008000UL    /* Overide visibility rules because it's OOC */
 #define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speech. */
 
-#define MSG_SRC_MASK    0x80000000UL    /* Bit mask for originating code path */
+#define MSG_SRC_KILL    0x10000000UL    /* Message originated from kill */
+#define MSG_SRC_GIVE    0x20000000UL    /* Message originated from give */
+#define MSG_SRC_PAGE    0x40000000UL    /* Message originated from page */
 #define MSG_SRC_COMSYS  0x80000000UL    /* Message originated from comsys */
 #define MSG_SRC_GENERIC 0x00000000UL    /* Message originated from 'none of the above' */
+#define MSG_SRC_MASK    (MSG_SRC_KILL|MSG_SRC_GIVE|MSG_SRC_PAGE|MSG_SRC_COMSYS)
 
 #define MSG_ME_ALL      (MSG_ME|MSG_INV_EXITS|MSG_FWDLIST)
 #define MSG_F_CONTENTS  (MSG_INV)

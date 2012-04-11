@@ -1502,7 +1502,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
 
 inline void notify_comsys(dbref target, dbref sender, const mux_string &msg)
 {
-    notify_check(target, sender, msg, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC|MSG_SRC_COMSYS);
+    notify_with_cause_ooc(target, sender, msg, MSG_SRC_COMSYS);
 }
 
 // Transmit the given message as appropriate to all listening parties.
