@@ -175,15 +175,15 @@ CQueryServer::~CQueryServer()
     {
         mysql_close(m_database);
         m_database = NULL;
-        delete [] m_pServer;
-        m_pServer = NULL;
-        delete [] m_pDatabase;
-        m_pDatabase = NULL;
-        delete [] m_pUser;
-        m_pUser = NULL;
-        delete [] m_pPassword;
-        m_pPassword = NULL;
     }
+    delete [] m_pServer;
+    m_pServer = NULL;
+    delete [] m_pDatabase;
+    m_pDatabase = NULL;
+    delete [] m_pUser;
+    m_pUser = NULL;
+    delete [] m_pPassword;
+    m_pPassword = NULL;
 #endif // HAVE_MYSQL
 
     g_cComponents--;
@@ -611,14 +611,19 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
     m_pPassword = pPassword;
 
 #if defined(HAVE_MYSQL)
-    if ('\0' != m_pServer[0])
+    // Close any existing session.
+    //
+    if (NULL != m_database)
     {
-        m_database = mysql_init(NULL);
+        mysql_close(m_database);
+        m_database = NULL;
+    }
 
-        if (NULL != m_database)
-        {
-            ConnectionHelper();
-        }
+    m_database = mysql_init(NULL);
+
+    if (NULL != m_database)
+    {
+        ConnectionHelper();
     }
 #endif // HAVE_MYSQL
     return MUX_S_OK;
@@ -626,24 +631,29 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
 
 void CQueryServer::ConnectionHelper()
 {
-#ifdef MYSQL_OPT_RECONNECT
-    // As of MySQL 5.0.3, the default is no longer to reconnect.
-    //
-    my_bool reconnect = 1;
-    mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
-#endif
-    mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
-
-    if (mysql_real_connect(m_database, (char *)m_pServer, (char *)m_pUser,
-         (char *)m_pPassword, (char *)m_pDatabase, 0, NULL, 0) != 0)
+#if defined(HAVE_MYSQL)
+    if ('\0' != m_pServer[0])
     {
 #ifdef MYSQL_OPT_RECONNECT
-        // Before MySQL 5.0.19, mysql_real_connect sets the option
-        // back to default, so we set it again.
+        // As of MySQL 5.0.3, the default is no longer to reconnect.
         //
+        my_bool reconnect = 1;
         mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
 #endif
+        mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
+
+        if (mysql_real_connect(m_database, (char *)m_pServer, (char *)m_pUser,
+             (char *)m_pPassword, (char *)m_pDatabase, 0, NULL, 0) != 0)
+        {
+#ifdef MYSQL_OPT_RECONNECT
+            // Before MySQL 5.0.19, mysql_real_connect sets the option
+            // back to default, so we set it again.
+            //
+            mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
+        }
     }
+#endif
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
