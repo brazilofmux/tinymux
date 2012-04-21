@@ -3079,7 +3079,7 @@ void do_reference
     {
         try
         {
-            result = (reference_entry *)MEMALLOC(sizeof(result));
+            result = (reference_entry *)MEMALLOC(sizeof(reference_entry));
         }
         catch(...)
         {
