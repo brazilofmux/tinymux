@@ -1,5 +1,5 @@
 TinyMUX 2.9: CHANGES
-Last Update: November 2010
+Last Update: April 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,6 +62,14 @@ Bug Fixes:
  -- The 'Input already pending.' check in @program must occur before
     A_PROGCMD is set.
  -- Protect ConvertToAscii() from buffer overflow.
+ -- Fix overflow from 2.2250738585072011e-308.
+ -- Avoid operation outside the domain of modulus.
+ -- Fix/include/enable Windows version of boot_slave() so reverse-DNS works.
+ -- Create I/O Completion port just once.
+ -- mux_string::transform's use of scratch_htab needs hashflush() instead of hashreset().
+ -- Fix struct mail and MAILBODY leak in MailList::RemoveAll -- only affects @mail/nuke.
+ -- Fix crashbug in TruncateToBuffer. This is probably the one, or one of the ones I've been looking for for a year.
+ -- Fix crashbug in @reference.
 
 
 Performance Enhancements:
