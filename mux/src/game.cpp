@@ -718,7 +718,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
     case TYPE_PLAYER:
         if (key & MSG_ME)
         {
-            (key & MSG_ATCP)
+            if (key & MSG_ATCP)
             {
                 check_listens = false;
                 raw_notify_atcp(target, *msg_ns);

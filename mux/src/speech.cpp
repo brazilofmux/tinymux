@@ -1629,9 +1629,9 @@ void do_pemit_whisper
         free_lbuf(pBuff);
     }
 
-    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
+    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML, PEMIT_ATCP and remove from key.
     //
-    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML;
+    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML | PEMIT_ATCP;
     int pemit_flags = key & mask;
     key &= ~mask;
 
@@ -1775,9 +1775,9 @@ void do_pemit
     }
     key &= ~(PEMIT_CONTENTS | PEMIT_LIST);
 
-    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
+    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML, PEMIT_ATCP and remove from key.
     //
-    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML;
+    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML | PEMIT_ATCP;
     int pemit_flags = key & mask;
     key &= ~mask;
 
