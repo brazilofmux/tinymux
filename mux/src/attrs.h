@@ -31,6 +31,7 @@
 #define AF_TRACE    0x00080000UL // Trace evaluation of this attribute.
 #define AF_NONAME   0x00400000UL // Supress name in oattr cases.
 #define AF_NODECOMP 0x00800000UL // Do not include in @decomp.
+#define AF_ATCP     0x01000000UL // Only evaluated by ATCP input when checking for $-cmds.
 #define AF_ISUSED   0x10000000UL // Used to make efficient sweeps of stale
                                  // attributes.
 

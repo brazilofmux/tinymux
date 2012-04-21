@@ -120,6 +120,7 @@ struct prog_data
 #define TELNET_ENV      ((unsigned char)'\x27')
 #define TELNET_CHARSET  ((unsigned char)'\x2A')
 #define TELNET_STARTTLS ((unsigned char)'\x2E')
+#define TELNET_ATCP     ((unsigned char)'\xC8')
 
 // Telnet Option Negotiation States
 //
@@ -363,6 +364,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void);
 #ifdef UNIX_SSL
 void CleanUpSSLConnections(void);
 #endif
+bool AtcpEnabled(DESC *d);
 
 extern NAMETAB sigactions_nametab[];
 

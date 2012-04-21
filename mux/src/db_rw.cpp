@@ -656,6 +656,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             if (isPlayer(i))
             {
                 c_Connected(i);
+                c_Atcp(i);
             }
             break;
 

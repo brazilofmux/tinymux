@@ -1097,7 +1097,11 @@ void do_pemit_single
         switch (key)
         {
         case PEMIT_PEMIT:
-            if (bDoContents)
+            if (pemit_flags & PEMIT_ATCP)
+            {
+                notify_atcp(target, player, message);
+            }
+            else if (bDoContents)
             {
                 if (Has_contents(target))
                 {

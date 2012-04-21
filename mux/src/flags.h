@@ -118,6 +118,7 @@
 #define SITEMON      0x00000400      // Sitemonitor Flag
 #define CMDCHECK     0x00000800      // Has @icmd set
 #define MUX_UNICODE  0x00001000      // UTF-8 override flag
+#define ATCP         0x00002000      // ATCP enabled connection.
 #define MARK_0       0x00400000      // User-defined flags.
 #define MARK_1       0x00800000
 #define MARK_2       0x01000000
@@ -447,6 +448,10 @@ UTF8 *MakeCanonicalFlagName
 
 #define Unicode(x)          ((Flags3(x) & MUX_UNICODE) != 0)
 #define s_Unicode(x)        s_Flags((x), FLAG_WORD3, Flags3(x) | MUX_UNICODE)
+
+#define Atcp(x)             ((Flags3(x) & ATCP) != 0)
+#define s_Atcp(x)           s_Flags((x), FLAG_WORD3, Flags3(x) | ATCP)
+#define c_Atcp(x)           s_Flags((x), FLAG_WORD3, Flags3(x) & ~ATCP)
 
 #if defined(FIRANMUX)
 #define Linewrap(x)   ((Flags3(x) & LINEWRAP) != 0)

@@ -223,6 +223,39 @@ void raw_notify(dbref player, const mux_string &sMsg)
     }
 }
 
+void raw_notify_atcp(dbref player, const mux_string &sMsg)
+{
+    if (0 == sMsg.length_byte())
+    {
+        return;
+    }
+
+    if (  mudstate.inpipe
+       && player == mudstate.poutobj)
+    {
+        mudstate.poutbufc += sMsg.export_TextColor( mudstate.poutbufc, CursorMin,
+                                CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
+        safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
+        return;
+    }
+
+    if (!Connected(player)
+     || !Atcp(player))
+    {
+        return;
+    }
+
+    DESC *d;
+    const char IAC_SB_ATCP[3] = {NVT_IAC, NVT_SB, TELNET_ATCP};
+    const char IAC_SE[2] = {NVT_IAC, NVT_SE};
+    DESC_ITER_PLAYER(player, d)
+    {
+        queue_write_LEN(d, IAC_SB_ATCP, 3);
+        queue_string(d, sMsg);
+        queue_write_LEN(d, IAC_SE, 2);
+    }
+}
+
 void raw_notify_newline(dbref player)
 {
     if (  mudstate.inpipe
@@ -943,6 +976,11 @@ static void announce_connect(dbref player, DESC *d)
     dbref loc = Location(player);
     s_Connected(player);
 
+    if (AtcpEnabled(d))
+    {
+        s_Atcp(player);
+    }
+
     if (d->flags & DS_PUEBLOCLIENT)
     {
         s_Html(player);
@@ -1225,6 +1263,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"), Moniker(player), reason);
 
         c_Connected(player);
+        c_Atcp(player);
 
         if (mudconf.have_comsys)
         {

@@ -3019,6 +3019,7 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
 #ifdef UNIX_SSL
        || TELNET_STARTTLS== chOption
 #endif
+       || TELNET_ATCP    == chOption
        || TELNET_CHARSET == chOption)
     {
         return true;
@@ -3171,6 +3172,17 @@ void DisableUs(DESC *d, unsigned char chOption)
     }
 }
 
+/*! \brief Check if ATCP enabled.
+ *
+ * \param d        Player connection context.
+ * \return         Boolean.
+ */
+
+bool AtcpEnabled(DESC *d)
+{
+    return d->nvt_him_state[(unsigned char)TELNET_ATCP] == OPTION_YES;
+}
+
 /*! \brief Begin initial telnet negotiations on a socket.
  *
  * The two sides of the connection may not agree on the following set of
@@ -3194,6 +3206,7 @@ void TelnetSetup(DESC *d)
     EnableHim(d, TELNET_TTYPE);
     EnableHim(d, TELNET_NAWS);
     EnableHim(d, TELNET_ENV);
+    EnableHim(d, TELNET_ATCP);
 //    EnableHim(d, TELNET_OLDENV);
     EnableUs(d, TELNET_CHARSET);
     EnableHim(d, TELNET_CHARSET);
@@ -3677,10 +3690,25 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
             //
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
-            if (  d->aOption <= q
-               && q < qend)
+            if ( d->aOption < q && d->aOption[0] == TELNET_ATCP && mux_isprint_ascii(ch))
             {
-                *q++ = ch;
+                if (p < pend)
+                {
+                    *p++ = ch;
+                    nInputBytes++;
+                }
+                else
+                {
+                    nLostBytes++;
+                }
+            }
+            else
+            {
+                if (  d->aOption <= q
+                   && q < qend)
+                {
+                    *q++ = ch;
+                }
             }
             break;
 
@@ -4059,6 +4087,21 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             {
                                 SendSb(d, TELNET_CHARSET, TELNETSB_REJECT, NULL, 0);
                             }
+                        }
+                    }
+                    break;
+
+                case TELNET_ATCP:
+                    if(1 == m)
+                    {
+                        *p = '\0';
+                        if (d->raw_input->cmd < p)
+                        {
+                            save_command(d, d->raw_input);
+                            d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
+
+                            p = d->raw_input_at = d->raw_input->cmd;
+                            pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
                         }
                     }
                 }
