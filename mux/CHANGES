@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  April 2010
+Last Update:  April 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -354,6 +354,17 @@ Bug Fixes:
     that it re-numbers (Issue 621).
  -- Fix access of uninitialized memory during dbconvert when @queuemax
     is set on player object (Issue 623).
+ -- Add buffer protections to convert_color() and ConverToLatin().
+    These functions are only used for down-converting flatfiles from
+    2.7 and later.
+ -- The 'Input already pending.' check in @program must occur before
+    A_PROGCMD is set.
+ -- Update SGP minimal database with new places code.
+ -- Fix overflow from 2.2250738585072011e-308.
+ -- Avoid operation outside the domain of modulus.
+ -- Create I/O Completion port just once.
+ -- Fix struct mail and MAILBODY leak in MailList::RemoveAll -- only
+    affects @mail/nuke.
 
 
 Performance Enhancements:
@@ -385,6 +396,10 @@ Cosmetic Changes:
  -- Flag letter 'z' should be OPEN_OK.
  -- The examples for WIDTH() and HEIGHT() are for 'say' instead of 'think'.
  -- Fix typo in orflags() topic (Issue 504).
+ -- Remove reference to STRINGS in FAILURE help topic.
+ -- Fix connects/disconnects typo in @ADISCONNECT topic.
+ -- wizhelp @listcommands should reference @delcommand instead of
+    @listcommands.
 
 
 Miscellaneous:
@@ -405,3 +420,4 @@ Miscellaneous:
  -- Firan is now using 24000-byte buffers.
  -- Increase Debian debhelper compat level.
  -- Build updates for Intel Compiler v11.1.
+ -- Fix 4.2.1 -Wall warnings.
