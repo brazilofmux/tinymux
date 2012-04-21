@@ -133,11 +133,23 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
     // Advertise our components.
     //
     MUX_RESULT mr = mux_RegisterClassObjects(NUM_CLASSES, sum_classes, NULL);
+#if defined(HAVE_MYSQL)
+    if (MUX_SUCCEEDED(mr))
+    {
+        if (mysql_library_init(0, NULL, NULL))
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+#endif
     return mr;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
+#if defined(HAVE_MYSQL)
+    mysql_library_end();
+#endif
     return mux_RevokeClassObjects(NUM_CLASSES, sum_classes);
 }
 
