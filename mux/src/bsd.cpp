@@ -1053,7 +1053,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 
         if (!CompletionPort)
         {
-            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
+            Log.tinyprintf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
             return;
         }
 
