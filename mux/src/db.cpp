@@ -3774,8 +3774,14 @@ void load_restart_db(void)
         getref(f); // Eat host_info
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        memset(d->nvt_him_state, OPTION_NO, 256);
-        memset(d->nvt_us_state, OPTION_NO, 256);
+        for (int i = 0; i < 256; i++)
+        {
+            d->nvt_him_state[i] = OPTION_NO;
+        }
+        for (int i = 0; i < 256; i++)
+        {
+            d->nvt_us_state[i] = OPTION_NO;
+        }
         d->raw_codepoint_length = 0;
         d->ttype = NULL;
         d->encoding = mudconf.default_charset;
