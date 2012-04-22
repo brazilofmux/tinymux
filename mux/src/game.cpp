@@ -725,7 +725,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             }
             else if (key & MSG_HTML)
             {
-                raw_notify_html(target, *msg_ns);
+                raw_notify_html(target, msg);
             }
             else
             {

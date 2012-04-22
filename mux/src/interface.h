@@ -93,6 +93,8 @@ struct prog_data
 #define NVT_IS_HAVE_IAC_DONT   5
 #define NVT_IS_HAVE_IAC_SB     6
 #define NVT_IS_HAVE_IAC_SB_IAC 7
+#define NVT_IS_HAVE_ATCP       8
+#define NVT_IS_HAVE_ATCP_IAC   9
 
 // Character Names
 //

@@ -2658,7 +2658,7 @@ void process_output(void *dvoid, int bHandleShutdown)
  * Class  1 - BS   (0x08)  Class  5 - IP   (0xF4)  Class 11 - DO   (0xFD)
  * Class  2 - LF   (0x0A)  Class  5 - AO   (0xF5)  Class 12 - DONT (0xFE)
  * Class  3 - CR   (0x0D)  Class  6 - AYT  (0xF6)  Class 13 - IAC  (0xFF)
- * Class  1 - DEL  (0x7F)  Class  7 - EC   (0xF7)
+ * Class  1 - DEL  (0x7F)  Class  7 - EC   (0xF7)  Class 14 - ATCP (0xC8)
  * Class  5 - EOR  (0xEF)  Class  5 - EL   (0xF8)
  * Class  4 - SE   (0xF0)  Class  5 - GA   (0xF9)
  * Class  5 - NOP  (0xF1)  Class  8 - SB   (0xFA)
@@ -2682,7 +2682,7 @@ static const unsigned char nvt_input_xlat_table[256] =
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 9
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // A
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // B
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // C
+    0,  0,  0,  0,  0,  0,  0,  0, 14,  0,  0,  0,  0,  0,  0,  0,  // C
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // D
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  5,  // E
     4,  5,  5,  5,  5,  5,  6,  7,  5,  5,  8,  9, 10, 11, 12, 13   // F
@@ -2710,19 +2710,24 @@ static const unsigned char nvt_input_xlat_table[256] =
  * Action 16 - Respond to IAC WONT X
  * Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
  * Action 18 - Accept Completed Sub-option and transition to Normal state.
+ * Action 19 - Transition to the Have_ATCP state.
+ * Action 20 - Transition to the Have_ATCP_IAC state.
+ * Action 21 - Accept CHR(X) (and transition to Have_ATCP state).
  */
 
-static const int nvt_input_action_table[8][14] =
+static const int nvt_input_action_table[10][15] =
 {
-//    Any   BS   LF   CR   SE  NOP  AYT   EC   SB WILL DONT   DO WONT  IAC
-    {   1,   2,   3,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
-    {   4,   4,   4,   4,   4,   4,  12,   2,  10,   6,   7,   8,   9,   1  }, // Have_IAC
-    {  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,   4  }, // Have_IAC_WILL
-    {  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,   4  }, // Have_IAC_DONT
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4  }, // Have_IAC_DO
-    {  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,   4  }, // Have_IAC_WONT
-    {  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  11  }, // Have_IAC_SB
-    {   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
+//    Any   BS   LF   CR   SE  NOP  AYT   EC   SB WILL DONT   DO WONT  IAC  ATCP
+    {   1,   2,   3,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5,    1 }, // Normal
+    {   4,   4,   4,   4,   4,   4,  12,   2,  10,   6,   7,   8,   9,   1,    4 }, // Have_IAC
+    {  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,   4,   13 }, // Have_IAC_WILL
+    {  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,   4,   14 }, // Have_IAC_DONT
+    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4,   15 }, // Have_IAC_DO
+    {  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,   4,   16 }, // Have_IAC_WONT
+    {  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  11,   19 }, // Have_IAC_SB
+    {   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,  17,    0 }, // Have_IAC_SB_IAC
+    {  21,  21,  21,  21,  21,  21,  21,  21,  21,  21,  21,  21,  21,  20,   21 }, // Have_ATCP
+    {   0,   0,   0,   0,   3,   0,   0,   0,   0,   0,   0,   0,   0,  21,    0 }, // Have_ATCP_IAC
 };
 
 /*! \brief Transmit a Telnet SB sequence for the given option.
@@ -3268,8 +3273,15 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     {
         unsigned char ch = (unsigned char)*pBytes;
         int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
+        int nAction = NVT_IS_NORMAL;
         switch (iAction)
         {
+        case 21:
+            // Action 21 - Accept CHR(X) and transition to Have_ATCP state.
+            //
+            nAction = NVT_IS_HAVE_ATCP;
+
+            // FALLTHROUGH
         case 1:
             // Action 1 - Accept CHR(X).
             //
@@ -3445,7 +3457,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     }
                 }
             }
-            d->raw_input_state = NVT_IS_NORMAL;
+            d->raw_input_state = nAction;
             break;
 
         case 0:
@@ -3515,6 +3527,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 p = d->raw_input_at = d->raw_input->cmd;
                 pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
             }
+            d->raw_input_state = NVT_IS_NORMAL;
             break;
 
         case 4:
@@ -3690,25 +3703,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
             //
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
-            if ( d->aOption < q && d->aOption[0] == TELNET_ATCP && mux_isprint_ascii(ch))
+            if (  d->aOption <= q
+               && q < qend)
             {
-                if (p < pend)
-                {
-                    *p++ = ch;
-                    nInputBytes++;
-                }
-                else
-                {
-                    nLostBytes++;
-                }
-            }
-            else
-            {
-                if (  d->aOption <= q
-                   && q < qend)
-                {
-                    *q++ = ch;
-                }
+                *q++ = ch;
             }
             break;
 
@@ -4089,25 +4087,22 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             }
                         }
                     }
-                    break;
-
-                case TELNET_ATCP:
-                    if(1 == m)
-                    {
-                        *p = '\0';
-                        if (d->raw_input->cmd < p)
-                        {
-                            save_command(d, d->raw_input);
-                            d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
-
-                            p = d->raw_input_at = d->raw_input->cmd;
-                            pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
-                        }
-                    }
                 }
             }
             q = d->aOption;
             d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 19:
+            // Action 19 - Transition to the Have_ATCP state.
+            //
+            d->raw_input_state = NVT_IS_HAVE_ATCP;
+            break;
+
+        case 20:
+            // Action 20 - Transition to the Have_ATCP_IAC state.
+            //
+            d->raw_input_state = NVT_IS_HAVE_ATCP_IAC;
             break;
         }
         pBytes++;
