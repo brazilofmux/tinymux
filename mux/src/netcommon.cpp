@@ -722,8 +722,8 @@ void freeqs(DESC *d)
     d->raw_input_at = NULL;
     d->nOption = 0;
     d->raw_input_state    = NVT_IS_NORMAL;
-    memset(d->nvt_him_state,OPTION_NO,256);
-    memset(d->nvt_us_state,OPTION_NO,256);
+    memset(d->nvt_him_state,OPTION_NO,(sizeof(int) * 256));
+    memset(d->nvt_us_state,OPTION_NO,(sizeof(int) * 256));
     if (d->ttype)
     {
         MEMFREE(d->ttype);

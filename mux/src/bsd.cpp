@@ -2387,8 +2387,8 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
-    memset(d->nvt_him_state, OPTION_NO, 256);
-    memset(d->nvt_us_state, OPTION_NO, 256);
+    memset(d->nvt_him_state, OPTION_NO, (sizeof(int) * 256));
+    memset(d->nvt_us_state, OPTION_NO, (sizeof(int) * 256));
     d->ttype = NULL;
     d->encoding = mudconf.default_charset;
     d->negotiated_encoding = mudconf.default_charset;
