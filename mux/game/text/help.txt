@@ -4168,6 +4168,17 @@ ABODE
 
   Related Topics:
 
+& ATCP
+ATCP
+
+  FLAG: ATCP(_)  ()
+
+  This flag applies only to players and it shows if the client
+  supports ATCP. You cannot reset this flag, and it is used internally
+  by the code.
+
+  Related Topics:
+
 & ABS()
 ABS()
 
@@ -7097,7 +7108,7 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |       COLOR256   |       UNICODE    |
+    _ - ATCP       |       COLOR256   |       UNICODE    |
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
