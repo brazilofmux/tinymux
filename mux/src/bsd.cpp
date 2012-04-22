@@ -2777,8 +2777,14 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
-    memset(d->nvt_him_state, OPTION_NO, 256);
-    memset(d->nvt_us_state, OPTION_NO, 256);
+    for (int i = 0; i < 256; i++)
+    {
+        d->nvt_him_state[i] = OPTION_NO;
+    }
+    for (int i = 0; i < 256; i++)
+    {
+        d->nvt_us_state[i] = OPTION_NO;
+    }
     d->ttype = NULL;
     d->encoding = CHARSET_LATIN1;
     d->negotiated_encoding = CHARSET_LATIN1;
