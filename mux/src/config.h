@@ -654,7 +654,16 @@ void init_rlimit(void);
 
 // IPPROTO_IPV6 is not defined unless _WIN32_WINNT >= 0x0501, so the following hack is necessary.
 //
+#if !defined(IPPROTO_IPV6)
 #define IPPROTO_IPV6        ((IPPROTO)41)
+#endif
+
+#if (_MSC_VER <= 1400)
+#define AI_ADDRCONFIG   0x00000400
+#define AI_NUMERICSERV  0x00000008
+#define AI_V4MAPPED     0x00000800
+#define IPV6_V6ONLY           27
+#endif
 
 #else
 
