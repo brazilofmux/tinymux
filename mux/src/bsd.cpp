@@ -3273,14 +3273,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     {
         unsigned char ch = (unsigned char)*pBytes;
         int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
-        int nAction = NVT_IS_NORMAL;
         switch (iAction)
         {
         case 21:
             // Action 21 - Accept CHR(X) and transition to Have_ATCP state.
             //
-            nAction = NVT_IS_HAVE_ATCP;
-
             // FALLTHROUGH
         case 1:
             // Action 1 - Accept CHR(X).
@@ -3457,7 +3454,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     }
                 }
             }
-            d->raw_input_state = nAction;
+            d->raw_input_state = (iAction == 21 ? NVT_IS_HAVE_ATCP : NVT_IS_NORMAL);
             break;
 
         case 0:
