@@ -324,6 +324,7 @@ NAMETAB lock_sw[] =
     {T("uselock"),         1,  CA_PUBLIC,  A_LUSE},
     {T("userlock"),        4,  CA_PUBLIC,  A_LUSER},
     {T("visiblelock"),     1,  CA_PUBLIC,  A_LVISIBLE},
+    {T("atcplock"),        3,  CA_PUBLIC,  A_LATCP},
     {(UTF8 *) NULL,        0,          0,  0}
 };
 
@@ -435,7 +436,7 @@ static NAMETAB pemit_sw[] =
     {T("html"),            1,  CA_PUBLIC,  PEMIT_HTML|SW_MULTIPLE},
     {T("list"),            1,  CA_PUBLIC,  PEMIT_LIST|SW_MULTIPLE},
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    {T("atcp"),            1,  CA_WIZARD,  PEMIT_ATCP},
+    {T("atcp"),            1,  CA_PUBLIC,  PEMIT_ATCP},
     {T("object"),          1,  CA_PUBLIC,  0},
     {T("silent"),          1,  CA_PUBLIC,  0},
     {(UTF8 *) NULL,        0,          0,  0}

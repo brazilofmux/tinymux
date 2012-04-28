@@ -2492,6 +2492,7 @@ Related Topics: @name.
                                    In DARK locations, the object must also be
                                    set LIGHT and the viewer must pass the
                                    VisibleLock.
+     AtcpLock:     Players:        controls who may @pemit/atcp the player.
 
  Note: If a player fails the UseLock on a parent of an object being searched
  for $-commands, then the search for attributes stops and the parent chain is

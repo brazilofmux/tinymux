@@ -1099,7 +1099,10 @@ void do_pemit_single
         case PEMIT_PEMIT:
             if (pemit_flags & PEMIT_ATCP)
             {
-                notify_atcp(target, player, message);
+                if(could_doit(player, target, A_LATCP))
+                {
+                    notify_atcp(target, player, message);
+                }
             }
             else if (bDoContents)
             {

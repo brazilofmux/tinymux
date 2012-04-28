@@ -219,8 +219,9 @@
 #define A_APARENT   229  // @aparent attribute
 #define A_ACREATE   230  // @acreate attribute
 #define A_LVISIBLE  231  // Visibility Lock Storage Attribute
+#define A_LATCP     232  // Lock for who may @pemit/atcp you
 
-// 232 - 235 unused
+// 233 - 235 unused
 
 #if defined(FIRANMUX)
 #define A_COLOR      236 /* Color of name of object in look commands */
