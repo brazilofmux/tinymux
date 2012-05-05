@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: March 2012
+Last Update: May 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -27,6 +27,7 @@ Feature Additions:
  -- Updated log() to accept optional base parameter.
  -- Add baseconv() and update pack() and unpack() to provide
     compatibility options with PennMUSH.
+ -- Add give, kill, and page to NOSPOOF message.
 
 
 Bug Fixes:
@@ -87,6 +88,14 @@ Bug Fixes:
  -- Fix tr() so transformations don't accumulate.
  -- Fix mail-loading bug from TinyMUX 1.6.
  -- Make older code valgrind-friendly and AppVerifier-friendly.
+ -- Reconnect to MySQL with given credentials when MySQL itself fails to
+    do so.
+ -- Fix crashbug in @reference.
+ -- Fix build for VS2005.
+ -- Add /Qopenmp-link:static to 64-bit libmux.dll build to avoid
+    libiomp5md.dll dependency.
+ -- These memset calls were being called with an incorrect number of
+    bytes.
 
 
 Performance Enhancements:
@@ -113,3 +122,4 @@ Miscellaneous:
  -- Remove IDENT query. Everyone blocks it these days.
  -- Windows 2000 is now the oldest supported version.  Note: The
     pre-built binaries haven't supported pre-Win2k for some time.
+ -- Minimum version of Visual Studio is now 2005 (from 2003).
