@@ -3,15 +3,15 @@ Section: games
 Priority: optional
 Maintainer: Ervin Hearn III <noltar@korongil.net>
 DM-Upload-Allowed: yes
-Build-Depends: debhelper (>= 4.0.0), binutils (>= 2.12.90 )
-Standards-Version: 3.8.0
+Build-Depends: debhelper (>= 9.0.0), binutils (>= 2.21.0 )
+Standards-Version: 3.9.3
 Vcs-Svn: http://tinymux.googlecode.com/svn/trunk/
 Vcs-Browser: http://code.google.com/p/tinymux/source/browse/trunk
 Homepage: http://www.tinymux.org/
 
 Package: tinymux
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: text-based multi-user virtual world server
  This is the TinyMUX flavor of mud servers of the MUSH branch. It
  provides a number of robust features to enable players to extend
