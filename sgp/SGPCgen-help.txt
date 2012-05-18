@@ -7,11 +7,11 @@
 ## commands are listed.  These are all staff commands.
 ##
 ## TO DO:
-## 		- Document +setstring and +setlist.  (done 111001)
-## 		- Document global functions.  (done 111001)
-## 		- Document sheet display functions.  (done 111001)
-## 		- Document genre-specific sheet display functions.
-## 		- Document List Object creation and organization. 
+##      - Document +setstring and +setlist.  (done 111001)
+##      - Document global functions.  (done 111001)
+##      - Document sheet display functions.  (done 111001)
+##      - Document genre-specific sheet display functions.
+##      - Document List Object creation and organization. 
 ##        (done 111001 HOWTO-CHAR-SHEETS.txt)
 ##      
 
@@ -25,7 +25,7 @@
 ------------------------------------------------------------------------------
   DB commands:
   
-  +create-db   +stathide	+statlist    +match       +matchfirst  +matches
+  +create-db   +stathide    +statlist    +match       +matchfirst  +matches
   
 ------------------------------------------------------------------------------
   Cgen and Database functions:

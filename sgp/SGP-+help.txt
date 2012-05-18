@@ -1,6 +1,6 @@
 @@ ############################################################################
 @@
-@@	SGP - Help Data and +help/+wizhelp commands for Penn and Tiny 2.2.x
+@@  SGP - Help Data and +help/+wizhelp commands for Penn and Tiny 2.2.x
 @@  1 August 00
 @@  This file creates one new SGP object for the purpose of helpfile storage.
 @@  It adds +help and +wizhelp commands to existing SGP commands objects and
