@@ -173,7 +173,7 @@ int main(void)
                     gets(q);
                 }
             }
-            else 
+            else
             {
                 printf(">%d\n",val);
                 fflush(stdout);
@@ -208,5 +208,5 @@ int main(void)
             return 0;
         }
     }
-    return 0;   
+    return 0;
 }

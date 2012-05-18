@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
     Output output(LINES-3, COLS, 0, 0);
     Status status(1, COLS, LINES-3, 0);
     Input  input(2, COLS, LINES-2, 0, &output);
-    
+
     if (  !output.Valid()
        || !status.Valid()
        || !input.Valid())

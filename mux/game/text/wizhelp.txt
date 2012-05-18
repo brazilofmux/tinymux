@@ -3329,7 +3329,7 @@ LOG
 
   CONFIG PARAMETER: log [!]<logoption> [[!]<logoption>]...
   DEFAULT: bugs checkpoints config_changes create logins network problems
-           security shouts startup suspect time_usage wizard 
+           security shouts startup suspect time_usage wizard
 
   Specifies what types of events are to be logged to the logfile.
 
@@ -4826,7 +4826,7 @@ IPV6
 
 & SITE NOTATION2
 SITE NOTATION (continued)
- 
+
  Examples:
 
    135.246.4.40 255.255.255.255   - Single host.
