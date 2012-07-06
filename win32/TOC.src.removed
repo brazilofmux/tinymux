@@ -1,4 +1,5 @@
 ALPHA
+BETA
 src/table.cpp
 src/table.h
 src/libmux.dsp
