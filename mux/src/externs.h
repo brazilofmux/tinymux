@@ -535,6 +535,8 @@ extern int anum_alc_top;
 #define ATTRIB_INFO     8   /* Info (number, flags) about attribute */
 #define BOOT_QUIET      1   /* Inhibit boot message to victim */
 #define BOOT_PORT       2   /* Boot by port number */
+#define BREAK_INLINE    1   // Evaluate @break action inline
+#define BREAK_QUEUED    2   // Queue @break action.
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE       1   /* item = new_owner */
 #define CHOWN_ALL       2   /* old_owner = new_owner */

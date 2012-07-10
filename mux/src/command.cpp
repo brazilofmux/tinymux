@@ -41,6 +41,13 @@ static NAMETAB boot_sw[] =
     {(UTF8 *) NULL,        0,          0,  0}
 };
 
+static NAMETAB break_sw[] =
+{
+    {T("inline"),          1,  CA_WIZARD,  BREAK_INLINE},
+    {T("queued"),          1,  CA_WIZARD,  BREAK_QUEUED},
+    {(UTF8 *) NULL,        0,          0,  0}
+};
+
 static NAMETAB cboot_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  CBOOT_QUIET},
@@ -688,9 +695,9 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@addcommand"),  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
     {T("@admin"),       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
     {T("@alias"),       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
-    {T("@assert"),      NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
+    {T("@assert"),      break_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
     {T("@attribute"),   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_attribute},
-    {T("@break"),       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
+    {T("@break"),       break_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
     {T("@cboot"),       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_chboot},
     {T("@ccharge"),     NULL,       CA_NO_SLAVE|CA_NO_GUEST,       EDIT_CHANNEL_CCHARGE,           CS_TWO_ARG,           0, do_editchannel},
     {T("@cchown"),      NULL,       CA_NO_SLAVE|CA_NO_GUEST,        EDIT_CHANNEL_CCHOWN,           CS_TWO_ARG,           0, do_editchannel},
@@ -4086,11 +4093,18 @@ void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
         if (  NULL != command
            && '\0' != command[0])
         {
-            CLinearTimeAbsolute lta;
-            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                command,
-                ncargs, cargs,
-                mudstate.global_regs);
+            if (key & BREAK_INLINE)
+            {
+                process_command(executor, caller, enactor, eval, false, command, cargs, ncargs);
+            }
+            else
+            {
+                CLinearTimeAbsolute lta;
+                wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                    command,
+                    ncargs, cargs,
+                    mudstate.global_regs);
+            }
         }
     }
 }
@@ -4107,11 +4121,18 @@ void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
         if (  NULL != command
            && '\0' != command[0])
         {
-            CLinearTimeAbsolute lta;
-            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                command,
-                ncargs, cargs,
-                mudstate.global_regs);
+            if (key & BREAK_INLINE)
+            {
+                process_command(executor, caller, enactor, eval, false, command, cargs, ncargs);
+            }
+            else
+            {
+                CLinearTimeAbsolute lta;
+                wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                    command,
+                    ncargs, cargs,
+                    mudstate.global_regs);
+            }
         }
     }
 }

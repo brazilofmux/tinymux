@@ -551,13 +551,19 @@ Related Topics: @name.
 & @ASSERT
 @ASSERT
 
-  COMMAND: @assert <boolean>[=<action list>]
+  COMMAND: @assert[/<switches>] <boolean>[=<action list>]
 
   @assert stops the execution of further commands in the current action
   list if its argument is a false value.  It doesn't affect new queue
   entries made by previous commands in the action list.  Very useful to
   people who don't like @switch.  If <action list> is given, they are
   executed instead of the rest of the commands in the current action list.
+
+  The following switches are available:
+
+    /inline   - Evaluates <action list>, if present, inline.
+    /queued   - Queues any <action list> to be evaluated in the next
+                queue cycle (default).
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@assert %0;@pemit %#=After
@@ -687,13 +693,19 @@ Related Topics: @name.
 & @BREAK
 @BREAK
 
-  COMMAND: @break <boolean>[=<action list>]
+  COMMAND: @break[/<switches>] <boolean>[=<action list>]
 
   @break stops the execution of further commands in the current action
   list if its argument is a true value.  It doesn't affect new queue
   entries made by previous commands in the action list.  Very useful to
   people who don't like @switch. If <action list> is given, they are
   executed instead of the rest of the commands in the current action list.
+
+  The following switches are available:
+
+    /inline   - Evaluates <action list>, if present, inline.
+    /queued   - Queues any <action list> to be evaluated in the next
+                queue cycle (default).
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@break %0;@pemit %#=After
