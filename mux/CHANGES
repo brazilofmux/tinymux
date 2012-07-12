@@ -1,101 +1,20 @@
-TinyMUX 2.10: CHANGES
-Last Update: May 2012
+TinyMUX 2.12: CHANGES
+Last Update: July 2012
+~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Removed dbpuller tool. Use Omega flatfile tool instead.
- -- guest_site configuration option is renamed to noguest_site.
+ -- None.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Add 256-color support via COLOR256 flag, %x<>, ansi(), and
-    translate().
- -- Add 24-bit color support.  That is, the database and string
-    functions can represent 24-bit color.
- -- Support for MXP/HTML-style tags representing 24-bit color.
- -- IPv6 support.
- -- Add password_methods configuration option.
- -- Add default_charset configuration option (Issue 575).
- -- Add ATAN2().
- -- Add pairs for ACCENT() through U+017F.
- -- Extend writetime() and exptime() to show years.
- -- Add colordepth() - reflects how much color a target can accept.
- -- Update to Unicode 5.2.
- -- insert(), ldelete(), and remove() updated to take output delimiter,
-    list of positions, and negative positions.
- -- Updated log() to accept optional base parameter.
- -- Add baseconv() and update pack() and unpack() to provide
-    compatibility options with PennMUSH.
- -- Add give, kill, and page to NOSPOOF message.
+ -- None.
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- Fix @dbclean to not strip attribute owner and flags on attributes
-    that it re-numbers (Issue 621).
- -- Fix access of uninitialized memory during dbconvert when @queuemax
-    is set on player object (Issue 623).
- -- db_check can potentially crash if exit destination is HOME.
- -- Stricter telnet option parsing.
- -- Avoid using negative initializers in UTF-8 run-copy table to fix
-    gcc 3.4.2 and VC -W4 warnings (Issue 573).
- -- Detect and revert to de facto telnet behavior for MUSHClient
-    (Issue 625).
- -- Fix space delimiter regression from 2.6 (Issues 620, 628, 629,
-    630, 631, 632, 633, and 634).
- -- Use CXX instead of CXXCPP in Makefile for modules.
- -- Protect ConvertToLatin() from buffer overflow (Issue 637).
- -- Return message from shl() and shr() when negative shifts are
-    requested.
- -- Two @program requests to the same player could mix the A_PROGCMD
-    from one with the registers of the other.
- -- Fix color bleed regression (Issue 650).
- -- Add potential fix for hang in export_TextHtml (Issue 652).
- -- Fix the 'doubling' of text that sometimes occurs in HTML
-    conversion.
- -- Fix lack of normal text at beginning in HTML conversion.
- -- Add asserts and potential fix for hang in export_TextHtml
-    (Issue 652).
- -- Fix the 'doubling' of text that sometimes occurs in HTML conversion.
- -- Fix lack of normal text at beginning.
- -- Change the version headers in ./Backup.
- -- For terminfo(), report #-1 NOT CONNECTED for Hidden things.
- -- Should use %llX instead of %X for 64-bit type (Issue 656).
- -- Fix HTML color bleed via @mail (Issue 653).
- -- Fix color use in text snippets containing &, <, >, and " for HTML
-    clients (Issue 655)
- -- Map BULLET (U+2022) which Word uses to an asterisk.
- -- Add COLOR256 flag to flag list topic.
- -- Add upper/lower-case support for a handful characters including
-    U+1E9E and U+00DF (Issue 661).
- -- Fix @QueueMax (Issue 651).
- -- Fix @decompile with colored names, @moniker, and @alias (Issue 577
-    and 602).
- -- Don't @decomp @mail-related attributes.
- -- Include BETA file and remove ALPHA file.
- -- For ldelete() and replace(), ignore duplicate positions.
- -- Fix @decomp so it avoids translating every attribute -- wrapping
-    those that need it in @wait 0={} to make quoting work right.
- -- Disallow %` (Issue 664).
- -- Avoid operation outside the domain of modulus.
- -- Using @mail is clearer than check.my.mail.
- -- Re-write ANSI SUBSTITUTIONS to document %X (upper-case).
- -- Don't returned a dbref for a @reference if the dbref is garbage.
- -- Fixes to site list handling.
- -- Fix crashbug in TruncateToBuffer.
- -- Fix memory leaks from recent code.
- -- Fix tr() so transformations don't accumulate.
- -- Fix mail-loading bug from TinyMUX 1.6.
- -- Make older code valgrind-friendly and AppVerifier-friendly.
- -- Reconnect to MySQL with given credentials when MySQL itself fails to
-    do so.
- -- Fix crashbug in @reference.
- -- Fix build for VS2005.
- -- Add /Qopenmp-link:static to 64-bit libmux.dll build to avoid
-    libiomp5md.dll dependency.
- -- These memset calls were being called with an incorrect number of
-    bytes.
+ -- None.
 
 
 Performance Enhancements:
@@ -105,21 +24,9 @@ Performance Enhancements:
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Remove reference to STRINGS in FAILURE help topic.
- -- Fix connects/disconnects typo in @ADISCONNECT topic.
+ -- None.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Removed search class type=GARBAGE.
- -- Switch to Intel Compiler v11.1.
- -- Update and freshen autoconf to v2.62.
- -- Add and use test cases for shuffle, pickrand, columns, and
-    elements.
- -- Document defaults for log and log_options.
- -- Dark Purple is #800080.
- -- Typo. Should be hiding instead of hidding (Issue 654).
- -- Remove IDENT query. Everyone blocks it these days.
- -- Windows 2000 is now the oldest supported version.  Note: The
-    pre-built binaries haven't supported pre-Win2k for some time.
- -- Minimum version of Visual Studio is now 2005 (from 2003).
+ -- None.

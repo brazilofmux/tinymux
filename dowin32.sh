@@ -3,15 +3,15 @@
 # REQUIRED: The two ReferenceDir must already exist. They may be created by
 # untaring a previous distribution.
 #
-OldBuild=11
-OldVersion=2.10.1.$OldBuild
-NewBuild=12
-NewVersion=2.10.1.$NewBuild
+OldBuild=0
+OldVersion=2.11.0.$OldBuild
+NewBuild=1
+NewVersion=2.11.0.$NewBuild
 
 ChangesDir=mux
-ReferenceDir=mux2.10_$OldBuild
-DistroDir=mux2.10
-NewDir=mux2.10_$NewBuild
+ReferenceDir=mux2.11_$OldBuild
+DistroDir=mux2.11
+NewDir=mux2.11_$NewBuild
 patchableFiles=`cat win32/TOC.src.patchable`
 unpatchedFiles=`cat win32/TOC.src.unpatched`
 removeFiles=`cat win32/TOC.src.removed`

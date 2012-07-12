@@ -69,7 +69,7 @@ CPP_PROJ=/nologo /MT /W3 /EHsc /Ot /Oa /O3 /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_release\libmux.lib" /nologo /version:2.10 /subsystem:console /dll /incremental:no /pdb:"$(OUTDIR)\sqlslave.pdb" /machine:amd64 /def:".\sqlslave.def" /out:"$(OUTDIR)\sqlslave.dll"
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_release\libmux.lib" /nologo /version:2.12 /subsystem:console /dll /incremental:no /pdb:"$(OUTDIR)\sqlslave.pdb" /machine:amd64 /def:".\sqlslave.def" /out:"$(OUTDIR)\sqlslave.dll"
 DEF_FILE= \
 	".\sqlslave.def"
 LINK32_OBJS= \

@@ -1,5 +1,6 @@
-TinyMUX 2.10: BETA
-Last Update: May 2011
+TinyMUX 2.12: BETA
+Last Update: July 2012
+~~~~~~~~~~~~~~~~~~~~~~
 
 Welcome
 ~~~~~~~
@@ -13,8 +14,8 @@ This BETA contains at least one crash-bug.  We have not been able as of yet,
 to find or reproduce it.
 
 Be careful, and leave yourself a way out.  Due to the addition of rich color,
-the only path for down-converting a 2.10 database to 2.9 is the use of the
-Omega flatfile utility.  TinyMUX 2.9 is not able to consume a 2.10 database.
+the only path for down-converting a 2.12 database to 2.9 is the use of the
+Omega flatfile utility.  TinyMUX 2.9 is not able to consume a 2.12 database.
 
 
 General Cautions During the Beta Period:

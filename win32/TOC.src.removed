@@ -1,11 +1,1 @@
-ALPHA
 BETA
-src/table.cpp
-src/table.h
-src/libmux.dsp
-src/netmux.dsw
-src/netmux.dsp
-src/modules/sample.dsp
-src/modules/sum.dsp
-src/modules/sqlproxy.dsp
-src/modules/sqlslave.dsp
