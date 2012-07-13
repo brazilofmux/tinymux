@@ -1464,21 +1464,6 @@ ALIAS
 
   Related Topics: function_alias, flag_alias.
 
-& ALLOW_GUEST_FROM_REGISTERED_SITE
-ALLOW_GUEST_FROM_REGISTERED_SITE
-
-  CONFIG PARAMETER: allow_guest_from_registered_site
-  DEFAULT: yes.
-
-  With this option turned off, guests are not permitted to connect from
-  sites which have been register_site'd.
-
-  Game which use register_site as a more surgical version of forbid_site
-  may be interested in turn this option off. However, game which are
-  register_only will probably want to leave this option as defaulted.
-
-  Related Topics: register_site, SITE LIST
-
 & ARTICLE_RULE
 ARTICLE_RULE
 
@@ -1866,21 +1851,21 @@ CONFIG PARAMETERS
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
 
-  access  alias  allow_guest_from_registered_site  article_rule  attr_access
-  attr_alias  attr_cmd_access  attr_name_charset  autozone  bad_name
-  badsite_file  cache_names  cache_pages  cache_tick_period  check_interval
-  check_offset  clone_copies_cost  command_quota_increment  command_quota_max
-  compress_program  compression  comsys_database  config_access  conn_timeout
-  connect_file  connect_reg_file  crash_database  crash_message
-  create_max_cost  create_min_cost  dark_sleepers  def_exit_rx  def_exit_tx
-  def_player_rx  def_player_tx  def_room_rx  def_room_tx  def_thing_rx
-  def_thing_tx  default_charset  default_home  destroy_going_now  dig_cost
-  down_file  down_motd_message  dump_interval  dump_message  dump_offset
-  earn_limit  eval_comtitle  events_daily_hour  examine_flags
-  examine_public_attrs  exit_flags  exit_name_charset  exit_parent  exit_quota
-  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
-  flag_access  flag_alias  flag_name  float_precision forbid_site  fork_dump
-  full_file  full_motd_message  function_access  function_alias  function_name
+  access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
+  attr_name_charset  autozone  bad_name  badsite_file  cache_names  cache_pages
+  cache_tick_period  check_interval  check_offset  clone_copies_cost
+  command_quota_increment  command_quota_max  compress_program  compression
+  comsys_database  config_access  conn_timeout  connect_file  connect_reg_file
+  crash_database  crash_message  create_max_cost  create_min_cost
+  dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx  def_player_tx
+  def_room_rx  def_room_tx  def_thing_rx  def_thing_tx  default_charset
+  default_home  destroy_going_now  dig_cost  down_file  down_motd_message
+  dump_interval  dump_message  dump_offset  earn_limit  eval_comtitle
+  events_daily_hour  examine_flags  examine_public_attrs  exit_flags
+  exit_name_charset  exit_parent  exit_quota  fascist_teleport
+  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
+  flag_alias  flag_name  float_precision forbid_site  fork_dump  full_file
+  full_motd_message  function_access  function_alias  function_name
   function_invocation_limit  function_recursion_limit  game_dir_file
 
 { 'wizhelp config parameters2' for more }

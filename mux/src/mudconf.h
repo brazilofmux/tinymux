@@ -35,7 +35,6 @@ typedef struct
 typedef struct confdata CONFDATA;
 struct confdata
 {
-    bool    allow_guest_from_registered_site;   // Whether guests from registered sites are allowed.
     bool    autozone;           // New objects are automatically zoned.
     bool    cache_names;        /* Should object names be cached separately */
     bool    clone_copy_cost;    /* Does @clone copy value? */

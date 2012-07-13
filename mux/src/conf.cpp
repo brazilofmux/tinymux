@@ -233,7 +233,6 @@ void cf_init(void)
     // -- ??? Running SC on a non-SC DB may cause problems.
     //
     mudconf.space_compress = true;
-    mudconf.allow_guest_from_registered_site = true;
     mudconf.start_room = 0;
     mudconf.start_home = NOTHING;
     mudconf.default_home = NOTHING;
@@ -1760,7 +1759,6 @@ static CONFPARM conftable[] =
 {
     {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
-    {T("allow_guest_from_registered_site"), cf_bool, CA_GOD,    CA_WIZARD,   (int *)&mudconf.allow_guest_from_registered_site, NULL,     1},
     {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       NULL,               0},
     {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
     {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},

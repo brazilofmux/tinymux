@@ -2353,9 +2353,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
-            if (  (host_info & HI_NOGUEST)
-               || (   !mudconf.allow_guest_from_registered_site
-                  && (host_info & HI_REGISTER)))
+            if (host_info & HI_NOGUEST)
             {
                 // Someone from an IP with guest restrictions is
                 // trying to use a guest account. Give them the blurb
@@ -2467,9 +2465,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // following orders. ;)
             //
             if (  Guest(player)
-               && (  (host_info & HI_NOGUEST)
-                  || (   !mudconf.allow_guest_from_registered_site
-                     && (host_info & HI_REGISTER))))
+               && (host_info & HI_NOGUEST))
             {
                 failconn(T("CON"), T("Connect"), T("Guest Site Forbidden"), d,
                     R_GAMEDOWN, player, FC_CONN_SITE,

@@ -4,7 +4,9 @@ Last Update: July 2012
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- None.
+ -- Removed allow_guest_from_registered_site configuration option.  The
+    guest_site/noguest_site and register_site/permit_site site
+    restrictions can be combined instead to achieve this effect.
 
 
 Feature Additions:
