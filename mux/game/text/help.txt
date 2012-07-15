@@ -3367,11 +3367,11 @@ Related Topics: @name.
 & @PROGRAM2
 @PROGRAM (continued)
 
-  As you can see, this command basically takes what a user types at the
-  prompt, stuffs it into %0 in the code in <obj/attr>, and then triggers
-  that attribute. Note that when @program triggers an attribute, the enactor
-  of that triggered attribute is <player>, and is inserted into %#.
-  r-registers are preserved when @program triggers an attribute.
+  As you can see, this command takes what a user types at the prompt and
+  passes it as %0 into the code in <obj/attr> -- which it then triggers.
+  Note that when @program triggers an attribute, the enactor of that
+  triggered attribute is <player>, and is inserted into %#.  r-registers
+  are preserved when @program triggers an attribute.
 
   An optional message, <prefix>, may be specified and will be output before
   the @program prompt. This is useful for telling the user what information
