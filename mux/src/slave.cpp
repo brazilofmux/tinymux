@@ -63,7 +63,7 @@ char *format_inet_addr(char *dest, long addr)
 //
 // copy a string, returning pointer to the null terminator of dest
 //
-char *stpcpy(char *dest, const char *src)
+char *mux_stpcpy(char *dest, const char *src)
 {
     while ((*dest = *src))
     {
@@ -111,9 +111,9 @@ int query(char *ip, char *orig_arg)
     }
 #endif // HAVE_GETHOSTBYADDR
 
-    p = stpcpy(buf, ip);
+    p = mux_stpcpy(buf, ip);
     *p++ = ' ';
-    p = stpcpy(p, pHName);
+    p = mux_stpcpy(p, pHName);
     *p++ = '\n';
     *p++ = '\0';
 
@@ -215,7 +215,7 @@ int query(char *ip, char *orig_arg)
         fclose(f);
         p = (char *)format_inet_addr(buf2, ntohl(sin.sin_addr.s_addr));
         *p++ = ' ';
-        p = stpcpy(p, result);
+        p = mux_stpcpy(p, result);
         *p++ = '\n';
         *p++ = '\0';
     }
