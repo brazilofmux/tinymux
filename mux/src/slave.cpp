@@ -48,7 +48,7 @@ pid_t parent_pid;
 //
 // copy a string, returning pointer to the null terminator of dest
 //
-char *stpcpy(char *dest, const char *src)
+char *mux_stpcpy(char *dest, const char *src)
 {
     while ((*dest = *src))
     {
@@ -116,9 +116,9 @@ int query(char *ip)
 #endif
 
     char buf[MAX_STRING * 2];
-    char *p = stpcpy(buf, ip);
+    char *p = mux_stpcpy(buf, ip);
     *p++ = ' ';
-    p = stpcpy(p, pHName);
+    p = mux_stpcpy(p, pHName);
     *p++ = '\n';
     *p++ = '\0';
 
