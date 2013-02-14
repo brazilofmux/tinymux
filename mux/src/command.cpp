@@ -4870,5 +4870,6 @@ NAMETAB allow_charset_nametab[] =
     {T("latin-2"),         7,       0,     ALLOW_CHARSET_8859_2},
     {T("iso8859-1"),       9,       0,     ALLOW_CHARSET_8859_1},
     {T("iso8859-2"),       9,       0,     ALLOW_CHARSET_8859_2},
+    {T("hangul"),          9,       0,     ALLOW_CHARSET_HANGUL},
     {(UTF8 *) NULL,        0,       0,     0}
 };

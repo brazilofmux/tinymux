@@ -455,6 +455,55 @@ inline bool mux_is8859_2(__in const unsigned char *p)
     return ((iState - CL_8859_2_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_hangul.txt
+//
+inline bool mux_ishangul(__in const unsigned char *p)
+{
+    unsigned char iState = CL_HANGUL_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_hangul_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_hangul_sot[iState];
+        for (;;)
+        {
+            int y = cl_hangul_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_hangul_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_hangul_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_HANGUL_ACCEPTING_STATES_START);
+    return ((iState - CL_HANGUL_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
 // utf/tr_utf8_ascii.txt
 //
 const char *ConvertToAscii(__in const UTF8 *pString);

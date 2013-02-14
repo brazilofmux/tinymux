@@ -326,6 +326,11 @@ bool IsRestricted(const UTF8 *pName, int charset)
         {
             bAllowed = true;
         }
+        else if (  (ALLOW_CHARSET_HANGUL & charset)
+                && mux_ishangul(pName))
+        {
+            bAllowed = true;
+        }
 
         if (!bAllowed)
         {

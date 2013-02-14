@@ -809,6 +809,7 @@ extern int anum_alc_top;
 #define ALLOW_CHARSET_ASCII  1
 #define ALLOW_CHARSET_8859_1 2
 #define ALLOW_CHARSET_8859_2 4
+#define ALLOW_CHARSET_HANGUL 8
 
 /* Password Encryption Methods */
 

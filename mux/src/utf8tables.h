@@ -50,25 +50,25 @@ extern const unsigned char cl_attrname_sbt[50];
 
 // utf/cl_ObjectName.txt
 //
-// 257 included, 1113855 excluded, 0 errors.
-// 8 states, 23 columns, 343 bytes
+// 11429 included, 1102683 excluded, 0 errors.
+// 12 states, 33 columns, 389 bytes
 //
 #define CL_OBJECTNAME_START_STATE (0)
-#define CL_OBJECTNAME_ACCEPTING_STATES_START (8)
+#define CL_OBJECTNAME_ACCEPTING_STATES_START (12)
 extern const unsigned char cl_objectname_itt[256];
-extern const unsigned char cl_objectname_sot[8];
-extern const unsigned char cl_objectname_sbt[79];
+extern const unsigned char cl_objectname_sot[12];
+extern const unsigned char cl_objectname_sbt[121];
 
 // utf/cl_PlayerName.txt
 //
-// 190 included, 1113922 excluded, 0 errors.
-// 6 states, 14 columns, 312 bytes
+// 11362 included, 1102750 excluded, 0 errors.
+// 11 states, 27 columns, 377 bytes
 //
 #define CL_PLAYERNAME_START_STATE (0)
-#define CL_PLAYERNAME_ACCEPTING_STATES_START (6)
+#define CL_PLAYERNAME_ACCEPTING_STATES_START (11)
 extern const unsigned char cl_playername_itt[256];
-extern const unsigned char cl_playername_sot[6];
-extern const unsigned char cl_playername_sbt[50];
+extern const unsigned char cl_playername_sot[11];
+extern const unsigned char cl_playername_sbt[110];
 
 // utf/cl_8859_1.txt
 //
@@ -91,6 +91,17 @@ extern const unsigned char cl_8859_1_sbt[20];
 extern const unsigned char cl_8859_2_itt[256];
 extern const unsigned char cl_8859_2_sot[6];
 extern const unsigned char cl_8859_2_sbt[73];
+
+// utf/cl_hangul.txt
+//
+// 11172 included, 1102940 excluded, 0 errors.
+// 6 states, 9 columns, 298 bytes
+//
+#define CL_HANGUL_START_STATE (0)
+#define CL_HANGUL_ACCEPTING_STATES_START (6)
+extern const unsigned char cl_hangul_itt[256];
+extern const unsigned char cl_hangul_sot[6];
+extern const unsigned char cl_hangul_sbt[36];
 
 // utf/tr_utf8_ascii.txt
 //
