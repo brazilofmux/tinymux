@@ -520,6 +520,10 @@ const char *ConvertToLatin1(__in const UTF8 *pString);
 //
 const char *ConvertToLatin2(__in const UTF8 *pString);
 
+// utf/tr_widths.txt
+//
+int ConsoleWidth(__in const UTF8 *pCodePoint);
+
 // utf/tr_tolower.txt
 //
 inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
