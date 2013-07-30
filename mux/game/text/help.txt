@@ -11153,6 +11153,7 @@ POWERS LIST
   halt              Can @halt anything, and @halt/all.
   hide              DARK flag is effective for hiding.
   idle              No idle timeout.
+  immutable         No attributes may change (1).
   long_fingers      Can get, look, whisper, etc from a distance.
 
 { 'help powers list2' for more }
@@ -11174,6 +11175,10 @@ POWERS LIST (continued)
   tel_anywhere      Can teleport anywhere.
   tel_anything      Can teleport anything (includes tel_anywhere)
   unkillable        Cannot be killed with the 'kill' command.
+
+  Footnotes:
+
+    (1) The immutable power is only available with --enable-firanmux.
 
   Related Topics: @power
 
