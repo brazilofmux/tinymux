@@ -3928,7 +3928,7 @@ PERMISSIONS (continued)
   Footnotes:
 
     (1) The dark permission is not available with --enable-firanmux.
-    (2) The no_immutable and no_restricted permissions are only available with
+    (2) The no_immobile and no_restricted permissions are only available with
         --enable-firanmux.
 
 & PERMIT_SITE
