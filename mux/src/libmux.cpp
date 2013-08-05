@@ -1303,9 +1303,61 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID ridd, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal)
+class CStandardMarshaler : public mux_IMarshal
 {
-    MUX_RESULT mr = MUX_E_NOTIMPLEMENTED;
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    CStandardMarshaler(MUX_IID riid, marshal_context ctx);
+    virtual ~CStandardMarshaler();
+
+private:
+    UINT32          m_cRef;
+    MUX_IID         m_riid;
+    marshal_context m_ctx;
+};
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal)
+{
+    MUX_RESULT mr = MUX_S_OK;
+    if (NULL == pIUnknown)
+    {
+        mr = MUX_E_NOTIMPLEMENTED;
+    }
+    else
+    {
+        CStandardMarshaler *pMarshaler = NULL;
+        try
+        {
+            pMarshaler = new CStandardMarshaler(riid, ctx);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == pMarshaler)
+        {
+            mr = MUX_E_OUTOFMEMORY;
+        }
+        else
+        {
+            mr = pMarshaler->QueryInterface(mux_IID_IMarshal, (void **)ppMarshal);
+            pMarshaler->Release();
+        }
+    }
     return mr;
 }
 
@@ -2068,5 +2120,79 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 iReturnChann
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
+    return MUX_S_OK;
+}
+
+// Standard Marshaler which is not directly accessible.
+//
+CStandardMarshaler::CStandardMarshaler(MUX_IID riid, marshal_context ctx) : m_cRef(1)
+{
+    m_riid = riid;
+    m_ctx = ctx;
+}
+
+CStandardMarshaler::~CStandardMarshaler()
+{
+}
+
+MUX_RESULT CStandardMarshaler::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CStandardMarshaler::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CStandardMarshaler::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CStandardMarshaler::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
+{
+    *pcid = mux_CID_StandardMarshaler;
+    return S_OK;
+}
+
+MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStandardMarshaler::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStandardMarshaler::ReleaseMarshalData(QUEUE_INFO *pqi)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CStandardMarshaler::DisconnectObject(void)
+{
     return MUX_S_OK;
 }

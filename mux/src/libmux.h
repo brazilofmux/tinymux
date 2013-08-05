@@ -66,6 +66,8 @@ typedef enum
     IsSlaveProcess   = 2
 } process_context;
 
+const MUX_CID mux_CID_StandardMarshaler = UINT64_C(0x0000000100000001);
+
 const MUX_IID mux_IID_IUnknown          = UINT64_C(0x0000000100000010);
 const MUX_IID mux_IID_IClassFactory     = UINT64_C(0x0000000100000011);
 const MUX_IID mux_IID_IRpcChannelBuffer = UINT64_C(0x0000000100000012);
@@ -225,7 +227,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLASS_INFO aci[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID ridd, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
 
