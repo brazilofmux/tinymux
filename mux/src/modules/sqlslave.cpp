@@ -27,7 +27,7 @@ public:
     // mux_IMarshal
     //
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
     virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
     virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
     virtual MUX_RESULT DisconnectObject(void);
@@ -515,7 +515,7 @@ MUX_RESULT CQueryControl_Msg(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return CQueryControl_Call(pci, pqi);
 }
 
-MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -535,7 +535,15 @@ MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
     else
     {
         mux_IQueryControl *pIQueryControl = NULL;
-        mr = QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
@@ -962,10 +970,11 @@ MUX_RESULT CQuerySinkProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQuerySinkProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQuerySinkProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(pv);
     UNUSED_PARAMETER(ctx);
 
     // This should only be called on the component side.

@@ -578,10 +578,11 @@ MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_C
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CSumProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(pv);
     UNUSED_PARAMETER(ctx);
 
     // This should only be called on the component side.

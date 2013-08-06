@@ -70,7 +70,6 @@ const MUX_CID mux_CID_StandardMarshaler = UINT64_C(0x0000000100000001);
 
 const MUX_IID mux_IID_IUnknown          = UINT64_C(0x0000000100000010);
 const MUX_IID mux_IID_IClassFactory     = UINT64_C(0x0000000100000011);
-const MUX_IID mux_IID_IRpcChannelBuffer = UINT64_C(0x0000000100000012);
 const MUX_IID mux_IID_IRpcProxyBuffer   = UINT64_C(0x0000000100000013);
 const MUX_IID mux_IID_IRpcStubBuffer    = UINT64_C(0x0000000100000014);
 const MUX_IID mux_IID_IPSFactoryBuffer  = UINT64_C(0x0000000100000015);
@@ -93,50 +92,6 @@ interface mux_IClassFactory : public mux_IUnknown
 public:
     virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv) = 0;
     virtual MUX_RESULT LockServer(bool bLock) = 0;
-};
-
-// The following is part of what is called 'Standard Marshaling'.  Since this
-// is only partially implemented, the related interfaces are subject to change.
-//
-typedef struct
-{
-    void   *pBuffer;
-    size_t cbBuffer;
-    UINT32 iMethod;
-} MUX_RPCMESSAGE;
-
-interface mux_IRpcChannelBuffer : public mux_IUnknown
-{
-public:
-    virtual MUX_RESULT GetBuffer(MUX_RPCMESSAGE *pMessage, MUX_IID riid) = 0;
-    virtual MUX_RESULT SendReceive(MUX_RPCMESSAGE *pMessage, UINT32 *pStatus) = 0;
-    virtual MUX_RESULT FreeBuffer(MUX_RPCMESSAGE *pMessage) = 0;
-    virtual marshal_context GetMarshalContext(void) = 0;
-    virtual MUX_RESULT IsConnected(void) = 0;
-};
-
-interface mux_IRpcProxyBuffer : public mux_IUnknown
-{
-public:
-    virtual MUX_RESULT Connect(mux_IRpcChannelBuffer *pRpcChannelBuffer) = 0;
-    virtual void       Disconnect(void);
-};
-
-interface mux_IRpcStubBuffer : public mux_IUnknown
-{
-public:
-    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer) = 0;
-    virtual void       Disconnect(void) = 0;
-    virtual MUX_RESULT Invoke(MUX_RPCMESSAGE *pMessage, mux_IRpcChannelBuffer *pRpcChannelBuffer) = 0;
-    virtual MUX_RESULT IsSupported(MUX_IID riid) = 0;
-    virtual UINT32     CountRefs(void) = 0;
-};
-
-interface mux_IPSFactoryBuffer : public mux_IUnknown
-{
-public:
-    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv) = 0;
-    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub) = 0;
 };
 
 #define QUEUE_BLOCK_SIZE 32768
@@ -186,13 +141,41 @@ extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nC
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqi);
 
+
+// The following is part of what is called 'Standard Marshaling'.  Since this
+// is only partially implemented, the related interfaces are subject to change.
+//
+interface mux_IRpcProxyBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Connect(UINT32 nChannel) = 0;
+    virtual void       Disconnect(void);
+};
+
+interface mux_IRpcStubBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer) = 0;
+    virtual void       Disconnect(void) = 0;
+    virtual MUX_RESULT Invoke(QUEUE_INFO *pqi) = 0;
+    virtual MUX_RESULT IsSupported(MUX_IID riid) = 0;
+    virtual UINT32     CountRefs(void) = 0;
+};
+
+interface mux_IPSFactoryBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv) = 0;
+    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub) = 0;
+};
+
 // The following is part of what is called 'Custom Marshaling'.
 //
 interface mux_IMarshal : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid) = 0;
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx) = 0;
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx) = 0;
     virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv) = 0;
     virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi) = 0;
     virtual MUX_RESULT DisconnectObject(void) = 0;

@@ -1315,7 +1315,7 @@ public:
     // mux_IMarshal
     //
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
     virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
     virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
     virtual MUX_RESULT DisconnectObject(void);
@@ -1379,7 +1379,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, M
         if (MUX_SUCCEEDED(mr))
         {
             Pipe_AppendBytes(pqi, sizeof(cidProxy), &cidProxy);
-            mr = pIMarshal->MarshalInterface(pqi, riid, ctx);
+            mr = pIMarshal->MarshalInterface(pqi, riid, pIUnknown, ctx);
         }
         pIMarshal->Release();
     }
@@ -2177,9 +2177,88 @@ MUX_RESULT CStandardMarshaler::GetUnmarshalClass(MUX_IID riid, marshal_context c
     return S_OK;
 }
 
-MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+static MUX_RESULT CStd_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
+    if (NULL == pIRpcStubBuffer)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+    return pIRpcStubBuffer->Invoke(pqi);
+}
+
+static MUX_RESULT CStd_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
+    if (NULL == pIRpcStubBuffer)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    pIRpcStubBuffer->Disconnect();
+    pIRpcStubBuffer->Release();
+    pci->pInterface = NULL;
+    Pipe_FreeChannel(pci);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
+{
+    MUX_RESULT mr = MUX_S_OK;
+    mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+
+    int i = InterfaceFind(riid);
+    if (  i < g_nInterfaces
+       && g_pInterfaces[i].iid == riid)
+    {
+        MUX_CID cidProxyStub = g_pInterfaces[i].cidProxyStub;
+        mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
+        mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
+        if (MUX_SUCCEEDED(mr))
+        {
+            mux_IRpcStubBuffer *pIRpcStubBuffer = NULL;
+            mr = pIPSFactoryBuffer->CreateStub(riid, NULL, &pIRpcStubBuffer);
+            pIPSFactoryBuffer->Release();
+            if (MUX_SUCCEEDED(mr))
+            {
+                mr = pIRpcStubBuffer->Connect(pIUnknown);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStd_Call, NULL, CStd_Disconnect);
+                    if (NULL != pChannel)
+                    {
+                        pChannel->pInterface = pIRpcStubBuffer;
+
+                        Pipe_AppendBytes(pqi, sizeof(riid), &riid);
+                        Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                    }
+                    else
+                    {
+                        pIRpcStubBuffer->Disconnect();
+                        pIRpcStubBuffer->Release();
+                        mr = MUX_E_OUTOFMEMORY;
+                    }
+                }
+                else
+                {
+                    pIRpcStubBuffer->Release();
+                }
+            }
+            else
+            {
+                mr = MUX_E_NOINTERFACE;
+            }
+        }
+        else
+        {
+            mr = MUX_E_NOINTERFACE;
+        }
+    }
+    else
+    {
+        mr = MUX_E_NOINTERFACE;
+    }
+    return mr;
 }
 
 MUX_RESULT CStandardMarshaler::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)

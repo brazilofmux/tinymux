@@ -674,10 +674,11 @@ MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(pv);
     UNUSED_PARAMETER(ctx);
 
     // This should only be called on the component side.
@@ -1228,7 +1229,7 @@ MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     }
 }
 
-MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -1248,7 +1249,15 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
     else
     {
         mux_IQuerySink *pIQuerySink = NULL;
-        mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.

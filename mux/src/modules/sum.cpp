@@ -233,7 +233,7 @@ MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -253,7 +253,15 @@ MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context
     else
     {
         ISum *pISum = NULL;
-        mr = QueryInterface(IID_ISum, (void **)&pISum);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_ISum, (void **)&pISum);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_ISum, (void **)&pISum);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
