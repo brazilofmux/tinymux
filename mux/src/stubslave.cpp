@@ -449,7 +449,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return mr;
 }
 
-MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -469,7 +469,15 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_c
     else
     {
         mux_ISlaveControl *pISlaveControl = NULL;
-        mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.

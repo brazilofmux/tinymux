@@ -2174,7 +2174,7 @@ UINT32 CStandardMarshaler::Release(void)
 MUX_RESULT CStandardMarshaler::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
     *pcid = mux_CID_StandardMarshaler;
-    return S_OK;
+    return MUX_S_OK;
 }
 
 static MUX_RESULT CStd_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
