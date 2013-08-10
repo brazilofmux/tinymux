@@ -2242,6 +2242,7 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
                 else
                 {
                     pIRpcStubBuffer->Release();
+                    mr = MUX_E_NOINTERFACE;
                 }
             }
             else
@@ -2268,7 +2269,24 @@ MUX_RESULT CStandardMarshaler::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid,
 
 MUX_RESULT CStandardMarshaler::ReleaseMarshalData(QUEUE_INFO *pqi)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    MUX_IID riid;
+    size_t nWanted = sizeof(riid);
+    if (  Pipe_GetBytes(pqi, &nWanted, &riid)
+       && sizeof(riid) == nWanted)
+    {
+        UINT32 nChannel;
+        nWanted = sizeof(nChannel);
+        if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
+           && sizeof(nChannel) == nWanted)
+        {
+            CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
+            if (NULL != pChannel)
+            {
+                CStd_Disconnect(pChannel, pqi);
+            }
+        }
+    }
+    return MUX_S_OK;
 }
 
 MUX_RESULT CStandardMarshaler::DisconnectObject(void)
