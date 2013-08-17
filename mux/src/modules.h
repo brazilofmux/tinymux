@@ -45,7 +45,7 @@ const MUX_IID IID_ISlaveControl         = UINT64_C(0x0000000250C158E9);
 const MUX_CID CID_QueryControlProxy     = UINT64_C(0x00000002683E889A);
 const MUX_IID IID_IServerEventsControl  = UINT64_C(0x000000026EE5256E);
 const MUX_CID CID_QuerySinkProxy        = UINT64_C(0x00000002746B93B9);
-const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13A);
+const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13B);
 const MUX_CID CID_QueryServer           = UINT64_C(0x000000028FEA49AD);
 const MUX_CID CID_ServerEventsSource    = UINT64_C(0x00000002A5080812);
 const MUX_IID IID_IQuerySink            = UINT64_C(0x00000002CBBCE24E);
@@ -57,17 +57,14 @@ const MUX_IID CID_QueryClient           = UINT64_C(0x00000002F571AB88);
 interface mux_ILog : public mux_IUnknown
 {
 public:
-    virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary) = 0;
-
-    virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
-    virtual void log_text(const UTF8 *text) = 0;
-    virtual void log_number(int num) = 0;
-    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...) = 0;
-    virtual void log_name(dbref target) = 0;
-    virtual void log_name_and_loc(dbref player) = 0;
-    virtual void log_type_and_name(dbref thing) = 0;
-
-    virtual void end_log(void) = 0;
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary) = 0;
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
+    virtual MUX_RESULT log_text(const UTF8 *text) = 0;
+    virtual MUX_RESULT log_number(int num) = 0;
+    virtual MUX_RESULT log_name(dbref target) = 0;
+    virtual MUX_RESULT log_name_and_loc(dbref player) = 0;
+    virtual MUX_RESULT log_type_and_name(dbref thing) = 0;
+    virtual MUX_RESULT end_log(void) = 0;
 };
 
 class CLog : public mux_ILog
@@ -81,15 +78,14 @@ public:
 
     // mux_ILog
     //
-    virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary);
-    virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
-    virtual void log_text(const UTF8 *text);
-    virtual void log_number(int num);
-    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...);
-    virtual void log_name(dbref target);
-    virtual void log_name_and_loc(dbref player);
-    virtual void log_type_and_name(dbref thing);
-    virtual void end_log(void);
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary);
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
+    virtual MUX_RESULT log_text(const UTF8 *text);
+    virtual MUX_RESULT log_number(int num);
+    virtual MUX_RESULT log_name(dbref target);
+    virtual MUX_RESULT log_name_and_loc(dbref player);
+    virtual MUX_RESULT log_type_and_name(dbref thing);
+    virtual MUX_RESULT end_log(void);
 
     CLog(void);
     virtual ~CLog();

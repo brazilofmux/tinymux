@@ -249,62 +249,60 @@ UINT32 CLog::Release(void)
     return m_cRef;
 }
 
-bool CLog::start_log(int key, const UTF8 *primary, const UTF8 *secondary)
+MUX_RESULT CLog::start_log(bool *fStarted, int key, const UTF8 *primary, const UTF8 *secondary)
 {
     if (  ((key) & mudconf.log_options) != 0
        && ::start_log(primary, secondary))
     {
-        return true;
+        *fStarted = true;
     }
     else
     {
-        return false;
+        *fStarted = false;
     }
+    return MUX_S_OK;
 }
 
-void CLog::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
+MUX_RESULT CLog::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
 {
     ::log_perror(primary, secondary, extra, failing_object);
+    return MUX_S_OK;
 }
 
-void CLog::log_text(const UTF8 *text)
+MUX_RESULT CLog::log_text(const UTF8 *text)
 {
     ::log_text(text);
+    return MUX_S_OK;
 }
 
-void CLog::log_number(int num)
+MUX_RESULT CLog::log_number(int num)
 {
     ::log_number(num);
+    return MUX_S_OK;
 }
 
-void DCL_CDECL CLog::log_printf(const UTF8 *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    UTF8 aTempBuffer[SIZEOF_LOG_BUFFER];
-    size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
-    va_end(ap);
-    Log.WriteBuffer(nString, aTempBuffer);
-}
-
-void CLog::log_name(dbref target)
+MUX_RESULT CLog::log_name(dbref target)
 {
     ::log_name(target);
+    return MUX_S_OK;
 }
 
-void CLog::log_name_and_loc(dbref player)
+MUX_RESULT CLog::log_name_and_loc(dbref player)
 {
     ::log_name_and_loc(player);
+    return MUX_S_OK;
 }
 
-void CLog::log_type_and_name(dbref thing)
+MUX_RESULT CLog::log_type_and_name(dbref thing)
 {
     ::log_type_and_name(thing);
+    return MUX_S_OK;
 }
 
-void CLog::end_log(void)
+MUX_RESULT CLog::end_log(void)
 {
     ::end_log();
+    return MUX_S_OK;
 }
 
 // Factory for CLog component which is not directly accessible.
