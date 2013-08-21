@@ -1585,7 +1585,7 @@ ATTR_NAME_CHARSET
     hangul    - Restrict names to use Hangul (Korean).
     hiragana  - Restrict names to use Hiragana (Japanese).
     katakana  - Restrict names to use Katakana (Japanese).
-    kanji     - Restrict names to use Kanji (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -2362,7 +2362,7 @@ EXIT_NAME_CHARSET
     hangul    - Restrict names to use Hangul (Korean).
     hiragana  - Restrict names to use Hiragana (Japanese).
     katakana  - Restrict names to use Katakana (Japanese).
-    kanji     - Restrict names to use Kanji (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -4052,7 +4052,7 @@ PLAYER_NAME_CHARSET
     hangul    - Restrict names to use Hangul (Korean).
     hiragana  - Restrict names to use Hiragana (Japanese).
     katakana  - Restrict names to use Katakana (Japanese).
-    kanji     - Restrict names to use Kanji (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -4500,7 +4500,7 @@ ROOM_NAME_CHARSET
     hangul    - Restrict names to use Hangul (Korean).
     hiragana  - Restrict names to use Hiragana (Japanese).
     katakana  - Restrict names to use Katakana (Japanese).
-    kanji     - Restrict names to use Kanji (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -5101,7 +5101,7 @@ THING_NAME_CHARSET
     hangul    - Restrict names to use Hangul (Korean).
     hiragana  - Restrict names to use Hiragana (Japanese).
     katakana  - Restrict names to use Katakana (Japanese).
-    kanji     - Restrict names to use Kanji (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
