@@ -4868,10 +4868,13 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 NAMETAB allow_charset_nametab[] =
 {
     {T("ascii"),           5,       0,     ALLOW_CHARSET_ASCII},
-    {T("latin-1"),         7,       0,     ALLOW_CHARSET_8859_1},
-    {T("latin-2"),         7,       0,     ALLOW_CHARSET_8859_2},
+    {T("hangul"),          6,       0,     ALLOW_CHARSET_HANGUL},
+    {T("hiragana"),        8,       0,     ALLOW_CHARSET_HIRAGANA},
     {T("iso8859-1"),       9,       0,     ALLOW_CHARSET_8859_1},
     {T("iso8859-2"),       9,       0,     ALLOW_CHARSET_8859_2},
-    {T("hangul"),          9,       0,     ALLOW_CHARSET_HANGUL},
+    {T("kanji"),           5,       0,     ALLOW_CHARSET_KANJI},
+    {T("katakana"),        8,       0,     ALLOW_CHARSET_KATAKANA},
+    {T("latin-1"),         7,       0,     ALLOW_CHARSET_8859_1},
+    {T("latin-2"),         7,       0,     ALLOW_CHARSET_8859_2},
     {(UTF8 *) NULL,        0,       0,     0}
 };

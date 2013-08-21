@@ -837,10 +837,13 @@ extern int anum_alc_top;
 
 /* Character Set Restrictions */
 
-#define ALLOW_CHARSET_ASCII  1
-#define ALLOW_CHARSET_8859_1 2
-#define ALLOW_CHARSET_8859_2 4
-#define ALLOW_CHARSET_HANGUL 8
+#define ALLOW_CHARSET_ASCII       0x00000001UL
+#define ALLOW_CHARSET_HANGUL      0x00000002UL
+#define ALLOW_CHARSET_HIRAGANA    0x00000004UL
+#define ALLOW_CHARSET_KANJI       0x00000008UL
+#define ALLOW_CHARSET_KATAKANA    0x00000010UL
+#define ALLOW_CHARSET_8859_1      0x00000020UL
+#define ALLOW_CHARSET_8859_2      0x00000040UL
 
 /* Password Encryption Methods */
 

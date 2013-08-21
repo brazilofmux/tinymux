@@ -504,6 +504,153 @@ inline bool mux_ishangul(__in const unsigned char *p)
     return ((iState - CL_HANGUL_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_hiragana.txt
+//
+inline bool mux_ishiragana(__in const unsigned char *p)
+{
+    unsigned char iState = CL_HIRAGANA_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_hiragana_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_hiragana_sot[iState];
+        for (;;)
+        {
+            int y = cl_hiragana_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_hiragana_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_hiragana_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_HIRAGANA_ACCEPTING_STATES_START);
+    return ((iState - CL_HIRAGANA_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_kanji.txt
+//
+inline bool mux_iskanji(__in const unsigned char *p)
+{
+    unsigned char iState = CL_KANJI_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_kanji_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_kanji_sot[iState];
+        for (;;)
+        {
+            int y = cl_kanji_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_kanji_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_kanji_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_KANJI_ACCEPTING_STATES_START);
+    return ((iState - CL_KANJI_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_katakana.txt
+//
+inline bool mux_iskatakana(__in const unsigned char *p)
+{
+    unsigned char iState = CL_KATAKANA_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_katakana_itt[(unsigned char)ch];
+        unsigned char iOffset = cl_katakana_sot[iState];
+        for (;;)
+        {
+            int y = cl_katakana_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_katakana_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_katakana_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_KATAKANA_ACCEPTING_STATES_START);
+    return ((iState - CL_KATAKANA_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
 // utf/tr_utf8_ascii.txt
 //
 const char *ConvertToAscii(__in const UTF8 *pString);
