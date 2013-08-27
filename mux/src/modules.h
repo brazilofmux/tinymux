@@ -422,7 +422,6 @@ public:
     virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
 
     CQueryClient(void);
-    MUX_RESULT FinalConstruct(void);
     virtual ~CQueryClient();
 
 private:
