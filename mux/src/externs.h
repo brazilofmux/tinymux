@@ -1192,4 +1192,29 @@ void stack_clr(dbref obj);
 #endif // DEPRECATED
 bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
 
+#if defined(TINYMUX_MODULES)
+
+class CLogFactory : public mux_IClassFactory
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IClassFactory
+    //
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+
+    CLogFactory(void);
+    virtual ~CLogFactory();
+
+private:
+    UINT32 m_cRef;
+};
+
+#endif
+
 #endif // EXTERNS_H

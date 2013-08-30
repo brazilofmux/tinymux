@@ -688,6 +688,33 @@ CLogFile::~CLogFile(void)
 
 // CLog component which is not directly accessible.
 //
+class CLog : public mux_ILog
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_ILog
+    //
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary);
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
+    virtual MUX_RESULT log_text(const UTF8 *text);
+    virtual MUX_RESULT log_number(int num);
+    virtual MUX_RESULT log_name(dbref target);
+    virtual MUX_RESULT log_name_and_loc(dbref player);
+    virtual MUX_RESULT log_type_and_name(dbref thing);
+    virtual MUX_RESULT end_log(void);
+
+    CLog(void);
+    virtual ~CLog();
+
+private:
+    UINT32 m_cRef;
+};
+
 CLog::CLog(void) : m_cRef(1)
 {
 }
