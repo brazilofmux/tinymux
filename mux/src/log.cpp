@@ -684,6 +684,8 @@ CLogFile::~CLogFile(void)
 #endif // WINDOWS_THREADS
 }
 
+#if defined(TINYMUX_MODULES)
+
 // CLog component which is not directly accessible.
 //
 CLog::CLog(void) : m_cRef(1)
@@ -866,3 +868,5 @@ MUX_RESULT CLogFactory::LockServer(bool bLock)
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
+
+#endif

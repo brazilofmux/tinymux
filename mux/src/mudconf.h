@@ -511,7 +511,9 @@ struct statedata
     CResultsSet *pResultsSet;           // ResultsSet from @query.
     int iRow;                           // Current Row.
 #endif // STUB_SLAVE
+#if defined(TINYMUX_MODULES)
     mux_IQueryControl *pIQueryControl;
+#endif
 
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */

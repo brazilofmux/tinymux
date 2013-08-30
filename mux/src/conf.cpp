@@ -385,7 +385,9 @@ void cf_init(void)
 #if defined(STUB_SLAVE)
     mudstate.pISlaveControl = NULL;
 #endif // STUB_SLAVE
+#if defined(TINYMUX_MODULES)
     mudstate.pIQueryControl = NULL;
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -1535,6 +1537,8 @@ static CF_HAND(cf_hook)
     return retval;
 }
 
+#if defined(TINYMUX_MODULES)
+
 static CF_HAND(cf_module)
 {
     UNUSED_PARAMETER(vp);
@@ -1641,6 +1645,8 @@ static CF_HAND(cf_module)
         return 0;
     }
 }
+
+#endif
 
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
@@ -1878,7 +1884,9 @@ static CONFPARM conftable[] =
     {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
     {T("motd_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
     {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
+#if defined(TINYMUX_MODULES)
     {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   (int *)NULL,                     NULL,               0},
+#endif
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
     {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,      HC_NOGUEST},

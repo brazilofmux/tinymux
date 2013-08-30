@@ -12,8 +12,8 @@
 #include "match.h"
 #if defined(TINYMUX_MODULES)
 #include "libmux.h"
-#include "modules.h"
 #endif
+#include "modules.h"
 #include "mudconf.h"
 #include "svdrand.h"
 
@@ -99,7 +99,9 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
+#if defined(TINYMUX_MODULES)
 void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
+#endif
 
 #if defined(UNIX_CRYPT)
 extern "C" char *crypt(const char *inptr, const char *inkey);
