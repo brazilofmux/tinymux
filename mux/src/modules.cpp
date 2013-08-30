@@ -25,6 +25,8 @@ static MUX_CLASS_INFO netmux_classes[NUM_CLASSES] =
     { CID_QueryClient        }
 };
 
+DEFINE_FACTORY(CStubSlaveProxyFactory)
+
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
@@ -205,6 +207,27 @@ void final_modules(void)
 
 // CServerEventsSource component which is not directly accessible.
 //
+class CServerEventsSource : public mux_IServerEventsControl
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IServerEventsControl
+    //
+    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents);
+
+    CServerEventsSource(void);
+    virtual ~CServerEventsSource();
+
+private:
+    UINT32 m_cRef;
+    mux_IServerEventsSink *m_pSink;
+};
+
 CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(NULL)
 {
 }
@@ -416,6 +439,45 @@ MUX_RESULT CServerEventsSourceFactory::LockServer(bool bLock)
 
 // StubSlaveProxy component which is not directly accessible.
 //
+class CStubSlaveProxy : public mux_ISlaveControl, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_ISlaveControl
+    //
+#if defined(WINDOWS_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#elif defined(UNIX_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // UNIX_FILES
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+    virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
+
+    CStubSlaveProxy(void);
+    MUX_RESULT FinalConstruct(void);
+    virtual ~CStubSlaveProxy();
+
+private:
+    UINT32 m_cRef;
+    UINT32 m_nChannel;
+    UTF8  *m_pModuleName;
+};
+
 CStubSlaveProxy::CStubSlaveProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID), m_pModuleName(NULL)
 {
 }
@@ -888,6 +950,34 @@ MUX_RESULT CStubSlaveProxyFactory::LockServer(bool bLock)
 
 // CQueryClient component which is not directly accessible.
 //
+class CQueryClient : public mux_IQuerySink, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_IQuerySink
+    //
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
+
+    CQueryClient(void);
+    virtual ~CQueryClient();
+
+private:
+    UINT32 m_cRef;
+};
+
 CQueryClient::CQueryClient(void) : m_cRef(1)
 {
 }

@@ -236,4 +236,20 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void);
 
+#define DEFINE_FACTORY(x)                                                                      \
+class x : public mux_IClassFactory                                                             \
+{                                                                                              \
+public:                                                                                        \
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);                                \
+    virtual UINT32     AddRef(void);                                                           \
+    virtual UINT32     Release(void);                                                          \
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);   \
+    virtual MUX_RESULT LockServer(bool bLock);                                                 \
+    x(void);                                                                                   \
+    virtual ~x();                                                                              \
+                                                                                               \
+private:                                                                                       \
+    UINT32 m_cRef;                                                                             \
+};
+
 #endif // LIBMUX_H

@@ -14,6 +14,35 @@
 #include "libmux.h"
 #endif
 #include "modules.h"
+
+class CResultsSet
+{
+public:
+    CResultsSet(QUEUE_INFO *pqi);
+    ~CResultsSet(void);
+    UINT32 Release(void);
+    UINT32 AddRef(void);
+    bool   isLoaded(void);
+    void   SetError(UINT32 iError);
+    UINT32 GetError(void);
+    int    GetRowCount(void);
+    const UTF8 *FirstField(int iRow);
+    const UTF8 *NextField(void);
+
+private:
+    UINT32 m_cRef;
+    int    m_nFields;
+    size_t m_nBlob;
+    UTF8  *m_pBlob;
+    bool   m_bLoaded;
+    UINT32 m_iError;
+    int    m_nRows;
+    PUTF8 *m_pRows;
+
+    const UTF8 *m_pCurrentField;
+    int         m_iCurrentField;
+};
+
 #include "mudconf.h"
 #include "svdrand.h"
 
@@ -1194,26 +1223,17 @@ bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF
 
 #if defined(TINYMUX_MODULES)
 
-class CLogFactory : public mux_IClassFactory
+DEFINE_FACTORY(CLogFactory)
+
+typedef struct ServerEventsSinkNode
 {
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    mux_IServerEventsSink        *pSink;
+    struct ServerEventsSinkNode  *pNext;
+} ServerEventsSinkNode;
+extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CLogFactory(void);
-    virtual ~CLogFactory();
-
-private:
-    UINT32 m_cRef;
-};
+DEFINE_FACTORY(CServerEventsSourceFactory)
+DEFINE_FACTORY(CQueryClientFactory)
 
 #endif
 
