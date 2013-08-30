@@ -39,19 +39,23 @@
 
 #if defined(TINYMUX_MODULES)
 
-const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
-const MUX_CID CID_StubSlave             = UINT64_C(0x00000002267CA586);
-const MUX_IID IID_ISlaveControl         = UINT64_C(0x0000000250C158E9);
-const MUX_IID IID_IServerEventsControl  = UINT64_C(0x000000026EE5256E);
-const MUX_CID CID_QuerySinkProxy        = UINT64_C(0x00000002746B93B9);
-const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13B);
-const MUX_CID CID_QueryServer           = UINT64_C(0x000000028FEA49AD);
-const MUX_CID CID_ServerEventsSource    = UINT64_C(0x00000002A5080812);
-const MUX_IID IID_IQuerySink            = UINT64_C(0x00000002CBBCE24E);
-const MUX_CID CID_StubSlaveProxy        = UINT64_C(0x00000002D2453099);
-const MUX_IID IID_IQueryControl         = UINT64_C(0x00000002ECD689FC);
-const MUX_IID IID_IServerEventsSink     = UINT64_C(0x00000002F0F2753F);
-const MUX_IID CID_QueryClient           = UINT64_C(0x00000002F571AB88);
+const MUX_IID IID_IFunctionSinkControl   = UINT64_C(0x000000020560E6D5);
+const MUX_CID CID_Log                    = UINT64_C(0x000000020CE18E7A);
+const MUX_CID CID_StubSlave              = UINT64_C(0x00000002267CA586);
+const MUX_IID IID_IFunctionsControl      = UINT64_C(0x000000022E28F8FA);
+const MUX_IID IID_ISlaveControl          = UINT64_C(0x0000000250C158E9);
+const MUX_IID IID_IServerEventsControl   = UINT64_C(0x000000026EE5256E);
+const MUX_CID CID_QuerySinkProxy         = UINT64_C(0x00000002746B93B9);
+const MUX_IID IID_ILog                   = UINT64_C(0x000000028B9DC13B);
+const MUX_CID CID_QueryServer            = UINT64_C(0x000000028FEA49AD);
+const MUX_CID CID_ServerEventsSource     = UINT64_C(0x00000002A5080812);
+const MUX_IID IID_IQuerySink             = UINT64_C(0x00000002CBBCE24E);
+const MUX_CID CID_StubSlaveProxy         = UINT64_C(0x00000002D2453099);
+const MUX_IID IID_IFunction              = UINT64_C(0x00000002D34910C1);
+const MUX_IID IID_IQueryControl          = UINT64_C(0x00000002ECD689FC);
+const MUX_IID IID_IServerEventsSink      = UINT64_C(0x00000002F0F2753F);
+const MUX_IID CID_QueryClient            = UINT64_C(0x00000002F571AB88);
+const MUX_CID CID_Functions              = UINT64_C(0x00000002FE32BEA1);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -194,13 +198,19 @@ extern void final_modules(void);
 
 #define RS_TOP             (0)
 
+// Functions
+//
 interface mux_IFunction : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Call(__in UTF8 *buff, __deref_inout UTF8 **bufc,
-        dbref executor, dbref caller, dbref enactor, int eval,
-        __in UTF8 *fargs[], int nfargs, __in const UTF8 *cargs[],
-        int ncargs);
+    virtual MUX_RESULT Call(unsigned int nKey, __in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
+        int eval, __in UTF8 *fargs[], int nfargs, __in const UTF8 *cargs[], int ncargs) = 0;
+};
+
+interface mux_IFunctionsControl : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms) = 0;
 };
 
 #endif

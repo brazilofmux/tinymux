@@ -13,14 +13,14 @@
 typedef struct tagFun
 {
     const UTF8 *name;     // function name
-    void (*fun)(__in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller,
-        dbref enactor, int eval, __in UTF8 *fargs[], int nfargs,
-        __in const UTF8 *cargs[], int ncargs);  // handler
+    void (*fun)(__in struct tagFun *fp, __in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
+        int eval, __in UTF8 *fargs[], int nfargs, __in const UTF8 *cargs[], int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
     int maxArgs;      // Maximum number of arguments permitted
     int flags;        // Function flags
     int perms;        // Access to function
+    void *vp;
 } FUN;
 
 typedef struct ufun {
@@ -92,9 +92,8 @@ bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc);
 // This is the prototype for functions
 //
 #define FUNCTION(x) \
-    void x(__in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller,  \
-        dbref enactor, int eval, __in UTF8 *fargs[], int nfargs,                      \
-        __in const UTF8 *cargs[], int ncargs)
+    void x(__in FUN *fp, __in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller,  dbref enactor, int eval, \
+         __in UTF8 *fargs[], int nfargs,  __in const UTF8 *cargs[], int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
@@ -102,9 +101,8 @@ bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc);
     delim_check(buff, bufc, executor, caller, enactor, eval,     \
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
 
-#define XFUNCTION(x) void x(__in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, \
- dbref caller, dbref enactor, int eval, __in UTF8 *fargs[], int nfargs,                 \
- __in const UTF8 *cargs[], int ncargs)
+#define XFUNCTION(x) void x(__in FUN *fp, __in UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref caller, dbref enactor, \
+    int eval, __in UTF8 *fargs[], int nfargs, __in const UTF8 *cargs[], int ncargs)
 
 // Interface for adding additional hardcode functions.
 //

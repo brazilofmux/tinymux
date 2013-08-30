@@ -82,8 +82,6 @@ CSum::CSum(void) : m_cRef(1)
     g_cComponents++;
 }
 
-#define LOG_ALWAYS      0x80000000  /* Always log it */
-
 MUX_RESULT CSum::FinalConstruct(void)
 {
     MUX_RESULT mr = MUX_S_OK;

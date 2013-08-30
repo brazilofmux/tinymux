@@ -1,0 +1,9 @@
+# Included by funcs.mak
+
+.\funcs.cpp : \
+	"..\autoconf.h"\
+	"..\config.h"\
+	"..\libmux.h"\
+	"..\modules.h"\
+	".\funcs.h"\
+	

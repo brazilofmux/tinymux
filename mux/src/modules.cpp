@@ -16,14 +16,15 @@
 
 #if defined(TINYMUX_MODULES)
 
-#define NUM_CLASSES 4
-static MUX_CLASS_INFO netmux_classes[NUM_CLASSES] =
+static MUX_CLASS_INFO netmux_classes[] =
 {
     { CID_Log                },
     { CID_ServerEventsSource },
     { CID_StubSlaveProxy     },
-    { CID_QueryClient        }
+    { CID_QueryClient        },
+    { CID_Functions          }
 };
+#define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
 DEFINE_FACTORY(CStubSlaveProxyFactory)
 
@@ -110,6 +111,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pQueryClientFactory->QueryInterface(iid, ppv);
         pQueryClientFactory->Release();
+    }
+    else if (CID_Functions == cid)
+    {
+        CFunctionsFactory *pFunctionsFactory = NULL;
+        try
+        {
+            pFunctionsFactory = new CFunctionsFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == pFunctionsFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFunctionsFactory->QueryInterface(iid, ppv);
+        pFunctionsFactory->Release();
     }
     return mr;
 }

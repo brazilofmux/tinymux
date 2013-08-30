@@ -1,0 +1,6 @@
+LIBRARY "funcs.dll"
+EXPORTS
+    mux_CanUnloadNow    @1 PRIVATE
+    mux_GetClassObject  @2 PRIVATE
+    mux_Register        @3 PRIVATE
+    mux_Unregister      @4 PRIVATE

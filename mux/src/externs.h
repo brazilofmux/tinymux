@@ -1237,6 +1237,7 @@ extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
 DEFINE_FACTORY(CServerEventsSourceFactory)
 DEFINE_FACTORY(CQueryClientFactory)
+DEFINE_FACTORY(CFunctionsFactory)
 
 #endif
 

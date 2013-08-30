@@ -11409,16 +11409,24 @@ void function_add(FUN *fp)
 {
     size_t nCased;
     UTF8 *pCased = mux_strupr(fp->name, nCased);
-    hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
+    if (NULL == hashfindLEN(pCased, nCased, &mudstate.func_htab))
+    {
+        hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
+    }
+}
+
+void function_remove(FUN *fp)
+{
+    size_t nCased;
+    UTF8 *pCased = mux_strupr(fp->name, nCased);
+    hashdeleteLEN(pCased, nCased, &mudstate.func_htab);
 }
 
 void functions_add(FUN funlist[])
 {
     for (FUN *fp = funlist; fp->name; fp++)
     {
-        size_t nCased;
-        UTF8 *pCased = mux_strupr(fp->name, nCased);
-        hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
+        function_add(fp);
     }
 }
 
@@ -11732,3 +11740,253 @@ CF_HAND(cf_func_access)
     cf_log_notfound(player, cmd, T("Function"), str);
     return -1;
 }
+
+#if defined(TINYMUX_MODULES)
+
+// CFunctions component which is not directly accessible.
+//
+
+class CFunctions;
+
+typedef struct FunctionsNode
+{
+    FUN                   fun;
+    mux_IFunction         *pIFun;
+    unsigned int          nKey;
+    struct FunctionsNode *next;
+} FunctionsNode;
+
+class CFunctions : public mux_IFunctionsControl
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IFunctionsControl
+    //
+    virtual MUX_RESULT Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms);
+
+    CFunctions(void);
+    virtual ~CFunctions();
+
+private:
+    UINT32          m_cRef;
+    FunctionsNode  *m_pHead;
+};
+
+CFunctions::CFunctions(void) : m_cRef(1), m_pHead(NULL)
+{
+}
+
+CFunctions::~CFunctions()
+{
+    FunctionsNode *pfn;
+    while (NULL != m_pHead)
+    {
+        pfn = m_pHead;
+        m_pHead = pfn->next;
+
+        function_remove(&pfn->fun);
+
+        pfn->fun.vp = NULL;
+        if (NULL != pfn->pIFun)
+        {
+            pfn->pIFun->Release();
+            pfn->pIFun = NULL;
+        }
+        pfn->next = NULL;
+
+        delete pfn;
+    }
+}
+
+MUX_RESULT CFunctions::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IFunctionsControl *>(this);
+    }
+    else if (IID_IFunctionsControl == iid)
+    {
+        *ppv = static_cast<mux_IFunctionsControl *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CFunctions::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CFunctions::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+static FUNCTION(fun_Functions)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    FunctionsNode *pfn = (FunctionsNode *)(fp->vp);
+    if (NULL != pfn)
+    {
+        mux_IFunction *pIFun = pfn->pIFun;
+        if (NULL != pIFun)
+        {
+            MUX_RESULT mr = pIFun->Call(pfn->nKey, buff, bufc, executor, caller, enactor, eval, fargs, nfargs, cargs, ncargs);
+        }
+    }
+}
+
+MUX_RESULT CFunctions::Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms)
+{
+    if (  NULL == name
+       || NULL == pIFun)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    FunctionsNode *pfn = NULL;
+    try
+    {
+        pfn = new FunctionsNode;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pfn)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    pfn->fun.name = name;
+    pfn->fun.fun = fun_Functions;
+    pfn->fun.maxArgsParsed = maxArgsParsed;
+    pfn->fun.minArgs = minArgs;
+    pfn->fun.maxArgs = maxArgs;
+    pfn->fun.flags = flags;
+    pfn->fun.perms = perms;
+    pfn->fun.vp = (void *)pfn;
+
+    pfn->pIFun = pIFun;
+    pfn->pIFun->AddRef();
+
+    pfn->nKey = nKey;
+
+    // Add ourselves to the list.
+    //
+    pfn->next = m_pHead;
+    m_pHead = pfn;
+
+    function_add(&pfn->fun);
+    
+    return MUX_S_OK;
+}
+
+// Factory for CFunctions component which is not directly accessible.
+//
+CFunctionsFactory::CFunctionsFactory(void) : m_cRef(1)
+{
+}
+
+CFunctionsFactory::~CFunctionsFactory()
+{
+}
+
+MUX_RESULT CFunctionsFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CFunctionsFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CFunctionsFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CFunctionsFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CFunctions *pLog = NULL;
+    try
+    {
+        pLog = new CFunctions;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pLog)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pLog->QueryInterface(iid, ppv);
+    pLog->Release();
+    return mr;
+}
+
+MUX_RESULT CFunctionsFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+#endif

@@ -1,8 +1,13 @@
 CXX = @CXX@
 
-ALLSRC     = sample.cpp sum.cpp sqlproxy.cpp sqlslave.cpp
+ALLSRC     = funcs.cpp sample.cpp sum.cpp sqlproxy.cpp sqlslave.cpp
 
-all: sample.so sum.so sqlproxy.so sqlslave.so
+all: funcs.so sample.so sum.so sqlproxy.so sqlslave.so
+
+funcs.so: funcs.cpp funcs.h ../autoconf.h ../config.h ../libmux.h ../modules.h
+	( if [ -f funcs.so ]; then mv -f funcs.so funcs.so~ ; fi )
+	$(CXX) @MODULE_CPPFLAGS@ -o funcs.so funcs.cpp -L.. @MUX_LIBS@
+	( if [ -f funcs.so ]; then cd ../../game/bin ; rm -f funcs.so ; ln -s ../../src/modules/funcs.so funcs.so ; fi )
 
 sample.so: sample.cpp sample.h ../autoconf.h ../config.h ../libmux.h ../modules.h
 	( if [ -f sample.so ]; then mv -f sample.so sample.so~ ; fi )
@@ -29,9 +34,9 @@ depend: $(ALLSRC) ../unsplit
 	mv .depend~ .depend
 
 clean:
-	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log funcs.so~ sample.so~ sum.so~ sqlproxy.so~ sqlslave.so~
 
 realclean:
-	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so sample.so~ sum.so sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~ autoconf.h
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log funcs.so funcs.so~ sample.so sample.so~ sum.so sum.so~ sqlproxy.so sqlproxy.so~ sqlslave.so sqlslave.so~ autoconf.h Makefile
 
 include .depend
