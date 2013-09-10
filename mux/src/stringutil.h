@@ -268,7 +268,7 @@ inline bool mux_isobjectname(__in const unsigned char *p)
     {
         unsigned char ch = *p++;
         unsigned char iColumn = cl_objectname_itt[(unsigned char)ch];
-        unsigned char iOffset = cl_objectname_sot[iState];
+        unsigned short iOffset = cl_objectname_sot[iState];
         for (;;)
         {
             int y = cl_objectname_sbt[iOffset];
@@ -317,7 +317,7 @@ inline bool mux_isplayername(__in const unsigned char *p)
     {
         unsigned char ch = *p++;
         unsigned char iColumn = cl_playername_itt[(unsigned char)ch];
-        unsigned char iOffset = cl_playername_sot[iState];
+        unsigned short iOffset = cl_playername_sot[iState];
         for (;;)
         {
             int y = cl_playername_sbt[iOffset];
