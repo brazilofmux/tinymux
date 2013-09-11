@@ -3559,6 +3559,9 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
     case mux_subnet::kGreaterThan:
         search(msnRoot->pnLeft, msa, pulInfo);
         break;
+
+    default:
+        break;
     }
 }
 

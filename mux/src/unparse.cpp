@@ -40,7 +40,7 @@ static UTF8 *buftop;
 
 static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int format)
 {
-    if ((b == TRUE_BOOLEXP))
+    if (TRUE_BOOLEXP == b)
     {
         if (format == F_EXAMINE)
         {
