@@ -5965,7 +5965,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         if (!is_integer(mask_txt, NULL))
         {
             cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
-            return false;
+            return NULL;
         }
 
         nLeadingBits = mux_atol(mask_txt);
