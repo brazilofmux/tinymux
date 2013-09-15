@@ -4,7 +4,7 @@
  * $Id$
  *
  * \verbatim
-           Copyright (c) 1997-2004 University of Cambridge
+           Copyright (c) 1997-2005 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -42,13 +42,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef _PCRE_H
 #define _PCRE_H
 
-#define PCRE_MAJOR          5
+#define PCRE_MAJOR          6
 #define PCRE_MINOR          0
-#define PCRE_DATE           13-Sep-2004
-
-#ifndef PCRE_DATA_SCOPE
-#  define PCRE_DATA_SCOPE     extern
-#endif
+#define PCRE_DATE           07-Jun-2005
 
 #define SUPPORT_UTF8
 
@@ -59,22 +55,25 @@ it is needed here for malloc. */
 
 /* Options */
 
-#define PCRE_CASELESS           0x0001
-#define PCRE_MULTILINE          0x0002
-#define PCRE_DOTALL             0x0004
-#define PCRE_EXTENDED           0x0008
-#define PCRE_ANCHORED           0x0010
-#define PCRE_DOLLAR_ENDONLY     0x0020
-#define PCRE_EXTRA              0x0040
-#define PCRE_NOTBOL             0x0080
-#define PCRE_NOTEOL             0x0100
-#define PCRE_UNGREEDY           0x0200
-#define PCRE_NOTEMPTY           0x0400
-#define PCRE_UTF8               0x0800
-#define PCRE_NO_AUTO_CAPTURE    0x1000
-#define PCRE_NO_UTF8_CHECK      0x2000
-#define PCRE_AUTO_CALLOUT       0x4000
-#define PCRE_PARTIAL            0x8000
+#define PCRE_CASELESS           0x00000001
+#define PCRE_MULTILINE          0x00000002
+#define PCRE_DOTALL             0x00000004
+#define PCRE_EXTENDED           0x00000008
+#define PCRE_ANCHORED           0x00000010
+#define PCRE_DOLLAR_ENDONLY     0x00000020
+#define PCRE_EXTRA              0x00000040
+#define PCRE_NOTBOL             0x00000080
+#define PCRE_NOTEOL             0x00000100
+#define PCRE_UNGREEDY           0x00000200
+#define PCRE_NOTEMPTY           0x00000400
+#define PCRE_UTF8               0x00000800
+#define PCRE_NO_AUTO_CAPTURE    0x00001000
+#define PCRE_NO_UTF8_CHECK      0x00002000
+#define PCRE_AUTO_CALLOUT       0x00004000
+#define PCRE_PARTIAL            0x00008000
+#define PCRE_DFA_SHORTEST       0x00010000
+#define PCRE_DFA_RESTART        0x00020000
+#define PCRE_FIRSTLINE          0x00040000
 
 /* Exec-time and get/set-time error codes */
 
@@ -93,6 +92,11 @@ it is needed here for malloc. */
 #define PCRE_ERROR_BADPARTIAL     (-13)
 #define PCRE_ERROR_INTERNAL       (-14)
 #define PCRE_ERROR_BADCOUNT       (-15)
+#define PCRE_ERROR_DFA_UITEM      (-16)
+#define PCRE_ERROR_DFA_UCOND      (-17)
+#define PCRE_ERROR_DFA_UMLIMIT    (-18)
+#define PCRE_ERROR_DFA_WSSIZE     (-19)
+#define PCRE_ERROR_DFA_RECURSE    (-20)
 
 /* Request types for pcre_fullinfo() */
 
@@ -170,14 +174,16 @@ typedef struct pcre_callout_block {
 
 /* Exported PCRE functions */
 
-extern pcre *pcre_compile(const char *, int, const char **,
-              int *, const unsigned char *);
-extern int  pcre_copy_substring(const char *, int *, int, int,
-              char *, int);
-extern int  pcre_exec(const pcre *, const pcre_extra *,
-              const char *, int, int, int, int *, int);
+extern pcre *pcre_compile(const char *, int, const char **, int *,
+                  const unsigned char *);
+extern pcre *pcre_compile2(const char *, int, int *, const char **,
+                  int *, const unsigned char *);
+extern int  pcre_copy_substring(const char *, int *, int, int, char *,
+                  int);
+extern int  pcre_exec(const pcre *, const pcre_extra *, const char *,
+                   int, int, int, int *, int);
 extern int  pcre_fullinfo(const pcre *, const pcre_extra *, int,
-              void *);
+                  void *);
 extern const unsigned char *pcre_maketables(void);
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
 
