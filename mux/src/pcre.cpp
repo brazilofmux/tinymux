@@ -41,19 +41,10 @@ POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------------
 \endverbatim
  *
- * Modified by Shawn Wagner for TinyMUX to fit in one file and remove things
- * we don't use, like a bunch of API functions and utf-8 support. If you want
- * the full thing, see http://www.pcre.org.
+ * Modified by Shawn Wagner for TinyMUX to fit in one file and exclude unused
+ * things. If you want the full thing, see http://www.pcre.org.
  *
- * Patched by Alierak to protect against integer overflow in repeat
- * counts.
- *
- * Re-synced with 4.5 sources to include utf-8 support. Kept Alierak's patch.
- * Left out unnecessary functions and EBCDIC support.
- *
- * Updated with 5.0 sources.
- * Updated with 6.0 sources.
- * Updated with 6.1 sources.
+ * Updated with 6.2 sources.
  */
 
 #include "autoconf.h"
@@ -103,7 +94,6 @@ typedef unsigned char uschar;
 /* This header contains definitions that are shared between the different
 modules, but which are not relevant to the exported API. This includes some
 functions whose names all begin with "_pcre_". */
-
 
 /* PCRE keeps offsets in its compiled code as 2-byte quantities (always stored
 in big-endian order) by default. These are used, for example, to link from the
@@ -1862,6 +1852,7 @@ static const unsigned char digitab[] =
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 240-247 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};/* 248-255 */
 
+
 /* Definition to allow mutual recursion */
 
 static bool
@@ -1918,6 +1909,7 @@ byte-mode, and more complicated ones for UTF-8 characters. */
 
 #ifndef SUPPORT_UTF8
 #define GETCHAR(c, eptr) c = *eptr;
+#define GETCHARTEST(c, eptr) c = *eptr;
 #define GETCHARINC(c, eptr) c = *eptr++;
 #define GETCHARINCTEST(c, eptr) c = *eptr++;
 #define GETCHARLEN(c, eptr, len) c = *eptr;
@@ -2181,7 +2173,7 @@ Arguments:
   errorcodeptr   points to the errorcode variable
   bracount       number of previous extracting brackets
   options        the options bits
-  isclass        TRUE if inside a character class
+  isclass        true if inside a character class
 
 Returns:         zero or positive => a data character
                  negative => a special escape sequence
@@ -2366,7 +2358,7 @@ escape sequence.
 
 Argument:
   ptrptr         points to the pattern position pointer
-  negptr         points to a boolean that is set TRUE for negation else FALSE
+  negptr         points to a boolean that is set true for negation else false
   errorcodeptr   points to the error code variable
 
 Returns:     value from ucp_type_table, or -1 for an invalid type
@@ -2505,7 +2497,18 @@ read_repeat_counts(const uschar *p, int *minp, int *maxp, int *errorcodeptr)
 int min = 0;
 int max = -1;
 
+/* Read the minimum value and do a paranoid check: a negative value indicates
+an integer overflow. */
+
 while ((digitab[*p] & ctype_digit) != 0) min = min * 10 + *p++ - '0';
+if (min < 0 || min > 65535)
+  {
+  *errorcodeptr = ERR5;
+  return p;
+  }
+
+/* Read the maximum value if there is one, and again do a paranoid on its size.
+Also, max must not be less than min. */
 
 if (*p == '}') max = min; else
   {
@@ -2513,6 +2516,11 @@ if (*p == '}') max = min; else
     {
     max = 0;
     while((digitab[*p] & ctype_digit) != 0) max = max * 10 + *p++ - '0';
+    if (max < 0 || max > 65535)
+      {
+      *errorcodeptr = ERR5;
+      return p;
+      }
     if (max < min)
       {
       *errorcodeptr = ERR4;
@@ -2521,17 +2529,11 @@ if (*p == '}') max = min; else
     }
   }
 
-/* Do paranoid checks, then fill in the required variables, and pass back the
-pointer to the terminating '}'. */
+/* Fill in the required variables, and pass back the pointer to the terminating
+'}'. */
 
-if (min < 0 || 65535 < min ||
-    max < -1 || 65535 < max)
-  *errorcodeptr = ERR5;
-else
-  {
-  *minp = min;
-  *maxp = max;
-  }
+*minp = min;
+*maxp = max;
 return p;
 }
 
@@ -5205,14 +5207,14 @@ Argument:
   codeptr        -> the address of the current code pointer
   ptrptr         -> the address of the current pattern pointer
   errorcodeptr   -> pointer to error code variable
-  lookbehind     TRUE if this is a lookbehind assertion
+  lookbehind     true if this is a lookbehind assertion
   skipbytes      skip this many bytes at start (for OP_COND, OP_BRANUMBER)
   firstbyteptr   place to put the first required character, or a negative number
   reqbyteptr     place to put the last required character, or a negative number
   bcptr          pointer to the chain of currently open branches
   cd             points to the data block with tables pointers etc.
 
-Returns:      TRUE on success
+Returns:      true on success
 */
 
 static bool
@@ -5753,6 +5755,7 @@ bool utf8;
 bool class_utf8;
 #endif
 bool inescq = false;
+bool capturing;
 unsigned int brastackptr = 0;
 size_t size;
 uschar *code;
@@ -6318,6 +6321,7 @@ while ((c = *(++ptr)) != 0)
     case '(':
     branch_newextra = 0;
     bracket_length = 1 + LINK_SIZE;
+    capturing = false;
 
     /* Handle special forms of bracket, which all start (? */
 
@@ -6405,6 +6409,9 @@ while ((c = *(++ptr)) != 0)
 
         case 'P':
         ptr += 3;
+
+        /* Handle the definition of a named subpattern */
+
         if (*ptr == '<')
           {
           const uschar *p;    /* Don't amalgamate; some compilers */
@@ -6417,8 +6424,11 @@ while ((c = *(++ptr)) != 0)
             }
           name_count++;
           if (ptr - p > max_name_size) max_name_size = (ptr - p);
+          capturing = true;   /* Named parentheses are always capturing */
           break;
           }
+
+        /* Handle back references and recursive calls to named subpatterns */
 
         if (*ptr == '=' || *ptr == '>')
           {
@@ -6603,18 +6613,24 @@ while ((c = *(++ptr)) != 0)
           continue;
           }
 
-        /* If options were terminated by ':' control comes here. Fall through
-        to handle the group below. */
+        /* If options were terminated by ':' control comes here. This is a
+        non-capturing group with an options change. There is nothing more that
+        needs to be done because "capturing" is already set false by default;
+        we can just fall through. */
+
         }
       }
 
-    /* Extracting brackets must be counted so we can process escapes in a
-    Perlish way. If the number exceeds EXTRACT_BASIC_MAX we are going to
-    need an additional 3 bytes of store per extracting bracket. However, if
-    PCRE_NO_AUTO)CAPTURE is set, unadorned brackets become non-capturing, so we
-    must leave the count alone (it will aways be zero). */
+    /* Ordinary parentheses, not followed by '?', are capturing unless
+    PCRE_NO_AUTO_CAPTURE is set. */
 
-    else if ((options & PCRE_NO_AUTO_CAPTURE) == 0)
+    else capturing = (options & PCRE_NO_AUTO_CAPTURE) == 0;
+
+    /* Capturing brackets must be counted so we can process escapes in a
+    Perlish way. If the number exceeds EXTRACT_BASIC_MAX we are going to need
+    an additional 3 bytes of memory per capturing bracket. */
+
+    if (capturing)
       {
       bracount++;
       if (bracount > EXTRACT_BASIC_MAX) bracket_length += 3;
@@ -6750,7 +6766,7 @@ if ((options & PCRE_AUTO_CALLOUT) != 0)
 if (length > MAX_PATTERN_SIZE)
   {
   errorcode = ERR20;
-  return NULL;
+  goto PCRE_EARLY_ERROR_RETURN;
   }
 
 /* Compute the size of data block needed and get it, either from malloc or
@@ -6762,7 +6778,7 @@ re = static_cast<real_pcre *>(malloc(size));
 if (re == NULL)
   {
   errorcode = ERR21;
-  return NULL;
+  goto PCRE_EARLY_ERROR_RETURN;
   }
 
 /* Put in the magic number, and save the sizes, options, and character table
@@ -6964,7 +6980,7 @@ Arguments:
   c           the character
   data        points to the flag byte of the XCLASS data
 
-Returns:      TRUE if character matches, else FALSE
+Returns:      true if character matches, else false
 */
 
 static bool
@@ -10034,7 +10050,7 @@ do
     while (iptr < iend) *iptr++ = -1;
     }
 
-  /* Advance to a unique first char if possible. If firstline is TRUE, the
+  /* Advance to a unique first char if possible. If firstline is true, the
   start of the match is constrained to the first line of a multiline string.
   Implement this by temporarily adjusting end_subject so that we stop scanning
   at a newline. If the match fails at the newline, later code breaks this loop.
