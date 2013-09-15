@@ -53,6 +53,7 @@ POSSIBILITY OF SUCH DAMAGE.
  *
  * Updated with 5.0 sources.
  * Updated with 6.0 sources.
+ * Updated with 6.1 sources.
  */
 
 #include "autoconf.h"
@@ -3326,14 +3327,14 @@ Arguments:
   brackets       points to number of extracting brackets used
   codeptr        points to the pointer to the current code point
   ptrptr         points to the current pattern pointer
-  errorptr       points to pointer to error message
+  errorcodeptr   points to error code variable
   firstbyteptr   set to initial literal character, or < 0 (REQ_UNSET, REQ_NONE)
   reqbyteptr     set to the last literal character required, else < 0
   bcptr          points to current branch chain
   cd             contains pointers to tables etc.
 
 Returns:         true on success
-                 false, with *errorptr set on error
+                 false, with *errorcodeptr set non-zero on error
 */
 
 static bool
@@ -6532,6 +6533,14 @@ while ((c = *(++ptr)) != 0)
             nothing is done here and it is handled during the compiling
             process.
 
+            We allow for more than one options setting at the start. If such
+            settings do not change the existing options, nothing is compiled.
+            However, we must leave space just in case something is compiled.
+            This can happen for pathological sequences such as (?i)(?-i)
+            because the global options will end up with -i set. The space is
+            small and not significant. (Before I did this there was a reported
+            bug with (?i)(?-i) in a machine-generated pattern.)
+
             [Historical note: Up to Perl 5.8, options settings at top level
             were always global settings, wherever they appeared in the pattern.
             That is, they were equivalent to an external setting. From 5.8
@@ -6544,6 +6553,7 @@ while ((c = *(++ptr)) != 0)
               options = (options | set) & (~unset);
               set = unset = 0;     /* To save length */
               item_count--;        /* To allow for several */
+              length += 2;
               }
 
             /* Fall through */
