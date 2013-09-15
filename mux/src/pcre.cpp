@@ -9274,7 +9274,7 @@ for (;!MuxAlarm.bAlarmed;)
             break;
 
             case OP_WORDCHAR:
-            if (c >= 256 && (md->ctypes[c] & ctype_word) == 0)
+            if (c >= 256 || (md->ctypes[c] & ctype_word) == 0)
               RRETURN(MATCH_NOMATCH);
             break;
 
