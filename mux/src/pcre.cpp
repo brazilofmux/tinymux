@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
  * Modified by Shawn Wagner for TinyMUX to fit in one file and exclude unused
  * things. If you want the full thing, see http://www.pcre.org.
  *
- * Updated with 6.2 sources.
+ * Updated with 6.4 sources.
  */
 
 #include "autoconf.h"
@@ -1383,9 +1383,9 @@ return extra;
 /* End pcre_internal.h */
 
 #ifdef SUPPORT_UCP
-/* Begin ucp_findchar.c */
+/* Begin _pcre_ucp_findchar.c */
 #include "ucp.h"               /* Exported interface */
-/* End ucp_findchar.c */
+/* End _pcre_ucp_findchar.c */
 
 /* Begin ucpinternal.h */
 /*************************************************
@@ -1479,8 +1479,9 @@ When searching the tree, proceed as follows:
 
 
 /* End of ucpinternal.h */
-/* Begin ucp_findchar.c */
+/* Begin _pcre_ucp_findchar.c */
 #include "ucptable.cpp"          /* The table itself */
+
 
 
 /*************************************************
@@ -1500,7 +1501,7 @@ Returns:      the character type category or -1 if not found
 */
 
 static int
-ucp_findchar(const int c, int *type_ptr, int *case_ptr)
+_pcre_ucp_findchar(const int c, int *type_ptr, int *case_ptr)
 {
 cnode *node = ucp_table;
 register int cc = c;
@@ -1588,11 +1589,10 @@ switch ((*type_ptr = ((node->f0 & f0_typemask) >> f0_typeshift)))
   }
 }
 
-/* End of ucp_findchar.c */
+/* End of _pcre_ucp_findchar.c */
 /* Being pcre_tables.c */
 /* This table translates Unicode property names into code values for the
-ucp_findchar() function. It is used by pcretest as well as by the library
-functions. */
+ucp_findchar() function. */
 
 typedef struct {
   const char *name;
@@ -7025,7 +7025,7 @@ while ((t = *data++) != XCL_END)
     {
     int chartype, othercase;
     int rqdtype = *data++;
-    int category = ucp_findchar(c, &chartype, &othercase);
+    int category = _pcre_ucp_findchar(c, &chartype, &othercase);
     if (rqdtype >= 128)
       {
       if ((rqdtype - 128 == category) == (t == XCL_PROP)) return !negated;
@@ -8024,7 +8024,7 @@ for (;!MuxAlarm.bAlarmed;)
       {
       int chartype, rqdtype;
       int othercase;
-      int category = ucp_findchar(c, &chartype, &othercase);
+      int category = _pcre_ucp_findchar(c, &chartype, &othercase);
 
       rqdtype = *(++ecode);
       ecode++;
@@ -8051,7 +8051,7 @@ for (;!MuxAlarm.bAlarmed;)
       {
       int chartype;
       int othercase;
-      int category = ucp_findchar(c, &chartype, &othercase);
+      int category = _pcre_ucp_findchar(c, &chartype, &othercase);
       if (category == ucp_M) RRETURN(MATCH_NOMATCH);
       while (eptr < md->end_subject)
         {
@@ -8060,7 +8060,7 @@ for (;!MuxAlarm.bAlarmed;)
           {
           GETCHARLEN(c, eptr, len);
           }
-        category = ucp_findchar(c, &chartype, &othercase);
+        category = _pcre_ucp_findchar(c, &chartype, &othercase);
         if (category != ucp_M) break;
         eptr += len;
         }
@@ -8511,7 +8511,7 @@ for (;!MuxAlarm.bAlarmed;)
         ecode += length;
 
         /* If we have Unicode property support, we can use it to test the other
-        case of the character, if there is one. The result of ucp_findchar() is
+        case of the character, if there is one. The result of _pcre_ucp_findchar() is
         < 0 if the char isn't found, and othercase is returned as zero if there
         isn't one. */
 
@@ -8520,7 +8520,7 @@ for (;!MuxAlarm.bAlarmed;)
 #ifdef SUPPORT_UCP
           int chartype;
           int othercase;
-          if (ucp_findchar(fc, &chartype, &othercase) < 0 || dc != othercase)
+          if (_pcre_ucp_findchar(fc, &chartype, &othercase) < 0 || dc != othercase)
 #endif
             RRETURN(MATCH_NOMATCH);
           }
@@ -8590,7 +8590,7 @@ for (;!MuxAlarm.bAlarmed;)
         int othercase;
         int chartype;
         if ((ims & PCRE_CASELESS) != 0 &&
-             ucp_findchar(fc, &chartype, &othercase) >= 0 &&
+             _pcre_ucp_findchar(fc, &chartype, &othercase) >= 0 &&
              othercase > 0)
           oclength = _pcre_ord2utf8(othercase, occhars);
 #endif  /* SUPPORT_UCP */
@@ -9109,7 +9109,7 @@ for (;!MuxAlarm.bAlarmed;)
         for (i = 1; i <= min; i++)
           {
           GETCHARINC(c, eptr);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if ((*prop_test_variable == prop_test_against) == prop_fail_result)
             RRETURN(MATCH_NOMATCH);
           }
@@ -9123,7 +9123,7 @@ for (;!MuxAlarm.bAlarmed;)
         for (i = 1; i <= min; i++)
           {
           GETCHARINCTEST(c, eptr);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if (prop_category == ucp_M) RRETURN(MATCH_NOMATCH);
           while (eptr < md->end_subject)
             {
@@ -9132,7 +9132,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9302,7 +9302,7 @@ for (;!MuxAlarm.bAlarmed;)
           if (rrc != MATCH_NOMATCH) RRETURN(rrc);
           if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
           GETCHARINC(c, eptr);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if ((*prop_test_variable == prop_test_against) == prop_fail_result)
             RRETURN(MATCH_NOMATCH);
           }
@@ -9319,7 +9319,7 @@ for (;!MuxAlarm.bAlarmed;)
           if (rrc != MATCH_NOMATCH) RRETURN(rrc);
           if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
           GETCHARINCTEST(c, eptr);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if (prop_category == ucp_M) RRETURN(MATCH_NOMATCH);
           while (eptr < md->end_subject)
             {
@@ -9328,7 +9328,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9460,7 +9460,7 @@ for (;!MuxAlarm.bAlarmed;)
           int len = 1;
           if (eptr >= md->end_subject) break;
           GETCHARLEN(c, eptr, len);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if ((*prop_test_variable == prop_test_against) == prop_fail_result)
             break;
           eptr+= len;
@@ -9486,7 +9486,7 @@ for (;!MuxAlarm.bAlarmed;)
           {
           if (eptr >= md->end_subject) break;
           GETCHARINCTEST(c, eptr);
-          prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
           if (prop_category == ucp_M) break;
           while (eptr < md->end_subject)
             {
@@ -9495,7 +9495,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9516,7 +9516,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
             if (prop_category != ucp_M) break;
             eptr--;
             }
