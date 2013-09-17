@@ -43,9 +43,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #define _PCRE_H
 
 #define PCRE_MAJOR          6
-#define PCRE_MINOR          5
+#define PCRE_MINOR          6
 #define PCRE_PRERELEASE
-#define PCRE_DATE           01-Feb-2006
+#define PCRE_DATE           06-Feb-2006
 
 #define SUPPORT_UTF8
 

@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
  * Modified by Shawn Wagner for TinyMUX to fit in one file and exclude unused
  * things. If you want the full thing, see http://www.pcre.org.
  *
- * Updated with 6.5 sources.
+ * Updated with 6.6 sources.
  */
 
 #include "autoconf.h"
