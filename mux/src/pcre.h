@@ -4,7 +4,7 @@
  * $Id$
  *
  * \verbatim
-           Copyright (c) 1997-2005 University of Cambridge
+           Copyright (c) 1997-2006 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #define _PCRE_H
 
 #define PCRE_MAJOR          6
-#define PCRE_MINOR          4
-#define PCRE_DATE           05-Sep-2005
+#define PCRE_MINOR          5
+#define PCRE_PRERELEASE
+#define PCRE_DATE           01-Feb-2006
 
 #define SUPPORT_UTF8
 
@@ -77,16 +78,16 @@ it is needed here for malloc. */
 
 /* Exec-time and get/set-time error codes */
 
-#define PCRE_ERROR_NOMATCH        (-1)
-#define PCRE_ERROR_NULL           (-2)
-#define PCRE_ERROR_BADOPTION      (-3)
-#define PCRE_ERROR_BADMAGIC       (-4)
-#define PCRE_ERROR_UNKNOWN_NODE   (-5)
-#define PCRE_ERROR_NOMEMORY       (-6)
-#define PCRE_ERROR_NOSUBSTRING    (-7)
-#define PCRE_ERROR_MATCHLIMIT     (-8)
-#define PCRE_ERROR_CALLOUT        (-9)  /* Never used by PCRE itself */
-#define PCRE_ERROR_BADUTF8       (-10)
+#define PCRE_ERROR_NOMATCH         (-1)
+#define PCRE_ERROR_NULL            (-2)
+#define PCRE_ERROR_BADOPTION       (-3)
+#define PCRE_ERROR_BADMAGIC        (-4)
+#define PCRE_ERROR_UNKNOWN_NODE    (-5)
+#define PCRE_ERROR_NOMEMORY        (-6)
+#define PCRE_ERROR_NOSUBSTRING     (-7)
+#define PCRE_ERROR_MATCHLIMIT      (-8)
+#define PCRE_ERROR_CALLOUT         (-9)  /* Never used by PCRE itself */
+#define PCRE_ERROR_BADUTF8        (-10)
 #define PCRE_ERROR_BADUTF8_OFFSET (-11)
 #define PCRE_ERROR_PARTIAL        (-12)
 #define PCRE_ERROR_BADPARTIAL     (-13)
@@ -97,6 +98,7 @@ it is needed here for malloc. */
 #define PCRE_ERROR_DFA_UMLIMIT    (-18)
 #define PCRE_ERROR_DFA_WSSIZE     (-19)
 #define PCRE_ERROR_DFA_RECURSE    (-20)
+#define PCRE_ERROR_RECURSIONLIMIT (-21)
 
 /* Request types for pcre_fullinfo() */
 
@@ -114,7 +116,8 @@ it is needed here for malloc. */
 #define PCRE_INFO_STUDYSIZE         10
 #define PCRE_INFO_DEFAULT_TABLES    11
 
-/* Request types for pcre_config() */
+/* Request types for pcre_config(). Do not re-arrange, in order to remain
+compatible. */
 
 #define PCRE_CONFIG_UTF8                    0
 #define PCRE_CONFIG_NEWLINE                 1
@@ -123,18 +126,29 @@ it is needed here for malloc. */
 #define PCRE_CONFIG_MATCH_LIMIT             4
 #define PCRE_CONFIG_STACKRECURSE            5
 #define PCRE_CONFIG_UNICODE_PROPERTIES      6
+#define PCRE_CONFIG_MATCH_LIMIT_RECURSION   7
 
-/* Bit flags for the pcre_extra structure */
+/* Bit flags for the pcre_extra structure. Do not re-arrange or redefine
+these bits, just add new ones on the end, in order to remain compatible. */
 
-#define PCRE_EXTRA_STUDY_DATA          0x0001
-#define PCRE_EXTRA_MATCH_LIMIT         0x0002
-#define PCRE_EXTRA_CALLOUT_DATA        0x0004
-#define PCRE_EXTRA_TABLES              0x0008
+#define PCRE_EXTRA_STUDY_DATA             0x0001
+#define PCRE_EXTRA_MATCH_LIMIT            0x0002
+#define PCRE_EXTRA_CALLOUT_DATA           0x0004
+#define PCRE_EXTRA_TABLES                 0x0008
+#define PCRE_EXTRA_MATCH_LIMIT_RECURSION  0x0010
 
 /* Types */
 
 struct real_pcre;                 /* declaration; the definition is private  */
 typedef struct real_pcre pcre;
+
+/* When PCRE is compiled as a C++ library, the subject pointer type can be
+replaced with a custom type. For conventional use, the public interface is a
+const char *. */
+
+#ifndef PCRE_SPTR
+#define PCRE_SPTR const char *
+#endif
 
 /* The structure for passing additional data to pcre_exec(). This is defined in
 such as way as to be extensible. Always add new fields at the end, in order to
@@ -146,6 +160,7 @@ typedef struct pcre_extra {
   unsigned long int match_limit;  /* Maximum number of calls to match() */
   void *callout_data;             /* Data passed back in callouts */
   const unsigned char *tables;    /* Pointer to character tables */
+  unsigned long int match_limit_recursion; /* Max recursive calls to match() */
 } pcre_extra;
 
 /* The structure for passing out data via the pcre_callout_function. We use a
@@ -158,7 +173,7 @@ typedef struct pcre_callout_block {
   /* ------------------------ Version 0 ------------------------------- */
   int          callout_number;    /* Number compiled into pattern */
   int         *offset_vector;     /* The offset vector */
-  const char  *subject;           /* The subject being matched */
+  PCRE_SPTR    subject;           /* The subject being matched */
   int          subject_length;    /* The length of the subject */
   int          start_match;       /* Offset to start of this match attempt */
   int          current_position;  /* Where we currently are in the subject */
@@ -180,7 +195,7 @@ extern pcre *pcre_compile2(const char *, int, int *, const char **,
                   int *, const unsigned char *);
 extern int  pcre_copy_substring(const char *, int *, int, int, char *,
                   int);
-extern int  pcre_exec(const pcre *, const pcre_extra *, const char *,
+extern int  pcre_exec(const pcre *, const pcre_extra *, PCRE_SPTR,
                    int, int, int, int *, int);
 extern int  pcre_fullinfo(const pcre *, const pcre_extra *, int,
                   void *);

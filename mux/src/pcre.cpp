@@ -10,7 +10,7 @@
  * \author Philip Hazel <ph10@cam.ac.uk>
  *
  * \verbatim
-           Copyright (c) 1997-2005 University of Cambridge
+           Copyright (c) 1997-2006 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
  * Modified by Shawn Wagner for TinyMUX to fit in one file and exclude unused
  * things. If you want the full thing, see http://www.pcre.org.
  *
- * Updated with 6.4 sources.
+ * Updated with 6.5 sources.
  */
 
 #include "autoconf.h"
@@ -78,7 +78,19 @@ Unix, where it is defined in sys/types, so use "uschar" instead. */
 
 typedef unsigned char uschar;
 
-/* Include the public PCRE header */
+/* When PCRE is compiled as a C++ library, the subject pointer can be replaced
+with a custom type. This makes it possible, for example, to allow pcre_exec()
+to process subject strings that are discontinuous by using a smart pointer
+class. It must always be possible to inspect all of the subject string in
+pcre_exec() because of the way it backtracks. Two macros are required in the
+normal case, for sign-unspecified and unsigned char pointers. The former is
+used for the external interface and appears in pcre.h, which is why its name
+must begin with PCRE_. */
+
+#define USPTR const unsigned char *
+
+/* Include the public PCRE header and the definitions of UCP character property
+values. */
 
 #include "pcre.h"
 
@@ -87,6 +99,7 @@ typedef unsigned char uschar;
 /* Begin config.h */
 #define LINK_SIZE 2
 #define MATCH_LIMIT 100000
+#define MATCH_LIMIT_RECURSION MATCH_LIMIT
 #define NEWLINE '\n'
 /* End config.h */
 
@@ -239,7 +252,7 @@ contain UTF-8 characters with values greater than 255. */
 #define XCL_END       0    /* Marks end of individual items */
 #define XCL_SINGLE    1    /* Single item (one multibyte char) follows */
 #define XCL_RANGE     2    /* A range (two multibyte chars) follows */
-#define XCL_PROP      3    /* Unicode property (one property code) follows */
+#define XCL_PROP      3    /* Unicode property (2-byte property code follows) */
 #define XCL_NOTPROP   4    /* Unicode inverted property (ditto) */
 
 
@@ -406,7 +419,7 @@ in UTF-8 mode. The code that uses this table must know about such things. */
   1,                             /* End                                    */ \
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* \A, \G, \B, \B, \D, \d, \S, \s, \W, \w */ \
   1, 1,                          /* Any, Anybyte                           */ \
-  2, 2, 1,                       /* NOTPROP, PROP, EXTUNI                  */ \
+  3, 3, 1,                       /* NOTPROP, PROP, EXTUNI                  */ \
   1, 1, 2, 1, 1,                 /* \Z, \z, Opt, ^, $                      */ \
   2,                             /* Char  - the minimum length             */ \
   2,                             /* Charnc  - the minimum length           */ \
@@ -538,7 +551,7 @@ typedef struct recursion_info {
   struct recursion_info *prevrec; /* Previous recursion record (or NULL) */
   int group_num;                /* Number of group that was called */
   const uschar *after_call;     /* "Return value": points after the call in the expr */
-  const uschar *save_start;     /* Old value of md->start_match */
+  USPTR save_start;             /* Old value of md->start_match */
   int *offset_save;             /* Pointer to start of saved offsets */
   int saved_max;                /* Number of saved offsets */
 } recursion_info;
@@ -552,11 +565,12 @@ structure here so that we can put a pointer in the match_data structure.
 NOTE: This isn't used for a "normal" compilation of pcre. */
 
 /* Structure for passing "static" information around between the functions
-doing the compiling, so that they are thread-safe. */
+doing traditional NFA matching, so that they are thread-safe. */
 
 typedef struct match_data {
-  unsigned long int match_call_count; /* As it says */
-  unsigned long int match_limit;/* As it says */
+  unsigned long int match_call_count;      /* As it says */
+  unsigned long int match_limit;           /* As it says */
+  unsigned long int match_limit_recursion; /* As it says */
   int   *offset_vector;         /* Offset vector */
   int    offset_end;            /* One past the end */
   int    offset_max;            /* The maximum usable for return data */
@@ -571,10 +585,10 @@ typedef struct match_data {
   bool   partial;               /* PARTIAL flag */
   bool   hitend;                /* Hit the end of the subject at some point */
   const uschar *start_code;     /* For use when recursing */
-  const uschar *start_subject;  /* Start of the subject string */
-  const uschar *end_subject;    /* End of the subject string */
-  const uschar *start_match;    /* Start of this match attempt */
-  const uschar *end_match_ptr;  /* Subject position at end match */
+  USPTR  start_subject;         /* Start of the subject string */
+  USPTR  end_subject;           /* End of the subject string */
+  USPTR  start_match;           /* Start of this match attempt */
+  USPTR  end_match_ptr;         /* Subject position at end match */
   int    end_offset_top;        /* Highwater mark at end of match */
   int    capture_last;          /* Most recent capture number */
   int    start_offset;          /* The start offset value */
@@ -616,7 +630,6 @@ total length. */
 #define tables_length (ctypes_offset + 256)
 
 /* End pcre_internal.h */
-
 /* Begin pcre_chartables.c */
 /*************************************************
 *      Perl-Compatible Regular Expressions       *
@@ -885,29 +898,22 @@ pcre_maketables(void)
         *p++ = mux_islower_ascii(i)? mux_toupper_ascii(i) : mux_tolower_ascii(i);
     }
 
-    /* Then the character class tables. Don't try to be clever and save effort
-    on exclusive ones - in some locales things may be different. Note that the
-    table for "space" includes everything "isspace" gives, including VT in the
-    default locale. This makes it work for the POSIX class [:space:]. */
+    /* Then the character class tables. Don't try to be clever and save effort on
+    exclusive ones - in some locales things may be different. Note that the table
+    for "space" includes everything "isspace" gives, including VT in the default
+    locale. This makes it work for the POSIX class [:space:]. Note also that it is
+    possible for a character to be alnum or alpha without being lower or upper,
+    such as "male and female ordinals" (\xAA and \xBA) in the fr_FR locale (at
+    least under Debian Linux's locales as of 12/2005). So we must test for alnum
+    specially. */
 
     memset(p, 0, cbit_length);
     for (i = 0; i < 256; i++)
     {
-        if (mux_isdigit(i))
-        {
-            p[cbit_digit  + i/8] |= 1 << (i&7);
-            p[cbit_word   + i/8] |= 1 << (i&7);
-        }
-        if (mux_isupper_ascii(i))
-        {
-            p[cbit_upper  + i/8] |= 1 << (i&7);
-            p[cbit_word   + i/8] |= 1 << (i&7);
-        }
-        if (mux_islower_ascii(i))
-        {
-            p[cbit_lower  + i/8] |= 1 << (i&7);
-            p[cbit_word   + i/8] |= 1 << (i&7);
-        }
+        if (mux_isdigit(i)) p[cbit_digit  + i/8] |= 1 << (i&7);
+        if (mux_isupper_ascii(i)) p[cbit_upper  + i/8] |= 1 << (i&7);
+        if (mux_islower_ascii(i)) p[cbit_lower  + i/8] |= 1 << (i&7);
+        if (mux_isalnum(i)) p[cbit_word   + i/8] |= 1 << (i&7);
         if (i == '_')       p[cbit_word   + i/8] |= 1 << (i&7);
         if (mux_isspace(i)) p[cbit_space  + i/8] |= 1 << (i&7);
         if (mux_isxdigit(i))p[cbit_xdigit + i/8] |= 1 << (i&7);
@@ -1383,261 +1389,336 @@ return extra;
 /* End pcre_internal.h */
 
 #ifdef SUPPORT_UCP
-/* Begin _pcre_ucp_findchar.c */
+/* Begin pcre_ucp_searchfuncs.c */
 #include "ucp.h"               /* Exported interface */
-/* End _pcre_ucp_findchar.c */
+/* End pcre_ucp_searchfuncs.c */
 
 /* Begin ucpinternal.h */
 /*************************************************
-*     libucp - Unicode Property Table handler    *
+*           Unicode Property Table handler       *
 *************************************************/
 
-/* Internal header file defining the layout of compact nodes in the tree. */
+/* Internal header file defining the layout of the bits in each pair of 32-bit
+words that form a data item in the table. */
 
 typedef struct cnode {
-  unsigned short int f0;
-  unsigned short int f1;
-  unsigned short int f2;
+  pcre_uint32 f0;
+  pcre_uint32 f1;
 } cnode;
 
 /* Things for the f0 field */
 
-#define f0_leftexists   0x8000    /* Left child exists */
-#define f0_typemask     0x3f00    /* Type bits */
-#define f0_typeshift         8    /* Type shift */
-#define f0_chhmask      0x00ff    /* Character high bits */
+#define f0_scriptmask   0xff000000  /* Mask for script field */
+#define f0_scriptshift          24  /* Shift for script value */
+#define f0_rangeflag    0x00f00000  /* Flag for a range item */
+#define f0_charmask     0x001fffff  /* Mask for code point value */
 
-/* Things for the f2 field */
+/* Things for the f1 field */
 
-#define f2_rightmask    0xf000    /* Mask for right offset bits */
-#define f2_rightshift       12    /* Shift for right offset */
-#define f2_casemask     0x0fff    /* Mask for case offset */
+#define f1_typemask     0xfc000000  /* Mask for char type field */
+#define f1_typeshift            26  /* Shift for the type field */
+#define f1_rangemask    0x0000ffff  /* Mask for a range offset */
+#define f1_casemask     0x0000ffff  /* Mask for a case offset */
+#define f1_caseneg      0xffff8000  /* Bits for negation */
 
-/* The tree consists of a vector of structures of type cnode, with the root
-node as the first element. The three short ints (16-bits) are used as follows:
+/* The data consists of a vector of structures of type cnode. The two unsigned
+32-bit integers are used as follows:
 
-(f0) (1) The 0x8000 bit of f0 is set if a left child exists. The child's node
-         is the next node in the vector.
-     (2) The 0x4000 bits of f0 is spare.
-     (3) The 0x3f00 bits of f0 contain the character type; this is a number
-         defined by the enumeration in ucp.h (e.g. ucp_Lu).
-     (4) The bottom 8 bits of f0 contain the most significant byte of the
-         character's 24-bit codepoint.
+(f0) (1) The most significant byte holds the script number. The numbers are
+         defined by the enum in ucp.h.
 
-(f1) (1) The f1 field contains the two least significant bytes of the
-         codepoint.
+     (2) The 0x00800000 bit is set if this entry defines a range of characters.
+         It is not set if this entry defines a single character
 
-(f2) (1) The 0xf000 bits of f2 contain zero if there is no right child of this
-         node. Otherwise, they contain one plus the exponent of the power of
-         two of the offset to the right node (e.g. a value of 3 means 8). The
-         units of the offset are node items.
+     (3) The 0x00600000 bits are spare.
 
-     (2) The 0x0fff bits of f2 contain the signed offset from this character to
-         its alternate cased value. They are zero if there is no such
-         character.
+     (4) The 0x001fffff bits contain the code point. No Unicode code point will
+         ever be greater than 0x0010ffff, so this should be OK for ever.
 
+(f1) (1) The 0xfc000000 bits contain the character type number. The numbers are
+         defined by an enum in ucp.h.
 
------------------------------------------------------------------------------
-||.|.| type (6) | ms char (8) ||  ls char (16)  ||....|  case offset (12)  ||
------------------------------------------------------------------------------
-  | |                                              |
-  | |-> spare                                      |
-  |                                        exponent of right
-  |-> left child exists                       child offset
+     (2) The 0x03ff0000 bits are spare.
 
+     (3) The 0x0000ffff bits contain EITHER the unsigned offset to the top of
+         range if this entry defines a range, OR the *signed* offset to the
+         character's "other case" partner if this entry defines a single
+         character. There is no partner if the value is zero.
+
+-------------------------------------------------------------------------------
+| script (8) |.|.|.| codepoint (21) || type (6) |.|.| spare (8) | offset (16) |
+-------------------------------------------------------------------------------
+              | | |                              | |
+              | | |-> spare                      | |-> spare
+              | |                                |
+              | |-> spare                        |-> spare
+              |
+              |-> range flag
 
 The upper/lower casing information is set only for characters that come in
-pairs. There are (at present) four non-one-to-one mappings in the Unicode data.
-These are ignored. They are:
+pairs. The non-one-to-one mappings in the Unicode data are ignored.
 
-  1FBE Greek Prosgegrammeni (lower, with upper -> capital iota)
-  2126 Ohm
-  212A Kelvin
-  212B Angstrom
+When searching the data, proceed as follows:
 
-Certainly for the last three, having an alternate case would seem to be a
-mistake. I don't know any Greek, so cannot comment on the first one.
+(1) Set up for a binary chop search.
 
+(2) If the top is not greater than the bottom, the character is not in the
+    table. Its type must therefore be "Cn" ("Undefined").
 
-When searching the tree, proceed as follows:
+(3) Find the middle vector element.
 
-(1) Start at the first node.
+(4) Extract the code point and compare. If equal, we are done.
 
-(2) Extract the character value from f1 and the bottom 8 bits of f0;
+(5) If the test character is smaller, set the top to the current point, and
+    goto (2).
 
-(3) Compare with the character being sought. If equal, we are done.
+(6) If the current entry defines a range, compute the last character by adding
+    the offset, and see if the test character is within the range. If it is,
+    we are done.
 
-(4) If the test character is smaller, inspect the f0_leftexists flag. If it is
-    not set, the character is not in the tree. If it is set, move to the next
-    node, and go to (2).
-
-(5) If the test character is bigger, extract the f2_rightmask bits from f2, and
-    shift them right by f2_rightshift. If the result is zero, the character is
-    not in the tree. Otherwise, calculate the number of nodes to skip by
-    shifting the value 1 left by this number minus one. Go to (2).
+(7) Otherwise, set the bottom to one element past the current point and goto
+    (2).
 */
 
 
 /* End of ucpinternal.h */
-/* Begin _pcre_ucp_findchar.c */
+/* Begin pcre_ucp_searchfuncs.c */
 #include "ucptable.cpp"          /* The table itself */
+
+
+/* Table to translate from particular type value to the general value. */
+
+static int ucp_gentype[] = {
+  ucp_C, ucp_C, ucp_C, ucp_C, ucp_C,  /* Cc, Cf, Cn, Co, Cs */
+  ucp_L, ucp_L, ucp_L, ucp_L, ucp_L,  /* Ll, Lu, Lm, Lo, Lt */
+  ucp_M, ucp_M, ucp_M,                /* Mc, Me, Mn */
+  ucp_N, ucp_N, ucp_N,                /* Nd, Nl, No */
+  ucp_P, ucp_P, ucp_P, ucp_P, ucp_P,  /* Pc, Pd, Pe, Pf, Pi */
+  ucp_P, ucp_P,                       /* Ps, Po */
+  ucp_S, ucp_S, ucp_S, ucp_S,         /* Sc, Sk, Sm, So */
+  ucp_Z, ucp_Z, ucp_Z                 /* Zl, Zp, Zs */
+};
 
 
 
 /*************************************************
-*         Search table and return data           *
+*         Search table and return type           *
 *************************************************/
 
-/* Two values are returned: the category is ucp_C, ucp_L, etc. The detailed
-character type is ucp_Lu, ucp_Nd, etc.
+/* Three values are returned: the category is ucp_C, ucp_L, etc. The detailed
+character type is ucp_Lu, ucp_Nd, etc. The script is ucp_Latin, etc.
 
 Arguments:
   c           the character value
   type_ptr    the detailed character type is returned here
-  case_ptr    for letters, the opposite case is returned here, if there
-                is one, else zero
+  script_ptr  the script is returned here
 
-Returns:      the character type category or -1 if not found
+Returns:      the character type category
 */
 
 static int
-_pcre_ucp_findchar(const int c, int *type_ptr, int *case_ptr)
+_pcre_ucp_findprop(const int c, int *type_ptr, int *script_ptr)
 {
-cnode *node = ucp_table;
-register int cc = c;
-int case_offset;
+int bot = 0;
+int top = sizeof(ucp_table)/sizeof(cnode);
+int mid;
+
+/* The table is searched using a binary chop. You might think that using
+intermediate variables to hold some of the common expressions would speed
+things up, but tests with gcc 3.4.4 on Linux showed that, on the contrary, it
+makes things a lot slower. */
 
 for (;;)
   {
-  register int d = node->f1 | ((node->f0 & f0_chhmask) << 16);
-  if (cc == d) break;
-  if (cc < d)
+  if (top <= bot)
     {
-    if ((node->f0 & f0_leftexists) == 0) return -1;
-    node ++;
+    *type_ptr = ucp_Cn;
+    *script_ptr = ucp_Common;
+    return ucp_C;
     }
+  mid = (bot + top) >> 1;
+  if (c == (ucp_table[mid].f0 & f0_charmask)) break;
+  if (c < (ucp_table[mid].f0 & f0_charmask)) top = mid;
   else
     {
-    register int roffset = (node->f2 & f2_rightmask) >> f2_rightshift;
-    if (roffset == 0) return -1;
-    node += 1 << (roffset - 1);
+    if ((ucp_table[mid].f0 & f0_rangeflag) != 0 &&
+        c <= (ucp_table[mid].f0 & f0_charmask) +
+             (ucp_table[mid].f1 & f1_rangemask)) break;
+    bot = mid + 1;
     }
   }
 
-switch ((*type_ptr = ((node->f0 & f0_typemask) >> f0_typeshift)))
-  {
-  case ucp_Cc:
-  case ucp_Cf:
-  case ucp_Cn:
-  case ucp_Co:
-  case ucp_Cs:
-  return ucp_C;
-  break;
+/* Found an entry in the table. Set the script and detailed type values, and
+return the general type. */
 
-  case ucp_Ll:
-  case ucp_Lu:
-  case_offset = node->f2 & f2_casemask;
-  if ((case_offset & 0x0100) != 0) case_offset |= 0xfffff000;
-  *case_ptr = (case_offset == 0)? 0 : cc + case_offset;
-  return ucp_L;
+*script_ptr = (ucp_table[mid].f0 & f0_scriptmask) >> f0_scriptshift;
+*type_ptr = (ucp_table[mid].f1 & f1_typemask) >> f1_typeshift;
 
-  case ucp_Lm:
-  case ucp_Lo:
-  case ucp_Lt:
-  *case_ptr = 0;
-  return ucp_L;
-  break;
-
-  case ucp_Mc:
-  case ucp_Me:
-  case ucp_Mn:
-  return ucp_M;
-  break;
-
-  case ucp_Nd:
-  case ucp_Nl:
-  case ucp_No:
-  return ucp_N;
-  break;
-
-  case ucp_Pc:
-  case ucp_Pd:
-  case ucp_Pe:
-  case ucp_Pf:
-  case ucp_Pi:
-  case ucp_Ps:
-  case ucp_Po:
-  return ucp_P;
-  break;
-
-  case ucp_Sc:
-  case ucp_Sk:
-  case ucp_Sm:
-  case ucp_So:
-  return ucp_S;
-  break;
-
-  case ucp_Zl:
-  case ucp_Zp:
-  case ucp_Zs:
-  return ucp_Z;
-  break;
-
-  default:         /* "Should never happen" */
-  return -1;
-  break;
-  }
+return ucp_gentype[*type_ptr];
 }
 
-/* End of _pcre_ucp_findchar.c */
-/* Being pcre_tables.c */
-/* This table translates Unicode property names into code values for the
-ucp_findchar() function. */
 
-typedef struct {
-  const char *name;
-  int value;
-} ucp_type_table;
+
+/*************************************************
+*       Search table and return other case       *
+*************************************************/
+
+/* If the given character is a letter, and there is another case for the
+letter, return the other case. Otherwise, return -1.
+
+Arguments:
+  c           the character value
+
+Returns:      the other case or -1 if none
+*/
+
+static int
+_pcre_ucp_othercase(const int c)
+{
+int bot = 0;
+int top = sizeof(ucp_table)/sizeof(cnode);
+int mid, offset;
+
+/* The table is searched using a binary chop. You might think that using
+intermediate variables to hold some of the common expressions would speed
+things up, but tests with gcc 3.4.4 on Linux showed that, on the contrary, it
+makes things a lot slower. */
+
+for (;;)
+  {
+  if (top <= bot) return -1;
+  mid = (bot + top) >> 1;
+  if (c == (ucp_table[mid].f0 & f0_charmask)) break;
+  if (c < (ucp_table[mid].f0 & f0_charmask)) top = mid;
+  else
+    {
+    if ((ucp_table[mid].f0 & f0_rangeflag) != 0 &&
+        c <= (ucp_table[mid].f0 & f0_charmask) +
+             (ucp_table[mid].f1 & f1_rangemask)) break;
+    bot = mid + 1;
+    }
+  }
+
+/* Found an entry in the table. Return -1 for a range entry. Otherwise return
+the other case if there is one, else -1. */
+
+if ((ucp_table[mid].f0 & f0_rangeflag) != 0) return -1;
+
+offset = ucp_table[mid].f1 & f1_casemask;
+if ((offset & f1_caseneg) != 0) offset |= f1_caseneg;
+return (offset == 0)? -1 : c + offset;
+}
+
+
+/* End pcre_ucp_searchfuncs.c */
+/* Being pcre_tables.c */
+/* This table translates Unicode property names into type and code values. It
+is searched by binary chop, so must be in collating sequence of name. */
 
 static const ucp_type_table _pcre_utt[] = {
-  { "C",  128 + ucp_C },
-  { "Cc", ucp_Cc },
-  { "Cf", ucp_Cf },
-  { "Cn", ucp_Cn },
-  { "Co", ucp_Co },
-  { "Cs", ucp_Cs },
-  { "L",  128 + ucp_L },
-  { "Ll", ucp_Ll },
-  { "Lm", ucp_Lm },
-  { "Lo", ucp_Lo },
-  { "Lt", ucp_Lt },
-  { "Lu", ucp_Lu },
-  { "M",  128 + ucp_M },
-  { "Mc", ucp_Mc },
-  { "Me", ucp_Me },
-  { "Mn", ucp_Mn },
-  { "N",  128 + ucp_N },
-  { "Nd", ucp_Nd },
-  { "Nl", ucp_Nl },
-  { "No", ucp_No },
-  { "P",  128 + ucp_P },
-  { "Pc", ucp_Pc },
-  { "Pd", ucp_Pd },
-  { "Pe", ucp_Pe },
-  { "Pf", ucp_Pf },
-  { "Pi", ucp_Pi },
-  { "Po", ucp_Po },
-  { "Ps", ucp_Ps },
-  { "S",  128 + ucp_S },
-  { "Sc", ucp_Sc },
-  { "Sk", ucp_Sk },
-  { "Sm", ucp_Sm },
-  { "So", ucp_So },
-  { "Z",  128 + ucp_Z },
-  { "Zl", ucp_Zl },
-  { "Zp", ucp_Zp },
-  { "Zs", ucp_Zs }
+  { "Any",                 PT_ANY,  0 },
+  { "Arabic",              PT_SC,   ucp_Arabic },
+  { "Armenian",            PT_SC,   ucp_Armenian },
+  { "Bengali",             PT_SC,   ucp_Bengali },
+  { "Bopomofo",            PT_SC,   ucp_Bopomofo },
+  { "Braille",             PT_SC,   ucp_Braille },
+  { "Buginese",            PT_SC,   ucp_Buginese },
+  { "Buhid",               PT_SC,   ucp_Buhid },
+  { "C",                   PT_GC,   ucp_C },
+  { "Canadian_Aboriginal", PT_SC,   ucp_Canadian_Aboriginal },
+  { "Cc",                  PT_PC,   ucp_Cc },
+  { "Cf",                  PT_PC,   ucp_Cf },
+  { "Cherokee",            PT_SC,   ucp_Cherokee },
+  { "Cn",                  PT_PC,   ucp_Cn },
+  { "Co",                  PT_PC,   ucp_Co },
+  { "Common",              PT_SC,   ucp_Common },
+  { "Coptic",              PT_SC,   ucp_Coptic },
+  { "Cs",                  PT_PC,   ucp_Cs },
+  { "Cypriot",             PT_SC,   ucp_Cypriot },
+  { "Cyrillic",            PT_SC,   ucp_Cyrillic },
+  { "Deseret",             PT_SC,   ucp_Deseret },
+  { "Devanagari",          PT_SC,   ucp_Devanagari },
+  { "Ethiopic",            PT_SC,   ucp_Ethiopic },
+  { "Georgian",            PT_SC,   ucp_Georgian },
+  { "Glagolitic",          PT_SC,   ucp_Glagolitic },
+  { "Gothic",              PT_SC,   ucp_Gothic },
+  { "Greek",               PT_SC,   ucp_Greek },
+  { "Gujarati",            PT_SC,   ucp_Gujarati },
+  { "Gurmukhi",            PT_SC,   ucp_Gurmukhi },
+  { "Han",                 PT_SC,   ucp_Han },
+  { "Hangul",              PT_SC,   ucp_Hangul },
+  { "Hanunoo",             PT_SC,   ucp_Hanunoo },
+  { "Hebrew",              PT_SC,   ucp_Hebrew },
+  { "Hiragana",            PT_SC,   ucp_Hiragana },
+  { "Inherited",           PT_SC,   ucp_Inherited },
+  { "Kannada",             PT_SC,   ucp_Kannada },
+  { "Katakana",            PT_SC,   ucp_Katakana },
+  { "Kharoshthi",          PT_SC,   ucp_Kharoshthi },
+  { "Khmer",               PT_SC,   ucp_Khmer },
+  { "L",                   PT_GC,   ucp_L },
+  { "L&",                  PT_LAMP, 0 },
+  { "Lao",                 PT_SC,   ucp_Lao },
+  { "Latin",               PT_SC,   ucp_Latin },
+  { "Limbu",               PT_SC,   ucp_Limbu },
+  { "Linear_B",            PT_SC,   ucp_Linear_B },
+  { "Ll",                  PT_PC,   ucp_Ll },
+  { "Lm",                  PT_PC,   ucp_Lm },
+  { "Lo",                  PT_PC,   ucp_Lo },
+  { "Lt",                  PT_PC,   ucp_Lt },
+  { "Lu",                  PT_PC,   ucp_Lu },
+  { "M",                   PT_GC,   ucp_M },
+  { "Malayalam",           PT_SC,   ucp_Malayalam },
+  { "Mc",                  PT_PC,   ucp_Mc },
+  { "Me",                  PT_PC,   ucp_Me },
+  { "Mn",                  PT_PC,   ucp_Mn },
+  { "Mongolian",           PT_SC,   ucp_Mongolian },
+  { "Myanmar",             PT_SC,   ucp_Myanmar },
+  { "N",                   PT_GC,   ucp_N },
+  { "Nd",                  PT_PC,   ucp_Nd },
+  { "New_Tai_Lue",         PT_SC,   ucp_New_Tai_Lue },
+  { "Nl",                  PT_PC,   ucp_Nl },
+  { "No",                  PT_PC,   ucp_No },
+  { "Ogham",               PT_SC,   ucp_Ogham },
+  { "Old_Italic",          PT_SC,   ucp_Old_Italic },
+  { "Old_Persian",         PT_SC,   ucp_Old_Persian },
+  { "Oriya",               PT_SC,   ucp_Oriya },
+  { "Osmanya",             PT_SC,   ucp_Osmanya },
+  { "P",                   PT_GC,   ucp_P },
+  { "Pc",                  PT_PC,   ucp_Pc },
+  { "Pd",                  PT_PC,   ucp_Pd },
+  { "Pe",                  PT_PC,   ucp_Pe },
+  { "Pf",                  PT_PC,   ucp_Pf },
+  { "Pi",                  PT_PC,   ucp_Pi },
+  { "Po",                  PT_PC,   ucp_Po },
+  { "Ps",                  PT_PC,   ucp_Ps },
+  { "Runic",               PT_SC,   ucp_Runic },
+  { "S",                   PT_GC,   ucp_S },
+  { "Sc",                  PT_PC,   ucp_Sc },
+  { "Shavian",             PT_SC,   ucp_Shavian },
+  { "Sinhala",             PT_SC,   ucp_Sinhala },
+  { "Sk",                  PT_PC,   ucp_Sk },
+  { "Sm",                  PT_PC,   ucp_Sm },
+  { "So",                  PT_PC,   ucp_So },
+  { "Syloti_Nagri",        PT_SC,   ucp_Syloti_Nagri },
+  { "Syriac",              PT_SC,   ucp_Syriac },
+  { "Tagalog",             PT_SC,   ucp_Tagalog },
+  { "Tagbanwa",            PT_SC,   ucp_Tagbanwa },
+  { "Tai_Le",              PT_SC,   ucp_Tai_Le },
+  { "Tamil",               PT_SC,   ucp_Tamil },
+  { "Telugu",              PT_SC,   ucp_Telugu },
+  { "Thaana",              PT_SC,   ucp_Thaana },
+  { "Thai",                PT_SC,   ucp_Thai },
+  { "Tibetan",             PT_SC,   ucp_Tibetan },
+  { "Tifinagh",            PT_SC,   ucp_Tifinagh },
+  { "Ugaritic",            PT_SC,   ucp_Ugaritic },
+  { "Yi",                  PT_SC,   ucp_Yi },
+  { "Z",                   PT_GC,   ucp_Z },
+  { "Zl",                  PT_PC,   ucp_Zl },
+  { "Zp",                  PT_PC,   ucp_Zp },
+  { "Zs",                  PT_PC,   ucp_Zs }
 };
+
+const int _pcre_utt_size = sizeof(_pcre_utt)/sizeof(ucp_type_table);
 
 /* End pcre_tables.c */
 #endif
@@ -1651,40 +1732,31 @@ compile time. */
 
 #define BRASTACK_SIZE 200
 /* End pcre_compile.c */
-
-
 /* Begin pcre_exec.c */
 /* Maximum number of ints of offset to save on the stack for recursive calls.
 If the offset vector is bigger, malloc is used. This should be a multiple of 3,
 because the offset vector is always a multiple of 3 long. */
 
 #define REC_STACK_SAVE_MAX 30
-/* End of pcre_exec.c */
-
-
+/* End pcre_exec.c */
 /* Begin pcre_internal.h */
 /* The maximum remaining length of subject we are prepared to search for a
 req_byte match. */
 
 #define REQ_BYTE_MAX 1000
 /* End pcre_internal.h */
-
-
 /* Begin pcre_tables.c */
 /* Table of sizes for the fixed-length opcodes. It's defined in a macro so that
-the definition is next to the definition of the opcodes in internal.h. */
+the definition is next to the definition of the opcodes in pcre_internal.h. */
 
 static const uschar _pcre_OP_lengths[] = { OP_LENGTHS };
 /* End pcre_tables.c */
-
-
 /* Begin pcre_exec.c */
 /* Min and max values for the common repeats; for the maxima, 0 => infinity */
 
 static const char rep_min[] = { 0, 0, 1, 1, 0, 0 };
 static const char rep_max[] = { 0, 0, 0, 0, 1, 1 };
 /* End pcre_exec.c */
-
 /* Begin pcre_compile.c */
 /* Table for handling escaped characters in the range '0'-'z'. Positive returns
 are simple data values; negative values are for special things like \d and so
@@ -1705,7 +1777,7 @@ static const short int escapes[] = {
 };
 
 /* Tables of names of POSIX character classes and their lengths. The list is
-terminated by a zero length entry. The first three must be alpha, upper, lower,
+terminated by a zero length entry. The first three must be alpha, lower, upper,
 as this is assumed for handling case independence. */
 
 static const char *const posix_names[] = {
@@ -1716,26 +1788,33 @@ static const char *const posix_names[] = {
 static const uschar posix_name_lengths[] = {
   5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 6, 0 };
 
-/* Table of class bit maps for each POSIX class; up to three may be combined
-to form the class. The table for [:blank:] is dynamically modified to remove
-the vertical space characters. */
+/* Table of class bit maps for each POSIX class. Each class is formed from a
+base map, with an optional addition or removal of another map. Then, for some
+classes, there is some additional tweaking: for [:blank:] the vertical space
+characters are removed, and for [:alpha:] and [:alnum:] the underscore
+character is removed. The triples in the table consist of the base map offset,
+second map offset or -1 if no second map, and a non-negative value for map
+addition or a negative value for map subtraction (if there are two maps). The
+absolute value of the third field has these meanings: 0 => no tweaking, 1 =>
+remove vertical space characters, 2 => remove underscore. */
 
 static const int posix_class_maps[] = {
-  cbit_lower, cbit_upper, -1,             /* alpha */
-  cbit_lower, -1,         -1,             /* lower */
-  cbit_upper, -1,         -1,             /* upper */
-  cbit_digit, cbit_lower, cbit_upper,     /* alnum */
-  cbit_print, cbit_cntrl, -1,             /* ascii */
-  cbit_space, -1,         -1,             /* blank - a GNU extension */
-  cbit_cntrl, -1,         -1,             /* cntrl */
-  cbit_digit, -1,         -1,             /* digit */
-  cbit_graph, -1,         -1,             /* graph */
-  cbit_print, -1,         -1,             /* print */
-  cbit_punct, -1,         -1,             /* punct */
-  cbit_space, -1,         -1,             /* space */
-  cbit_word,  -1,         -1,             /* word - a Perl extension */
-  cbit_xdigit,-1,         -1              /* xdigit */
+  cbit_word,  cbit_digit, -2,             /* alpha */
+  cbit_lower, -1,          0,             /* lower */
+  cbit_upper, -1,          0,             /* upper */
+  cbit_word,  -1,          2,             /* alnum - word without underscore */
+  cbit_print, cbit_cntrl,  0,             /* ascii */
+  cbit_space, -1,          1,             /* blank - a GNU extension */
+  cbit_cntrl, -1,          0,             /* cntrl */
+  cbit_digit, -1,          0,             /* digit */
+  cbit_graph, -1,          0,             /* graph */
+  cbit_print, -1,          0,             /* print */
+  cbit_punct, -1,          0,             /* punct */
+  cbit_space, -1,          0,             /* space */
+  cbit_word,  -1,          0,             /* word - a Perl extension */
+  cbit_xdigit,-1,          0              /* xdigit */
 };
+
 
 /* The texts of compile-time error messages. These are "char *" because they
 are passed to the outside world. */
@@ -1859,7 +1938,6 @@ static bool
   compile_regex(int, int, int *, uschar **, const uschar **, int *, bool, int,
     int *, int *, branch_chain *, compile_data *);
 /* End pcre_compile.c */
-
 /* Begin pcre_exec.c */
 /* Structure for building a chain of data that actually lives on the
 stack, for holding the values of the subject pointer at the start of each
@@ -1869,7 +1947,7 @@ are on the heap, not on the stack. */
 
 typedef struct eptrblock {
   struct eptrblock *epb_prev;
-  const uschar *epb_saved_eptr;
+  USPTR epb_saved_eptr;
 } eptrblock;
 
 /* Flag bits for the match() function */
@@ -1883,13 +1961,11 @@ defined PCRE_ERROR_xxx codes, which are all negative. */
 #define MATCH_MATCH        1
 #define MATCH_NOMATCH      0
 /* End pcre_exec.c */
-
 /* Begin pcregrep.c */
 /*************************************************
 *               Global variables                 *
 *************************************************/
 /* End pcregrep.c */
-
 /* Begin pcre_globals.c */
 /* This module contains global variables that are exported by the PCRE library.
 PCRE is thread-clean and doesn't use any global variables in the normal sense.
@@ -1901,7 +1977,6 @@ differently, and global variables are not used (see pcre.in). */
 
 static int   (*pcre_callout)(pcre_callout_block *) = NULL;
 /* End pcre_globals.c */
-
 /* Begin pcre_internal.h */
 /* When UTF-8 encoding is being used, a character is no longer just a single
 byte. The macros for character handling generate simple sequences when used in
@@ -1992,7 +2067,6 @@ it is. Called only in UTF-8 mode. */
 
 #define BACKCHAR(eptr) while((*eptr & 0xc0) == 0x80) eptr--;
 /* End pcre_internal.h */
-
 /* Begin pcre_tables.c */
 /*************************************************
 *           Tables for UTF-8 support             *
@@ -2023,7 +2097,6 @@ static const uschar _pcre_utf8_table4[] = {
   3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5 };
 
 /* End pcre_tables.c */
-
 /* Begin pcre_ord2utf8.c */
 /*************************************************
 *       Convert character value to UTF-8         *
@@ -2155,8 +2228,6 @@ switch (what)
 return 0;
 }
 /* End pcre_fullinfo.c */
-
-
 /* Begin pcre_compile.c */
 /*************************************************
 *            Handle escapes                      *
@@ -2184,12 +2255,15 @@ static int
 check_escape(const uschar **ptrptr, int *errorcodeptr, int bracount,
   int options, bool isclass)
 {
-const uschar *ptr = *ptrptr;
+bool utf8 = (options & PCRE_UTF8) != 0;
+const uschar *ptr = *ptrptr + 1;
 int c, i;
+
+GETCHARINCTEST(c, ptr);           /* Get character value, increment pointer */
+ptr--;                            /* Set pointer back to the last byte */
 
 /* If backslash is at the end of the pattern, it's an error. */
 
-c = *(++ptr);
 if (c == 0) *errorcodeptr = ERR1;
 
 /* Non-alphamerics are literals. For digits or letters, do an initial lookup in
@@ -2267,35 +2341,39 @@ else
     c &= 255;     /* Take least significant 8 bits */
     break;
 
-    /* \x is complicated when UTF-8 is enabled. \x{ddd} is a character number
-    which can be greater than 0xff, but only if the ddd are hex digits. */
+    /* \x is complicated. \x{ddd} is a character number which can be greater
+    than 0xff in utf8 mode, but only if the ddd are hex digits. If not, { is
+    treated as a data character. */
 
     case 'x':
-#ifdef SUPPORT_UTF8
-    if (ptr[1] == '{' && (options & PCRE_UTF8) != 0)
+    if (ptr[1] == '{')
       {
       const uschar *pt = ptr + 2;
-      register int count = 0;
+      int count = 0;
+
       c = 0;
       while ((digitab[*pt] & ctype_xdigit) != 0)
         {
-        int cc = *pt++;
+        register int cc = *pt++;
+        if (c == 0 && cc == '0') continue;     /* Leading zeroes */
         count++;
+
         if (cc >= 'a') cc -= 32;               /* Convert to upper case */
-        c = c * 16 + cc - ((cc < 'A')? '0' : ('A' - 10));
+        c = (c << 4) + cc - ((cc < 'A')? '0' : ('A' - 10));
         }
+
       if (*pt == '}')
         {
-        if (c < 0 || count > 8) *errorcodeptr = ERR34;
+        if (c < 0 || count > (utf8? 8 : 2)) *errorcodeptr = ERR34;
         ptr = pt;
         break;
         }
+
       /* If the sequence of hex digits does not end with '}', then we don't
       recognize this construct; fall through to the normal \x handling. */
       }
-#endif
 
-    /* Read just a single hex char */
+    /* Read just a single-byte hex-defined char */
 
     c = 0;
     while (i++ < 2 && (digitab[ptr[1]] & ctype_xdigit) != 0)
@@ -2359,25 +2437,26 @@ escape sequence.
 Argument:
   ptrptr         points to the pattern position pointer
   negptr         points to a boolean that is set true for negation else false
+  dptr           points to an int that is set to the detailed property value
   errorcodeptr   points to the error code variable
 
-Returns:     value from ucp_type_table, or -1 for an invalid type
+Returns:         type value from ucp_type_table, or -1 for an invalid type
 */
 
 static int
-get_ucp(const uschar **ptrptr, bool *negptr, int *errorcodeptr)
+get_ucp(const uschar **ptrptr, bool *negptr, int *dptr, int *errorcodeptr)
 {
 int c, i, bot, top;
 const uschar *ptr = *ptrptr;
-char name[4];
+char name[32];
 
 c = *(++ptr);
 if (c == 0) goto ERROR_RETURN;
 
 *negptr = false;
 
-/* \P or \p can be followed by a one- or two-character name in {}, optionally
-preceded by ^ for negation. */
+/* \P or \p can be followed by a name in {}, optionally preceded by ^ for
+negation. */
 
 if (c == '{')
   {
@@ -2386,18 +2465,14 @@ if (c == '{')
     *negptr = true;
     ptr++;
     }
-  for (i = 0; i <= 2; i++)
+  for (i = 0; i < sizeof(name) - 1; i++)
     {
     c = *(++ptr);
     if (c == 0) goto ERROR_RETURN;
     if (c == '}') break;
     name[i] = c;
     }
-  if (c !='}')   /* Try to distinguish error cases */
-    {
-    while (*(++ptr) != 0 && *ptr != '}');
-    if (*ptr == '}') goto UNKNOWN_RETURN; else goto ERROR_RETURN;
-    }
+  if (c !='}') goto ERROR_RETURN;
   name[i] = 0;
   }
 
@@ -2418,13 +2493,16 @@ top = _pcre_utt_size;
 
 while (bot < top)
   {
-  i = (bot + top)/2;
+  i = (bot + top) >> 1;
   c = strcmp(name, _pcre_utt[i].name);
-  if (c == 0) return _pcre_utt[i].value;
+  if (c == 0)
+    {
+    *dptr = _pcre_utt[i].value;
+    return _pcre_utt[i].type;
+    }
   if (c > 0) bot = i + 1; else top = i;
   }
 
-UNKNOWN_RETURN:
 *errorcodeptr = ERR47;
 *ptrptr = ptr;
 return -1;
@@ -2727,7 +2805,7 @@ for (;;)
 
     case OP_PROP:
     case OP_NOTPROP:
-    cc++;
+    cc += 2;
     /* Fall through */
 
     case OP_NOT_DIGIT:
@@ -3287,13 +3365,10 @@ Yield:        true when range returned; false when no more
 static bool
 get_othercase_range(int *cptr, int d, int *ocptr, int *odptr)
 {
-int c, chartype, othercase, next;
+int c, othercase, next;
 
 for (c = *cptr; c <= d; c++)
-  {
-  if (_pcre_ucp_findchar(c, &chartype, &othercase) == ucp_L && othercase != 0)
-    break;
-  }
+  { if ((othercase = _pcre_ucp_othercase(c)) >= 0) break; }
 
 if (c > d) return false;
 
@@ -3302,9 +3377,7 @@ next = othercase + 1;
 
 for (++c; c <= d; c++)
   {
-  if (_pcre_ucp_findchar(c, &chartype, &othercase) != ucp_L ||
-        othercase != next)
-    break;
+  if (_pcre_ucp_othercase(c) != next) break;
   next++;
   }
 
@@ -3521,11 +3594,11 @@ for (;; ptr++)
     *code++ = OP_ANY;
     break;
 
-    /* Character classes. If the included characters are all < 255 in value, we
-    build a 32-byte bitmap of the permitted characters, except in the special
-    case where there is only one such character. For negated classes, we build
-    the map as usual, then invert it at the end. However, we use a different
-    opcode so that data characters > 255 can be handled correctly.
+    /* Character classes. If the included characters are all < 256, we build a
+    32-byte bitmap of the permitted characters, except in the special case
+    where there is only one such character. For negated classes, we build the
+    map as usual, then invert it at the end. However, we use a different opcode
+    so that data characters > 255 can be handled correctly.
 
     If the class contains characters outside the 0-255 range, a different
     opcode is compiled. It may optionally have a bit map for characters < 256,
@@ -3616,8 +3689,9 @@ for (;; ptr++)
           check_posix_syntax(ptr, &tempptr, cd))
         {
         bool local_negate = false;
-        int posix_class, i;
+        int posix_class, taboffset, tabopt;
         register const uschar *cbits = cd->cbits;
+        uschar pbits[32];
 
         if (ptr[1] != ':')
           {
@@ -3646,31 +3720,45 @@ for (;; ptr++)
         if ((options & PCRE_CASELESS) != 0 && posix_class <= 2)
           posix_class = 0;
 
-        /* Or into the map we are building up to 3 of the static class
-        tables, or their negations. The [:blank:] class sets up the same
-        chars as the [:space:] class (all white space). We remove the vertical
-        white space chars afterwards. */
+        /* We build the bit map for the POSIX class in a chunk of local store
+        because we may be adding and subtracting from it, and we don't want to
+        subtract bits that may be in the main map already. At the end we or the
+        result into the bit map that is being built. */
 
         posix_class *= 3;
-        for (i = 0; i < 3; i++)
+
+        /* Copy in the first table (always present) */
+
+        memcpy(pbits, cbits + posix_class_maps[posix_class],
+          32 * sizeof(uschar));
+
+        /* If there is a second table, add or remove it as required. */
+
+        taboffset = posix_class_maps[posix_class + 1];
+        tabopt = posix_class_maps[posix_class + 2];
+
+        if (taboffset >= 0)
           {
-          bool blankclass = strncmp((char *)ptr, "blank", 5) == 0;
-          int taboffset = posix_class_maps[posix_class + i];
-          if (taboffset < 0) break;
-          if (local_negate)
-            {
-            if (i == 0)
-              for (c = 0; c < 32; c++) classbits[c] |= ~cbits[c+taboffset];
-            else
-              for (c = 0; c < 32; c++) classbits[c] &= ~cbits[c+taboffset];
-            if (blankclass) classbits[1] |= 0x3c;
-            }
+          if (tabopt >= 0)
+            for (c = 0; c < 32; c++) pbits[c] |= cbits[c + taboffset];
           else
-            {
-            for (c = 0; c < 32; c++) classbits[c] |= cbits[c+taboffset];
-            if (blankclass) classbits[1] &= ~0x3c;
-            }
+            for (c = 0; c < 32; c++) pbits[c] &= ~cbits[c + taboffset];
           }
+
+        /* Not see if we need to remove any special characters. An option
+        value of 1 removes vertical space and 2 removes underscore. */
+
+        if (tabopt < 0) tabopt = -tabopt;
+        if (tabopt == 1) pbits[1] &= ~0x3c;
+          else if (tabopt == 2) pbits[11] &= 0x7f;
+
+        /* Add the POSIX table or its complement into the main table that is
+        being built and we are done. */
+
+        if (local_negate)
+          for (c = 0; c < 32; c++) classbits[c] |= ~pbits[c];
+        else
+          for (c = 0; c < 32; c++) classbits[c] |= pbits[c];
 
         ptr = tempptr + 1;
         class_charcount = 10;  /* Set > 1; assumes more than 1 per class */
@@ -3738,12 +3826,14 @@ for (;; ptr++)
             case ESC_P:
               {
               bool negated;
-              int property = get_ucp(&ptr, &negated, errorcodeptr);
-              if (property < 0) goto FAILED;
-              class_utf8 = true;
+              int pdata;
+              int ptype = get_ucp(&ptr, &negated, &pdata, errorcodeptr);
+              if (ptype < 0) goto FAILED;
+              class_utf8 = TRUE;
               *class_utf8data++ = ((-c == ESC_p) != negated)?
                 XCL_PROP : XCL_NOTPROP;
-              *class_utf8data++ = property;
+              *class_utf8data++ = ptype;
+              *class_utf8data++ = pdata;
               class_charcount -= 2;   /* Not a < 256 character */
               }
             continue;
@@ -3925,10 +4015,8 @@ for (;; ptr++)
 #ifdef SUPPORT_UCP
         if ((options & PCRE_CASELESS) != 0)
           {
-          int chartype;
           int othercase;
-          if (_pcre_ucp_findchar(c, &chartype, &othercase) >= 0 &&
-               othercase > 0)
+          if ((othercase = _pcre_ucp_othercase(c)) >= 0)
             {
             *class_utf8data++ = XCL_SINGLE;
             class_utf8data += _pcre_ord2utf8(othercase, class_utf8data);
@@ -4213,13 +4301,17 @@ for (;; ptr++)
     else if (*previous < OP_EODN)
       {
       uschar *oldcode;
-      int prop_type;
+      int prop_type, prop_value;
       op_type = OP_TYPESTAR - OP_STAR;  /* Use type opcodes */
       c = *previous;
 
       OUTPUT_SINGLE_REPEAT:
-      prop_type = (*previous == OP_PROP || *previous == OP_NOTPROP)?
-        previous[1] : -1;
+      if (*previous == OP_PROP || *previous == OP_NOTPROP)
+        {
+        prop_type = previous[1];
+        prop_value = previous[2];
+        }
+      else prop_type = prop_value = -1;
 
       oldcode = code;
       code = previous;                  /* Usually overwrite previous item */
@@ -4244,7 +4336,7 @@ for (;; ptr++)
       if (repeat_min == 0)
         {
         if (repeat_max == -1) *code++ = static_cast<uschar>(OP_STAR + repeat_type);
-          else if (repeat_max == 1) *code++ = static_cast<uschar>(OP_QUERY + repeat_type);
+        else if (repeat_max == 1) *code++ = static_cast<uschar>(OP_QUERY + repeat_type);
         else
           {
           *code++ = static_cast<uschar>(OP_UPTO + repeat_type);
@@ -4280,7 +4372,7 @@ for (;; ptr++)
 
         /* If the maximum is unlimited, insert an OP_STAR. Before doing so,
         we have to insert the character for the previous code. For a repeated
-        Unicode property match, there is an extra byte that defines the
+        Unicode property match, there are two extra bytes that define the
         required property. In UTF-8 mode, long characters have their length in
         c, with the 0x80 bit as a flag. */
 
@@ -4296,7 +4388,11 @@ for (;; ptr++)
 #endif
             {
             *code++ = static_cast<uschar>(c);
-            if (prop_type >= 0) *code++ = static_cast<uschar>(prop_type);
+            if (prop_type >= 0)
+              {
+              *code++ = static_cast<uschar>(prop_type);
+              *code++ = static_cast<uschar>(prop_value);
+              }
             }
           *code++ = static_cast<uschar>(OP_STAR + repeat_type);
           }
@@ -4315,7 +4411,11 @@ for (;; ptr++)
           else
 #endif
           *code++ = static_cast<uschar>(c);
-          if (prop_type >= 0) *code++ = static_cast<uschar>(prop_type);
+          if (prop_type >= 0)
+            {
+            *code++ = static_cast<uschar>(prop_type);
+            *code++ = static_cast<uschar>(prop_value);
+            }
           repeat_max -= repeat_min;
           *code++ = static_cast<uschar>(OP_UPTO + repeat_type);
           PUT2INC(code, 0, repeat_max);
@@ -4334,11 +4434,15 @@ for (;; ptr++)
 #endif
       *code++ = static_cast<uschar>(c);
 
-      /* For a repeated Unicode property match, there is an extra byte that
-      defines the required property. */
+      /* For a repeated Unicode property match, there are two extra bytes that
+      define the required property. */
 
 #ifdef SUPPORT_UCP
-      if (prop_type >= 0) *code++ = static_cast<uschar>(prop_type);
+      if (prop_type >= 0)
+        {
+        *code++ = static_cast<uschar>(prop_type);
+        *code++ = static_cast<uschar>(prop_value);
+        }
 #endif
       }
 
@@ -4806,10 +4910,19 @@ for (;; ptr++)
             goto FAILED;
             }
 
-          /* Insert the recursion/subroutine item */
+          /* Insert the recursion/subroutine item, automatically wrapped inside
+          "once" brackets. */
+
+          *code = OP_ONCE;
+          PUT(code, 1, 2 + 2*LINK_SIZE);
+          code += 1 + LINK_SIZE;
 
           *code = OP_RECURSE;
           PUT(code, 1, called - cd->start_code);
+          code += 1 + LINK_SIZE;
+
+          *code = OP_KET;
+          PUT(code, 1, 2 + 2*LINK_SIZE);
           code += 1 + LINK_SIZE;
           }
         continue;
@@ -5080,10 +5193,12 @@ for (;; ptr++)
       else if (-c == ESC_P || -c == ESC_p)
         {
         bool negated;
-        int value = get_ucp(&ptr, &negated, errorcodeptr);
+        int pdata;
+        int ptype = get_ucp(&ptr, &negated, &pdata, errorcodeptr);
         previous = code;
         *code++ = ((-c == ESC_p) != negated)? OP_PROP : OP_NOTPROP;
-        *code++ = static_cast<uschar>(value);
+        *code++ = static_cast<uschar>(ptype);
+        *code++ = static_cast<uschar>(pdata);
         }
 #endif
 
@@ -5939,15 +6054,17 @@ while ((c = *(++ptr)) != 0)
 #endif
 
     /* \P and \p are for Unicode properties, but only when the support has
-    been compiled. Each item needs 2 bytes. */
+    been compiled. Each item needs 3 bytes. */
 
     else if (-c == ESC_P || -c == ESC_p)
       {
 #ifdef SUPPORT_UCP
       bool negated;
-      length += 2;
-      lastitemlength = 2;
-      if (get_ucp(&ptr, &negated, &errorcode) < 0) goto PCRE_ERROR_RETURN;
+      bool pdata;
+      length += 3;
+      lastitemlength = 3;
+      if (get_ucp(&ptr, &negated, &pdata, &errorcode) < 0)
+        goto PCRE_ERROR_RETURN;
       continue;
 #else
       errorcode = ERR45;
@@ -6113,7 +6230,7 @@ while ((c = *(++ptr)) != 0)
               class_utf8 = true;
               length += LINK_SIZE + 2;
               }
-            length += 2;
+            length += 3;
             }
 #endif
           }
@@ -6376,7 +6493,7 @@ while ((c = *(++ptr)) != 0)
           errorcode = ERR29;
           goto PCRE_ERROR_RETURN;
           }
-        length += 1 + LINK_SIZE;
+        length += 3 + 3*LINK_SIZE;  /* Allows for the automatic "once" */
 
         /* If this item is quantified, it will get wrapped inside brackets so
         as to use the code for quantified brackets. We jump down and use the
@@ -6432,6 +6549,7 @@ while ((c = *(++ptr)) != 0)
 
         if (*ptr == '=' || *ptr == '>')
           {
+          length += 2 + 2*LINK_SIZE;  /* Allow for the automatic "once" */
           while ((compile_block.ctypes[*(++ptr)] & ctype_word) != 0);
           if (*ptr != ')')
             {
@@ -6892,7 +7010,7 @@ if (reqbyte >= 0 &&
      ((re->options & PCRE_ANCHORED) == 0 || (reqbyte & REQ_VARY) != 0))
   {
   int ch = reqbyte & 255;
-  re->req_byte = static_cast<unsigned short>(((reqbyte & REQ_CASELESS) != 0 &&
+  re->req_byte = static_cast<uschar>(((reqbyte & REQ_CASELESS) != 0 &&
     compile_block.fcc[ch] == ch)? (reqbyte & ~REQ_CASELESS) : reqbyte);
   re->options |= PCRE_REQCHSET;
   }
@@ -6923,7 +7041,7 @@ static bool
 match_ref(int offset, register const uschar *eptr, int length, match_data *md,
   unsigned long int ims)
 {
-    const uschar *p = md->start_subject + md->offset_vector[offset];
+    USPTR p = md->start_subject + md->offset_vector[offset];
 
     /* Always fail if not enough characters left */
 
@@ -6965,7 +7083,7 @@ match_ref(int offset, register const uschar *eptr, int length, match_data *md,
 
     return true;
 }
-
+/* End pcre_exec.c */
 
 #ifdef SUPPORT_UTF8
 /* Begin pcre_xclass.c */
@@ -7023,17 +7141,40 @@ while ((t = *data++) != XCL_END)
 #ifdef SUPPORT_UCP
   else  /* XCL_PROP & XCL_NOTPROP */
     {
-    int chartype, othercase;
-    int rqdtype = *data++;
-    int category = _pcre_ucp_findchar(c, &chartype, &othercase);
-    if (rqdtype >= 128)
+    int chartype, script;
+    int category = _pcre_ucp_findprop(c, &chartype, &script);
+
+    switch(*data)
       {
-      if ((rqdtype - 128 == category) == (t == XCL_PROP)) return !negated;
+      case PT_ANY:
+      if (t == XCL_PROP) return !negated;
+      break;
+
+      case PT_LAMP:
+      if ((chartype == ucp_Lu || chartype == ucp_Ll || chartype == ucp_Lt) ==
+          (t == XCL_PROP)) return !negated;
+      break;
+
+      case PT_GC:
+      if ((data[1] == category) == (t == XCL_PROP)) return !negated;
+      break;
+
+      case PT_PC:
+      if ((data[1] == chartype) == (t == XCL_PROP)) return !negated;
+      break;
+
+      case PT_SC:
+      if ((data[1] == script) == (t == XCL_PROP)) return !negated;
+      break;
+
+      /* This should never occur, but compilers may mutter if there is no
+      default. */
+
+      default:
+      return FALSE;
       }
-    else
-      {
-      if ((rqdtype == chartype) == (t == XCL_PROP)) return !negated;
-      }
+
+    data += 2;
     }
 #endif  /* SUPPORT_UCP */
   }
@@ -7048,43 +7189,54 @@ return negated;   /* char did not match */
 ****************************************************************************
                    RECURSION IN THE match() FUNCTION
 
-The match() function is highly recursive. Some regular expressions can cause
-it to recurse thousands of times. I was writing for Unix, so I just let it
-call itself recursively. This uses the stack for saving everything that has
-to be saved for a recursive call. On Unix, the stack can be large, and this
-works fine.
+The match() function is highly recursive, though not every recursive call
+increases the recursive depth. Nevertheless, some regular expressions can cause
+it to recurse to a great depth. I was writing for Unix, so I just let it call
+itself recursively. This uses the stack for saving everything that has to be
+saved for a recursive call. On Unix, the stack can be large, and this works
+fine.
 
-It turns out that on non-Unix systems there are problems with programs that
-use a lot of stack. (This despite the fact that every last chip has oodles
-of memory these days, and techniques for extending the stack have been known
-for decades.) So....
+It turns out that on some non-Unix-like systems there are problems with
+programs that use a lot of stack. (This despite the fact that every last chip
+has oodles of memory these days, and techniques for extending the stack have
+been known for decades.) So....
 
 There is a fudge, triggered by defining NO_RECURSE, which avoids recursive
 calls by keeping local variables that need to be preserved in blocks of memory
-obtained from malloc instead instead of on the stack. Macros are used to
+obtained from malloc() instead instead of on the stack. Macros are used to
 achieve this so that the actual code doesn't look very different to what it
 always used to.
 ****************************************************************************
 ***************************************************************************/
 
 
-/* These versions of the macros use the stack, as normal */
+/* These versions of the macros use the stack, as normal. There are debugging
+versions and production versions. */
 
 #define REGISTER register
-#define RMATCH(rx,ra,rb,rc,rd,re,rf,rg) rx = match(ra,rb,rc,rd,re,rf,rg)
+#ifdef DEBUG
+#define RMATCH(rx,ra,rb,rc,rd,re,rf,rg) \
+  { \
+  printf("match() called in line %d\n", __LINE__); \
+  rx = match(ra,rb,rc,rd,re,rf,rg,rdepth+1); \
+  printf("to line %d\n", __LINE__); \
+  }
+#define RRETURN(ra) \
+  { \
+  printf("match() returned %d from line %d ", ra, __LINE__); \
+  return ra; \
+  }
+#else
+#define RMATCH(rx,ra,rb,rc,rd,re,rf,rg) \
+  rx = match(ra,rb,rc,rd,re,rf,rg,rdepth+1)
 #define RRETURN(ra) return ra
+#endif
+
 
 /***************************************************************************
 ***************************************************************************/
 
-/* These statements are here to stop the compiler complaining about unitialized
-variables. */
 
-#ifdef SUPPORT_UCP
-prop_fail_result = 0;
-prop_test_against = 0;
-prop_test_variable = NULL;
-#endif
 
 /*************************************************
 *         Match from current position            *
@@ -7113,17 +7265,18 @@ Arguments:
    flags       can contain
                  match_condassert - this is an assertion condition
                  match_isgroup - this is the start of a bracketed group
+   rdepth      the recursion depth
 
 Returns:       MATCH_MATCH if matched            )  these values are >= 0
                MATCH_NOMATCH if failed to match  )
                a negative PCRE_ERROR_xxx value if aborted by an error condition
-                 (e.g. stopped by recursion limit)
+                 (e.g. stopped by repeated call or recursion limit)
 */
 
 static int
-match(REGISTER const uschar *eptr, REGISTER const uschar *ecode,
+match(REGISTER USPTR eptr, REGISTER const uschar *ecode,
   int offset_top, match_data *md, unsigned long int ims, eptrblock *eptrb,
-  int flags)
+  int flags, unsigned int rdepth)
 {
 /* These variables do not need to be preserved over recursion in this function,
 so they can be ordinary variables in all cases. Mark them with "register"
@@ -7143,20 +7296,20 @@ heap whenever RMATCH() does a "recursion". See the macro definitions above. */
 #define fc c
 
 
-#ifdef SUPPORT_UTF8                /* Many of these variables are used ony */
-const uschar *charptr;             /* small blocks of the code. My normal  */
-#endif                             /* style of coding would have declared  */
-const uschar *callpat;             /* them within each of those blocks.    */
-const uschar *data;                /* However, in order to accommodate the */
-const uschar *next;                /* version of this code that uses an    */
-const uschar *pp;                  /* external "stack" implemented on the  */
-const uschar *prev;                /* heap, it is easier to declare them   */
-const uschar *saved_eptr;          /* all here, so the declarations can    */
-                                   /* be cut out in a block. The only      */
-recursion_info new_recursive;      /* declarations within blocks below are */
-                                   /* for variables that do not have to    */
-bool cur_is_word;                  /* be preserved over a recursive call   */
-bool condition;                    /* to RMATCH().                         */
+#ifdef SUPPORT_UTF8                /* Many of these variables are used only  */
+const uschar *charptr;             /* in small blocks of the code. My normal */
+#endif                             /* style of coding would have declared    */
+const uschar *callpat;             /* them within each of those blocks.      */
+const uschar *data;                /* However, in order to accommodate the   */
+const uschar *next;                /* version of this code that uses an      */
+USPTR         pp;                  /* external "stack" implemented on the    */
+const uschar *prev;                /* heap, it is easier to declare them all */
+USPTR         saved_eptr;          /* here, so the declarations can be cut   */
+                                   /* out in a block. The only declarations  */
+recursion_info new_recursive;      /* within blocks below are for variables  */
+                                   /* that do not have to be preserved over  */
+bool cur_is_word;                  /* a recursive call to RMATCH().          */
+bool condition;
 bool minimize;
 bool prev_is_word;
 
@@ -7164,11 +7317,11 @@ unsigned long int original_ims;
 
 #ifdef SUPPORT_UCP
 int prop_type;
+int prop_value;
 int prop_fail_result;
 int prop_category;
 int prop_chartype;
-int prop_othercase;
-int prop_test_against;
+int prop_script;
 int *prop_test_variable;
 #endif
 
@@ -7185,14 +7338,28 @@ int stacksave[REC_STACK_SAVE_MAX];
 
 eptrblock newptrb;
 
-/* OK, now we can get on with the real code of the function. Recursion is
-specified by the macros RMATCH and RRETURN. When NO_RECURSE is *not* defined,
-these just turn into a recursive call to match() and a "return", respectively.
-However, RMATCH isn't like a function call because it's quite a complicated
-macro. It has to be used in one particular way. This shouldn't, however, impact
-performance when true recursion is being used. */
+/* These statements are here to stop the compiler complaining about unitialized
+variables. */
+
+#ifdef SUPPORT_UCP
+prop_value = 0;
+prop_fail_result = 0;
+prop_test_variable = NULL;
+#endif
+
+/* OK, now we can get on with the real code of the function. Recursive calls
+are specified by the macro RMATCH and RRETURN is used to return. When
+NO_RECURSE is *not* defined, these just turn into a recursive call to match()
+and a "return", respectively (possibly with some debugging if DEBUG is
+defined). However, RMATCH isn't like a function call because it's quite a
+complicated macro. It has to be used in one particular way. This shouldn't,
+however, impact performance when true recursion is being used. */
+
+/* First check that we haven't called match() too many times, or that we
+haven't exceeded the recursive call limit. */
 
 if (md->match_call_count++ >= md->match_limit) RRETURN(PCRE_ERROR_MATCHLIMIT);
+if (rdepth >= md->match_limit_recursion) RRETURN(PCRE_ERROR_RECURSIONLIMIT);
 
 original_ims = ims;    /* Save for resetting on ')' */
 utf8 = md->utf8;       /* Local copy of the flag */
@@ -7356,7 +7523,7 @@ for (;!MuxAlarm.bAlarmed;)
     if (md->recursive != NULL && md->recursive->group_num == 0)
       {
       recursion_info *rec = md->recursive;
-      DPRINTF(("Hit the end in a (?0) recursion\n"));
+      DPRINTF(("End of pattern in a (?0) recursion\n"));
       md->recursive = rec->prevrec;
       memmove(md->offset_vector, rec->offset_save,
         rec->saved_max * sizeof(int));
@@ -7475,7 +7642,7 @@ for (;!MuxAlarm.bAlarmed;)
       cb.version          = 1;   /* Version 1 of the callout block */
       cb.callout_number   = ecode[1];
       cb.offset_vector    = md->offset_vector;
-      cb.subject          = (const char *)md->start_subject;
+      cb.subject          = (PCRE_SPTR)md->start_subject;
       cb.subject_length   = md->end_subject - md->start_subject;
       cb.start_match      = md->start_match - md->start_subject;
       cb.current_position = eptr - md->start_subject;
@@ -7557,12 +7724,17 @@ for (;!MuxAlarm.bAlarmed;)
             eptrb, match_isgroup);
         if (rrc == MATCH_MATCH)
           {
+          DPRINTF(("Recursion matched\n"));
           md->recursive = new_recursive.prevrec;
           if (new_recursive.offset_save != stacksave)
             free(new_recursive.offset_save);
           RRETURN(MATCH_MATCH);
           }
-        else if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+        else if (rrc != MATCH_NOMATCH)
+          {
+          DPRINTF(("Recursion gave error %d\n", rrc));
+          RRETURN(rrc);
+          }
 
         md->recursive = &new_recursive;
         memcpy(md->offset_vector, new_recursive.offset_save,
@@ -8022,23 +8194,43 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
       {
-      int chartype, rqdtype;
-      int othercase;
-      int category = _pcre_ucp_findchar(c, &chartype, &othercase);
+      int chartype, script;
+      int category = _pcre_ucp_findprop(c, &chartype, &script);
 
-      rqdtype = *(++ecode);
-      ecode++;
+      switch(ecode[1])
+        {
+        case PT_ANY:
+        if (op == OP_NOTPROP) RRETURN(MATCH_NOMATCH);
+        break;
 
-      if (rqdtype >= 128)
-        {
-        if ((rqdtype - 128 != category) == (op == OP_PROP))
+        case PT_LAMP:
+        if ((chartype == ucp_Lu ||
+             chartype == ucp_Ll ||
+             chartype == ucp_Lt) == (op == OP_NOTPROP))
           RRETURN(MATCH_NOMATCH);
-        }
-      else
-        {
-        if ((rqdtype != chartype) == (op == OP_PROP))
+         break;
+
+        case PT_GC:
+        if ((ecode[2] != category) == (op == OP_PROP))
           RRETURN(MATCH_NOMATCH);
+        break;
+
+        case PT_PC:
+        if ((ecode[2] != chartype) == (op == OP_PROP))
+          RRETURN(MATCH_NOMATCH);
+        break;
+
+        case PT_SC:
+        if ((ecode[2] != script) == (op == OP_PROP))
+          RRETURN(MATCH_NOMATCH);
+        break;
+
+        default:
+        RRETURN(PCRE_ERROR_INTERNAL);
+        break;
         }
+
+      ecode += 3;
       }
     break;
 
@@ -8049,9 +8241,8 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
       {
-      int chartype;
-      int othercase;
-      int category = _pcre_ucp_findchar(c, &chartype, &othercase);
+      int chartype, script;
+      int category = _pcre_ucp_findprop(c, &chartype, &script);
       if (category == ucp_M) RRETURN(MATCH_NOMATCH);
       while (eptr < md->end_subject)
         {
@@ -8060,7 +8251,7 @@ for (;!MuxAlarm.bAlarmed;)
           {
           GETCHARLEN(c, eptr, len);
           }
-        category = _pcre_ucp_findchar(c, &chartype, &othercase);
+        category = _pcre_ucp_findprop(c, &chartype, &script);
         if (category != ucp_M) break;
         eptr += len;
         }
@@ -8353,8 +8544,8 @@ for (;!MuxAlarm.bAlarmed;)
           while (eptr >= pp)
             {
             RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
-            eptr--;
             if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            eptr--;
             }
           }
 
@@ -8475,10 +8666,10 @@ for (;!MuxAlarm.bAlarmed;)
 #endif
 
     /* Non-UTF-8 mode */
-        {
+      {
       if (md->end_subject - eptr < 1) RRETURN(MATCH_NOMATCH);
       if (ecode[1] != *eptr++) RRETURN(MATCH_NOMATCH);
-            ecode += 2;
+      ecode += 2;
       }
     break;
 
@@ -8505,22 +8696,18 @@ for (;!MuxAlarm.bAlarmed;)
       /* Otherwise we must pick up the subject character */
 
       else
-      {
+        {
         int dc;
         GETCHARINC(dc, eptr);
         ecode += length;
 
         /* If we have Unicode property support, we can use it to test the other
-        case of the character, if there is one. The result of _pcre_ucp_findchar() is
-        < 0 if the char isn't found, and othercase is returned as zero if there
-        isn't one. */
+        case of the character, if there is one. */
 
         if (fc != dc)
           {
 #ifdef SUPPORT_UCP
-          int chartype;
-          int othercase;
-          if (_pcre_ucp_findchar(fc, &chartype, &othercase) < 0 || dc != othercase)
+          if (dc != _pcre_ucp_othercase(fc))
 #endif
             RRETURN(MATCH_NOMATCH);
           }
@@ -8588,10 +8775,9 @@ for (;!MuxAlarm.bAlarmed;)
 
 #ifdef SUPPORT_UCP
         int othercase;
-        int chartype;
         if ((ims & PCRE_CASELESS) != 0 &&
-             _pcre_ucp_findchar(fc, &chartype, &othercase) >= 0 &&
-             othercase > 0)
+            (othercase = _pcre_ucp_othercase(fc)) >= 0 &&
+             othercase >= 0)
           oclength = _pcre_ord2utf8(othercase, occhars);
 #endif  /* SUPPORT_UCP */
 
@@ -9078,16 +9264,7 @@ for (;!MuxAlarm.bAlarmed;)
       {
       prop_fail_result = ctype == OP_NOTPROP;
       prop_type = *ecode++;
-      if (prop_type >= 128)
-        {
-        prop_test_against = prop_type - 128;
-        prop_test_variable = &prop_category;
-        }
-      else
-        {
-        prop_test_against = prop_type;
-        prop_test_variable = &prop_chartype;
-        }
+      prop_value = *ecode++;
       }
     else prop_type = -1;
 #endif
@@ -9104,14 +9281,68 @@ for (;!MuxAlarm.bAlarmed;)
     if (min > 0)
       {
 #ifdef SUPPORT_UCP
-      if (prop_type > 0)
+      if (prop_type >= 0)
         {
-        for (i = 1; i <= min; i++)
+        switch(prop_type)
           {
-          GETCHARINC(c, eptr);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
-          if ((*prop_test_variable == prop_test_against) == prop_fail_result)
-            RRETURN(MATCH_NOMATCH);
+          case PT_ANY:
+          if (prop_fail_result) RRETURN(MATCH_NOMATCH);
+          for (i = 1; i <= min; i++)
+            {
+            if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            }
+          break;
+
+          case PT_LAMP:
+          for (i = 1; i <= min; i++)
+            {
+            if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == ucp_Lu ||
+                 prop_chartype == ucp_Ll ||
+                 prop_chartype == ucp_Lt) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_GC:
+          for (i = 1; i <= min; i++)
+            {
+            if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_category == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_PC:
+          for (i = 1; i <= min; i++)
+            {
+            if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_SC:
+          for (i = 1; i <= min; i++)
+            {
+            if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_script == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          default:
+          RRETURN(PCRE_ERROR_INTERNAL);
+          break;
           }
         }
 
@@ -9123,7 +9354,7 @@ for (;!MuxAlarm.bAlarmed;)
         for (i = 1; i <= min; i++)
           {
           GETCHARINCTEST(c, eptr);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
           if (prop_category == ucp_M) RRETURN(MATCH_NOMATCH);
           while (eptr < md->end_subject)
             {
@@ -9132,7 +9363,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9294,17 +9525,78 @@ for (;!MuxAlarm.bAlarmed;)
     if (minimize)
       {
 #ifdef SUPPORT_UCP
-      if (prop_type > 0)
+      if (prop_type >= 0)
         {
-        for (fi = min;; fi++)
+        switch(prop_type)
           {
-          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
-          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
-          if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
-          GETCHARINC(c, eptr);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
-          if ((*prop_test_variable == prop_test_against) == prop_fail_result)
-            RRETURN(MATCH_NOMATCH);
+          case PT_ANY:
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            if (prop_fail_result) RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_LAMP:
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == ucp_Lu ||
+                 prop_chartype == ucp_Ll ||
+                 prop_chartype == ucp_Lt) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_GC:
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_category == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_PC:
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          case PT_SC:
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_script == prop_value) == prop_fail_result)
+              RRETURN(MATCH_NOMATCH);
+            }
+          break;
+
+          default:
+          RRETURN(PCRE_ERROR_INTERNAL);
+          break;
           }
         }
 
@@ -9319,7 +9611,7 @@ for (;!MuxAlarm.bAlarmed;)
           if (rrc != MATCH_NOMATCH) RRETURN(rrc);
           if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
           GETCHARINCTEST(c, eptr);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
           if (prop_category == ucp_M) RRETURN(MATCH_NOMATCH);
           while (eptr < md->end_subject)
             {
@@ -9328,7 +9620,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9453,17 +9745,74 @@ for (;!MuxAlarm.bAlarmed;)
       pp = eptr;  /* Remember where we started */
 
 #ifdef SUPPORT_UCP
-      if (prop_type > 0)
+      if (prop_type >= 0)
         {
-        for (i = min; i < max; i++)
+        switch(prop_type)
           {
-          int len = 1;
-          if (eptr >= md->end_subject) break;
-          GETCHARLEN(c, eptr, len);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
-          if ((*prop_test_variable == prop_test_against) == prop_fail_result)
-            break;
-          eptr+= len;
+          case PT_ANY:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (prop_fail_result) break;
+            eptr+= len;
+            }
+          break;
+
+          case PT_LAMP:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == ucp_Lu ||
+                 prop_chartype == ucp_Ll ||
+                 prop_chartype == ucp_Lt) == prop_fail_result)
+              break;
+            eptr+= len;
+            }
+          break;
+
+          case PT_GC:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_category == prop_value) == prop_fail_result)
+              break;
+            eptr+= len;
+            }
+          break;
+
+          case PT_PC:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_chartype == prop_value) == prop_fail_result)
+              break;
+            eptr+= len;
+            }
+          break;
+
+          case PT_SC:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
+            if ((prop_script == prop_value) == prop_fail_result)
+              break;
+            eptr+= len;
+            }
+          break;
           }
 
         /* eptr is now past the end of the maximum run */
@@ -9486,7 +9835,7 @@ for (;!MuxAlarm.bAlarmed;)
           {
           if (eptr >= md->end_subject) break;
           GETCHARINCTEST(c, eptr);
-          prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+          prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
           if (prop_category == ucp_M) break;
           while (eptr < md->end_subject)
             {
@@ -9495,7 +9844,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
             if (prop_category != ucp_M) break;
             eptr += len;
             }
@@ -9516,7 +9865,7 @@ for (;!MuxAlarm.bAlarmed;)
               {
               GETCHARLEN(c, eptr, len);
               }
-            prop_category = _pcre_ucp_findchar(c, &prop_chartype, &prop_othercase);
+            prop_category = _pcre_ucp_findprop(c, &prop_chartype, &prop_script);
             if (prop_category != ucp_M) break;
             eptr--;
             }
@@ -9830,7 +10179,7 @@ Returns:          > 0 => success; value is the number of elements filled in
 
 int
 pcre_exec(const pcre *argument_re, const pcre_extra *extra_data,
-  const char *subject, int length, int start_offset, int options, int *offsets,
+  PCRE_SPTR subject, int length, int start_offset, int options, int *offsets,
   int offsetcount)
 {
 int rc, resetcount, ocount;
@@ -9847,9 +10196,9 @@ bool req_byte_caseless = false;
 match_data match_block;
 const uschar *tables;
 const uschar *start_bits = NULL;
-const uschar *start_match = (const uschar *)subject + start_offset;
-const uschar *end_subject;
-const uschar *req_byte_ptr = start_match - 1;
+USPTR start_match = (USPTR)subject + start_offset;
+USPTR end_subject;
+USPTR req_byte_ptr = start_match - 1;
 
 const pcre_study_data *study;
 
@@ -9868,6 +10217,7 @@ the default values. */
 
 study = NULL;
 match_block.match_limit = MATCH_LIMIT;
+match_block.match_limit_recursion = MATCH_LIMIT_RECURSION;
 match_block.callout_data = NULL;
 
 /* The table pointer is always in native byte order. */
@@ -9881,6 +10231,8 @@ if (extra_data != NULL)
     study = (const pcre_study_data *)extra_data->study_data;
   if ((flags & PCRE_EXTRA_MATCH_LIMIT) != 0)
     match_block.match_limit = extra_data->match_limit;
+  if ((flags & PCRE_EXTRA_MATCH_LIMIT_RECURSION) != 0)
+    match_block.match_limit_recursion = extra_data->match_limit_recursion;
   if ((flags & PCRE_EXTRA_CALLOUT_DATA) != 0)
     match_block.callout_data = extra_data->callout_data;
   if ((flags & PCRE_EXTRA_TABLES) != 0) tables = extra_data->tables;
@@ -9913,7 +10265,7 @@ firstline = (re->options & PCRE_FIRSTLINE) != 0;
 match_block.start_code = (const uschar *)external_re + re->name_table_offset +
   re->name_count * re->name_entry_size;
 
-match_block.start_subject = (const uschar *)subject;
+match_block.start_subject = (USPTR)subject;
 match_block.start_offset = start_offset;
 match_block.end_subject = match_block.start_subject + length;
 end_subject = match_block.end_subject;
@@ -10039,7 +10391,7 @@ the loop runs just once. */
 
 do
   {
-  const uschar *save_end_subject = end_subject;
+  USPTR save_end_subject = end_subject;
 
   /* Reset the maximum number of extractions we might see. */
 
@@ -10058,7 +10410,7 @@ do
 
   if (firstline)
     {
-    const uschar *t = start_match;
+    USPTR t = start_match;
     while (t < save_end_subject && *t != '\n') t++;
     end_subject = t;
     }
@@ -10098,6 +10450,10 @@ do
       }
     }
 
+  /* Restore fudged end_subject */
+
+  end_subject = save_end_subject;
+
   /* If req_byte is set, we know that that character must appear in the subject
   for the match to succeed. If the first character is set, req_byte must be
   later in the subject; otherwise the test starts at the match point. This
@@ -10118,7 +10474,7 @@ do
       end_subject - start_match < REQ_BYTE_MAX &&
       !match_block.partial)
     {
-    register const uschar *p = start_match + ((first_byte >= 0)? 1 : 0);
+    register USPTR p = start_match + ((first_byte >= 0)? 1 : 0);
 
     /* We don't need to repeat the search if we haven't yet reached the
     place we found it at last time. */
@@ -10164,7 +10520,14 @@ do
   match_block.match_call_count = 0;
 
   rc = match(start_match, match_block.start_code, 2, &match_block, ims, NULL,
-    match_isgroup);
+    match_isgroup, 0);
+
+  /* When the result is no match, if the subject's first character was a
+  newline and the PCRE_FIRSTLINE option is set, break (which will return
+  PCRE_ERROR_NOMATCH). The option requests that a match occur before the first
+  newline in the subject. Otherwise, advance the pointer to the next character
+  and continue - but the continuation will actually happen only when the
+  pattern is not anchored. */
 
   if (rc == MATCH_NOMATCH)
     {
