@@ -110,7 +110,7 @@ void do_kill
             notify(executor, T("Your murder attempt failed."));
             buf1 = alloc_lbuf("do_kill.failed");
             mux_sprintf(buf1, LBUF_SIZE, T("%s tried to kill you!"), Moniker(executor));
-            notify_with_cause_ooc(victim, executor, buf1);
+            notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
             if (Suspect(executor))
             {
                 mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
@@ -167,7 +167,7 @@ void do_kill
         // notify victim
         //
         mux_sprintf(buf1, LBUF_SIZE, T("%s killed you!"), Moniker(executor));
-        notify_with_cause_ooc(victim, executor, buf1);
+        notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
 
         // Pay off the bonus.
         //
@@ -271,9 +271,9 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
     {
         str = alloc_lbuf("do_give.thing.ok");
         mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
-        notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str, Moniker(thing)));
+        notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str, Moniker(thing)), MSG_SRC_GIVE);
         notify(giver, T("Given."));
-        notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str, Moniker(recipient)));
+        notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str, Moniker(recipient)), MSG_SRC_GIVE);
         free_lbuf(str);
     }
     did_it(giver, thing, A_DROP, NULL, A_ODROP, NULL, A_ADROP, 0, NULL, 0);
@@ -360,13 +360,13 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         if (amount == 1)
         {
             notify(giver, tprintf(T("You give a %s to %s."), mudconf.one_coin, Moniker(recipient)));
-            notify_with_cause_ooc(recipient, giver, tprintf(T("%s gives you a %s."), Moniker(giver), mudconf.one_coin));
+            notify_with_cause_ooc(recipient, giver, tprintf(T("%s gives you a %s."), Moniker(giver), mudconf.one_coin), MSG_SRC_GIVE);
         }
         else
         {
             notify(giver, tprintf(T("You give %d %s to %s."), amount, mudconf.many_coins, Moniker(recipient)));
             notify_with_cause_ooc(recipient, giver, tprintf(T("%s gives you %d %s."),
-                Moniker(giver), amount, mudconf.many_coins));
+                Moniker(giver), amount, mudconf.many_coins), MSG_SRC_GIVE);
         }
     }
 

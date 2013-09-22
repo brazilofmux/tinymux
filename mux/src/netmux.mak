@@ -111,7 +111,7 @@ CLEAN :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
 CPP=icl.exe
-CPP_PROJ=/nologo /MT /Qopenmp-link:static /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GF /O3 /Qprec_div /Qipo2 /Qsfalign8 /c 
+CPP_PROJ=/nologo /MT /Qopenmp-link:static /W3 /EHsc /Ot /Oa /O3 /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GF /Qprec_div /Qipo2 /Qsfalign8 /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -129,7 +129,7 @@ CPP_PROJ=/nologo /MT /Qopenmp-link:static /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "N
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib advapi32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.10 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib advapi32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.12 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alarm.obj" \
@@ -292,7 +292,7 @@ CLEAN :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
 CPP=icl.exe
-CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /EHsc /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GZ /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<

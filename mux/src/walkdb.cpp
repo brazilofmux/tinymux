@@ -1309,7 +1309,10 @@ dbref olist_next(void)
     return thing;
 }
 
-#define NPERIODS 24
+#define HOURS_PER_PERIOD  4
+#define DAYS_PER_REPORT   (2*7)
+#define NPERIODS          (24*DAYS_PER_REPORT/HOURS_PER_PERIOD)
+
 void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
@@ -1329,7 +1332,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
     CLinearTimeAbsolute ltaNow, ltaPlayer;
     ltaNow.GetLocal();
 
-    const int PeriodInSeconds = 28800;
+    const int SecondsPerPeriod = HOURS_PER_PERIOD*60*60;
 
     int iPlayer;
     DO_WHOLE_DB(iPlayer)
@@ -1343,7 +1346,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
             {
                 CLinearTimeDelta ltd(ltaPlayer, ltaNow);
                 int ltdSeconds = ltd.ReturnSeconds();
-                int iBin = ltdSeconds / PeriodInSeconds;
+                int iBin = ltdSeconds / SecondsPerPeriod;
                 if (0 <= iBin && iBin < NPERIODS)
                 {
                     nBin[iBin]++;
@@ -1355,11 +1358,11 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     int iHour, nSum = 0;
     notify(executor, T("Day   Hours     Players  Total"));
-    for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
+    for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += HOURS_PER_PERIOD)
     {
         nSum += nBin[i];
         mux_sprintf(buff, MBUF_SIZE, T("%3d %03d - %03d: %6d %6d"),
-            iHour/24 + 1, iHour, iHour+8, nBin[i], nSum);
+            iHour/24 + 1, iHour, iHour + HOURS_PER_PERIOD, nBin[i], nSum);
         notify(executor, buff);
     }
     free_mbuf(buff);

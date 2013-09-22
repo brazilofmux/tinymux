@@ -4,9 +4,9 @@
  */
 #include <stdio.h>
 #include <string.h>
-#define MUX_MASK1	0xFFFFFFFB
-#define MUX_MASK2	0xF707DFFF
-#define MUX_MASK3	0x00000000
+#define MUX_MASK1   0xFFFFFFFB
+#define MUX_MASK2   0xF707DFFF
+#define MUX_MASK3   0x00000000
 
 int main(void)
 {
@@ -173,7 +173,7 @@ int main(void)
                     gets(q);
                 }
             }
-            else 
+            else
             {
                 printf(">%d\n",val);
                 fflush(stdout);
@@ -208,5 +208,5 @@ int main(void)
             return 0;
         }
     }
-    return 0;	
+    return 0;
 }

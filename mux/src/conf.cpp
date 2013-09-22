@@ -233,7 +233,6 @@ void cf_init(void)
     // -- ??? Running SC on a non-SC DB may cause problems.
     //
     mudconf.space_compress = true;
-    mudconf.allow_guest_from_registered_site = true;
     mudconf.start_room = 0;
     mudconf.start_home = NOTHING;
     mudconf.default_home = NOTHING;
@@ -386,7 +385,9 @@ void cf_init(void)
 #if defined(STUB_SLAVE)
     mudstate.pISlaveControl = NULL;
 #endif // STUB_SLAVE
+#if defined(TINYMUX_MODULES)
     mudstate.pIQueryControl = NULL;
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -1536,6 +1537,8 @@ static CF_HAND(cf_hook)
     return retval;
 }
 
+#if defined(TINYMUX_MODULES)
+
 static CF_HAND(cf_module)
 {
     UNUSED_PARAMETER(vp);
@@ -1642,6 +1645,8 @@ static CF_HAND(cf_module)
         return 0;
     }
 }
+
+#endif
 
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
@@ -1760,7 +1765,6 @@ static CONFPARM conftable[] =
 {
     {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
-    {T("allow_guest_from_registered_site"), cf_bool, CA_GOD,    CA_WIZARD,   (int *)&mudconf.allow_guest_from_registered_site, NULL,     1},
     {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       NULL,               0},
     {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
     {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
@@ -1880,7 +1884,9 @@ static CONFPARM conftable[] =
     {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
     {T("motd_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
     {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
+#if defined(TINYMUX_MODULES)
     {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   (int *)NULL,                     NULL,               0},
+#endif
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
     {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,      HC_NOGUEST},

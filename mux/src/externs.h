@@ -12,8 +12,37 @@
 #include "match.h"
 #if defined(TINYMUX_MODULES)
 #include "libmux.h"
-#include "modules.h"
 #endif
+#include "modules.h"
+
+class CResultsSet
+{
+public:
+    CResultsSet(QUEUE_INFO *pqi);
+    ~CResultsSet(void);
+    UINT32 Release(void);
+    UINT32 AddRef(void);
+    bool   isLoaded(void);
+    void   SetError(UINT32 iError);
+    UINT32 GetError(void);
+    int    GetRowCount(void);
+    const UTF8 *FirstField(int iRow);
+    const UTF8 *NextField(void);
+
+private:
+    UINT32 m_cRef;
+    int    m_nFields;
+    size_t m_nBlob;
+    UTF8  *m_pBlob;
+    bool   m_bLoaded;
+    UINT32 m_iError;
+    int    m_nRows;
+    PUTF8 *m_pRows;
+
+    const UTF8 *m_pCurrentField;
+    int         m_iCurrentField;
+};
+
 #include "mudconf.h"
 #include "svdrand.h"
 
@@ -99,7 +128,9 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
+#if defined(TINYMUX_MODULES)
 void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
+#endif
 
 #if defined(UNIX_CRYPT)
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -195,7 +226,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
 #define notify_quiet(p,m)                   notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME)
 #define notify_atcp(p,c,m)                  notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME|MSG_ATCP)
 #define notify_with_cause(p,c,m)            notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)
-#define notify_with_cause_ooc(p,c,m)        notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC)
+#define notify_with_cause_ooc(p,c,m,s)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC|(s))
 #define notify_with_cause_html(p,c,m)       notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
 #define notify_quiet_with_cause(p,c,m)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME)
 #define notify_all(p,c,m)                   notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS)
@@ -536,6 +567,8 @@ extern int anum_alc_top;
 #define ATTRIB_INFO     8   /* Info (number, flags) about attribute */
 #define BOOT_QUIET      1   /* Inhibit boot message to victim */
 #define BOOT_PORT       2   /* Boot by port number */
+#define BREAK_INLINE    1   // Evaluate @break action inline
+#define BREAK_QUEUED    2   // Queue @break action.
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE       1   /* item = new_owner */
 #define CHOWN_ALL       2   /* old_owner = new_owner */
@@ -806,9 +839,13 @@ extern int anum_alc_top;
 
 /* Character Set Restrictions */
 
-#define ALLOW_CHARSET_ASCII  1
-#define ALLOW_CHARSET_8859_1 2
-#define ALLOW_CHARSET_8859_2 4
+#define ALLOW_CHARSET_ASCII       0x00000001UL
+#define ALLOW_CHARSET_HANGUL      0x00000002UL
+#define ALLOW_CHARSET_HIRAGANA    0x00000004UL
+#define ALLOW_CHARSET_KANJI       0x00000008UL
+#define ALLOW_CHARSET_KATAKANA    0x00000010UL
+#define ALLOW_CHARSET_8859_1      0x00000020UL
+#define ALLOW_CHARSET_8859_2      0x00000040UL
 
 /* Password Encryption Methods */
 
@@ -871,9 +908,12 @@ extern NAMETAB method_nametab[];
 #define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speech. */
 #define MSG_ATCP        0x00020000UL    /* Wrap message in IAC SB ATCP ... IAC SE */
 
-#define MSG_SRC_MASK    0x80000000UL    /* Bit mask for originating code path */
+#define MSG_SRC_KILL    0x10000000UL    /* Message originated from kill */
+#define MSG_SRC_GIVE    0x20000000UL    /* Message originated from give */
+#define MSG_SRC_PAGE    0x40000000UL    /* Message originated from page */
 #define MSG_SRC_COMSYS  0x80000000UL    /* Message originated from comsys */
 #define MSG_SRC_GENERIC 0x00000000UL    /* Message originated from 'none of the above' */
+#define MSG_SRC_MASK    (MSG_SRC_KILL|MSG_SRC_GIVE|MSG_SRC_PAGE|MSG_SRC_COMSYS)
 
 #define MSG_ME_ALL      (MSG_ME|MSG_INV_EXITS|MSG_FWDLIST)
 #define MSG_F_CONTENTS  (MSG_INV)
@@ -1187,5 +1227,21 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command);
 void stack_clr(dbref obj);
 #endif // DEPRECATED
 bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
+
+#if defined(TINYMUX_MODULES)
+
+DEFINE_FACTORY(CLogFactory)
+
+typedef struct ServerEventsSinkNode
+{
+    mux_IServerEventsSink        *pSink;
+    struct ServerEventsSinkNode  *pNext;
+} ServerEventsSinkNode;
+extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
+
+DEFINE_FACTORY(CServerEventsSourceFactory)
+DEFINE_FACTORY(CQueryClientFactory)
+
+#endif
 
 #endif // EXTERNS_H

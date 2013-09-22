@@ -206,15 +206,15 @@ commands.
 -- Helpfiles are updated for MUX.
 -- Helpfiles and +help code to be added for Penn and Tiny 2.2.X
 -- Added the following commands:
-   ooc and ' 	- <OOC> emits
-   @register 	- Command for registration games.
-   +register 	- Staff version of the registration command.
-   +where    	- A simple +where command
-   +3who     	- A 3 column +who
-   +shout    	- Emits a shout to nearby rooms.
-   +stnotes  	- Sets judgenotes.  Differs from +cnote in that it is staff-
+   ooc and '    - <OOC> emits
+   @register    - Command for registration games.
+   +register    - Staff version of the registration command.
+   +where       - A simple +where command
+   +3who        - A 3 column +who
+   +shout       - Emits a shout to nearby rooms.
+   +stnotes     - Sets judgenotes.  Differs from +cnote in that it is staff-
               only.(RPPack)
-   +timestamp	- Sets generic timestamps on player objects.
+   +timestamp   - Sets generic timestamps on player objects.
 
 as of: 26 Jun 00
 

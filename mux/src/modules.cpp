@@ -25,6 +25,8 @@ static MUX_CLASS_INFO netmux_classes[NUM_CLASSES] =
     { CID_QueryClient        }
 };
 
+DEFINE_FACTORY(CStubSlaveProxyFactory)
+
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
@@ -203,193 +205,29 @@ void final_modules(void)
     mux_FinalizeModuleLibrary();
 }
 
-// CLog component which is not directly accessible.
-//
-CLog::CLog(void) : m_cRef(1)
-{
-}
-
-CLog::~CLog()
-{
-}
-
-MUX_RESULT CLog::QueryInterface(MUX_IID iid, void **ppv)
-{
-    if (mux_IID_IUnknown == iid)
-    {
-        *ppv = static_cast<mux_ILog *>(this);
-    }
-    else if (IID_ILog == iid)
-    {
-        *ppv = static_cast<mux_ILog *>(this);
-    }
-    else
-    {
-        *ppv = NULL;
-        return MUX_E_NOINTERFACE;
-    }
-    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
-    return MUX_S_OK;
-}
-
-UINT32 CLog::AddRef(void)
-{
-    m_cRef++;
-    return m_cRef;
-}
-
-UINT32 CLog::Release(void)
-{
-    m_cRef--;
-    if (0 == m_cRef)
-    {
-        delete this;
-        return 0;
-    }
-    return m_cRef;
-}
-
-bool CLog::start_log(int key, const UTF8 *primary, const UTF8 *secondary)
-{
-    if (  ((key) & mudconf.log_options) != 0
-       && ::start_log(primary, secondary))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void CLog::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
-{
-    ::log_perror(primary, secondary, extra, failing_object);
-}
-
-void CLog::log_text(const UTF8 *text)
-{
-    ::log_text(text);
-}
-
-void CLog::log_number(int num)
-{
-    ::log_number(num);
-}
-
-void DCL_CDECL CLog::log_printf(const UTF8 *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    UTF8 aTempBuffer[SIZEOF_LOG_BUFFER];
-    size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
-    va_end(ap);
-    Log.WriteBuffer(nString, aTempBuffer);
-}
-
-void CLog::log_name(dbref target)
-{
-    ::log_name(target);
-}
-
-void CLog::log_name_and_loc(dbref player)
-{
-    ::log_name_and_loc(player);
-}
-
-void CLog::log_type_and_name(dbref thing)
-{
-    ::log_type_and_name(thing);
-}
-
-void CLog::end_log(void)
-{
-    ::end_log();
-}
-
-// Factory for CLog component which is not directly accessible.
-//
-CLogFactory::CLogFactory(void) : m_cRef(1)
-{
-}
-
-CLogFactory::~CLogFactory()
-{
-}
-
-MUX_RESULT CLogFactory::QueryInterface(MUX_IID iid, void **ppv)
-{
-    if (mux_IID_IUnknown == iid)
-    {
-        *ppv = static_cast<mux_IClassFactory *>(this);
-    }
-    else if (mux_IID_IClassFactory == iid)
-    {
-        *ppv = static_cast<mux_IClassFactory *>(this);
-    }
-    else
-    {
-        *ppv = NULL;
-        return MUX_E_NOINTERFACE;
-    }
-    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
-    return MUX_S_OK;
-}
-
-UINT32 CLogFactory::AddRef(void)
-{
-    m_cRef++;
-    return m_cRef;
-}
-
-UINT32 CLogFactory::Release(void)
-{
-    m_cRef--;
-    if (0 == m_cRef)
-    {
-        delete this;
-        return 0;
-    }
-    return m_cRef;
-}
-
-MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
-{
-    // Disallow attempts to aggregate this component.
-    //
-    if (NULL != pUnknownOuter)
-    {
-        return MUX_E_NOAGGREGATION;
-    }
-
-    CLog *pLog = NULL;
-    try
-    {
-        pLog = new CLog;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == pLog)
-    {
-        return MUX_E_OUTOFMEMORY;
-    }
-
-    MUX_RESULT mr = pLog->QueryInterface(iid, ppv);
-    pLog->Release();
-    return mr;
-}
-
-MUX_RESULT CLogFactory::LockServer(bool bLock)
-{
-    UNUSED_PARAMETER(bLock);
-    return MUX_S_OK;
-}
-
 // CServerEventsSource component which is not directly accessible.
 //
+class CServerEventsSource : public mux_IServerEventsControl
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IServerEventsControl
+    //
+    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents);
+
+    CServerEventsSource(void);
+    virtual ~CServerEventsSource();
+
+private:
+    UINT32 m_cRef;
+    mux_IServerEventsSink *m_pSink;
+};
+
 CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(NULL)
 {
 }
@@ -601,6 +439,45 @@ MUX_RESULT CServerEventsSourceFactory::LockServer(bool bLock)
 
 // StubSlaveProxy component which is not directly accessible.
 //
+class CStubSlaveProxy : public mux_ISlaveControl, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_ISlaveControl
+    //
+#if defined(WINDOWS_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#elif defined(UNIX_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // UNIX_FILES
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+    virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
+
+    CStubSlaveProxy(void);
+    MUX_RESULT FinalConstruct(void);
+    virtual ~CStubSlaveProxy();
+
+private:
+    UINT32 m_cRef;
+    UINT32 m_nChannel;
+    UTF8  *m_pModuleName;
+};
+
 CStubSlaveProxy::CStubSlaveProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID), m_pModuleName(NULL)
 {
 }
@@ -674,10 +551,11 @@ MUX_RESULT CStubSlaveProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CStubSlaveProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(pv);
     UNUSED_PARAMETER(ctx);
 
     // This should only be called on the component side.
@@ -1072,6 +950,34 @@ MUX_RESULT CStubSlaveProxyFactory::LockServer(bool bLock)
 
 // CQueryClient component which is not directly accessible.
 //
+class CQueryClient : public mux_IQuerySink, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_IQuerySink
+    //
+    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
+
+    CQueryClient(void);
+    virtual ~CQueryClient();
+
+private:
+    UINT32 m_cRef;
+};
+
 CQueryClient::CQueryClient(void) : m_cRef(1)
 {
 }
@@ -1228,7 +1134,7 @@ MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     }
 }
 
-MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -1248,7 +1154,15 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
     else
     {
         mux_IQuerySink *pIQuerySink = NULL;
-        mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.

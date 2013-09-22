@@ -35,7 +35,6 @@ typedef struct
 typedef struct confdata CONFDATA;
 struct confdata
 {
-    bool    allow_guest_from_registered_site;   // Whether guests from registered sites are allowed.
     bool    autozone;           // New objects are automatically zoned.
     bool    cache_names;        /* Should object names be cached separately */
     bool    clone_copy_cost;    /* Does @clone copy value? */
@@ -512,7 +511,9 @@ struct statedata
     CResultsSet *pResultsSet;           // ResultsSet from @query.
     int iRow;                           // Current Row.
 #endif // STUB_SLAVE
+#if defined(TINYMUX_MODULES)
     mux_IQueryControl *pIQueryControl;
+#endif
 
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */

@@ -17,13 +17,15 @@
 QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
 
-#define NUM_CLASSES 1
-static MUX_CLASS_INFO stubslave_classes[NUM_CLASSES] =
+static MUX_CLASS_INFO stubslave_classes[] =
 {
     { CID_StubSlave }
 };
+#define NUM_CLASSES (sizeof(stubslave_classes)/sizeof(stubslave_classes[0]))
 
 bool bStubSlaveShutdown = false;
+
+DEFINE_FACTORY(CStubSlaveFactory)
 
 extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
 {
@@ -121,6 +123,42 @@ int main(int argc, char *argv[])
 
 // CStubSlave component which is not directly accessible.
 //
+class CStubSlave : public mux_ISlaveControl, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // mux_ISlaveControl
+    //
+#if defined(WINDOWS_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#elif defined(UNIX_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // UNIX_FILES
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+    virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
+
+    CStubSlave(void);
+    virtual ~CStubSlave();
+
+private:
+    UINT32 m_cRef;
+};
+
 CStubSlave::CStubSlave(void) : m_cRef(1)
 {
 }
@@ -449,7 +487,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return mr;
 }
 
-MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -469,7 +507,15 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_c
     else
     {
         mux_ISlaveControl *pISlaveControl = NULL;
-        mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.

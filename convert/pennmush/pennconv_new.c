@@ -79,7 +79,7 @@ StripQuote(char *s_instr, int key)
             *(s_instr+2) = '\0';
             return(s_instr+1);
          } else if ( *s_instr == '"' ) {
-            if ( key ) 
+            if ( key )
                *(s_instr) = '\r';
             else
                *(s_instr) = '\n';
@@ -117,14 +117,14 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
    char *s_flags1_list[] = {"WIZARD", "VISUAL", "VERBOSE", "TRANSPARENT", "TERSE",
                             "STICKY", "SAFE", "QUIET", "PUPPET", "OPAQUE", "NOSPOOF",
                             "MYOPIC", "LINK_OK", "JUMP_OK", "HAVEN", "HALT", "GOING",
-                            "ENTER_OK", "DESTROY_OK", "DEBUG", "DARK", "CHOWN_OK", 
+                            "ENTER_OK", "DESTROY_OK", "DEBUG", "DARK", "CHOWN_OK",
                             "AUDIBLE", NULL};
    char *s_flags2_list[] = {"UNFINDABLE", "SUSPECT", "ROYALTY", "NO_TEL", "LIGHT",
-                            "GAGGED", "FLOATING", "FIXED", "CONNECTED", "COLOR", 
+                            "GAGGED", "FLOATING", "FIXED", "CONNECTED", "COLOR",
                             "ANSI", "ABODE", NULL};
    char *s_flags3_list[] = {"NO_COMMAND", NULL};
    char *s_flags4_list[] = {NULL, NULL};
-   int i_flags1_list[] = {16, 1048576, 16777216, 8, 2147483648U, 
+   int i_flags1_list[] = {16, 1048576, 16777216, 8, 2147483648U,
                           256, 268435456, 2048, 131072, 8388608, 67108864,
                           65536, 32, 128, 1024, 4096, 16384,
                           524288, 512, 8192, 64, 262144,
@@ -151,7 +151,7 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
    s_strtok = strtok_r(s_instr, " \t\r\n", &s_strtokr);
    while ( s_strtok && *s_strtok ) {
       i_found = 0;
-      for ( s_listtmp = s_flags1_list, i_listtmp = i_flags1_list; 
+      for ( s_listtmp = s_flags1_list, i_listtmp = i_flags1_list;
             s_listtmp && *s_listtmp; s_listtmp++, i_listtmp++ ) {
          if ( strcmp(*s_listtmp, s_strtok) == 0 ) {
             i_flags1 = i_flags1 | *i_listtmp;
@@ -160,7 +160,7 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
          }
       }
       if ( !i_found ) {
-         for ( s_listtmp = s_flags2_list, i_listtmp = i_flags2_list; 
+         for ( s_listtmp = s_flags2_list, i_listtmp = i_flags2_list;
                s_listtmp && *s_listtmp; s_listtmp++, i_listtmp++ ) {
             if ( strcmp(*s_listtmp, s_strtok) == 0 ) {
                i_flags2 = i_flags2 | *i_listtmp;
@@ -170,7 +170,7 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
          }
       }
       if ( !i_found ) {
-         for ( s_listtmp = s_flags3_list, i_listtmp = i_flags3_list; 
+         for ( s_listtmp = s_flags3_list, i_listtmp = i_flags3_list;
                s_listtmp && *s_listtmp; s_listtmp++, i_listtmp++ ) {
             if ( strcmp(*s_listtmp, s_strtok) == 0 ) {
                i_flags3 = i_flags3 | *i_listtmp;
@@ -180,7 +180,7 @@ convert_flagstomux(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, char *s_inst
          }
       }
       if ( !i_found ) {
-         for ( s_listtmp = s_flags4_list, i_listtmp = i_flags4_list; 
+         for ( s_listtmp = s_flags4_list, i_listtmp = i_flags4_list;
                s_listtmp && *s_listtmp; s_listtmp++, i_listtmp++ ) {
             if ( strcmp(*s_listtmp, s_strtok) == 0 ) {
                i_flags4 = i_flags4 | *i_listtmp;
@@ -215,7 +215,7 @@ convert_powerstomux(FILE *fd_filein, FILE *fd_fileout, char *s_instr)
 }
 
 void
-process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations, char *s_lock_list[DEFINED_LOCKS], 
+process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations, char *s_lock_list[DEFINED_LOCKS],
               char *s_lock_array[DEFINED_LOCKS], int i_id)
 {
    char *s_instr, *s_firstarg, *s_restarg, s_tmpbuff[LBUF+1], *s_tmpbufptr, *s_resttmp;
@@ -250,13 +250,13 @@ process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations,
                   /* Count joiners */
                   while ( *s_resttmp && s_resttmp) {
                      /* Right now, we can't handle any alpha characters.  Will work later */
-                     if ( *s_resttmp == '"' ) { 
-                        s_resttmp++; 
+                     if ( *s_resttmp == '"' ) {
+                        s_resttmp++;
                         continue;
                      }
-                     if ( *s_resttmp == '#') { 
-                        s_resttmp++; 
-                        continue; 
+                     if ( *s_resttmp == '#') {
+                        s_resttmp++;
+                        continue;
                      }
                      if ( (*(s_resttmp) == '=') || (*(s_resttmp) == '@') ||
                           (*(s_resttmp) == '+') || (*(s_resttmp) == '$')) {
@@ -301,7 +301,7 @@ process_locks(FILE *fd_filein, FILE *fd_fileout, FILE *fd_err, int i_iterations,
                            *s_tmpbufptr = ')';
                            s_tmpbufptr++;
                            i_joiner++;
-                        } 
+                        }
                         i_basictype = 0;
                         if ( isalpha(*(s_resttmp+1)) ) {
                            /* MUX can't handle these complex locks - Clear it */
@@ -380,7 +380,7 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
    char *s_tmpstr, *s_tmpptr, *s_tmpptr2, *s_tmpptrtok;
    char *s_tmp2str, *s_tmp2ptr, *s_tmp2ptr2, *s_tmp2ptrtok;
    char *s_flagptr, *s_flagptrtok, **s_flagcur;
-   char *s_flag_list[]={"no_command", "no_inherit", "no_clone", "wizard", "mortal_dark", 
+   char *s_flag_list[]={"no_command", "no_inherit", "no_clone", "wizard", "mortal_dark",
                         "hidden", "regexp", "locked", "safe", (char)NULL};
    int i_flag_list[]={32, 32768, 2097152, 4, 8, 2, 536870912, 64, 8388608, 0};
    int i_loop, i_owner, i_flags, *i_flagcur, i_contvalue, i_exception, i_attrib;
@@ -407,7 +407,7 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
          fgets(s_tmpstr, LBUF, fd_attrexception);
          s_tmpptr = strtok_r(s_tmpstr, " \t\n", &s_tmpptrtok);
          if ( s_tmpptr )
-            s_tmpptr2 = strtok_r(NULL, " \t\n", &s_tmpptrtok);        
+            s_tmpptr2 = strtok_r(NULL, " \t\n", &s_tmpptrtok);
          else
             s_tmpptr2 = NULL;
          if ( s_restarg && s_tmpptr && strcmp(StripQuote(s_restarg,1), s_tmpptr) != 0 )
@@ -457,7 +457,7 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
          if ( *(s_restarg+1) != '"' ) {
             s_flagptr = strtok_r(StripQuote(s_restarg,1), " \t\r\n", &s_flagptrtok);
             while ( s_flagptr ) {
-               for (s_flagcur = s_flag_list, i_flagcur = i_flag_list; 
+               for (s_flagcur = s_flag_list, i_flagcur = i_flag_list;
                     s_flagcur && *s_flagcur; s_flagcur++, i_flagcur++) {
                   if (strcmp(s_flagptr, *s_flagcur) == 0 ) {
                      i_flags += *i_flagcur;
@@ -514,7 +514,7 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
             i_contvalue = 0;
             i_exception = 0;
          }
-      } 
+      }
       if ( ((i_owner != i_id) || (i_flags > 0)) && (i_attrib > 256) ) {
          if ( *(StripQuote(s_restarg,i_exception)) == '\n')
             fprintf(fd_fileout, "%c%d:%d:", (char)1, i_owner, i_flags, StripQuote(s_restarg,i_exception));
@@ -566,7 +566,7 @@ process_attribs(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd_
                i_contvalue = 0;
                i_exception = 0;
             }
-         } 
+         }
          if ( *(s_instr) )
             fputs(StripQuote(s_instr,i_contvalue), fd_fileout);
          if ( i_exception )
@@ -644,7 +644,7 @@ ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd
             }
          }
       }
-      
+
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
       /* Store name */
@@ -726,7 +726,7 @@ ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd
       } else {
          LogError(i_fetchcntr, "owner", s_instr, s_firstarg, s_restarg);
       }
-      
+
       /* Grab zone and toss out */
       FGETS(s_instr, LBUF, fd_filein);
       SetupArguments(&s_instr, &s_firstarg, &s_restarg);
@@ -826,9 +826,9 @@ ConvertPenntoMUX(FILE *fd_filein, FILE *fd_fileout, FILE *fd_attrtonum, FILE *fd
 int
 main(int argc, char *argv[])
 {
-   FILE *fd_attrexception=NULL, 
-        *fd_attrtonum=NULL, 
-        *fd_filein=NULL, 
+   FILE *fd_attrexception=NULL,
+        *fd_attrtonum=NULL,
+        *fd_filein=NULL,
         *fd_fileout=NULL,
         *fd_err=NULL;
 
@@ -888,7 +888,7 @@ main(int argc, char *argv[])
    if ( fd_attrtonum != NULL)
       fclose(fd_attrtonum);
    if ( fd_attrexception != NULL)
-      fclose(fd_attrexception); 
+      fclose(fd_attrexception);
 */
    fcloseall();
    return(0);

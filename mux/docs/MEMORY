@@ -1,5 +1,6 @@
-TinyMUX 2.10: MEMORY
-Last Update: January 2010
+TinyMUX 2.12: MEMORY
+Last Update: July 2012
+~~~~~~~~~~~~~~~~~~~~~~
 
 This file will explain how to configure for the two memory options of TinyMUX
 as well as the procedure for converting between them.

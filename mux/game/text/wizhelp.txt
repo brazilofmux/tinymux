@@ -1474,21 +1474,6 @@ ALIAS
 
   Related Topics: function_alias, flag_alias.
 
-& ALLOW_GUEST_FROM_REGISTERED_SITE
-ALLOW_GUEST_FROM_REGISTERED_SITE
-
-  CONFIG PARAMETER: allow_guest_from_registered_site
-  DEFAULT: yes.
-
-  With this option turned off, guests are not permitted to connect from
-  sites which have been register_site'd.
-
-  Game which use register_site as a more surgical version of forbid_site
-  may be interested in turn this option off. However, game which are
-  register_only will probably want to leave this option as defaulted.
-
-  Related Topics: register_site, SITE LIST
-
 & ARTICLE_RULE
 ARTICLE_RULE
 
@@ -1619,6 +1604,10 @@ ATTR_NAME_CHARSET
     iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
     latin-2   - Restrict names to use latin-2 (same as iso8859-2).
+    hangul    - Restrict names to use Hangul (Korean).
+    hiragana  - Restrict names to use Hiragana (Japanese).
+    katakana  - Restrict names to use Katakana (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -1888,21 +1877,21 @@ CONFIG PARAMETERS
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
 
-  access  alias  allow_guest_from_registered_site  article_rule  attr_access
-  attr_alias  attr_cmd_access  attr_name_charset  autozone  bad_name
-  badsite_file  cache_names  cache_pages  cache_tick_period  check_interval
-  check_offset  clone_copies_cost  command_quota_increment  command_quota_max
-  compress_program  compression  comsys_database  config_access  conn_timeout
-  connect_file  connect_reg_file  crash_database  crash_message
-  create_max_cost  create_min_cost  dark_sleepers  def_exit_rx  def_exit_tx
-  def_player_rx  def_player_tx  def_room_rx  def_room_tx  def_thing_rx
-  def_thing_tx  default_charset  default_home  destroy_going_now  dig_cost
-  down_file  down_motd_message  dump_interval  dump_message  dump_offset
-  earn_limit  eval_comtitle  events_daily_hour  examine_flags
-  examine_public_attrs  exit_flags  exit_name_charset  exit_parent  exit_quota
-  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
-  flag_access  flag_alias  flag_name  float_precision forbid_site  fork_dump
-  full_file  full_motd_message  function_access  function_alias  function_name
+  access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
+  attr_name_charset  autozone  bad_name  badsite_file  cache_names  cache_pages
+  cache_tick_period  check_interval  check_offset  clone_copies_cost
+  command_quota_increment  command_quota_max  compress_program  compression
+  comsys_database  config_access  conn_timeout  connect_file  connect_reg_file
+  crash_database  crash_message  create_max_cost  create_min_cost
+  dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx  def_player_tx
+  def_room_rx  def_room_tx  def_thing_rx  def_thing_tx  default_charset
+  default_home  destroy_going_now  dig_cost  down_file  down_motd_message
+  dump_interval  dump_message  dump_offset  earn_limit  eval_comtitle
+  events_daily_hour  examine_flags  examine_public_attrs  exit_flags
+  exit_name_charset  exit_parent  exit_quota  fascist_teleport
+  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
+  flag_alias  flag_name  float_precision forbid_site  fork_dump  full_file
+  full_motd_message  function_access  function_alias  function_name
   function_invocation_limit  function_recursion_limit  game_dir_file
 
 { 'wizhelp config parameters2' for more }
@@ -2392,6 +2381,10 @@ EXIT_NAME_CHARSET
     iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
     latin-2   - Restrict names to use latin-2 (same as iso8859-2).
+    hangul    - Restrict names to use Hangul (Korean).
+    hiragana  - Restrict names to use Hiragana (Japanese).
+    katakana  - Restrict names to use Katakana (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -3351,7 +3344,7 @@ LOG
 
   CONFIG PARAMETER: log [!]<logoption> [[!]<logoption>]...
   DEFAULT: bugs checkpoints config_changes create logins network problems
-           security shouts startup suspect time_usage wizard 
+           security shouts startup suspect time_usage wizard
 
   Specifies what types of events are to be logged to the logfile.
 
@@ -4017,7 +4010,7 @@ PERMISSIONS (continued)
   Footnotes:
 
     (1) The dark permission is not available with --enable-firanmux.
-    (2) The no_immutable and no_restricted permissions are only available with
+    (2) The no_immobile and no_restricted permissions are only available with
         --enable-firanmux.
 
 & PERMIT_SITE
@@ -4078,6 +4071,10 @@ PLAYER_NAME_CHARSET
     iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
     latin-2   - Restrict names to use latin-2 (same as iso8859-2).
+    hangul    - Restrict names to use Hangul (Korean).
+    hiragana  - Restrict names to use Hiragana (Japanese).
+    katakana  - Restrict names to use Katakana (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -4522,6 +4519,10 @@ ROOM_NAME_CHARSET
     iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
     latin-2   - Restrict names to use latin-2 (same as iso8859-2).
+    hangul    - Restrict names to use Hangul (Korean).
+    hiragana  - Restrict names to use Hiragana (Japanese).
+    katakana  - Restrict names to use Katakana (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a
@@ -4848,7 +4849,7 @@ IPV6
 
 & SITE NOTATION2
 SITE NOTATION (continued)
- 
+
  Examples:
 
    135.246.4.40 255.255.255.255   - Single host.
@@ -5119,6 +5120,10 @@ THING_NAME_CHARSET
     iso8859-2 - Restrict names to use iso8859-2.
     latin-1   - Restrict names to use latin-1 (same as iso8859-1).
     latin-2   - Restrict names to use latin-2 (same as iso8859-2).
+    hangul    - Restrict names to use Hangul (Korean).
+    hiragana  - Restrict names to use Hiragana (Japanese).
+    katakana  - Restrict names to use Katakana (Japanese).
+    kanji     - Restrict names to use Kanji (Chinese, Japanese, and Korean).
 
   If no restrictions are made, the Unicode set is used.  If more than one
   restriction is made, the union of the two are used.  That is, as long as a

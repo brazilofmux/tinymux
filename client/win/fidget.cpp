@@ -736,7 +736,7 @@ LRESULT CALLBACK CFidgetApp::NewSessionProc(HWND hDlg, UINT message, WPARAM wPar
                     ::SetFocus(::GetDlgItem(hDlg, IDC_TCPIP_PORT));
                     return FALSE;
                 }
-                
+
                 CSessionFrame *pChild = g_theApp.m_pMainFrame->m_pMDIControl->CreateNewChild();
 
                 DestroyWindow(hDlg);

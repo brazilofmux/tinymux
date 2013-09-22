@@ -722,8 +722,14 @@ void freeqs(DESC *d)
     d->raw_input_at = NULL;
     d->nOption = 0;
     d->raw_input_state    = NVT_IS_NORMAL;
-    memset(d->nvt_him_state,OPTION_NO,(sizeof(int) * 256));
-    memset(d->nvt_us_state,OPTION_NO,(sizeof(int) * 256));
+    for (int i = 0; i < 256; i++)
+    {
+        d->nvt_him_state[i] = OPTION_NO;
+    }
+    for (int i = 0; i < 256; i++)
+    {
+        d->nvt_us_state[i] = OPTION_NO;
+    }
     if (d->ttype)
     {
         MEMFREE(d->ttype);
@@ -2386,9 +2392,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
-            if (  (host_info & HI_NOGUEST)
-               || (   !mudconf.allow_guest_from_registered_site
-                  && (host_info & HI_REGISTER)))
+            if (host_info & HI_NOGUEST)
             {
                 // Someone from an IP with guest restrictions is
                 // trying to use a guest account. Give them the blurb
@@ -2500,9 +2504,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // following orders. ;)
             //
             if (  Guest(player)
-               && (  (host_info & HI_NOGUEST)
-                  || (   !mudconf.allow_guest_from_registered_site
-                     && (host_info & HI_REGISTER))))
+               && (host_info & HI_NOGUEST))
             {
                 failconn(T("CON"), T("Connect"), T("Guest Site Forbidden"), d,
                     R_GAMEDOWN, player, FC_CONN_SITE,

@@ -180,7 +180,7 @@ void BuildOutputTable(FILE *fp)
                         break;
                     }
                 }
-    
+
                 if (!bFound)
                 {
                     aLiteralTable[nLiteralTable].p = new UTF8[nLiteral];
@@ -204,7 +204,7 @@ void BuildOutputTable(FILE *fp)
                 UTF8 *pA = TargetA;
                 UTF8 *pB = TargetB;
                 UTF8 *pXor = Xor;
-    
+
                 while (pA < pTargetA)
                 {
                     *pXor = *pA ^ *pB;
@@ -213,7 +213,7 @@ void BuildOutputTable(FILE *fp)
                     pXor++;
                 }
                 size_t nXor = pXor - Xor;
-    
+
                 for (i = 0; i < nXorTable; i++)
                 {
                     if (  aXorTable[i].n_bytes == nXor
@@ -223,7 +223,7 @@ void BuildOutputTable(FILE *fp)
                         break;
                     }
                 }
-    
+
                 if (!bFound)
                 {
                     aXorTable[nXorTable].p = new UTF8[nXor];
@@ -333,7 +333,7 @@ void TestTable(FILE *fp)
                 UTF8 *pA = TargetA;
                 UTF8 *pB = TargetB;
                 UTF8 *pXor = Xor;
-    
+
                 while (pA < pTargetA)
                 {
                     *pXor = *pA ^ *pB;
@@ -342,7 +342,7 @@ void TestTable(FILE *fp)
                     pXor++;
                 }
                 size_t nXor = pXor - Xor;
-    
+
                 for (i = 0; i < nXorTable; i++)
                 {
                     if (  aXorTable[i].n_bytes == nXor
@@ -455,7 +455,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
                 UTF8 *pA = TargetA;
                 UTF8 *pB = TargetB;
                 UTF8 *pXor = Xor;
-    
+
                 while (pA < pTargetA)
                 {
                     *pXor = *pA ^ *pB;
@@ -464,7 +464,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
                     pXor++;
                 }
                 size_t nXor = pXor - Xor;
-    
+
                 for (int i = 0; i < nXorTable; i++)
                 {
                     if (  aXorTable[i].n_bytes == nXor

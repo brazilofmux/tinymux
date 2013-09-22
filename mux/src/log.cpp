@@ -683,3 +683,217 @@ CLogFile::~CLogFile(void)
     DeleteCriticalSection(&csLog);
 #endif // WINDOWS_THREADS
 }
+
+#if defined(TINYMUX_MODULES)
+
+// CLog component which is not directly accessible.
+//
+class CLog : public mux_ILog
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_ILog
+    //
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary);
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
+    virtual MUX_RESULT log_text(const UTF8 *text);
+    virtual MUX_RESULT log_number(int num);
+    virtual MUX_RESULT log_name(dbref target);
+    virtual MUX_RESULT log_name_and_loc(dbref player);
+    virtual MUX_RESULT log_type_and_name(dbref thing);
+    virtual MUX_RESULT end_log(void);
+
+    CLog(void);
+    virtual ~CLog();
+
+private:
+    UINT32 m_cRef;
+};
+
+CLog::CLog(void) : m_cRef(1)
+{
+}
+
+CLog::~CLog()
+{
+}
+
+MUX_RESULT CLog::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_ILog *>(this);
+    }
+    else if (IID_ILog == iid)
+    {
+        *ppv = static_cast<mux_ILog *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CLog::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CLog::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CLog::start_log(bool *fStarted, int key, const UTF8 *primary, const UTF8 *secondary)
+{
+    if (  ((key) & mudconf.log_options) != 0
+       && ::start_log(primary, secondary))
+    {
+        *fStarted = true;
+    }
+    else
+    {
+        *fStarted = false;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
+{
+    ::log_perror(primary, secondary, extra, failing_object);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_text(const UTF8 *text)
+{
+    ::log_text(text);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_number(int num)
+{
+    ::log_number(num);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_name(dbref target)
+{
+    ::log_name(target);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_name_and_loc(dbref player)
+{
+    ::log_name_and_loc(player);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::log_type_and_name(dbref thing)
+{
+    ::log_type_and_name(thing);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::end_log(void)
+{
+    ::end_log();
+    return MUX_S_OK;
+}
+
+// Factory for CLog component which is not directly accessible.
+//
+CLogFactory::CLogFactory(void) : m_cRef(1)
+{
+}
+
+CLogFactory::~CLogFactory()
+{
+}
+
+MUX_RESULT CLogFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CLogFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CLogFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CLog *pLog = NULL;
+    try
+    {
+        pLog = new CLog;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pLog)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pLog->QueryInterface(iid, ppv);
+    pLog->Release();
+    return mr;
+}
+
+MUX_RESULT CLogFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+#endif

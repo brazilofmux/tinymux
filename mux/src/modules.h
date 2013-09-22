@@ -42,10 +42,9 @@
 const MUX_CID CID_Log                   = UINT64_C(0x000000020CE18E7A);
 const MUX_CID CID_StubSlave             = UINT64_C(0x00000002267CA586);
 const MUX_IID IID_ISlaveControl         = UINT64_C(0x0000000250C158E9);
-const MUX_CID CID_QueryControlProxy     = UINT64_C(0x00000002683E889A);
 const MUX_IID IID_IServerEventsControl  = UINT64_C(0x000000026EE5256E);
 const MUX_CID CID_QuerySinkProxy        = UINT64_C(0x00000002746B93B9);
-const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13A);
+const MUX_IID IID_ILog                  = UINT64_C(0x000000028B9DC13B);
 const MUX_CID CID_QueryServer           = UINT64_C(0x000000028FEA49AD);
 const MUX_CID CID_ServerEventsSource    = UINT64_C(0x00000002A5080812);
 const MUX_IID IID_IQuerySink            = UINT64_C(0x00000002CBBCE24E);
@@ -57,66 +56,14 @@ const MUX_IID CID_QueryClient           = UINT64_C(0x00000002F571AB88);
 interface mux_ILog : public mux_IUnknown
 {
 public:
-    virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary) = 0;
-
-    virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
-    virtual void log_text(const UTF8 *text) = 0;
-    virtual void log_number(int num) = 0;
-    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...) = 0;
-    virtual void log_name(dbref target) = 0;
-    virtual void log_name_and_loc(dbref player) = 0;
-    virtual void log_type_and_name(dbref thing) = 0;
-
-    virtual void end_log(void) = 0;
-};
-
-class CLog : public mux_ILog
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_ILog
-    //
-    virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary);
-    virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
-    virtual void log_text(const UTF8 *text);
-    virtual void log_number(int num);
-    virtual void DCL_CDECL log_printf(const UTF8 *fmt, ...);
-    virtual void log_name(dbref target);
-    virtual void log_name_and_loc(dbref player);
-    virtual void log_type_and_name(dbref thing);
-    virtual void end_log(void);
-
-    CLog(void);
-    virtual ~CLog();
-
-private:
-    UINT32 m_cRef;
-};
-
-class CLogFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CLogFactory(void);
-    virtual ~CLogFactory();
-
-private:
-    UINT32 m_cRef;
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary) = 0;
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
+    virtual MUX_RESULT log_text(const UTF8 *text) = 0;
+    virtual MUX_RESULT log_number(int num) = 0;
+    virtual MUX_RESULT log_name(dbref target) = 0;
+    virtual MUX_RESULT log_name_and_loc(dbref player) = 0;
+    virtual MUX_RESULT log_type_and_name(dbref thing) = 0;
+    virtual MUX_RESULT end_log(void) = 0;
 };
 
 interface mux_IServerEventsSink : public mux_IUnknown
@@ -209,56 +156,6 @@ public:
     virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents) = 0;
 };
 
-typedef struct ServerEventsSinkNode
-{
-    mux_IServerEventsSink        *pSink;
-    struct ServerEventsSinkNode  *pNext;
-} ServerEventsSinkNode;
-
-extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
-
-class CServerEventsSource : public mux_IServerEventsControl
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IServerEventsControl
-    //
-    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents);
-
-    CServerEventsSource(void);
-    virtual ~CServerEventsSource();
-
-private:
-    UINT32 m_cRef;
-    mux_IServerEventsSink *m_pSink;
-};
-
-class CServerEventsSourceFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CServerEventsSourceFactory(void);
-    virtual ~CServerEventsSourceFactory();
-
-private:
-    UINT32 m_cRef;
-};
-
 interface mux_ISlaveControl : public mux_IUnknown
 {
 public:
@@ -271,123 +168,6 @@ public:
     virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo) = 0;
     virtual MUX_RESULT ModuleMaintenance(void) = 0;
     virtual MUX_RESULT ShutdownSlave(void) = 0;
-};
-
-class CStubSlave : public mux_ISlaveControl, public mux_IMarshal
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IMarshal
-    //
-    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
-    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
-    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
-    virtual MUX_RESULT DisconnectObject(void);
-
-    // mux_ISlaveControl
-    //
-#if defined(WINDOWS_FILES)
-    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
-#elif defined(UNIX_FILES)
-    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
-#endif // UNIX_FILES
-    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
-    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
-    virtual MUX_RESULT ModuleMaintenance(void);
-    virtual MUX_RESULT ShutdownSlave(void);
-
-    CStubSlave(void);
-    virtual ~CStubSlave();
-
-private:
-    UINT32 m_cRef;
-};
-
-class CStubSlaveFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CStubSlaveFactory(void);
-    virtual ~CStubSlaveFactory();
-
-private:
-    UINT32 m_cRef;
-};
-
-class CStubSlaveProxy : public mux_ISlaveControl, public mux_IMarshal
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IMarshal
-    //
-    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
-    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
-    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
-    virtual MUX_RESULT DisconnectObject(void);
-
-    // mux_ISlaveControl
-    //
-#if defined(WINDOWS_FILES)
-    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
-#elif defined(UNIX_FILES)
-    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
-#endif // UNIX_FILES
-    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
-    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
-    virtual MUX_RESULT ModuleMaintenance(void);
-    virtual MUX_RESULT ShutdownSlave(void);
-
-    CStubSlaveProxy(void);
-    MUX_RESULT FinalConstruct(void);
-    virtual ~CStubSlaveProxy();
-
-private:
-    UINT32 m_cRef;
-    UINT32 m_nChannel;
-    UTF8  *m_pModuleName;
-};
-
-class CStubSlaveProxyFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CStubSlaveProxyFactory(void);
-    virtual ~CStubSlaveProxyFactory();
-
-private:
-    UINT32 m_cRef;
 };
 
 interface mux_IQuerySink : public mux_IUnknown
@@ -404,139 +184,8 @@ public:
     virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery) = 0;
 };
 
-class CQueryClient : public mux_IQuerySink, public mux_IMarshal
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IMarshal
-    //
-    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
-    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
-    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
-    virtual MUX_RESULT DisconnectObject(void);
-
-    // mux_IQuerySink
-    //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
-
-    CQueryClient(void);
-    MUX_RESULT FinalConstruct(void);
-    virtual ~CQueryClient();
-
-private:
-    UINT32 m_cRef;
-};
-
-class CQueryClientFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CQueryClientFactory(void);
-    virtual ~CQueryClientFactory();
-
-private:
-    UINT32 m_cRef;
-};
-
-class CQueryControlProxy : public mux_IQueryControl, public mux_IMarshal
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IMarshal
-    //
-    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
-    virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
-    virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
-    virtual MUX_RESULT DisconnectObject(void);
-
-    // mux_IQueryControl
-    //
-    virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
-    virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
-
-    CQueryControlProxy(void);
-    MUX_RESULT FinalConstruct(void);
-    virtual ~CQueryControlProxy();
-
-private:
-    UINT32 m_cRef;
-    UINT32 m_nChannel;
-};
-
-class CQueryControlProxyFactory : public mux_IClassFactory
-{
-public:
-    // mux_IUnknown
-    //
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
-
-    // mux_IClassFactory
-    //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-
-    CQueryControlProxyFactory(void);
-    virtual ~CQueryControlProxyFactory();
-
-private:
-    UINT32 m_cRef;
-};
-
 extern void init_modules(void);
 extern void final_modules(void);
-
-class CResultsSet
-{
-public:
-    CResultsSet(QUEUE_INFO *pqi);
-    ~CResultsSet(void);
-    UINT32 Release(void);
-    UINT32 AddRef(void);
-    bool   isLoaded(void);
-    void   SetError(UINT32 iError);
-    UINT32 GetError(void);
-    int    GetRowCount(void);
-    const UTF8 *FirstField(int iRow);
-    const UTF8 *NextField(void);
-
-private:
-    UINT32 m_cRef;
-    int    m_nFields;
-    size_t m_nBlob;
-    UTF8  *m_pBlob;
-    bool   m_bLoaded;
-    UINT32 m_iError;
-    int    m_nRows;
-    PUTF8 *m_pRows;
-
-    const UTF8 *m_pCurrentField;
-    int         m_iCurrentField;
-};
 
 #define QS_SUCCESS         (0)
 #define QS_NO_SESSION      (1)

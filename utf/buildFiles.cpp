@@ -315,6 +315,29 @@ static struct
     { 0, NULL }
 };
 
+#define WIDTH_TYPE_NONE                0
+#define WIDTH_TYPE_NEUTRAL             1
+#define WIDTH_TYPE_AMBIGUOUS           2
+#define WIDTH_TYPE_HALFWIDTH           3
+#define WIDTH_TYPE_WIDE                4
+#define WIDTH_TYPE_FULLWIDTH           5
+#define WIDTH_TYPE_NARROW              6
+
+static struct
+{
+    int         WidthType;
+    const char *WidthTypeLet;
+} WidthTypeTable[] =
+{
+    { WIDTH_TYPE_NEUTRAL,              "N"        },
+    { WIDTH_TYPE_AMBIGUOUS,            "A"        },
+    { WIDTH_TYPE_HALFWIDTH,            "H"        },
+    { WIDTH_TYPE_WIDE,                 "W"        },
+    { WIDTH_TYPE_FULLWIDTH,            "F"        },
+    { WIDTH_TYPE_NARROW,               "Na"       },
+    { 0, NULL }
+};
+
 #define MAPPING_ASCII      0
 #define MAPPING_CP437      1
 #define MAPPING_ISO_8859_1 2
@@ -397,6 +420,9 @@ public:
     void SetMapping(int m, unsigned char ch) { m_mappings[m].ch = ch; m_mappings[m].bIs = true; };
     bool IsMapping(int m, unsigned char &ch) { ch = m_mappings[m].ch; return m_mappings[m].bIs; };
 
+    void SetWidthType(int n);
+    bool GetWidthType(int *pn);
+
 private:
     bool  m_bDefined;
     char *m_pDescription;
@@ -420,6 +446,8 @@ private:
     UTF32 m_SimpleUppercaseMapping;
     UTF32 m_SimpleLowercaseMapping;
     UTF32 m_SimpleTitlecaseMapping;
+    bool  m_bHaveWidthType;
+    int   m_nWidthType;
 
     bool  m_bProhibited;
 
@@ -486,6 +514,18 @@ void CodePoint::SetDecompositionMapping(int nPoints, UTF32 pts[])
     }
 }
 
+void CodePoint::SetWidthType(int n)
+{
+    m_nWidthType = n;
+    m_bHaveWidthType = true;
+}
+
+bool CodePoint::GetWidthType(int *pn)
+{
+    *pn = m_nWidthType;
+    return m_bHaveWidthType;
+}
+
 CodePoint::CodePoint()
 {
     m_bDefined = false;
@@ -508,6 +548,7 @@ CodePoint::CodePoint()
     m_SimpleLowercaseMapping = UNI_EOF;
     m_SimpleTitlecaseMapping = UNI_EOF;
     m_bProhibited = false;
+    m_bHaveWidthType = false;
 
     for (int i = 0; i < NUM_MAPPINGS; i++)
     {
@@ -571,6 +612,7 @@ public:
     void LoadUnicodeDataFile(void);
     void LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[]);
     void LoadUnicodeHanFile(void);
+    void LoadEastAsianWidth(void);
 
     void LoadMappings(void);
 
@@ -586,6 +628,7 @@ public:
     void SaveDecompositions(void);
     void SaveClassifyPrintable(void);
     void SaveCombiningClass(void);
+    void SaveWidths(void);
 
     void GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[]);
 
@@ -635,6 +678,7 @@ int main(int argc, char *argv[])
     g_UniData = new UniData;
     g_UniData->LoadUnicodeDataFile();
     g_UniData->LoadUnicodeHanFile();
+    g_UniData->LoadEastAsianWidth();
 
     g_UniData->LoadMappings();
 
@@ -650,6 +694,7 @@ int main(int argc, char *argv[])
     g_UniData->SaveDecompositions();
     g_UniData->SaveClassifyPrintable();
     g_UniData->SaveCombiningClass();
+    g_UniData->SaveWidths();
 
     return 0;
 }
@@ -1020,6 +1065,79 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
     }
 }
 
+void UniData::LoadEastAsianWidth(void)
+{
+    FILE *fp = fopen("EastAsianWidth.txt", "r");
+    if (NULL != fp)
+    {
+        char buffer[1024];
+        while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+        {
+            int   nFields;
+            char *aFields[2];
+
+            ParseFields(buffer, 2, nFields, aFields);
+
+            if (2 == nFields)
+            {
+                UTF32 ptStart, ptEnd;
+                int nWidth;
+
+                char *p = strchr(aFields[0], '.');
+                if (NULL == p)
+                {
+                    ptEnd = ptStart = DecodeCodePoint(aFields[0]);
+                }
+                else
+                {
+                    while ('.' == *p)
+                    {
+                        *p = '\0';
+                        p++;
+                    }
+
+                    if ('\0' == *p)
+                    {
+                        printf("Malformed range: %s..\n", aFields[0]);
+                        exit(1);
+                    }
+
+                    ptStart = DecodeCodePoint(aFields[0]);
+                    ptEnd = DecodeCodePoint(p);
+                }
+
+                bool fFound = false;
+                for (int i = 0; i < sizeof(WidthTypeTable)/sizeof(WidthTypeTable[0]); i++)
+                {
+                    if (strcmp(aFields[1], WidthTypeTable[i].WidthTypeLet) == 0)
+                    {
+                        nWidth = WidthTypeTable[i].WidthType;
+                        fFound = true;
+                        break;
+                    }
+                }
+
+                if (!fFound)
+                {
+                    printf("Unexpected EastAsianWidth property: %s|%s\n", aFields[0], aFields[1]);
+                    exit(1);
+                }
+
+                for (UTF32 pt = ptStart; pt <= ptEnd; pt++)
+                {
+                    cp[pt].SetWidthType(nWidth);
+                }
+            }
+            else
+            {
+                printf("Unexpected number of fields for EastAsianWidth property: %s\n", buffer);
+                exit(1);
+            }
+        }
+        fclose(fp);
+    }
+}
+
 void UniData::LoadMappings(void)
 {
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
@@ -1180,6 +1298,36 @@ void UniData::SaveCombiningClass()
             {
                 fprintf(fp, "Didn't find entry for %u\n", cc);
             }
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveWidths()
+{
+    FILE *fp = fopen("tr_widths.txt", "w+");
+    if (NULL == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        static const int table[] =
+        {
+            0, // WIDTH_TYPE_NONE
+            1, // WIDTH_TYPE_NEUTRAL
+            1, // WIDTH_TYPE_AMBIGUOUS
+            1, // WIDTH_TYPE_HALFWIDTH
+            2, // WIDTH_TYPE_WIDE
+            2, // WIDTH_TYPE_FULLWIDTH
+            1, // WIDTH_TYPE_NARROW
+        };
+
+        int wt;
+        if (cp[pt].GetWidthType(&wt))
+        {
+            fprintf(fp, "%04X;%u;%s\n", static_cast<unsigned int>(pt), table[wt], cp[pt].GetDescription());
         }
     }
     fclose(fp);

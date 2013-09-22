@@ -50,25 +50,25 @@ extern const unsigned char cl_attrname_sbt[50];
 
 // utf/cl_ObjectName.txt
 //
-// 257 included, 1113855 excluded, 0 errors.
-// 8 states, 23 columns, 343 bytes
+// 87028 included, 1027084 excluded, 0 errors.
+// 32 states, 63 columns, 639 bytes
 //
 #define CL_OBJECTNAME_START_STATE (0)
-#define CL_OBJECTNAME_ACCEPTING_STATES_START (8)
+#define CL_OBJECTNAME_ACCEPTING_STATES_START (32)
 extern const unsigned char cl_objectname_itt[256];
-extern const unsigned char cl_objectname_sot[8];
-extern const unsigned char cl_objectname_sbt[79];
+extern const unsigned short cl_objectname_sot[32];
+extern const unsigned char cl_objectname_sbt[319];
 
 // utf/cl_PlayerName.txt
 //
-// 190 included, 1113922 excluded, 0 errors.
-// 6 states, 14 columns, 312 bytes
+// 86961 included, 1027151 excluded, 0 errors.
+// 31 states, 57 columns, 622 bytes
 //
 #define CL_PLAYERNAME_START_STATE (0)
-#define CL_PLAYERNAME_ACCEPTING_STATES_START (6)
+#define CL_PLAYERNAME_ACCEPTING_STATES_START (31)
 extern const unsigned char cl_playername_itt[256];
-extern const unsigned char cl_playername_sot[6];
-extern const unsigned char cl_playername_sbt[50];
+extern const unsigned short cl_playername_sot[31];
+extern const unsigned char cl_playername_sbt[304];
 
 // utf/cl_8859_1.txt
 //
@@ -91,6 +91,50 @@ extern const unsigned char cl_8859_1_sbt[20];
 extern const unsigned char cl_8859_2_itt[256];
 extern const unsigned char cl_8859_2_sot[6];
 extern const unsigned char cl_8859_2_sbt[73];
+
+// utf/cl_hangul.txt
+//
+// 11172 included, 1102940 excluded, 0 errors.
+// 6 states, 9 columns, 298 bytes
+//
+#define CL_HANGUL_START_STATE (0)
+#define CL_HANGUL_ACCEPTING_STATES_START (6)
+extern const unsigned char cl_hangul_itt[256];
+extern const unsigned char cl_hangul_sot[6];
+extern const unsigned char cl_hangul_sbt[36];
+
+// utf/cl_hiragana.txt
+//
+// 94 included, 1114018 excluded, 0 errors.
+// 8 states, 12 columns, 315 bytes
+//
+#define CL_HIRAGANA_START_STATE (0)
+#define CL_HIRAGANA_ACCEPTING_STATES_START (8)
+extern const unsigned char cl_hiragana_itt[256];
+extern const unsigned char cl_hiragana_sot[8];
+extern const unsigned char cl_hiragana_sbt[51];
+
+// utf/cl_kanji.txt
+//
+// 75394 included, 1038718 excluded, 0 errors.
+// 18 states, 29 columns, 413 bytes
+//
+#define CL_KANJI_START_STATE (0)
+#define CL_KANJI_ACCEPTING_STATES_START (18)
+extern const unsigned char cl_kanji_itt[256];
+extern const unsigned char cl_kanji_sot[18];
+extern const unsigned char cl_kanji_sbt[139];
+
+// utf/cl_katakana.txt
+//
+// 115 included, 1113997 excluded, 0 errors.
+// 8 states, 12 columns, 315 bytes
+//
+#define CL_KATAKANA_START_STATE (0)
+#define CL_KATAKANA_ACCEPTING_STATES_START (8)
+extern const unsigned char cl_katakana_itt[256];
+extern const unsigned char cl_katakana_sot[8];
+extern const unsigned char cl_katakana_sbt[51];
 
 // utf/tr_utf8_ascii.txt
 //
@@ -135,6 +179,17 @@ extern const unsigned short tr_latin1_sbt[3349];
 extern const unsigned char tr_latin2_itt[256];
 extern const unsigned short tr_latin2_sot[94];
 extern const unsigned short tr_latin2_sbt[3324];
+
+// utf/tr_widths.txt
+//
+// 330647 code points.
+// 206 states, 92 columns, 3703 bytes
+//
+#define TR_WIDTHS_START_STATE (0)
+#define TR_WIDTHS_ACCEPTING_STATES_START (206)
+extern const unsigned char tr_widths_itt[256];
+extern const unsigned short tr_widths_sot[206];
+extern const unsigned char tr_widths_sbt[3035];
 
 // utf/tr_tolower.txt
 //

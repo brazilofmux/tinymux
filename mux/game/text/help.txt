@@ -551,13 +551,19 @@ Related Topics: @name.
 & @ASSERT
 @ASSERT
 
-  COMMAND: @assert <boolean>[=<action list>]
+  COMMAND: @assert[/<switches>] <boolean>[=<action list>]
 
   @assert stops the execution of further commands in the current action
   list if its argument is a false value.  It doesn't affect new queue
   entries made by previous commands in the action list.  Very useful to
   people who don't like @switch.  If <action list> is given, they are
   executed instead of the rest of the commands in the current action list.
+
+  The following switches are available:
+
+    /inline   - Evaluates <action list>, if present, inline.
+    /queued   - Queues any <action list> to be evaluated in the next
+                queue cycle (default).
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@assert %0;@pemit %#=After
@@ -687,13 +693,19 @@ Related Topics: @name.
 & @BREAK
 @BREAK
 
-  COMMAND: @break <boolean>[=<action list>]
+  COMMAND: @break[/<switches>] <boolean>[=<action list>]
 
   @break stops the execution of further commands in the current action
   list if its argument is a true value.  It doesn't affect new queue
   entries made by previous commands in the action list.  Very useful to
   people who don't like @switch. If <action list> is given, they are
   executed instead of the rest of the commands in the current action list.
+
+  The following switches are available:
+
+    /inline   - Evaluates <action list>, if present, inline.
+    /queued   - Queues any <action list> to be evaluated in the next
+                queue cycle (default).
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@break %0;@pemit %#=After
@@ -3368,11 +3380,11 @@ Related Topics: @name.
 & @PROGRAM2
 @PROGRAM (continued)
 
-  As you can see, this command basically takes what a user types at the
-  prompt, stuffs it into %0 in the code in <obj/attr>, and then triggers
-  that attribute. Note that when @program triggers an attribute, the enactor
-  of that triggered attribute is <player>, and is inserted into %#.
-  r-registers are preserved when @program triggers an attribute.
+  As you can see, this command takes what a user types at the prompt and
+  passes it as %0 into the code in <obj/attr> -- which it then triggers.
+  Note that when @program triggers an attribute, the enactor of that
+  triggered attribute is <player>, and is inserted into %#.  r-registers
+  are preserved when @program triggers an attribute.
 
   An optional message, <prefix>, may be specified and will be output before
   the @program prompt. This is useful for telling the user what information
@@ -6166,7 +6178,7 @@ CREATE()
 
   Topic: CREDITS
 
-TinyMUX 2.10 is based on TinyMUX 2.9. It is currently maintained by
+TinyMUX 2.12 is based on TinyMUX 2.10. It is currently maintained by
 Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
@@ -11153,6 +11165,7 @@ POWERS LIST
   halt              Can @halt anything, and @halt/all.
   hide              DARK flag is effective for hiding.
   idle              No idle timeout.
+  immutable         No attributes may change (1).
   long_fingers      Can get, look, whisper, etc from a distance.
 
 { 'help powers list2' for more }
@@ -11174,6 +11187,10 @@ POWERS LIST (continued)
   tel_anywhere      Can teleport anywhere.
   tel_anything      Can teleport anything (includes tel_anywhere)
   unkillable        Cannot be killed with the 'kill' command.
+
+  Footnotes:
+
+    (1) The immutable power is only available with --enable-firanmux.
 
   Related Topics: @power
 
@@ -13245,7 +13262,7 @@ SUBSTITUTIONS (continued)
 
     %|      A string piped from the previous command in a pipe.
 
-  Note that %va-%vz is equivalent to [get(%!/a)-[get(%!/z)], and %=<name> is
+  Note that %va-%vz is equivalent to [get(%!/a)]-[get(%!/z)], and %=<name> is
   equivalent to [get(%!/name)].  The substitutions forms are more efficient.
   Note that %=<name> supports single-letter attributes names while [v(name)]
   does not. For attribute names longer than one character, %=<name>,

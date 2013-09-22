@@ -628,14 +628,14 @@ const UTF8 *latin2_utf8[256] =
    T("\x74"),         T("\x75"),         T("\x76"),         T("\x77"),
    T("\x78"),         T("\x79"),         T("\x7A"),         T("\x7B"),
    T("\x7C"),         T("\x7D"),         T("\x7E"),         T("\x7F"),
-   T("\x80"),         T("\x81"),         T("\x82"),         T("\x83"),
-   T("\x84"),         T("\x85"),         T("\x86"),         T("\x87"),
-   T("\x88"),         T("\x89"),         T("\x8A"),         T("\x8B"),
-   T("\x8C"),         T("\x8D"),         T("\x8E"),         T("\x8F"),
-   T("\x90"),         T("\x91"),         T("\x92"),         T("\x93"),
-   T("\x94"),         T("\x95"),         T("\x96"),         T("\x97"),
-   T("\x98"),         T("\x99"),         T("\x9A"),         T("\x9B"),
-   T("\x9C"),         T("\x9D"),         T("\x9E"),         T("\x9F"),
+   T("\xC2\x80"),     T("\xC2\x81"),     T("\xC2\x82"),     T("\xC2\x83"),
+   T("\xC2\x84"),     T("\xC2\x85"),     T("\xC2\x86"),     T("\xC2\x87"),
+   T("\xC2\x88"),     T("\xC2\x89"),     T("\xC2\x8A"),     T("\xC2\x8B"),
+   T("\xC2\x8C"),     T("\xC2\x8D"),     T("\xC2\x8E"),     T("\xC2\x8F"),
+   T("\xC2\x90"),     T("\xC2\x91"),     T("\xC2\x92"),     T("\xC2\x93"),
+   T("\xC2\x94"),     T("\xC2\x95"),     T("\xC2\x96"),     T("\xC2\x97"),
+   T("\xC2\x98"),     T("\xC2\x99"),     T("\xC2\x9A"),     T("\xC2\x9B"),
+   T("\xC2\x9C"),     T("\xC2\x9D"),     T("\xC2\x9E"),     T("\xC2\x9F"),
    T("\xC2\xA0"),     T("\xC4\x84"),     T("\xCB\x98"),     T("\xC5\x81"),
    T("\xC2\xA4"),     T("\xC4\xBD"),     T("\xC5\x9A"),     T("\xC2\xA7"),
    T("\xC2\xA8"),     T("\xC5\xA0"),     T("\xC5\x9E"),     T("\xC5\xA4"),
@@ -987,6 +987,60 @@ const char *ConvertToLatin2(const UTF8 *pString)
     }
     *q = '\0';
     return buffer;
+}
+
+/*! \brief Return ConsoleWidth property for single code point.
+ *
+ * \param pCodePoint   UTF8 string.
+ * \return             Width to allow in formatting.
+ */
+
+int ConsoleWidth(__in const UTF8 *pCodePoint)
+{
+    const UTF8 *p = pCodePoint;
+    int iState = TR_WIDTHS_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_widths_itt[(unsigned char)ch];
+        unsigned short iOffset = tr_widths_sot[iState];
+        for (;;)
+        {
+            int y = tr_widths_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = tr_widths_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = tr_widths_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_WIDTHS_ACCEPTING_STATES_START);
+    return (iState - TR_WIDTHS_ACCEPTING_STATES_START);
 }
 
 // 16-bit RGB --> Y'UV

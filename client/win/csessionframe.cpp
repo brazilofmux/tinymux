@@ -50,7 +50,7 @@ LRESULT CALLBACK CSessionFrame::SessionWndProc(HWND hWnd, UINT message, WPARAM w
             pWnd = NULL;
         }
         break;
-    
+
     default:
         lRes = pWnd->DefaultMDIChildHandler(message, wParam, lParam);
         break;

@@ -1,4 +1,4 @@
-@@		SGP V1.0 - 1 August 2000 (updated 042501)
+@@      SGP V1.0 - 1 August 2000 (updated 042501)
 @@
 @@ ----  SGP - Main Object Installer  ----
 @@

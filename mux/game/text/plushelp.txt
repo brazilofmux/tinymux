@@ -4,20 +4,20 @@ Index
 
   Index of helpfiles, V1.0 (1 AUG 00)
 
-  +beginner      +cnotes        +finger        +finger-setup  +glance  
+  +beginner      +cnotes        +finger        +finger-setup  +glance
   +ic            +info          +info-setup    +knock         +3who*
   +lwho          +shout         +staff         +staff/all     +timestamp
   +timestop      +uptime        +view          +view-setup    +warn
-  +where         +who           @register      BACKGROUNDS    CREDITS        
-  mutter         OOC            PLACES         places-config  places-options 
+  +where         +who           @register      BACKGROUNDS    CREDITS
+  mutter         OOC            PLACES         places-config  places-options
   plook
-  
+
   To get help on any of the listed topics, type '+help <topic>'
 -----------------------------------------------------------------------------
 
 & backgrounds
 ------------------------------------------------------------------------------
-Commands for Setting your Background:                     
+Commands for Setting your Background:
 
   SYNTAX:  +bg <#>                 - Read a background section.
            +bglist                 - List out sections that have been created
@@ -28,7 +28,7 @@ Commands for Setting your Background:
            +bglock <#>             - Locks a background section when finished.
 
   The '<#>' sign in the BG help stands for the number of the section you are
-  working on. The BG commands allows for multiple sections so that your 
+  working on. The BG commands allows for multiple sections so that your
   background can be broken up into reasonably sized pieces of text.
 -----------------------------------------------------------------------------
 
@@ -36,8 +36,8 @@ Commands for Setting your Background:
 ------------------------------------------------------------------------------
 +beginner
 
-  MUSH is new to some of you and probably a little daunting. To ease your 
-  feelings of panic, we offer a very basic list of commands that will get you 
+  MUSH is new to some of you and probably a little daunting. To ease your
+  feelings of panic, we offer a very basic list of commands that will get you
   looking around and using the various features of the game.
 
     "<message>                You say <message>.
@@ -46,14 +46,14 @@ Commands for Setting your Background:
     page <person>=<message>   Pages <person> with <message>.
     look                      Shows you the room you are standing in.
     look <object or person>   Shows the desc for that object or person.
-    pose <message>            You pose <message> EX: pose grins.->John Doe 
+    pose <message>            You pose <message> EX: pose grins.->John Doe
                               grins.
     :<message>                See 'pose" above
     WHO                       Shows a list of who is connected to the MUSH.
     +staff                    Shows connected Staff.
     +staff/all                Shows the staff roster.
 
-  NOTE: MUSH commands may be case sensitive. You can always page a staffer 
+  NOTE: MUSH commands may be case sensitive. You can always page a staffer
   for help.
 
   '+beginner' also recalls this file
@@ -63,68 +63,68 @@ Commands for Setting your Background:
 ------------------------------------------------------------------------------
 +cnotes
 
-  SYNTAX: +cnotelist             - Gives you a list of all cnotes on your 
+  SYNTAX: +cnotelist             - Gives you a list of all cnotes on your
                                    character object.
           +cnoteview <notename>  - Shows you the contents of the named cnote.
-          +cnote <notename>=text - Sets &cnote<notename> on the player to the 
-                                   value of the text with person and time 
+          +cnote <notename>=text - Sets &cnote<notename> on the player to the
+                                   value of the text with person and time
                                    added.
-                        
-  To set notes on rooms, exits, and other objects that you own, set an 
+
+  To set notes on rooms, exits, and other objects that you own, set an
   attribute: &CNOTE_<notename> <object>=<text>
 
-  Please note that some cnotes require staff approval before they can go into 
-  effect ICly.  Consult a member of staff for assistance.  
+  Please note that some cnotes require staff approval before they can go into
+  effect ICly.  Consult a member of staff for assistance.
 -----------------------------------------------------------------------------
 
 & CREDITS
 ------------------------------------------------------------------------------
 Credits
 
-  SGP is a broad, cross platform coding effort with numerous contributors.  
-  Current contributors of code and assistance in testing, writing helpfiles, 
+  SGP is a broad, cross platform coding effort with numerous contributors.
+  Current contributors of code and assistance in testing, writing helpfiles,
   and pithy comments are as follows:
 
-    Audumla@Everywhere   --A little bit of everything, +staff and +staff/all, 
+    Audumla@Everywhere   --A little bit of everything, +staff and +staff/all,
                            +beginner, +version, and installer files.
-    BEM@Granite          --Much of the base code including +who, joining 
-                           and summon commands, debugging. 
+    BEM@Granite          --Much of the base code including +who, joining
+                           and summon commands, debugging.
     Miateila@Granite     --+finger and LOTS of pithy commentary
-    Hilikiradi@Sandbox   --Debugging, Penn platform tests, +cnotes, 
-                           +lwho, PLACES upgrades, and installer files. 
+    Hilikiradi@Sandbox   --Debugging, Penn platform tests, +cnotes,
+                           +lwho, PLACES upgrades, and installer files.
     Brazil@Everywhere    --MUX 2.0 issues
     Talek, Javelin, Raevnos, David,
     Vexon@M*U*S*H        --Penn Issues
     Ashen-Shugar         --RhostMUSH Issues, +motd
-    Lilith@Sandbox       --Debugging, @register 
+    Lilith@Sandbox       --Debugging, @register
     Hunger@Pacifica      --Debugging, Aesthetics
-    Jeff@TSC             --+version, @crontab 
+    Jeff@TSC             --+version, @crontab
 ------------------------------------------------------------------------------
 
-& +finger 
+& +finger
 ------------------------------------------------------------------------------
-+finger 
++finger
 
   SYNTAX: +finger <name>
-           
 
-  This command shows you various bits of information about and will also 
-  accept "me" as an argument.  +finger is generally a command that notes OOC 
-  information and should not be considered IC unless game policy 
+
+  This command shows you various bits of information about and will also
+  accept "me" as an argument.  +finger is generally a command that notes OOC
+  information and should not be considered IC unless game policy
   specifically says otherwise.
 
-  See Also '+finger-setup' for configuration options.  
+  See Also '+finger-setup' for configuration options.
 -----------------------------------------------------------------------------
 
 & +finger-setup
 ------------------------------------------------------------------------------
 Finger Setup
-  
+
   Attributes read by this command:
-        
-  E-MAIL:              Your email address (optional)   
+
+  E-MAIL:              Your email address (optional)
   POSITION:            Your Position
-  SHORT-DESC:          A short description of yourself  
+  SHORT-DESC:          A short description of yourself
   FULLNAME:            Your character's full name.
   AGE:                 Your real age
   FAME:                What you are known for.
@@ -140,25 +140,25 @@ Finger Setup
   URL:                 Your homepage, if any.
   &FINGER-<whatever>:  Let's you add other fields.
 
-  AFINGER:     Similar to @adesc, gets triggered when someone +fingers 
-               you.%%0 is the name of the person who +fingered you, 
+  AFINGER:     Similar to @adesc, gets triggered when someone +fingers
+               you.%%0 is the name of the person who +fingered you,
                %%1 is their dbref.
 -----------------------------------------------------------------------------
 
-& +glance 
+& +glance
 ------------------------------------------------------------------------------
 +glance
 
-  SYNTAX: +glance 
+  SYNTAX: +glance
 
-  Displays displays the &SHORT-DESC attributes of objects and connected 
-  players in your present location.  Idle times of players are shown.  
-  &SHORT-DESC information is truncated to 50 characters. 
+  Displays displays the &SHORT-DESC attributes of objects and connected
+  players in your present location.  Idle times of players are shown.
+  &SHORT-DESC information is truncated to 50 characters.
 -----------------------------------------------------------------------------
 
 & +ic
 ------------------------------------------------------------------------------
-+ic 
++ic
 
   SYNTAX: +ic
 
@@ -172,30 +172,30 @@ Finger Setup
   SYNTAX: +info           Show you the info that you have set on yourself.
           +info <player>  Shows you info set on other characters.
 
-  +info allows you to set information on yourself that would be useful to 
-  other players without them having them page you for it. This is an 
-  /excellent/ way to tell other players about pertinent merits, flaws, or 
-  other things that /would/ affect the way that they might interact with you, 
+  +info allows you to set information on yourself that would be useful to
+  other players without them having them page you for it. This is an
+  /excellent/ way to tell other players about pertinent merits, flaws, or
+  other things that /would/ affect the way that they might interact with you,
   yet would not be appropriate to place in your @desc.
 
-  Players should make a brief mention like "+info set" at the end of their 
+  Players should make a brief mention like "+info set" at the end of their
   @desc, so that others may know to look.
 
   See Also: +info-setup
------------------------------------------------------------------------------  
+-----------------------------------------------------------------------------
 
 & +info-setup
 ------------------------------------------------------------------------------
 +info setup
 
-  To set info on yourself, set it as an attribute &INFO-<category>.  General 
-  info can be seen by anyone. More specific info is set in the same way, 
-  except you use who should be able to see it instead of 'general'. Possible 
+  To set info on yourself, set it as an attribute &INFO-<category>.  General
+  info can be seen by anyone. More specific info is set in the same way,
+  except you use who should be able to see it instead of 'general'. Possible
   things to use are: race, factions, clans, tribes, and traditions.:
 
-  &info-general me=A wandering bum, usually seen in the dirtier parts of 
+  &info-general me=A wandering bum, usually seen in the dirtier parts of
 the streets.
-  &info-camarilla me=This is the Gangrel Primogen, and as such, is a very 
+  &info-camarilla me=This is the Gangrel Primogen, and as such, is a very
 noted member of the Camarilla...
   &info-garou me=This character has a Pure Breed 4.
 -----------------------------------------------------------------------------
@@ -206,11 +206,11 @@ noted member of the Camarilla...
 
   SYNTAX: +knock <exit name or alias>
 
-  This command will allow you to 'knock' on any door in the MUSH. The players 
-  on the other side of the door will get an emit telling them that someone is 
-  knocking on the door. 
+  This command will allow you to 'knock' on any door in the MUSH. The players
+  on the other side of the door will get an emit telling them that someone is
+  knocking on the door.
 
-  NOTE: Using this command on the street grid on exits like South <S> is very 
+  NOTE: Using this command on the street grid on exits like South <S> is very
   silly and people will think that you are dumb if you do.
 -----------------------------------------------------------------------------
 
@@ -219,33 +219,33 @@ noted member of the Camarilla...
 mp - multipaging:
 
   SYNTAX:  mp <names>=<message> - Allows multipaging to a list of players
-           mp <message>         - Allows multipaging to the last group of 
+           mp <message>         - Allows multipaging to the last group of
                                   players multipaged.
 -----------------------------------------------------------------------------
 
 & mutter
 ------------------------------------------------------------------------------
 mutter
-  
+
   SYNTAX: mutter <target>=<string>
           mutter/tt <target>=<string>
           mutter/place <place number>=<string>
 
-  The first form of this command behaves identically to "whisper", except 
-  that the other players in the room will see that you have said something. 
-  A regular message, or part of a pose enclosed in "quotes", will have some 
-  of its words or groups of words replaced by "..." If you enclose a phrase 
-  with <angle brackets>, it will not be replaced. Poses without "quotes" 
-  will simply show that you have muttered something. <target> can be any 
+  The first form of this command behaves identically to "whisper", except
+  that the other players in the room will see that you have said something.
+  A regular message, or part of a pose enclosed in "quotes", will have some
+  of its words or groups of words replaced by "..." If you enclose a phrase
+  with <angle brackets>, it will not be replaced. Poses without "quotes"
+  will simply show that you have muttered something. <target> can be any
   player in the same room as you.
 
-  The second form of this command behaves like the first, except that instead 
-  of the entire room hearing the mutter, only people at a place will do so. 
-  If you are at a place, those at your place will hear the mutter;if you are 
-  not, and the target is, those at that place will hear the mutter. If 
+  The second form of this command behaves like the first, except that instead
+  of the entire room hearing the mutter, only people at a place will do so.
+  If you are at a place, those at your place will hear the mutter;if you are
+  not, and the target is, those at that place will hear the mutter. If
   neither of you are at a place, an error message will be generated.
 
-  The final version of this command allows everyone at a place to hear the 
+  The final version of this command allows everyone at a place to hear the
   message in full, while the rest of the room hears the mutter.
 
   This code was written by Deirdre@AmberMUSH.
@@ -276,9 +276,9 @@ Out of Character speech:
 
   SYNTAX:  ooc <message>
            ' <message>
-  
+
   Allows a player to speak or pose OOCly or out of character.
-         
+
 -----------------------------------------------------------------------------
 
 & places
@@ -294,11 +294,11 @@ PLACES
            Depart                      Removes you from your place.
            Places                      Lists who's present at all places.
            Place <num>                 Lists who's present at place <num>.
-           Plook                       Lists in column format everyone around the 
+           Plook                       Lists in column format everyone around the
                               room.
            Plook <num>                 Lists name of <num> and virtual desc.
            tt <message>                (Tete a tete) Relays a message to all those at
-                              your place. This command takes the usual 
+                              your place. This command takes the usual
                               say/pose tokens, and TT |<message> will emit.
            ttooc <message>             (Tete a tete) Relays an OOC message
            Update <#>/<Option>=<text>  See '+help places-options'
@@ -309,29 +309,29 @@ PLACES
 
   For installation help, type '+help places-config'.
 
-  This code originally provided courtesy of Deirdre, Meg, and Osric of 
+  This code originally provided courtesy of Deirdre, Meg, and Osric of
   AmberMUSH. It has since been editted by Angel@Heaven
 -----------------------------------------------------------------------------
 
 & places-config
 ------------------------------------------------------------------------------
 PLACES configuration:
-  
+
   SYNTAX: Configure <num> places
           Unconfigure places
 
-  Notes: A null fixed message means vacancies can be moved freely to and from 
-  the place.  This does not make sense for things like couches and rugs.  Set 
+  Notes: A null fixed message means vacancies can be moved freely to and from
+  the place.  This does not make sense for things like couches and rugs.  Set
   it to something like "That makes no sense." if you are using such a place.
 
-  (O)Join and (O)depart messages take like this: %%N. All Join and Depart 
+  (O)Join and (O)depart messages take like this: %%N. All Join and Depart
   messages are appended with the place name.
 
-  Functions:  WHICHPLACE(<loc num>,<dbnum>) gives the number of a place where 
+  Functions:  WHICHPLACE(<loc num>,<dbnum>) gives the number of a place where
               <dbnum> is.
-              ATPLACE(<loc num>,<place num>) gives you a list of things at a 
+              ATPLACE(<loc num>,<place num>) gives you a list of things at a
               place.
-              PLACEINFO(<loc num>,<place num>,<option>) gives the value of 
+              PLACEINFO(<loc num>,<place num>,<option>) gives the value of
               <option> at place.
 -----------------------------------------------------------------------------
 
@@ -353,7 +353,7 @@ PLACES configuration:
   Depart message        DEPART          You stand and leave <place>.
   Odepart message       ODEPART         stands and leaves <place>.
   Say prefix            PREFIX          At your table
-  Description           DESCRIBE        A table with 4 legs and some chairs 
+  Description           DESCRIBE        A table with 4 legs and some chairs
 -----------------------------------------------------------------------------
 
 & plook
@@ -365,9 +365,9 @@ plook
 
   The first form gives you a list of places, in a three column format.
 
-  The second form takes the number of the place as an argument, and gives the 
-  name and description of the virtual place. Descriptions are in the final 
-  field of the PLACE# attribute on the room, after the | in the list of 
+  The second form takes the number of the place as an argument, and gives the
+  name and description of the virtual place. Descriptions are in the final
+  field of the PLACE# attribute on the room, after the | in the list of
   information.
 -----------------------------------------------------------------------------
 
@@ -376,8 +376,8 @@ plook
 
   SYNTAX: @register <RL Name>=<email>=<alts>
 
-  All players must be registered and read and accept the conditions found in 
-  'news AUP' before they are allowed out of the Registration room. 
+  All players must be registered and read and accept the conditions found in
+  'news AUP' before they are allowed out of the Registration room.
   Unregistered character objects become subject to nuking at any time.
 -----------------------------------------------------------------------------
 
@@ -387,26 +387,26 @@ plook
 
   SYNTAX: +selfboot
 
-  This command allows you to boot 'ghost' connections that are usually caused 
-  by dropped connections to your ISP.  
+  This command allows you to boot 'ghost' connections that are usually caused
+  by dropped connections to your ISP.
 -----------------------------------------------------------------------------
 
 & +shout
 ------------------------------------------------------------------------------
 +shout
-  
+
   SYNTAX: +shout <message>
 
-  This command will allow you to shout a message so that is is heard in 
+  This command will allow you to shout a message so that is is heard in
   adjacent rooms. Codewise, it propogates a given message through all non-
   audible exits leading from the room of the enactor.
 
-  NOTE: People in adjacent rooms will not know who is shouting, but will be 
+  NOTE: People in adjacent rooms will not know who is shouting, but will be
   told that 'A man', 'A woman', or 'Someone" is shouting.
 
   Overuse of this command can be very annoying to others.
 
-  If you want to 'sound proof' an exit, to prevent a shout from being heard 
+  If you want to 'sound proof' an exit, to prevent a shout from being heard
   through a particular exit, add &NO_SHOUT <exit name>=1.
 -----------------------------------------------------------------------------
 
@@ -416,7 +416,7 @@ plook
 
   SYNTAX: +staff
 
-  This command shows all connected staff who are not set DARK, along with 
+  This command shows all connected staff who are not set DARK, along with
   their alias, staff position, duty status, and how long they have been idle.
 -----------------------------------------------------------------------------
 
@@ -426,8 +426,8 @@ plook
 
   SYNTAX: +staff/all
 
-  This command shows all staff along with their alias, staff position, and if 
-  they are connected or not.  For offline or DARK staff, it displays when they 
+  This command shows all staff along with their alias, staff position, and if
+  they are connected or not.  For offline or DARK staff, it displays when they
   were last connected.
 -----------------------------------------------------------------------------
 
@@ -435,8 +435,8 @@ plook
 ------------------------------------------------------------------------------
 +timestamp
 
-  SYNTAX: +timestamp      
-  
+  SYNTAX: +timestamp
+
   Allows a player to read their current timestamps.
 -----------------------------------------------------------------------------
 
@@ -444,18 +444,18 @@ plook
 ------------------------------------------------------------------------------
 +timestop
 
-  SYNTAX:  +timestop     
+  SYNTAX:  +timestop
            +resume
-           
-           
-  +timestop create a timestop object and drops it in the room where the 
-  timestop was requested.  Staff is notified.  The object itself will appear 
+
+
+  +timestop create a timestop object and drops it in the room where the
+  timestop was requested.  Staff is notified.  The object itself will appear
   in the location as:  TIMESTOP: <player> <timestamp> <location>
 
   +resume removes _all_ timestops from the room in which it is used.
 -----------------------------------------------------------------------------
 
-& +uptime 
+& +uptime
 ------------------------------------------------------------------------------
 +uptime
 
@@ -471,14 +471,14 @@ plook
            +view <object>         Lists all views on a particular object.
            +view <object>/<view>  Reads a view.
 
-  Setting viewable objects using this code allows for greater detail to be 
-  coded into a room without requiring huge, spammy descriptions. +view may 
+  Setting viewable objects using this code allows for greater detail to be
+  coded into a room without requiring huge, spammy descriptions. +view may
   also be set on characters.
 
   Be sure to add "+view items" to your @descs so people know to look at them.
 
   See Also: '+help +view-setup'
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
 & +view-setup
 ------------------------------------------------------------------------------
@@ -488,19 +488,19 @@ Setting views:
 
                &view-<name of view> <object>=<text>
 
-  An example:  &view-painting here=You see a painting hanging on the walls, 
+  An example:  &view-painting here=You see a painting hanging on the walls,
   that seems to be done in an Impressionist tone...
 
         To erase a view, simply leave the <text> area blank.
 
-  You may also set messages to be displayed to other players when a view is 
-  looked at. This is just like setting a view, but the attribute is called 
+  You may also set messages to be displayed to other players when a view is
+  looked at. This is just like setting a view, but the attribute is called
   &oview.
 
-  An example.  &oview-painting here=takes a look at the painting hanging on 
+  An example.  &oview-painting here=takes a look at the painting hanging on
   the wall.
 
-  Mary and Fred are in a room and Mary does a "+view here/painting" 
+  Mary and Fred are in a room and Mary does a "+view here/painting"
   Fred would see 'Mary takes a look at the painting hanging on the wall.'
 -----------------------------------------------------------------------------
 
@@ -508,14 +508,14 @@ Setting views:
 ------------------------------------------------------------------------------
 +warn
 
-  SYNTAX:   +warn <player>         
-  
+  SYNTAX:   +warn <player>
+
   Issues an anonymous OOC warning of impending danger to the named player.
 
-  This is only a generic warning -- players are encouraged to page or @pemit 
-  more specific messages, but this will suffice in a pinch. Do not use this 
-  command flippantly. Give players ample time to make up their minds. This is 
-  to be used BEFORE a timestop occurs. The command DOES display a message to 
+  This is only a generic warning -- players are encouraged to page or @pemit
+  more specific messages, but this will suffice in a pinch. Do not use this
+  command flippantly. Give players ample time to make up their minds. This is
+  to be used BEFORE a timestop occurs. The command DOES display a message to
   staff when used.
 -----------------------------------------------------------------------------
 
@@ -532,10 +532,10 @@ Setting views:
 ------------------------------------------------------------------------------
 +lwho
 
-  SYNTAX: +lwho 
+  SYNTAX: +lwho
 
-  This commands information as that displayed by +who, but only shows the 
-  players in the same room. 
+  This commands information as that displayed by +who, but only shows the
+  players in the same room.
 -----------------------------------------------------------------------------
 
 & +who
@@ -545,14 +545,14 @@ Setting views:
   SYNTAX: +who
           +who <string>
 
-  This command displays Player, Gender, Alias, Idletime, Location, dbref of 
+  This command displays Player, Gender, Alias, Idletime, Location, dbref of
   location if findable and set JUMP_OK, and if the player is also staff.
 
   The second version of this command accepts an argument and allow you to see
   only connected players who match the argument given, such as looking for all
   players whose names start with an 'm'.
 
-  The staff version of this code shows DARK staff, location, and dbref of 
+  The staff version of this code shows DARK staff, location, and dbref of
   locations.
 ------------------------------------------------------------------------------
 
@@ -562,7 +562,7 @@ Setting views:
 
   SYNTAX: +where
 
-  Shows the location of all findable players on the mush.  It sorts the list 
-  by location and does not show DARK, UNFINDABLE, or those in UNFINDABLE 
+  Shows the location of all findable players on the mush.  It sorts the list
+  by location and does not show DARK, UNFINDABLE, or those in UNFINDABLE
   locations.
 -----------------------------------------------------------------------------

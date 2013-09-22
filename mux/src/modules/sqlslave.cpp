@@ -27,7 +27,7 @@ public:
     // mux_IMarshal
     //
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
-    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx);
     virtual MUX_RESULT UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv);
     virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
     virtual MUX_RESULT DisconnectObject(void);
@@ -48,6 +48,12 @@ private:
 #if defined(HAVE_MYSQL)
     MYSQL          *m_database;
 #endif // HAVE_MYSQL
+    const UTF8     *m_pServer;
+    const UTF8     *m_pDatabase;
+    const UTF8     *m_pUser;
+    const UTF8     *m_pPassword;
+
+    void ConnectionHelper();
 };
 
 static INT32 g_cComponents  = 0;
@@ -127,11 +133,23 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
     // Advertise our components.
     //
     MUX_RESULT mr = mux_RegisterClassObjects(NUM_CLASSES, sum_classes, NULL);
+#if defined(HAVE_MYSQL)
+    if (MUX_SUCCEEDED(mr))
+    {
+        if (mysql_library_init(0, NULL, NULL))
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+#endif
     return mr;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
+#if defined(HAVE_MYSQL)
+    mysql_library_end();
+#endif
     return mux_RevokeClassObjects(NUM_CLASSES, sum_classes);
 }
 
@@ -142,6 +160,11 @@ CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
 #if defined(HAVE_MYSQL)
     m_database = NULL;
 #endif // HAVE_MYSQL
+    m_pServer = NULL;
+    m_pDatabase = NULL;
+    m_pUser = NULL;
+    m_pPassword = NULL;
+
     g_cComponents++;
 }
 
@@ -165,6 +188,14 @@ CQueryServer::~CQueryServer()
         mysql_close(m_database);
         m_database = NULL;
     }
+    delete [] m_pServer;
+    m_pServer = NULL;
+    delete [] m_pDatabase;
+    m_pDatabase = NULL;
+    delete [] m_pUser;
+    m_pUser = NULL;
+    delete [] m_pPassword;
+    m_pPassword = NULL;
 #endif // HAVE_MYSQL
 
     g_cComponents--;
@@ -364,30 +395,6 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 {
                     ReturnFrame.mr = MUX_E_OUTOFMEMORY;
                 }
-
-                if (NULL != pServer)
-                {
-                    delete [] pServer;
-                    pServer = NULL;
-                }
-
-                if (NULL != pDatabase)
-                {
-                    delete [] pDatabase;
-                    pDatabase = NULL;
-                }
-
-                if (NULL != pUser)
-                {
-                    delete [] pUser;
-                    pUser = NULL;
-                }
-
-                if (NULL != pPassword)
-                {
-                    delete [] pPassword;
-                    pPassword = NULL;
-                }
             }
             Pipe_EmptyQueue(pqi);
             Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
@@ -508,7 +515,7 @@ MUX_RESULT CQueryControl_Msg(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     return CQueryControl_Call(pci, pqi);
 }
 
-MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     // Parameter validation and initialization.
     //
@@ -528,7 +535,15 @@ MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal
     else
     {
         mux_IQueryControl *pIQueryControl = NULL;
-        mr = QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        if (NULL == pv)
+        {
+            mr = QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        }
+        else
+        {
+            mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
+            mr = pIUnknown->QueryInterface(IID_IQueryControl, (void **)&pIQueryControl);
+        }
         if (MUX_SUCCEEDED(mr))
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
@@ -594,45 +609,71 @@ MUX_RESULT CQueryServer::DisconnectObject(void)
 
 MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
+    // Free any previous Server/Database/User/Password values.
+    //
+    delete [] m_pServer;
+    m_pServer = NULL;
+    delete [] m_pDatabase;
+    m_pDatabase = NULL;
+    delete [] m_pUser;
+    m_pUser = NULL;
+    delete [] m_pPassword;
+    m_pPassword = NULL;
+
+    // Save new Server/Database/User/Password values.  These are used later if reconnection is necessary.
+    //
+    m_pServer = pServer;
+    delete [] m_pDatabase;
+    m_pDatabase = pDatabase;
+    delete [] m_pUser;
+    m_pUser = pUser;
+    delete [] m_pPassword;
+    m_pPassword = pPassword;
+
 #if defined(HAVE_MYSQL)
-    if ('\0' != pServer[0])
+    // Close any existing session.
+    //
+    if (NULL != m_database)
     {
-        m_database = mysql_init(NULL);
-
-        if (NULL != m_database)
-        {
-#ifdef MYSQL_OPT_RECONNECT
-            // As of MySQL 5.0.3, the default is no longer to reconnect.
-            //
-            my_bool reconnect = 1;
-            mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
-#endif
-            mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
-
-            if (mysql_real_connect(m_database, (char *)pServer, (char *)pUser,
-                 (char *)pPassword, (char *)pDatabase, 0, NULL, 0) == 0)
-            {
-                mysql_close(m_database);
-                m_database = NULL;
-            }
-            else
-            {
-#ifdef MYSQL_OPT_RECONNECT
-                // Before MySQL 5.0.19, mysql_real_connect sets the option
-                // back to default, so we set it again.
-                //
-                mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
-#endif
-            }
-        }
+        mysql_close(m_database);
+        m_database = NULL;
     }
-#else // HAVE_MYSQL
-    UNUSED_PARAMETER(pServer);
-    UNUSED_PARAMETER(pDatabase);
-    UNUSED_PARAMETER(pUser);
-    UNUSED_PARAMETER(pPassword);
+
+    m_database = mysql_init(NULL);
+
+    if (NULL != m_database)
+    {
+        ConnectionHelper();
+    }
 #endif // HAVE_MYSQL
     return MUX_S_OK;
+}
+
+void CQueryServer::ConnectionHelper()
+{
+#if defined(HAVE_MYSQL)
+    if ('\0' != m_pServer[0])
+    {
+#ifdef MYSQL_OPT_RECONNECT
+        // As of MySQL 5.0.3, the default is no longer to reconnect.
+        //
+        my_bool reconnect = 1;
+        mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
+        mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
+
+        if (mysql_real_connect(m_database, (char *)m_pServer, (char *)m_pUser,
+             (char *)m_pPassword, (char *)m_pDatabase, 0, NULL, 0) != 0)
+        {
+#ifdef MYSQL_OPT_RECONNECT
+            // Before MySQL 5.0.19, mysql_real_connect sets the option
+            // back to default, so we set it again.
+            //
+            mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+#endif
+        }
+    }
+#endif
 }
 
 MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
@@ -671,11 +712,32 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
     {
         iError = QS_NO_SESSION;
     }
-    else if (mysql_ping(m_database) != 0)
+    else
     {
-        iError = QS_SQL_UNAVAILABLE;
+        unsigned long lThreadId_before = mysql_thread_id(m_database);
+        if (mysql_ping(m_database) != 0)
+        {
+            // Attempt our own reconnection.
+            //
+            ConnectionHelper();
+            if (mysql_ping(m_database) != 0)
+            {
+                iError = QS_SQL_UNAVAILABLE;
+            }
+        }
+        else
+        {
+            unsigned long lThreadId_after = mysql_thread_id(m_database);
+            if (lThreadId_before != lThreadId_after)
+            {
+                // Respond to detected reconnection.
+                //
+            }
+        }
     }
-    else if (mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) != 0)
+
+    if (  QS_SUCCESS == iError
+       && mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) != 0)
     {
         iError = QS_QUERY_ERROR;
     }
@@ -908,10 +970,11 @@ MUX_RESULT CQuerySinkProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx,
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQuerySinkProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CQuerySinkProxy::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marshal_context ctx)
 {
     UNUSED_PARAMETER(pqi);
     UNUSED_PARAMETER(riid);
+    UNUSED_PARAMETER(pv);
     UNUSED_PARAMETER(ctx);
 
     // This should only be called on the component side.
