@@ -43,9 +43,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #define _PCRE_H
 
 #define PCRE_MAJOR          6
-#define PCRE_MINOR          6
+#define PCRE_MINOR          7
 #define PCRE_PRERELEASE
-#define PCRE_DATE           06-Feb-2006
+#define PCRE_DATE           04-Jul-2006
 
 #define SUPPORT_UTF8
 
@@ -75,6 +75,10 @@ it is needed here for malloc. */
 #define PCRE_DFA_SHORTEST       0x00010000
 #define PCRE_DFA_RESTART        0x00020000
 #define PCRE_FIRSTLINE          0x00040000
+#define PCRE_DUPNAMES           0x00080000
+#define PCRE_NEWLINE_CR         0x00100000
+#define PCRE_NEWLINE_LF         0x00200000
+#define PCRE_NEWLINE_CRLF       0x00300000
 
 /* Exec-time and get/set-time error codes */
 
