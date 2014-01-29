@@ -17,14 +17,14 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 106866 included, 1007246 excluded, 0 errors.
-// 215 states, 95 columns, 3949 bytes
+// 108944 included, 1005168 excluded, 0 errors.
+// 231 states, 95 columns, 4141 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (215)
+#define CL_PRINT_ACCEPTING_STATES_START (231)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned short cl_print_sot[215];
-extern const unsigned char cl_print_sbt[3263];
+extern const unsigned short cl_print_sot[231];
+extern const unsigned char cl_print_sbt[3423];
 
 // utf/cl_AttrNameInitial.txt
 //
@@ -50,25 +50,25 @@ extern const unsigned char cl_attrname_sbt[50];
 
 // utf/cl_ObjectName.txt
 //
-// 87028 included, 1027084 excluded, 0 errors.
-// 32 states, 63 columns, 639 bytes
+// 87250 included, 1026862 excluded, 0 errors.
+// 32 states, 63 columns, 643 bytes
 //
 #define CL_OBJECTNAME_START_STATE (0)
 #define CL_OBJECTNAME_ACCEPTING_STATES_START (32)
 extern const unsigned char cl_objectname_itt[256];
 extern const unsigned short cl_objectname_sot[32];
-extern const unsigned char cl_objectname_sbt[319];
+extern const unsigned char cl_objectname_sbt[323];
 
 // utf/cl_PlayerName.txt
 //
-// 86961 included, 1027151 excluded, 0 errors.
-// 31 states, 57 columns, 622 bytes
+// 87183 included, 1026929 excluded, 0 errors.
+// 31 states, 58 columns, 626 bytes
 //
 #define CL_PLAYERNAME_START_STATE (0)
 #define CL_PLAYERNAME_ACCEPTING_STATES_START (31)
 extern const unsigned char cl_playername_itt[256];
 extern const unsigned short cl_playername_sot[31];
-extern const unsigned char cl_playername_sbt[304];
+extern const unsigned char cl_playername_sbt[308];
 
 // utf/cl_8859_1.txt
 //
@@ -116,14 +116,14 @@ extern const unsigned char cl_hiragana_sbt[51];
 
 // utf/cl_kanji.txt
 //
-// 75394 included, 1038718 excluded, 0 errors.
-// 18 states, 29 columns, 413 bytes
+// 75616 included, 1038496 excluded, 0 errors.
+// 18 states, 30 columns, 417 bytes
 //
 #define CL_KANJI_START_STATE (0)
 #define CL_KANJI_ACCEPTING_STATES_START (18)
 extern const unsigned char cl_kanji_itt[256];
 extern const unsigned char cl_kanji_sot[18];
-extern const unsigned char cl_kanji_sbt[139];
+extern const unsigned char cl_kanji_sbt[143];
 
 // utf/cl_katakana.txt
 //
@@ -138,106 +138,106 @@ extern const unsigned char cl_katakana_sbt[51];
 
 // utf/tr_utf8_ascii.txt
 //
-// 2367 code points.
-// 94 states, 192 columns, 3739 bytes
+// 2538 code points.
+// 99 states, 193 columns, 3885 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (94)
+#define TR_ASCII_ACCEPTING_STATES_START (99)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned short tr_ascii_sot[94];
-extern const unsigned char tr_ascii_sbt[3295];
+extern const unsigned short tr_ascii_sot[99];
+extern const unsigned char tr_ascii_sbt[3431];
 
 // utf/tr_utf8_cp437.txt
 //
-// 2480 code points.
-// 103 states, 193 columns, 7632 bytes
+// 2813 code points.
+// 114 states, 194 columns, 8614 bytes
 //
 #define TR_CP437_START_STATE (0)
-#define TR_CP437_ACCEPTING_STATES_START (103)
+#define TR_CP437_ACCEPTING_STATES_START (114)
 extern const unsigned char tr_cp437_itt[256];
-extern const unsigned short tr_cp437_sot[103];
-extern const unsigned short tr_cp437_sbt[3585];
+extern const unsigned short tr_cp437_sot[114];
+extern const unsigned short tr_cp437_sbt[4065];
 
 // utf/tr_utf8_latin1.txt
 //
-// 2404 code points.
-// 96 states, 192 columns, 7146 bytes
+// 2579 code points.
+// 101 states, 193 columns, 7434 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (96)
+#define TR_LATIN1_ACCEPTING_STATES_START (101)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_sot[96];
-extern const unsigned short tr_latin1_sbt[3349];
+extern const unsigned short tr_latin1_sot[101];
+extern const unsigned short tr_latin1_sbt[3488];
 
 // utf/tr_utf8_latin2.txt
 //
-// 2372 code points.
-// 94 states, 192 columns, 7092 bytes
+// 2543 code points.
+// 99 states, 193 columns, 7374 bytes
 //
 #define TR_LATIN2_START_STATE (0)
-#define TR_LATIN2_ACCEPTING_STATES_START (94)
+#define TR_LATIN2_ACCEPTING_STATES_START (99)
 extern const unsigned char tr_latin2_itt[256];
-extern const unsigned short tr_latin2_sot[94];
-extern const unsigned short tr_latin2_sbt[3324];
+extern const unsigned short tr_latin2_sot[99];
+extern const unsigned short tr_latin2_sbt[3460];
 
 // utf/tr_widths.txt
 //
-// 330647 code points.
-// 206 states, 92 columns, 3703 bytes
+// 332513 code points.
+// 221 states, 91 columns, 3865 bytes
 //
 #define TR_WIDTHS_START_STATE (0)
-#define TR_WIDTHS_ACCEPTING_STATES_START (206)
+#define TR_WIDTHS_ACCEPTING_STATES_START (221)
 extern const unsigned char tr_widths_itt[256];
-extern const unsigned short tr_widths_sot[206];
-extern const unsigned char tr_widths_sbt[3035];
+extern const unsigned short tr_widths_sot[221];
+extern const unsigned char tr_widths_sbt[3167];
 
 // utf/tr_tolower.txt
 //
-// 1029 code points.
-// 46 states, 86 columns, 1713 bytes
+// 1038 code points.
+// 46 states, 86 columns, 1732 bytes
 //
 #define TR_TOLOWER_START_STATE (0)
 #define TR_TOLOWER_ACCEPTING_STATES_START (46)
 extern const unsigned char tr_tolower_itt[256];
 extern const unsigned short tr_tolower_sot[46];
-extern const unsigned char tr_tolower_sbt[1365];
+extern const unsigned char tr_tolower_sbt[1384];
 
 #define TR_TOLOWER_DEFAULT (0)
 #define TR_TOLOWER_LITERAL_START (1)
-#define TR_TOLOWER_XOR_START (16)
-extern const string_desc tr_tolower_ott[100];
+#define TR_TOLOWER_XOR_START (17)
+extern const string_desc tr_tolower_ott[101];
 
 // utf/tr_toupper.txt
 //
-// 1036 code points.
-// 48 states, 90 columns, 1810 bytes
+// 1045 code points.
+// 48 states, 90 columns, 1830 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
 #define TR_TOUPPER_ACCEPTING_STATES_START (48)
 extern const unsigned char tr_toupper_itt[256];
 extern const unsigned short tr_toupper_sot[48];
-extern const unsigned char tr_toupper_sbt[1458];
+extern const unsigned char tr_toupper_sbt[1478];
 
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (14)
-extern const string_desc tr_toupper_ott[105];
+#define TR_TOUPPER_XOR_START (15)
+extern const string_desc tr_toupper_ott[106];
 
 // utf/tr_totitle.txt
 //
-// 1040 code points.
-// 48 states, 90 columns, 1811 bytes
+// 1049 code points.
+// 48 states, 90 columns, 1831 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
 #define TR_TOTITLE_ACCEPTING_STATES_START (48)
 extern const unsigned char tr_totitle_itt[256];
 extern const unsigned short tr_totitle_sot[48];
-extern const unsigned char tr_totitle_sbt[1459];
+extern const unsigned char tr_totitle_sbt[1479];
 
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (14)
-extern const string_desc tr_totitle_ott[103];
+#define TR_TOTITLE_XOR_START (15)
+extern const string_desc tr_totitle_ott[104];
 
 // utf/tr_foldmatch.txt
 //
