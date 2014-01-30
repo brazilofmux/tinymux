@@ -1164,8 +1164,7 @@ void UniData::LoadMappings(void)
                 achIn[0] = pt;
                 achIn[1] = 0;
 
-                size_t cnt = iconv(iconvd, NULL, NULL, NULL, NULL);
-                cnt = iconv(iconvd, &pIn, &nIn, &pOut, &nOut);
+                size_t cnt = iconv(iconvd, &pIn, &nIn, &pOut, &nOut);
                 if (  ((size_t)-1) != cnt
                    && '\0' != achOut[0]
                    && '\0' == achOut[1])
@@ -1347,28 +1346,49 @@ void UniData::SaveMappings()
         {
             if (cp[pt].IsDefined())
             {
-                int   nPoints = 0;
-                UTF32 pts[100];
-                GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
-
                 unsigned char ch;
-                UTF32 pt2;
-                int cnt = 0;
-                for (pt2 = 0; pt2 < nPoints; pt2++)
-                {
-                    if (cp[pts[pt2]].IsMapping(MappingTypeTable[iMapping].Type, ch))
-                    {
-                        cnt++;
-                    }
-                }
-
-                if (  1 == cnt
-                   && cp[pts[0]].IsMapping(MappingTypeTable[iMapping].Type, ch))
+                if (cp[pt].IsMapping(MappingTypeTable[iMapping].Type, ch))
                 {
                     char *pUnicode1Name = cp[pt].GetUnicode1Name();
                     fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
                         cp[pt].GetDescription(),
                         (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                }
+                else
+                {
+                    int   nPoints = 0;
+                    UTF32 pts[100];
+                    GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
+    
+                    UTF32 pt2;
+                    int cnt = 0;
+                    for (pt2 = 0; pt2 < nPoints; pt2++)
+                    {
+                        if (cp[pts[pt2]].IsMapping(MappingTypeTable[iMapping].Type, ch))
+                        {
+                            cnt++;
+                        }
+                    }
+    
+                    int decimal;
+                    if (  1 == cnt
+                       && cp[pts[0]].IsMapping(MappingTypeTable[iMapping].Type, ch))
+                    {
+                        char *pUnicode1Name = cp[pt].GetUnicode1Name();
+                        fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
+                            cp[pt].GetDescription(),
+                            (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                    }
+                    else if (  cp[pt].GetDigitValue(&decimal)
+                            && 0 <= decimal
+                            && decimal <= 9)
+                    {
+                        ch = '0' + decimal;
+                        char *pUnicode1Name = cp[pt].GetUnicode1Name();
+                        fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
+                            cp[pt].GetDescription(),
+                            (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                    }
                 }
             }
         }
