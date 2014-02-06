@@ -4,14 +4,14 @@
 # previous distribution.
 #
 OldBuild=0
-OldVersion=2.11.0.$OldBuild
+OldVersion=2.12.0.$OldBuild
 NewBuild=1
-NewVersion=2.11.0.$NewBuild
+NewVersion=2.12.0.$NewBuild
 
 ChangesDir=mux
-ReferenceDir=mux2.11_$OldBuild
-DistroDir=mux2.11
-NewDir=mux2.11_$NewBuild
+ReferenceDir=mux2.12_$OldBuild
+DistroDir=mux2.12
+NewDir=mux2.12_$NewBuild
 patchableFiles=`cat unix/TOC.patchable`
 unpatchedFiles=`cat unix/TOC.unpatched`
 removeFiles=`cat unix/TOC.removed`
