@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
  * Modified by Shawn Wagner for TinyMUX to fit in one file and exclude unused
  * things. If you want the full thing, see http://www.pcre.org.
  *
- * Updated with 7.0 sources.
+ * Updated with 7.1 sources.
  */
 
 #include "autoconf.h"
@@ -85,21 +85,22 @@ characters only go up to 0x7fffffff (though Unicode doesn't go beyond
 #define NOTACHAR 0xffffffff
 
 /* PCRE is able to support several different kinds of newline (CR, LF, CRLF,
-and "all" at present). The following macros are used to package up testing for
-newlines. NLBLOCK, PSSTART, and PSEND are defined in the various modules to
-indicate in which datablock the parameters exist, and what the start/end of
-string field names are. */
+"any" and "anycrlf" at present). The following macros are used to package up
+testing for newlines. NLBLOCK, PSSTART, and PSEND are defined in the various
+modules to indicate in which datablock the parameters exist, and what the
+start/end of string field names are. */
 
-#define NLTYPE_FIXED   0     /* Newline is a fixed length string */
-#define NLTYPE_ANY     1     /* Newline is any Unicode line ending */
+#define NLTYPE_FIXED    0     /* Newline is a fixed length string */
+#define NLTYPE_ANY      1     /* Newline is any Unicode line ending */
+#define NLTYPE_ANYCRLF  2     /* Newline is CR, LF, or CRLF */
 
 /* This macro checks for a newline at the given position */
 
 #define IS_NEWLINE(p) \
   ((NLBLOCK->nltype != NLTYPE_FIXED)? \
     ((p) < NLBLOCK->PSEND && \
-     _pcre_is_newline((p), NLBLOCK->PSEND, &(NLBLOCK->nllen), utf8) \
-    ) \
+     _pcre_is_newline((p), NLBLOCK->nltype, NLBLOCK->PSEND, &(NLBLOCK->nllen),\
+       utf8)) \
     : \
     ((p) <= NLBLOCK->PSEND - NLBLOCK->nllen && \
      (p)[0] == NLBLOCK->nl[0] && \
@@ -112,8 +113,8 @@ string field names are. */
 #define WAS_NEWLINE(p) \
   ((NLBLOCK->nltype != NLTYPE_FIXED)? \
     ((p) > NLBLOCK->PSSTART && \
-     _pcre_was_newline((p), NLBLOCK->PSSTART, &(NLBLOCK->nllen), utf8) \
-    ) \
+     _pcre_was_newline((p), NLBLOCK->nltype, NLBLOCK->PSSTART, \
+       &(NLBLOCK->nllen), utf8)) \
     : \
     ((p) >= NLBLOCK->PSSTART + NLBLOCK->nllen && \
      (p)[-NLBLOCK->nllen] == NLBLOCK->nl[0] && \
@@ -746,20 +747,23 @@ typedef struct {
 *      Perl-Compatible Regular Expressions       *
 *************************************************/
 
-/* This file is automatically written by the dftables auxiliary 
-program. If you edit it by hand, you might like to edit the Makefile to 
-prevent its ever being regenerated.
+/* This file contains character tables that are used when no external tables
+are passed to PCRE by the application that calls it. The tables are used only
+for characters whose code values are less than 256.
 
-This file contains the default tables for characters with codes less than
-128 (ASCII characters). These tables are used when no external tables are
-passed to PCRE.
+This is a default version of the tables that assumes ASCII encoding. A program
+called dftables (which is distributed with PCRE) can be used to build
+alternative versions of this file. This is necessary if you are running in an
+EBCDIC environment, or if you want to default to a different encoding, for
+example ISO-8859-1. When dftables is run, it creates these tables in the
+current locale. If PCRE is configured with --enable-rebuild-chartables, this
+happens automatically.
 
-The following #include is present because without it gcc 4.x may remove
-the array definition from the final binary if PCRE is built into a static
-library and dead code stripping is activated. This leads to link errors.
-Pulling in the header ensures that the array gets flagged as "someone
-outside this compilation unit might reference this" and so it will always
-be supplied to the linker. */
+The following #include is present because without it gcc 4.x may remove the
+array definition from the final binary if PCRE is built into a static library
+and dead code stripping is activated. This leads to link errors. Pulling in the
+header ensures that the array gets flagged as "someone outside this compilation
+unit might reference this" and so it will always be supplied to the linker. */
 
 const unsigned char _pcre_default_tables[] = {
 
@@ -833,11 +837,10 @@ const unsigned char _pcre_default_tables[] = {
   240,241,242,243,244,245,246,247,
   248,249,250,251,252,253,254,255,
 
-/* This table contains bit maps for various character classes.
-Each map is 32 bytes long and the bits run from the least
-significant end of each byte. The classes that have their own
-maps are: space, xdigit, digit, upper, lower, word, graph
-print, punct, and cntrl. Other classes are built from combinations. */
+/* This table contains bit maps for various character classes. Each map is 32
+bytes long and the bits run from the least significant end of each byte. The
+classes that have their own maps are: space, xdigit, digit, upper, lower, word,
+graph, print, punct, and cntrl. Other classes are built from combinations. */
 
   0x00,0x3e,0x00,0x00,0x01,0x00,0x00,0x00,
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -930,6 +933,7 @@ print, punct, and cntrl. Other classes are built from combinations. */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 232-239 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 240-247 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};/* 248-255 */
+
 
 /* End pcre_chartables.c */
 /* Begin pcre_get.c */
@@ -1076,6 +1080,8 @@ pcre_maketables(void)
 /* These are the breakpoints for different numbers of bytes in a UTF-8
 character. */
 
+#ifdef SUPPORT_UTF8
+
 static const int _pcre_utf8_table1[] =
   { 0x7f, 0x7ff, 0xffff, 0x1fffff, 0x3ffffff, 0x7fffffff};
 
@@ -1095,6 +1101,8 @@ static const uschar _pcre_utf8_table4[] = {
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
   2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
   3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5 };
+
+#endif  /* SUPPORT_UTF8 */
 
 /* End pcre_tables.c */
 /* Begin pcre_study.c */
@@ -1448,11 +1456,13 @@ do
       character with a value > 255. */
 
       case OP_NCLASS:
+#ifdef SUPPORT_UTF8
       if (utf8)
         {
         start_bits[24] |= 0xf0;              /* Bits for 0xc4 - 0xc8 */
         memset(start_bits+25, 0xff, 7);      /* Bits for 0xc9 - 0xff */
         }
+#endif
       /* Fall through */
 
       case OP_CLASS:
@@ -1465,6 +1475,7 @@ do
         value is > 127. In fact, there are only two possible starting bytes for
         characters in the range 128 - 255. */
 
+#ifdef SUPPORT_UTF8
         if (utf8)
           {
           for (c = 0; c < 16; c++) start_bits[c] |= tcode[c];
@@ -1482,6 +1493,7 @@ do
         /* In non-UTF-8 mode, the two bit maps are completely compatible. */
 
         else
+#endif
           {
           for (c = 0; c < 32; c++) start_bits[c] |= tcode[c];
           }
@@ -2348,6 +2360,7 @@ if there are extra bytes. This is called when we know we are in UTF-8 mode. */
 it is. Called only in UTF-8 mode. */
 
 #define BACKCHAR(eptr) while((*eptr & 0xc0) == 0x80) eptr--;
+#endif
 /* End pcre_internal.h */
 /* Begin pcre_ord2utf8.c */
 /*************************************************
@@ -2367,6 +2380,7 @@ Returns:     number of characters placed in the buffer
 static int
 _pcre_ord2utf8(int cvalue, uschar *buffer)
 {
+#ifdef SUPPORT_UTF8
 size_t i, j;
 for (i = 0; i < _pcre_utf8_table1_size; i++)
   if (cvalue <= _pcre_utf8_table1[i]) break;
@@ -2378,9 +2392,11 @@ for (j = i; j > 0; j--)
  }
 *buffer = _pcre_utf8_table2[i] | cvalue;
 return i + 1;
+#else
+return 0;   /* Keep compiler happy; this function won't ever be */
+#endif      /* called when SUPPORT_UTF8 is not defined. */
 }
 /* End pcre_ord2utf8.c */
-#endif
 
 /* Begin pcre_fullinfo.c */
 /*************************************************
@@ -2490,6 +2506,7 @@ string that is being processed.
 
 Arguments:
   ptr          pointer to possible newline
+  type         the newline type
   endptr       pointer to the end of the string
   lenptr       where to return the length
   utf8         true if in utf8 mode
@@ -2498,12 +2515,23 @@ Returns:       true or false
 */
 
 static bool
-_pcre_is_newline(const uschar *ptr, const uschar *endptr, int *lenptr,
-  bool utf8)
+_pcre_is_newline(const uschar *ptr, int type, const uschar *endptr,
+  int *lenptr, bool utf8)
 {
 int c;
 if (utf8) { GETCHAR(c, ptr); } else c = *ptr;
-switch(c)
+
+if (type == NLTYPE_ANYCRLF) switch(c)
+  {
+  case 0x000a: *lenptr = 1; return true;             /* LF */
+  case 0x000d: *lenptr = (ptr < endptr - 1 && ptr[1] == 0x0a)? 2 : 1;
+               return true;                          /* CR */
+  default: return false;
+  }
+
+/* NLTYPE_ANY */
+
+else switch(c)
   {
   case 0x000a:                                       /* LF */
   case 0x000b:                                       /* VT */
@@ -2528,6 +2556,7 @@ the string that is being processed.
 
 Arguments:
   ptr          pointer to possible newline
+  type         the newline type
   startptr     pointer to the start of the string
   lenptr       where to return the length
   utf8         true if in utf8 mode
@@ -2536,8 +2565,8 @@ Returns:       true or false
 */
 
 static bool
-_pcre_was_newline(const uschar *ptr, const uschar *startptr, int *lenptr,
-  bool utf8)
+_pcre_was_newline(const uschar *ptr, int type, const uschar *startptr,
+  int *lenptr, bool utf8)
 {
 int c;
 ptr--;
@@ -2547,7 +2576,16 @@ if (utf8)
   GETCHAR(c, ptr);
   }
 else c = *ptr;
-switch(c)
+
+if (type == NLTYPE_ANYCRLF) switch(c)
+  {
+  case 0x000a: *lenptr = (ptr > startptr && ptr[-1] == 0x0d)? 2 : 1;
+               return true;                         /* LF */
+  case 0x000d: *lenptr = 1; return true;            /* CR */
+  default: return true;
+  }
+
+else switch(c)
   {
   case 0x000a: *lenptr = (ptr > startptr && ptr[-1] == 0x0d)? 2 : 1;
                return true;                         /* LF */
@@ -3411,6 +3449,7 @@ for (;;)
   else
     {
     code += _pcre_OP_lengths[c];
+#ifdef SUPPORT_UTF8
     if (utf8) switch(c)
       {
       case OP_CHAR:
@@ -3431,6 +3470,7 @@ for (;;)
       if (code[-1] >= 0xc0) code += _pcre_utf8_table4[code[-1] & 0x3f];
       break;
       }
+#endif
     }
   }
 }
@@ -3474,6 +3514,7 @@ for (;;)
   else
     {
     code += _pcre_OP_lengths[c];
+#ifdef SUPPORT_UTF8
     if (utf8) switch(c)
       {
       case OP_CHAR:
@@ -3494,6 +3535,7 @@ for (;;)
       if (code[-1] >= 0xc0) code += _pcre_utf8_table4[code[-1] & 0x3f];
       break;
       }
+#endif
     }
   }
 }
@@ -7167,8 +7209,9 @@ return c;
 
 
 
-#ifdef SUPPORT_UTF8
 /* Begin pcre_valid_utf8.c */
+
+
 /*************************************************
 *         Validate a UTF-8 string                *
 *************************************************/
@@ -7190,6 +7233,7 @@ Returns:       < 0    if the string is a valid UTF-8 string
 static int
 _pcre_valid_utf8(const uschar *string, int length)
 {
+#ifdef SUPPORT_UTF8
 register const uschar *p;
 
 if (length < 0)
@@ -7247,11 +7291,12 @@ for (p = string; length-- > 0; p++)
     if ((*(++p) & 0xc0) != 0x80) return p - string;
     }
   }
+#endif
 
 return -1;
 }
+
 /* End pcre_valid_utf8.c */
-#endif
 
 
 #define NLBLOCK cd
@@ -7337,7 +7382,7 @@ if (errorcodeptr != NULL) *errorcodeptr = ERR0;
 if (erroroffset == NULL)
   {
   errorcode = ERR16;
-  goto PCRE_EARLY_ERROR_RETURN;
+  goto PCRE_EARLY_ERROR_RETURN2;
   }
 
 *erroroffset = 0;
@@ -7350,7 +7395,7 @@ if (utf8 && (options & PCRE_NO_UTF8_CHECK) == 0 &&
      (*erroroffset = _pcre_valid_utf8((uschar *)pattern, -1)) >= 0)
   {
   errorcode = ERR44;
-  goto PCRE_UTF8_ERROR_RETURN;
+  goto PCRE_EARLY_ERROR_RETURN2;
   }
 #else
 if ((options & PCRE_UTF8) != 0)
@@ -7375,7 +7420,8 @@ cd->cbits = tables + cbits_offset;
 cd->ctypes = tables + ctypes_offset;
 
 /* Handle different types of newline. The three bits give seven cases. The
-current code allows for fixed one- or two-byte sequences, plus "any". */
+current code allows for fixed one- or two-byte sequences, plus "any" and
+"anycrlf". */
 
 switch (options & (PCRE_NEWLINE_CRLF | PCRE_NEWLINE_ANY))
   {
@@ -7385,10 +7431,15 @@ switch (options & (PCRE_NEWLINE_CRLF | PCRE_NEWLINE_ANY))
   case PCRE_NEWLINE_CR+
        PCRE_NEWLINE_LF: newline = ('\r' << 8) | '\n'; break;
   case PCRE_NEWLINE_ANY: newline = -1; break;
+  case PCRE_NEWLINE_ANYCRLF: newline = -2; break;
   default: errorcode = ERR56; goto PCRE_EARLY_ERROR_RETURN;
   }
 
-if (newline < 0)
+if (newline == -2)
+  {
+  cd->nltype = NLTYPE_ANYCRLF;
+  }
+else if (newline < 0)
   {
   cd->nltype = NLTYPE_ANY;
   }
@@ -7552,9 +7603,7 @@ if (errorcode != 0)
   free(re);
   PCRE_EARLY_ERROR_RETURN:
   *erroroffset = ptr - (const uschar *)pattern;
-#ifdef SUPPORT_UTF8
-  PCRE_UTF8_ERROR_RETURN:
-#endif
+  PCRE_EARLY_ERROR_RETURN2:
   *errorptr = error_texts[errorcode];
   if (errorcodeptr != NULL) *errorcodeptr = errorcode;
   return NULL;
@@ -7904,6 +7953,8 @@ int prop_fail_result;
 int prop_category;
 int prop_chartype;
 int prop_script;
+int oclength;
+uschar occhars[8];
 #endif
 
 int ctype;
@@ -9440,19 +9491,18 @@ for (;!MuxAlarm.bAlarmed;)
 
       if (length > 1)
         {
-        int oclength = 0;
-        uschar occhars[8];
-
 #ifdef SUPPORT_UCP
         unsigned int othercase;
         if ((ims & PCRE_CASELESS) != 0 &&
             (othercase = _pcre_ucp_othercase(fc)) != NOTACHAR)
           oclength = _pcre_ord2utf8(othercase, occhars);
+        else oclength = 0;
 #endif  /* SUPPORT_UCP */
 
         for (i = 1; i <= min; i++)
           {
           if (memcmp(eptr, charptr, length) == 0) eptr += length;
+#ifdef SUPPORT_UCP
           /* Need braces because of following else */
           else if (oclength == 0) { RRETURN(MATCH_NOMATCH); }
           else
@@ -9460,6 +9510,9 @@ for (;!MuxAlarm.bAlarmed;)
             if (memcmp(eptr, occhars, oclength) != 0) RRETURN(MATCH_NOMATCH);
             eptr += oclength;
             }
+#else   /* without SUPPORT_UCP */
+          else { RRETURN(MATCH_NOMATCH); }
+#endif  /* SUPPORT_UCP */
           }
 
         if (min == max) continue;
@@ -9472,6 +9525,7 @@ for (;!MuxAlarm.bAlarmed;)
             if (rrc != MATCH_NOMATCH) RRETURN(rrc);
             if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
             if (memcmp(eptr, charptr, length) == 0) eptr += length;
+#ifdef SUPPORT_UCP
             /* Need braces because of following else */
             else if (oclength == 0) { RRETURN(MATCH_NOMATCH); }
             else
@@ -9479,6 +9533,9 @@ for (;!MuxAlarm.bAlarmed;)
               if (memcmp(eptr, occhars, oclength) != 0) RRETURN(MATCH_NOMATCH);
               eptr += oclength;
               }
+#else   /* without SUPPORT_UCP */
+            else { RRETURN (MATCH_NOMATCH); }
+#endif  /* SUPPORT_UCP */
             }
           /* Control never gets here */
           }
@@ -9490,22 +9547,31 @@ for (;!MuxAlarm.bAlarmed;)
             {
             if (eptr > md->end_subject - length) break;
             if (memcmp(eptr, charptr, length) == 0) eptr += length;
+#ifdef SUPPORT_UCP
             else if (oclength == 0) break;
             else
               {
               if (memcmp(eptr, occhars, oclength) != 0) break;
               eptr += oclength;
               }
+#else   /* without SUPPORT_UCP */
+            else break;
+#endif  /* SUPPORT_UCP */
             }
 
           if (possessive) continue;
-          while (eptr >= pp)
+          for(;;)
            {
            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+           if (eptr == pp) RRETURN(MATCH_NOMATCH);
+#ifdef SUPPORT_UCP
+           eptr--;
+           BACKCHAR(eptr);
+#else   /* without SUPPORT_UCP */
            eptr -= length;
+#endif  /* SUPPORT_UCP */
            }
-          RRETURN(MATCH_NOMATCH);
           }
         /* Control never gets here */
         }
@@ -11152,10 +11218,10 @@ md->eptrchain = eptrchain;              /* Make workspace generally available */
 md->lcc = tables + lcc_offset;
 md->ctypes = tables + ctypes_offset;
 
-/* Handle different types of newline. The two bits give four cases. If nothing
-is set at run time, whatever was used at compile time applies. */
+/* Handle different types of newline. The three bits give eight cases. If
+nothing is set at run time, whatever was used at compile time applies. */
 
-switch ((((options & PCRE_NEWLINE_BITS) == 0)? re->options : options) &
+switch ((((options & PCRE_NEWLINE_BITS) == 0)? re->options : (pcre_uint32)options) &
        PCRE_NEWLINE_BITS)
   {
   case 0: newline = NEWLINE; break;   /* Compile-time default */
@@ -11164,10 +11230,15 @@ switch ((((options & PCRE_NEWLINE_BITS) == 0)? re->options : options) &
   case PCRE_NEWLINE_CR+
        PCRE_NEWLINE_LF: newline = ('\r' << 8) | '\n'; break;
   case PCRE_NEWLINE_ANY: newline = -1; break;
+  case PCRE_NEWLINE_ANYCRLF: newline = -2; break;
   default: return PCRE_ERROR_BADNEWLINE;
   }
 
-if (newline < 0)
+if (newline == -2)
+  {
+  md->nltype = NLTYPE_ANYCRLF;
+  }
+else if (newline < 0)
   {
   md->nltype = NLTYPE_ANY;
   }
@@ -11310,9 +11381,9 @@ for(;;)
 
   /* Advance to a unique first char if possible. If firstline is true, the
   start of the match is constrained to the first line of a multiline string.
-  Implement this by temporarily adjusting end_subject so that we stop scanning
-  at a newline. If the match fails at the newline, later code breaks this loop.
-  */
+  That is, the match must be before or at the first newline. Implement this by
+  temporarily adjusting end_subject so that we stop scanning at a newline. If
+  the match fails at the newline, later code breaks this loop. */
 
   if (firstline)
     {
@@ -11341,6 +11412,16 @@ for(;;)
     if (start_match > md->start_subject + start_offset)
       {
       while (start_match <= end_subject && !WAS_NEWLINE(start_match))
+        start_match++;
+
+      /* If we have just passed a CR and the newline option is ANY or ANYCRLF,
+      and we are now at a LF, advance the match position by one more character.
+      */
+
+      if (start_match[-1] == '\r' &&
+           (md->nltype == NLTYPE_ANY || md->nltype == NLTYPE_ANYCRLF) &&
+           start_match < end_subject &&
+           *start_match == '\n')
         start_match++;
       }
     }
@@ -11451,11 +11532,14 @@ for(;;)
 
   if (anchored || start_match > end_subject) break;
 
-  /* If we have just passed a CR and the newline option is CRLF or ANY, and we
-  are now at a LF, advance the match position by one more character. */
+  /* If we have just passed a CR and the newline option is CRLF or ANY or
+  ANYCRLF, and we are now at a LF, advance the match position by one more
+  character. */
 
   if (start_match[-1] == '\r' &&
-       (md->nltype == NLTYPE_ANY || md->nllen == 2) &&
+       (md->nltype == NLTYPE_ANY ||
+        md->nltype == NLTYPE_ANYCRLF ||
+        md->nllen == 2) &&
        start_match < end_subject &&
        *start_match == '\n')
     start_match++;
