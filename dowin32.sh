@@ -58,10 +58,6 @@ if [ -e mux-$NewVersion.win32.src.tar.gz ]; then
     rm mux-$NewVersion.win32.src.tar.gz
 fi
 tar czf mux-$NewVersion.win32.src.tar.gz $DistroDir
-if [ -e mux-$NewVersion.win32.src.j ]; then
-    rm mux-$NewVersion.win32.src.j
-fi
-/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.src.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.src.zip ]; then
     rm mux-$NewVersion.win32.src.zip
 fi
@@ -111,10 +107,6 @@ if [ -e mux-$NewVersion.win32.bin.tar.gz ]; then
     rm mux-$NewVersion.win32.bin.tar.gz
 fi
 tar czf mux-$NewVersion.win32.bin.tar.gz $DistroDir
-if [ -e mux-$NewVersion.win32.bin.j ]; then
-    rm mux-$NewVersion.win32.bin.j
-fi
-/cygdrive/c/jar/jar32 a -m4 -r mux-$NewVersion.win32.bin.j $DistroDir\\
 if [ -e mux-$NewVersion.win32.bin.zip ]; then
     rm mux-$NewVersion.win32.bin.zip
 fi
