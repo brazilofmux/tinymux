@@ -1,6 +1,6 @@
 TinyMUX 2.12: CHANGES
-Last Update: July 2012
-~~~~~~~~~~~~~~~~~~~~~~
+Last Update: December 2014
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,17 +11,33 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- None.
+ -- Add /inline and /queued switches to @break and @assert.
+ -- Remove allow_guest_from_registered_site configuration option.
+ -- Support longer object names to allow COLOR256 gradients when
+    FIRANMUX is defined.
+ -- Add Hangul set of characters for allowance in object names.
+ -- Add Hiragama, Katakana, and Kanji set of characters for allowance
+    in object names.
+ -- Finish CStandardMarshaler, CLog, and funcs module.
+ -- Improve automated mapping of UTF-8 to ASCII, CP437, Latin-1, and
+    Latin-2.
+ -- Update to Unicode 6.0.
+ -- Update to PCRE 7.1.
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- None.
+ -- Fix data type conversion warning in Windows build which is a bug
+    for Unix as well.
+ -- Build scripts should be for 2.12 instead of 2.11.
+ -- Fix compiler warnings for freeing (const char*)
+ -- Stop building jar32 archives of source and binaries. The jar32
+    utility is not supported on 64-bit platforms.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- None.
+ -- Rewrite unsplit to avoid using sed.
 
 
 Cosmetic Changes:
@@ -31,4 +47,5 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- None.
+ -- Consume v5.2 of EastAsianWidth.txt to develop ConsoleWidth() helper
+    function.
