@@ -1,6 +1,6 @@
 TinyMUX 2.12: CHANGES
-Last Update: December 2014
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Last Update: January 2015
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,6 +23,7 @@ Feature Additions:
     Latin-2.
  -- Update to Unicode 6.0.
  -- Update to PCRE 7.1.
+ -- Added LMAX().
 
 
 Bug Fixes:
@@ -49,3 +50,4 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Consume v5.2 of EastAsianWidth.txt to develop ConsoleWidth() helper
     function.
+ -- Bump minimum Visual Studio version to VS 2008.

@@ -436,6 +436,40 @@ FUNCTION(fun_max)
     fval(buff, bufc, maximum);
 }
 
+FUNCTION(fun_lmax)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    double maximum = 0.0;
+    if (0 < nfargs)
+    {
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+        {
+            return;
+        }
+
+		int n = 0;
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        while (NULL != cp)
+        {
+            UTF8 *curr = split_token(&cp, sep);
+			double tval = mux_atof(curr);
+			if (  n++ == 0
+			   || tval > maximum)
+			{
+				maximum = tval;
+			}
+        }
+    }
+    fval(buff, bufc, maximum);
+}
+
 FUNCTION(fun_min)
 {
     UNUSED_PARAMETER(executor);
