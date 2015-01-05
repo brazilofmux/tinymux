@@ -7372,7 +7372,7 @@ FUNCTION CLASSES (continued)
                              CONNRECORD CONNTOTAL DOING FINDABLE HASQUOTA HEIGHT
                              HOST IDLE LWHO LPORTS PLAYMEM PORTS WIDTH
 
-  Relational:                EQ GT GTE LMAX LT LTE MAX MIN NEQ
+  Relational:                EQ GT GTE LMAX LMIN LT LTE MAX MIN NEQ
 
   Side-Effect Functions:     CREATE DESTROY EMIT LINK OEMIT PEMIT REMIT SET
                              SETNAME SETPARENT TEL TRIGGER
@@ -7446,50 +7446,50 @@ FUNCTION LIST (continued)
     LADD()      LAND()      LAST()      LASTCREATE()LATTR()     LATTRCMDS()
     LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
     LFLAGS()    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()
-    LMAX()      LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()
-    LOCK()      LOG()       LOR()       LPAD()      LPARENT()   LPORTS()
-    LPOS()      LRAND()     LROOMS()    LT()        LTE()       LWHO()
-	MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()
-	MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
-	MIN()       MIX()       MOD()       MONEY()     MONIKER()   MOTD()
-	MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
-    NEQ()       NEXT()      NOT()       NULL()      NUM()       OBJ()
+    LMAX()      LMIN()      LN()        LNUM()      LOC()       LOCALIZE()
+    LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()
+    LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
+    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
+    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-	OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()
-	ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEMIT()
-	PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
-	PORTS()     POS()       POSS()      POWER()     POWERS()    R()
-	RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()
-	REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()
-	REST()      RESTARTS()  RESTARTSECS()           RESTARTTIME()
-	REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
-	ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
-	SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-	SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
-	SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-	SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()
-	SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
-	STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
+    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
+    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
+    POLL()      PORTS()     POS()       POSS()      POWER()     POWERS()
+    R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL()
+    REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()
+    REPLACE()   REST()      RESTARTS()  RESTARTSECS()           RESTARTTIME()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+    ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
+    STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
     STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
-	SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-	TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
+    SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
+    TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
 
 ("help function list4" for more)
 
 & FUNCTION LIST4
 FUNCTION LIST (continued)
 
-	TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
-	U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-	VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-	VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-	WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME()
-	XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -9114,7 +9114,22 @@ LMAX()
     > say lmax(1@10@2@4@6,@)
     You say "10"
 
-  Related Topics: max(), min()
+  Related Topics: lmin(), max(), min()
+
+& LMIN()
+LMIN()
+
+  FUNCTION: lmin(<list of numbers>[,<delim>])
+
+  Returns the minimum number from the optionally delimited list.
+
+  Example:
+    > say lmax(1 10 2 4 6)
+    You say "1"
+    > say lmax(1@10@2@4@6,@)
+    You say "1"
+
+  Related Topics: lmax(), max(), min()
 
 & LN()
 LN()
@@ -9962,7 +9977,7 @@ MAX()
     > say max(-100,50,0,25)
     You say, "50"
 
-  Related Topics: lmax(), min()
+  Related Topics: lmax(), lmax(), min()
 
 & ME
 ME
@@ -10052,10 +10067,8 @@ MIN()
 
   FUNCTION: min(<number1>,<number2>[,<numberN]...)
 
-  Returns the smallest integer from among its arguments.
-  Up to 30 arguments may be specified.
-  <numberN> may be a floating point number, and a floating point result
-  is returned.
+  Returns the smallest number from among its arguments.  Up to 30
+  arguments may be specified.
 
   Examples:
     > say min(2,4)
@@ -10063,7 +10076,7 @@ MIN()
     > say min(-100,50,0,25)
     You say, "-100"
 
-  Related Topics: max()
+  Related Topics: lmax(), lmin(), max()
 
 & MIX()
 MIX()

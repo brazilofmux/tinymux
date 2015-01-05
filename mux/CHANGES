@@ -23,7 +23,7 @@ Feature Additions:
     Latin-2.
  -- Update to Unicode 6.0.
  -- Update to PCRE 7.1.
- -- Added LMAX().
+ -- Added LMAX(), LMIN().
 
 
 Bug Fixes:
