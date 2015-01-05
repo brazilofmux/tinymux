@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="sqlslave"
 	ProjectGUID="{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -78,6 +79,8 @@
 				ModuleDefinitionFile=".\sqlslave.def"
 				ProgramDatabaseFile=".\bin_release/sqlslave.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_release/sqlslave.lib"
 				TargetMachine="1"
 			/>
@@ -98,9 +101,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -170,6 +170,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\bin_debug/sqlslave.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_debug/sqlslave.lib"
 				TargetMachine="1"
 			/>
@@ -190,9 +192,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

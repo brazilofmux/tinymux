@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="sqlproxy"
 	ProjectGUID="{5689B87D-E634-4061-8090-BC93974ABB2E}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -78,6 +79,8 @@
 				ModuleDefinitionFile=".\sqlproxy.def"
 				ProgramDatabaseFile=".\bin_release/sqlproxy.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_release/sqlproxy.lib"
 				TargetMachine="1"
 			/>
@@ -98,9 +101,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -170,6 +170,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\bin_debug/sqlproxy.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_debug/sqlproxy.lib"
 				TargetMachine="1"
 			/>
@@ -190,9 +192,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

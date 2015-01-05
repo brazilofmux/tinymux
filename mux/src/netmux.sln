@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmux", "libmux.vcproj", "{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netmux", "netmux.vcproj", "{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}"
