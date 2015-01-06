@@ -115,6 +115,7 @@ struct confdata
     int     idle_interval;      /* when to check for idle users */
     int     idle_timeout;       /* Boot off players idle this long in secs */
     int     init_size;          // initial db size.
+    int     keepalive_interval; /* when to send keep alive */
     int     killguarantee;      /* cost of kill cmd that guarantees success */
     int     killmax;            /* max cost of kill command */
     int     killmin;            /* default (and minimum) cost of kill cmd */
@@ -520,6 +521,7 @@ struct statedata
     CLinearTimeAbsolute dump_counter;   /* Countdown to next db dump */
     CLinearTimeAbsolute events_counter; /* Countdown to next events check */
     CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
+    CLinearTimeAbsolute keepalive_counter; /* Countdown to next keep alive cycle */
     CLinearTimeAbsolute start_time;     /* When was MUX started */
     CLinearTimeAbsolute restart_time;   /* When was MUX restarted */
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.

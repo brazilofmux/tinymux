@@ -153,6 +153,7 @@ void cf_init(void)
     mudconf.idle_timeout = 3600;
     mudconf.conn_timeout = 120;
     mudconf.idle_interval = 60;
+    mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
     mudconf.output_limit = 16384;
     mudconf.paycheck = 0;
@@ -1858,6 +1859,7 @@ static CONFPARM conftable[] =
     {T("initial_size"),              cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.init_size,              NULL,               0},
     {T("input_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.indb,            NULL, SIZEOF_PATHNAME},
     {T("ip_address"),                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.ip_address,      NULL,       LBUF_SIZE},
+    {T("keepalive_interval"),        cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.keepalive_interval,     NULL,               0},
     {T("kill_guarantee_cost"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
     {T("kill_max_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
     {T("kill_min_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},

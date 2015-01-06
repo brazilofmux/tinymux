@@ -1276,6 +1276,10 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf(T("[%d]Test for @daily time"), ltd.ReturnSeconds()));
     }
+    else if (p->fpTask == dispatch_KeepAlive)
+    {
+        notify(Show_Player, tprintf(T("[%d]Keep Alive"), ltd.ReturnSeconds()));
+    }
 #ifndef MEMORY_BASED
     else if (p->fpTask == dispatch_CacheTick)
     {

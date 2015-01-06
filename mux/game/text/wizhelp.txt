@@ -834,7 +834,8 @@
 
   Related Topics: @dbck, @disable, @enable, @kick, @list permissions,
                   @timewarp, checkpoint, conn_timeout, dump_interval,
-                  dump_offset, idle_interval, idle_timeout.
+                  dump_offset, idle_interval, idle_timeout,
+                  keepalive_interval.
 
 & @LIST GUESTS
 @LIST GUESTS
@@ -1882,42 +1883,43 @@ CONFIG PARAMETERS (continued)
   have_comsys  have_mailer  have_zones  help_executor  helpfile  hook_cmd
   hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
   immobile_message  include  indent_desc  initial_size  input_database
-  ip_address  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit
-  lag_maximum  lbuf_size  link_cost  list_access  lock_recursion_limit  log
-  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
-  machine_command_cost  mail_database  mail_ehlo  mail_expiration
-  mail_per_hour  mail_sendaddr  mail_sendname  mail_server  mail_subject
-  master_room  match_own_commands  max_cache_size  max_players  min_guests
-  module  money_name_plural  money_name_singular  motd_file  motd_message
-  mud_name  newuser_file  noguest_site  nositemon_site  notify_recursion_limit
-  number_guests  open_cost  output_database  output_limit  page_cost
-  paranoid_allocate  parent_recursion_limit  password_methods  paycheck
-  pcreate_per_hour  pemit_any_object  pemit_far_players  permit_site
-  player_flags  player_parent  player_listen  player_match_own_commands
-  player_name_charset  player_name_spaces  player_queue_limit  player_quota
-  player_starting_home  player_starting_room  port  postdump_message
-  power_alias  public_channel  public_channel_alias  public_flags
+  ip_address  keepalive_interval  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
+  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
+  mail_expiration  mail_per_hour  mail_sendaddr  mail_sendname  mail_server
+  mail_subject  master_room  match_own_commands  max_cache_size  max_players
+  min_guests  module  money_name_plural  money_name_singular  motd_file
+  motd_message  mud_name  newuser_file  noguest_site  nositemon_site
+  notify_recursion_limit  number_guests  open_cost  output_database
+  output_limit  page_cost  paranoid_allocate  parent_recursion_limit
+  password_methods  paycheck  pcreate_per_hour  pemit_any_object
+  pemit_far_players  permit_site  player_flags  player_parent  player_listen
+  player_match_own_commands  player_name_charset  player_name_spaces
+  player_queue_limit  player_quota  player_starting_home
+  player_starting_room  port  postdump_message  power_alias  public_channel
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
-  pueblo_message  queue_active_chunk  queue_idle_chunk  quiet_look
-  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
-  read_remote_name  reality_level  references_per_hour  register_create_file
-  register_site  reset_players  reset_site  restrict_home  retry_limit
-  robot_cost  robot_flags  robot_speech  room_flags  room_name_charset
-  room_parent  room_quota  run_startup  sacrifice_adjust  sacrifice_factor
-  safe_wipe  safer_passwords  search_cost  see_owned_dark  signal_action
-  site_chars  space_compress  sql_database  sql_password  sql_server
-  sql_user  stack_limit  starting_money  starting_quota  status_file
-  stripped_flags  suspect_site  sweep_dark  switch_default_all
-  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
-  thing_flags  thing_name_charset  thing_parent  thing_quota  timeslice
-  toad_recipient  trace_output_limit  trace_topdown  trust_site
-  uncompress_program  unowned_safe  user_attr_access  user_attr_per_hour
-  wait_cost  wizard_motd_file  wizard_motd_message  zone_recursion_limit
+  public_channel_alias  public_flags  pueblo_message  queue_active_chunk
+  queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas
+  raw_helpfile  read_remote_desc  read_remote_name  reality_level
+  references_per_hour  register_create_file  register_site  reset_players
+  reset_site  restrict_home  retry_limit  robot_cost  robot_flags
+  robot_speech  room_flags  room_name_charset  room_parent  room_quota
+  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
+  search_cost  see_owned_dark  signal_action  site_chars  space_compress
+  sql_database  sql_password  sql_server  sql_user  stack_limit
+  starting_money  starting_quota  status_file  stripped_flags  suspect_site
+  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
+  terse_shows_move_messages  thing_flags  thing_name_charset  thing_parent
+  thing_quota  timeslice  toad_recipient  trace_output_limit  trace_topdown
+  trust_site  uncompress_program  unowned_safe  user_attr_access
+  user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
+  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -1982,7 +1984,7 @@ CONN_TIMEOUT
   connection timeouts. While supported, disabling login-time connections is
   not recommended.
 
-  Related Topics: idle_interval, idle_timeout.
+  Related Topics: idle_interval, idle_timeout, keepalive_interval.
 
 & CONTACT INFO
 CONTACT INFO
@@ -3075,7 +3077,7 @@ IDLE_INTERVAL
 
   Sets the interval between checks for idle users.
 
-  Related Topics: conn_timeout, idle_timeout.
+  Related Topics: conn_timeout, idle_timeout, keepalive_interval.
 
 & IDLE_TIMEOUT
 IDLE_TIMEOUT
@@ -3192,6 +3194,17 @@ IP_ADDRESS
 
   Specifies the IP address the MUX should listen on on startup.
   The default of 0.0.0.0 will make it listen on all interfaces.
+
+& KEEPALIVE_INTERVAL
+KEEPALIVE_INTERVAL
+
+  CONFIG PARAMETER: keepalive_interval <secs>
+  DEFAULT: 60
+
+  Sets the interval between keep alive emits -- telnet NOP sequences to
+  keep intervening routers happy with the connection.
+
+  Related Topics: conn_timeout, idle_timeout.
 
 & KILL_GUARANTEE_COST
 KILL_GUARANTEE_COST

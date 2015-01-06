@@ -113,6 +113,35 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
     scheduler.DeferTask(mudstate.idle_counter, PRIORITY_SYSTEM, dispatch_IdleCheck, 0, 0);
 }
 
+void dispatch_KeepAlive(void *pUnused, int iUnused)
+{
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
+    DESC *d, *dnext;
+    DESC_SAFEITER_ALL(d, dnext)
+    {
+        if (  (d->flags & DS_CONNECTED)
+           && KeepAlive(d->player))
+        {
+            // Send a Telnet NOP code - creates traffic to keep NAT routers
+            // happy.
+            //
+            const char aNOP[2] = { NVT_IAC, NVT_NOP };
+            queue_write_LEN(d, aNOP, sizeof(aNOP));
+        }
+    }
+
+    // Schedule ourselves again.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    CLinearTimeDelta ltd;
+    ltd.SetSeconds(mudconf.keepalive_interval);
+    mudstate.keepalive_counter = ltaNow + ltd;
+    scheduler.DeferTask(mudstate.keepalive_counter, PRIORITY_SYSTEM, dispatch_KeepAlive, 0, 0);
+}
+
 // Check Events Task routine.
 //
 void dispatch_CheckEvents(void *pUnused, int iUnused)
@@ -221,6 +250,12 @@ void init_timer(void)
     mudstate.events_counter = ltaNow + time_15s;
     scheduler.DeferTask(mudstate.events_counter, PRIORITY_SYSTEM,
         dispatch_CheckEvents, 0, 0);
+
+    // Setup re-occuring KeepAlive task.
+    //
+    ltd.SetSeconds(mudconf.keepalive_interval);
+    mudstate.keepalive_counter = ltaNow + ltd;
+    scheduler.DeferTask(mudstate.keepalive_counter, PRIORITY_SYSTEM, dispatch_KeepAlive, 0, 0);
 
 #ifndef MEMORY_BASED
     // Setup re-occuring cache_tick task.
