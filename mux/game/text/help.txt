@@ -6970,7 +6970,7 @@ FCOUNT()
   <expression>.  Softcode can use this result to gauge its distance from the
   configured function invocation limit.
 
-  Related Topics: fdepth(), function_invocation_limit in wizhelp
+  Related Topics: fdepth(), function_invocation_limit in wizhelp, trace().
 
 & FDEPTH()
 FDEPTH()
@@ -6981,7 +6981,7 @@ FDEPTH()
   counter.  Softcode can use this result to gauge its distance from the
   configured function recursion limit.
 
-  Related Topics: fcount(), function_recursion_limit in wizhelp
+  Related Topics: fcount(), function_recursion_limit in wizhelp, trace().
 
 & FDIV()
 FDIV()
@@ -7351,7 +7351,7 @@ FUNCTION CLASSES (continued)
 
   Miscellaneous:             @@ ANSI ART BEEP ERROR FCOUNT ISDBREF ISINT ISNUM
                              ISRAT ISWORD LIT NULL R SETQ SETR SUBEVAL
-                             TEXT TEXTFILE
+                             TEXT TEXTFILE TRACE
 
 { 'help function classes3' for more }
 
@@ -7484,12 +7484,12 @@ FUNCTION LIST (continued)
 & FUNCTION LIST4
 FUNCTION LIST (continued)
 
-    TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()      WRITETIME()
-    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    TR()        TRACE()     TRIGGER()   TRIM()      TRUNC()     TXLEVEL()
+    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
+    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
+    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    WHERE()     WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()
+    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -13706,7 +13706,17 @@ TRACE (continued)
   Example:
     > @set object/attribute = trace
 
-  Related Topics: VERBOSE.
+  Related Topics: TRACE(), VERBOSE.
+
+& TRACE()
+TRACE()
+
+  FUNCTION: trace(<eval>)
+
+  A evaluates <eval> with tracing enabled. This is similar to setting an
+  attribute or an entire object TRACE.
+
+  Related Topics: fcount(), fdepth(), TRACE.
 
 & TRAIN
 TRAIN

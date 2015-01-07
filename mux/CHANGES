@@ -23,7 +23,7 @@ Feature Additions:
     Latin-2.
  -- Update to Unicode 6.0.
  -- Update to PCRE 7.1.
- -- Added LMAX(), LMIN().
+ -- Added LMAX(), LMIN(), TRACE().
 
 
 Bug Fixes:
@@ -34,6 +34,7 @@ Bug Fixes:
  -- Fix compiler warnings for freeing (const char*)
  -- Stop building jar32 archives of source and binaries. The jar32
     utility is not supported on 64-bit platforms.
+ -- Separated KeepAlive out from Idle-checking.
 
 
 Performance Enhancements:
