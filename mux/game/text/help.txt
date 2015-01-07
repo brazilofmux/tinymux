@@ -11226,7 +11226,8 @@ PUEBLO
        Pueblo.
   @pemit/html and @emit/html allow outputting unescaped HTML strings.
 
-  Please see http://www.chaco.com/pueblo/doc/enhancing.html for more details.
+  See http://pueblo.sourceforge.net/doc/manual/pueblo_enhancers_guide.html for
+  more details.
 
   Related Topics: HTML, @htdesc, @vrml_url
 

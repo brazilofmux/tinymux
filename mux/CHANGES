@@ -35,6 +35,7 @@ Bug Fixes:
  -- Stop building jar32 archives of source and binaries. The jar32
     utility is not supported on 64-bit platforms.
  -- Separated KeepAlive out from Idle-checking.
+ -- Update link to Pueblo Enhancer's Guide.
 
 
 Performance Enhancements:
