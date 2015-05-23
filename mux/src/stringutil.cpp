@@ -2864,6 +2864,9 @@ UTF8 *convert_to_html(const UTF8 *pString)
                                     case kColor:
                                         csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                         break;
+
+                                    default:
+                                        break;
                                     }
                                     nList++;
                                     nStack--;
@@ -2905,6 +2908,9 @@ UTF8 *convert_to_html(const UTF8 *pString)
 
                             case kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+                                break;
+
+                            default:
                                 break;
                             }
                             nList++;
@@ -2950,6 +2956,9 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     case kColor:
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
+                        break;
+
+                    default:
                         break;
                     }
                     Stack[nStack++] = nList++;
@@ -3045,6 +3054,9 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     mux_sprintf(pBuffer, sizeof(aBuffer) - (pBuffer - aBuffer) - 1, T("COLOR"));
                     pBuffer += strlen((char *)pBuffer);
                 }
+                break;
+
+            default:
                 break;
             }
             *pBuffer++ = '>';
@@ -6909,6 +6921,9 @@ void mux_string::export_TextHtml
                                     case kColor:
                                         csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                         break;
+
+                                    default:
+                                        break;
                                     }
                                     mux_assert((csPrev & ~CS_ALLBITS) == 0);
                                     nList++;
@@ -6952,6 +6967,9 @@ void mux_string::export_TextHtml
                             case kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
+
+                            default:
+                                break;
                             }
                             mux_assert((csPrev & ~CS_ALLBITS) == 0);
                             nList++;
@@ -6990,6 +7008,9 @@ void mux_string::export_TextHtml
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
                         break;
+
+                    default:
+                        break;
                     }
                     mux_assert((csPrev & ~CS_ALLBITS) == 0);
                     Stack[nStack++] = nList++;
@@ -7023,6 +7044,9 @@ void mux_string::export_TextHtml
 
         case kColor:
             csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
+            break;
+
+        default:
             break;
         }
         mux_assert((csPrev & ~CS_ALLBITS) == 0);
@@ -7103,6 +7127,9 @@ void mux_string::export_TextHtml
                     mux_sprintf(pBuffer, nBuffer - (pBuffer - aBuffer) - 1, T("COLOR"));
                     pBuffer += strlen((char *)pBuffer);
                 }
+                break;
+
+            default:
                 break;
             }
             *pBuffer++ = '>';

@@ -1,3 +1,4 @@
+funcs.o: funcs.cpp ../autoconf.h ../config.h ../libmux.h ../modules.h funcs.h
 sample.o: sample.cpp ../autoconf.h ../config.h ../libmux.h ../modules.h sample.h
 sum.o: sum.cpp ../autoconf.h ../config.h ../libmux.h ../modules.h sum.h
 sqlproxy.o: sqlproxy.cpp ../autoconf.h ../config.h ../libmux.h ../modules.h sql.h

@@ -1574,7 +1574,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                            && nfargs <= fp->maxArgs
                            && !MuxAlarm.bAlarmed)
                         {
-                            fp->fun(buff, &oldp, executor, caller, enactor,
+                            fp->fun(fp, buff, &oldp, executor, caller, enactor,
                                     feval & EV_TRACE, fargs, nfargs, cargs, ncargs);
                         }
                         else

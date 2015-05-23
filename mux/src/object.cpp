@@ -507,9 +507,9 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     s_Owner(obj, (self_owned ? obj : owner));
     s_Pennies(obj, value);
     Unmark(obj);
-    pValidName = munge_space(pValidName);
-    s_Name(obj, pValidName);
-    free_lbuf(pValidName);
+    buff = munge_space(pValidName);
+    s_Name(obj, buff);
+    free_lbuf(buff); buff = NULL;
     db[obj].cpu_time_used.Set100ns(0);
 
     db[obj].tThrottleExpired.Set100ns(0);
