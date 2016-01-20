@@ -159,7 +159,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -170,7 +170,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -181,7 +181,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -192,7 +192,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -203,7 +203,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -214,7 +214,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;
@@ -225,7 +225,7 @@ typedef struct
 {
     const char *cmdname;
     NAMETAB *switches;
-    int     perms;
+    unsigned perms;
     int     extra;
     int     callseq;
     int     hookmask;

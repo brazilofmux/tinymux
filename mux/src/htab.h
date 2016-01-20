@@ -17,7 +17,7 @@ struct name_table
     const char *name;
     int minlen;
     int perm;
-    int flag;
+    unsigned flag;
 };
 
 /* BQUE - Command queue */

@@ -57,7 +57,7 @@ static const char *mux_FPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "
 #define IEEE_MAKE_TABLESIZE 5
 typedef union
 {
-    INT64  i64;
+    UINT64 i64;
     double d;
 } SpecialFloatUnion;
 

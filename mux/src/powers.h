@@ -57,7 +57,7 @@
 
 typedef struct power_entry {
     const char *powername;  /* Name of the flag */
-    int powervalue; /* Which bit in the object is the flag */
+    unsigned powervalue; /* Which bit in the object is the flag */
     int powerpower; /* Ctrl flags for this power (recursive? :-) */
     int listperm;   /* Who sees this flag when set */
     bool (*handler)(dbref target, dbref player, POWER power, int fpowers, bool reset);    /* Handler for setting/clearing this flag */
