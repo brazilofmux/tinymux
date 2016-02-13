@@ -133,7 +133,7 @@
  */
 typedef struct flag_bit_entry
 {
-    int  flagvalue;         // Which bit in the object is the flag.
+    unsigned int flagvalue; // Which bit in the object is the flag.
     UTF8 flaglett;          // Flag letter for listing.
     int  flagflag;          // Ctrl flags for this flag.
     int  listperm;          // Who sees this flag when set.
