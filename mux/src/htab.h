@@ -18,7 +18,7 @@ struct name_table
     const UTF8 *name;
     int minlen;
     int perm;
-    int flag;
+    unsigned int flag;
 };
 
 /* BQUE - Command queue */

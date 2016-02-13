@@ -65,7 +65,7 @@ static const UTF8 *mux_FPStrings[] =
 #define IEEE_MAKE_TABLESIZE 5
 typedef union
 {
-    INT64  i64;
+    UINT64 ui64;
     double d;
 } SpecialFloatUnion;
 
