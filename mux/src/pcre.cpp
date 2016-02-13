@@ -966,14 +966,6 @@ set_start_bits(const uschar *code, uschar *start_bits, bool caseless,
 {
 register int c;
 
-/* This next statement and the later reference to dummy are here in order to
-trick the optimizer of the IBM C compiler for OS/2 into generating correct
-code. Apparently IBM isn't going to fix the problem, and we would rather not
-disable optimization (in this module it actually makes a big difference, and
-the pcre module can use all the optimization it can get). */
-
-volatile int dummy;
-
 do
   {
   const uschar *tcode = code + 1 + LINK_SIZE;
@@ -1030,7 +1022,6 @@ do
       case OP_BRAMINZERO:
       if (!set_start_bits(++tcode, start_bits, caseless, utf8, cd))
         return false;
-      dummy = 1;
       do tcode += GET(tcode,1); while (*tcode == OP_ALT);
       tcode += 1+LINK_SIZE;
       break;

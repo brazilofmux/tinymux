@@ -982,10 +982,10 @@ static char *ANSI_TransitionColorBinary
 
     // Do we need to go through the normal state?
     //
-    if (  tmp.bHighlite && !pcsNext->bHighlite
-       || tmp.bUnder    && !pcsNext->bUnder
-       || tmp.bBlink    && !pcsNext->bBlink
-       || tmp.bInverse  && !pcsNext->bInverse
+    if (  (tmp.bHighlite && !pcsNext->bHighlite)
+       || (tmp.bUnder    && !pcsNext->bUnder)
+       || (tmp.bBlink    && !pcsNext->bBlink)
+       || (tmp.bInverse  && !pcsNext->bInverse)
        || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
           && pcsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
@@ -1063,10 +1063,10 @@ static char *ANSI_TransitionColorEscape
 
     // Do we need to go through the normal state?
     //
-    if (  tmp.bBlink    && !acsNext->bBlink
-       || tmp.bHighlite && !acsNext->bHighlite
-       || tmp.bInverse  && !acsNext->bInverse
-       || tmp.bUnder    && !acsNext->bUnder
+    if (  (tmp.bBlink    && !acsNext->bBlink)
+       || (tmp.bHighlite && !acsNext->bHighlite)
+       || (tmp.bInverse  && !acsNext->bInverse)
+       || (tmp.bUnder    && !acsNext->bUnder)
        || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
           && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
