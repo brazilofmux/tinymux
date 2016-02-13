@@ -42,7 +42,7 @@ const UTF8 *mux_FPStrings[8] =
 
 typedef union
 {
-    INT64  i64;
+    UINT64 ui64;
     double d;
 } SpecialFloatUnion;
 
@@ -71,35 +71,35 @@ int mux_fpclass(double result)
 
     u.d = result;
 
-    if ((u.i64 & IEEE_MASK_EXPONENT) == 0)
+    if ((u.ui64 & IEEE_MASK_EXPONENT) == 0)
     {
-        if (u.i64 & IEEE_MASK_MANTISSA)
+        if (u.ui64 & IEEE_MASK_MANTISSA)
         {
-            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_ND;
+            if (u.ui64 & IEEE_MASK_SIGN) return MUX_FPCLASS_ND;
             else                        return MUX_FPCLASS_PD;
         }
         else
         {
-            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NZ;
+            if (u.ui64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NZ;
             else                        return MUX_FPCLASS_PZ;
         }
     }
-    else if ((u.i64 & IEEE_MASK_EXPONENT) == IEEE_MASK_EXPONENT)
+    else if ((u.ui64 & IEEE_MASK_EXPONENT) == IEEE_MASK_EXPONENT)
     {
-        if (u.i64 & IEEE_MASK_MANTISSA)
+        if (u.ui64 & IEEE_MASK_MANTISSA)
         {
-            if (u.i64 & IEEE_MASK_QNAN) return MUX_FPCLASS_QNAN;
+            if (u.ui64 & IEEE_MASK_QNAN) return MUX_FPCLASS_QNAN;
             else                        return MUX_FPCLASS_SNAN;
         }
         else
         {
-            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NINF;
+            if (u.ui64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NINF;
             else                        return MUX_FPCLASS_PINF;
         }
     }
     else
     {
-        if (u.i64 & IEEE_MASK_SIGN)     return MUX_FPCLASS_NN;
+        if (u.ui64 & IEEE_MASK_SIGN)     return MUX_FPCLASS_NN;
         else                            return MUX_FPCLASS_PN;
     }
 }
