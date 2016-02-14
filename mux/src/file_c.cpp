@@ -225,7 +225,7 @@ void fcache_dump(DESC *d, int num)
 
     while (fp != NULL)
     {
-        queue_write_LEN(d, (char *)fp->data, fp->hdr.nchars);
+        queue_write_LEN(d, fp->data, fp->hdr.nchars);
         fp = fp->hdr.nxt;
     }
 }

@@ -740,10 +740,10 @@ const int g_trimoffset[4][4] =
  * \return          Equivalent string in ASCII codeset.
  */
 
-const char *ConvertToAscii(const UTF8 *pString)
+const UTF8 *ConvertToAscii(const UTF8 *pString)
 {
-    static char buffer[2*LBUF_SIZE];
-    char *q = buffer;
+    static UTF8 buffer[2*LBUF_SIZE];
+    UTF8 *q = buffer;
 
     while ('\0' != *pString)
     {
@@ -803,10 +803,10 @@ const char *ConvertToAscii(const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const char *ConvertToCp437(const UTF8 *pString)
+const UTF8 *ConvertToCp437(const UTF8 *pString)
 {
-    static char buffer[2*LBUF_SIZE];
-    char *q = buffer;
+    static UTF8 buffer[2*LBUF_SIZE];
+    UTF8 *q = buffer;
 
     while (  '\0' != *pString
           && q < buffer + sizeof(buffer) - 1)
@@ -815,7 +815,7 @@ const char *ConvertToCp437(const UTF8 *pString)
         int iState = TR_CP437_START_STATE;
         do
         {
-            unsigned char ch = *p++;
+            UTF8 ch = *p++;
             unsigned char iColumn = tr_cp437_itt[(unsigned char)ch];
             unsigned short iOffset = tr_cp437_sot[iState];
             for (;;)
@@ -867,10 +867,10 @@ const char *ConvertToCp437(const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const char *ConvertToLatin1(const UTF8 *pString)
+const UTF8 *ConvertToLatin1(const UTF8 *pString)
 {
-    static char buffer[2*LBUF_SIZE];
-    char *q = buffer;
+    static UTF8 buffer[2*LBUF_SIZE];
+    UTF8 *q = buffer;
 
     while (  '\0' != *pString
           && q < buffer + sizeof(buffer) - 1)
@@ -879,7 +879,7 @@ const char *ConvertToLatin1(const UTF8 *pString)
         int iState = TR_LATIN1_START_STATE;
         do
         {
-            unsigned char ch = *p++;
+            UTF8 ch = *p++;
             unsigned char iColumn = tr_latin1_itt[(unsigned char)ch];
             unsigned short iOffset = tr_latin1_sot[iState];
             for (;;)
@@ -931,10 +931,10 @@ const char *ConvertToLatin1(const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const char *ConvertToLatin2(const UTF8 *pString)
+const UTF8 *ConvertToLatin2(const UTF8 *pString)
 {
-    static char buffer[2*LBUF_SIZE];
-    char *q = buffer;
+    static UTF8 buffer[2*LBUF_SIZE];
+    UTF8 *q = buffer;
 
     while (  '\0' != *pString
           && q < buffer + sizeof(buffer) - 1)
@@ -943,7 +943,7 @@ const char *ConvertToLatin2(const UTF8 *pString)
         int iState = TR_LATIN2_START_STATE;
         do
         {
-            unsigned char ch = *p++;
+            UTF8 ch = *p++;
             unsigned char iColumn = tr_latin2_itt[(unsigned char)ch];
             unsigned short iOffset = tr_latin2_sot[iState];
             for (;;)
