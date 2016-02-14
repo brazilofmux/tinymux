@@ -127,7 +127,7 @@ void dispatch_KeepAlive(void *pUnused, int iUnused)
             // Send a Telnet NOP code - creates traffic to keep NAT routers
             // happy.
             //
-            const char aNOP[2] = { NVT_IAC, NVT_NOP };
+            const UTF8 aNOP[2] = { NVT_IAC, NVT_NOP };
             queue_write_LEN(d, aNOP, sizeof(aNOP));
         }
     }

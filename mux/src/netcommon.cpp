@@ -190,7 +190,7 @@ void raw_notify(dbref player, const UTF8 *msg)
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
-        queue_write_LEN(d, "\r\n", 2);
+        queue_write_LEN(d, T("\r\n"), 2);
     }
 }
 
@@ -219,7 +219,7 @@ void raw_notify(dbref player, const mux_string &sMsg)
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, sMsg);
-        queue_write_LEN(d, "\r\n", 2);
+        queue_write_LEN(d, T("\r\n"), 2);
     }
 }
 
@@ -239,7 +239,7 @@ void raw_notify_newline(dbref player)
     DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
-        queue_write_LEN(d, "\r\n", 2);
+        queue_write_LEN(d, T("\r\n"), 2);
     }
 }
 
@@ -267,7 +267,7 @@ void DCL_CDECL raw_broadcast(int inflags, __in_z const UTF8 *fmt, ...)
         if ((Flags(d->player) & inflags) == inflags)
         {
             queue_string(d, buff);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
             process_output(d, false);
         }
     }
@@ -307,7 +307,7 @@ void clearstrings(DESC *d)
  * \return          None.
  */
 
-static void add_to_output_queue(DESC *d, const char *b, size_t n)
+static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
 {
     TBLOCK *tp;
     size_t left;
@@ -414,7 +414,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
  * \return          None.
  */
 
-void queue_write_LEN(DESC *d, const char *b, size_t n)
+void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
 {
     if (0 == n)
     {
@@ -521,22 +521,22 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
 #endif // WINDOWS_NETWORKING
 }
 
-void queue_write(DESC *d, const char *b)
+void queue_write(DESC *d, const UTF8 *b)
 {
-    queue_write_LEN(d, b, strlen(b));
+    queue_write_LEN(d, b, strlen((const char *)b));
 }
 
-static const char *encode_iac(const char *szString)
+static const UTF8 *encode_iac(const UTF8 *szString)
 {
-    static char Buffer[2*LBUF_SIZE];
-    char *pBuffer = Buffer;
+    static UTF8 Buffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = Buffer;
 
-    const char *pString = szString;
+    const UTF8 *pString = szString;
     if (pString)
     {
         while (*pString)
         {
-            const char *p = strchr(pString, NVT_IAC);
+            const UTF8 *p = (const UTF8 *)strchr((char *)pString, NVT_IAC);
             if (!p)
             {
                 // NVT_IAC does not appear in the buffer. This is by far the most-common case.
@@ -592,10 +592,10 @@ void queue_string(DESC *d, const UTF8 *s)
         p = strip_color(s);
     }
 
-    const char *q;
+    const UTF8 *q;
     if (CHARSET_UTF8 == d->encoding)
     {
-        q = (char *)p;
+        q = p;
     }
     else
     {
@@ -625,10 +625,10 @@ void queue_string(DESC *d, const mux_string &s)
 {
     const UTF8 *p = s.export_TextConverted((d->flags & DS_CONNECTED) && Ansi(d->player), NoBleed(d->player), Color256(d->player), Html(d->player));
 
-    const char *q;
+    const UTF8 *q;
     if (CHARSET_UTF8 == d->encoding)
     {
-        q = (char *)p;
+        q = p;
     }
     else
     {
@@ -1400,7 +1400,7 @@ int boot_off(dbref player, const UTF8 *message)
         if (message && *message)
         {
             queue_string(d, message);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
         shutdownsock(d, R_BOOT);
         count++;
@@ -1423,7 +1423,7 @@ int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
                && *message)
             {
                 queue_string(d, message);
-                queue_write_LEN(d, "\r\n", 2);
+                queue_write_LEN(d, T("\r\n"), 2);
             }
             shutdownsock(d, R_BOOT);
             count++;
@@ -1645,7 +1645,7 @@ void check_idle(void)
             }
             else if (ltdIdle.ReturnSeconds() > d->timeout)
             {
-                queue_write(d, "*** Inactivity Timeout ***\r\n");
+                queue_write(d, T("*** Inactivity Timeout ***\r\n"));
                 shutdownsock(d, R_TIMEOUT);
             }
         }
@@ -1654,7 +1654,7 @@ void check_idle(void)
             CLinearTimeDelta ltdIdle = ltaNow - d->connected_at;
             if (ltdIdle.ReturnSeconds() > mudconf.conn_timeout)
             {
-                queue_write(d, "*** Login Timeout ***\r\n");
+                queue_write(d, T("*** Login Timeout ***\r\n"));
                 shutdownsock(d, R_TIMEOUT);
             }
         }
@@ -1769,39 +1769,39 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
-        queue_write(e, "<pre>");
+        queue_write(e, T("<pre>"));
     }
 
     buf = alloc_mbuf("dump_users");
     if (key == CMD_SESSION)
     {
-        queue_write(e, "                               ");
-        queue_write(e, "     Characters Input----  Characters Output---\r\n");
+        queue_write(e, T("                               "));
+        queue_write(e, T("     Characters Input----  Characters Output---\r\n"));
     }
-    queue_write(e, "Player Name        On For Idle ");
+    queue_write(e, T("Player Name        On For Idle "));
     if (key == CMD_SESSION)
     {
-        queue_write(e, "Port Pend  Lost     Total  Pend  Lost     Total\r\n");
+        queue_write(e, T("Port Pend  Lost     Total  Pend  Lost     Total\r\n"));
     }
     else if (  (e->flags & DS_CONNECTED)
             && Wizard_Who(e->player)
             && key == CMD_WHO)
     {
-        queue_write(e, "  Room    Cmds   Host\r\n");
+        queue_write(e, T("  Room    Cmds   Host\r\n"));
     }
     else
     {
         if (  Wizard_Who(e->player)
            || See_Hidden(e->player))
         {
-            queue_write(e, "  ");
+            queue_write(e, T("  "));
         }
         else
         {
-            queue_write(e, " ");
+            queue_write(e, T(" "));
         }
         queue_string(e, mudstate.doing_hdr);
-        queue_write_LEN(e, "\r\n", 2);
+        queue_write_LEN(e, T("\r\n"), 2);
     }
     count = 0;
 
@@ -1991,12 +1991,12 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     mux_sprintf(buf, MBUF_SIZE, T("%d Player%slogged in, %d record, %s maximum.\r\n"), count,
         (count == 1) ? T(" ") : T("s "), mudstate.record_players,
         (mudconf.max_players == -1) ? T("no") : mux_ltoa_t(mudconf.max_players));
-    queue_write(e, (char *)buf);
+    queue_write(e, buf);
 
     if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
-        queue_write(e, "</pre>");
+        queue_write(e, T("</pre>"));
     }
     free_mbuf(buf);
 }
@@ -2043,11 +2043,11 @@ static void dump_info(DESC *arg_desc)
     if (  0 == nDumpInfoTable
        && 0 == nLocalDumpInfoTable)
     {
-        queue_write(arg_desc, "### Begin INFO 1\r\n");
+        queue_write(arg_desc, T("### Begin INFO 1\r\n"));
     }
     else
     {
-        queue_write(arg_desc, "### Begin INFO 1.1\r\n");
+        queue_write(arg_desc, T("### Begin INFO 1.1\r\n"));
     }
 
     queue_string(arg_desc, tprintf(T("Name: %s\r\n"), mudconf.mud_name));
@@ -2055,7 +2055,7 @@ static void dump_info(DESC *arg_desc)
     CLinearTimeAbsolute lta = mudstate.start_time;
     lta.UTC2Local();
     UTF8 *temp = lta.ReturnDateString();
-    queue_write(arg_desc, (char *)tprintf(T("Uptime: %s\r\n"), temp));
+    queue_write(arg_desc, tprintf(T("Uptime: %s\r\n"), temp));
 
     DESC *d;
     int count = 0;
@@ -2072,9 +2072,9 @@ static void dump_info(DESC *arg_desc)
             count++;
         }
     }
-    queue_write(arg_desc, (char *)tprintf(T("Connected: %d\r\n"), count));
-    queue_write(arg_desc, (char *)tprintf(T("Size: %d\r\n"), mudstate.db_top));
-    queue_write(arg_desc, (char *)tprintf(T("Version: %s\r\n"), mudstate.short_ver));
+    queue_write(arg_desc, tprintf(T("Connected: %d\r\n"), count));
+    queue_write(arg_desc, tprintf(T("Size: %d\r\n"), mudstate.db_top));
+    queue_write(arg_desc, tprintf(T("Version: %s\r\n"), mudstate.short_ver));
 
     if (  0 != nDumpInfoTable
        || 0 != nLocalDumpInfoTable)
@@ -2111,11 +2111,11 @@ static void dump_info(DESC *arg_desc)
             safe_str(LocalDumpInfoTable[i], buf, &bp);
         }
         *bp = '\0';
-        queue_write(arg_desc, (char *)buf);
+        queue_write(arg_desc, buf);
         free_lbuf(buf);
-        queue_write(arg_desc, "\r\n");
+        queue_write(arg_desc, T("\r\n"));
     }
-    queue_write(arg_desc, "### End INFO\r\n");
+    queue_write(arg_desc, T("### End INFO\r\n"));
 }
 
 UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
@@ -2299,7 +2299,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     if (*motd_msg)
     {
         queue_string(d, motd_msg);
-        queue_write_LEN(d, "\r\n", 2);
+        queue_write_LEN(d, T("\r\n"), 2);
     }
     free_lbuf(command);
     free_lbuf(user);
@@ -2367,7 +2367,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                    || !Good_obj(mudconf.guest_char)
                    || !(mudconf.control_flags & CF_GUEST))
                 {
-                    queue_write(d, "Guest logins are disabled.\r\n");
+                    queue_write(d, T("Guest logins are disabled.\r\n"));
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
@@ -2412,7 +2412,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         {
             // Not a player, or wrong password.
             //
-            queue_write(d, (char *)connect_fail);
+            queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
             mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->descriptor, d->addr, user);
@@ -2539,7 +2539,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             //
             if (NULL != d->program_data)
             {
-                queue_write_LEN(d, ">\377\371", 3);
+                queue_write_LEN(d, T(">\377\371"), 3);
             }
 
         }
@@ -2601,8 +2601,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
             player = create_player(user, password, NOTHING, false, &pmsg);
             if (player == NOTHING)
             {
-                queue_write(d, (char *)pmsg);
-                queue_write(d, "\r\n");
+                queue_write(d, pmsg);
+                queue_write(d, T("\r\n"));
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
                 mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->descriptor, d->addr, user);
@@ -2714,7 +2714,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         d->flags |= DS_PUEBLOCLIENT;
 
         queue_string(d, mudconf.pueblo_msg);
-        queue_write_LEN(d, "\r\n", 2);
+        queue_write_LEN(d, T("\r\n"), 2);
         break;
 
     default:
@@ -2742,7 +2742,7 @@ void do_command(DESC *d, UTF8 *command)
         if (d->output_prefix)
         {
             queue_string(d, d->output_prefix);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
         mudstate.curr_executor = d->player;
         mudstate.curr_enactor = d->player;
@@ -2799,7 +2799,7 @@ void do_command(DESC *d, UTF8 *command)
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
         mudstate.debug_cmd = cmdsave;
         return;
@@ -2843,12 +2843,12 @@ void do_command(DESC *d, UTF8 *command)
         if (d->output_prefix)
         {
             queue_string(d, d->output_prefix);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
     }
     if (cp->perm != CA_PUBLIC)
     {
-        queue_write(d, "Permission denied.\r\n");
+        queue_write(d, T("Permission denied.\r\n"));
     }
     else
     {
@@ -2865,7 +2865,7 @@ void do_command(DESC *d, UTF8 *command)
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
     }
     mudstate.debug_cmd = cmdsave;
@@ -3723,7 +3723,7 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
 
     bool fFirst = true;
     UTF8* bufc = sControl;
-    for (int i = 0; i < sizeof(access_keywords)/sizeof(access_keywords[0]); i++)
+    for (size_t i = 0; i < sizeof(access_keywords)/sizeof(access_keywords[0]); i++)
     {
         if (p->ulControl & access_keywords[i].m)
         {

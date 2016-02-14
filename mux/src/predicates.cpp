@@ -1261,14 +1261,14 @@ void handle_prog(DESC *d, UTF8 *message)
             {
                 // Use telnet protocol's EOR command to show prompt.
                 //
-                const char aEOR[2] = { NVT_IAC, NVT_EOR };
+                const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
                 queue_write_LEN(d, aEOR, sizeof(aEOR));
             }
             else if (OPTION_YES != UsState(d, TELNET_SGA))
             {
                 // Use telnet protocol's GOAHEAD command to show prompt.
                 //
-                const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+                const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
                 queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
             }
         }
@@ -1547,14 +1547,14 @@ void do_prog
         {
             // Use telnet protocol's EOR command to show prompt.
             //
-            const char aEOR[2] = { NVT_IAC, NVT_EOR };
+            const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
             queue_write_LEN(d, aEOR, sizeof(aEOR));
         }
         else if (OPTION_YES != UsState(d, TELNET_SGA))
         {
             // Use telnet protocol's GOAHEAD command to show prompt.
             //
-            const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+            const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
             queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
         }
     }

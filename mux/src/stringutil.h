@@ -653,19 +653,19 @@ inline bool mux_iskatakana(__in const unsigned char *p)
 
 // utf/tr_utf8_ascii.txt
 //
-const char *ConvertToAscii(__in const UTF8 *pString);
+const UTF8 *ConvertToAscii(__in const UTF8 *pString);
 
 // utf/tr_utf8_cp437.txt
 //
-const char *ConvertToCp437(__in const UTF8 *pString);
+const UTF8 *ConvertToCp437(__in const UTF8 *pString);
 
 // utf/tr_utf8_latin1.txt
 //
-const char *ConvertToLatin1(__in const UTF8 *pString);
+const UTF8 *ConvertToLatin1(__in const UTF8 *pString);
 
 // utf/tr_utf8_latin2.txt
 //
-const char *ConvertToLatin2(__in const UTF8 *pString);
+const UTF8 *ConvertToLatin2(__in const UTF8 *pString);
 
 // utf/tr_widths.txt
 //

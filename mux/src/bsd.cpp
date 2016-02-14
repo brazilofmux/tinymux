@@ -2741,7 +2741,7 @@ static const int nvt_input_action_table[8][14] =
 
 static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
 {
-    char aSB[6] = { NVT_IAC, NVT_SB, 0, 0, NVT_IAC, NVT_SE };
+    UTF8 aSB[6] = { NVT_IAC, NVT_SB, 0, 0, NVT_IAC, NVT_SE };
     aSB[2] = chOption;
     aSB[3] = chRequest;
     queue_write_LEN(d, aSB, sizeof(aSB));
@@ -2798,7 +2798,7 @@ static void SendSb
     *(p++) = NVT_SE;
 
     size_t length = p - pSB;
-    queue_write_LEN(d, (char *)pSB, length);
+    queue_write_LEN(d, pSB, length);
 
     if (pSB != buffer)
     {
@@ -2815,7 +2815,7 @@ static void SendSb
 
 static void SendWill(DESC *d, unsigned char chOption)
 {
-    char aWill[3] = { NVT_IAC, NVT_WILL, 0 };
+    UTF8 aWill[3] = { NVT_IAC, NVT_WILL, 0 };
     aWill[2] = chOption;
     queue_write_LEN(d, aWill, sizeof(aWill));
 }
@@ -2829,7 +2829,7 @@ static void SendWill(DESC *d, unsigned char chOption)
 
 static void SendDont(DESC *d, unsigned char chOption)
 {
-    char aDont[3] = { NVT_IAC, NVT_DONT, 0 };
+    UTF8 aDont[3] = { NVT_IAC, NVT_DONT, 0 };
     aDont[2] = chOption;
     queue_write_LEN(d, aDont, sizeof(aDont));
 }
@@ -2843,7 +2843,7 @@ static void SendDont(DESC *d, unsigned char chOption)
 
 static void SendDo(DESC *d, unsigned char chOption)
 {
-    char aDo[3]   = { NVT_IAC, NVT_DO,   0 };
+    UTF8 aDo[3]   = { NVT_IAC, NVT_DO,   0 };
     aDo[2] = chOption;
     queue_write_LEN(d, aDo, sizeof(aDo));
 }
@@ -2857,7 +2857,7 @@ static void SendDo(DESC *d, unsigned char chOption)
 
 static void SendWont(DESC *d, unsigned char chOption)
 {
-    char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
+    unsigned char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
     aWont[2] = chOption;
     queue_write_LEN(d, aWont, sizeof(aWont));
 }
@@ -4159,7 +4159,7 @@ void close_sockets(bool emergency, const UTF8 *message)
         else
         {
             queue_string(d, message);
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
             shutdownsock(d, R_GOING_DOWN);
         }
     }
@@ -5409,7 +5409,7 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
         if (SiteMon(nd->player))
         {
             queue_string(nd, sendMsg);
-            queue_write_LEN(nd, "\r\n", 2);
+            queue_write_LEN(nd, T("\r\n"), 2);
             process_output(nd, false);
         }
     }
@@ -5688,7 +5688,7 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 {
     const unsigned char allones = 0xFF;
     unsigned char ucMask;
-    int i;
+    size_t i;
     for (i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
     {
         ucMask = m_ia6.s6_addr[i];
@@ -5740,15 +5740,15 @@ void mux_in6_addr::makeMask(int nLeadingBits)
 {
     const unsigned char allones = 0xFF;
     memset(&m_ia6, 0, sizeof(m_ia6));
-    int iBytes = nLeadingBits / 8;
-    for (int i = 0; i < iBytes; i++)
+    size_t iBytes = nLeadingBits / 8;
+    for (size_t i = 0; i < iBytes; i++)
     {
         m_ia6.s6_addr[i] = allones;
     }
 
     if (iBytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
     {
-        int iBits = nLeadingBits % 8;
+        size_t iBits = nLeadingBits % 8;
         if (iBits > 0)
         {
             m_ia6.s6_addr[iBytes] = (allones << (8 - iBits)) & allones;
@@ -6779,7 +6779,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
     if (AF_INET6 == it.getFamily())
     {
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
-        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
             {
@@ -6806,7 +6806,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
     {
         bool fOutside = false;
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
-        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
             {
@@ -6825,7 +6825,7 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
     {
         const mux_in6_addr *t = (const mux_in6_addr *)&it;
         mux_in6_addr *e = new mux_in6_addr();
-        for (int i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             e->m_ia6.s6_addr[i] = m_ia6.s6_addr[i] | ~t->m_ia6.s6_addr[i];
         }

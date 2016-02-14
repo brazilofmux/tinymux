@@ -11870,6 +11870,7 @@ static FUNCTION(fun_Functions)
         if (NULL != pIFun)
         {
             MUX_RESULT mr = pIFun->Call(pfn->nKey, buff, bufc, executor, caller, enactor, eval, fargs, nfargs, cargs, ncargs);
+            UNUSED_PARAMETER(mr);
         }
     }
 }
