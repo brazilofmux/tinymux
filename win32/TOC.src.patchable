@@ -90,6 +90,12 @@ src/mathutil.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
+src/modules/funcs.cpp
+src/modules/funcs.def
+src/modules/funcs.dep
+src/modules/funcs.vcproj
+src/modules/funcs.h
+src/modules/funcs.mak
 src/modules/sample.cpp
 src/modules/sample.def
 src/modules/sample.dep

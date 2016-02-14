@@ -104,6 +104,8 @@ src/modules/config.sub
 src/modules/configure
 src/modules/configure.ac
 src/modules/install-sh
+src/modules/funcs.cpp
+src/modules/funcs.h
 src/modules/sample.cpp
 src/modules/sample.h
 src/modules/sum.cpp
