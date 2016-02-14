@@ -1,6 +1,6 @@
 TinyMUX 2.12: CHANGES
-Last Update: January 2015
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Last Update: February 2016
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,3 +53,5 @@ Miscellaneous:
  -- Consume v5.2 of EastAsianWidth.txt to develop ConsoleWidth() helper
     function.
  -- Bump minimum Visual Studio version to VS 2008.
+ -- Fixed -Wall compiler warnings that may eventually become build
+    errors.
