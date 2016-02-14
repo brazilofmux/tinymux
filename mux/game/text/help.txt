@@ -9124,9 +9124,9 @@ LMIN()
   Returns the minimum number from the optionally delimited list.
 
   Example:
-    > say lmax(1 10 2 4 6)
+    > say lmin(1 10 2 4 6)
     You say "1"
-    > say lmax(1@10@2@4@6,@)
+    > say lmin(1@10@2@4@6,@)
     You say "1"
 
   Related Topics: lmax(), max(), min()
