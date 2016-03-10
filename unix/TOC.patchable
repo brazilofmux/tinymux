@@ -50,7 +50,7 @@ src/config.guess
 src/config.h
 src/config.sub
 src/configure
-src/configure.in
+src/configure.ac
 src/copyright.h
 src/cque.cpp
 src/create.cpp
