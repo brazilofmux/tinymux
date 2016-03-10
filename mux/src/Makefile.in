@@ -186,15 +186,15 @@ stubslave: stubslave.o
 	$(CXX) $(ALLCXXFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
 
 slave: slave.o
-	$(CXX) $(ALLCXXFLAGS) -o slave slave.o $(LIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o slave slave.o $(LIBS)
 
 unsplit: unsplit.o
-	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o unsplit unsplit.o
 
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFALGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
