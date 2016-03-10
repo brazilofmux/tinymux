@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  April 2012
+Last Update:  March 2016
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -406,7 +406,7 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Add mux_fopen() utility function to replace direct use of fopen().
  -- Updated config.guess, config.sub, and configure to later versions.
- -- Updated to autoconf 2.61.
+ -- Updated to autoconf 2.69.
  -- Refer to tinymux.org instead of tinymux.com.
  -- Added SQL readme (Issue 47).
  -- Updated to doxygen 1.5.1.
@@ -420,4 +420,4 @@ Miscellaneous:
  -- Firan is now using 24000-byte buffers.
  -- Increase Debian debhelper compat level.
  -- Build updates for Intel Compiler v11.1.
- -- Fix 4.2.1 -Wall warnings.
+ -- Fix -Wall warnings.
