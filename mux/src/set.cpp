@@ -1017,7 +1017,7 @@ void do_chown
         if (ROYALTY & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/nostrip on %s(#%d) leaves ROYALTY priviledge intact.",
+                tprintf("Warning: @chown/nostrip on %s(#%d) leaves ROYALTY privilege intact.",
                 Moniker(thing), thing));
         }
 
@@ -1026,7 +1026,7 @@ void do_chown
         if (INHERIT & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/nostrip on %s(#%d) leaves INHERIT priviledge intact.",
+                tprintf("Warning: @chown/nostrip on %s(#%d) leaves INHERIT privilege intact.",
                 Moniker(thing), thing));
         }
 
