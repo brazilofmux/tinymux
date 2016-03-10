@@ -1,11 +1,12 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(mudconf.h)
+AC_INIT
+AC_CONFIG_SRCDIR([mudconf.h])
 AC_CONFIG_HEADER(autoconf.h)
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
 AC_ARG_ENABLE(
   [realitylvls],
-  AC_HELP_STRING([--enable-realitylvls], [enable Reality  Levels (default is NO)]),
+  AS_HELP_STRING([--enable-realitylvls],[enable Reality  Levels (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -28,7 +29,7 @@ AC_SUBST(REALITY_OBJ)
 AC_MSG_CHECKING(whether to enable WOD Realms)
 AC_ARG_ENABLE(
   [wodrealms],
-  AC_HELP_STRING([--enable-wodrealms], [enable WOD Realms (default is NO)]),
+  AS_HELP_STRING([--enable-wodrealms],[enable WOD Realms (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -45,7 +46,7 @@ AC_SUBST(WOD_REALMS)
 AC_MSG_CHECKING(whether to enable Memory-Based Database)
 AC_ARG_ENABLE(
   [memorybased],
-  AC_HELP_STRING([--enable-memorybased], [enable Memory-Based Database (default is NO)]),
+  AS_HELP_STRING([--enable-memorybased],[enable Memory-Based Database (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -62,7 +63,7 @@ AC_SUBST(MEMORY_BASED)
 AC_MSG_CHECKING(whether to enable Firan MUX)
 AC_ARG_ENABLE(
   [firanmux],
-  AC_HELP_STRING([--enable-firanmux], [enable Firan MUX (default is NO)]),
+  AS_HELP_STRING([--enable-firanmux],[enable Firan MUX (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -81,7 +82,7 @@ AC_SUBST(FIRANLIBS)
 AC_MSG_CHECKING(whether to enable Firan MUX Conversion)
 AC_ARG_ENABLE(
   [firanmuxconvert],
-  AC_HELP_STRING([--enable-firanmuxconvert], [enable Firan MUX Conversion (default is NO)]),
+  AS_HELP_STRING([--enable-firanmuxconvert],[enable Firan MUX Conversion (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -98,7 +99,7 @@ AC_SUBST(FIRANMUX_CONVERT)
 AC_MSG_CHECKING(whether to enable deprecated features)
 AC_ARG_ENABLE(
   [deprecated],
-  AC_HELP_STRING([--enable-deprecated], [enable deprecated features (default is NO)]),
+  AS_HELP_STRING([--enable-deprecated],[enable deprecated features (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
@@ -120,9 +121,9 @@ AC_PROG_CPP
 case "$host" in
 *irix*) LIBS="-lm" ;;
 esac
-AC_ISC_POSIX
-AC_AIX
-AC_MINIX
+AC_SEARCH_LIBS([strerror],[cposix])
+AC_USE_SYSTEM_EXTENSIONS
+AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
@@ -130,7 +131,7 @@ AC_CHECK_HEADERS(unistd.h memory.h string.h errno.h malloc.h sys/select.h)
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h)
 AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h)
 AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECKING(for sys_errlist decl)
+AS_MESSAGE([checking for sys_errlist decl...])
 if test $ac_cv_header_errno_h = no; then
 	AC_DEFINE(NEED_SYS_ERRLIST_DCL)
 else
@@ -145,16 +146,16 @@ AC_CHECK_FUNCS(gettimeofday select socket localtime_r)
 AC_CHECK_FUNCS(getpagesize usleep nanosleep setitimer crypt)
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE(NEED_GETPAGESIZE_DCL))
 if test $ac_cv_header_ieeefp_h = yes; then
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <ieeefp.h>
-    ],[
+    ]], [[
     int main(int argc, char *argv[])
     {
         fp_prec_t a = fpgetprec();
         fpsetprec(FP_PD);
         return 0;
     }
-    ],AC_DEFINE(IEEEFP_H_USEABLE))
+    ]])],[AC_DEFINE(IEEEFP_H_USEABLE)],[])
 fi
 if test $ac_cv_header_fenv_h = yes; then
 	AC_EGREP_HEADER(fesetprec,fenv.h,AC_DEFINE(HAVE_FESETPREC))
@@ -162,14 +163,13 @@ if test $ac_cv_header_fenv_h = yes; then
 fi
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
-AC_TYPE_SIGNAL
-AC_TRY_COMPILE([#include <signal.h>],[struct sigcontext scp;],AC_DEFINE(HAVE_STRUCT_SIGCONTEXT))
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]], [[struct sigcontext scp;]])],[AC_DEFINE(HAVE_STRUCT_SIGCONTEXT)],[])
 AC_HEADER_SYS_WAIT
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
-AC_CHECKING(for extended string dcls)
+AS_MESSAGE([checking for extended string dcls...])
 AC_EGREP_HEADER(rindex,string.h, ,AC_DEFINE(NEED_INDEX_DCL))
-AC_CHECKING(for malloc dcl)
+AS_MESSAGE([checking for malloc dcl...])
 querymalloc=no
 AC_EGREP_HEADER(realloc,stdlib.h,AC_DEFINE(MALLOC_IN_STDLIB_H),querymalloc=yes)
 if test $ac_cv_header_malloc_h = no && test $querymalloc = yes; then
@@ -177,18 +177,18 @@ if test $ac_cv_header_malloc_h = no && test $querymalloc = yes; then
 else
     AC_EGREP_HEADER(realloc,malloc.h, ,AC_DEFINE(NEED_MALLOC_DCL))
 fi
-AC_CHECKING(for vsprintf dcl)
+AS_MESSAGE([checking for vsprintf dcl...])
 AC_EGREP_HEADER(vsprintf,stdio.h, ,AC_DEFINE(NEED_VSPRINTF_DCL))
-AC_CHECKING(for sprintf dcl)
+AS_MESSAGE([checking for sprintf dcl...])
 AC_EGREP_HEADER(\<sprintf|\<*sprintf,stdio.h, ,AC_DEFINE(NEED_SPRINTF_DCL))
-AC_CHECKING(for extended stdio dcls)
+AS_MESSAGE([checking for extended stdio dcls...])
 AC_EGREP_HEADER(fread,stdio.h,AC_DEFINE(EXTENDED_STDIO_DCLS))
-AC_CHECKING(for extended socket dcls)
+AS_MESSAGE([checking for extended socket dcls...])
 AC_EGREP_HEADER(setsockopt,sys/socket.h,AC_DEFINE(EXTENDED_SOCKET_DCLS))
-AC_CHECKING(for socklen_t dcls)
+AS_MESSAGE([checking for socklen_t dcls...])
 AC_EGREP_HEADER(socklen_t,sys/socket.h,AC_DEFINE(SOCKLEN_T_DCL))
 
-AC_CHECKING(for gettimeofday dcl)
+AS_MESSAGE([checking for gettimeofday dcl...])
 if test $ac_cv_header_time = yes && test $ac_cv_header_sys_time_h = yes ; then
 AC_EGREP_HEADER(gettimeofday,[time.h>
 #include <sys/time.h], ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
@@ -198,8 +198,8 @@ else
 AC_EGREP_HEADER(gettimeofday,time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
 fi
 
-AC_CHECKING(for signal SIGCHLD braindamage)
-AC_TRY_RUN([
+AS_MESSAGE([checking for signal SIGCHLD braindamage...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <signal.h>
 
 #ifndef SIGCHLD
@@ -208,7 +208,7 @@ AC_TRY_RUN([
 
 int rlev;
 
-RETSIGTYPE sighand(int sig, int code)
+void sighand(int sig, int code)
 {
   int stat;
 
@@ -231,13 +231,19 @@ int main(int argc, char *argv[])
   }
   exit(0);
 }
-], ,AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE),AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE))
+]])],[],[AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE)],[AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE)])
 
-AC_DECL_SYS_SIGLIST
+AC_CHECK_DECLS([sys_siglist],[],[],[#include <signal.h>
+/* NetBSD declares sys_siglist in unistd.h.  */
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+])
+
 AC_MSG_CHECKING(for sys_signame decl)
 AC_EGREP_HEADER(sys_signame,signal.h,AC_DEFINE(HAVE_SYS_SIGNAME) AC_MSG_RESULT(yes),AC_MSG_RESULT(no))
-AC_CHECKING(for IEEE floating-point format)
-AC_TRY_RUN([
+AS_MESSAGE([checking for IEEE floating-point format...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    const double d_in = -1e-125;
@@ -254,9 +260,9 @@ int main(int argc, char *argv[])
    }
    return 1;
 }
-],AC_DEFINE(HAVE_IEEE_FP_FORMAT),AC_DEFINE(NO_IEEE_FP_FORMAT),AC_DEFINE(NO_IEEE_FP_FORMAT))
-AC_CHECKING(for IEEE floating-point exception handling)
-AC_TRY_RUN([
+]])],[AC_DEFINE(HAVE_IEEE_FP_FORMAT)],[AC_DEFINE(NO_IEEE_FP_FORMAT)],[AC_DEFINE(NO_IEEE_FP_FORMAT)])
+AS_MESSAGE([checking for IEEE floating-point exception handling...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <signal.h>
 double rZero = 0.0;
 int main(int argc, char *argv[])
@@ -277,9 +283,9 @@ int main(int argc, char *argv[])
    }
    return 1;
 }
-],AC_DEFINE(HAVE_IEEE_FP_SNAN),AC_DEFINE(NO_IEEE_FP_SNAN),AC_DEFINE(NO_IEEE_FP_SNAN))
-AC_CHECKING(for how division/moduli of negative quotients are handled)
-AC_TRY_RUN([
+]])],[AC_DEFINE(HAVE_IEEE_FP_SNAN)],[AC_DEFINE(NO_IEEE_FP_SNAN)],[AC_DEFINE(NO_IEEE_FP_SNAN)])
+AS_MESSAGE([checking for how division/moduli of negative quotients are handled...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    int top = -9;
@@ -291,10 +297,10 @@ int main(int argc, char *argv[])
    }
    return 1;
 }
-],AC_DEFINE(SMALLEST_INT_GTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT))
-AC_CHECKING(for getrusage dcl)
+]])],[AC_DEFINE(SMALLEST_INT_GTE_NEG_QUOTIENT)],[AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT)],[AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT)])
+AS_MESSAGE([checking for getrusage dcl...])
 AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE(NEED_GETRUSAGE_DCL))
-AC_CHECKING(for getrlimit dcl)
+AS_MESSAGE([checking for getrlimit dcl...])
 AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE(NEED_GETRLIMIT_DCL))
 AC_C_CONST
 AC_C_INLINE
@@ -305,8 +311,8 @@ AC_CHECK_SIZEOF(int,4)
 AC_CHECK_SIZEOF(unsigned int,4)
 AC_CHECK_SIZEOF(long,4)
 AC_CHECK_SIZEOF(unsigned long,4)
-AC_CHECKING(whether unaligned 'short' access is permitted)
-AC_TRY_RUN([
+AS_MESSAGE([checking whether unaligned 'short' access is permitted...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    char foo[sizeof(short)+1];
@@ -314,9 +320,9 @@ int main(int argc, char *argv[])
    *ps = 0;
    return 0;
 }
-],AC_DEFINE(CAN_UNALIGN_SHORT))
-AC_CHECKING(whether unaligned 'int' access is permitted)
-AC_TRY_RUN([
+]])],[AC_DEFINE(CAN_UNALIGN_SHORT)],[],[])
+AS_MESSAGE([checking whether unaligned 'int' access is permitted...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    char foo[sizeof(int)+1];
@@ -324,9 +330,9 @@ int main(int argc, char *argv[])
    *pi = 0;
    return 0;
 }
-],AC_DEFINE(CAN_UNALIGN_INT))
-AC_CHECKING(whether unaligned 'long' access is permitted)
-AC_TRY_RUN([
+]])],[AC_DEFINE(CAN_UNALIGN_INT)],[],[])
+AS_MESSAGE([checking whether unaligned 'long' access is permitted...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    char foo[sizeof(long)+1];
@@ -334,9 +340,9 @@ int main(int argc, char *argv[])
    *pl = 0;
    return 0;
 }
-],AC_DEFINE(CAN_UNALIGN_LONG))
-AC_CHECKING(whether unaligned 'long long' access is permitted)
-AC_TRY_RUN([
+]])],[AC_DEFINE(CAN_UNALIGN_LONG)],[],[])
+AS_MESSAGE([checking whether unaligned 'long long' access is permitted...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
 {
    char foo[sizeof(long long)+1];
@@ -344,26 +350,22 @@ int main(int argc, char *argv[])
    *pll = 0;
    return 0;
 }
-],AC_DEFINE(CAN_UNALIGN_LONGLONG))
+]])],[AC_DEFINE(CAN_UNALIGN_LONGLONG)],[],[])
 
-AC_CHECKING(for pread and pwrite)
-AC_TRY_RUN([
+AS_MESSAGE([checking for pread and pwrite...])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
-main() { pwrite(0, "abc", 3, 0); exit(0); }],
-pwrite_works=yes,
-pwrite_works=no,)
+main() { pwrite(0, "abc", 3, 0); exit(0); }]])],[pwrite_works=yes],[pwrite_works=no],[])
 
 if test $pwrite_works = yes; then
   AC_DEFINE(HAVE_PREAD)
   AC_DEFINE(HAVE_PWRITE)
 fi
 
-AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/socket.h>],
-[struct linger ling; ling.l_onoff = 1;],
-AC_DEFINE(HAVE_LINGER))
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/socket.h>]], [[struct linger ling; ling.l_onoff = 1;]])],[AC_DEFINE(HAVE_LINGER)],[])
 AC_CHECK_LIB(resolv, main)
 AC_CHECK_LIB(sun, getpwnam)
 AC_CHECK_LIB(seq, main)
@@ -376,21 +378,20 @@ if test $ac_cv_func_socket = no; then
 	AC_CHECK_LIB(socket, main)
 fi
 AC_CHECK_LIB(m, main)
-AC_CHECKING(for /dev/urandom)
+AS_MESSAGE([checking for /dev/urandom...])
 if test -c /dev/urandom; then
   AC_DEFINE(HAVE_DEV_URANDOM)
 fi
 AC_MSG_CHECKING([for in_addr_t])
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
 #endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#endif], [in_addr_t foo;],
-  [AC_DEFINE([HAVE_IN_ADDR_T])
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+#endif]], [[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_SUBST(def_force_c_compiler)
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

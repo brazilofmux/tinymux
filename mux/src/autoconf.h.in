@@ -20,8 +20,6 @@
 #undef NEED_MEMORY_H
 /* Decl for pid_t */
 #undef pid_t
-/* signal() return type */
-#define RETSIGTYPE void
 /* Define if struct tm is not in time.h */
 #undef TM_IN_SYS_TIME
 /* Define if struct tm has a timezone member */

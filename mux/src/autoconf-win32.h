@@ -26,8 +26,6 @@
 #undef HAVE_UNISTD_H
 /* Define if we have memory.h and need it to get memcmp et al */
 #undef NEED_MEMORY_H
-/* signal() return type */
-#define RETSIGTYPE void
 /* Define if struct tm is not in time.h */
 #undef TM_IN_SYS_TIME
 /* Define if struct tm has a timezone member */

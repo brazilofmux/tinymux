@@ -3807,7 +3807,7 @@ void LogStatBuf(int stat_buf, const char *Name)
 }
 #endif
 
-static RETSIGTYPE DCL_CDECL sighandler(int sig)
+static void DCL_CDECL sighandler(int sig)
 {
 #ifndef WIN32
     int stat_buf;
