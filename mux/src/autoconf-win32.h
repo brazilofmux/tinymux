@@ -331,9 +331,6 @@
 /* Define to the version of this package. */
 /* #undef PACKAGE_VERSION */
 
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
-
 /* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow. */
 /* #undef SIGNAL_SIGCHLD_BRAINDAMAGE */
 

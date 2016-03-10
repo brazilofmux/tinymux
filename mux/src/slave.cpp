@@ -73,7 +73,7 @@ char *mux_stpcpy(char *dest, const char *src)
     return (dest);
 }
 
-RETSIGTYPE child_timeout_signal(int iSig)
+void child_timeout_signal(int iSig)
 {
     exit(1);
 }
@@ -224,7 +224,7 @@ int query(char *ip, char *orig_arg)
     return 0;
 }
 
-RETSIGTYPE alarm_signal(int iSig)
+void alarm_signal(int iSig)
 {
     struct itimerval itime;
     struct timeval interval;
@@ -246,7 +246,7 @@ volatile int nChildrenStarted = 0;
 volatile int nChildrenEndedSIGCHLD = 0;
 volatile int nChildrenEndedMain = 0;
 
-RETSIGTYPE child_signal(int iSig)
+void child_signal(int iSig)
 {
     // Collect the children.
     //
