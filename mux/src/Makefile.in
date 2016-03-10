@@ -160,7 +160,7 @@ links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 
 slave: slave.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) $(LIBS) -o slave slave.o
 
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
@@ -168,7 +168,7 @@ unsplit: unsplit.o
 netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(AUX_SRC) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
