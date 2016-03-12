@@ -9,7 +9,10 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-CXXFLAGS = -Wall
+include /usr/share/dpkg/buildflags.mk
+export CPPFLAGS CXXFLAGS LDFLAGS
+
+CXXFLAGS += -Wall
 DEB_INSTALL = usr/lib/tinymux/game
 DEB_SHRINSTALL = usr/share/tinymux/game
 DEB_BIN = usr/games
@@ -32,7 +35,7 @@ configure-stamp:
 
 build: build-stamp
 
-build-stamp: configure-stamp 
+build-stamp: configure-stamp
 	dh_testdir
 
 	# Add here commands to compile the package.
@@ -56,12 +59,12 @@ clean:
 		src/Makefile src/autoconf.h src/modules/config.status src/modules/Makefile \
 		src/modules/autoconf.h
 
-	dh_clean 
+	dh_clean
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_prep
 	dh_installdirs
 
 	# Add here commands to install the package into debian/tinymux.
