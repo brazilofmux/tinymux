@@ -3,7 +3,7 @@ Section: games
 Priority: optional
 Maintainer: Ervin Hearn III <noltar@korongil.net>
 Build-Depends: debhelper (>= 9.0.0), binutils (>= 2.21.0 )
-Standards-Version: 3.9.7
+Standards-Version: 3.9.6
 Vcs-Git: https://github.com/brazilofmux/tinymux.git
 Vcs-Browser: https://github.com/brazilofmux/tinymux
 Homepage: http://www.tinymux.org/

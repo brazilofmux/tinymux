@@ -1,16 +1,16 @@
 tinymux (2.6.5.34-1.1) unstable; urgency=low
 
-  * Non-maintainer upload
-  * Fix "FTBFS with GCC 6: narrowing conversion" <explain what you
-    changed and why> (Closes: #811780)
+  * Non-maintainer upload.
+  * New upstream release.
+  * Fix "FTBFS with GCC 6: narrowing conversion" by using unsigned types.
+    They are always used as a bit field anyway. (Closes: #811780)
   * Fix "use autotools-dev to update config.{sub,guess} for new arches"
-    <explain what you changed and why> (Closes: #736863)
+    by adopting latest versions of config.{sub,guess}. (Closes: #736863)
   * Fix "[Mayhem] Bug report on tinymux: netmux crashes with exit status
-    139" <explain what you changed and why> (Closes: #716615)
-  * Fix "run dh-autoreconf to update for new architectures" <explain
-    what you changed and why> (Closes: #759448)
+    139" by fixing the size of the command-line argument table.
+    (Closes: #716615)
 
- -- Stephen Dennis <brazilofmux@gmail.com>  Thu, 10 Mar 2016 10:19:18 -0700
+ -- Stephen Dennis <brazilofmux@gmail.com>  Thu, 10 Mar 2016 16:57:00 -0700
 
 tinymux (2.6.5.28-1) unstable; urgency=low
 
