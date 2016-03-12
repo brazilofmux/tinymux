@@ -171,7 +171,7 @@ NETMUX_SRC = $(NETMUX_BASE_SRC) $(REALITY_SRC)
 NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 
 .cpp.o:
-	$(CXX) $(ALLCXXFLAGS) -c $<
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) -c $<
 
 all: @DYNAMICLIB_TARGET@ netmux slave @STUBSLAVE_TARGET@ links
 
@@ -183,25 +183,25 @@ links: netmux slave @STUBSLAVE_TARGET@
 	( if [ ! -z "@DYNAMICLIB_TARGET@" -a -f "@DYNAMICLIB_TARGET@" ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
 
 stubslave: stubslave.o
-	$(CXX) $(ALLCXXFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
 
 slave: slave.o
-	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o slave slave.o $(LIBS)
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) $(LDFLAGS) -o slave slave.o $(LIBS)
 
 unsplit: unsplit.o
-	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o unsplit unsplit.o
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) $(LDFLAGS) -o unsplit unsplit.o
 
 netmux: $(NETMUX_OBJ) $(VER_SRC)
-	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) $(LDFALGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) $(LDFALGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(CPPFLAGS) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(ALLSRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(ALLSRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(CPPFLAGS) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
