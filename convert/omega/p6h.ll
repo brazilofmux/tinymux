@@ -18,13 +18,16 @@
                  int  iPreStrContext;
 
 <INITIAL>{
-  ^\+V[0-9]+     {
-                     p6hlval.i = ((atoi(p6htext+2) - 2) / 256) - 5;
+  ^\+V-?[0-9]+   {
+                     p6hlval.i = ((unsigned)(atoi(p6htext+2) - 2) / 256) - 5;
                      BEGIN(afterhdr);
                      return VHDR;
                  }
 }
 <afterhdr>{
+  dbversion      {
+                     return DBVERSION;
+                 }
   savedtime      {
                      return SAVEDTIME;
                  }
@@ -34,11 +37,20 @@
   ^\+POWER[\t ]+LIST  {
                      return POWERLIST;
                  }
+  ^\+ATTRIBUTES[\t ]+LIST  {
+                     return ATTRIBUTESLIST;
+                 }
   flagcount      {
                      return FLAGCOUNT;
                  }
   flagaliascount {
                      return FLAGALIASCOUNT;
+                 }
+  attrcount      {
+                     return ATTRCOUNT;
+                 }
+  attraliascount {
+                     return ATTRALIASCOUNT;
                  }
   name           {
                      return NAME;
@@ -58,6 +70,15 @@
   alias          {
                      return ALIAS;
                  }
+  flags          {
+                     return FLAGS;
+                 }
+  creator        {
+                     return CREATOR;
+                 }
+  data           {
+                     return DATA;
+                 }
   -?[0-9]+       {
                      p6hlval.i = atoi(p6htext);
                      return INTEGER;
@@ -66,10 +87,19 @@
                      p6hlval.i = atoi(p6htext+1);
                      return SIZEHINT;
                  }
+  \#-?[0-9]+     {
+                     p6hlval.i = atoi(p6htext+1);
+                     return DBREF;
+                 }
   ![0-9]+        {
                      p6hlval.i = atoi(p6htext+1);
                      BEGIN(object);
                      return OBJECT;
+                 }
+\"               {
+                     pQuotedString = aQuotedString;
+                     iPreStrContext = YY_START;
+                     BEGIN(str);
                  }
 }
 

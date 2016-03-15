@@ -25,6 +25,7 @@
 #define DBF_LABELS              0x00100000
 #define DBF_SPIFFY_AF_ANSI      0x00200000
 #define DBF_HEAR_CONNECT        0x00400000
+#define DBF_NEW_VERSION         0x00800000
 
 // DBF_SPIFFY_LOCKS was introduced with PennMUSH 1.7.5p0 (11/14/2001) and
 // replaced DBF_NEW_LOCKS.
@@ -68,11 +69,30 @@ p6h_gameflaginfo p6h_gameflagnames[] =
     { DBF_LABELS,           "LABELS"          },
     { DBF_SPIFFY_AF_ANSI,   "SPIFFY_AF_ANSI"  },
     { DBF_HEAR_CONNECT,     "HEAR_CONNECT"    },
+    { DBF_NEW_VERSION,      "NEW_VERSION"     },
 };
 #define P6H_NUM_GAMEFLAGNAMES (sizeof(p6h_gameflagnames)/sizeof(p6h_gameflagnames[0]))
 
 P6H_GAME g_p6hgame;
 P6H_LOCKEXP *p6hl_ParseKey(char *pKey);
+
+static char *EncodeString(const char *str)
+{
+    static char buf[65536];
+    char *p = buf;
+    while (  '\0' != *str
+          && p < buf + sizeof(buf) - 2)
+    {
+        if (  '\\' == *str
+           || '"' == *str)
+        {
+            *p++ = '\\';
+        }
+        *p++ = *str++;
+    }
+    *p = '\0';
+    return buf;
+}
 
 char *P6H_LOCKEXP::Write(char *p)
 {
@@ -152,12 +172,12 @@ char *P6H_LOCKEXP::Write(char *p)
         break;
 
     case P6H_LOCKEXP::le_true:
-        sprintf(p, "#true", m_p[0]);
+        sprintf(p, "#true");
         p += strlen(p);
         break;
 
     case P6H_LOCKEXP::le_false:
-        sprintf(p, "#false", m_p[0]);
+        sprintf(p, "#false");
         p += strlen(p);
         break;
 
@@ -350,27 +370,27 @@ void P6H_FLAGINFO::Merge(P6H_FLAGINFO *pfi)
     if (NULL != pfi->m_pName && NULL == m_pName)
     {
         m_pName = pfi->m_pName;
-        pfi->m_pName = NULL;;
+        pfi->m_pName = NULL;
     }
     if (NULL != pfi->m_pLetter && NULL == m_pLetter)
     {
         m_pLetter = pfi->m_pLetter;
-        pfi->m_pLetter = NULL;;
+        pfi->m_pLetter = NULL;
     }
     if (NULL != pfi->m_pType && NULL == m_pType)
     {
         m_pType = pfi->m_pType;
-        pfi->m_pType = NULL;;
+        pfi->m_pType = NULL;
     }
     if (NULL != pfi->m_pPerms && NULL == m_pPerms)
     {
         m_pPerms = pfi->m_pPerms;
-        pfi->m_pPerms = NULL;;
+        pfi->m_pPerms = NULL;
     }
     if (NULL != pfi->m_pNegatePerms && NULL == m_pNegatePerms)
     {
         m_pNegatePerms = pfi->m_pNegatePerms;
-        pfi->m_pNegatePerms = NULL;;
+        pfi->m_pNegatePerms = NULL;
     }
 }
 
@@ -397,12 +417,127 @@ void P6H_FLAGALIASINFO::Merge(P6H_FLAGALIASINFO *pfai)
     if (NULL != pfai->m_pName && NULL == m_pName)
     {
         m_pName = pfai->m_pName;
-        pfai->m_pName = NULL;;
+        pfai->m_pName = NULL;
     }
     if (NULL != pfai->m_pAlias && NULL == m_pAlias)
     {
         m_pAlias = pfai->m_pAlias;
-        pfai->m_pAlias = NULL;;
+        pfai->m_pAlias = NULL;
+    }
+}
+
+void P6H_ATTRNAMEINFO::SetName(char *p)
+{
+    if (NULL != m_pName)
+    {
+        free(m_pName);
+    }
+    m_pName = p;
+}
+
+void P6H_ATTRNAMEINFO::SetFlags(char *p)
+{
+    if (NULL != m_pFlags)
+    {
+        free(m_pFlags);
+    }
+    m_pFlags = p;
+}
+
+void P6H_ATTRNAMEINFO::SetData(char *p)
+{
+    if (NULL != m_pData)
+    {
+        free(m_pData);
+    }
+    m_pData = p;
+}
+
+void P6H_ATTRNAMEINFO::Merge(P6H_ATTRNAMEINFO *pani)
+{
+    if (NULL != pani->m_pName && NULL == m_pName)
+    {
+        m_pName = pani->m_pName;
+        pani->m_pName = NULL;
+    }
+    if (NULL != pani->m_pFlags && NULL == m_pFlags)
+    {
+        m_pFlags = pani->m_pFlags;
+        pani->m_pFlags = NULL;
+    }
+    if (pani->m_fCreator && !m_fCreator)
+    {
+        m_fCreator = true;
+        m_dbCreator = pani->m_dbCreator;
+    }
+    if (NULL != pani->m_pData && NULL == m_pData)
+    {
+        m_pData = pani->m_pData;
+        pani->m_pData = NULL;
+    }
+}
+
+void P6H_ATTRNAMEINFO::Write(FILE *fp)
+{
+    if (NULL != m_pName)
+    {
+        fprintf(fp, " name \"%s\"\n", EncodeString(m_pName));
+        if (NULL != m_pFlags)
+        {
+            fprintf(fp, "  flags \"%s\"\n", EncodeString(m_pFlags));
+        }
+        if (m_fCreator)
+        {
+            fprintf(fp, "  creator #%d\n", m_dbCreator);
+        }
+        if (NULL != m_pData)
+        {
+            fprintf(fp, "  data \"%s\"\n", EncodeString(m_pData));
+        }
+    }
+}
+
+void P6H_ATTRALIASINFO::SetName(char *p)
+{
+    if (NULL != m_pName)
+    {
+        free(m_pName);
+    }
+    m_pName = p;
+}
+
+void P6H_ATTRALIASINFO::SetAlias(char *p)
+{
+    if (NULL != m_pAlias)
+    {
+        free(m_pAlias);
+    }
+    m_pAlias = p;
+}
+
+void P6H_ATTRALIASINFO::Merge(P6H_ATTRALIASINFO *paai)
+{
+    if (NULL != paai->m_pName && NULL == m_pName)
+    {
+        m_pName = paai->m_pName;
+        paai->m_pName = NULL;
+    }
+    if (NULL != paai->m_pAlias && NULL == m_pAlias)
+    {
+        m_pAlias = paai->m_pAlias;
+        paai->m_pAlias = NULL;
+    }
+}
+
+void P6H_ATTRALIASINFO::Write(FILE *fp)
+{
+    if (NULL != m_pName)
+    {
+        fprintf(fp, " name \"%s\"\n", EncodeString(m_pName));
+        if (NULL != m_pAlias)
+        {
+            fprintf(fp, "  alias \"%s\"\n", EncodeString(m_pAlias));
+        }
     }
 }
 
@@ -485,7 +620,7 @@ void P6H_OBJECTINFO::Merge(P6H_OBJECTINFO *poi)
     if (NULL != poi->m_pName && NULL == m_pName)
     {
         m_pName = poi->m_pName;
-        poi->m_pName = NULL;;
+        poi->m_pName = NULL;
     }
     if (poi->m_fLocation && !m_fLocation)
     {
@@ -555,17 +690,17 @@ void P6H_OBJECTINFO::Merge(P6H_OBJECTINFO *poi)
     if (NULL != poi->m_pFlags && NULL == m_pFlags)
     {
         m_pFlags = poi->m_pFlags;
-        poi->m_pFlags = NULL;;
+        poi->m_pFlags = NULL;
     }
     if (NULL != poi->m_pPowers && NULL == m_pPowers)
     {
         m_pPowers = poi->m_pPowers;
-        poi->m_pPowers = NULL;;
+        poi->m_pPowers = NULL;
     }
     if (NULL != poi->m_pWarnings && NULL == m_pWarnings)
     {
         m_pWarnings = poi->m_pWarnings;
-        poi->m_pWarnings = NULL;;
+        poi->m_pWarnings = NULL;
     }
     if (NULL != poi->m_pvai && NULL == m_pvai)
     {
@@ -621,7 +756,7 @@ void P6H_LOCKINFO::Merge(P6H_LOCKINFO *pli)
     if (NULL != pli->m_pType && NULL == m_pType)
     {
         m_pType = pli->m_pType;
-        pli->m_pType = NULL;;
+        pli->m_pType = NULL;
     }
     if (pli->m_fCreator && !m_fCreator)
     {
@@ -631,7 +766,7 @@ void P6H_LOCKINFO::Merge(P6H_LOCKINFO *pli)
     if (NULL != pli->m_pFlags && NULL == m_pFlags)
     {
         m_pFlags = pli->m_pFlags;
-        pli->m_pFlags = NULL;;
+        pli->m_pFlags = NULL;
     }
     if (pli->m_fDerefs && !m_fDerefs)
     {
@@ -641,7 +776,7 @@ void P6H_LOCKINFO::Merge(P6H_LOCKINFO *pli)
     if (NULL != pli->m_pKey && NULL == m_pKey)
     {
         m_pKey = pli->m_pKey;
-        pli->m_pKey = NULL;;
+        pli->m_pKey = NULL;
     }
     if (pli->m_fFlags && !m_fFlags)
     {
@@ -682,7 +817,7 @@ void P6H_ATTRINFO::Merge(P6H_ATTRINFO *pai)
     if (NULL != pai->m_pName && NULL == m_pName)
     {
         m_pName = pai->m_pName;
-        pai->m_pName = NULL;;
+        pai->m_pName = NULL;
     }
     if (pai->m_fOwner && !m_fOwner)
     {
@@ -692,7 +827,7 @@ void P6H_ATTRINFO::Merge(P6H_ATTRINFO *pai)
     if (NULL != pai->m_pFlags && NULL == m_pFlags)
     {
         m_pFlags = pai->m_pFlags;
-        pai->m_pFlags = NULL;;
+        pai->m_pFlags = NULL;
     }
     if (pai->m_fDerefs && !m_fDerefs)
     {
@@ -702,7 +837,7 @@ void P6H_ATTRINFO::Merge(P6H_ATTRINFO *pai)
     if (NULL != pai->m_pValue && NULL == m_pValue)
     {
         m_pValue = pai->m_pValue;
-        pai->m_pValue = NULL;;
+        pai->m_pValue = NULL;
     }
     if (pai->m_fFlags && !m_fFlags)
     {
@@ -824,7 +959,7 @@ void P6H_GAME::Validate() const
         {
             if (m_nFlags != m_pvFlags->size())
             {
-                fprintf(stderr, "WARNING: flag count (%d) does not agree with flagcount (%d) in +FLAG LIST\n", m_pvFlags->size(), m_nFlags);
+                fprintf(stderr, "WARNING: flag count (%lu) does not agree with flagcount (%d) in +FLAG LIST\n", m_pvFlags->size(), m_nFlags);
             }
             for (vector<P6H_FLAGINFO *>::iterator it = m_pvFlags->begin(); it != m_pvFlags->end(); ++it)
             {
@@ -837,24 +972,6 @@ void P6H_GAME::Validate() const
     {
         it->second->Validate();
     }
-}
-
-static char *EncodeString(const char *str)
-{
-    static char buf[65536];
-    char *p = buf;
-    while (  '\0' != *str
-          && p < buf + sizeof(buf) - 2)
-    {
-        if (  '\\' == *str
-           || '"' == *str)
-        {
-            *p++ = '\\';
-        }
-        *p++ = *str++;
-    }
-    *p = '\0';
-    return buf;
 }
 
 void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
@@ -935,7 +1052,7 @@ void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
         }
         else
         {
-            fprintf(fp, "lockcount %d\n", m_pvli->size());
+            fprintf(fp, "lockcount %lu\n", m_pvli->size());
             for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
             {
                 (*it)->Write(fp, fLabels);
@@ -1036,7 +1153,7 @@ void P6H_OBJECTINFO::Write(FILE *fp, bool fLabels)
     {
         if (fLabels)
         {
-            fprintf(fp, "attrcount %d\n", m_pvai->size());
+            fprintf(fp, "attrcount %lu\n", m_pvai->size());
         }
         for (vector<P6H_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
         {
@@ -1065,7 +1182,7 @@ void P6H_OBJECTINFO::Validate() const
         {
             if (m_nLockCount != m_pvli->size())
             {
-                fprintf(stderr, "WARNING: lock count (%d) does not agree with lockcount (%d)\n", m_pvli->size(), m_nLockCount);
+                fprintf(stderr, "WARNING: lock count (%lu) does not agree with lockcount (%d)\n", m_pvli->size(), m_nLockCount);
             }
             for (vector<P6H_LOCKINFO *>::iterator it = m_pvli->begin(); it != m_pvli->end(); ++it)
             {
@@ -1238,22 +1355,22 @@ void P6H_OBJECTINFO::Upgrade()
             {
             case P6H_OLD_TYPE_ROOM:
                 pnm = upgrade_obj_toggles_room;
-                nnm = sizeof(upgrade_obj_toggles_room)/sizeof(upgrade_obj_toggles_room[0]);;
+                nnm = sizeof(upgrade_obj_toggles_room)/sizeof(upgrade_obj_toggles_room[0]);
                 break;
 
             case P6H_OLD_TYPE_THING:
                 pnm = upgrade_obj_toggles_thing;
-                nnm = sizeof(upgrade_obj_toggles_thing)/sizeof(upgrade_obj_toggles_thing[0]);;
+                nnm = sizeof(upgrade_obj_toggles_thing)/sizeof(upgrade_obj_toggles_thing[0]);
                 break;
 
             case P6H_OLD_TYPE_EXIT:
                 pnm = upgrade_obj_toggles_exit;
-                nnm = sizeof(upgrade_obj_toggles_exit)/sizeof(upgrade_obj_toggles_exit[0]);;
+                nnm = sizeof(upgrade_obj_toggles_exit)/sizeof(upgrade_obj_toggles_exit[0]);
                 break;
 
             case P6H_OLD_TYPE_PLAYER:
                 pnm = upgrade_obj_toggles_player;
-                nnm = sizeof(upgrade_obj_toggles_player)/sizeof(upgrade_obj_toggles_player[0]);;
+                nnm = sizeof(upgrade_obj_toggles_player)/sizeof(upgrade_obj_toggles_player[0]);
                 break;
             }
 
@@ -1644,6 +1761,10 @@ void P6H_ATTRINFO::Upgrade()
 void P6H_GAME::Write(FILE *fp)
 {
     fprintf(fp, "+V%d\n", (m_flags + 5) * 256 + 2);
+    if (m_fDbVersion)
+    {
+        fprintf(fp, "dbversion %d\n", m_nDbVersion);
+    }
     if (NULL != m_pSavedTime)
     {
         fprintf(fp, "savedtime \"%s\"\n", m_pSavedTime);
@@ -1688,6 +1809,28 @@ void P6H_GAME::Write(FILE *fp)
     if (NULL != m_pvPowerAliases)
     {
         for (vector<P6H_FLAGALIASINFO *>::iterator it = m_pvPowerAliases->begin(); it != m_pvPowerAliases->end(); ++it)
+        {
+            (*it)->Write(fp);
+        }
+    }
+    if (m_fAttributeNames)
+    {
+        fprintf(fp, "+ATTRIBUTES LIST\nattrcount %d\n", m_nAttributeNames);
+    }
+    if (NULL != m_pvAttributeNames)
+    {
+        for (vector<P6H_ATTRNAMEINFO *>::iterator it = m_pvAttributeNames->begin(); it != m_pvAttributeNames->end(); ++it)
+        {
+            (*it)->Write(fp);
+        }
+    }
+    if (m_fAttributeAliases)
+    {
+        fprintf(fp, "attraliascount %d\n", m_nAttributeAliases);
+    }
+    if (NULL != m_pvAttributeAliases)
+    {
+        for (vector<P6H_ATTRALIASINFO *>::iterator it = m_pvAttributeAliases->begin(); it != m_pvAttributeAliases->end(); ++it)
         {
             (*it)->Write(fp);
         }
@@ -2885,7 +3028,7 @@ static char *StripColor(char *pValue)
 void P6H_OBJECTINFO::Extract(FILE *fp) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
-    fprintf(fp, "@@ encoding is latin-1\n", m_dbRef);
+    fprintf(fp, "@@ encoding is latin-1\n");
     if (NULL != m_pName)
     {
         bool fNeedEval;

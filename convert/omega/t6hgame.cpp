@@ -3101,7 +3101,7 @@ static NameMask t6h_powers2[] =
 void T6H_OBJECTINFO::Extract(FILE *fp) const
 {
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
-    fprintf(fp, "@@ encoding is ASCII\n", m_dbRef);
+    fprintf(fp, "@@ encoding is ASCII\n");
     if (NULL != m_pName)
     {
         bool fNeedEval;
@@ -3601,7 +3601,7 @@ void T6H_ATTRINFO::Extract(FILE *fp, char *pObjName) const
                             if (fFirst)
                             {
                                 fFirst = false;
-                                fprintf(fp, "@@ attribute is ", pObjName);
+                                fprintf(fp, "@@ attribute is ");
                             }
                             else
                             {

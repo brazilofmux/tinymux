@@ -333,6 +333,70 @@ public:
     }
 };
 
+class P6H_ATTRNAMEINFO
+{
+public:
+    char *m_pName;
+    void SetName(char *pName);
+
+    char *m_pFlags;
+    void SetFlags(char *pFlags);
+
+    bool m_fCreator;
+    int  m_dbCreator;
+    void SetCreator(int dbCreator) { m_fCreator = true; m_dbCreator = dbCreator; }
+
+    char *m_pData;
+    void SetData(char *pData);
+
+    void Merge(P6H_ATTRNAMEINFO *pani);
+
+    void Write(FILE *fp);
+
+    P6H_ATTRNAMEINFO()
+    {
+        m_pName = NULL;
+        m_pFlags = NULL;
+        m_pData = NULL;
+    }
+    ~P6H_ATTRNAMEINFO()
+    {
+        free(m_pName);
+        free(m_pFlags);
+        free(m_pData);
+        m_pName = NULL;
+        m_pFlags = NULL;
+        m_pData = NULL;
+    }
+};
+
+class P6H_ATTRALIASINFO
+{
+public:
+    char *m_pName;
+    void SetName(char *pName);
+
+    char *m_pAlias;
+    void SetAlias(char *pAlias);
+
+    void Merge(P6H_ATTRALIASINFO *paai);
+
+    void Write(FILE *fp);
+
+    P6H_ATTRALIASINFO()
+    {
+        m_pName = NULL;
+        m_pAlias = NULL;
+    }
+    ~P6H_ATTRALIASINFO()
+    {
+        free(m_pName);
+        free(m_pAlias);
+        m_pName = NULL;
+        m_pAlias = NULL;
+    }
+};
+
 class P6H_OBJECTINFO
 {
 public:
@@ -495,6 +559,10 @@ public:
     int  GetFlags()          { return m_flags;  }
     bool HasLabels() const;
 
+    bool m_fDbVersion;
+    int m_nDbVersion;
+    void SetDbVersion(int nDbVersion) { m_fDbVersion = true; m_nDbVersion = nDbVersion; }
+
     char *m_pSavedTime;
     void SetSavedTime(char *p);
 
@@ -526,6 +594,20 @@ public:
     vector<P6H_FLAGALIASINFO *> *m_pvPowerAliases;
     void SetPowerAliasList(vector<P6H_FLAGALIASINFO *> *pvpai) { m_pvPowerAliases = pvpai; }
 
+    bool m_fAttributeNames;
+    int  m_nAttributeNames;
+    void SetAttributeNameCount(int nAttributeNames) { m_fAttributeNames = true; m_nAttributeNames = nAttributeNames; }
+
+    vector<P6H_ATTRNAMEINFO *> *m_pvAttributeNames;
+    void SetAttributeNameList(vector<P6H_ATTRNAMEINFO *> *pvani) { m_pvAttributeNames = pvani; }
+
+    bool m_fAttributeAliases;
+    int  m_nAttributeAliases;
+    void SetAttributeAliasCount(int nAttributeAliases) { m_fAttributeAliases = true; m_nAttributeAliases = nAttributeAliases; }
+
+    vector<P6H_ATTRALIASINFO *> *m_pvAttributeAliases;
+    void SetAttributeAliasList(vector<P6H_ATTRALIASINFO *> *pvaai) { m_pvAttributeAliases = pvaai; }
+
     bool m_fSizeHint;
     int  m_nSizeHint;
     void SetSizeHint(int nSizeHint) { m_fSizeHint = true; m_nSizeHint = nSizeHint; }
@@ -549,6 +631,7 @@ public:
     P6H_GAME()
     {
         m_flags = 0;
+        m_fDbVersion = false;
         m_pSavedTime = NULL;
         m_fSizeHint = false;
         m_nSizeHint = 0;
@@ -564,6 +647,9 @@ public:
         m_fPowerAliases = false;
         m_nPowerAliases = 0;
         m_pvPowerAliases = NULL;
+        m_fAttributeNames = false;
+        m_nAttributeNames = 0;
+        m_pvAttributeNames = NULL;
     }
     ~P6H_GAME()
     {
@@ -604,6 +690,15 @@ public:
             }
             delete m_pvPowerAliases;
             m_pvPowerAliases = NULL;
+        }
+        if (NULL != m_pvAttributeNames)
+        {
+            for (vector<P6H_ATTRNAMEINFO *>::iterator it = m_pvAttributeNames->begin(); it != m_pvAttributeNames->end(); ++it)
+            {
+                delete *it;
+            }
+            delete m_pvAttributeNames;
+            m_pvAttributeNames = NULL;
         }
         for (map<int, P6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {

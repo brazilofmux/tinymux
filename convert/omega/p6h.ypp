@@ -5,7 +5,7 @@ int p6hlex();
 void p6herror(const char *s);
 %}
 
-%name-prefix="p6h"
+%name-prefix "p6h"
 %union {
     char                       *p;
     int                         i;
@@ -19,23 +19,32 @@ void p6herror(const char *s);
     vector<P6H_LOCKINFO *>      *pvli;
     P6H_ATTRINFO                *pai;
     vector<P6H_ATTRINFO *>      *pvai;
+    P6H_ATTRNAMEINFO            *pani;
+    vector<P6H_ATTRNAMEINFO *>  *pvani;
+    P6H_ATTRALIASINFO           *paai;
+    vector<P6H_ATTRALIASINFO *> *pvaai;
 }
 
 %token SAVEDTIME FLAGSLIST FLAGCOUNT NAME LETTER TYPE PERMS NEGATE_PERMS
 %token FLAGALIASCOUNT ALIAS POWERLIST LOCATION CONTENTS
 %token EXITS NEXT PARENT LOCKCOUNT OWNER ZONE PENNIES FLAGS POWERS WARNINGS
 %token CREATED MODIFIED ATTRCOUNT DEREFS VALUE CREATOR KEY EOD
+%token ATTRIBUTESLIST ATTRALIASCOUNT DATA DBVERSION
 %token <p> STRING ATTRNAME
 %token <i> INTEGER DBREF OBJECT VHDR SIZEHINT
 %type <pfi> flag flagphrase flagphrases
 %type <pvfi> flags
 %type <pfai> flagalias flagaliasphrase flagaliasphrases
 %type <pvfai> flagaliases
+%type <paai> attralias attraliasphrase attraliasphrases
+%type <pvaai> attraliases
 %type <poi> object objectphrase objectphrases
 %type <pli> lock lockphrase lockphrases
 %type <pvli> locklist
 %type <pai> attr attrphrase attrphrases attr_old
 %type <pvai> attrlist attrlist_old
+%type <pani> attributename attributenamephrase attributenamephrases
+%type <pvani> attributenames
 %start start
 
 %%
@@ -55,11 +64,15 @@ sections
 
 section
 :
+    DBVERSION INTEGER  { g_p6hgame.SetDbVersion($2); }
+|
     SAVEDTIME STRING  { g_p6hgame.SetSavedTime($2); }
 |
     FLAGSLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetFlagCount($3); g_p6hgame.SetFlagList($4); g_p6hgame.SetFlagAliasCount($6); g_p6hgame.SetFlagAliasList($7); }
 |
     POWERLIST FLAGCOUNT INTEGER flags FLAGALIASCOUNT INTEGER flagaliases { g_p6hgame.SetPowerCount($3); g_p6hgame.SetPowerList($4); g_p6hgame.SetPowerAliasCount($6); g_p6hgame.SetPowerAliasList($7); }
+|
+    ATTRIBUTESLIST ATTRCOUNT INTEGER attributenames ATTRALIASCOUNT INTEGER attraliases { g_p6hgame.SetAttributeNameCount($3); g_p6hgame.SetAttributeNameList($4); g_p6hgame.SetAttributeAliasCount($6); g_p6hgame.SetAttributeAliasList($7); }
 |
     SIZEHINT          { g_p6hgame.SetSizeHint($1); }
 |
@@ -118,6 +131,58 @@ flagaliasphrases
 flagaliasphrase
 :
     ALIAS STRING     { $$ = new P6H_FLAGALIASINFO; $$->SetAlias($2); }
+;
+
+attributenames
+:
+    attributename    { $$ = new vector<P6H_ATTRNAMEINFO *>; $$->push_back($1); }
+|
+    attributenames attributename { $$ = $1; $$->push_back($2); }
+;
+
+attributename
+:
+    NAME STRING attributenamephrases  { $$ = $3; $$->SetName($2); }
+;
+
+attributenamephrases
+:
+    attributenamephrase               { $$ = $1; }
+|
+    attributenamephrases attributenamephrase   { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+attributenamephrase
+:
+    FLAGS STRING        { $$ = new P6H_ATTRNAMEINFO; $$->SetFlags($2); }
+|
+    CREATOR DBREF       { $$ = new P6H_ATTRNAMEINFO; $$->SetCreator($2); }
+|
+    DATA STRING         { $$ = new P6H_ATTRNAMEINFO; $$->SetData($2); }
+;
+
+attraliases
+:
+    attralias              { $$ = new vector<P6H_ATTRALIASINFO *>; $$->push_back($1); }
+|
+    attraliases attralias  { $$ = $1; $$->push_back($2); }
+;
+
+attralias
+:
+    NAME STRING attraliasphrases  { $$ = $3; $$->SetName($2); }
+;
+
+attraliasphrases
+:
+    attraliasphrase                   { $$ = $1; }
+|
+    attraliasphrases attraliasphrase  { $1->Merge($2); $$ = $1; delete $2; }
+;
+
+attraliasphrase
+:
+    ALIAS STRING     { $$ = new P6H_ATTRALIASINFO; $$->SetAlias($2); }
 ;
 
 objectlist

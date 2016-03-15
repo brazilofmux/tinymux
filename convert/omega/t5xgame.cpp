@@ -7246,11 +7246,11 @@ void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
     fprintf(fp, "@@ Extracting #%d\n", m_dbRef);
     if (fUnicode)
     {
-        fprintf(fp, "@@ encoding is UTF-8\n", m_dbRef);
+        fprintf(fp, "@@ encoding is UTF-8\n");
     }
     else
     {
-        fprintf(fp, "@@ encoding is latin-1\n", m_dbRef);
+        fprintf(fp, "@@ encoding is latin-1\n");
     }
     if (NULL != m_pName)
     {
@@ -7760,7 +7760,7 @@ void T5X_ATTRINFO::Extract(FILE *fp, bool fUnicode, char *pObjName) const
                             if (fFirst)
                             {
                                 fFirst = false;
-                                fprintf(fp, "@@ attribute is ", pObjName);
+                                fprintf(fp, "@@ attribute is ");
                             }
                             else
                             {
