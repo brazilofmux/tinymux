@@ -2947,10 +2947,12 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
-        else if (TELNET_STARTTLS == chOption)
+#ifdef UNIX_SSL
+        else if ((TELNET_STARTTLS == chOption) && (tls_ctx != NULL))
         {
             SendSb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
         }
+#endif
         else if (TELNET_BINARY == chOption)
         {
             EnableUs(d, TELNET_BINARY);
@@ -3023,7 +3025,7 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
        || TELNET_ENV     == chOption
        || TELNET_BINARY  == chOption
 #ifdef UNIX_SSL
-       || TELNET_STARTTLS== chOption
+       || ((TELNET_STARTTLS== chOption) && (tls_ctx != NULL))
 #endif
        || TELNET_CHARSET == chOption)
     {
@@ -3204,7 +3206,7 @@ void TelnetSetup(DESC *d)
     EnableUs(d, TELNET_CHARSET);
     EnableHim(d, TELNET_CHARSET);
 #ifdef UNIX_SSL
-    if (!d->ssl_session)
+    if (!d->ssl_session && (tls_ctx != NULL))
     {
         EnableHim(d, TELNET_STARTTLS);
     }
@@ -3710,7 +3712,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 #ifdef UNIX_SSL
                 case TELNET_STARTTLS:
                     if (  2 == m
-                       && TELNETSB_FOLLOWS == d->aOption[1])
+                       && TELNETSB_FOLLOWS == d->aOption[1]
+                       && tls_ctx != NULL)
                     {
                        d->ssl_session = SSL_new(tls_ctx);
                        SSL_set_fd(d->ssl_session, d->descriptor);
