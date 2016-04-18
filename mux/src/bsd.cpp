@@ -3206,7 +3206,7 @@ void TelnetSetup(DESC *d)
     EnableUs(d, TELNET_CHARSET);
     EnableHim(d, TELNET_CHARSET);
 #ifdef UNIX_SSL
-    if (!d->ssl_session)
+    if (!d->ssl_session && (tls_ctx != NULL))
     {
         EnableHim(d, TELNET_STARTTLS);
     }
