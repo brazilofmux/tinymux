@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: May 2012
+Last Update: April 2016
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,6 +96,7 @@ Bug Fixes:
     libiomp5md.dll dependency.
  -- These memset calls were being called with an incorrect number of
     bytes.
+ -- Fix for crash if STARTTLS is called without a valid certificate.
 
 
 Performance Enhancements:
