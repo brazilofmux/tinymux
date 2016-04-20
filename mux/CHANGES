@@ -1,6 +1,6 @@
 TinyMUX 2.12: CHANGES
-Last Update: February 2016
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Last Update: April 2016
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,6 +36,7 @@ Bug Fixes:
     utility is not supported on 64-bit platforms.
  -- Separated KeepAlive out from Idle-checking.
  -- Update link to Pueblo Enhancer's Guide.
+ -- Fix for crash if STARTTLS is called without a valid certificate.
 
 
 Performance Enhancements:
