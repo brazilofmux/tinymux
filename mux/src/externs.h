@@ -10,9 +10,7 @@
 
 #include "db.h"
 #include "match.h"
-#if defined(TINYMUX_MODULES)
 #include "libmux.h"
-#endif
 #include "modules.h"
 
 class CResultsSet
@@ -128,9 +126,7 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
-#if defined(TINYMUX_MODULES)
 void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
-#endif
 
 #if defined(UNIX_CRYPT)
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -1225,8 +1221,6 @@ void stack_clr(dbref obj);
 #endif // DEPRECATED
 bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
 
-#if defined(TINYMUX_MODULES)
-
 DEFINE_FACTORY(CLogFactory)
 
 typedef struct ServerEventsSinkNode
@@ -1239,7 +1233,5 @@ extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 DEFINE_FACTORY(CServerEventsSourceFactory)
 DEFINE_FACTORY(CQueryClientFactory)
 DEFINE_FACTORY(CFunctionsFactory)
-
-#endif
 
 #endif // EXTERNS_H

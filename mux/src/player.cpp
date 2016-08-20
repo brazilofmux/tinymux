@@ -784,14 +784,12 @@ dbref create_player
     s_Home(player, start_home());
     free_lbuf(pbuf);
     local_data_create(player);
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_create(player);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
     return player;
 }
 

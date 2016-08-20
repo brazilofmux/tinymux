@@ -74,8 +74,6 @@
 
 #endif // WIN32
 
-#define TINYMUX_MODULES
-
 #ifndef __specstrings
 #define __deref_in
 #define __deref_in_opt

@@ -89,14 +89,12 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     s_Next(exit, Exits(loc));
     s_Exits(loc, exit);
     local_data_create(exit);
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_create(exit);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
     // and we're done
     //
@@ -607,14 +605,12 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     local_data_create(room);
 
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_create(room);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
     notify(executor, tprintf(T("%s created as room #%d."), name, room));
 
@@ -691,14 +687,12 @@ void do_create
 
     local_data_create(thing);
 
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_create(thing);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 }
 
 
@@ -947,14 +941,12 @@ void do_clone
 
     local_data_clone(clone, thing);
 
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->data_clone(clone, thing);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 }
 
 // ---------------------------------------------------------------------------

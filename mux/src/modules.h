@@ -37,8 +37,6 @@
 
 #define EV_TRACE        0x00200000  /* Request a trace of this call to eval */
 
-#if defined(TINYMUX_MODULES)
-
 const MUX_IID IID_IFunctionSinkControl   = UINT64_C(0x000000020560E6D5);
 const MUX_CID CID_Log                    = UINT64_C(0x000000020CE18E7A);
 const MUX_CID CID_StubSlave              = UINT64_C(0x00000002267CA586);
@@ -213,5 +211,4 @@ public:
     virtual MUX_RESULT Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms) = 0;
 };
 
-#endif
 #endif // MODULES_H

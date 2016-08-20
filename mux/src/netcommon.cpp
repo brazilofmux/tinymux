@@ -1381,14 +1381,12 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
     desc_delhash(d);
 
     local_disconnect(player, num);
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->disconnect(player, num);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 }
 
 int boot_off(dbref player, const UTF8 *message)
@@ -2526,14 +2524,12 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
             local_connect(player, 0, num_con);
 
-#if defined(TINYMUX_MODULES)
             ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
             while (NULL != pNode)
             {
                 pNode->pSink->connect(player, 0, num_con);
                 pNode = pNode->pNext;
             }
-#endif // TINYMUX_MODULES
 
             // If stuck in an @prog, show the prompt.
             //
@@ -2631,14 +2627,12 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 // is 0 and indicate the connect is a new character.
                 //
                 local_connect(player, 1, 0);
-#if defined(TINYMUX_MODULES)
                 ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
                 while (NULL != pNode)
                 {
                     pNode->pSink->connect(player, 1, 0);
                     pNode = pNode->pNext;
                 }
-#endif // TINYMUX_MODULES
             }
         }
     }

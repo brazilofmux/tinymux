@@ -9,8 +9,6 @@
 #include "autoconf.h"
 #include "config.h"
 
-#if defined(TINYMUX_MODULES)
-
 #include "libmux.h"
 #include "modules.h"
 
@@ -686,5 +684,3 @@ MUX_RESULT CStubSlaveFactory::LockServer(bool bLock)
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
-
-#endif // TINYMUX_MODULES

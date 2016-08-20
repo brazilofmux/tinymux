@@ -741,9 +741,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@pemit"),       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@power"),       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           0, do_power},
     {T("@program"),     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
-#if defined(TINYMUX_MODULES)
     {T("@query"),       query_sw,   CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_query},
-#endif
     {T("@quota"),       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
     {T("@reference"),   reference_sw, CA_PUBLIC,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_reference},
     {T("@robot"),       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
@@ -3892,7 +3890,6 @@ static void list_process(dbref player)
 //
 static void list_modules(dbref executor)
 {
-#if defined(TINYMUX_MODULES)
     raw_notify(executor, T("Modules:"));
     int i;
     for (i = 0; ; i++)
@@ -3924,9 +3921,6 @@ static void list_modules(dbref executor)
             raw_notify(executor, tprintf(T("%s (%s) by stubslave"), ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
         }
     }
-#endif
-#else
-    raw_notify(executor, T("Modules not enabled."));
 #endif
 }
 

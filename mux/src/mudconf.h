@@ -217,12 +217,10 @@ struct confdata
     UTF8    immobile_msg[128];  /* Message displayed to immobile players */
 #endif // FIRANMUX
 
-#if defined(INLINESQL) || defined(TINYMUX_MODULES)
     UTF8    sql_server[128];
     UTF8    sql_user[128];
     UTF8    sql_password[128];
     UTF8    sql_database[128];
-#endif // INLINESQL || TINYMUX_MODULES
 
     UTF8    mail_server[128];
     UTF8    mail_ehlo[128];
@@ -522,9 +520,7 @@ struct statedata
     CResultsSet *pResultsSet;           // ResultsSet from @query.
     int iRow;                           // Current Row.
 #endif // STUB_SLAVE
-#if defined(TINYMUX_MODULES)
     mux_IQueryControl *pIQueryControl;
-#endif
 
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */

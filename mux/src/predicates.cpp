@@ -1616,7 +1616,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #endif
 
     local_presync_database();
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
@@ -1624,7 +1623,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
         p = p->pNext;
     }
     final_modules();
-#endif // TINYMUX_MODULES
 
 #ifndef MEMORY_BASED
     al_store();

@@ -993,8 +993,6 @@ void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prsResultsSet)
 }
 #endif // STUB_SLAVE
 
-#if defined(TINYMUX_MODULES)
-
 // ---------------------------------------------------------------------------
 // sql_que: Add commands to the sql queue.
 //
@@ -1050,8 +1048,6 @@ void sql_que
         scheduler.CancelTask(Task_SQLTimeout, tmp, next_handle);
     }
 }
-
-#endif
 
 // ---------------------------------------------------------------------------
 // do_wait: Command interface to wait_que
@@ -1174,8 +1170,6 @@ void do_wait
     }
 }
 
-#if defined(TINYMUX_MODULES)
-
 // ---------------------------------------------------------------------------
 // do_query: Command interface to sql_que
 //
@@ -1238,8 +1232,6 @@ void do_query
         notify_quiet(executor, T("At least one query option is required."));
     }
 }
-
-#endif
 
 static CLinearTimeAbsolute Show_lsaNow;
 static int Total_SystemTasks;

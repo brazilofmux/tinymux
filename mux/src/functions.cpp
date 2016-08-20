@@ -11754,8 +11754,6 @@ CF_HAND(cf_func_access)
     return -1;
 }
 
-#if defined(TINYMUX_MODULES)
-
 // CFunctions component which is not directly accessible.
 //
 
@@ -12002,5 +12000,3 @@ MUX_RESULT CFunctionsFactory::LockServer(bool bLock)
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
-
-#endif

@@ -4639,14 +4639,12 @@ static void DCL_CDECL sighandler(int sig)
                     }
                     mudstate.dumping = false;
                     local_dump_complete_signal();
-#if defined(TINYMUX_MODULES)
                     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
                     while (NULL != p)
                     {
                         p->pSink->dump_complete_signal();
                         p = p->pNext;
                     }
-#endif // TINYMUX_MODULES
                     continue;
                 }
             }
@@ -4745,7 +4743,6 @@ static void DCL_CDECL sighandler(int sig)
         report();
 
         local_presync_database_sigsegv();
-#if defined(TINYMUX_MODULES)
         {
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
             while (NULL != p)
@@ -4755,7 +4752,6 @@ static void DCL_CDECL sighandler(int sig)
             }
         }
         final_modules();
-#endif // TINYMUX_MODULES
 
 #ifndef MEMORY_BASED
         al_store();

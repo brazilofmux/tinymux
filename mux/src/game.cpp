@@ -1290,7 +1290,6 @@ void do_shutdown
         emergency_shutdown();
 
         local_presync_database();
-#if defined(TINYMUX_MODULES)
         ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
         while (NULL != p)
         {
@@ -1298,7 +1297,6 @@ void do_shutdown
             p = p->pNext;
         }
         final_modules();
-#endif // TINYMUX_MODULES
 
         // Close the attribute text db and dump the header db.
         //
@@ -1402,14 +1400,12 @@ void dump_database_internal(int dump_type)
     // in progress.
     //
     local_dump_database(dump_type);
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->dump_database(dump_type);
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
     if (0 < dump_type)
     {
@@ -1582,14 +1578,12 @@ static void dump_database(void)
     ENDLOG;
 
     local_presync_database();
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->presync_database();
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
@@ -1616,14 +1610,12 @@ static void dump_database(void)
     local_dump_complete_signal();
 #endif // HAVE_WORKING_FORK
 
-#if defined(TINYMUX_MODULES)
     p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->dump_complete_signal();
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 }
 
 void fork_and_dump(int key)
@@ -1686,14 +1678,12 @@ void fork_and_dump(int key)
     free_lbuf(buff);
 
     local_presync_database();
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->presync_database();
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
@@ -1794,14 +1784,12 @@ void fork_and_dump(int key)
         mudstate.dumper = 0;
         mudstate.dumping = false;
         local_dump_complete_signal();
-#if defined(TINYMUX_MODULES)
         ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
         while (NULL != p)
         {
             p->pSink->dump_complete_signal();
             p = p->pNext;
         }
-#endif // TINYMUX_MODULES
     }
     bRequestAccepted = false;
 #endif // HAVE_WORKING_FORK
@@ -2820,7 +2808,6 @@ int DCL_CDECL main(int argc, char *argv[])
     init_attrtab();
     init_version();
 
-#if defined(TINYMUX_MODULES)
     // The module subsystem must be ready to go before the configuration files
     // are consumed.  However, this means that the modules can't really do
     // much until they get a notification that the part of loading they depend
@@ -2830,13 +2817,11 @@ int DCL_CDECL main(int argc, char *argv[])
     boot_stubslave(GOD, GOD, GOD, 0);
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
     init_modules();
-#endif // TINYMUX_MODULES
 
     mudconf.config_file = StringClone(conffile);
     mudconf.log_dir = StringClone(pErrorBasename);
     cf_read();
 
-#if defined(TINYMUX_MODULES)
     MUX_RESULT mr = mux_CreateInstance(CID_QueryServer, NULL, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {
@@ -2889,7 +2874,6 @@ int DCL_CDECL main(int argc, char *argv[])
         log_text(T("Couldn\xE2\x80\x99t create interface to Query Server."));
         ENDLOG;
     }
-#endif // TINYMUX_MODULES
 
 #if defined(INLINESQL)
     init_sql();
@@ -3018,14 +3002,12 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     local_startup();
 
-#if defined(TINYMUX_MODULES)
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
         p->pSink->startup();
         p = p->pNext;
     }
-#endif // TINYMUX_MODULES
 
     init_timer();
 
@@ -3050,7 +3032,6 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     local_shutdown();
 
-#if defined(TINYMUX_MODULES)
     p = g_pServerEventsSinkListHead;
     while (NULL != p)
     {
@@ -3058,7 +3039,6 @@ int DCL_CDECL main(int argc, char *argv[])
         p = p->pNext;
     }
     final_modules();
-#endif // TINYMUX_MODULES
     CLOSE;
 
 #if defined(HAVE_WORKING_FORK)
