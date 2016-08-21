@@ -4751,6 +4751,9 @@ static void DCL_CDECL sighandler(int sig)
                 p = p->pNext;
             }
         }
+#if defined(STUB_SLAVE)
+        final_stubslave();
+#endif // STUB_SLAVE
         final_modules();
 
 #ifndef MEMORY_BASED

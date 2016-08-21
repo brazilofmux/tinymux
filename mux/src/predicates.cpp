@@ -1622,6 +1622,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
         p->pSink->presync_database();
         p = p->pNext;
     }
+#if defined(STUB_SLAVE)
+    final_stubslave();
+#endif // STUB_SLAVE
     final_modules();
 
 #ifndef MEMORY_BASED

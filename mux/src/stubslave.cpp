@@ -104,14 +104,18 @@ int main(int argc, char *argv[])
     Pipe_InitializeQueueInfo(&Queue_Out);
 
     MUX_RESULT mr = MUX_S_OK;
-    mr = mux_InitModuleLibrary(IsSlaveProcess, Stub_PipePump, &Queue_In, &Queue_Out);
+    mr = mux_InitModuleLibrary(IsSlaveProcess);
     if (MUX_SUCCEEDED(mr))
     {
         mr = mux_RegisterClassObjects(NUM_CLASSES, stubslave_classes, stubslave_GetClassObject);
         if (MUX_SUCCEEDED(mr))
         {
-            Stub_ShoveChars();
-            mr = mux_RevokeClassObjects(NUM_CLASSES, stubslave_classes);
+            mr = mux_InitModuleLibraryPump(Stub_PipePump, &Queue_In, &Queue_Out);
+            if (MUX_SUCCEEDED(mr))
+            {
+                Stub_ShoveChars();
+                mr = mux_RevokeClassObjects(NUM_CLASSES, stubslave_classes);
+            }
         }
         mr = mux_FinalizeModuleLibrary();
     }

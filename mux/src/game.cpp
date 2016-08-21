@@ -1296,6 +1296,9 @@ void do_shutdown
             p->pSink->presync_database();
             p = p->pNext;
         }
+#if defined(STUB_SLAVE)
+        final_stubslave();
+#endif // STUB_SLAVE
         final_modules();
 
         // Close the attribute text db and dump the header db.
@@ -2636,6 +2639,8 @@ void DetectWindowsCapabilities()
 
 int DCL_CDECL main(int argc, char *argv[])
 {
+    FLOAT_Initialize();
+
     build_version();
 
     // Look for dbconvert[.exe] in the program name.
@@ -2731,12 +2736,29 @@ int DCL_CDECL main(int argc, char *argv[])
 
     mudstate.bStandAlone = false;
 
-    FLOAT_Initialize();
+    // Initialize Modules very, very early.
+    //
+    MUX_RESULT mr = init_modules();
+
+    // TODO: Create platform interface
+
     TIME_Initialize();
     SeedRandomNumberGenerator();
 
     Log.SetBasename(pErrorBasename);
     Log.StartLogging();
+
+    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+    if (MUX_SUCCEEDED(mr))
+    {
+        log_printf(T("Registered netmux modules."));
+    }
+    else
+    {
+        log_printf(T("Failed either to initialize module subsystem or register netmux modules (%d)."), mr);
+    }
+    ENDLOG;
+
     game_pid = mux_getpid();
     write_pidfile(mudconf.pid_file);
 
@@ -2815,14 +2837,14 @@ int DCL_CDECL main(int argc, char *argv[])
     //
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     boot_stubslave(GOD, GOD, GOD, 0);
+    init_stubslave();
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
-    init_modules();
 
     mudconf.config_file = StringClone(conffile);
     mudconf.log_dir = StringClone(pErrorBasename);
     cf_read();
 
-    MUX_RESULT mr = mux_CreateInstance(CID_QueryServer, NULL, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
+    mr = mux_CreateInstance(CID_QueryServer, NULL, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {
         mr = mudstate.pIQueryControl->Connect(mudconf.sql_server, mudconf.sql_database, mudconf.sql_user, mudconf.sql_password);
@@ -3038,6 +3060,9 @@ int DCL_CDECL main(int argc, char *argv[])
         p->pSink->shutdown();
         p = p->pNext;
     }
+#if defined(STUB_SLAVE)
+    final_stubslave();
+#endif // STUB_SLAVE
     final_modules();
     CLOSE;
 

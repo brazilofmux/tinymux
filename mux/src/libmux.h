@@ -224,7 +224,8 @@ typedef MUX_RESULT PipePump(void);
 
 // APIs intended only for use by main program (netmux or stubslave).
 //
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx, PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void);
 
 #if defined(WINDOWS_FILES)

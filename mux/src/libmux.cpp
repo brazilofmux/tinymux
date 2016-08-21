@@ -1206,41 +1206,47 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 
 static bool GrowChannels(void);
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx, PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
 {
     if (eLibraryDown == g_LibraryState)
     {
         g_ProcessContext = ctx;
+        g_fpPipePump = NULL;
+        g_pQueue_In  = NULL;
+        g_pQueue_Out = NULL;
         g_LibraryState = eLibraryInitialized;
-
-        if (  NULL != fpPipePump
-           && NULL != pQueue_In
-           && NULL != pQueue_Out
-           && GrowChannels())
-        {
-            // Save pipepump callback and two queues.  Hosting process should
-            // service queues when pipepump is called.
-            //
-            // The module library should deal with packets, call levels, and
-            // clean disconnections.  The main program (stubslave or netmux)
-            // can handle file descriptors, process spawning, and errors.
-            //
-            g_fpPipePump = fpPipePump;
-            g_pQueue_In  = pQueue_In;
-            g_pQueue_Out = pQueue_Out;
-        }
-        else
-        {
-            g_fpPipePump = NULL;
-            g_pQueue_In  = NULL;
-            g_pQueue_Out = NULL;
-        }
         return MUX_S_OK;
     }
     else
     {
         return MUX_E_FAIL;
     }
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out)
+{
+    if (  eLibraryInitialized == g_LibraryState
+       && NULL == g_fpPipePump
+       && NULL == g_pQueue_In
+       && NULL == g_pQueue_Out
+       && NULL != fpPipePump
+       && NULL != pQueue_In
+       && NULL != pQueue_Out
+       && GrowChannels())
+    {
+        // Save pipepump callback and two queues.  Hosting process should
+        // service queues when pipepump is called.
+        //
+        // The module library should deal with packets, call levels, and
+        // clean disconnections.  The main program (stubslave or netmux)
+        // can handle file descriptors, process spawning, and errors.
+        //
+        g_fpPipePump = fpPipePump;
+        g_pQueue_In  = pQueue_In;
+        g_pQueue_Out = pQueue_Out;
+        return MUX_S_OK;
+    }
+    return MUX_E_FAIL;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)

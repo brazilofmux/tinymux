@@ -186,7 +186,9 @@ public:
     virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery) = 0;
 };
 
-extern void init_modules(void);
+extern MUX_RESULT init_modules(void);
+extern MUX_RESULT init_stubslave(void);
+extern void final_stubslave(void);
 extern void final_modules(void);
 
 #define QS_SUCCESS         (0)
