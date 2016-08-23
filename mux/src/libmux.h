@@ -118,7 +118,6 @@ typedef MUX_RESULT FDISC(struct channel_info *pci, QUEUE_INFO *pqi);
 
 typedef struct channel_info
 {
-     bool      bAllocated;
      UINT32    nChannel;
      FCALL    *pfCall;
      FMSG     *pfMsg;

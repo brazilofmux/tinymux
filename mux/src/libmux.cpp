@@ -14,6 +14,8 @@
 #endif // HAVE_DLOPEN
 
 #include "libmux.h"
+#include <map>
+using namespace std;
 
 extern "C"
 {
@@ -58,62 +60,47 @@ typedef enum MODULESTATE
     eModuleUnloadable
 } ModuleState;
 
-typedef struct mod_info
+struct ltstr
 {
-    struct mod_info  *pNext;
+    bool operator()(const UTF8 *s1, const UTF8 *s2) const
+    {
+        return strcmp((const char *)s1, (const char *)s2) < 0;
+    }
+};
+
+class Module
+{
+public:
+    Module() : fpGetClassObject(NULL), fpCanUnloadNow(NULL), fpRegister(NULL), fpUnregister(NULL), hInst(NULL), pModuleName(NULL),
+        pFileName(NULL), bLoaded(false), eState(eModuleInitialized)
+    { }
     FPGETCLASSOBJECT *fpGetClassObject;
     FPCANUNLOADNOW   *fpCanUnloadNow;
     FPREGISTER       *fpRegister;
     FPUNREGISTER     *fpUnregister;
     MODULE_HANDLE    hInst;
-    UTF8             *pModuleName;
+    const UTF8       *pModuleName;
 #if defined(WINDOWS_FILES)
-    UTF16            *pFileName;
+    const UTF16      *pFileName;
 #elif defined(UNIX_FILES)
     UTF8             *pFileName;
 #endif // UNIX_FILES
     bool             bLoaded;
     ModuleState      eState;
-} MUX_MODULE_INFO_PRIVATE;
-
-typedef struct
-{
-    MUX_CLASS_INFO            ci;
-    MUX_MODULE_INFO_PRIVATE  *pModule;
-} MUX_CLASS_INFO_PRIVATE;
-
-static MUX_MODULE_INFO_PRIVATE *g_pModuleList = NULL;
-static MUX_MODULE_INFO_PRIVATE *g_pModuleLast = NULL;
-
-static MUX_MODULE_INFO_PRIVATE  g_MainModule =
-{
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    false
 };
 
-static int                      g_nClasses = 0;
-static int                      g_nClassesAllocated = 0;
-static MUX_CLASS_INFO_PRIVATE  *g_pClasses = NULL;
-
-static MUX_MODULE_INFO_PRIVATE *g_pModule = NULL;
-
-static int                  g_nInterfaces = 0;
-static int                  g_nInterfacesAllocated = 0;
-static MUX_INTERFACE_INFO  *g_pInterfaces = NULL;
+static Module g_MainModule;
+static Module *g_pModule = NULL;
+static map<MUX_CID, Module *> g_ModulesByClass;
+static map<const UTF8 *, Module *, ltstr> g_ModulesByName;
+static map<MUX_IID, MUX_INTERFACE_INFO *> g_Interfaces;
 
 static PipePump   *g_fpPipePump = NULL;
 static QUEUE_INFO *g_pQueue_In  = NULL;
 static QUEUE_INFO *g_pQueue_Out = NULL;
 
-static CHANNEL_INFO *aChannels = NULL;
-static UINT32        nChannels = 0;
+static map<UINT32, CHANNEL_INFO *> g_Channels;
+static UINT32 nNextChannel;
 
 static LibraryState    g_LibraryState   = eLibraryDown;
 static process_context g_ProcessContext = IsUninitialized;
@@ -180,110 +167,6 @@ static UTF16 *CopyUTF16(const UTF16 *pString)
 }
 #endif // WINDOWS_FILES
 
-/*! \brief Find the first class ID not less than the requested class id.
- *
- * The return value may be beyond the end of the array, so callers should check bounds.
- *
- * \param  cid  Class ID.
- * \return      Index into g_pClasses.
- */
-
-static int ClassFind(MUX_CID cid)
-{
-    // Binary search for the class id.
-    //
-    int lo = 0;
-    int mid;
-    int hi = g_nClasses - 1;
-    while (lo <= hi)
-    {
-        mid = ((hi - lo) >> 1) + lo;
-        if (cid < g_pClasses[mid].ci.cid)
-        {
-            hi = mid - 1;
-        }
-        else if (g_pClasses[mid].ci.cid < cid)
-        {
-            lo = mid + 1;
-        }
-        else // (g_pClasses[mid].ci.cid == cid)
-        {
-            return mid;
-        }
-    }
-    return lo;
-}
-
-/*! \brief Find which module implements a particular class id.
- *
- * Note that callers may need to test for MainModule and cannot assume the
- * returned module record is implemented in a module.
- *
- * \param  cid  Class ID.
- * \return      Pointer to module.
- */
-
-static MUX_MODULE_INFO_PRIVATE *ModuleFindFromCID(MUX_CID cid)
-{
-    int i = ClassFind(cid);
-    if (  i < g_nClasses
-       && g_pClasses[i].ci.cid == cid)
-   {
-        return g_pClasses[i].pModule;
-    }
-    return NULL;
-}
-
-/*! \brief Find module given its module name.
- *
- * Note that it is not possible to find the special-case module for the main
- * program (netmux or stubslave) this way.
- *
- * \param  UTF8[]    Module name.
- * \return           Corresponding module record or NULL if not found.
- */
-
-static MUX_MODULE_INFO_PRIVATE *ModuleFindFromName(const UTF8 aModuleName[])
-{
-    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
-    while (NULL != pModule)
-    {
-        if (strcmp((const char *)aModuleName, (const char *)pModule->pModuleName) == 0)
-        {
-            return pModule;
-        }
-        pModule = pModule->pNext;
-    }
-    return NULL;
-}
-
-/*! \brief Find module given its filename.
- *
- * Note that it is not possible to find the special-case module for the main
- * program (netmux or stubslave) this way.
- *
- * \param  UTF8[]    File name.
- * \return           Corresponding module record or NULL if not found.
- */
-
-#if defined(WINDOWS_FILES)
-static MUX_MODULE_INFO_PRIVATE *ModuleFindFromFileName(const UTF16 aFileName[])
-#elif defined(UNIX_FILES)
-static MUX_MODULE_INFO_PRIVATE *ModuleFindFromFileName(const UTF8 aFileName[])
-#endif // UNIX_FILES
-{
-    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
-    while (NULL != pModule)
-    {
-        if (strcmp((const char *)aFileName, (const char *)pModule->pFileName) == 0)
-        {
-            return pModule;
-        }
-        pModule = pModule->pNext;
-    }
-    return NULL;
-}
-
 #define MINIMUM_SIZE 8
 
 static UINT32 GrowByFactor(UINT32 i)
@@ -298,120 +181,6 @@ static UINT32 GrowByFactor(UINT32 i)
     }
 }
 
-/*! \brief Adds (class id, module) in table while maintain its order.
- *
- * This routine assumes the array is large enough to hold the addition.
- *
- * \param pci        Class-related attributes including cid.
- * \param pModule    Module that implements it.
- * \return           None.
- */
-
-static void ClassAdd(MUX_CLASS_INFO *pci, MUX_MODULE_INFO_PRIVATE *pModule)
-{
-    int i = ClassFind(pci->cid);
-    if (  i < g_nClasses
-       && g_pClasses[i].ci.cid == pci->cid)
-    {
-        return;
-    }
-
-    if (i != g_nClasses)
-    {
-        memmove( g_pClasses + i + 1,
-                 g_pClasses + i,
-                 (g_nClasses - i) * sizeof(MUX_CLASS_INFO_PRIVATE));
-    }
-    g_nClasses++;
-
-    g_pClasses[i].ci = *pci;
-    g_pClasses[i].pModule = pModule;
-}
-
-/*! \brief Removes a class id from the table while maintaining order.
- *
- * \param cid       Class ID
- * \return          None.
- */
-
-static void ClassRemove(MUX_CID cid)
-{
-    int i = ClassFind(cid);
-    if (  i < g_nClasses
-       && g_pClasses[i].ci.cid == cid)
-    {
-        g_nClasses--;
-        if (i != g_nClasses)
-        {
-            memmove( g_pClasses + i,
-                     g_pClasses + i + 1,
-                     (g_nClasses - i) * sizeof(MUX_CLASS_INFO_PRIVATE));
-        }
-    }
-}
-
-static int InterfaceFind(MUX_IID iid)
-{
-    // Binary search for the interface id.
-    //
-    int lo = 0;
-    int mid;
-    int hi = g_nInterfaces - 1;
-    while (lo <= hi)
-    {
-        mid = ((hi - lo) >> 1) + lo;
-        if (iid < g_pInterfaces[mid].iid)
-        {
-            hi = mid - 1;
-        }
-        else if (g_pInterfaces[mid].iid < iid)
-        {
-            lo = mid + 1;
-        }
-        else // (g_pInterfaces[mid].iid == iid)
-        {
-            return mid;
-        }
-    }
-    return lo;
-}
-
-static void InterfaceAdd(MUX_INTERFACE_INFO *pii)
-{
-    int i = InterfaceFind(pii->iid);
-    if (  i < g_nInterfaces
-       && g_pInterfaces[i].iid == pii->iid)
-    {
-        return;
-    }
-
-    if (i != g_nInterfaces)
-    {
-        memmove( g_pInterfaces + i + 1,
-                 g_pInterfaces + i,
-                 (g_nInterfaces - i) * sizeof(MUX_INTERFACE_INFO));
-    }
-    g_nInterfaces++;
-
-    g_pInterfaces[i] = *pii;
-}
-
-static void InterfaceRemove(MUX_IID iid)
-{
-    int i = InterfaceFind(iid);
-    if (  i < g_nInterfaces
-       && g_pInterfaces[i].iid == iid)
-    {
-        g_nInterfaces--;
-        if (i != g_nInterfaces)
-        {
-            memmove( g_pInterfaces + i,
-                     g_pInterfaces + i + 1,
-                     (g_nInterfaces - i) * sizeof(MUX_INTERFACE_INFO));
-        }
-    }
-}
-
 /*! \brief Adds a module.
  *
  * \param aModuleName[]  Filename of Module
@@ -420,26 +189,21 @@ static void InterfaceRemove(MUX_IID iid)
  */
 
 #if defined(WINDOWS_FILES)
-static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
+static Module *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
 #elif defined(UNIX_FILES)
-static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
+static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // UNIX_FILES
 {
-    // If the module name or file name is already being used, we won't add it
-    // again.  This does not handle file-system links, but that will be caught
-    // when the module tries to register its class ids.
+    // If the module name is already being used, we won't add it again.
     //
-    MUX_MODULE_INFO_PRIVATE *pModuleFromMN = ModuleFindFromName(aModuleName);
-    MUX_MODULE_INFO_PRIVATE *pModuleFromFN = ModuleFindFromFileName(aFileName);
-    if (  NULL == pModuleFromMN
-       && NULL == pModuleFromFN)
+    if (g_ModulesByName.end() == g_ModulesByName.find(aModuleName))
     {
-        // Ensure that enough room is available to append a new MUX_MODULE_INFO_PRIVATE.
+        // Ensure that enough room is available to append a new Module.
         //
-        MUX_MODULE_INFO_PRIVATE *pModule = NULL;
+        Module *pModule = NULL;
         try
         {
-            pModule = new MUX_MODULE_INFO_PRIVATE;
+            pModule = new Module;
         }
         catch (...)
         {
@@ -451,7 +215,7 @@ static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF8 a
             return NULL;
         }
 
-        // Fill in new MUX_MODULE_INFO_PRIVATE
+        // Fill in new Module
         //
         pModule->fpGetClassObject = NULL;
         pModule->fpCanUnloadNow = NULL;
@@ -470,18 +234,7 @@ static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF8 a
         if (  NULL != pModule->pModuleName
            && NULL != pModule->pFileName)
         {
-            // Add new MUX_MODULE_INFO_PRIVATE to the end of the list.
-            //
-            pModule->pNext = NULL;
-            if (NULL == g_pModuleLast)
-            {
-                g_pModuleList = pModule;
-            }
-            else
-            {
-                g_pModuleLast->pNext = pModule;
-                g_pModuleLast = pModule;
-            }
+            g_ModulesByName[pModule->pModuleName] = pModule;
             return pModule;
         }
         else
@@ -511,60 +264,49 @@ static MUX_MODULE_INFO_PRIVATE *ModuleAdd(const UTF8 aModuleName[], const UTF8 a
  * \param pModule      Module context record to remove and destroy.
  */
 
-static void ModuleRemove(MUX_MODULE_INFO_PRIVATE *pModule)
+static void ModuleRemove(Module *pModule)
 {
-    MUX_MODULE_INFO_PRIVATE *p = g_pModuleList;
-    MUX_MODULE_INFO_PRIVATE *q = NULL;
-
-    while (NULL != p)
+    map<const UTF8 *, Module *, ltstr>::iterator it1 = g_ModulesByName.begin();
+    while (g_ModulesByName.end() != it1)
     {
-        if (pModule == p)
+        if (it1->second == pModule)
         {
-            // Unlink from list.
-            //
-            if (NULL == q)
-            {
-                g_pModuleList = p->pNext;
-            }
-            else
-            {
-                q->pNext = p->pNext;
-            }
-
-            // As a precaution, remove any any references in the class id
-            // table.  This should have been done when we asked the module to
-            // revoke its class ids.
-            //
-            int i;
-            for (i = 0; i < g_nClasses; i++)
-            {
-                if (g_pClasses[i].pModule == pModule)
-                {
-                    ClassRemove(g_pClasses[i].ci.cid);
-                }
-            }
-
-            // Free associated memory.
-            //
-            if (NULL != p->pModuleName)
-            {
-                delete [] p->pModuleName;
-                p->pModuleName = NULL;
-            }
-
-            if (NULL != p->pFileName)
-            {
-                delete [] p->pFileName;
-                p->pFileName = NULL;
-            }
-
-            delete p;
-            return;
+            g_ModulesByName.erase(it1++);
         }
-
-        q = p;
-        p = p->pNext;
+        else
+        {
+            ++it1;
+        }
     }
+
+    map<MUX_CID, Module *>::iterator it2 = g_ModulesByClass.begin();
+    while (g_ModulesByClass.end() != it2)
+    {
+        if (it2->second == pModule)
+        {
+            g_ModulesByClass.erase(it2++);
+        }
+        else
+        {
+            ++it2;
+        }
+    }
+
+    // Free associated memory.
+    //
+    if (NULL != pModule->pModuleName)
+    {
+        delete [] pModule->pModuleName;
+        pModule->pModuleName = NULL;
+    }
+
+    if (NULL != pModule->pFileName)
+    {
+        delete [] pModule->pFileName;
+        pModule->pFileName = NULL;
+    }
+
+    delete pModule;
 }
 
 /*! \brief Loads a known module.
@@ -572,7 +314,7 @@ static void ModuleRemove(MUX_MODULE_INFO_PRIVATE *pModule)
  * \param pModule   Module context record.
  */
 
-static void ModuleLoad(MUX_MODULE_INFO_PRIVATE *pModule)
+static void ModuleLoad(Module *pModule)
 {
     if (  pModule->bLoaded
        || eModuleUnloadable == pModule->eState)
@@ -618,7 +360,7 @@ static void ModuleLoad(MUX_MODULE_INFO_PRIVATE *pModule)
  * \param pModule   Module context record.
  */
 
-static void ModuleUnload(MUX_MODULE_INFO_PRIVATE *pModule)
+static void ModuleUnload(Module *pModule)
 {
     if (pModule->bLoaded)
     {
@@ -656,8 +398,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
     {
         // In-proc component.
         //
-        MUX_MODULE_INFO_PRIVATE *pModule = ModuleFindFromCID(cid);
-        if (NULL != pModule)
+        Module *pModule = NULL;
+        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
+        if (g_ModulesByClass.end() != it && NULL != (pModule = it->second))
         {
             if (pModule == &g_MainModule)
             {
@@ -763,21 +506,20 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
 
     // Verify that the requested class ids are not already registered.
     //
-    MUX_MODULE_INFO_PRIVATE *pModule = NULL;
     int i;
     for (i = 0; i < nci; i++)
     {
-        pModule = ModuleFindFromCID(aci[i].cid);
-        if (NULL != pModule)
+        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
+        if (g_ModulesByClass.end() != it)
         {
             return MUX_E_INVALIDARG;
         }
     }
 
-    // Find corresponding MUX_MODULE_INFO_PRIVATE. Since we're the one that requested the module to register its classes, we know
+    // Find corresponding Module. Since we're the one that requested the module to register its classes, we know
     // which module is registering.
     //
-    pModule = g_pModule;
+    Module *pModule = g_pModule;
     if (NULL == pModule)
     {
         // These classes are implemented in the main program (netmux or
@@ -792,44 +534,6 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
         }
     }
 
-    // Make sure there is enough room in the class table for additional class
-    // ids.
-    //
-    if (g_nClassesAllocated < g_nClasses + nci)
-    {
-        UINT32 nAllocate = GrowByFactor(g_nClasses + nci);
-
-        MUX_CLASS_INFO_PRIVATE *pNewClasses = NULL;
-        try
-        {
-            pNewClasses = new MUX_CLASS_INFO_PRIVATE[nAllocate];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (NULL == pNewClasses)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        if (NULL != g_pClasses)
-        {
-            int j;
-            for (j = 0; j < g_nClasses; j++)
-            {
-                pNewClasses[j] = g_pClasses[j];
-            }
-
-            delete [] g_pClasses;
-            g_pClasses = NULL;
-        }
-
-        g_pClasses = pNewClasses;
-        g_nClassesAllocated = nAllocate;
-    }
-
     // If these classes are implemented in the main program (netmux or
     // stubslave), save the private GetClassObject method.
     //
@@ -840,7 +544,12 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
 
     for (i = 0; i < nci; i++)
     {
-        ClassAdd(&(aci[i]), pModule);
+        MUX_CLASS_INFO *ci = &aci[i];
+        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(ci->cid);
+        if (g_ModulesByClass.end() == it)
+        {
+            g_ModulesByClass[ci->cid] = pModule;
+        }
     }
     return MUX_S_OK;
 }
@@ -868,12 +577,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
 
     // Verify that all class ids in this request are handled by the same module.
     //
-    MUX_MODULE_INFO_PRIVATE *pModule = NULL;
+    Module *pModule = NULL;
     int i;
     for (i = 0; i < nci; i++)
     {
-        MUX_MODULE_INFO_PRIVATE *q = ModuleFindFromCID(aci[i].cid);
-        if (NULL == q)
+        Module *q = NULL;
+        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
+        if (g_ModulesByClass.end() == it || NULL == (q = it->second))
         {
             // Attempt to revoke a class ids which were never registered.
             //
@@ -903,7 +613,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     //
     for (i = 0; i < nci; i++)
     {
-        ClassRemove(aci[i].cid);
+        g_ModulesByClass.erase(aci[i].cid);
     }
     return MUX_S_OK;
 }
@@ -921,46 +631,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INT
         return MUX_E_INVALIDARG;
     }
 
-    // Make sure there is enough room in the interface table.
-    //
-    if (g_nInterfacesAllocated < g_nInterfaces + nii)
-    {
-        int nAllocate = GrowByFactor(g_nInterfaces + nii);
-
-        MUX_INTERFACE_INFO *pNewInterfaces = NULL;
-        try
-        {
-            pNewInterfaces = new MUX_INTERFACE_INFO[nAllocate];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (NULL == pNewInterfaces)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        if (NULL != g_pInterfaces)
-        {
-            int j;
-            for (j = 0; j < g_nInterfaces; j++)
-            {
-                pNewInterfaces[j] = g_pInterfaces[j];
-            }
-
-            delete [] g_pInterfaces;
-            g_pInterfaces = NULL;
-        }
-
-        g_pInterfaces = pNewInterfaces;
-        g_nInterfacesAllocated = nAllocate;
-    }
-
     for (int i = 0; i < nii; i++)
     {
-        InterfaceAdd(&aii[i]);
+        MUX_INTERFACE_INFO *pii = &aii[i];
+        if (g_Interfaces.end() == g_Interfaces.find(pii->iid))
+        {
+            g_Interfaces[pii->iid] = pii;
+        }
     }
     return MUX_S_OK;
 }
@@ -980,7 +657,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTER
 
     for (int i = 0; i < nii; i++)
     {
-        InterfaceRemove(aii[i].iid);
+        g_Interfaces.erase(aii[i].iid);
     }
     return MUX_S_OK;
 }
@@ -1008,9 +685,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     MUX_RESULT mr = MUX_S_OK;
     if (NULL == g_pModule)
     {
-        // Create new MUX_MODULE_INFO_PRIVATE.
+        // Create new Module.
         //
-        MUX_MODULE_INFO_PRIVATE *pModule = ModuleAdd(aModuleName, aFileName);
+        Module *pModule = ModuleAdd(aModuleName, aFileName);
         if (NULL != pModule)
         {
             // Ask module to register its classes.
@@ -1041,7 +718,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     return mr;
 }
 
-static MUX_RESULT RemoveModule(MUX_MODULE_INFO_PRIVATE *pModule)
+static MUX_RESULT RemoveModule(Module *pModule)
 {
     MUX_RESULT mr = MUX_S_OK;
 
@@ -1119,10 +796,14 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
     MUX_RESULT mr MUX_S_OK;
     if (NULL == g_pModule)
     {
-        MUX_MODULE_INFO_PRIVATE *pModule = ModuleFindFromName(aModuleName);
-        if (NULL != pModule)
+        map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.find(aModuleName);
+        if (g_ModulesByName.end() != it)
         {
-            mr = RemoveModule(pModule);
+            Module *pModule = it->second;
+            if (NULL != pModule)
+            {
+                mr = RemoveModule(pModule);
+            }
         }
     }
     else
@@ -1155,17 +836,18 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
         return MUX_E_INVALIDARG;
     }
 
-    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
-    while (NULL != pModule)
+    map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
+    while (g_ModulesByName.end() != it)
     {
         if (0 == iModule)
         {
+            Module *pModule = it->second;
             pModuleInfo->bLoaded = pModule->bLoaded;
             pModuleInfo->pName   = pModule->pModuleName;
             return MUX_S_OK;
         }
         iModule--;
-        pModule = pModule->pNext;
+        ++it;
     }
     return MUX_S_FALSE;
 }
@@ -1187,9 +869,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 
     // We can query each loaded module and unload the ones that are unloadable.
     //
-    MUX_MODULE_INFO_PRIVATE *pModule = g_pModuleList;
-    while (NULL != pModule)
+    map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
+    while (g_ModulesByName.end() != it)
     {
+        Module *pModule = it->second;
         if (pModule->bLoaded)
         {
             MUX_RESULT mr = pModule->fpCanUnloadNow();
@@ -1199,7 +882,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
                 ModuleUnload(pModule);
             }
         }
-        pModule = pModule->pNext;
+        ++it;
     }
     return MUX_S_OK;
 }
@@ -1223,6 +906,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
     }
 }
 
+static MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi);
+
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out)
 {
     if (  eLibraryInitialized == g_LibraryState
@@ -1231,20 +916,39 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpP
        && NULL == g_pQueue_Out
        && NULL != fpPipePump
        && NULL != pQueue_In
-       && NULL != pQueue_Out
-       && GrowChannels())
+       && NULL != pQueue_Out)
     {
-        // Save pipepump callback and two queues.  Hosting process should
-        // service queues when pipepump is called.
-        //
-        // The module library should deal with packets, call levels, and
-        // clean disconnections.  The main program (stubslave or netmux)
-        // can handle file descriptors, process spawning, and errors.
-        //
-        g_fpPipePump = fpPipePump;
-        g_pQueue_In  = pQueue_In;
-        g_pQueue_Out = pQueue_Out;
-        return MUX_S_OK;
+        CHANNEL_INFO *pci = NULL;
+        try
+        {
+            pci = new CHANNEL_INFO;
+        }
+        catch (...) {}
+
+        if (NULL != pci)
+        {
+            // Initialized Channel 0 is always allocated.
+            //
+            pci->pfCall     = Channel0_Call;
+            pci->pfMsg      = NULL;
+            pci->pfDisc     = NULL;
+            pci->pInterface = NULL;
+            g_Channels[0] = pci;
+            nNextChannel = 1;
+
+            // Save pipepump callback and two queues.  Hosting process should
+            // service queues when pipepump is called.
+            //
+            // The module library should deal with packets, call levels, and
+            // clean disconnections.  The main program (stubslave or netmux)
+            // can handle file descriptors, process spawning, and errors.
+            //
+            g_fpPipePump = fpPipePump;
+            g_pQueue_In  = pQueue_In;
+            g_pQueue_Out = pQueue_Out;
+
+            return MUX_S_OK;
+        }
     }
     return MUX_E_FAIL;
 }
@@ -1259,32 +963,34 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 
         // Give each module a chance to unregister.
         //
-        MUX_MODULE_INFO_PRIVATE *pModule = NULL;
         bool bFound = false;
+        map<const UTF8 *, Module *, ltstr>::iterator it;
         do
         {
             // Find a module in the eModuleRegistered state.  The list we use
             // is only valid until we call RemoveModule().
             //
             bFound = false;
-            pModule = g_pModuleList;
-            while (NULL != pModule)
+            it = g_ModulesByName.begin();
+            while (g_ModulesByName.end() != it)
             {
+                Module *pModule = it->second;
                 if (eModuleRegistered == pModule->eState)
                 {
                     bFound = true;
                     mr = RemoveModule(pModule);
                     break;
                 }
-                pModule = pModule->pNext;
+                ++it;
             }
         } while (bFound);
 
         // Attempt to unload the remaining modules politely.
         //
-        pModule = g_pModuleList;
-        while (NULL != pModule)
+        it = g_ModulesByName.begin();
+        while (g_ModulesByName.end() != it)
         {
+            Module *pModule = it->second;
             if (pModule->bLoaded)
             {
                 mr = pModule->fpCanUnloadNow();
@@ -1294,21 +1000,22 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
                     ModuleUnload(pModule);
                 }
             }
-            pModule = pModule->pNext;
+            ++it;
         }
 
         // If anything is left on the list, there is a bug in someone's code.
         // The server will shortly either shutdown or restart.  To avoid
         // leaking a handle, we will unload the module impolitely.
         //
-        pModule = g_pModuleList;
-        while (NULL != pModule)
+        it = g_ModulesByName.begin();
+        while (g_ModulesByName.end() != it)
         {
+            Module *pModule = it->second;
             if (pModule->bLoaded)
             {
                 ModuleUnload(pModule);
             }
-            pModule = pModule->pNext;
+            ++it;
         }
 
         g_LibraryState   = eLibraryDown;
@@ -1477,131 +1184,44 @@ extern "C" void DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
     pqi->nBytes = 0;
 }
 
-static void FreeChannel(UINT32 nChannel)
-{
-    aChannels[nChannel].bAllocated = false;
-    aChannels[nChannel].nChannel   = nChannel;
-    aChannels[nChannel].pfCall     = NULL;
-    aChannels[nChannel].pfMsg      = NULL;
-    aChannels[nChannel].pfDisc     = NULL;
-    aChannels[nChannel].pInterface = NULL;
-}
-
-static bool GrowChannels(void)
-{
-    UINT32 nNew = GrowByFactor(nChannels+1);
-    CHANNEL_INFO *pNew = NULL;
-    try
-    {
-        pNew = new CHANNEL_INFO[nNew];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL != pNew)
-    {
-        UINT32 i;
-        if (NULL != aChannels)
-        {
-            for (i = 0; i < nChannels; i++)
-            {
-                pNew[i] = aChannels[i];
-            }
-            delete aChannels;
-            aChannels = NULL;
-        }
-        else
-        {
-            // Initialized Channel 0 as always allocated.
-            //
-            pNew[0].bAllocated = true;
-            pNew[0].nChannel   = 0;
-            pNew[0].pfCall     = Channel0_Call;
-            pNew[0].pfMsg      = NULL;
-            pNew[0].pfDisc     = NULL;
-            pNew[0].pInterface = NULL;
-            nChannels = 1;
-        }
-
-        aChannels = pNew;
-        pNew = NULL;
-        for (i = nChannels; i < nNew; i++)
-        {
-            FreeChannel(i);
-        }
-        nChannels = nNew;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-static UINT32 AllocateChannel(void)
-{
-    if (  NULL == aChannels
-       && !GrowChannels())
-    {
-        return CHANNEL_INVALID;
-    }
-
-    for (;;)
-    {
-        for (UINT32 i = 0; i < nChannels; i++)
-        {
-            if (!aChannels[i].bAllocated)
-            {
-                aChannels[i].bAllocated = true;
-                return i;
-            }
-        }
-
-        if (!GrowChannels())
-        {
-            return CHANNEL_INVALID;
-        }
-    }
-}
-
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
 {
-    UINT32 n = AllocateChannel();
-
-    aChannels[n].pfCall     = pfCall;
-    aChannels[n].pfMsg      = pfMsg;
-    aChannels[n].pfDisc     = pfDisc;
-    aChannels[n].pInterface = NULL;
-
-    return &aChannels[n];
+    CHANNEL_INFO *pci = NULL;
+    try
+    {
+        pci = new CHANNEL_INFO;
+    }
+    catch (...) {}
+    if (NULL != pci)
+    {
+        pci->nChannel   = nNextChannel++;
+        pci->pfCall     = pfCall;
+        pci->pfMsg      = pfMsg;
+        pci->pfDisc     = pfDisc;
+        pci->pInterface = NULL;
+        g_Channels[pci->nChannel] = pci;
+    }
+    return pci;
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
 {
-    UINT32 n;
-    if (  NULL != pci
-       && pci == &aChannels[n = pci->nChannel]
-       && n != 0
-       && aChannels[n].bAllocated)
+    if (NULL != pci)
     {
-        FreeChannel(n);
+        g_Channels.erase(pci->nChannel);
+        delete pci;
+        pci = NULL;
     }
 }
 
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel)
 {
-    CHANNEL_INFO *pChannel;
-    if (  nChannel < nChannels
-       && (pChannel = &aChannels[nChannel])->bAllocated)
+    map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(nChannel);
+    if (g_Channels.end() != it)
     {
-        return pChannel;
+        return it->second;
     }
-    else
-    {
-        return NULL;
-    }
+    return NULL;
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
@@ -2028,15 +1648,16 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                     }
                     else
                     {
-                        if (  g_nChannel < nChannels
-                           && aChannels[g_nChannel].bAllocated)
+                        map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
+                        PCHANNEL_INFO pci;
+                        if (g_Channels.end() != it && NULL != (pci = it->second))
                         {
                             switch (g_eType)
                             {
                             case eCall:
-                                if (NULL != aChannels[g_nChannel].pfCall)
+                                if (NULL != pci->pfCall)
                                 {
-                                    MUX_RESULT mr = aChannels[g_nChannel].pfCall(&aChannels[g_nChannel], pqiFrame);
+                                    MUX_RESULT mr = pci->pfCall(pci, pqiFrame);
                                     if (MUX_FAILED(mr))
                                     {
                                         Pipe_EmptyQueue(pqiFrame);
@@ -2055,16 +1676,16 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                                 break;
 
                             case eMessage:
-                                if (NULL != aChannels[g_nChannel].pfMsg)
+                                if (NULL != pci->pfMsg)
                                 {
-                                    aChannels[g_nChannel].pfMsg(&aChannels[g_nChannel], pqiFrame);
+                                    pci->pfMsg(pci, pqiFrame);
                                 }
                                 break;
 
                             case eDisconnect:
-                                if (NULL != aChannels[g_nChannel].pfDisc)
+                                if (NULL != pci->pfDisc)
                                 {
-                                    aChannels[g_nChannel].pfDisc(&aChannels[g_nChannel], pqiFrame);
+                                    pci->pfDisc(pci, pqiFrame);
                                 }
                                 break;
 
@@ -2221,11 +1842,10 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
     MUX_RESULT mr = MUX_S_OK;
     mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
 
-    int i = InterfaceFind(riid);
-    if (  i < g_nInterfaces
-       && g_pInterfaces[i].iid == riid)
+    map<MUX_IID, MUX_INTERFACE_INFO *>::iterator it = g_Interfaces.find(riid);
+    if (g_Interfaces.end() != it)
     {
-        MUX_CID cidProxyStub = g_pInterfaces[i].cidProxyStub;
+        MUX_CID cidProxyStub = it->second->cidProxyStub;
         mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
         mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
         if (MUX_SUCCEEDED(mr))
