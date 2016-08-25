@@ -213,8 +213,4 @@ realclean:
 clean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~ @DYNAMICLIB_TARGET@~
 
-docs:
-	doxygen
-	( cd doxygen/latex; make )
-
 include .depend

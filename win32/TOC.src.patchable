@@ -29,7 +29,6 @@ readme.txt
 SGP
 SQL
 SSL
-src/Doxyfile
 src/_build.cpp
 src/_build.h
 src/alarm.cpp
