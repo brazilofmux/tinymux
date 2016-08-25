@@ -8,14 +8,14 @@
 	>
 	<Platforms>
 		<Platform
-			Name="Win32"
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
+			Name="Release|x64"
 			OutputDirectory=".\bin_release"
 			IntermediateDirectory=".\bin_release_libmux"
 			ConfigurationType="2"
@@ -39,7 +39,7 @@
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_release/libmux.tlb"
 				HeaderFileName=""
 			/>
@@ -81,7 +81,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_release/libmux.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -106,7 +106,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug|x64"
 			OutputDirectory=".\bin_debug"
 			IntermediateDirectory=".\bin_debug_libmux"
 			ConfigurationType="2"
@@ -130,7 +130,7 @@
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_debug/libmux.tlb"
 				HeaderFileName=""
 			/>
@@ -172,7 +172,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_debug/libmux.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -208,7 +208,7 @@
 				RelativePath="libmux.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -217,7 +217,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

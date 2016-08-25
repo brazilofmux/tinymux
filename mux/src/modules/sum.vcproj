@@ -8,14 +8,14 @@
 	>
 	<Platforms>
 		<Platform
-			Name="Win32"
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug|x64"
 			OutputDirectory=".\bin_debug"
 			IntermediateDirectory=".\bin_debug_sum"
 			ConfigurationType="2"
@@ -39,7 +39,7 @@
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_debug/sum.tlb"
 				HeaderFileName=""
 			/>
@@ -74,14 +74,14 @@
 				OutputFile=".\bin_debug/sum.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\sum.def"
+				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\bin_debug/sum.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_debug/sum.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -106,7 +106,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="Release|x64"
 			OutputDirectory=".\bin_release"
 			IntermediateDirectory=".\bin_release_sum"
 			ConfigurationType="2"
@@ -130,7 +130,7 @@
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_release/sum.tlb"
 				HeaderFileName=""
 			/>
@@ -167,13 +167,13 @@
 				OutputFile=".\bin_release/sum.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\sum.def"
+				ModuleDefinitionFile=""
 				ProgramDatabaseFile=".\bin_release/sum.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_release/sum.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -209,7 +209,7 @@
 				RelativePath="sum.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -219,7 +219,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -227,10 +227,6 @@
 						PreprocessorDefinitions="WIN32;NDEBUG;UNICODE;$(NoInherit)"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="sum.def"
-				>
 			</File>
 		</Filter>
 		<Filter

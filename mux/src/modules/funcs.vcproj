@@ -8,14 +8,14 @@
 	>
 	<Platforms>
 		<Platform
-			Name="Win32"
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug|x64"
 			OutputDirectory=".\bin_debug"
 			IntermediateDirectory=".\bin_debug_funcs"
 			ConfigurationType="2"
@@ -40,7 +40,7 @@
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_debug/funcs.tlb"
 				HeaderFileName=""
 			/>
@@ -75,14 +75,14 @@
 				OutputFile=".\bin_debug/funcs.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\funcs.def"
+				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\bin_debug/funcs.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_debug/funcs.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -107,7 +107,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="Release|x64"
 			OutputDirectory=".\bin_release"
 			IntermediateDirectory=".\bin_release_funcs"
 			ConfigurationType="2"
@@ -132,7 +132,7 @@
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
-				TargetEnvironment="1"
+				TargetEnvironment="3"
 				TypeLibraryName=".\bin_release/funcs.tlb"
 				HeaderFileName=""
 			/>
@@ -169,13 +169,13 @@
 				OutputFile=".\bin_release/funcs.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\funcs.def"
+				ModuleDefinitionFile=""
 				ProgramDatabaseFile=".\bin_release/funcs.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\bin_release/funcs.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -211,7 +211,7 @@
 				RelativePath="funcs.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -221,7 +221,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -229,10 +229,6 @@
 						PreprocessorDefinitions="WIN32;NDEBUG;UNICODE;$(NoInherit)"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="funcs.def"
-				>
 			</File>
 		</Filter>
 		<Filter
