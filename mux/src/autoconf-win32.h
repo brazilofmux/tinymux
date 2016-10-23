@@ -328,14 +328,8 @@
 /* Define if we need to declare malloc et. al. */
 /* #undef NEED_MALLOC_DCL */
 
-/* Define if you need to declare sprintf yourself. */
-/* #undef NEED_SPRINTF_DCL */
-
 /* Define if you need to declare sys_errlist yourself. */
 /* #undef NEED_SYS_ERRLIST_DCL */
-
-/* Define if you need to declare vsprintf yourself. */
-/* #undef NEED_VSPRINTF_DCL */
 
 /* Define if you do not have IEEE floating-point formatted numbers. */
 /* #undef NO_IEEE_FP_FORMAT */

@@ -262,10 +262,6 @@ extern char *sys_errlist[];
 #include <sys/fcntl.h>
 #endif // HAVE_SYS_FCNTL_H
 
-#ifdef NEED_SPRINTF_DCL
-extern char *sprintf(char *, const char *, ...);
-#endif
-
 #ifndef EXTENDED_STDIO_DCLS
 extern int    fprintf(FILE *, const char *, ...);
 extern int    printf(const char *, ...);
