@@ -350,10 +350,6 @@ if test $ac_cv_header_malloc_h = no && test $querymalloc = yes; then
 else
     AC_EGREP_HEADER(realloc,malloc.h, ,AC_DEFINE(NEED_MALLOC_DCL))
 fi
-AS_MESSAGE([checking for vsprintf dcl...])
-AC_EGREP_HEADER(vsprintf,stdio.h, ,AC_DEFINE([NEED_VSPRINTF_DCL], [], [Define if you need to declare vsprintf yourself.]))
-AS_MESSAGE([checking for sprintf dcl...])
-AC_EGREP_HEADER(\<sprintf|\<*sprintf,stdio.h, ,AC_DEFINE([NEED_SPRINTF_DCL], [], [Define if you need to declare sprintf yourself.]))
 AS_MESSAGE([checking for extended stdio dcls...])
 AC_EGREP_HEADER(fread,stdio.h,AC_DEFINE([EXTENDED_STDIO_DCLS], [], [Define if stdio.h defines lots of extra functions.]))
 AS_MESSAGE([checking for extended socket dcls...])

@@ -5673,40 +5673,6 @@ fi
 rm -f conftest*
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for vsprintf dcl..." >&5
-$as_echo "$as_me: checking for vsprintf dcl..." >&6;}
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdio.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "vsprintf" >/dev/null 2>&1; then :
-
-else
-
-$as_echo "#define NEED_VSPRINTF_DCL /**/" >>confdefs.h
-
-fi
-rm -f conftest*
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sprintf dcl..." >&5
-$as_echo "$as_me: checking for sprintf dcl..." >&6;}
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdio.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "\<sprintf|\<*sprintf" >/dev/null 2>&1; then :
-
-else
-
-$as_echo "#define NEED_SPRINTF_DCL /**/" >>confdefs.h
-
-fi
-rm -f conftest*
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for extended stdio dcls..." >&5
 $as_echo "$as_me: checking for extended stdio dcls..." >&6;}
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
