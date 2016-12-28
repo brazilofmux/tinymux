@@ -2683,7 +2683,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         if ((d->flags & DS_CONNECTED) == 0)
         {
             queue_string(d, T("This command is disabled on login."));
-            queue_write_LEN(d, "\r\n", 2);
+            queue_write_LEN(d, T("\r\n"), 2);
         }
         else
 #endif // FIRANMUX
