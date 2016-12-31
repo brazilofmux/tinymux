@@ -2293,6 +2293,11 @@ bool locatable(dbref player, dbref it, dbref enactor)
         return false;
     }
 
+    if (Hidden(it) && !See_Hidden(player))
+    {
+        return false;
+    }
+
     dbref loc_it = where_is(it);
 
     // Succeed if we can examine the target, if we are the target, if we can
