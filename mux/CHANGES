@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: April 2016
+Last Update: January 2017
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,6 +97,14 @@ Bug Fixes:
  -- These memset calls were being called with an incorrect number of
     bytes.
  -- Fix for crash if STARTTLS is called without a valid certificate.
+ -- Fix false-to-NULL bug in bsd.cpp and ( .. && ..) != 0 bug in pcre.cpp
+ -- Take bug fix from PCRE 6.0.
+ -- LATIN CAPITAL LETTER Z WITH CARON should map to CAPITAL LETTER Z.
+ -- Latin-1 contains LATIN CAPITAL LETTER O WITH STROKE and LATIN SMALL LETTER O WITH STROKE.
+ -- Latin-1 contains MODIFIER LETTER SMALL ETH.
+ -- Fix build break with LibreSSL 2.3.0 on FreeBSD (patch from Benard Spil at freebsd.org).
+ -- Fix build break for --enable-firanmux.
+ -- Dark wizard in same room should not be locatable.
 
 
 Performance Enhancements:
@@ -108,6 +116,8 @@ Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Remove reference to STRINGS in FAILURE help topic.
  -- Fix connects/disconnects typo in @ADISCONNECT topic.
+ -- BUG 613: Fix typo in help substitutions3.
+ -- Fix documentation of immutable @power and immobile @flag.
 
 
 Miscellaneous:
@@ -124,3 +134,8 @@ Miscellaneous:
  -- Windows 2000 is now the oldest supported version.  Note: The
     pre-built binaries haven't supported pre-Win2k for some time.
  -- Minimum version of Visual Studio is now 2005 (from 2003).
+ -- Rename stpcpy() to mux_strpcpy() in slave.cpp
+ -- Update config.guess and config.sub.
+ -- Fixed -Wall warnings which might later become build errors.
+ -- Fixed -Wall warnings which may become build errors.
+ -- Remove NEED_SPRINTF and NEED_VSPRINTF as we don't use them.
