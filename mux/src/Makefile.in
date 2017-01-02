@@ -163,7 +163,7 @@ DEFS =
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC = unsplit.cpp
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) \
+ALLCXXFLAGS = $(CXXFLAGS) $(CPPFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) \
     $(REALITY_LVLS) $(STUB_SLAVE) $(FIRANMUX) $(DEPRECATED) $(SELFCHECK) \
     $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
 
@@ -186,22 +186,22 @@ links: netmux slave @STUBSLAVE_TARGET@
 	( if [ ! -z "@DYNAMICLIB_TARGET@" -a -f "@DYNAMICLIB_TARGET@" ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
 
 stubslave: stubslave.o
-	$(CXX) $(ALLCXXFLAGS) -o stubslave stubslave.o $(LDFLAGS) -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
 
 slave: slave.o
-	$(CXX) $(ALLCXXFLAGS) -o slave slave.o $(LIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o slave slave.o $(LIBS)
 
 unsplit: unsplit.o
-	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o unsplit unsplit.o
 
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) $(LDFLAGS) -L. $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ $(LDFLAGS) -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(ALLSRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
