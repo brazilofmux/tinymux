@@ -1,0 +1,8 @@
+game/bin/*
+src/unsplit
+src/buildnum.data
+src/Makefile
+src/autoconf.h
+src/modules/config.status
+src/modules/Makefile
+src/modules/autoconf.h

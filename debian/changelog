@@ -1,8 +1,24 @@
 tinymux (2.10.1.13-1) unstable; urgency=medium
 
   * New upstream release
+  * New maintainer. (Closes: #830140)
+  * As suggested by lintian, update Standards-Version in debian/control from
+    3.9.6 to 3.9.8.
+  * Removed first paragraph from tinymux-install.1 man page because the
+    tinymux-install program is not part of the upstream package.
+  * Freshened the first paragraph of tinymux.6 man page to give the reader a
+    better sense of what can be built.
+  * Removed the reference to Amberyl's MUSH Manual because the link points to
+    what is now a completely different website.
+  * As suggested by lintian, added debian/watch file and signing-key.asc.
+  * As required, convert debian/copyright to deb5 format.
+  * Migrate debian/rules to shortened version, add debian/install and
+    debian/clean, and remove debian/dirs. This simplifies things
+    considerably.
+  * Enabled hardening in debian/rules to address build warnings about
+    hardening control via CPPFLAGS and LDFLAGS.
 
- -- Stephen Dennis <brazilofmux@gmail.com>  Sun, 01 Jan 2017 08:57:54 -0700
+ -- Stephen Dennis <brazilofmux@gmail.com>  Thu, 05 Jan 2017 04:37:00 -0700
 
 tinymux (2.6.5.34-1.1) unstable; urgency=low
 

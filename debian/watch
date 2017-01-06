@@ -1,0 +1,2 @@
+version=4
+opts="pasv,pgpsigurlmangle=s/$/.sig/" ftp://ftp.tinymux.org/tinymux-2.10/([\d\.]+)/mux-@ANY_VERSION@.unix@ARCHIVE_EXT@
