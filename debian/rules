@@ -1,117 +1,21 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
-# Sample debian/rules that uses debhelper.
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
-
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-DPKG_EXPORT_BUILDFLAGS = 1
-include /usr/share/dpkg/buildflags.mk
-export CPPFLAGS CXXFLAGS LDFLAGS
 
-CXXFLAGS += -Wall
-DEB_INSTALL = usr/lib/tinymux/game
-DEB_SHRINSTALL = usr/share/tinymux/game
-DEB_BIN = usr/games
+%:
+	dh $@ --no-parallel --sourcedirectory=src
 
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CXXFLAGS += -O0
-else
-	CXXFLAGS += -O3 -fomit-frame-pointer
-endif
+override_dh_auto_configure:
+	dh_auto_configure -- --enable-stubslave
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
+override_dh_auto_build:
+	dh_auto_build
+	dh_auto_build --sourcedirectory=src/modules
 
-	# Add here commands to configure the package.
-	(cd src; ./configure --enable-stubslave)
-
-	touch configure-stamp
-
-build: build-arch build-indep
-build-arch: build-stamp
-build-indep: build-stamp
-
-build-stamp: configure-stamp
-	dh_testdir
-
-	# Add here commands to compile the package.
-	(cd src; $(MAKE) depend)
-	(cd src; $(MAKE))
-	(cd src/modules; $(MAKE))
-
-	touch build-stamp
-
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp configure-stamp
-
-	# Add here commands to clean up the package.
-	-(cd src; $(MAKE) realclean)
-	-(cd src/modules; $(MAKE) realclean)
-	-rm -f game/bin/dbconvert game/bin/libmux.so game/bin/netmux game/bin/sample.so \
-		game/bin/slave game/bin/sqlproxy.so game/bin/sqlslave.so game/bin/stubslave \
-                game/bin/sum.so src/unsplit src/buildnum.data src/config.log src/config.status \
-		src/Makefile src/autoconf.h src/modules/config.status src/modules/Makefile \
-		src/modules/autoconf.h
-
-	dh_clean
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-
-	# Add here commands to install the package into debian/tinymux.
-	dh_install game/* $(DEB_SHRINSTALL)
-	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/netmux
-	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/slave
-	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/dbconvert
-	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/libmux.so
-	-rm -f $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/bin/stubslave
-	dh_install src/netmux $(DEB_INSTALL)/bin
-	dh_install src/slave $(DEB_INSTALL)/bin
-	dh_install src/libmux.so $(DEB_INSTALL)/bin
-	dh_install src/stubslave $(DEB_INSTALL)/bin
-	dh_install debian/tinymux-install $(DEB_BIN)
-	chmod a+rX -R $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)
-	chmod a-x $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/netmux.conf
-	chmod a+rx -R $(CURDIR)/debian/tinymux/$(DEB_INSTALL)/bin
-	chmod a+rx $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/data/db_check
-	chmod a+rx $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/data/db_load
-	chmod a+rx $(CURDIR)/debian/tinymux/$(DEB_SHRINSTALL)/data/db_unload
-	chmod a+rx $(CURDIR)/debian/tinymux/$(DEB_BIN)/tinymux-install
-
-
-# Build architecture-independent files here.
-binary-indep: build install
-# We have nothing to do by default.
-
-# Build architecture-dependent files here.
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installchangelogs -k CHANGES
-	dh_installdocs
-	dh_installexamples
-	dh_installman
-	dh_link
-	dh_strip
-	dh_compress
+override_dh_fixperms:
 	dh_fixperms
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
+	chmod a-x $(CURDIR)/debian/tinymux/usr/share/tinymux/game/netmux.conf
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+override_dh_auto_clean:
+	dh_auto_clean --sourcedirectory=src/modules
+	dh_auto_clean
