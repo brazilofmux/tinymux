@@ -1225,6 +1225,16 @@
 
   Related Topics: REGISTRATION.
 
+& @PEMIT
+@PEMIT
+
+  COMMAND: @pemit[/switches] <what>=<message>
+
+  Wizards (or Wizard INHERIT objects) may use the /atcp switch to send a
+  message to a player over ATCP.
+
+  Related Topics: ATCP, help ATCP
+
 & @POOR
 @POOR
 
@@ -1499,6 +1509,18 @@ ARTICLE_RULE
     You say "an"
 
   Related topics: art(), regexps, @admin, config parameters.
+
+& ATCP
+ATCP
+
+  ATCP is a protocol that utilizes TELNET subnegotiation to transmit data
+  out-of-band from the rest of the client/server traffic. MUX supports this
+  in two ways. If the client supports ATCP, ATCP data sent to the server is
+  queued as a command, just like regular input from the client. To send
+  ATCP data to the client, you can use the /atcp switch with the @pemit
+  command.
+
+  Related topics: @pemit, help ATCP
 
 & ATTRIBUTE PERMISSIONS
 ATTRIBUTE PERMISSIONS
@@ -5203,6 +5225,7 @@ TOPICS
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
   PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LIST
+  ATCP
 
 & TRACE_OUTPUT_LIMIT
 TRACE_OUTPUT_LIMIT

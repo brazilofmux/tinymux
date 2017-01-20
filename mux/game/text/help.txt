@@ -2504,6 +2504,7 @@ Related Topics: @name.
                                    In DARK locations, the object must also be
                                    set LIGHT and the viewer must pass the
                                    VisibleLock.
+     AtcpLock:     Players:        controls who may @pemit/atcp the player.
 
  Note: If a player fails the UseLock on a parent of an object being searched
  for $-commands, then the search for attributes stops and the parent chain is
@@ -4177,6 +4178,17 @@ ABODE
   and can set the homes of objects there.  It does not mean that a
   player can open an exit to that room, only that they can set their
   home there.
+
+  Related Topics:
+
+& ATCP
+ATCP
+
+  FLAG: ATCP(_)  ()
+
+  This flag applies only to players and it shows if the client
+  supports ATCP. You cannot reset this flag, and it is used internally
+  by the code.
 
   Related Topics:
 
@@ -7109,7 +7121,7 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |       COLOR256   |       UNICODE    |
+    _ - ATCP       |       COLOR256   |       UNICODE    |
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING

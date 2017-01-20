@@ -1097,7 +1097,14 @@ void do_pemit_single
         switch (key)
         {
         case PEMIT_PEMIT:
-            if (bDoContents)
+            if (pemit_flags & PEMIT_ATCP)
+            {
+                if(could_doit(player, target, A_LATCP))
+                {
+                    notify_atcp(target, player, message);
+                }
+            }
+            else if (bDoContents)
             {
                 if (Has_contents(target))
                 {
@@ -1625,9 +1632,9 @@ void do_pemit_whisper
         free_lbuf(pBuff);
     }
 
-    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
+    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML, PEMIT_ATCP and remove from key.
     //
-    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML;
+    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML | PEMIT_ATCP;
     int pemit_flags = key & mask;
     key &= ~mask;
 
@@ -1771,9 +1778,9 @@ void do_pemit
     }
     key &= ~(PEMIT_CONTENTS | PEMIT_LIST);
 
-    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
+    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML, PEMIT_ATCP and remove from key.
     //
-    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML;
+    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML | PEMIT_ATCP;
     int pemit_flags = key & mask;
     key &= ~mask;
 

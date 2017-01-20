@@ -730,9 +730,14 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
     case TYPE_PLAYER:
         if (key & MSG_ME)
         {
-            if (key & MSG_HTML)
+            if (key & MSG_ATCP)
             {
-                raw_notify_html(target, *msg_ns);
+                check_listens = false;
+                raw_notify_atcp(target, *msg_ns);
+            }
+            else if (key & MSG_HTML)
+            {
+                raw_notify_html(target, msg);
             }
             else
             {

@@ -31,6 +31,7 @@
 #define AF_TRACE    0x00080000UL // Trace evaluation of this attribute.
 #define AF_NONAME   0x00400000UL // Supress name in oattr cases.
 #define AF_NODECOMP 0x00800000UL // Do not include in @decomp.
+#define AF_ATCP     0x01000000UL // Only evaluated by ATCP input when checking for $-cmds.
 #define AF_ISUSED   0x10000000UL // Used to make efficient sweeps of stale
                                  // attributes.
 
@@ -218,8 +219,9 @@
 #define A_APARENT   229  // @aparent attribute
 #define A_ACREATE   230  // @acreate attribute
 #define A_LVISIBLE  231  // Visibility Lock Storage Attribute
+#define A_LATCP     232  // Lock for who may @pemit/atcp you
 
-// 232 - 235 unused
+// 233 - 235 unused
 
 #if defined(FIRANMUX)
 #define A_COLOR      236 /* Color of name of object in look commands */

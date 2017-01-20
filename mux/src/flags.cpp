@@ -402,6 +402,7 @@ static FLAGBITENT fbeTrace          = { TRACE,        'T',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeTransparent    = { SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeUnfindable     = { UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeUnicode        = { MUX_UNICODE,  ' ',    FLAG_WORD3, CA_NO_DECOMP,         fh_unicode};
+static FLAGBITENT fbeAtcp           = { ATCP,         '_',    FLAG_WORD3, CA_NO_DECOMP,         fh_god};
 static FLAGBITENT fbeUninspected    = { UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy};
 static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player};
 static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
@@ -520,6 +521,7 @@ FLAGNAMEENT gen_flag_names[] =
     {(UTF8 *)"TRANSPARENT",     true, &fbeTransparent    },
     {(UTF8 *)"UNFINDABLE",      true, &fbeUnfindable     },
     {(UTF8 *)"UNICODE",         true, &fbeUnicode        },
+    {(UTF8 *)"ATCP",            true, &fbeAtcp           },
     {(UTF8 *)"UNINSPECTED",     true, &fbeUninspected    },
     {(UTF8 *)"VACATION",        true, &fbeVacation       },
     {(UTF8 *)"VERBOSE",         true, &fbeVerbose        },

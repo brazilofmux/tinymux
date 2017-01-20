@@ -224,6 +224,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
 #define notify_saypose(p,m)                 notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_SAYPOSE)
 #define notify_html(p,m)                    notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
 #define notify_quiet(p,m)                   notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME)
+#define notify_atcp(p,c,m)                  notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME|MSG_ATCP)
 #define notify_with_cause(p,c,m)            notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)
 #define notify_with_cause_ooc(p,c,m,s)      notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_OOC|(s))
 #define notify_with_cause_html(p,c,m)       notify_check(p,c,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
@@ -757,6 +758,7 @@ extern int anum_alc_top;
 #define PEMIT_ROOM      32  /* Send to containing rm (@femit, additive) */
 #define PEMIT_LIST      64  /* Send to a list */
 #define PEMIT_HTML      128 /* HTML escape, and no newline */
+#define PEMIT_ATCP      256 /* Send over ATCP channel */
 #define PS_BRIEF        0   /* Short PS report */
 #define PS_LONG         1   /* Long PS report */
 #define PS_SUMM         2   /* Queue counts only */
@@ -904,6 +906,7 @@ extern NAMETAB method_nametab[];
 #define MSG_HTML        0x00004000UL    /* Don't send \r\n */
 #define MSG_OOC         0x00008000UL    /* Overide visibility rules because it's OOC */
 #define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speech. */
+#define MSG_ATCP        0x00020000UL    /* Wrap message in IAC SB ATCP ... IAC SE */
 
 #define MSG_SRC_KILL    0x10000000UL    /* Message originated from kill */
 #define MSG_SRC_GIVE    0x20000000UL    /* Message originated from give */
@@ -1013,6 +1016,7 @@ void check_mail(dbref player, int folder, bool silent);
 const UTF8 *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
 void raw_notify_html(dbref player, const mux_string &sMsg);
+void raw_notify_atcp(dbref player, const mux_string &sMsg);
 void do_lock(dbref executor, dbref caller, dbref enactor, int eval, int key,
                     int nargs, UTF8 *name, UTF8 *keytext, const UTF8 *cargs[], int ncargs);
 void check_events(void);

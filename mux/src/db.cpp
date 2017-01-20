@@ -236,6 +236,7 @@ ATTR AttrTable[] =
     {T("Lead"),        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
     {T("Olead"),       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
 #endif // FIRANMUX
+    {T("AtcpLock"),    A_LATCP,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {NULL,                  0,          0}
 };
 
