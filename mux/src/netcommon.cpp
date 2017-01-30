@@ -3450,19 +3450,19 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
         {
             (*msnRoot)->ulControl &= ~(HC_NOSITEMON|HC_SITEMON);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_NOSITEMON|HC_SITEMON);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOSITEMON|HC_SITEMON);
         }
 
         if (0 != ((HC_NOGUEST|HC_GUEST) & msn_arg->ulControl))
         {
             (*msnRoot)->ulControl &= ~(HC_NOGUEST|HC_GUEST);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_NOGUEST|HC_GUEST);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOGUEST|HC_GUEST);
         }
 
         if (0 != ((HC_SUSPECT|HC_TRUST) & msn_arg->ulControl))
         {
             (*msnRoot)->ulControl &= ~(HC_SUSPECT|HC_TRUST);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & ~(HC_SUSPECT|HC_TRUST);
+            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_SUSPECT|HC_TRUST);
         }
 
         delete msn_arg;
