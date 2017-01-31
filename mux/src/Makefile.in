@@ -185,7 +185,7 @@ links: netmux slave @STUBSLAVE_TARGET@
 	( if [ ! -z "@STUBSLAVE_TARGET@" -a -f "@STUBSLAVE_TARGET@" ]; then cd ../game/bin ; rm -f @STUBSLAVE_TARGET@; ln -s ../../src/@STUBSLAVE_TARGET@ @STUBSLAVE_TARGET@ ; fi )
 	( if [ ! -z "@DYNAMICLIB_TARGET@" -a -f "@DYNAMICLIB_TARGET@" ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
 
-stubslave: stubslave.o
+stubslave: stubslave.o @DYNAMICLIB_TARGET@
 	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
 
 slave: slave.o
@@ -194,7 +194,7 @@ slave: slave.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o unsplit unsplit.o
 
-netmux: $(NETMUX_OBJ) $(VER_SRC)
+netmux: $(NETMUX_OBJ) $(VER_SRC) @DYNAMICLIB_TARGET@
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
 	$(CXX) $(ALLCXXFLAGS) $(LDFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
