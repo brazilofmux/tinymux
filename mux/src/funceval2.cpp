@@ -538,7 +538,7 @@ FUNCTION(fun_lastcreate)
             A_NEWOBJS, &aowner, &aflags);
 
     if (  NULL == newobject_string
-       || '\0' == newobject_string)
+       || '\0' == newobject_string[0])
     {
         safe_str(T("#-1"), buff, bufc);
         return;
@@ -847,8 +847,8 @@ FUNCTION(fun_foreach)
     LBUF_OFFSET i = 0, nBytes = 0;
 
     if (  4 == nfargs
-       && '\0' != fargs[2]
-       && '\0' != fargs[3])
+       && '\0' != fargs[2][0]
+       && '\0' != fargs[3][0])
     {
         bool flag = false;
         UTF8 prev = '\0';

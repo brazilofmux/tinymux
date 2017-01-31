@@ -1748,7 +1748,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
         }
         set_player_folder(player, folder);
         msglist = arg2;
-        if (  '\0' != msglist
+        if (  NULL != msglist
            && '*' == msglist[0])
         {
             msglist[0] = '\0';
