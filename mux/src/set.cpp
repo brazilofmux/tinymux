@@ -1287,7 +1287,7 @@ void do_set
 
     if (*p)
     {
-        *p++ = 0;
+        *p++ = '\0';
         int atr = mkattr(executor, flagname);
         if (atr <= 0)
         {
@@ -1312,8 +1312,8 @@ void do_set
         {
             p++;
 
-            attr_info src(thing, pattr);
-            attr_info dest(executor, p, false, false);
+            attr_info src(executor, p, false, false);
+            attr_info dest(thing, pattr);
             copy_attr(executor, src, dest, key);
             return;
         }
