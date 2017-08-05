@@ -1,5 +1,5 @@
 TinyMUX 2.10: CHANGES
-Last Update: January 2017
+Last Update: August 2017
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,6 +105,10 @@ Bug Fixes:
  -- Fix build break with LibreSSL 2.3.0 on FreeBSD (patch from Benard Spil at freebsd.org).
  -- Fix build break for --enable-firanmux.
  -- Dark wizard in same room should not be locatable.
+ -- Fix typo in site list management which would prevent lots of combinations.
+ -- Fix gcc-7 errors related to comparison between pointer and integer.
+ -- Add libmux.so build depedency to stubslave.
+ -- Fix bug with "@set <object>=<attribute>:_<fromobj>/<fromattr>"
 
 
 Performance Enhancements:
@@ -139,3 +143,6 @@ Miscellaneous:
  -- Fixed -Wall warnings which might later become build errors.
  -- Fixed -Wall warnings which may become build errors.
  -- Remove NEED_SPRINTF and NEED_VSPRINTF as we don't use them.
+ -- Let CPPFLAGS and LDFLAGS flow through.
+ -- Bump autoconf versions and use AC_CONFIG_AUX_DIR in modules sub-directory.
+ -- Freshen config.guess and config.sub.
