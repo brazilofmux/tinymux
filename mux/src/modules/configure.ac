@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
 AC_INIT([TinyMUX],[2.10],[tinymux@googlegroups.com])
-AC_AUX_CONFIG_DIR([..])
+AC_CONFIG_AUX_DIR([..])
 AC_CONFIG_SRCDIR([sample.cpp])
 AC_CONFIG_HEADER([autoconf.h])
 
