@@ -1,3 +1,16 @@
+tinymux (2.10.1.14-1) unstable; urgency=medium
+
+  * New upstream release
+    + fixes integer/pointer comparison (Closes: #853683)
+  * Update Standards-Version in debian/control from 3.9.8 to 4.0.1 (no
+    change needed).
+  * cppflags.diff was accepted upstream and therefore dropped from the
+    package.
+  * Added PCRE license to debian/copyright.
+  * Dropped unnecessary build dependencies (Closes: #877604)
+
+ -- Stephen Dennis <brazilofmux@gmail.com>  Tue, 03 Oct 2017 07:55:00 -0600
+
 tinymux (2.10.1.13-1) unstable; urgency=medium
 
   * New upstream release
