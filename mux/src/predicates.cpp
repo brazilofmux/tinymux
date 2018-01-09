@@ -501,8 +501,9 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
                 }
             }
         }
+        free_lbuf(pTrimmedSegment);
+        pTrimmedSegment = NULL;
     }
-
 
     *pbValid = bHaveDisplay;
     if (!bHaveDisplay)
