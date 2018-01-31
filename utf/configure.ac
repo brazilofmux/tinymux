@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.69])
 AC_INIT([Tinymux-UTF 2.12],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([ConvertUTF.cpp])
 AC_CONFIG_HEADERS([autoconf.h])
