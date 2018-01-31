@@ -17,7 +17,6 @@ convert/configure.ac
 convert/Makefile.in
 convert/omega.cpp
 convert/omega.h
-convert/out
 convert/p6hgame.cpp
 convert/p6hgame.h
 convert/p6h.ll
