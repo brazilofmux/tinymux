@@ -281,22 +281,22 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     case "$host" in
     *darwin*) DYNAMICLIB_EXT="dylib"
               DYNAMICLIB_TARGET="libmux.dylib"
-              DYNAMICLIB_CPPFLAGS="-dynamiclib"
+              DYNAMICLIB_CXXFLAGS="-dynamiclib"
               ;;
     *cygwin*) DYNAMICLIB_EXT="dll"
               DYNAMICLIB_TARGET="libmux.dll"
-              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
               ;;
     *)        DYNAMICLIB_EXT="so"
               DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
               ;;
     esac
     MUX_LIBS="-lmux"
     ],[])
 LIBS=$LIBS_SAVE
 AC_SUBST(DYNAMICLIB_EXT)
-AC_SUBST(DYNAMICLIB_CPPFLAGS)
+AC_SUBST(DYNAMICLIB_CXXFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
 AC_SUBST(MUX_LIBS)
 AC_SUBST(DL_LIB)

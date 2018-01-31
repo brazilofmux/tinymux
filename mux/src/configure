@@ -629,7 +629,7 @@ subdirs
 DL_LIB
 MUX_LIBS
 DYNAMICLIB_TARGET
-DYNAMICLIB_CPPFLAGS
+DYNAMICLIB_CXXFLAGS
 DYNAMICLIB_EXT
 EGREP
 GREP
@@ -5068,15 +5068,15 @@ $as_echo "#define HAVE_DLOPEN /**/" >>confdefs.h
     case "$host" in
     *darwin*) DYNAMICLIB_EXT="dylib"
               DYNAMICLIB_TARGET="libmux.dylib"
-              DYNAMICLIB_CPPFLAGS="-dynamiclib"
+              DYNAMICLIB_CXXFLAGS="-dynamiclib"
               ;;
     *cygwin*) DYNAMICLIB_EXT="dll"
               DYNAMICLIB_TARGET="libmux.dll"
-              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
               ;;
     *)        DYNAMICLIB_EXT="so"
               DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
               ;;
     esac
     MUX_LIBS="-lmux"
