@@ -34,7 +34,6 @@
 #define WINDOWS_THREADS
 #define WINDOWS_INSTRINSICS
 //#define WINDOWS_SSL
-#define TINYMUX_MODULES
 
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
@@ -65,7 +64,8 @@
 #define UNIX_TIME
 #if defined(HAVE_DLOPEN)
 #define UNIX_DYNALIB
-#define TINYMUX_MODULES
+#else
+#define PRETEND_DYNALIB
 #endif // HAVE_DLOPEN
 #if defined(SSL_ENABLED)
 #define UNIX_SSL
@@ -73,6 +73,8 @@
 #endif // SSL_ENABLED
 
 #endif // WIN32
+
+#define TINYMUX_MODULES
 
 #ifndef __specstrings
 #define __deref_in

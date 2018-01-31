@@ -5540,26 +5540,26 @@ if ac_fn_c_try_link "$LINENO"; then :
 
 $as_echo "#define HAVE_DLOPEN /**/" >>confdefs.h
 
-    case "$host" in
-    *darwin*) DYNAMICLIB_EXT="so"
-              DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
-              ;;
-    *cygwin*) DYNAMICLIB_EXT="dll"
-              DYNAMICLIB_TARGET="libmux.dll"
-              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
-              ;;
-    *)        DYNAMICLIB_EXT="so"
-              DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
-              ;;
-    esac
-    MUX_LIBS="-lmux"
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$LIBS_SAVE
+case "$host" in
+*darwin*) DYNAMICLIB_EXT="so"
+          DYNAMICLIB_TARGET="libmux.so"
+          DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
+          ;;
+*cygwin*) DYNAMICLIB_EXT="dll"
+          DYNAMICLIB_TARGET="libmux.dll"
+          DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          ;;
+*)        DYNAMICLIB_EXT="so"
+          DYNAMICLIB_TARGET="libmux.so"
+          DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          ;;
+esac
+MUX_LIBS="-lmux"
 
 
 

@@ -265,23 +265,23 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     int   cc = dlclose(mh);
     ]])],[
     AC_DEFINE([HAVE_DLOPEN], [], [Define if dlopen exists.])
-    case "$host" in
-    *darwin*) DYNAMICLIB_EXT="so"
-              DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
-              ;;
-    *cygwin*) DYNAMICLIB_EXT="dll"
-              DYNAMICLIB_TARGET="libmux.dll"
-              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
-              ;;
-    *)        DYNAMICLIB_EXT="so"
-              DYNAMICLIB_TARGET="libmux.so"
-              DYNAMICLIB_CXXFLAGS="-shared -fPIC"
-              ;;
-    esac
-    MUX_LIBS="-lmux"
     ],[])
 LIBS=$LIBS_SAVE
+case "$host" in
+*darwin*) DYNAMICLIB_EXT="so"
+          DYNAMICLIB_TARGET="libmux.so"
+          DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
+          ;;
+*cygwin*) DYNAMICLIB_EXT="dll"
+          DYNAMICLIB_TARGET="libmux.dll"
+          DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          ;;
+*)        DYNAMICLIB_EXT="so"
+          DYNAMICLIB_TARGET="libmux.so"
+          DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          ;;
+esac
+MUX_LIBS="-lmux"
 AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CXXFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)

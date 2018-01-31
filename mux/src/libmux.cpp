@@ -32,6 +32,14 @@ typedef void     *MODULE_HANDLE;
 #define MOD_OPEN(m)  dlopen((char *)m, RTLD_LAZY)
 #define MOD_SYM(h,s) dlsym(h,s)
 #define MOD_CLOSE(h) dlclose(h)
+#elif defined(PRETEND_DYNALIB)
+typedef void     *MODULE_HANDLE;
+extern MODULE_HANDLE mux_dlopen(const char *m);
+extern void *mux_dlsym(MODULE_HANDLE h, const char *s);
+extern void mux_dlclose(MODULE_HANDLE h);
+#define MOD_OPEN(m) mux_dlopen(m)
+#define MOD_SYM(h,s) mux_dlsym(h,s)
+#define MOD_CLOSE(h) mux_dlclose(h)
 #endif
 
 typedef enum LIBRARYSTATE
@@ -2293,3 +2301,25 @@ MUX_RESULT CStandardMarshaler::DisconnectObject(void)
 {
     return MUX_S_OK;
 }
+
+#if defined(PRETEND_DYNALIB)
+
+MODULE_HANDLE mux_dlopen(const char *m)
+{
+    UNUSED_PARAMETER(m);
+    return NULL;
+}
+
+void *mux_dlsym(MODULE_HANDLE h, const char *s)
+{
+    UNUSED_PARAMETER(h);
+    UNUSED_PARAMETER(s);
+    return NULL;
+}
+
+void mux_dlclose(MODULE_HANDLE h)
+{
+    UNUSED_PARAMETER(h);
+}
+
+#endif // PRETEND_DYNALIB
