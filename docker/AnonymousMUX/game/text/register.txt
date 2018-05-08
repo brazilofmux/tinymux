@@ -1,0 +1,10 @@
+Welcome to TinyMUX
+------------------------------------------------------------------------------
+  "connect <name> <password>" connects you to an existing character.
+  "WHO" tells you who is logged in to the game (case sensitive).
+  "QUIT" exits the game and saves your character.
+
+  If you want a character, e-mail your request to user@machine.domain.
+  Include in your request the character name and password you want.
+  New characters are normally created within 24 hours.
+------------------------------------------------------------------------------

@@ -1,0 +1,2 @@
+& help
+This is the indexed wiznews file, like help and news.
