@@ -1,36 +1,20 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmux", "libmux.vcproj", "{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmux", "libmux.vcxproj", "{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netmux", "netmux.vcproj", "{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netmux", "netmux.vcxproj", "{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "funcs", "modules\funcs.vcproj", "{E6E9E6EC-E35E-46AA-9980-7D4C1B77A05B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "funcs", "modules\funcs.vcxproj", "{E6E9E6EC-E35E-46AA-9980-7D4C1B77A05B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample", "modules\sample.vcproj", "{1CB7989F-273C-4A7D-9BDE-57DDB7047196}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample", "modules\sample.vcxproj", "{1CB7989F-273C-4A7D-9BDE-57DDB7047196}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sum", "modules\sum.vcproj", "{38D996E0-458D-43E7-834F-10645162ADD4}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sum", "modules\sum.vcxproj", "{38D996E0-458D-43E7-834F-10645162ADD4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlproxy.vcproj", "{5689B87D-E634-4061-8090-BC93974ABB2E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlproxy.vcxproj", "{5689B87D-E634-4061-8090-BC93974ABB2E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave.vcproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92} = {FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave.vcxproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
