@@ -189,7 +189,7 @@ AC_ARG_ENABLE(
       AC_MSG_RESULT(no)
     else
       SSL="-DSSL_ENABLED"
-      SSL_LIBS="-lssl"
+      SSL_LIBS="-lssl -lcrypto"
       AC_MSG_RESULT(yes)
     fi
   ],

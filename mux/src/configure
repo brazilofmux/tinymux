@@ -2836,7 +2836,7 @@ if test "${enable_ssl+set}" = set; then :
 $as_echo "no" >&6; }
     else
       SSL="-DSSL_ENABLED"
-      SSL_LIBS="-lssl"
+      SSL_LIBS="-lssl -lcrypto"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     fi
