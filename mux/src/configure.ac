@@ -228,9 +228,6 @@ AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 # Checks for libraries.
 #
-# The following may be removeable:
-#   -lcposix: ISC is obsolete as of 2006-07-23.
-AC_SEARCH_LIBS([strerror],[cposix])
 AC_SEARCH_LIBS([crypt],[crypt])
 AC_SEARCH_LIBS([socket],[socket inet])
 AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
