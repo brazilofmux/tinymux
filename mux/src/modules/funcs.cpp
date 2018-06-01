@@ -24,7 +24,7 @@ static MUX_CLASS_INFO funcs_classes[] =
 
 // The following four functions are for access by dlopen.
 //
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow()
 {
     if (0 == g_cComponents
         && 0 == g_cServerLocks)
@@ -60,7 +60,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register()
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
 
@@ -78,7 +78,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
         //
         mux_IFunctionSinkControl* pIFunctionSinkControl = nullptr;
         mr = mux_CreateInstance(CID_Funcs, nullptr, UseSameProcess, IID_IFunctionSinkControl,
-                                (void **)&pIFunctionSinkControl);
+                                reinterpret_cast<void **>(&pIFunctionSinkControl));
         if (MUX_SUCCEEDED(mr))
         {
             g_pIFunctionSinkControl = pIFunctionSinkControl;
@@ -93,7 +93,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister()
 {
     // Destroy our CFuncs component.
     //
@@ -109,20 +109,18 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // Funcs component which is not directly accessible.
 //
-CFuncs::CFuncs(void) : m_cRef(1)
+CFuncs::CFuncs() : m_cRef(1)
 {
     g_cComponents++;
     m_pILog = nullptr;
     m_pIFunctionsControl = nullptr;
 }
 
-MUX_RESULT CFuncs::FinalConstruct(void)
+MUX_RESULT CFuncs::FinalConstruct()
 {
-    MUX_RESULT mr;
-
     // Use CLog provided by netmux.
     //
-    mr = mux_CreateInstance(CID_Log, nullptr, UseSameProcess, IID_ILog, (void **)&m_pILog);
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, nullptr, UseSameProcess, IID_ILog, reinterpret_cast<void **>(&m_pILog));
     if (MUX_SUCCEEDED(mr))
     {
         bool fStarted;
@@ -137,11 +135,11 @@ MUX_RESULT CFuncs::FinalConstruct(void)
     // Start conversation with netmux to offer softcode functions.
     //
     mr = mux_CreateInstance(CID_Functions, nullptr, UseSameProcess, IID_IFunctionsControl,
-                            (void **)&m_pIFunctionsControl);
+                            reinterpret_cast<void **>(&m_pIFunctionsControl));
     if (MUX_SUCCEEDED(mr))
     {
         mux_IFunction* pIFunction = nullptr;
-        mr = QueryInterface(IID_IFunction, (void **)&pIFunction);
+        mr = QueryInterface(IID_IFunction, reinterpret_cast<void **>(&pIFunction));
         if (MUX_SUCCEEDED(mr))
         {
             m_pIFunctionsControl->Add(0, T("HELLO"), pIFunction, MAX_ARG, 0, MAX_ARG, 0, 0);
@@ -159,7 +157,7 @@ CFuncs::~CFuncs()
     if (nullptr != m_pILog)
     {
         bool fStarted;
-        MUX_RESULT mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO"));
+        const MUX_RESULT mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO"));
         if (MUX_SUCCEEDED(mr) && fStarted)
         {
             m_pILog->log_text(T("CFuncs::~CFuncs()"));
@@ -202,13 +200,13 @@ MUX_RESULT CFuncs::QueryInterface(MUX_IID iid, void** ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFuncs::AddRef(void)
+UINT32 CFuncs::AddRef()
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFuncs::Release(void)
+UINT32 CFuncs::Release()
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -221,7 +219,7 @@ UINT32 CFuncs::Release(void)
 
 #define LBUF_SIZE   8000    // Large
 
-void CFuncs::Unregistering(void)
+void CFuncs::Unregistering()
 {
     // We need to release our references before netmux will release his.
     //
@@ -267,7 +265,7 @@ size_t trim_partial_sequence(size_t n, const UTF8* p)
 {
     for (size_t i = 0; i < n; i++)
     {
-        int j = utf8_FirstByte[p[n - i - 1]];
+        const int j = utf8_FirstByte[p[n - i - 1]];
         if (j < UTF8_CONTINUE)
         {
             if (i < 4)
@@ -324,7 +322,7 @@ MUX_RESULT CFuncs::Call(unsigned int nKey, UTF8* buff, UTF8** bufc, dbref execut
     UNUSED_PARAMETER(ncargs);
 
     bool fStarted;
-    MUX_RESULT mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO"));
+    const MUX_RESULT mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO"));
     if (MUX_SUCCEEDED(mr) && fStarted)
     {
         m_pILog->log_text(T("CFuncs::Call()."));
@@ -344,7 +342,7 @@ MUX_RESULT CFuncs::Call(unsigned int nKey, UTF8* buff, UTF8** bufc, dbref execut
 
 // Factory for Funcs component which is not directly accessible.
 //
-CFuncsFactory::CFuncsFactory(void) : m_cRef(1)
+CFuncsFactory::CFuncsFactory() : m_cRef(1)
 {
 }
 
@@ -370,13 +368,13 @@ MUX_RESULT CFuncsFactory::QueryInterface(MUX_IID iid, void** ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFuncsFactory::AddRef(void)
+UINT32 CFuncsFactory::AddRef()
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFuncsFactory::Release(void)
+UINT32 CFuncsFactory::Release()
 {
     m_cRef--;
     if (0 == m_cRef)
