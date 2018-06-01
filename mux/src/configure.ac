@@ -250,6 +250,8 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_CANONICAL_HOST
 AC_USE_SYSTEM_EXTENSIONS
+m4_include([m4/ax_cxx_compile_stdcxx.m4])
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 # Checks for libraries.
 #
