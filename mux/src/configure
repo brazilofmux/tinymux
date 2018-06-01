@@ -622,11 +622,10 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-enable_option_checking=no
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-subdirs
 DL_LIB
+SQL_LIBS
 MUX_LIBS
 DYNAMICLIB_TARGET
 DYNAMICLIB_CXXFLAGS
@@ -657,10 +656,9 @@ CXX
 DEPRECATED
 SSL_LIBS
 SSL
-INLINESQL_LIBPATH
-INLINESQL_INCLUDE
+SQL_LIBPATH
+SQL_INCLUDE
 SELFCHECK
-INLINESQL_LIBS
 INLINESQL
 FIRANLIBS
 FIRANMUX
@@ -738,7 +736,7 @@ CXXCPP
 CC
 CFLAGS
 CPP'
-ac_subdirs_all='modules'
+
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -2592,7 +2590,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers autoconf.h"
+ac_config_headers="$ac_config_headers autoconf.h modules/autoconf.h tools/autoconf.h"
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable Reality Levels" >&5
@@ -2730,7 +2728,6 @@ if test "${enable_inlinesql+set}" = set; then :
 $as_echo "no" >&6; }
     else
       INLINESQL="-DINLINESQL"
-      INLINESQL_LIBS="-lmysqlclient -lz"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     fi
@@ -2741,7 +2738,6 @@ else
 $as_echo "no" >&6; }
 
 fi
-
 
 
 
@@ -2774,41 +2770,25 @@ $as_echo_n "checking for location of SQL header files... " >&6; }
 # Check whether --with-mysql-include was given.
 if test "${with_mysql_include+set}" = set; then :
   withval=$with_mysql_include;
-      if test "x$enable_inlinesql" = "xno"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      elif test "x$enable_inlinesql" = "x"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      else
-        INLINESQL_INCLUDE="-I$withval"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+      SQL_INCLUDE="-I$withval"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
-      fi
 
 else
 
-      if test "x$enable_inlinesql" = "xno"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      elif test "x$enable_inlinesql" = "x"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
+      if test -d "/usr/include/mysql"; then
+          bestguessval="/usr/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
+$as_echo "$bestguessval" >&6; }
+      elif test -d "/usr/local/include/mysql"; then
+          bestguessval="/usr/local/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
+$as_echo "$bestguessval" >&6; }
       else
-        if test -d "/usr/include/mysql"; then
-            bestguessval="/usr/include/mysql"
-            INLINESQL_INCLUDE="-I$bestguessval"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
-$as_echo "$bestguessval" >&6; }
-        elif test -d "/usr/local/include/mysql"; then
-            bestguessval="/usr/local/include/mysql"
-            INLINESQL_INCLUDE="-I$bestguessval"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
-$as_echo "$bestguessval" >&6; }
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Unknown. Use --with-mysql-include with path" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: Unknown. Use --with-mysql-include with path" >&5
 $as_echo "Unknown. Use --with-mysql-include with path" >&6; }
-        fi
       fi
 
 fi
@@ -2821,41 +2801,25 @@ $as_echo_n "checking for location of SQL library files... " >&6; }
 # Check whether --with-mysql-libs was given.
 if test "${with_mysql_libs+set}" = set; then :
   withval=$with_mysql_libs;
-      if test "x$enable_inlinesql" = "xno"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      elif test "x$enable_inlinesql" = "x"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      else
-        INLINESQL_LIBPATH="-L$withval"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+      SQL_LIBPATH="-L$withval"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
-      fi
 
 else
 
-      if test "x$enable_inlinesql" = "xno"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-      elif test "x$enable_inlinesql" = "x"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
+      if test -d "/usr/lib/mysql"; then
+          bestguessval="/usr/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
+$as_echo "$bestguessval" >&6; }
+      elif test -d "/usr/local/lib/mysql"; then
+          bestguessval="/usr/local/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
+$as_echo "$bestguessval" >&6; }
       else
-        if test -d "/usr/lib/mysql"; then
-            bestguessval="/usr/lib/mysql"
-            INLINESQL_LIBPATH="-L$bestguessval"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
-$as_echo "$bestguessval" >&6; }
-        elif test -d "/usr/local/lib/mysql"; then
-            bestguessval="/usr/local/lib/mysql"
-            INLINESQL_LIBPATH="-L$bestguessval"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bestguessval" >&5
-$as_echo "$bestguessval" >&6; }
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Unknown. Use --with-mysql-libs with path" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: Unknown. Use --with-mysql-libs with path" >&5
 $as_echo "Unknown. Use --with-mysql-libs with path" >&6; }
-        fi
       fi
 
 fi
@@ -5419,6 +5383,57 @@ if test "$ac_res" != no; then :
 fi
 
 
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="$save_LDFLAGS $SQL_LIBPATH"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmysqlclient" >&5
+$as_echo_n "checking for main in -lmysqlclient... " >&6; }
+if ${ac_cv_lib_mysqlclient_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmysqlclient  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mysqlclient_main=yes
+else
+  ac_cv_lib_mysqlclient_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mysqlclient_main" >&5
+$as_echo "$ac_cv_lib_mysqlclient_main" >&6; }
+if test "x$ac_cv_lib_mysqlclient_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBMYSQLCLIENT 1
+_ACEOF
+
+  LIBS="-lmysqlclient $LIBS"
+
+fi
+
+if test "x$ac_cv_lib_mysqlclient_main" = "xyes"; then
+  SQL_LIBS="-lmysqlclient -lz"
+
+$as_echo "#define HAVE_MYSQL /**/" >>confdefs.h
+
+fi
+LDFLAGS="$save_LDFLAGS"
+LIBS="$save_LIBS"
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen" >&5
 $as_echo_n "checking for dlopen... " >&6; }
 LIBS_SAVE=$LIBS
@@ -5506,9 +5521,9 @@ if ac_fn_c_try_link "$LINENO"; then :
 $as_echo "#define HAVE_DLOPEN /**/" >>confdefs.h
 
     case "$host" in
-    *darwin*) DYNAMICLIB_EXT="dylib"
-              DYNAMICLIB_TARGET="libmux.dylib"
-              DYNAMICLIB_CXXFLAGS="-dynamiclib"
+    *darwin*) DYNAMICLIB_EXT="so"
+              DYNAMICLIB_TARGET="libmux.so"
+              DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
               ;;
     *cygwin*) DYNAMICLIB_EXT="dll"
               DYNAMICLIB_TARGET="libmux.dll"
@@ -5525,6 +5540,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$LIBS_SAVE
+
 
 
 
@@ -7875,11 +7891,7 @@ $as_echo "#define HAVE_DEV_URANDOM /**/" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files Makefile"
-
-
-
-subdirs="$subdirs modules"
+ac_config_files="$ac_config_files modules/Makefile Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -8572,6 +8584,9 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS autoconf.h" ;;
+    "modules/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS modules/autoconf.h" ;;
+    "tools/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS tools/autoconf.h" ;;
+    "modules/Makefile") CONFIG_FILES="$CONFIG_FILES modules/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -9148,151 +9163,6 @@ if test "$no_create" != yes; then
   # Use ||, not &&, to avoid exiting from the if with $? = 1, which
   # would make configure fail if this is the last instruction.
   $ac_cs_success || as_fn_exit 1
-fi
-
-#
-# CONFIG_SUBDIRS section.
-#
-if test "$no_recursion" != yes; then
-
-  # Remove --cache-file, --srcdir, and --disable-option-checking arguments
-  # so they do not pile up.
-  ac_sub_configure_args=
-  ac_prev=
-  eval "set x $ac_configure_args"
-  shift
-  for ac_arg
-  do
-    if test -n "$ac_prev"; then
-      ac_prev=
-      continue
-    fi
-    case $ac_arg in
-    -cache-file | --cache-file | --cache-fil | --cache-fi \
-    | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
-      ac_prev=cache_file ;;
-    -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
-    | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* \
-    | --c=*)
-      ;;
-    --config-cache | -C)
-      ;;
-    -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
-      ac_prev=srcdir ;;
-    -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
-      ;;
-    -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
-      ac_prev=prefix ;;
-    -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
-      ;;
-    --disable-option-checking)
-      ;;
-    *)
-      case $ac_arg in
-      *\'*) ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-      esac
-      as_fn_append ac_sub_configure_args " '$ac_arg'" ;;
-    esac
-  done
-
-  # Always prepend --prefix to ensure using the same prefix
-  # in subdir configurations.
-  ac_arg="--prefix=$prefix"
-  case $ac_arg in
-  *\'*) ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-  esac
-  ac_sub_configure_args="'$ac_arg' $ac_sub_configure_args"
-
-  # Pass --silent
-  if test "$silent" = yes; then
-    ac_sub_configure_args="--silent $ac_sub_configure_args"
-  fi
-
-  # Always prepend --disable-option-checking to silence warnings, since
-  # different subdirs can have different --enable and --with options.
-  ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
-
-  ac_popdir=`pwd`
-  for ac_dir in : $subdirs; do test "x$ac_dir" = x: && continue
-
-    # Do not complain, so a configure script can configure whichever
-    # parts of a large source tree are present.
-    test -d "$srcdir/$ac_dir" || continue
-
-    ac_msg="=== configuring in $ac_dir (`pwd`/$ac_dir)"
-    $as_echo "$as_me:${as_lineno-$LINENO}: $ac_msg" >&5
-    $as_echo "$ac_msg" >&6
-    as_dir="$ac_dir"; as_fn_mkdir_p
-    ac_builddir=.
-
-case "$ac_dir" in
-.) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
-*)
-  ac_dir_suffix=/`$as_echo "$ac_dir" | sed 's|^\.[\\/]||'`
-  # A ".." for each directory in $ac_dir_suffix.
-  ac_top_builddir_sub=`$as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
-  case $ac_top_builddir_sub in
-  "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
-  *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
-  esac ;;
-esac
-ac_abs_top_builddir=$ac_pwd
-ac_abs_builddir=$ac_pwd$ac_dir_suffix
-# for backward compatibility:
-ac_top_builddir=$ac_top_build_prefix
-
-case $srcdir in
-  .)  # We are building in place.
-    ac_srcdir=.
-    ac_top_srcdir=$ac_top_builddir_sub
-    ac_abs_top_srcdir=$ac_pwd ;;
-  [\\/]* | ?:[\\/]* )  # Absolute name.
-    ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir
-    ac_abs_top_srcdir=$srcdir ;;
-  *) # Relative name.
-    ac_srcdir=$ac_top_build_prefix$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_build_prefix$srcdir
-    ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
-esac
-ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
-
-
-    cd "$ac_dir"
-
-    # Check for guested configure; otherwise get Cygnus style configure.
-    if test -f "$ac_srcdir/configure.gnu"; then
-      ac_sub_configure=$ac_srcdir/configure.gnu
-    elif test -f "$ac_srcdir/configure"; then
-      ac_sub_configure=$ac_srcdir/configure
-    elif test -f "$ac_srcdir/configure.in"; then
-      # This should be Cygnus configure.
-      ac_sub_configure=$ac_aux_dir/configure
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: no configuration information is in $ac_dir" >&5
-$as_echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2;}
-      ac_sub_configure=
-    fi
-
-    # The recursion is here.
-    if test -n "$ac_sub_configure"; then
-      # Make the cache file name correct relative to the subdirectory.
-      case $cache_file in
-      [\\/]* | ?:[\\/]* ) ac_sub_cache_file=$cache_file ;;
-      *) # Relative name.
-	ac_sub_cache_file=$ac_top_build_prefix$cache_file ;;
-      esac
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&5
-$as_echo "$as_me: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&6;}
-      # The eval makes quoting arguments work.
-      eval "\$SHELL \"\$ac_sub_configure\" $ac_sub_configure_args \
-	   --cache-file=\"\$ac_sub_cache_file\" --srcdir=\"\$ac_srcdir\"" ||
-	as_fn_error $? "$ac_sub_configure failed for $ac_dir" "$LINENO" 5
-    fi
-
-    cd "$ac_popdir"
-  done
 fi
 if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5

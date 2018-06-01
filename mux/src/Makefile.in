@@ -63,13 +63,13 @@ STUBLIBS   =  # -ldbi
 #
 FIRANMUX    = @FIRANMUX@
 
-# Inline SQL support.  This provides an inline sql() function which links
+# SQL support.  This optionally provides an inline sql() function which links
 # to a MySQL database, providing softcode compatibility with the SQL support
 # in TinyMUSH 3.x and PennMUSH.
 #
-INLINESQL         = @INLINESQL@
-INLINESQL_LIBS    = @INLINESQL_LIBPATH@ @INLINESQL_LIBS@
-INLINESQL_INCLUDE = @INLINESQL_INCLUDE@
+INLINESQL   = @INLINESQL@
+SQL_LIBS    = @SQL_LIBPATH@ @SQL_LIBS@
+SQL_INCLUDE = @SQL_INCLUDE@
 
 # SSL encryption support.  This provides a 'port_ssl' configuration directive
 # which adds SSL-enabled ports to the listening MUX ports.  It also enables the
@@ -165,7 +165,7 @@ DEFS =
 AUX_SRC = unsplit.cpp
 ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) \
     $(REALITY_LVLS) $(STUB_SLAVE) $(FIRANMUX) $(DEPRECATED) $(SELFCHECK) \
-    $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
+    $(INLINESQL) $(SQL_INCLUDE) $(SSL)
 
 # Compiliation source files.
 #
@@ -173,10 +173,13 @@ ALLSRC     = $(NETMUX_BASE_SRC) $(LIBMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(A
 NETMUX_SRC = $(NETMUX_BASE_SRC) $(REALITY_SRC)
 NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 
+SUBDIRS = modules tools
+.PHONY: subdirs $(SUBDIRS)
+
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: @DYNAMICLIB_TARGET@ netmux slave @STUBSLAVE_TARGET@ links
+all: @DYNAMICLIB_TARGET@ netmux slave @STUBSLAVE_TARGET@ links subdirs
 
 links: netmux slave @STUBSLAVE_TARGET@
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
@@ -197,11 +200,18 @@ unsplit: unsplit.o
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(SQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CXXFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CXXFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(SQL_LIBS) $(SSL_LIBS)
+
+subdirs: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+modules: @DYNAMICLIB_TARGET@
 
 depend: $(ALLSRC) unsplit
 	for i in $(ALLSRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | ./unsplit > .depend~

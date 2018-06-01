@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.68])
 AC_INIT([TinyMUX],[2.12],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
-AC_CONFIG_HEADER([autoconf.h])
+AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
 AC_ARG_ENABLE(
@@ -109,7 +109,6 @@ AC_ARG_ENABLE(
       AC_MSG_RESULT(no)
     else
       INLINESQL="-DINLINESQL"
-      INLINESQL_LIBS="-lmysqlclient -lz"
       AC_MSG_RESULT(yes)
     fi
   ],
@@ -117,7 +116,6 @@ AC_ARG_ENABLE(
     AC_MSG_RESULT(no)
   ])
 AC_SUBST(INLINESQL)
-AC_SUBST(INLINESQL_LIBS)
 
 AC_MSG_CHECKING(whether to perform expensive self-checking)
 AC_ARG_ENABLE(
@@ -141,70 +139,46 @@ AC_ARG_WITH(
   [mysql-include],
   AS_HELP_STRING([--with-mysql-include=PATH],[set the include path for SQL header files]),
   [
-      if test "x$enable_inlinesql" = "xno"; then
-        AC_MSG_RESULT(none)
-      elif test "x$enable_inlinesql" = "x"; then
-        AC_MSG_RESULT(none)
-      else
-        INLINESQL_INCLUDE="-I$withval"
-        AC_MSG_RESULT($withval)
-      fi
+      SQL_INCLUDE="-I$withval"
+      AC_MSG_RESULT($withval)
   ],
   [
-      if test "x$enable_inlinesql" = "xno"; then
-        AC_MSG_RESULT(none)
-      elif test "x$enable_inlinesql" = "x"; then
-        AC_MSG_RESULT(none)
+      if test -d "/usr/include/mysql"; then
+          bestguessval="/usr/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      elif test -d "/usr/local/include/mysql"; then
+          bestguessval="/usr/local/include/mysql"
+          SQL_INCLUDE="-I$bestguessval"
+          AC_MSG_RESULT($bestguessval)
       else
-        if test -d "/usr/include/mysql"; then
-            bestguessval="/usr/include/mysql"
-            INLINESQL_INCLUDE="-I$bestguessval"
-            AC_MSG_RESULT($bestguessval)
-        elif test -d "/usr/local/include/mysql"; then
-            bestguessval="/usr/local/include/mysql"
-            INLINESQL_INCLUDE="-I$bestguessval"
-            AC_MSG_RESULT($bestguessval)
-        else
-            AC_MSG_RESULT(Unknown. Use --with-mysql-include with path)
-        fi
+          AC_MSG_RESULT(Unknown. Use --with-mysql-include with path)
       fi
   ])
-AC_SUBST(INLINESQL_INCLUDE)
+AC_SUBST(SQL_INCLUDE)
 
 AC_MSG_CHECKING(for location of SQL library files)
 AC_ARG_WITH(
   [mysql-libs],
   AS_HELP_STRING([--with-mysql-libs=PATH],[set the library path for SQL library files]),
   [
-      if test "x$enable_inlinesql" = "xno"; then
-        AC_MSG_RESULT(none)
-      elif test "x$enable_inlinesql" = "x"; then
-        AC_MSG_RESULT(none)
-      else
-        INLINESQL_LIBPATH="-L$withval"
-        AC_MSG_RESULT($withval)
-      fi
+      SQL_LIBPATH="-L$withval"
+      AC_MSG_RESULT($withval)
   ],
   [
-      if test "x$enable_inlinesql" = "xno"; then
-        AC_MSG_RESULT(none)
-      elif test "x$enable_inlinesql" = "x"; then
-        AC_MSG_RESULT(none)
+      if test -d "/usr/lib/mysql"; then
+          bestguessval="/usr/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          AC_MSG_RESULT($bestguessval)
+      elif test -d "/usr/local/lib/mysql"; then
+          bestguessval="/usr/local/lib/mysql"
+          SQL_LIBPATH="-L$bestguessval"
+          AC_MSG_RESULT($bestguessval)
       else
-        if test -d "/usr/lib/mysql"; then
-            bestguessval="/usr/lib/mysql"
-            INLINESQL_LIBPATH="-L$bestguessval"
-            AC_MSG_RESULT($bestguessval)
-        elif test -d "/usr/local/lib/mysql"; then
-            bestguessval="/usr/local/lib/mysql"
-            INLINESQL_LIBPATH="-L$bestguessval"
-            AC_MSG_RESULT($bestguessval)
-        else
-            AC_MSG_RESULT(Unknown. Use --with-mysql-libs with path)
-        fi
+          AC_MSG_RESULT(Unknown. Use --with-mysql-libs with path)
       fi
   ])
-AC_SUBST(INLINESQL_LIBPATH)
+AC_SUBST(SQL_LIBPATH)
 
 AC_MSG_CHECKING(whether to enable SSL support)
 AC_ARG_ENABLE(
@@ -264,6 +238,17 @@ AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
 AC_SEARCH_LIBS([inet_addr],[nsl])
 AC_SEARCH_LIBS([sqrt],[m])
 
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="$save_LDFLAGS $SQL_LIBPATH"
+AC_CHECK_LIB(mysqlclient, main)
+if test "x$ac_cv_lib_mysqlclient_main" = "xyes"; then
+  SQL_LIBS="-lmysqlclient -lz"
+  AC_DEFINE([HAVE_MYSQL], [], [Define if mysql exists.])
+fi
+LDFLAGS="$save_LDFLAGS"
+LIBS="$save_LIBS"
+
 AC_MSG_CHECKING(for dlopen)
 LIBS_SAVE=$LIBS
 AC_SEARCH_LIBS([dlopen],[dl],[
@@ -281,9 +266,9 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     ]])],[
     AC_DEFINE([HAVE_DLOPEN], [], [Define if dlopen exists.])
     case "$host" in
-    *darwin*) DYNAMICLIB_EXT="dylib"
-              DYNAMICLIB_TARGET="libmux.dylib"
-              DYNAMICLIB_CXXFLAGS="-dynamiclib"
+    *darwin*) DYNAMICLIB_EXT="so"
+              DYNAMICLIB_TARGET="libmux.so"
+              DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
               ;;
     *cygwin*) DYNAMICLIB_EXT="dll"
               DYNAMICLIB_TARGET="libmux.dll"
@@ -301,6 +286,7 @@ AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CXXFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
 AC_SUBST(MUX_LIBS)
+AC_SUBST(SQL_LIBS)
 AC_SUBST(DL_LIB)
 
 # Checks for header files.
@@ -621,6 +607,5 @@ if test -c /dev/urandom; then
   AC_DEFINE([HAVE_DEV_URANDOM], [], [Define if the character special file /dev/urandom is present.])
 fi
 
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_SUBDIRS([modules])
+AC_CONFIG_FILES([modules/Makefile Makefile])
 AC_OUTPUT

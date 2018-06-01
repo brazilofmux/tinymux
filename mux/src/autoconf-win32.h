@@ -19,14 +19,17 @@
 /* Define if sys/socket.h defines lots of extra functions. */
 #define EXTENDED_SOCKET_DCLS
 
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-/* #undef HAVE_ARPA_INET_H */
-
 /* Define if stdio.h defines lots of extra functions. */
 #define EXTENDED_STDIO_DCLS
 
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+/* #undef HAVE_ARPA_INET_H */
+
 /* Define to 1 if you have the `crypt' function. */
 /* #undef HAVE_CRYPT */
+
+/* define if the compiler supports basic C++11 syntax */
+#define HAVE_CXX11 1
 
 /* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
    don't. */
@@ -73,11 +76,11 @@
 /* Define if fesetprec is available. */
 /* #undef HAVE_FESETPREC */
 
-/* Define to 1 if you have the `fork' function. */
-/* #undef HAVE_FORK */
-
 /* Define to 1 if you have the <float.h> header file. */
 /* #undef HAVE_FLOAT_H */
+
+/* Define to 1 if you have the `fork' function. */
+/* #undef HAVE_FORK */
 
 /* Define to 1 if you have the <fpu_control.h> header file. */
 /* #undef HAVE_FPU_CONTROL_H */
@@ -139,6 +142,9 @@
 /* Define to 1 if you have the `kqueue' function. */
 /* #undef HAVE_KQUEUE */
 
+/* Define to 1 if you have the `mysqlclient' library (-lmysqlclient). */
+/* #undef HAVE_LIBMYSQLCLIENT */
+
 /* Define to 1 if you have the <limits.h> header file. */
 /* #undef HAVE_LIMITS_H */
 
@@ -156,6 +162,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 /* #undef HAVE_MEMORY_H */
+
+/* Define if mysql exists. */
+/* #undef HAVE_MYSQL */
 
 /* Define to 1 if you have the `nanosleep' function. */
 /* #undef HAVE_NANOSLEEP */
