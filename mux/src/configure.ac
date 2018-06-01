@@ -188,8 +188,8 @@ AC_ARG_ENABLE(
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
     else
+      ENABLE_SSL="yes"
       SSL="-DSSL_ENABLED"
-      SSL_LIBS="-lssl -lcrypto"
       AC_MSG_RESULT(yes)
     fi
   ],
@@ -197,7 +197,6 @@ AC_ARG_ENABLE(
     AC_MSG_RESULT(no)
   ])
 AC_SUBST(SSL)
-AC_SUBST(SSL_LIBS)
 
 AC_MSG_CHECKING(whether to enable deprecated features)
 AC_ARG_ENABLE(
@@ -237,6 +236,10 @@ AC_SEARCH_LIBS([socket],[socket inet])
 AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
 AC_SEARCH_LIBS([inet_addr],[nsl])
 AC_SEARCH_LIBS([sqrt],[m])
+if test "x$ENABLE_SSL" = "xyes"; then
+    AC_CHECK_LIB([ssl], [main])
+    AC_CHECK_LIB([crypto], [main])
+fi
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

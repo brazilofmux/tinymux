@@ -77,7 +77,6 @@ SQL_INCLUDE = @SQL_INCLUDE@
 # configuration options.
 #
 SSL               = @SSL@
-SSL_LIBS          = @SSL_LIBS@
 
 # Deprecated Features. By default, this is off. This can be turned on by
 # running configure with --enable-deprecated. Features which are infrequently
@@ -200,11 +199,11 @@ unsplit: unsplit.o
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(SQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(SQL_LIBS) $(MUX_LIBS)
 
 @DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
 	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CXXFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(SQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CXXFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 subdirs: $(SUBDIRS)
 
