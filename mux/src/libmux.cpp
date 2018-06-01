@@ -7,6 +7,9 @@
 
 #include "copyright.h"
 #include "autoconf.h"
+#include <map>
+using namespace std;
+
 #include "config.h"
 
 #ifdef HAVE_DLOPEN
@@ -14,8 +17,6 @@
 #endif // HAVE_DLOPEN
 
 #include "libmux.h"
-#include <map>
-using namespace std;
 
 extern "C"
 {
