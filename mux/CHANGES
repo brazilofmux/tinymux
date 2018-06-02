@@ -1,5 +1,5 @@
 TinyMUX 2.12: CHANGES
-Last Update: April 2016
+Last Update: June 2018
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
@@ -24,6 +24,12 @@ Feature Additions:
  -- Update to Unicode 6.0.
  -- Update to PCRE 7.1.
  -- Added LMAX(), LMIN(), TRACE().
+ -- Include Omega in distribution.
+ -- Remove support for Windows x86 build with and without Intel
+    compiler.
+ -- Add environment for building Docker images from TinyMUX sources.
+ -- Update to Unicode 6.1.
+ -- Add funcs module to the distribution.
 
 
 Bug Fixes:
@@ -37,6 +43,15 @@ Bug Fixes:
  -- Separated KeepAlive out from Idle-checking.
  -- Update link to Pueblo Enhancer's Guide.
  -- Fix for crash if STARTTLS is called without a valid certificate.
+ -- Fix LMIN topic.
+ -- Fix build break for --enable-firanmux.
+ -- Dark wizard in same room should not be locatable.
+ -- Fix typo in site list management which would prevent lots of
+    combinations.
+ -- Fix gcc-7 errors related to comparison between pointer and integer.
+ -- Fix 2007 bug in "@set <object>=<attribute>:_<fromobj>/<fromattr>".
+ -- Fix memory leak from trim_spaces() in MakeCanonicalExitName().
+ -- Need -lcrypto.
 
 
 Performance Enhancements:
@@ -53,6 +68,13 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Consume v5.2 of EastAsianWidth.txt to develop ConsoleWidth() helper
     function.
- -- Bump minimum Visual Studio version to VS 2008.
  -- Fixed -Wall compiler warnings that may eventually become build
     errors.
+ -- Move to C++11 and start using STL.
+ -- Update Debian package.
+ -- Update to autoconf 2.69.
+ -- Use Visual Studio 2013.
+ -- Remove Doxygen.
+ -- Remove obsolete -cposix check.
+ -- Removed NEED_SPRINTF and NEED_VSPRINTF as we don't use them.
+ -- Use a single top-level configure.ac. Build recursively.
