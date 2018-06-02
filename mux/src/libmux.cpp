@@ -8,7 +8,6 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include <map>
-using namespace std;
 
 #include "config.h"
 
@@ -92,15 +91,15 @@ public:
 
 static Module g_MainModule;
 static Module *g_pModule = NULL;
-static map<MUX_CID, Module *> g_ModulesByClass;
-static map<const UTF8 *, Module *, ltstr> g_ModulesByName;
-static map<MUX_IID, MUX_INTERFACE_INFO *> g_Interfaces;
+static std::map<MUX_CID, Module *> g_ModulesByClass;
+static std::map<const UTF8 *, Module *, ltstr> g_ModulesByName;
+static std::map<MUX_IID, MUX_INTERFACE_INFO *> g_Interfaces;
 
 static PipePump   *g_fpPipePump = NULL;
 static QUEUE_INFO *g_pQueue_In  = NULL;
 static QUEUE_INFO *g_pQueue_Out = NULL;
 
-static map<UINT32, CHANNEL_INFO *> g_Channels;
+static std::map<UINT32, CHANNEL_INFO *> g_Channels;
 static UINT32 nNextChannel;
 
 static LibraryState    g_LibraryState   = eLibraryDown;
@@ -267,7 +266,7 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
 
 static void ModuleRemove(Module *pModule)
 {
-    map<const UTF8 *, Module *, ltstr>::iterator it1 = g_ModulesByName.begin();
+    std::map<const UTF8 *, Module *, ltstr>::iterator it1 = g_ModulesByName.begin();
     while (g_ModulesByName.end() != it1)
     {
         if (it1->second == pModule)
@@ -280,7 +279,7 @@ static void ModuleRemove(Module *pModule)
         }
     }
 
-    map<MUX_CID, Module *>::iterator it2 = g_ModulesByClass.begin();
+    std::map<MUX_CID, Module *>::iterator it2 = g_ModulesByClass.begin();
     while (g_ModulesByClass.end() != it2)
     {
         if (it2->second == pModule)
@@ -400,7 +399,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         // In-proc component.
         //
         Module *pModule = NULL;
-        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
+        std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
         if (g_ModulesByClass.end() != it && NULL != (pModule = it->second))
         {
             if (pModule == &g_MainModule)
@@ -510,7 +509,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     int i;
     for (i = 0; i < nci; i++)
     {
-        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
+        std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
         if (g_ModulesByClass.end() != it)
         {
             return MUX_E_INVALIDARG;
@@ -546,7 +545,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     for (i = 0; i < nci; i++)
     {
         MUX_CLASS_INFO *ci = &aci[i];
-        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(ci->cid);
+        std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(ci->cid);
         if (g_ModulesByClass.end() == it)
         {
             g_ModulesByClass[ci->cid] = pModule;
@@ -583,7 +582,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     for (i = 0; i < nci; i++)
     {
         Module *q = NULL;
-        map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
+        std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
         if (g_ModulesByClass.end() == it || NULL == (q = it->second))
         {
             // Attempt to revoke a class ids which were never registered.
@@ -797,7 +796,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
     MUX_RESULT mr MUX_S_OK;
     if (NULL == g_pModule)
     {
-        map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.find(aModuleName);
+        std::map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.find(aModuleName);
         if (g_ModulesByName.end() != it)
         {
             Module *pModule = it->second;
@@ -837,7 +836,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
         return MUX_E_INVALIDARG;
     }
 
-    map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
+    std::map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
     while (g_ModulesByName.end() != it)
     {
         if (0 == iModule)
@@ -870,7 +869,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 
     // We can query each loaded module and unload the ones that are unloadable.
     //
-    map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
+    std::map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.begin();
     while (g_ModulesByName.end() != it)
     {
         Module *pModule = it->second;
@@ -965,7 +964,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
         // Give each module a chance to unregister.
         //
         bool bFound = false;
-        map<const UTF8 *, Module *, ltstr>::iterator it;
+        std::map<const UTF8 *, Module *, ltstr>::iterator it;
         do
         {
             // Find a module in the eModuleRegistered state.  The list we use
@@ -1217,7 +1216,7 @@ extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
 
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel)
 {
-    map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(nChannel);
+    std::map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(nChannel);
     if (g_Channels.end() != it)
     {
         return it->second;
@@ -1649,7 +1648,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                     }
                     else
                     {
-                        map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
+                        std::map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
                         PCHANNEL_INFO pci;
                         if (g_Channels.end() != it && NULL != (pci = it->second))
                         {
@@ -1843,7 +1842,7 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
     MUX_RESULT mr = MUX_S_OK;
     mux_IUnknown *pIUnknown = static_cast<mux_IUnknown *>(pv);
 
-    map<MUX_IID, MUX_INTERFACE_INFO *>::iterator it = g_Interfaces.find(riid);
+    std::map<MUX_IID, MUX_INTERFACE_INFO *>::iterator it = g_Interfaces.find(riid);
     if (g_Interfaces.end() != it)
     {
         MUX_CID cidProxyStub = it->second->cidProxyStub;
