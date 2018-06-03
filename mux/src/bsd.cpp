@@ -470,7 +470,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         // If we don't clear this alarm, the child will eventually receive a
         // SIG_PROF.
         //
-        mux_alarm.clear();
+        alarm_clock.clear();
 
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is
