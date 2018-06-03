@@ -1161,7 +1161,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
     int cnt = 60;
-    for ( ; cnt; MuxAlarm.Sleep(time_1s), cnt--)
+    for ( ; cnt; alarm_clock.sleep(time_1s), cnt--)
     {
 #ifdef HAVE_PWRITE
         int cc = pwrite(hFile, m_pPage, m_nPageSize, oWhere);
@@ -1201,7 +1201,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     cs_dbreads++;
     SetFixedPointers();
     int cnt = 60;
-    for ( ; cnt; MuxAlarm.Sleep(time_1s), cnt--)
+    for ( ; cnt; alarm_clock.sleep(time_1s), cnt--)
     {
 #ifdef HAVE_PREAD
         int cc = pread(hFile, m_pPage, m_nPageSize, oWhere);
@@ -1962,7 +1962,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
                 // We have a forked dump in progress, so we will wait until the
                 // child exits.
                 //
-                MuxAlarm.Sleep(time_1s);
+                alarm_clock.sleep(time_1s);
             } while (mudstate.dumping);
         }
 #endif // HAVE_WORKING_FORK

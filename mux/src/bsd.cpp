@@ -470,7 +470,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         // If we don't clear this alarm, the child will eventually receive a
         // SIG_PROF.
         //
-        MuxAlarm.Clear();
+        mux_alarm.clear();
 
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is
@@ -684,7 +684,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         // If we don't clear this alarm, the child will eventually receive a
         // SIG_PROF.
         //
-        MuxAlarm.Clear();
+        alarm_clock.clear();
 
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is
@@ -4684,7 +4684,7 @@ static void DCL_CDECL sighandler(int sig)
         // Softcode is running longer than is reasonable.  Apply the brakes.
         //
         log_signal(sig);
-        MuxAlarm.Signal();
+        alarm_clock.signal();
         break;
 #endif
 

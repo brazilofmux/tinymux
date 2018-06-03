@@ -1566,7 +1566,7 @@ static void dump_database(void)
             // We have a forked dump in progress, so we will wait until the
             // child exits.
             //
-            MuxAlarm.Sleep(time_1s);
+            alarm_clock.sleep(time_1s);
         }
     }
     mudstate.dumping = true;
@@ -1728,7 +1728,7 @@ void fork_and_dump(int key)
             // If we don't clear this alarm, the child will eventually receive a
             // SIG_PROF.
             //
-            MuxAlarm.Clear();
+            alarm_clock.clear();
 #endif // HAVE_WORKING_FORK
 
             if (key & DUMP_STRUCT)

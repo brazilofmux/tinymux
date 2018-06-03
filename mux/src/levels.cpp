@@ -626,7 +626,7 @@ void did_it_rlevel
     int   nargs
 )
 {
-    if (MuxAlarm.bAlarmed)
+    if (alarm_clock.alarmed)
     {
         return;
     }
