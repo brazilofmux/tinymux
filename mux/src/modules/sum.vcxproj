@@ -112,10 +112,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\config.h" />
+    <ClInclude Include="..\libmux.h" />
+    <ClInclude Include="..\modules.h" />
     <ClInclude Include="autoconf.h" />
-    <ClInclude Include="config.h" />
-    <ClInclude Include="libmux.h" />
-    <ClInclude Include="modules.h" />
     <ClInclude Include="sum.h" />
   </ItemGroup>
   <ItemGroup>
