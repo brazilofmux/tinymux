@@ -73,7 +73,7 @@ Miscellaneous:
  -- Move to C++11 and start using STL.
  -- Update Debian package.
  -- Update to autoconf 2.69.
- -- Use Visual Studio 2013.
+ -- Use Visual Studio 2017.
  -- Remove Doxygen.
  -- Remove obsolete -cposix check.
  -- Removed NEED_SPRINTF and NEED_VSPRINTF as we don't use them.
