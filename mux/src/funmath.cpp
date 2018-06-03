@@ -2141,7 +2141,7 @@ FUNCTION(fun_cand)
 {
     bool val = true;
     UTF8 *temp = alloc_lbuf("fun_cand");
-    for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
+    for (int i = 0; i < nfargs && val && !alarm.alarmed; i++)
     {
         UTF8 *bp = temp;
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
@@ -2157,7 +2157,7 @@ FUNCTION(fun_cor)
 {
     bool val = false;
     UTF8 *temp = alloc_lbuf("fun_cor");
-    for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
+    for (int i = 0; i < nfargs && !val && !alarm.alarmed; i++)
     {
         UTF8 *bp = temp;
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
@@ -2173,7 +2173,7 @@ FUNCTION(fun_candbool)
 {
     bool val = true;
     UTF8 *temp = alloc_lbuf("fun_candbool");
-    for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
+    for (int i = 0; i < nfargs && val && !alarm.alarmed; i++)
     {
         UTF8 *bp = temp;
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
@@ -2189,7 +2189,7 @@ FUNCTION(fun_corbool)
 {
     bool val = false;
     UTF8 *temp = alloc_lbuf("fun_corbool");
-    for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
+    for (int i = 0; i < nfargs && !val && !alarm.alarmed; i++)
     {
         UTF8 *bp = temp;
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,

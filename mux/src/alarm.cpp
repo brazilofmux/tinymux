@@ -1,5 +1,5 @@
 /*! \file alarm.cpp
- * \brief CMuxAlarm module.
+ * \brief mux_alarm module.
  *
  * $Id$
  *
@@ -12,7 +12,7 @@
 #include "config.h"
 #include "externs.h"
 
-CMuxAlarm MuxAlarm;
+mux_alarm alarm;
 
 // OS Dependent Routines:
 //
@@ -20,33 +20,32 @@ CMuxAlarm MuxAlarm;
 
 /*! \brief Alarm Clock Thread Procedure.
  *
- * This thread takes requests to wait from dwWait.  If the allowed time runs
- * out, bAlarm is set.
+ * This thread takes requests to wait. If the allowed time runs out, alarmed is set.
  *
- * \param lParameter  Void pointer to CMuxAlarm instance.
- * \return            Always 1.
+ * \param parameter  Void pointer to mux_alarm instance.
+ * \return Always 1.
  */
 
-DWORD WINAPI CMuxAlarm::AlarmProc(LPVOID lpParameter)
+DWORD WINAPI mux_alarm::alarm_proc(LPVOID parameter)
 {
-    CMuxAlarm *pthis = (CMuxAlarm *)lpParameter;
-    DWORD dwWait = pthis->dwWait;
+    const auto pthis = static_cast<mux_alarm *>(parameter);
+    auto milliseconds = pthis->alarm_period_in_milliseconds_;
     for (;;)
     {
-        HANDLE hSemAlarm = pthis->hSemAlarm;
-        if (hSemAlarm == INVALID_HANDLE_VALUE)
+        const auto sem_alarm = pthis->semaphore_handle_;
+        if (sem_alarm == INVALID_HANDLE_VALUE)
         {
             break;
         }
-        DWORD dwReason = WaitForSingleObject(hSemAlarm, dwWait);
-        if (dwReason == WAIT_TIMEOUT)
+        const auto reason = WaitForSingleObject(sem_alarm, milliseconds);
+        if (reason == WAIT_TIMEOUT)
         {
-            pthis->bAlarmed = true;
-            dwWait = INFINITE;
+            pthis->alarmed = true;
+            milliseconds = INFINITE;
         }
         else
         {
-            dwWait = pthis->dwWait;
+            milliseconds = pthis->alarm_period_in_milliseconds_;
         }
     }
     return 1;
@@ -60,11 +59,11 @@ DWORD WINAPI CMuxAlarm::AlarmProc(LPVOID lpParameter)
  * \return  none.
  */
 
-CMuxAlarm::CMuxAlarm(void)
+mux_alarm::mux_alarm()
 {
-    hSemAlarm = CreateSemaphore(NULL, 0, 1, NULL);
-    Clear();
-    hThread = CreateThread(NULL, 0, AlarmProc, (LPVOID)this, 0, NULL);
+    semaphore_handle_ = CreateSemaphore(nullptr, 0, 1, nullptr);
+    clear();
+    thread_handle_ = CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr);
 }
 
 /*! \brief Alarm Clock Destructor.
@@ -75,13 +74,13 @@ CMuxAlarm::CMuxAlarm(void)
  * \return  none.
  */
 
-CMuxAlarm::~CMuxAlarm()
+mux_alarm::~mux_alarm()
 {
-    HANDLE hSave = hSemAlarm;
-    hSemAlarm = INVALID_HANDLE_VALUE;
-    ReleaseSemaphore(hSave, 1, NULL);
-    WaitForSingleObject(hThread, static_cast<DWORD>(15*FACTOR_MS_PER_SECOND));
-    CloseHandle(hSave);
+    const auto save_handle = semaphore_handle_;
+    semaphore_handle_ = INVALID_HANDLE_VALUE;
+    ReleaseSemaphore(save_handle, 1, nullptr);
+    WaitForSingleObject(thread_handle_, static_cast<DWORD>(15 * FACTOR_MS_PER_SECOND));
+    CloseHandle(save_handle);
 }
 
 /*! \brief Sleep Routine.
@@ -92,20 +91,20 @@ CMuxAlarm::~CMuxAlarm()
  * \return  none.
  */
 
-void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
+void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
-    ::Sleep(ltd.ReturnMilliseconds());
+    ::Sleep(sleep_period.ReturnMilliseconds());
 }
 
 /*! \brief Surrenders a little time.
  *
- * One most operating system, a request to sleep for 0 is a polite way of
+ * On most operating system, a request to sleep for 0 is a polite way of
  * giving other threads the remainder of your time slice.
  *
  * \return  none.
  */
 
-void CMuxAlarm::SurrenderSlice(void)
+void mux_alarm::surrender_slice()
 {
     ::Sleep(0);
 }
@@ -117,12 +116,12 @@ void CMuxAlarm::SurrenderSlice(void)
  * \return  none.
  */
 
-void CMuxAlarm::Set(CLinearTimeDelta ltd)
+void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
-    dwWait = ltd.ReturnMilliseconds();
-    ReleaseSemaphore(hSemAlarm, 1, NULL);
-    bAlarmed  = false;
-    bAlarmSet = true;
+    alarm_period_in_milliseconds_ = alarm_period.ReturnMilliseconds();
+    ReleaseSemaphore(semaphore_handle_, 1, nullptr);
+    alarmed = false;
+    alarm_set_ = true;
 }
 
 /*! \brief Clear the Alarm Clock.
@@ -132,12 +131,12 @@ void CMuxAlarm::Set(CLinearTimeDelta ltd)
  * \return  none.
  */
 
-void CMuxAlarm::Clear(void)
+void mux_alarm::clear()
 {
-    dwWait = INFINITE;
-    ReleaseSemaphore(hSemAlarm, 1, NULL);
-    bAlarmed  = false;
-    bAlarmSet = false;
+    alarm_period_in_milliseconds_ = INFINITE;
+    ReleaseSemaphore(semaphore_handle_, 1, nullptr);
+    alarmed = false;
+    alarm_set_ = false;
 }
 
 #elif defined(UNIX_TIME)
@@ -150,10 +149,10 @@ void CMuxAlarm::Clear(void)
  * \return  none.
  */
 
-CMuxAlarm::CMuxAlarm(void)
+mux_alarm::mux_alarm()
 {
-    bAlarmed = false;
-    bAlarmSet = false;
+    alarmed = false;
+    alarm_set_ = false;
 }
 
 /*! \brief Sleep Routine.
@@ -164,11 +163,11 @@ CMuxAlarm::CMuxAlarm(void)
  * \return  none.
  */
 
-void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
+void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
 #if defined(HAVE_NANOSLEEP)
     struct timespec req;
-    ltd.ReturnTimeSpecStruct(&req);
+    sleep_period.ReturnTimeSpecStruct(&req);
     while (!mudstate.shutdown_flag)
     {
         struct timespec rem;
@@ -185,8 +184,8 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 #else
 #if defined(HAVE_SETITIMER)
     struct itimerval oit;
-    bool   bSaved = false;
-    if (bAlarmSet)
+    bool bSaved = false;
+    if (alarm_set_)
     {
         // Save existing timer and disable.
         //
@@ -197,13 +196,13 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
         it.it_interval.tv_usec = 0;
         setitimer(ITIMER_PROF, &it, &oit);
         bSaved = true;
-        bAlarmSet = false;
+        alarm_set_ = false;
     }
 #endif
 #if defined(HAVE_USLEEP)
 #define TIME_1S 1000000
     unsigned long usec;
-    INT64 usecTotal = ltd.ReturnMicroseconds();
+    INT64 usecTotal = sleep_period.ReturnMicroseconds();
 
     while (  usecTotal
           && mudstate.shutdown_flag)
@@ -221,7 +220,7 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
         usecTotal -= usec;
     }
 #else
-    ::sleep(ltd.ReturnSeconds());
+    ::sleep(sleep_period.ReturnSeconds());
 #endif
 #ifdef HAVE_SETITIMER
     if (bSaved)
@@ -229,7 +228,7 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
         // Restore and re-enabled timer.
         //
         setitimer(ITIMER_PROF, &oit, NULL);
-        bAlarmSet = true;
+        alarm_set_ = true;
     }
 #endif
 #endif
@@ -243,7 +242,7 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
  * \return  none.
  */
 
-void CMuxAlarm::SurrenderSlice(void)
+void mux_alarm::surrender_slice()
 {
     ::sleep(0);
 }
@@ -258,16 +257,16 @@ void CMuxAlarm::SurrenderSlice(void)
  * \return  none.
  */
 
-void CMuxAlarm::Set(CLinearTimeDelta ltd)
+void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
 #ifdef HAVE_SETITIMER
     struct itimerval it;
-    ltd.ReturnTimeValueStruct(&it.it_value);
+    alarm_period.ReturnTimeValueStruct(&it.it_value);
     it.it_interval.tv_sec = 0;
     it.it_interval.tv_usec = 0;
     setitimer(ITIMER_PROF, &it, NULL);
-    bAlarmSet = true;
-    bAlarmed  = false;
+    alarm_set_ = true;
+    alarmed  = false;
 #endif
 }
 
@@ -278,7 +277,7 @@ void CMuxAlarm::Set(CLinearTimeDelta ltd)
  * \return  none.
  */
 
-void CMuxAlarm::Clear(void)
+void mux_alarm::clear()
 {
 #ifdef HAVE_SETITIMER
     // Turn off the timer.
@@ -289,8 +288,8 @@ void CMuxAlarm::Clear(void)
     it.it_interval.tv_sec = 0;
     it.it_interval.tv_usec = 0;
     setitimer(ITIMER_PROF, &it, NULL);
-    bAlarmSet = false;
-    bAlarmed  = false;
+    alarm_set_ = false;
+    alarmed  = false;
 #endif
 }
 
@@ -302,10 +301,10 @@ void CMuxAlarm::Clear(void)
  * \return  none.
  */
 
-void CMuxAlarm::Signal(void)
+void mux_alarm::signal()
 {
-    bAlarmSet = false;
-    bAlarmed  = true;
+    alarm_set_ = false;
+    alarmed  = true;
 }
 
 #endif // UNIX_TIME

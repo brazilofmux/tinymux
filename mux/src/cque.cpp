@@ -162,7 +162,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
-                    MuxAlarm.Set(mudconf.max_cmdsecs);
+                    alarm.set(mudconf.max_cmdsecs);
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     UTF8 *log_cmdbuf = process_command(executor, point->caller,
@@ -171,7 +171,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
-                    if (MuxAlarm.bAlarmed)
+                    if (alarm.alarmed)
                     {
                         notify(executor, T("GAME: Expensive activity abbreviated."));
                         s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
@@ -179,7 +179,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                         halt_que(point->enactor, NOTHING);
                         halt_que(executor, NOTHING);
                     }
-                    MuxAlarm.Clear();
+                    alarm.clear();
 
                     CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
                     CLinearTimeDelta ltd = ltdUsageEnd - ltdUsageBegin;

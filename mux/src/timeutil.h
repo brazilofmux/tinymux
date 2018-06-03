@@ -119,37 +119,37 @@ public:
     void operator+=(const CLinearTimeDelta& ltd);
 };
 
-class CMuxAlarm
+class mux_alarm
 {
 private:
-    bool bAlarmSet;
+    bool alarm_set_{};
 #if defined(WINDOWS_THREADS)
-    HANDLE hThread;
-static DWORD WINAPI AlarmProc(LPVOID lpParameter);
+    HANDLE thread_handle_;
+volatile HANDLE semaphore_handle_;
+volatile DWORD  alarm_period_in_milliseconds_{};
+static DWORD WINAPI alarm_proc(LPVOID parameter);
 #endif // WINDOWS_THREADS
 
 public:
-    bool bAlarmed;
+    bool alarmed{};
 
 #if defined(WINDOWS_THREADS)
-    volatile HANDLE hSemAlarm;
-    volatile DWORD  dwWait;
-    ~CMuxAlarm();
+    ~mux_alarm();
 #endif // WINDOWS_THREADS
 
-    CMuxAlarm(void);
-    void Sleep(CLinearTimeDelta ltd);
-    void SurrenderSlice(void);
+    mux_alarm();
+    static void sleep(CLinearTimeDelta sleep_period);
+    static void surrender_slice();
 
-    void Set(CLinearTimeDelta ltdDeadline);
-    void Clear(void);
+    void set(CLinearTimeDelta alarm_period);
+    void clear();
 
 #if defined(UNIX_SIGNALS)
-    void Signal(void);
+    void signal();
 #endif // UNIX_SIGNALS
 };
 
-extern CMuxAlarm MuxAlarm;
+extern mux_alarm alarm;
 
 #define FACTOR_NANOSECONDS_PER_100NS 100
 #define FACTOR_100NS_PER_MICROSECOND 10

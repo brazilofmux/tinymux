@@ -2760,20 +2760,20 @@ void do_command(DESC *d, UTF8 *command)
 
         CLinearTimeAbsolute ltaBegin;
         ltaBegin.GetUTC();
-        MuxAlarm.Set(mudconf.max_cmdsecs);
+        alarm.set(mudconf.max_cmdsecs);
 
         UTF8 *log_cmdbuf = process_command(d->player, d->player, d->player,
             0, true, command, NULL, 0);
 
         CLinearTimeAbsolute ltaEnd;
         ltaEnd.GetUTC();
-        if (MuxAlarm.bAlarmed)
+        if (alarm.alarmed)
         {
             notify(d->player, T("GAME: Expensive activity abbreviated."));
             halt_que(d->player, NOTHING);
             s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
         }
-        MuxAlarm.Clear();
+        alarm.clear();
 
         CLinearTimeDelta ltd = ltaEnd - ltaBegin;
         if (ltd > mudconf.rpt_cmdsecs)

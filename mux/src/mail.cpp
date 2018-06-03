@@ -1639,7 +1639,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
             return;
         }
         MailList ml(target);
-        for (mp = ml.FirstItem(); !ml.IsEnd() && !MuxAlarm.bAlarmed; mp = ml.NextItem())
+        for (mp = ml.FirstItem(); !ml.IsEnd() && !alarm.alarmed; mp = ml.NextItem())
         {
             if (mp->from == player)
             {

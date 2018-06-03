@@ -167,7 +167,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         a = atr_num(b->thing);
         if (  !a
-           || MuxAlarm.bAlarmed)
+           || alarm.alarmed)
         {
             // No such attribute.
             //

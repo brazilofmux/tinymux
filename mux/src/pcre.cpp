@@ -6810,7 +6810,7 @@ code += 1 + LINK_SIZE + skipbytes;
 
 /* Loop for each alternative branch */
 
-for (;!MuxAlarm.bAlarmed;)
+for (;!alarm.alarmed;)
   {
   /* Handle a change of ims options at the start of the branch */
 
@@ -8031,7 +8031,7 @@ if ((flags & match_cbegroup) != 0)
 
 /* Now start processing the opcodes. */
 
-for (;!MuxAlarm.bAlarmed;)
+for (;!alarm.alarmed;)
   {
   minimize = possessive = false;
   op = *ecode;

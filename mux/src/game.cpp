@@ -99,7 +99,7 @@ bool regexp_match
      */
 
     pcre *re;
-    if (  MuxAlarm.bAlarmed
+    if (  alarm.alarmed
        || (re = pcre_compile((char *)pattern, PCRE_UTF8|case_opt, &errptr, &erroffset, NULL)) == NULL)
     {
         /*
@@ -460,7 +460,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
         {
             UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             mudstate.wild_invk_ctr = 0;
-            if (  MuxAlarm.bAlarmed
+            if (  alarm.alarmed
                || quick_wild(cp, msg))
             {
                 free_lbuf(nbuf);
@@ -477,7 +477,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
             const char *errptr;
             UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             pcre *re;
-            if (  !MuxAlarm.bAlarmed
+            if (  !alarm.alarmed
                && (re = pcre_compile((char *)cp, PCRE_UTF8|case_opt, &errptr, &erroffset, NULL)) != NULL)
             {
                 const int ovecsize = 33;
@@ -2000,7 +2000,7 @@ bool list_check
         dbref next;
         if (  thing == (next = Next(thing))
            || --limit < 0
-           || MuxAlarm.bAlarmed)
+           || alarm.alarmed)
         {
             break;
         }

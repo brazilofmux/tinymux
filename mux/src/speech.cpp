@@ -27,7 +27,7 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
         &aowner, &aflags);
 
     if (  mod[0] == '\0'
-       || MuxAlarm.bAlarmed)
+       || alarm.alarmed)
     {
         free_lbuf(mod);
         return NULL;
@@ -469,7 +469,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
 static void page_return(dbref player, dbref target, const UTF8 *tag,
     int anum, const UTF8 *dflt)
 {
-    if (MuxAlarm.bAlarmed)
+    if (alarm.alarmed)
     {
         return;
     }

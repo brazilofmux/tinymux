@@ -2492,7 +2492,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             const UTF8 *odef, int awhat, int ctrl_flags,
             const UTF8 *args[], int nargs)
 {
-    if (MuxAlarm.bAlarmed)
+    if (alarm.alarmed)
     {
         return;
     }
