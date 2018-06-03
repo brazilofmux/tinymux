@@ -26,9 +26,6 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="copyright.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="libmux.h">
       <Filter>Header Files</Filter>
     </ClInclude>

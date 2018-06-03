@@ -113,7 +113,6 @@
   <ItemGroup>
     <ClInclude Include="autoconf.h" />
     <ClInclude Include="config.h" />
-    <ClInclude Include="copyright.h" />
     <ClInclude Include="libmux.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
