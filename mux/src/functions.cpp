@@ -6663,7 +6663,7 @@ static FUNCTION(fun_iter)
     mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !alarm.alarmed)
+          && !alarm_clock.alarmed)
     {
         if (!first)
         {
@@ -6778,7 +6778,7 @@ static FUNCTION(fun_list)
     mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !alarm.alarmed)
+          && !alarm_clock.alarmed)
     {
         number++;
         objstring = split_token(&cp, sep);
@@ -6888,7 +6888,7 @@ static FUNCTION(fun_fold)
 
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !alarm.alarmed)
+          && !alarm_clock.alarmed)
     {
         clist[0] = rstore;
         clist[1] = split_token(&cp, sep);
@@ -7294,7 +7294,7 @@ static void filter_handler(__inout UTF8 *buff, __deref_inout UTF8 **bufc, dbref 
         bool bFirst = true;
         while (  cp
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
-              && !alarm.alarmed)
+              && !alarm_clock.alarmed)
         {
             UTF8 *objstring = split_token(&cp, sep);
             UTF8 *bp = result;
@@ -7403,7 +7403,7 @@ static FUNCTION(fun_map)
         bool first = true;
         while (  cp
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
-              && !alarm.alarmed)
+              && !alarm_clock.alarmed)
         {
             if (!first)
             {
@@ -7633,7 +7633,7 @@ static void switch_handler
     for (i = 1;  i < nfargs-1
               && fargs[i]
               && fargs[i+1]
-              && !alarm.alarmed; i += 2)
+              && !alarm_clock.alarmed; i += 2)
     {
         bp = tbuff;
         mux_exec(fargs[i], LBUF_SIZE-1, tbuff, &bp, executor, caller, enactor,
@@ -10589,7 +10589,7 @@ static FUNCTION(fun_art)
         pcre* reRuleRegexp = (pcre *) arRule->m_pRegexp;
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
-        if (  !alarm.alarmed
+        if (  !alarm_clock.alarmed
            && pcre_exec(reRuleRegexp, reRuleStudy, (char *)pCased, static_cast<int>(nCased),
                 0, 0, ovec, ovecsize) > 0)
         {

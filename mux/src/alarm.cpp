@@ -12,7 +12,7 @@
 #include "config.h"
 #include "externs.h"
 
-mux_alarm alarm;
+mux_alarm alarm_clock;
 
 // OS Dependent Routines:
 //

@@ -149,7 +149,7 @@ public:
 #endif // UNIX_SIGNALS
 };
 
-extern mux_alarm alarm;
+extern mux_alarm alarm_clock;
 
 #define FACTOR_NANOSECONDS_PER_100NS 100
 #define FACTOR_100NS_PER_MICROSECOND 10

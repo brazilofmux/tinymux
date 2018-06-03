@@ -1231,7 +1231,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 {
     if (  NULL == pStr
        || '\0' == pStr[0]
-       || alarm.alarmed)
+       || alarm_clock.alarmed)
     {
         return;
     }
@@ -1530,7 +1530,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     {
                         safe_noperm(buff, &oldp);
                     }
-                    else if (alarm.alarmed)
+                    else if (alarm_clock.alarmed)
                     {
                         safe_str(T("#-1 CPU LIMITED"), buff, &oldp);
                     }
@@ -1572,7 +1572,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         //
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs
-                           && !alarm.alarmed)
+                           && !alarm_clock.alarmed)
                         {
                             fp->fun(fp, buff, &oldp, executor, caller, enactor,
                                     feval & EV_TRACE, fargs, nfargs, cargs, ncargs);
@@ -1591,7 +1591,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                     T("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
-                            else if (alarm.alarmed)
+                            else if (alarm_clock.alarmed)
                             {
                                 mux_sprintf(mux_scratch, sizeof(mux_scratch), T("#-1 CPU LIMITED"));
                             }

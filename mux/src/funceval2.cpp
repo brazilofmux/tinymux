@@ -316,7 +316,7 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
 {
     if (  mudstate.func_invk_ctr > mudconf.func_invk_lim
        || mudstate.func_nest_lev > mudconf.func_nest_lim
-       || alarm.alarmed)
+       || alarm_clock.alarmed)
     {
         return 0;
     }
@@ -700,7 +700,7 @@ FUNCTION(fun_mix)
     for (  int wc = 0;
            wc < nwords
         && mudstate.func_invk_ctr < mudconf.func_invk_lim
-        && !alarm.alarmed;
+        && !alarm_clock.alarmed;
            wc++)
     {
         if (!bFirst)
@@ -774,7 +774,7 @@ FUNCTION(fun_step)
     bool bFirst = true;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !alarm.alarmed)
+          && !alarm_clock.alarmed)
     {
         if (!bFirst)
         {
@@ -855,7 +855,7 @@ FUNCTION(fun_foreach)
 
         while (  i < nStr
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
-              && !alarm.alarmed)
+              && !alarm_clock.alarmed)
         {
             nBytes = sStr->export_Char_UTF8(i, cbuf);
             i = i + nBytes;
@@ -895,7 +895,7 @@ FUNCTION(fun_foreach)
     {
         while (  i < nStr
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
-              && !alarm.alarmed)
+              && !alarm_clock.alarmed)
         {
             nBytes = sStr->export_Char_UTF8(i, cbuf);
 
@@ -1590,7 +1590,7 @@ static UTF8 *grep_util(dbref player, dbref thing, const UTF8 *pattern, const UTF
 
     dbref aowner;
     int aflags;
-    for (int ca = olist_first(); ca != NOTHING && !alarm.alarmed; ca = olist_next())
+    for (int ca = olist_first(); ca != NOTHING && !alarm_clock.alarmed; ca = olist_next())
     {
         size_t nText;
         UTF8 *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
@@ -2236,7 +2236,7 @@ FUNCTION(fun_push)
 static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registers,
                    int nfargs, UTF8 *buff, UTF8 **bufc, bool cis)
 {
-    if (alarm.alarmed)
+    if (alarm_clock.alarmed)
     {
         return;
     }
@@ -2351,7 +2351,7 @@ FUNCTION(fun_regmatchi)
 static void real_regrab(__in UTF8 *search, __in const UTF8 *pattern, __in const SEP &sep, __in UTF8 *buff,
                  __deref_inout UTF8 **bufc, bool cis, bool all)
 {
-    if (alarm.alarmed)
+    if (alarm_clock.alarmed)
     {
         return;
     }
@@ -2386,7 +2386,7 @@ static void real_regrab(__in UTF8 *search, __in const UTF8 *pattern, __in const 
     do
     {
         UTF8 *r = split_token(&s, sep);
-        if (  !alarm.alarmed
+        if (  !alarm_clock.alarmed
            && pcre_exec(re, study, (char *)r, static_cast<int>(strlen((char *)r)), 0, 0, ovec, ovecsize) >= 0)
         {
             if (first)

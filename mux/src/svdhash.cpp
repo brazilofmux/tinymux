@@ -1109,7 +1109,7 @@ void CHashPage::GetRange
 bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
-    for ( ; ; alarm.sleep(time_250ms))
+    for ( ; ; alarm_clock.sleep(time_250ms))
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
@@ -1134,7 +1134,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbreads++;
     SetFixedPointers();
-    for ( ; ; alarm.sleep(time_250ms))
+    for ( ; ; alarm_clock.sleep(time_250ms))
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {

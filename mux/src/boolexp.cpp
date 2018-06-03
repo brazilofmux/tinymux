@@ -167,7 +167,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         a = atr_num(b->thing);
         if (  !a
-           || alarm.alarmed)
+           || alarm_clock.alarmed)
         {
             // No such attribute.
             //
