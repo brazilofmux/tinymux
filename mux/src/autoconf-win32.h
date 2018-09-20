@@ -172,6 +172,9 @@
 /* Define if mysql exists. */
 /* #undef HAVE_MYSQL */
 
+/* Define if mysql.h exists. */
+/* #undef HAVE_MYSQL_H */
+
 /* Define to 1 if you have the `nanosleep' function. */
 /* #undef HAVE_NANOSLEEP */
 
