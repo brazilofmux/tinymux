@@ -2617,6 +2617,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 #ifdef SOCKET_EAGAIN
                    || SOCKET_EAGAIN        == iSocketError
 #endif
+                   || SOCKET_EINTR         == iSocketError
 #ifdef UNIX_SSL
                    || SSL_ERROR_WANT_WRITE == iSocketError
                    || SSL_ERROR_WANT_READ  == iSocketError
@@ -4115,14 +4116,33 @@ bool process_input(DESC *d)
     if (  IS_SOCKET_ERROR(got)
        || 0 == got)
     {
+#ifdef UNIX_SSL
+        int iSocketError;
+        if (d->ssl_session)
+        {
+           iSocketError = SSL_get_error(d->ssl_session, got);
+        }
+        else
+        {
+           iSocketError = SOCKET_LAST_ERROR;
+        }
+#else
         int iSocketError = SOCKET_LAST_ERROR;
+#endif
         mudstate.debug_cmd = cmdsave;
+
         if (  IS_SOCKET_ERROR(got)
-           && (  iSocketError == SOCKET_EWOULDBLOCK
+           && (  SOCKET_EWOULDBLOCK   == iSocketError
 #ifdef SOCKET_EAGAIN
-              || iSocketError == SOCKET_EAGAIN
-#endif // SOCKET_EAGAIN
-              || iSocketError == SOCKET_EINTR))
+              || SOCKET_EAGAIN        == iSocketError
+#endif
+              || SOCKET_EINTR         == iSocketError
+#ifdef UNIX_SSL
+              || SSL_ERROR_WANT_WRITE == iSocketError
+              || SSL_ERROR_WANT_READ  == iSocketError
+#endif
+              )
+           )
         {
             return true;
         }
