@@ -3764,31 +3764,31 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                        && (  TELNETSB_IS == d->aOption[1]
                           || TELNETSB_INFO == d->aOption[1]))
                     {
-                        unsigned char *envPtr = &d->aOption[2];
+                        auto envPtr = &d->aOption[2];
                         while (envPtr < &d->aOption[m])
                         {
-                            unsigned char ch = *envPtr++;
-                            if (  TELNETSB_USERVAR == ch
-                               || TELNETSB_VAR     == ch)
+                            auto ch2 = *envPtr++;
+                            if (  TELNETSB_USERVAR == ch2
+                               || TELNETSB_VAR     == ch2)
                             {
-                                unsigned char *pVarnameStart = envPtr;
+                                auto pVarnameStart = envPtr;
                                 unsigned char *pVarnameEnd = nullptr;
                                 unsigned char *pVarvalStart = nullptr;
                                 unsigned char *pVarvalEnd = nullptr;
 
                                 while (envPtr < &d->aOption[m])
                                 {
-                                    ch = *envPtr++;
-                                    if (TELNETSB_VALUE == ch)
+                                    ch2 = *envPtr++;
+                                    if (TELNETSB_VALUE == ch2)
                                     {
                                         pVarnameEnd = envPtr - 1;
                                         pVarvalStart = envPtr;
 
                                         while (envPtr < &d->aOption[m])
                                         {
-                                            ch = *envPtr++;
-                                            if (  TELNETSB_USERVAR == ch
-                                               || TELNETSB_VAR == ch)
+                                            ch2 = *envPtr++;
+                                            if (  TELNETSB_USERVAR == ch2
+                                               || TELNETSB_VAR == ch2)
                                             {
                                                 pVarvalEnd = envPtr - 1;
                                                 break;
@@ -3976,12 +3976,12 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 if (  NVT_IAC != chSep
                                    && '[' != chSep)
                                 {
-                                    unsigned char *pTermStart = reqPtr;
+                                    auto pTermStart = reqPtr;
 
                                     while (reqPtr < &d->aOption[m])
                                     {
-                                        auto ch = *reqPtr++;
-                                        if (  chSep == ch
+                                        auto ch3 = *reqPtr++;
+                                        if (  chSep == ch3
                                            || reqPtr == &d->aOption[m])
                                         {
                                             const size_t nTerm = reqPtr - pTermStart - 1;
@@ -5749,6 +5749,7 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
             }
         }
     }
+    *pnLeadingBits = num_leading_bits;
     return true;
 }
 
