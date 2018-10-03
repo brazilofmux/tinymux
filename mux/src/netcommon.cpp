@@ -3427,7 +3427,7 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         return;
     }
 
-    mux_subnet::Comparison ct = (*msnRoot)->msn->CompareTo(msn_arg->msn);
+    mux_subnet::Comparison ct = (*msnRoot)->msn->compare_to(msn_arg->msn);
     switch (ct)
     {
     case mux_subnet::kLessThan:
@@ -3490,7 +3490,7 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
         return;
     }
 
-    mux_subnet::Comparison ct = msnRoot->msn->CompareTo(msa);
+    mux_subnet::Comparison ct = msnRoot->msn->compare_to(msa);
     switch (ct)
     {
     case mux_subnet::kLessThan:
@@ -3585,7 +3585,7 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
     {
         return nullptr;
     }
-    mux_subnet::Comparison ct = msnRoot->msn->CompareTo(msn_arg);
+    mux_subnet::Comparison ct = msnRoot->msn->compare_to(msn_arg);
     switch (ct)
     {
     case mux_subnet::kLessThan:

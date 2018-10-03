@@ -1221,7 +1221,7 @@ static CF_HAND(cf_site)
 {
     UNUSED_PARAMETER(pExtra);
 
-    mux_subnet *pSubnet = ParseSubnet(str, player, cmd);
+    mux_subnet *pSubnet = parse_subnet(str, player, cmd);
     if (nullptr == pSubnet)
     {
         return -1;

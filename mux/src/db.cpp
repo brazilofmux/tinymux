@@ -3623,13 +3623,13 @@ void dump_restart_db(void)
 
     mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
     mux_fprintf(f, T("+V%d\n"), version);
-    putref(f, nMainGamePorts);
-    for (int i = 0; i < nMainGamePorts; i++)
+    putref(f, num_main_game_ports);
+    for (int i = 0; i < num_main_game_ports; i++)
     {
-        putref(f, aMainGamePorts[i].msa.Port());
-        putref(f, aMainGamePorts[i].socket);
+        putref(f, main_game_ports[i].msa.Port());
+        putref(f, main_game_ports[i].socket);
 #ifdef UNIX_SSL
-        putref(f, aMainGamePorts[i].fSSL ? 1 : 0);
+        putref(f, main_game_ports[i].fSSL ? 1 : 0);
 #else
         putref(f, 0);
 #endif
@@ -3696,29 +3696,29 @@ void load_restart_db(void)
         // Version 3 started on 2007-MAR-09
         // Version 4 started on 2007-AUG-12
         //
-        nMainGamePorts = getref(f);
-        for (int i = 0; i < nMainGamePorts; i++)
+        num_main_game_ports = getref(f);
+        for (int i = 0; i < num_main_game_ports; i++)
         {
             unsigned short usPort = getref(f);
-            aMainGamePorts[i].socket = getref(f);
-            socklen_t n = aMainGamePorts[i].msa.maxaddrlen();
-            if (  0 != getsockname(aMainGamePorts[i].socket, aMainGamePorts[i].msa.sa(), &n)
-               || usPort != aMainGamePorts[i].msa.Port())
+            main_game_ports[i].socket = getref(f);
+            socklen_t n = main_game_ports[i].msa.maxaddrlen();
+            if (  0 != getsockname(main_game_ports[i].socket, main_game_ports[i].msa.sa(), &n)
+               || usPort != main_game_ports[i].msa.Port())
             {
                 mux_assert(0);
             }
 
 #if defined(UNIX_NETWORKING_SELECT)
-            if (maxd <= aMainGamePorts[i].socket)
+            if (maxd <= main_game_ports[i].socket)
             {
-                maxd = aMainGamePorts[i].socket + 1;
+                maxd = main_game_ports[i].socket + 1;
             }
 #endif // UNIX_NETWORKING_SELECT
 
             if (3 <= version)
             {
 #ifdef UNIX_SSL
-                aMainGamePorts[i].fSSL = (0 != getref(f));
+                main_game_ports[i].fSSL = (0 != getref(f));
 #else
                 // Eat meaningless field.
                 (void)getref(f);
@@ -3734,7 +3734,7 @@ void load_restart_db(void)
         //
         mux_assert(0);
     }
-    DebugTotalSockets += nMainGamePorts;
+    DebugTotalSockets += num_main_game_ports;
 
     mudstate.start_time.SetSeconds(getref(f));
 

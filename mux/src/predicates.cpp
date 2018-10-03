@@ -1258,14 +1258,14 @@ void handle_prog(DESC *d, UTF8 *message)
         {
             queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
 
-            if (OPTION_YES == UsState(d, TELNET_EOR))
+            if (OPTION_YES == us_state(d, TELNET_EOR))
             {
                 // Use telnet protocol's EOR command to show prompt.
                 //
                 const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
                 queue_write_LEN(d, aEOR, sizeof(aEOR));
             }
-            else if (OPTION_YES != UsState(d, TELNET_SGA))
+            else if (OPTION_YES != us_state(d, TELNET_SGA))
             {
                 // Use telnet protocol's GOAHEAD command to show prompt.
                 //
@@ -1544,14 +1544,14 @@ void do_prog
 
         queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
 
-        if (OPTION_YES == UsState(d, TELNET_EOR))
+        if (OPTION_YES == us_state(d, TELNET_EOR))
         {
             // Use telnet protocol's EOR command to show prompt.
             //
             const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
             queue_write_LEN(d, aEOR, sizeof(aEOR));
         }
-        else if (OPTION_YES != UsState(d, TELNET_SGA))
+        else if (OPTION_YES != us_state(d, TELNET_SGA))
         {
             // Use telnet protocol's GOAHEAD command to show prompt.
             //

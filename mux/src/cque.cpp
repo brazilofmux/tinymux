@@ -31,7 +31,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
     FILETIME ftExit;
     FILETIME ftKernel;
     FILETIME ftUser;
-    GetProcessTimes(hGameProcess, &ftCreate, &ftExit, &ftKernel, &ftUser);
+    GetProcessTimes(game_process_handle, &ftCreate, &ftExit, &ftKernel, &ftUser);
     ltd.Set100ns(*(INT64 *)(&ftUser));
 
 #endif // WINDOWS_PROCESSES

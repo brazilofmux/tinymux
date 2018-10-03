@@ -37,17 +37,17 @@ extern const int _sys_nsig;
 #ifdef UNIX_SSL
 SSL_CTX  *ssl_ctx = nullptr;
 SSL_CTX  *tls_ctx = nullptr;
-PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
+PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
-PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+PortInfo main_game_ports[MAX_LISTEN_PORTS];
 #endif
-int      nMainGamePorts = 0;
+int      num_main_game_ports = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = nullptr;
 
-static void TelnetSetup(DESC *d);
-static void SiteMonSend(SOCKET, const UTF8 *, DESC *, const UTF8 *);
+static void telnet_setup(DESC *d);
+static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
 static DESC *new_connection(PortInfo *Port, int *piError);
@@ -63,7 +63,7 @@ pid_t game_pid;
 // <nick@gammon.com.au>, and were throughly reviewed, re-written and debugged
 // by Stephen Dennis <brazilofmux@gmail.com>.
 //
-HANDLE hGameProcess = INVALID_HANDLE_VALUE;
+HANDLE game_process_handle = INVALID_HANDLE_VALUE;
 FGETNAMEINFO *fpGetNameInfo = nullptr;
 FGETADDRINFO *fpGetAddrInfo = nullptr;
 FFREEADDRINFO *fpFreeAddrInfo = nullptr;
@@ -74,8 +74,8 @@ static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 static OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
 static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
-static DWORD WINAPI MUXListenThread(LPVOID pVoid);
-static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
+static DWORD WINAPI mux_listen_thread(LPVOID pVoid);
+static void process_windows_tcp(DWORD dwTimeout);  // handle NT-style IOs
 static bool bDescriptorListInit = false;
 HWND g_hWnd = nullptr;
 
@@ -134,8 +134,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
         // Go to sleep until there's something useful to do.
         //
         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-        DWORD dwReason = WaitForSingleObject(hSlaveThreadsSemaphore,
-            30000UL*NUM_SLAVE_THREADS);
+        DWORD dwReason = WaitForSingleObject(hSlaveThreadsSemaphore, 30000UL*NUM_SLAVE_THREADS);
         switch (dwReason)
         {
         case WAIT_TIMEOUT:
@@ -325,7 +324,7 @@ static int get_slave_result(void)
 
     for (DESC *d = descriptor_list; d; d = d->next)
     {
-        if (strcmp((char *)d->addr, (char *)host_address))
+        if (strcmp(reinterpret_cast<char *>(d->addr), reinterpret_cast<char *>(host_address)) != 0)
         {
             continue;
         }
@@ -1051,7 +1050,7 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
 
     // Create the listening thread.
     //
-    HANDLE hThread = CreateThread(nullptr, 0, MUXListenThread, (LPVOID)ps, 0, nullptr);
+    HANDLE hThread = CreateThread(nullptr, 0, mux_listen_thread, (LPVOID)ps, 0, nullptr);
     if (nullptr == hThread)
     {
         log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
@@ -1400,7 +1399,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
         CLinearTimeDelta ltdTimeOut = ltaWakeUp - ltaCurrent;
         unsigned int iTimeout = ltdTimeOut.ReturnMilliseconds();
-        ProcessWindowsTCP(iTimeout);
+        process_windows_tcp(iTimeout);
     }
 
     if (IsWindow(g_hWnd))
@@ -2047,7 +2046,7 @@ void shutdownsock(DESC *d, int reason)
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
-            SiteMonSend(d->descriptor, d->addr, d, T("Disconnection"));
+            site_mon_send(d->descriptor, d->addr, d, T("Disconnection"));
         }
 
         // If requested, write an accounting record of the form:
@@ -2083,7 +2082,7 @@ void shutdownsock(DESC *d, int reason)
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
-        SiteMonSend(d->descriptor, d->addr, d, T("N/C Connection Closed"));
+        site_mon_send(d->descriptor, d->addr, d, T("N/C Connection Closed"));
     }
 
     process_output(d, false);
@@ -2314,10 +2313,10 @@ int make_nonblocking(SOCKET s)
 static void make_nolinger(SOCKET s)
 {
 #if defined(HAVE_LINGER)
-    struct linger ling;
+    struct linger ling{};
     ling.l_onoff = 0;
     ling.l_linger = 0;
-    if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling))))
+    if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&ling), sizeof(ling))))
     {
         log_perror(T("NET"), T("FAIL"), T("linger"), T("setsockopt"));
     }
@@ -2467,7 +2466,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
-    DESC *d = (DESC *)dvoid;
+    DESC *d = static_cast<DESC *>(dvoid);
     TBLOCK *tb = d->output_head;
 
     // Don't write if connection dropped, there is nothing to write, or a
@@ -2521,7 +2520,7 @@ void process_output(void *dvoid, int bHandleShutdown)
         tb->hdr.flags |= TBLK_FLAG_LOCKED;
         d->OutboundOverlapped.Offset = 0;
         d->OutboundOverlapped.OffsetHigh = 0;
-        BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start,
+        BOOL bResult = WriteFile(reinterpret_cast<HANDLE>(d->descriptor), tb->hdr.start,
             static_cast<DWORD>(tb->hdr.nchars), nullptr, &d->OutboundOverlapped);
         if (bResult)
         {
@@ -2739,7 +2738,7 @@ static const int nvt_input_action_table[8][14] =
  * \return          None.
  */
 
-static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
+static void send_sb(DESC *d, unsigned char chOption, unsigned char chRequest)
 {
     UTF8 aSB[6] = { NVT_IAC, NVT_SB, 0, 0, NVT_IAC, NVT_SE };
     aSB[2] = chOption;
@@ -2757,7 +2756,7 @@ static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
  * \return          None.
  */
 
-static void SendSb
+static void send_sb
 (
     DESC *d,
     unsigned char chOption,
@@ -2772,7 +2771,7 @@ static void SendSb
     unsigned char *pSB = buffer;
     if (sizeof(buffer) < nMaximum)
     {
-        pSB = (unsigned char *)MEMALLOC(nMaximum);
+        pSB = static_cast<unsigned char *>(MEMALLOC(nMaximum));
         if (nullptr == pSB)
         {
             return;
@@ -2813,7 +2812,7 @@ static void SendSb
  * \return          None.
  */
 
-static void SendWill(DESC *d, unsigned char chOption)
+static void send_will(DESC *d, unsigned char chOption)
 {
     UTF8 aWill[3] = { NVT_IAC, NVT_WILL, 0 };
     aWill[2] = chOption;
@@ -2827,7 +2826,7 @@ static void SendWill(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-static void SendDont(DESC *d, unsigned char chOption)
+static void send_dont(DESC *d, unsigned char chOption)
 {
     UTF8 aDont[3] = { NVT_IAC, NVT_DONT, 0 };
     aDont[2] = chOption;
@@ -2841,7 +2840,7 @@ static void SendDont(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-static void SendDo(DESC *d, unsigned char chOption)
+static void send_do(DESC *d, unsigned char chOption)
 {
     UTF8 aDo[3]   = { NVT_IAC, NVT_DO,   0 };
     aDo[2] = chOption;
@@ -2855,7 +2854,7 @@ static void SendDo(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-static void SendWont(DESC *d, unsigned char chOption)
+static void send_wont(DESC *d, unsigned char chOption)
 {
     unsigned char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
     aWont[2] = chOption;
@@ -2876,7 +2875,7 @@ static void SendWont(DESC *d, unsigned char chOption)
  * \return         One of six states.
  */
 
-int HimState(DESC *d, unsigned char chOption)
+int him_state(DESC *d, unsigned char chOption)
 {
     return d->nvt_him_state[chOption];
 }
@@ -2895,30 +2894,30 @@ int HimState(DESC *d, unsigned char chOption)
  * \return         One of six states.
  */
 
-int UsState(DESC *d, unsigned char chOption)
+int us_state(DESC *d, unsigned char chOption)
 {
     return d->nvt_us_state[chOption];
 }
 
-void SendCharsetRequest(DESC *d, bool fDefacto = false)
+void send_charset_request(DESC *d, bool fDefacto = false)
 {
     if (  OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
        || (  fDefacto
           && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]))
     {
         unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
-        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
+        send_sb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
     }
 }
 
-void DefactoCharsetCheck(DESC *d)
+void defacto_charset_check(DESC *d)
 {
     if (  nullptr != d->ttype
-       && OPTION_NO == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
-       && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]
+       && OPTION_NO == d->nvt_us_state[static_cast<unsigned char>(TELNET_CHARSET)]
+       && OPTION_YES == d->nvt_him_state[static_cast<unsigned char>(TELNET_CHARSET)]
        && mux_stricmp(d->ttype, T("mushclient")) == 0)
     {
-        SendCharsetRequest(d, true);
+        send_charset_request(d, true);
     }
 }
 
@@ -2930,7 +2929,7 @@ void DefactoCharsetCheck(DESC *d)
  * \return          None.
  */
 
-static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
+static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
 {
     d->nvt_him_state[chOption] = iHimState;
 
@@ -2938,14 +2937,14 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
     {
         if (TELNET_TTYPE == chOption)
         {
-            SendSb(d, chOption, TELNETSB_SEND);
+            send_sb(d, chOption, TELNETSB_SEND);
         }
         else if (TELNET_ENV == chOption)
         {
             // Request environment variables.
             //
             unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
-            SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
+            send_sb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
 #ifdef UNIX_SSL
         else if ((TELNET_STARTTLS == chOption) && (tls_ctx != nullptr))
@@ -2955,18 +2954,18 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 #endif
         else if (TELNET_BINARY == chOption)
         {
-            EnableUs(d, TELNET_BINARY);
+            enable_us(d, TELNET_BINARY);
         }
         else if (TELNET_CHARSET == chOption)
         {
-            DefactoCharsetCheck(d);
+            defacto_charset_check(d);
         }
     }
     else if (OPTION_NO == iHimState)
     {
         if (TELNET_BINARY == chOption)
         {
-            DisableUs(d, TELNET_BINARY);
+            disable_us(d, TELNET_BINARY);
         }
     }
 }
@@ -2979,7 +2978,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
  * \return          None.
  */
 
-static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
+static void set_us_state(DESC *d, unsigned char chOption, int iUsState)
 {
     d->nvt_us_state[chOption] = iUsState;
 
@@ -2987,22 +2986,22 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     {
         if (TELNET_EOR == chOption)
         {
-            EnableUs(d, TELNET_SGA);
+            enable_us(d, TELNET_SGA);
         }
         else if (TELNET_CHARSET == chOption)
         {
-            SendCharsetRequest(d);
+            send_charset_request(d);
         }
     }
     else if (OPTION_NO == iUsState)
     {
         if (TELNET_EOR == chOption)
         {
-            DisableUs(d, TELNET_SGA);
+            disable_us(d, TELNET_SGA);
         }
         else if (TELNET_CHARSET == chOption)
         {
-            DefactoCharsetCheck(d);
+            defacto_charset_check(d);
         }
     }
 }
@@ -3015,7 +3014,7 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
  * \return          Yes if we want it enabled.
  */
 
-static bool DesiredHimOption(DESC *d, unsigned char chOption)
+static bool desired_him_option(DESC *d, unsigned char chOption)
 {
     UNUSED_PARAMETER(d);
 
@@ -3046,13 +3045,13 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
  * \return          Yes if we want it enabled.
  */
 
-static bool DesiredUsOption(DESC *d, unsigned char chOption)
+static bool desired_us_option(DESC *d, unsigned char chOption)
 {
     if (  TELNET_EOR    == chOption
        || TELNET_BINARY == chOption
        || TELNET_CHARSET == chOption
        || (  TELNET_SGA == chOption
-          && OPTION_YES == UsState(d, TELNET_EOR)))
+          && OPTION_YES == us_state(d, TELNET_EOR)))
     {
         return true;
     }
@@ -3070,21 +3069,21 @@ static bool DesiredUsOption(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void EnableHim(DESC *d, unsigned char chOption)
+void enable_him(DESC *d, unsigned char chOption)
 {
-    switch (HimState(d, chOption))
+    switch (him_state(d, chOption))
     {
     case OPTION_NO:
-        SetHimState(d, chOption, OPTION_WANTYES_EMPTY);
-        SendDo(d, chOption);
+        set_him_state(d, chOption, OPTION_WANTYES_EMPTY);
+        send_do(d, chOption);
         break;
 
     case OPTION_WANTNO_EMPTY:
-        SetHimState(d, chOption, OPTION_WANTNO_OPPOSITE);
+        set_him_state(d, chOption, OPTION_WANTNO_OPPOSITE);
         break;
 
     case OPTION_WANTYES_OPPOSITE:
-        SetHimState(d, chOption, OPTION_WANTYES_EMPTY);
+        set_him_state(d, chOption, OPTION_WANTYES_EMPTY);
         break;
     }
 }
@@ -3100,21 +3099,21 @@ void EnableHim(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void DisableHim(DESC *d, unsigned char chOption)
+void disable_him(DESC *d, unsigned char chOption)
 {
-    switch (HimState(d, chOption))
+    switch (him_state(d, chOption))
     {
     case OPTION_YES:
-        SetHimState(d, chOption, OPTION_WANTNO_EMPTY);
-        SendDont(d, chOption);
+        set_him_state(d, chOption, OPTION_WANTNO_EMPTY);
+        send_dont(d, chOption);
         break;
 
     case OPTION_WANTNO_OPPOSITE:
-        SetHimState(d, chOption, OPTION_WANTNO_EMPTY);
+        set_him_state(d, chOption, OPTION_WANTNO_EMPTY);
         break;
 
     case OPTION_WANTYES_EMPTY:
-        SetHimState(d, chOption, OPTION_WANTYES_OPPOSITE);
+        set_him_state(d, chOption, OPTION_WANTYES_OPPOSITE);
         break;
     }
 }
@@ -3130,21 +3129,21 @@ void DisableHim(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void EnableUs(DESC *d, unsigned char chOption)
+void enable_us(DESC *d, unsigned char chOption)
 {
-    switch (HimState(d, chOption))
+    switch (him_state(d, chOption))
     {
     case OPTION_NO:
-        SetUsState(d, chOption, OPTION_WANTYES_EMPTY);
-        SendWill(d, chOption);
+        set_us_state(d, chOption, OPTION_WANTYES_EMPTY);
+        send_will(d, chOption);
         break;
 
     case OPTION_WANTNO_EMPTY:
-        SetUsState(d, chOption, OPTION_WANTNO_OPPOSITE);
+        set_us_state(d, chOption, OPTION_WANTNO_OPPOSITE);
         break;
 
     case OPTION_WANTYES_OPPOSITE:
-        SetUsState(d, chOption, OPTION_WANTYES_EMPTY);
+        set_us_state(d, chOption, OPTION_WANTYES_EMPTY);
         break;
     }
 }
@@ -3160,21 +3159,21 @@ void EnableUs(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void DisableUs(DESC *d, unsigned char chOption)
+void disable_us(DESC *d, unsigned char chOption)
 {
-    switch (HimState(d, chOption))
+    switch (him_state(d, chOption))
     {
     case OPTION_YES:
-        SetUsState(d, chOption, OPTION_WANTNO_EMPTY);
-        SendWont(d, chOption);
+        set_us_state(d, chOption, OPTION_WANTNO_EMPTY);
+        send_wont(d, chOption);
         break;
 
     case OPTION_WANTNO_OPPOSITE:
-        SetUsState(d, chOption, OPTION_WANTNO_EMPTY);
+        set_us_state(d, chOption, OPTION_WANTNO_EMPTY);
         break;
 
     case OPTION_WANTYES_EMPTY:
-        SetUsState(d, chOption, OPTION_WANTYES_OPPOSITE);
+        set_us_state(d, chOption, OPTION_WANTYES_OPPOSITE);
         break;
     }
 }
@@ -3191,20 +3190,20 @@ void DisableUs(DESC *d, unsigned char chOption)
  * \return         None.
  */
 
-void TelnetSetup(DESC *d)
+void telnet_setup(DESC *d)
 {
     // Attempt negotation of EOR so we can use that, and if that succeeds,
     // code elsewhere will attempt the negotation of SGA for our side as well.
     //
-    EnableUs(d, TELNET_EOR);
-    EnableHim(d, TELNET_EOR);
-    EnableHim(d, TELNET_SGA);
-    EnableHim(d, TELNET_TTYPE);
-    EnableHim(d, TELNET_NAWS);
-    EnableHim(d, TELNET_ENV);
+    enable_us(d, TELNET_EOR);
+    enable_him(d, TELNET_EOR);
+    enable_him(d, TELNET_SGA);
+    enable_him(d, TELNET_TTYPE);
+    enable_him(d, TELNET_NAWS);
+    enable_him(d, TELNET_ENV);
 //    EnableHim(d, TELNET_OLDENV);
-    EnableUs(d, TELNET_CHARSET);
-    EnableHim(d, TELNET_CHARSET);
+    enable_us(d, TELNET_CHARSET);
+    enable_him(d, TELNET_CHARSET);
 #ifdef UNIX_SSL
     if (!d->ssl_session && (tls_ctx != nullptr))
     {
@@ -3245,7 +3244,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
     if (!d->raw_input)
     {
-        d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
+        d->raw_input = reinterpret_cast<CBLK *>(alloc_lbuf("process_input.raw"));
         d->raw_input_at = d->raw_input->cmd;
     }
 
@@ -3261,8 +3260,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     int n = nBytes;
     while (n--)
     {
-        unsigned char ch = (unsigned char)*pBytes;
-        int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
+        auto ch = static_cast<unsigned char>(*pBytes);
+        auto iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
         switch (iAction)
         {
         case 1:
@@ -3272,11 +3271,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             {
                 // Execute UTF-8 state machine.
                 //
-                unsigned char iColumn = cl_print_itt[(unsigned char)ch];
-                unsigned short iOffset = cl_print_sot[d->raw_codepoint_state];
+                auto iColumn = cl_print_itt[static_cast<unsigned char>(ch)];
+                auto iOffset = cl_print_sot[d->raw_codepoint_state];
                 for (;;)
                 {
-                    int y = (char)cl_print_sbt[iOffset];
+                    int y = static_cast<char>(cl_print_sbt[iOffset]);
                     if (0 < y)
                     {
                         // RUN phrase.
@@ -3478,7 +3477,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             {
                 nInputBytes--;
                 p--;
-                if (utf8_FirstByte[(UTF8)*p] < UTF8_CONTINUE)
+                if (utf8_FirstByte[static_cast<UTF8>(*p)] < UTF8_CONTINUE)
                 {
                     break;
                 }
@@ -3505,7 +3504,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (d->raw_input->cmd < p)
             {
                 save_command(d, d->raw_input);
-                d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
+                d->raw_input = reinterpret_cast<CBLK *>(alloc_lbuf("process_input.raw"));
 
                 p = d->raw_input_at = d->raw_input->cmd;
                 pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
@@ -3571,31 +3570,31 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 13:
             // Action 13 - Respond to IAC WILL X
             //
-            switch (HimState(d, ch))
+            switch (him_state(d, ch))
             {
             case OPTION_NO:
-                if (DesiredHimOption(d, ch))
+                if (desired_him_option(d, ch))
                 {
-                    SetHimState(d, ch, OPTION_YES);
-                    SendDo(d, ch);
+                    set_him_state(d, ch, OPTION_YES);
+                    send_do(d, ch);
                 }
                 else
                 {
-                    SendDont(d, ch);
+                    send_dont(d, ch);
                 }
                 break;
 
             case OPTION_WANTNO_EMPTY:
-                SetHimState(d, ch, OPTION_NO);
+                set_him_state(d, ch, OPTION_NO);
                 break;
 
             case OPTION_WANTYES_OPPOSITE:
-                SetHimState(d, ch, OPTION_WANTNO_EMPTY);
-                SendDont(d, ch);
+                set_him_state(d, ch, OPTION_WANTNO_EMPTY);
+                send_dont(d, ch);
                 break;
 
             default:
-                SetHimState(d, ch, OPTION_YES);
+                set_him_state(d, ch, OPTION_YES);
                 break;
             }
             d->raw_input_state = NVT_IS_NORMAL;
@@ -3604,20 +3603,20 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 14:
             // Action 14 - Respond to IAC DONT X
             //
-            switch (UsState(d, ch))
+            switch (us_state(d, ch))
             {
             case OPTION_YES:
-                SetUsState(d, ch, OPTION_NO);
-                SendWont(d, ch);
+                set_us_state(d, ch, OPTION_NO);
+                send_wont(d, ch);
                 break;
 
             case OPTION_WANTNO_OPPOSITE:
-                SetUsState(d, ch, OPTION_WANTYES_EMPTY);
-                SendWill(d, ch);
+                set_us_state(d, ch, OPTION_WANTYES_EMPTY);
+                send_will(d, ch);
                 break;
 
             default:
-                SetUsState(d, ch, OPTION_NO);
+                set_us_state(d, ch, OPTION_NO);
                 break;
             }
             d->raw_input_state = NVT_IS_NORMAL;
@@ -3626,31 +3625,31 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 15:
             // Action 15 - Respond to IAC DO X
             //
-            switch (UsState(d, ch))
+            switch (us_state(d, ch))
             {
             case OPTION_NO:
-                if (DesiredUsOption(d, ch))
+                if (desired_us_option(d, ch))
                 {
-                    SetUsState(d, ch, OPTION_YES);
-                    SendWill(d, ch);
+                    set_us_state(d, ch, OPTION_YES);
+                    send_will(d, ch);
                 }
                 else
                 {
-                    SendWont(d, ch);
+                    send_wont(d, ch);
                 }
                 break;
 
             case OPTION_WANTNO_EMPTY:
-                SetUsState(d, ch, OPTION_NO);
+                set_us_state(d, ch, OPTION_NO);
                 break;
 
             case OPTION_WANTYES_OPPOSITE:
-                SetUsState(d, ch, OPTION_WANTNO_EMPTY);
-                SendWont(d, ch);
+                set_us_state(d, ch, OPTION_WANTNO_EMPTY);
+                send_wont(d, ch);
                 break;
 
             default:
-                SetUsState(d, ch, OPTION_YES);
+                set_us_state(d, ch, OPTION_YES);
                 break;
             }
             d->raw_input_state = NVT_IS_NORMAL;
@@ -3659,23 +3658,23 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 16:
             // Action 16 - Respond to IAC WONT X
             //
-            switch (HimState(d, ch))
+            switch (him_state(d, ch))
             {
             case OPTION_NO:
                 break;
 
             case OPTION_YES:
-                SetHimState(d, ch, OPTION_NO);
-                SendDont(d, ch);
+                set_him_state(d, ch, OPTION_NO);
+                send_dont(d, ch);
                 break;
 
             case OPTION_WANTNO_OPPOSITE:
-                SetHimState(d, ch, OPTION_WANTYES_EMPTY);
-                SendDo(d, ch);
+                set_him_state(d, ch, OPTION_WANTYES_EMPTY);
+                send_do(d, ch);
                 break;
 
             default:
-                SetHimState(d, ch, OPTION_NO);
+                set_him_state(d, ch, OPTION_NO);
                 break;
             }
             d->raw_input_state = NVT_IS_NORMAL;
@@ -3730,8 +3729,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         // that terminal type information is an NVT ASCII
                         // string.
                         //
-                        size_t nTermType = m-2;
-                        UTF8 *pTermType = &d->aOption[2];
+                        const auto nTermType = m-2;
+                        const auto pTermType = &d->aOption[2];
 
                         bool fASCII = true;
                         for (size_t i = 0; i < nTermType; i++)
@@ -3750,11 +3749,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 MEMFREE(d->ttype);
                                 d->ttype = nullptr;
                             }
-                            d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
+                            d->ttype = static_cast<UTF8 *>(MEMALLOC(nTermType+1));
                             memcpy(d->ttype, pTermType, nTermType);
                             d->ttype[nTermType] = '\0';
 
-                            DefactoCharsetCheck(d);
+                            defacto_charset_check(d);
                         }
                     }
                     break;
@@ -3848,7 +3847,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                        || mux_stricmp(varname, T("LC_ALL")) == 0
                                        || mux_stricmp(varname, T("LANG")) == 0)
                                     {
-                                        UTF8 *pEncoding = (UTF8 *)strchr((char *)varval, '.');
+                                        auto pEncoding = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(varval), '.'));
                                         if (nullptr != pEncoding)
                                         {
                                             pEncoding++;
@@ -3870,8 +3869,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             d->negotiated_encoding = CHARSET_UTF8;
                                             d->raw_codepoint_state = CL_PRINT_START_STATE;
 
-                                            EnableUs(d, TELNET_BINARY);
-                                            EnableHim(d, TELNET_BINARY);
+                                            enable_us(d, TELNET_BINARY);
+                                            enable_him(d, TELNET_BINARY);
                                         }
                                     }
                                     else if (mux_stricmp(varname, T("USER")) == 0)
@@ -3893,10 +3892,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                         if (TELNETSB_ACCEPT == d->aOption[1])
                         {
-                            unsigned char *pCharset = &d->aOption[2];
+                            const auto pCharset = &d->aOption[2];
 
                             if (  nUTF8 == m - 2
-                               && memcmp((char *)pCharset, szUTF8, nUTF8) == 0)
+                               && memcmp(reinterpret_cast<char *>(pCharset), szUTF8, nUTF8) == 0)
                             {
                                 if (CHARSET_UTF8 != d->encoding)
                                 {
@@ -3908,45 +3907,45 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     d->negotiated_encoding = CHARSET_UTF8;
                                     d->raw_codepoint_state = CL_PRINT_START_STATE;
 
-                                    EnableUs(d, TELNET_BINARY);
-                                    EnableHim(d, TELNET_BINARY);
+                                    enable_us(d, TELNET_BINARY);
+                                    enable_him(d, TELNET_BINARY);
                                 }
                             }
                             else if (  nISO8859_1 == m - 2
-                                    && memcmp((char *)pCharset, szISO8859_1, nISO8859_1) == 0)
+                                    && memcmp(reinterpret_cast<char *>(pCharset), szISO8859_1, nISO8859_1) == 0)
                             {
                                 d->encoding = CHARSET_LATIN1;
                                 d->negotiated_encoding = CHARSET_LATIN1;
 
-                                EnableUs(d, TELNET_BINARY);
-                                EnableHim(d, TELNET_BINARY);
+                                enable_us(d, TELNET_BINARY);
+                                enable_him(d, TELNET_BINARY);
                             }
                             else if (  nISO8859_2 == m - 2
-                                    && memcmp((char *)pCharset, szISO8859_2, nISO8859_2) == 0)
+                                    && memcmp(reinterpret_cast<char *>(pCharset), szISO8859_2, nISO8859_2) == 0)
                             {
                                 d->encoding = CHARSET_LATIN2;
                                 d->negotiated_encoding = CHARSET_LATIN2;
 
-                                EnableUs(d, TELNET_BINARY);
-                                EnableHim(d, TELNET_BINARY);
+                                enable_us(d, TELNET_BINARY);
+                                enable_him(d, TELNET_BINARY);
                             }
                             else if (  nCp437 == m - 2
-                                    && memcmp((char *)pCharset, szCp437, nCp437) == 0)
+                                    && memcmp(reinterpret_cast<char *>(pCharset), szCp437, nCp437) == 0)
                             {
                                 d->encoding = CHARSET_CP437;
                                 d->negotiated_encoding = CHARSET_CP437;
 
-                                EnableUs(d, TELNET_BINARY);
-                                EnableHim(d, TELNET_BINARY);
+                                enable_us(d, TELNET_BINARY);
+                                enable_him(d, TELNET_BINARY);
                             }
                             else if (  nUSASCII == m - 2
-                                    && memcmp((char *)pCharset, szUSASCII, nUSASCII) == 0)
+                                    && memcmp(reinterpret_cast<char *>(pCharset), szUSASCII, nUSASCII) == 0)
                             {
                                 d->encoding = CHARSET_ASCII;
                                 d->negotiated_encoding = CHARSET_ASCII;
 
-                                DisableUs(d, TELNET_BINARY);
-                                DisableHim(d, TELNET_BINARY);
+                                disable_us(d, TELNET_BINARY);
+                                disable_him(d, TELNET_BINARY);
                             }
                         }
                         else if (TELNETSB_REJECT == d->aOption[1])
@@ -3959,13 +3958,13 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             d->encoding = CHARSET_ASCII;
                             d->negotiated_encoding = CHARSET_ASCII;
 
-                            DisableUs(d, TELNET_BINARY);
-                            DisableHim(d, TELNET_BINARY);
+                            disable_us(d, TELNET_BINARY);
+                            disable_him(d, TELNET_BINARY);
                         }
                         else if (TELNETSB_REQUEST == d->aOption[1])
                         {
-                            bool fRequestAcknowledged = false;
-                            unsigned char *reqPtr = &d->aOption[2];
+                            auto fRequestAcknowledged = false;
+                            auto reqPtr = &d->aOption[2];
                             if (reqPtr < &d->aOption[m])
                             {
                                 // NVT_IAC is not permitted as a separator.
@@ -3973,7 +3972,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 // <version>, but we don't support parsing
                                 // and ignoring that.
                                 //
-                                unsigned char chSep = *reqPtr++;
+                                auto chSep = *reqPtr++;
                                 if (  NVT_IAC != chSep
                                    && '[' != chSep)
                                 {
@@ -3981,19 +3980,19 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                                     while (reqPtr < &d->aOption[m])
                                     {
-                                        unsigned char ch = *reqPtr++;
+                                        auto ch = *reqPtr++;
                                         if (  chSep == ch
                                            || reqPtr == &d->aOption[m])
                                         {
-                                            size_t nTerm = reqPtr - pTermStart - 1;
+                                            const size_t nTerm = reqPtr - pTermStart - 1;
 
                                             // Process [pTermStart, pTermStart+nTermEnd)
                                             // We let the client determine priority by its order of the list.
                                             //
                                             if (  nUTF8 == nTerm
-                                               && memcmp((char *)pTermStart, szUTF8, nUTF8) == 0)
+                                               && memcmp(reinterpret_cast<char *>(pTermStart), szUTF8, nUTF8) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 if (CHARSET_UTF8 != d->encoding)
                                                 {
@@ -4005,57 +4004,57 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                                     d->negotiated_encoding = CHARSET_UTF8;
                                                     d->raw_codepoint_state = CL_PRINT_START_STATE;
 
-                                                    EnableUs(d, TELNET_BINARY);
-                                                    EnableHim(d, TELNET_BINARY);
+                                                    enable_us(d, TELNET_BINARY);
+                                                    enable_him(d, TELNET_BINARY);
                                                 }
                                                 break;
                                             }
                                             else if (  nISO8859_1 == nTerm
-                                                    && memcmp((char *)pTermStart, szISO8859_1, nISO8859_1) == 0)
+                                                    && memcmp(reinterpret_cast<char *>(pTermStart), szISO8859_1, nISO8859_1) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 d->encoding = CHARSET_LATIN1;
                                                 d->negotiated_encoding = CHARSET_LATIN1;
 
-                                                EnableUs(d, TELNET_BINARY);
-                                                EnableHim(d, TELNET_BINARY);
+                                                enable_us(d, TELNET_BINARY);
+                                                enable_him(d, TELNET_BINARY);
                                                 break;
                                             }
                                             else if (  nISO8859_2 == nTerm
-                                                    && memcmp((char *)pTermStart, szISO8859_2, nISO8859_2) == 0)
+                                                    && memcmp(reinterpret_cast<char *>(pTermStart), szISO8859_2, nISO8859_2) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 d->encoding = CHARSET_LATIN2;
                                                 d->negotiated_encoding = CHARSET_LATIN2;
 
-                                                EnableUs(d, TELNET_BINARY);
-                                                EnableHim(d, TELNET_BINARY);
+                                                enable_us(d, TELNET_BINARY);
+                                                enable_him(d, TELNET_BINARY);
                                                 break;
                                             }
                                             else if (  nCp437 == nTerm
-                                                    && memcmp((char *)pTermStart, szCp437, nCp437) == 0)
+                                                    && memcmp(reinterpret_cast<char *>(pTermStart), szCp437, nCp437) == 0)
                                             {
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
                                                 d->encoding = CHARSET_CP437;
                                                 d->negotiated_encoding = CHARSET_CP437;
 
-                                                EnableUs(d, TELNET_BINARY);
-                                                EnableHim(d, TELNET_BINARY);
+                                                enable_us(d, TELNET_BINARY);
+                                                enable_him(d, TELNET_BINARY);
                                                 break;
                                             }
                                             else if (  nUSASCII== nTerm
-                                                    && memcmp((char *)pTermStart, szUSASCII, nUSASCII) == 0)
+                                                    && memcmp(reinterpret_cast<char *>(pTermStart), szUSASCII, nUSASCII) == 0)
                                             {
                                                 fRequestAcknowledged = true;
-                                                SendSb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
+                                                send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 d->encoding = CHARSET_ASCII;
                                                 d->negotiated_encoding = CHARSET_ASCII;
 
-                                                DisableUs(d, TELNET_BINARY);
-                                                DisableHim(d, TELNET_BINARY);
+                                                disable_us(d, TELNET_BINARY);
+                                                disable_him(d, TELNET_BINARY);
                                                 break;
                                             }
                                             pTermStart = reqPtr;
@@ -4066,7 +4065,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                             if (!fRequestAcknowledged)
                             {
-                                SendSb(d, TELNET_CHARSET, TELNETSB_REJECT, nullptr, 0);
+                                send_sb(d, TELNET_CHARSET, TELNETSB_REJECT, nullptr, 0);
                             }
                         }
                     }
@@ -4111,7 +4110,7 @@ bool process_input(DESC *d)
     mudstate.debug_cmd = T("< process_input >");
 
     char buf[LBUF_SIZE];
-    int got = mux_socket_read(d, buf, sizeof(buf), 0);
+    const auto got = mux_socket_read(d, buf, sizeof(buf), 0);
     if (  IS_SOCKET_ERROR(got)
        || 0 == got)
     {
@@ -4126,7 +4125,7 @@ bool process_input(DESC *d)
            iSocketError = SOCKET_LAST_ERROR;
         }
 #else
-        int iSocketError = SOCKET_LAST_ERROR;
+        const int iSocketError = SOCKET_LAST_ERROR;
 #endif
         mudstate.debug_cmd = cmdsave;
 
@@ -4160,7 +4159,7 @@ void close_sockets(bool emergency, const UTF8 *message)
     {
         if (emergency)
         {
-            mux_socket_write(d, (const char *)message, strlen((const char *)message), 0);
+            mux_socket_write(d, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)), 0);
             if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
             {
                 log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
@@ -4185,13 +4184,13 @@ void close_sockets(bool emergency, const UTF8 *message)
             shutdownsock(d, R_GOING_DOWN);
         }
     }
-    for (int i = 0; i < nMainGamePorts; i++)
+    for (int i = 0; i < num_main_game_ports; i++)
     {
-        if (0 == SOCKET_CLOSE(aMainGamePorts[i].socket))
+        if (0 == SOCKET_CLOSE(main_game_ports[i].socket))
         {
             DebugTotalSockets--;
         }
-        aMainGamePorts[i].socket = INVALID_SOCKET;
+        main_game_ports[i].socket = INVALID_SOCKET;
     }
 }
 
@@ -4426,7 +4425,7 @@ static MUX_SIGNAMES signames[NSIG];
 #define SysSigNames sys_siglist
 #endif // HAVE_SYS_SIGNAME
 
-void BuildSignalNamesTable(void)
+void build_signal_names_table(void)
 {
     int i;
     for (i = 0; i < NSIG; i++)
@@ -4438,7 +4437,7 @@ void BuildSignalNamesTable(void)
     const SIGNALTYPE *pst = aSigTypes;
     while (pst->szSignal)
     {
-        int sig = pst->iSignal;
+        const auto sig = pst->iSignal;
         if (  0 <= sig
            && sig < NSIG)
         {
@@ -4517,10 +4516,10 @@ static void check_panicking(int sig)
     mudstate.panicking = true;
 }
 
-static UTF8 *SignalDesc(int iSignal)
+static UTF8 *signal_desc(const int iSignal)
 {
     static UTF8 buff[LBUF_SIZE];
-    UTF8 *bufc = buff;
+    auto bufc = buff;
     safe_str(signames[iSignal].pShortName, buff, &bufc);
     if (signames[iSignal].pLongName)
     {
@@ -4532,11 +4531,11 @@ static UTF8 *SignalDesc(int iSignal)
     return buff;
 }
 
-static void log_signal(int iSignal)
+static void log_signal(const int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, T("SIG"), T("CATCH"));
     log_text(T("Caught signal "));
-    log_text(SignalDesc(iSignal));
+    log_text(signal_desc(iSignal));
     ENDLOG;
 }
 
@@ -4727,7 +4726,7 @@ static void DCL_CDECL sighandler(int sig)
         //
         check_panicking(sig);
         log_signal(sig);
-        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), SignalDesc(sig));
+        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), signal_desc(sig));
         if ('\0' != mudconf.crash_msg[0])
         {
             raw_broadcast(0, T("GAME: %s"), mudconf.crash_msg);
@@ -4785,7 +4784,7 @@ static void DCL_CDECL sighandler(int sig)
            && mudstate.bCanRestart)
         {
             raw_broadcast(0,
-                    T("GAME: Fatal signal %s caught, restarting."), SignalDesc(sig));
+                    T("GAME: Fatal signal %s caught, restarting."), signal_desc(sig));
 
             if ('\0' != mudconf.crash_msg[0])
             {
@@ -4870,7 +4869,7 @@ NAMETAB sigactions_nametab[] =
 {
     {T("exit"),        3,  0,  SA_EXIT},
     {T("default"),     1,  0,  SA_DFLT},
-    {(UTF8 *) nullptr,    0,  0,  0}
+    {static_cast<UTF8 *>(nullptr), 0,  0,  0}
 };
 
 void set_signals(void)
@@ -4971,10 +4970,10 @@ void list_system_resources(dbref player)
 // Thread to listen on port - for Windows NT
 // ---------------------------------------------------------------------------
 //
-static DWORD WINAPI MUXListenThread(LPVOID pVoid)
+static DWORD WINAPI mux_listen_thread(LPVOID pVoid)
 {
-    SOCKET *ps = (SOCKET *)pVoid;
-    SOCKET s = *ps;
+    auto ps = static_cast<SOCKET *>(pVoid);
+    auto s = *ps;
 
     mux_sockaddr SockAddr;
     int          nLen;
@@ -4991,9 +4990,9 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
         // Block on accept()
         //
         nLen = SockAddr.maxaddrlen();
-        SOCKET socketClient = accept(s, SockAddr.sa(), &nLen);
+        const SOCKET socket_client = accept(s, SockAddr.sa(), &nLen);
 
-        if (socketClient == INVALID_SOCKET)
+        if (socket_client == INVALID_SOCKET)
         {
             // parent thread closes the listening socket
             // when it wants this thread to stop.
@@ -5006,10 +5005,10 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
         {
             UTF8 host_address[MBUF_SIZE];
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            unsigned short us = SockAddr.Port();
+            auto us = SockAddr.port();
             SockAddr.ntop(host_address, sizeof(host_address));
             Log.tinyprintf(T("[%d/%s] Connection refused.  (Remote port %d)"),
-                socketClient, host_address, us);
+                socket_client, host_address, us);
             ENDLOG;
 
             // The following are commented out for thread-safety, but
@@ -5019,8 +5018,8 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
             //            "Connection refused");
             //fcache_rawdump(socketClient, FC_CONN_SITE);
 
-            shutdown(socketClient, SD_BOTH);
-            if (0 == closesocket(socketClient))
+            shutdown(socket_client, SD_BOTH);
+            if (0 == closesocket(socket_client))
             {
                 DebugTotalSockets--;
             }
@@ -5055,22 +5054,22 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
             }
         }
-        d = initializesock(socketClient, &SockAddr);
+        d = initializesock(socket_client, &SockAddr);
 
         // Add this socket to the IO completion port.
         //
-        CompletionPort = CreateIoCompletionPort((HANDLE)socketClient, CompletionPort, (MUX_ULONG_PTR) d, 1);
+        CompletionPort = CreateIoCompletionPort(reinterpret_cast<HANDLE>(socket_client), CompletionPort, reinterpret_cast<MUX_ULONG_PTR>(d), 1);
 
         if (!CompletionPort)
         {
-            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE), GetLastError(), socketClient);
+            Log.tinyprintf(T("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE), GetLastError(), socket_client);
             shutdownsock_brief(d);
             continue;
         }
 
-        TelnetSetup(d);
+        telnet_setup(d);
 
-        if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_welcome))
+        if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_welcome))
         {
             Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
             shutdownsock_brief(d);
@@ -5079,7 +5078,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
 
         // Do the first read
         //
-        b = ReadFile((HANDLE) socketClient, d->input_buffer, sizeof(d->input_buffer), nullptr, &d->InboundOverlapped);
+        b = ReadFile(reinterpret_cast<HANDLE>(socket_client), d->input_buffer, sizeof(d->input_buffer), nullptr, &d->InboundOverlapped);
 
         if (!b && GetLastError() != ERROR_IO_PENDING)
         {
@@ -5087,7 +5086,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
             //
             d->bConnectionDropped = true;
             Log.tinyprintf(T("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, GetLastError());
-            if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+            if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_shutdown))
             {
                 Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE), GetLastError());
             }
@@ -5140,7 +5139,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
         // queued completed IOs that will crash when they refer to a descriptor
         // (d) that has been freed.
         //
-        if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted))
+        if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_aborted))
         {
             Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE), GetLastError());
         }
@@ -5168,7 +5167,7 @@ orderly way.
 
 */
 
-void ProcessWindowsTCP(DWORD dwTimeout)
+void process_windows_tcp(DWORD dwTimeout)
 {
     LPOVERLAPPED lpo;
     DWORD nbytes;
@@ -5178,15 +5177,15 @@ void ProcessWindowsTCP(DWORD dwTimeout)
     {
         // pull out the next completed IO
         //
-        BOOL b = GetQueuedCompletionStatus(CompletionPort, &nbytes, (MUX_PULONG_PTR) &d, &lpo, dwTimeout);
+        auto b = GetQueuedCompletionStatus(CompletionPort, &nbytes, reinterpret_cast<MUX_PULONG_PTR>(&d), &lpo, dwTimeout);
 
         if (!b)
         {
-            DWORD dwLastError = GetLastError();
+            const auto last_error = GetLastError();
 
             // Ignore timeouts and cancelled IOs
             //
-            switch (dwLastError)
+            switch (last_error)
             {
             case WAIT_TIMEOUT:
                 //Log.WriteString("Timeout." ENDLINE);
@@ -5205,8 +5204,8 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
                     // Post a notification that the descriptor should be shutdown
                     //
-                    Log.tinyprintf(T("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
-                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+                    Log.tinyprintf(T("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, last_error);
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_shutdown))
                     {
                         Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE), GetLastError());
                     }
@@ -5220,7 +5219,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
             // Write completed. We own the buffer again.
             //
-            TBLOCK *tb = d->output_head;
+            auto tb = d->output_head;
             if (nullptr != tb)
             {
                 mux_assert(tb->hdr.flags & TBLK_FLAG_LOCKED);
@@ -5263,7 +5262,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 d->bConnectionDropped = true;
                 Log.tinyprintf(T("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE), d->descriptor);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+                if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_shutdown))
                 {
                     Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
                 }
@@ -5292,7 +5291,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
             // now fire off another read
             //
-            b = ReadFile((HANDLE) d->descriptor, d->input_buffer, sizeof(d->input_buffer), &nbytes, &d->InboundOverlapped);
+            b = ReadFile(reinterpret_cast<HANDLE>(d->descriptor), d->input_buffer, sizeof(d->input_buffer), &nbytes, &d->InboundOverlapped);
 
             // if ReadFile returns true, then the read completed successfully already, but it was also added to the IO
             // completion port queue, so in order to avoid having two requests in the queue for the same buffer
@@ -5302,14 +5301,14 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             {
                 // ERROR_IO_PENDING is a normal way of saying, 'not done yet'. All other errors are serious errors.
                 //
-                DWORD dwLastError = GetLastError();
-                if (dwLastError != ERROR_IO_PENDING)
+                const auto last_error = GetLastError();
+                if (last_error != ERROR_IO_PENDING)
                 {
                     // Post a notification that the descriptor should be shutdown, and do no more IO.
                     //
                     d->bConnectionDropped = true;
-                    Log.tinyprintf(T("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
-                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+                    Log.tinyprintf(T("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, last_error);
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_shutdown))
                     {
                         Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE), GetLastError());
                     }
@@ -5325,29 +5324,29 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // request, and the port was shutdown while this packet was in
             // the completion port queue.
             //
-            bool bInvalidSocket = IS_INVALID_SOCKET(d->descriptor);
+            const bool invalid_socket = IS_INVALID_SOCKET(d->descriptor);
 
             // Log connection.
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
             const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf(T("[%s/%s] Connection opened (remote port %d)"),
-                bInvalidSocket ? T("UNKNOWN") : lDesc, buff,
-                d->address.Port());
+                invalid_socket ? T("UNKNOWN") : lDesc, buff,
+                d->address.port());
             ENDLOG;
 
-            SiteMonSend(d->descriptor, buff, d, T("Connection"));
+            site_mon_send(d->descriptor, buff, d, T("Connection"));
 
-            if (bInvalidSocket)
+            if (invalid_socket)
             {
                 // Log premature disconnection.
                 //
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC");
                 Log.tinyprintf(T("[UNKNOWN/%s] Connection closed prematurely (remote port %d)"),
-                    buff, d->address.Port());
+                    buff, d->address.port());
                 ENDLOG;
 
-                SiteMonSend(d->descriptor, buff, d, T("Connection closed prematurely"));
+                site_mon_send(d->descriptor, buff, d, T("Connection closed prematurely"));
             }
             else
             {
@@ -5370,7 +5369,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // end of the queue. CancelIo will still generate aborted packets. We don't want the descriptor
             // be be re-used and have a new connection be stepped on by a dead one.
             //
-            if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted_final))
+            if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_aborted_final))
             {
                 Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE), GetLastError());
             }
@@ -5394,7 +5393,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
 #endif // WINDOWS_NETWORKING
 
-void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
+void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
     int host_info = 0;
     if (nullptr != d)
@@ -5411,17 +5410,17 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 
     // Build the msg.
     //
-    UTF8 *sendMsg;
-    bool bSuspect = (0 != (host_info & HI_SUSPECT));
+    UTF8 *send_msg;
+    const bool suspect = (0 != (host_info & HI_SUSPECT));
     if (IS_INVALID_SOCKET(port))
     {
-        sendMsg = tprintf(T("SITEMON: [UNKNOWN] %s from %s.%s"), msg, address,
-            bSuspect ? T(" (SUSPECT)"): T(""));
+        send_msg = tprintf(T("SITEMON: [UNKNOWN] %s from %s.%s"), msg, address,
+            suspect ? T(" (SUSPECT)"): T(""));
     }
     else
     {
-        sendMsg = tprintf(T("SITEMON: [%d] %s from %s.%s"), port, msg,
-            address, bSuspect ? T(" (SUSPECT)"): T(""));
+        send_msg = tprintf(T("SITEMON: [%d] %s from %s.%s"), port, msg,
+            address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
     DESC *nd;
@@ -5429,7 +5428,7 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     {
         if (SiteMon(nd->player))
         {
-            queue_string(nd, sendMsg);
+            queue_string(nd, send_msg);
             queue_write_LEN(nd, T("\r\n"), 2);
             process_output(nd, false);
         }
@@ -5446,9 +5445,9 @@ typedef struct
     size_t maxHexLen;
 } DECODEIPV4;
 
-static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
+static bool DecodeN(const int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
 {
-    static DECODEIPV4 DecodeIPv4Table[4] =
+    static DECODEIPV4 decode_IPv4_table[4] =
     {
         { 8,         255UL,  3,  3, 2 },
         { 16,      65535UL,  6,  5, 4 },
@@ -5456,7 +5455,7 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
         { 32, 4294967295UL, 11, 10, 8 }
     };
 
-    *pu32  = (*pu32 << DecodeIPv4Table[nType].nShift) & 0xFFFFFFFFUL;
+    *pu32  = (*pu32 << decode_IPv4_table[nType].nShift) & 0xFFFFFFFFUL;
     if (len == 0)
     {
         return false;
@@ -5479,13 +5478,13 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
             p++;
             len--;
         }
-        if (len > DecodeIPv4Table[nType].maxHexLen)
+        if (len > decode_IPv4_table[nType].maxHexLen)
         {
             return false;
         }
         while (len)
         {
-            UTF8 ch = *p;
+            const auto ch = *p;
             ul2 = ul;
             ul  = (ul << 4) & 0xFFFFFFFFUL;
             if (ul < ul2)
@@ -5527,13 +5526,13 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
             p++;
             len--;
         }
-        if (len > DecodeIPv4Table[nType].maxOctLen)
+        if (len > decode_IPv4_table[nType].maxOctLen)
         {
             return false;
         }
         while (len)
         {
-            UTF8 ch = *p;
+            const auto ch = *p;
             ul2 = ul;
             ul  = (ul << 3) & 0xFFFFFFFFUL;
             if (ul < ul2)
@@ -5558,13 +5557,13 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
     {
         // Decimal Path
         //
-        if (len > DecodeIPv4Table[nType].maxDecLen)
+        if (len > decode_IPv4_table[nType].maxDecLen)
         {
             return false;
         }
         while (len)
         {
-            UTF8 ch = *p;
+            const auto ch = *p;
             ul2 = ul;
             ul  = (ul * 10) & 0xFFFFFFFFUL;
             if (ul < ul2)
@@ -5592,7 +5591,7 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
             len--;
         }
     }
-    if (ul > DecodeIPv4Table[nType].maxValue)
+    if (ul > decode_IPv4_table[nType].maxValue)
     {
         return false;
     }
@@ -5626,7 +5625,7 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
 //    0X8 Hexadecimal
 //    8   Decimal
 //
-bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
+bool make_canonical_IPv4(const UTF8 *str, in_addr_t *pnIP)
 {
     *pnIP = 0;
     if (!str)
@@ -5636,14 +5635,14 @@ bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
 
     // Skip leading spaces.
     //
-    const UTF8 *q = str;
+    auto q = str;
     while (*q == ' ')
     {
         q++;
     }
 
-    const UTF8 *p = (UTF8 *)strchr((char *)q, '.');
-    int n = 0;
+    const auto* p = reinterpret_cast<UTF8 const *>(strchr(reinterpret_cast<char const *>(q), '.'));
+    auto n = 0;
     while (p)
     {
         // Decode
@@ -5658,17 +5657,13 @@ bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
             return false;
         }
         q = p + 1;
-        p = (UTF8 *)strchr((char *)q, '.');
+        p = reinterpret_cast<UTF8 const *>(strchr(reinterpret_cast<char const *>(q), '.'));
     }
 
     // Decode last element.
     //
-    size_t len = strlen((char *)q);
-    if (!DecodeN(3-n, len, q, pnIP))
-    {
-        return false;
-    }
-    return true;
+    const auto len = strlen(reinterpret_cast<char const *>(q));
+    return DecodeN(3 - n, len, q, pnIP);
 }
 
 // Given a host-ordered mask, this function will determine whether it is a
@@ -5677,30 +5672,30 @@ bool MakeCanonicalIPv4(const UTF8 *str, in_addr_t *pnIP)
 //
 bool mux_in_addr::isValidMask(int *pnLeadingBits) const
 {
-    in_addr_t ulTest = 0xFFFFFFFFUL;
-    in_addr_t ulMask = m_ia.s_addr;
-    for (int i = 0; i <= 32; i++)
+    in_addr_t test = 0xFFFFFFFFUL;
+    const in_addr_t mask = m_ia.s_addr;
+    for (auto i = 0; i <= 32; i++)
     {
-        if (ulMask == ulTest)
+        if (mask == test)
         {
             *pnLeadingBits = i;
             return true;
         }
-        ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
+        test = (test << 1) & 0xFFFFFFFFUL;
     }
     return false;
 }
 
-void mux_in_addr::makeMask(int nLeadingBits)
+void mux_in_addr::makeMask(const int num_leading_bits)
 {
     // << [0,31] works. << 32 is problematic on some systems.
     //
-    in_addr_t ulMask = 0;
-    if (nLeadingBits > 0)
+    in_addr_t mask = 0;
+    if (num_leading_bits > 0)
     {
-        ulMask = (0xFFFFFFFFUL << (32 - nLeadingBits)) & 0xFFFFFFFFUL;
+        mask = (0xFFFFFFFFUL << (32 - num_leading_bits)) & 0xFFFFFFFFUL;
     }
-    m_ia.s_addr = htonl(ulMask);
+    m_ia.s_addr = htonl(mask);
 }
 #endif
 
@@ -5708,37 +5703,37 @@ void mux_in_addr::makeMask(int nLeadingBits)
 bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 {
     const unsigned char allones = 0xFF;
-    unsigned char ucMask;
+    unsigned char mask = 0;
     size_t i;
     for (i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
     {
-        ucMask = m_ia6.s6_addr[i];
-        if (allones != ucMask)
+        mask = m_ia6.s6_addr[i];
+        if (allones != mask)
         {
             break;
         }
     }
 
-    int nLeadingBits = 8*i;
+    int num_leading_bits = 8*i;
 
     if (i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
     {
-        if (0 != ucMask)
+        if (0 != mask)
         {
-            bool fFound = false;
-            unsigned char ucTest = allones;
-            for (int j = 0; j <= 8 && !fFound; j++)
+            auto found = false;
+            auto test = allones;
+            for (auto j = 0; j <= 8 && !found; j++)
             {
-                if (ucMask == ucTest)
+                if (mask == test)
                 {
-                    nLeadingBits += j;
-                    fFound = true;
+                    num_leading_bits += j;
+                    found = true;
                     break;
                 }
-                ucTest = (ucTest << 1) & allones;
+                test = (test << 1) & allones;
             }
 
-            if (!fFound)
+            if (!found)
             {
                 return false;
             }
@@ -5747,8 +5742,8 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 
         for ( ; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
-            ucMask = m_ia6.s6_addr[i];
-            if (0 != ucMask)
+            mask = m_ia6.s6_addr[i];
+            if (0 != mask)
             {
                 return false;
             }
@@ -5757,22 +5752,22 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
     return true;
 }
 
-void mux_in6_addr::makeMask(int nLeadingBits)
+void mux_in6_addr::makeMask(const int num_leading_bits)
 {
     const unsigned char allones = 0xFF;
     memset(&m_ia6, 0, sizeof(m_ia6));
-    size_t iBytes = nLeadingBits / 8;
-    for (size_t i = 0; i < iBytes; i++)
+    const size_t num_bytes = num_leading_bits / 8;
+    for (size_t i = 0; i < num_bytes; i++)
     {
         m_ia6.s6_addr[i] = allones;
     }
 
-    if (iBytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
+    if (num_bytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
     {
-        size_t iBits = nLeadingBits % 8;
-        if (iBits > 0)
+        const size_t num_leftover_bits = num_leading_bits % 8;
+        if (num_leftover_bits > 0)
         {
-            m_ia6.s6_addr[iBytes] = (allones << (8 - iBits)) & allones;
+            m_ia6.s6_addr[num_bytes] = (allones << (8 - num_leftover_bits)) & allones;
         }
     }
 }
@@ -5790,7 +5785,7 @@ bool mux_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
     // Base Address
     //
     mux_sockaddr msa;
-    msa.SetAddress(m_iaBase);
+    msa.set_address(m_iaBase);
     msa.ntop(sAddress, LBUF_SIZE);
 
     // Leading significant bits
@@ -5800,7 +5795,7 @@ bool mux_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
     return true;
 }
 
-mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
+mux_subnet::Comparison mux_subnet::compare_to(mux_subnet *t) const
 {
     if (*(t->m_iaEnd) < *m_iaBase)
     {
@@ -5836,7 +5831,7 @@ mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
     }
 }
 
-mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
+mux_subnet::Comparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
 {
     mux_addr *ma = nullptr;
     switch (msa->Family())
@@ -5844,9 +5839,9 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 #if defined(HAVE_IN_ADDR)
     case AF_INET:
         {
-            struct in_addr ia;
-            msa->GetAddress(&ia);
-            ma = (mux_addr *)(new mux_in_addr(&ia));
+            struct in_addr ia{};
+            msa->get_address(&ia);
+            ma = static_cast<mux_addr *>(new mux_in_addr(&ia));
         }
         break;
 #endif
@@ -5854,9 +5849,9 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 #if defined(HAVE_IN6_ADDR)
     case AF_INET6:
         {
-            struct in6_addr ia6;
-            msa->GetAddress(&ia6);
-            ma = (mux_addr *)(new mux_in6_addr(&ia6));
+            struct in6_addr ia6{};
+            msa->get_address(&ia6);
+            ma = static_cast<mux_addr *>(new mux_in6_addr(&ia6));
         }
         break;
 #endif
@@ -5887,12 +5882,12 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
     return fComp;
 }
 
-mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
+mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 {
-    mux_addr *maMask = nullptr;
-    mux_addr *maBase = nullptr;
-    mux_addr *maEnd  = nullptr;
-    int nLeadingBits = 0;
+    mux_addr *mux_address_mask = nullptr;
+    mux_addr *mux_address_base = nullptr;
+    mux_addr *mux_address_end  = nullptr;
+    auto num_leading_bits = 0;
 
     MUX_ADDRINFO hints;
     memset(&hints, 0, sizeof(hints));
@@ -5902,11 +5897,11 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     hints.ai_flags = AI_NUMERICHOST|AI_NUMERICSERV;
 
     int n;
-    in_addr_t ulNetBits;
+    in_addr_t net_address_bits;
     MUX_ADDRINFO *servinfo;
 
     UTF8 *addr_txt;
-    UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
+    auto mask_txt = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(str), '/'));
     if (nullptr == mask_txt)
     {
         // Standard IP range and netmask notation.
@@ -5932,24 +5927,24 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         n = 0;
         if (0 == mux_getaddrinfo(mask_txt, nullptr, &hints, &servinfo))
         {
-            for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
+            for (auto ai = servinfo; nullptr != ai; ai = ai->ai_next)
             {
-                delete maMask;
+                delete mux_address_mask;
                 switch (ai->ai_family)
                 {
 #if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
                 case AF_INET:
                     {
-                        struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
-                        maMask = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+                        auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
+                        mux_address_mask = static_cast<mux_addr *>(new mux_in_addr(&sai->sin_addr));
                     }
                     break;
 #endif
 #if defined(HAVE_SOCKADDR_IN6) && defined(HAVE_IN6_ADDR)
                 case AF_INET6:
                     {
-                        struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
-                        maMask = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+                        auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
+                        mux_address_mask = static_cast<mux_addr *>(new mux_in6_addr(&sai6->sin6_addr));
                     }
                     break;
 #endif
@@ -5961,19 +5956,19 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
             mux_freeaddrinfo(servinfo);
         }
 #if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
-        else if (MakeCanonicalIPv4(mask_txt, &ulNetBits))
+        else if (make_canonical_IPv4(mask_txt, &net_address_bits))
         {
-            delete maMask;
-            maMask = (mux_addr *)(new mux_in_addr(ulNetBits));
+            delete mux_address_mask;
+            mux_address_mask = static_cast<mux_addr *>(new mux_in_addr(net_address_bits));
             n++;
         }
 #endif
 
         if (  1 != n
-           || !maMask->isValidMask(&nLeadingBits))
+           || !mux_address_mask->isValidMask(&num_leading_bits))
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
-            delete maMask;
+            delete mux_address_mask;
             return nullptr;
         }
     }
@@ -5989,7 +5984,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
             return nullptr;
         }
 
-        nLeadingBits = mux_atol(mask_txt);
+        num_leading_bits = mux_atol(mask_txt);
     }
 
     n = 0;
@@ -5997,27 +5992,27 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     {
         for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
         {
-            delete maBase;
+            delete mux_address_base;
             switch (ai->ai_family)
             {
 #if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
             case AF_INET:
                 {
-                    struct sockaddr_in *sai = (struct sockaddr_in *)(ai->ai_addr);
-                    maBase = (mux_addr *)(new mux_in_addr(&sai->sin_addr));
+                    auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
+                    mux_address_base = static_cast<mux_addr *>(new mux_in_addr(&sai->sin_addr));
                 }
                 break;
 #endif
 #if defined(HAVE_SOCKADDR_IN6) &&  defined(HAVE_IN6_ADDR)
             case AF_INET6:
                 {
-                    struct sockaddr_in6 *sai6 = (struct sockaddr_in6 *)(ai->ai_addr);
-                    maBase = (mux_addr *)(new mux_in6_addr(&sai6->sin6_addr));
+                    auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
+                    mux_address_base = static_cast<mux_addr *>(new mux_in6_addr(&sai6->sin6_addr));
                 }
                 break;
 #endif
             default:
-                delete maMask;
+                delete mux_address_mask;
                 return nullptr;
             }
             n++;
@@ -6025,10 +6020,10 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         mux_freeaddrinfo(servinfo);
     }
 #if defined(HAVE_IN_ADDR)
-    else if (MakeCanonicalIPv4(addr_txt, &ulNetBits))
+    else if (make_canonical_IPv4(addr_txt, &net_address_bits))
     {
-        delete maBase;
-        maBase = (mux_addr *)(new mux_in_addr(ulNetBits));
+        delete mux_address_base;
+        mux_address_base = static_cast<mux_addr *>(new mux_in_addr(net_address_bits));
         n++;
     }
 #endif
@@ -6036,21 +6031,21 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
     if (1 != n)
     {
         cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
-        delete maMask;
-        delete maBase;
+        delete mux_address_mask;
+        delete mux_address_base;
         return nullptr;
     }
 
-    if (nullptr == maMask)
+    if (nullptr == mux_address_mask)
     {
         bool fOutOfRange = false;
-        switch (maBase->getFamily())
+        switch (mux_address_base->getFamily())
         {
 #if defined(HAVE_IN_ADDR)
         case AF_INET:
-            maMask = (mux_addr *)(new mux_in_addr());
-            if (  nLeadingBits < 0
-               || 32 < nLeadingBits)
+            mux_address_mask = static_cast<mux_addr *>(new mux_in_addr());
+            if (  num_leading_bits < 0
+               || 32 < num_leading_bits)
             {
                 fOutOfRange = true;
             }
@@ -6058,9 +6053,9 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 #endif
 #if defined(HAVE_IN6_ADDR)
         case AF_INET6:
-            maMask = (mux_addr *)(new mux_in6_addr());
-            if (  nLeadingBits < 0
-               || 128 < nLeadingBits)
+            mux_address_mask = static_cast<mux_addr *>(new mux_in6_addr());
+            if (  num_leading_bits < 0
+               || 128 < num_leading_bits)
             {
                 fOutOfRange = true;
             }
@@ -6072,20 +6067,20 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 
         if (fOutOfRange)
         {
-            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), nLeadingBits);
+            cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), num_leading_bits);
             return nullptr;
         }
-        maMask->makeMask(nLeadingBits);
+        mux_address_mask->makeMask(num_leading_bits);
     }
-    else if (maBase->getFamily() != maMask->getFamily())
+    else if (mux_address_base->getFamily() != mux_address_mask->getFamily())
     {
         cf_log_syntax(player, cmd, T("Mask type is not compatible with address type: %s %s"), addr_txt, mask_txt);
-        delete maMask;
-        delete maBase;
+        delete mux_address_mask;
+        delete mux_address_base;
         return nullptr;
     }
 
-    if (maBase->clearOutsideMask(*maMask))
+    if (mux_address_base->clearOutsideMask(*mux_address_mask))
     {
         // The given subnet address contains 'one' bits which are outside the given subnet mask. If we don't clear these bits, they
         // will interfere with the subnet tests in site_check. The subnet spec would be defunct and useless.
@@ -6093,26 +6088,26 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         cf_log_syntax(player, cmd, T("Non-zero host address bits outside the subnet mask (fixed): %s %s"), addr_txt, mask_txt);
     }
 
-    delete maEnd;
-    maEnd = maBase->calculateEnd(*maMask);
+    delete mux_address_end;
+    mux_address_end = mux_address_base->calculateEnd(*mux_address_mask);
 
-    mux_subnet *msn = new mux_subnet();
-    msn->m_iaBase = maBase;
-    msn->m_iaMask = maMask;
-    msn->m_iaEnd = maEnd;
-    msn->m_iLeadingBits = nLeadingBits;
+    const auto msn = new mux_subnet();
+    msn->m_iaBase = mux_address_base;
+    msn->m_iaMask = mux_address_mask;
+    msn->m_iaEnd = mux_address_end;
+    msn->m_iLeadingBits = num_leading_bits;
     return msn;
 }
 
 #if (defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))) && defined(HAVE_IN_ADDR)
-static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, struct in_addr addr, unsigned short port)
+static struct addrinfo *gai_addrinfo_new(const int socktype, const UTF8 *canonical, const struct in_addr addr, const unsigned short port)
 {
-    struct addrinfo *ai = (struct addrinfo *)MEMALLOC(sizeof(*ai));
+    const auto ai = static_cast<struct addrinfo *>(MEMALLOC(sizeof(struct addrinfo)));
     if (nullptr == ai)
     {
         return nullptr;
     }
-    ai->ai_addr = (sockaddr *)MEMALLOC(sizeof(struct sockaddr_in));
+    ai->ai_addr = static_cast<sockaddr *>(MEMALLOC(sizeof(struct sockaddr_in)));
     if (nullptr == ai->ai_addr)
     {
         free(ai);
@@ -6125,7 +6120,7 @@ static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, st
     }
     else
     {
-        ai->ai_canonname = (char *)StringClone(canonical);
+        ai->ai_canonname = reinterpret_cast<char *>(StringClone(canonical));
         if (nullptr == ai->ai_canonname)
         {
             mux_freeaddrinfo(ai);
@@ -6138,9 +6133,9 @@ static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, st
     ai->ai_socktype = socktype;
     ai->ai_protocol = (socktype == SOCK_DGRAM) ? IPPROTO_UDP : IPPROTO_TCP;
     ai->ai_addrlen = sizeof(struct sockaddr_in);
-    ((struct sockaddr_in *) ai->ai_addr)->sin_family = AF_INET;
-    ((struct sockaddr_in *) ai->ai_addr)->sin_addr = addr;
-    ((struct sockaddr_in *) ai->ai_addr)->sin_port = htons(port);
+    reinterpret_cast<struct sockaddr_in *>(ai->ai_addr)->sin_family = AF_INET;
+    reinterpret_cast<struct sockaddr_in *>(ai->ai_addr)->sin_addr = addr;
+    reinterpret_cast<struct sockaddr_in *>(ai->ai_addr)->sin_port = htons(port);
     return ai;
 }
 
@@ -6151,11 +6146,7 @@ static bool convert_service(const UTF8 *string, long *result)
         return false;
     }
     *result = mux_atol(string);
-    if (*result < 0)
-    {
-        return false;
-    }
-    return true;
+    return *result >= 0;
 }
 
 static int gai_service(const UTF8 *servname, int flags, int *type, unsigned short *port)
@@ -6203,18 +6194,16 @@ static int gai_service(const UTF8 *servname, int flags, int *type, unsigned shor
     return 0;
 }
 
-static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned short port, struct addrinfo **res)
+static int gai_lookup(const UTF8 *nodename, const int flags, const int socktype, const unsigned short port, struct addrinfo **res)
 {
-    struct addrinfo *ai, *first, *prev;
-    struct in_addr addr;
-    struct hostent *host;
+    struct addrinfo *ai;
+    struct in_addr addr{};
     const UTF8 *canonical;
-    int i;
 
-    in_addr_t ulAddr;
-    if (MakeCanonicalIPv4(nodename, &ulAddr))
+    in_addr_t address_bits;
+    if (make_canonical_IPv4(nodename, &address_bits))
     {
-        addr.s_addr = ulAddr;
+        addr.s_addr = address_bits;
         canonical = (flags & AI_CANONNAME) ? nodename : nullptr;
         ai = gai_addrinfo_new(socktype, canonical, addr, port);
         if (nullptr == ai)
@@ -6230,7 +6219,7 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
         {
             return EAI_NONAME;
         }
-        host = gethostbyname((const char *)nodename);
+        const auto host = gethostbyname(reinterpret_cast<const char *>(nodename));
         if (nullptr == host)
         {
             switch (h_errno)
@@ -6252,7 +6241,7 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
         {
             if (nullptr != host->h_name)
             {
-                canonical = (UTF8 *)host->h_name;
+                canonical = reinterpret_cast<UTF8 *>(host->h_name);
             }
             else
             {
@@ -6263,9 +6252,9 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
         {
             canonical = nullptr;
         }
-        first = nullptr;
-        prev = nullptr;
-        for (i = 0; host->h_addr_list[i] != nullptr; i++)
+        struct addrinfo *first = nullptr;
+        struct addrinfo *prev = nullptr;
+        for (auto i = 0; host->h_addr_list[i] != nullptr; i++)
         {
             if (host->h_length != sizeof(addr))
             {
@@ -6304,12 +6293,11 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
 #elif defined(WINDOWS_NETWORKING)
     if (nullptr != fpGetAddrInfo)
     {
-        return fpGetAddrInfo((const char *)node, (const char *)service, hints, res);
+        return fpGetAddrInfo(reinterpret_cast<const char *>(node), reinterpret_cast<const char *>(service), hints, res);
     }
 #endif
 #if (defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))) && defined(HAVE_IN_ADDR)
-    struct addrinfo *ai;
-    struct in_addr addr;
+    struct in_addr addr{};
     unsigned short port;
 
     int flags;
@@ -6351,14 +6339,13 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
         socktype = 0;
     }
 
-    int status;
     if (nullptr == service)
     {
         port = 0;
     }
     else
     {
-        status = gai_service(service, flags, &socktype, &port);
+        const auto status = gai_service(service, flags, &socktype, &port);
         if (0 != status)
         {
             return status;
@@ -6382,7 +6369,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
         {
             addr.s_addr = htonl(0x7f000001UL);
         }
-        ai = gai_addrinfo_new(socktype, nullptr, addr, port);
+        struct addrinfo *ai = gai_addrinfo_new(socktype, nullptr, addr, port);
         if (nullptr == ai)
         {
             return EAI_MEMORY;
@@ -6405,10 +6392,9 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
     }
 #endif
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
-    MUX_ADDRINFO *next;
     while (nullptr != res)
     {
-        next = res->ai_next;
+        auto next = res->ai_next;
         if (nullptr != res->ai_addr)
         {
             free(res->ai_addr);
@@ -6426,12 +6412,12 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETNAMEINFO))
 static bool try_name(const char *name, UTF8 *host, size_t hostlen, int *status)
 {
-    if (nullptr == strchr((const char *)name, '.'))
+    if (nullptr == strchr(static_cast<const char *>(name), '.'))
     {
         return false;
     }
     UTF8 *bufc = host;
-    safe_str((const UTF8 *)name, host, &bufc);
+    safe_str(reinterpret_cast<const UTF8 *>(name), host, &bufc);
     *bufc = '\0';
     return true;
 }
@@ -6442,7 +6428,7 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
 #ifdef HAVE_GETHOSTBYADDR
     if (0 == (flags & NI_NUMERICHOST))
     {
-        struct hostent *he = gethostbyaddr((const char *)addr, sizeof(struct in_addr), AF_INET);
+        auto he = gethostbyaddr(reinterpret_cast<const char *>(addr), sizeof(struct in_addr), AF_INET);
         if (nullptr == he)
         {
             if (flags & NI_NAMEREQD)
@@ -6470,22 +6456,22 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
 #endif
 
     bufc = host;
-    safe_str((UTF8 *)inet_ntoa(*addr), host, &bufc);
+    safe_str(reinterpret_cast<UTF8 *>(inet_ntoa(*addr)), host, &bufc);
     *bufc = '\0';
     return 0;
 }
 
-static int lookup_servicename(unsigned short port, UTF8 *serv, size_t servlen, int flags)
+static int lookup_servicename(const unsigned short port, UTF8 *serv, size_t servlen, const int flags)
 {
     UTF8 *bufc;
     if (0 == (flags & NI_NUMERICSERV))
     {
-        const char *protocol = (flags & NI_DGRAM) ? "udp" : "tcp";
-        struct servent *srv = getservbyport(htons(port), protocol);
+        auto protocol = (flags & NI_DGRAM) ? "udp" : "tcp";
+        auto srv = getservbyport(htons(port), protocol);
         if (nullptr != srv)
         {
             bufc = serv;
-            safe_str((UTF8 *)srv->s_name, serv, &bufc);
+            safe_str(reinterpret_cast<UTF8 *>(srv->s_name), serv, &bufc);
             *bufc = '\0';
             return 0;
         }
@@ -6498,14 +6484,14 @@ static int lookup_servicename(unsigned short port, UTF8 *serv, size_t servlen, i
 }
 #endif
 
-int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags)
+int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, const size_t hostlen, UTF8 *serv, const size_t servlen, const int flags)
 {
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETNAMEINFO)
-    return getnameinfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
+    return getnameinfo(msa->saro(), msa->salen(), reinterpret_cast<char *>(host(, hostlen, reinterpret_cast<char *>(serv), servlen, flags);
 #elif defined(WINDOWS_NETWORKING)
     if (nullptr != fpGetNameInfo)
     {
-        return fpGetNameInfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
+        return fpGetNameInfo(msa->saro(), msa->salen(), reinterpret_cast<char *>(host), hostlen, reinterpret_cast<char *>(serv), servlen, flags);
     }
 #endif
 
@@ -6523,11 +6509,10 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *s
         return EAI_FAMILY;
     }
 
-    int status;
     if (  nullptr != host
        && 0 < hostlen)
     {
-        status = lookup_hostname(&msa->sairo()->sin_addr, host, hostlen, flags);
+        const auto status = lookup_hostname(&msa->sairo()->sin_addr, host, hostlen, flags);
         if (0 != status)
         {
             return status;
@@ -6537,14 +6522,14 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *s
     if (  nullptr != serv
        && 0 < servlen)
     {
-        unsigned short port = msa->Port();
+        const auto port = msa->port();
         return lookup_servicename(port, serv, servlen, flags);
     }
     return 0;
 #endif
 }
 
-unsigned short mux_sockaddr::Port() const
+unsigned short mux_sockaddr::port() const
 {
     switch (u.sa.sa_family)
     {
@@ -6581,14 +6566,14 @@ void mux_sockaddr::ntop(UTF8 *sAddress, size_t len) const
     }
 }
 
-void mux_sockaddr::SetAddress(mux_addr *ma)
+void mux_sockaddr::set_address(mux_addr *ma)
 {
     switch (ma->getFamily())
     {
 #if defined(HAVE_IN_ADDR)
     case AF_INET:
         {
-            mux_in_addr *mia = (mux_in_addr *)ma;
+            const auto mia = dynamic_cast<mux_in_addr *>(ma);
             u.sai.sin_family = AF_INET;
             u.sai.sin_addr = mia->m_ia;
         }
@@ -6597,7 +6582,7 @@ void mux_sockaddr::SetAddress(mux_addr *ma)
 #if defined(HAVE_IN6_ADDR)
     case AF_INET6:
         {
-            mux_in6_addr *mia6 = (mux_in6_addr *)ma;
+            const auto mia6 = dynamic_cast<mux_in6_addr *>(ma);
             u.sai6.sin6_family = AF_INET6;
             u.sai6.sin6_addr = mia6->m_ia6;
         }
@@ -6708,26 +6693,22 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
     return false;
 }
 
-mux_addr::~mux_addr()
-{
-}
+mux_addr::~mux_addr() = default;
 
 #if defined(HAVE_IN_ADDR)
-mux_in_addr::~mux_in_addr()
-{
-}
+mux_in_addr::~mux_in_addr() = default;
 
 mux_in_addr::mux_in_addr(in_addr *ia)
 {
     m_ia = *ia;
 }
 
-mux_in_addr::mux_in_addr(unsigned int ulBits)
+mux_in_addr::mux_in_addr(const unsigned int bits)
 {
-    m_ia.s_addr = htonl(ulBits);
+    m_ia.s_addr = htonl(bits);
 }
 
-void mux_sockaddr::GetAddress(in_addr *ia) const
+void mux_sockaddr::get_address(in_addr *ia) const
 {
     *ia = u.sai.sin_addr;
 }
@@ -6736,7 +6717,7 @@ bool mux_in_addr::operator<(const mux_addr &it) const
 {
     if (AF_INET == it.getFamily())
     {
-        const mux_in_addr *t = (const mux_in_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in_addr *>(&it);
         return (ntohl(m_ia.s_addr) < ntohl(t->m_ia.s_addr));
     }
     return true;
@@ -6746,7 +6727,7 @@ bool mux_in_addr::operator==(const mux_addr &it) const
 {
     if (AF_INET == it.getFamily())
     {
-        const mux_in_addr *t = (const mux_in_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in_addr *>(&it);
         return (ntohl(m_ia.s_addr) == ntohl(t->m_ia.s_addr));
     }
     return false;
@@ -6756,7 +6737,7 @@ bool mux_in_addr::clearOutsideMask(const mux_addr &it)
 {
     if (AF_INET == it.getFamily())
     {
-        const mux_in_addr *t = (const mux_in_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in_addr *>(&it);
         if (m_ia.s_addr & ~t->m_ia.s_addr)
         {
             m_ia.s_addr &= t->m_ia.s_addr;
@@ -6771,26 +6752,24 @@ mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
 {
     if (AF_INET == it.getFamily())
     {
-        const mux_in_addr *t = (const mux_in_addr *)&it;
-        mux_in_addr *e = new mux_in_addr();
+        const auto* t = dynamic_cast<const mux_in_addr *>(&it);
+        auto* e = new mux_in_addr();
         e->m_ia.s_addr = m_ia.s_addr | ~t->m_ia.s_addr;
-        return (mux_addr *)e;
+        return static_cast<mux_addr *>(e);
     }
     return nullptr;
 }
 #endif
 
 #if defined(HAVE_IN6_ADDR)
-mux_in6_addr::~mux_in6_addr()
-{
-}
+mux_in6_addr::~mux_in6_addr() = default;
 
 mux_in6_addr::mux_in6_addr(in6_addr *ia6)
 {
     m_ia6 = *ia6;
 }
 
-void mux_sockaddr::GetAddress(in6_addr *ia6) const
+void mux_sockaddr::get_address(in6_addr *ia6) const
 {
     *ia6 = u.sai6.sin6_addr;
 }
@@ -6799,7 +6778,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
 {
     if (AF_INET6 == it.getFamily())
     {
-        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
         for (size_t i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
@@ -6815,7 +6794,7 @@ bool mux_in6_addr::operator==(const mux_addr &it) const
 {
     if (AF_INET6 == it.getFamily())
     {
-        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
         return (m_ia6.s6_addr == t->m_ia6.s6_addr);
     }
     return false;
@@ -6826,7 +6805,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
     if (AF_INET6 == it.getFamily())
     {
         bool fOutside = false;
-        const mux_in6_addr *t = (const mux_in6_addr *)&it;
+        const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
         for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
@@ -6844,13 +6823,13 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
 {
     if (AF_INET6 == it.getFamily())
     {
-        const mux_in6_addr *t = (const mux_in6_addr *)&it;
-        mux_in6_addr *e = new mux_in6_addr();
+        const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
+        auto* e = new mux_in6_addr();
         for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             e->m_ia6.s6_addr[i] = m_ia6.s6_addr[i] | ~t->m_ia6.s6_addr[i];
         }
-        return (mux_addr *)e;
+        return static_cast<mux_addr *>(e);
     }
     return nullptr;
 }

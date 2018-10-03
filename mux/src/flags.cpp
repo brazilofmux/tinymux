@@ -274,7 +274,7 @@ static bool fh_staff
 
 
 /* External reference to our telnet routine to resynch charset */
-extern void SendCharsetRequest(DESC* d);
+extern void send_charset_request(DESC* d);
 
 /*
  * ---------------------------------------------------------------------------

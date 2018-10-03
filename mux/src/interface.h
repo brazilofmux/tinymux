@@ -220,12 +220,12 @@ struct descriptor_data
 #endif
 };
 
-int HimState(DESC *d, unsigned char chOption);
-int UsState(DESC *d, unsigned char chOption);
-void EnableHim(DESC *d, unsigned char chOption);
-void DisableHim(DESC *d, unsigned char chOption);
-void EnableUs(DESC *d, unsigned char chOption);
-void DisableUs(DESC *d, unsigned char chOption);
+int him_state(DESC *d, unsigned char chOption);
+int us_state(DESC *d, unsigned char chOption);
+void enable_him(DESC *d, unsigned char chOption);
+void disable_him(DESC *d, unsigned char chOption);
+void enable_us(DESC *d, unsigned char chOption);
+void disable_us(DESC *d, unsigned char chOption);
 
 /* flags in the flag field */
 #define DS_CONNECTED    0x0001      // player is connected.
@@ -253,11 +253,11 @@ typedef struct
 extern bool initialize_ssl();
 extern void shutdown_ssl();
 
-extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
+extern PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
-extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+extern PortInfo main_game_ports[MAX_LISTEN_PORTS];
 #endif
-extern int      nMainGamePorts;
+extern int      num_main_game_ports;
 
 /* from the net interface */
 
@@ -273,7 +273,7 @@ void process_output(void *, int);
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK
 
-extern void BuildSignalNamesTable(void);
+extern void build_signal_names_table(void);
 extern void set_signals(void);
 
 // From netcommon.cpp
@@ -375,7 +375,7 @@ extern long DebugTotalSockets;
 #if defined(WINDOWS_NETWORKING)
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
-extern HANDLE hGameProcess;
+extern HANDLE game_process_handle;
 typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
     DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
 typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,

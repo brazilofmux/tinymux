@@ -2762,7 +2762,7 @@ int DCL_CDECL main(int argc, char *argv[])
     game_pid = mux_getpid();
     write_pidfile(mudconf.pid_file);
 
-    BuildSignalNamesTable();
+    build_signal_names_table();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;
@@ -2775,7 +2775,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
 #if defined(WINDOWS_NETWORKING)
 
-    hGameProcess = GetCurrentProcess();
+    game_process_handle = GetCurrentProcess();
     DetectWindowsCapabilities();
 
     // Initialize WinSock.
@@ -3010,9 +3010,9 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
 #ifdef UNIX_SSL
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
+    SetupPorts(&num_main_game_ports, main_game_ports, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
 #else
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, nullptr, mudconf.ip_address);
+    SetupPorts(&num_main_game_ports, main_game_ports, &mudconf.ports, nullptr, mudconf.ip_address);
 #endif
 
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
@@ -3033,7 +3033,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     init_timer();
 
-    shovechars(nMainGamePorts, aMainGamePorts);
+    shovechars(num_main_game_ports, main_game_ports);
 
 #ifdef INLINESQL
      if (mush_database)
