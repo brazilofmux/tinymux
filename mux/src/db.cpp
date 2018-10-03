@@ -3626,7 +3626,7 @@ void dump_restart_db(void)
     putref(f, num_main_game_ports);
     for (int i = 0; i < num_main_game_ports; i++)
     {
-        putref(f, main_game_ports[i].msa.Port());
+        putref(f, main_game_ports[i].msa.port());
         putref(f, main_game_ports[i].socket);
 #ifdef UNIX_SSL
         putref(f, main_game_ports[i].fSSL ? 1 : 0);
@@ -3703,7 +3703,7 @@ void load_restart_db(void)
             main_game_ports[i].socket = getref(f);
             socklen_t n = main_game_ports[i].msa.maxaddrlen();
             if (  0 != getsockname(main_game_ports[i].socket, main_game_ports[i].msa.sa(), &n)
-               || usPort != main_game_ports[i].msa.Port())
+               || usPort != main_game_ports[i].msa.port())
             {
                 mux_assert(0);
             }

@@ -1797,7 +1797,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
     addr.ntop(pBuffM2, MBUF_SIZE);
-    unsigned short usPort = addr.Port();
+    unsigned short usPort = addr.port();
 
     DebugTotalSockets++;
     if (mudstate.access_list.isForbid(&addr))
@@ -1812,7 +1812,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         // Report site monitor information.
         //
-        SiteMonSend(newsock, pBuffM2, nullptr, T("Connection refused"));
+        site_mon_send(newsock, pBuffM2, nullptr, T("Connection refused"));
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
@@ -1893,12 +1893,12 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         d->ssl_session = ssl_session;
 #endif
 
-        TelnetSetup(d);
+        telnet_setup(d);
 
         // Initalize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
         //
-        SiteMonSend(newsock, pBuffM2, d, T("Connection"));
+        site_mon_send(newsock, pBuffM2, d, T("Connection"));
 
         welcome_user(d);
     }
@@ -4545,7 +4545,7 @@ static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
     log_text(T("Caught signal and ignored signal "));
-    log_text(SignalDesc(iSignal));
+    log_text(signal_desc(iSignal));
     log_text(T(" because server just came up."));
     ENDLOG;
 }
@@ -4559,7 +4559,7 @@ void LogStatBuf(int stat_buf, const char *Name)
     }
     else if (WIFSIGNALED(stat_buf))
     {
-        Log.tinyprintf(T("process was terminated with signal %s."), SignalDesc(WTERMSIG(stat_buf)));
+        Log.tinyprintf(T("process was terminated with signal %s."), signal_desc(WTERMSIG(stat_buf)));
     }
     else
     {
@@ -4597,7 +4597,7 @@ static void DCL_CDECL sighandler(int sig)
         // Drop a flatfile.
         //
         log_signal(sig);
-        raw_broadcast(0, T("Caught signal %s requesting a flatfile @dump. Please wait."), SignalDesc(sig));
+        raw_broadcast(0, T("Caught signal %s requesting a flatfile @dump. Please wait."), signal_desc(sig));
         dump_database_internal(DUMP_I_SIGNAL);
         break;
 
@@ -6487,7 +6487,7 @@ static int lookup_servicename(const unsigned short port, UTF8 *serv, size_t serv
 int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, const size_t hostlen, UTF8 *serv, const size_t servlen, const int flags)
 {
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETNAMEINFO)
-    return getnameinfo(msa->saro(), msa->salen(), reinterpret_cast<char *>(host(, hostlen, reinterpret_cast<char *>(serv), servlen, flags);
+    return getnameinfo(msa->saro(), msa->salen(), reinterpret_cast<char *>(host), hostlen, reinterpret_cast<char *>(serv), servlen, flags);
 #elif defined(WINDOWS_NETWORKING)
     if (nullptr != fpGetNameInfo)
     {
