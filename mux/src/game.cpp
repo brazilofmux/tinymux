@@ -10,7 +10,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include <signal.h>
+#include <csignal>
 
 #include "attrs.h"
 #include "command.h"

@@ -16,7 +16,7 @@
 #include <sys/ioctl.h>
 #endif // HAVE_SYS_IOCTL_H
 
-#include <signal.h>
+#include <csignal>
 
 #include "attrs.h"
 #include "command.h"
