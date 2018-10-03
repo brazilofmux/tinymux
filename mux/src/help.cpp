@@ -20,14 +20,14 @@
 struct help_entry
 {
     size_t pos;       // Position in file.
-    UTF8  *key;       // The key this is stored under. NULL if this is an
+    UTF8  *key;       // The key this is stored under. nullptr if this is an
                       // automatically generated initial substring alias.
 };
 
 void helpindex_clean(int iHelpfile)
 {
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
-    if (NULL == htab)
+    if (nullptr == htab)
     {
         return;
     }
@@ -40,13 +40,13 @@ void helpindex_clean(int iHelpfile)
         if (htab_entry->key)
         {
             MEMFREE(htab_entry->key);
-            htab_entry->key = NULL;
+            htab_entry->key = nullptr;
         }
         delete htab_entry;
-        htab_entry = NULL;
+        htab_entry = nullptr;
     }
     delete mudstate.aHelpDesc[iHelpfile].ht;
-    mudstate.aHelpDesc[iHelpfile].ht = NULL;
+    mudstate.aHelpDesc[iHelpfile].ht = nullptr;
 }
 
 static int lineno;
@@ -69,7 +69,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, UTF8 pTopic[TOPIC_NAME_
     while (  0 == nLine
           || '&' != Line[0])
     {
-        if (fgets((char *)Line, LBUF_SIZE-2, rfp) == NULL)
+        if (fgets((char *)Line, LBUF_SIZE-2, rfp) == nullptr)
         {
             *pPos   = 0L;
             *nTopic = 0;
@@ -119,7 +119,7 @@ static void HelpIndex_End(void)
 {
     lineno = 0;
     ntopics = 0;
-    rfp = NULL;
+    rfp = nullptr;
 }
 
 static void helpindex_read(int iHelpfile)
@@ -190,12 +190,12 @@ static void helpindex_read(int iHelpfile)
                 if (htab_entry->key)
                 {
                     MEMFREE(htab_entry->key);
-                    htab_entry->key = NULL;
+                    htab_entry->key = nullptr;
                     Log.tinyprintf(T("helpindex_read: duplicate %s entries for %s" ENDLINE),
                         szTextFilename, pCased);
                 }
                 delete htab_entry;
-                htab_entry = NULL;
+                htab_entry = nullptr;
             }
 
             try
@@ -210,7 +210,7 @@ static void helpindex_read(int iHelpfile)
             if (htab_entry)
             {
                 htab_entry->pos = pos;
-                htab_entry->key = bOriginal ? StringCloneLen(pCased, nTopic) : NULL;
+                htab_entry->key = bOriginal ? StringCloneLen(pCased, nTopic) : nullptr;
                 bOriginal = false;
 
                 hashaddLEN(pCased, nTopic, htab_entry, htab);
@@ -266,11 +266,11 @@ static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
 static void ReportMatchedTopics(dbref executor, const UTF8 *topic, CHashTable *htab)
 {
     bool matched = false;
-    UTF8 *topic_list = NULL;
-    UTF8 *buffp = NULL;
+    UTF8 *topic_list = nullptr;
+    UTF8 *buffp = nullptr;
     struct help_entry *htab_entry;
     for (htab_entry = (struct help_entry *)hash_firstentry(htab);
-         htab_entry != NULL;
+         htab_entry != nullptr;
          htab_entry = (struct help_entry *)hash_nextentry(htab))
     {
         mudstate.wild_invk_ctr = 0;
@@ -342,7 +342,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     bool bInTopicAliases = true;
     for (;;)
     {
-        if (  fgets((char *)line, LBUF_SIZE - 2, fp) == NULL
+        if (  fgets((char *)line, LBUF_SIZE - 2, fp) == nullptr
            || '\0' == line[0])
         {
             break;
@@ -383,7 +383,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
                 executor_for_help = mudconf.help_executor;
             }
             mux_exec(line, len, result, &bp, executor_for_help, executor, executor,
-                    EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, NULL, 0);
+                    EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, nullptr, 0);
         }
         else
         {

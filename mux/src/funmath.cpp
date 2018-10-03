@@ -456,7 +456,7 @@ FUNCTION(fun_lmax)
 
         int n = 0;
         UTF8 *cp = trim_space_sep(fargs[0], sep);
-        while (NULL != cp)
+        while (nullptr != cp)
         {
             UTF8 *curr = split_token(&cp, sep);
             double tval = mux_atof(curr);
@@ -512,7 +512,7 @@ FUNCTION(fun_lmin)
 
         int n = 0;
         UTF8 *cp = trim_space_sep(fargs[0], sep);
-        while (NULL != cp)
+        while (nullptr != cp)
         {
             UTF8 *curr = split_token(&cp, sep);
             double tval = mux_atof(curr);
@@ -587,8 +587,8 @@ FUNCTION(fun_shl)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    if (  is_integer(fargs[0], nullptr)
+       && is_integer(fargs[1], nullptr))
     {
         long  b = mux_atol(fargs[1]);
         if (0 <= b)
@@ -617,8 +617,8 @@ FUNCTION(fun_shr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    if (  is_integer(fargs[0], nullptr)
+       && is_integer(fargs[1], nullptr))
     {
         long  b = mux_atol(fargs[1]);
         if (0 <= b)
@@ -1304,7 +1304,7 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    UTF8 **v1 = NULL;
+    UTF8 **v1 = nullptr;
     try
     {
         v1 = new UTF8 *[LBUF_SIZE/2];
@@ -1314,7 +1314,7 @@ FUNCTION(fun_vmag)
         ; // Nothing.
     }
 
-    if (NULL != v1)
+    if (nullptr != v1)
     {
         int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
 
@@ -1358,7 +1358,7 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    UTF8 **v1 = NULL;
+    UTF8 **v1 = nullptr;
     try
     {
         v1 = new UTF8 *[LBUF_SIZE/2];
@@ -1368,7 +1368,7 @@ FUNCTION(fun_vunit)
         ; // Nothing.
     }
 
-    if (NULL != v1)
+    if (nullptr != v1)
     {
         int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
 
@@ -2066,7 +2066,7 @@ FUNCTION(fun_isint)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_bool(is_integer(fargs[0], NULL), buff, bufc);
+    safe_bool(is_integer(fargs[0], nullptr), buff, bufc);
 }
 
 FUNCTION(fun_and)
@@ -2518,7 +2518,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
     }
     size_t nA = number - pA;
 
-    const UTF8 *pB  = NULL;
+    const UTF8 *pB  = nullptr;
     size_t nB = 0;
     if (*number == '.')
     {
@@ -2755,7 +2755,7 @@ FUNCTION(fun_band)
     UINT64 val = UINT64_MAX_VALUE;
     for (int i = 0; i < nfargs; i++)
     {
-        if (is_integer(fargs[i], NULL))
+        if (is_integer(fargs[i], nullptr))
         {
             val &= mux_atoi64(fargs[i]);
         }
@@ -2780,7 +2780,7 @@ FUNCTION(fun_bor)
     UINT64 val = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        if (is_integer(fargs[i], NULL))
+        if (is_integer(fargs[i], nullptr))
         {
             val |= mux_atoi64(fargs[i]);
         }
@@ -2803,8 +2803,8 @@ FUNCTION(fun_bnand)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    if (  is_integer(fargs[0], nullptr)
+       && is_integer(fargs[1], nullptr))
     {
         INT64 a = mux_atoi64(fargs[0]);
         INT64 b = mux_atoi64(fargs[1]);
@@ -2828,7 +2828,7 @@ FUNCTION(fun_bxor)
     UINT64 val = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        if (is_integer(fargs[i], NULL))
+        if (is_integer(fargs[i], nullptr))
         {
             val ^= mux_atoi64(fargs[i]);
         }
@@ -2861,7 +2861,7 @@ FUNCTION(fun_crc32)
 
 void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc)
 {
-    UTF8 *buf = NULL;
+    UTF8 *buf = nullptr;
     try
     {
         buf = new UTF8[(len * 2) + 1];
@@ -2871,7 +2871,7 @@ void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inou
         ; // Nothing.
     }
 
-    if (NULL == buf)
+    if (nullptr == buf)
     {
         return;
     }
@@ -2927,7 +2927,7 @@ FUNCTION(fun_digest)
     EVP_MD_CTX ctx;
 
     const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
-    if (NULL == mp)
+    if (nullptr == mp)
     {
         safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
         return;

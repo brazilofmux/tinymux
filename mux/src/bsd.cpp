@@ -35,8 +35,8 @@ extern const int _sys_nsig;
 #endif // SOLARIS
 
 #ifdef UNIX_SSL
-SSL_CTX  *ssl_ctx = NULL;
-SSL_CTX  *tls_ctx = NULL;
+SSL_CTX  *ssl_ctx = nullptr;
+SSL_CTX  *tls_ctx = nullptr;
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
 #else
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
@@ -44,7 +44,7 @@ PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
 int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
-DESC *descriptor_list = NULL;
+DESC *descriptor_list = nullptr;
 
 static void TelnetSetup(DESC *d);
 static void SiteMonSend(SOCKET, const UTF8 *, DESC *, const UTF8 *);
@@ -64,9 +64,9 @@ pid_t game_pid;
 // by Stephen Dennis <brazilofmux@gmail.com>.
 //
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
-FGETNAMEINFO *fpGetNameInfo = NULL;
-FGETADDRINFO *fpGetAddrInfo = NULL;
-FFREEADDRINFO *fpFreeAddrInfo = NULL;
+FGETNAMEINFO *fpGetNameInfo = nullptr;
+FGETADDRINFO *fpGetAddrInfo = nullptr;
+FFREEADDRINFO *fpFreeAddrInfo = nullptr;
 HANDLE CompletionPort;    // IOs are queued up on this port
 static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 static OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
@@ -77,7 +77,7 @@ CRITICAL_SECTION csDescriptorList;      // for thread synchronization
 static DWORD WINAPI MUXListenThread(LPVOID pVoid);
 static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 static bool bDescriptorListInit = false;
-HWND g_hWnd = NULL;
+HWND g_hWnd = nullptr;
 
 typedef struct
 {
@@ -185,7 +185,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                 // The stack is empty. Release control and go back to sleep.
                 //
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
+                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 break;
             }
@@ -196,7 +196,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             req = SlaveRequests[iSlaveRequest];
 
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
-            ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
+            ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
             // Ok, we have complete control of this address, now, so let's
@@ -205,8 +205,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             UTF8 host_address[MAX_STRING];
             UTF8 host_name[MAX_STRING];
 
-            if (  0 == mux_getnameinfo(&req.msa, host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV)
-               && 0 == mux_getnameinfo(&req.msa, host_name, sizeof(host_name), NULL, 0, NI_NUMERICSERV))
+            if (  0 == mux_getnameinfo(&req.msa, host_address, sizeof(host_address), nullptr, 0, NI_NUMERICHOST|NI_NUMERICSERV)
+               && 0 == mux_getnameinfo(&req.msa, host_name, sizeof(host_name), nullptr, 0, NI_NUMERICSERV))
             {
                 if (fSlaveShutdown)
                 {
@@ -231,7 +231,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         SlaveThreadInfo[iSlave].iError = __LINE__;
                     }
                     SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
+                    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, nullptr);
                     SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 }
                 else
@@ -262,15 +262,15 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         return;
     }
 
-    hSlaveThreadsSemaphore = CreateSemaphore(NULL, 0, NUM_SLAVE_THREADS, NULL);
-    hSlaveRequestStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
-    hSlaveResultStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
+    hSlaveThreadsSemaphore = CreateSemaphore(nullptr, 0, NUM_SLAVE_THREADS, nullptr);
+    hSlaveRequestStackSemaphore = CreateSemaphore(nullptr, 1, 1, nullptr);
+    hSlaveResultStackSemaphore = CreateSemaphore(nullptr, 1, 1, nullptr);
     DebugTotalSemaphores += 3;
     for (size_t iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
     {
         SlaveThreadInfo[iSlave].iDoing = 0;
         SlaveThreadInfo[iSlave].iError = 0;
-        SlaveThreadInfo[iSlave].hThread = CreateThread(NULL, 0, SlaveProc, reinterpret_cast<LPVOID>(iSlave), 0,
+        SlaveThreadInfo[iSlave].hThread = CreateThread(nullptr, 0, SlaveProc, reinterpret_cast<LPVOID>(iSlave), 0,
             &SlaveThreadInfo[iSlave].hThreadId);
         DebugTotalThreads++;
     }
@@ -283,7 +283,7 @@ void shutdown_slave()
     fSlaveShutdown = true;
     for (iSlave = 0; iSlave < NUM_SLAVE_THREADS*2; iSlave++)
     {
-        ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
+        ReleaseSemaphore(hSlaveThreadsSemaphore, 1, nullptr);
     }
     for (iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
     {
@@ -308,13 +308,13 @@ static int get_slave_result(void)
     //
     if (iSlaveResult <= 0)
     {
-        ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
+        ReleaseSemaphore(hSlaveResultStackSemaphore, 1, nullptr);
         return 1;
     }
     iSlaveResult--;
     mux_strncpy(host_address, SlaveResults[iSlaveResult].host_address, sizeof(host_address)-1);
     mux_strncpy(host_name, SlaveResults[iSlaveResult].host_name, sizeof(host_name)-1);
-    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
+    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, nullptr);
 
     // At this point, we have a host name on our own stack.
     //
@@ -383,7 +383,7 @@ void CleanUpSlaveProcess(void)
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, NULL, 0);
+        waitpid(slave_pid, nullptr, 0);
     }
     slave_pid = 0;
 }
@@ -406,7 +406,7 @@ void WaitOnStubSlaveProcess(void)
 {
     if (stubslave_pid > 0)
     {
-        waitpid(stubslave_pid, NULL, 0);
+        waitpid(stubslave_pid, nullptr, 0);
     }
     stubslave_pid = 0;
 }
@@ -425,7 +425,7 @@ void WaitOnStubSlaveProcess(void)
 
 void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
 {
-    const char *pFailedFunc = NULL;
+    const char *pFailedFunc = nullptr;
     int sv[2];
     int i;
     int maxfds;
@@ -500,7 +500,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         {
             mux_close(i);
         }
-        execlp("bin/stubslave", "stubslave", (char *)NULL);
+        execlp("bin/stubslave", "stubslave", (char *)nullptr);
         _exit(1);
     }
     mux_close(sv[1]);
@@ -640,7 +640,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    const char *pFailedFunc = NULL;
+    const char *pFailedFunc = nullptr;
     int sv[2];
     int i;
     int maxfds;
@@ -714,7 +714,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         {
             mux_close(i);
         }
-        execlp("bin/slave", "slave", (char *)NULL);
+        execlp("bin/slave", "slave", (char *)nullptr);
         _exit(1);
     }
     close(sv[1]);
@@ -861,8 +861,8 @@ bool initialize_ssl()
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
         SSL_CTX_free(tls_ctx);
-        ssl_ctx = NULL;
-        tls_ctx = NULL;
+        ssl_ctx = nullptr;
+        tls_ctx = nullptr;
         return false;
     }
     if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
@@ -873,8 +873,8 @@ bool initialize_ssl()
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
         SSL_CTX_free(tls_ctx);
-        ssl_ctx = NULL;
-        tls_ctx = NULL;
+        ssl_ctx = nullptr;
+        tls_ctx = nullptr;
         return false;
     }
 
@@ -891,8 +891,8 @@ bool initialize_ssl()
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
         SSL_CTX_free(tls_ctx);
-        ssl_ctx = NULL;
-        tls_ctx = NULL;
+        ssl_ctx = nullptr;
+        tls_ctx = nullptr;
         return false;
     }
 
@@ -904,7 +904,7 @@ bool initialize_ssl()
         log_text(T("initialize_ssl: Key, certificate or password does not match."));
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
-        ssl_ctx = NULL;
+        ssl_ctx = nullptr;
         return false;
     }
 
@@ -929,12 +929,12 @@ void shutdown_ssl()
     if (ssl_ctx)
     {
         SSL_CTX_free(ssl_ctx);
-        ssl_ctx = NULL;
+        ssl_ctx = nullptr;
     }
     if (tls_ctx)
     {
         SSL_CTX_free(tls_ctx);
-        tls_ctx = NULL;
+        tls_ctx = nullptr;
     }
 }
 
@@ -997,7 +997,7 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
     SOCKET s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (IS_INVALID_SOCKET(s))
     {
-        log_perror(T("NET"), T("FAIL"), NULL, T("creating socket"));
+        log_perror(T("NET"), T("FAIL"), nullptr, T("creating socket"));
         return false;
     }
     DebugTotalSockets++;
@@ -1005,7 +1005,7 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
     int opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {
-        log_perror(T("NET"), T("FAIL"), NULL, T("SO_REUSEADDR"));
+        log_perror(T("NET"), T("FAIL"), nullptr, T("SO_REUSEADDR"));
     }
 
 #if defined(HAVE_SOCKADDR_IN6)
@@ -1014,7 +1014,7 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
         opt = 1;
         if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)) < 0)
         {
-            log_perror(T("NET"), T("FAIL"), NULL, T("IPV6_V6ONLY"));
+            log_perror(T("NET"), T("FAIL"), nullptr, T("IPV6_V6ONLY"));
         }
     }
 #endif
@@ -1051,8 +1051,8 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
 
     // Create the listening thread.
     //
-    HANDLE hThread = CreateThread(NULL, 0, MUXListenThread, (LPVOID)ps, 0, NULL);
-    if (NULL == hThread)
+    HANDLE hThread = CreateThread(nullptr, 0, MUXListenThread, (LPVOID)ps, 0, nullptr);
+    if (nullptr == hThread)
     {
         log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
         if (0 == SOCKET_CLOSE(s))
@@ -1144,7 +1144,7 @@ void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF
         MUX_ADDRINFO *servinfo;
         if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
         {
-            for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+            for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
             {
                 int n = 0;
                 for (int i = 0; i < *pnPorts; i++)
@@ -1187,7 +1187,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     // and start up a listening thread for new connections.  Create
     // initial IO completion port, so threads have something to wait on
     //
-    CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+    CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1);
 
     if (!CompletionPort)
     {
@@ -1209,14 +1209,14 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         aPorts[i].fMatched = false;
     }
 
-    UTF8 *sAddress = NULL;
-    UTF8 *sp = NULL;
+    UTF8 *sAddress = nullptr;
+    UTF8 *sp = nullptr;
 
-    // If ip_address is NULL, we pass NULL to mux_getaddrinfo() once. Otherwise, we pass each address (separated by space
+    // If ip_address is nullptr, we pass nullptr to mux_getaddrinfo() once. Otherwise, we pass each address (separated by space
     // delimiter).
     //
     MUX_STRTOK_STATE tts;
-    if (NULL != ip_address)
+    if (nullptr != ip_address)
     {
         sAddress = StringClone(ip_address);
         mux_strtok_src(&tts, sAddress);
@@ -1234,17 +1234,17 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         }
 #endif
 
-        if (NULL != ip_address)
+        if (nullptr != ip_address)
         {
             sp = mux_strtok_parse(&tts);
         }
 
-    } while (NULL != sp);
+    } while (nullptr != sp);
 
-    if (NULL != sAddress)
+    if (nullptr != sAddress)
     {
         MEMFREE(sAddress);
-        sAddress = NULL;
+        sAddress = nullptr;
     }
 
     for (int i = 0; i < *pnPorts; i++)
@@ -1310,22 +1310,22 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;
     wc.hInstance     = 0;
-    wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
+    wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-    wc.lpszMenuName  = NULL;
+    wc.lpszMenuName  = nullptr;
     wc.lpszClassName = szApp;
 
     RegisterClass(&wc);
 
     g_hWnd = CreateWindow(szApp, szApp, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, 0, NULL);
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, 0, nullptr);
 
     ShowWindow(g_hWnd, SW_HIDE);
     UpdateWindow(g_hWnd);
 
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
+    while (GetMessage(&msg, nullptr, 0, 0))
     {
         DispatchMessage(&msg);
     }
@@ -1341,7 +1341,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
     mudstate.debug_cmd = T("< shovecharsNT >");
 
-    HANDLE hCloseProc = CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
+    HANDLE hCloseProc = CreateThread(nullptr, 0, ListenForCloseProc, nullptr, 0, nullptr);
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1521,8 +1521,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         struct timeval timeout;
         CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
         ltdTimeout.ReturnTimeValueStruct(&timeout);
-        found = select(maxd, &input_set, &output_set, (fd_set *) NULL,
-                   &timeout);
+        found = select(maxd, &input_set, &output_set, (fd_set *) nullptr, &timeout);
 
         if (IS_SOCKET_ERROR(found))
         {
@@ -1638,13 +1637,13 @@ void shovechars(int nPorts, PortInfo aPorts[])
             if (CheckInput(aPorts[i].socket))
             {
                 int iSocketError;
-                newd = new_connection(aPorts+i, &iSocketError);
+                newd = new_connection(&aPorts[i], &iSocketError);
                 if (!newd)
                 {
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
                     {
-                        log_perror(T("NET"), T("FAIL"), NULL, T("new_connection"));
+                        log_perror(T("NET"), T("FAIL"), nullptr, T("new_connection"));
                     }
                 }
                 else if (  !IS_INVALID_SOCKET(newd->descriptor)
@@ -1725,7 +1724,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 
     // Wait for something to happen.
     //
-    found = select(maxd, &input_set, &output_set, (fd_set *) NULL, NULL);
+    found = select(maxd, &input_set, &output_set, (fd_set *) nullptr, nullptr);
 
     if (IS_SOCKET_ERROR(found))
     {
@@ -1814,7 +1813,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         // Report site monitor information.
         //
-        SiteMonSend(newsock, pBuffM2, NULL, T("Connection refused"));
+        SiteMonSend(newsock, pBuffM2, nullptr, T("Connection refused"));
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
@@ -1824,7 +1823,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         }
         newsock = INVALID_SOCKET;
         errno = 0;
-        d = NULL;
+        d = nullptr;
     }
     else
     {
@@ -1859,7 +1858,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         ENDLOG;
 
 #ifdef UNIX_SSL
-        SSL *ssl_session = NULL;
+        SSL *ssl_session = nullptr;
 
         if (Port->fSSL && ssl_ctx)
         {
@@ -1884,7 +1883,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 newsock = INVALID_SOCKET;
                 *piSocketError = ssl_err;
                 errno = 0;
-                return NULL;
+                return nullptr;
             }
         }
 #endif
@@ -2094,7 +2093,7 @@ void shutdownsock(DESC *d, int reason)
 
     // Is this desc still in interactive mode?
     //
-    if (d->program_data != NULL)
+    if (d->program_data != nullptr)
     {
         num = 0;
         DESC_ITER_PLAYER(d->player, dtemp)
@@ -2109,13 +2108,13 @@ void shutdownsock(DESC *d, int reason)
                 if (d->program_data->wait_regs[i])
                 {
                     RegRelease(d->program_data->wait_regs[i]);
-                    d->program_data->wait_regs[i] = NULL;
+                    d->program_data->wait_regs[i] = nullptr;
                 }
             }
             MEMFREE(d->program_data);
             atr_clr(d->player, A_PROGCMD);
         }
-        d->program_data = NULL;
+        d->program_data = nullptr;
     }
 
     if (reason == R_LOGOUT)
@@ -2179,7 +2178,7 @@ void shutdownsock(DESC *d, int reason)
         {
             SSL_shutdown(d->ssl_session);
             SSL_free(d->ssl_session);
-            d->ssl_session = NULL;
+            d->ssl_session = nullptr;
         }
 #endif
 
@@ -2358,7 +2357,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->command_count = 0;
     d->timeout = mudconf.idle_timeout;
 #ifdef UNIX_SSL
-    d->ssl_session = NULL;
+    d->ssl_session = nullptr;
 #endif
 
     // Be sure #0 isn't wizard. Shouldn't be.
@@ -2369,20 +2368,20 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->doing[0] = '\0';
     d->username[0] = '\0';
     config_socket(s);
-    d->output_prefix = NULL;
-    d->output_suffix = NULL;
+    d->output_prefix = nullptr;
+    d->output_suffix = nullptr;
     d->output_size = 0;
     d->output_tot = 0;
     d->output_lost = 0;
-    d->output_head = NULL;
-    d->output_tail = NULL;
-    d->input_head = NULL;
-    d->input_tail = NULL;
+    d->output_head = nullptr;
+    d->output_tail = nullptr;
+    d->input_head = nullptr;
+    d->input_tail = nullptr;
     d->input_size = 0;
     d->input_tot = 0;
     d->input_lost = 0;
-    d->raw_input = NULL;
-    d->raw_input_at = NULL;
+    d->raw_input = nullptr;
+    d->raw_input_at = nullptr;
     d->nOption = 0;
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
@@ -2395,13 +2394,13 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     {
         d->nvt_us_state[i] = OPTION_NO;
     }
-    d->ttype = NULL;
+    d->ttype = nullptr;
     d->encoding = mudconf.default_charset;
     d->negotiated_encoding = mudconf.default_charset;
     d->height = 24;
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
-    d->program_data = NULL;
+    d->program_data = nullptr;
     d->address = *msa;
     msa->ntop(d->addr, sizeof(d->addr));
 
@@ -2418,7 +2417,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     {
         descriptor_list->prev = &d->next;
     }
-    d->hashnext = NULL;
+    d->hashnext = nullptr;
     d->next = descriptor_list;
     d->prev = &descriptor_list;
     descriptor_list = d;
@@ -2428,8 +2427,8 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     //
     LeaveCriticalSection (&csDescriptorList);
 
-    d->OutboundOverlapped.hEvent = NULL;
-    d->InboundOverlapped.hEvent = NULL;
+    d->OutboundOverlapped.hEvent = nullptr;
+    d->InboundOverlapped.hEvent = nullptr;
     d->InboundOverlapped.Offset = 0;
     d->InboundOverlapped.OffsetHigh = 0;
     d->bConnectionShutdown = false; // not shutdown yet
@@ -2485,22 +2484,22 @@ void process_output(void *dvoid, int bHandleShutdown)
     // freeing empty blocks. These shouldn't occur, but we cannot afford to
     // assume.
     //
-    while (  NULL != tb
+    while (  nullptr != tb
           && 0 == (tb->hdr.flags & TBLK_FLAG_LOCKED)
           && 0 == tb->hdr.nchars)
     {
         TBLOCK *save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
-        save = NULL;
+        save = nullptr;
         d->output_head = tb;
-        if (NULL == tb)
+        if (nullptr == tb)
         {
-            d->output_tail = NULL;
+            d->output_tail = nullptr;
         }
     }
 
-    if (  NULL != tb
+    if (  nullptr != tb
        && 0 == (tb->hdr.flags & TBLK_FLAG_LOCKED)
        && 0 < tb->hdr.nchars)
     {
@@ -2523,7 +2522,7 @@ void process_output(void *dvoid, int bHandleShutdown)
         d->OutboundOverlapped.Offset = 0;
         d->OutboundOverlapped.OffsetHigh = 0;
         BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start,
-            static_cast<DWORD>(tb->hdr.nchars), NULL, &d->OutboundOverlapped);
+            static_cast<DWORD>(tb->hdr.nchars), nullptr, &d->OutboundOverlapped);
         if (bResult)
         {
             // The WriteFile request completed immediately, and technically,
@@ -2591,7 +2590,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
-    while (NULL != tb)
+    while (nullptr != tb)
     {
         while (0 < tb->hdr.nchars)
         {
@@ -2643,11 +2642,11 @@ void process_output(void *dvoid, int bHandleShutdown)
         TBLOCK *save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
-        save = NULL;
+        save = nullptr;
         d->output_head = tb;
-        if (tb == NULL)
+        if (tb == nullptr)
         {
-            d->output_tail = NULL;
+            d->output_tail = nullptr;
         }
     }
 
@@ -2774,7 +2773,7 @@ static void SendSb
     if (sizeof(buffer) < nMaximum)
     {
         pSB = (unsigned char *)MEMALLOC(nMaximum);
-        if (NULL == pSB)
+        if (nullptr == pSB)
         {
             return;
         }
@@ -2914,7 +2913,7 @@ void SendCharsetRequest(DESC *d, bool fDefacto = false)
 
 void DefactoCharsetCheck(DESC *d)
 {
-    if (  NULL != d->ttype
+    if (  nullptr != d->ttype
        && OPTION_NO == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
        && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]
        && mux_stricmp(d->ttype, T("mushclient")) == 0)
@@ -2949,7 +2948,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             SendSb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
 #ifdef UNIX_SSL
-        else if ((TELNET_STARTTLS == chOption) && (tls_ctx != NULL))
+        else if ((TELNET_STARTTLS == chOption) && (tls_ctx != nullptr))
         {
             SendSb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
         }
@@ -3026,7 +3025,7 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
        || TELNET_ENV     == chOption
        || TELNET_BINARY  == chOption
 #ifdef UNIX_SSL
-       || ((TELNET_STARTTLS== chOption) && (tls_ctx != NULL))
+       || ((TELNET_STARTTLS== chOption) && (tls_ctx != nullptr))
 #endif
        || TELNET_CHARSET == chOption)
     {
@@ -3207,7 +3206,7 @@ void TelnetSetup(DESC *d)
     EnableUs(d, TELNET_CHARSET);
     EnableHim(d, TELNET_CHARSET);
 #ifdef UNIX_SSL
-    if (!d->ssl_session && (tls_ctx != NULL))
+    if (!d->ssl_session && (tls_ctx != nullptr))
     {
         EnableHim(d, TELNET_STARTTLS);
     }
@@ -3714,7 +3713,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 case TELNET_STARTTLS:
                     if (  2 == m
                        && TELNETSB_FOLLOWS == d->aOption[1]
-                       && tls_ctx != NULL)
+                       && tls_ctx != nullptr)
                     {
                        d->ssl_session = SSL_new(tls_ctx);
                        SSL_set_fd(d->ssl_session, d->descriptor);
@@ -3746,10 +3745,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                         if (fASCII)
                         {
-                            if (NULL != d->ttype)
+                            if (nullptr != d->ttype)
                             {
                                 MEMFREE(d->ttype);
-                                d->ttype = NULL;
+                                d->ttype = nullptr;
                             }
                             d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
                             memcpy(d->ttype, pTermType, nTermType);
@@ -3774,9 +3773,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                || TELNETSB_VAR     == ch)
                             {
                                 unsigned char *pVarnameStart = envPtr;
-                                unsigned char *pVarnameEnd = NULL;
-                                unsigned char *pVarvalStart = NULL;
-                                unsigned char *pVarvalEnd = NULL;
+                                unsigned char *pVarnameEnd = nullptr;
+                                unsigned char *pVarvalStart = nullptr;
+                                unsigned char *pVarvalEnd = nullptr;
 
                                 while (envPtr < &d->aOption[m])
                                 {
@@ -3806,7 +3805,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 }
 
                                 if (  envPtr == &d->aOption[m]
-                                   && NULL == pVarnameEnd)
+                                   && nullptr == pVarnameEnd)
                                 {
                                     pVarnameEnd = envPtr;
                                 }
@@ -3814,21 +3813,21 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 size_t nVarname = 0;
                                 size_t nVarval = 0;
 
-                                if (  NULL != pVarnameStart
-                                   && NULL != pVarnameEnd)
+                                if (  nullptr != pVarnameStart
+                                   && nullptr != pVarnameEnd)
                                 {
                                     nVarname = pVarnameEnd - pVarnameStart;
                                 }
 
-                                if (  NULL != pVarvalStart
-                                   && NULL != pVarvalEnd)
+                                if (  nullptr != pVarvalStart
+                                   && nullptr != pVarvalEnd)
                                 {
                                     nVarval = pVarvalEnd - pVarvalStart;
                                 }
 
                                 UTF8 varname[1024];
                                 UTF8 varval[1024];
-                                if (  NULL != pVarvalStart
+                                if (  nullptr != pVarvalStart
                                    && 0 < nVarname
                                    && nVarname < sizeof(varname) - 1
                                    && 0 < nVarval
@@ -3850,7 +3849,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                        || mux_stricmp(varname, T("LANG")) == 0)
                                     {
                                         UTF8 *pEncoding = (UTF8 *)strchr((char *)varval, '.');
-                                        if (NULL != pEncoding)
+                                        if (nullptr != pEncoding)
                                         {
                                             pEncoding++;
                                         }
@@ -4067,7 +4066,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                             if (!fRequestAcknowledged)
                             {
-                                SendSb(d, TELNET_CHARSET, TELNETSB_REJECT, NULL, 0);
+                                SendSb(d, TELNET_CHARSET, TELNETSB_REJECT, nullptr, 0);
                             }
                         }
                     }
@@ -4088,8 +4087,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     else
     {
         free_lbuf(d->raw_input);
-        d->raw_input = NULL;
-        d->raw_input_at = NULL;
+        d->raw_input = nullptr;
+        d->raw_input_at = nullptr;
     }
 
     if (  d->aOption <= q
@@ -4164,14 +4163,14 @@ void close_sockets(bool emergency, const UTF8 *message)
             mux_socket_write(d, (const char *)message, strlen((const char *)message), 0);
             if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
             {
-                log_perror(T("NET"), T("FAIL"), NULL, T("shutdown"));
+                log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
             }
 #ifdef UNIX_SSL
             if (d->ssl_session)
             {
                 SSL_shutdown(d->ssl_session);
                 SSL_free(d->ssl_session);
-                d->ssl_session = NULL;
+                d->ssl_session = nullptr;
             }
 #endif
             if (0 == SOCKET_CLOSE(d->descriptor))
@@ -4410,7 +4409,7 @@ const SIGNALTYPE aSigTypes[] =
     { SIGWINCH, T("SIGWINCH")},
 #endif // SIGWINCH
     { 0,        T("SIGZERO") },
-    { -1, NULL }
+    { -1, nullptr }
 };
 
 typedef struct
@@ -4432,8 +4431,8 @@ void BuildSignalNamesTable(void)
     int i;
     for (i = 0; i < NSIG; i++)
     {
-        signames[i].pShortName = NULL;
-        signames[i].pLongName  = NULL;
+        signames[i].pShortName = nullptr;
+        signames[i].pLongName  = nullptr;
     }
 
     const SIGNALTYPE *pst = aSigTypes;
@@ -4444,7 +4443,7 @@ void BuildSignalNamesTable(void)
            && sig < NSIG)
         {
             MUX_SIGNAMES *tsn = &signames[sig];
-            if (tsn->pShortName == NULL)
+            if (tsn->pShortName == nullptr)
             {
                 tsn->pShortName = pst->szSignal;
 #if defined(UNIX_SIGNALS)
@@ -4458,7 +4457,7 @@ void BuildSignalNamesTable(void)
                 }
 #endif // UNIX_SIGNALS
 #ifdef SysSigNames
-                if (  tsn->pLongName == NULL
+                if (  tsn->pLongName == nullptr
                    && SysSigNames[sig]
                    && strcmp((char *)tsn->pShortName, (char *)SysSigNames[sig]) != 0)
                 {
@@ -4472,7 +4471,7 @@ void BuildSignalNamesTable(void)
     for (i = 0; i < NSIG; i++)
     {
         MUX_SIGNAMES *tsn = &signames[i];
-        if (tsn->pShortName == NULL)
+        if (tsn->pShortName == nullptr)
         {
 #ifdef SysSigNames
             if (SysSigNames[i])
@@ -4660,7 +4659,7 @@ static void DCL_CDECL sighandler(int sig)
                     mudstate.dumping = false;
                     local_dump_complete_signal();
                     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-                    while (NULL != p)
+                    while (nullptr != p)
                     {
                         p->pSink->dump_complete_signal();
                         p = p->pNext;
@@ -4765,7 +4764,7 @@ static void DCL_CDECL sighandler(int sig)
         local_presync_database_sigsegv();
         {
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (NULL != p)
+            while (nullptr != p)
             {
                 p->pSink->presync_database_sigsegv();
                 p = p->pNext;
@@ -4830,9 +4829,9 @@ static void DCL_CDECL sighandler(int sig)
 #endif // HAVE_WORKING_FORK
 
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
 #endif // GAME_DOOFERMUX
             mux_assert(false);
             break;
@@ -4871,7 +4870,7 @@ NAMETAB sigactions_nametab[] =
 {
     {T("exit"),        3,  0,  SA_EXIT},
     {T("default"),     1,  0,  SA_DFLT},
-    {(UTF8 *) NULL,    0,  0,  0}
+    {(UTF8 *) nullptr,    0,  0,  0}
 };
 
 void set_signals(void)
@@ -4888,7 +4887,7 @@ void set_signals(void)
 #undef sigfillset
 #undef sigprocmask
     sigfillset(&sigs);
-    sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+    sigprocmask(SIG_UNBLOCK, &sigs, nullptr);
 #endif // UNIX_SIGNALS
 
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
@@ -5016,7 +5015,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
             // The following are commented out for thread-safety, but
             // ordinarily, they would occur at this time.
             //
-            //SiteMonSend(socketClient, inet_ntoa(SockAddr.sin_addr), NULL,
+            //SiteMonSend(socketClient, inet_ntoa(SockAddr.sin_addr), nullptr,
             //            "Connection refused");
             //fcache_rawdump(socketClient, FC_CONN_SITE);
 
@@ -5043,17 +5042,17 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
                 //
                 SlaveRequests[iSlaveRequest].msa = SockAddr;
                 iSlaveRequest++;
-                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
+                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
 
                 // Wake up a single slave thread. Event automatically resets itself.
                 //
-                ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
+                ReleaseSemaphore(hSlaveThreadsSemaphore, 1, nullptr);
             }
             else
             {
                 // No room on the stack, so skip it.
                 //
-                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
+                ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
             }
         }
         d = initializesock(socketClient, &SockAddr);
@@ -5080,7 +5079,7 @@ static DWORD WINAPI MUXListenThread(LPVOID pVoid)
 
         // Do the first read
         //
-        b = ReadFile((HANDLE) socketClient, d->input_buffer, sizeof(d->input_buffer), NULL, &d->InboundOverlapped);
+        b = ReadFile((HANDLE) socketClient, d->input_buffer, sizeof(d->input_buffer), nullptr, &d->InboundOverlapped);
 
         if (!b && GetLastError() != ERROR_IO_PENDING)
         {
@@ -5222,24 +5221,24 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // Write completed. We own the buffer again.
             //
             TBLOCK *tb = d->output_head;
-            if (NULL != tb)
+            if (nullptr != tb)
             {
                 mux_assert(tb->hdr.flags & TBLK_FLAG_LOCKED);
 
                 TBLOCK *save = tb;
                 tb = tb->hdr.nxt;
                 MEMFREE(save);
-                save = NULL;
+                save = nullptr;
                 d->output_head = tb;
-                if (NULL == tb)
+                if (nullptr == tb)
                 {
-                    d->output_tail = NULL;
+                    d->output_tail = nullptr;
                 }
             }
             process_output(d, false);
             tb = d->output_head;
 
-            if (  NULL == tb
+            if (  nullptr == tb
                && d->bConnectionShutdown)
             {
                 // We generated all the disconnection output, and have waited
@@ -5398,7 +5397,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
     int host_info = 0;
-    if (NULL != d)
+    if (nullptr != d)
     {
         host_info = mudstate.access_list.check(&d->address);
     }
@@ -5839,7 +5838,7 @@ mux_subnet::Comparison mux_subnet::CompareTo(mux_subnet *t) const
 
 mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 {
-    mux_addr *ma = NULL;
+    mux_addr *ma = nullptr;
     switch (msa->Family())
     {
 #if defined(HAVE_IN_ADDR)
@@ -5890,9 +5889,9 @@ mux_subnet::Comparison mux_subnet::CompareTo(MUX_SOCKADDR *msa) const
 
 mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 {
-    mux_addr *maMask = NULL;
-    mux_addr *maBase = NULL;
-    mux_addr *maEnd  = NULL;
+    mux_addr *maMask = nullptr;
+    mux_addr *maBase = nullptr;
+    mux_addr *maEnd  = nullptr;
     int nLeadingBits = 0;
 
     MUX_ADDRINFO hints;
@@ -5908,7 +5907,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 
     UTF8 *addr_txt;
     UTF8 *mask_txt = (UTF8 *)strchr((char *)str, '/');
-    if (NULL == mask_txt)
+    if (nullptr == mask_txt)
     {
         // Standard IP range and netmask notation.
         //
@@ -5916,24 +5915,24 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         mux_strtok_src(&tts, str);
         mux_strtok_ctl(&tts, T(" \t=,"));
         addr_txt = mux_strtok_parse(&tts);
-        if (NULL != addr_txt)
+        if (nullptr != addr_txt)
         {
             mask_txt = mux_strtok_parse(&tts);
         }
 
-        if (  NULL == addr_txt
+        if (  nullptr == addr_txt
            || '\0' == *addr_txt
-           || NULL == mask_txt
+           || nullptr == mask_txt
            || '\0' == *mask_txt)
         {
             cf_log_syntax(player, cmd, T("Missing host address or mask."));
-            return NULL;
+            return nullptr;
         }
 
         n = 0;
-        if (0 == mux_getaddrinfo(mask_txt, NULL, &hints, &servinfo))
+        if (0 == mux_getaddrinfo(mask_txt, nullptr, &hints, &servinfo))
         {
-            for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+            for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
             {
                 delete maMask;
                 switch (ai->ai_family)
@@ -5955,7 +5954,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
                     break;
 #endif
                 default:
-                    return NULL;
+                    return nullptr;
                 }
                 n++;
             }
@@ -5975,7 +5974,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         {
             cf_log_syntax(player, cmd, T("Malformed mask address: %s"), mask_txt);
             delete maMask;
-            return NULL;
+            return nullptr;
         }
     }
     else
@@ -5984,19 +5983,19 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         //
         addr_txt = str;
         *mask_txt++ = '\0';
-        if (!is_integer(mask_txt, NULL))
+        if (!is_integer(mask_txt, nullptr))
         {
             cf_log_syntax(player, cmd, T("Mask field (%s) in CIDR IP prefix is not numeric."), mask_txt);
-            return NULL;
+            return nullptr;
         }
 
         nLeadingBits = mux_atol(mask_txt);
     }
 
     n = 0;
-    if (0 == mux_getaddrinfo(addr_txt, NULL, &hints, &servinfo))
+    if (0 == mux_getaddrinfo(addr_txt, nullptr, &hints, &servinfo))
     {
-        for (MUX_ADDRINFO *ai = servinfo; NULL != ai; ai = ai->ai_next)
+        for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
         {
             delete maBase;
             switch (ai->ai_family)
@@ -6019,7 +6018,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 #endif
             default:
                 delete maMask;
-                return NULL;
+                return nullptr;
             }
             n++;
         }
@@ -6039,10 +6038,10 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         cf_log_syntax(player, cmd, T("Malformed host address: %s"), addr_txt);
         delete maMask;
         delete maBase;
-        return NULL;
+        return nullptr;
     }
 
-    if (NULL == maMask)
+    if (nullptr == maMask)
     {
         bool fOutOfRange = false;
         switch (maBase->getFamily())
@@ -6068,13 +6067,13 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
             break;
 #endif
         default:
-            return NULL;
+            return nullptr;
         }
 
         if (fOutOfRange)
         {
             cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), nLeadingBits);
-            return NULL;
+            return nullptr;
         }
         maMask->makeMask(nLeadingBits);
     }
@@ -6083,7 +6082,7 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
         cf_log_syntax(player, cmd, T("Mask type is not compatible with address type: %s %s"), addr_txt, mask_txt);
         delete maMask;
         delete maBase;
-        return NULL;
+        return nullptr;
     }
 
     if (maBase->clearOutsideMask(*maMask))
@@ -6109,28 +6108,28 @@ mux_subnet *ParseSubnet(UTF8 *str, dbref player, UTF8 *cmd)
 static struct addrinfo *gai_addrinfo_new(int socktype, const UTF8 *canonical, struct in_addr addr, unsigned short port)
 {
     struct addrinfo *ai = (struct addrinfo *)MEMALLOC(sizeof(*ai));
-    if (NULL == ai)
+    if (nullptr == ai)
     {
-        return NULL;
+        return nullptr;
     }
     ai->ai_addr = (sockaddr *)MEMALLOC(sizeof(struct sockaddr_in));
-    if (NULL == ai->ai_addr)
+    if (nullptr == ai->ai_addr)
     {
         free(ai);
-        return NULL;
+        return nullptr;
     }
-    ai->ai_next = NULL;
-    if (NULL == canonical)
+    ai->ai_next = nullptr;
+    if (nullptr == canonical)
     {
-        ai->ai_canonname = NULL;
+        ai->ai_canonname = nullptr;
     }
     else
     {
         ai->ai_canonname = (char *)StringClone(canonical);
-        if (NULL == ai->ai_canonname)
+        if (nullptr == ai->ai_canonname)
         {
             mux_freeaddrinfo(ai);
-            return NULL;
+            return nullptr;
         }
     }
     memset(ai->ai_addr, 0, sizeof(struct sockaddr_in));
@@ -6180,10 +6179,10 @@ static int gai_service(const UTF8 *servname, int flags, int *type, unsigned shor
         if (0 != *type)
             protocol = (SOCK_DGRAM == *type) ? T("udp") : T("tcp");
         else
-            protocol = NULL;
+            protocol = nullptr;
 
         struct servent *servent = getservbyname((const char *)servname, (const char *)protocol);
-        if (NULL == servent)
+        if (nullptr == servent)
         {
             return EAI_NONAME;
         }
@@ -6216,9 +6215,9 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
     if (MakeCanonicalIPv4(nodename, &ulAddr))
     {
         addr.s_addr = ulAddr;
-        canonical = (flags & AI_CANONNAME) ? nodename : NULL;
+        canonical = (flags & AI_CANONNAME) ? nodename : nullptr;
         ai = gai_addrinfo_new(socktype, canonical, addr, port);
-        if (NULL == ai)
+        if (nullptr == ai)
         {
             return EAI_MEMORY;
         }
@@ -6232,7 +6231,7 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
             return EAI_NONAME;
         }
         host = gethostbyname((const char *)nodename);
-        if (NULL == host)
+        if (nullptr == host)
         {
             switch (h_errno)
             {
@@ -6245,13 +6244,13 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
                 return EAI_FAIL;
             }
         }
-        if (NULL == host->h_addr_list[0])
+        if (nullptr == host->h_addr_list[0])
         {
             return EAI_FAIL;
         }
         if (flags & AI_CANONNAME)
         {
-            if (NULL != host->h_name)
+            if (nullptr != host->h_name)
             {
                 canonical = (UTF8 *)host->h_name;
             }
@@ -6262,11 +6261,11 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
         }
         else
         {
-            canonical = NULL;
+            canonical = nullptr;
         }
-        first = NULL;
-        prev = NULL;
-        for (i = 0; host->h_addr_list[i] != NULL; i++)
+        first = nullptr;
+        prev = nullptr;
+        for (i = 0; host->h_addr_list[i] != nullptr; i++)
         {
             if (host->h_length != sizeof(addr))
             {
@@ -6275,12 +6274,12 @@ static int gai_lookup(const UTF8 *nodename, int flags, int socktype, unsigned sh
             }
             memcpy(&addr, host->h_addr_list[i], sizeof(addr));
             ai = gai_addrinfo_new(socktype, canonical, addr, port);
-            if (NULL == ai)
+            if (nullptr == ai)
             {
                 mux_freeaddrinfo(first);
                 return EAI_MEMORY;
             }
-            if (first == NULL)
+            if (first == nullptr)
             {
                 first = ai;
                 prev = ai;
@@ -6303,7 +6302,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETADDRINFO)
     return getaddrinfo((const char *)node, (const char *)service, hints, res);
 #elif defined(WINDOWS_NETWORKING)
-    if (NULL != fpGetAddrInfo)
+    if (nullptr != fpGetAddrInfo)
     {
         return fpGetAddrInfo((const char *)node, (const char *)service, hints, res);
     }
@@ -6315,7 +6314,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
 
     int flags;
     int socktype;
-    if (NULL != hints)
+    if (nullptr != hints)
     {
         flags = hints->ai_flags;
         socktype = hints->ai_socktype;
@@ -6353,7 +6352,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
     }
 
     int status;
-    if (NULL == service)
+    if (nullptr == service)
     {
         port = 0;
     }
@@ -6365,13 +6364,13 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
             return status;
         }
     }
-    if (node != NULL)
+    if (node != nullptr)
     {
         return gai_lookup(node, flags, socktype, port, res);
     }
     else
     {
-        if (NULL == service)
+        if (nullptr == service)
         {
             return EAI_NONAME;
         }
@@ -6383,8 +6382,8 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
         {
             addr.s_addr = htonl(0x7f000001UL);
         }
-        ai = gai_addrinfo_new(socktype, NULL, addr, port);
-        if (NULL == ai)
+        ai = gai_addrinfo_new(socktype, nullptr, addr, port);
+        if (nullptr == ai)
         {
             return EAI_MEMORY;
         }
@@ -6399,7 +6398,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETADDRINFO)
     freeaddrinfo(res);
 #elif defined(WINDOWS_NETWORKING)
-    if (NULL != fpFreeAddrInfo)
+    if (nullptr != fpFreeAddrInfo)
     {
         fpFreeAddrInfo(res);
         return;
@@ -6407,14 +6406,14 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #endif
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
     MUX_ADDRINFO *next;
-    while (NULL != res)
+    while (nullptr != res)
     {
         next = res->ai_next;
-        if (NULL != res->ai_addr)
+        if (nullptr != res->ai_addr)
         {
             free(res->ai_addr);
         }
-        if (NULL != res->ai_canonname)
+        if (nullptr != res->ai_canonname)
         {
             free(res->ai_canonname);
         }
@@ -6427,7 +6426,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETNAMEINFO))
 static bool try_name(const char *name, UTF8 *host, size_t hostlen, int *status)
 {
-    if (NULL == strchr((const char *)name, '.'))
+    if (nullptr == strchr((const char *)name, '.'))
     {
         return false;
     }
@@ -6444,7 +6443,7 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
     if (0 == (flags & NI_NUMERICHOST))
     {
         struct hostent *he = gethostbyaddr((const char *)addr, sizeof(struct in_addr), AF_INET);
-        if (NULL == he)
+        if (nullptr == he)
         {
             if (flags & NI_NAMEREQD)
             {
@@ -6459,7 +6458,7 @@ static int lookup_hostname(const struct in_addr *addr, UTF8 *host, size_t hostle
                 return status;
             }
 
-            for (char **alias = he->h_aliases; NULL != *alias; alias++)
+            for (char **alias = he->h_aliases; nullptr != *alias; alias++)
             {
                 if (try_name(*alias, host, hostlen, &status))
                 {
@@ -6483,7 +6482,7 @@ static int lookup_servicename(unsigned short port, UTF8 *serv, size_t servlen, i
     {
         const char *protocol = (flags & NI_DGRAM) ? "udp" : "tcp";
         struct servent *srv = getservbyport(htons(port), protocol);
-        if (NULL != srv)
+        if (nullptr != srv)
         {
             bufc = serv;
             safe_str((UTF8 *)srv->s_name, serv, &bufc);
@@ -6504,16 +6503,16 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *s
 #if defined(UNIX_NETWORKING) && defined(HAVE_GETNAMEINFO)
     return getnameinfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
 #elif defined(WINDOWS_NETWORKING)
-    if (NULL != fpGetNameInfo)
+    if (nullptr != fpGetNameInfo)
     {
         return fpGetNameInfo(msa->saro(), msa->salen(), (char *)host, hostlen, (char *)serv, servlen, flags);
     }
 #endif
 
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETNAMEINFO))
-    if (  (  NULL == host
+    if (  (  nullptr == host
           || hostlen <= 0)
-       && (  NULL == serv
+       && (  nullptr == serv
           || servlen <= 0))
     {
         return EAI_NONAME;
@@ -6525,7 +6524,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *s
     }
 
     int status;
-    if (  NULL != host
+    if (  nullptr != host
        && 0 < hostlen)
     {
         status = lookup_hostname(&msa->sairo()->sin_addr, host, hostlen, flags);
@@ -6535,7 +6534,7 @@ int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, size_t hostlen, UTF8 *s
         }
     }
 
-    if (  NULL != serv
+    if (  nullptr != serv
        && 0 < servlen)
     {
         unsigned short port = msa->Port();
@@ -6576,7 +6575,7 @@ size_t mux_sockaddr::maxaddrlen() const
 
 void mux_sockaddr::ntop(UTF8 *sAddress, size_t len) const
 {
-    if (0 != mux_getnameinfo(this, sAddress, len, NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV))
+    if (0 != mux_getnameinfo(this, sAddress, len, nullptr, 0, NI_NUMERICHOST|NI_NUMERICSERV))
     {
         sAddress[0] = '\0';
     }
@@ -6777,7 +6776,7 @@ mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
         e->m_ia.s_addr = m_ia.s_addr | ~t->m_ia.s_addr;
         return (mux_addr *)e;
     }
-    return NULL;
+    return nullptr;
 }
 #endif
 
@@ -6853,6 +6852,6 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
         }
         return (mux_addr *)e;
     }
-    return NULL;
+    return nullptr;
 }
 #endif

@@ -117,7 +117,7 @@ static double AddWithError(double& err, double a, double b)
 //
 double NearestPretty(double R)
 {
-    UTF8 *rve = NULL;
+    UTF8 *rve = nullptr;
     int decpt;
     int bNegative;
     const int mode = 0;
@@ -490,7 +490,7 @@ double mux_atof(__in_z const UTF8 *szString, bool bStrict)
     // We need to protect certain libraries from going nuts from being
     // force fed lots of ASCII.
     //
-    UTF8 *pTmp = NULL;
+    UTF8 *pTmp = nullptr;
     if (n > ATOF_LIMIT)
     {
         pTmp = alloc_lbuf("mux_atof");
@@ -499,7 +499,7 @@ double mux_atof(__in_z const UTF8 *szString, bool bStrict)
         p = pTmp;
     }
 
-    ret = mux_strtod(p, NULL);
+    ret = mux_strtod(p, nullptr);
 
     if (pTmp)
     {
@@ -513,7 +513,7 @@ UTF8 *mux_ftoa(double r, bool bRounded, int frac)
 {
     static UTF8 buffer[100];
     UTF8 *q = buffer;
-    UTF8 *rve = NULL;
+    UTF8 *rve = nullptr;
     int iDecimalPoint = 0;
     int bNegative = 0;
     int mode = 0;

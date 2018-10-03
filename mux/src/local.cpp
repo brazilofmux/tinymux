@@ -23,7 +23,7 @@
 //
 static FUN local_funlist[] =
 {
-    {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
+    {nullptr,       nullptr,        MAX_ARG, 0,       0,         0, 0}
 };
 
 // ---------------------------------------------------------------------------
@@ -33,22 +33,22 @@ static FUN local_funlist[] =
 //
 static CMDENT_NO_ARG local_command_table_no_arg[] =
 {
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
+    {nullptr,       nullptr,    0,           0,          0,          0, nullptr}
 };
 
 static CMDENT_ONE_ARG local_command_table_one_arg[] =
 {
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
+    {nullptr,       nullptr,    0,           0,          0,          0, nullptr}
 };
 
 static CMDENT_TWO_ARG local_command_table_two_arg[] =
 {
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
+    {nullptr,       nullptr,    0,           0,          0,          0, nullptr}
 };
 
 static CMDENT_TWO_ARG_ARGV local_command_table_two_arg_argv[] =
 {
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
+    {nullptr,       nullptr,    0,           0,          0,          0, nullptr}
 };
 
 // Called after all normal MUX initialization is complete.
@@ -177,7 +177,7 @@ void local_data_free(dbref object)
 
 static const UTF8 *LocalDumpInfoTable[] =
 {
-    NULL
+    nullptr
 };
 
 const UTF8 **local_get_info_table(void)

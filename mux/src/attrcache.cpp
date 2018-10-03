@@ -77,7 +77,7 @@ void cache_redirect(void)
         mux_sprintf(TempFileName, sizeof(TempFileName), T("$convtemp.%d"), i);
         mux_assert(mux_fopen(&TempFiles[i], TempFileName, T("wb+")));
         mux_assert(TempFiles[i]);
-        setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
+        setvbuf(TempFiles[i], nullptr, _IOFBF, 16384);
     }
     cache_redirected = true;
 }
@@ -233,7 +233,7 @@ static void TrimCache(void)
         hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
             &mudstate.acache_htab);
         MEMFREE(pCacheEntry);
-        pCacheEntry = NULL;
+        pCacheEntry = nullptr;
     }
 }
 
@@ -243,10 +243,10 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
        || !cache_initted)
     {
         *pLen = 0;
-        return NULL;
+        return nullptr;
     }
 
-    PCENT_HDR pCacheEntry = NULL;
+    PCENT_HDR pCacheEntry = nullptr;
     if (!mudstate.bStandAlone)
     {
         // Check the cache, first.
@@ -268,7 +268,7 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
             else
             {
                 *pLen = 0;
-                return NULL;
+                return nullptr;
             }
         }
     }
@@ -330,7 +330,7 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
     }
 
     *pLen = 0;
-    return NULL;
+    return nullptr;
 }
 
 
@@ -416,7 +416,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
             CacheSize -= pCacheEntry->nSize;
             hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
             MEMFREE(pCacheEntry);
-            pCacheEntry = NULL;
+            pCacheEntry = nullptr;
         }
 
         // Add information about the new entry back into the cache.
@@ -494,7 +494,7 @@ void cache_del(Aname *nam)
             CacheSize -= pCacheEntry->nSize;;
             hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
             MEMFREE(pCacheEntry);
-            pCacheEntry = NULL;
+            pCacheEntry = nullptr;
         }
     }
 }

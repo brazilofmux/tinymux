@@ -176,7 +176,7 @@ static void do_teleport_single
             }
             did_it(victim, destination,
                    A_TFAIL, T("You can\xE2\x80\x99t teleport there!"),
-                   A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
+                   A_OTFAIL, 0, A_ATFAIL, 0, nullptr, 0);
         }
     }
     else if (isExit(destination))
@@ -189,7 +189,7 @@ static void do_teleport_single
             }
             did_it(victim, destination,
                    A_TFAIL, T("You can\xE2\x80\x99t teleport there!"),
-                   A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
+                   A_OTFAIL, 0, A_ATFAIL, 0, nullptr, 0);
             return;
         }
         else
@@ -575,7 +575,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     int count;
     if (key & BOOT_PORT)
     {
-        if (is_integer(name, NULL))
+        if (is_integer(name, nullptr))
         {
             victim = mux_atol(name);
         }
@@ -624,7 +624,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     const UTF8 *buf;
     if (key & BOOT_QUIET)
     {
-        buf = NULL;
+        buf = nullptr;
     }
     else
     {
@@ -811,7 +811,7 @@ NAMETAB enable_names[] =
     {T("logins"),          3,  CA_PUBLIC,  CF_LOGIN},
     {T("guests"),          2,  CA_PUBLIC,  CF_GUEST},
     {T("eventchecking"),   2,  CA_PUBLIC,  CF_EVENTCHECK},
-    {(UTF8 *) NULL,             0,  0,          0}
+    {(UTF8 *) nullptr,     0,  0,          0}
 };
 
 void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *flag, const UTF8 *cargs[], int ncargs)

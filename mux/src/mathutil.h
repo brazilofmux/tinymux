@@ -73,7 +73,7 @@ INT64 mux_atoi64(__in const UTF8 *pString);
 void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
 void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
 
-bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits = NULL);
+bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits = nullptr);
 bool is_rational(__in_z const UTF8 *str);
 bool is_real(__in_z const UTF8 *str);
 

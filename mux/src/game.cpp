@@ -29,7 +29,7 @@
 #if defined(INLINESQL)
 #include <mysql.h>
 
-MYSQL *mush_database = NULL;
+MYSQL *mush_database = nullptr;
 #endif // INLINESQL
 
 void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
@@ -100,7 +100,7 @@ bool regexp_match
 
     pcre *re;
     if (  alarm_clock.alarmed
-       || (re = pcre_compile((char *)pattern, PCRE_UTF8|case_opt, &errptr, &erroffset, NULL)) == NULL)
+       || (re = pcre_compile((char *)pattern, PCRE_UTF8|case_opt, &errptr, &erroffset, nullptr)) == nullptr)
     {
         /*
          * This is a matching error. We have an error message in
@@ -120,7 +120,7 @@ bool regexp_match
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
-    matches = pcre_exec(re, NULL, (char *)str, static_cast<int>(strlen((char *)str)), 0, 0, ovec, ovecsize);
+    matches = pcre_exec(re, nullptr, (char *)str, static_cast<int>(strlen((char *)str)), 0, 0, ovec, ovecsize);
     if (matches < 0)
     {
         delete [] ovec;
@@ -150,7 +150,7 @@ bool regexp_match
                                 (char *)args[i], LBUF_SIZE) < 0)
         {
             free_lbuf(args[i]);
-            args[i] = NULL;
+            args[i] = nullptr;
         }
     }
 
@@ -242,7 +242,7 @@ static int atr_match1
         UTF8 buff[LBUF_SIZE];
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
-        UTF8 *s = NULL;
+        UTF8 *s = nullptr;
         if (  0 == (aflags & AF_NOPROG)
            &&  (  AMATCH_CMD    == buff[0]
                || AMATCH_LISTEN == buff[0]))
@@ -437,7 +437,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
         return true;
     }
 
-    reg_ref **preserve = NULL;
+    reg_ref **preserve = nullptr;
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
@@ -445,14 +445,14 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
     UTF8 *dp = nbuf;
     mux_exec(buf, LBUF_SIZE-1, nbuf, &dp, object, player, player,
         AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
-        NULL, 0);
+        nullptr, 0);
     *dp = '\0';
     dp = nbuf;
     free_lbuf(buf);
 
     restore_global_regs(preserve);
     PopRegisters(preserve, MAX_GLOBAL_REGS);
-    preserve = NULL;
+    preserve = nullptr;
 
     if (!(aflags & AF_REGEXP))
     {
@@ -466,7 +466,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
                 free_lbuf(nbuf);
                 return false;
             }
-        } while (dp != NULL);
+        } while (dp != nullptr);
     }
     else
     {
@@ -478,11 +478,11 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
             UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             pcre *re;
             if (  !alarm_clock.alarmed
-               && (re = pcre_compile((char *)cp, PCRE_UTF8|case_opt, &errptr, &erroffset, NULL)) != NULL)
+               && (re = pcre_compile((char *)cp, PCRE_UTF8|case_opt, &errptr, &erroffset, nullptr)) != nullptr)
             {
                 const int ovecsize = 33;
                 int ovec[ovecsize];
-                int matches = pcre_exec(re, NULL, (char *)msg, static_cast<int>(strlen((char *)msg)), 0, 0,
+                int matches = pcre_exec(re, nullptr, (char *)msg, static_cast<int>(strlen((char *)msg)), 0, 0,
                     ovec, ovecsize);
                 if (0 <= matches)
                 {
@@ -492,7 +492,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
                 }
                 MEMFREE(re);
             }
-        } while (dp != NULL);
+        } while (dp != nullptr);
     }
     free_lbuf(nbuf);
     return true;
@@ -508,7 +508,7 @@ static UTF8 *make_prefix(dbref object, dbref player, int prefix, const UTF8 *dfl
     if (!*buf)
     {
         cp = buf;
-        if (NULL == dflt)
+        if (nullptr == dflt)
         {
             safe_str(T("From "), buf, &cp);
             if (Good_obj(object))
@@ -528,14 +528,14 @@ static UTF8 *make_prefix(dbref object, dbref player, int prefix, const UTF8 *dfl
     }
     else
     {
-        reg_ref **preserve = NULL;
+        reg_ref **preserve = nullptr;
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_global_regs(preserve);
 
         nbuf = cp = alloc_lbuf("add_prefix");
         mux_exec(buf, LBUF_SIZE-1, nbuf, &cp, object, player, player,
             AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
-            NULL, 0);
+            nullptr, 0);
         free_lbuf(buf);
 
         restore_global_regs(preserve);
@@ -828,15 +828,15 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             mudstate.nHearNest++;
             if (sender != target)
             {
-                did_it( sender, target, 0, NULL, 0, NULL, A_AHEAR, 0,
+                did_it( sender, target, 0, nullptr, 0, nullptr, A_AHEAR, 0,
                         (const UTF8 **)args, nargs);
             }
             else
             {
-                did_it( sender, target, 0, NULL, 0, NULL, A_AMHEAR, 0,
+                did_it( sender, target, 0, nullptr, 0, nullptr, A_AMHEAR, 0,
                         (const UTF8 **)args, nargs);
             }
-            did_it( sender, target, 0, NULL, 0, NULL, A_AAHEAR, 0,
+            did_it( sender, target, 0, nullptr, 0, nullptr, A_AAHEAR, 0,
                     (const UTF8 **)args, nargs);
             mudstate.nHearNest--;
         }
@@ -847,7 +847,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         {
             for (i = 0; i < nargs; i++)
             {
-                if (args[i] != NULL)
+                if (args[i] != nullptr)
                 {
                     free_lbuf(args[i]);
                 }
@@ -871,9 +871,9 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
            && check_filter(target, sender, A_FILTER, msgPlain))
         {
             fp = fwdlist_get(target);
-            if (NULL != fp)
+            if (nullptr != fp)
             {
-                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                prefix = make_prefix(target, sender, A_PREFIX, nullptr);
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
                 msgFinal->append(msg);
@@ -926,7 +926,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             //
             if (key & MSG_S_INSIDE)
             {
-                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                prefix = make_prefix(target, sender, A_PREFIX, nullptr);
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
 
@@ -1034,7 +1034,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         {
             if (key & MSG_S_INSIDE)
             {
-                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                prefix = make_prefix(target, sender, A_PREFIX, nullptr);
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
                 msgFinal->append(msg);
@@ -1291,7 +1291,7 @@ void do_shutdown
 
         local_presync_database();
         ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-        while (NULL != p)
+        while (nullptr != p)
         {
             p->pSink->presync_database();
             p = p->pNext;
@@ -1356,7 +1356,7 @@ typedef struct
 
 static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { NULL,             T(""),     false, 0,                             T("") }, // 0 -- Handled specially.
+    { nullptr,          T(""),     false, 0,                             T("") }, // 0 -- Handled specially.
     { &mudconf.crashdb, T(""),     false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening crash file") }, // 1
     { &mudconf.indb,    T(""),     true,  OUTPUT_VERSION | OUTPUT_FLAGS, T("Opening input file") }, // 2
     { &mudconf.indb,   T(".FLAT"), false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening flatfile")   }, // 3
@@ -1404,7 +1404,7 @@ void dump_database_internal(int dump_type)
     //
     local_dump_database(dump_type);
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->dump_database(dump_type);
         p = p->pNext;
@@ -1431,7 +1431,7 @@ void dump_database_internal(int dump_type)
         if (bOpen)
         {
             DebugTotalFiles++;
-            setvbuf(f, NULL, _IOFBF, 16384);
+            setvbuf(f, nullptr, _IOFBF, 16384);
             db_write(f, F_MUX, dp->fType);
             if (fclose(f) == 0)
             {
@@ -1484,7 +1484,7 @@ void dump_database_internal(int dump_type)
         if (f)
         {
             DebugTotalFiles++;
-            setvbuf(f, NULL, _IOFBF, 16384);
+            setvbuf(f, nullptr, _IOFBF, 16384);
             db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
             if (pclose(f) != -1)
             {
@@ -1511,7 +1511,7 @@ void dump_database_internal(int dump_type)
         if (mux_fopen(&f, tmpfile, T("wb")))
         {
             DebugTotalFiles++;
-            setvbuf(f, NULL, _IOFBF, 16384);
+            setvbuf(f, nullptr, _IOFBF, 16384);
             db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
             if (fclose(f) == 0)
             {
@@ -1582,7 +1582,7 @@ static void dump_database(void)
 
     local_presync_database();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->presync_database();
         p = p->pNext;
@@ -1614,7 +1614,7 @@ static void dump_database(void)
 #endif // HAVE_WORKING_FORK
 
     p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->dump_complete_signal();
         p = p->pNext;
@@ -1682,7 +1682,7 @@ void fork_and_dump(int key)
 
     local_presync_database();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->presync_database();
         p = p->pNext;
@@ -1747,7 +1747,7 @@ void fork_and_dump(int key)
         }
         else if (child < 0)
         {
-            log_perror(T("DMP"), T("FORK"), NULL, T("fork()"));
+            log_perror(T("DMP"), T("FORK"), nullptr, T("fork()"));
         }
         else
         {
@@ -1788,7 +1788,7 @@ void fork_and_dump(int key)
         mudstate.dumping = false;
         local_dump_complete_signal();
         ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-        while (NULL != p)
+        while (nullptr != p)
         {
             p->pSink->dump_complete_signal();
             p = p->pNext;
@@ -1814,7 +1814,7 @@ static int load_game(void)
 static int load_game(int ccPageFile)
 #endif // MEMORY_BASED
 {
-    FILE *f = NULL;
+    FILE *f = nullptr;
     UTF8 infile[SIZEOF_PATHNAME+8];
     struct stat statbuf;
     int db_format, db_version, db_flags;
@@ -1827,7 +1827,7 @@ static int load_game(int ccPageFile)
         if (stat((char *)infile, &statbuf) == 0)
         {
             f = popen((char *)tprintf(T(" %s < %s"), mudconf.uncompress, infile), POPEN_READ_OP);
-            if (f != NULL)
+            if (f != nullptr)
             {
                 DebugTotalFiles++;
                 compressed = true;
@@ -1851,7 +1851,7 @@ static int load_game(int ccPageFile)
             return LOAD_GAME_CANNOT_OPEN;
         }
         DebugTotalFiles++;
-        setvbuf(f, NULL, _IOFBF, 16384);
+        setvbuf(f, nullptr, _IOFBF, 16384);
     }
 
     // Ok, read it in.
@@ -1940,7 +1940,7 @@ static int load_game(int ccPageFile)
         if (mux_fopen(&f, mudconf.mail_db, T("rb")))
         {
             DebugTotalFiles++;
-            setvbuf(f, NULL, _IOFBF, 16384);
+            setvbuf(f, nullptr, _IOFBF, 16384);
             Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
             load_mail(f);
             Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
@@ -2059,7 +2059,7 @@ bool Hearer(dbref thing)
                     continue;
                 }
 
-                UTF8 *s = NULL;
+                UTF8 *s = nullptr;
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
@@ -2137,8 +2137,8 @@ static void process_preload(void)
             {
                 if (H_Startup(thing))
                 {
-                    did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP,
-                        0, NULL, 0);
+                    did_it(Owner(thing), thing, 0, nullptr, 0, nullptr, A_STARTUP,
+                        0, nullptr, 0);
 
                     // Process queue entries as we add them.
                     //
@@ -2156,7 +2156,7 @@ static void process_preload(void)
             if (*tstr)
             {
                 FWDLIST *fp = fwdlist_load(GOD, tstr);
-                if (NULL != fp)
+                if (nullptr != fp)
                 {
                     fwdlist_set(thing, fp);
 
@@ -2165,7 +2165,7 @@ static void process_preload(void)
                         delete [] fp->data;
                     }
                     delete fp;
-                    fp = NULL;
+                    fp = nullptr;
                 }
             }
         }
@@ -2221,9 +2221,9 @@ static void info(int fmt, int flags, int ver)
     Log.WriteString(T(ENDLINE));
 }
 
-static const UTF8 *standalone_infile = NULL;
-static const UTF8 *standalone_outfile = NULL;
-static const UTF8 *standalone_basename = NULL;
+static const UTF8 *standalone_infile = nullptr;
+static const UTF8 *standalone_outfile = nullptr;
+static const UTF8 *standalone_basename = nullptr;
 static bool standalone_check = false;
 static bool standalone_load = false;
 static bool standalone_unload = false;
@@ -2324,7 +2324,7 @@ static void dbconvert(void)
         cache_redirect();
     }
 
-    setvbuf(fpIn, NULL, _IOFBF, 16384);
+    setvbuf(fpIn, nullptr, _IOFBF, 16384);
     if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
     {
         cache_cleanup();
@@ -2363,7 +2363,7 @@ static void dbconvert(void)
         }
         Log.WriteString(T("Output: "));
         info(F_MUX, db_flags, db_ver);
-        setvbuf(fpOut, NULL, _IOFBF, 16384);
+        setvbuf(fpOut, nullptr, _IOFBF, 16384);
 #ifndef MEMORY_BASED
         // Save cached modified attribute list
         //
@@ -2410,7 +2410,7 @@ static void init_sql(void)
         log_text(mudconf.sql_user);
         ENDLOG;
 
-        mush_database = mysql_init(NULL);
+        mush_database = mysql_init(nullptr);
 
         if (mush_database)
         {
@@ -2425,7 +2425,7 @@ static void init_sql(void)
             if (mysql_real_connect(mush_database,
                        (char *)mudconf.sql_server, (char *)mudconf.sql_user,
                        (char *)mudconf.sql_password,
-                       (char *)mudconf.sql_database, 0, NULL, 0))
+                       (char *)mudconf.sql_database, 0, nullptr, 0))
             {
 #ifdef MYSQL_OPT_RECONNECT
                 // Before MySQL 5.0.19, mysql_real_connect sets the option
@@ -2443,7 +2443,7 @@ static void init_sql(void)
                 log_text(T("Unable to connect"));
                 ENDLOG;
                 mysql_close(mush_database);
-                mush_database = NULL;
+                mush_database = nullptr;
             }
         }
         else
@@ -2481,7 +2481,7 @@ long DebugTotalMemory = 0;
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
-static const UTF8 *conffile = NULL;
+static const UTF8 *conffile = nullptr;
 static bool bVersion = false;
 static const UTF8 *pErrorBasename = T("");
 static bool bServerOption = false;
@@ -2586,7 +2586,7 @@ void DetectWindowsCapabilities()
     // Get a handle to ws2_32.dll
     //
     HINSTANCE hInstWs2_32 = LoadLibrary(L"ws2_32");
-    if (NULL != hInstWs2_32)
+    if (nullptr != hInstWs2_32)
     {
         fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWs2_32, "getnameinfo");
         fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWs2_32, "getaddrinfo");
@@ -2594,24 +2594,24 @@ void DetectWindowsCapabilities()
 
         // These interfaces are all-or-nothing.
         //
-        if (  NULL == fpGetNameInfo
-           || NULL == fpGetAddrInfo
-           || NULL == fpFreeAddrInfo)
+        if (  nullptr == fpGetNameInfo
+           || nullptr == fpGetAddrInfo
+           || nullptr == fpFreeAddrInfo)
         {
-            fpGetNameInfo = NULL;
-            fpGetAddrInfo = NULL;
-            fpFreeAddrInfo = NULL;
+            fpGetNameInfo = nullptr;
+            fpGetAddrInfo = nullptr;
+            fpFreeAddrInfo = nullptr;
             FreeLibrary(hInstWs2_32);
-            hInstWs2_32 = NULL;
+            hInstWs2_32 = nullptr;
         }
     }
 
-    if (NULL == hInstWs2_32)
+    if (nullptr == hInstWs2_32)
     {
         // Get a handle to wship6.dll (part of the Windows 2000 IPv6 technology preview).
         //
         HINSTANCE hInstWship6 = LoadLibrary(L"wship6");
-        if (NULL != hInstWship6)
+        if (nullptr != hInstWship6)
         {
             fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWship6, "getnameinfo");
             fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWship6, "getaddrinfo");
@@ -2619,15 +2619,15 @@ void DetectWindowsCapabilities()
 
             // These interfaces are all-or-nothing.
             //
-            if (  NULL == fpGetNameInfo
-               || NULL == fpGetAddrInfo
-               || NULL == fpFreeAddrInfo)
+            if (  nullptr == fpGetNameInfo
+               || nullptr == fpGetAddrInfo
+               || nullptr == fpFreeAddrInfo)
             {
-                fpGetNameInfo = NULL;
-                fpGetAddrInfo = NULL;
-                fpFreeAddrInfo = NULL;
+                fpGetNameInfo = nullptr;
+                fpGetAddrInfo = nullptr;
+                fpFreeAddrInfo = nullptr;
                 FreeLibrary(hInstWship6);
-                hInstWship6 = NULL;
+                hInstWship6 = nullptr;
             }
         }
     }
@@ -2707,7 +2707,7 @@ int DCL_CDECL main(int argc, char *argv[])
         return 1;
     }
     if (  bSyntaxError
-       || conffile == NULL
+       || conffile == nullptr
        || !bServerOption)
     {
         mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
@@ -2844,26 +2844,26 @@ int DCL_CDECL main(int argc, char *argv[])
     mudconf.log_dir = StringClone(pErrorBasename);
     cf_read();
 
-    mr = mux_CreateInstance(CID_QueryServer, NULL, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
+    mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {
         mr = mudstate.pIQueryControl->Connect(mudconf.sql_server, mudconf.sql_database, mudconf.sql_user, mudconf.sql_password);
         if (MUX_SUCCEEDED(mr))
         {
-            mux_IQuerySink *pIQuerySink = NULL;
-            mr = mux_CreateInstance(CID_QueryClient, NULL, UseSameProcess, IID_IQuerySink, (void **)&pIQuerySink);
+            mux_IQuerySink *pIQuerySink = nullptr;
+            mr = mux_CreateInstance(CID_QueryClient, nullptr, UseSameProcess, IID_IQuerySink, (void **)&pIQuerySink);
             if (MUX_SUCCEEDED(mr))
             {
                 mr = mudstate.pIQueryControl->Advise(pIQuerySink);
                 if (MUX_SUCCEEDED(mr))
                 {
                     pIQuerySink->Release();
-                    pIQuerySink = NULL;
+                    pIQuerySink = nullptr;
                 }
                 else
                 {
                     mudstate.pIQueryControl->Release();
-                    mudstate.pIQueryControl = NULL;
+                    mudstate.pIQueryControl = nullptr;
 
                     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
                     log_printf(T("Couldn\xE2\x80\x99t connect sink to server (%d)."), mr);
@@ -2873,7 +2873,7 @@ int DCL_CDECL main(int argc, char *argv[])
             else
             {
                 mudstate.pIQueryControl->Release();
-                mudstate.pIQueryControl = NULL;
+                mudstate.pIQueryControl = nullptr;
 
                 STARTLOG(LOG_ALWAYS, "INI", "LOAD");
                 log_printf(T("Couldn\xE2\x80\x99t create Query Sink (%d)."), mr);
@@ -2883,7 +2883,7 @@ int DCL_CDECL main(int argc, char *argv[])
         else
         {
             mudstate.pIQueryControl->Release();
-            mudstate.pIQueryControl = NULL;
+            mudstate.pIQueryControl = nullptr;
 
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
             log_printf(T("Couldn\xE2\x80\x99t connect to Query Server (%d)."), mr);
@@ -3012,7 +3012,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef UNIX_SSL
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
 #else
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL, mudconf.ip_address);
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, nullptr, mudconf.ip_address);
 #endif
 
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
@@ -3025,7 +3025,7 @@ int DCL_CDECL main(int argc, char *argv[])
     local_startup();
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->startup();
         p = p->pNext;
@@ -3039,7 +3039,7 @@ int DCL_CDECL main(int argc, char *argv[])
      if (mush_database)
      {
          mysql_close(mush_database);
-         mush_database = NULL;
+         mush_database = nullptr;
          STARTLOG(LOG_STARTUP,"SQL","DISC");
          log_text(T("SQL shut down"));
          ENDLOG;
@@ -3055,7 +3055,7 @@ int DCL_CDECL main(int argc, char *argv[])
     local_shutdown();
 
     p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->shutdown();
         p = p->pNext;
@@ -3116,14 +3116,14 @@ void init_rlimit(void)
 
     if (getrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror(T("RLM"), T("FAIL"), NULL, T("getrlimit()"));
+        log_perror(T("RLM"), T("FAIL"), nullptr, T("getrlimit()"));
         free_lbuf(rlp);
         return;
     }
     rlp->rlim_cur = rlp->rlim_max;
     if (setrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror(T("RLM"), T("FAIL"), NULL, T("setrlimit()"));
+        log_perror(T("RLM"), T("FAIL"), nullptr, T("setrlimit()"));
     }
     free_lbuf(rlp);
 
@@ -3134,9 +3134,9 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
 {
     if (pFile)
     {
-        *pFile = NULL;
-        if (  NULL != filename
-           && NULL != mode)
+        *pFile = nullptr;
+        if (  nullptr != filename
+           && nullptr != mode)
         {
 #if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
@@ -3144,7 +3144,7 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
             return (fopen_s(pFile, (const char *)filename, (const char *)mode) == 0);
 #else
             *pFile = fopen((char *)filename, (char *)mode);
-            if (NULL != *pFile)
+            if (nullptr != *pFile)
             {
                 return true;
             }
@@ -3156,10 +3156,10 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
 
 bool mux_open(int *pfh, const UTF8 *filename, int oflag)
 {
-    if (NULL != pfh)
+    if (nullptr != pfh)
     {
         *pfh = MUX_OPEN_INVALID_HANDLE_VALUE;
-        if (NULL != filename)
+        if (nullptr != filename)
         {
 #if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005

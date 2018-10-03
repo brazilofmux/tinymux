@@ -55,7 +55,7 @@ static PCACHE *pcache_head;
 void pcache_init(void)
 {
     pool_init(POOL_PCACHE, sizeof(PCACHE));
-    pcache_head = NULL;
+    pcache_head = nullptr;
 }
 
 /*! \brief Updates player cache items from the database.
@@ -180,7 +180,7 @@ void pcache_reload(dbref player)
 void pcache_trim(void)
 {
     PCACHE *pp = pcache_head;
-    PCACHE *pplast = NULL;
+    PCACHE *pplast = nullptr;
     while (pp)
     {
         PCACHE *ppnext = pp->next;

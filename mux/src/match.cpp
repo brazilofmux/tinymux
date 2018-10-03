@@ -122,7 +122,7 @@ static UTF8 *munge_space_for_match(const UTF8 *name, size_t n)
     size_t i = 0;
     UTF8 *q = buffer;
 
-    if (NULL != name)
+    if (nullptr != name)
     {
         // Remove Initial spaces.
         //
@@ -188,7 +188,7 @@ void match_player(void)
 //
 static dbref absolute_named_reference(UTF8 *name)
 {
-    if (  NULL == name
+    if (  nullptr == name
        || '\0' == name[0])
     {
         return NOTHING;
@@ -209,7 +209,7 @@ static dbref absolute_named_reference(UTF8 *name)
         pReferenceName, nReferenceName, &mudstate.reference_htab);
     free_lbuf(pReferenceName);
 
-    if (  NULL != result
+    if (  nullptr != result
        && Good_obj(result->target))
     {
         return result->target;

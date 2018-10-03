@@ -299,7 +299,7 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if ((key == 0) || (key & TWARP_QUEUE))
     {
-        do_queue(executor, caller, enactor, 0, QUEUE_WARP, arg, NULL, 0);
+        do_queue(executor, caller, enactor, 0, QUEUE_WARP, arg, nullptr, 0);
     }
 
     // Once these are adjusted, we need to Cancel and reschedule the task.
@@ -355,7 +355,7 @@ CTaskHeap::~CTaskHeap(void)
         {
             delete pTask;
         }
-        m_pHeap[m_nCurrent] = NULL;
+        m_pHeap[m_nCurrent] = nullptr;
     }
     if (m_pHeap)
     {
@@ -385,7 +385,7 @@ bool CTaskHeap::Grow(void)
     // Grow the heap.
     //
     int n = GrowFiftyPercent(m_nAllocated, INITIAL_TASKS, INT_MAX);
-    PTASK_RECORD *p = NULL;
+    PTASK_RECORD *p = nullptr;
     try
     {
         p = new PTASK_RECORD[n];
@@ -419,7 +419,7 @@ void CTaskHeap::Shrink(void)
         return;
     }
 
-    PTASK_RECORD *p = NULL;
+    PTASK_RECORD *p = nullptr;
     try
     {
         p = new PTASK_RECORD[n];
@@ -445,7 +445,7 @@ PTASK_RECORD CTaskHeap::PeekAtTopmost(void)
 {
     if (m_nCurrent <= 0)
     {
-        return NULL;
+        return nullptr;
     }
     return m_pHeap[0];
 }
@@ -464,7 +464,7 @@ void CTaskHeap::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
            && p->arg_voidptr == arg_voidptr
            && p->arg_Integer == arg_Integer)
         {
-            p->fpTask = NULL;
+            p->fpTask = nullptr;
         }
     }
 }
@@ -559,7 +559,7 @@ void CScheduler::ReadyTasks(const CLinearTimeAbsolute& ltaNow)
         pTask = m_WhenHeap.RemoveTopmost(CompareWhen);
         if (pTask)
         {
-            if (  NULL == pTask->fpTask
+            if (  nullptr == pTask->fpTask
                || !m_PriorityHeap.Insert(pTask, ComparePriority))
             {
                 delete pTask;
@@ -701,7 +701,7 @@ void CTaskHeap::SiftUp(int child, SCHCMP *pfCompare)
 
 PTASK_RECORD CTaskHeap::Remove(int iNode, SCHCMP *pfCompare)
 {
-    if (iNode < 0 || m_nCurrent <= iNode) return NULL;
+    if (iNode < 0 || m_nCurrent <= iNode) return nullptr;
 
     PTASK_RECORD pTask = m_pHeap[iNode];
 

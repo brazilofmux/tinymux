@@ -195,14 +195,14 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         if (bCheck)
         {
-            reg_ref **preserve = NULL;
+            reg_ref **preserve = nullptr;
             preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_global_regs(preserve);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
             mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
                 AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
-                NULL, 0);
+                nullptr, 0);
             *bp = '\0';
 
             restore_global_regs(preserve);
@@ -275,7 +275,7 @@ bool eval_boolexp_atr(dbref player, dbref thing, dbref from, UTF8 *key)
     bool ret_value;
 
     BOOLEXP *b = parse_boolexp(player, key, true);
-    if (b == NULL)
+    if (b == nullptr)
     {
         ret_value = true;
     }
@@ -388,7 +388,7 @@ static BOOLEXP *parse_boolexp_L(void)
     UTF8    *buf;
     MSTATE  mstate;
 
-    buf = NULL;
+    buf = nullptr;
     skip_whitespace();
 
     switch (*parsebuf)
@@ -429,7 +429,7 @@ static BOOLEXP *parse_boolexp_L(void)
 
         // Check for an attribute.
         //
-        if ((b = test_atr(buf)) != NULL)
+        if ((b = test_atr(buf)) != nullptr)
         {
             free_lbuf(buf);
             return (b);
@@ -697,7 +697,7 @@ static BOOLEXP *parse_boolexp_E(void)
 
 BOOLEXP *parse_boolexp(dbref player, const UTF8 *buf, bool internal)
 {
-    if (  NULL == buf
+    if (  nullptr == buf
        || '\0' == buf[0])
     {
         return TRUE_BOOLEXP;

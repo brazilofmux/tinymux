@@ -3143,7 +3143,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
         {
             if (csNext != csPrev)
             {
-                UTF8 *pTransition = NULL;
+                UTF8 *pTransition = nullptr;
                 size_t nTransition;
                 pTransition = ColorTransitionANSI( csClient, csNext,
                                                    &nTransition, fNoBleed, fColor256);
@@ -3190,13 +3190,13 @@ UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
     static UTF8 aBuffer[LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
 
-    if (NULL == pString)
+    if (nullptr == pString)
     {
-        if (NULL != pnBytes)
+        if (nullptr != pnBytes)
         {
             *pnBytes = 0;
         }
-        if (NULL != pnPoints)
+        if (nullptr != pnPoints)
         {
             *pnPoints = 0;
         }
@@ -3215,11 +3215,11 @@ UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
         pString = utf8_NextCodePoint(pString);
     }
     *pBuffer = '\0';
-    if (NULL != pnBytes)
+    if (nullptr != pnBytes)
     {
         *pnBytes = pBuffer - aBuffer;
     }
-    if (NULL != pnPoints)
+    if (nullptr != pnPoints)
     {
         *pnPoints = nPoints;
     }
@@ -3240,7 +3240,7 @@ static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
     { 1, T(" ")  },  // 1
     { 2, T("%t") },  // 2
     { 2, T("%r") },  // 3
-    { 0,         NULL },  // 4
+    { 0, nullptr },  // 4
     { 2, T("%b") },  // 5
     { 2, T("%%") },  // 6
     { 2, T("%(") },  // 7
@@ -3511,7 +3511,7 @@ UTF8 *grabto(UTF8 **str, UTF8 targ)
     UTF8 *savec, *cp;
 
     if (!str || !*str || !**str)
-        return NULL;
+        return nullptr;
 
     savec = cp = *str;
     while (*cp && *cp != targ)
@@ -3657,7 +3657,7 @@ UTF8 *replace_string(const UTF8 *old, const UTF8 *new0, const UTF8 *s)
 {
     if (!s)
     {
-        return NULL;
+        return nullptr;
     }
     size_t olen = strlen((char *)old);
     UTF8 *result = alloc_lbuf("replace_string");
@@ -3720,7 +3720,7 @@ UTF8 *replace_tokens
 {
     if (!s)
     {
-        return NULL;
+        return nullptr;
     }
     UTF8 *result = alloc_lbuf("replace_tokens");
     UTF8 *r = result;
@@ -3849,7 +3849,7 @@ UTF8 *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer)
 
 void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer)
 {
-    if (src == NULL) return;
+    if (src == nullptr) return;
 
     UTF8 *tp = *bufp;
     UTF8 *maxtp = buff + nSizeOfBuffer;
@@ -3862,7 +3862,7 @@ void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffe
 
 void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 {
-    if (src == NULL)
+    if (src == nullptr)
     {
         return;
     }
@@ -3909,7 +3909,7 @@ void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
 {
     size_t nLen;
     size_t nLeft;
-    if (  NULL == src
+    if (  nullptr == src
        || UTF8_CONTINUE <= (nLen = utf8_FirstByte[*src])
        || (nLeft = LBUF_SIZE - (*bufc - buff) - 1) < nLen)
     {
@@ -4108,7 +4108,7 @@ UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t *pnString)
         UTF32 ch = ConvertFromUTF8(pString);
         if (UNI_EOF == ch)
         {
-            return NULL;
+            return nullptr;
         }
 
         UTF16 *q = ConvertToUTF16(ch);
@@ -4171,7 +4171,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                         // The segment [p,r) should contain one code.
                         //
                         size_t n = r - p;
-                        const UTF8 *s = NULL;
+                        const UTF8 *s = nullptr;
                         switch (n)
                         {
                         case 1:
@@ -4219,7 +4219,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                             break;
                         }
 
-                        if (NULL != s)
+                        if (nullptr != s)
                         {
                             utf8_safe_chr(s, aBuffer, &pBuffer);
                         }
@@ -4255,7 +4255,7 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 //
 void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
 {
-    if (  NULL == src
+    if (  nullptr == src
        || 0 == nSizeOfBuffer)
     {
         return;
@@ -4348,7 +4348,7 @@ void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl)
     //
     memset(tts->aControl, 0, sizeof(tts->aControl));
 
-    // The NULL character is always a control character.
+    // The '\0' character is always a control character.
     //
     tts->aControl[0] = 1;
 
@@ -4366,12 +4366,12 @@ UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
     *pnLen = 0;
     if (!tts)
     {
-        return NULL;
+        return nullptr;
     }
     UTF8 *p = tts->pString;
     if (!p)
     {
-        return NULL;
+        return nullptr;
     }
 
     // Skip over leading control characters except for the NUL character.
@@ -4419,7 +4419,7 @@ UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -4444,13 +4444,13 @@ mux_field StripTabsAndTruncate
 {
     mux_field  fldOutput(0, 0);
 
-    if (  NULL == pBuffer
-       || NULL == pString
+    if (  nullptr == pBuffer
+       || nullptr == pString
        || 0 == nLength
        || 0 == nWidth0
        || '\0' == pString[0])
     {
-        if (  NULL != pBuffer
+        if (  nullptr != pBuffer
            && 0 < nLength)
         {
             pBuffer[0] = '\0';
@@ -4469,7 +4469,7 @@ mux_field StripTabsAndTruncate
 
     mux_field  fldTransition(0, 0);
     mux_field  fldNormal(0, 0);
-    const UTF8 *pTransition = NULL, *pNormal = NULL;
+    const UTF8 *pTransition = nullptr, *pNormal = nullptr;
     size_t nNormalBytes = 0, nTransition = 0;
     ColorState csCurrent = CS_NORMAL, csNext = CS_NORMAL;
 
@@ -4481,7 +4481,7 @@ mux_field StripTabsAndTruncate
         {
             csNext = UpdateColorState(csNext, iCode);
         }
-        else if (NULL == strchr("\r\n\t", pString[curPos.m_byte]))
+        else if (nullptr == strchr("\r\n\t", pString[curPos.m_byte]))
         {
             mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
             if (csCurrent != csNext)
@@ -4573,12 +4573,12 @@ size_t TruncateToBuffer
 {
     size_t nOutput = 0;
 
-    if (  NULL == pBuffer
-       || NULL == pString
+    if (  nullptr == pBuffer
+       || nullptr == pString
        || 0 == nBuffer
        || '\0' == pString[0])
     {
-        if (NULL != pBuffer)
+        if (nullptr != pBuffer)
         {
             pBuffer[0] = '\0';
         }
@@ -4617,7 +4617,7 @@ size_t TruncateToBuffer
         for (;;)
         {
             const UTF8 *pEF, *pF3;
-            if (NULL != (pEF = (UTF8 *)strchr((char *)p, '\xEF')))
+            if (nullptr != (pEF = (UTF8 *)strchr((char *)p, '\xEF')))
             {
                 nTextRun += pEF - p;
                 p = pEF;
@@ -4628,7 +4628,7 @@ size_t TruncateToBuffer
                 nTextRun += UTF8_SIZE3;
                 p += UTF8_SIZE3;
             }
-            else if (NULL != (pF3 = (UTF8 *)strchr((char *)p, '\xF3')))
+            else if (nullptr != (pF3 = (UTF8 *)strchr((char *)p, '\xF3')))
             {
                 nTextRun += pF3 - p;
                 p = pF3;
@@ -4717,7 +4717,7 @@ size_t TruncateToBuffer
 mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                     mux_field fldOutput)
 {
-    if (NULL == pBuffer)
+    if (nullptr == pBuffer)
     {
         return fldMin;
     }
@@ -4929,7 +4929,7 @@ UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
         size_t m;
         bool bXor;
         const string_desc *qDesc = mux_tolower(a, bXor);
-        if (NULL == qDesc)
+        if (nullptr == qDesc)
         {
             m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
@@ -4985,7 +4985,7 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
         size_t m;
         bool bXor;
         const string_desc *qDesc = mux_toupper(a, bXor);
-        if (NULL == qDesc)
+        if (nullptr == qDesc)
         {
             m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
@@ -5042,7 +5042,7 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
         size_t m;
         bool bXor;
         const string_desc *qDesc = mux_foldmatch(a, bXor);
-        if (NULL == qDesc)
+        if (nullptr == qDesc)
         {
             m = utf8_FirstByte[*a];
             if (LBUF_SIZE-1 < n + m)
@@ -5095,7 +5095,7 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
 //
 size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va)
 {
-    if (  NULL == pBuffer
+    if (  nullptr == pBuffer
        || nBuffer < 1)
     {
        return 0;
@@ -5110,7 +5110,7 @@ size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t n
     size_t iBuffer = 0;
     size_t ncpFmt;
     size_t iFmt = 0;
-    if (  NULL != pFmt
+    if (  nullptr != pFmt
        && utf8_strlen(pFmt, ncpFmt))
     {
         static UTF8 Buff[I64BUF_SIZE];
@@ -5490,7 +5490,7 @@ void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __i
 
 void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...)
 {
-    if (NULL != fp)
+    if (nullptr != fp)
     {
         UTF8 Buffer[MBUF_SIZE];
 
@@ -5751,7 +5751,7 @@ CF_HAND(cf_art_rule)
 
     const char *errptr;
     int erroffset;
-    pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, NULL);
+    pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, nullptr);
     if (!reNewRegexp)
     {
         cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99:."),
@@ -5763,7 +5763,7 @@ CF_HAND(cf_art_rule)
 
     ArtRuleset** arRules = (ArtRuleset **) vp;
 
-    ArtRuleset* arNewRule = NULL;
+    ArtRuleset* arNewRule = nullptr;
     try
     {
         arNewRule = new ArtRuleset;
@@ -5773,7 +5773,7 @@ CF_HAND(cf_art_rule)
         ; // Nothing.
     }
 
-    if (NULL != arNewRule)
+    if (nullptr != arNewRule)
     {
         // Push new rule at head of list.
         //
@@ -5810,7 +5810,7 @@ mux_string::mux_string(void)
     m_iLast = CursorMin;
     m_autf[0] = '\0';
     m_ncs = 0;
-    m_pcs = NULL;
+    m_pcs = nullptr;
 }
 
 /*! \brief Constructs mux_string object.
@@ -5826,7 +5826,7 @@ mux_string::mux_string(const mux_string &sStr)
     m_iLast = CursorMin;
     m_autf[0] = '\0';
     m_ncs = 0;
-    m_pcs = NULL;
+    m_pcs = nullptr;
     import(sStr);
 }
 
@@ -5844,7 +5844,7 @@ mux_string::mux_string(const UTF8 *pStr)
     m_iLast = CursorMin;
     m_autf[0] = '\0';
     m_ncs = 0;
-    m_pcs = NULL;
+    m_pcs = nullptr;
     import(pStr);
 }
 
@@ -5881,14 +5881,14 @@ void mux_string::Validate(void) const
     //
     mux_assert(m_ncs <= LBUF_SIZE-1);
 
-    // When m_pcs is NULL, m_ncs must be 0, and this is equivalent to every
-    // code point having CS_NORMAL color.  When m_pcs is not NULL, m_ncs
+    // When m_pcs is nullptr, m_ncs must be 0, and this is equivalent to every
+    // code point having CS_NORMAL color.  When m_pcs is not nullptr, m_ncs
     // must be between 1 and LBUF_SIZE-1, inclusively, and it must be large
     // enough to contain colors for every code point.
     //
-    mux_assert(  ( NULL == m_pcs
+    mux_assert(  ( nullptr == m_pcs
                  && 0 == m_ncs)
-              || ( NULL != m_pcs
+              || ( nullptr != m_pcs
                  && 1 <= m_ncs
                  && m_ncs <= LBUF_SIZE-1
                  && m_iLast.m_point <= m_ncs));
@@ -5933,7 +5933,7 @@ void mux_string::Validate(void) const
     mux_assert(nbytes == m_iLast.m_byte);
     mux_assert(npoints == m_iLast.m_point);
 
-    if (NULL != m_pcs)
+    if (nullptr != m_pcs)
     {
         // Every ColorState must be valid.
         //
@@ -6025,7 +6025,7 @@ void mux_string::append(const mux_string &sStr, mux_cursor iStart, mux_cursor iE
 
 void mux_string::append(const UTF8 *pStr)
 {
-    if (  NULL == pStr
+    if (  nullptr == pStr
        || '\0' == *pStr)
     {
         return;
@@ -6055,7 +6055,7 @@ void mux_string::append(const UTF8 *pStr)
 
 void mux_string::append(const UTF8 *pStr, size_t nLen)
 {
-    if (  NULL == pStr
+    if (  nullptr == pStr
        || '\0' == *pStr)
     {
         return;
@@ -6354,7 +6354,7 @@ void mux_string::encode_Html(void)
     mux_string *sTo = new mux_string;
     while (iPos < m_iLast)
     {
-        const UTF8 *pTo = NULL;
+        const UTF8 *pTo = nullptr;
         switch (m_autf[iPos.m_byte])
         {
         case '&':
@@ -6374,10 +6374,10 @@ void mux_string::encode_Html(void)
             break;
         }
 
-        if (NULL != pTo)
+        if (nullptr != pTo)
         {
             sTo->import(pTo);
-            if (NULL != m_pcs)
+            if (nullptr != m_pcs)
             {
                 ColorState cs = m_pcs[iPos.m_point];
                 sTo->realloc_m_pcs(sTo->m_iLast.m_point);
@@ -6408,7 +6408,7 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 {
     if (m_iLast.m_byte <= iFirst)
     {
-        if (NULL != pBuffer)
+        if (nullptr != pBuffer)
         {
             pBuffer[0] = '\0';
         }
@@ -6419,14 +6419,14 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 
     if (UTF8_CONTINUE <= nBytes)
     {
-        if (NULL != pBuffer)
+        if (nullptr != pBuffer)
         {
             pBuffer[0] = '\0';
         }
         return 0;
     }
 
-    if (NULL != pBuffer)
+    if (nullptr != pBuffer)
     {
         LBUF_OFFSET i;
         for (i = 0; i < nBytes; i++)
@@ -6467,7 +6467,7 @@ long mux_string::export_Long(void) const
 /*! \brief Generates colored string from internal form.
  *
  * \param buff      Pointer to beginning of lbuf.
- * \param bufc      Pointer to current position. Defaults to NULL.
+ * \param bufc      Pointer to current position. Defaults to nullptr.
  * \param iStart    String position to begin copying from. Defaults to (0, 0).
  * \param iEnd      Last string position to copy. Defaults to (LBUF_SIZE-1, LBUF_SIZE-1).
  * \param nBytesMax Size of buffer we're outputting into.
@@ -6521,7 +6521,7 @@ LBUF_OFFSET mux_string::export_TextColor
         static_cast<size_t>(nBytesWanted + (COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH * nPointsWanted) + COLOR_MAXIMUM_BINARY_NORMAL + 1));
     mux_cursor iPos = iStart, iCopy = iStart;
     size_t nTransition = 0;
-    const UTF8 *pTransition = NULL;
+    const UTF8 *pTransition = nullptr;
     ColorState csPrev = CS_NORMAL;
     LBUF_OFFSET nCopy = 0, nDone = 0;
 
@@ -6659,7 +6659,7 @@ UTF8 *mux_string::export_TextConverted
     ColorState csClient = (fNoBleed)?CS_FG_WHITE:CS_NORMAL;
     ColorState csPrev = CS_NORMAL;
     ColorState csCurrent = CS_NORMAL;
-    UTF8 *pTransition = NULL;
+    UTF8 *pTransition = nullptr;
 
     bool bPlentyOfRoom = (m_iLast.m_byte + (COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH * m_ncs) + nNormal + 1) < sizeof(Buffer);
 
@@ -7166,7 +7166,7 @@ void mux_string::export_TextHtml
 /*! \brief Outputs ANSI-stripped string from internal form.
  *
  * \param buff     Pointer to beginning of lbuf.
- * \param bufc     Pointer to current position. Defaults to NULL.
+ * \param bufc     Pointer to current position. Defaults to nullptr.
  * \param nStart   String position to begin copying from. Defaults to 0.
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into.
@@ -7303,7 +7303,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
 void mux_string::import(const UTF8 *pStr)
 {
     m_iLast = CursorMin;
-    if (  NULL == pStr
+    if (  nullptr == pStr
        || '\0' == *pStr)
     {
         m_autf[m_iLast.m_byte] = '\0';
@@ -7328,7 +7328,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
 {
     m_iLast = CursorMin;
 
-    if (  NULL == pStr
+    if (  nullptr == pStr
        || '\0' == *pStr
        || 0 == nLen)
     {
@@ -7439,7 +7439,7 @@ void mux_string::prepend(const UTF8 *pStr, size_t n)
 /*! \brief Resizes or deletes the m_pcs array if necessary.
  *
  * If asked to resize the array to 0, this method will delete the
- * array and set m_pcs to NULL.  Otherwise when this method returns
+ * array and set m_pcs to nullptr.  Otherwise when this method returns
  * the m_pcs array will exist and have at least the required size.
  * Any color states that were already initialized and would fit within
  * the resulting array will be preserved.
@@ -7454,7 +7454,7 @@ void mux_string::realloc_m_pcs(size_t ncs)
        && 0 != m_ncs)
     {
         delete [] m_pcs;
-        m_pcs = NULL;
+        m_pcs = nullptr;
         m_ncs = 0;
     }
     else if (m_ncs < ncs)
@@ -7465,7 +7465,7 @@ void mux_string::realloc_m_pcs(size_t ncs)
         ncs++;
 
         ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
+        m_pcs = nullptr;
         try
         {
             m_pcs = new ColorState[ncs];
@@ -7828,7 +7828,7 @@ void mux_string::strip(const UTF8 *pStripSet, mux_cursor iStart, mux_cursor iEnd
 {
     static bool strip_table[UCHAR_MAX+1];
 
-    if (  NULL == pStripSet
+    if (  nullptr == pStripSet
        || '\0' == pStripSet[0]
        || m_iLast <= iStart
        || iEnd <= iStart)
@@ -7980,7 +7980,7 @@ void mux_string::transform
             {
                 size_t n = utf8_FirstByte[m_autf[i.m_byte]];
                 UTF8 *p = static_cast<UTF8*>(hashfindLEN(&m_autf[i.m_byte], n, &mudstate.scratch_htab));
-                if (  NULL != p
+                if (  nullptr != p
                    && !replace_Point(p, i))
                 {
                     break;
@@ -8068,7 +8068,7 @@ void mux_string::trim(const UTF8 ch, bool bLeft, bool bRight)
 void mux_string::trim(const UTF8 *p, bool bLeft, bool bRight)
 {
     if (  0 == m_iLast.m_byte
-       || NULL == p
+       || nullptr == p
        || '\0' == p[0]
        || (  !bLeft
           && !bRight ))
@@ -8091,7 +8091,7 @@ void mux_string::trim(const UTF8 *p, bool bLeft, bool bRight)
 void mux_string::trim(const UTF8 *p, size_t n, bool bLeft, bool bRight)
 {
     if (  CursorMin == m_iLast
-       || NULL == p
+       || nullptr == p
        || 0 == n
        || m_iLast.m_byte < n
        || (  !bLeft
@@ -8161,14 +8161,14 @@ void mux_string::truncate(mux_cursor iEnd)
 
 void mux_string::UpperCase(void)
 {
-    mux_string *sTo = NULL;
+    mux_string *sTo = nullptr;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
 
         bool bXor;
         const string_desc *qDesc = mux_toupper(p, bXor);
-        if (NULL != qDesc)
+        if (nullptr != qDesc)
         {
             size_t m = qDesc->n_bytes;
             if (bXor)
@@ -8188,7 +8188,7 @@ void mux_string::UpperCase(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (NULL == sTo)
+                if (nullptr == sTo)
                 {
                     try
                     {
@@ -8199,7 +8199,7 @@ void mux_string::UpperCase(void)
                         ; // Nothing.
                     }
                 }
-                if (NULL != sTo)
+                if (nullptr != sTo)
                 {
                     mux_cursor len;
                     len.m_byte = utf8_FirstByte[*p];
@@ -8211,19 +8211,19 @@ void mux_string::UpperCase(void)
         }
     }
     delete sTo;
-    sTo = NULL;
+    sTo = nullptr;
 }
 
 void mux_string::LowerCase(void)
 {
-    mux_string *sTo = NULL;
+    mux_string *sTo = nullptr;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
 
         bool bXor;
         const string_desc *qDesc = mux_tolower(p, bXor);
-        if (NULL != qDesc)
+        if (nullptr != qDesc)
         {
             size_t m = qDesc->n_bytes;
             if (bXor)
@@ -8243,7 +8243,7 @@ void mux_string::LowerCase(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (NULL == sTo)
+                if (nullptr == sTo)
                 {
                     try
                     {
@@ -8254,7 +8254,7 @@ void mux_string::LowerCase(void)
                         ; // Nothing.
                     }
                 }
-                if (NULL != sTo)
+                if (nullptr != sTo)
                 {
                     mux_cursor len;
                     len.m_byte = utf8_FirstByte[*p];
@@ -8266,12 +8266,12 @@ void mux_string::LowerCase(void)
         }
     }
     delete sTo;
-    sTo = NULL;
+    sTo = nullptr;
 }
 
 void mux_string::UpperCaseFirst(void)
 {
-    mux_string *sTo = NULL;
+    mux_string *sTo = nullptr;
     mux_cursor i = CursorMin;
     if (i < m_iLast)
     {
@@ -8279,7 +8279,7 @@ void mux_string::UpperCaseFirst(void)
 
         bool bXor;
         const string_desc *qDesc = mux_totitle(p, bXor);
-        if (NULL != qDesc)
+        if (nullptr != qDesc)
         {
             size_t m = qDesc->n_bytes;
             if (bXor)
@@ -8299,7 +8299,7 @@ void mux_string::UpperCaseFirst(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (NULL == sTo)
+                if (nullptr == sTo)
                 {
                     try
                     {
@@ -8310,7 +8310,7 @@ void mux_string::UpperCaseFirst(void)
                         ; // Nothing.
                     }
                 }
-                if (NULL != sTo)
+                if (nullptr != sTo)
                 {
                     mux_cursor len;
                     len.m_byte = utf8_FirstByte[*p];
@@ -8322,7 +8322,7 @@ void mux_string::UpperCaseFirst(void)
         }
     }
     delete sTo;
-    sTo = NULL;
+    sTo = nullptr;
 }
 
 void mux_string::FoldForMatching(void)
@@ -8333,7 +8333,7 @@ void mux_string::FoldForMatching(void)
 
         bool bXor;
         const string_desc *qDesc = mux_foldmatch(p, bXor);
-        if (NULL != qDesc)
+        if (nullptr != qDesc)
         {
             size_t m = qDesc->n_bytes;
             if (bXor)
@@ -8432,7 +8432,7 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim, bool bFavorEmptyList)
         bSucceeded = m_s->search(pDelimNoColor, &iPos, iStart);
     }
     MEMFREE(pDelimNoColor);
-    pDelimNoColor = NULL;
+    pDelimNoColor = nullptr;
 
     if (  !fSpaceDelim
        || m_s->m_iLast != iStart)

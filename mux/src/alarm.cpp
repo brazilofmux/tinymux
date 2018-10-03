@@ -227,7 +227,7 @@ void mux_alarm::sleep(CLinearTimeDelta sleep_period)
     {
         // Restore and re-enabled timer.
         //
-        setitimer(ITIMER_PROF, &oit, NULL);
+        setitimer(ITIMER_PROF, &oit, nullptr);
         alarm_set_ = true;
     }
 #endif
@@ -264,7 +264,7 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
     alarm_period.ReturnTimeValueStruct(&it.it_value);
     it.it_interval.tv_sec = 0;
     it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, NULL);
+    setitimer(ITIMER_PROF, &it, nullptr);
     alarm_set_ = true;
     alarmed  = false;
 #endif
@@ -287,7 +287,7 @@ void mux_alarm::clear()
     it.it_value.tv_usec = 0;
     it.it_interval.tv_sec = 0;
     it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, NULL);
+    setitimer(ITIMER_PROF, &it, nullptr);
     alarm_set_ = false;
     alarmed  = false;
 #endif

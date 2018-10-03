@@ -64,21 +64,21 @@ static struct
  * created with hashaddLEN() to find and return the corresponding 'Data' part
  * of a (Key, Data) pair, if it exists.
  *
- * NULL is returned if the request is not valid or if the (Key, Data) pair
+ * nullptr is returned if the request is not valid or if the (Key, Data) pair
  * is not found.
  *
  * \param pKey     Pointer to Key to find.
  * \param nKey     Size (in bytes) of the above Key.
  * \param htab     Hash Table.
- * \return         pData or NULL.
+ * \return         pData or nullptr.
  */
 
 void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
 {
-    if (  pKey == NULL
+    if (  pKey == nullptr
        || nKey <= 0)
     {
-        return NULL;
+        return nullptr;
     }
 
     UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
@@ -98,7 +98,7 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
         }
         iDir = htab->FindNextKey(iDir, nHash);
     }
-    return NULL;
+    return nullptr;
 }
 
 /*! \brief Add a new (Key, Data) pair to a hash table.
@@ -122,7 +122,7 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
 
 bool hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 {
-    if (  pKey == NULL
+    if (  pKey == nullptr
        || nKey <= 0)
     {
         return false;
@@ -152,7 +152,7 @@ bool hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 
 void hashdeleteLEN(const void *pKey, size_t nKey, CHashTable *htab)
 {
-    if (  pKey == NULL
+    if (  pKey == nullptr
        || nKey <= 0)
     {
         return;
@@ -197,7 +197,7 @@ void hashflush(CHashTable *htab)
 
 bool hashreplLEN(const void *str, size_t nStr, void *pData, CHashTable *htab)
 {
-    if (  str == NULL
+    if (  str == nullptr
        || nStr <= 0)
     {
         return false;
@@ -251,7 +251,7 @@ void *hash_firstentry(CHashTable *htab)
     {
         return htab_rec.pData;
     }
-    return NULL;
+    return nullptr;
 }
 
 void *hash_nextentry(CHashTable *htab)
@@ -262,7 +262,7 @@ void *hash_nextentry(CHashTable *htab)
     {
         return htab_rec.pData;
     }
-    return NULL;
+    return nullptr;
 }
 
 /*
@@ -280,8 +280,8 @@ void *hash_firstkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
         return htab_rec.pData;
     }
     *nKeyLength = 0;
-    *pKey = NULL;
-    return NULL;
+    *pKey = nullptr;
+    return nullptr;
 }
 
 void *hash_nextkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
@@ -295,8 +295,8 @@ void *hash_nextkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
         return htab_rec.pData;
     }
     *nKeyLength = 0;
-    *pKey = NULL;
-    return NULL;
+    *pKey = nullptr;
+    return nullptr;
 }
 
 /*
@@ -343,7 +343,7 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, const UTF8 *flagname)
             }
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /*

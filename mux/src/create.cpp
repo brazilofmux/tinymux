@@ -61,7 +61,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     {
         return;
     }
-    if (  NULL == direction
+    if (  nullptr == direction
        || '\0' == direction[0])
     {
         notify_quiet(player, T("Open where?"));
@@ -90,7 +90,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     s_Exits(loc, exit);
     local_data_create(exit);
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->data_create(exit);
         p = p->pNext;
@@ -153,7 +153,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
     else
     {
-        dest = NULL;
+        dest = nullptr;
     }
 
     dbref loc;
@@ -275,7 +275,7 @@ void do_link
     //
     if (!where || !*where)
     {
-        do_unlink(executor, caller, enactor, 0, key, what, NULL, 0);
+        do_unlink(executor, caller, enactor, 0, key, what, nullptr, 0);
         return;
     }
 
@@ -531,14 +531,14 @@ void do_parent
             UTF8* action = atr_get("do_parent.529", previous_parent, A_APARENT,
                 &aowner, &aflags);
 
-            if (  NULL != action
+            if (  nullptr != action
                && '\0' != action[0])
             {
                 mux_sprintf(child, SBUF_SIZE, T("#%d"), thing);
                 mux_sprintf(original_executor, SBUF_SIZE, T("#%d"), executor);
                 xargs[1] = removal;
 
-                did_it(previous_parent, previous_parent, 0, NULL, 0, NULL,
+                did_it(previous_parent, previous_parent, 0, nullptr, 0, nullptr,
                         A_APARENT, 0, xargs, xnargs);
             }
             free_lbuf(action);
@@ -551,14 +551,14 @@ void do_parent
             UTF8* action = atr_get("do_parent.550", parent, A_APARENT,
                 &aowner, &aflags);
 
-            if (  NULL != action
+            if (  nullptr != action
                && '\0' != action[0])
             {
                 mux_sprintf(child, SBUF_SIZE, T("#%d"), thing);
                 mux_sprintf(original_executor, SBUF_SIZE, T("#%d"), executor);
                 xargs[1] = addition;
 
-                did_it(parent, parent, 0, NULL, 0, NULL, A_APARENT, 0,
+                did_it(parent, parent, 0, nullptr, 0, nullptr, A_APARENT, 0,
                     xargs, xnargs);
             }
             free_lbuf(action);
@@ -606,7 +606,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     local_data_create(room);
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->data_create(room);
         p = p->pNext;
@@ -688,7 +688,7 @@ void do_create
     local_data_create(thing);
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->data_create(thing);
         p = p->pNext;
@@ -783,7 +783,7 @@ void do_clone
             cost = mudconf.createmin;
         if (cost > mudconf.createmax)
             cost = mudconf.createmax;
-        arg2 = NULL;
+        arg2 = nullptr;
     }
     else
     {
@@ -815,7 +815,7 @@ void do_clone
     //
     bool bValid = false;
     size_t nValidName;
-    UTF8 *pValidName = NULL;
+    UTF8 *pValidName = nullptr;
     switch (Typeof(thing))
     {
     case TYPE_THING:
@@ -867,7 +867,7 @@ void do_clone
 
     FLAGSET clearflags;
     TranslateFlags_Clone(clearflags.word, executor, key);
-    SetClearFlags(clone, clearflags.word, NULL);
+    SetClearFlags(clone, clearflags.word, nullptr);
 
     // Tell creator about it
     //
@@ -927,7 +927,7 @@ void do_clone
         {
             s_Parent(clone, Parent(thing));
         }
-        did_it(executor, clone, 0, NULL, 0, NULL, A_ACLONE, 0, NULL, 0);
+        did_it(executor, clone, 0, nullptr, 0, nullptr, A_ACLONE, 0, nullptr, 0);
     }
     else
     {
@@ -942,7 +942,7 @@ void do_clone
     local_data_clone(clone, thing);
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->data_clone(clone, thing);
         p = p->pNext;

@@ -330,13 +330,13 @@ extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 #define DESC_SAFEITER_PLAYER(p,d,n) \
     for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab), \
-            n=((d!=NULL) ? d->hashnext : NULL); \
+            n=((d!=nullptr) ? d->hashnext : nullptr); \
          d; \
-         d=n,n=((n!=NULL) ? n->hashnext : NULL))
+         d=n,n=((n!=nullptr) ? n->hashnext : nullptr))
 #define DESC_SAFEITER_ALL(d,n) \
-    for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
+    for (d=descriptor_list,n=((d!=nullptr) ? d->next : nullptr); \
          d; \
-         d=n,n=((n!=NULL) ? n->next : NULL))
+         d=n,n=((n!=nullptr) ? n->next : nullptr))
 
 // From bsd.cpp.
 //

@@ -157,7 +157,7 @@ static POWERENT gen_powers[] =
     {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
 #endif // FIRANMUX
     {T("unkillable"),      POW_UNKILLABLE, 0, 0,   ph_wiz},
-    {(UTF8 *)NULL,              0,              0, 0,   0}
+    {(UTF8 *)nullptr,      0,              0, 0,   0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -303,7 +303,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
         else
         {
             POWERENT *fp = find_power(target, power);
-            if (fp == NULL)
+            if (fp == nullptr)
             {
                 notify(player, T("I don\xE2\x80\x99t understand that power."));
             }

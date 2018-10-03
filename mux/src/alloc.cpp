@@ -100,8 +100,8 @@ void pool_init(int poolnum, int poolsize)
     pools[poolnum].pool_alloc_size  = poolsize + sizeof(POOLHDR) + sizeof(POOLFTR);
     mux_assert(pools[poolnum].pool_client_size < pools[poolnum].pool_alloc_size);
     pools[poolnum].poolmagic = CRC32_ProcessInteger2(poolnum, poolsize);
-    pools[poolnum].free_head = NULL;
-    pools[poolnum].chain_head = NULL;
+    pools[poolnum].free_head = nullptr;
+    pools[poolnum].chain_head = nullptr;
     pools[poolnum].tot_alloc = 0;
     pools[poolnum].num_alloc = 0;
     pools[poolnum].max_alloc = 0;
@@ -175,9 +175,9 @@ static void pool_vfy
     const int line
 )
 {
-    POOLHDR *lastph = NULL;
+    POOLHDR *lastph = nullptr;
     size_t psize = pools[poolnum].pool_client_size;
-    for (POOLHDR *ph = pools[poolnum].chain_head; NULL != ph; lastph = ph, ph = ph->next)
+    for (POOLHDR *ph = pools[poolnum].chain_head; nullptr != ph; lastph = ph, ph = ph->next)
     {
         UTF8 *h = (UTF8 *)ph;
         h += sizeof(POOLHDR);
@@ -194,13 +194,13 @@ static void pool_vfy
             // can't continue the scan because the next pointer might
             // be trash too.
             //
-            if (NULL != lastph)
+            if (nullptr != lastph)
             {
-                lastph->next = NULL;
+                lastph->next = nullptr;
             }
             else
             {
-                pools[poolnum].chain_head = NULL;
+                pools[poolnum].chain_head = nullptr;
             }
 
             // It's not safe to continue.
@@ -269,13 +269,13 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
 
             // Start a new free list and record stats.
             //
-            pools[poolnum].free_head = NULL;
+            pools[poolnum].free_head = nullptr;
             pools[poolnum].num_lost += (pools[poolnum].tot_alloc
                                      -  pools[poolnum].num_alloc);
             pools[poolnum].tot_alloc = pools[poolnum].num_alloc;
         }
 
-        ph = NULL;
+        ph = nullptr;
         try
         {
             ph = reinterpret_cast<POOLHDR *>(new char[pools[poolnum].pool_alloc_size]);
@@ -285,10 +285,10 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
             ; // Nothing.
         }
 
-        if (NULL == ph)
+        if (nullptr == ph)
         {
             ISOUTOFMEMORY(ph);
-            return NULL;
+            return nullptr;
         }
 
         p = (UTF8 *)(ph + 1);
@@ -297,7 +297,7 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
         // Initialize.
         //
         ph->next = pools[poolnum].chain_head;
-        ph->nxtfree = NULL;
+        ph->nxtfree = nullptr;
         ph->magicnum = pools[poolnum].poolmagic;
         ph->pool_size = pools[poolnum].pool_client_size;
         pf->magicnum = pools[poolnum].poolmagic;
@@ -369,13 +369,13 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
 
             // Start a new free list and record stats.
             //
-            pools[POOL_LBUF].free_head = NULL;
+            pools[POOL_LBUF].free_head = nullptr;
             pools[POOL_LBUF].num_lost += (pools[POOL_LBUF].tot_alloc
                                      -  pools[POOL_LBUF].num_alloc);
             pools[POOL_LBUF].tot_alloc = pools[POOL_LBUF].num_alloc;
         }
 
-        ph = NULL;
+        ph = nullptr;
         try
         {
             ph = reinterpret_cast<POOLHDR *>(new char[LBUF_SIZE + sizeof(POOLHDR) + sizeof(POOLFTR)]);
@@ -385,10 +385,10 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
             ; // Nothing.
         }
 
-        if (NULL == ph)
+        if (nullptr == ph)
         {
             ISOUTOFMEMORY(ph);
-            return NULL;
+            return nullptr;
         }
 
         p = (UTF8 *)(ph + 1);
@@ -397,7 +397,7 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
         // Initialize.
         //
         ph->next = pools[POOL_LBUF].chain_head;
-        ph->nxtfree = NULL;
+        ph->nxtfree = nullptr;
         ph->magicnum = pools[POOL_LBUF].poolmagic;
         ph->pool_size = LBUF_SIZE;
         pf->magicnum = pools[POOL_LBUF].poolmagic;
@@ -433,7 +433,7 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
 
 void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int line)
 {
-    if (buf == NULL)
+    if (buf == nullptr)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
         log_printf(T("Attempt to free null pointer in %s line %d."), file, line);
@@ -509,7 +509,7 @@ void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int lin
 
 void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, const int line)
 {
-    if (buf == NULL)
+    if (buf == nullptr)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
         log_printf(T("Attempt to free_lbuf null pointer in %s line %d."), file, line);
@@ -591,7 +591,7 @@ static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
     POOLHDR *ph;
     int numfree = 0;
     notify(player, tprintf(T("----- %s -----"), text));
-    for (ph = pools[poolnum].chain_head; ph != NULL; ph = ph->next)
+    for (ph = pools[poolnum].chain_head; ph != nullptr; ph = ph->next)
     {
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
@@ -647,10 +647,10 @@ void pool_reset(void)
     int i;
     for (i = 0; i < NUM_POOLS; i++)
     {
-        POOLHDR *newchain = NULL;
+        POOLHDR *newchain = nullptr;
         POOLHDR *phnext;
         POOLHDR *ph;
-        for (ph = pools[i].chain_head; ph != NULL; ph = phnext)
+        for (ph = pools[i].chain_head; ph != nullptr; ph = phnext)
         {
             char *h = (char *)ph;
             phnext = ph->next;
@@ -660,17 +660,17 @@ void pool_reset(void)
             {
                 char *p = reinterpret_cast<char *>(ph);
                 delete [] p;
-                ph = NULL;
+                ph = nullptr;
             }
             else
             {
                 ph->next = newchain;
                 newchain = ph;
-                ph->nxtfree = NULL;
+                ph->nxtfree = nullptr;
             }
         }
         pools[i].chain_head = newchain;
-        pools[i].free_head = NULL;
+        pools[i].free_head = nullptr;
         pools[i].max_alloc = pools[i].num_alloc;
     }
 }

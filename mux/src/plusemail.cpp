@@ -362,7 +362,7 @@ static int mod_email_sock_readline(SOCKET sock, UTF8 *buffer, int maxlen)
 
     // Check for data before giving up.
     //
-    if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, NULL, NULL, &tv)))
+    if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, nullptr, nullptr, &tv)))
     {
         return 0;
     }
@@ -401,7 +401,7 @@ static int mod_email_sock_readline(SOCKET sock, UTF8 *buffer, int maxlen)
 
                 // Check for data before giving up.
                 //
-                if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, NULL, NULL, &tv)))
+                if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, nullptr, nullptr, &tv)))
                 {
                     done = true;
                 }
@@ -451,7 +451,7 @@ static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *so
     MUX_ADDRINFO *servinfo;
     if (0 == mux_getaddrinfo(conhostname, sPort, &hints, &servinfo))
     {
-        for (MUX_ADDRINFO *p = servinfo; NULL != p; p = p->ai_next)
+        for (MUX_ADDRINFO *p = servinfo; nullptr != p; p = p->ai_next)
         {
             cc = -2;
             SOCKET mysock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
@@ -549,7 +549,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     UTF8 *body = alloc_lbuf("mod_email_do_email.body");
     UTF8 *bodyptr = body;
     mux_exec(arg2, LBUF_SIZE-1, body, &bodyptr, executor, executor, executor,
-        EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, NULL, 0);
+        EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, nullptr, 0);
     *bodyptr = '\0';
 
     do

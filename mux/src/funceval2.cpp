@@ -103,7 +103,7 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -113,7 +113,7 @@ FUNCTION(fun_scramble)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -122,7 +122,7 @@ FUNCTION(fun_scramble)
 
     if (2 <= nPoints)
     {
-        mux_string *sOut = NULL;
+        mux_string *sOut = nullptr;
         try
         {
             sOut = new mux_string;
@@ -132,7 +132,7 @@ FUNCTION(fun_scramble)
             ; // Nothing.
         }
 
-        if (NULL == sOut)
+        if (nullptr == sOut)
         {
             delete sStr;
             return;
@@ -178,7 +178,7 @@ FUNCTION(fun_shuffle)
         return;
     }
 
-    mux_string *sIn = NULL;
+    mux_string *sIn = nullptr;
     try
     {
         sIn = new mux_string(fargs[0]);
@@ -188,12 +188,12 @@ FUNCTION(fun_shuffle)
         ; // Nothing.
     }
 
-    if (NULL == sIn)
+    if (nullptr == sIn)
     {
         return;
     }
 
-    mux_words *words = NULL;
+    mux_words *words = nullptr;
     try
     {
         words = new mux_words(*sIn);
@@ -203,14 +203,14 @@ FUNCTION(fun_shuffle)
         ; // Nothing.
     }
 
-    if (NULL == words)
+    if (nullptr == words)
     {
         delete sIn;
         return;
     }
 
     LBUF_OFFSET n = words->find_Words(sep.str);
-    mux_string *sOut = NULL;
+    mux_string *sOut = nullptr;
     try
     {
         sOut = new mux_string;
@@ -220,7 +220,7 @@ FUNCTION(fun_shuffle)
         ; // Nothing.
     }
 
-    if (NULL == sOut)
+    if (nullptr == sOut)
     {
         delete sIn;
         delete words;
@@ -274,8 +274,8 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr = new mux_string(s);
@@ -286,8 +286,8 @@ FUNCTION(fun_pickrand)
         ; // Nothing.
     }
 
-    if (  NULL != sStr
-       && NULL != words)
+    if (  nullptr != sStr
+       && nullptr != words)
     {
         INT32 n = static_cast<INT32>(words->find_Words(sep.str));
 
@@ -443,8 +443,8 @@ FUNCTION(fun_last)
         return;
     }
 
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -455,8 +455,8 @@ FUNCTION(fun_last)
         ; // Nothing.
     }
 
-    if (  NULL != sStr
-       && NULL != words)
+    if (  nullptr != sStr
+       && nullptr != words)
     {
         LBUF_OFFSET nWords = words->find_Words(sep.str);
         words->export_WordColor(nWords-1, buff, bufc);
@@ -537,7 +537,7 @@ FUNCTION(fun_lastcreate)
     UTF8* newobject_string = atr_get("fun_lastcreate.2998", target,
             A_NEWOBJS, &aowner, &aflags);
 
-    if (  NULL == newobject_string
+    if (  nullptr == newobject_string
        || '\0' == newobject_string[0])
     {
         safe_str(T("#-1"), buff, bufc);
@@ -551,7 +551,7 @@ FUNCTION(fun_lastcreate)
     int i;
     UTF8* ptr;
     for ( ptr = mux_strtok_parse(&tts), i = 0;
-          NULL != ptr && i < 5;
+          nullptr != ptr && i < 5;
           ptr = mux_strtok_parse(&tts), i++)
     {
         if (i == iObjectPosition)
@@ -715,7 +715,7 @@ FUNCTION(fun_mix)
         for (i = 0; i < lastn; i++)
         {
             os[i] = split_token(&cp[i], sep);
-            if (NULL == os[i])
+            if (nullptr == os[i])
             {
                 os[i] = T("");
             }
@@ -827,7 +827,7 @@ FUNCTION(fun_foreach)
 
     UTF8 cbuf[5] = {'\0', '\0', '\0', '\0', '\0'};
     const UTF8 *bp = cbuf;
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[1]);
@@ -837,7 +837,7 @@ FUNCTION(fun_foreach)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -965,8 +965,8 @@ FUNCTION(fun_munge)
         return;
     }
 
-    munge_htab_rec *htab = NULL;
-    UINT16 *tails = NULL;
+    munge_htab_rec *htab = nullptr;
+    UINT16 *tails = nullptr;
     try
     {
         htab = new munge_htab_rec[1 + 2 * nWords];
@@ -977,16 +977,16 @@ FUNCTION(fun_munge)
         ; // Nothing.
     }
 
-    if (  NULL == htab
-       || NULL == tails)
+    if (  nullptr == htab
+       || nullptr == tails)
     {
         free_lbuf(atext);
         free_lbuf(list1);
-        if (NULL != htab)
+        if (nullptr != htab)
         {
             delete [] htab;
         }
-        else if (NULL != tails)
+        else if (nullptr != tails)
         {
             delete [] tails;
         }
@@ -1004,7 +1004,7 @@ FUNCTION(fun_munge)
     UTF8 *p2 = trim_space_sep(fargs[2], sep);
     UTF8 *pKey, *pValue;
     for (pKey = split_token(&p1, sep), pValue = split_token(&p2, sep);
-         NULL != pKey && NULL != pValue;
+         nullptr != pKey && nullptr != pValue;
          pKey = split_token(&p1, sep), pValue = split_token(&p2, sep))
     {
         UINT32 nHash = munge_hash(pKey);
@@ -1029,8 +1029,8 @@ FUNCTION(fun_munge)
     }
     delete [] tails;
 
-    if (  NULL != pKey
-       || NULL != pValue)
+    if (  nullptr != pKey
+       || nullptr != pValue)
     {
         safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
         free_lbuf(atext);
@@ -1062,7 +1062,7 @@ FUNCTION(fun_munge)
     {
         UTF8 *result;
         for (result = split_token(&bp, sep);
-             NULL != result;
+             nullptr != result;
              result = split_token(&bp, sep))
         {
             UINT32 nHash = munge_hash(result);
@@ -1438,7 +1438,7 @@ FUNCTION(fun_unpack)
     int iRadix = 64;
     if (2 <= nfargs)
     {
-        if (  !is_integer(fargs[1], NULL)
+        if (  !is_integer(fargs[1], nullptr)
            || (iRadix = mux_atol(fargs[1])) < 2
            || 64 < iRadix)
         {
@@ -1475,8 +1475,8 @@ FUNCTION(fun_pack)
 
     // Validate the arguments are numeric.
     //
-    if (  !is_integer(fargs[0], NULL)
-       || (2 <= nfargs && !is_integer(fargs[1], NULL)))
+    if (  !is_integer(fargs[0], nullptr)
+       || (2 <= nfargs && !is_integer(fargs[1], nullptr)))
     {
         safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
@@ -1517,8 +1517,8 @@ FUNCTION(fun_baseconv)
 
     // Validate that input and output radix are integers.
     //
-    if (  !is_integer(fargs[1], NULL)
-       || !is_integer(fargs[2], NULL))
+    if (  !is_integer(fargs[1], nullptr)
+       || !is_integer(fargs[2], nullptr))
     {
         safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
@@ -1907,7 +1907,7 @@ static int stacksize(dbref doer)
 {
     int i;
     MUX_STACK *sp;
-    for (i = 0, sp = Stack(doer); sp != NULL; sp = sp->next, i++)
+    for (i = 0, sp = Stack(doer); sp != nullptr; sp = sp->next, i++)
     {
         // Nothing
         ;
@@ -1944,10 +1944,10 @@ FUNCTION(fun_lstack)
         safe_noperm(buff, bufc);
         return;
     }
-    for (sp = Stack(doer); sp != NULL; sp = sp->next)
+    for (sp = Stack(doer); sp != nullptr; sp = sp->next)
     {
         safe_str(sp->data, buff, bufc);
-        if (sp->next != NULL)
+        if (sp->next != nullptr)
         {
             safe_chr(' ', buff, bufc);
         }
@@ -1961,14 +1961,14 @@ void stack_clr(dbref obj)
     // Clear the stack.
     //
     MUX_STACK *sp, *next;
-    for (sp = Stack(obj); sp != NULL; sp = next)
+    for (sp = Stack(obj); sp != nullptr; sp = next)
     {
         next = sp->next;
         free_lbuf(sp->data);
         MEMFREE(sp);
-        sp = NULL;
+        sp = nullptr;
     }
-    s_Stack(obj, NULL);
+    s_Stack(obj, nullptr);
 }
 
 FUNCTION(fun_empty)
@@ -2085,7 +2085,7 @@ FUNCTION(fun_peek)
     sp = Stack(doer);
     while (count != pos)
     {
-        if (sp == NULL)
+        if (sp == nullptr)
         {
             return;
         }
@@ -2144,11 +2144,11 @@ FUNCTION(fun_pop)
     }
 
     MUX_STACK *sp = Stack(doer);
-    MUX_STACK *prev = NULL;
+    MUX_STACK *prev = nullptr;
     int count = 0;
     while (count != pos)
     {
-        if (sp == NULL)
+        if (sp == nullptr)
         {
             return;
         }
@@ -2163,14 +2163,14 @@ FUNCTION(fun_pop)
         s_Stack(doer, sp->next);
         free_lbuf(sp->data);
         MEMFREE(sp);
-        sp = NULL;
+        sp = nullptr;
     }
     else
     {
         prev->next = sp->next;
         free_lbuf(sp->data);
         MEMFREE(sp);
-        sp = NULL;
+        sp = nullptr;
     }
 }
 
@@ -2250,7 +2250,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
     int ovec[ovecsize];
 
     pcre *re = pcre_compile((char *)pattern, PCRE_UTF8|(cis ? PCRE_CASELESS : 0),
-        &errptr, &erroffset, NULL);
+        &errptr, &erroffset, nullptr);
     if (!re)
     {
         // Matching error.
@@ -2260,7 +2260,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         return;
     }
 
-    int matches = pcre_exec(re, NULL, (char *)search, static_cast<int>(strlen((char *)search)), 0, 0,
+    int matches = pcre_exec(re, nullptr, (char *)search, static_cast<int>(strlen((char *)search)), 0, 0,
         ovec, ovecsize);
     if (matches == 0)
     {
@@ -2356,7 +2356,7 @@ static void real_regrab(__in UTF8 *search, __in const UTF8 *pattern, __in const 
         return;
     }
     pcre *re;
-    pcre_extra *study = NULL;
+    pcre_extra *study = nullptr;
     const char *errptr;
     int erroffset;
     // To capture N substrings, you need space for 3(N+1) offsets in the
@@ -2366,7 +2366,7 @@ static void real_regrab(__in UTF8 *search, __in const UTF8 *pattern, __in const 
     int ovec[ovecsize];
 
     re = pcre_compile((char *)pattern, PCRE_UTF8|(cis ? PCRE_CASELESS : 0),
-        &errptr, &erroffset, NULL);
+        &errptr, &erroffset, nullptr);
     if (!re)
     {
         // Matching error.
@@ -2481,8 +2481,8 @@ CBitField::CBitField(unsigned int nMaximum_arg)
 {
     nMaximum = 0;
     nInts    = 0;
-    pInts    = NULL;
-    pMasks   = NULL;
+    pInts    = nullptr;
+    pMasks   = nullptr;
 
     nBitsPer = sizeof(UINT32)*8;
 
@@ -2574,11 +2574,11 @@ void CBitField::Resize(unsigned int nMaximum_arg)
 
 CBitField::~CBitField(void)
 {
-    pInts  = NULL;
+    pInts  = nullptr;
     if (pMasks)
     {
         MEMFREE(pMasks);
-        pMasks = NULL;
+        pMasks = nullptr;
     }
 }
 

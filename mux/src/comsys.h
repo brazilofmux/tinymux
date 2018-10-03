@@ -197,25 +197,25 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header);
 
 //! \brief Locate a channel structure by channel name
 //! \param channel - name of channel to locate
-//! @return struct channel pointer or NULL if not found
+//! @return struct channel pointer or nullptr if not found
 struct channel *select_channel(UTF8 *channel);
 
 //! \brief Locate player in the user list for the given channel
 //! \param ch - channel data to search
 //! \param player - dbref of the player to locate
-//! @return NULL if not found, or struct comuser pointer
+//! @return nullptr if not found, or struct comuser pointer
 struct comuser *select_user(struct channel *ch, dbref player);
 
 //! \brief Validate alias limits of 1-5 characters, no spaces, no ANSI
 //! \param pAlias - incoming alias
 //! \param nValidAlias - return size of the valid alias
 //! \param bValidAlias - is alias valid or not
-//! \return new alias data or NULL on failure
+//! \return new alias data or nullptr on failure
 UTF8 *MakeCanonicalComAlias(const UTF8 *pAlias, size_t *nValidAlias,
         bool *bValidAlias);
 
 //! \brief Allocate and initialize a new comsys_t structure
-//! \return initialized memory or NULL if allocation failed
+//! \return initialized memory or nullptr if allocation failed
 comsys_t *create_new_comsys();
 
 //! \brief Purge channels owned by player. Internal cleanup called from db.c

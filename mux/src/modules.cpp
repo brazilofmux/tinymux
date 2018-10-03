@@ -32,7 +32,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
     if (CID_Log == cid)
     {
-        CLogFactory *pLogFactory = NULL;
+        CLogFactory *pLogFactory = nullptr;
         try
         {
             pLogFactory = new CLogFactory;
@@ -42,7 +42,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
             ; // Nothing.
         }
 
-        if (NULL == pLogFactory)
+        if (nullptr == pLogFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -52,7 +52,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     }
     else if (CID_ServerEventsSource == cid)
     {
-        CServerEventsSourceFactory *pServerEventsSourceFactory = NULL;
+        CServerEventsSourceFactory *pServerEventsSourceFactory = nullptr;
         try
         {
             pServerEventsSourceFactory = new CServerEventsSourceFactory;
@@ -62,7 +62,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
             ; // Nothing.
         }
 
-        if (NULL == pServerEventsSourceFactory)
+        if (nullptr == pServerEventsSourceFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -72,7 +72,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     }
     else if (CID_StubSlaveProxy == cid)
     {
-        CStubSlaveProxyFactory *pStubSlaveProxyFactory = NULL;
+        CStubSlaveProxyFactory *pStubSlaveProxyFactory = nullptr;
         try
         {
             pStubSlaveProxyFactory = new CStubSlaveProxyFactory;
@@ -82,7 +82,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
             ; // Nothing.
         }
 
-        if (NULL == pStubSlaveProxyFactory)
+        if (nullptr == pStubSlaveProxyFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -92,7 +92,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     }
     else if (CID_QueryClient == cid)
     {
-        CQueryClientFactory *pQueryClientFactory = NULL;
+        CQueryClientFactory *pQueryClientFactory = nullptr;
         try
         {
             pQueryClientFactory = new CQueryClientFactory;
@@ -102,7 +102,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
             ; // Nothing.
         }
 
-        if (NULL == pQueryClientFactory)
+        if (nullptr == pQueryClientFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -112,7 +112,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     }
     else if (CID_Functions == cid)
     {
-        CFunctionsFactory *pFunctionsFactory = NULL;
+        CFunctionsFactory *pFunctionsFactory = nullptr;
         try
         {
             pFunctionsFactory = new CFunctionsFactory;
@@ -122,7 +122,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
             ; // Nothing.
         }
 
-        if (NULL == pFunctionsFactory)
+        if (nullptr == pFunctionsFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -153,13 +153,13 @@ MUX_RESULT init_stubslave(void)
     Pipe_InitializeQueueInfo(&Queue_Out);
     MUX_RESULT mr = mux_InitModuleLibraryPump(pipepump, &Queue_In, &Queue_Out);
 
-    if (NULL != mudstate.pISlaveControl)
+    if (nullptr != mudstate.pISlaveControl)
     {
         mudstate.pISlaveControl->Release();
-        mudstate.pISlaveControl = NULL;
+        mudstate.pISlaveControl = nullptr;
     }
 
-    mr = mux_CreateInstance(CID_StubSlave, NULL, UseSlaveProcess, IID_ISlaveControl, (void **)&mudstate.pISlaveControl);
+    mr = mux_CreateInstance(CID_StubSlave, nullptr, UseSlaveProcess, IID_ISlaveControl, (void **)&mudstate.pISlaveControl);
     if (MUX_SUCCEEDED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
@@ -179,7 +179,7 @@ void final_stubslave(void)
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    if (NULL != mudstate.pISlaveControl)
+    if (nullptr != mudstate.pISlaveControl)
     {
         mr = mudstate.pISlaveControl->ShutdownSlave();
         if (MUX_FAILED(mr))
@@ -190,7 +190,7 @@ void final_stubslave(void)
         }
 
         mudstate.pISlaveControl->Release();
-        mudstate.pISlaveControl = NULL;
+        mudstate.pISlaveControl = nullptr;
     }
 }
 #endif // STUB_SLAVE
@@ -238,25 +238,25 @@ private:
     mux_IServerEventsSink *m_pSink;
 };
 
-CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(NULL)
+CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(nullptr)
 {
 }
 
-ServerEventsSinkNode *g_pServerEventsSinkListHead = NULL;
+ServerEventsSinkNode *g_pServerEventsSinkListHead = nullptr;
 
 CServerEventsSource::~CServerEventsSource()
 {
-    if (NULL != m_pSink)
+    if (nullptr != m_pSink)
     {
         ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-        ServerEventsSinkNode *q = NULL;
-        while (NULL != p)
+        ServerEventsSinkNode *q = nullptr;
+        while (nullptr != p)
         {
             if (p->pSink == m_pSink)
             {
                 // Unlink node p from list.
                 //
-                if (NULL == q)
+                if (nullptr == q)
                 {
                     g_pServerEventsSinkListHead = p->pNext;
                 }
@@ -264,12 +264,12 @@ CServerEventsSource::~CServerEventsSource()
                 {
                     q->pNext = p->pNext;
                 }
-                p->pNext = NULL;
+                p->pNext = nullptr;
 
                 // Free sink and node.
                 //
                 p->pSink->Release();
-                p->pSink = NULL;
+                p->pSink = nullptr;
                 delete p;
                 break;
             }
@@ -278,7 +278,7 @@ CServerEventsSource::~CServerEventsSource()
         }
 
         m_pSink->Release();
-        m_pSink = NULL;
+        m_pSink = nullptr;
     }
 }
 
@@ -294,7 +294,7 @@ MUX_RESULT CServerEventsSource::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -320,7 +320,7 @@ UINT32 CServerEventsSource::Release(void)
 
 MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink)
 {
-    if (NULL == pIServerEventsSink)
+    if (nullptr == pIServerEventsSink)
     {
         return MUX_E_INVALIDARG;
     }
@@ -329,7 +329,7 @@ MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink
     // added again.
     //
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         if (p->pSink == pIServerEventsSink)
         {
@@ -339,7 +339,7 @@ MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink
 
     // Allocate a list node.
     //
-    p = NULL;
+    p = nullptr;
     try
     {
         p = new ServerEventsSinkNode;
@@ -349,7 +349,7 @@ MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink
         ; // Nothing.
     }
 
-    if (NULL == p)
+    if (nullptr == p)
     {
         return MUX_E_OUTOFMEMORY;
     }
@@ -388,7 +388,7 @@ MUX_RESULT CServerEventsSourceFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -416,12 +416,12 @@ MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOute
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CServerEventsSource *pServerEventsSource = NULL;
+    CServerEventsSource *pServerEventsSource = nullptr;
     try
     {
         pServerEventsSource = new CServerEventsSource;
@@ -431,7 +431,7 @@ MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOute
         ; // Nothing.
     }
 
-    if (NULL == pServerEventsSource)
+    if (nullptr == pServerEventsSource)
     {
         return MUX_E_OUTOFMEMORY;
     }
@@ -488,7 +488,7 @@ private:
     UTF8  *m_pModuleName;
 };
 
-CStubSlaveProxy::CStubSlaveProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID), m_pModuleName(NULL)
+CStubSlaveProxy::CStubSlaveProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID), m_pModuleName(nullptr)
 {
 }
 
@@ -517,7 +517,7 @@ MUX_RESULT CStubSlaveProxy::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -739,10 +739,10 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
         if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
            && nWanted == sizeof(ReturnFrame))
         {
-            if (NULL != m_pModuleName)
+            if (nullptr != m_pModuleName)
             {
                 delete m_pModuleName;
-                m_pModuleName = NULL;
+                m_pModuleName = nullptr;
             }
 
             if (0 < ReturnFrame.nName)
@@ -756,7 +756,7 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
                     ; // Nothing.
                 }
 
-                if (NULL != m_pModuleName)
+                if (nullptr != m_pModuleName)
                 {
                     nWanted = ReturnFrame.nName;
                     if (  Pipe_GetBytes(&qiFrame, &nWanted, m_pModuleName)
@@ -779,7 +779,7 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
             else
             {
                 pModuleInfo->bLoaded = ReturnFrame.bLoaded;
-                pModuleInfo->pName   = NULL;
+                pModuleInfo->pName   = nullptr;
                 mr = ReturnFrame.mr;
             }
         }
@@ -889,7 +889,7 @@ MUX_RESULT CStubSlaveProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -917,12 +917,12 @@ MUX_RESULT CStubSlaveProxyFactory::CreateInstance(mux_IUnknown *pUnknownOuter, M
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CStubSlaveProxy *pStubSlaveProxy = NULL;
+    CStubSlaveProxy *pStubSlaveProxy = nullptr;
     try
     {
         pStubSlaveProxy = new CStubSlaveProxy;
@@ -933,7 +933,7 @@ MUX_RESULT CStubSlaveProxyFactory::CreateInstance(mux_IUnknown *pUnknownOuter, M
     }
 
     MUX_RESULT mr;
-    if (NULL == pStubSlaveProxy)
+    if (nullptr == pStubSlaveProxy)
     {
         return MUX_E_OUTOFMEMORY;
     }
@@ -1012,7 +1012,7 @@ MUX_RESULT CQueryClient::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -1040,7 +1040,7 @@ MUX_RESULT CQueryClient::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MU
 {
     UNUSED_PARAMETER(ctx);
 
-    if (NULL == pcid)
+    if (nullptr == pcid)
     {
         return MUX_E_INVALIDARG;
     }
@@ -1058,7 +1058,7 @@ MUX_RESULT CQueryClient::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MU
 MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     mux_IQuerySink *pIQuerySink = static_cast<mux_IQuerySink *>(pci->pInterface);
-    if (NULL == pIQuerySink)
+    if (nullptr == pIQuerySink)
     {
         return MUX_E_NOINTERFACE;
     }
@@ -1126,14 +1126,14 @@ MUX_RESULT CQueryClient_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     // Get our interface pointer from the channel.
     //
     mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
-    pci->pInterface = NULL;
+    pci->pInterface = nullptr;
 
     // Tear down our side of the communication.  Our callback functions will
     // no longer be called.
     //
     Pipe_FreeChannel(pci);
 
-    if (NULL != pIUnknown)
+    if (nullptr != pIUnknown)
     {
         pIUnknown->Release();
         return MUX_S_OK;
@@ -1149,7 +1149,7 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
     // Parameter validation and initialization.
     //
     MUX_RESULT mr = MUX_S_OK;
-    if (NULL == pqi)
+    if (nullptr == pqi)
     {
         mr = MUX_E_INVALIDARG;
     }
@@ -1163,8 +1163,8 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
     }
     else
     {
-        mux_IQuerySink *pIQuerySink = NULL;
-        if (NULL == pv)
+        mux_IQuerySink *pIQuerySink = nullptr;
+        if (nullptr == pv)
         {
             mr = QueryInterface(IID_IQuerySink, (void **)&pIQuerySink);
         }
@@ -1178,7 +1178,7 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
             // Construct a packet sufficient to allow the proxy to communicate with us.
             //
             CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CQueryClient_Call, CQueryClient_Msg, CQueryClient_Disconnect);
-            if (NULL != pChannel)
+            if (nullptr != pChannel)
             {
                 pChannel->pInterface = pIQuerySink;
                 Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
@@ -1187,7 +1187,7 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
             else
             {
                 pIQuerySink->Release();
-                pIQuerySink = NULL;
+                pIQuerySink = nullptr;
                 mr = MUX_E_OUTOFMEMORY;
             }
         }
@@ -1217,7 +1217,7 @@ MUX_RESULT CQueryClient::ReleaseMarshalData(QUEUE_INFO *pqi)
        && sizeof(nChannel) == nWanted)
     {
         CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
-        if (NULL != pChannel)
+        if (nullptr != pChannel)
         {
             CQueryClient_Disconnect(pChannel, pqi);
         }
@@ -1239,7 +1239,7 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
 MUX_RESULT CQueryClient::Result(UINT32 hQuery, UINT32 iError, QUEUE_INFO *pqiResultsSet)
 {
 #if defined(STUB_SLAVE)
-    CResultsSet *prs = NULL;
+    CResultsSet *prs = nullptr;
     try
     {
         prs = new CResultsSet(pqiResultsSet);
@@ -1280,7 +1280,7 @@ MUX_RESULT CQueryClientFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -1308,12 +1308,12 @@ MUX_RESULT CQueryClientFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CQueryClient *pLog = NULL;
+    CQueryClient *pLog = nullptr;
     try
     {
         pLog = new CQueryClient;
@@ -1323,7 +1323,7 @@ MUX_RESULT CQueryClientFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_
         ; // Nothing.
     }
 
-    if (NULL == pLog)
+    if (nullptr == pLog)
     {
         return MUX_E_OUTOFMEMORY;
     }
@@ -1342,8 +1342,8 @@ MUX_RESULT CQueryClientFactory::LockServer(bool bLock)
 CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
      m_nBlob(0), m_bLoaded(false), m_iError(QS_SUCCESS), m_nRows(0)
 {
-    m_pBlob = NULL;
-    m_pRows = NULL;
+    m_pBlob = nullptr;
+    m_pRows = nullptr;
     size_t nWanted = sizeof(m_nFields);
     if (  Pipe_GetBytes(pqi, &nWanted, &m_nFields)
        && nWanted == sizeof(m_nFields))
@@ -1366,7 +1366,7 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                 }
 
                 nWanted = m_nBlob;
-                if (  NULL == m_pBlob
+                if (  nullptr == m_pBlob
                    || !Pipe_GetBytes(pqi, &nWanted, m_pBlob)
                    || nWanted != m_nBlob)
                 {
@@ -1390,7 +1390,7 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                         ; // Nothing.
                     }
 
-                    if (NULL != m_pRows)
+                    if (nullptr != m_pRows)
                     {
                         int i, j;
                         UTF8 *p = m_pBlob;
@@ -1440,7 +1440,7 @@ const UTF8 *CResultsSet::FirstField(int iRow)
 {
     if (  0 <= iRow
        && iRow < m_nRows
-       && NULL != m_pRows
+       && nullptr != m_pRows
        && 0 < m_nFields)
     {
         m_pCurrentField = m_pRows[iRow];
@@ -1448,7 +1448,7 @@ const UTF8 *CResultsSet::FirstField(int iRow)
     }
     else
     {
-        m_pCurrentField = NULL;
+        m_pCurrentField = nullptr;
         m_iCurrentField = 1;
     }
     return m_pCurrentField;
@@ -1456,8 +1456,8 @@ const UTF8 *CResultsSet::FirstField(int iRow)
 
 const UTF8 *CResultsSet::NextField(void)
 {
-    const UTF8 *pField = NULL;
-    if (  NULL != m_pCurrentField
+    const UTF8 *pField = nullptr;
+    if (  nullptr != m_pCurrentField
        && 0 < m_nFields
        && m_iCurrentField < m_nFields)
     {
@@ -1473,16 +1473,16 @@ const UTF8 *CResultsSet::NextField(void)
 
 CResultsSet::~CResultsSet(void)
 {
-    if (NULL != m_pBlob)
+    if (nullptr != m_pBlob)
     {
         delete [] m_pBlob;
-        m_pBlob = NULL;
+        m_pBlob = nullptr;
     }
 
-    if (NULL != m_pRows)
+    if (nullptr != m_pRows)
     {
         delete [] m_pRows;
-        m_pRows = NULL;
+        m_pRows = nullptr;
     }
 }
 

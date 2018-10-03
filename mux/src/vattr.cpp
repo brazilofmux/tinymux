@@ -23,7 +23,7 @@ static UTF8 *store_string(const UTF8 *);
 
 // Current block we're putting stuff in
 //
-static UTF8 *stringblock = NULL;
+static UTF8 *stringblock = nullptr;
 
 // High water mark.
 //
@@ -47,7 +47,7 @@ ATTR *vattr_find_LEN(const UTF8 *pAttrName, size_t nAttrName)
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }
-    return NULL;
+    return nullptr;
 }
 
 ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
@@ -266,7 +266,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
             else if (iAttr < A_USER_START)
             {
                 ATTR *pa = (ATTR *) anum_get(iAttr);
-                if (pa == NULL)
+                if (pa == nullptr)
                 {
                     nInvalid++;
                 }
@@ -274,7 +274,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
             else if (iAttr <= anum_alc_top)
             {
                 ATTR *va = (ATTR *) anum_get(iAttr);
-                if (va == NULL)
+                if (va == nullptr)
                 {
                     // We can try to fix this one.
                     //
@@ -371,7 +371,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
         va = (ATTR *) anum_get(iAttr);
-        if (va != NULL)
+        if (va != nullptr)
         {
             va->flags &= ~AF_ISUSED;
         }
@@ -389,7 +389,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
             if (atr >= A_USER_START)
             {
                 va = (ATTR *) anum_get(atr);
-                if (va != NULL)
+                if (va != nullptr)
                 {
                     va->flags |= AF_ISUSED;
                 }
@@ -405,11 +405,11 @@ static int dbclean_RemoveStaleAttributeNames(void)
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
         va = (ATTR *) anum_get(iAttr);
-        if (va != NULL)
+        if (va != nullptr)
         {
             if ((AF_ISUSED & (va->flags)) != AF_ISUSED)
             {
-                anum_set(iAttr, NULL);
+                anum_set(iAttr, nullptr);
 
                 // Delete from hashtable.
                 //
@@ -429,7 +429,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
                 }
 
                 MEMFREE(va);
-                va = NULL;
+                va = nullptr;
             }
             else
             {
@@ -465,7 +465,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     {
         int iAttr = iMapStart + i;
         va = (ATTR *) anum_get(iAttr);
-        if (va != NULL)
+        if (va != nullptr)
         {
             while (anum_get(iSweep))
             {
@@ -496,7 +496,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
 
             va->number = iAllocated;
             anum_set(iAllocated, (ATTR *)va);
-            anum_set(iAttr, NULL);
+            anum_set(iAttr, nullptr);
             mudstate.attr_next = iAttr;
         }
     }
@@ -533,7 +533,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
                     //
                     size_t n;
                     const UTF8 *p = atr_get_raw_LEN(iObject, iAttr, &n);
-                    if (NULL != p)
+                    if (nullptr != p)
                     {
                         memcpy(tbuff, p, n);
                         atr_add_raw_LEN(iObject, iNew, tbuff, n);
@@ -541,13 +541,13 @@ static void dbclean_RenumberAttributes(int cVAttributes)
 
                     // Delete value at old attribute number.
                     //
-                    atr_add_raw_LEN(iObject, iAttr, NULL, 0);
+                    atr_add_raw_LEN(iObject, iAttr, nullptr, 0);
                 }
             }
         }
     }
     free_lbuf(tbuff);
-    tbuff = NULL;
+    tbuff = nullptr;
 
     // Traverse entire @addcommand data structure.
     //
@@ -555,14 +555,14 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     UTF8 *pKeyName;
     CMDENT *old;
     for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyLength, &pKeyName);
-         old != NULL;
+         old != nullptr;
          old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyLength, &pKeyName))
     {
         if (old && (old->callseq & CS_ADDED))
         {
             pKeyName[nKeyLength] = '\0';
             ADDENT *nextp;
-            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
             {
                 if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
                 {
@@ -599,7 +599,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     atr_pop();
 
     MEMFREE(aMap);
-    aMap = NULL;
+    aMap = nullptr;
 }
 
 void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
@@ -650,10 +650,10 @@ void vattr_delete_LEN(UTF8 *pName, size_t nName)
         if (strcmp((char *)pName, (char *)anum_table[anum]->name) == 0)
         {
             ATTR *vp = (ATTR *)anum_table[anum];
-            anum_set(anum, NULL);
+            anum_set(anum, nullptr);
             pht->Remove(iDir);
             MEMFREE(vp);
-            vp = NULL;
+            vp = nullptr;
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }
@@ -686,7 +686,7 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }
-    return NULL;
+    return nullptr;
 }
 
 ATTR *vattr_first(void)
@@ -698,13 +698,13 @@ ATTR *vattr_first(void)
     {
         return (ATTR *)anum_table[anum];
     }
-    return NULL;
+    return nullptr;
 
 }
 
 ATTR *vattr_next(ATTR *vp)
 {
-    if (vp == NULL)
+    if (vp == nullptr)
         return vattr_first();
 
     HP_HEAPLENGTH nRecord;
@@ -714,7 +714,7 @@ ATTR *vattr_next(ATTR *vp)
     {
         return (ATTR *)anum_table[anum];
     }
-    return NULL;
+    return nullptr;
 }
 
 // Some goop for efficiently storing strings we expect to keep forever. There

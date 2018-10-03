@@ -445,14 +445,14 @@ static Bigint *Balloc(int k)
             rv = (Bigint*)MEMALLOC(len*sizeof(double));
         }
 #endif
-        if (NULL != rv)
+        if (nullptr != rv)
         {
             rv->k = k;
             rv->maxwds = x;
         }
     }
 
-    if (NULL != rv)
+    if (nullptr != rv)
     {
         rv->sign = rv->wds = 0;
     }
@@ -1384,8 +1384,8 @@ double mux_strtod(CONST UTF8 *s00, UTF8 **se)
     double aadj, aadj1, adj, rv, rv0;
     Long L;
     ULong y, z;
-    Bigint *bb = NULL, *bb1 = NULL, *bd = NULL, *bd0 = NULL, *bs = NULL;
-    Bigint *delta = NULL;
+    Bigint *bb = nullptr, *bb1 = nullptr, *bd = nullptr, *bd0 = nullptr, *bs = nullptr;
+    Bigint *delta = nullptr;
 #ifdef SET_INEXACT
     int inexact, oldinexact;
 #endif
@@ -2699,7 +2699,7 @@ UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
     int denorm;
     ULong x;
 #endif
-    Bigint *b = NULL, *b1 = NULL, *delta = NULL, *mlo = NULL, *mhi = NULL, *S = NULL;
+    Bigint *b = nullptr, *b1 = nullptr, *delta = nullptr, *mlo = nullptr, *mhi = nullptr, *S = nullptr;
     double d2, ds, eps;
     UTF8 *s, *s0;
 #ifdef Honor_FLT_ROUNDS

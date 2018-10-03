@@ -144,7 +144,7 @@ void mux_exec(const UTF8 *pdstr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
 inline void BufAddRef(lbuf_ref *lbufref)
 {
-    if (NULL != lbufref)
+    if (nullptr != lbufref)
     {
         lbufref->refcount++;
     }
@@ -152,13 +152,13 @@ inline void BufAddRef(lbuf_ref *lbufref)
 
 inline void BufRelease(lbuf_ref *lbufref)
 {
-    if (NULL != lbufref)
+    if (nullptr != lbufref)
     {
         lbufref->refcount--;
         if (0 == lbufref->refcount)
         {
             free_lbuf(lbufref->lbuf_ptr);
-            lbufref->lbuf_ptr = NULL;
+            lbufref->lbuf_ptr = nullptr;
             free_lbufref(lbufref);
         }
     }
@@ -166,7 +166,7 @@ inline void BufRelease(lbuf_ref *lbufref)
 
 inline void RegAddRef(reg_ref *regref)
 {
-    if (NULL != regref)
+    if (nullptr != regref)
     {
         regref->refcount++;
     }
@@ -174,14 +174,14 @@ inline void RegAddRef(reg_ref *regref)
 
 inline void RegRelease(reg_ref *regref)
 {
-    if (NULL != regref)
+    if (nullptr != regref)
     {
         regref->refcount--;
         if (0 == regref->refcount)
         {
             BufRelease(regref->lbuf);
-            regref->lbuf    = NULL;
-            regref->reg_ptr = NULL;
+            regref->lbuf    = nullptr;
+            regref->reg_ptr = nullptr;
             regref->reg_len = 0;
             free_regref(regref);
         }

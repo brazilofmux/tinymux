@@ -369,7 +369,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
 
     if (!pName)
     {
-        return NULL;
+        return nullptr;
     }
 
     // Build up what the real name would be. If we pass all the
@@ -382,7 +382,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
     //
     if (0 == fldLen.m_column)
     {
-        return NULL;
+        return nullptr;
     }
 
     // Get the stripped version (Visible parts without color info).
@@ -397,7 +397,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
        || mux_isspace(pStripped[0])
        || mux_isspace(pStripped[nStripped-1]))
     {
-        return NULL;
+        return nullptr;
     }
 
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
@@ -408,7 +408,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
     {
         if (!mux_isobjectname(p))
         {
-            return NULL;
+            return nullptr;
         }
         p = utf8_NextCodePoint(p);
     }
@@ -419,12 +419,12 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
        || (nStripped == 4 && (  memcmp("home", pStripped, 4) == 0
                              || memcmp("here", pStripped, 4) == 0)))
     {
-        return NULL;
+        return nullptr;
     }
 
     if (IsRestricted(pStripped, charset))
     {
-        return NULL;
+        return nullptr;
     }
 
     *pnName = fldLen.m_byte;
@@ -443,7 +443,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 
     if (!pName)
     {
-        return NULL;
+        return nullptr;
     }
 
     mux_strncpy(Buf, pName, mux_strlen(pName));
@@ -464,7 +464,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     bool bHaveDisplay = false;
     for (ptr = mux_strtok_parse(&tts); ptr; ptr = mux_strtok_parse(&tts))
     {
-        UTF8 *pTrimmedSegment = NULL;
+        UTF8 *pTrimmedSegment = nullptr;
         if (bHaveDisplay)
         {
             // No color allowed in segments after the first one.
@@ -502,7 +502,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
             }
         }
         free_lbuf(pTrimmedSegment);
-        pTrimmedSegment = NULL;
+        pTrimmedSegment = nullptr;
     }
 
     *pbValid = bHaveDisplay;
@@ -596,7 +596,7 @@ bool ValidatePlayerName(const UTF8 *pName)
 
 bool ok_password(const UTF8 *password, const UTF8 **pmsg)
 {
-    *pmsg = NULL;
+    *pmsg = nullptr;
 
     if (*password == '\0')
     {
@@ -760,7 +760,7 @@ void do_switch
         *bp = '\0';
         if (wild_match(buff, expr))
         {
-            UTF8 *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
+            UTF8 *tbuf = replace_tokens(args[a+1], nullptr, nullptr, expr);
             wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
                 tbuf,
                 ncargs, cargs,
@@ -775,7 +775,7 @@ void do_switch
        && !bAny
        && args[a])
     {
-        UTF8 *tbuf = replace_tokens(args[a], NULL, NULL, expr);
+        UTF8 *tbuf = replace_tokens(args[a], nullptr, nullptr, expr);
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
             tbuf,
             ncargs, cargs,
@@ -903,7 +903,7 @@ void do_addcommand
     {
         // Don't allow the same (thing,atr) in the list.
         //
-        for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
+        for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
         {
             if (  nextp->thing == thing
                && nextp->atr == pattr->number)
@@ -933,7 +933,7 @@ void do_addcommand
             hashdeleteLEN(pName, strlen((char *)pName), &mudstate.command_htab);
         }
 
-        cmd = NULL;
+        cmd = nullptr;
         try
         {
             cmd = new CMDENT;
@@ -944,7 +944,7 @@ void do_addcommand
         }
         ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(pName);
-        cmd->switches = NULL;
+        cmd->switches = nullptr;
         cmd->perms = 0;
         cmd->extra = 0;
         if (  old
@@ -962,7 +962,7 @@ void do_addcommand
         add->thing = thing;
         add->atr = pattr->number;
         add->name = StringClone(pName);
-        add->next = NULL;
+        add->next = nullptr;
         cmd->addent = add;
 
         hashaddLEN(pName, strlen((char *)pName), cmd, &mudstate.command_htab);
@@ -1016,7 +1016,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             // If it's already found in the hash table, and it's being added
             // using the same object and attribute...
             //
-            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
             {
                 ATTR *ap = (ATTR *)atr_num(nextp->atr);
                 const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
@@ -1038,13 +1038,13 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
         UTF8 *pKeyName;
         int  nKeyName;
         for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
-             old != NULL;
+             old != nullptr;
              old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyName, &pKeyName))
         {
             if (old->callseq & CS_ADDED)
             {
                 pKeyName[nKeyName] = '\0';
-                for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
+                for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
                 {
                     if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
                     {
@@ -1123,7 +1123,7 @@ void do_delcommand
     UTF8  *pCased = mux_strlwr(name, nCased);
 
     CMDENT *old, *cmd;
-    ADDENT *prev = NULL, *nextp;
+    ADDENT *prev = nullptr, *nextp;
     old = (CMDENT *)hashfindLEN(pCased, nCased, &mudstate.command_htab);
 
     if (  old
@@ -1136,13 +1136,13 @@ void do_delcommand
         {
             // Delete all @addcommand'ed associations with the given name.
             //
-            for (prev = old->addent; prev != NULL; prev = nextp)
+            for (prev = old->addent; prev != nullptr; prev = nextp)
             {
                 nextp = prev->next;
                 MEMFREE(prev->name);
-                prev->name = NULL;
+                prev->name = nullptr;
                 MEMFREE(prev);
-                prev = NULL;
+                prev = nullptr;
             }
             hashdeleteLEN(pCased, nCased, &mudstate.command_htab);
             cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
@@ -1165,9 +1165,9 @@ void do_delcommand
                 //
             }
             MEMFREE(old->cmdname);
-            old->cmdname = NULL;
+            old->cmdname = nullptr;
             MEMFREE(old);
-            old = NULL;
+            old = nullptr;
             cache_prefix_cmds();
             notify(player, T("Done."));
         }
@@ -1175,13 +1175,13 @@ void do_delcommand
         {
             // Remove only the (name,thing,atr) association.
             //
-            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
             {
                 if (  nextp->thing == thing
                    && nextp->atr == atr)
                 {
                     MEMFREE(nextp->name);
-                    nextp->name = NULL;
+                    nextp->name = nullptr;
                     if (!prev)
                     {
                         if (!nextp->next)
@@ -1207,22 +1207,22 @@ void do_delcommand
                                     &mudstate.command_htab);
                             }
                             MEMFREE(old->cmdname);
-                            old->cmdname = NULL;
+                            old->cmdname = nullptr;
                             MEMFREE(old);
-                            old = NULL;
+                            old = nullptr;
                         }
                         else
                         {
                             old->addent = nextp->next;
                             MEMFREE(nextp);
-                            nextp = NULL;
+                            nextp = nullptr;
                         }
                     }
                     else
                     {
                         prev->next = nextp->next;
                         MEMFREE(nextp);
-                        nextp = NULL;
+                        nextp = nullptr;
                     }
                     cache_prefix_cmds();
                     notify(player, T("Done."));
@@ -1254,7 +1254,7 @@ void handle_prog(DESC *d, UTF8 *message)
     {
         do_command(d, message + 1);
 
-        if (d->program_data != NULL)
+        if (d->program_data != nullptr)
         {
             queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
 
@@ -1298,16 +1298,16 @@ void handle_prog(DESC *d, UTF8 *message)
             if (program->wait_regs[i])
             {
                 RegRelease(program->wait_regs[i]);
-                program->wait_regs[i] = NULL;
+                program->wait_regs[i] = nullptr;
             }
         }
 
-        // Set info for all player descriptors to NULL
+        // Set info for all player descriptors to nullptr
         //
         DESC_ITER_PLAYER(d->player, all)
         {
             mux_assert(program == all->program_data);
-            all->program_data = NULL;
+            all->program_data = nullptr;
         }
 
         MEMFREE(program);
@@ -1358,7 +1358,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
     bool isprog = false;
     DESC_ITER_PLAYER(doer, d)
     {
-        if (NULL != d->program_data)
+        if (nullptr != d->program_data)
         {
             isprog = true;
         }
@@ -1382,16 +1382,16 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
             if (program->wait_regs[i])
             {
                 RegRelease(program->wait_regs[i]);
-                program->wait_regs[i] = NULL;
+                program->wait_regs[i] = nullptr;
             }
         }
 
-        // Set info for all player descriptors to NULL.
+        // Set info for all player descriptors to nullptr.
         //
         DESC_ITER_PLAYER(doer, d)
         {
             mux_assert(program == d->program_data);
-            d->program_data = NULL;
+            d->program_data = nullptr;
         }
 
         MEMFREE(program);
@@ -1456,7 +1456,7 @@ void do_prog
     DESC *d;
     DESC_ITER_PLAYER(doer, d)
     {
-        if (d->program_data != NULL)
+        if (d->program_data != nullptr)
         {
             notify(player, T("Input already pending."));
             return;
@@ -1484,7 +1484,7 @@ void do_prog
         int   aflags;
         int   lev;
         dbref parent;
-        UTF8 *pBuffer = NULL;
+        UTF8 *pBuffer = nullptr;
         bool bFound = false;
         ITER_PARENTS(thing, parent, lev)
         {
@@ -1617,7 +1617,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     local_presync_database();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->presync_database();
         p = p->pNext;
@@ -1651,10 +1651,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
+        mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
 #else
     execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, (char *)NULL);
+        mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
 #endif // GAME_DOOFERMUX
     mux_assert(false);
 #endif // UNIX_PROCESSES
@@ -1777,7 +1777,7 @@ dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool 
         //
         place = target;
         target = (UTF8 *)strchr((char *)place, '\'');
-        if (  target == NULL
+        if (  target == nullptr
            || !*target)
         {
             return dflt;
@@ -1963,7 +1963,7 @@ bool parse_thing_slash(dbref player, const UTF8 *thing, const UTF8 **after, dbre
     //
     if (thing[i] == '\0')
     {
-        *after = NULL;
+        *after = nullptr;
         *it = NOTHING;
         return false;
     }
@@ -2019,7 +2019,7 @@ bool get_obj_and_lock(dbref player, const UTF8 *what, dbref *it, ATTR **attr, UT
     // Get the attribute definition, fail if not found.
     //
     *attr = atr_num(anum);
-    if (NULL == *attr)
+    if (nullptr == *attr)
     {
         safe_str(T("#-1 LOCK NOT FOUND"), errmsg, bufc);
         return false;
@@ -2056,7 +2056,7 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
     if (mudstate.attrperm_list)
     {
         ATTRPERM *perm_walk = mudstate.attrperm_list;
-        while (NULL != perm_walk)
+        while (nullptr != perm_walk)
         {
             if (quick_wild(perm_walk->wildcard, tattr->name))
             {
@@ -2146,7 +2146,7 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
     if (mudstate.attrperm_list)
     {
         ATTRPERM *perm_walk = mudstate.attrperm_list;
-        while (NULL != perm_walk)
+        while (nullptr != perm_walk)
         {
             if (quick_wild(perm_walk->wildcard,tattr->name))
             {
@@ -2202,7 +2202,7 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
     if (mudstate.attrperm_list)
     {
         ATTRPERM *perm_walk = mudstate.attrperm_list;
-        while (NULL != perm_walk)
+        while (nullptr != perm_walk)
         {
             if (quick_wild(perm_walk->wildcard,tattr->name))
             {
@@ -2512,7 +2512,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
     //
 
     bool need_pres = false;
-    reg_ref **preserve = NULL;
+    reg_ref **preserve = nullptr;
 
     // message to player.
     //
@@ -2793,8 +2793,8 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     int what = -1;
     int owhat = -1;
     int awhat = -1;
-    const UTF8 *whatd = NULL;
-    const UTF8 *owhatd = NULL;
+    const UTF8 *whatd = nullptr;
+    const UTF8 *owhatd = nullptr;
     int nxargs = 0;
     dbref aowner = NOTHING;
     int aflags = NOTHING;
@@ -2806,7 +2806,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
         // Get arguments.
         //
         parse_arglist(victim, actor, actor, args[6],
-            EV_STRIP_LS | EV_STRIP_TS, xargs, 10, NULL, 0, &nxargs);
+            EV_STRIP_LS | EV_STRIP_TS, xargs, 10, nullptr, 0, &nxargs);
 
     case 6:
         // Get action attribute.
@@ -2856,7 +2856,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (!Controls(executor, victim))
     {
-        ap = NULL;
+        ap = nullptr;
         if (what != -1)
         {
             atr_get_info(victim, what, &aowner, &aflags);
@@ -2872,7 +2872,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
             what = -1;
         }
 
-        ap = NULL;
+        ap = nullptr;
         if (owhat != -1)
         {
             atr_get_info(victim, owhat, &aowner, &aflags);
@@ -2964,7 +2964,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
     bool global_only = false;
     mux_string refstr(reference_name);
 
-    if (  NULL == reference_name
+    if (  nullptr == reference_name
        || '\0' == reference_name[0])
     {
         global_only = true;
@@ -2996,7 +2996,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
 
     CHashTable* htab = &mudstate.reference_htab;
     for (  htab_entry = (struct reference_entry *) hash_firstentry(htab);
-           NULL != htab_entry;
+           nullptr != htab_entry;
            htab_entry = (struct reference_entry *) hash_nextentry(htab))
     {
         if (  (  global_only
@@ -3069,7 +3069,7 @@ void do_reference
     // References can only be set on objects the executor can examine.
     //
     dbref target = NOTHING;
-    if (  NULL != object_name
+    if (  nullptr != object_name
        && '\0' != object_name[0])
     {
         target = match_thing_quiet(executor, object_name);
@@ -3108,7 +3108,7 @@ void do_reference
 
     enum { Delete, Add, Update, NotFound, Redundant, OutOfMemory } eOperation;
 
-    if (NULL != result)
+    if (nullptr != result)
     {
         if (NOTHING == target)
         {
@@ -3147,9 +3147,9 @@ void do_reference
         // Release the existing reference.
         //
         MEMFREE(result->name);
-        result->name = NULL;
+        result->name = nullptr;
         MEMFREE(result);
-        result = NULL;
+        result = nullptr;
         hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
     }
 
@@ -3165,7 +3165,7 @@ void do_reference
             ; // Nothing;
         }
 
-        if (NULL != result)
+        if (nullptr != result)
         {
             result->target = target;
             result->owner = executor;

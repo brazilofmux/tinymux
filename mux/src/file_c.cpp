@@ -42,18 +42,18 @@ typedef struct filecache_hdr FCACHE;
 
 static FCACHE fcache[] =
 {
-    { &mudconf.conn_file,    NULL,   T("Conn") },
-    { &mudconf.site_file,    NULL,   T("Conn/Badsite") },
-    { &mudconf.down_file,    NULL,   T("Conn/Down") },
-    { &mudconf.full_file,    NULL,   T("Conn/Full") },
-    { &mudconf.guest_file,   NULL,   T("Conn/Guest") },
-    { &mudconf.creg_file,    NULL,   T("Conn/Reg") },
-    { &mudconf.crea_file,    NULL,   T("Crea/Newuser") },
-    { &mudconf.regf_file,    NULL,   T("Crea/RegFaill") },
-    { &mudconf.motd_file,    NULL,   T("Motd") },
-    { &mudconf.wizmotd_file, NULL,   T("Wizmotd") },
-    { &mudconf.quit_file,    NULL,   T("Quit") },
-    { NULL,                  NULL,   (UTF8 *)NULL }
+    { &mudconf.conn_file,    nullptr,   T("Conn") },
+    { &mudconf.site_file,    nullptr,   T("Conn/Badsite") },
+    { &mudconf.down_file,    nullptr,   T("Conn/Down") },
+    { &mudconf.full_file,    nullptr,   T("Conn/Full") },
+    { &mudconf.guest_file,   nullptr,   T("Conn/Guest") },
+    { &mudconf.creg_file,    nullptr,   T("Conn/Reg") },
+    { &mudconf.crea_file,    nullptr,   T("Crea/Newuser") },
+    { &mudconf.regf_file,    nullptr,   T("Crea/RegFaill") },
+    { &mudconf.motd_file,    nullptr,   T("Motd") },
+    { &mudconf.wizmotd_file, nullptr,   T("Wizmotd") },
+    { &mudconf.quit_file,    nullptr,   T("Quit") },
+    { nullptr,               nullptr,   (UTF8 *)nullptr }
 };
 
 static NAMETAB list_files[] =
@@ -69,7 +69,7 @@ static NAMETAB list_files[] =
     {T("quit"),             1,  CA_WIZARD,  FC_QUIT},
     {T("register_connect"), 1,  CA_WIZARD,  FC_CONN_REG},
     {T("wizard_motd"),      1,  CA_WIZARD,  FC_WIZMOTD},
-    {(UTF8 *) NULL,              0,  0,          0}
+    {(UTF8 *) nullptr,      0,  0,          0}
 };
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
@@ -98,7 +98,7 @@ static FBLOCK *fcache_fill(FBLOCK *fp, UTF8 ch)
         //
         FBLOCK *tfp = fp;
         fp = (FBLOCK *) alloc_mbuf("fcache_fill");
-        fp->hdr.nxt = NULL;
+        fp->hdr.nxt = nullptr;
         fp->hdr.nchars = 0;
         tfp->hdr.nxt = fp;
     }
@@ -111,13 +111,13 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
     // Free a prior buffer chain.
     //
     FBLOCK *fp = *cp;
-    while (fp != NULL)
+    while (fp != nullptr)
     {
         FBLOCK *tfp = fp->hdr.nxt;
         free_mbuf(fp);
         fp = tfp;
     }
-    *cp = NULL;
+    *cp = nullptr;
 
     // Read the text file into a new chain.
     //
@@ -141,7 +141,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
     // Set up the initial cache buffer to make things easier.
     //
     fp = (FBLOCK *) alloc_mbuf("fcache_read.first");
-    fp->hdr.nxt = NULL;
+    fp->hdr.nxt = nullptr;
     fp->hdr.nchars = 0;
     *cp = fp;
     int tchars = 0;
@@ -179,7 +179,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
     //
     if (fp->hdr.nchars == 0)
     {
-        *cp = NULL;
+        *cp = nullptr;
         free_mbuf(fp);
     }
     return tchars;
@@ -196,7 +196,7 @@ void fcache_rawdump(SOCKET fd, int num)
     int cnt, remaining;
     UTF8 *start;
 
-    while (fp != NULL)
+    while (fp != nullptr)
     {
         start = fp->data;
         remaining = fp->hdr.nchars;
@@ -223,7 +223,7 @@ void fcache_dump(DESC *d, int num)
     }
     FBLOCK *fp = fcache[num].fileblock;
 
-    while (fp != NULL)
+    while (fp != nullptr)
     {
         queue_write_LEN(d, fp->data, fp->hdr.nchars);
         fp = fp->hdr.nxt;
@@ -282,7 +282,7 @@ void fcache_init(void)
     FCACHE *fp = fcache;
     for (fp = fcache; fp->ppFilename; fp++)
     {
-        fp->fileblock = NULL;
+        fp->fileblock = nullptr;
     }
 
     fcache_load(NOTHING);

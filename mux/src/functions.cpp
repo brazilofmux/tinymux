@@ -107,7 +107,7 @@ UTF8 *next_token(__deref_inout UTF8 *str, const SEP &sep)
         }
         if (!*str)
         {
-            return NULL;
+            return nullptr;
         }
         str++;
         if (sep.str[0] == ' ')
@@ -127,7 +127,7 @@ UTF8 *next_token(__deref_inout UTF8 *str, const SEP &sep)
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
     return str;
@@ -143,8 +143,8 @@ UTF8 *split_token(__deref_inout UTF8 **sp, const SEP &sep)
 
     if (!str)
     {
-        *sp = NULL;
-        return NULL;
+        *sp = nullptr;
+        return nullptr;
     }
     if (sep.n == 1)
     {
@@ -166,7 +166,7 @@ UTF8 *split_token(__deref_inout UTF8 **sp, const SEP &sep)
         }
         else
         {
-            str = NULL;
+            str = nullptr;
         }
     }
     else
@@ -179,7 +179,7 @@ UTF8 *split_token(__deref_inout UTF8 **sp, const SEP &sep)
         }
         else
         {
-            str = NULL;
+            str = nullptr;
         }
     }
     *sp = str;
@@ -224,7 +224,7 @@ void AutoDetect::ExamineList(int nitems, UTF8 *ptrs[])
         }
 
         if (  (m_CouldBe & DBREF_LIST)
-           && !is_integer(p+1, NULL))
+           && !is_integer(p+1, nullptr))
         {
             m_CouldBe &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
         }
@@ -236,7 +236,7 @@ void AutoDetect::ExamineList(int nitems, UTF8 *ptrs[])
         }
 
         if (  (m_CouldBe & NUMERIC_LIST)
-           && !is_integer(p, NULL))
+           && !is_integer(p, nullptr))
         {
             m_CouldBe &= ~NUMERIC_LIST;
         }
@@ -943,8 +943,8 @@ static FUNCTION(fun_timefmt)
         }
     }
 
-    const UTF8 *pValidLongMonth = NULL;
-    const UTF8 *pValidShortMonth = NULL;
+    const UTF8 *pValidLongMonth = nullptr;
+    const UTF8 *pValidShortMonth = nullptr;
     if (  1 <= ft.iMonth
        && ft.iMonth <= 12)
     {
@@ -957,8 +957,8 @@ static FUNCTION(fun_timefmt)
         pValidShortMonth = T("");
     }
 
-    const UTF8 *pValidLongDayOfWeek = NULL;
-    const UTF8 *pValidShortDayOfWeek = NULL;
+    const UTF8 *pValidLongDayOfWeek = nullptr;
+    const UTF8 *pValidShortDayOfWeek = nullptr;
     if (ft.iDayOfWeek <= 6)
     {
         pValidLongDayOfWeek = DayOfWeekStringLong[ft.iDayOfWeek];
@@ -972,7 +972,7 @@ static FUNCTION(fun_timefmt)
 
     UTF8 *q;
     UTF8 *p = fargs[0];
-    while ((q = (UTF8 *)strchr((char *)p, '$')) != NULL)
+    while ((q = (UTF8 *)strchr((char *)p, '$')) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1225,7 +1225,7 @@ static FUNCTION(fun_etimefmt)
 
     UTF8 *q;
     UTF8 *p = fargs[0];
-    while ((q = (UTF8 *)strchr((char *)p, '$')) != NULL)
+    while ((q = (UTF8 *)strchr((char *)p, '$')) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1485,7 +1485,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                              const UTF8 *pOSep,    mux_cursor  curOSep,
                              LBUF_OFFSET nWidth0)
 {
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(pStr);
@@ -1495,7 +1495,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return 0;
     }
@@ -1550,7 +1550,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
 
         while (sStr->search(T("\t"), &curTab, curStr, curEnd))
         {
-            mux_string *sSpaces = NULL;
+            mux_string *sSpaces = nullptr;
             try
             {
                 sSpaces = new mux_string(T("        "));
@@ -1560,7 +1560,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                 ; // Nothing.
             }
 
-            if (NULL == sSpaces)
+            if (nullptr == sSpaces)
             {
                 ISOUTOFMEMORY(sSpaces);
                 return 0;
@@ -1706,8 +1706,8 @@ FUNCTION(fun_format)
     }
 
     size_t n2, n3;
-    strip_color(fargs[2], NULL, &n2);
-    strip_color(fargs[3], NULL, &n3);
+    strip_color(fargs[2], nullptr, &n2);
+    strip_color(fargs[3], nullptr, &n3);
     if (79 < fieldsize + n2 + n3)
     {
         safe_str(T("#-1 COMBINED FIELD TOO LARGE"), buff, bufc);
@@ -2068,8 +2068,8 @@ FUNCTION(fun_successes)
 
     // Number of dice and difficulty.
     //
-    if (  !is_integer(fargs[0], NULL)
-       || !is_integer(fargs[1], NULL))
+    if (  !is_integer(fargs[0], nullptr)
+       || !is_integer(fargs[1], nullptr))
     {
         safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
         return;
@@ -2215,7 +2215,7 @@ static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[], 
        || key == GET_GEVAL)
     {
         mux_exec(atr_gotten, nLen, buff, bufc, thing, executor, executor,
-            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), NULL, 0);
+            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), nullptr, 0);
     }
     else
     {
@@ -2277,7 +2277,7 @@ static FUNCTION(fun_subeval)
 
     mux_exec(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
              eval|EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
-             NULL, 0);
+             nullptr, 0);
 }
 
 static FUNCTION(fun_eval)
@@ -2288,7 +2288,7 @@ static FUNCTION(fun_eval)
     if (nfargs == 1)
     {
         mux_exec(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor, eval|EV_EVAL,
-                 NULL, 0);
+                 nullptr, 0);
         return;
     }
     if (!*fargs[0] || !*fargs[1])
@@ -2325,7 +2325,7 @@ static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
 
     // If we're evaluating locally, preserve the global registers.
     //
-    reg_ref **preserve = NULL;
+    reg_ref **preserve = nullptr;
     if (is_local)
     {
         preserve = PushRegisters(MAX_GLOBAL_REGS);
@@ -2381,7 +2381,7 @@ static FUNCTION(fun_parent)
             return;
         }
         do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
-                NULL, 0);
+                nullptr, 0);
     }
     else
     {
@@ -2625,7 +2625,7 @@ static FUNCTION(fun_v)
     int i = mux_atol(fargs[0]);
     if (  0 <= i
        && i < ncargs
-       && NULL != cargs[i])
+       && nullptr != cargs[i])
     {
         safe_str(cargs[i], buff, bufc);
     }
@@ -3075,7 +3075,7 @@ static FUNCTION(fun_name)
             return;
         }
         do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
-                NULL, 0);
+                nullptr, 0);
     }
     else
     {
@@ -3196,8 +3196,8 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr = new mux_string(trim_space_sep(fargs[0], sep));
@@ -3208,8 +3208,8 @@ static FUNCTION(fun_extract)
         ; // Nothing.
     }
 
-    if (  NULL == sStr
-       || NULL == words)
+    if (  nullptr == sStr
+       || nullptr == words)
     {
         delete sStr;
         delete words;
@@ -3350,7 +3350,7 @@ static FUNCTION(fun_index)
     start--;
     while (start && s && *s)
     {
-        if ((s = (UTF8 *)strchr((char *)s, c)) != NULL)
+        if ((s = (UTF8 *)strchr((char *)s, c)) != nullptr)
         {
             s++;
         }
@@ -3373,7 +3373,7 @@ static FUNCTION(fun_index)
     p = s;
     while (end && p && *p)
     {
-        if ((p = (UTF8 *)strchr((char *)p, c)) != NULL)
+        if ((p = (UTF8 *)strchr((char *)p, c)) != nullptr)
         {
             if (--end == 0)
             {
@@ -3662,7 +3662,7 @@ SubsetTable[] =
     { T("CONNECT"), lconConnect},
     { T("PUPPET"),  lconPuppet },
     { T("LISTEN"),  lconListen },
-    { (UTF8 *)NULL,      lconAny    }
+    { (UTF8 *)nullptr, lconAny }
 };
 
 /*
@@ -3702,7 +3702,7 @@ static FUNCTION(fun_lcon)
         // LISTEN  -- include only Listening objects.
 
         lconSubsetTable *p = SubsetTable;
-        while (NULL != p->name)
+        while (nullptr != p->name)
         {
             if (mux_stricmp(fargs[1], p->name) == 0)
             {
@@ -4095,8 +4095,8 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = NULL;
-    mux_string *sStr = NULL;
+    mux_string *sPat = nullptr;
+    mux_string *sStr = nullptr;
     try
     {
         sPat = new mux_string(fargs[0]);
@@ -4108,8 +4108,8 @@ static FUNCTION(fun_pos)
     }
 
     mux_cursor nPat;
-    if (  NULL != sStr
-       && NULL != sPat
+    if (  nullptr != sStr
+       && nullptr != sPat
        && sStr->search(*sPat, &nPat))
     {
         safe_ltoa(static_cast<long>(nPat.m_point + 1), buff, bufc);
@@ -4139,7 +4139,7 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -4149,7 +4149,7 @@ static FUNCTION(fun_lpos)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -4160,7 +4160,7 @@ static FUNCTION(fun_lpos)
         return;
     }
 
-    mux_string *sPat = NULL;
+    mux_string *sPat = nullptr;
     try
     {
         sPat = new mux_string(fargs[1]);
@@ -4170,7 +4170,7 @@ static FUNCTION(fun_lpos)
         ; // Nothing.
     }
 
-    if (NULL == sPat)
+    if (nullptr == sPat)
     {
         delete sStr;
         delete sPat;
@@ -4235,7 +4235,7 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
    const SEP &osep, int flag)
 {
     int j;
-    if (NULL == sList)
+    if (nullptr == sList)
     {
         // Return an empty string if passed a null string.
         //
@@ -4273,7 +4273,7 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
 
     // Parse list into words
     //
-    mux_words *words = NULL;
+    mux_words *words = nullptr;
     try
     {
         words = new mux_words(*sList);
@@ -4282,7 +4282,7 @@ static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *
     {
         ; // Nothing.
     }
-    if (NULL == words)
+    if (nullptr == words)
     {
         ISOUTOFMEMORY(words);
         return;
@@ -4433,7 +4433,7 @@ static FUNCTION(fun_ldelete)
 
     // Delete a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, nai, ai, NULL, sep, osep, IF_DELETE);
+    do_itemfuns(buff, bufc, sList, nai, ai, nullptr, sep, osep, IF_DELETE);
 
     delete sList;
 }
@@ -4452,8 +4452,8 @@ static FUNCTION(fun_replace)
         return;
     }
 
-    mux_string *sList = NULL;
-    mux_string *sWord = NULL;
+    mux_string *sList = nullptr;
+    mux_string *sWord = nullptr;
     try
     {
         sList = new mux_string(fargs[0]);
@@ -4466,8 +4466,8 @@ static FUNCTION(fun_replace)
 
     // Replace a word at position X of a list.
     //
-    if (  NULL != sList
-       && NULL != sWord)
+    if (  nullptr != sList
+       && nullptr != sWord)
     {
         int ai[MAX_WORDS];
         int nai = DecodeListOfIntegers(fargs[1], ai);
@@ -4492,7 +4492,7 @@ static FUNCTION(fun_insert)
         return;
     }
 
-    mux_string *sList = NULL;
+    mux_string *sList = nullptr;
     try
     {
         sList = new mux_string(fargs[0]);
@@ -4502,12 +4502,12 @@ static FUNCTION(fun_insert)
         ; // Nothing.
     }
 
-    if (NULL == sList)
+    if (nullptr == sList)
     {
         return;
     }
 
-    mux_string *sWord = NULL;
+    mux_string *sWord = nullptr;
     try
     {
         sWord = new mux_string(fargs[2]);
@@ -4517,7 +4517,7 @@ static FUNCTION(fun_insert)
         ; // Nothing.
     }
 
-    if (NULL == sWord)
+    if (nullptr == sWord)
     {
         delete sList;
         return;
@@ -4552,7 +4552,7 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    mux_string *sWord = NULL;
+    mux_string *sWord = nullptr;
     try
     {
         sWord = new mux_string(fargs[1]);
@@ -4562,7 +4562,7 @@ static FUNCTION(fun_remove)
         ; // Nothing.
     }
 
-    if (NULL == sWord)
+    if (nullptr == sWord)
     {
         return;
     }
@@ -4574,7 +4574,7 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -4584,13 +4584,13 @@ static FUNCTION(fun_remove)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         delete sWord;
         return;
     }
 
-    mux_words *words = NULL;
+    mux_words *words = nullptr;
     try
     {
         words = new mux_words(*sStr);
@@ -4600,7 +4600,7 @@ static FUNCTION(fun_remove)
         ; // Nothing.
     }
 
-    if (NULL == words)
+    if (nullptr == words)
     {
         delete sWord;
         delete sStr;
@@ -4700,7 +4700,7 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -4710,7 +4710,7 @@ static FUNCTION(fun_secure)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -4719,7 +4719,7 @@ static FUNCTION(fun_secure)
     mux_cursor i = CursorMin;
     if (i < nLen)
     {
-        mux_string *sTo = NULL;
+        mux_string *sTo = nullptr;
         try
         {
             sTo = new mux_string(T(" "));
@@ -4729,7 +4729,7 @@ static FUNCTION(fun_secure)
             ; // Nothing.
         }
 
-        if (NULL == sTo)
+        if (nullptr == sTo)
         {
             return;
         }
@@ -4768,7 +4768,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -4778,12 +4778,12 @@ static FUNCTION(fun_escape)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
 
-    mux_string *sOut = NULL;
+    mux_string *sOut = nullptr;
     try
     {
         sOut = new mux_string;
@@ -4793,7 +4793,7 @@ static FUNCTION(fun_escape)
         ; // Nothing.
     }
 
-    if (NULL == sOut)
+    if (nullptr == sOut)
     {
         delete sStr;
         return;
@@ -4931,7 +4931,7 @@ static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { T("visual"),     AF_VISUAL  },
     { T("no_inherit"), AF_PRIVATE },
     { T("const"),      AF_CONST   },
-    { (UTF8 *)NULL,         0          }
+    { (UTF8 *)nullptr,      0     }
 };
 
 static bool atr_has_flag
@@ -5479,7 +5479,7 @@ static void process_sex(dbref player, UTF8 *what, UTF8 *token, UTF8 *buff, UTF8 
     }
     else
     {
-        mux_exec(token, LBUF_SIZE-1, buff, bufc, it, it, it, EV_EVAL, NULL, 0);
+        mux_exec(token, LBUF_SIZE-1, buff, bufc, it, it, it, EV_EVAL, nullptr, 0);
     }
 }
 
@@ -6110,8 +6110,8 @@ static FUNCTION(fun_revwords)
         return;
     }
 
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -6122,8 +6122,8 @@ static FUNCTION(fun_revwords)
         ; // Nothing.
     }
 
-    if (  NULL == sStr
-       || NULL == words)
+    if (  nullptr == sStr
+       || nullptr == words)
     {
         delete sStr;
         delete words;
@@ -6164,7 +6164,7 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = NULL;
+    mux_string *sPat = nullptr;
     try
     {
         sPat = new mux_string;
@@ -6174,7 +6174,7 @@ static FUNCTION(fun_after)
         ; // Nothing.
     }
 
-    if (NULL == sPat)
+    if (nullptr == sPat)
     {
         return;
     }
@@ -6200,7 +6200,7 @@ static FUNCTION(fun_after)
 
     // Look for the target string.
     //
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(bp);
@@ -6210,7 +6210,7 @@ static FUNCTION(fun_after)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         delete sPat;
         return;
@@ -6239,7 +6239,7 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = NULL;
+    mux_string *sPat = nullptr;
     try
     {
         sPat = new mux_string;
@@ -6249,7 +6249,7 @@ static FUNCTION(fun_before)
         ; // Nothing.
     }
 
-    if (NULL == sPat)
+    if (nullptr == sPat)
     {
         return;
     }
@@ -6277,7 +6277,7 @@ static FUNCTION(fun_before)
 
     // Look for the target string.
     //
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(bp);
@@ -6287,7 +6287,7 @@ static FUNCTION(fun_before)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         delete sPat;
         return;
@@ -6325,7 +6325,7 @@ static FUNCTION(fun_search)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *pArg = NULL;
+    UTF8 *pArg = nullptr;
     if (nfargs != 0)
     {
         pArg = fargs[0];
@@ -6425,9 +6425,9 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = NULL;
-    mux_string *sStrB = NULL;
-    mux_string *sStrC = NULL;
+    mux_string *sStrA = nullptr;
+    mux_string *sStrB = nullptr;
+    mux_string *sStrC = nullptr;
     try
     {
         sStrA = new mux_string(fargs[0]);
@@ -6439,9 +6439,9 @@ static FUNCTION(fun_merge)
         ; // Nothing.
     }
 
-    if (  NULL != sStrA
-       && NULL != sStrB
-       && NULL != sStrC)
+    if (  nullptr != sStrA
+       && nullptr != sStrB
+       && nullptr != sStrC)
     {
         // Do length checks first.
         //
@@ -6657,7 +6657,7 @@ static FUNCTION(fun_iter)
                          && mudstate.in_loop < MAX_ITEXT);
     if (bLoopInBounds)
     {
-        mudstate.itext[mudstate.in_loop] = NULL;
+        mudstate.itext[mudstate.in_loop] = nullptr;
         mudstate.inum[mudstate.in_loop] = number;
     }
     mudstate.in_loop++;
@@ -6678,7 +6678,7 @@ static FUNCTION(fun_iter)
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
         UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
-            NULL);
+            nullptr);
         mux_exec(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         free_lbuf(buff2);
@@ -6686,7 +6686,7 @@ static FUNCTION(fun_iter)
     mudstate.in_loop--;
     if (bLoopInBounds)
     {
-        mudstate.itext[mudstate.in_loop] = NULL;
+        mudstate.itext[mudstate.in_loop] = nullptr;
         mudstate.inum[mudstate.in_loop] = 0;
     }
     free_lbuf(curr);
@@ -6772,7 +6772,7 @@ static FUNCTION(fun_list)
                          && mudstate.in_loop < MAX_ITEXT);
     if (bLoopInBounds)
     {
-        mudstate.itext[mudstate.in_loop] = NULL;
+        mudstate.itext[mudstate.in_loop] = nullptr;
         mudstate.inum[mudstate.in_loop] = number;
     }
     mudstate.in_loop++;
@@ -6788,7 +6788,7 @@ static FUNCTION(fun_list)
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
         UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
-            NULL);
+            nullptr);
         dp = result = alloc_lbuf("fun_list.2");
         mux_exec(buff2, LBUF_SIZE-1, result, &dp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -6800,7 +6800,7 @@ static FUNCTION(fun_list)
     mudstate.in_loop--;
     if (bLoopInBounds)
     {
-        mudstate.itext[mudstate.in_loop] = NULL;
+        mudstate.itext[mudstate.in_loop] = nullptr;
         mudstate.inum[mudstate.in_loop] = 0;
     }
     free_lbuf(curr);
@@ -6976,7 +6976,7 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    PUTF8 *elems = NULL;
+    PUTF8 *elems = nullptr;
     try
     {
         elems = new PUTF8[LBUF_SIZE/2];
@@ -6986,12 +6986,12 @@ static FUNCTION(fun_choose)
         ; // Nothing.
     }
 
-    if (NULL == elems)
+    if (nullptr == elems)
     {
         return;
     }
 
-    PUTF8 *weights = NULL;
+    PUTF8 *weights = nullptr;
     try
     {
         weights = new PUTF8[LBUF_SIZE/2];
@@ -7001,7 +7001,7 @@ static FUNCTION(fun_choose)
         ; // Nothing.
     }
 
-    if (NULL == weights)
+    if (nullptr == weights)
     {
         delete [] elems;
         return;
@@ -7084,13 +7084,13 @@ FUNCTION(fun_distribute)
 
     // Validate arguments.
     //
-    if (!is_integer(fargs[0], NULL))
+    if (!is_integer(fargs[0], nullptr))
     {
         safe_str(T("#-1 ARG1 IS NOT AN INTEGER"), buff, bufc);
         return;
     }
 
-    if (!is_integer(fargs[1], NULL))
+    if (!is_integer(fargs[1], nullptr))
     {
         safe_str(T("#-1 ARG2 IS NOT AN INTEGER"), buff, bufc);
         return;
@@ -7109,7 +7109,7 @@ FUNCTION(fun_distribute)
         return;
     }
 
-    int *bin_array = NULL;
+    int *bin_array = nullptr;
     try
     {
         bin_array = new int[bins];
@@ -7119,7 +7119,7 @@ FUNCTION(fun_distribute)
         ; // Nothing.
     }
 
-    if (NULL == bin_array)
+    if (nullptr == bin_array)
     {
         safe_str(T("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE"), buff, bufc);
     }
@@ -7434,9 +7434,9 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr  = NULL;
-    mux_string *sFrom = NULL;
-    mux_string *sTo   = NULL;
+    mux_string *sStr  = nullptr;
+    mux_string *sFrom = nullptr;
+    mux_string *sTo   = nullptr;
 
     try
     {
@@ -7447,7 +7447,7 @@ static FUNCTION(fun_edit)
         ; // Nothing.
     }
 
-    if (NULL != sStr)
+    if (nullptr != sStr)
     {
         for (int i = 1; i + 1 < nfargs; i += 2)
         {
@@ -7460,7 +7460,7 @@ static FUNCTION(fun_edit)
             {
                 ; // Nothing.
             }
-            if (NULL != sFrom && NULL != sTo)
+            if (nullptr != sFrom && nullptr != sTo)
             {
                 sStr->edit(*sFrom, *sTo);
             }
@@ -7643,7 +7643,7 @@ static void switch_handler
         if (bSwitch ? wild_match(tbuff, mbuff) : strcmp((char *)tbuff, (char *)mbuff) == 0)
         {
             free_lbuf(tbuff);
-            tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
+            tbuff = replace_tokens(fargs[i+1], nullptr, nullptr, mbuff);
             free_lbuf(mbuff);
             mux_exec(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -7658,7 +7658,7 @@ static void switch_handler
     if (  i < nfargs
        && fargs[i])
     {
-        tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff);
+        tbuff = replace_tokens(fargs[i], nullptr, nullptr, mbuff);
         mux_exec(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         free_lbuf(tbuff);
@@ -7726,7 +7726,7 @@ static FUNCTION(fun_space)
             // If 'space(0)', 'space(00)', ..., then allow num == 0,
             // otherwise, we force to num to be 1.
             //
-            if (!is_integer(fargs[0], NULL))
+            if (!is_integer(fargs[0], nullptr))
             {
                 num = 1;
             }
@@ -7994,7 +7994,7 @@ static FUNCTION(fun_terminfo)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    DESC *d = NULL;
+    DESC *d = nullptr;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -8008,7 +8008,7 @@ static FUNCTION(fun_terminfo)
             }
         }
 
-        if (  NULL != d
+        if (  nullptr != d
            && (  d->player != executor
               && !Wizard_Who(executor)))
         {
@@ -8043,7 +8043,7 @@ static FUNCTION(fun_terminfo)
         }
     }
 
-    if (NULL == d)
+    if (nullptr == d)
     {
         safe_notconnected(buff, bufc);
         return;
@@ -8171,7 +8171,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
     psc->m_s = s;
     psc->m_n  = n;
     psc->m_iSortType = sort_type;
-    psc->m_ptrs = NULL;
+    psc->m_ptrs = nullptr;
 
     if (0 == n)
     {
@@ -8181,7 +8181,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
     int i;
 
     psc->m_ptrs = (q_rec *) MEMALLOC(n * sizeof(q_rec));
-    if (NULL != psc->m_ptrs)
+    if (nullptr != psc->m_ptrs)
     {
         switch (sort_type)
         {
@@ -8240,10 +8240,10 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
 
 static void do_asort_finish(SortContext *psc)
 {
-    if (NULL != psc->m_ptrs)
+    if (nullptr != psc->m_ptrs)
     {
         MEMFREE(psc->m_ptrs);
-        psc->m_ptrs = NULL;
+        psc->m_ptrs = nullptr;
     }
 }
 
@@ -8340,7 +8340,7 @@ static void handle_sets
     __in const SEP      &osep
 )
 {
-    UTF8 **ptrs1 = NULL;
+    UTF8 **ptrs1 = nullptr;
     try
     {
         ptrs1 = new UTF8 *[LBUF_SIZE/2];
@@ -8350,12 +8350,12 @@ static void handle_sets
         ; // Nothing.
     }
 
-    if (NULL == ptrs1)
+    if (nullptr == ptrs1)
     {
         return;
     }
 
-    UTF8 **ptrs2 = NULL;
+    UTF8 **ptrs2 = nullptr;
     try
     {
         ptrs2 = new UTF8 *[LBUF_SIZE/2];
@@ -8365,7 +8365,7 @@ static void handle_sets
         ; // Nothing.
     }
 
-    if (NULL == ptrs2)
+    if (nullptr == ptrs2)
     {
         delete [] ptrs1;
         return;
@@ -8439,7 +8439,7 @@ static void handle_sets
         return;
     }
 
-    CompareFunction *cf = NULL;
+    CompareFunction *cf = nullptr;
     switch (sort_type)
     {
     case ASCII_LIST:
@@ -8465,7 +8465,7 @@ static void handle_sets
 
     int i1 = 0;
     int i2 = 0;
-    q_rec *oldp = NULL;
+    q_rec *oldp = nullptr;
     bool bFirst = true;
 
     switch (oper)
@@ -8761,7 +8761,7 @@ static void centerjustcombo
 {
     // Width must be a number.
     //
-    if (!is_integer(fargs[1], NULL))
+    if (!is_integer(fargs[1], nullptr))
     {
         return;
     }
@@ -8777,7 +8777,7 @@ static void centerjustcombo
         return;
     }
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -8787,7 +8787,7 @@ static void centerjustcombo
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -8811,7 +8811,7 @@ static void centerjustcombo
 
     // Determine string to pad with.
     //
-    mux_string *sPad = NULL;
+    mux_string *sPad = nullptr;
     try
     {
         sPad = new mux_string;
@@ -8821,7 +8821,7 @@ static void centerjustcombo
         ; // Nothing.
     }
 
-    if (NULL == sPad)
+    if (nullptr == sPad)
     {
         delete sStr;
         return;
@@ -8851,7 +8851,7 @@ static void centerjustcombo
     LBUF_OFFSET nTrailing = nWidth - nLeading - nStr.m_point;
     LBUF_OFFSET nPos = 0;
 
-    mux_string *s = NULL;
+    mux_string *s = nullptr;
     try
     {
         s = new mux_string;
@@ -8861,7 +8861,7 @@ static void centerjustcombo
         ; // Nothing.
     }
 
-    if (NULL == s)
+    if (nullptr == s)
     {
         delete sStr;
         delete sPad;
@@ -9124,7 +9124,7 @@ static FUNCTION(fun_rsrelease)
     if (mudstate.pResultsSet)
     {
         mudstate.pResultsSet->Release();
-        mudstate.pResultsSet = NULL;
+        mudstate.pResultsSet = nullptr;
     }
     else
     {
@@ -9224,7 +9224,7 @@ FUNCTION(fun_rsrec)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (NULL == mudstate.pResultsSet)
+    if (nullptr == mudstate.pResultsSet)
     {
         safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
         return;
@@ -9245,7 +9245,7 @@ FUNCTION(fun_rsrec)
 
     bool bFirst = true;
     const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
-    while (NULL != pField)
+    while (nullptr != pField)
     {
         if (!bFirst)
         {
@@ -9293,7 +9293,7 @@ FUNCTION(fun_rsrecnext)
 
     bool bFirst = true;
     const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
-    while (NULL != pField)
+    while (nullptr != pField)
     {
         if (!bFirst)
         {
@@ -9348,7 +9348,7 @@ FUNCTION(fun_rsrecprev)
 
     bool bFirst = true;
     const UTF8 *pField = mudstate.pResultsSet->FirstField(mudstate.iRow);
-    while (NULL != pField)
+    while (nullptr != pField)
     {
         if (!bFirst)
         {
@@ -9413,7 +9413,7 @@ static FUNCTION(fun_trim)
     UNUSED_PARAMETER(ncargs);
 
     bool bLeft = true, bRight = true;
-    const UTF8 *p = NULL;
+    const UTF8 *p = nullptr;
     size_t n = 0;
 
     if (nfargs >= 2)
@@ -9438,7 +9438,7 @@ static FUNCTION(fun_trim)
         }
     }
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -9448,7 +9448,7 @@ static FUNCTION(fun_trim)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -9568,7 +9568,7 @@ static FUNCTION(fun_error)
         {
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_TOP|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY),
-                NULL, 0);
+                nullptr, 0);
             *errbufc = '\0';
         }
         safe_str(errbuff, buff, bufc);
@@ -9594,7 +9594,7 @@ static FUNCTION(fun_strip)
     {
         return;
     }
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -9604,7 +9604,7 @@ static FUNCTION(fun_strip)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -9678,24 +9678,24 @@ static FUNCTION(fun_wrap)
 
     // ARG 4: Left padding. Default: blank.
     //
-    UTF8 *pLeft = NULL;
+    UTF8 *pLeft = nullptr;
     size_t nLeft = 0;
     if (  4 <= nfargs
        && '\0' != fargs[3][0])
     {
         pLeft = fargs[3];
-        strip_color(pLeft, NULL, &nLeft);
+        strip_color(pLeft, nullptr, &nLeft);
     }
 
     // ARG 5: Right padding. Default: blank.
     //
-    UTF8 *pRight = NULL;
+    UTF8 *pRight = nullptr;
     size_t nRight = 0;
     if (  5 <= nfargs
        && '\0' != fargs[4][0])
     {
         pRight = fargs[4];
-        strip_color(pRight, NULL, &nRight);
+        strip_color(pRight, nullptr, &nRight);
     }
 
     // ARG 6: Hanging indent. Default: 0.
@@ -10584,7 +10584,7 @@ static FUNCTION(fun_art)
     //
     ArtRuleset *arRule = mudconf.art_rules;
 
-    while (arRule != NULL)
+    while (arRule != nullptr)
     {
         pcre* reRuleRegexp = (pcre *) arRule->m_pRegexp;
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
@@ -10657,7 +10657,7 @@ static FUNCTION(fun_chr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!is_integer(fargs[0], NULL))
+    if (!is_integer(fargs[0], nullptr))
     {
         safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
         return;
@@ -10845,7 +10845,7 @@ void transform_range(mux_string &sStr)
     mux_cursor nPos, nStart;
     UTF8 cBefore, cAfter;
 
-    mux_string *sTemp = NULL;
+    mux_string *sTemp = nullptr;
     try
     {
         sTemp = new mux_string;
@@ -10855,7 +10855,7 @@ void transform_range(mux_string &sStr)
         ; // Nothing.
     }
 
-    if (NULL == sTemp)
+    if (nullptr == sTemp)
     {
         return;
     }
@@ -10941,7 +10941,7 @@ static FUNCTION(fun_tr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -10951,15 +10951,15 @@ static FUNCTION(fun_tr)
         ; // Nothing.
     }
 
-    if (NULL != sStr)
+    if (nullptr != sStr)
     {
         size_t nStr = sStr->length_byte();
         if (0 != nStr)
         {
             // Process character ranges.
             //
-            mux_string *sFrom = NULL;
-            mux_string *sTo = NULL;
+            mux_string *sFrom = nullptr;
+            mux_string *sTo = nullptr;
             try
             {
                 sFrom = new mux_string(fargs[1]);
@@ -10970,8 +10970,8 @@ static FUNCTION(fun_tr)
                 ; // Nothing.
             }
 
-            if (  NULL != sFrom
-               && NULL != sTo)
+            if (  nullptr != sFrom
+               && nullptr != sTo)
             {
                 transform_range(*sFrom);
                 transform_range(*sTo);
@@ -11415,14 +11415,14 @@ static FUN builtin_function_list[] =
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZWHO"),        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {(UTF8 *)NULL,         NULL,       MAX_ARG, 0,       0,         0, 0}
+    {(UTF8 *)nullptr,   nullptr,       MAX_ARG, 0,       0,         0, 0}
 };
 
 void function_add(FUN *fp)
 {
     size_t nCased;
     UTF8 *pCased = mux_strupr(fp->name, nCased);
-    if (NULL == hashfindLEN(pCased, nCased, &mudstate.func_htab))
+    if (nullptr == hashfindLEN(pCased, nCased, &mudstate.func_htab))
     {
         hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
     }
@@ -11446,7 +11446,7 @@ void functions_add(FUN funlist[])
 void init_functab(void)
 {
     functions_add(builtin_function_list);
-    ufun_head = NULL;
+    ufun_head = nullptr;
 }
 
 // MakeCanonicalUserFunctionName
@@ -11458,12 +11458,12 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
 {
     static UTF8 Buffer[MAX_UFUN_NAME_LEN+1];
 
-    if (  NULL == pName
+    if (  nullptr == pName
        || '\0' == pName[0])
     {
         *pnName = 0;
         *pbValid = false;
-        return NULL;
+        return nullptr;
     }
 
     size_t nLen = 0;
@@ -11509,7 +11509,7 @@ void do_function
     ATTR *ap;
 
     if (  (key & FN_LIST)
-       || NULL == fname
+       || nullptr == fname
        || '\0' == fname[0])
     {
         notify(executor, tprintf(T("%-28s   %-8s  %-30s Flgs"),
@@ -11557,7 +11557,7 @@ void do_function
 
     // Verify that the function doesn't exist in the builtin table.
     //
-    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != NULL)
+    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != nullptr)
     {
         notify_quiet(executor, T("Function already defined in builtin function table."));
         return;
@@ -11570,7 +11570,7 @@ void do_function
           && '\0' == target[0]))
     {
         ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
-        if (NULL == ufp)
+        if (nullptr == ufp)
         {
             notify_quiet(executor, tprintf(T("Function %s not found."), pName));
         }
@@ -11636,7 +11636,7 @@ void do_function
 
     if (!ufp)
     {
-        ufp = NULL;
+        ufp = nullptr;
         try
         {
             ufp = new UFUN;
@@ -11646,7 +11646,7 @@ void do_function
             ; // Nothing.
         }
 
-        if (NULL == ufp)
+        if (nullptr == ufp)
         {
             return;
         }
@@ -11655,7 +11655,7 @@ void do_function
         ufp->obj = obj;
         ufp->atr = pattr->number;
         ufp->perms = CA_PUBLIC;
-        ufp->next = NULL;
+        ufp->next = nullptr;
         if (!ufun_head)
         {
             ufun_head = ufp;
@@ -11788,27 +11788,27 @@ private:
     FunctionsNode  *m_pHead;
 };
 
-CFunctions::CFunctions(void) : m_cRef(1), m_pHead(NULL)
+CFunctions::CFunctions(void) : m_cRef(1), m_pHead(nullptr)
 {
 }
 
 CFunctions::~CFunctions()
 {
     FunctionsNode *pfn;
-    while (NULL != m_pHead)
+    while (nullptr != m_pHead)
     {
         pfn = m_pHead;
         m_pHead = pfn->next;
 
         function_remove(&pfn->fun);
 
-        pfn->fun.vp = NULL;
-        if (NULL != pfn->pIFun)
+        pfn->fun.vp = nullptr;
+        if (nullptr != pfn->pIFun)
         {
             pfn->pIFun->Release();
-            pfn->pIFun = NULL;
+            pfn->pIFun = nullptr;
         }
-        pfn->next = NULL;
+        pfn->next = nullptr;
 
         delete pfn;
     }
@@ -11826,7 +11826,7 @@ MUX_RESULT CFunctions::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -11862,10 +11862,10 @@ static FUNCTION(fun_Functions)
     UNUSED_PARAMETER(ncargs);
 
     FunctionsNode *pfn = (FunctionsNode *)(fp->vp);
-    if (NULL != pfn)
+    if (nullptr != pfn)
     {
         mux_IFunction *pIFun = pfn->pIFun;
-        if (NULL != pIFun)
+        if (nullptr != pIFun)
         {
             MUX_RESULT mr = pIFun->Call(pfn->nKey, buff, bufc, executor, caller, enactor, eval, fargs, nfargs, cargs, ncargs);
             UNUSED_PARAMETER(mr);
@@ -11875,13 +11875,13 @@ static FUNCTION(fun_Functions)
 
 MUX_RESULT CFunctions::Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms)
 {
-    if (  NULL == name
-       || NULL == pIFun)
+    if (  nullptr == name
+       || nullptr == pIFun)
     {
         return MUX_E_INVALIDARG;
     }
 
-    FunctionsNode *pfn = NULL;
+    FunctionsNode *pfn = nullptr;
     try
     {
         pfn = new FunctionsNode;
@@ -11891,7 +11891,7 @@ MUX_RESULT CFunctions::Add(unsigned int nKey, const UTF8 *name, mux_IFunction *p
         ; // Nothing.
     }
 
-    if (NULL == pfn)
+    if (nullptr == pfn)
     {
         return MUX_E_OUTOFMEMORY;
     }
@@ -11942,7 +11942,7 @@ MUX_RESULT CFunctionsFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -11970,12 +11970,12 @@ MUX_RESULT CFunctionsFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_II
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CFunctions *pLog = NULL;
+    CFunctions *pLog = nullptr;
     try
     {
         pLog = new CFunctions;
@@ -11985,7 +11985,7 @@ MUX_RESULT CFunctionsFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_II
         ; // Nothing.
     }
 
-    if (NULL == pLog)
+    if (nullptr == pLog)
     {
         return MUX_E_OUTOFMEMORY;
     }

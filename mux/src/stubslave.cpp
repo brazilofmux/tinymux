@@ -77,7 +77,7 @@ extern "C" MUX_RESULT DCL_API stubslave_GetClassObject(MUX_CID cid, MUX_IID iid,
 
     if (CID_StubSlave == cid)
     {
-        CStubSlaveFactory *pStubSlaveFactory = NULL;
+        CStubSlaveFactory *pStubSlaveFactory = nullptr;
         try
         {
             pStubSlaveFactory = new CStubSlaveFactory;
@@ -87,7 +87,7 @@ extern "C" MUX_RESULT DCL_API stubslave_GetClassObject(MUX_CID cid, MUX_IID iid,
             ; // Nothing.
         }
 
-        if (NULL == pStubSlaveFactory)
+        if (nullptr == pStubSlaveFactory)
         {
             return MUX_E_OUTOFMEMORY;
         }
@@ -185,7 +185,7 @@ MUX_RESULT CStubSlave::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -213,7 +213,7 @@ MUX_RESULT CStubSlave::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_
 {
     UNUSED_PARAMETER(ctx);
 
-    if (NULL == pcid)
+    if (nullptr == pcid)
     {
         return MUX_E_INVALIDARG;
     }
@@ -235,14 +235,14 @@ MUX_RESULT CStubSlave_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     // Get our interface pointer from the channel.
     //
     mux_IUnknown *pIUnknown= static_cast<mux_IUnknown *>(pci->pInterface);
-    pci->pInterface = NULL;
+    pci->pInterface = nullptr;
 
     // Tear down our side of the communication.  Our callback functions will
     // no longer be called.
     //
     Pipe_FreeChannel(pci);
 
-    if (NULL != pIUnknown)
+    if (nullptr != pIUnknown)
     {
         pIUnknown->Release();
         return MUX_S_OK;
@@ -256,7 +256,7 @@ MUX_RESULT CStubSlave_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     mux_ISlaveControl *pISlaveControl = static_cast<mux_ISlaveControl *>(pci->pInterface);
-    if (NULL == pISlaveControl)
+    if (nullptr == pISlaveControl)
     {
         return MUX_E_NOINTERFACE;
     }
@@ -293,11 +293,11 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 return MUX_E_INVALIDARG;
             }
 
-            UTF8  *pModuleName = NULL;
+            UTF8  *pModuleName = nullptr;
 #if defined(WINDOWS_FILES)
-            UTF16 *pFileName = NULL;
+            UTF16 *pFileName = nullptr;
 #elif defined(UNIX_FILES)
-            UTF8  *pFileName = NULL;
+            UTF8  *pFileName = nullptr;
 #endif // UNIX_FILES
 
             try
@@ -314,8 +314,8 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 ; // Nothing.
             }
 
-            if (  NULL != pModuleName
-               && NULL != pFileName)
+            if (  nullptr != pModuleName
+               && nullptr != pFileName)
             {
                 nWanted = CallFrame.nModuleName;
                 if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
@@ -343,15 +343,15 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 mr = MUX_E_OUTOFMEMORY;
             }
 
-            if (NULL != pModuleName)
+            if (nullptr != pModuleName)
             {
                 delete pModuleName;
-                pModuleName = NULL;
+                pModuleName = nullptr;
             }
-            if (NULL != pFileName)
+            if (nullptr != pFileName)
             {
                 delete pFileName;
-                pFileName = NULL;
+                pFileName = nullptr;
             }
         }
         break;
@@ -370,7 +370,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 return MUX_E_INVALIDARG;
             }
 
-            UTF8  *pModuleName = NULL;
+            UTF8  *pModuleName = nullptr;
 
             try
             {
@@ -381,7 +381,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 ; // Nothing.
             }
 
-            if (NULL != pModuleName)
+            if (nullptr != pModuleName)
             {
                 nWanted = CallFrame.nModuleName;
                 if (  Pipe_GetBytes(pqi, &nWanted, pModuleName)
@@ -404,10 +404,10 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                 mr = MUX_E_OUTOFMEMORY;
             }
 
-            if (NULL != pModuleName)
+            if (nullptr != pModuleName)
             {
                 delete pModuleName;
-                pModuleName = NULL;
+                pModuleName = nullptr;
             }
         }
         break;
@@ -494,7 +494,7 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv,
     // Parameter validation and initialization.
     //
     MUX_RESULT mr = MUX_S_OK;
-    if (NULL == pqi)
+    if (nullptr == pqi)
     {
         mr = MUX_E_INVALIDARG;
     }
@@ -508,8 +508,8 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv,
     }
     else
     {
-        mux_ISlaveControl *pISlaveControl = NULL;
-        if (NULL == pv)
+        mux_ISlaveControl *pISlaveControl = nullptr;
+        if (nullptr == pv)
         {
             mr = QueryInterface(IID_ISlaveControl, (void **)&pISlaveControl);
         }
@@ -522,8 +522,8 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv,
         {
             // Construct a packet sufficient to allow the proxy to communicate with us.
             //
-            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStubSlave_Call, NULL, CStubSlave_Disconnect);
-            if (NULL != pChannel)
+            CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStubSlave_Call, nullptr, CStubSlave_Disconnect);
+            if (nullptr != pChannel)
             {
                 pChannel->pInterface = pISlaveControl;
                 Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
@@ -532,7 +532,7 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv,
             else
             {
                 pISlaveControl->Release();
-                pISlaveControl = NULL;
+                pISlaveControl = nullptr;
                 mr = MUX_E_OUTOFMEMORY;
             }
         }
@@ -558,7 +558,7 @@ MUX_RESULT CStubSlave::ReleaseMarshalData(QUEUE_INFO *pqi)
        && sizeof(nChannel) == nWanted)
     {
         CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
-        if (NULL != pChannel)
+        if (nullptr != pChannel)
         {
             CStubSlave_Disconnect(pChannel, pqi);
         }
@@ -630,7 +630,7 @@ MUX_RESULT CStubSlaveFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -658,12 +658,12 @@ MUX_RESULT CStubSlaveFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_II
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CStubSlave *pStubSlave = NULL;
+    CStubSlave *pStubSlave = nullptr;
     try
     {
         pStubSlave = new CStubSlave;
@@ -673,7 +673,7 @@ MUX_RESULT CStubSlaveFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_II
         ; // Nothing.
     }
 
-    if (NULL == pStubSlave)
+    if (nullptr == pStubSlave)
     {
         return MUX_E_OUTOFMEMORY;
     }

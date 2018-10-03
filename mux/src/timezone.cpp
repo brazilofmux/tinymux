@@ -125,7 +125,7 @@ static bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
     //
     return (_localtime64_s(ptm_arg, pt_arg) == 0);
 #elif defined(HAVE_LOCALTIME_R)
-    return (localtime_r(pt_arg, ptm_arg) != NULL);
+    return (localtime_r(pt_arg, ptm_arg) != nullptr);
 #else
     struct tm *ptm = localtime(pt_arg);
     if (ptm)

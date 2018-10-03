@@ -162,7 +162,7 @@ void do_kill
             }
         }
         did_it(executor, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, 0,
-            NULL, 0);
+            nullptr, 0);
 
         // notify victim
         //
@@ -246,8 +246,8 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         safe_str(T(" away."), str, &sp);
         *sp = '\0';
 
-        did_it(giver, thing, A_GFAIL, str, A_OGFAIL, NULL, A_AGFAIL, 0,
-            NULL, 0);
+        did_it(giver, thing, A_GFAIL, str, A_OGFAIL, nullptr, A_AGFAIL, 0,
+            nullptr, 0);
         free_lbuf(str);
         return;
     }
@@ -260,8 +260,8 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         safe_chr('.', str, &sp);
         *sp = '\0';
 
-        did_it(giver, recipient, A_RFAIL, str, A_ORFAIL, NULL, A_ARFAIL, 0,
-            NULL, 0);
+        did_it(giver, recipient, A_RFAIL, str, A_ORFAIL, nullptr, A_ARFAIL, 0,
+            nullptr, 0);
         free_lbuf(str);
         return;
     }
@@ -276,9 +276,9 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str, Moniker(recipient)), MSG_SRC_GIVE);
         free_lbuf(str);
     }
-    did_it(giver, thing, A_DROP, NULL, A_ODROP, NULL, A_ADROP, 0, NULL, 0);
-    did_it(recipient, thing, A_SUCC, NULL, A_OSUCC, NULL, A_ASUCC, 0,
-        NULL, 0);
+    did_it(giver, thing, A_DROP, nullptr, A_ODROP, nullptr, A_ADROP, 0, nullptr, 0);
+    did_it(recipient, thing, A_SUCC, nullptr, A_OSUCC, nullptr, A_ASUCC, 0,
+        nullptr, 0);
 }
 
 static void give_money(dbref giver, dbref recipient, int key, int amount)
@@ -386,7 +386,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     // Transfer the money and run PAY attributes
     //
     giveto(recipient, cost);
-    did_it(giver, recipient, A_PAY, NULL, A_OPAY, NULL, A_APAY, 0, NULL, 0);
+    did_it(giver, recipient, A_PAY, nullptr, A_OPAY, nullptr, A_APAY, 0, nullptr, 0);
     return;
 }
 

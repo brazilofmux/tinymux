@@ -26,7 +26,7 @@
 // dstr is modified to point to the char after the delimiter, and the function
 // return value points to the found string (space compressed if specified). If
 // we ran off the end of the string without finding the delimiter, dstr is
-// returned as NULL.
+// returned as nullptr.
 //
 static UTF8 *parse_to_cleanup( int eval, int first, UTF8 *cstr, UTF8 *rstr,
                                UTF8 *zstr, UTF8 *strFirewall)
@@ -188,16 +188,16 @@ UTF8 *parse_to(UTF8 **dstr, UTF8 delim, int eval)
     UTF8 *rstr, *cstr, *zstr, *strFirewall;
     int sp, tp, bracketlev;
 
-    if (  dstr == NULL
-       || *dstr == NULL)
+    if (  dstr == nullptr
+       || *dstr == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (**dstr == '\0')
     {
         rstr = *dstr;
-        *dstr = NULL;
+        *dstr = nullptr;
         return rstr;
     }
     sp = 0;
@@ -462,7 +462,7 @@ TryAgain:
         }
     }
     rstr = parse_to_cleanup(eval, first, cstr, rstr, zstr, strFirewall);
-    *dstr = NULL;
+    *dstr = nullptr;
     return rstr;
 }
 
@@ -472,11 +472,11 @@ TryAgain:
 //
 static const UTF8 *parse_to_lite(const UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
 {
-    if (  NULL == dstr
+    if (  nullptr == dstr
        || '\0' == dstr[0])
     {
         *nLen = 0;
-        return NULL;
+        return nullptr;
     }
 
 #define stacklim 32
@@ -707,21 +707,21 @@ TryAgain:
     }
     *iWhichDelim = 0;
     *nLen = (cstr - dstr);
-    rstr = NULL;
+    rstr = nullptr;
     return rstr;
 }
 
 //-----------------------------------------------------------------------------
 // parse_arglist: Parse a line into an argument list contained in lbufs. A
 // pointer is returned to whatever follows the final delimiter. If the arglist
-// is unterminated, a NULL is returned.  The original arglist is destructively
+// is unterminated, a nullptr is returned.  The original arglist is destructively
 // modified.
 //
 void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
                      int eval, UTF8 *fargs[], int nfargs,
                      const UTF8 *cargs[], int ncargs, int *nArgsParsed )
 {
-    if (dstr == NULL)
+    if (dstr == nullptr)
     {
         *nArgsParsed = 0;
         return;
@@ -764,10 +764,10 @@ static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enact
                           int nfargs, const UTF8 *cargs[], int ncargs,
                           int *nArgsParsed)
 {
-    if (NULL == dstr)
+    if (nullptr == dstr)
     {
         *nArgsParsed = 0;
-        return NULL;
+        return nullptr;
     }
 
     int peval = eval;
@@ -874,7 +874,7 @@ static int  tcache_count;
 
 void tcache_init(void)
 {
-    tcache_head = NULL;
+    tcache_head = nullptr;
     tcache_top = true;
     tcache_count = 0;
 }
@@ -914,7 +914,7 @@ static void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
 
 static void tcache_finish(void)
 {
-    while (tcache_head != NULL)
+    while (tcache_head != nullptr)
     {
         TCENT *xp = tcache_head;
         tcache_head = xp->next;
@@ -1078,7 +1078,7 @@ typedef struct tag_ptrsframe
     struct tag_ptrsframe *next;
 } PtrsFrame;
 
-static PtrsFrame *pPtrsFrame = NULL;
+static PtrsFrame *pPtrsFrame = nullptr;
 
 UTF8 **PushPointers(int nNeeded)
 {
@@ -1116,7 +1116,7 @@ typedef struct tag_refsframe
     struct tag_refsframe *next;
 } RefsFrame;
 
-static RefsFrame *pRefsFrame = NULL;
+static RefsFrame *pRefsFrame = nullptr;
 
 reg_ref **PushRegisters(int nNeeded)
 {
@@ -1229,7 +1229,7 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
 void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs)
 {
-    if (  NULL == pStr
+    if (  nullptr == pStr
        || '\0' == pStr[0]
        || alarm_clock.alarmed)
     {
@@ -1248,7 +1248,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     UTF8 *start, *oldp, *savestr;
     const UTF8 *constbuf;
     UTF8 ch;
-    UTF8 *realbuff = NULL, *realbp = NULL;
+    UTF8 *realbuff = nullptr, *realbp = nullptr;
     dbref aowner;
     int nfargs, aflags, feval, i;
     size_t n;
@@ -1317,7 +1317,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
     // If we are tracing, save a copy of the starting buffer.
     //
-    savestr = NULL;
+    savestr = nullptr;
     if (is_trace)
     {
         is_top = tcache_empty();
@@ -1376,11 +1376,11 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         // At this point, pStr[iStr] must be one of the following characters:
         //
         // 0x00 0x20 0x25 0x28 0x5B 0x5C 0x7B
-        // NULL  SP   %    (     [    \   {
+        // NUL   SP   %    (     [    \   {
         //
         // Test softcode shows the following distribution:
         //
-        // NULL occurs 116948 times
+        // NUL  occurs 116948 times
         //   (  occurs  49567 times
         //   %  occurs  24553 times
         //   [  occurs   7618 times
@@ -1413,8 +1413,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 }
             }
 
-            fp = NULL;
-            ufp = NULL;
+            fp = nullptr;
+            ufp = nullptr;
 
             size_t nFun = 0;
             if (oldp <= pEnd)
@@ -1441,7 +1441,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
                 // If not a builtin func, check for global func.
                 //
-                if (NULL == fp)
+                if (nullptr == fp)
                 {
                     ufp = (UFUN *)hashfindLEN(mux_scratch, nFun, &mudstate.ufunc_htab);
                 }
@@ -1546,7 +1546,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             i = executor;
                         }
 
-                        reg_ref **preserve = NULL;
+                        reg_ref **preserve = nullptr;
 
                         if (ufp->flags & FN_PRES)
                         {
@@ -1561,7 +1561,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         {
                             restore_global_regs(preserve);
                             PopRegisters(preserve, MAX_GLOBAL_REGS);
-                            preserve = NULL;
+                            preserve = nullptr;
                         }
                         free_lbuf(tbuf);
                     }
@@ -1616,7 +1616,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     free_lbuf(fargs[i]);
                 }
                 PopPointers(fargs, MAX_ARG);
-                fargs = NULL;
+                fargs = nullptr;
             }
             eval &= ~EV_FCHECK;
             isSpecial(L1, '(') = false;
@@ -2135,7 +2135,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                           : (mux_scratch[0]-'0');
 
                                         if (  i < ncargs
-                                           && NULL != cargs[i])
+                                           && nullptr != cargs[i])
                                         {
                                             safe_str(cargs[i], buff, bufc);
                                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
@@ -2227,7 +2227,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             mudstate.nStackNest++;
             tstr = parse_to_lite(pStr + iStr + 1, ']', '\0', &n, &at_space);
             at_space = 0;
-            if (tstr == NULL)
+            if (tstr == nullptr)
             {
                 if (nBufferAvailable)
                 {
@@ -2282,7 +2282,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             mudstate.nStackNest++;
             tstr = parse_to_lite(pStr + iStr + 1, '}', '\0', &n, &at_space);
             at_space = 0;
-            if (NULL == tstr)
+            if (nullptr == tstr)
             {
                 if (nBufferAvailable)
                 {
@@ -2466,7 +2466,7 @@ void save_and_clear_global_regs
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         preserve[i] = mudstate.global_regs[i];
-        mudstate.global_regs[i] = NULL;
+        mudstate.global_regs[i] = nullptr;
     }
 }
 
@@ -2480,25 +2480,25 @@ void restore_global_regs
         if (mudstate.global_regs[i])
         {
             RegRelease(mudstate.global_regs[i]);
-            mudstate.global_regs[i] = NULL;
+            mudstate.global_regs[i] = nullptr;
         }
 
         if (preserve[i])
         {
             mudstate.global_regs[i] = preserve[i];
-            preserve[i] = NULL;
+            preserve[i] = nullptr;
         }
     }
 }
 
-static lbuf_ref *last_lbufref = NULL;
+static lbuf_ref *last_lbufref = nullptr;
 static size_t    last_left    = 0;
-static UTF8     *last_ptr     = NULL;
+static UTF8     *last_ptr     = nullptr;
 
 void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
 {
-    if (  NULL == regref
-       || NULL == ptr
+    if (  nullptr == regref
+       || nullptr == ptr
        || LBUF_SIZE <= nLength)
     {
         return;
@@ -2506,27 +2506,27 @@ void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
 
     // Put any previous register value out of the way.
     //
-    if (NULL != *regref)
+    if (nullptr != *regref)
     {
         RegRelease(*regref);
-        *regref = NULL;
+        *regref = nullptr;
     }
 
     // Let go of the last lbuf if we can't use it.
     //
     size_t nSize = nLength + 1;
-    if (  NULL != last_lbufref
+    if (  nullptr != last_lbufref
        && last_left < nSize)
     {
         BufRelease(last_lbufref);
-        last_lbufref = NULL;
+        last_lbufref = nullptr;
         last_left    = 0;
-        last_ptr     = NULL;
+        last_ptr     = nullptr;
     }
 
     // Grab a new, fresh lbuf if we don't have one.
     //
-    if (NULL == last_lbufref)
+    if (nullptr == last_lbufref)
     {
         last_ptr = alloc_lbuf("RegAssign");
         last_left = LBUF_SIZE;

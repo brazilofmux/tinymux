@@ -30,7 +30,7 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
        || alarm_clock.alarmed)
     {
         free_lbuf(mod);
-        return NULL;
+        return nullptr;
     }
 
     UTF8 *new_message = alloc_lbuf("modspeech");
@@ -97,7 +97,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     buf = bp = alloc_lbuf("do_think");
     mux_exec(message, LBUF_SIZE-1, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
-         NULL, 0);
+         nullptr, 0);
     *bp = '\0';
     notify(executor, buf);
     free_lbuf(buf);
@@ -198,7 +198,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     // Parse speechmod if present.
     //
     UTF8 *messageOrig = message;
-    UTF8 *messageNew = NULL;
+    UTF8 *messageNew = nullptr;
     if (!(say_flags & SAY_NOEVAL))
     {
         messageNew = modSpeech(executor, message, true, command);
@@ -357,7 +357,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *p = NULL, *messageNew = NULL, *buf2 = NULL, *bp = NULL;
+    UTF8 *p = nullptr, *messageNew = nullptr, *buf2 = nullptr, *bp = nullptr;
     bool bNoTag = (key & SHOUT_NOTAG)   ? true : false;
     bool bEmit  = (key & SHOUT_EMIT)    ? true : false;
     bool bPose  = (key & SHOUT_POSE)    ? true : bEmit;
@@ -484,7 +484,7 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
         str2 = bp = alloc_lbuf("page_return");
         mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
-             NULL, 0);
+             nullptr, 0);
         *bp = '\0';
         if (*str2)
         {
@@ -936,7 +936,7 @@ void do_page
             int target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)
             {
-                page_return(executor, target, T("Idle"), A_IDLE, NULL);
+                page_return(executor, target, T("Idle"), A_IDLE, nullptr);
             }
         }
     }
@@ -1025,8 +1025,8 @@ void do_pemit_single
         break;
     }
 
-    UTF8 *newMessage = NULL;
-    UTF8 *saystring = NULL;
+    UTF8 *newMessage = nullptr;
+    UTF8 *saystring = nullptr;
 
     UTF8 *p;
     switch (target)
@@ -1302,8 +1302,8 @@ void do_pemit_list
         return;
     }
 
-    UTF8 *error_message = NULL;
-    UTF8 *error_ptr = NULL;
+    UTF8 *error_message = nullptr;
+    UTF8 *error_ptr = nullptr;
     dbref aPlayers[(LBUF_SIZE+1)/2];
     int   nPlayers = 0;
 
@@ -1320,7 +1320,7 @@ void do_pemit_list
         }
         else
         {
-            if (NULL == error_message)
+            if (nullptr == error_message)
             {
                 error_message = alloc_lbuf("do_pemit_list.error");
                 error_ptr = error_message;
@@ -1373,13 +1373,13 @@ void do_pemit_list
         }
     }
 
-    if (NULL != error_message)
+    if (nullptr != error_message)
     {
         *error_ptr = '\0';
         notify(player, error_message);
         free_lbuf(error_message);
-        error_message = NULL;
-        error_ptr = NULL;
+        error_message = nullptr;
+        error_ptr = nullptr;
     }
 }
 
@@ -1442,7 +1442,7 @@ void do_pemit_whisper
             return;
         }
         message = recipient;
-        recipient = NULL;
+        recipient = nullptr;
     }
 
     bool  bModified = true;
@@ -1452,7 +1452,7 @@ void do_pemit_whisper
     // Read the A_LASTWHISPER attribute and use that recipient list.
     //
     if (  PEMIT_WHISPER == key
-       && (  NULL == recipient
+       && (  nullptr == recipient
           || '\0' == recipient[0]))
     {
         dbref aowner;

@@ -544,7 +544,7 @@ FLAGNAMEENT gen_flag_names[] =
     {(UTF8 *)"RESTRICTED",      true, &fbeRestricted     },
     {(UTF8 *)"PARENT",          true, &fbeParent         },
 #endif // FIRANMUX
-    {(UTF8 *)NULL,             false, NULL}
+    {(UTF8 *)nullptr,          false, nullptr}
 };
 
 OBJENT object_types[8] =
@@ -644,7 +644,7 @@ UTF8 *MakeCanonicalFlagName
     {
         *pnName = 0;
         *pbValid = false;
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -655,7 +655,7 @@ static FLAGNAMEENT *find_flag(const UTF8 *flagname)
     int nName;
     bool bValid;
     UTF8 *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
-    FLAGNAMEENT *fe = NULL;
+    FLAGNAMEENT *fe = nullptr;
     if (bValid)
     {
         fe = (FLAGNAMEENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
@@ -982,14 +982,14 @@ static UTF8 *AcquireColorLetters(dbref player, dbref target)
     if ('\0' == color_attr[0])
     {
         free_lbuf(color_attr);
-        return NULL;
+        return nullptr;
     }
     else
     {
         UTF8 *AnsiCodes = alloc_lbuf("AcquireColor.2");
         UTF8 *ac = AnsiCodes;
         mux_exec(color_attr, LBUF_SIZE-1, AnsiCodes, &ac, player, target, target,
-                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), NULL, 0);
+                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), nullptr, 0);
         *ac = '\0';
         free_lbuf(color_attr);
         return AnsiCodes;
@@ -1041,11 +1041,11 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             UTF8 *bp2  = buf2;
 
             UTF8 *pLetters = AcquireColorLetters(player, target);
-            if (NULL != pLetters)
+            if (nullptr != pLetters)
             {
                 safe_str(LettersToBinary(pLetters), buf2, &bp2);
                 free_lbuf(pLetters);
-                pLetters = NULL;
+                pLetters = nullptr;
             }
             else
             {
@@ -1103,16 +1103,16 @@ CF_HAND(cf_flag_access)
     UTF8 *fstr = mux_strtok_parse(&tts);
     UTF8 *permstr = mux_strtok_parse(&tts);
 
-    if (  NULL == fstr
+    if (  nullptr == fstr
        || '\0' == fstr[0]
-       || NULL == permstr
+       || nullptr == permstr
        || '\0' == permstr[0])
     {
         return -1;
     }
 
     FLAGNAMEENT *fp;
-    if ((fp = find_flag(fstr)) == NULL)
+    if ((fp = find_flag(fstr)) == nullptr)
     {
         cf_log_notfound(player, cmd, T("No such flag"), fstr);
         return -1;
@@ -1357,11 +1357,11 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
 
     FLAGNAMEENT *flag1;
     flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, nAlias, &mudstate.flags_htab);
-    if (flag1 != NULL)
+    if (flag1 != nullptr)
     {
         FLAGNAMEENT *flag2;
         flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, nNewName, &mudstate.flags_htab);
-        if (flag2 == NULL)
+        if (flag2 == nullptr)
         {
             hashaddLEN(pNewName, nNewName, flag1, &mudstate.flags_htab);
 

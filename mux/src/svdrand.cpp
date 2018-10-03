@@ -52,8 +52,8 @@ void SeedRandomNumberGenerator(void)
 #endif // HAVE_DEV_URANDOM
 #if defined(WINDOWS_CRYPT)
     HCRYPTPROV hProv;
-    if (  CryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0)
-       || CryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, CRYPT_NEWKEYSET))
+    if (  CryptAcquireContext(&hProv, nullptr, nullptr, PROV_DSS, 0)
+       || CryptAcquireContext(&hProv, nullptr, nullptr, PROV_DSS, CRYPT_NEWKEYSET))
     {
         if (CryptGenRandom(hProv, sizeof(aRandomSystemBytes), (BYTE *)aRandomSystemBytes))
         {

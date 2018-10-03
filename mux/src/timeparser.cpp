@@ -704,7 +704,7 @@ PD_Node *PD_NewNode(void)
     {
         return Nodes+(nNodes++);
     }
-    return NULL;
+    return nullptr;
 }
 
 static PD_Node *PD_FirstNode(void)
@@ -802,20 +802,20 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
     int ch = *p;
     if (ch == 0)
     {
-        return NULL;
+        return nullptr;
     }
     PD_Node *pNode;
     int iType = LexTable[ch];
     if (iType == PD_LEX_EOS || iType == PD_LEX_INVALID)
     {
-        return NULL;
+        return nullptr;
     }
     else if (iType == PD_LEX_SYMBOL)
     {
         pNode = PD_NewNode();
         if (!pNode)
         {
-            return NULL;
+            return nullptr;
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
@@ -862,7 +862,7 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         pNode = PD_NewNode();
         if (!pNode)
         {
-            return NULL;
+            return nullptr;
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
@@ -912,7 +912,7 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
             }
             if (!bFound)
             {
-                return NULL;
+                return nullptr;
             }
         }
     }

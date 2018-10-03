@@ -58,7 +58,7 @@ static void do_setnewtitle(dbref player, struct channel *ch, UTF8 *pValidatedTit
         if (user->title)
         {
             MEMFREE(user->title);
-            user->title = NULL;
+            user->title = nullptr;
         }
         user->title = StringClone(pValidatedTitle);
     }
@@ -110,7 +110,7 @@ UTF8 *MakeCanonicalComAlias
 
     if (!pAlias)
     {
-        return NULL;
+        return nullptr;
     }
     size_t n = 0;
     while (pAlias[n])
@@ -118,14 +118,14 @@ UTF8 *MakeCanonicalComAlias
         if (  !mux_isprint_ascii(pAlias[n])
            || ' ' == pAlias[n])
         {
-            return NULL;
+            return nullptr;
         }
         n++;
     }
 
     if (n < 1)
     {
-        return NULL;
+        return nullptr;
     }
     else if (MAX_ALIAS_LEN < n)
     {
@@ -299,14 +299,14 @@ void save_channels(FILE *fp)
 comsys_t *create_new_comsys(void)
 {
     comsys_t *c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
-    if (NULL != c)
+    if (nullptr != c)
     {
         c->who         = NOTHING;
         c->numchannels = 0;
         c->maxchannels = 0;
-        c->alias       = NULL;
-        c->channels    = NULL;
-        c->next        = NULL;
+        c->alias       = nullptr;
+        c->channels    = nullptr;
+        c->next        = nullptr;
     }
     else
     {
@@ -319,7 +319,7 @@ static comsys_t *get_comsys(dbref which)
 {
     if (which < 0)
     {
-        return NULL;
+        return nullptr;
     }
 
     comsys_t *c = comsys_table[which % NUM_COMSYS];
@@ -367,7 +367,7 @@ void del_comsys(dbref who)
 
     comsys_t *c = comsys_table[who % NUM_COMSYS];
 
-    if (c == NULL)
+    if (c == nullptr)
     {
         return;
     }
@@ -403,20 +403,20 @@ void destroy_comsys(comsys_t *c)
     if (c->alias)
     {
         MEMFREE(c->alias);
-        c->alias = NULL;
+        c->alias = nullptr;
     }
     for (i = 0; i < c->numchannels; i++)
     {
         MEMFREE(c->channels[i]);
-        c->channels[i] = NULL;
+        c->channels[i] = nullptr;
     }
     if (c->channels)
     {
         MEMFREE(c->channels);
-        c->channels = NULL;
+        c->channels = nullptr;
     }
     MEMFREE(c);
-    c = NULL;
+    c = nullptr;
 }
 
 // Sort aliases.
@@ -495,7 +495,7 @@ void load_comsystem_V4(FILE *fp)
     num_channels = 0;
 
     int nc = 0;
-    if (NULL == fgets((char *)temp, sizeof(temp), fp))
+    if (nullptr == fgets((char *)temp, sizeof(temp), fp))
     {
         return;
     }
@@ -536,7 +536,7 @@ void load_comsystem_V4(FILE *fp)
         memcpy(ch->header, temp, nHeader);
         ch->header[nHeader] = '\0';
 
-        ch->on_users = NULL;
+        ch->on_users = nullptr;
 
         hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
 
@@ -642,7 +642,7 @@ void load_comsystem_V4(FILE *fp)
         }
         else
         {
-            ch->users = NULL;
+            ch->users = nullptr;
         }
     }
 }
@@ -660,7 +660,7 @@ void load_comsystem_V0123(FILE *fp)
     num_channels = 0;
 
     int nc = 0;
-    if (NULL == fgets((char *)temp, sizeof(temp), fp))
+    if (nullptr == fgets((char *)temp, sizeof(temp), fp))
     {
         return;
     }
@@ -741,7 +741,7 @@ void load_comsystem_V0123(FILE *fp)
             ch->header[nHeader] = '\0';
         }
 
-        ch->on_users = NULL;
+        ch->on_users = nullptr;
 
         hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
 
@@ -908,7 +908,7 @@ void load_comsystem_V0123(FILE *fp)
         }
         else
         {
-            ch->users = NULL;
+            ch->users = nullptr;
         }
     }
 }
@@ -958,8 +958,8 @@ void load_channels_V4(FILE *fp)
         }
         else
         {
-            c->alias = NULL;
-            c->channels = NULL;
+            c->alias = nullptr;
+            c->channels = nullptr;
         }
         if (Good_obj(c->who))
         {
@@ -1024,8 +1024,8 @@ void load_channels_V0123(FILE *fp)
         }
         else
         {
-            c->alias = NULL;
-            c->channels = NULL;
+            c->alias = nullptr;
+            c->channels = nullptr;
         }
         if (Good_obj(c->who))
         {
@@ -1100,7 +1100,7 @@ void load_comsys(UTF8 *filename)
     int i;
     for (i = 0; i < NUM_COMSYS; i++)
     {
-        comsys_table[i] = NULL;
+        comsys_table[i] = nullptr;
     }
 
     FILE *fp;
@@ -1235,7 +1235,7 @@ static void BuildChannelMessage
     // Allocate necessary buffers.
     //
     *messNormal = alloc_lbuf("BCM.messNormal");
-    *messNoComtitle = NULL;
+    *messNoComtitle = nullptr;
     if (!bSpoof)
     {
         *messNoComtitle = alloc_lbuf("BCM.messNoComtitle");
@@ -1269,7 +1269,7 @@ static void BuildChannelMessage
             UTF8 TempToEval[LBUF_SIZE];
             mux_strncpy(TempToEval, user->title, sizeof(TempToEval)-1);
             mux_exec(TempToEval, LBUF_SIZE-1, *messNormal, &mnptr, user->who, user->who, user->who,
-                EV_FCHECK | EV_EVAL | EV_TOP, NULL, 0);
+                EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
         }
         else
         {
@@ -1317,8 +1317,8 @@ static void BuildChannelMessage
         free_lbuf(test_attr);
     }
 
-    UTF8 *saystring = NULL;
-    UTF8 *newPose = NULL;
+    UTF8 *saystring = nullptr;
+    UTF8 *newPose = nullptr;
 
     switch (pPose[0])
     {
@@ -1460,7 +1460,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     else if (  !strncmp((char *)arg2, "last", 4)
             && (  arg2[4] == '\0'
                || (  arg2[4] == ' '
-                  && is_integer(arg2 + 5, NULL))))
+                  && is_integer(arg2 + 5, nullptr))))
     {
         // Parse optional number after the 'last' command.
         //
@@ -1529,7 +1529,7 @@ void SendChannelMessage
         {
             if (  user->ComTitleStatus
                || bSpoof
-               || msgNoComtitle == NULL)
+               || msgNoComtitle == nullptr)
             {
                 notify_comsys(user->who, executor, msgNormal);
             }
@@ -1625,7 +1625,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
             UTF8 *bp = buf;
 
             mux_exec(q, LBUF_SIZE-1, buf, &bp, executor, executor, enactor,
-                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), NULL, 0);
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), nullptr, 0);
             *bp = '\0';
 
             notify_comsys(enactor, executor, buf);
@@ -1657,7 +1657,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         }
 
         user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-        if (NULL == user)
+        if (nullptr == user)
         {
             raw_notify(player, OUT_OF_MEMORY);
             return;
@@ -1750,7 +1750,7 @@ static void do_comwho_line
 )
 {
     UTF8 *msg;
-    UTF8 *buff = NULL;
+    UTF8 *buff = nullptr;
 
     if (user->title[0] != '\0')
     {
@@ -1910,8 +1910,8 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     // Validate arg.
     //
     int value = 0;
-    if (  NULL == arg
-       || !is_integer(arg, NULL)
+    if (  nullptr == arg
+       || !is_integer(arg, nullptr)
        || (  (value = mux_atol(arg)) != 0
           && value != 1))
     {
@@ -1931,7 +1931,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     dbref aowner;
     int aflags;
     ATTR *pattr = atr_str(T("MAX_LOG"));
-    if (  NULL == pattr
+    if (  nullptr == pattr
        || !atr_get_info(ch->chan_obj, pattr->number, &aowner, &aflags))
     {
         // Logging isn't enabled.
@@ -1966,7 +1966,7 @@ static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
 
     int value;
     if (  !*arg
-       || !is_integer(arg, NULL)
+       || !is_integer(arg, nullptr)
        || (value = mux_atol(arg)) > MAX_RECALL_REQUEST)
     {
         return false;
@@ -2027,7 +2027,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
 {
     if (!ch)
     {
-        return NULL;
+        return nullptr;
     }
 
     int first = 0;
@@ -2038,7 +2038,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
     while (dir && (first <= last))
     {
         current = (first + last) / 2;
-        if (ch->users[current] == NULL)
+        if (ch->users[current] == nullptr)
         {
             last--;
             continue;
@@ -2065,7 +2065,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -2161,12 +2161,12 @@ void do_addcom
         if (c->alias)
         {
             MEMFREE(c->alias);
-            c->alias = NULL;
+            c->alias = nullptr;
         }
         if (c->channels)
         {
             MEMFREE(c->channels);
-            c->channels = NULL;
+            c->channels = nullptr;
         }
         c->alias = na;
         c->channels = nc;
@@ -2241,7 +2241,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                     arg1, c->channels[i]));
             }
 
-            c->channels[i] = NULL;
+            c->channels[i] = nullptr;
             c->numchannels--;
 
             for (; i < c->numchannels; i++)
@@ -2295,10 +2295,10 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
                 if (user->title)
                 {
                     MEMFREE(user->title);
-                    user->title = NULL;
+                    user->title = nullptr;
                 }
                 MEMFREE(user);
-                user = NULL;
+                user = nullptr;
                 j = 1;
             }
         }
@@ -2336,7 +2336,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     }
 
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
-    if (NULL == newchannel)
+    if (nullptr == newchannel)
     {
         raw_notify(executor, T("Out of memory."));
         return;
@@ -2401,8 +2401,8 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     newchannel->amount_col = 0;
     newchannel->num_users = 0;
     newchannel->max_users = 0;
-    newchannel->users = NULL;
-    newchannel->on_users = NULL;
+    newchannel->users = nullptr;
+    newchannel->on_users = nullptr;
     newchannel->chan_obj = NOTHING;
     newchannel->num_messages = 0;
 
@@ -2451,12 +2451,12 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
     for (j = 0; j < ch->num_users; j++)
     {
         MEMFREE(ch->users[j]);
-        ch->users[j] = NULL;
+        ch->users[j] = nullptr;
     }
     MEMFREE(ch->users);
-    ch->users = NULL;
+    ch->users = nullptr;
     MEMFREE(ch);
-    ch = NULL;
+    ch = nullptr;
     raw_notify(executor, tprintf(T("Channel %s destroyed."), channel));
 }
 
@@ -2473,7 +2473,7 @@ static void do_listchannels(dbref player, UTF8 *pattern)
     }
 
     bool bWild;
-    if (  NULL != pattern
+    if (  nullptr != pattern
        && '\0' != *pattern)
     {
         bWild = true;
@@ -2621,7 +2621,7 @@ void do_comlist
     }
 
     bool bWild;
-    if (  NULL != pattern
+    if (  nullptr != pattern
        && '\0' != *pattern)
     {
         bWild = true;
@@ -2676,18 +2676,18 @@ void do_channelnuke(dbref player)
             num_channels--;
             hashdeleteLEN(ch->name, strlen((char *)ch->name), &mudstate.channel_htab);
 
-            if (NULL != ch->users)
+            if (nullptr != ch->users)
             {
                 for (j = 0; j < ch->num_users; j++)
                 {
                     MEMFREE(ch->users[j]);
-                    ch->users[j] = NULL;
+                    ch->users[j] = nullptr;
                 }
                 MEMFREE(ch->users);
-                ch->users = NULL;
+                ch->users = nullptr;
             }
             MEMFREE(ch);
-            ch = NULL;
+            ch = nullptr;
         }
     }
 }
@@ -2707,7 +2707,7 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int eval, int key)
     int i;
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE, NULL, 0);
+        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE, nullptr, 0);
     }
 }
 
@@ -2801,12 +2801,12 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
         bAll = true;
     }
 
-    struct channel *ch = NULL;
+    struct channel *ch = nullptr;
     if (i <= MAX_CHANNEL_LEN)
     {
         ch = select_channel(channel);
     }
-    if (NULL == ch)
+    if (nullptr == ch)
     {
         raw_notify(executor, tprintf(T("Unknown channel %s."), channel));
         return;
@@ -3006,7 +3006,7 @@ void do_comdisconnectchannel(dbref player, UTF8 *channel)
         return;
     }
 
-    struct comuser *prevuser = NULL;
+    struct comuser *prevuser = nullptr;
     struct comuser *user;
     for (user = ch->on_users; user;)
     {
@@ -3357,11 +3357,11 @@ void do_chopen
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(executor, caller, enactor, 0, 1, NULL, NULL, 0);
+        do_chanlist(executor, caller, enactor, 0, 1, nullptr, nullptr, 0);
         return;
     }
 
-    const UTF8 *msg = NULL;
+    const UTF8 *msg = nullptr;
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
@@ -3652,7 +3652,7 @@ void do_chanlist
     }
 
     bool bWild;
-    if (  NULL != pattern
+    if (  nullptr != pattern
        && '\0' != *pattern)
     {
         bWild = true;
@@ -3707,8 +3707,8 @@ void do_chanlist
                        || (ch->type & CHANNEL_PUBLIC)
                        || Controls(executor, ch->charge_who))
                     {
-                        const UTF8 *pBuffer = NULL;
-                        UTF8 *atrstr = NULL;
+                        const UTF8 *pBuffer = nullptr;
+                        UTF8 *atrstr = nullptr;
 
                         if (key & CLIST_HEADERS)
                         {
@@ -3721,7 +3721,7 @@ void do_chanlist
                                 atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
                             }
 
-                            if (  NULL != atrstr
+                            if (  nullptr != atrstr
                                && '\0' != atrstr[0])
                             {
                                 pBuffer = atrstr;
@@ -3758,7 +3758,7 @@ void do_chanlist
                         raw_notify(executor, temp);
                         free_mbuf(temp);
 
-                        if (NULL != atrstr)
+                        if (nullptr != atrstr)
                         {
                             free_lbuf(atrstr);
                         }
@@ -3981,7 +3981,7 @@ FUNCTION(fun_chanobj)
     }
 
     struct channel *ch = select_channel(fargs[0]);
-    if (NULL == ch)
+    if (nullptr == ch)
     {
         safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;

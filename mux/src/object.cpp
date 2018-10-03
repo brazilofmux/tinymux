@@ -192,7 +192,7 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
     //
     int i;
     dbref object_list[4];
-    if (  NULL == newobject_string
+    if (  nullptr == newobject_string
        || '\0' == newobject_string[0])
     {
         for (i = 0; i < 4; i++)
@@ -208,7 +208,7 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
 
         UTF8* ptr;
         for ( ptr = mux_strtok_parse(&tts), i = 0;
-              NULL != ptr && i < 4;
+              nullptr != ptr && i < 4;
               ptr = mux_strtok_parse(&tts), i++)
         {
             object_list[i] = mux_atol(ptr);
@@ -509,7 +509,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     Unmark(obj);
     buff = munge_space(pValidName);
     s_Name(obj, buff);
-    free_lbuf(buff); buff = NULL;
+    free_lbuf(buff); buff = nullptr;
     db[obj].cpu_time_used.Set100ns(0);
 
     db[obj].tThrottleExpired.Set100ns(0);
@@ -564,7 +564,7 @@ static void destroy_bad_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
-    s_Name(obj, NULL);
+    s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
     s_Flags(obj, FLAG_WORD3, 0);
@@ -684,7 +684,7 @@ void destroy_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
-    s_Name(obj, NULL);
+    s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
     s_Flags(obj, FLAG_WORD3, 0);
@@ -703,7 +703,7 @@ void destroy_obj(dbref obj)
     local_data_free(obj);
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->data_free(obj);
         p = p->pNext;
@@ -1391,7 +1391,7 @@ static void check_dead_refs(void)
  * *      Location GOING                                  - skip it.
  * *      Location not a PLAYER, ROOM, or THING           - skip it.
  * *      Location already visited                        - skip it.
- * *      Exit/next pointer not in database               - NULL it.
+ * *      Exit/next pointer not in database               - nullptr it.
  * *      Member is not an EXIT                           - terminate chain.
  * *      Member is GOING                                 - destroy exit.
  * *      Member already checked (is in another list)     - terminate chain.
@@ -1601,7 +1601,7 @@ static void check_exit_chains(void)
  * *      Location GOING                                  - skip it.
  * *      Location not a PLAYER, ROOM, or THING           - skip it.
  * *      Location already visited                        - skip it.
- * *      Contents/next pointer not in database           - NULL it.
+ * *      Contents/next pointer not in database           - nullptr it.
  * *      Member is not an PLAYER or THING                - terminate chain.
  * *      Member is GOING                                 - destroy exit.
  * *      Member already checked (is in another list)     - terminate chain.
@@ -1891,7 +1891,7 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
     scheduler.Shrink();
     mux_ModuleMaintenance();
 #if defined(STUB_SLAVE)
-    if (NULL != mudstate.pISlaveControl)
+    if (nullptr != mudstate.pISlaveControl)
     {
         mudstate.pISlaveControl->ModuleMaintenance();
     }
@@ -1901,7 +1901,7 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
     //
     local_dbck();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (NULL != p)
+    while (nullptr != p)
     {
         p->pSink->dbck();
         p = p->pNext;

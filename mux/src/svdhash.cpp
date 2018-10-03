@@ -1341,7 +1341,7 @@ UINT32 CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 CHashFile::CHashFile(void)
 {
     SeedRandomNumberGenerator();
-    m_Cache = NULL;
+    m_Cache = nullptr;
     m_nCache = 0;
     Init();
 }
@@ -1357,8 +1357,8 @@ void CHashFile::Init(void)
 #endif // UNIX_FILES
     m_nDir = 0;
     m_nDirDepth = 0;
-    m_pDir = NULL;
-    m_hpCacheLookup = NULL;
+    m_pDir = nullptr;
+    m_hpCacheLookup = nullptr;
     iCache = 0;
     m_iLastFlushed = 0;
 }
@@ -1411,12 +1411,12 @@ bool CHashFile::InitializeDirectory(unsigned int n)
     if (m_pDir)
     {
         delete [] m_pDir;
-        m_pDir = NULL;
+        m_pDir = nullptr;
     }
     if (m_hpCacheLookup)
     {
         delete [] m_hpCacheLookup;
-        m_hpCacheLookup = NULL;
+        m_hpCacheLookup = nullptr;
     }
 
     m_nDir = n;
@@ -1428,7 +1428,7 @@ bool CHashFile::InitializeDirectory(unsigned int n)
         n >>= 1;
     }
 
-    m_pDir = NULL;
+    m_pDir = nullptr;
     try
     {
         m_pDir = new HF_FILEOFFSET[m_nDir];
@@ -1437,12 +1437,12 @@ bool CHashFile::InitializeDirectory(unsigned int n)
     {
         ; // Nothing.
     }
-    if (NULL == m_pDir)
+    if (nullptr == m_pDir)
     {
         return false;
     }
 
-    m_hpCacheLookup = NULL;
+    m_hpCacheLookup = nullptr;
     try
     {
         m_hpCacheLookup = new int[m_nDir];
@@ -1452,12 +1452,12 @@ bool CHashFile::InitializeDirectory(unsigned int n)
         ; // Nothing.
     }
 
-    if (NULL == m_hpCacheLookup)
+    if (nullptr == m_hpCacheLookup)
     {
         if (m_pDir)
         {
             delete [] m_pDir;
-            m_pDir = NULL;
+            m_pDir = nullptr;
         }
         return false;
     }
@@ -1480,14 +1480,14 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
     size_t nFilename;
     UTF16 *pFilename;
     pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return false;
     }
 
     m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
@@ -1500,14 +1500,14 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
 
 #if defined(WINDOWS_FILES)
     pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return false;
     }
 
     m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
@@ -1561,7 +1561,7 @@ bool CHashFile::RebuildDirectory(void)
     for (UINT32 oPage = 0; oPage < oEndOfFile; oPage += HF_SIZEOF_PAGE)
     {
         int iCache;
-        if ((iCache = AllocateEmptyPage(0, NULL)) < 0)
+        if ((iCache = AllocateEmptyPage(0, nullptr)) < 0)
         {
             Log.WriteString(T("CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE));
             return false;
@@ -1684,14 +1684,14 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     size_t nFilename;
     UTF16 *pFilename;
     pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return HF_OPEN_STATUS_ERROR;
     }
 
     m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY);
@@ -1750,14 +1750,14 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
 #if defined(WINDOWS_FILES)
     bSuccess;
     pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return HF_OPEN_STATUS_ERROR;
     }
 
     m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY);
@@ -1769,7 +1769,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
 #if defined(WINDOWS_FILES)
         m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
-            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
         bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
 #elif defined(UNIX_FILES)
         bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
@@ -1861,12 +1861,12 @@ void CHashFile::CloseAll(void)
         if (m_pDir)
         {
             delete [] m_pDir;
-            m_pDir = NULL;
+            m_pDir = nullptr;
         }
         if (m_hpCacheLookup)
         {
             delete [] m_hpCacheLookup;
-            m_hpCacheLookup = NULL;
+            m_hpCacheLookup = nullptr;
         }
 
 #if defined(WINDOWS_FILES)
@@ -1896,7 +1896,7 @@ void CHashFile::FinalCache(void)
     if (m_Cache)
     {
         delete [] m_Cache;
-        m_Cache = NULL;
+        m_Cache = nullptr;
         m_nCache = 0;
     }
 }
@@ -2094,7 +2094,7 @@ bool CHashFile::DoubleDirectory(void)
     UINT32       nNewDirDepth = m_nDirDepth + 1;
 
 
-    HF_PFILEOFFSET pNewDir = NULL;
+    HF_PFILEOFFSET pNewDir = nullptr;
     try
     {
         pNewDir = new HF_FILEOFFSET[nNewDir];
@@ -2103,12 +2103,12 @@ bool CHashFile::DoubleDirectory(void)
     {
         ; // Nothing.
     }
-    if (NULL == pNewDir)
+    if (nullptr == pNewDir)
     {
         return false;
     }
 
-    int *pNewCacheLookup = NULL;
+    int *pNewCacheLookup = nullptr;
     try
     {
         pNewCacheLookup = new int[nNewDir];
@@ -2118,12 +2118,12 @@ bool CHashFile::DoubleDirectory(void)
         ; // Nothing.
     }
 
-    if (NULL == pNewCacheLookup)
+    if (nullptr == pNewCacheLookup)
     {
         if (pNewDir)
         {
             delete [] pNewDir;
-            pNewDir = NULL;
+            pNewDir = nullptr;
         }
         return false;
     }
@@ -2358,7 +2358,7 @@ int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
         return iCache;
     }
 
-    if ((iCache = AllocateEmptyPage(0, NULL)) >= 0)
+    if ((iCache = AllocateEmptyPage(0, nullptr)) >= 0)
     {
         if (m_Cache[iCache].m_hp.ReadPage(m_hPageFile, oPage))
         {
@@ -2399,7 +2399,7 @@ void CHashTable::Init(void)
     m_nDir = 0;
     m_nPages = 0;
     m_nDirDepth = 0;
-    m_pDir = NULL;
+    m_pDir = nullptr;
 
     m_nEntries = 0;
     m_nDeletions = 0;
@@ -2421,7 +2421,7 @@ void CHashTable::Init(void)
     if (m_pDir)
     {
         m_nDir = nDirRequest;
-        m_pDir[1] = m_pDir[0] = NULL;
+        m_pDir[1] = m_pDir[0] = nullptr;
         try
         {
             m_pDir[1] = m_pDir[0] = new CHashPage;
@@ -2442,7 +2442,7 @@ void CHashTable::Init(void)
             else
             {
                 delete m_pDir[0];
-                m_pDir[0] = NULL;
+                m_pDir[0] = nullptr;
             }
         }
     }
@@ -2686,7 +2686,7 @@ void CHashTable::Final(void)
             }
         }
         delete [] m_pDir;
-        m_pDir = NULL;
+        m_pDir = nullptr;
     }
 }
 

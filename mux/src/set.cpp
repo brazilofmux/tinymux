@@ -150,7 +150,7 @@ void do_chzone
         // inconvenient -- although this may pose a bit of a security risk. Be
         // careful when @chzone'ing wizard or royal players.
         //
-        SetClearFlags(thing, mudconf.stripped_flags.word, NULL);
+        SetClearFlags(thing, mudconf.stripped_flags.word, nullptr);
 
         // Wipe out all powers.
         //
@@ -804,12 +804,12 @@ void SetClearFlags
     int j;
     for (j = FLAG_WORD1; j <= FLAG_WORD3; j++)
     {
-        if (NULL != aClearFlags)
+        if (nullptr != aClearFlags)
         {
             db[thing].fs.word[j] &= ~aClearFlags[j];
         }
 
-        if (NULL != aSetFlags)
+        if (nullptr != aSetFlags)
         {
             db[thing].fs.word[j] |= aSetFlags[j];
         }
@@ -1137,12 +1137,12 @@ bool copy_attr(dbref executor, attr_info &src, attr_info &dest, int key)
 {
     if (  !Good_obj(src.m_object)
        || !Good_obj(dest.m_object)
-       || NULL == src.m_attr)
+       || nullptr == src.m_attr)
     {
         notify_quiet(executor, T("No match."));
         return false;
     }
-    if (  NULL == dest.m_attr
+    if (  nullptr == dest.m_attr
        || !See_attr(executor, src.m_object, src.m_attr)
        || !bCanSetAttr(executor, dest.m_object, dest.m_attr))
     {
@@ -1474,7 +1474,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UTF8 *astr = alloc_lbuf("do_mvattr");
     ATTR *in_attr = atr_str(args[0]);
     int aflags = 0;
-    if (in_attr == NULL)
+    if (in_attr == nullptr)
     {
         *astr = '\0';
     }
@@ -1584,7 +1584,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 bool parse_attrib(dbref player, const UTF8 *str, dbref *thing, ATTR **attr)
 {
-    ATTR *tattr = NULL;
+    ATTR *tattr = nullptr;
     *thing = NOTHING;
 
     if (!str)
@@ -2024,7 +2024,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, 0, (const UTF8 **)argv, nargs);
+    did_it(executor, thing, 0, nullptr, 0, nullptr, pattr->number, 0, (const UTF8 **)argv, nargs);
 
     if (key & TRIG_NOTIFY)
     {
@@ -2033,7 +2033,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
-            0, NULL,
+            0, nullptr,
             mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -2078,7 +2078,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     {
         did_it(executor, thing, A_UFAIL,
                T("You can\xE2\x80\x99t figure out how to use that."),
-               A_OUFAIL, NULL, A_AUFAIL, 0, NULL, 0);
+               A_OUFAIL, nullptr, A_AUFAIL, 0, nullptr, 0);
         return;
     }
     temp = alloc_lbuf("do_use");
@@ -2104,7 +2104,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         mux_sprintf(df_use, LBUF_SIZE, T("You use %s"), Moniker(thing));
         mux_sprintf(df_ouse, LBUF_SIZE, T("uses %s"), Moniker(thing));
         did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE, 0,
-            NULL, 0);
+            nullptr, 0);
         free_lbuf(df_use);
         free_lbuf(df_ouse);
     }
@@ -2169,5 +2169,5 @@ void do_setvattr
         notify_quiet(executor, T("That\xE2\x80\x99s not a good name for an attribute."));
         return;
     }
-    do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2, NULL, 0);
+    do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2, nullptr, 0);
 }

@@ -22,7 +22,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
                            int eval, UTF8 *action, UTF8 *argstr,
                            const UTF8 *cargs[], int ncargs, int number)
 {
-    UTF8 *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
+    UTF8 *command = replace_tokens(action, argstr, mux_ltoa_t(number), nullptr);
     CLinearTimeAbsolute lta;
     wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
         command,
@@ -390,7 +390,7 @@ void do_chownall
     }
 
     dbref recipient = executor;
-    if (  NULL  != to
+    if (  nullptr  != to
        && to[0] != '\0')
     {
         init_match(executor, to, TYPE_PLAYER);
@@ -519,8 +519,8 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     // Set limits on what we search for.
     //
     int err = 0;
-    parm->s_rst_name = NULL;
-    parm->s_rst_eval = NULL;
+    parm->s_rst_name = nullptr;
+    parm->s_rst_eval = nullptr;
     parm->s_rst_type = NOTYPE;
     parm->s_parent = NOTHING;
     parm->s_zone = NOTHING;
@@ -861,7 +861,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 
         // Check for matching name.
         //
-        if (parm->s_rst_name != NULL)
+        if (parm->s_rst_name != nullptr)
         {
             if (!string_prefix(PureName(thing), parm->s_rst_name))
                 continue;
@@ -869,14 +869,14 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 
         // Check for successful evaluation.
         //
-        if (parm->s_rst_eval != NULL)
+        if (parm->s_rst_eval != nullptr)
         {
             buff[0] = '#';
             mux_ltoa(thing, buff+1);
-            UTF8 *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
+            UTF8 *buff2 = replace_tokens(parm->s_rst_eval, buff, nullptr, nullptr);
             result = bp = alloc_lbuf("search_perform");
             mux_exec(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
-                EV_FCHECK | EV_EVAL | EV_NOTRACE, NULL, 0);
+                EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
             *bp = '\0';
             free_lbuf(buff2);
             if (!*result || !xlate(result))
@@ -1201,7 +1201,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
 //
 void olist_push(void)
 {
-    OLSTK *ol = NULL;
+    OLSTK *ol = nullptr;
     try
     {
         ol = new OLSTK;
@@ -1211,14 +1211,14 @@ void olist_push(void)
         ; // Nothing.
     }
 
-    if (NULL != ol)
+    if (nullptr != ol)
     {
         ol->next = mudstate.olist;
         mudstate.olist = ol;
 
-        ol->head = NULL;
-        ol->tail = NULL;
-        ol->cblock = NULL;
+        ol->head = nullptr;
+        ol->tail = nullptr;
+        ol->cblock = nullptr;
         ol->count = 0;
         ol->citm = 0;
     }
@@ -1234,7 +1234,7 @@ void olist_pop(void)
 {
     OLSTK *ol = mudstate.olist->next;
     OBLOCK *op, *onext;
-    for (op = mudstate.olist->head; op != NULL; op = onext)
+    for (op = mudstate.olist->head; op != nullptr; op = onext)
     {
         onext = op->next;
         free_lbuf(op);
@@ -1254,7 +1254,7 @@ void olist_add(dbref item)
         op = (OBLOCK *) alloc_lbuf("olist_add.first");
         mudstate.olist->head = mudstate.olist->tail = op;
         mudstate.olist->count = 0;
-        op->next = NULL;
+        op->next = nullptr;
     }
     else if (mudstate.olist->count >= OBLOCK_SIZE)
     {
@@ -1262,7 +1262,7 @@ void olist_add(dbref item)
         mudstate.olist->tail->next = op;
         mudstate.olist->tail = op;
         mudstate.olist->count = 0;
-        op->next = NULL;
+        op->next = nullptr;
     }
     else
     {

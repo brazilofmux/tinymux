@@ -19,7 +19,7 @@ NAMETAB logdata_nametab[] =
     {T("location"),        1,  0,  LOGOPT_LOC},
     {T("owner"),           1,  0,  LOGOPT_OWNER},
     {T("timestamp"),       1,  0,  LOGOPT_TIMESTAMP},
-    {(UTF8 *) NULL,        0,  0,  0}
+    {(UTF8 *) nullptr,     0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
@@ -42,7 +42,7 @@ NAMETAB logoptions_nametab[] =
     {T("suspect"),         2,  0,  LOG_SUSPECTCMDS},
     {T("time_usage"),      1,  0,  LOG_TIMEUSE},
     {T("wizard"),          1,  0,  LOG_WIZARD},
-    {(UTF8 *) NULL,        0,  0,  0}
+    {(UTF8 *) nullptr,     0,  0,  0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -315,7 +315,7 @@ void do_log
         }
     }
 
-    UTF8 *pFullName = NULL;
+    UTF8 *pFullName = nullptr;
     const UTF8 *pMessage = T("");
     if (bValid)
     {
@@ -461,14 +461,14 @@ bool CLogFile::CreateLogFile(void)
 #if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return false;
     }
 
     m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_fdFile, m_szFilename,
@@ -485,14 +485,14 @@ void CLogFile::AppendLogFile(void)
 #if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
-    if (NULL == pFilename)
+    if (nullptr == pFilename)
     {
         return;
     }
 
     m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
 #elif defined(UNIX_FILES)
     bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR | O_BINARY);
@@ -547,7 +547,7 @@ void CLogFile::Flush(void)
 #if defined(WINDOWS_FILES)
         unsigned long nWritten;
         bool fSuccess = true;
-        if (!WriteFile(m_hFile, m_aBuffer, (DWORD) m_nBuffer, &nWritten, NULL))
+        if (!WriteFile(m_hFile, m_aBuffer, (DWORD) m_nBuffer, &nWritten, nullptr))
         {
             fSuccess = false;
         }
@@ -608,7 +608,7 @@ void CLogFile::SetBasename(const UTF8 * pBasename)
     if (m_pBasename)
     {
         MEMFREE(m_pBasename);
-        m_pBasename = NULL;
+        m_pBasename = nullptr;
     }
 
     if (  pBasename
@@ -646,7 +646,7 @@ CLogFile::CLogFile(void)
     m_nBuffer = 0;
     bEnabled = false;
     bUseStderr = true;
-    m_pBasename = NULL;
+    m_pBasename = nullptr;
     m_szPrefix[0] = '\0';
     m_szFilename[0] = '\0';
 }
@@ -672,7 +672,7 @@ void CLogFile::StopLogging(void)
         CloseLogFile();
         m_szPrefix[0] = '\0';
         m_szFilename[0] = '\0';
-        SetBasename(NULL);
+        SetBasename(nullptr);
     }
 }
 
@@ -733,7 +733,7 @@ MUX_RESULT CLog::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -835,7 +835,7 @@ MUX_RESULT CLogFactory::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -863,12 +863,12 @@ MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid,
 {
     // Disallow attempts to aggregate this component.
     //
-    if (NULL != pUnknownOuter)
+    if (nullptr != pUnknownOuter)
     {
         return MUX_E_NOAGGREGATION;
     }
 
-    CLog *pLog = NULL;
+    CLog *pLog = nullptr;
     try
     {
         pLog = new CLog;
@@ -878,7 +878,7 @@ MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid,
         ; // Nothing.
     }
 
-    if (NULL == pLog)
+    if (nullptr == pLog)
     {
         return MUX_E_OUTOFMEMORY;
     }

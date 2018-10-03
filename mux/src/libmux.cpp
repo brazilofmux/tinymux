@@ -71,8 +71,8 @@ struct ltstr
 class Module
 {
 public:
-    Module() : fpGetClassObject(NULL), fpCanUnloadNow(NULL), fpRegister(NULL), fpUnregister(NULL), hInst(NULL), pModuleName(NULL),
-        pFileName(NULL), bLoaded(false), eState(eModuleInitialized)
+    Module() : fpGetClassObject(nullptr), fpCanUnloadNow(nullptr), fpRegister(nullptr), fpUnregister(nullptr), hInst(nullptr), pModuleName(nullptr),
+        pFileName(nullptr), bLoaded(false), eState(eModuleInitialized)
     { }
     FPGETCLASSOBJECT *fpGetClassObject;
     FPCANUNLOADNOW   *fpCanUnloadNow;
@@ -90,14 +90,14 @@ public:
 };
 
 static Module g_MainModule;
-static Module *g_pModule = NULL;
+static Module *g_pModule = nullptr;
 static std::map<MUX_CID, Module *> g_ModulesByClass;
 static std::map<const UTF8 *, Module *, ltstr> g_ModulesByName;
 static std::map<MUX_IID, MUX_INTERFACE_INFO *> g_Interfaces;
 
-static PipePump   *g_fpPipePump = NULL;
-static QUEUE_INFO *g_pQueue_In  = NULL;
-static QUEUE_INFO *g_pQueue_Out = NULL;
+static PipePump   *g_fpPipePump = nullptr;
+static QUEUE_INFO *g_pQueue_In  = nullptr;
+static QUEUE_INFO *g_pQueue_Out = nullptr;
 
 static std::map<UINT32, CHANNEL_INFO *> g_Channels;
 static UINT32 nNextChannel;
@@ -126,7 +126,7 @@ static process_context g_ProcessContext = IsUninitialized;
 static UTF8 *CopyUTF8(const UTF8 *pString)
 {
     size_t n = strlen((const char *)pString);
-    UTF8 *p = NULL;
+    UTF8 *p = nullptr;
 
     try
     {
@@ -137,7 +137,7 @@ static UTF8 *CopyUTF8(const UTF8 *pString)
         ; // Nothing.
     }
 
-    if (NULL != p)
+    if (nullptr != p)
     {
         memcpy(p, pString, n+1);
     }
@@ -148,7 +148,7 @@ static UTF8 *CopyUTF8(const UTF8 *pString)
 static UTF16 *CopyUTF16(const UTF16 *pString)
 {
     size_t n = wcslen(pString);
-    UTF16 *p = NULL;
+    UTF16 *p = nullptr;
 
     try
     {
@@ -159,7 +159,7 @@ static UTF16 *CopyUTF16(const UTF16 *pString)
         ; // Nothing.
     }
 
-    if (NULL != p)
+    if (nullptr != p)
     {
         memcpy(p, pString, (n+1) * sizeof(UTF16));
     }
@@ -184,7 +184,7 @@ static UINT32 GrowByFactor(UINT32 i)
 /*! \brief Adds a module.
  *
  * \param aModuleName[]  Filename of Module
- * \return               Module context record, NULL if out of memory or
+ * \return               Module context record, nullptr if out of memory or
  *                       duplicate found.
  */
 
@@ -200,7 +200,7 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
     {
         // Ensure that enough room is available to append a new Module.
         //
-        Module *pModule = NULL;
+        Module *pModule = nullptr;
         try
         {
             pModule = new Module;
@@ -210,18 +210,18 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
             ; // Nothing.
         }
 
-        if (NULL == pModule)
+        if (nullptr == pModule)
         {
-            return NULL;
+            return nullptr;
         }
 
         // Fill in new Module
         //
-        pModule->fpGetClassObject = NULL;
-        pModule->fpCanUnloadNow = NULL;
-        pModule->fpRegister = NULL;
-        pModule->fpUnregister = NULL;
-        pModule->hInst = NULL;
+        pModule->fpGetClassObject = nullptr;
+        pModule->fpCanUnloadNow = nullptr;
+        pModule->fpRegister = nullptr;
+        pModule->fpUnregister = nullptr;
+        pModule->hInst = nullptr;
         pModule->pModuleName = CopyUTF8(aModuleName);
 #if defined(WINDOWS_FILES)
         pModule->pFileName = CopyUTF16(aFileName);
@@ -231,8 +231,8 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         pModule->bLoaded = false;
         pModule->eState  = eModuleInitialized;
 
-        if (  NULL != pModule->pModuleName
-           && NULL != pModule->pFileName)
+        if (  nullptr != pModule->pModuleName
+           && nullptr != pModule->pFileName)
         {
             g_ModulesByName[pModule->pModuleName] = pModule;
             return pModule;
@@ -241,22 +241,22 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         {
             // Clean up after failing to copy string.
             //
-            if (NULL != pModule->pModuleName)
+            if (nullptr != pModule->pModuleName)
             {
                 delete [] pModule->pModuleName;
-                pModule->pModuleName = NULL;
+                pModule->pModuleName = nullptr;
             }
 
-            if (NULL != pModule->pFileName)
+            if (nullptr != pModule->pFileName)
             {
                 delete [] pModule->pFileName;
-                pModule->pFileName = NULL;
+                pModule->pFileName = nullptr;
             }
 
             delete pModule;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /*! \brief Removes a module from the module table.
@@ -294,16 +294,16 @@ static void ModuleRemove(Module *pModule)
 
     // Free associated memory.
     //
-    if (NULL != pModule->pModuleName)
+    if (nullptr != pModule->pModuleName)
     {
         delete [] pModule->pModuleName;
-        pModule->pModuleName = NULL;
+        pModule->pModuleName = nullptr;
     }
 
-    if (NULL != pModule->pFileName)
+    if (nullptr != pModule->pFileName)
     {
         delete [] pModule->pFileName;
-        pModule->pFileName = NULL;
+        pModule->pFileName = nullptr;
     }
 
     delete pModule;
@@ -325,26 +325,26 @@ static void ModuleLoad(Module *pModule)
     }
 
     pModule->hInst = MOD_OPEN(pModule->pFileName);
-    if (NULL != pModule->hInst)
+    if (nullptr != pModule->hInst)
     {
         pModule->fpGetClassObject = (FPGETCLASSOBJECT *)MOD_SYM(pModule->hInst, "mux_GetClassObject");
         pModule->fpCanUnloadNow   = (FPCANUNLOADNOW *)MOD_SYM(pModule->hInst, "mux_CanUnloadNow");
         pModule->fpRegister       = (FPREGISTER *)MOD_SYM(pModule->hInst, "mux_Register");
         pModule->fpUnregister     = (FPUNREGISTER *)MOD_SYM(pModule->hInst, "mux_Unregister");
 
-        if (  NULL != pModule->fpGetClassObject
-           && NULL != pModule->fpCanUnloadNow
-           && NULL != pModule->fpRegister
-           && NULL != pModule->fpUnregister)
+        if (  nullptr != pModule->fpGetClassObject
+           && nullptr != pModule->fpCanUnloadNow
+           && nullptr != pModule->fpRegister
+           && nullptr != pModule->fpUnregister)
         {
             pModule->bLoaded = true;
         }
         else
         {
-            pModule->fpGetClassObject = NULL;
-            pModule->fpCanUnloadNow   = NULL;
-            pModule->fpRegister       = NULL;
-            pModule->fpUnregister     = NULL;
+            pModule->fpGetClassObject = nullptr;
+            pModule->fpCanUnloadNow   = nullptr;
+            pModule->fpRegister       = nullptr;
+            pModule->fpUnregister     = nullptr;
             MOD_CLOSE(pModule->hInst);
             pModule->eState = eModuleUnloadable;
         }
@@ -365,11 +365,11 @@ static void ModuleUnload(Module *pModule)
     if (pModule->bLoaded)
     {
         MOD_CLOSE(pModule->hInst);
-        pModule->hInst = NULL;
-        pModule->fpGetClassObject = NULL;
-        pModule->fpCanUnloadNow = NULL;
-        pModule->fpRegister = NULL;
-        pModule->fpUnregister = NULL;
+        pModule->hInst = nullptr;
+        pModule->fpGetClassObject = nullptr;
+        pModule->fpCanUnloadNow = nullptr;
+        pModule->fpRegister = nullptr;
+        pModule->fpUnregister = nullptr;
         pModule->bLoaded = false;
     }
 }
@@ -398,13 +398,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
     {
         // In-proc component.
         //
-        Module *pModule = NULL;
+        Module *pModule = nullptr;
         std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
-        if (g_ModulesByClass.end() != it && NULL != (pModule = it->second))
+        if (g_ModulesByClass.end() != it && nullptr != (pModule = it->second))
         {
             if (pModule == &g_MainModule)
             {
-                if (NULL == pModule->fpGetClassObject)
+                if (nullptr == pModule->fpGetClassObject)
                 {
                     mr = MUX_E_CLASSNOTAVAILABLE;
                 }
@@ -420,10 +420,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
 
             if (MUX_SUCCEEDED(mr))
             {
-                mux_IClassFactory *pIClassFactory = NULL;
+                mux_IClassFactory *pIClassFactory = nullptr;
                 mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
                 if (  MUX_SUCCEEDED(mr)
-                   && NULL != pIClassFactory)
+                   && nullptr != pIClassFactory)
                 {
                     mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
                     pIClassFactory->Release();
@@ -435,7 +435,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
             mr = MUX_E_CLASSNOTAVAILABLE;
         }
     }
-    else if (NULL != g_fpPipePump)
+    else if (nullptr != g_fpPipePump)
     {
         // Out-of-Proc component.
         //
@@ -466,8 +466,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
 
 /*! \brief Register class ids and factory implemented by the process binary.
  *
- * Modules must pass NULL for pfGetClassObject, but the main program (netmux
- * or stubslave) must pass a non-NULL pfGetClassObject.  For modules, the
+ * Modules must pass nullptr for pfGetClassObject, but the main program (netmux
+ * or stubslave) must pass a non-nullptr pfGetClassObject.  For modules, the
  * class factory is obtained by using the mux_GetClassObject export.
  *
  * \param nci                  Number of components to register.
@@ -485,7 +485,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     }
 
     if (  nci <= 0
-       || NULL == aci)
+       || nullptr == aci)
     {
         return MUX_E_INVALIDARG;
     }
@@ -496,10 +496,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     // program to provide module interfaces, so some special-casing is done to
     // allow that.
     //
-    if (  (  NULL != g_pModule
-          && NULL != fpGetClassObject)
-       || (  NULL == g_pModule
-          && NULL == fpGetClassObject))
+    if (  (  nullptr != g_pModule
+          && nullptr != fpGetClassObject)
+       || (  nullptr == g_pModule
+          && nullptr == fpGetClassObject))
     {
         return MUX_E_INVALIDARG;
     }
@@ -520,13 +520,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     // which module is registering.
     //
     Module *pModule = g_pModule;
-    if (NULL == pModule)
+    if (nullptr == pModule)
     {
         // These classes are implemented in the main program (netmux or
         // stubslave).
         //
         pModule = &g_MainModule;
-        if (NULL != pModule->fpGetClassObject)
+        if (nullptr != pModule->fpGetClassObject)
         {
             // The main program is attempting to register another handler.
             //
@@ -570,26 +570,26 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     }
 
     if (  nci <= 0
-       || NULL == aci)
+       || nullptr == aci)
     {
         return MUX_E_INVALIDARG;
     }
 
     // Verify that all class ids in this request are handled by the same module.
     //
-    Module *pModule = NULL;
+    Module *pModule = nullptr;
     int i;
     for (i = 0; i < nci; i++)
     {
-        Module *q = NULL;
+        Module *q = nullptr;
         std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(aci[i].cid);
-        if (g_ModulesByClass.end() == it || NULL == (q = it->second))
+        if (g_ModulesByClass.end() == it || nullptr == (q = it->second))
         {
             // Attempt to revoke a class ids which were never registered.
             //
             return MUX_E_INVALIDARG;
         }
-        else if (NULL == pModule)
+        else if (nullptr == pModule)
         {
             pModule = q;
         }
@@ -606,7 +606,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     //
     if (pModule == &g_MainModule)
     {
-        pModule->fpGetClassObject = NULL;
+        pModule->fpGetClassObject = nullptr;
     }
 
     // Remove the requested class ids.
@@ -626,7 +626,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INT
     }
 
     if (  nii <= 0
-       || NULL == aii)
+       || nullptr == aii)
     {
         return MUX_E_INVALIDARG;
     }
@@ -650,7 +650,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTER
     }
 
     if (  nii <= 0
-       || NULL == aii)
+       || nullptr == aii)
     {
         return MUX_E_INVALIDARG;
     }
@@ -683,12 +683,12 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
     }
 
     MUX_RESULT mr = MUX_S_OK;
-    if (NULL == g_pModule)
+    if (nullptr == g_pModule)
     {
         // Create new Module.
         //
         Module *pModule = ModuleAdd(aModuleName, aFileName);
-        if (NULL != pModule)
+        if (nullptr != pModule)
         {
             // Ask module to register its classes.
             //
@@ -698,7 +698,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[],
                 pModule->eState = eModuleRegistering;
                 g_pModule = pModule;
                 mr = pModule->fpRegister();
-                g_pModule = NULL;
+                g_pModule = nullptr;
                 pModule->eState = eModuleRegistered;
             }
             else
@@ -722,7 +722,7 @@ static MUX_RESULT RemoveModule(Module *pModule)
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    if (NULL != pModule)
+    if (nullptr != pModule)
     {
         // First, aim for an unregistered state.
         //
@@ -744,7 +744,7 @@ static MUX_RESULT RemoveModule(Module *pModule)
                 pModule->eState = eModuleUnregistering;
                 g_pModule = pModule;
                 mr = pModule->fpUnregister();
-                g_pModule = NULL;
+                g_pModule = nullptr;
                 pModule->eState = eModuleInitialized;
             }
             else
@@ -794,13 +794,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
     }
 
     MUX_RESULT mr MUX_S_OK;
-    if (NULL == g_pModule)
+    if (nullptr == g_pModule)
     {
         std::map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.find(aModuleName);
         if (g_ModulesByName.end() != it)
         {
             Module *pModule = it->second;
-            if (NULL != pModule)
+            if (nullptr != pModule)
             {
                 mr = RemoveModule(pModule);
             }
@@ -894,9 +894,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
     if (eLibraryDown == g_LibraryState)
     {
         g_ProcessContext = ctx;
-        g_fpPipePump = NULL;
-        g_pQueue_In  = NULL;
-        g_pQueue_Out = NULL;
+        g_fpPipePump = nullptr;
+        g_pQueue_In  = nullptr;
+        g_pQueue_Out = nullptr;
         g_LibraryState = eLibraryInitialized;
         return MUX_S_OK;
     }
@@ -911,28 +911,28 @@ static MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out)
 {
     if (  eLibraryInitialized == g_LibraryState
-       && NULL == g_fpPipePump
-       && NULL == g_pQueue_In
-       && NULL == g_pQueue_Out
-       && NULL != fpPipePump
-       && NULL != pQueue_In
-       && NULL != pQueue_Out)
+       && nullptr == g_fpPipePump
+       && nullptr == g_pQueue_In
+       && nullptr == g_pQueue_Out
+       && nullptr != fpPipePump
+       && nullptr != pQueue_In
+       && nullptr != pQueue_Out)
     {
-        CHANNEL_INFO *pci = NULL;
+        CHANNEL_INFO *pci = nullptr;
         try
         {
             pci = new CHANNEL_INFO;
         }
         catch (...) {}
 
-        if (NULL != pci)
+        if (nullptr != pci)
         {
             // Initialized Channel 0 is always allocated.
             //
             pci->pfCall     = Channel0_Call;
-            pci->pfMsg      = NULL;
-            pci->pfDisc     = NULL;
-            pci->pInterface = NULL;
+            pci->pfMsg      = nullptr;
+            pci->pfDisc     = nullptr;
+            pci->pInterface = nullptr;
             g_Channels[0] = pci;
             nNextChannel = 1;
 
@@ -1053,13 +1053,13 @@ private:
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal)
 {
     MUX_RESULT mr = MUX_S_OK;
-    if (NULL == pIUnknown)
+    if (nullptr == pIUnknown)
     {
         mr = MUX_E_NOTIMPLEMENTED;
     }
     else
     {
-        CStandardMarshaler *pMarshaler = NULL;
+        CStandardMarshaler *pMarshaler = nullptr;
         try
         {
             pMarshaler = new CStandardMarshaler(riid, ctx);
@@ -1069,7 +1069,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID riid, mu
             ; // Nothing.
         }
 
-        if (NULL == pMarshaler)
+        if (nullptr == pMarshaler)
         {
             mr = MUX_E_OUTOFMEMORY;
         }
@@ -1086,7 +1086,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, M
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    mux_IMarshal *pIMarshal = NULL;
+    mux_IMarshal *pIMarshal = nullptr;
     mr = pIUnknown->QueryInterface(mux_IID_IMarshal, (void **)&pIMarshal);
     if (MUX_FAILED(mr))
     {
@@ -1122,8 +1122,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
     {
         // Open an IMarshal interface on the given proxy and pass it the marshal packet.
         //
-        mux_IMarshal *pIMarshal = NULL;
-        mr = mux_CreateInstance(cidProxy, NULL, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
+        mux_IMarshal *pIMarshal = nullptr;
+        mr = mux_CreateInstance(cidProxy, nullptr, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
         if (MUX_SUCCEEDED(mr))
         {
             mr = pIMarshal->UnmarshalInterface(pqi, riid, ppv);
@@ -1155,8 +1155,8 @@ static MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     {
         // First, we create the requested component and obtain the requested interface.
         //
-        mux_IUnknown *pIUnknown = NULL;
-        mr = mux_CreateInstance(CallFrame.cid, NULL, UseSameProcess, mux_IID_IUnknown, (void **)&pIUnknown);
+        mux_IUnknown *pIUnknown = nullptr;
+        mr = mux_CreateInstance(CallFrame.cid, nullptr, UseSameProcess, mux_IID_IUnknown, (void **)&pIUnknown);
         if (MUX_SUCCEEDED(mr))
         {
             // Now that we have an interface pointer, we need to Marshal it into a packet and return it on pqi.
@@ -1179,26 +1179,26 @@ static MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
 extern "C" void DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
 {
-    pqi->pHead = NULL;
-    pqi->pTail = NULL;
+    pqi->pHead = nullptr;
+    pqi->pTail = nullptr;
     pqi->nBytes = 0;
 }
 
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc)
 {
-    CHANNEL_INFO *pci = NULL;
+    CHANNEL_INFO *pci = nullptr;
     try
     {
         pci = new CHANNEL_INFO;
     }
     catch (...) {}
-    if (NULL != pci)
+    if (nullptr != pci)
     {
         pci->nChannel   = nNextChannel++;
         pci->pfCall     = pfCall;
         pci->pfMsg      = pfMsg;
         pci->pfDisc     = pfDisc;
-        pci->pInterface = NULL;
+        pci->pInterface = nullptr;
         g_Channels[pci->nChannel] = pci;
     }
     return pci;
@@ -1206,11 +1206,11 @@ extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, 
 
 extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
 {
-    if (NULL != pci)
+    if (nullptr != pci)
     {
         g_Channels.erase(pci->nChannel);
         delete pci;
-        pci = NULL;
+        pci = nullptr;
     }
 }
 
@@ -1221,22 +1221,22 @@ extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel)
     {
         return it->second;
     }
-    return NULL;
+    return nullptr;
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p)
 {
     if (  0 != n
-       && NULL != p)
+       && nullptr != p)
     {
         // Continue copying data to the end of the queue until it is all consumed.
         //
-        QUEUE_BLOCK *pBlock = NULL;
+        QUEUE_BLOCK *pBlock = nullptr;
         while (0 < n)
         {
             // We need an empty or partially filled QUEUE_BLOCK.
             //
-            if (  NULL == pqi->pTail
+            if (  nullptr == pqi->pTail
                || pqi->pTail->aBuffer + QUEUE_BLOCK_SIZE <= pqi->pTail->pBuffer + pqi->pTail->nBuffer)
             {
                 // The last block is full or not there, so allocate a new QUEUE_BLOCK.
@@ -1250,10 +1250,10 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, c
                     ; // Nothing.
                 }
 
-                if (NULL != pBlock)
+                if (nullptr != pBlock)
                 {
-                    pBlock->pNext   = NULL;
-                    pBlock->pPrev   = NULL;
+                    pBlock->pNext   = nullptr;
+                    pBlock->pPrev   = nullptr;
                     pBlock->pBuffer = pBlock->aBuffer;
                     pBlock->nBuffer = 0;
                 }
@@ -1266,7 +1266,7 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, c
 
                 // Append the newly allocated block to the end of the queue.
                 //
-                if (NULL == pqi->pTail)
+                if (nullptr == pqi->pTail)
                 {
                     pqi->pHead = pBlock;
                     pqi->pTail = pBlock;
@@ -1303,11 +1303,11 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, c
 
 extern "C" void DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn)
 {
-    if (  NULL != pqiOut
-       && NULL != pqiIn)
+    if (  nullptr != pqiOut
+       && nullptr != pqiIn)
     {
         QUEUE_BLOCK *pBlock = pqiIn->pHead;
-        while (NULL != pBlock)
+        while (nullptr != pBlock)
         {
             Pipe_AppendBytes(pqiOut, pBlock->nBuffer, pBlock->pBuffer);
 
@@ -1316,29 +1316,29 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_IN
             pBlock = qBlock;
         }
 
-        pqiIn->pHead = NULL;
-        pqiIn->pTail = NULL;
+        pqiIn->pHead = nullptr;
+        pqiIn->pTail = nullptr;
         pqiIn->nBytes = 0;
     }
 }
 
 extern "C" void DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi)
 {
-    if (NULL != pqi)
+    if (nullptr != pqi)
     {
         QUEUE_BLOCK *pBlock = pqi->pHead;
 
         // Free all the QUEUE_BLOCKs finally the owning QUEUE_INFO structure.
         //
-        while (NULL != pBlock)
+        while (nullptr != pBlock)
         {
             QUEUE_BLOCK *qBlock = pBlock->pNext;
             delete pBlock;
             pBlock = qBlock;
         }
 
-        pqi->pHead = NULL;
-        pqi->pTail = NULL;
+        pqi->pHead = nullptr;
+        pqi->pTail = nullptr;
         pqi->nBytes = 0;
     }
 }
@@ -1347,18 +1347,18 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1])
 {
     QUEUE_BLOCK *pBlock;
 
-    if (  NULL != pqi
-       && NULL != (pBlock = pqi->pHead))
+    if (  nullptr != pqi
+       && nullptr != (pBlock = pqi->pHead))
     {
         // Advance over empty blocks.
         //
-        while (  NULL != pBlock
+        while (  nullptr != pBlock
               && 0 == pBlock->nBuffer)
         {
             pqi->pHead = pBlock->pNext;
-            if (NULL == pqi->pHead)
+            if (nullptr == pqi->pHead)
             {
-                pqi->pTail = NULL;
+                pqi->pTail = nullptr;
             }
             delete pBlock;
             pBlock = pqi->pHead;
@@ -1366,7 +1366,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1])
 
         // If there is a block left on the list, it will have something.
         //
-        if (NULL != pBlock)
+        if (nullptr != pBlock)
         {
             ach[0] = pBlock->pBuffer[0];
             pBlock->pBuffer++;
@@ -1386,23 +1386,23 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, vo
     size_t nCopied = 0;
     QUEUE_BLOCK *pBlock;
 
-    if (  NULL != pqi
-       && NULL != pn)
+    if (  nullptr != pqi
+       && nullptr != pn)
     {
         size_t nWantedBytes = *pn;
         pBlock = pqi->pHead;
-        while (  NULL != pBlock
+        while (  nullptr != pBlock
               && 0 < nWantedBytes)
         {
             // Advance over empty blocks.
             //
-            while (  NULL != pBlock
+            while (  nullptr != pBlock
                   && 0 == pBlock->nBuffer)
             {
                 pqi->pHead = pBlock->pNext;
-                if (NULL == pqi->pHead)
+                if (nullptr == pqi->pHead)
                 {
-                    pqi->pTail = NULL;
+                    pqi->pTail = nullptr;
                 }
                 delete pBlock;
                 pBlock = pqi->pHead;
@@ -1410,7 +1410,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, vo
 
             // If there is a block left on the list, it will have something.
             //
-            if (NULL != pBlock)
+            if (nullptr != pBlock)
             {
                 size_t nCopy = pBlock->nBuffer;
                 if (nWantedBytes < nCopy)
@@ -1437,7 +1437,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, vo
 extern "C" size_t DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi)
 {
     size_t n = 0;
-    if (NULL != pqi)
+    if (nullptr != pqi)
     {
         n = pqi->nBytes;
     }
@@ -1650,12 +1650,12 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                     {
                         std::map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
                         PCHANNEL_INFO pci;
-                        if (g_Channels.end() != it && NULL != (pci = it->second))
+                        if (g_Channels.end() != it && nullptr != (pci = it->second))
                         {
                             switch (g_eType)
                             {
                             case eCall:
-                                if (NULL != pci->pfCall)
+                                if (nullptr != pci->pfCall)
                                 {
                                     MUX_RESULT mr = pci->pfCall(pci, pqiFrame);
                                     if (MUX_FAILED(mr))
@@ -1676,14 +1676,14 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                                 break;
 
                             case eMessage:
-                                if (NULL != pci->pfMsg)
+                                if (nullptr != pci->pfMsg)
                                 {
                                     pci->pfMsg(pci, pqiFrame);
                                 }
                                 break;
 
                             case eDisconnect:
-                                if (NULL != pci->pfDisc)
+                                if (nullptr != pci->pfDisc)
                                 {
                                     pci->pfDisc(pci, pqiFrame);
                                 }
@@ -1782,7 +1782,7 @@ MUX_RESULT CStandardMarshaler::QueryInterface(MUX_IID iid, void **ppv)
     }
     else
     {
-        *ppv = NULL;
+        *ppv = nullptr;
         return MUX_E_NOINTERFACE;
     }
     reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
@@ -1815,7 +1815,7 @@ MUX_RESULT CStandardMarshaler::GetUnmarshalClass(MUX_IID riid, marshal_context c
 static MUX_RESULT CStd_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
-    if (NULL == pIRpcStubBuffer)
+    if (nullptr == pIRpcStubBuffer)
     {
         return MUX_E_NOINTERFACE;
     }
@@ -1825,14 +1825,14 @@ static MUX_RESULT CStd_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 static MUX_RESULT CStd_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     mux_IRpcStubBuffer *pIRpcStubBuffer = static_cast<mux_IRpcStubBuffer *>(pci->pInterface);
-    if (NULL == pIRpcStubBuffer)
+    if (nullptr == pIRpcStubBuffer)
     {
         return MUX_E_NOINTERFACE;
     }
 
     pIRpcStubBuffer->Disconnect();
     pIRpcStubBuffer->Release();
-    pci->pInterface = NULL;
+    pci->pInterface = nullptr;
     Pipe_FreeChannel(pci);
     return MUX_S_OK;
 }
@@ -1846,20 +1846,20 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
     if (g_Interfaces.end() != it)
     {
         MUX_CID cidProxyStub = it->second->cidProxyStub;
-        mux_IPSFactoryBuffer *pIPSFactoryBuffer = NULL;
-        mr = mux_CreateInstance(cidProxyStub, NULL, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
+        mux_IPSFactoryBuffer *pIPSFactoryBuffer = nullptr;
+        mr = mux_CreateInstance(cidProxyStub, nullptr, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
         if (MUX_SUCCEEDED(mr))
         {
-            mux_IRpcStubBuffer *pIRpcStubBuffer = NULL;
-            mr = pIPSFactoryBuffer->CreateStub(riid, NULL, &pIRpcStubBuffer);
+            mux_IRpcStubBuffer *pIRpcStubBuffer = nullptr;
+            mr = pIPSFactoryBuffer->CreateStub(riid, nullptr, &pIRpcStubBuffer);
             pIPSFactoryBuffer->Release();
             if (MUX_SUCCEEDED(mr))
             {
                 mr = pIRpcStubBuffer->Connect(pIUnknown);
                 if (MUX_SUCCEEDED(mr))
                 {
-                    CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStd_Call, NULL, CStd_Disconnect);
-                    if (NULL != pChannel)
+                    CHANNEL_INFO *pChannel = Pipe_AllocateChannel(CStd_Call, nullptr, CStd_Disconnect);
+                    if (nullptr != pChannel)
                     {
                         pChannel->pInterface = pIRpcStubBuffer;
 
@@ -1914,7 +1914,7 @@ MUX_RESULT CStandardMarshaler::ReleaseMarshalData(QUEUE_INFO *pqi)
            && sizeof(nChannel) == nWanted)
         {
             CHANNEL_INFO *pChannel = Pipe_FindChannel(nChannel);
-            if (NULL != pChannel)
+            if (nullptr != pChannel)
             {
                 CStd_Disconnect(pChannel, pqi);
             }
@@ -1933,14 +1933,14 @@ MUX_RESULT CStandardMarshaler::DisconnectObject(void)
 MODULE_HANDLE mux_dlopen(const char *m)
 {
     UNUSED_PARAMETER(m);
-    return NULL;
+    return nullptr;
 }
 
 void *mux_dlsym(MODULE_HANDLE h, const char *s)
 {
     UNUSED_PARAMETER(h);
     UNUSED_PARAMETER(s);
-    return NULL;
+    return nullptr;
 }
 
 void mux_dlclose(MODULE_HANDLE h)

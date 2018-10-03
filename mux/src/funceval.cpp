@@ -252,7 +252,7 @@ FUNCTION(fun_link)
     {
         return;
     }
-    do_link(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
+    do_link(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], nullptr, 0);
 }
 
 #if defined(FIRANMUX)
@@ -266,7 +266,7 @@ FUNCTION(fun_setparent)
     {
         return;
     }
-    do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
+    do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], nullptr, 0);
 }
 
 FUNCTION(fun_setname)
@@ -281,7 +281,7 @@ FUNCTION(fun_setname)
     {
         return;
     }
-    do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
+    do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], nullptr, 0);
 }
 
 #endif // FIRANMUX
@@ -296,7 +296,7 @@ FUNCTION(fun_trigger)
     {
         return;
     }
-    do_trigger(executor, caller, enactor, eval, TRIG_QUIET, fargs[0], fargs+1, nfargs-1, NULL, 0);
+    do_trigger(executor, caller, enactor, eval, TRIG_QUIET, fargs[0], fargs+1, nfargs-1, nullptr, 0);
 }
 
 FUNCTION(fun_wipe)
@@ -309,7 +309,7 @@ FUNCTION(fun_wipe)
     {
         return;
     }
-    do_wipe(executor, caller, enactor, eval, 0, fargs[0], NULL, 0);
+    do_wipe(executor, caller, enactor, eval, 0, fargs[0], nullptr, 0);
 }
 
 FUNCTION(fun_tel)
@@ -343,7 +343,7 @@ FUNCTION(fun_tel)
         }
     }
 
-    do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1], NULL, 0);
+    do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1], nullptr, 0);
 }
 
 FUNCTION(fun_pemit)
@@ -389,7 +389,7 @@ FUNCTION(fun_emit)
     {
         return;
     }
-    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0], NULL, 0);
+    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0], nullptr, 0);
 }
 
 FUNCTION(fun_remit)
@@ -417,7 +417,7 @@ FUNCTION(fun_cemit)
     {
         return;
     }
-    do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], NULL, 0);
+    do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], nullptr, 0);
 }
 
 // ------------------------------------------------------------------------
@@ -463,7 +463,7 @@ FUNCTION(fun_create)
         {
             local_data_create(thing);
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (NULL != p)
+            while (nullptr != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
@@ -485,7 +485,7 @@ FUNCTION(fun_create)
             s_Exits(executor, thing);
             local_data_create(thing);
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (NULL != p)
+            while (nullptr != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
@@ -520,7 +520,7 @@ FUNCTION(fun_create)
             s_Home(thing, new_home(executor));
             local_data_create(thing);
             ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (NULL != p)
+            while (nullptr != p)
             {
                 p->pSink->data_create(thing);
                 p = p->pNext;
@@ -542,7 +542,7 @@ FUNCTION(fun_destroy)
     {
         return;
     }
-    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0], NULL, 0);
+    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0], nullptr, 0);
 }
 
 FUNCTION(fun_textfile)
@@ -1046,7 +1046,7 @@ FUNCTION(fun_localize)
 {
     UNUSED_PARAMETER(nfargs);
 
-    reg_ref **preserve = NULL;
+    reg_ref **preserve = nullptr;
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
@@ -1196,8 +1196,8 @@ FUNCTION(fun_columns)
         return;
     }
 
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr = new mux_string(cp);
@@ -1209,8 +1209,8 @@ FUNCTION(fun_columns)
     }
 
     LBUF_OFFSET nWords;
-    if (  NULL == sStr
-       || NULL == words
+    if (  nullptr == sStr
+       || nullptr == words
        || 0 == (nWords = words->find_Words(sep.str)))
     {
         delete sStr;
@@ -1286,8 +1286,8 @@ FUNCTION(fun_table)
 
     // Check argument numbers, assign values and defaults if necessary.
     //
-    UTF8 *pPaddingStart = NULL;
-    UTF8 *pPaddingEnd = NULL;
+    UTF8 *pPaddingStart = nullptr;
+    UTF8 *pPaddingEnd = nullptr;
     if (nfargs == 6 && *fargs[5])
     {
         pPaddingStart = strip_color(fargs[5]);
@@ -1703,7 +1703,7 @@ FUNCTION(fun_strtrunc)
         return;
     }
 
-    mux_string *sStr = NULL;
+    mux_string *sStr = nullptr;
     try
     {
         sStr = new mux_string(fargs[0]);
@@ -1713,7 +1713,7 @@ FUNCTION(fun_strtrunc)
         ; // Nothing.
     }
 
-    if (NULL == sStr)
+    if (nullptr == sStr)
     {
         return;
     }
@@ -1797,7 +1797,7 @@ FUNCTION(fun_mail)
     }
     else if (nfargs == 1)
     {
-        if (!is_integer(fargs[0], NULL))
+        if (!is_integer(fargs[0], nullptr))
         {
             // Handle the case of wanting to count the number of
             // messages.
@@ -2005,7 +2005,7 @@ FUNCTION(fun_mailj)
     }
     else if (1 == nfargs)
     {
-        if (!is_integer(fargs[0], NULL))
+        if (!is_integer(fargs[0], nullptr))
         {
             // Handle the case of wanting to count the number of messages.
             //
@@ -2196,7 +2196,7 @@ static void hasattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs
             else
             {
                 const UTF8 *tbuf = atr_get_raw(thing, pattr->number);
-                result = (tbuf != NULL);
+                result = (tbuf != nullptr);
             }
         }
     }
@@ -2284,7 +2284,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
             case DEFAULT_EDEFAULT:
                 mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, executor, executor,
                      AttrTrace(aflags, EV_FIGNORE|EV_EVAL),
-                     NULL, 0);
+                     nullptr, 0);
                 break;
 
             case DEFAULT_UDEFAULT:
@@ -2520,8 +2520,8 @@ FUNCTION(fun_elements)
 
     // Turn the first list into an array.
     //
-    mux_string *sStr = NULL;
-    mux_words *words = NULL;
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
     try
     {
         sStr  = new mux_string(fargs[0]);
@@ -2532,8 +2532,8 @@ FUNCTION(fun_elements)
         ; // Nothing.
     }
 
-    if (  NULL == sStr
-       || NULL == words)
+    if (  nullptr == sStr
+       || nullptr == words)
     {
         delete sStr;
         delete words;

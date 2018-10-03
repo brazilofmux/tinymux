@@ -27,7 +27,7 @@ CGuests Guest;
 
 CGuests::CGuests(void)
 {
-    Guests = NULL;
+    Guests = nullptr;
     nGuests = 0;
     nMaxGuests = 0;
 }
@@ -37,7 +37,7 @@ CGuests::~CGuests(void)
     if (Guests)
     {
         MEMFREE(Guests);
-        Guests = NULL;
+        Guests = nullptr;
         nGuests = 0;
         nMaxGuests = 0;
     }
@@ -108,7 +108,7 @@ void CGuests::SizeGuests(int nMin)
     {
         memcpy(newGuests, Guests, nGuests * sizeof(dbref));
         MEMFREE(Guests);
-        Guests = NULL;
+        Guests = nullptr;
     }
     Guests = newGuests;
     nMaxGuests = nMin;
@@ -134,7 +134,7 @@ const UTF8 *CGuests::Create(DESC *d)
             if (NOTHING == guest_player)
             {
                 queue_string(d, T("Error creating guest, please try again later.\n"));
-                return NULL;
+                return nullptr;
             }
             else
             {
@@ -207,13 +207,13 @@ const UTF8 *CGuests::Create(DESC *d)
     if (nGuests >= mudconf.number_guests)
     {
         queue_string(d, T("All guests are currently busy, please try again later.\n"));
-        return NULL;
+        return nullptr;
     }
     dbref newGuest = MakeGuestChar();
     if (newGuest == NOTHING)
     {
         queue_string(d, T("Error creating guest, please try again later.\n"));
-        return NULL;
+        return nullptr;
     }
     SizeGuests(nGuests+1);
     Guests[nGuests] = newGuest;
@@ -344,7 +344,7 @@ dbref CGuests::MakeGuestChar(void)
     aClearFlags[FLAG_WORD2] = mudconf.stripped_flags.word[FLAG_WORD2];
     aClearFlags[FLAG_WORD3] = mudconf.stripped_flags.word[FLAG_WORD3];
 
-    SetClearFlags(player, aClearFlags, NULL);
+    SetClearFlags(player, aClearFlags, nullptr);
 
     s_Pennies(player, Pennies(mudconf.guest_char));
     s_Zone(player, Zone(mudconf.guest_char));
@@ -356,8 +356,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, player, player, 0, A_LOCK, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", NULL, 0);
-    do_lock(player, player, player, 0, A_LENTER, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", NULL, 0);
+    do_lock(player, player, player, 0, A_LOCK, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", nullptr, 0);
+    do_lock(player, player, player, 0, A_LENTER, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", nullptr, 0);
 
     // return em!
     //
@@ -459,7 +459,7 @@ void CGuests::AddToGuestChannel(dbref player)
        && mudconf.guests_channel_alias[0] != '\0')
     {
         do_addcom(player, player, player, 0, 0, 2,
-            mudconf.guests_channel_alias, mudconf.guests_channel, NULL, 0);
+            mudconf.guests_channel_alias, mudconf.guests_channel, nullptr, 0);
     }
 }
 
