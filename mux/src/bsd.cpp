@@ -1363,7 +1363,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         CLinearTimeAbsolute ltaWakeUp;
         if (!scheduler.WhenNext(&ltaWakeUp))
         {
-            CLinearTimeDelta ltd = time_30m;
+            auto ltd = time_30m;
             ltaWakeUp = ltaCurrent + ltd;
         }
         else if (ltaWakeUp < ltaCurrent)
@@ -1371,15 +1371,15 @@ void shovechars(int nPorts, PortInfo aPorts[])
             ltaWakeUp = ltaCurrent;
         }
 
-        // The following kick-starts Asyncronous writes to the sockets going
+        // The following kick-starts asynchronous writes to the sockets going
         // if they are not already going. Doing it this way is better than:
         //
-        //   1) Starting an asyncronous write after a single addition
+        //   1) Starting an asynchronous write after a single addition
         //      to the socket's output queue, or
         //
         //   2) Scheduling a task to do it (because we would need to
         //      either maintain the task's uniqueness in the
-        //      scheduler's queue, or endure many redudant calls to
+        //      scheduler's queue, or endure many redundant calls to
         //      process_output for the same descriptor).
         //
         DESC *d, *dnext;
@@ -1397,8 +1397,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
             break;
         }
 
-        CLinearTimeDelta ltdTimeOut = ltaWakeUp - ltaCurrent;
-        unsigned int iTimeout = ltdTimeOut.ReturnMilliseconds();
+        auto ltdTimeOut = ltaWakeUp - ltaCurrent;
+        const unsigned int iTimeout = ltdTimeOut.ReturnMilliseconds();
         process_windows_tcp(iTimeout);
     }
 
@@ -1533,7 +1533,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 //
                 log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
 
-                // Search for a bad socket amoungst the players.
+                // Search for a bad socket amongst the players.
                 //
                 DESC_ITER_ALL(d)
                 {
@@ -1551,8 +1551,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 if (  !IS_INVALID_SOCKET(slave_socket)
                    && !ValidSocket(slave_socket))
                 {
-                    // Try to restart the slave, since it presumably
-                    // died.
+                    // Try to restart the slave, since it presumably died.
                     //
                     STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
                     log_text(T("Bad slave descriptor "));
@@ -1895,7 +1894,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         telnet_setup(d);
 
-        // Initalize everything before sending the sitemon info, so that we
+        // Initialize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
         //
         site_mon_send(newsock, pBuffM2, d, T("Connection"));
@@ -1946,8 +1945,8 @@ static const UTF8 *disc_messages[] =
 
 void shutdownsock(DESC *d, int reason)
 {
-    UTF8 *buff, *buff2;
-    int i, num;
+    UTF8 *buff;
+    int i;
     DESC *dtemp;
 
     if (  R_LOGOUT == reason
@@ -2006,7 +2005,7 @@ void shutdownsock(DESC *d, int reason)
                 //
                 ltdPart = ltdFull;
             }
-            long tPart = ltdPart.ReturnSeconds();
+            auto tPart = ltdPart.ReturnSeconds();
 
             anFields[CIF_TOTALTIME] += tPart;
             if (anFields[CIF_LONGESTCONNECT] < tFull)
@@ -2053,13 +2052,13 @@ void shutdownsock(DESC *d, int reason)
         // Plyr# Flags Cmds ConnTime Loc Money [Site] <DiscRsn> Name
         //
         STARTLOG(LOG_ACCOUNTING, "DIS", "ACCT");
-        CLinearTimeDelta ltd = ltaNow - d->connected_at;
-        int Seconds = ltd.ReturnSeconds();
+        auto ltd = ltaNow - d->connected_at;
+        const int Seconds = ltd.ReturnSeconds();
         buff = alloc_lbuf("shutdownsock.LOG.accnt");
-        buff2 = decode_flags(GOD, &(db[d->player].fs));
-        dbref locPlayer = Location(d->player);
-        int penPlayer = Pennies(d->player);
-        const UTF8 *PlayerName = PureName(d->player);
+        const auto buff2 = decode_flags(GOD, &(db[d->player].fs));
+        const auto locPlayer = Location(d->player);
+        const auto penPlayer = Pennies(d->player);
+        const auto PlayerName = PureName(d->player);
         mux_sprintf(buff, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"), d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
@@ -2094,7 +2093,7 @@ void shutdownsock(DESC *d, int reason)
     //
     if (d->program_data != nullptr)
     {
-        num = 0;
+        int num = 0;
         DESC_ITER_PLAYER(d->player, dtemp)
         {
             num++;
@@ -2249,8 +2248,8 @@ static void shutdownsock_brief(DESC *d)
         d->next->prev = d->prev;
     }
 
-    d->next = 0;
-    d->prev = 0;
+    d->next = nullptr;
+    d->prev = nullptr;
 
     // safe to allow the listening thread to continue now
     LeaveCriticalSection(&csDescriptorList);
@@ -2385,13 +2384,13 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
-    for (int i = 0; i < 256; i++)
+    for (auto& i : d->nvt_him_state)
     {
-        d->nvt_him_state[i] = OPTION_NO;
+        i = OPTION_NO;
     }
-    for (int i = 0; i < 256; i++)
+    for (auto& i : d->nvt_us_state)
     {
-        d->nvt_us_state[i] = OPTION_NO;
+        i = OPTION_NO;
     }
     d->ttype = nullptr;
     d->encoding = mudconf.default_charset;
@@ -2463,11 +2462,11 @@ void process_output(void *dvoid, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
-    const UTF8 *cmdsave = mudstate.debug_cmd;
+    const auto cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
-    DESC *d = static_cast<DESC *>(dvoid);
-    TBLOCK *tb = d->output_head;
+    auto d = static_cast<DESC *>(dvoid);
+    auto tb = d->output_head;
 
     // Don't write if connection dropped, there is nothing to write, or a
     // write is pending.
@@ -2487,7 +2486,7 @@ void process_output(void *dvoid, int bHandleShutdown)
           && 0 == (tb->hdr.flags & TBLK_FLAG_LOCKED)
           && 0 == tb->hdr.nchars)
     {
-        TBLOCK *save = tb;
+        auto save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
         save = nullptr;
@@ -2520,7 +2519,7 @@ void process_output(void *dvoid, int bHandleShutdown)
         tb->hdr.flags |= TBLK_FLAG_LOCKED;
         d->OutboundOverlapped.Offset = 0;
         d->OutboundOverlapped.OffsetHigh = 0;
-        BOOL bResult = WriteFile(reinterpret_cast<HANDLE>(d->descriptor), tb->hdr.start,
+        const auto bResult = WriteFile(reinterpret_cast<HANDLE>(d->descriptor), tb->hdr.start,
             static_cast<DWORD>(tb->hdr.nchars), nullptr, &d->OutboundOverlapped);
         if (bResult)
         {
@@ -2533,7 +2532,7 @@ void process_output(void *dvoid, int bHandleShutdown)
         }
         else
         {
-            DWORD dwLastError = GetLastError();
+            const auto dwLastError = GetLastError();
             if (ERROR_IO_PENDING == dwLastError)
             {
                 // The WriteFile request will complete later. We must not
@@ -2555,7 +2554,7 @@ void process_output(void *dvoid, int bHandleShutdown)
                     //
                     d->bConnectionDropped = true;
                     Log.tinyprintf(T("WriteFile(%d) failed with error %ld. Requesting port shutdown." ENDLINE), d->descriptor, dwLastError);
-                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, reinterpret_cast<MUX_ULONG_PTR>(d), &lpo_shutdown))
                     {
                         Log.tinyprintf(T("Error %ld on PostQueuedCompletionStatus() in process_output_ntio()." ENDLINE), GetLastError());
                     }
@@ -2765,10 +2764,10 @@ static void send_sb
     size_t nPayload
 )
 {
-    size_t nMaximum = 6 + 2*nPayload;
+    const auto nMaximum = 6 + 2*nPayload;
 
     unsigned char buffer[100];
-    unsigned char *pSB = buffer;
+    auto pSB = buffer;
     if (sizeof(buffer) < nMaximum)
     {
         pSB = static_cast<unsigned char *>(MEMALLOC(nMaximum));
@@ -2783,7 +2782,7 @@ static void send_sb
     pSB[2] = chOption;
     pSB[3] = chRequest;
 
-    unsigned char *p = &pSB[4];
+    auto p = &pSB[4];
 
     for (size_t loop = 0; loop < nPayload; loop++)
     {
@@ -2796,7 +2795,7 @@ static void send_sb
     *(p++) = NVT_IAC;
     *(p++) = NVT_SE;
 
-    size_t length = p - pSB;
+    const size_t length = p - pSB;
     queue_write_LEN(d, pSB, length);
 
     if (pSB != buffer)
@@ -3047,15 +3046,8 @@ static bool desired_him_option(DESC *d, unsigned char chOption)
 
 static bool desired_us_option(DESC *d, unsigned char chOption)
 {
-    if (  TELNET_EOR    == chOption
-       || TELNET_BINARY == chOption
-       || TELNET_CHARSET == chOption
-       || (  TELNET_SGA == chOption
-          && OPTION_YES == us_state(d, TELNET_EOR)))
-    {
-        return true;
-    }
-    return false;
+    return TELNET_EOR == chOption || TELNET_BINARY == chOption || TELNET_CHARSET == chOption || (TELNET_SGA == chOption
+        && OPTION_YES == us_state(d, TELNET_EOR));
 }
 
 /*! \brief Start the process of negotiating the enablement of an option on
@@ -3251,17 +3243,17 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     size_t nInputBytes = 0;
     size_t nLostBytes  = 0;
 
-    UTF8 *p    = d->raw_input_at;
-    UTF8 *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+    auto p    = d->raw_input_at;
+    auto pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
 
-    unsigned char *q    = d->aOption + d->nOption;
-    unsigned char *qend = d->aOption + SBUF_SIZE - 1;
+    auto q    = d->aOption + d->nOption;
+    const auto qend = d->aOption + SBUF_SIZE - 1;
 
-    int n = nBytes;
+    auto n = nBytes;
     while (n--)
     {
-        auto ch = static_cast<unsigned char>(*pBytes);
-        auto iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
+        const auto ch = static_cast<unsigned char>(*pBytes);
+        const auto iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
         switch (iAction)
         {
         case 1:
@@ -3697,7 +3689,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (  d->aOption < q
                && q < qend)
             {
-                size_t m = q - d->aOption;
+                const size_t m = q - d->aOption;
                 switch (d->aOption[0])
                 {
                 case TELNET_NAWS:
@@ -3732,7 +3724,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         const auto nTermType = m-2;
                         const auto pTermType = &d->aOption[2];
 
-                        bool fASCII = true;
+                        auto fASCII = true;
                         for (size_t i = 0; i < nTermType; i++)
                         {
                             if (!mux_isprint_ascii(pTermType[i]))
@@ -3771,7 +3763,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             if (  TELNETSB_USERVAR == ch2
                                || TELNETSB_VAR     == ch2)
                             {
-                                auto pVarnameStart = envPtr;
+                                const auto pVarnameStart = envPtr;
                                 unsigned char *pVarnameEnd = nullptr;
                                 unsigned char *pVarvalStart = nullptr;
                                 unsigned char *pVarvalEnd = nullptr;
@@ -5317,7 +5309,7 @@ void process_windows_tcp(DWORD dwTimeout)
         }
         else if (lpo == &lpo_welcome)
         {
-            UTF8 *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
+            const auto buff = alloc_mbuf("ProcessWindowsTCP.Premature");
             d->address.ntop(buff, MBUF_SIZE);
 
             // If the socket is invalid, the we were unable to queue a read
@@ -5376,7 +5368,7 @@ void process_windows_tcp(DWORD dwTimeout)
         }
         else if (lpo == &lpo_aborted_final)
         {
-            // Now that we are fairly certain that all IO packets refering to this descriptor have been processed
+            // Now that we are fairly certain that all IO packets referring to this descriptor have been processed
             // and no further packets remain in the IO queue, schedule a task to free the descriptor. This allows
             // any tasks which might potentially refer to this descriptor to be handled before we free the
             // descriptor.

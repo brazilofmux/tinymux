@@ -259,11 +259,6 @@ extern PortInfo main_game_ports[MAX_LISTEN_PORTS];
 #endif
 extern int      num_main_game_ports;
 
-/* from the net interface */
-
-extern int mux_socket_write(DESC *d, const char* buffer, int nBytes, int flags);
-extern int mux_socket_read(DESC *d, char* buffer, int nBytes, int flags);
-
 extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
