@@ -42,6 +42,7 @@ PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
 PortInfo main_game_ports[MAX_LISTEN_PORTS];
 #endif
 int      num_main_game_ports = 0;
+void process_output_socket(DESC *d, int bHandleShutdown);
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = nullptr;
@@ -2669,16 +2670,16 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
 }
 #endif // UNIX_SSL
 
+#endif // UNIX_NETWORKING
+
 void process_output(DESC *d, int bHandleShutdown)
 {
 #ifdef UNIX_SSL
     if (d->ssl_session) process_output_ssl(d, bHandleShutdown);
     else
 #endif
-    process_output_socket(d, bHandleShutdown);
+        process_output_socket(d, bHandleShutdown);
 }
-
-#endif // UNIX_NETWORKING
 
 /*! \brief Table to quickly classify characters recieved from the wire with
  * their Telnet meaning.
