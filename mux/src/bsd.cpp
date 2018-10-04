@@ -499,7 +499,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         {
             mux_close(i);
         }
-        execlp("bin/stubslave", "stubslave", (char *)nullptr);
+        execlp("bin/stubslave", "stubslave", static_cast<char *>(nullptr));
         _exit(1);
     }
     mux_close(sv[1]);
@@ -713,7 +713,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         {
             mux_close(i);
         }
-        execlp("bin/slave", "slave", (char *)nullptr);
+        execlp("bin/slave", "slave", static_cast<char *>(nullptr));
         _exit(1);
     }
     close(sv[1]);
@@ -1520,7 +1520,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         struct timeval timeout;
         CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
         ltdTimeout.ReturnTimeValueStruct(&timeout);
-        found = select(maxd, &input_set, &output_set, (fd_set *) nullptr, &timeout);
+        found = select(maxd, &input_set, &output_set, static_cast<fd_set *>(nullptr), &timeout);
 
         if (IS_SOCKET_ERROR(found))
         {
@@ -2949,7 +2949,7 @@ static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
 #ifdef UNIX_SSL
         else if ((TELNET_STARTTLS == chOption) && (tls_ctx != nullptr))
         {
-            SendSb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
+            send_sb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
         }
 #endif
         else if (TELNET_BINARY == chOption)
@@ -3207,7 +3207,7 @@ void telnet_setup(DESC *d)
 #ifdef UNIX_SSL
     if (!d->ssl_session && (tls_ctx != nullptr))
     {
-        EnableHim(d, TELNET_STARTTLS);
+        enable_him(d, TELNET_STARTTLS);
     }
 #endif
 }
