@@ -263,7 +263,7 @@ extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
 extern void shovechars(int nPorts, PortInfo aPorts[]);
-void process_output(void *, int);
+void process_output(DESC *, int);
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK

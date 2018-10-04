@@ -952,24 +952,6 @@ void CleanUpSSLConnections()
 
 #endif
 
-int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
-{
-    int result;
-
-#ifdef UNIX_SSL
-    if (d->ssl_session)
-    {
-        result = SSL_write(d->ssl_session, buffer, nBytes);
-    }
-    else
-#endif
-    {
-        result = SOCKET_WRITE(d->descriptor, buffer, nBytes, flags);
-    }
-
-    return result;
-}
-
 int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 {
     int result;
@@ -1388,7 +1370,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             if (d->bCallProcessOutputLater)
             {
                 d->bCallProcessOutputLater = false;
-                process_output(d, false);
+                process_output_socket(d, false);
             }
         }
 
@@ -2458,14 +2440,13 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
  * \return                  None.
  */
 
-void process_output(void *dvoid, int bHandleShutdown)
+void process_output_socket(DESC *d, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
     const auto cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
-    auto d = static_cast<DESC *>(dvoid);
     auto tb = d->output_head;
 
     // Don't write if connection dropped, there is nothing to write, or a
@@ -2580,10 +2561,8 @@ void process_output(void *dvoid, int bHandleShutdown)
  * \return                  None.
  */
 
-void process_output(void *dvoid, int bHandleShutdown)
+void process_output_socket(DESC *d, int bHandleShutdown)
 {
-    DESC *d = (DESC *)dvoid;
-
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
@@ -2592,33 +2571,16 @@ void process_output(void *dvoid, int bHandleShutdown)
     {
         while (0 < tb->hdr.nchars)
         {
-            int cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
+            int cnt = SOCKET_WRITE(d->descriptor, reinterpret_cast<char *>(tb->hdr.start), tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
-#ifdef UNIX_SSL
-                int iSocketError;
-                if (d->ssl_session)
-                {
-                   iSocketError = SSL_get_error(d->ssl_session, cnt);
-                }
-                else
-                {
-                   iSocketError = SOCKET_LAST_ERROR;
-                }
-#else
                 int iSocketError = SOCKET_LAST_ERROR;
-#endif
                 mudstate.debug_cmd = cmdsave;
-
                 if (  SOCKET_EWOULDBLOCK   == iSocketError
 #ifdef SOCKET_EAGAIN
                    || SOCKET_EAGAIN        == iSocketError
 #endif
                    || SOCKET_EINTR         == iSocketError
-#ifdef UNIX_SSL
-                   || SSL_ERROR_WANT_WRITE == iSocketError
-                   || SSL_ERROR_WANT_READ  == iSocketError
-#endif
                 )
                 {
                     // The call would have blocked, so we need to mark the
@@ -2649,6 +2611,71 @@ void process_output(void *dvoid, int bHandleShutdown)
     }
 
     mudstate.debug_cmd = cmdsave;
+}
+
+#ifdef UNIX_SSL
+void process_output_ssl(DESC *d, int bHandleShutdown)
+{
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< process_output_ssl >");
+
+    TBLOCK *tb = d->output_head;
+    while (nullptr != tb)
+    {
+        while (0 < tb->hdr.nchars)
+        {
+            int cnt = SSL_write(d->ssl_session, reinterpret_cast<char *>(tb->hdr.start), tb->hdr.nchars);
+            if (IS_SOCKET_ERROR(cnt))
+            {
+                int iSocketError = SSL_get_error(d->ssl_session, cnt);
+                mudstate.debug_cmd = cmdsave;
+                if (  SOCKET_EWOULDBLOCK   == iSocketError
+#ifdef SOCKET_EAGAIN
+                   || SOCKET_EAGAIN        == iSocketError
+#endif
+                   || SOCKET_EINTR         == iSocketError
+                   || SSL_ERROR_WANT_WRITE == iSocketError
+                   || SSL_ERROR_WANT_READ  == iSocketError
+                )
+                {
+                    // The call would have blocked, so we need to mark the
+                    // buffer we used as read-only and try again later with
+                    // the exactly same buffer.
+                    //
+                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
+                }
+                else if (bHandleShutdown)
+                {
+                    shutdownsock(d, R_SOCKDIED);
+                }
+                return;
+            }
+            d->output_size -= cnt;
+            tb->hdr.nchars -= cnt;
+            tb->hdr.start += cnt;
+        }
+        TBLOCK *save = tb;
+        tb = tb->hdr.nxt;
+        MEMFREE(save);
+        save = nullptr;
+        d->output_head = tb;
+        if (tb == nullptr)
+        {
+            d->output_tail = nullptr;
+        }
+    }
+
+    mudstate.debug_cmd = cmdsave;
+}
+#endif // UNIX_SSL
+
+void process_output(DESC *d, int bHandleShutdown)
+{
+#ifdef UNIX_SSL
+    if (d->ssl_session) process_output_ssl(d, bHandleShutdown);
+    else
+#endif
+    process_output_socket(d, bHandleShutdown);
 }
 
 #endif // UNIX_NETWORKING
@@ -4151,19 +4178,24 @@ void close_sockets(bool emergency, const UTF8 *message)
     {
         if (emergency)
         {
-            mux_socket_write(d, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)), 0);
-            if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
-            {
-                log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
-            }
 #ifdef UNIX_SSL
             if (d->ssl_session)
             {
+                SSL_write(d->ssl_session, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)));
                 SSL_shutdown(d->ssl_session);
                 SSL_free(d->ssl_session);
                 d->ssl_session = nullptr;
             }
+            else
 #endif
+            {
+                SOCKET_WRITE(d->descriptor, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)), 0);
+            }
+
+            if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
+            {
+                log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
+            }
             if (0 == SOCKET_CLOSE(d->descriptor))
             {
                 DebugTotalSockets--;
