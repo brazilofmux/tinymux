@@ -611,5 +611,5 @@ if test -c /dev/urandom; then
   AC_DEFINE([HAVE_DEV_URANDOM], [], [Define if the character special file /dev/urandom is present.])
 fi
 
-AC_CONFIG_FILES([modules/Makefile Makefile])
+AC_CONFIG_FILES([modules/Makefile tools/Makefile Makefile])
 AC_OUTPUT

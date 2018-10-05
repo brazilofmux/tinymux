@@ -1,0 +1,6 @@
+CC = @CC@
+
+all: announce
+
+announce: announce.c
+	$(CC) -o announce announce.c
