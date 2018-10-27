@@ -242,6 +242,10 @@ static struct
 #define BIDI_SEGMENT_SEPARATOR          17
 #define BIDI_WHITESPACE                 18
 #define BIDI_OTHER_NEUTRALS             19
+#define BIDI_LEFT_TO_RIGHT_ISOLATE      20
+#define BIDI_RIGHT_TO_LEFT_ISOLATE      21
+#define BIDI_FIRST_STRONG_ISOLATE       22
+#define BIDI_POP_DIRECTIONAL_ISOLATE    23
 
 static struct
 {
@@ -268,6 +272,10 @@ static struct
     { BIDI_SEGMENT_SEPARATOR,          "S"   },
     { BIDI_WHITESPACE,                 "WS"  },
     { BIDI_OTHER_NEUTRALS,             "ON"  },
+    { BIDI_LEFT_TO_RIGHT_ISOLATE,      "LRI" },
+    { BIDI_RIGHT_TO_LEFT_ISOLATE,      "RLI" },
+    { BIDI_FIRST_STRONG_ISOLATE,       "FSI" },
+    { BIDI_POP_DIRECTIONAL_ISOLATE,    "PDI" },
     { 0, NULL }
 };
 

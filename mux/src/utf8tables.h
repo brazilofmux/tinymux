@@ -17,7 +17,7 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 109631 included, 1004481 excluded, 0 errors.
+// 109630 included, 1004482 excluded, 0 errors.
 // 243 states, 95 columns, 4362 bytes
 //
 #define CL_PRINT_START_STATE (0)
