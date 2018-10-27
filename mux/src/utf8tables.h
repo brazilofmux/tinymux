@@ -17,7 +17,7 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 109630 included, 1004482 excluded, 0 errors.
+// 109631 included, 1004481 excluded, 0 errors.
 // 243 states, 95 columns, 4362 bytes
 //
 #define CL_PRINT_START_STATE (0)
@@ -265,5 +265,3 @@ extern const string_desc tr_foldmatch_ott[3];
 extern const unsigned char tr_color_itt[256];
 extern const unsigned short tr_color_sot[37];
 extern const unsigned short tr_color_sbt[2245];
-
-#endif // UTF8TABLES_H
