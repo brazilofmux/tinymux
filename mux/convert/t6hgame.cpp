@@ -15,7 +15,7 @@
 
 typedef struct _t6h_gameflaginfo
 {
-    int         mask;
+    unsigned    mask;
     const char *pName;
 } t6h_gameflaginfo;
 
@@ -2024,7 +2024,7 @@ void T6H_GAME::ConvertFromP6H()
         poi->SetPowers1(powers1);
         poi->SetPowers2(powers2);
 
-        if (m_flags && T6H_V_TIMESTAMPS)
+        if (m_flags & T6H_V_TIMESTAMPS)
         {
             if (it->second->m_fModified)
             {
@@ -2038,7 +2038,7 @@ void T6H_GAME::ConvertFromP6H()
             }
         }
 
-        if (m_flags && T6H_V_CREATETIME)
+        if (m_flags & T6H_V_CREATETIME)
         {
             if (it->second->m_fCreated)
             {
