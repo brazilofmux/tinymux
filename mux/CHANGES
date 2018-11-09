@@ -1,5 +1,5 @@
 TinyMUX 2.12: CHANGES
-Last Update: June 2018
+Last Update: November 2018
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Major changes that may affect performance and require softcode tweaks:
@@ -21,15 +21,14 @@ Feature Additions:
  -- Finish CStandardMarshaler, CLog, and funcs module.
  -- Improve automated mapping of UTF-8 to ASCII, CP437, Latin-1, and
     Latin-2.
- -- Update to Unicode 6.0.
  -- Update to PCRE 7.1.
  -- Added LMAX(), LMIN(), TRACE().
  -- Include Omega in distribution.
  -- Remove support for Windows x86 build with and without Intel
     compiler.
  -- Add environment for building Docker images from TinyMUX sources.
- -- Update to Unicode 6.1.
  -- Add funcs module to the distribution.
+ -- Update to Unicode 8.0.
 
 
 Bug Fixes:
@@ -48,10 +47,15 @@ Bug Fixes:
  -- Dark wizard in same room should not be locatable.
  -- Fix typo in site list management which would prevent lots of
     combinations.
- -- Fix gcc-7 errors related to comparison between pointer and integer.
+ -- Fix GCC7 errors related to comparison between pointer and integer.
  -- Fix 2007 bug in "@set <object>=<attribute>:_<fromobj>/<fromattr>".
  -- Fix memory leak from trim_spaces() in MakeCanonicalExitName().
  -- Need -lcrypto.
+ -- unsplit should accept '+' in directory names.
+ -- HAVE_MYSQL_H test was missing.
+ -- Announce should have used $(CC) intead of hardcoding 'gcc'.
+ -- Omega fixed for GCC7 and LLVM. Constant narrowing.
+ -- Fixed Omega handling of TinyMUSH's V_TIMESTAMPS and V_CREATETIME.
 
 
 Performance Enhancements:
@@ -71,6 +75,8 @@ Miscellaneous:
  -- Fixed -Wall compiler warnings that may eventually become build
     errors.
  -- Move to C++11 and start using STL.
+ -- Include ax_cxx_compile_stdcxx.m4 for autoconf.
+ -- Replace NULL with nullptr.
  -- Update Debian package.
  -- Update to autoconf 2.69.
  -- Use Visual Studio 2017.
@@ -78,3 +84,5 @@ Miscellaneous:
  -- Remove obsolete -cposix check.
  -- Removed NEED_SPRINTF and NEED_VSPRINTF as we don't use them.
  -- Use a single top-level configure.ac. Build recursively.
+ -- Use <csignal> instead of deprecated C++ header <signal.h>.
+ -- Add clean/realclean to tools sub-directory.

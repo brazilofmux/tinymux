@@ -118,6 +118,7 @@ src/libmux.h
 src/local.cpp
 src/log.cpp
 src/look.cpp
+src/m4/ax_cxx_compile_stdcxx.m4
 src/mail.cpp
 src/mail.h
 src/match.cpp
