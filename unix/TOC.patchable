@@ -130,10 +130,6 @@ src/mguests.h
 src/misc.h
 src/modules/Makefile.in
 src/modules/autoconf.h.in
-src/modules/config.guess
-src/modules/config.sub
-src/modules/configure
-src/modules/configure.ac
 src/modules/install-sh
 src/modules/funcs.cpp
 src/modules/funcs.h
@@ -185,9 +181,7 @@ src/timeutil.h
 src/timezone.cpp
 src/tools/announce.c
 src/tools/autoconf.h.in
-src/tools/configure
-src/tools/configure.ac
-src/tools/Makefile
+src/tools/Makefile.in
 src/unparse.cpp
 src/unsplit.cpp
 src/utf8tables.cpp

@@ -1,2 +1,9 @@
 BETA
 src/Doxyfile
+src/modules/config.guess
+src/modules/config.sub
+src/modules/configure
+src/modules/configure.ac
+src/tools/configure
+src/tools/configure.ac
+src/tools/Makefile
