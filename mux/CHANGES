@@ -56,6 +56,7 @@ Bug Fixes:
  -- Announce should have used $(CC) intead of hardcoding 'gcc'.
  -- Omega fixed for GCC7 and LLVM. Constant narrowing.
  -- Fixed Omega handling of TinyMUSH's V_TIMESTAMPS and V_CREATETIME.
+ -- Include tools/Makefile.in in distribution.
 
 
 Performance Enhancements:
