@@ -3640,7 +3640,7 @@ void dump_restart_db(void)
     putref(f, mudstate.restart_count);
     DESC_ITER_ALL(d)
     {
-        putref(f, d->descriptor);
+        putref(f, d->socket);
         putref(f, d->flags);
         putref(f, d->connected_at.ReturnSeconds());
         putref(f, d->command_count);
@@ -3766,7 +3766,7 @@ void load_restart_db(void)
         ndescriptors++;
         DebugTotalSockets++;
         d = alloc_desc("restart");
-        d->descriptor = val;
+        d->socket = val;
         d->flags = getref(f);
         d->connected_at.SetSeconds(getref(f));
         d->command_count = getref(f);
@@ -3965,9 +3965,9 @@ void load_restart_db(void)
         }
 
 #if defined(UNIX_NETWORKING_SELECT)
-        if (maxd <= d->descriptor)
+        if (maxd <= d->socket)
         {
-            maxd = d->descriptor + 1;
+            maxd = d->socket + 1;
         }
 #endif // UNIX_NETWORKING_SELECT
 

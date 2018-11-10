@@ -156,10 +156,11 @@ struct prog_data
 typedef struct descriptor_data DESC;
 struct descriptor_data
 {
-  CLinearTimeAbsolute connected_at;
-  CLinearTimeAbsolute last_time;
+  SOCKET socket;
 
-  SOCKET descriptor;
+#ifdef UNIX_SSL
+  SSL *ssl_session;
+#endif
 
 #if defined(WINDOWS_NETWORKING)
   // these are for the Windows NT TCP/IO
@@ -171,6 +172,9 @@ struct descriptor_data
   bool bConnectionShutdown;       // true if connection has been shutdown
   bool bCallProcessOutputLater;   // Does the socket need priming for output.
 #endif // WINDOWS_NETWORKING
+
+  CLinearTimeAbsolute connected_at;
+  CLinearTimeAbsolute last_time;
 
   int flags;
   int retries_left;
@@ -209,15 +213,11 @@ struct descriptor_data
   struct descriptor_data *next;
   struct descriptor_data **prev;
 
-  mux_sockaddr address;   /* added 3/6/90 SCG */
+  mux_sockaddr address;
 
   UTF8 addr[51];
   UTF8 username[11];
   UTF8 doing[SIZEOF_DOING_STRING];
-
-#ifdef UNIX_SSL
-  SSL *ssl_session;
-#endif
 };
 
 int him_state(DESC *d, unsigned char chOption);

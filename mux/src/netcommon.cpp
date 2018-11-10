@@ -54,7 +54,7 @@ void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
     DESC_ITER_CONN(d)
     {
         if (  d->player == target
-           && !ItemToList_AddInteger64(&itl, d->descriptor))
+           && !ItemToList_AddInteger64(&itl, d->socket))
         {
             break;
         }
@@ -80,12 +80,12 @@ void make_port_ulist(dbref player, UTF8 *buff, UTF8 **bufc)
             continue;
         }
 
-        // printf format: printf("%d:%d", d->player, d->descriptor);
+        // printf format: printf("%d:%d", d->player, d->socket);
         //
         UTF8 *p = tmp;
         p += mux_ltoa(d->player, p);
         *p++ = ':';
-        p += mux_i64toa(d->descriptor, p);
+        p += mux_i64toa(d->socket, p);
 
         size_t n = p - tmp;
         if (!ItemToList_AddStringLEN(&itl, n, tmp))
@@ -479,7 +479,7 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
                 STARTLOG(LOG_NET, "NET", "WRITE");
                 UTF8 *buf = alloc_lbuf("queue_write.LOG");
                 mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %d chars discarded by "),
-                    d->descriptor, d->addr, tp->hdr.nchars);
+                    d->socket, d->addr, tp->hdr.nchars);
                 log_text(buf);
                 free_lbuf(buf);
                 if (d->flags & DS_CONNECTED)
@@ -1412,7 +1412,7 @@ int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
     int count = 0;
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if (  d->descriptor == port
+        if (  d->socket == port
            && (  bGod
               || !(d->flags & DS_CONNECTED)
               || !God(d->player)))
@@ -1956,7 +1956,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     NameField,
                     pTimeStamp1,
                     pTimeStamp2,
-                    d->descriptor,
+                    d->socket,
                     d->input_size, d->input_lost,
                     d->input_tot,
                     d->output_size, d->output_lost,
@@ -2278,7 +2278,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     UTF8 *buff = alloc_mbuf("failconn.LOG");
-    mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->descriptor, d->addr, logtype);
+    mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
     log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
@@ -2413,7 +2413,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->descriptor, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2467,7 +2467,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             //
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
             buff = alloc_mbuf("check_conn.LOG.login");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connected to "), d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
             log_text(buff);
             log_name_and_loc(player);
             free_mbuf(buff);
@@ -2601,7 +2601,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 queue_write(d, T("\r\n"));
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->descriptor, d->addr, user);
+                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->socket, d->addr, user);
                 log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2611,7 +2611,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 AddToPublicChannel(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
-                mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->descriptor, d->addr);
+                mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
                 log_text(buff);
                 log_name(player);
                 free_mbuf(buff);
@@ -2642,7 +2642,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99"), d->descriptor, d->addr, msg);
+        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, msg);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -3051,7 +3051,7 @@ FUNCTION(fun_doing)
         DESC *d;
         DESC_ITER_CONN(d)
         {
-            if (d->descriptor == s)
+            if (d->socket == s)
             {
                 bFound = true;
                 break;
@@ -3120,7 +3120,7 @@ FUNCTION(fun_host)
         SOCKET s = mux_atol(fargs[0]);
         DESC_ITER_CONN(d)
         {
-            if (d->descriptor == s)
+            if (d->socket == s)
             {
                 bFound = true;
                 break;
@@ -3216,7 +3216,7 @@ FUNCTION(fun_siteinfo)
         SOCKET s = mux_atol(fargs[0]);
         DESC_ITER_CONN(d)
         {
-            if (d->descriptor == s)
+            if (d->socket == s)
             {
                 bFound = true;
                 break;
