@@ -1252,6 +1252,67 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     }
 }
 
+int make_nonblocking(SOCKET s)
+{
+#if defined(WINDOWS_NETWORKING)
+    unsigned long on = 1;
+    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctlsocket"));
+        return -1;
+    }
+#endif // WINDOWS_NETWORKING
+
+#if defined(UNIX_NETWORKING)
+#if defined(O_NONBLOCK)
+    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
+        return -1;
+    }
+#elif defined(FNDELAY)
+    if (fcntl(s, F_SETFL, FNDELAY) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
+        return -1;
+    }
+#elif defined(O_NDELAY)
+    if (fcntl(s, F_SETFL, O_NDELAY) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
+        return -1;
+    }
+#elif defined(FIONBIO)
+    unsigned long on = 1;
+    if (ioctl(s, FIONBIO, &on) < 0)
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctl"));
+        return -1;
+    }
+#endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
+#endif // UNIX_NETWORKING
+    return 0;
+}
+
+static void make_nolinger(SOCKET s)
+{
+#if defined(HAVE_LINGER)
+    struct linger ling {};
+    ling.l_onoff = 0;
+    ling.l_linger = 0;
+    if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&ling), sizeof(ling))))
+    {
+        log_perror(T("NET"), T("FAIL"), T("linger"), T("setsockopt"));
+    }
+#endif // HAVE_LINGER
+}
+
+static void config_socket(SOCKET s)
+{
+    make_nonblocking(s);
+    make_nolinger(s);
+}
+
 #if defined(WINDOWS_NETWORKING)
 
 static LRESULT WINAPI mux_WindowProc
@@ -1775,6 +1836,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         return 0;
     }
 
+    config_socket(newsock);
+
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
     addr.ntop(pBuffM2, MBUF_SIZE);
     unsigned short usPort = addr.port();
@@ -2248,67 +2311,6 @@ static void shutdownsock_brief(DESC *d)
 }
 #endif // WINDOWS_NETWORKING
 
-int make_nonblocking(SOCKET s)
-{
-#if defined(WINDOWS_NETWORKING)
-    unsigned long on = 1;
-    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
-    {
-        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctlsocket"));
-        return -1;
-    }
-#endif // WINDOWS_NETWORKING
-
-#if defined(UNIX_NETWORKING)
-#if defined(O_NONBLOCK)
-    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
-        return -1;
-    }
-#elif defined(FNDELAY)
-    if (fcntl(s, F_SETFL, FNDELAY) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
-        return -1;
-    }
-#elif defined(O_NDELAY)
-    if (fcntl(s, F_SETFL, O_NDELAY) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
-        return -1;
-    }
-#elif defined(FIONBIO)
-    unsigned long on = 1;
-    if (ioctl(s, FIONBIO, &on) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctl"));
-        return -1;
-    }
-#endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
-#endif // UNIX_NETWORKING
-    return 0;
-}
-
-static void make_nolinger(SOCKET s)
-{
-#if defined(HAVE_LINGER)
-    struct linger ling{};
-    ling.l_onoff = 0;
-    ling.l_linger = 0;
-    if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&ling), sizeof(ling))))
-    {
-        log_perror(T("NET"), T("FAIL"), T("linger"), T("setsockopt"));
-    }
-#endif // HAVE_LINGER
-}
-
-static void config_socket(SOCKET s)
-{
-    make_nonblocking(s);
-    make_nolinger(s);
-}
-
 // This function must be thread safe WinNT
 //
 DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
@@ -2346,7 +2348,6 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     d->addr[0] = '\0';
     d->doing[0] = '\0';
     d->username[0] = '\0';
-    config_socket(s);
     d->output_prefix = nullptr;
     d->output_suffix = nullptr;
     d->output_size = 0;
@@ -5077,6 +5078,7 @@ static DWORD WINAPI mux_listen_thread(LPVOID pVoid)
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, nullptr);
             }
         }
+        config_socket(socket_client);
         d = initializesock(socket_client, &SockAddr);
 
         // Add this socket to the IO completion port.
