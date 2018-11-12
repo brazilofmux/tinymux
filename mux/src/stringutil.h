@@ -116,7 +116,7 @@ inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
 //
 inline bool mux_isprint(__in const unsigned char *p)
 {
-    unsigned char iState = CL_PRINT_START_STATE;
+    unsigned short iState = CL_PRINT_START_STATE;
     do
     {
         unsigned char ch = *p++;
