@@ -57,6 +57,8 @@ Bug Fixes:
  -- Omega fixed for GCC7 and LLVM. Constant narrowing.
  -- Fixed Omega handling of TinyMUSH's V_TIMESTAMPS and V_CREATETIME.
  -- Include tools/Makefile.in in distribution.
+ -- Updating to Unicode 7.1 required that the state variable for the
+    mux_isprint() state machine become an unsigned short.
 
 
 Performance Enhancements:
