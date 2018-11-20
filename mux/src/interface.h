@@ -151,9 +151,15 @@ struct prog_data
 #define CHARSET_LATIN2          3
 #define CHARSET_UTF8            4
 
+enum SocketState {
+    Accepted = 0,
+    AcceptedSSL = 1
+};
+
 typedef struct descriptor_data DESC;
 struct descriptor_data
 {
+  enum SocketState ss;
   SOCKET socket;
 
 #ifdef UNIX_SSL

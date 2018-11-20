@@ -1836,8 +1836,6 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         return 0;
     }
 
-    config_socket(newsock);
-
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
     addr.ntop(pBuffM2, MBUF_SIZE);
     unsigned short usPort = addr.port();
@@ -1899,41 +1897,68 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         free_mbuf(pBuffM3);
         ENDLOG;
 
-#ifdef UNIX_SSL
-        SSL *ssl_session = nullptr;
+        config_socket(newsock);
+        d = initializesock(newsock, &addr);
 
+#ifdef UNIX_SSL
         if (Port->fSSL && ssl_ctx)
         {
-            ssl_session = SSL_new(ssl_ctx);
-            SSL_set_fd(ssl_session, newsock);
-            int ssl_result = SSL_accept(ssl_session);
-            if (ssl_result != 1)
+            d->ssl_session = SSL_new(ssl_ctx);
+            SSL_set_fd(d->ssl_session, d->socket);
+            int ssl_result = SSL_accept(d->ssl_session);
+            if (1 == ssl_result)
             {
-                // Something errored out.  We'll have to drop.
-                int ssl_err = SSL_get_error(ssl_session, ssl_result);
+                d->ss = SocketState::AcceptedSSL;
+            }
+            else
+            {
+                int iSocketError = SSL_get_error(d->ssl_session, ssl_result);
+                if (  SOCKET_EWOULDBLOCK   == iSocketError
+#ifdef SOCKET_EAGAIN
+                   || SOCKET_EAGAIN        == iSocketError
+#endif
+                   || SOCKET_EINTR         == iSocketError
+                   || SSL_ERROR_WANT_WRITE == iSocketError
+                   || SSL_ERROR_WANT_READ  == iSocketError
+                )
+                {
+                    // QQQ
 
-                SSL_free(ssl_session);
+                }
+
+                SSL_free(d->ssl_session);
+                d->ssl_session = nullptr;
                 STARTLOG(LOG_ALWAYS, "NET", "SSL");
                 log_text(T("SSL negotiation failed: "));
-                log_number(ssl_err);
+                log_number(iSocketError);
                 ENDLOG;
-                shutdown(newsock, SD_BOTH);
-                if (0 == SOCKET_CLOSE(newsock))
+                shutdown(d->socket, SD_BOTH);
+                if (0 == SOCKET_CLOSE(d->socket))
                 {
                     DebugTotalSockets--;
                 }
-                newsock = INVALID_SOCKET;
-                *piSocketError = ssl_err;
+                d->socket = INVALID_SOCKET;
+                *d->prev = d->next;
+                if (d->next)
+                {
+                    d->next->prev = d->prev;
+                }
+
+                // This descriptor may hang around awhile, clear out the links.
+                //
+                d->next = 0;
+                d->prev = 0;
+
+                // If we don't have queued IOs, then we can free these, now.
+                //
+                freeqs(d);
+                free_desc(d);
+
+                *piSocketError = iSocketError;
                 errno = 0;
                 return nullptr;
             }
         }
-#endif
-
-        d = initializesock(newsock, &addr);
-
-#ifdef UNIX_SSL
-        d->ssl_session = ssl_session;
 #endif
 
         telnet_setup(d);
@@ -1941,7 +1966,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         // Initialize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
         //
-        site_mon_send(newsock, pBuffM2, d, T("Connection"));
+        site_mon_send(d->socket, pBuffM2, d, T("Connection"));
 
         welcome_user(d);
     }
@@ -2330,16 +2355,17 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     LeaveCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
+    d->ss = SocketState::Accepted;
     d->socket = s;
+#ifdef UNIX_SSL
+    d->ssl_session = nullptr;
+#endif
     d->flags = 0;
     d->connected_at.GetUTC();
     d->last_time = d->connected_at;
     d->retries_left = mudconf.retry_limit;
     d->command_count = 0;
     d->timeout = mudconf.idle_timeout;
-#ifdef UNIX_SSL
-    d->ssl_session = nullptr;
-#endif
 
     // Be sure #0 isn't wizard. Shouldn't be.
     //
@@ -2388,7 +2414,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
-    EnterCriticalSection (&csDescriptorList);
+    EnterCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
     ndescriptors++;
@@ -2405,7 +2431,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
 #if defined(WINDOWS_NETWORKING)
     // ok to continue now
     //
-    LeaveCriticalSection (&csDescriptorList);
+    LeaveCriticalSection(&csDescriptorList);
 
     d->OutboundOverlapped.hEvent = nullptr;
     d->InboundOverlapped.hEvent = nullptr;
