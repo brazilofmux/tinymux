@@ -50,6 +50,9 @@ static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
 static DESC *new_connection(PortInfo *Port, int *piError);
+static DESC *new_connection0(PortInfo *Port, int *piError);
+static DESC *new_connection1(DESC* d, int *piSocketError);
+static void new_connection2(DESC* d);
 #endif
 static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
@@ -924,12 +927,12 @@ bool initialize_ssl()
 
 void shutdown_ssl()
 {
-    if (ssl_ctx)
+    if (nullptr != ssl_ctx)
     {
         SSL_CTX_free(ssl_ctx);
         ssl_ctx = nullptr;
     }
-    if (tls_ctx)
+    if (nullptr != tls_ctx)
     {
         SSL_CTX_free(tls_ctx);
         tls_ctx = nullptr;
@@ -1208,7 +1211,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     {
         PortInfoOpenClose(pnPorts, aPorts, pia, sp, false);
 #if defined(UNIX_SSL)
-        if (piaSSL && ssl_ctx)
+        if (piaSSL && nullptr != ssl_ctx)
         {
             PortInfoOpenClose(pnPorts, aPorts, piaSSL, sp, true);
         }
@@ -1678,7 +1681,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             {
                 int iSocketError;
                 newd = new_connection(&aPorts[i], &iSocketError);
-                if (!newd)
+                if (nullptr == newd)
                 {
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
@@ -1810,21 +1813,19 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 }
 #endif // HAVE_WORKINGFORK && STUB_SLAVE
 
-DESC *new_connection(PortInfo *Port, int *piSocketError)
+// new_connection(). Call when connection made to open port.
+//
+DESC *new_connection0(PortInfo *Port, int *piSocketError)
 {
-    DESC *d;
-    mux_sockaddr addr;
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< new_connection0 >");
+
 #ifdef SOCKLEN_T_DCL
     socklen_t addr_len;
 #else // SOCKLEN_T_DCL
     int addr_len;
 #endif // SOCKLEN_T_DCL
-#if defined(UNIX_NETWORKING)
-    int len;
-#endif // UNIX_NETWORKING
-
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection >");
+    mux_sockaddr addr;
     addr_len = addr.maxaddrlen();
 
     SOCKET newsock = accept(Port->socket, addr.sa(), &addr_len);
@@ -1833,7 +1834,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     {
         *piSocketError = SOCKET_LAST_ERROR;
         mudstate.debug_cmd = cmdsave;
-        return 0;
+        return nullptr;
     }
 
     UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
@@ -1845,15 +1846,15 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
-        mux_sprintf(pBuffM1, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
-            newsock, pBuffM2, usPort);
+        mux_sprintf(pBuffM1, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"), newsock, pBuffM2, usPort);
         log_text(pBuffM1);
-        free_mbuf(pBuffM1);
+        free_mbuf(pBuffM1); pBuffM1 = nullptr;
         ENDLOG;
 
         // Report site monitor information.
         //
         site_mon_send(newsock, pBuffM2, nullptr, T("Connection refused"));
+        free_mbuf(pBuffM2); pBuffM2 = nullptr;
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
@@ -1863,116 +1864,170 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         }
         newsock = INVALID_SOCKET;
         errno = 0;
-        d = nullptr;
+        *piSocketError = SOCKET_LAST_ERROR;
+        mudstate.debug_cmd = cmdsave;
+        return nullptr;
+    }
+
+#if defined(HAVE_WORKING_FORK)
+    // Make slave request
+    //
+    if (  !IS_INVALID_SOCKET(slave_socket)
+       && mudconf.use_hostname)
+    {
+        UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
+        mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n"), pBuffM2);
+        size_t len = strlen((char *)pBuffL1);
+        if (mux_write(slave_socket, pBuffL1, len) < 0)
+        {
+            CleanUpSlaveSocket();
+            CleanUpSlaveProcess();
+
+            STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+            log_text(T("write() of slave request failed. Slave stopped."));
+            ENDLOG;
+        }
+        free_lbuf(pBuffL1); pBuffL1 = nullptr;
+    }
+#endif // HAVE_WORKING_FORK
+
+    STARTLOG(LOG_NET, "NET", "CONN");
+    UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
+    mux_sprintf(pBuffM3, MBUF_SIZE, T("[%u/%s] Connection opened (remote port %d)"), newsock, pBuffM2, usPort);
+    free_mbuf(pBuffM2); pBuffM2 = nullptr;
+    log_text(pBuffM3);
+    free_mbuf(pBuffM3); pBuffM3 = nullptr;
+    ENDLOG;
+
+    config_socket(newsock);
+    DESC *d = initializesock(newsock, &addr);
+
+#ifdef UNIX_SSL
+    if (Port->fSSL && nullptr != ssl_ctx)
+    {
+        d->ssl_session = SSL_new(ssl_ctx);
+        SSL_set_fd(d->ssl_session, d->socket);
+        d->ss = SocketState::SSLAcceptAgain;
+    }
+    else
+#endif
+    {
+        d->ss = SocketState::Accepted;
+    }
+    mudstate.debug_cmd = cmdsave;
+    return d;
+}
+
+// new_connection(). Call when SocketState::SSLAcceptGain, SocketState::SSLAcceptWantWrite, and SocketState::SSLAcceptWantread
+//
+DESC *new_connection1(DESC* d, int *piSocketError)
+{
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< new_connection1 >");
+
+#ifdef UNIX_SSL
+    int ssl_result = SSL_accept(d->ssl_session);
+    if (1 == ssl_result)
+    {
+        d->ss = SocketState::Accepted;
     }
     else
     {
-#if defined(HAVE_WORKING_FORK)
-        // Make slave request
-        //
-        if (  !IS_INVALID_SOCKET(slave_socket)
-           && mudconf.use_hostname)
-        {
-            UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
-            mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n"), pBuffM2);
-            len = strlen((char *)pBuffL1);
-            if (mux_write(slave_socket, pBuffL1, len) < 0)
-            {
-                CleanUpSlaveSocket();
-                CleanUpSlaveProcess();
-
-                STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-                log_text(T("write() of slave request failed. Slave stopped."));
-                ENDLOG;
-            }
-            free_lbuf(pBuffL1);
-        }
-#endif // HAVE_WORKING_FORK
-
-        STARTLOG(LOG_NET, "NET", "CONN");
-        UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
-        mux_sprintf(pBuffM3, MBUF_SIZE, T("[%u/%s] Connection opened (remote port %d)"), newsock,
-            pBuffM2, usPort);
-        log_text(pBuffM3);
-        free_mbuf(pBuffM3);
-        ENDLOG;
-
-        config_socket(newsock);
-        d = initializesock(newsock, &addr);
-
-#ifdef UNIX_SSL
-        if (Port->fSSL && ssl_ctx)
-        {
-            d->ssl_session = SSL_new(ssl_ctx);
-            SSL_set_fd(d->ssl_session, d->socket);
-            int ssl_result = SSL_accept(d->ssl_session);
-            if (1 == ssl_result)
-            {
-                d->ss = SocketState::AcceptedSSL;
-            }
-            else
-            {
-                int iSocketError = SSL_get_error(d->ssl_session, ssl_result);
-                if (  SOCKET_EWOULDBLOCK   == iSocketError
+        int iSocketError = SSL_get_error(d->ssl_session, ssl_result);
+        if (  SOCKET_EWOULDBLOCK == iSocketError
 #ifdef SOCKET_EAGAIN
-                   || SOCKET_EAGAIN        == iSocketError
+           || SOCKET_EAGAIN      == iSocketError
 #endif
-                   || SOCKET_EINTR         == iSocketError
-                   || SSL_ERROR_WANT_WRITE == iSocketError
-                   || SSL_ERROR_WANT_READ  == iSocketError
-                )
-                {
-                    // QQQ
-
-                }
-
-                SSL_free(d->ssl_session);
-                d->ssl_session = nullptr;
-                STARTLOG(LOG_ALWAYS, "NET", "SSL");
-                log_text(T("SSL negotiation failed: "));
-                log_number(iSocketError);
-                ENDLOG;
-                shutdown(d->socket, SD_BOTH);
-                if (0 == SOCKET_CLOSE(d->socket))
-                {
-                    DebugTotalSockets--;
-                }
-                d->socket = INVALID_SOCKET;
-                *d->prev = d->next;
-                if (d->next)
-                {
-                    d->next->prev = d->prev;
-                }
-
-                // This descriptor may hang around awhile, clear out the links.
-                //
-                d->next = 0;
-                d->prev = 0;
-
-                // If we don't have queued IOs, then we can free these, now.
-                //
-                freeqs(d);
-                free_desc(d);
-
-                *piSocketError = iSocketError;
-                errno = 0;
-                return nullptr;
-            }
+           || SOCKET_EINTR       == iSocketError
+           )
+        {
+            d->ss = SocketState::SSLAcceptAgain;
         }
-#endif
+        else if (SSL_ERROR_WANT_WRITE == iSocketError)
+        {
+            d->ss = SocketState::SSLAcceptWantWrite;
+        }
+        else if (SSL_ERROR_WANT_READ  == iSocketError)
+        {
+            d->ss = SocketState::SSLAcceptWantRead;
+        }
+        else
+        {
+            SSL_free(d->ssl_session);
+            d->ssl_session = nullptr;
+            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            log_text(T("SSL negotiation failed: "));
+            log_number(iSocketError);
+            ENDLOG;
+            shutdown(d->socket, SD_BOTH);
+            if (0 == SOCKET_CLOSE(d->socket))
+            {
+                DebugTotalSockets--;
+            }
+            d->socket = INVALID_SOCKET;
+            *d->prev = d->next;
+            if (d->next)
+            {
+                d->next->prev = d->prev;
+            }
 
-        telnet_setup(d);
+            // This descriptor may hang around awhile, clear out the links.
+            //
+            d->next = 0;
+            d->prev = 0;
 
-        // Initialize everything before sending the sitemon info, so that we
-        // can pass the descriptor, d.
-        //
-        site_mon_send(d->socket, pBuffM2, d, T("Connection"));
+            // If we don't have queued IOs, then we can free these, now.
+            //
+            freeqs(d);
+            free_desc(d);
 
-        welcome_user(d);
+            *piSocketError = iSocketError;
+            mudstate.debug_cmd = cmdsave;
+            errno = 0;
+            return nullptr;
+        }
     }
-    free_mbuf(pBuffM2);
-    *piSocketError = SOCKET_LAST_ERROR;
+#endif
     mudstate.debug_cmd = cmdsave;
+    return d;
+}
+
+// new_connection(). Call when SocketState::Accepted.
+//
+void new_connection2(DESC* d)
+{
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< new_connection2 >");
+
+    telnet_setup(d);
+
+    // Initialize everything before sending the sitemon info, so that we
+    // can pass the descriptor, d.
+    //
+    UTF8 *pBuffer = alloc_mbuf("new_connection.address");
+    d->address.ntop(pBuffer, MBUF_SIZE);
+    site_mon_send(d->socket, pBuffer, d, T("Connection"));
+    free_mbuf(pBuffer);
+    pBuffer = nullptr;
+
+    welcome_user(d);
+    d->ss = SocketState::Connected;
+    mudstate.debug_cmd = cmdsave;
+}
+
+DESC *new_connection(PortInfo *Port, int *piSocketError)
+{
+    DESC *d = new_connection0(Port, piSocketError);
+#ifdef UNIX_SSL
+    if (nullptr != d && SocketState::SSLAcceptAgain == d->ss)
+    {
+        d = new_connection1(d, piSocketError);
+    }
+#endif
+    if (nullptr != d && SocketState::Accepted == d->ss)
+    {
+        new_connection2(d);
+    }
     return d;
 }
 
