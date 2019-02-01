@@ -422,7 +422,7 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
     s_Pass(player, pEncodedPassword);
 }
 
-#if defined(UNIX_DIGEST) && !defined(OPENSSL_NO_SHA0)
+#if defined(UNIX_DIGEST) && defined(HAVE_SHA_INIT)
 const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 {
     // Calculate SHA-0 Hash.
@@ -598,7 +598,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     case CRYPT_CLEARTEXT:
         return szPassword;
 
-#ifdef UNIX_DIGEST
+#if defined(UNIX_DIGEST) && defined(HAVE_SHA_INIT)
     case CRYPT_P6H_XX:
         return p6h_xx_crypt(szPassword);
 #endif

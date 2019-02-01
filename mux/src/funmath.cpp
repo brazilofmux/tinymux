@@ -2924,7 +2924,14 @@ FUNCTION(fun_digest)
     UNUSED_PARAMETER(ncargs);
 
 #ifdef UNIX_DIGEST
-    EVP_MD_CTX ctx;
+    EVP_MD_CTX *ctx;
+#if HAVE_EVP_MD_CTX_NEW
+    ctx = EVP_MD_CTX_new();
+#elif HAVE_EVP_MD_CTX_CREATE
+    ctx = EVP_MD_CTX_create();
+#else
+#error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
+#endif
 
     const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
     if (nullptr == mp)
@@ -2933,17 +2940,24 @@ FUNCTION(fun_digest)
         return;
     }
 
-    EVP_DigestInit(&ctx, mp);
+    EVP_DigestInit(ctx, mp);
 
     int i;
     for (i = 1; i < nfargs; i++)
     {
-        EVP_DigestUpdate(&ctx, fargs[i], strlen((const char *)fargs[i]));
+        EVP_DigestUpdate(ctx, fargs[i], strlen((const char *)fargs[i]));
     }
 
     unsigned int len = 0;
     UINT8 md[EVP_MAX_MD_SIZE];
-    EVP_DigestFinal(&ctx, md, &len);
+    EVP_DigestFinal(ctx, md, &len);
+#if HAVE_EVP_MD_CTX_NEW
+    EVP_MD_CTX_free(ctx);
+#elif HAVE_EVP_MD_CTX_CREATE
+    EVP_MD_CTX_destroy(ctx);
+#else
+#error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
+#endif
     safe_hex(md, len, true, buff, bufc);
 #else
     if (mux_stricmp(fargs[0], T("sha1")) == 0)

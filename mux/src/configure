@@ -7577,6 +7577,18 @@ _ACEOF
 fi
 done
 
+for ac_func in EVP_MD_CTX_create EVP_MD_CTX_new SHA_Init
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pread and pwrite..." >&5
 $as_echo "$as_me: checking for pread and pwrite..." >&6;}
 if test "$cross_compiling" = yes; then :

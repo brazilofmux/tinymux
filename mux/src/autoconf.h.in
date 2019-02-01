@@ -63,6 +63,12 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define to 1 if you have the `EVP_MD_CTX_create' function. */
+#undef HAVE_EVP_MD_CTX_CREATE
+
+/* Define to 1 if you have the `EVP_MD_CTX_new' function. */
+#undef HAVE_EVP_MD_CTX_NEW
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
@@ -200,6 +206,9 @@
 
 /* Define to 1 if you have the `setrlimit' function. */
 #undef HAVE_SETRLIMIT
+
+/* Define to 1 if you have the `SHA_Init' function. */
+#undef HAVE_SHA_INIT
 
 /* Define if your system has the sockaddr_in type. */
 #undef HAVE_SOCKADDR_IN

@@ -457,6 +457,7 @@ AC_FUNC_FORK
 AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getnameinfo getaddrinfo inet_ntop inet_pton getpagesize getrusage gettimeofday)
 AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep log2)
 AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait kqueue kevent)
+AC_CHECK_FUNCS(EVP_MD_CTX_create EVP_MD_CTX_new SHA_Init)
 AS_MESSAGE([checking for pread and pwrite...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
