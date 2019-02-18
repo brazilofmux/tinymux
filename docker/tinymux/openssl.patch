@@ -1,0 +1,138 @@
+commit 647745590681cea2b7d09fe040c001be7c46516b
+Author: Stephen Dennis <brazilofmux@gmail.com>
+Date:   Fri Feb 1 20:13:42 2019 +0000
+
+    Gloss over differences between openssl 1.0 and openssl 1.1
+
+diff --git a/mux/src/autoconf.h.in b/mux/src/autoconf.h.in
+index c713258..f825d7f 100644
+--- a/mux/src/autoconf.h.in
++++ b/mux/src/autoconf.h.in
+@@ -63,6 +63,12 @@
+ /* Define to 1 if you have the <errno.h> header file. */
+ #undef HAVE_ERRNO_H
+ 
++/* Define to 1 if you have the `EVP_MD_CTX_create' function. */
++#undef HAVE_EVP_MD_CTX_CREATE
++
++/* Define to 1 if you have the `EVP_MD_CTX_new' function. */
++#undef HAVE_EVP_MD_CTX_NEW
++
+ /* Define to 1 if you have the <fcntl.h> header file. */
+ #undef HAVE_FCNTL_H
+ 
+@@ -201,6 +207,9 @@
+ /* Define to 1 if you have the `setrlimit' function. */
+ #undef HAVE_SETRLIMIT
+ 
++/* Define to 1 if you have the `SHA_Init' function. */
++#undef HAVE_SHA_INIT
++
+ /* Define if your system has the sockaddr_in type. */
+ #undef HAVE_SOCKADDR_IN
+ 
+diff --git a/mux/src/configure b/mux/src/configure
+index 162856c..761fb03 100755
+--- a/mux/src/configure
++++ b/mux/src/configure
+@@ -7577,6 +7577,18 @@ _ACEOF
+ fi
+ done
+ 
++for ac_func in EVP_MD_CTX_create EVP_MD_CTX_new SHA_Init
++do :
++  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
++ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
++if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
++  cat >>confdefs.h <<_ACEOF
++#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
++_ACEOF
++
++fi
++done
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pread and pwrite..." >&5
+ $as_echo "$as_me: checking for pread and pwrite..." >&6;}
+ if test "$cross_compiling" = yes; then :
+diff --git a/mux/src/configure.ac b/mux/src/configure.ac
+index ff8f511..47ee5c1 100644
+--- a/mux/src/configure.ac
++++ b/mux/src/configure.ac
+@@ -457,6 +457,7 @@ AC_FUNC_FORK
+ AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getnameinfo getaddrinfo inet_ntop inet_pton getpagesize getrusage gettimeofday)
+ AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep log2)
+ AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait kqueue kevent)
++AC_CHECK_FUNCS(EVP_MD_CTX_create EVP_MD_CTX_new SHA_Init)
+ AS_MESSAGE([checking for pread and pwrite...])
+ AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ #include <sys/types.h>
+diff --git a/mux/src/funmath.cpp b/mux/src/funmath.cpp
+index a2d0cac..1faa6e8 100644
+--- a/mux/src/funmath.cpp
++++ b/mux/src/funmath.cpp
+@@ -2924,7 +2924,14 @@ FUNCTION(fun_digest)
+     UNUSED_PARAMETER(ncargs);
+ 
+ #ifdef UNIX_DIGEST
+-    EVP_MD_CTX ctx;
++    EVP_MD_CTX *ctx;
++#if HAVE_EVP_MD_CTX_NEW
++    ctx = EVP_MD_CTX_new();
++#elif HAVE_EVP_MD_CTX_CREATE
++    ctx = EVP_MD_CTX_create();
++#else
++#error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
++#endif
+ 
+     const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
+     if (nullptr == mp)
+@@ -2933,17 +2940,24 @@ FUNCTION(fun_digest)
+         return;
+     }
+ 
+-    EVP_DigestInit(&ctx, mp);
++    EVP_DigestInit(ctx, mp);
+ 
+     int i;
+     for (i = 1; i < nfargs; i++)
+     {
+-        EVP_DigestUpdate(&ctx, fargs[i], strlen((const char *)fargs[i]));
++        EVP_DigestUpdate(ctx, fargs[i], strlen((const char *)fargs[i]));
+     }
+ 
+     unsigned int len = 0;
+     UINT8 md[EVP_MAX_MD_SIZE];
+-    EVP_DigestFinal(&ctx, md, &len);
++    EVP_DigestFinal(ctx, md, &len);
++#if HAVE_EVP_MD_CTX_NEW
++    EVP_MD_CTX_free(ctx);
++#elif HAVE_EVP_MD_CTX_CREATE
++    EVP_MD_CTX_destroy(ctx);
++#else
++#error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
++#endif
+     safe_hex(md, len, true, buff, bufc);
+ #else
+     if (mux_stricmp(fargs[0], T("sha1")) == 0)
+diff --git a/mux/src/player.cpp b/mux/src/player.cpp
+index bea057a..d6e41cc 100644
+--- a/mux/src/player.cpp
++++ b/mux/src/player.cpp
+@@ -422,7 +422,7 @@ void ChangePassword(dbref player, const UTF8 *szPassword)
+     s_Pass(player, pEncodedPassword);
+ }
+ 
+-#if defined(UNIX_DIGEST) && !defined(OPENSSL_NO_SHA0)
++#if defined(UNIX_DIGEST) && defined(HAVE_SHA_INIT)
+ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
+ {
+     // Calculate SHA-0 Hash.
+@@ -598,7 +598,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
+     case CRYPT_CLEARTEXT:
+         return szPassword;
+ 
+-#ifdef UNIX_DIGEST
++#if defined(UNIX_DIGEST) && defined(HAVE_SHA_INIT)
+     case CRYPT_P6H_XX:
+         return p6h_xx_crypt(szPassword);
+ #endif
