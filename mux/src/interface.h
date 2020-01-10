@@ -152,13 +152,13 @@ struct prog_data
 #define CHARSET_UTF8            4
 
 enum SocketState {
+    Initialized = 0,
+    Accepted,
 #ifdef UNIX_SSL
     SSLAcceptAgain,
     SSLAcceptWantWrite,
     SSLAcceptWantRead,
 #endif
-    Accepted,
-    Connected,
 };
 
 typedef struct descriptor_data DESC;

@@ -49,10 +49,9 @@ static void telnet_setup(DESC *d);
 static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
-static DESC *new_connection(PortInfo *Port, int *piError);
-static DESC *new_connection0(PortInfo *Port, int *piError);
-static DESC *new_connection1(DESC* d, int *piSocketError);
-static void new_connection2(DESC* d);
+static DESC *new_connection_initial(PortInfo *Port);
+static bool new_connection_continue(DESC* d);
+static void new_connection_final(DESC* d);
 #endif
 static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
@@ -1680,19 +1679,22 @@ void shovechars(int nPorts, PortInfo aPorts[])
             if (CheckInput(aPorts[i].socket))
             {
                 int iSocketError;
-                newd = new_connection(&aPorts[i], &iSocketError);
-                if (nullptr == newd)
+                newd = new_connection_initial(&aPorts[i]);
+                if (nullptr != newd)
                 {
-                    if (  iSocketError
-                       && iSocketError != SOCKET_EINTR)
-                    {
-                        log_perror(T("NET"), T("FAIL"), nullptr, T("new_connection"));
-                    }
-                }
-                else if (  !IS_INVALID_SOCKET(newd->socket)
-                        && maxd <= newd->socket)
-                {
-                    maxd = newd->socket + 1;
+                   bool fConnectionOpen = true;
+#ifdef UNIX_SSL
+                   if (SocketState::SSLAcceptAgain == newd->ss)
+                   {
+                       fConnectionOpen = new_connection_continue(newd);
+                   }
+#endif
+                   if (  fConnectionOpen
+                      && !IS_INVALID_SOCKET(newd->socket)
+                      && maxd <= newd->socket)
+                   {
+                       maxd = newd->socket + 1;
+                   }
                 }
             }
         }
@@ -1705,26 +1707,43 @@ void shovechars(int nPorts, PortInfo aPorts[])
             //
             if (CheckInput(d->socket))
             {
-                // Undo autodark
-                //
-                if (d->flags & DS_AUTODARK)
-                {
-                    // Clear the DS_AUTODARK on every related session.
-                    //
-                    DESC *d1;
-                    DESC_ITER_PLAYER(d->player, d1)
-                    {
-                        d1->flags &= ~DS_AUTODARK;
-                    }
-                    db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
-                }
+                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                log_printf(T("shovechars(), CheckInput (%u)."), d->socket);
+                ENDLOG;
 
-                // Process received data.
-                //
-                if (!process_input(d))
+#ifdef UNIX_SSL
+                if (SocketState::SSLAcceptAgain == d->ss)
                 {
-                    shutdownsock(d, R_SOCKDIED);
-                    continue;
+                    if (!new_connection_continue(d)) continue;
+                }
+                if (SocketState::SSLAcceptWantRead == d->ss)
+                {
+                    if (!new_connection_continue(d)) continue;
+                }
+                else
+#endif
+                {
+                    // Undo autodark
+                    //
+                    if (d->flags & DS_AUTODARK)
+                    {
+                        // Clear the DS_AUTODARK on every related session.
+                        //
+                        DESC *d1;
+                        DESC_ITER_PLAYER(d->player, d1)
+                        {
+                            d1->flags &= ~DS_AUTODARK;
+                        }
+                        db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+                    }
+
+                    // Process received data.
+                    //
+                    if (!process_input(d))
+                    {
+                        shutdownsock(d, R_SOCKDIED);
+                        continue;
+                    }
                 }
             }
 
@@ -1732,7 +1751,24 @@ void shovechars(int nPorts, PortInfo aPorts[])
             //
             if (CheckOutput(d->socket))
             {
-                process_output(d, true);
+                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                log_printf(T("shovechars(), CkeckOutput (%u)."), d->socket);
+                ENDLOG;
+#ifdef UNIX_SSL
+                if (SocketState::SSLAcceptAgain == d->ss)
+                {
+                    if (!new_connection_continue(d)) continue;
+                }
+
+                if (SocketState::SSLAcceptWantWrite == d->ss)
+                {
+                    if (!new_connection_continue(d)) continue;
+                }
+                else
+#endif
+                {
+                    process_output(d, true);
+                }
             }
         }
     }
@@ -1813,12 +1849,50 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 }
 #endif // HAVE_WORKINGFORK && STUB_SLAVE
 
-// new_connection(). Call when connection made to open port.
+// new_connection_final(). Call when SocketState::Accepted.
 //
-DESC *new_connection0(PortInfo *Port, int *piSocketError)
+void new_connection_final(DESC* d)
 {
     const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection0 >");
+    mudstate.debug_cmd = T("< new_connection_final >");
+
+    STARTLOG(LOG_ALWAYS, "NET", "SSL");
+    log_printf(T("new_connection_final() (%u)."), d->socket);
+    ENDLOG;
+
+    telnet_setup(d);
+
+    // Initialize everything before sending the sitemon info, so that we
+    // can pass the descriptor, d.
+    //
+    UTF8 *pBuffer = alloc_mbuf("new_connection.address");
+    d->address.ntop(pBuffer, MBUF_SIZE);
+    site_mon_send(d->socket, pBuffer, d, T("Connection"));
+    free_mbuf(pBuffer);
+    pBuffer = nullptr;
+
+    welcome_user(d);
+    mudstate.debug_cmd = cmdsave;
+}
+
+
+void check_connection_failure(int iSocketError)
+{
+    if (  iSocketError
+       && iSocketError != SOCKET_EINTR)
+    {
+        STARTLOG(LOG_ALWAYS, "NET", "FAIL");
+        log_printf(T("new_connection() failed with %u."), iSocketError);
+        ENDLOG;
+    }
+}
+
+// new_connection_initial(). Call when connection made to open port.
+//
+DESC *new_connection_initial(PortInfo *Port)
+{
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< new_connection_initial >");
 
 #ifdef SOCKLEN_T_DCL
     socklen_t addr_len;
@@ -1832,7 +1906,7 @@ DESC *new_connection0(PortInfo *Port, int *piSocketError)
 
     if (IS_INVALID_SOCKET(newsock))
     {
-        *piSocketError = SOCKET_LAST_ERROR;
+        check_connection_failure(SOCKET_LAST_ERROR);
         mudstate.debug_cmd = cmdsave;
         return nullptr;
     }
@@ -1864,7 +1938,7 @@ DESC *new_connection0(PortInfo *Port, int *piSocketError)
         }
         newsock = INVALID_SOCKET;
         errno = 0;
-        *piSocketError = SOCKET_LAST_ERROR;
+        check_connection_failure(SOCKET_LAST_ERROR);
         mudstate.debug_cmd = cmdsave;
         return nullptr;
     }
@@ -1913,23 +1987,28 @@ DESC *new_connection0(PortInfo *Port, int *piSocketError)
 #endif
     {
         d->ss = SocketState::Accepted;
+        new_connection_final(d);
     }
     mudstate.debug_cmd = cmdsave;
     return d;
 }
 
-// new_connection(). Call when SocketState::SSLAcceptGain, SocketState::SSLAcceptWantWrite, and SocketState::SSLAcceptWantread
+#ifdef UNIX_SSL
+// new_connection_continue(). Call when SocketState::SSLAcceptAgain, SocketState::SSLAcceptWantWrite, and SocketState::SSLAcceptWantRead
 //
-DESC *new_connection1(DESC* d, int *piSocketError)
+bool new_connection_continue(DESC* d)
 {
     const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection1 >");
+    mudstate.debug_cmd = T("< new_connection_continue >");
 
-#ifdef UNIX_SSL
     int ssl_result = SSL_accept(d->ssl_session);
     if (1 == ssl_result)
     {
+        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+        log_printf(T("new_connection_continue(), SSL_accept (%u): Set SocketState::Accepted."), d->socket);
+        ENDLOG;
         d->ss = SocketState::Accepted;
+        new_connection_final(d);
     }
     else
     {
@@ -1941,14 +2020,23 @@ DESC *new_connection1(DESC* d, int *piSocketError)
            || SOCKET_EINTR       == iSocketError
            )
         {
+            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptAgain."), d->socket);
+            ENDLOG;
             d->ss = SocketState::SSLAcceptAgain;
         }
         else if (SSL_ERROR_WANT_WRITE == iSocketError)
         {
+            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantWrite."), d->socket);
+            ENDLOG;
             d->ss = SocketState::SSLAcceptWantWrite;
         }
         else if (SSL_ERROR_WANT_READ  == iSocketError)
         {
+            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantRead."), d->socket);
+            ENDLOG;
             d->ss = SocketState::SSLAcceptWantRead;
         }
         else
@@ -1981,55 +2069,15 @@ DESC *new_connection1(DESC* d, int *piSocketError)
             freeqs(d);
             free_desc(d);
 
-            *piSocketError = iSocketError;
-            mudstate.debug_cmd = cmdsave;
+            check_connection_failure(iSocketError);
             errno = 0;
-            return nullptr;
+            return false;
         }
     }
-#endif
     mudstate.debug_cmd = cmdsave;
-    return d;
+    return true;
 }
-
-// new_connection(). Call when SocketState::Accepted.
-//
-void new_connection2(DESC* d)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection2 >");
-
-    telnet_setup(d);
-
-    // Initialize everything before sending the sitemon info, so that we
-    // can pass the descriptor, d.
-    //
-    UTF8 *pBuffer = alloc_mbuf("new_connection.address");
-    d->address.ntop(pBuffer, MBUF_SIZE);
-    site_mon_send(d->socket, pBuffer, d, T("Connection"));
-    free_mbuf(pBuffer);
-    pBuffer = nullptr;
-
-    welcome_user(d);
-    d->ss = SocketState::Connected;
-    mudstate.debug_cmd = cmdsave;
-}
-
-DESC *new_connection(PortInfo *Port, int *piSocketError)
-{
-    DESC *d = new_connection0(Port, piSocketError);
-#ifdef UNIX_SSL
-    if (nullptr != d && SocketState::SSLAcceptAgain == d->ss)
-    {
-        d = new_connection1(d, piSocketError);
-    }
 #endif
-    if (nullptr != d && SocketState::Accepted == d->ss)
-    {
-        new_connection2(d);
-    }
-    return d;
-}
 
 #endif // UNIX_NETWORKING
 
@@ -3816,7 +3864,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                        d->ssl_session = SSL_new(tls_ctx);
                        SSL_set_fd(d->ssl_session, d->socket);
-                       SSL_accept(d->ssl_session);
+                       d->ss = SocketState::SSLAcceptAgain;
                     }
                     break;
 #endif
