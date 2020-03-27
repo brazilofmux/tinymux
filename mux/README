@@ -1,6 +1,6 @@
 TinyMUX 2.12: README (Unix-based)
-Last Update: July 2012
-~~~~~~~~~~~~~~~~~~~~~~
+Last Update: March 2020
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Congratulations and welcome to the README file for TinyMUX 2.12.  That
 you have chosen to actually read the file is a sign of bravery equal to
@@ -28,7 +28,7 @@ following files:
                       has been shown to run under out of the box, how to
                       report bugs.
 
-  CHANGES             New features, commands, and bug fixes.
+  CHANGES.md          New features, commands, and bug fixes.
 
   INSTALL             How to compile your game, step by step.
 
@@ -71,7 +71,7 @@ The latest version of this code can generally be found running at:
 
   brazilmux.tinymux.org 2860
 
-Refer to the file CHANGES for information about new features, commands,
+Refer to the file CHANGES.md for information about new features, commands,
 and bug fixes.  NOTES now contains a LOT of small bits of info related
 to running the server, as well as reminders about how to flatfile the
 database for conversions and moving from site to site.
