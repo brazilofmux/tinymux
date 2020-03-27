@@ -2772,6 +2772,21 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
                     // the exactly same buffer.
                     //
                     tb->hdr.flags |= TBLK_FLAG_LOCKED;
+
+                    if (SSL_ERROR_WANT_WRITE == iSocketError)
+                    {
+                        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                        log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantWrite."), d->socket);
+                        ENDLOG;
+                        d->ss = SocketState::SSLWriteWantWrite;
+                    }
+                    else if (SSL_ERROR_WANT_READ == iSocketError)
+                    {
+                        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                        log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantRead."), d->socket);
+                        ENDLOG;
+                        d->ss = SocketState::SSLWriteWantRead;
+                    }
                 }
                 else if (bHandleShutdown)
                 {
@@ -4290,6 +4305,22 @@ bool process_input(DESC *d)
               )
            )
         {
+#ifdef UNIX_SSL
+            if (SSL_ERROR_WANT_WRITE == iSocketError)
+            {
+                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantWrite."), d->socket);
+                ENDLOG;
+                d->ss = SocketState::SSLReadWantWrite;
+            }
+            else if (SSL_ERROR_WANT_READ == iSocketError)
+            {
+                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantRead."), d->socket);
+                ENDLOG;
+                d->ss = SocketState::SSLReadWantRead;
+            }
+#endif // UNIX_SSL
             return true;
         }
         return false;

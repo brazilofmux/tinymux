@@ -158,6 +158,10 @@ enum SocketState {
     SSLAcceptAgain,
     SSLAcceptWantWrite,
     SSLAcceptWantRead,
+    SSLReadWantWrite,
+    SSLReadWantRead,
+    SSLWriteWantWrite,
+    SSLWriteWantRead,
 #endif
 };
 
