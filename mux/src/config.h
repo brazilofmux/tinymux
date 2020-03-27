@@ -159,6 +159,10 @@ extern int getdtablesize(void);
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#else // HAVE_FCNTL_H
+#ifdef HAVE_SYS_FCNTL_H
+#include <sys/fcntl.h>
+#endif // HAVE_SYS_FCNTL_H
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
@@ -257,10 +261,6 @@ extern char *sys_errlist[];
 #endif // HAVE_SYS_TYPES_H
 
 #include <stdio.h>
-
-#ifdef HAVE_SYS_FCNTL_H
-#include <sys/fcntl.h>
-#endif // HAVE_SYS_FCNTL_H
 
 #ifndef EXTENDED_STDIO_DCLS
 extern int    fprintf(FILE *, const char *, ...);
