@@ -28,8 +28,8 @@
 /* Define to 1 if you have the `crypt' function. */
 /* #undef HAVE_CRYPT */
 
-/* define if the compiler supports basic C++11 syntax */
-#define HAVE_CXX11 1
+/* define if the compiler supports basic C++14 syntax */
+#define HAVE_CXX14 1
 
 /* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
    don't. */
