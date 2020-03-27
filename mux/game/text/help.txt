@@ -11489,7 +11489,7 @@ REGEXPS (continued)
   player to enter a string and a number ('+setnum <player>=<number>',
   for example), you might do it like this:
 
-  &DO_NUM Command Object=$+setnum (.+)=([0-9]*): @va me=Data: %1 = %2
+  &DO_NUM Command Object=$\+setnum (.+)=([0-9]*): @va me=Data: %1 = %2
   @set Command Object/DO_NUM = regexp
 
   Then, '+setnum cookies=30' would set VA to "Data: cookies = 30".
