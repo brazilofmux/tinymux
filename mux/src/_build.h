@@ -20,5 +20,5 @@ extern char szBuildDate[];
 
 // Define if this release is qualified as ALPHA or BETA.
 //
-#define ALPHA
-//#define BETA
+//#define ALPHA
+#define BETA
