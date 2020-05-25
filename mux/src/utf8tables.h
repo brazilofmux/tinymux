@@ -263,3 +263,5 @@ extern const string_desc tr_foldmatch_ott[3];
 extern const unsigned char tr_color_itt[256];
 extern const unsigned short tr_color_sot[37];
 extern const unsigned short tr_color_sbt[2245];
+
+#endif // UTF8TABLES_H
