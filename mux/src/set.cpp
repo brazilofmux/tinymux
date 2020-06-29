@@ -1914,9 +1914,11 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
             {
                 // No rights to change the attr.
                 //
-                notify_quiet(executor, tprintf(T("%s: Permission denied."), ap->name));
+                if (!Quiet(executor))
+                {
+                    notify_quiet(executor, tprintf(T("%s: Permission denied."), ap->name));
+                }
             }
-
         }
     }
 
