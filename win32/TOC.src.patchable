@@ -21,7 +21,7 @@ game/data/db_unload.bat
 game/startmux.wsf
 game/text/help.txt
 game/text/wizhelp.txt
-INSTALL
+INSTALL.md
 LOCAL
 NOTES
 README
