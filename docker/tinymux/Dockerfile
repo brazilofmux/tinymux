@@ -1,13 +1,13 @@
 FROM alpine:latest as builder
-RUN apk add --no-cache g++ make openssl openssl-dev
+RUN apk add --no-cache clang g++ make openssl openssl-dev
 COPY mux-2.12.0.9.unix.tar.gz .
 RUN tar xzf mux-2.12.0.9.unix.tar.gz
 WORKDIR /mux2.12/src
-RUN ./configure --enable-ssl
+RUN CC=clang CXX=clang++ ./configure --enable-ssl
 RUN sed -e '80s/-lssl/-lssl -lcrypto/g' Makefile > Makefile.new
 RUN mv Makefile.new Makefile
-RUN make depend
-RUN make
+RUN CC=clang CXX=clang++ CXXFLAGS=-O3 make depend
+RUN CC=clang CXX=clang++ CXXFLAGS=-O3 make -j12
 #
 # Startmux requires adjustment
 #
