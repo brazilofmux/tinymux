@@ -17,14 +17,16 @@ game.
     Optional packages are documented separately and enabled with the
     following configuration options:
 
-      --enable-firanmux     For use by FiranMUX.  Not recommended generally.
-      --enable-memorybased  See docs/MEMORY.
-      --enable-realitylvls  See REALITY and REALITY.SETUP.
-      --enable-stubslave    See MODULES.
-      --enable-wodrealms    See docs/REALMS.
-      --enable-inlinesql    Enables in-line MySQL support.
-      --enable-ssl          See SSL.
-      --enable-deprecated   Enables deprecated features.
+      |                      |                                                  |
+      |----------------------|--------------------------------------------------|
+      | --enable-firanmux    | For use by FiranMUX.  Not recommended generally. |
+      | --enable-memorybased | See docs/MEMORY.                                 |
+      | --enable-realitylvls | See REALITY and REALITY.SETUP.                   |
+      | --enable-stubslave   | See MODULES.                                     |
+      | --enable-wodrealms   | See docs/REALMS.                                 |
+      | --enable-inlinesql   | Enables in-line MySQL support.                   |
+      | --enable-ssl         | See SSL.                                         |
+      | --enable-deprecated  | Enables deprecated features.                     |
 
 2.  Edit the Configuration section of the Makefile.  This is usually not
     needed.  Most likely, all you will need to change are any C++ flags
@@ -61,16 +63,18 @@ game.
    flatfile format and back again.  The db_load and db_unload scripts
    simplify the process for the user.
 
- - The syntax of the scripts is:
+ - The syntax of the db_load script is:
 
-   './db_load netmux netmux.flat netmux.db'
+       ./db_load netmux netmux.flat netmux.db
 
    This converts a flatfile database to binary for use by the server
    and would be done with dbconvert thus:
 
        ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
 
-   './db_unload netmux netmux.db.new netmux.flat'
+ - The syntax of the db_unload script is:
+ 
+       ./db_unload netmux netmux.db.new netmux.flat
 
    This converts binary data to flatfile for would be done with
    dbconvert thus:
