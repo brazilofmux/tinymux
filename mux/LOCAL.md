@@ -6,7 +6,7 @@ title: LOCAL
 
 # Overall
 
-The local.cpp file contains several functions to enable the extension of the
+The `local.cpp` file contains several functions to enable the extension of the
 server source code (AKA hardcode).  These functions provide an interface to
 reduce the need to implement changes within the server code itself.
 
@@ -75,7 +75,7 @@ has an active connection.
 Function: `local_data_create(dbref object)`
 
 `local_data_create()` is called when any object is created.  Note: this
-function catches player creation via @pcreate as well as creations
+function catches player creation via `@pcreate` as well as creations
 at the connection screen so is a better location for player based
 initialization if required.
 
@@ -90,12 +90,12 @@ Function: `local_data_free(dbref object)`
 `local_data_free()` is called after the target object has been cleared of
 all information but just prior to it being truly destroyed.  This occurs
 at the point of true destruction prior to being available to the freelist
-not when it is just set GOING.
+not when it is just set `GOING`.
 
 # Periodic Processing
 
 The TinyMUX local implementation does not provide a function implementing the
-functionality of PennMUSH's `local_timer()` 1 second cycle callback.  Instead,
+functionality of PennMUSH's `local_timer()` one second cycle callback.  Instead,
 developers should make use of the TinyMUX scheduler to instantiate periodic or
 one-shot timers.  The scheduler accepts a function pointer to execute at the
 designated timeframe.  Regularly occuring timers must re-schedule themselves
@@ -121,7 +121,7 @@ void myTimer(void* pUnused, int iUnused)
 ```
 
 Once the function is available, it must be scheduled.  The following
-example is shown using local_statup.
+example is shown using `local_startup`.
 
 ```C++
 const CLinearTimeDelta period_15s   = 15*FACTOR_100NS_PER_SECOND;
