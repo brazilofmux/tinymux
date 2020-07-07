@@ -1,6 +1,7 @@
 ALPHA.md
 ATTACK.md
 CHANGES.md
+LOCAL.md
 MODULES
 REALITY
 REALITY.SETUP
@@ -22,7 +23,6 @@ game/startmux.wsf
 game/text/help.txt
 game/text/wizhelp.txt
 INSTALL.md
-LOCAL
 NOTES
 README
 readme.txt
