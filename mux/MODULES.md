@@ -1,6 +1,8 @@
-TinyMUX 2.12: MODULES
-Last Update: July 2012
-~~~~~~~~~~~~~~~~~~~~~~
+---
+author: Brazil
+date: July 2020
+title: MODULES
+---
 
 Modules are a separate package of hardcode that provide and use well-defined
 interfaces within the main server to accomplish their purpose.  Modules
@@ -11,28 +13,29 @@ adaptation of COM, the best documentation for modules at the current time is a
 combination of the sample sources, the TinyMUX wiki, and various books
 written about COM and OLE.
 
-As long as your platform is Windows or supports dlopen(), modules are enabled
-by default.  However, to support loading of modules in a separate slave process,
-it is necessary to add --enable-stubslave at the ./configure step described in
-INSTALL.
+As long as your platform is Windows or supports `dlopen()`, modules are
+enabled by default.  However, to support loading of modules in a separate
+slave process, it is necessary to add `--enable-stubslave` at the
+`./configure` step described in INSTALL.
 
-Under the src/modules directory, you will find the modules provided with
+Under the `src/modules` directory, you will find the modules provided with
 TinyMUX.  These include two sample modules that are primiarly useful as a
 starting point for you or others to write their own modules.  Also included
 are two modules required for Asyncronous SQL support.  To build these, you
 need to build TinyMUX in src first.  That has the side-effect of running
-./configure in src/modules for you, but you can do it again from src/modules
-if you like.  Then, do the following from the src/modules directory:
-
-  1. make
-
-To load the sample and sum modules, add the following to netmux.conf:
-
-module sample
-module sum slave
-
+`./configure` in `src/modules` for you, but you can do it again from
+`src/modules` if you like.  Then, do the following from the `src/modules`
+directory:
+```
+    make
+```
+To load the sample and sum modules, add the following to `netmux.conf`:
+```
+    module sample
+    module sum slave
+```
 When you start TinyMUX, these modules are loaded and will log additional
-messages in the server log to demonstrate that they are working.  The sum
+messages in the server log to demonstrate that they are working.  The `sum`
 module adds two numbers together in a separate process.  The sample module
 opens the logging interfaces and the server events interface to capture and
 log server events as they occur.
