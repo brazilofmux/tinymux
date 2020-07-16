@@ -17,15 +17,15 @@ need it.
  - It is worth noting that keeping a record of changes in the `#1` character
    password might save you some flatfile hacking for forgotten passwords.
 
- - The default port has been changed to 2860.  Change this in the
+ - The default port has been changed to `2860`.  Change this in the
    `netmux.conf` or `GAMENAME.conf` file.
 
  - Always be sure to ftp files in binary mode.  Otherwise, you can expect
    your data to be unusable.
 
- - Default `GAMENAME` will be netmux.  If you changed the `GAMENAME` in
+ - Default `GAMENAME` will be `netmux`.  If you changed the `GAMENAME` in
    `mux.config`, be sure to change the filenames in `GAMENAME.conf` as well,
-   otherwise, the TinyMUX and (perhaps more importantly), `./Backup`, won't be
+   otherwise, TinyMUX and (perhaps more importantly), `./Backup`, won't be
    able to find your DB.
 
  - Read `wizhelp config parameters` when you get the TinyMUX started.  If you
@@ -34,10 +34,10 @@ need it.
    your configuration file.
 
  - If you had a mail database previously, remember to adjust
-   `mail_expiration` accordingly, or else ALL `@mail` older than the default
+   `mail_expiration` accordingly, or else all `@mail` older than the default
    value of 14 days will be deleted.
 
- - `./Backup` has superceeded the traditional use of db_unload for making
+ - `./Backup` has superceeded the traditional use of `db_unload` for making
    flatfiles.  The script makes a flatfile of the DB and also creates a `tar.gz`
    file containing the `mail.db`, `comsys.db`, configuration files, and the
    customized files in `game/text`.  When porting, all you have to do is place
@@ -52,20 +52,20 @@ simplify the process for the user.
 
 The syntax of `db_load` is:
 ```
-   ./db_load netmux netmux.flat netmux.db
+    ./db_load netmux netmux.flat netmux.db
 ```
 This converts flatfiled database to binary for use by the server and would be
-done with dbconvert thus:
+done with `dbconvert` thus:
 ```
-     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
+    ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
 ```
 The syntax of `db_unload` is:
 ```
-./db_unload netmux netmux.db.new netmux.flat
+    ./db_unload netmux netmux.db.new netmux.flat
 ```
-This converts binary data to flatfile for would be done with dbconvert thus:
+This converts binary data to flatfile for would be done with `dbconvert` thus:
 ```
-     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
+    ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
 ```
 
 # On Flatfiles:
@@ -75,15 +75,15 @@ This converts binary data to flatfile for would be done with dbconvert thus:
    portable!
 
  - When you unload the database to flatfile format it is important to
-   use your original db_unload/dbconvert.  *We cannot stress this enough.*
-   Data loss is possible, especially since `db_unload/dbconvert` sometimes
+   use your original `db_unload` or `dbconvert`.  *We cannot stress this enough.*
+   Data loss is possible, especially since `db_unload` or `dbconvert` sometimes
    changes between releases.
 
  - Flatfiles are the most stable format to store and move your data in.  Yes,
    the occasional miracle happens to let someone bring a game back up from
    binary data moved from the nether regions of the net.  However, this isn't
-   the place for beginners or the faint of heart.  As always, store backups in
-   a remote location.
+   the place for beginners or the faint of heart.  As always, store backups
+   offline.
 
 # On Making Backups:
 
@@ -92,15 +92,15 @@ name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
 `comsys.db` which will appear in the `game` directory.  To make use of the
 `Backup` script:
 
-     - `@shutdown` the game.
+ - `@shutdown` the game.
 
-     - `cd` to the `game` directory.
+ - `cd` to the `game` directory.
 
-     - Type `./Backup`
+ - Type `./Backup`
+    
+ - Restart the game using `./Startmux`
 
-     - Restart the game using `./Startmux`
-
-     - Move the backup to onsite and offsite storage locations.
+ - Move the backup to onsite and offsite storage locations.
 
 # On Tools:
 
