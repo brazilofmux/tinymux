@@ -6558,7 +6558,7 @@ EDIT()
     You say, "Thx x a test"
     > say edit(Atlantic,^,Trans)
     You say, "TransAtlantic"
-    > say edit(Multiple edits.,edits,elepehants,e e,e pink e)
+    > say edit(Multiple edits.,edits,elephants,e e,e pink e)
     You say, "Multiple pink elephants."
 
   Related Topics: @edit.
