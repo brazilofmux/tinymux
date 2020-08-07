@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.69])
 AC_INIT([Omega],[1.0],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([omega.cpp])
 AC_CONFIG_HEADER([autoconf.h])
