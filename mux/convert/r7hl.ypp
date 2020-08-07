@@ -8,7 +8,7 @@ R7H_LOCKEXP *g_r7hKeyExp = NULL;
 
 %}
 
-%name-prefix "r7hl"
+%define api.prefix {r7hl}
 %debug
 %union {
     R7H_LOCKEXP                *ple;

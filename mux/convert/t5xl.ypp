@@ -8,7 +8,7 @@ T5X_LOCKEXP *g_t5xKeyExp = NULL;
 
 %}
 
-%name-prefix "t5xl"
+%define api.prefix {t5xl}
 %debug
 %union {
     T5X_LOCKEXP                *ple;

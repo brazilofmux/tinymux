@@ -8,7 +8,7 @@ T6H_LOCKEXP *g_t6hKeyExp = NULL;
 
 %}
 
-%name-prefix "t6hl"
+%define api.prefix {t6hl}
 %debug
 %union {
     T6H_LOCKEXP                *ple;

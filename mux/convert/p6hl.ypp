@@ -8,7 +8,7 @@ P6H_LOCKEXP *g_p6hKeyExp = NULL;
 
 %}
 
-%name-prefix "p6hl"
+%define api.prefix {p6hl}
 %debug
 %union {
     char                       *p;

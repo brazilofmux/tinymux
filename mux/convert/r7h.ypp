@@ -5,7 +5,7 @@ int r7hlex();
 void r7herror(const char *s);
 %}
 
-%name-prefix "r7h"
+%define api.prefix {r7h}
 %union {
     char                   *p;
     int                     i;

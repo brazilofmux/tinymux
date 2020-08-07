@@ -5,7 +5,7 @@ int p6hlex();
 void p6herror(const char *s);
 %}
 
-%name-prefix "p6h"
+%define api.prefix {p6h}
 %union {
     char                       *p;
     int                         i;
