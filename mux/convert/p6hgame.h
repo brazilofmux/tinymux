@@ -357,6 +357,7 @@ public:
     {
         m_pName = NULL;
         m_pFlags = NULL;
+        m_fCreator = false;
         m_pData = NULL;
     }
     ~P6H_ATTRNAMEINFO()
