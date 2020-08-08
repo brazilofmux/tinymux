@@ -1,8 +1,6 @@
 /*! \file unsplit.cpp
  * \brief Strip system include files and re-combining lines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

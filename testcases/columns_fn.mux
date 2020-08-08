@@ -1,6 +1,5 @@
 #
 # columns_fn.mux - Test Cases for columns().
-# $Id$
 #
 @create test_columns_fn
 -

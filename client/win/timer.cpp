@@ -1,8 +1,6 @@
 /*! \file timer.cpp
  * \brief Mini-task scheduler for timed events.
  *
- * $Id$
- *
  */
 
 #include "stdafx.h"

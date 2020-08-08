@@ -1,6 +1,5 @@
 #
 # digest_fn.mux - Test Cases for digest().
-# $Id$
 #
 # Strategy: Exercise examples and test vectors.
 #

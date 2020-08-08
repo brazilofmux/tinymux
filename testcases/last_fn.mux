@@ -1,6 +1,5 @@
 #
 # last_fn.mux - Test Cases for last().
-# $Id$
 #
 @create test_last_fn
 -

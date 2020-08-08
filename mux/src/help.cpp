@@ -1,8 +1,6 @@
 /*! \file help.cpp
  * \brief In-game help system.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

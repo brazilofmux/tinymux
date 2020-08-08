@@ -1,8 +1,6 @@
 /*! \file alloc.cpp
  * \brief Memory Allocation Subsystem.
  *
- * $Id$
- *
  * The functions here manage pools of often-used buffers of fixed-size.  It
  * adds value by greatly reducing the number and strength of calls to the
  * underlying platform's memory management. It also adds headers and footer to

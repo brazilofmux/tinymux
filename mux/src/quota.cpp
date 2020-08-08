@@ -1,8 +1,6 @@
 /*! \file quota.cpp
  * \brief Quota Management Commands.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

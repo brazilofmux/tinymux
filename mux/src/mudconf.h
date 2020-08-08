@@ -1,8 +1,6 @@
 /*! \file mudconf.h
  * \brief Definitions of global state and configuration structures.
  *
- * $Id$
- *
  */
 
 #ifndef __CONF_H

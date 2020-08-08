@@ -1,8 +1,6 @@
 /*! \file conf.cpp
  * \brief Set up configuration information and static data.
  *
- * $Id$
- *
  * This parses the configuration files and controls configuration options used
  * to control the server and its behavior.
  */

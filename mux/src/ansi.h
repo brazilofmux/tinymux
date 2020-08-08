@@ -1,8 +1,6 @@
 /*! \file ansi.h
  * \brief ANSI control codes for various neat-o terminal effects
  *
- * $Id$
- *
  */
 
 /*

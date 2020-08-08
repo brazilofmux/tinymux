@@ -1,8 +1,6 @@
 /*! \file player_c.cpp
  * \brief Player cache routines.
  *
- * $Id$
- *
  * Frequently-used items which appear on every object generally find a
  * home in the db[] structure managed in db.cpp.  However, there are a
  * few items related only to players which are still accessed

@@ -1,6 +1,5 @@
 #
 # cpad_fn.mux - Test Cases for cpad().
-# $Id$
 #
 # Strategy: Vary three argument with color and UTF-8 in combination with
 # expected cpad() behaviors.

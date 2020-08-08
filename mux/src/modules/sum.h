@@ -1,8 +1,6 @@
 /*! \file sum.h
  * \brief Sum Out-of-Proc Module
  *
- * $Id$
- *
  */
 
 #ifndef SUM_H

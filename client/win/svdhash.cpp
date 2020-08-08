@@ -1,8 +1,6 @@
 /*! \file svdhash.cpp
  * \brief CHashPage, CHashTable modules.
  *
- * $Id$
- *
  */
 
 #include "stdafx.h"

@@ -1,8 +1,6 @@
 /*! \file sqlslave.cpp
  * \brief SQLSlave Module
  *
- * $Id$
- *
  */
 
 #include "../autoconf.h"

@@ -1,8 +1,6 @@
 /*! \file look.cpp
  * \brief Commands which look at things.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

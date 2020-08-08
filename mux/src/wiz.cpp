@@ -1,8 +1,6 @@
 /*! \file wiz.cpp
  * \brief Wizard-only commands.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

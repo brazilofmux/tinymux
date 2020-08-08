@@ -1,8 +1,6 @@
 /*! \file slave.h
  * \brief Shared definitions between the main server and the dns / ident slave.
  *
- * $Id$
- *
  * This enum doesn't actually appear to be used for anything.
  */
 

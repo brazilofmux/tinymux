@@ -1,8 +1,6 @@
 /*! \file svdrand.cpp
  * \brief Random Numbers.
  *
- * $Id$
- *
  * Random Numbers from Makoto Matsumoto and Takuji Nishimura.
  */
 

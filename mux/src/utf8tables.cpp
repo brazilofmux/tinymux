@@ -1,8 +1,6 @@
 /*! \file utf8tables.cpp
  * \brief Static tables with UTF-8 state machines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

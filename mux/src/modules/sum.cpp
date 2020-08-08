@@ -1,8 +1,6 @@
 /*! \file sum.cpp
  * \brief Sum Out-of-Proc Module
  *
- * $Id$
- *
  */
 
 #include "../autoconf.h"

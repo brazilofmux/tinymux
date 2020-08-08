@@ -1,8 +1,6 @@
 /*! \file misc.h
  * \brief miscellaneous structures that are needed in more than one file.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

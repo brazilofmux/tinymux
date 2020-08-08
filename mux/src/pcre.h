@@ -1,8 +1,6 @@
 /*! \file pcre.h
  * \brief Perl-Compatible Regular Expressions
  *
- * $Id$
- *
  * \verbatim
            Copyright (c) 1997-2006 University of Cambridge
 

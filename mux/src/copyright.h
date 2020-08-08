@@ -1,8 +1,6 @@
 /*! \file copyright.h
  * \brief Copyright notice in comments.
  *
- * $Id$
- *
  */
 
 /* -*-C-*- */

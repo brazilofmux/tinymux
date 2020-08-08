@@ -1,6 +1,5 @@
 #
 # sha1_fn.mux - Test Cases for sha1().
-# $Id$
 #
 # Strategy: Exercise examples and test vectors.
 #

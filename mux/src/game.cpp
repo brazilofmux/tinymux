@@ -1,8 +1,6 @@
 /*! \file game.cpp
  * \brief Main program and misc functions.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

@@ -1,6 +1,5 @@
 #
 # lpad_fn.mux - Test Cases for lpad().
-# $Id$
 #
 # Strategy: Vary three argument with color and UTF-8 in combination with
 # expected lpad() behaviors.

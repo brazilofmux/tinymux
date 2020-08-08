@@ -1,8 +1,6 @@
 /*! \file libmux.cpp
  * \brief Base-level module support
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

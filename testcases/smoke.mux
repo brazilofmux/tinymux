@@ -1,6 +1,5 @@
 #
 # smoke.mux - Automated testing infrastructure.
-# $Id$
 #
 @create smoke
 -

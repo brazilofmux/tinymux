@@ -1,8 +1,6 @@
 /*! \file command.h
  * \brief declarations used by the command processor.
  *
- * $Id$
- *
  */
 
 #ifndef __COMMAND_H

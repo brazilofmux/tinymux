@@ -1,8 +1,6 @@
 /*! \file stringutil.h
  * \brief string utilities.
  *
- * $Id$
- *
  */
 
 #ifndef STRINGUTIL_H

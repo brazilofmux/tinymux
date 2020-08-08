@@ -1,6 +1,5 @@
 #
 # shuffle_fn.mux - Test Cases for shuffle().
-# $Id$
 #
 @create test_shuffle_fn
 -

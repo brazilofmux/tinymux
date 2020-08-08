@@ -1,8 +1,6 @@
 /*! \file timezone.cpp
  * \brief Timezone-related helper functions.
  *
- * $Id$
- *
  * This contains conversions between local and UTC timezones.
  */
 

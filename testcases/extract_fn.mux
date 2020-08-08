@@ -1,6 +1,5 @@
 #
 # extract_fn.mux - Test Cases for extract().
-# $Id$
 #
 @create test_extract_fn
 -

@@ -1,8 +1,6 @@
 /*! \file strtod.cpp
  * \brief String to double conversion.
  *
- * $Id$
- *
  * \verbatim
  ****************************************************************
  *

@@ -1,6 +1,5 @@
 #
 # escape_fn.mux - Test Cases for escape().
-# $Id$
 #
 # Strategy: Exercise color and UTF-8 in combination with escape() behaviors.
 #

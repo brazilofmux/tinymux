@@ -1,6 +1,5 @@
 #
 # ldelete_fn.mux - Test Cases for ldelete().
-# $Id$
 #
 @create test_ldelete_fn
 -

@@ -1,8 +1,6 @@
 /*! \file utf8tables.h
  * \brief Static tables with UTF-8 state machines.
  *
- * $Id$
- *
  */
 
 #ifndef UTF8TABLES_H

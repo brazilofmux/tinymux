@@ -1,8 +1,6 @@
 /*! \file _build.cpp
  * \brief Build-identifying declarations.
  *
- * $Id$
- *
  * Ignore the contents of this file, use macros in _build.h instead.
  * These declarations are usually overridden by VER_FLG in the Makefile.
  */

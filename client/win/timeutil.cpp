@@ -1,8 +1,6 @@
 /*! \file timeutil.cpp
  * \brief Time-related helper functions.
  *
- * $Id$
- *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
  *

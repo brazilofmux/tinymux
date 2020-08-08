@@ -1,8 +1,6 @@
 /*! \file file_c.h
  * \brief File cache header file.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

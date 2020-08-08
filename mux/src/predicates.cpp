@@ -1,8 +1,6 @@
 /*! \file predicates.cpp
  * \brief Miscellaneous commands and functions.
  *
- * $Id$
- *
  * In theory, most of these functions could plausibly be called
  * "predicates", either because they determine some boolean property
  * of the input, or because they perform some action that makes them

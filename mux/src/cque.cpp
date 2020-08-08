@@ -1,8 +1,6 @@
 /*! \file cque.cpp
  * \brief Commands and functions for manipulating the command queue.
  *
- * $Id$
- *
  * This forms the upper-level command list queue, and includes timed commands
  * and semaphores.  The lower-level task implementation is found in timer.cpp.
  */

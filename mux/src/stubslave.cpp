@@ -1,8 +1,6 @@
 /*! \file stubslave.cpp
  * \brief This slave hosts modules in a separate process.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

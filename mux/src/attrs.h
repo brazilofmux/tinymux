@@ -1,8 +1,6 @@
 /*! \file attrs.h
  * \brief Attribute definitions.
  *
- * $Id$
- *
  */
 
 #ifndef _ATTRS_H

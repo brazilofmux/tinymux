@@ -1,8 +1,6 @@
 /*! \file externs.h
  * \brief Prototypes for externs not defined elsewhere.
  *
- * $Id$
- *
  */
 
 #ifndef EXTERNS_H

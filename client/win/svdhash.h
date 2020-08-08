@@ -1,8 +1,6 @@
 /*! \file svdhash.h
  * \brief CHashPage, CHashFile, CHashTable modules.
  *
- * $Id$
- *
  */
 
 #ifndef SVDHASH_H

@@ -1,8 +1,6 @@
 /*! \file rob.cpp
  * \brief Commands dealing with giving/taking/killing things or money.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

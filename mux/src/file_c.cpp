@@ -1,8 +1,6 @@
 /*! \file file_c.cpp
  * \brief File cache management.
  *
- * $Id$
- *
  * These functions load, cache, and display text files for the
  * connect screen, motd, and similar uses.
  */

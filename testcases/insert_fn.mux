@@ -1,6 +1,5 @@
 #
 # insert_fn.mux - Test Cases for insert().
-# $Id$
 #
 # Strategy: Exercise color and UTF-8 in combination with insert() behaviors.
 #

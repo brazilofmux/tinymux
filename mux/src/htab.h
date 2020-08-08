@@ -1,8 +1,6 @@
 /*! \file htab.h
  * \brief Structures and declarations needed for table hashing.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

@@ -1,8 +1,6 @@
 /*! \file svdrand.h
  * \brief Random Numbers.
  *
- * $Id$
- *
  * Random Numbers based on algorithms presented in "Numerical Recipes in C",
  * Cambridge Press, 1992.
  */

@@ -1,8 +1,6 @@
 /*! \file object.cpp
  * \brief Low-level object manipulation routines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

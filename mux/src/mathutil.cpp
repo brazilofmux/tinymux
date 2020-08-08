@@ -1,8 +1,6 @@
 /*! \file mathutil.cpp
  * \brief TinyMUX math-related helper functions.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

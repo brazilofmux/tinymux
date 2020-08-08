@@ -1,6 +1,5 @@
 #
 # convtime_fn.mux - Test Cases for convtime().
-# $Id$
 #
 # Strategy: The structure of the code under convtime() can be broken into the
 # core Gregorian routines, the timezone routines, and the auto-magic date

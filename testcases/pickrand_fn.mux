@@ -1,6 +1,5 @@
 #
 # pickrand_fn.mux - Test Cases for pickrand().
-# $Id$
 #
 @create test_pickrand_fn
 -

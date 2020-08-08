@@ -1,8 +1,6 @@
 /*! \file funcs.cpp
  * \brief Funcs Module
  *
- * $Id$
- *
  */
 
 #include "../autoconf.h"

@@ -1,6 +1,5 @@
 #
 # sqrt_fn.mux - Test Cases for sqrt().
-# $Id$
 #
 @create test_sqrt_fn
 -

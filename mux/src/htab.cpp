@@ -1,8 +1,6 @@
 /*! \file htab.cpp
  * \brief Table hashing routines.
  *
- * $Id$
- *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
  * directly: 1) they are briefer to use, 2) this interface predates

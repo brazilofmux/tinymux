@@ -1,7 +1,6 @@
 /*! \file db_rw.cpp
  * \brief Flatfile implementation.
  *
- * $Id$
  */
 
 #include "copyright.h"

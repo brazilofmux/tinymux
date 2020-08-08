@@ -1,8 +1,6 @@
 /*! \file attrcache.h
  * \brief Attribute caching module.
  *
- * $Id$
- *
  */
 
 #ifndef _ATTRCACHE_H

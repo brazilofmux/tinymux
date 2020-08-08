@@ -1,8 +1,6 @@
 /*! \file timeutil.h
  * \brief CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id$
- *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
  */

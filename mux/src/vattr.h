@@ -1,8 +1,6 @@
 /*! \file vattr.h
  * \brief Definitions for user-defined attributes.
  *
- * $Id$
- *
  */
 
 extern ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t nNewName);

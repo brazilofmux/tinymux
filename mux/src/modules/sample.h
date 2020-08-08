@@ -1,8 +1,6 @@
 /*! \file sample.h
  * \brief Sample Module
  *
- * $Id$
- *
  */
 
 #ifndef SAMPLE_H

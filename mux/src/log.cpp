@@ -1,8 +1,6 @@
 /*! \file log.cpp
  * \brief Logging routines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

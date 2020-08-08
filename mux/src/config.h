@@ -1,8 +1,6 @@
 /*! \file config.h
  * \brief Compile-time options.
  *
- * $Id$
- *
  * Some of these might be okay to change, others aren't really
  * options, and some are portability-related.
  */

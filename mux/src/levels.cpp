@@ -1,8 +1,6 @@
 /*! \file levels.cpp
  * \brief Reality levels stuff.
  *
- * $Id$
- *
  * See mux/REALITY.SETUP in the distribution.
  */
 

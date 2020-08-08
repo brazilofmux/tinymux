@@ -1,8 +1,6 @@
 /*! \file muxcli.h
  * \brief MUX command-line option system.
  *
- * $Id$
- *
  */
 
 #define CLI_USER 0

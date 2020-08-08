@@ -1,6 +1,5 @@
 #
 # accent_fn.mux - Test Cases for accent().
-# $Id$
 #
 @create test_accent_fn
 -

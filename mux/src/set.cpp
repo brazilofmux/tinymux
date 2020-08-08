@@ -1,8 +1,6 @@
 /*! \file set.cpp
  * \brief Commands which modify objects.
  *
- * $Id$
- *
  * These functions primarily implement commands like \@set and
  * \@name that modify attributes or basic properties of an object,
  * but this file also includes \@trigger and the use command.

@@ -1,8 +1,6 @@
 /*! \file funceval2.cpp
  * \brief MUX function handlers.
  *
- * $Id$
- *
  * This file began as a place to put function handlers ported from other
  * MU* servers, but has also become home to miscellaneous new functions.
  * These handlers include side-effect functions, comsys / mail functions,

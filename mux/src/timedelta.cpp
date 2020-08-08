@@ -1,8 +1,6 @@
 /*! \file timedelta.cpp
  * \brief CLinearTimeDelta module.
  *
- * $Id$
- *
  * CLinearTimeDelta deals with time differences.
  *
  */

@@ -1,8 +1,6 @@
 /*! \file mguests.h
  * \brief Multiguest system.
  *
- * $Id$
- *
  */
 
 #ifndef __MGUESTS_H

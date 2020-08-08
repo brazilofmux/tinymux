@@ -1,8 +1,6 @@
 /*! \file funcs.h
  * \brief Funcs Module
  *
- * $Id$
- *
  */
 
 #ifndef FUNCS_H

@@ -1,8 +1,6 @@
 /*! \file attrcache.cpp
  * \brief Attribute caching module.
  *
- * $Id$
- *
  * The functions here manage the upper-level attribute value cache for
  * disk-based mode. It's not used in memory-based builds. The lower-level
  * cache is managed in svdhash.cpp

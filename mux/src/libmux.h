@@ -1,8 +1,6 @@
 /*! \file libmux.h
  * \brief Module support
  *
- * $Id$
- *
  * To support loadable modules, we implement a poor man's COM.  There is no
  * support for appartments or remote servers.  The registry is constructed by
  * libmux as each module is loaded, but it exists only for as long as a

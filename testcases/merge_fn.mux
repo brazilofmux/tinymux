@@ -1,6 +1,5 @@
 #
 # merge_fn.mux - Test Cases for merge().
-# $Id$
 #
 # Strategy: Exercise a mix of color, ASCII, and Unicode in combination with merge() behaviors.
 #

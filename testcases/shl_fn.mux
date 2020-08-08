@@ -1,6 +1,5 @@
 #
 # shl_fn.mux - Test Cases for shl().
-# $Id$
 #
 @create test_shl_fn
 -

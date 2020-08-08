@@ -1,6 +1,5 @@
 #
 # cmd_say.mux
-# $Id$
 #
 @create test_cmd_say
 -

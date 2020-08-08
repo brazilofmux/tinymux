@@ -1,8 +1,6 @@
 /*! \file alarm.cpp
  * \brief mux_alarm module.
  *
- * $Id$
- *
  * This module implements an Alarm Clock mechanism used to help abbreviate
  * work as part of limiting CPU usage.
  */

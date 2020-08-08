@@ -4,8 +4,6 @@
  * Interfaces and classes declared here are built into the netmux server and
  * are available to netmux itself and to dynamically-loaded external modules.
  *
- * $Id$
- *
  */
 
 #ifndef MODULES_H

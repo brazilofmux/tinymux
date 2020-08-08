@@ -1,8 +1,6 @@
 /*! \file stringutil.cpp
  * \brief String utility functions.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

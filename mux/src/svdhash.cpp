@@ -1,8 +1,6 @@
 /*! \file svdhash.cpp
  * \brief CHashPage, CHashFile, CHashTable modules.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

@@ -1,8 +1,6 @@
 /*! \file bsd.cpp
  * \brief Low-level TCP socket-related code.
  *
- * $Id$
- *
  * Contains most of the TCP socket-related code. Some socket-related code also
  * exists in netcommon.cpp, but most of it is here.
  */

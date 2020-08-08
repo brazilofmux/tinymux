@@ -1,6 +1,5 @@
 #
 # rest_fn.mux - Test Cases for rest().
-# $Id$
 #
 @create test_rest_fn
 -

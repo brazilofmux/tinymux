@@ -1,6 +1,5 @@
 #
 # mid_fn.mux - Test Cases for mid().
-# $Id$
 #
 # Strategy: Vary three argument with color and UTF-8 in combination with
 # expected mid() behaviors.

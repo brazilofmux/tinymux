@@ -1,8 +1,6 @@
 /*! \file speech.cpp
  * \brief Commands which involve speaking.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

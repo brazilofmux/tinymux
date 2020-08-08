@@ -1,8 +1,6 @@
 /*! \file powers.h
  * \brief Object powers.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

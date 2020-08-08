@@ -1,8 +1,6 @@
 /*! \file powers.cpp
  * \brief Power manipulation routines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

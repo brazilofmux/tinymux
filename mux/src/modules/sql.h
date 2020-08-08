@@ -1,8 +1,6 @@
 /*! \file sql.h
  * \brief Definitions for SQLProxy and SQLSlave Modules
  *
- * $Id$
- *
  */
 
 #ifndef SQL_H

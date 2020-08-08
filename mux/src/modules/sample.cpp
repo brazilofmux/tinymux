@@ -1,8 +1,6 @@
 /*! \file sample.cpp
  * \brief Sample Module
  *
- * $Id$
- *
  */
 
 #include "../autoconf.h"

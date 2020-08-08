@@ -1,8 +1,6 @@
 /*! \file sqlproxy.cpp
  * \brief SQLProxy Module
  *
- * $Id$
- *
  */
 
 #include "../autoconf.h"

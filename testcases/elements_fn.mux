@@ -1,6 +1,5 @@
 #
 # elements_fn.mux - Test Cases for elements().
-# $Id$
 #
 @create test_elements_fn
 -

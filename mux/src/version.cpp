@@ -1,8 +1,6 @@
 /*! \file version.cpp
  * \brief Version information.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

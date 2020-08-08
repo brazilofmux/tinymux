@@ -1,8 +1,6 @@
 /*! \file move.cpp
  * \brief Routines for moving about.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

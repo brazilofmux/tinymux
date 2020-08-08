@@ -1,8 +1,6 @@
 /*! \file mathutil.h
  * \brief Declarations for math-related helper functions.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

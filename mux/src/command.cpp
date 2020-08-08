@@ -1,8 +1,6 @@
 /*! \file command.cpp
  * \brief Command parser and support routines.
  *
- * $Id$
- *
  * The functions here crack command lists into commands, decode switches, and
  * match commands to built-in and softcoded commands.  This is one of the
  * three parsers in the server.  The other two parsers are for functions

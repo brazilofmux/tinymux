@@ -1,8 +1,6 @@
 /*! \file functions.cpp
  * \brief MUX function handlers
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

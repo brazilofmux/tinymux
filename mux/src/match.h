@@ -1,8 +1,6 @@
 /*! \file match.h
  * \brief Routines for parsing arguments that may refer to objects.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

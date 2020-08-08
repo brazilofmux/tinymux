@@ -1,6 +1,5 @@
 #
 # rjust_fn.mux - Test Cases for rjust().
-# $Id$
 #
 # Strategy: Vary three argument with color and UTF-8 in combination with
 # expected rjust() behaviors.

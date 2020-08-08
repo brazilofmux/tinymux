@@ -1,8 +1,6 @@
 /*! \file flags.cpp
  * \brief Flag manipulation routines.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

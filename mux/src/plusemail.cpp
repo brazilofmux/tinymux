@@ -1,8 +1,6 @@
 /*! \file plusemail.cpp
  * \brief Quicky module implementing Firan-like \@email function.
  *
- * $Id$
- *
  * \author Rachel Blackman <sparks@noderunner.net>
  *
  * \verbatim

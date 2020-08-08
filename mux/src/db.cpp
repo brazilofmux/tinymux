@@ -1,8 +1,6 @@
 /*! \file db.cpp
  * \brief Attribute interface, some flatfile and object routines.
  *
- * $Id$
- *
  * This file mainly has to do with attributes and objects in memory,
  * but it is somewhat bloated.  Contents now include: the list of
  * built-in attributes, fwdlist routines, Name-related routines,

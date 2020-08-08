@@ -1,6 +1,5 @@
 #
 # atan2_fn.mux - Test Cases for atan2().
-# $Id$
 #
 @create test_atan2_fn
 -

@@ -11,8 +11,6 @@
  * the next code requires a method separate from the state machine produced
  * here.
  *
- * $Id$
- *
  */
 
 #include <stdio.h>

@@ -1,8 +1,6 @@
 /*! \file levels.h
  * \brief Reality levels
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

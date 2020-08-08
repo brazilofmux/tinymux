@@ -1,8 +1,6 @@
 /*! \file mguests.cpp
  * \brief Multiguest system.
  *
- * $Id$
- *
  * Multiguest code originally ported from DarkZone.
  * Multiguest code rewritten by Matthew J. Leavitt (zenty).
  * Idea for \@list guest from Ashen-Shugar and the great team of RhostMUSH.

@@ -1,6 +1,5 @@
 #
 # shutdown.mux - Last job.
-# $Id$
 #
 @create test_shutdown
 -

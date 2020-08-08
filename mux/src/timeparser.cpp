@@ -1,8 +1,6 @@
 /*! \file timeparser.cpp
  * \brief General Date Parser.
  *
- * $Id$
- *
  * This file contains code related to parsing date strings.
  */
 

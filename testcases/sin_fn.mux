@@ -1,6 +1,5 @@
 #
 # sin_fn.mux - Test Cases for sin().
-# $Id$
 #
 @create test_sin_fn
 -

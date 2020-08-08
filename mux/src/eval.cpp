@@ -1,8 +1,6 @@
 /*! \file eval.cpp
  * \brief Expression and function evaluation.
  *
- * $Id$
- *
  * The functions here crack expressions into function calls and arguments,
  * perform %-substitutions, locate matching close-parens and so forth.
  * This is one of the three parsers in the server.  The other two parsers

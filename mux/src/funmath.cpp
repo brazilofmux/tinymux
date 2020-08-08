@@ -1,8 +1,6 @@
 /*! \file funmath.cpp
  * \brief MUX math function handlers.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"

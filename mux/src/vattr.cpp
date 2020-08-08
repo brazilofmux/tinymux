@@ -1,8 +1,6 @@
 /*! \file vattr.cpp
  * \brief Manages the user-defined attributes.
  *
- * $Id$
- *
  */
 
 #include "copyright.h"
