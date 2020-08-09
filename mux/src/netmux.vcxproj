@@ -94,7 +94,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <Version>2.12</Version>
+      <Version>2.13</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention />

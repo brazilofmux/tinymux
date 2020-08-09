@@ -64,7 +64,7 @@ Sometimes, the differences are minor, sometimes these differences are major.
 Omega can upgrade PennMUSH from 'old' to 'new' style flatfiles.
 
 Omega can upgrade or downgrade between TinyMUX flatfiles from TinyMUX 2.0
-through TinyMUX 2.12.  It may also be able to accept TinyMUX 1.6, but
+through TinyMUX 2.13.  It may also be able to accept TinyMUX 1.6, but
 flatfiles from that era were more varied in the flatfile options.  Your 1.6
 flatfile may use options which Omega doesn't expect.  It is best to run it
 through TinyMUX 2.0 first.

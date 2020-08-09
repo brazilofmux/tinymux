@@ -87,7 +87,7 @@ This converts binary data to flatfile for would be done with `dbconvert` thus:
 
 # On Making Backups:
 
-TinyMUX 2.12 includes a backup script.  It produces a flatfile with the
+TinyMUX 2.13 includes a backup script.  It produces a flatfile with the
 name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
 `comsys.db` which will appear in the `game` directory.  To make use of the
 `Backup` script:

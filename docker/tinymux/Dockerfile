@@ -1,7 +1,7 @@
 FROM alpine:latest as builder
 RUN apk add --no-cache clang g++ make openssl openssl-dev
-COPY mux-2.12.0.9.unix.tar.gz .
-RUN tar xzf mux-2.12.0.9.unix.tar.gz
+COPY mux-2.12.0.10.unix.tar.gz .
+RUN tar xzf mux-2.12.0.10.unix.tar.gz
 WORKDIR /mux2.12/src
 RUN CC=clang CXX=clang++ ./configure --enable-ssl
 RUN sed -e '80s/-lssl/-lssl -lcrypto/g' Makefile > Makefile.new

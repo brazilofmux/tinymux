@@ -1,8 +1,8 @@
-TinyMUX 2.12: CONFIGURATION
+TinyMUX 2.13: CONFIGURATION
 Last Update: July 2012
 ~~~~~~~~~~~~~~~~~~~~~~
 
-TinyMUX 2.12 gets the information it needs to operate the game (aside from
+TinyMUX 2.13 gets the information it needs to operate the game (aside from
 the database itself) from a configuration file that is read in at startup.
 The configuration file contains various parameters, such as where to find
 the database, what port to listen for connects, and many other things.
