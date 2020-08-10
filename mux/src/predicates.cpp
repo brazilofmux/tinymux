@@ -2286,14 +2286,9 @@ dbref where_room(dbref what)
 
 bool locatable(dbref player, dbref it, dbref enactor)
 {
-    // No sense if trying to locate a bad object
+    // No sense in trying to locate a bad object.
     //
     if (!Good_obj(it))
-    {
-        return false;
-    }
-
-    if (Hidden(it) && !See_Hidden(player))
     {
         return false;
     }
@@ -2309,7 +2304,9 @@ bool locatable(dbref player, dbref it, dbref enactor)
        || loc_it == player
        || (  loc_it != NOTHING
           && (  Examinable(player, loc_it)
-             || loc_it == where_is(player)))
+             || loc_it == where_is(player))
+          && (  !Hidden(it)
+             || See_Hidden(player)))
        || Wizard(enactor)
        || it == enactor)
     {
@@ -2332,9 +2329,13 @@ bool locatable(dbref player, dbref it, dbref enactor)
     //
     if (  (  room_it != NOTHING
           && Examinable(player, room_it))
+          && (  !Hidden(it)
+             || See_Hidden(player))
        || Find_Unfindable(player)
        || (  Findable(it)
-          && findable_room))
+          && findable_room)
+          && (  !Hidden(it)
+             || See_Hidden(player)))
     {
         return true;
     }
