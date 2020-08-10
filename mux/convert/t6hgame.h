@@ -711,6 +711,8 @@ public:
     int  m_nRecordPlayers;
     void SetRecordPlayers(int nRecordPlayers) { m_fRecordPlayers = true; m_nRecordPlayers = nRecordPlayers; }
 
+    int m_iOrder;
+    map<int, int, lti> m_mAttrNamesInSitu;
     map<int, T6H_ATTRNAMEINFO *, lti> m_mAttrNames;
     map<char *, T6H_ATTRNAMEINFO *, ltstr> m_mAttrNums;
     void AddNumAndName(int iNum, char *pName);
@@ -748,6 +750,7 @@ public:
         m_fNextAttr = false;
         m_fRecordPlayers = false;
         m_fExtraEscapes = false;
+        m_iOrder = 0;
     }
     ~T6H_GAME()
     {
@@ -762,6 +765,7 @@ public:
             delete it->second;
         }
         m_mAttrNames.clear();
+        m_mAttrNamesInSitu.clear();
         for (map<int, T6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
         {
             delete it->second;

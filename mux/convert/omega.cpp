@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
     if (  eRhostMUSH == eOutputType
        && eOutputVersion != eLatest)
     {
-        fprintf(stderr, "There is only one know RhostMUSH flatfile version.\n");
+        fprintf(stderr, "There is only one known RhostMUSH flatfile version.\n");
         Usage();
         return 1;
     }

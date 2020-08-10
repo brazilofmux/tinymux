@@ -1049,6 +1049,7 @@ void T6H_GAME::AddNumAndName(int iNum, char *pName)
         return;
     }
     m_mAttrNames[iNum] = pani;
+    m_mAttrNamesInSitu[++m_iOrder] = iNum;
     m_mAttrNums[pani->m_pNameUnencoded] = pani;
 }
 
@@ -1489,9 +1490,10 @@ void T6H_GAME::Write(FILE *fp)
     {
         fprintf(fp, "-R%d\n", m_nRecordPlayers);
     }
-    for (map<int, T6H_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
+    for (map<int, int, lti>::iterator it = m_mAttrNamesInSitu.begin(); it != m_mAttrNamesInSitu.end(); ++it)
     {
-        it->second->Write(fp, m_fExtraEscapes);
+        T6H_ATTRNAMEINFO *pani = m_mAttrNames[it->second];
+        pani->Write(fp, m_fExtraEscapes);
     }
     for (map<int, T6H_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
