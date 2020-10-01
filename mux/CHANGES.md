@@ -15,7 +15,8 @@ author:
 
 # Bug Fixes:
 
- - None.
+ - @npemit now refers to @pemit/noeval.
+ - pose now documents /noeval switch.
 
 # Performance Enhancements:
 

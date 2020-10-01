@@ -2791,7 +2791,7 @@ Related Topics: @name.
 
   Almost exactly like @pemit and it takes the same switches. However,
   it does not evaluate <message> at all. So, @npemit differs from
-  @npemit/noeval in that no space compression is done.
+  @pemit/noeval in that no space compression is done.
 
   Related Topics: @pemit
 
@@ -11119,6 +11119,7 @@ POSE
 
      /default - (default) Put a space between your name and the message
                 (ie, display '<name> <message>').
+     /noeval  - Do not parse the message.
      /nospace - Don't put a space between your name and the message
                 (ie, display '<name><message>').
 
