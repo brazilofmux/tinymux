@@ -1,5 +1,5 @@
 /*! \file plusemail.cpp
- * \brief Quicky module implementing Firan-like \@email function.
+ * \brief Quicky module implementing \@email function.
  *
  * \author Rachel Blackman <sparks@noderunner.net>
  *

@@ -384,18 +384,6 @@ $-COMMANDS
 
   Related Topics: kill, @kill and @okill, BEING KILLED, IMMORTAL, WIZARD.
 
-& @ALEAD
-@ALEAD
-
-  COMMAND:   @alead <object> = <command list>
-  ATTRIBUTE: Alead
-
-  Sets the <command list> executed when object is lead.
-
-  This attribute is only available with --enable-firanmux.
-
-  Related Topics: @lead, @olead.
-
 & @ALEAVE
 @ALEAVE
 
@@ -1084,22 +1072,6 @@ Related Topics: @name.
   corresponding to <object>.
 
   Related Topics: alias, CHANNEL OBJECT, @comjoin, @comleave, @comoff.
-
-& @COLOR
-@COLOR
-
-  COMMAND:   @color <object> = <color-code-list>
-  ATTRIBUTE: Color
-
-  Controls the colorization of an object's name.
-
-  Example:
-    @color me = hr
-
-  This attribute is only available with --enable-firanmux, and is expected to
-  be deprecated in favor of @moniker.
-
-  Related Topics: ansi(), ANSI CODES, @moniker, moniker().
 
 & @CONFORMAT
 @CONFORMAT
@@ -2097,18 +2069,6 @@ Related Topics: @name.
   number of successful and failed connections.
   You can only display information about yourself.
 
-& @LEAD
-@LEAD
-
-  COMMAND:   @lead <object> = <message>
-  ATTRIBUTE: Lead
-
-  Sets the <message> seen by the object when it is lead.
-
-  This attribute is only available with --enable-firanmux.
-
-  Related Topics: @alead, @olead.
-
 & @LEAVE
 @LEAVE
 
@@ -2953,18 +2913,6 @@ Related Topics: @name.
   Example: @okill guard = bashes in the guard's skull, killing him.
 
   Related Topics: kill, @akill, @kill, BEING KILLED, IMMORTAL, WIZARD.
-
-& @OLEAD
-@OLEAD
-
-  COMMAND:   @olead <object> = <message>
-  ATTRIBUTE: Olead
-
-  Sets the <message> seen by others when <object> is lead.
-
-  This attribute is only available with --enable-firanmux.
-
-  Related Topics: @lead, @alead.
 
 & @OLEAVE
 @OLEAVE
@@ -7133,10 +7081,6 @@ FLAG LIST2
     4 - SHROUD     |   5 - MATRIX     |   6 - OBF        |   7 - HSS
     8 - MEDIUM     |   9 - DEAD       |                  |
   ------------------------------------------------------------------------
-  Firan-specific
-    # - IMMOBILE   |   > - LINEWRAP   |     - QUELL      |   ! - RESTRICTED
-    + - PARENT     |                  |                  |
-  ------------------------------------------------------------------------
 
   For information on a particular flag, type 'help <flagname>'.
   Some flags may be disabled at your particular MUX.
@@ -8184,18 +8128,6 @@ ILEV()
 
   Related Topics: iter(), list().
 
-& IMMOBILE
-IMMOBILE
-
-  FLAG: IMMOBILE()  (#)
-
-  Objects set IMMOBILE cannot move by any means, including using exits,
-  entering other objects, being picked up or dropped, or by @teleporting.
-
-  This flag is only available with --enable-firanmux.
-
-  Related Topics:
-
 & IMMORTAL
 IMMORTAL
 
@@ -8938,18 +8870,6 @@ LIGHT
   visible even though the object itself is not.
 
   Related Topics:
-
-& LINEWRAP
-LINEWRAP
-
-  FLAG: LINEWRAP()  (>)
-
-  Objects set LINEWRAP show their descriptions in a formatted style using
-  code equivalent to that in format().
-
-  This flag is only available with --enable-firanmux.
-
-  Related Topics: format().
 
 & LINK()
 LINK()
@@ -9845,27 +9765,6 @@ MAILFROM()
   specify mailfrom(<player>,<msg #>).
 
   Related Topics:
-
-& MAILJ()
-MAILJ()
-
-  FUNCTION: mailj(<num>)
-            mailj(<player>)
-            mailj(<player>, <num>)
-            mailj()
-
-  First form returns message <num> from the executor's mail bag.  The second
-  form returns number of messages for <player>.  The third form return message
-  <num> for <player>.  The fourth form returns number of message for executor.
-
-  The difference between this and mail() is that this returns one number and
-  mail() returns three. Also, mail() only accounts for the messages in the
-  inbox, while mailj() accounts for all messages in all folders.
-
-  This function is only available with --enable-firanmux and is likely to be
-  deprecated in favor of mail().
-
-  Related Topics: mail()
 
 & MAILSIZE()
 MAILSIZE()
@@ -10841,19 +10740,6 @@ PAGE (continued)
   Related Topics: pose, say, whisper, :, ;, ", @pemit, @away, @idle,
       @idletimeout, @reject.
 
-& PARENT
-PARENT
-
-  FLAG: PARENT()  (+)
-
-  This flag is not associated with any hardcode behavior other than to record
-  that it is present or absent from an object. Softcode is free to use this
-  flag for any purpose it sees fit.
-
-  This flag is only available with --enable-firanmux.
-
-  Related Topics:
-
 & PARENT OBJECTS
 PARENT OBJECTS
 
@@ -11180,15 +11066,14 @@ POWERS LIST
   halt              Can @halt anything, and @halt/all.
   hide              DARK flag is effective for hiding.
   idle              No idle timeout.
-  immutable         No attributes may change (1).
   long_fingers      Can get, look, whisper, etc from a distance.
+  monitor           Can set or reset monitor flag.
 
 { 'help powers list2' for more }
 
 & POWERS LIST2
 POWERS LIST (continued)
 
-  monitor           Can set or reset monitor flag.
   pass_locks        Can successfully pass all locks.
   poll              Can set the @poll.
   prog              Can use @program on players other than them self.
@@ -11202,10 +11087,6 @@ POWERS LIST (continued)
   tel_anywhere      Can teleport anywhere.
   tel_anything      Can teleport anything (includes tel_anywhere)
   unkillable        Cannot be killed with the 'kill' command.
-
-  Footnotes:
-
-    (1) The immutable power is only available with --enable-firanmux.
 
   Related Topics: @power
 
@@ -11259,25 +11140,6 @@ PUPPETS
   @force fred="hi there.  -or-  #4342 "hi there.
 
   Related Topics: VERBOSE.
-
-& QUELL
-QUELL
-
-  FLAG: QUELL()  ()
-
-  Any object set QUELL will disregard any WIZARD flag it has.  That is, objects
-  that do not have a WIZARD flag are not affected by the QUELL flag, and
-  objects that do have a WIZARD flag act as if they do not have it. QUELL also
-  prevents objects from inheriting WIZARD abilities from their owners.
-
-  The main purpose of this flag is to allow Wizards to temporarily become
-  "mortal" (non-wizardly) for purposes of testing code or whatnot.  With the
-  QUELL flag set, they are for all intents and purposes just like a non-Wizard
-  character.  This allows a Wizard to turn her wizbit on and off, sorta.
-
-  This flag is only available with --enable-firanmux.
-
-  Related Topics:
 
 & QUIET
 QUIET
@@ -11763,29 +11625,6 @@ RESTARTTIME()
     You say, "Sat Dec  7 00:09:13 1991
 
   Related Topics: convtime(), starttime(), time().
-
-& RESTRICTED
-RESTRICTED
-
-  FLAG: RESTRICTED()  (!)
-
-  Any object set RESTRICTED will have the number of commands available to use
-  greatly limited.  Generally, this flag works in conjunction with the
-  no_restricted access permission (see 'wizhelp PERMISSIONS', 'wizhelp
-  access', etc.) which is used to mark which commands can not be used by
-  RESTRICTED players (or objects).
-
-  Command access permissions can be viewed by a wizard using the '@list
-  permissions' command.  Commands marked 'no_restricted' in this list cannot
-  be used by RESTRICTED players or objects.
-
-  Note that a RESTRICTED Wizard character who later sets herself QUELL will
-  not be able to set herself un-RESTRICTED!  Fixing this will require the help
-  of a fully-powered wizard.  Be careful with this combination.
-
-  This flag is only available with --enable-firanmux.
-
-  Related Topics: no_restricted
 
 & REVERSE()
 REVERSE()
@@ -12470,32 +12309,6 @@ SETINTER()
     You say, "bar gleep"
 
   Related Topics: setdiff(), setunion(), sort().
-
-& SETNAME()
-SETNAME()
-
-  FUNCTION: setname(<object>, <newname>)
-
-  Works the same as @name, <object> and <newname> are equivalent to what comes
-  before and after the '=' sign.  Returns nothing.  This is a side effect
-  function, and should only be used when necessary.
-
-  This function is only available with --enable-firanmux.
-
-  Related Topics: @name
-
-& SETPARENT()
-SETPARENT()
-
-  FUNCTION: setparent(<object>, <parent>)
-
-  Works the same as @parent, <object> and <parent> are equivalent to what
-  comes before and after the '=' sign.  Returns nothing.  This is a side
-  effect function, and should only be used when necessary.
-
-  This function is only available with --enable-firanmux.
-
-  Related Topics: @parent
 
 & SETQ()
 SETQ()
@@ -13510,30 +13323,6 @@ TERSE
   afail command list is still run.
 
   Related Topics: examine, look.
-
-& TEXT()
-TEXT()
-
-  FUNCTION: text(<filename>, <index>)
-
-  This function returns the text associated with an index from a file in a
-  help.txt format.  The exact path and name of the file should be specified,
-  and must match exactly the name of a file in game/textfiles.conf (for
-  security).
-
-  This allows you to, for example, create a file, game/text/rumors.txt, and
-  add an entry:
-
-    & beer
-    It is rumored that you can get free beer at the Rat in the Ale Tavern.
-
-  If textfiles.conf contains an entry for the file (text/rumors.txt), then you
-  can refer to the beer rumor using 'text(text/rumors.txt, beer)'.
-
-  This function is only available with --enable-firanmux and is likely to be
-  deprecated in favor of textfile().
-
-  Related Topics: textfile().
 
 & TEXTFILE()
 TEXTFILE()

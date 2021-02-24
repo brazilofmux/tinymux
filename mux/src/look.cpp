@@ -701,7 +701,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
                 if (can_see(player, thing, can_see_loc))
 #endif
                 {
-                    buff = unparse_object(player, thing, true, true);
+                    buff = unparse_object(player, thing, true);
                     html_cp = html_buff;
                     if (Html(player))
                     {
@@ -1167,7 +1167,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int can_see_thing = Examinable(player, thing);
     if (can_see_thing)
     {
-        UTF8 *buff = unparse_object(player, thing, true, true);
+        UTF8 *buff = unparse_object(player, thing, true);
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -1288,7 +1288,7 @@ void look_in(dbref player, dbref loc, int key)
     {
         // Okay, no @NameFormat.  Show the normal name.
         //
-        UTF8 *buff = unparse_object(player, loc, true, true);
+        UTF8 *buff = unparse_object(player, loc, true);
         if (Html(player))
         {
             notify_html(player, T("<center><h3>"));
@@ -1748,7 +1748,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
     if (control)
     {
-        buf2 = unparse_object(executor, thing, false, true);
+        buf2 = unparse_object(executor, thing, false);
         notify(executor, buf2);
         free_lbuf(buf2);
         if (mudconf.ex_flags)
@@ -1825,7 +1825,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         //
         if (mudconf.have_zones)
         {
-            buf2 = unparse_object(executor, Zone(thing), false, true);
+            buf2 = unparse_object(executor, Zone(thing), false);
             notify(executor, tprintf(T("Zone: %s"), buf2));
             free_lbuf(buf2);
         }
@@ -1835,7 +1835,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         loc = Parent(thing);
         if (loc != NOTHING)
         {
-            buf2 = unparse_object(executor, loc, false, true);
+            buf2 = unparse_object(executor, loc, false);
             notify(executor, tprintf(T("Parent: %s"), buf2));
             free_lbuf(buf2);
         }
@@ -1869,7 +1869,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             notify(executor, T("Contents:"));
             DOLIST(content, Contents(thing))
             {
-                buf2 = unparse_object(executor, content, false, true);
+                buf2 = unparse_object(executor, content, false);
                 notify(executor, buf2);
                 free_lbuf(buf2);
             }
@@ -1887,7 +1887,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 notify(executor, T("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(executor, exit, false, true);
+                    buf2 = unparse_object(executor, exit, false);
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1901,7 +1901,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Dropto(thing) != NOTHING)
             {
-                buf2 = unparse_object(executor, Dropto(thing), false, true);
+                buf2 = unparse_object(executor, Dropto(thing), false);
                 notify(executor, tprintf(T("Dropped objects go to: %s"), buf2));
                 free_lbuf(buf2);
             }
@@ -1917,7 +1917,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 notify(executor, T("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(executor, exit, false, true);
+                    buf2 = unparse_object(executor, exit, false);
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1930,7 +1930,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             // Print home
             //
             loc = Home(thing);
-            buf2 = unparse_object(executor, loc, false, true);
+            buf2 = unparse_object(executor, loc, false);
             notify(executor, tprintf(T("Home: %s"), buf2));
             free_lbuf(buf2);
 
@@ -1942,14 +1942,14 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                   || Examinable(executor, thing)
                   || Linkable(executor, loc)))
             {
-                buf2 = unparse_object(executor, loc, false, true);
+                buf2 = unparse_object(executor, loc, false);
                 notify(executor, tprintf(T("Location: %s"), buf2));
                 free_lbuf(buf2);
             }
             break;
 
         case TYPE_EXIT:
-            buf2 = unparse_object(executor, Exits(thing), false, true);
+            buf2 = unparse_object(executor, Exits(thing), false);
             notify(executor, tprintf(T("Source: %s"), buf2));
             free_lbuf(buf2);
 
@@ -1964,7 +1964,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 break;
 
             default:
-                buf2 = unparse_object(executor, Location(thing), false, true);
+                buf2 = unparse_object(executor, Location(thing), false);
                 notify(executor, tprintf(T("Destination: %s"), buf2));
                 free_lbuf(buf2);
                 break;
@@ -2037,7 +2037,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key
         notify(executor, T("You are carrying:"));
         DOLIST(thing, thing)
         {
-            buff = unparse_object(executor, thing, true, true);
+            buff = unparse_object(executor, thing, true);
             notify(executor, buff);
             free_lbuf(buff);
         }
@@ -2125,7 +2125,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
             case TYPE_EXIT:
                 if (Location(i) == thing)
                 {
-                    exit = unparse_object(executor, Exits(i), false, true);
+                    exit = unparse_object(executor, Exits(i), false);
                     notify(executor, tprintf(T("%s (%s)"), exit, Moniker(i)));
                     free_lbuf(exit);
                     count++;
@@ -2134,7 +2134,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
             case TYPE_ROOM:
                 if (Dropto(i) == thing)
                 {
-                    exit = unparse_object(executor, i, false, true);
+                    exit = unparse_object(executor, i, false);
                     notify(executor, tprintf(T("%s [dropto]"), exit));
                     free_lbuf(exit);
                     count++;
@@ -2144,7 +2144,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
             case TYPE_PLAYER:
                 if (Home(i) == thing)
                 {
-                    exit = unparse_object(executor, i, false, true);
+                    exit = unparse_object(executor, i, false);
                     notify(executor, tprintf(T("%s [home]"), exit));
                     free_lbuf(exit);
                     count++;
@@ -2156,7 +2156,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
             //
             if (Parent(i) == thing)
             {
-                exit = unparse_object(executor, i, false, true);
+                exit = unparse_object(executor, i, false);
                 notify(executor, tprintf(T("%s [parent]"), exit));
                 free_lbuf(exit);
                 count++;
@@ -2177,7 +2177,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
                     {
                         continue;
                     }
-                    exit = unparse_object(executor, i, false, true);
+                    exit = unparse_object(executor, i, false);
                     notify(executor, tprintf(T("%s [forward]"), exit));
                     free_lbuf(exit);
                     count++;

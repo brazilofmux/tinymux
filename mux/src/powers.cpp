@@ -103,11 +103,7 @@ static POWERENT gen_powers[] =
 {
     {T("announce"),        POW_ANNOUNCE,   0, 0,   ph_wiz},
     {T("boot"),            POW_BOOT,       0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("builder"),         POW_BUILDER,    POWER_EXT,  0,  ph_any},
-#else
     {T("builder"),         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
-#endif // FIRANMUX
     {T("chown_anything"),  POW_CHOWN_ANY,  0, 0,   ph_wiz},
     {T("comm_all"),        POW_COMM_ALL,   0, 0,   ph_wiz},
     {T("control_all"),     POW_CONTROL_ALL,0, 0,   ph_god},
@@ -117,43 +113,24 @@ static POWERENT gen_powers[] =
     {T("free_quota"),      POW_FREE_QUOTA, 0, 0,   ph_wiz},
     {T("guest"),           POW_GUEST,      0, 0,   ph_god},
     {T("halt"),            POW_HALT,       0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("hide"),            POW_HIDE,       0, 0,   ph_any},
-#else
     {T("hide"),            POW_HIDE,       0, 0,   ph_wiz},
-#endif // FIRANMUX
     {T("idle"),            POW_IDLE,       0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("immutable"),       POW_IMMUTABLE,  POWER_EXT, 0, ph_wiz},
-#endif // FIRANMUX
     {T("long_fingers"),    POW_LONGFINGERS,0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("monitor"),         POW_MONITOR,    0, 0,   ph_any},
-#else
     {T("monitor"),         POW_MONITOR,    0, 0,   ph_wiz},
-#endif // FIRANMUX
     {T("no_destroy"),      POW_NO_DESTROY, 0, 0,   ph_wiz},
     {T("pass_locks"),      POW_PASS_LOCKS, 0, 0,   ph_wiz},
     {T("poll"),            POW_POLL,       0, 0,   ph_wiz},
     {T("prog"),            POW_PROG,       0, 0,   ph_wiz},
     {T("quota"),           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
     {T("search"),          POW_SEARCH,     0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("see_all"),         POW_EXAM_ALL,   0, 0,   ph_any},
-#else
     {T("see_all"),         POW_EXAM_ALL,   0, 0,   ph_wiz},
-#endif // FIRANMUX
     {T("see_hidden"),      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
     {T("see_queue"),       POW_SEE_QUEUE,  0, 0,   ph_wiz},
     {T("siteadmin"),       POW_SITEADMIN,  0, 0,   ph_wiz},
     {T("stat_any"),        POW_STAT_ANY,   0, 0,   ph_wiz},
     {T("steal_money"),     POW_STEAL,      0, 0,   ph_wiz},
     {T("tel_anything"),    POW_TEL_UNRST,  0, 0,   ph_wiz},
-#if defined(FIRANMUX)
-    {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_any},
-#else
     {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
-#endif // FIRANMUX
     {T("unkillable"),      POW_UNKILLABLE, 0, 0,   ph_wiz},
     {(UTF8 *)nullptr,      0,              0, 0,   0}
 };

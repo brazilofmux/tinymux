@@ -101,9 +101,6 @@ UTF8 *MakeCanonicalMailAliasDesc
     size_t *pnVisualWidth
 );
 
-#if defined(FIRANMUX)
-const UTF8 *MessageFetch(int number);
-#endif // FIRANMUX
 size_t MessageFetchSize(int number);
 void finish_mail();
 

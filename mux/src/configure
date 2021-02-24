@@ -659,8 +659,6 @@ SQL_LIBPATH
 SQL_INCLUDE
 SELFCHECK
 INLINESQL
-FIRANLIBS
-FIRANMUX
 STUBSLAVE_TARGET
 STUB_SLAVE
 MEMORY_BASED
@@ -714,7 +712,6 @@ enable_realitylvls
 enable_wodrealms
 enable_memorybased
 enable_stubslave
-enable_firanmux
 enable_inlinesql
 enable_selfcheck
 with_mysql_include
@@ -1363,7 +1360,6 @@ Optional Features:
   --enable-wodrealms      enable WOD Realms (default is NO)
   --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
-  --enable-firanmux       enable Firan MUX (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
@@ -2678,31 +2674,6 @@ $as_echo "no" >&6; }
     else
       STUB_SLAVE="-DSTUB_SLAVE"
       STUBSLAVE_TARGET="stubslave"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    fi
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable Firan MUX" >&5
-$as_echo_n "checking whether to enable Firan MUX... " >&6; }
-# Check whether --enable-firanmux was given.
-if test "${enable_firanmux+set}" = set; then :
-  enableval=$enable_firanmux;
-    if test "x$enableval" = "xno"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    else
-      FIRANMUX="-DFIRANMUX"
-      FIRANLIBS=""
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     fi

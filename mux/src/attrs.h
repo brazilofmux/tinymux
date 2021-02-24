@@ -217,20 +217,14 @@
 #define A_ACREATE   230  // @acreate attribute
 #define A_LVISIBLE  231  // Visibility Lock Storage Attribute
 
-// 232 - 235 unused
-
-#if defined(FIRANMUX)
-#define A_COLOR      236 /* Color of name of object in look commands */
-#define A_ALEAD      237 /* Lead action list */
-#define A_LEAD       238 /* Invoker lead message */
-#define A_OLEAD      239 /* Others lead message */
-#endif // FIRANMUX
+// 232 - 239 unused
 
 #define A_IDLETMOUT  240 /* Idle message timeout */
 #define A_EXITFORMAT 241
 #define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
 #define A_DESCFORMAT 244
+
 // 245 - 249 unused
 
 #ifdef REALITY_LVLS

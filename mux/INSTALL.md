@@ -1,6 +1,6 @@
 ---
 author: Brazil
-date: June 2020
+date: February 2021
 title: INSTALL
 ---
 
@@ -19,7 +19,6 @@ game.
 
       |                        |                                                  |
       |------------------------|--------------------------------------------------|
-      | `--enable-firanmux`    | For use by FiranMUX.  Not recommended generally. |
       | `--enable-memorybased` | See docs/MEMORY.                                 |
       | `--enable-realitylvls` | See REALITY and REALITY.SETUP.                   |
       | `--enable-stubslave`   | See MODULES.                                     |

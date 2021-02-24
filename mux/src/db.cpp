@@ -228,12 +228,6 @@ ATTR AttrTable[] =
 #ifdef REALITY_LVLS
     {T("Rlevel"),      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #endif // REALITY_LVLS
-#if defined(FIRANMUX)
-    {T("Color"),       A_COLOR,    AF_ODARK},
-    {T("Alead"),       A_ALEAD,    AF_ODARK | AF_WIZARD},
-    {T("Lead"),        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
-    {T("Olead"),       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
-#endif // FIRANMUX
     {nullptr,               0,          0}
 };
 

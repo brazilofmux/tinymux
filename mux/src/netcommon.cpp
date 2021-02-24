@@ -1182,13 +1182,8 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         num++;
     }
 
-#ifdef FIRANMUX
-    // Modified so that %# would be the dbref of the object which @booted you,
-    //  if such is the case.
-#else
     dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
-#endif
     dbref loc = Location(player);
 
     if (num < 2)
@@ -1242,19 +1237,11 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
-#if defined(FIRANMUX)
-            wait_que(player, player, mudstate.curr_enactor,
-                AttrTrace(aflags, 0), false, lta, NOTHING, 0,
-                buf,
-                1, &reason,
-                nullptr);
-#else
             wait_que(player, player, player, AttrTrace(aflags, 0), false,
                 lta, NOTHING, 0,
                 buf,
                 1, &reason,
                 nullptr);
-#endif // FIRANMUX
         }
         if (mudconf.master_room != NOTHING)
         {
@@ -1373,9 +1360,7 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         free_mbuf(mbuf);
     }
 
-#if !defined(FIRANMUX)
     mudstate.curr_enactor = temp;
-#endif // FIRANMUX
     desc_delhash(d);
 
     local_disconnect(player, num);
@@ -2001,9 +1986,6 @@ static const UTF8 *DumpInfoTable[] =
 {
 #if defined(DEPRECATED)
     T("DEPRECATED"),
-#endif
-#if defined(FIRANMUX)
-    T("FIRANMUX"),
 #endif
 #if defined(MEMORY_BASED)
     T("MEMORY_BASED"),
@@ -2670,18 +2652,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
     case CMD_WHO:
     case CMD_DOING:
     case CMD_SESSION:
-
-#if defined(FIRANMUX)
-        if ((d->flags & DS_CONNECTED) == 0)
-        {
-            queue_string(d, T("This command is disabled on login."));
-            queue_write_LEN(d, T("\r\n"), 2);
-        }
-        else
-#endif // FIRANMUX
-        {
-            dump_users(d, arg, key);
-        }
+        dump_users(d, arg, key);
         break;
 
     case CMD_PREFIX:

@@ -81,25 +81,6 @@ AC_ARG_ENABLE(
 AC_SUBST(STUB_SLAVE)
 AC_SUBST(STUBSLAVE_TARGET)
 
-AC_MSG_CHECKING(whether to enable Firan MUX)
-AC_ARG_ENABLE(
-  [firanmux],
-  AS_HELP_STRING([--enable-firanmux],[enable Firan MUX (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      FIRANMUX="-DFIRANMUX"
-      FIRANLIBS=""
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
-AC_SUBST(FIRANMUX)
-AC_SUBST(FIRANLIBS)
-
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
   [inlinesql],

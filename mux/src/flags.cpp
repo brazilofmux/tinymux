@@ -12,9 +12,6 @@
 #include "interface.h"
 #include "mathutil.h"
 #include "powers.h"
-#if defined(FIRANMUX)
-#include "attrs.h"
-#endif // FIRANMUX
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
@@ -127,10 +124,8 @@ static bool fh_privileged
     if (!God(player))
     {
         if (  isPlayer(target)
-#if !defined(FIRANMUX)
            || !isPlayer(player)
            || player != Owner(player)
-#endif // FIRANMUX
            || (db[player].fs.word[fflags] & flag) == 0)
         {
             return false;
@@ -439,13 +434,6 @@ static FLAGBITENT fbeMarker7        = { MARK_7,       '7',    FLAG_WORD3, 0,    
 static FLAGBITENT fbeMarker8        = { MARK_8,       '8',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,                    fh_god};
 #endif // WOD_REALMS
-#if defined(FIRANMUX)
-static FLAGBITENT fbeImmobile       = { IMMOBILE,     '#',    FLAG_WORD3, 0,                    fh_wiz};
-static FLAGBITENT fbeLineWrap       = { LINEWRAP,     '>',    FLAG_WORD3, 0,                    fh_any};
-static FLAGBITENT fbeQuell          = { QUELL,        ' ',    FLAG_WORD3, 0,                    fh_inherit};
-static FLAGBITENT fbeRestricted     = { RESTRICTED,   '!',    FLAG_WORD3, CA_WIZARD,            fh_wiz};
-static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,                    fh_any};
-#endif // FIRANMUX
 
 FLAGNAMEENT gen_flag_names[] =
 {
@@ -535,13 +523,6 @@ FLAGNAMEENT gen_flag_names[] =
     {(UTF8 *)"MEDIUM",          true, &fbeMedium         },
     {(UTF8 *)"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
-#if defined(FIRANMUX)
-    {(UTF8 *)"IMMOBILE",        true, &fbeImmobile       },
-    {(UTF8 *)"LINEWRAP",        true, &fbeLineWrap       },
-    {(UTF8 *)"QUELL",           true, &fbeQuell          },
-    {(UTF8 *)"RESTRICTED",      true, &fbeRestricted     },
-    {(UTF8 *)"PARENT",          true, &fbeParent         },
-#endif // FIRANMUX
     {(UTF8 *)nullptr,          false, nullptr}
 };
 
@@ -966,40 +947,11 @@ UTF8 *unparse_object_numonly(dbref target)
     return buf;
 }
 
-#if defined(FIRANMUX)
-static UTF8 *AcquireColorLetters(dbref player, dbref target)
-{
-    int   aflags;
-    dbref aowner;
-
-    // Get the value of the object's '@color' attribute (or on a parent).
-    //
-    UTF8 *color_attr = alloc_lbuf("AcquireColor.1");
-    atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
-
-    if ('\0' == color_attr[0])
-    {
-        free_lbuf(color_attr);
-        return nullptr;
-    }
-    else
-    {
-        UTF8 *AnsiCodes = alloc_lbuf("AcquireColor.2");
-        UTF8 *ac = AnsiCodes;
-        mux_exec(color_attr, LBUF_SIZE-1, AnsiCodes, &ac, player, target, target,
-                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), nullptr, 0);
-        *ac = '\0';
-        free_lbuf(color_attr);
-        return AnsiCodes;
-    }
-}
-#endif // FIRANMUX
-
 /*
  * ---------------------------------------------------------------------------
  * * Return an lbuf pointing to the object name and possibly the db# and flags
  */
-UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor)
+UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic)
 {
     UTF8 *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
@@ -1028,41 +980,6 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
         mux_field fldName = StripTabsAndTruncate( Moniker(target), buf,
                                                   LBUF_SIZE-100, LBUF_SIZE-100);
         UTF8 *bp = buf + fldName.m_byte;
-
-#if defined(FIRANMUX)
-        if (  fldName.m_column == fldName.m_byte
-           && bAddColor)
-        {
-            // There is no color in the name, so look for @color, or highlight.
-            //
-            UTF8 *buf2 = alloc_lbuf("unparse_object.color");
-            UTF8 *bp2  = buf2;
-
-            UTF8 *pLetters = AcquireColorLetters(player, target);
-            if (nullptr != pLetters)
-            {
-                safe_str(LettersToBinary(pLetters), buf2, &bp2);
-                free_lbuf(pLetters);
-                pLetters = nullptr;
-            }
-            else
-            {
-                safe_str((UTF8 *)COLOR_INTENSE, buf2, &bp2);
-            }
-
-            *bp = '\0';
-            safe_str(buf, buf2, &bp2);
-            safe_str((UTF8 *)COLOR_RESET, buf2, &bp2);
-
-            // Swap buffers.
-            //
-            free_lbuf(buf);
-            buf = buf2;
-            bp  = bp2;
-        }
-#else
-        UNUSED_PARAMETER(bAddColor);
-#endif // FIRANMUX
 
         if (  exam
            || (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK))

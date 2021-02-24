@@ -1678,145 +1678,6 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
     return fldLine.m_byte;
 }
 
-#if defined(FIRANMUX)
-
-/*
- * ---------------------------------------------------------------------------
- * * fun_format: format a string (linewrap) with str, field, left, right
- */
-
-FUNCTION(fun_format)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    int fieldsize = mux_atol(fargs[1]);
-    if (  fieldsize < 1
-       || 80 < fieldsize)
-    {
-        safe_str(T("#-1 ILLEGAL FIELDSIZE"), buff, bufc);
-        return;
-    }
-
-    size_t n2, n3;
-    strip_color(fargs[2], nullptr, &n2);
-    strip_color(fargs[3], nullptr, &n3);
-    if (79 < fieldsize + n2 + n3)
-    {
-        safe_str(T("#-1 COMBINED FIELD TOO LARGE"), buff, bufc);
-        return;
-    }
-
-    *bufc += linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(fieldsize),
-                               *bufc,    LBUF_SIZE - (*bufc - buff) - 1,
-                               fargs[2], static_cast<LBUF_OFFSET>(n2),
-                               fargs[3], static_cast<LBUF_OFFSET>(n3));
-}
-
-/*
- * ---------------------------------------------------------------------------
- * * text: return data from a file in game/text..
- */
-
-FUNCTION(fun_text)
-{
-    FILE *textconf;
-    if (!mux_fopen(&textconf, T("textfiles.conf"), T("r")))
-    {
-        // Can't open the file.
-        //
-        safe_str(T("#-1 TEXTFILES.CONF MISSING"), buff, bufc);
-        return;
-    }
-
-    UTF8 mybuffer[80];
-    while (fgets((char *)mybuffer, 80, textconf))
-    {
-        int index = 0;
-        while (mybuffer[index])
-        {
-            if (mybuffer[index] == '\n')
-            {
-                mybuffer[index] = 0;
-            }
-            else
-            {
-                index++;
-            }
-        }
-
-        /* Found the file listed, did I? */
-        if (!strcmp((char *)mybuffer, (char *)fargs[0]))
-        {
-            FILE *myfile;
-            if (!mux_fopen(&myfile, fargs[0], T("r")))
-            {
-                /* But not here!? */
-                fclose(textconf);
-                safe_str(T("#-1 FILE DOES NOT EXIST"),buff,bufc);
-                return;
-            }
-
-            while (fgets((char *)mybuffer, 80, myfile))
-            {
-                index = 0;
-                while (mybuffer[index])
-                {
-                    if (mybuffer[index] == '\n')
-                    {
-                        mybuffer[index] = 0;
-                    }
-                    else
-                    {
-                        index++;
-                    }
-                }
-
-                if ('&' == mybuffer[0])
-                {
-                    if (!mux_stricmp(fargs[1]+strspn((char *)fargs[1], " "), mybuffer+2))
-                    {
-                        /* At this point I've found the file and the entry */
-                        int thischar;
-                        int lastchar = '\0';
-                        while ((thischar = fgetc(myfile)) != EOF)
-                        {
-                            if ('&' == thischar)
-                            {
-                                if ('\n' == lastchar)
-                                {
-                                    fclose(textconf);
-                                    fclose(myfile);
-                                    return;
-                                }
-                            }
-                            safe_chr(thischar, buff, bufc);
-                            lastchar = thischar;
-                        }
-                        fclose(textconf);
-                        fclose(myfile);
-                        return;
-                    }
-                }
-            }
-            fclose(textconf);
-            fclose(myfile);
-            safe_str(T("#-1 ENTRY NOT FOUND"), buff, bufc);
-            return;
-        }
-    }
-    fclose(textconf);
-    safe_str(T("#-1 FILE NOT LISTED"),buff,bufc);
-}
-
-#endif // FIRANMUX
-
-
 // fun_successes
 //
 
@@ -11116,9 +10977,6 @@ static FUN builtin_function_list[] =
     {T("FMOD"),        fun_fmod,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("FOLD"),        fun_fold,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("FOREACH"),     fun_foreach,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {T("FORMAT"),      fun_format,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("FULLNAME"),    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("GET"),         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("GET_EVAL"),    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -11211,9 +11069,6 @@ static FUN builtin_function_list[] =
     {T("LWHO"),        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("MAIL"),        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("MAILFROM"),    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {T("MAILJ"),       fun_mailj,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("MAILSIZE"),    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("MAILSUBJ"),    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MAP"),         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
@@ -11319,14 +11174,8 @@ static FUN builtin_function_list[] =
     {T("SET"),         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SETDIFF"),     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SETINTER"),    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {T("SETPARENT"),   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("SETQ"),        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SETR"),        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {T("SETNAME"),     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("SETUNION"),    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SHA1"),        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {T("SHL"),         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -11368,9 +11217,6 @@ static FUN builtin_function_list[] =
     {T("TAN"),         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("TEL"),         fun_tel,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("TERMINFO"),    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {T("TEXT"),        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-#endif // FIRANMUX
     {T("TEXTFILE"),    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("TIME"),        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("TIMEFMT"),     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
