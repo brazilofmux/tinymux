@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: March 2020
+date: March 2021
 author:
  - Brazil
 ---
@@ -17,6 +17,7 @@ author:
 
  - @npemit now refers to @pemit/noeval.
  - pose now documents /noeval switch.
+ - Don't notify permission denied with @edit when QUIET.
 
 # Performance Enhancements:
 
@@ -28,4 +29,4 @@ author:
 
 # Miscellaneous:
 
- - None.
+ - Remove FiranMUX build.
