@@ -1570,7 +1570,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
                 if (  (  (aflags & AF_REGEXP)
                       && regexp_match(buff + 1, new0,
-                             ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), aargs,
+                             ((aflags & AF_CASE) ? PCRE_CASELESS : 0), aargs,
                              NUM_ENV_VARS))
                    || (  (aflags & AF_REGEXP) == 0
                       && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))

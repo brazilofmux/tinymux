@@ -303,7 +303,7 @@ static int atr_match1
         UTF8 *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
             && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
-                ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
+                ((aflags & AF_CASE) ? PCRE_CASELESS : 0), args, NUM_ENV_VARS))
            || (  0 == (aflags & AF_REGEXP)
               && wild(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
                 args, NUM_ENV_VARS)))
@@ -468,7 +468,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
     }
     else
     {
-        int case_opt = (aflags & AF_CASE) ? 0 : PCRE_CASELESS;
+        int case_opt = (aflags & AF_CASE) ? PCRE_CASELESS : 0;
         do
         {
             int erroffset;
