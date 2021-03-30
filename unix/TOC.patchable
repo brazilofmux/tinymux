@@ -148,8 +148,6 @@ src/muxcli.cpp
 src/muxcli.h
 src/netcommon.cpp
 src/object.cpp
-src/pcre.cpp
-src/pcre.h
 src/player.cpp
 src/player_c.cpp
 src/plusemail.cpp

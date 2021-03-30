@@ -5,3 +5,5 @@ LOCAL
 MODULES
 NOTES
 README
+src/pcre.cpp
+src/pcre.h
