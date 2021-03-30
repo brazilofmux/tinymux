@@ -20,7 +20,7 @@
 #include "mathutil.h"
 #include "powers.h"
 #include "vattr.h"
-#include "pcre.h"
+#include <pcre.h>
 
 // Switch tables for the various commands.
 //

@@ -9,7 +9,7 @@
 #include "externs.h"
 
 #include "ansi.h"
-#include "pcre.h"
+#include <pcre.h>
 #include "mathutil.h"
 
 const bool mux_isprint_ascii[256] =

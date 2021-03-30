@@ -20,7 +20,7 @@
 #include "functions.h"
 #include "mathutil.h"
 #include "misc.h"
-#include "pcre.h"
+#include <pcre.h>
 
 /* ---------------------------------------------------------------------------
  * fun_grab: a combination of extract() and match(), sortof. We grab the

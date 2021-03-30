@@ -18,7 +18,7 @@
 #include "help.h"
 #include "mguests.h"
 #include "muxcli.h"
-#include "pcre.h"
+#include <pcre.h>
 #include "powers.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
