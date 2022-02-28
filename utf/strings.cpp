@@ -581,7 +581,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     for (i = 0; i < nLiteralTable; i++)
     {
         UTF8 *p = aLiteralTable[i].p;
-        fprintf(fpBody, "    { %2d, %2d, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
+        fprintf(fpBody, "    { %2ld, %2ld, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
 
         fprintf(fpBody, "T(\"");
         size_t n = aLiteralTable[i].n_bytes;
@@ -609,7 +609,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     for (i = 0; i < nXorTable; i++)
     {
         UTF8 *p = aXorTable[i].p;
-        fprintf(fpBody, "    { %2d, %2d, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
+        fprintf(fpBody, "    { %2ld, %2ld, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
 
         fprintf(fpBody, "T(\"");
         size_t n = aXorTable[i].n_bytes;
