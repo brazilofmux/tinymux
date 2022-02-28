@@ -1,13 +1,14 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: March 2021
+date: February 2022
 author:
  - Brazil
 ---
 
 # Major changes that may affect performance and require softcode tweaks:
 
- - None.
+ - Require and use the platforms PCRE library instead of a static, private
+   version.
 
 # Feature Additions:
 
