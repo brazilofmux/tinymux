@@ -7,6 +7,7 @@ author:
 
 # Major changes that may affect performance and require softcode tweaks:
 
+ - Reworking networking to support non-blocking SSL sockets.
  - Require and use the platforms PCRE library instead of a static, private
    version.
 
