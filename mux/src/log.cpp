@@ -30,6 +30,7 @@ NAMETAB logoptions_nametab[] =
     {T("checkpoints"),     2,  0,  LOG_DBSAVES},
     {T("config_changes"),  2,  0,  LOG_CONFIGMODS},
     {T("create"),          2,  0,  LOG_PCREATES},
+    {T("debug"),           1,  0,  LOG_DEBUG},
     {T("killing"),         1,  0,  LOG_KILLS},
     {T("logins"),          1,  0,  LOG_LOGIN},
     {T("network"),         1,  0,  LOG_NET},

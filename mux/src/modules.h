@@ -29,6 +29,7 @@
 #define LOG_PROBLEMS    0x00008000  /* Log runtime problems */
 #define LOG_SUSPECTCMDS 0x00020000  // Log SUSPECT player keyboard commands.
 #define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
+#define LOG_DEBUG       0x00080000  // Log extra debugging information.
 #define LOG_ALWAYS      0x80000000  /* Always log it */
 
 /* Evaluation directives */

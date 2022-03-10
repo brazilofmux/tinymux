@@ -1707,7 +1707,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             //
             if (CheckInput(d->socket))
             {
-                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                STARTLOG(LOG_DEBUG, "NET", "SSL");
                 log_printf(T("shovechars(), CheckInput (%u)."), d->socket);
                 ENDLOG;
 
@@ -1751,7 +1751,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             //
             if (CheckOutput(d->socket))
             {
-                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                STARTLOG(LOG_DEBUG, "NET", "SSL");
                 log_printf(T("shovechars(), CkeckOutput (%u)."), d->socket);
                 ENDLOG;
 #ifdef UNIX_SSL
@@ -1856,7 +1856,7 @@ void new_connection_final(DESC* d)
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< new_connection_final >");
 
-    STARTLOG(LOG_ALWAYS, "NET", "SSL");
+    STARTLOG(LOG_DEBUG, "NET", "SSL");
     log_printf(T("new_connection_final() (%u)."), d->socket);
     ENDLOG;
 
@@ -2004,7 +2004,7 @@ bool new_connection_continue(DESC* d)
     int ssl_result = SSL_accept(d->ssl_session);
     if (1 == ssl_result)
     {
-        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+        STARTLOG(LOG_DEBUG, "NET", "SSL");
         log_printf(T("new_connection_continue(), SSL_accept (%u): Set SocketState::Accepted."), d->socket);
         ENDLOG;
         d->ss = SocketState::Accepted;
@@ -2020,21 +2020,21 @@ bool new_connection_continue(DESC* d)
            || SOCKET_EINTR       == iSocketError
            )
         {
-            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            STARTLOG(LOG_DEBUG, "NET", "SSL");
             log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptAgain."), d->socket);
             ENDLOG;
             d->ss = SocketState::SSLAcceptAgain;
         }
         else if (SSL_ERROR_WANT_WRITE == iSocketError)
         {
-            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            STARTLOG(LOG_DEBUG, "NET", "SSL");
             log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantWrite."), d->socket);
             ENDLOG;
             d->ss = SocketState::SSLAcceptWantWrite;
         }
         else if (SSL_ERROR_WANT_READ  == iSocketError)
         {
-            STARTLOG(LOG_ALWAYS, "NET", "SSL");
+            STARTLOG(LOG_DEBUG, "NET", "SSL");
             log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantRead."), d->socket);
             ENDLOG;
             d->ss = SocketState::SSLAcceptWantRead;
@@ -2775,14 +2775,14 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
 
                     if (SSL_ERROR_WANT_WRITE == iSocketError)
                     {
-                        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                        STARTLOG(LOG_DEBUG, "NET", "SSL");
                         log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantWrite."), d->socket);
                         ENDLOG;
                         d->ss = SocketState::SSLWriteWantWrite;
                     }
                     else if (SSL_ERROR_WANT_READ == iSocketError)
                     {
-                        STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                        STARTLOG(LOG_DEBUG, "NET", "SSL");
                         log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantRead."), d->socket);
                         ENDLOG;
                         d->ss = SocketState::SSLWriteWantRead;
@@ -4308,14 +4308,14 @@ bool process_input(DESC *d)
 #ifdef UNIX_SSL
             if (SSL_ERROR_WANT_WRITE == iSocketError)
             {
-                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                STARTLOG(LOG_DEBUG, "NET", "SSL");
                 log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantWrite."), d->socket);
                 ENDLOG;
                 d->ss = SocketState::SSLReadWantWrite;
             }
             else if (SSL_ERROR_WANT_READ == iSocketError)
             {
-                STARTLOG(LOG_ALWAYS, "NET", "SSL");
+                STARTLOG(LOG_DEBUG, "NET", "SSL");
                 log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantRead."), d->socket);
                 ENDLOG;
                 d->ss = SocketState::SSLReadWantRead;

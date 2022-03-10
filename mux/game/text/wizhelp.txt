@@ -3335,6 +3335,7 @@ LOG
     checkpoints    - Record automatic database dumps.
     config_changes - Record uses of the @admin command.
     create         - Record creation of new players.
+    debug          - Record information useful for debugging.
     killing        - Record uses of the kill and slay commands.
     logins         - Record connects to characters.
     network        - Record new and broken net connections.
