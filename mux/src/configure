@@ -6061,6 +6061,18 @@ fi
 
 done
 
+for ac_header in pcre.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "pcre.h" "ac_cv_header_pcre_h" "$ac_includes_default"
+if test "x$ac_cv_header_pcre_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PCRE_H 1
+_ACEOF
+
+fi
+
+done
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sys_errlist decl..." >&5
 $as_echo "$as_me: checking for sys_errlist decl..." >&6;}
 if test $ac_cv_header_errno_h = no; then

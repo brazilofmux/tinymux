@@ -280,6 +280,7 @@ AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/types.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
 AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
 AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
+AC_CHECK_HEADERS(pcre.h)
 AS_MESSAGE([checking for sys_errlist decl...])
 if test $ac_cv_header_errno_h = no; then
     AC_DEFINE([NEED_SYS_ERRLIST_DCL], [], [Define if you need to declare sys_errlist yourself.])
