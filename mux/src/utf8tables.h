@@ -15,14 +15,14 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 127513 included, 986599 excluded, 0 errors.
-// 287 states, 95 columns, 9354 bytes
+// 136019 included, 978093 excluded, 0 errors.
+// 294 states, 95 columns, 9586 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (287)
+#define CL_PRINT_ACCEPTING_STATES_START (294)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned short cl_print_sot[287];
-extern const unsigned short cl_print_sbt[4262];
+extern const unsigned short cl_print_sot[294];
+extern const unsigned short cl_print_sbt[4371];
 
 // utf/cl_AttrNameInitial.txt
 //
@@ -180,14 +180,14 @@ extern const unsigned short tr_latin2_sbt[3460];
 
 // utf/tr_widths.txt
 //
-// 345527 code points.
-// 295 states, 91 columns, 9516 bytes
+// 346551 code points.
+// 299 states, 91 columns, 9654 bytes
 //
 #define TR_WIDTHS_START_STATE (0)
-#define TR_WIDTHS_ACCEPTING_STATES_START (295)
+#define TR_WIDTHS_ACCEPTING_STATES_START (299)
 extern const unsigned char tr_widths_itt[256];
-extern const unsigned short tr_widths_sot[295];
-extern const unsigned short tr_widths_sbt[4335];
+extern const unsigned short tr_widths_sot[299];
+extern const unsigned short tr_widths_sbt[4400];
 
 // utf/tr_tolower.txt
 //
