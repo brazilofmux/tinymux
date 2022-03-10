@@ -18,7 +18,13 @@ char *ReadLine(FILE *fp, char *buffer, size_t bufsize)
         char *p = strchr(buffer, '#');
         if (NULL != p)
         {
-            // Ignore comment.
+            for (;buffer < p; --p)
+            {
+                char *oneBefore = p - 1;
+                if (!isspace(*oneBefore)) break;
+            }
+
+            // Ignore comment and trim trailing space.
             //
             *p = '\0';
         }

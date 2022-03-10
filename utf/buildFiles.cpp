@@ -343,7 +343,6 @@ static struct
     { WIDTH_TYPE_WIDE,                 "W"        },
     { WIDTH_TYPE_FULLWIDTH,            "F"        },
     { WIDTH_TYPE_NARROW,               "Na"       },
-    { 0, NULL }
 };
 
 #define MAPPING_ASCII      0
