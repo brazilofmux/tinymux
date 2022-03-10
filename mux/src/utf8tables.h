@@ -180,14 +180,14 @@ extern const unsigned short tr_latin2_sbt[3460];
 
 // utf/tr_widths.txt
 //
-// 333242 code points.
-// 231 states, 91 columns, 4054 bytes
+// 345527 code points.
+// 295 states, 91 columns, 9516 bytes
 //
 #define TR_WIDTHS_START_STATE (0)
-#define TR_WIDTHS_ACCEPTING_STATES_START (231)
+#define TR_WIDTHS_ACCEPTING_STATES_START (295)
 extern const unsigned char tr_widths_itt[256];
-extern const unsigned short tr_widths_sot[231];
-extern const unsigned char tr_widths_sbt[3336];
+extern const unsigned short tr_widths_sot[295];
+extern const unsigned short tr_widths_sbt[4335];
 
 // utf/tr_tolower.txt
 //
