@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: February 2022
+date: March 2022
 author:
  - Brazil
 ---
@@ -12,7 +12,7 @@ author:
 
 # Feature Additions:
 
- - Update to Unicode 9.0.
+ - Update to Unicode 10.0.
 
 # Bug Fixes:
 
