@@ -1181,8 +1181,14 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     //
     if (!bDescriptorListInit)
     {
-        InitializeCriticalSection(&csDescriptorList);
-        bDescriptorListInit = true;
+        __try
+        {
+            InitializeCriticalSection(&csDescriptorList);
+            bDescriptorListInit = true;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+        }
     }
 #endif
 
