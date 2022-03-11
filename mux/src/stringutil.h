@@ -1602,7 +1602,7 @@ bool minmatch(__in const UTF8 *str, __in const UTF8 *target, int min);
 UTF8 *StringCloneLen(__in_ecount(nStr) const UTF8 *str, size_t nStr);
 UTF8 *StringClone(__in const UTF8 *str);
 void safe_copy_str(__in const UTF8 *src, __inout_ecount_full(nSizeOfBuffer) UTF8 *buff, __deref_inout UTF8 **bufp, size_t nSizeOfBuffer);
-void safe_copy_str_lbuf(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
+void safe_copy_str_lbuf(__in const UTF8 *src, __inout_ecount_full(LBUF_SIZE) UTF8 *buff, __deref_inout UTF8 **bufp);
 size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __in UTF8 *buff, __deref_inout UTF8 **bufp);
 size_t safe_fill(__inout UTF8 *buff, __deref_inout UTF8 **bufc, UTF8 chFile, size_t nSpaces);
 void safe_chr_utf8(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
