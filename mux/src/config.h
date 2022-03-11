@@ -750,7 +750,7 @@ public:
         kGreaterThan
     };
 
-    mux_subnet() : m_iaBase(nullptr), m_iaMask(nullptr), m_iaEnd(nullptr) { }
+    mux_subnet() : m_iaBase(nullptr), m_iaMask(nullptr), m_iaEnd(nullptr), m_iLeadingBits(0) { }
     ~mux_subnet();
     int getFamily() const { return m_iaBase->getFamily(); }
     Comparison compare_to(mux_subnet *msn) const;
