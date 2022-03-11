@@ -968,8 +968,8 @@ extern const UTF8 *NOT_CONNECTED;
 #define safe_notfound(b,p)  safe_copy_buf(FUNC_NOT_FOUND,13,(b),(p))
 #define safe_notconnected(b,p)  safe_copy_buf(NOT_CONNECTED,17,(b),(p))
 
-int  ReplaceFile(UTF8 *old_name, UTF8 *new_name);
-void RemoveFile(UTF8 *name);
+int  ReplaceFile(UTF8 *old_name, UTF8 *new_name_arg);
+void RemoveFile(const UTF8 *name);
 void destroy_player(dbref agent, dbref victim);
 void do_pemit_list
 (

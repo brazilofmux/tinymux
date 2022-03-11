@@ -1475,15 +1475,14 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
 
     bool bSuccess;
 #if defined(WINDOWS_FILES)
-    size_t nFilename;
-    UTF16 *pFilename;
-    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
-    if (nullptr == pFilename)
+    size_t file_name_length;
+    UTF16* file_name = ConvertFromUTF8ToUTF16(szPageFile, file_name_length);
+    if (nullptr == file_name)
     {
         return false;
     }
 
-    m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hPageFile = CreateFile(file_name, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
@@ -1497,13 +1496,13 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
     }
 
 #if defined(WINDOWS_FILES)
-    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
-    if (nullptr == pFilename)
+    file_name = ConvertFromUTF8ToUTF16(szDirFile, file_name_length);
+    if (nullptr == file_name)
     {
         return false;
     }
 
-    m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hDirFile = CreateFile(file_name, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1681,7 +1680,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
 #if defined(WINDOWS_FILES)
     size_t nFilename;
     UTF16 *pFilename;
-    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
+    pFilename = ConvertFromUTF8ToUTF16(szPageFile, nFilename);
     if (nullptr == pFilename)
     {
         return HF_OPEN_STATUS_ERROR;
@@ -1747,7 +1746,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     //
 #if defined(WINDOWS_FILES)
     bSuccess;
-    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
+    pFilename = ConvertFromUTF8ToUTF16(szDirFile, nFilename);
     if (nullptr == pFilename)
     {
         return HF_OPEN_STATUS_ERROR;

@@ -835,11 +835,9 @@ void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
 
 void init_cmdtab(void)
 {
-    ATTR *ap;
-
     // Load attribute-setting commands.
     //
-    for (ap = AttrTable; ap->name; ap++)
+    for (ATTR* ap = AttrTable; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
         {
@@ -848,7 +846,7 @@ void init_cmdtab(void)
 
         size_t nBuffer;
         bool bValid;
-        UTF8 *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        const UTF8 *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
             continue;
@@ -861,7 +859,6 @@ void init_cmdtab(void)
         }
         catch (...)
         {
-            ; // Nothing.
         }
 
         if (nullptr != cp2a)
@@ -894,16 +891,16 @@ void init_cmdtab(void)
 
     cache_prefix_cmds();
 
-    goto_cmdp = (CMDENT *) hashfindLEN((char *)"goto", strlen("goto"), &mudstate.command_htab);
+    goto_cmdp = static_cast<CMDENT*>(hashfindLEN((char*)"goto", strlen("goto"), &mudstate.command_htab));
 }
 
 static CMDENT *g_prefix_cmds[256];
 
 void clear_prefix_cmds()
 {
-    for (int i = 0; i < 256; i++)
+    for (auto& g_prefix_cmd : g_prefix_cmds)
     {
-        g_prefix_cmds[i] = nullptr;
+        g_prefix_cmd = nullptr;
     }
 }
 
@@ -3229,7 +3226,7 @@ CF_HAND(cf_cmd_alias)
             return -1;
         }
 
-        if (!hashfindLEN(alias, strlen((char *)alias), (CHashTable *)vp))
+        if (!hashfindLEN(alias, strlen(reinterpret_cast<char*>(alias)), reinterpret_cast<CHashTable*>(vp)))
         {
             // Create the new command table entry.
             //
@@ -3255,7 +3252,7 @@ CF_HAND(cf_cmd_alias)
             cmd2->handler = cmdp->handler;
             cmd2->flags = CEF_ALLOC;
 
-            hashaddLEN(cmd2->cmdname, strlen((char *)cmd2->cmdname), cmd2, (CHashTable *) vp);
+            hashaddLEN(cmd2->cmdname, strlen(reinterpret_cast<char*>(cmd2->cmdname)), cmd2, reinterpret_cast<CHashTable*>(vp));
         }
     }
     else
@@ -4689,10 +4686,10 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    bool negate, found;
+    bool negate;
     UTF8 *s_ptr, *s_ptrbuff, *cbuff, *p;
     const UTF8 *q;
-    CMDENT *cmdp = (CMDENT *)nullptr;
+    auto* cmdp = static_cast<CMDENT*>(nullptr);
 
     if (  (  key
           && !(key & CEF_HOOK_LIST))
@@ -4700,7 +4697,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
              || (key & CEF_HOOK_LIST))
           && *name))
     {
-        cmdp = (CMDENT *)hashfindLEN(name, strlen((char *)name), &mudstate.command_htab);
+        cmdp = static_cast<CMDENT*>(hashfindLEN(name, strlen((char*)name), &mudstate.command_htab));
         if (!cmdp)
         {
             notify(executor, T("@hook: Non-existent command name given."));
@@ -4717,8 +4714,8 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     if (key & CEF_HOOK_CLEAR)
     {
         negate = true;
-        key = key & ~CEF_HOOK_CLEAR;
-        key = key & ~SW_MULTIPLE;
+        key = ~CEF_HOOK_CLEAR & key;
+        key = ~SW_MULTIPLE & key;
     }
     else
     {
@@ -4733,7 +4730,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         else
         {
-            cmdp->flags = cmdp->flags | key;
+            cmdp->flags = key | cmdp->flags;
         }
 
         if (cmdp->flags)
@@ -4769,63 +4766,59 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         else
         {
             notify(executor, tprintf(T("%.32s-+-%s"),
-                "--------------------------------",
-                "--------------------------------------------"));
+                       "--------------------------------",
+                       "--------------------------------------------"));
             notify(executor, tprintf(T("%-32s | %s"), "Built-in Command", "Hook Mask Values"));
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            found = false;
+            bool found = false;
             s_ptr = s_ptrbuff = alloc_lbuf("@hook");
             {
-                CMDENT_NO_ARG *cmdp2;
-                for (cmdp2 = command_table_no_arg; cmdp2->cmdname; cmdp2++)
+                for (CMDENT_NO_ARG* cmdp2 = command_table_no_arg; cmdp2->cmdname; cmdp2++)
                 {
                     s_ptrbuff[0] = '\0';
                     s_ptr = s_ptrbuff;
                     if (0 != HOOKMASK(cmdp2->flags))
                     {
                         found = true;
-                        hook_loop(executor, (CMDENT *)cmdp2, s_ptr, s_ptrbuff);
+                        hook_loop(executor, reinterpret_cast<CMDENT*>(cmdp2), s_ptr, s_ptrbuff);
                     }
                 }
             }
             {
-                CMDENT_ONE_ARG *cmdp2;
-                for (cmdp2 = command_table_one_arg; cmdp2->cmdname; cmdp2++)
+                for (CMDENT_ONE_ARG* cmdp2 = command_table_one_arg; cmdp2->cmdname; cmdp2++)
                 {
                     s_ptrbuff[0] = '\0';
                     s_ptr = s_ptrbuff;
                     if (0 != HOOKMASK(cmdp2->flags))
                     {
                         found = true;
-                        hook_loop(executor, (CMDENT *)cmdp2, s_ptr, s_ptrbuff);
+                        hook_loop(executor, reinterpret_cast<CMDENT*>(cmdp2), s_ptr, s_ptrbuff);
                     }
                 }
             }
             {
-                CMDENT_TWO_ARG *cmdp2;
-                for (cmdp2 = command_table_two_arg; cmdp2->cmdname; cmdp2++)
+                for (CMDENT_TWO_ARG* cmdp2 = command_table_two_arg; cmdp2->cmdname; cmdp2++)
                 {
                     s_ptrbuff[0] = '\0';
                     s_ptr = s_ptrbuff;
                     if (0 != HOOKMASK(cmdp2->flags))
                     {
                         found = true;
-                        hook_loop(executor, (CMDENT *)cmdp2, s_ptr, s_ptrbuff);
+                        hook_loop(executor, reinterpret_cast<CMDENT*>(cmdp2), s_ptr, s_ptrbuff);
                     }
                 }
             }
             {
-                CMDENT_TWO_ARG_ARGV *cmdp2;
-                for (cmdp2 = command_table_two_arg_argv; cmdp2->cmdname; cmdp2++)
+                for (CMDENT_TWO_ARG_ARGV* cmdp2 = command_table_two_arg_argv; cmdp2->cmdname; cmdp2++)
                 {
                     s_ptrbuff[0] = '\0';
                     s_ptr = s_ptrbuff;
                     if (0 != HOOKMASK(cmdp2->flags))
                     {
                         found = true;
-                        hook_loop(executor, (CMDENT *)cmdp2, s_ptr, s_ptrbuff);
+                        hook_loop(executor, reinterpret_cast<CMDENT*>(cmdp2), s_ptr, s_ptrbuff);
                     }
                 }
             }
@@ -4860,7 +4853,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                 }
                 *p = '\0';
                 size_t ncbuff = p - cbuff;
-                cmdp = (CMDENT *)hashfindLEN(cbuff, ncbuff, &mudstate.command_htab);
+                cmdp = static_cast<CMDENT*>(hashfindLEN(cbuff, ncbuff, &mudstate.command_htab));
                 if (  cmdp
                    && 0 != HOOKMASK(cmdp->flags))
                 {
@@ -4898,5 +4891,5 @@ NAMETAB allow_charset_nametab[] =
     {T("katakana"),        8,       0,     ALLOW_CHARSET_KATAKANA},
     {T("latin-1"),         7,       0,     ALLOW_CHARSET_8859_1},
     {T("latin-2"),         7,       0,     ALLOW_CHARSET_8859_2},
-    {(UTF8 *) nullptr,     0,       0,     0}
+    {static_cast<UTF8*>(nullptr),     0,       0,     0}
 };

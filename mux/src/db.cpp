@@ -3987,54 +3987,54 @@ void load_restart_db(void)
 
 #if defined(WINDOWS_FILES)
 
-int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
+int ReplaceFile(UTF8 *old_name_arg, UTF8 *new_name_arg)
 {
-    size_t nNewName;
-    UTF16 *pNewName = ConvertFromUTF8ToUTF16(new_name, &nNewName);
-    if (nullptr == pNewName)
+    size_t new_name_length;
+    UTF16 *new_name = ConvertFromUTF8ToUTF16(new_name_arg, new_name_length);
+    if (nullptr == new_name)
     {
         return -1;
     }
 
-    size_t n = (nNewName+1) * sizeof(UTF16);
-    UTF16 *p = (UTF16 *)MEMALLOC(n);
+    const size_t n = (new_name_length+1) * sizeof(UTF16);
+    const auto p = static_cast<UTF16*>(MEMALLOC(n));
     if (nullptr == p)
     {
         return -1;
     }
-    memcpy(p, pNewName, n);
-    pNewName = p;
+    memcpy(p, new_name, n);
+    new_name = p;
 
-    size_t nOldName;
-    UTF16 *pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
-    if (nullptr == pOldName)
+    size_t old_name_length;
+    UTF16 *old_name = ConvertFromUTF8ToUTF16(old_name_arg, old_name_length);
+    if (nullptr == old_name)
     {
-        MEMFREE(pNewName);
+        MEMFREE(new_name);
         return -1;
     }
 
-    DeleteFile(pNewName);
-    if (MoveFile(pOldName, pNewName))
+    DeleteFile(new_name);
+    if (MoveFile(old_name, new_name))
     {
-        MEMFREE(pNewName);
+        MEMFREE(new_name);
         return 0;
     }
     else
     {
         Log.tinyprintf(T("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE),
-            old_name, new_name, GetLastError());
+            old_name, new_name_arg, GetLastError());
     }
-    MEMFREE(pNewName);
+    MEMFREE(new_name);
     return -1;
 }
 
-void RemoveFile(UTF8 *name)
+void RemoveFile(const UTF8 *name)
 {
-    size_t nNewName;
-    UTF16 *pFileToDelete = ConvertFromUTF8ToUTF16(name, &nNewName);
-    if (nullptr != pFileToDelete)
+    size_t new_name_length;
+    UTF16 *file_to_delete = ConvertFromUTF8ToUTF16(name, new_name_length);
+    if (nullptr != file_to_delete)
     {
-        DeleteFile(pFileToDelete);
+        DeleteFile(file_to_delete);
     }
 }
 

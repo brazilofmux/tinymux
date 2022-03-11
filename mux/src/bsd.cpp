@@ -5986,43 +5986,43 @@ bool mux_subnet::listinfo(UTF8 *sAddress, int *pnLeadingBits) const
     return true;
 }
 
-mux_subnet::Comparison mux_subnet::compare_to(mux_subnet *t) const
+mux_subnet::SubnetComparison mux_subnet::compare_to(mux_subnet *t) const
 {
     if (*(t->m_iaEnd) < *m_iaBase)
     {
         // this > t
         //
-        return mux_subnet::kGreaterThan;
+        return SubnetComparison::kGreaterThan;
     }
     else if (*m_iaEnd < *(t->m_iaBase))
     {
         // this < t
         //
-        return mux_subnet::kLessThan;
+        return SubnetComparison::kLessThan;
     }
     else if (  *m_iaBase < *(t->m_iaBase)
             && *(t->m_iaEnd) < *m_iaEnd)
     {
         // this contains t
         //
-        return mux_subnet::kContains;
+        return SubnetComparison::kContains;
     }
     else if (  *m_iaBase == *(t->m_iaBase)
             && m_iLeadingBits == t->m_iLeadingBits)
     {
         // this == t
         //
-        return mux_subnet::kEqual;
+        return SubnetComparison::kEqual;
     }
     else
     {
         // this is contained by t
         //
-        return mux_subnet::kContainedBy;
+        return SubnetComparison::kContainedBy;
     }
 }
 
-mux_subnet::Comparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
+mux_subnet::SubnetComparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
 {
     mux_addr *ma = nullptr;
     switch (msa->Family())
@@ -6047,27 +6047,27 @@ mux_subnet::Comparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
         break;
 #endif
     default:
-        return mux_subnet::kGreaterThan;
+        return SubnetComparison::kGreaterThan;
     }
 
-    mux_subnet::Comparison fComp;
+    mux_subnet::SubnetComparison fComp;
     if (*ma < *m_iaBase)
     {
         // this > t
         //
-        fComp = mux_subnet::kGreaterThan;
+        fComp = SubnetComparison::kGreaterThan;
     }
     else if (*m_iaEnd < *ma)
     {
         // this < t
         //
-        fComp = mux_subnet::kLessThan;
+        fComp = SubnetComparison::kLessThan;
     }
     else
     {
         // this contains t
         //
-        fComp = mux_subnet::kContains;
+        fComp = SubnetComparison::kContains;
     }
     delete ma;
     return fComp;

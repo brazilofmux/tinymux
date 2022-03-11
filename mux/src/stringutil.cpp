@@ -4095,12 +4095,12 @@ size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch)
     return 0;
 }
 
-UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, __deref_out size_t *pnString)
+UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length)
 {
     static UTF16 buffer[2*LBUF_SIZE];
     UTF16 *p = buffer;
 
-    *pnString = 0;
+    length = 0;
     while ('\0' != *pString)
     {
         UTF32 ch = ConvertFromUTF8(pString);
@@ -4117,7 +4117,7 @@ UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, __deref_out size_t *pnSt
         pString = utf8_NextCodePoint(pString);
     }
     *p = '\0';
-    *pnString = p - buffer;
+    length = p - buffer;
     return buffer;
 }
 
@@ -5066,7 +5066,7 @@ UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(_Out_writes_(nBuffer) _Always_(_Post_z_) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va)
 {
     if (  nullptr == pBuffer
        || nBuffer < 1)
@@ -5453,12 +5453,12 @@ done:
     return iBuffer;
 }
 
-void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...)
+void DCL_CDECL mux_sprintf(_Out_writes_(count) _Always_(_Post_z_) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
     (void)mux_vsnprintf(buff, count, fmt, ap);
-    va_end(ap);
+    va_end(ap);    
 }
 
 void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...)

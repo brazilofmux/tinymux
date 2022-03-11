@@ -1631,7 +1631,7 @@ UTF8 *ConvertToUTF8(__in const char *p, size_t *pn);
 UTF16 *ConvertToUTF16(UTF32 ch);
 UTF32 ConvertFromUTF8(__in const UTF8 *p);
 size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch);
-UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, __deref_out size_t *pnString);
+UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length);
 UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
 void mux_strncpy(__out_ecount(nSizeOfBuffer-1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer);
 bool matches_exit_from_list(__in const UTF8 *, __in const UTF8 *);
@@ -1661,8 +1661,8 @@ bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
-size_t DCL_CDECL mux_vsnprintf(__in_ecount(nBuffer) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
-void DCL_CDECL mux_sprintf(__in_ecount(count) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...);
+size_t DCL_CDECL mux_vsnprintf(_Out_writes_(nBuffer) _Always_(_Post_z_) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
+void DCL_CDECL mux_sprintf(_Out_writes_(count) _Always_(_Post_z_) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...);
 void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...);
 size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 

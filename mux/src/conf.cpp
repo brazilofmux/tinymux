@@ -1470,7 +1470,7 @@ static CF_HAND(cf_hook)
 
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
-    mux_strncpy(playbuff, str, sizeof(playbuff));
+    mux_strncpy(playbuff, str, sizeof(playbuff)-1);
     string_token st(playbuff, T(" \t"));
     hookcmd = st.parse();
     if (hookcmd != nullptr)
@@ -1590,7 +1590,7 @@ static CF_HAND(cf_module)
 #if defined(WINDOWS_FILES)
         size_t n;
         mux_sprintf(buffer, LBUF_SIZE, T(".\\bin\\%s.dll"), str);
-        UTF16 *filename = ConvertFromUTF8ToUTF16(buffer, &n);
+        const UTF16 *filename = ConvertFromUTF8ToUTF16(buffer, n);
 #elif defined(UNIX_FILES)
         mux_sprintf(buffer, LBUF_SIZE, T("./bin/%s.so"), str);
         UTF8 *filename = buffer;

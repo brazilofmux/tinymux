@@ -741,7 +741,7 @@ public:
 class mux_subnet
 {
 public:
-    enum Comparison
+    enum class SubnetComparison
     {
         kLessThan,
         kEqual,
@@ -753,8 +753,8 @@ public:
     mux_subnet() : m_iaBase(nullptr), m_iaMask(nullptr), m_iaEnd(nullptr), m_iLeadingBits(0) { }
     ~mux_subnet();
     int getFamily() const { return m_iaBase->getFamily(); }
-    Comparison compare_to(mux_subnet *msn) const;
-    Comparison compare_to(MUX_SOCKADDR *msa) const;
+    SubnetComparison compare_to(mux_subnet *msn) const;
+    SubnetComparison compare_to(MUX_SOCKADDR *msa) const;
     bool listinfo(UTF8 *sAddress, int *pnLeadingBits) const;
 
 protected:

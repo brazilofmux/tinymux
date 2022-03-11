@@ -1420,13 +1420,12 @@ int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
 void desc_reload(dbref player)
 {
     DESC *d;
-    UTF8 *buf;
     dbref aowner;
     FLAG aflags;
 
     DESC_ITER_PLAYER(player, d)
     {
-        buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
+        UTF8* buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
         if (buf)
         {
             d->timeout = mux_atol(buf);
@@ -1434,8 +1433,9 @@ void desc_reload(dbref player)
             {
                 d->timeout = mudconf.idle_timeout;
             }
+            free_lbuf(buf);
+            buf = nullptr;
         }
-        free_lbuf(buf);
     }
 }
 
@@ -3394,14 +3394,14 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         return;
     }
 
-    mux_subnet::Comparison ct = (*msnRoot)->msn->compare_to(msn_arg->msn);
+    mux_subnet::SubnetComparison ct = (*msnRoot)->msn->compare_to(msn_arg->msn);
     switch (ct)
     {
-    case mux_subnet::kLessThan:
+    case mux_subnet::SubnetComparison::kLessThan:
         insert(&(*msnRoot)->pnRight, msn_arg);
         break;
 
-    case mux_subnet::kEqual:
+    case mux_subnet::SubnetComparison::kEqual:
         if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
         {
             (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
@@ -3429,11 +3429,11 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         delete msn_arg;
         break;
 
-    case mux_subnet::kContains:
+    case mux_subnet::SubnetComparison::kContains:
         insert(&(*msnRoot)->pnInside, msn_arg);
         break;
 
-    case mux_subnet::kContainedBy:
+    case mux_subnet::SubnetComparison::kContainedBy:
         {
             msn_arg->pnInside = *msnRoot;
             msn_arg->pnLeft = (*msnRoot)->pnLeft;
@@ -3444,7 +3444,7 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         }
         break;
 
-    case mux_subnet::kGreaterThan:
+    case mux_subnet::SubnetComparison::kGreaterThan:
         insert(&(*msnRoot)->pnLeft, msn_arg);
         break;
     }
@@ -3457,14 +3457,14 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
         return;
     }
 
-    mux_subnet::Comparison ct = msnRoot->msn->compare_to(msa);
+    mux_subnet::SubnetComparison ct = msnRoot->msn->compare_to(msa);
     switch (ct)
     {
-    case mux_subnet::kLessThan:
+    case mux_subnet::SubnetComparison::kLessThan:
         search(msnRoot->pnRight, msa, pulInfo);
         break;
 
-    case mux_subnet::kContains:
+    case mux_subnet::SubnetComparison::kContains:
         if (HC_PERMIT & msnRoot->ulControl)
         {
             *pulInfo &= ~(HI_REGISTER|HI_FORBID);
@@ -3508,7 +3508,7 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
         search(msnRoot->pnInside, msa, pulInfo);
         break;
 
-    case mux_subnet::kGreaterThan:
+    case mux_subnet::SubnetComparison::kGreaterThan:
         search(msnRoot->pnLeft, msa, pulInfo);
         break;
 
@@ -3552,14 +3552,14 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
     {
         return nullptr;
     }
-    mux_subnet::Comparison ct = msnRoot->msn->compare_to(msn_arg);
+    mux_subnet::SubnetComparison ct = msnRoot->msn->compare_to(msn_arg);
     switch (ct)
     {
-    case mux_subnet::kLessThan:
+    case mux_subnet::SubnetComparison::kLessThan:
         msnRoot->pnRight = remove(msnRoot->pnRight, msn_arg);
         break;
 
-    case mux_subnet::kEqual:
+    case mux_subnet::SubnetComparison::kEqual:
         {
             mux_subnet_node *x = msnRoot;
             delete msnRoot->pnInside;
@@ -3569,16 +3569,16 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
         }
         break;
 
-    case mux_subnet::kContains:
+    case mux_subnet::SubnetComparison::kContains:
         msnRoot->pnInside = remove(msnRoot->pnInside, msn_arg);
         break;
 
-    case mux_subnet::kContainedBy:
+    case mux_subnet::SubnetComparison::kContainedBy:
         delete msnRoot;
         msnRoot = nullptr;
         break;
 
-    case mux_subnet::kGreaterThan:
+    case mux_subnet::SubnetComparison::kGreaterThan:
         msnRoot->pnLeft = remove(msnRoot->pnLeft, msn_arg);
         break;
     }

@@ -746,7 +746,7 @@ size_t mux_utoa(unsigned long uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_ltoa(long val, UTF8 *buf)
+size_t mux_ltoa(long val, __out UTF8 *buf)
 {
     UTF8 *p = buf;
     if (val < 0)
@@ -796,7 +796,7 @@ size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_i64toa(INT64 val, UTF8 *buf)
+size_t mux_i64toa(INT64 val, __out UTF8 *buf)
 {
     UTF8 *p = buf;
 
@@ -820,7 +820,7 @@ UTF8 *mux_i64toa_t(INT64 val)
     return buff;
 }
 
-void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
+void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
 {
     static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
@@ -841,7 +841,7 @@ const UTF8 TableATOI[16][10] =
     { 90, 91, 92, 93, 94, 95, 96, 97, 98, 99}
 };
 
-long mux_atol(const UTF8 *pString)
+long mux_atol(__in const UTF8 *pString)
 {
     long sum = 0;
     int LeadingCharacter = 0;
@@ -893,7 +893,7 @@ long mux_atol(const UTF8 *pString)
     return sum;
 }
 
-INT64 mux_atoi64(const UTF8 *pString)
+INT64 mux_atoi64(__in const UTF8 *pString)
 {
     INT64 sum = 0;
     int LeadingCharacter = 0;
@@ -945,7 +945,7 @@ INT64 mux_atoi64(const UTF8 *pString)
     return sum;
 }
 
-bool is_integer(__in_z const UTF8 *str, int *pDigits)
+bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits)
 {
     LBUF_OFFSET i = 0;
     int nDigits = 0;

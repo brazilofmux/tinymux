@@ -458,14 +458,14 @@ bool CLogFile::CreateLogFile(void)
 
     bool bSuccess;
 #if defined(WINDOWS_FILES)
-    size_t nFilename;
-    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
-    if (nullptr == pFilename)
+    size_t file_name_length;
+    UTF16 *file_name = ConvertFromUTF8ToUTF16(m_szFilename, file_name_length);
+    if (nullptr == file_name)
     {
         return false;
     }
 
-    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hFile = CreateFile(file_name, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
@@ -482,14 +482,14 @@ void CLogFile::AppendLogFile(void)
 
     bool bSuccess;
 #if defined(WINDOWS_FILES)
-    size_t nFilename;
-    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
-    if (nullptr == pFilename)
+    size_t file_name_length;
+    UTF16 *file_name = ConvertFromUTF8ToUTF16(m_szFilename, file_name_length);
+    if (nullptr == file_name)
     {
         return;
     }
 
-    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hFile = CreateFile(file_name, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
