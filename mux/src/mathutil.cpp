@@ -765,7 +765,7 @@ UTF8 *mux_ltoa_t(long val)
     return buff;
 }
 
-void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
+void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
 {
     static UTF8 temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
