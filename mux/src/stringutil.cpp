@@ -4066,7 +4066,7 @@ UTF32 ConvertFromUTF8(__in const UTF8 *pString)
     }
 }
 
-size_t ConvertFromUTF16(__out UTF16 *pString, UTF32 &ch)
+size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch)
 {
     ch = pString[0];
     if (  ch < UNI_SUR_HIGH_START
@@ -4082,7 +4082,7 @@ size_t ConvertFromUTF16(__out UTF16 *pString, UTF32 &ch)
         if (  UNI_SUR_LOW_START <= ch2
            && ch2 <= UNI_SUR_LOW_END)
         {
-            const int halfShift  = 10;
+            const int halfShift = 10;
             const UTF32 halfBase = 0x0010000UL;
 
             ch = ((ch - UNI_SUR_HIGH_START) << halfShift)

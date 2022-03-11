@@ -1611,7 +1611,7 @@ UTF8 *ConvertToUTF8(UTF32 ch);
 UTF8 *ConvertToUTF8(__in const char *p, size_t *pn);
 UTF16 *ConvertToUTF16(UTF32 ch);
 UTF32 ConvertFromUTF8(__in const UTF8 *p);
-size_t ConvertFromUTF16(__out UTF16 *pString, UTF32 &ch);
+size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch);
 UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, __deref_out size_t *pnString);
 UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
 void mux_strncpy(__out_ecount(nSizeOfBuffer-1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer);
