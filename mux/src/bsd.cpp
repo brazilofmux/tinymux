@@ -1389,7 +1389,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
     mudstate.debug_cmd = T("< shovecharsNT >");
 
-    HANDLE hCloseProc = CreateThread(nullptr, 0, ListenForCloseProc, nullptr, 0, nullptr);
+    const HANDLE hCloseProc = CreateThread(nullptr, 0, ListenForCloseProc, nullptr, 0, nullptr);
+    if (nullptr == hCloseProc) return;
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();

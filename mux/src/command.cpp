@@ -1715,20 +1715,19 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
 static int cmdtest(dbref player, const UTF8 *cmd)
 {
-    UTF8 *buff1;
-    const UTF8 *pt1, *pt2;
     dbref aowner;
-    int aflags, rval;
+    int aflags;
 
-    rval = 0;
-    buff1 = atr_get("cmdtest.1573", player, A_CMDCHECK, &aowner, &aflags);
-    pt1 = buff1;
+    int rval = 0;
+    UTF8* buff1 = atr_get("cmdtest.1573", player, A_CMDCHECK, &aowner, &aflags);
+    if (nullptr == buff1) return 0;
+    const UTF8* pt1 = buff1;
     while (pt1 && *pt1)
     {
-        pt2 = (const UTF8 *)strchr((const char *)pt1, ':');
+        const auto pt2 = reinterpret_cast<const UTF8*>(strchr(reinterpret_cast<const char*>(pt1), ':'));
         if (!pt2 || (pt2 == pt1))
             break;
-        if (!strncmp((const char *)pt2+1, (const char *)cmd, strlen((const char *)cmd)))
+        if (!strncmp(reinterpret_cast<const char*>(pt2)+1, reinterpret_cast<const char*>(cmd), strlen(reinterpret_cast<const char*>(cmd))))
         {
             if (*(pt2-1) == '1')
                 rval = 1;
@@ -1736,7 +1735,7 @@ static int cmdtest(dbref player, const UTF8 *cmd)
                 rval = 2;
             break;
         }
-        pt1 = (const UTF8 *)strchr((const char *)pt2+1, ' ');
+        pt1 = reinterpret_cast<const UTF8*>(strchr(reinterpret_cast<const char*>(pt2) + 1, ' '));
         if (pt1 && *pt1)
         {
             while (mux_isspace(*pt1))
