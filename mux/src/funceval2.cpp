@@ -410,15 +410,16 @@ FUNCTION(fun_sortby)
 
     UTF8 *list = alloc_lbuf("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    UTF8 *ptrs[LBUF_SIZE / 2];
-    int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    const auto ptrs = new UTF8 * [LBUF_SIZE / 2];
+    const int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)
     {
-        mincomp_sort(&ctx, (void**)ptrs, nptrs);
+        mincomp_sort(&ctx, reinterpret_cast<void**>(ptrs), nptrs);
     }
 
     arr2list(ptrs, nptrs, buff, bufc, osep);
+    delete ptrs[];
     free_lbuf(list);
     free_lbuf(ctx.buff);
     free_lbuf(atext);
