@@ -247,10 +247,8 @@ void do_teleport
             // We have a space-delimited list of victims.
             //
             UTF8 *p;
-            MUX_STRTOK_STATE tts;
-            mux_strtok_src(&tts, arg1);
-            mux_strtok_ctl(&tts, T(" "));
-            for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+            string_token st(arg1, T(" "));
+            for (p = st.parse(); p; p = st.parse())
             {
                 init_match(executor, p, NOTYPE);
                 match_everything(0);

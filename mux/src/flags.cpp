@@ -1012,11 +1012,9 @@ CF_HAND(cf_flag_access)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *fstr = mux_strtok_parse(&tts);
-    UTF8 *permstr = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8 *fstr = st.parse();
+    UTF8 *permstr = st.parse();
 
     if (  nullptr == fstr
        || '\0' == fstr[0]
@@ -1365,11 +1363,9 @@ CF_HAND(cf_flag_name)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(cmd);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *flagstr = mux_strtok_parse(&tts);
-    UTF8 *namestr = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8 *flagstr = st.parse();
+    UTF8 *namestr = st.parse();
 
     if (  !flagstr
        || !*flagstr

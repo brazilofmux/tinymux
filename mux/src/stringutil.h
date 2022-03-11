@@ -958,16 +958,35 @@ inline int mux_color(__in const unsigned char *p)
 
 bool utf8_strlen(__in const UTF8 *pString, __out size_t &nString);
 
-typedef struct
+// This class replaces the functionality of the strtok() C runtime library
+// function. Set the source and control, and then call parse to obtain tokens.
+//
+// You may reset the control between calls to parse, however note that
+// parsing does not consume -all- of the controlling delimiters that separate
+// two tokens. It consumes only the first one.
+//
+class string_token
 {
-    UTF8 *pString;
-    UTF8 aControl[256];
-} MUX_STRTOK_STATE;
+public:
+    string_token() : source(nullptr)
+    {
+        memset(control, 0, sizeof(control));
+    }
 
-void mux_strtok_src(__in MUX_STRTOK_STATE *tts, __in UTF8 *pString);
-void mux_strtok_ctl(__in MUX_STRTOK_STATE *tts, __in const UTF8 *pControl);
-UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen);
-UTF8 *mux_strtok_parse(__deref_in MUX_STRTOK_STATE *tts);
+    string_token(__in UTF8* source, __in const UTF8* control) : source(source)
+    {
+        set_control(control);
+    }
+
+    void set_source(__in UTF8* source);
+    void set_control(__in const UTF8* control);
+    UTF8* parse();
+
+private:
+    UTF8* parse_length(__deref_out size_t* length);
+    UTF8* source;
+    UTF8 control[256]{};
+};
 
 // Color State
 //

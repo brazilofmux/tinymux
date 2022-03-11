@@ -3269,12 +3269,10 @@ int fetch_cmds(dbref target)
 
 static void ParseConnectionInfoString(UTF8 *pConnInfo, UTF8 *pFields[5])
 {
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, pConnInfo);
-    mux_strtok_ctl(&tts, T(" "));
+    string_token st(pConnInfo, T(" "));
     for (int i = 0; i < 5; i++)
     {
-        pFields[i] = mux_strtok_parse(&tts);
+        pFields[i] = st.parse();
     }
 }
 

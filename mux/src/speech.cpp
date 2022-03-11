@@ -609,11 +609,9 @@ void do_page
 
             // Decode space-delimited or comma-delimited recipients.
             //
-            MUX_STRTOK_STATE tts;
-            mux_strtok_src(&tts, p);
-            mux_strtok_ctl(&tts, T(", "));
+            string_token st(p, T(", "));
             UTF8 *r;
-            for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
+            for (r = st.parse(); r; r = st.parse())
             {
                 dbref target = lookup_player(executor, r, true);
                 if (target != NOTHING)
@@ -671,11 +669,9 @@ void do_page
         int   aflags;
         UTF8 *pLastPage = atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags);
 
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, pLastPage);
-        mux_strtok_ctl(&tts, T(" "));
+        string_token st(pLastPage, T(" "));
         UTF8 *p;
-        for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+        for (p = st.parse(); p; p = st.parse())
         {
             dbref target = mux_atol(p);
             if (  Good_obj(target)
@@ -1305,10 +1301,8 @@ void do_pemit_list
     dbref aPlayers[(LBUF_SIZE+1)/2];
     int   nPlayers = 0;
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, list);
-    mux_strtok_ctl(&tts, T(", "));
-    for (UTF8 *p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+    string_token st(list, T(", "));
+    for (UTF8 *p = st.parse(); p; p = st.parse())
     {
         dbref target = FindPemitTarget(player, key, p);
 
@@ -1461,11 +1455,9 @@ void do_pemit_whisper
 
         bModified = false;
 
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, stored_recipient);
-        mux_strtok_ctl(&tts, T(", "));
+        string_token st(stored_recipient, T(", "));
         UTF8 *r;
-        for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
+        for (r = st.parse(); r; r = st.parse())
         {
             dbref target = mux_atol(r);
             if (Good_obj(target))
@@ -1497,11 +1489,9 @@ void do_pemit_whisper
 
             // Decode space-delimited or comma-delimited recipients.
             //
-            MUX_STRTOK_STATE tts;
-            mux_strtok_src(&tts, p);
-            mux_strtok_ctl(&tts, T(", "));
+            string_token st(p, T(", "));
             UTF8 *r;
-            for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
+            for (r = st.parse(); r; r = st.parse())
             {
                 dbref target = lookup_player(executor, r, true);
 

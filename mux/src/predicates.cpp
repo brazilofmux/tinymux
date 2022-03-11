@@ -448,9 +448,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 
     // Sanitize the input before processing.
     //
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, Buf);
-    mux_strtok_ctl(&tts, T(";"));
+    string_token st(Buf, T(";"));
 
     // Break the exitname down into semi-colon-separated segments.  The first
     // segment can contain color as it is used for showing the exit, but the
@@ -460,7 +458,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     UTF8 *ptr;
     mux_string clean_names;
     bool bHaveDisplay = false;
-    for (ptr = mux_strtok_parse(&tts); ptr; ptr = mux_strtok_parse(&tts))
+    for (ptr = st.parse(); ptr; ptr = st.parse())
     {
         UTF8 *pTrimmedSegment = nullptr;
         if (bHaveDisplay)

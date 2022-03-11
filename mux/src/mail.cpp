@@ -1379,11 +1379,9 @@ static UTF8 *make_namelist(dbref player, UTF8 *arg)
 
     mux_strncpy(oldarg, arg, LBUF_SIZE-1);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, oldarg);
-    mux_strtok_ctl(&tts, T(" "));
+    string_token st(oldarg, T(" "));
     bool bFirst = true;
-    for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+    for (p = st.parse(); p; p = st.parse())
     {
         if (!bFirst)
         {
@@ -2073,11 +2071,9 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
 
         mux_strncpy(oldlist, mp->tolist, LBUF_SIZE-1);
 
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, oldlist);
-        mux_strtok_ctl(&tts, T(" "));
+        string_token st(oldlist, T(" "));
         UTF8 *p;
-        for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+        for (p = st.parse(); p; p = st.parse())
         {
             if (mux_atol(p) != mp->from)
             {

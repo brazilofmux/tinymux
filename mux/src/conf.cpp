@@ -540,10 +540,8 @@ static CF_HAND(cf_int_array)
 
     unsigned int nPorts = 0;
     UTF8 *p;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t\n\r"));
-    while (  (p = mux_strtok_parse(&tts)) != nullptr
+    string_token st(str, T(" \t\n\r"));
+    while (  (p = st.parse()) != nullptr
           && nPorts < nExtra)
     {
         int unused;
@@ -808,11 +806,9 @@ static CF_HAND(cf_alias)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *alias = mux_strtok_parse(&tts);
-    UTF8 *orig = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8* alias = st.parse();
+    UTF8* orig = st.parse();
 
     if (orig)
     {
@@ -843,11 +839,9 @@ static CF_HAND(cf_name)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *oldname = mux_strtok_parse(&tts);
-    UTF8 *newname = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8* oldname = st.parse();
+    UTF8* newname = st.parse();
 
     if (  nullptr != oldname
        && '\0' != oldname[0]
@@ -887,11 +881,9 @@ static CF_HAND(cf_flagalias)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *alias = mux_strtok_parse(&tts);
-    UTF8 *orig = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8 *alias = st.parse();
+    UTF8 *orig = st.parse();
 
     if (  nullptr == alias
        || '\0' == alias[0]
@@ -938,11 +930,9 @@ static CF_HAND(cf_poweralias)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *alias = mux_strtok_parse(&tts);
-    UTF8 *orig = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8 *alias = st.parse();
+    UTF8* orig = st.parse();
 
     if (  nullptr == alias
        || '\0' == alias[0]
@@ -1030,10 +1020,8 @@ CF_HAND(cf_modify_bits)
     // Walk through the tokens.
     //
     success = failure = 0;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t"));
-    UTF8 *sp = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t"));
+    UTF8 *sp = st.parse();
     while (sp != nullptr)
     {
         // Check for negation.
@@ -1063,7 +1051,7 @@ CF_HAND(cf_modify_bits)
 
         // Get the next token.
         //
-        sp = mux_strtok_parse(&tts);
+        sp = st.parse();
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
@@ -1123,10 +1111,8 @@ static CF_HAND(cf_set_flags)
     // Walk through the tokens.
     //
     success = failure = 0;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t"));
-    UTF8 *sp = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t"));
+    UTF8 *sp = st.parse();
     FLAGSET *fset = (FLAGSET *) vp;
 
     while (sp != nullptr)
@@ -1171,7 +1157,7 @@ static CF_HAND(cf_set_flags)
 
         // Get the next token
         //
-        sp = mux_strtok_parse(&tts);
+        sp = st.parse();
     }
     if ((success == 0) && (failure == 0))
     {
@@ -1312,12 +1298,10 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
 {
     // Parse the two arguments.
     //
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t\n\r"));
+    string_token st(str, T(" \t\n\r"));
 
-    UTF8 *pCmdName = mux_strtok_parse(&tts);
-    UTF8 *pBase = mux_strtok_parse(&tts);
+    UTF8 *pCmdName = st.parse();
+    UTF8 *pBase = st.parse();
     if (pBase == nullptr)
     {
         cf_log_syntax(player, cmd, T("Missing path for helpfile %s"), pCmdName);
@@ -1487,10 +1471,8 @@ static CF_HAND(cf_hook)
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
     mux_strncpy(playbuff, str, sizeof(playbuff));
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, playbuff);
-    mux_strtok_ctl(&tts, T(" \t"));
-    hookcmd = mux_strtok_parse(&tts);
+    string_token st(playbuff, T(" \t"));
+    hookcmd = st.parse();
     if (hookcmd != nullptr)
     {
        cmdp = (CMDENT *)hashfindLEN(hookcmd, strlen((char *)hookcmd), &mudstate.command_htab);
@@ -1506,7 +1488,7 @@ static CF_HAND(cf_hook)
 
     int t = cmdp->flags;
     mux_strncpy(playbuff, str, sizeof(playbuff)-1);
-    hookptr = mux_strtok_parse(&tts);
+    hookptr = st.parse();
     while (hookptr != nullptr)
     {
        if (  hookptr[0] == '!'
@@ -1526,7 +1508,7 @@ static CF_HAND(cf_hook)
              t = t | hookflg;
           }
        }
-       hookptr = mux_strtok_parse(&tts);
+       hookptr = st.parse();
     }
     cmdp->flags = t;
     return retval;
@@ -1538,11 +1520,9 @@ static CF_HAND(cf_module)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t"));
-    UTF8 *modname = mux_strtok_parse(&tts);
-    UTF8 *modtype = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t"));
+    UTF8 *modname = st.parse();
+    UTF8 *modtype = st.parse();
 
     enum MODTYPE
     {

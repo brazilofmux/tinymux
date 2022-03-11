@@ -543,15 +543,13 @@ FUNCTION(fun_lastcreate)
         return;
     }
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, newobject_string);
-    mux_strtok_ctl(&tts, T(" "));
+    string_token st(newobject_string, T(" "));
 
     int i;
     UTF8* ptr;
-    for ( ptr = mux_strtok_parse(&tts), i = 0;
+    for ( ptr = st.parse(), i = 0;
           nullptr != ptr && i < 5;
-          ptr = mux_strtok_parse(&tts), i++)
+          ptr = st.parse(), i++)
     {
         if (i == iObjectPosition)
         {

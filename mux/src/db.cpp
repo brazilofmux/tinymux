@@ -856,60 +856,58 @@ void do_attribute
     UTF8 *sp;
     ATTR *va2;
     bool negate, success;
-    MUX_STRTOK_STATE tts;
     size_t nCased;
     UTF8 *pCased;
 
     switch (key)
     {
     case ATTRIB_ACCESS:
-
-        // Modify access to user-named attribute
-        //
-        pCased = mux_strupr(value, nCased);
-
-        mux_strtok_src(&tts, pCased);
-        mux_strtok_ctl(&tts, T(" "));
-        sp = mux_strtok_parse(&tts);
-        success = false;
-        while (sp != nullptr)
         {
-            // Check for negation.
+            // Modify access to user-named attribute
             //
-            negate = false;
-            if (*sp == '!')
+            pCased = mux_strupr(value, nCased);
+            string_token st(pCased, T(" "));
+            sp = st.parse();
+            success = false;
+            while (sp != nullptr)
             {
-                negate = true;
-                sp++;
-            }
-
-            // Set or clear the appropriate bit.
-            //
-            if (search_nametab(executor, attraccess_nametab, sp, &f))
-            {
-                success = true;
-                if (negate)
+                // Check for negation.
+                //
+                negate = false;
+                if (*sp == '!')
                 {
-                    va->flags &= ~f;
+                    negate = true;
+                    sp++;
+                }
+
+                // Set or clear the appropriate bit.
+                //
+                if (search_nametab(executor, attraccess_nametab, sp, &f))
+                {
+                    success = true;
+                    if (negate)
+                    {
+                        va->flags &= ~f;
+                    }
+                    else
+                    {
+                        va->flags |= f;
+                    }
                 }
                 else
                 {
-                    va->flags |= f;
+                    notify(executor, tprintf(T("Unknown permission: %s."), sp));
                 }
+
+                // Get the next token.
+                //
+                sp = st.parse();
             }
-            else
+
+            if (success && !Quiet(executor))
             {
-                notify(executor, tprintf(T("Unknown permission: %s."), sp));
+                notify(executor, T("Attribute access changed."));
             }
-
-            // Get the next token.
-            //
-            sp = mux_strtok_parse(&tts);
-        }
-
-        if (success && !Quiet(executor))
-        {
-            notify(executor, T("Attribute access changed."));
         }
         break;
 

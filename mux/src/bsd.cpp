@@ -1197,13 +1197,13 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     // If ip_address is nullptr, we pass nullptr to mux_getaddrinfo() once. Otherwise, we pass each address (separated by space
     // delimiter).
     //
-    MUX_STRTOK_STATE tts;
+    string_token st;
     if (nullptr != ip_address)
     {
         sAddress = StringClone(ip_address);
-        mux_strtok_src(&tts, sAddress);
-        mux_strtok_ctl(&tts, T(" \t"));
-        sp = mux_strtok_parse(&tts);
+        st.set_source(sAddress);
+        st.set_control(T(" \t"));
+        sp = st.parse();
     }
 
     do
@@ -1218,7 +1218,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 
         if (nullptr != ip_address)
         {
-            sp = mux_strtok_parse(&tts);
+            sp = st.parse();
         }
 
     } while (nullptr != sp);
@@ -6092,13 +6092,11 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
     {
         // Standard IP range and netmask notation.
         //
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, str);
-        mux_strtok_ctl(&tts, T(" \t=,"));
-        addr_txt = mux_strtok_parse(&tts);
+        string_token st(str, T(" \t=,"));
+        addr_txt = st.parse();
         if (nullptr != addr_txt)
         {
-            mask_txt = mux_strtok_parse(&tts);
+            mask_txt = st.parse();
         }
 
         if (  nullptr == addr_txt

@@ -4316,57 +4316,32 @@ bool matches_exit_from_list(__in const UTF8 *str, __in const UTF8 *pattern)
     return false;
 }
 
-// mux_strtok_src, mux_strtok_ctl, mux_strtok_parse.
-//
-// These three functions work together to replace the functionality of the
-// strtok() C runtime library function. Call mux_strtok_src() first with
-// the string to parse, then mux_strtok_ctl() with the control
-// characters, and finally mux_strtok_parse() to parse out the tokens.
-//
-// You may call mux_strtok_ctl() to change the set of control characters
-// between mux_strtok_parse() calls, however keep in mind that the parsing
-// may not occur how you intend it to as mux_strtok_parse() does not
-// consume -all- of the controlling delimiters that separate two tokens.
-// It consumes only the first one.
-//
-void mux_strtok_src(__in MUX_STRTOK_STATE *tts, __in UTF8 *arg_pString)
+void string_token::set_source(__in UTF8* source_arg)
 {
-    if (!tts || !arg_pString) return;
-
-    // Remember the string to parse.
-    //
-    tts->pString = arg_pString;
+    source = source_arg;
 }
 
-void mux_strtok_ctl(__in MUX_STRTOK_STATE *tts, __in const UTF8 *pControl)
+void string_token::set_control(__in const UTF8* control_arg)
 {
-    if (!tts || !pControl) return;
-
-    // No character is a control character.
-    //
-    memset(tts->aControl, 0, sizeof(tts->aControl));
+    memset(control, 0, sizeof(control));
 
     // The '\0' character is always a control character.
     //
-    tts->aControl[0] = 1;
+    control[0] = true;
 
     // Record the user-specified control characters.
     //
-    while (*pControl)
+    while (*control_arg)
     {
-        tts->aControl[(unsigned char)*pControl] = 1;
-        pControl++;
+        control[(unsigned char)*control_arg] = 1;
+        control_arg++;
     }
 }
 
-UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen)
+UTF8* string_token::parse_length(__deref_out size_t* length)
 {
-    *pnLen = 0;
-    if (!tts)
-    {
-        return nullptr;
-    }
-    UTF8 *p = tts->pString;
+    *length = 0;
+    UTF8 *p = source;
     if (!p)
     {
         return nullptr;
@@ -4374,7 +4349,7 @@ UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen)
 
     // Skip over leading control characters except for the NUL character.
     //
-    while (tts->aControl[(unsigned char)*p] && *p)
+    while (control[(unsigned char)*p] && *p)
     {
         p++;
     }
@@ -4383,14 +4358,14 @@ UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen)
 
     // Skip over non-control characters.
     //
-    while (tts->aControl[(unsigned char)*p] == 0)
+    while (control[(unsigned char)*p] == 0)
     {
         p++;
     }
 
     // What is the length of this token?
     //
-    *pnLen = p - pReturn;
+    *length = p - pReturn;
 
     // Terminate the token with a NUL.
     //
@@ -4399,19 +4374,19 @@ UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen)
         // We found a non-NUL delimiter, so the next call will begin parsing
         // on the character after this one.
         //
-        tts->pString = p+1;
+        source = p+1;
     }
     else
     {
         // We hit the end of the string, so the end of the string is where
         // the next call will begin.
         //
-        tts->pString = p;
+        source = p;
     }
 
     // Did we find a token?
     //
-    if (*pnLen > 0)
+    if (*length > 0)
     {
         return pReturn;
     }
@@ -4421,10 +4396,10 @@ UTF8 *mux_strtok_parseLEN(__in MUX_STRTOK_STATE *tts, __deref_out size_t *pnLen)
     }
 }
 
-UTF8 *mux_strtok_parse(__deref_in MUX_STRTOK_STATE *tts)
+UTF8* string_token::parse()
 {
     size_t nLen;
-    UTF8 *p = mux_strtok_parseLEN(tts, &nLen);
+    UTF8 *p = parse_length(&nLen);
     if (p)
     {
         p[nLen] = '\0';

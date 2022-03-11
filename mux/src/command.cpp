@@ -2269,14 +2269,12 @@ UTF8 *process_command
                 search_nametab(executor, cmdp->switches, pSlash, &flagvalue);
                 if (flagvalue & SW_MULTIPLE)
                 {
-                    MUX_STRTOK_STATE ttswitch;
                     // All the switches given a command shouldn't exceed 200 chars together
                     UTF8 switch_buff[200];
                     UTF8 *switch_ptr;
                     mux_strncpy(switch_buff, pSlash, sizeof(switch_buff)-1);
-                    mux_strtok_src(&ttswitch, switch_buff);
-                    mux_strtok_ctl(&ttswitch, T("/"));
-                    switch_ptr = mux_strtok_parse(&ttswitch);
+                    string_token st(switch_buff, T("/"));
+                    switch_ptr = st.parse();
                     while (  switch_ptr
                           && *switch_ptr)
                     {
@@ -2285,7 +2283,7 @@ UTF8 *process_command
                         {
                             break;
                         }
-                        switch_ptr = mux_strtok_parse(&ttswitch);
+                        switch_ptr = st.parse();
                     }
                 }
                 if (flagvalue == -1)
@@ -3194,11 +3192,9 @@ CF_HAND(cf_cmd_alias)
     CMDENT *cmdp, *cmd2;
     NAMETAB *nt;
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *alias = mux_strtok_parse(&tts);
-    UTF8 *orig = mux_strtok_parse(&tts);
+    string_token st(str, T(" \t=,"));
+    UTF8 *alias = st.parse();
+    UTF8 *orig = st.parse();
 
     if (!orig)
     {
@@ -4002,10 +3998,8 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, arg);
-    mux_strtok_ctl(&tts, T(" \t=,"));
-    UTF8 *s_option = mux_strtok_parse(&tts);
+    string_token st(arg, T(" \t=,"));
+    UTF8* s_option = st.parse();
 
     int flagvalue;
     if (!search_nametab(executor, list_names, arg, &flagvalue))
@@ -4076,7 +4070,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int key,
         list_attraccess(executor);
         break;
     case LIST_VATTRS:
-        s_option = mux_strtok_parse(&tts);
+        s_option = st.parse();
         list_vattrs(executor, s_option);
         break;
     case LIST_LOGGING:
