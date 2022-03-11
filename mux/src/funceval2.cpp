@@ -419,7 +419,7 @@ FUNCTION(fun_sortby)
     }
 
     arr2list(ptrs, nptrs, buff, bufc, osep);
-    delete ptrs[];
+    delete[] ptrs;
     free_lbuf(list);
     free_lbuf(ctx.buff);
     free_lbuf(atext);
