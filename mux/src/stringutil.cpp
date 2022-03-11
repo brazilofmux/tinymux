@@ -2695,7 +2695,7 @@ UTF8 *LettersToBinary(UTF8 *pLetters)
     return ColorTransitionBinary(CS_NORMAL, cs, &n);
 }
 
-typedef enum
+enum class HTMLtag
 {
     kIntense,
     kUnderline,
@@ -2703,7 +2703,7 @@ typedef enum
     kInverse,
     kColor,
     kNormal,
-} HTMLtag;
+};
 
 typedef struct
 {
@@ -2724,7 +2724,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
     int      Stack[10];
     int      nStack = 0;
 
-    HTMLtag tagmap[5] = { kIntense, kUnderline, kBlink, kInverse, kColor };
+    HTMLtag tagmap[5] = {HTMLtag::kIntense, HTMLtag::kUnderline, HTMLtag::kBlink, HTMLtag::kInverse, HTMLtag::kColor };
 
     int iCopy;
     int i = 0;
@@ -2738,7 +2738,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
         if (COLOR_NOTCOLOR == iCode)
         {
             List[nList].fBeginEnd = true;
-            List[nList].kTag = kNormal;
+            List[nList].kTag = HTMLtag::kNormal;
             List[nList].cs = CS_NORMAL;
             List[nList].iStart = -1;
             nList++;
@@ -2843,23 +2843,23 @@ UTF8 *convert_to_html(const UTF8 *pString)
 
                                     switch (List[nList].kTag)
                                     {
-                                    case kIntense:
+                                    case HTMLtag::kIntense:
                                         csPrev &= ~CS_INTENSE;
                                         break;
 
-                                    case kUnderline:
+                                    case HTMLtag::kUnderline:
                                         csPrev &= ~CS_UNDERLINE;
                                         break;
 
-                                    case kBlink:
+                                    case HTMLtag::kBlink:
                                         csPrev &= ~CS_BLINK;
                                         break;
 
-                                    case kInverse:
+                                    case HTMLtag::kInverse:
                                         csPrev &= ~CS_INVERSE;
                                         break;
 
-                                    case kColor:
+                                    case HTMLtag::kColor:
                                         csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                         break;
 
@@ -2888,23 +2888,23 @@ UTF8 *convert_to_html(const UTF8 *pString)
                             List[nList].iStart = -1;
                             switch (List[nList].kTag)
                             {
-                            case kIntense:
+                            case HTMLtag::kIntense:
                                 csPrev &= ~CS_INTENSE;
                                 break;
 
-                            case kUnderline:
+                            case HTMLtag::kUnderline:
                                 csPrev &= ~CS_UNDERLINE;
                                 break;
 
-                            case kBlink:
+                            case HTMLtag::kBlink:
                                 csPrev &= ~CS_BLINK;
                                 break;
 
-                            case kInverse:
+                            case HTMLtag::kInverse:
                                 csPrev &= ~CS_INVERSE;
                                 break;
 
-                            case kColor:
+                            case HTMLtag::kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
 
@@ -2917,7 +2917,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
                             if (0 == nStack)
                             {
                                 List[nList].fBeginEnd = true;
-                                List[nList].kTag = kNormal;
+                                List[nList].kTag = HTMLtag::kNormal;
                                 List[nList].cs = CS_NORMAL;
                                 List[nList].iStart = -1;
                                 nList++;
@@ -2935,23 +2935,23 @@ UTF8 *convert_to_html(const UTF8 *pString)
                     List[nList].iStart = -1;
                     switch (List[nList].kTag)
                     {
-                    case kIntense:
+                    case HTMLtag::kIntense:
                         csPrev |= CS_INTENSE;
                         break;
 
-                    case kUnderline:
+                    case HTMLtag::kUnderline:
                         csPrev |= CS_UNDERLINE;
                         break;
 
-                    case kBlink:
+                    case HTMLtag::kBlink:
                         csPrev |= CS_BLINK;
                         break;
 
-                    case kInverse:
+                    case HTMLtag::kInverse:
                         csPrev |= CS_INVERSE;
                         break;
 
-                    case kColor:
+                    case HTMLtag::kColor:
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
                         break;
@@ -2983,7 +2983,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
 
     for (int iList = 0; iList < nList; iList++)
     {
-        if (kNormal != List[iList].kTag)
+        if (HTMLtag::kNormal != List[iList].kTag)
         {
             *pBuffer++ = '<';
             if (!List[iList].fBeginEnd)
@@ -2993,23 +2993,23 @@ UTF8 *convert_to_html(const UTF8 *pString)
 
             switch (List[iList].kTag)
             {
-            case kIntense:
+            case HTMLtag::kIntense:
                 *pBuffer++ = 'B';
                 break;
 
-            case kUnderline:
+            case HTMLtag::kUnderline:
                 *pBuffer++ = 'U';
                 break;
 
-            case kBlink:
+            case HTMLtag::kBlink:
                 *pBuffer++ = 'I';
                 break;
 
-            case kInverse:
+            case HTMLtag::kInverse:
                 *pBuffer++ = 'S';
                 break;
 
-            case kColor:
+            case HTMLtag::kColor:
                 if (List[iList].fBeginEnd)
                 {
                     ColorState cs = List[iList].cs;
@@ -6788,12 +6788,12 @@ void mux_string::export_TextHtml
     int      Stack[10];
     int      nStack = 0;
 
-    HTMLtag tagmap[5] = { kIntense, kUnderline, kBlink, kInverse, kColor };
+    HTMLtag tagmap[5] = {HTMLtag::kIntense, HTMLtag::kUnderline, HTMLtag::kBlink, HTMLtag::kInverse, HTMLtag::kColor };
 
     if (CS_NORMAL == m_pcs[0])
     {
         List[nList].fBeginEnd = true;
-        List[nList].kTag = kNormal;
+        List[nList].kTag = HTMLtag::kNormal;
         List[nList].cs = CS_NORMAL;
         List[nList].iStart = 0;
         nList++;
@@ -6900,23 +6900,23 @@ void mux_string::export_TextHtml
 
                                     switch (List[nList].kTag)
                                     {
-                                    case kIntense:
+                                    case HTMLtag::kIntense:
                                         csPrev &= ~CS_INTENSE;
                                         break;
 
-                                    case kUnderline:
+                                    case HTMLtag::kUnderline:
                                         csPrev &= ~CS_UNDERLINE;
                                         break;
 
-                                    case kBlink:
+                                    case HTMLtag::kBlink:
                                         csPrev &= ~CS_BLINK;
                                         break;
 
-                                    case kInverse:
+                                    case HTMLtag::kInverse:
                                         csPrev &= ~CS_INVERSE;
                                         break;
 
-                                    case kColor:
+                                    case HTMLtag::kColor:
                                         csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                         break;
 
@@ -6946,23 +6946,23 @@ void mux_string::export_TextHtml
                             List[nList].iStart = i;
                             switch (List[nList].kTag)
                             {
-                            case kIntense:
+                            case HTMLtag::kIntense:
                                 csPrev &= ~CS_INTENSE;
                                 break;
 
-                            case kUnderline:
+                            case HTMLtag::kUnderline:
                                 csPrev &= ~CS_UNDERLINE;
                                 break;
 
-                            case kBlink:
+                            case HTMLtag::kBlink:
                                 csPrev &= ~CS_BLINK;
                                 break;
 
-                            case kInverse:
+                            case HTMLtag::kInverse:
                                 csPrev &= ~CS_INVERSE;
                                 break;
 
-                            case kColor:
+                            case HTMLtag::kColor:
                                 csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
                                 break;
 
@@ -6986,23 +6986,23 @@ void mux_string::export_TextHtml
                     List[nList].iStart = i;
                     switch (List[nList].kTag)
                     {
-                    case kIntense:
+                    case HTMLtag::kIntense:
                         csPrev |= CS_INTENSE;
                         break;
 
-                    case kUnderline:
+                    case HTMLtag::kUnderline:
                         csPrev |= CS_UNDERLINE;
                         break;
 
-                    case kBlink:
+                    case HTMLtag::kBlink:
                         csPrev |= CS_BLINK;
                         break;
 
-                    case kInverse:
+                    case HTMLtag::kInverse:
                         csPrev |= CS_INVERSE;
                         break;
 
-                    case kColor:
+                    case HTMLtag::kColor:
                         csPrev &= ~(CS_FOREGROUND|CS_BACKGROUND);
                         csPrev |= (CS_FOREGROUND|CS_BACKGROUND) & csNext;;
                         break;
@@ -7024,23 +7024,23 @@ void mux_string::export_TextHtml
         List[nList].iStart = m_iLast.m_point;
         switch (List[nList].kTag)
         {
-        case kIntense:
+        case HTMLtag::kIntense:
             csPrev &= ~CS_INTENSE;
             break;
 
-        case kUnderline:
+        case HTMLtag::kUnderline:
             csPrev &= ~CS_UNDERLINE;
             break;
 
-        case kBlink:
+        case HTMLtag::kBlink:
             csPrev &= ~CS_BLINK;
             break;
 
-        case kInverse:
+        case HTMLtag::kInverse:
             csPrev &= ~CS_INVERSE;
             break;
 
-        case kColor:
+        case HTMLtag::kColor:
             csPrev = (csPrev & ~(CS_FOREGROUND|CS_BACKGROUND)) | CS_NORMAL;
             break;
 
@@ -7056,7 +7056,7 @@ void mux_string::export_TextHtml
     UTF8 *pBuffer = aBuffer;
     for (int iList = 0; iList < nList; iList++)
     {
-        if (kNormal != List[iList].kTag)
+        if (HTMLtag::kNormal != List[iList].kTag)
         {
             *pBuffer++ = '<';
             if (!List[iList].fBeginEnd)
@@ -7066,23 +7066,23 @@ void mux_string::export_TextHtml
 
             switch (List[iList].kTag)
             {
-            case kIntense:
+            case HTMLtag::kIntense:
                 *pBuffer++ = 'B';
                 break;
 
-            case kUnderline:
+            case HTMLtag::kUnderline:
                 *pBuffer++ = 'U';
                 break;
 
-            case kBlink:
+            case HTMLtag::kBlink:
                 *pBuffer++ = 'I';
                 break;
 
-            case kInverse:
+            case HTMLtag::kInverse:
                 *pBuffer++ = 'S';
                 break;
 
-            case kColor:
+            case HTMLtag::kColor:
                 if (List[iList].fBeginEnd)
                 {
                     ColorState cs = List[iList].cs;
