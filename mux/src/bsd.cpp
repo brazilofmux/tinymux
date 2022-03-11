@@ -1108,17 +1108,16 @@ void PortInfoOpen(int *pnPorts, PortInfo aPorts[], MUX_ADDRINFO *ai, bool fSSL)
 
 void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF8 *ip_address, bool fSSL)
 {
-    MUX_ADDRINFO hints;
-    memset(&hints, 0, sizeof(hints));
+    MUX_ADDRINFO hints = {};
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    UTF8 sPort[20];
     for (int j = 0; j < pia->n; j++)
     {
-        unsigned short usPort = pia->pi[j];
+        UTF8 sPort[20] = {};
+        const unsigned short usPort = pia->pi[j];
         UTF8 *bufc = sPort;
         safe_ltoa(usPort, sPort, &bufc);
         *bufc = '\0';
