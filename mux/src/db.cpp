@@ -4055,7 +4055,7 @@ int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
     return -1;
 }
 
-void RemoveFile(UTF8 *name)
+void RemoveFile(const UTF8 *name)
 {
     unlink((char *)name);
 }

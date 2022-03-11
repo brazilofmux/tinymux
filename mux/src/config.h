@@ -73,6 +73,9 @@
 #endif // WIN32
 
 #ifndef __specstrings
+
+// SAL 1
+//
 #define __deref_in
 #define __deref_in_opt
 #define __deref_in_ecount(n)
@@ -87,8 +90,12 @@
 #define __out
 #define __out_ecount(n)
 #define __out_opt
-#elif defined(WIN64)
-//#define __in_z
+
+// SAL 2
+//
+#define _Out_writes_(n)
+#define _Always_(n)
+
 #endif
 
 #ifndef _GNU_SOURCE
