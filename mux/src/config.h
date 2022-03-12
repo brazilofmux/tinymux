@@ -35,7 +35,7 @@
 
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
-#include <SpecStrings.h>
+#include <sal.h>
 #endif
 
 // Targeting Windows 2000 or later.
