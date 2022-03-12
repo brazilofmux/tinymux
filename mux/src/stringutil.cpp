@@ -1360,9 +1360,9 @@ INT64 diff(const YUV &yuv1, const YUV &yuv2)
 {
     // The human eye is twice as sensitive to changes in Y.  We use 1.5 times.
     //
-    INT64 dy = yuv1.y2-yuv2.y2;
-    INT64 du = yuv1.u-yuv2.u;
-    INT64 dv = yuv1.v-yuv2.v;
+    INT64 dy = (INT64)(yuv1.y2-yuv2.y2);
+    INT64 du = (INT64)(yuv1.u-yuv2.u);
+    INT64 dv = (INT64)(yuv1.v-yuv2.v);
 
     INT64 r = dy*dy + du*du + dv*dv;
     return r;
@@ -1391,7 +1391,7 @@ void NearestIndex_tree_y(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = rHere;
     }
 
-    INT64 d = yuv.y2 - palette[iHere].yuv.y2;
+    INT64 d = (INT64)(yuv.y2 - palette[iHere].yuv.y2);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_u(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
@@ -1422,7 +1422,7 @@ void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = rHere;
     }
 
-    INT64 d = yuv.u - palette[iHere].yuv.u;
+    INT64 d = (INT64)(yuv.u - palette[iHere].yuv.u);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_v(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
@@ -1453,7 +1453,7 @@ void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = rHere;
     }
 
-    INT64 d = yuv.v - palette[iHere].yuv.v;
+    INT64 d = (INT64)(yuv.v - palette[iHere].yuv.v);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_y(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
