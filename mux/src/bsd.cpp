@@ -35,7 +35,7 @@ extern const int _sys_nsig;
 #ifdef UNIX_SSL
 SSL_CTX  *ssl_ctx = nullptr;
 SSL_CTX  *tls_ctx = nullptr;
-PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
+port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
 port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
@@ -49,7 +49,7 @@ static void telnet_setup(DESC *d);
 static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
-static DESC *new_connection_initial(PortInfo *Port);
+static DESC *new_connection_initial(port_info* Port);
 static bool new_connection_continue(DESC* d);
 static void new_connection_final(DESC* d);
 #endif
@@ -1466,7 +1466,7 @@ void shovechars(int nPorts, port_info aPorts[])
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-void shovechars(int nPorts, PortInfo aPorts[])
+void shovechars(int nPorts, port_info aPorts[])
 {
     fd_set input_set, output_set;
     int found;
@@ -1895,7 +1895,7 @@ void check_connection_failure(int iSocketError)
 
 // new_connection_initial(). Call when connection made to open port.
 //
-DESC *new_connection_initial(PortInfo *Port)
+DESC *new_connection_initial(port_info* Port)
 {
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< new_connection_initial >");

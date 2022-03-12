@@ -219,7 +219,7 @@ struct descriptor_data
   int width;
   int height;
   int quota;
-  program_data *program_data;
+  struct program_data* program_data;
   struct descriptor_data *hashnext;
   struct descriptor_data *next;
   struct descriptor_data **prev;
@@ -264,7 +264,7 @@ typedef struct port_info
 extern bool initialize_ssl();
 extern void shutdown_ssl();
 
-extern PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
+extern port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
 extern port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
