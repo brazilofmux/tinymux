@@ -5068,6 +5068,7 @@ UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
+_Success_(true)
 size_t DCL_CDECL mux_vsnprintf(_Out_writes_(nBuffer) _Always_(_Post_z_) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va)
 {
     if (  nullptr == pBuffer
@@ -5455,12 +5456,13 @@ done:
     return iBuffer;
 }
 
+_Success_(true)
 void DCL_CDECL mux_sprintf(_Out_writes_(count) _Always_(_Post_z_) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
     (void)mux_vsnprintf(buff, count, fmt, ap);
-    va_end(ap);    
+    va_end(ap);
 }
 
 void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...)
