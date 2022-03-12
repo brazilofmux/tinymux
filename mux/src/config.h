@@ -93,8 +93,17 @@
 
 // SAL 2
 //
-#define _Out_writes_(n)
+
+// Structured SAL
+//
 #define _Always_(n)
+#define _In_
+#define _In_z_
+#define _In_reads_(n)
+#define _Out_writes_(n)
+#define _Out_writes_z_(n)
+#define _Ret_writes_(n)
+#define _Success_(n)
 
 #endif
 
