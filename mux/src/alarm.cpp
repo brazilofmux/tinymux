@@ -53,25 +53,18 @@ DWORD WINAPI mux_alarm::alarm_proc(LPVOID parameter)
  *
  * The order of execution in this function is important as the semaphore must
  * be in place and in the correct state before the thread begins to use it.
- *
- * \return  none.
  */
-
-mux_alarm::mux_alarm()
+mux_alarm::mux_alarm() : thread_handle_(CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr)),
+                         semaphore_handle_(CreateSemaphore(nullptr, 0, 1, nullptr))
 {
-    semaphore_handle_ = CreateSemaphore(nullptr, 0, 1, nullptr);
-    clear();
-    thread_handle_ = CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr);
+	clear();
 }
 
 /*! \brief Alarm Clock Destructor.
  *
  * This function ensures the thread is completely shutdown and all resources
  * are released.
- *
- * \return  none.
  */
-
 mux_alarm::~mux_alarm()
 {
     const auto save_handle = semaphore_handle_;
@@ -85,10 +78,7 @@ mux_alarm::~mux_alarm()
  *
  * A sleep request does not prevent the Alarm Clock from firing, so typically,
  * the server sleeps while the Alarm Clock is not set.
- *
- * \return  none.
  */
-
 void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
     ::Sleep(sleep_period.ReturnMilliseconds());
@@ -98,10 +88,7 @@ void mux_alarm::sleep(CLinearTimeDelta sleep_period)
  *
  * On most operating system, a request to sleep for 0 is a polite way of
  * giving other threads the remainder of your time slice.
- *
- * \return  none.
  */
-
 void mux_alarm::surrender_slice()
 {
     ::Sleep(0);
@@ -110,10 +97,7 @@ void mux_alarm::surrender_slice()
 /*! \brief Set the Alarm Clock.
  *
  * This sets the Alarm Clock to fire after a certain time has passed.
- *
- * \return  none.
  */
-
 void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
     alarm_period_in_milliseconds_ = alarm_period.ReturnMilliseconds();
@@ -125,10 +109,7 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
 /*! \brief Clear the Alarm Clock.
  *
  * This turns the Alarm Clock off.
- *
- * \return  none.
  */
-
 void mux_alarm::clear()
 {
     alarm_period_in_milliseconds_ = INFINITE;
@@ -143,10 +124,7 @@ void mux_alarm::clear()
  *
  * The UNIX version of the Alarm Clock is built on signals, so there isn't
  * much to initialize.
- *
- * \return  none.
  */
-
 mux_alarm::mux_alarm()
 {
     alarmed = false;
@@ -157,10 +135,7 @@ mux_alarm::mux_alarm()
  *
  * A sleep request does not prevent signals from firing, so typically,
  * the server sleeps while the Alarm Clock is not set.
- *
- * \return  none.
  */
-
 void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
 #if defined(HAVE_NANOSLEEP)
@@ -236,10 +211,7 @@ void mux_alarm::sleep(CLinearTimeDelta sleep_period)
  *
  * One most operating system, a request to sleep for 0 is a polite way of
  * giving other threads the remainder of your time slice.
- *
- * \return  none.
  */
-
 void mux_alarm::surrender_slice()
 {
     ::sleep(0);
@@ -251,10 +223,7 @@ void mux_alarm::surrender_slice()
  * requesting a SIG_PROF to fire at that time.  Note that SIG_PROF is used
  * by the profiler, so the Alarm Clock must be disable in autoconf.h before
  * the server can be profiled.
- *
- * \return  none.
  */
-
 void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
 #ifdef HAVE_SETITIMER
@@ -271,10 +240,7 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
 /*! \brief Clear the Alarm Clock.
  *
  * This turns the Alarm Clock off.
- *
- * \return  none.
  */
-
 void mux_alarm::clear()
 {
 #ifdef HAVE_SETITIMER
@@ -295,10 +261,7 @@ void mux_alarm::clear()
  *
  * Like the AlarmProc above, this routine is called when a SIGPROF signal
  * occurs indicating that the allowed time has passed.
- *
- * \return  none.
  */
-
 void mux_alarm::signal()
 {
     alarm_set_ = false;
