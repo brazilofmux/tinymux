@@ -1633,7 +1633,7 @@ UTF32 ConvertFromUTF8(__in const UTF8 *p);
 size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch);
 UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length);
 UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
-void mux_strncpy(__out_ecount(nSizeOfBuffer-1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer);
+void mux_strncpy(__out_ecount(length_to_copy +1) UTF8 *dest, __in const UTF8 *src, size_t length_to_copy);
 bool matches_exit_from_list(__in const UTF8 *, __in const UTF8 *);
 UTF8 *translate_string(__in const UTF8 *, bool);
 bool IsDecompFriendly(const UTF8 *pString);

@@ -4253,20 +4253,18 @@ UTF8 *ConvertToUTF8(__in const char *p, size_t *pn)
 // mux_strncpy: Copies up to specified number of chars from source.
 // Note: unlike strncpy(), this null-terminates after copying.
 //
-void mux_strncpy(__out_ecount(nSizeOfBuffer - 1) UTF8 *dest, __in const UTF8 *src, size_t nSizeOfBuffer)
+void mux_strncpy(__out_ecount(length_to_copy + 1) UTF8 *dest, __in const UTF8 *src, size_t length_to_copy)
 {
-    if (  nullptr == src
-       || 0 == nSizeOfBuffer)
-    {
-        return;
-    }
-
     size_t i = 0;
-    while (  i < nSizeOfBuffer
-          && '\0' != src[i])
+    if (  nullptr != src
+       || length_to_copy < 0)
     {
-        dest[i] = src[i];
-        i++;
+        while (  i < length_to_copy
+              && '\0' != src[i])
+        {
+            dest[i] = src[i];
+            i++;
+        }
     }
     dest[i] = '\0';
 }
