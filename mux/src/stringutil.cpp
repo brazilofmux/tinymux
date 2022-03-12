@@ -4340,7 +4340,7 @@ void string_token::set_control(__in const UTF8* control_arg)
     }
 }
 
-UTF8* string_token::parse_length(__deref_out size_t* length)
+UTF8* string_token::parse_length(__out size_t* length)
 {
     *length = 0;
     UTF8 *p = source;

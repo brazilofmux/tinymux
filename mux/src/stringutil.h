@@ -983,7 +983,7 @@ public:
     UTF8* parse();
 
 private:
-    UTF8* parse_length(__deref_out size_t* length);
+    UTF8* parse_length(__out size_t* length);
     UTF8* source;
     UTF8 control[256]{};
 };
