@@ -24,14 +24,14 @@
 #define PBUF_SIZE   128     // Pathname
 #define SBUF_SIZE   64      // Small
 
-extern void pool_init(int, int);
-extern UTF8 *pool_alloc(int, __in const UTF8 *, __in const UTF8 *, int);
-extern UTF8 *pool_alloc_lbuf(__in const UTF8 *, __in const UTF8 *, int);
-extern void pool_free(int, __in UTF8 *, __in const UTF8 *, int);
-extern void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *, __in const UTF8 *, int);
-extern void list_bufstats(dbref);
-extern void list_buftrace(dbref);
-extern void pool_reset(void);
+void pool_init(int, int);
+UTF8* pool_alloc(int poolnum, _In_z_ const UTF8* tag, _In_z_ const UTF8* file, const int line);
+_Ret_writes_(LBUF_SIZE) UTF8* pool_alloc_lbuf(_In_z_ const UTF8* tag, _In_z_ const UTF8* file, const int line);
+void pool_free(int poolnum, _In_ UTF8* buf, _In_z_ const UTF8* file, const int line);
+void pool_free_lbuf(_In_reads_(LBUF_SIZE) UTF8* buf, _In_z_ const UTF8* file, const int line);
+void list_bufstats(dbref);
+void list_buftrace(dbref);
+void pool_reset(void);
 
 #define alloc_lbuf(s)    pool_alloc_lbuf((UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
 #define free_lbuf(b)     pool_free_lbuf((UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)

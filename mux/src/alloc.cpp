@@ -89,9 +89,7 @@ static const UTF8 *poolnames[] =
  *
  * \param poolnum  An integer uniquely indicating which pool.
  * \param poolsize The size of the client area this pool supports.
- * \return         None.
  */
-
 void pool_init(int poolnum, int poolsize)
 {
     pools[poolnum].pool_client_size = poolsize;
@@ -120,29 +118,27 @@ void pool_init(int poolnum, int poolsize)
  * \param reason   prose to explain.
  * \param file     File name of caller.
  * \param line     Line number of caller.
- * \return         None.
  */
-
 static void pool_err
 (
-    __in const UTF8 *logsys,
-    int              logflag,
-    int              poolnum,
-    __in const UTF8 *tag,
-    __in POOLHDR    *ph,
-    __in const UTF8 *action,
-    __in const UTF8 *reason,
-    __in const UTF8 *file,
-    const int        line
+    _In_z_ const UTF8 *logsys,
+    int                logflag,
+    int                poolnum,
+    _In_z_ const UTF8 *tag,
+    _In_reads_(sizeof(POOLHDR)) POOLHDR* ph,
+    _In_z_ const UTF8 *action,
+    _In_z_ const UTF8 *reason,
+    _In_z_ const UTF8 *file,
+    const int          line
 )
 {
     if (0 == mudstate.logging)
     {
-        STARTLOG(logflag, logsys, "ALLOC");
-        Log.tinyprintf(T("%s[%d] (tag %s) %s in %s line %d at %p. (%s)"), action,
-            pools[poolnum].pool_client_size, tag, reason, file, line, ph,
-            mudstate.debug_cmd);
-        ENDLOG;
+        STARTLOG(logflag, logsys, "ALLOC")
+	        Log.tinyprintf(T("%s[%d] (tag %s) %s in %s line %d at %p. (%s)"), action,
+	                       pools[poolnum].pool_client_size, tag, reason, file, line, ph,
+	                       mudstate.debug_cmd);
+        ENDLOG
     }
     else if (LOG_ALLOCATE != logflag)
     {
@@ -162,25 +158,23 @@ static void pool_err
  * \param tag      Client tag of problem buffer.
  * \param file     File name of caller.
  * \param line     Line number of caller.
- * \return         None.
  */
-
 static void pool_vfy
 (
     int poolnum,
-    __in const UTF8 *tag,
-    __in const UTF8 *file,
+    _In_z_ const UTF8 *tag,
+    _In_z_ const UTF8 *file,
     const int line
 )
 {
     POOLHDR *lastph = nullptr;
-    size_t psize = pools[poolnum].pool_client_size;
+    const size_t psize = pools[poolnum].pool_client_size;
     for (POOLHDR *ph = pools[poolnum].chain_head; nullptr != ph; lastph = ph, ph = ph->next)
     {
-        UTF8 *h = (UTF8 *)ph;
+	    auto h = reinterpret_cast<UTF8*>(ph);
         h += sizeof(POOLHDR);
         h += pools[poolnum].pool_client_size;
-        POOLFTR *pf = (POOLFTR *) h;
+	    const auto pf = reinterpret_cast<POOLFTR*>(h);
 
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
@@ -221,16 +215,15 @@ static void pool_vfy
     }
 }
 
-static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
+static void pool_check(_In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
 {
-    int i;
-    for (i = 0; i < NUM_POOLS; i++)
+	for (int i = 0; i < NUM_POOLS; i++)
     {
         pool_vfy(i, tag, file, line);
     }
 }
 
-UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const int line)
+UTF8 *pool_alloc(int poolnum, _In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -239,12 +232,12 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
 
     UTF8 *p;
     POOLFTR *pf;
-    POOLHDR *ph = (POOLHDR *)pools[poolnum].free_head;
+    auto ph = (POOLHDR *)pools[poolnum].free_head;
     if (  ph
        && ph->magicnum == pools[poolnum].poolmagic)
     {
-        p = (UTF8 *)(ph + 1);
-        pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
+        p = reinterpret_cast<UTF8*>(ph + 1);
+        pf = reinterpret_cast<POOLFTR*>(p + pools[poolnum].pool_client_size);
         pools[poolnum].free_head = ph->nxtfree;
 
         // Check for corrupted footer, just report and fix it.
@@ -280,17 +273,16 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
         }
         catch (...)
         {
-            ; // Nothing.
         }
 
         if (nullptr == ph)
         {
-            ISOUTOFMEMORY(ph);
+            ISOUTOFMEMORY(ph)
             return nullptr;
         }
 
-        p = (UTF8 *)(ph + 1);
-        pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
+        p = reinterpret_cast<UTF8*>(ph + 1);
+        pf = reinterpret_cast<POOLFTR*>(p + pools[poolnum].pool_client_size);
 
         // Initialize.
         //
@@ -299,7 +291,7 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
         ph->magicnum = pools[poolnum].poolmagic;
         ph->pool_size = pools[poolnum].pool_client_size;
         pf->magicnum = pools[poolnum].poolmagic;
-        *((unsigned int *)p) = pools[poolnum].poolmagic;
+        *reinterpret_cast<unsigned*>(p) = pools[poolnum].poolmagic;
         pools[poolnum].chain_head = ph;
         pools[poolnum].max_alloc++;
     }
@@ -320,7 +312,7 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
 
     // If the buffer was modified after it was last freed, log it.
     //
-    unsigned int *pui = (unsigned int *)p;
+    const auto pui = reinterpret_cast<unsigned*>(p);
     if (*pui != pools[poolnum].poolmagic)
     {
         pool_err(T("BUG"), LOG_PROBLEMS, poolnum, tag, ph, T("Alloc"),
@@ -330,7 +322,7 @@ UTF8 *pool_alloc(int poolnum, __in const UTF8 *tag, __in const UTF8 *file, const
     return p;
 }
 
-UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int line)
+_Ret_writes_(LBUF_SIZE) UTF8 *pool_alloc_lbuf(_In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -339,12 +331,12 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
 
     UTF8 *p;
     POOLFTR *pf;
-    POOLHDR *ph = (POOLHDR *)pools[POOL_LBUF].free_head;
+    auto ph = (POOLHDR *)pools[POOL_LBUF].free_head;
     if (  ph
        && ph->magicnum == pools[POOL_LBUF].poolmagic)
     {
-        p = (UTF8 *)(ph + 1);
-        pf = (POOLFTR *)(p + LBUF_SIZE);
+        p = reinterpret_cast<UTF8*>(ph + 1);
+        pf = reinterpret_cast<POOLFTR*>(p + LBUF_SIZE);
         pools[POOL_LBUF].free_head = ph->nxtfree;
 
         // Check for corrupted footer, just report and fix it.
@@ -380,17 +372,16 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
         }
         catch (...)
         {
-            ; // Nothing.
         }
 
         if (nullptr == ph)
         {
-            ISOUTOFMEMORY(ph);
+            ISOUTOFMEMORY(ph)
             return nullptr;
         }
 
-        p = (UTF8 *)(ph + 1);
-        pf = (POOLFTR *)(p + LBUF_SIZE);
+        p = reinterpret_cast<UTF8*>(ph + 1);
+        pf = reinterpret_cast<POOLFTR*>(p + LBUF_SIZE);
 
         // Initialize.
         //
@@ -399,7 +390,7 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
         ph->magicnum = pools[POOL_LBUF].poolmagic;
         ph->pool_size = LBUF_SIZE;
         pf->magicnum = pools[POOL_LBUF].poolmagic;
-        *((unsigned int *)p) = pools[POOL_LBUF].poolmagic;
+        *reinterpret_cast<unsigned*>(p) = pools[POOL_LBUF].poolmagic;
         pools[POOL_LBUF].chain_head = ph;
         pools[POOL_LBUF].max_alloc++;
     }
@@ -419,7 +410,7 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
 
     // If the buffer was modified after it was last freed, log it.
     //
-    unsigned int *pui = (unsigned int *)p;
+    const auto pui = reinterpret_cast<unsigned*>(p);
     if (*pui != pools[POOL_LBUF].poolmagic)
     {
         pool_err(T("BUG"), LOG_PROBLEMS, POOL_LBUF, tag, ph, T("Alloc"),
@@ -429,18 +420,18 @@ UTF8 *pool_alloc_lbuf(__in const UTF8 *tag, __in const UTF8 *file, const int lin
     return p;
 }
 
-void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int line)
+void pool_free(int poolnum, _In_ UTF8* buf, _In_z_ const UTF8* file, const int line)
 {
     if (buf == nullptr)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_printf(T("Attempt to free null pointer in %s line %d."), file, line);
+			log_printf(T("Attempt to free null pointer in %s line %d."), file, line);
         ENDLOG
         return;
     }
-    POOLHDR *ph = ((POOLHDR *)buf) - 1;
-    POOLFTR *pf = (POOLFTR *)(buf + pools[poolnum].pool_client_size);
-    unsigned int *pui = (unsigned int *)buf;
+    POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
+    const auto pf = reinterpret_cast<POOLFTR*>(buf + pools[poolnum].pool_client_size);
+    const auto pui = reinterpret_cast<unsigned*>(buf);
 
     if (mudconf.paranoid_alloc)
     {
@@ -505,7 +496,7 @@ void pool_free(int poolnum, __in UTF8 *buf, __in const UTF8 *file, const int lin
     }
 }
 
-void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, const int line)
+void pool_free_lbuf(_In_reads_(LBUF_SIZE) UTF8 *buf, _In_z_ const UTF8 *file, const int line)
 {
     if (buf == nullptr)
     {
@@ -514,9 +505,9 @@ void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, con
         ENDLOG
         return;
     }
-    POOLHDR *ph = ((POOLHDR *)buf) - 1;
-    POOLFTR *pf = (POOLFTR *)(buf + LBUF_SIZE);
-    unsigned int *pui = (unsigned int *)buf;
+    POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
+    const auto pf = reinterpret_cast<POOLFTR*>(buf + LBUF_SIZE);
+    const auto pui = reinterpret_cast<unsigned*>(buf);
 
     if (mudconf.paranoid_alloc)
     {
@@ -584,12 +575,11 @@ void pool_free_lbuf(__in_ecount(LBUF_SIZE) UTF8 *buf, __in const UTF8 *file, con
     pools[POOL_LBUF].num_alloc--;
 }
 
-static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
+static void pool_trace(const dbref player, const int poolnum, _In_z_ const UTF8 *text)
 {
-    POOLHDR *ph;
-    int numfree = 0;
+	int numfree = 0;
     notify(player, tprintf(T("----- %s -----"), text));
-    for (ph = pools[poolnum].chain_head; ph != nullptr; ph = ph->next)
+    for (POOLHDR* ph = pools[poolnum].chain_head; ph != nullptr; ph = ph->next)
     {
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
@@ -598,9 +588,9 @@ static void pool_trace(dbref player, int poolnum, __in const UTF8 *text)
                        numfree, text));
             return;
         }
-        char *h = (char *)ph;
+        auto h = reinterpret_cast<char*>(ph);
         h += sizeof(POOLHDR);
-        unsigned int *ibuf = (unsigned int *)h;
+        const auto ibuf = reinterpret_cast<unsigned*>(h);
         if (*ibuf != pools[poolnum].poolmagic)
         {
             notify(player, ph->u.buf_tag);
@@ -622,19 +612,18 @@ void list_bufstats(dbref player)
         UTF8 *p = buff;
 
         p += LeftJustifyString(p,  12, poolnames[i]);                   *p++ = ' ';
-        p += RightJustifyNumber(p,  5, pools[i].pool_client_size, ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, pools[i].num_alloc,        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, pools[i].max_alloc,        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 16, pools[i].tot_alloc,        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p,  6, pools[i].num_lost,         ' '); *p++ = '\0';
+        p += RightJustifyNumber(p,  5, static_cast<INT64>(pools[i].pool_client_size), ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, static_cast<INT64>(pools[i].num_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, static_cast<INT64>(pools[i].max_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 16, static_cast<INT64>(pools[i].tot_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p,  6, static_cast<INT64>(pools[i].num_lost),         ' '); *p = '\0';
         notify(player, buff);
     }
 }
 
 void list_buftrace(dbref player)
 {
-    int i;
-    for (i = 0; i < NUM_POOLS; i++)
+	for (int i = 0; i < NUM_POOLS; i++)
     {
         pool_trace(player, i, poolnames[i]);
     }
@@ -642,21 +631,19 @@ void list_buftrace(dbref player)
 
 void pool_reset(void)
 {
-    int i;
-    for (i = 0; i < NUM_POOLS; i++)
-    {
+	for (auto& pool : pools)
+	{
         POOLHDR *newchain = nullptr;
         POOLHDR *phnext;
-        POOLHDR *ph;
-        for (ph = pools[i].chain_head; ph != nullptr; ph = phnext)
+        for (POOLHDR* ph = pool.chain_head; ph != nullptr; ph = phnext)
         {
-            char *h = (char *)ph;
+	        auto h = reinterpret_cast<char*>(ph);
             phnext = ph->next;
             h += sizeof(POOLHDR);
-            unsigned int *ibuf = (unsigned int *)h;
-            if (*ibuf == pools[i].poolmagic)
+	        const auto* ibuf = reinterpret_cast<unsigned*>(h);
+            if (*ibuf == pool.poolmagic)
             {
-                char *p = reinterpret_cast<char *>(ph);
+	            const auto p = reinterpret_cast<char *>(ph);
                 delete [] p;
                 ph = nullptr;
             }
@@ -667,8 +654,8 @@ void pool_reset(void)
                 ph->nxtfree = nullptr;
             }
         }
-        pools[i].chain_head = newchain;
-        pools[i].free_head = nullptr;
-        pools[i].max_alloc = pools[i].num_alloc;
+        pool.chain_head = newchain;
+        pool.free_head = nullptr;
+        pool.max_alloc = pool.num_alloc;
     }
 }

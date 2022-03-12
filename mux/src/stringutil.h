@@ -1661,9 +1661,9 @@ bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
-_Success_(true) size_t DCL_CDECL mux_vsnprintf(_Out_writes_(nBuffer) _Always_(_Post_z_) UTF8 *pBuffer, __in size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
-_Success_(true) void DCL_CDECL mux_sprintf(_Out_writes_(count) _Always_(_Post_z_) UTF8 *buff, __in size_t count, __in_z const UTF8 *fmt, ...);
-void DCL_CDECL mux_fprintf(FILE *fp, __in_z const UTF8 *fmt, ...);
+size_t DCL_CDECL mux_vsnprintf(_Out_writes_z_(nBuffer) UTF8 *pBuffer, _In_ size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
+void DCL_CDECL mux_sprintf(_Out_writes_z_(count) UTF8 *buff, _In_ size_t count, _In_z_ const UTF8 *fmt, ...);
+void DCL_CDECL mux_fprintf(_In_ FILE *fp, _In_z_ const UTF8 *fmt, ...);
 size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
