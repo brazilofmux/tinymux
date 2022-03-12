@@ -307,14 +307,14 @@ void clearstrings(DESC *d)
 
 static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
 {
-    TBLOCK *tp;
+    text_block *tp;
     size_t left;
 
     // Allocate an output buffer if needed.
     //
     if (nullptr == d->output_head)
     {
-        tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
+        tp = (text_block *)MEMALLOC(OUTPUT_BLOCK_SIZE);
         if (nullptr != tp)
         {
             tp->hdr.nxt = nullptr;
@@ -371,7 +371,7 @@ static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
                 n -= left;
             }
 
-            tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
+            tp = (text_block *)MEMALLOC(OUTPUT_BLOCK_SIZE);
             if (nullptr != tp)
             {
                 tp->hdr.nxt = nullptr;
@@ -443,7 +443,7 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         // order to limit the output queue to the output_limit configuration
         // option.
         //
-        TBLOCK *tp = d->output_head;
+        text_block *tp = d->output_head;
         if (nullptr == tp)
         {
             STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
@@ -654,8 +654,8 @@ void queue_string(DESC *d, const mux_string &s)
 
 void freeqs(DESC *d)
 {
-    TBLOCK *tb, *tnext;
-    CBLK *cb, *cnext;
+    text_block *tb, *tnext;
+    command_block *cb, *cnext;
 
     tb = d->output_head;
     while (tb)
@@ -670,7 +670,7 @@ void freeqs(DESC *d)
     cb = d->input_head;
     while (cb)
     {
-        cnext = (CBLK *) cb->hdr.nxt;
+        cnext = (command_block *) cb->hdr.nxt;
         free_lbuf(cb);
         cb = cnext;
     }
@@ -772,7 +772,7 @@ void welcome_user(DESC *d)
     }
 }
 
-void save_command(DESC *d, CBLK *command)
+void save_command(DESC *d, command_block *command)
 {
     command->hdr.nxt = nullptr;
     if (d->input_tail == nullptr)
@@ -2890,13 +2890,13 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
     DESC *d = (DESC *)arg_voidptr;
     if (d)
     {
-        CBLK *t = d->input_head;
+        command_block *t = d->input_head;
         if (t)
         {
             if (d->quota > 0)
             {
                 d->quota--;
-                d->input_head = (CBLK *) t->hdr.nxt;
+                d->input_head = (command_block *) t->hdr.nxt;
                 if (d->input_head)
                 {
                     // There are still commands to process, so schedule another looksee.

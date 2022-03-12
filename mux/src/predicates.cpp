@@ -1288,7 +1288,7 @@ void handle_prog(DESC *d, UTF8 *message)
     if (  all
        && all->program_data)
     {
-        PROG *program = all->program_data;
+        program_data *program = all->program_data;
         for (i = 0; i < MAX_GLOBAL_REGS; i++)
         {
             if (program->wait_regs[i])
@@ -1372,7 +1372,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
     if (  d
        && d->program_data)
     {
-        PROG *program = d->program_data;
+        program_data *program = d->program_data;
         for (i = 0; i < MAX_GLOBAL_REGS; i++)
         {
             if (program->wait_regs[i])
@@ -1520,7 +1520,7 @@ void do_prog
         return;
     }
 
-    PROG *program = (PROG *)MEMALLOC(sizeof(PROG));
+    program_data *program = (program_data *)MEMALLOC(sizeof(program_data));
     ISOUTOFMEMORY(program);
     program->wait_enactor = player;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)

@@ -2586,9 +2586,9 @@ void DetectWindowsCapabilities()
     HINSTANCE hInstWs2_32 = LoadLibrary(L"ws2_32");
     if (nullptr != hInstWs2_32)
     {
-        fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWs2_32, "getnameinfo");
-        fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWs2_32, "getaddrinfo");
-        fpFreeAddrInfo = (FFREEADDRINFO *)GetProcAddress(hInstWs2_32, "freeaddrinfo");
+        fpGetNameInfo = (function_getnameinfo *)GetProcAddress(hInstWs2_32, "getnameinfo");
+        fpGetAddrInfo = (function_getaddrinfo *)GetProcAddress(hInstWs2_32, "getaddrinfo");
+        fpFreeAddrInfo = (function_freeaddrinfo *)GetProcAddress(hInstWs2_32, "freeaddrinfo");
 
         // These interfaces are all-or-nothing.
         //
@@ -2611,9 +2611,9 @@ void DetectWindowsCapabilities()
         HINSTANCE hInstWship6 = LoadLibrary(L"wship6");
         if (nullptr != hInstWship6)
         {
-            fpGetNameInfo = (FGETNAMEINFO *)GetProcAddress(hInstWship6, "getnameinfo");
-            fpGetAddrInfo = (FGETADDRINFO *)GetProcAddress(hInstWship6, "getaddrinfo");
-            fpFreeAddrInfo = (FFREEADDRINFO *)GetProcAddress(hInstWship6, "freeaddrinfo");
+            fpGetNameInfo = (function_getnameinfo *)GetProcAddress(hInstWship6, "getnameinfo");
+            fpGetAddrInfo = (function_getaddrinfo *)GetProcAddress(hInstWship6, "getaddrinfo");
+            fpFreeAddrInfo = (function_freeaddrinfo *)GetProcAddress(hInstWship6, "freeaddrinfo");
 
             // These interfaces are all-or-nothing.
             //

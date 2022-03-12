@@ -3,10 +3,11 @@
  *
  */
 
+#pragma once
 #include "copyright.h"
 
-#ifndef __INTERFACE__H
-#define __INTERFACE__H
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
 /* these symbols must be defined by the interface */
 
@@ -44,42 +45,39 @@
 extern NAMETAB logout_cmdtable[];
 extern NAMETAB default_charset_nametab[];
 
-typedef struct cmd_block CBLK;
-typedef struct cmd_block_hdr
+typedef struct command_block_header
 {
-    struct cmd_block *nxt;
-} CBLKHDR;
+    struct command_block *nxt;
+} command_block_header;
 
-typedef struct cmd_block
+typedef struct command_block
 {
-    CBLKHDR hdr;
-    UTF8    cmd[LBUF_SIZE - sizeof(CBLKHDR)];
-} CBLK;
+    command_block_header hdr;
+    UTF8    cmd[LBUF_SIZE - sizeof(command_block_header)];
+} command_block;
 
 #define TBLK_FLAG_LOCKED    0x01
 
-typedef struct text_block TBLOCK;
-typedef struct text_block_hdr
+typedef struct text_block_header
 {
     struct text_block *nxt;
     UTF8    *start;
     UTF8    *end;
     size_t   nchars;
     int      flags;
-}   TBLOCKHDR;
+}   text_block_header;
 
 typedef struct text_block
 {
-    TBLOCKHDR hdr;
-    UTF8    data[OUTPUT_BLOCK_SIZE - sizeof(TBLOCKHDR)];
-} TBLOCK;
+    text_block_header hdr;
+    UTF8    data[OUTPUT_BLOCK_SIZE - sizeof(text_block_header)];
+} text_block;
 
-typedef struct prog_data PROG;
-struct prog_data
+typedef struct program_data
 {
     dbref    wait_enactor;
     reg_ref *wait_regs[MAX_GLOBAL_REGS];
-};
+} program_data;
 
 // Input state
 //
@@ -199,14 +197,14 @@ struct descriptor_data
   size_t output_size;
   size_t output_tot;
   size_t output_lost;
-  TBLOCK *output_head;
-  TBLOCK *output_tail;
+  text_block *output_head;
+  text_block *output_tail;
   size_t input_size;
   size_t input_tot;
   size_t input_lost;
-  CBLK *input_head;
-  CBLK *input_tail;
-  CBLK *raw_input;
+  command_block *input_head;
+  command_block *input_tail;
+  command_block *raw_input;
   UTF8 *raw_input_at;
   size_t        nOption;
   unsigned char aOption[SBUF_SIZE];
@@ -221,7 +219,7 @@ struct descriptor_data
   int width;
   int height;
   int quota;
-  PROG *program_data;
+  program_data *program_data;
   struct descriptor_data *hashnext;
   struct descriptor_data *next;
   struct descriptor_data **prev;
@@ -251,15 +249,15 @@ extern unsigned int ndescriptors;
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WINDOWS_NETWORKING
 
-typedef struct
+typedef struct port_info
 {
-    bool fMatched;
+    bool fMatched{};
     mux_sockaddr msa;
-    SOCKET socket;
+    SOCKET socket{};
 #ifdef UNIX_SSL
     bool   fSSL;
 #endif
-} PortInfo;
+} port_info;
 
 #define MAX_LISTEN_PORTS 30
 #ifdef UNIX_SSL
@@ -268,21 +266,21 @@ extern void shutdown_ssl();
 
 extern PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
-extern PortInfo main_game_ports[MAX_LISTEN_PORTS];
+extern port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
 extern int      num_main_game_ports;
 
-extern void emergency_shutdown(void);
+extern void emergency_shutdown();
 extern void shutdownsock(DESC *, int);
-extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
-extern void shovechars(int nPorts, PortInfo aPorts[]);
+extern void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
+extern void shovechars(int nPorts, port_info aPorts[]);
 void process_output(DESC *, int);
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK
 
-extern void build_signal_names_table(void);
-extern void set_signals(void);
+extern void build_signal_names_table();
+extern void set_signals();
 
 // From netcommon.cpp
 //
@@ -306,11 +304,11 @@ extern void queue_string(DESC *, const UTF8 *);
 extern void queue_string(DESC *d, const mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
-extern void save_command(DESC *, CBLK *);
+extern void save_command(DESC *, command_block *);
 extern void announce_disconnect(dbref, DESC *, const UTF8 *);
 extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
-extern void check_idle(void);
+extern void check_idle();
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern dbref  find_connected_name(dbref, UTF8 *);
 extern void do_command(DESC *, UTF8 *);
@@ -318,7 +316,7 @@ extern void desc_addhash(DESC *);
 
 // From predicates.cpp
 //
-#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC, (UTF8 *)(s), (UTF8 *)__FILE__, __LINE__)
 #define free_desc(b) pool_free(POOL_DESC,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
 extern void handle_prog(DESC *d, UTF8 *message);
 
@@ -329,22 +327,22 @@ extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 
 #define DESC_ITER_PLAYER(p,d) \
-    for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; d = d->hashnext)
+    for ((d)=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; (d) = (d)->hashnext)
 #define DESC_ITER_CONN(d) \
-    for (d=descriptor_list;(d);d=(d)->next) \
+    for ((d)=descriptor_list;(d);(d)=(d)->next) \
         if ((d)->flags & DS_CONNECTED)
 #define DESC_ITER_ALL(d) \
-    for (d=descriptor_list;(d);d=(d)->next)
+    for ((d)=descriptor_list;(d);(d)=(d)->next)
 
 #define DESC_SAFEITER_PLAYER(p,d,n) \
-    for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab), \
-            n=((d!=nullptr) ? d->hashnext : nullptr); \
+    for ((d)=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab), \
+            (n)=(((d)!=nullptr) ? (d)->hashnext : nullptr); \
          d; \
-         d=n,n=((n!=nullptr) ? n->hashnext : nullptr))
+         (d)=(n),(n)=(((n)!=nullptr) ? (n)->hashnext : nullptr))
 #define DESC_SAFEITER_ALL(d,n) \
-    for (d=descriptor_list,n=((d!=nullptr) ? d->next : nullptr); \
+    for ((d)=descriptor_list,(n)=(((d)!=nullptr) ? (d)->next : nullptr); \
          d; \
-         d=n,n=((n!=nullptr) ? n->next : nullptr))
+         (d)=(n),(n)=(((n)!=nullptr) ? (n)->next : nullptr))
 
 // From bsd.cpp.
 //
@@ -384,15 +382,15 @@ extern long DebugTotalSockets;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE game_process_handle;
-typedef int __stdcall FGETNAMEINFO(const SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer,
+typedef int __stdcall function_getnameinfo(const SOCKADDR *socket_address, socklen_t socket_address_length, PCHAR pNodeBuffer,
     DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
-typedef int __stdcall FGETADDRINFO(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
+typedef int __stdcall function_getaddrinfo(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
     PADDRINFOA *ppResult);
-typedef void __stdcall FFREEADDRINFO(PADDRINFOA pAddrInfo);
+typedef void __stdcall function_freeaddrinfo(PADDRINFOA address_information);
 
-extern FGETNAMEINFO *fpGetNameInfo;
-extern FGETADDRINFO *fpGetAddrInfo;
-extern FFREEADDRINFO *fpFreeAddrInfo;
+extern function_getnameinfo *fpGetNameInfo;
+extern function_getaddrinfo *fpGetAddrInfo;
+extern function_freeaddrinfo *fpFreeAddrInfo;
 #endif // WINDOWS_NETWORKING
 
 // From timer.cpp
@@ -402,4 +400,4 @@ void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
 void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
 #endif // WINDOWS_NETWORKING
 
-#endif // !__INTERFACE__H
+#endif // !INTERFACE_H

@@ -37,7 +37,7 @@ SSL_CTX  *ssl_ctx = nullptr;
 SSL_CTX  *tls_ctx = nullptr;
 PortInfo main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
-PortInfo main_game_ports[MAX_LISTEN_PORTS];
+port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
 int      num_main_game_ports = 0;
 void process_output_socket(DESC *d, int bHandleShutdown);
@@ -65,9 +65,9 @@ pid_t game_pid;
 // by Stephen Dennis <brazilofmux@gmail.com>.
 //
 HANDLE game_process_handle = INVALID_HANDLE_VALUE;
-FGETNAMEINFO *fpGetNameInfo = nullptr;
-FGETADDRINFO *fpGetAddrInfo = nullptr;
-FFREEADDRINFO *fpFreeAddrInfo = nullptr;
+function_getnameinfo *fpGetNameInfo = nullptr;
+function_getaddrinfo *fpGetAddrInfo = nullptr;
+function_freeaddrinfo *fpFreeAddrInfo = nullptr;
 HANDLE CompletionPort;    // IOs are queued up on this port
 static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 static OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
@@ -1061,7 +1061,7 @@ bool ValidSocket(SOCKET s)
 
 #endif // UNIX_NETWORKING
 
-void PortInfoClose(int *pnPorts, PortInfo aPorts[], int i)
+void PortInfoClose(int *pnPorts, port_info aPorts[], int i)
 {
     if (0 == SOCKET_CLOSE(aPorts[i].socket))
     {
@@ -1077,7 +1077,7 @@ void PortInfoClose(int *pnPorts, PortInfo aPorts[], int i)
     }
 }
 
-void PortInfoOpen(int *pnPorts, PortInfo aPorts[], MUX_ADDRINFO *ai, bool fSSL)
+void PortInfoOpen(int *pnPorts, port_info aPorts[], MUX_ADDRINFO *ai, bool fSSL)
 {
     int k = *pnPorts;
     if (  k < MAX_LISTEN_PORTS
@@ -1106,7 +1106,7 @@ void PortInfoOpen(int *pnPorts, PortInfo aPorts[], MUX_ADDRINFO *ai, bool fSSL)
     }
 }
 
-void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF8 *ip_address, bool fSSL)
+void PortInfoOpenClose(int *pnPorts, port_info aPorts[], IntArray *pia, const UTF8 *ip_address, bool fSSL)
 {
     MUX_ADDRINFO hints = {};
     hints.ai_family = AF_UNSPEC;
@@ -1157,7 +1157,7 @@ void PortInfoOpenClose(int *pnPorts, PortInfo aPorts[], IntArray *pia, const UTF
     }
 }
 
-void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address)
+void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address)
 {
 #if !defined(UNIX_SSL)
     UNUSED_PARAMETER(piaSSL);
@@ -1382,7 +1382,7 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     return 1;
 }
 
-void shovechars(int nPorts, PortInfo aPorts[])
+void shovechars(int nPorts, port_info aPorts[])
 {
     UNUSED_PARAMETER(nPorts);
     UNUSED_PARAMETER(aPorts);
@@ -2618,7 +2618,7 @@ void process_output_socket(DESC *d, int bHandleShutdown)
        && 0 < tb->hdr.nchars)
     {
         // In attempting an asyncronous write operation, we mark the
-        // TBLOCK as read-only, and it will remain that way until the
+        // text_block as read-only, and it will remain that way until the
         // asyncronous operation completes.
         //
         // WriteFile may return an immediate indication that the
@@ -2642,7 +2642,7 @@ void process_output_socket(DESC *d, int bHandleShutdown)
             // The WriteFile request completed immediately, and technically,
             // we own the buffer again. The d->OutboundOverlapped notification
             // is queued for ProcessWindowsTCP().  To keep the code simple,
-            // we will let it free the TBLOCK.
+            // we will let it free the text_block.
             //
             d->output_size -= tb->hdr.nchars;
         }
@@ -2701,7 +2701,7 @@ void process_output_socket(DESC *d, int bHandleShutdown)
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
-    TBLOCK *tb = d->output_head;
+    text_block *tb = d->output_head;
     while (nullptr != tb)
     {
         while (0 < tb->hdr.nchars)
@@ -2734,7 +2734,7 @@ void process_output_socket(DESC *d, int bHandleShutdown)
             tb->hdr.nchars -= cnt;
             tb->hdr.start += cnt;
         }
-        TBLOCK *save = tb;
+        text_block *save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
         save = nullptr;
@@ -2754,7 +2754,7 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output_ssl >");
 
-    TBLOCK *tb = d->output_head;
+    text_block *tb = d->output_head;
     while (nullptr != tb)
     {
         while (0 < tb->hdr.nchars)
@@ -2804,7 +2804,7 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
             tb->hdr.nchars -= cnt;
             tb->hdr.start += cnt;
         }
-        TBLOCK *save = tb;
+        text_block *save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
         save = nullptr;
@@ -3413,7 +3413,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
     if (!d->raw_input)
     {
-        d->raw_input = reinterpret_cast<CBLK *>(alloc_lbuf("process_input.raw"));
+        d->raw_input = reinterpret_cast<command_block *>(alloc_lbuf("process_input.raw"));
         d->raw_input_at = d->raw_input->cmd;
     }
 
@@ -3421,7 +3421,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     size_t nLostBytes  = 0;
 
     auto p    = d->raw_input_at;
-    auto pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+    auto pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(command_block_header) - 1);
 
     auto q    = d->aOption + d->nOption;
     const auto qend = d->aOption + SBUF_SIZE - 1;
@@ -3673,10 +3673,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (d->raw_input->cmd < p)
             {
                 save_command(d, d->raw_input);
-                d->raw_input = reinterpret_cast<CBLK *>(alloc_lbuf("process_input.raw"));
+                d->raw_input = reinterpret_cast<command_block *>(alloc_lbuf("process_input.raw"));
 
                 p = d->raw_input_at = d->raw_input->cmd;
-                pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+                pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(command_block_header) - 1);
             }
             break;
 
@@ -5415,7 +5415,7 @@ void process_windows_tcp(DWORD dwTimeout)
             {
                 mux_assert(tb->hdr.flags & TBLK_FLAG_LOCKED);
 
-                TBLOCK *save = tb;
+                text_block *save = tb;
                 tb = tb->hdr.nxt;
                 MEMFREE(save);
                 save = nullptr;
