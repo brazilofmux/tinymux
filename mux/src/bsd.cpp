@@ -1758,7 +1758,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             if (CheckOutput(d->socket))
             {
                 STARTLOG(LOG_DEBUG, "NET", "SSL");
-                log_printf(T("shovechars(), CkeckOutput (%u)."), d->socket);
+                log_printf(T("shovechars(), CheckOutput (%u)."), d->socket);
                 ENDLOG;
 #ifdef UNIX_SSL
                 if (SocketState::SSLAcceptAgain == d->ss)
