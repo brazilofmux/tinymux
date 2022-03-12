@@ -1510,6 +1510,7 @@ int FindNearestPalette8Entry(RGB &rgb)
 #define CS_FG_INDEXED UINT64_C(0x0000000001000000)
 #define CS_FG(x)      (CS_FG_INDEXED | static_cast<UINT64>(x))
 #define CS_FG_FIELD(x) ((x) & UINT64_C(0x0000000000FFFFFF))
+#define CS_FG_FIELD_INDEXED(x) ((x) & UINT64_C(0x00000000000000FF))
 #define CS_FG_DEFAULT CS_FG(NUM_FG)
 #define CS_BACKGROUND UINT64_C(0x01FFFFFF00000000)
 #define CS_BACKGROUND_RED     UINT64_C(0x00FF000000000000)
@@ -1526,6 +1527,7 @@ int FindNearestPalette8Entry(RGB &rgb)
 #define CS_BG_INDEXED UINT64_C(0x0100000000000000)
 #define CS_BG(x)      (CS_BG_INDEXED | (static_cast<UINT64>(x) << 32))
 #define CS_BG_FIELD(x) (((x) & UINT64_C(0x00FFFFFF00000000)) >> 32)
+#define CS_BG_FIELD_INDEXED(x) (((x) & UINT64_C(0x000000FF00000000)) >> 32)
 #define CS_BG_DEFAULT CS_BG(NUM_BG)
 #define CS_INTENSE    UINT64_C(0x0000000010000000)
 #define CS_INVERSE    UINT64_C(0x0000000020000000)
@@ -2093,7 +2095,7 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
         {
             if (CS_FG_INDEXED & cs)
             {
-                cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD(cs)].rgb);
+                cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD_INDEXED(cs)].rgb);
             }
 
             if (iColorCode < COLOR_INDEX_FG_24_GREEN)
@@ -2113,7 +2115,7 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
         {
             if (CS_BG_INDEXED & cs)
             {
-                cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD(cs)].rgb) << 32);
+                cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD_INDEXED(cs)].rgb) << 32);
             }
 
             if (iColorCode < COLOR_INDEX_BG_24_GREEN)

@@ -1351,7 +1351,7 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
     UNUSED_PARAMETER(lpParameter);
 
-    WNDCLASS wc;
+    WNDCLASS wc = {};
 
     wc.style         = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc   = mux_WindowProc;
