@@ -175,18 +175,15 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         buff = atr_pget(from, a->number, &aowner, &aflags);
         if (!buff || !*buff)
         {
-            free_lbuf(buff);
+            if (buff) free_lbuf(buff);
             buff = atr_pget(thing, a->number, &aowner, &aflags);
             source = thing;
         }
         bCheck = false;
 
         if (  a->number == A_NAME
-           || a->number == A_LENTER)
-        {
-            bCheck = true;
-        }
-        else if (bCanReadAttr(source, source, a, false))
+           || a->number == A_LENTER
+           || bCanReadAttr(source, source, a, false))
         {
             bCheck = true;
         }

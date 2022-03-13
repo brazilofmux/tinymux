@@ -55,8 +55,8 @@ static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 static DESC *new_connection_initial(port_info* Port);
 static bool new_connection_continue(DESC* d);
 static void new_connection_final(DESC* d);
+static bool process_input(DESC*);
 #endif
-static bool process_input(DESC *);
 static int make_nonblocking(SOCKET s);
 
 pid_t game_pid;
@@ -1327,10 +1327,10 @@ static void config_socket(SOCKET s)
 
 static LRESULT WINAPI mux_WindowProc
 (
-    HWND   hWin,
-    UINT   msg,
-    WPARAM wParam,
-    LPARAM lParam
+    const HWND   hWin,
+    const UINT   msg,
+    const WPARAM wParam,
+    const LPARAM lParam
 )
 {
     switch (msg)
@@ -1363,7 +1363,7 @@ static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     wc.hInstance     = 0;
     wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
     wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
     wc.lpszMenuName  = nullptr;
     wc.lpszClassName = szApp;
 
@@ -2127,8 +2127,6 @@ static const UTF8 *disc_messages[] =
 void shutdownsock(DESC *d, int reason)
 {
     UTF8 *buff;
-    int i;
-    DESC *dtemp;
 
     if (  R_LOGOUT == reason
        && mudstate.access_list.isForbid(&d->address))
@@ -2166,9 +2164,8 @@ void shutdownsock(DESC *d, int reason)
         DESC *dOldest[2];
         find_oldest(d->player, dOldest);
 
-        CLinearTimeDelta ltdFull;
-        ltdFull = ltaNow - dOldest[0]->connected_at;
-        long tFull = ltdFull.ReturnSeconds();
+        CLinearTimeDelta ltdFull = ltaNow - dOldest[0]->connected_at;
+        const long tFull = ltdFull.ReturnSeconds();
         if (dOldest[0] == d)
         {
             // We are dropping the oldest connection.
@@ -2186,7 +2183,7 @@ void shutdownsock(DESC *d, int reason)
                 //
                 ltdPart = ltdFull;
             }
-            auto tPart = ltdPart.ReturnSeconds();
+            const auto tPart = ltdPart.ReturnSeconds();
 
             anFields[CIF_TOTALTIME] += tPart;
             if (anFields[CIF_LONGESTCONNECT] < tFull)
@@ -2274,6 +2271,7 @@ void shutdownsock(DESC *d, int reason)
     //
     if (d->program_data != nullptr)
     {
+        DESC *dtemp;
         int num = 0;
         DESC_ITER_PLAYER(d->player, dtemp)
         {
@@ -2282,12 +2280,12 @@ void shutdownsock(DESC *d, int reason)
 
         if (0 == num)
         {
-            for (i = 0; i < MAX_GLOBAL_REGS; i++)
+            for (auto& wait_reg : d->program_data->wait_regs)
             {
-                if (d->program_data->wait_regs[i])
+                if (wait_reg)
                 {
-                    RegRelease(d->program_data->wait_regs[i]);
-                    d->program_data->wait_regs[i] = nullptr;
+                    RegRelease(wait_reg);
+                    wait_reg = nullptr;
                 }
             }
             MEMFREE(d->program_data);
@@ -2914,9 +2912,7 @@ static const int nvt_input_action_table[8][14] =
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
  * \param chRequest Telnet SB command.
- * \return          None.
  */
-
 static void send_sb(DESC *d, unsigned char chOption, unsigned char chRequest)
 {
     UTF8 aSB[6] = { NVT_IAC, NVT_SB, 0, 0, NVT_IAC, NVT_SE };
@@ -2932,16 +2928,14 @@ static void send_sb(DESC *d, unsigned char chOption, unsigned char chRequest)
  * \param chRequest Telnet SB command.
  * \param pPayload  Pointer to the payload.
  * \param nPayload  Length of the payload.
- * \return          None.
  */
-
 static void send_sb
 (
     DESC *d,
-    unsigned char chOption,
-    unsigned char chRequest,
-    unsigned char *pPayload,
-    size_t nPayload
+    const unsigned char chOption,
+    const unsigned char chRequest,
+    const unsigned char *pPayload,
+    const size_t nPayload
 )
 {
     const auto nMaximum = 6 + 2*nPayload;
@@ -2988,9 +2982,7 @@ static void send_sb
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 static void send_will(DESC *d, unsigned char chOption)
 {
     UTF8 aWill[3] = { NVT_IAC, NVT_WILL, 0 };
@@ -3002,9 +2994,7 @@ static void send_will(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 static void send_dont(DESC *d, unsigned char chOption)
 {
     UTF8 aDont[3] = { NVT_IAC, NVT_DONT, 0 };
@@ -3016,9 +3006,7 @@ static void send_dont(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 static void send_do(DESC *d, unsigned char chOption)
 {
     UTF8 aDo[3]   = { NVT_IAC, NVT_DO,   0 };
@@ -3030,9 +3018,7 @@ static void send_do(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 static void send_wont(DESC *d, unsigned char chOption)
 {
     unsigned char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
@@ -3054,7 +3040,7 @@ static void send_wont(DESC *d, unsigned char chOption)
  * \return         One of six states.
  */
 
-int him_state(DESC *d, unsigned char chOption)
+int him_state(const DESC *d, const unsigned char chOption)
 {
     return d->nvt_him_state[chOption];
 }
@@ -3073,7 +3059,7 @@ int him_state(DESC *d, unsigned char chOption)
  * \return         One of six states.
  */
 
-int us_state(DESC *d, unsigned char chOption)
+int us_state(const DESC *d, const unsigned char chOption)
 {
     return d->nvt_us_state[chOption];
 }
@@ -3084,7 +3070,7 @@ void send_charset_request(DESC *d, bool fDefacto = false)
        || (  fDefacto
           && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]))
     {
-        unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
+        const unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
         send_sb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
     }
 }
@@ -3105,9 +3091,7 @@ void defacto_charset_check(DESC *d)
  * \param d         Player connection context.
  * \param chOption  Telnet Option
  * \param iHimState One of the six option negotiation states.
- * \return          None.
  */
-
 static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
 {
     d->nvt_him_state[chOption] = iHimState;
@@ -3122,7 +3106,7 @@ static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
         {
             // Request environment variables.
             //
-            unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
+            const unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             send_sb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
 #ifdef UNIX_SSL
@@ -3154,9 +3138,7 @@ static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
  * \param iUsState  One of the six option negotiation states.
- * \return          None.
  */
-
 static void set_us_state(DESC *d, unsigned char chOption, int iUsState)
 {
     d->nvt_us_state[chOption] = iUsState;
@@ -3238,9 +3220,7 @@ static bool desired_us_option(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 void enable_him(DESC *d, unsigned char chOption)
 {
     switch (him_state(d, chOption))
@@ -3268,9 +3248,7 @@ void enable_him(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 void disable_him(DESC *d, unsigned char chOption)
 {
     switch (him_state(d, chOption))
@@ -3298,9 +3276,7 @@ void disable_him(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 void enable_us(DESC *d, unsigned char chOption)
 {
     switch (him_state(d, chOption))
@@ -3328,9 +3304,7 @@ void enable_us(DESC *d, unsigned char chOption)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \return          None.
  */
-
 void disable_us(DESC *d, unsigned char chOption)
 {
     switch (him_state(d, chOption))
@@ -3359,9 +3333,7 @@ void disable_us(DESC *d, unsigned char chOption)
  * Without this function, we are only react to client requests.
  *
  * \param d        Player connection on which the input arrived.
- * \return         None.
  */
-
 void telnet_setup(DESC *d)
 {
     // Attempt negotation of EOR so we can use that, and if that succeeds,
@@ -3398,9 +3370,7 @@ void telnet_setup(DESC *d)
  * \param d        Player connection on which the input arrived.
  * \param pBytes   Point to received bytes.
  * \param nBytes   Number of received bytes in above buffer.
- * \return         None.
  */
-
 static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
     char szUTF8[] = "UTF-8";
@@ -3408,11 +3378,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     char szISO8859_2[] = "ISO-8859-2";
     char szCp437[] = "CP437";
     char szUSASCII[] = "US-ASCII";
-    const size_t nUTF8 = sizeof(szUTF8) - 1;
-    const size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
-    const size_t nISO8859_2 = sizeof(szISO8859_2) - 1;
-    const size_t nCp437 = sizeof(szCp437) - 1;
-    const size_t nUSASCII = sizeof(szUSASCII) - 1;
+    constexpr size_t nUTF8 = sizeof(szUTF8) - 1;
+    constexpr size_t nISO8859_1 = sizeof(szISO8859_1) - 1;
+    constexpr size_t nISO8859_2 = sizeof(szISO8859_2) - 1;
+    constexpr size_t nCp437 = sizeof(szCp437) - 1;
+    constexpr size_t nUSASCII = sizeof(szUSASCII) - 1;
 
     if (!d->raw_input)
     {
@@ -3527,7 +3497,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     // Convert this latin1 character to the internal UTF-8 form.
                     //
-                    const UTF8 *pUTF = latin1_utf8(ch);
+                    auto pUTF = latin1_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
                     if (p + nUTF < pend)
@@ -3552,7 +3522,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     // Convert this latin2 character to the internal UTF-8 form.
                     //
-                    const UTF8 *pUTF = latin2_utf8(ch);
+                    auto pUTF = latin2_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
                     if (p + nUTF < pend)
@@ -3577,7 +3547,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     // Convert this cp437 character to the internal UTF-8 form.
                     //
-                    const UTF8 *pUTF = cp437_utf8(ch);
+                    auto pUTF = cp437_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
                     if (p + nUTF < pend)
@@ -5170,7 +5140,6 @@ static DWORD WINAPI mux_listen_thread(LPVOID pVoid)
 
     mux_sockaddr SockAddr;
     int          nLen;
-    BOOL         b;
 
     struct descriptor_data * d;
 
@@ -5272,7 +5241,8 @@ static DWORD WINAPI mux_listen_thread(LPVOID pVoid)
 
         // Do the first read
         //
-        b = ReadFile(reinterpret_cast<HANDLE>(socket_client), d->input_buffer, sizeof(d->input_buffer), nullptr, &d->InboundOverlapped);
+        BOOL b = ReadFile(reinterpret_cast<HANDLE>(socket_client), d->input_buffer, sizeof(d->input_buffer), nullptr,
+                          &d->InboundOverlapped);
 
         if (!b && GetLastError() != ERROR_IO_PENDING)
         {
@@ -5309,14 +5279,14 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
 {
     UNUSED_PARAMETER(arg_Integer);
 
-    DESC *d = (DESC *)arg_voidptr;
+    DESC *d = static_cast<DESC*>(arg_voidptr);
     if (d)
     {
         d->bConnectionDropped = true;
 
         // Cancel any pending reads or writes on this socket
         //
-        if (!CancelIo((HANDLE) d->socket))
+        if (!CancelIo(reinterpret_cast<HANDLE>(d->socket)))
         {
             Log.tinyprintf(T("Error %ld on CancelIo" ENDLINE), GetLastError());
         }
@@ -5934,7 +5904,7 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
             i++;
         }
 
-        for ( ; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for ( ; i < std::size(m_ia6.s6_addr); i++)
         {
             mask = m_ia6.s6_addr[i];
             if (0 != mask)
@@ -5949,7 +5919,7 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
 
 void mux_in6_addr::makeMask(const int num_leading_bits)
 {
-    const unsigned char allones = 0xFF;
+    constexpr unsigned char allones = 0xFF;
     memset(&m_ia6, 0, sizeof(m_ia6));
     const size_t num_bytes = num_leading_bits / 8;
     for (size_t i = 0; i < num_bytes; i++)
@@ -5957,7 +5927,7 @@ void mux_in6_addr::makeMask(const int num_leading_bits)
         m_ia6.s6_addr[i] = allones;
     }
 
-    if (num_bytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
+    if (num_bytes < std::size(m_ia6.s6_addr))
     {
         const size_t num_leftover_bits = num_leading_bits % 8;
         if (num_leftover_bits > 0)
@@ -6128,7 +6098,7 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 #if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
                 case AF_INET:
                     {
-                        auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
+                        const auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
                         mux_address_mask = static_cast<mux_addr *>(new mux_in_addr(&sai->sin_addr));
                     }
                     break;
@@ -6136,7 +6106,7 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 #if defined(HAVE_SOCKADDR_IN6) && defined(HAVE_IN6_ADDR)
                 case AF_INET6:
                     {
-                        auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
+                        const auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
                         mux_address_mask = static_cast<mux_addr *>(new mux_in6_addr(&sai6->sin6_addr));
                     }
                     break;
@@ -6191,7 +6161,7 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 #if defined(HAVE_SOCKADDR_IN) && defined(HAVE_IN_ADDR)
             case AF_INET:
                 {
-                    auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
+                    const auto sai = reinterpret_cast<struct sockaddr_in *>(ai->ai_addr);
                     mux_address_base = static_cast<mux_addr *>(new mux_in_addr(&sai->sin_addr));
                 }
                 break;
@@ -6199,7 +6169,7 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 #if defined(HAVE_SOCKADDR_IN6) &&  defined(HAVE_IN6_ADDR)
             case AF_INET6:
                 {
-                    auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
+                    const auto sai6 = reinterpret_cast<struct sockaddr_in6 *>(ai->ai_addr);
                     mux_address_base = static_cast<mux_addr *>(new mux_in6_addr(&sai6->sin6_addr));
                 }
                 break;
@@ -6365,7 +6335,7 @@ static int gai_service(const UTF8 *servname, int flags, int *type, unsigned shor
         else
             protocol = nullptr;
 
-        struct servent *servent = getservbyname((const char *)servname, (const char *)protocol);
+        struct servent *servent = getservbyname(reinterpret_cast<const char*>(servname), reinterpret_cast<const char*>(protocol));
         if (nullptr == servent)
         {
             return EAI_NONAME;
@@ -6490,7 +6460,6 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
     }
 #endif
 #if (defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))) && defined(HAVE_IN_ADDR)
-    struct in_addr addr{};
     unsigned short port;
 
     int flags;
@@ -6550,6 +6519,7 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
     }
     else
     {
+        in_addr addr;
         if (nullptr == service)
         {
             return EAI_NONAME;
@@ -6587,7 +6557,7 @@ void mux_freeaddrinfo(MUX_ADDRINFO *res)
 #if defined(WINDOWS_NETWORKING) || (defined(UNIX_NETWORK) && !defined(HAVE_GETADDRINFO))
     while (nullptr != res)
     {
-        auto next = res->ai_next;
+        const auto next = res->ai_next;
         if (nullptr != res->ai_addr)
         {
             free(res->ai_addr);
@@ -6659,8 +6629,8 @@ static int lookup_servicename(const unsigned short port, UTF8 *serv, size_t serv
     UTF8 *bufc;
     if (0 == (flags & NI_NUMERICSERV))
     {
-        auto protocol = (flags & NI_DGRAM) ? "udp" : "tcp";
-        auto srv = getservbyport(htons(port), protocol);
+        const auto protocol = (flags & NI_DGRAM) ? "udp" : "tcp";
+        const auto srv = getservbyport(htons(port), protocol);
         if (nullptr != srv)
         {
             bufc = serv;
@@ -6891,9 +6861,8 @@ mux_addr::~mux_addr() = default;
 #if defined(HAVE_IN_ADDR)
 mux_in_addr::~mux_in_addr() = default;
 
-mux_in_addr::mux_in_addr(in_addr *ia)
+mux_in_addr::mux_in_addr(in_addr *ia) : m_ia(*ia)
 {
-    m_ia = *ia;
 }
 
 mux_in_addr::mux_in_addr(const unsigned int bits)
@@ -6957,9 +6926,8 @@ mux_addr *mux_in_addr::calculateEnd(const mux_addr &it) const
 #if defined(HAVE_IN6_ADDR)
 mux_in6_addr::~mux_in6_addr() = default;
 
-mux_in6_addr::mux_in6_addr(in6_addr *ia6)
+mux_in6_addr::mux_in6_addr(in6_addr *ia6) : m_ia6(*ia6)
 {
-    m_ia6 = *ia6;
 }
 
 void mux_sockaddr::get_address(in6_addr *ia6) const
@@ -6972,7 +6940,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
     if (AF_INET6 == it.getFamily())
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        for (size_t i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t i = 0; i < std::size(m_ia6.s6_addr); i++)
         {
             if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
             {
@@ -6999,7 +6967,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
     {
         bool fOutside = false;
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t  i = 0; i < std::size(m_ia6.s6_addr); i++)
         {
             if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
             {
@@ -7018,7 +6986,7 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
         auto* e = new mux_in6_addr();
-        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
+        for (size_t  i = 0; i < std::size(m_ia6.s6_addr); i++)
         {
             e->m_ia6.s6_addr[i] = m_ia6.s6_addr[i] | ~t->m_ia6.s6_addr[i];
         }

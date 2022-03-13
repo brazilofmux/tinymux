@@ -231,8 +231,8 @@ struct descriptor_data
   UTF8 doing[SIZEOF_DOING_STRING];
 };
 
-int him_state(DESC *d, unsigned char chOption);
-int us_state(DESC *d, unsigned char chOption);
+int him_state(const DESC *d, unsigned char chOption);
+int us_state(const DESC *d, unsigned char chOption);
 void enable_him(DESC *d, unsigned char chOption);
 void disable_him(DESC *d, unsigned char chOption);
 void enable_us(DESC *d, unsigned char chOption);
