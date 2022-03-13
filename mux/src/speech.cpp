@@ -17,7 +17,7 @@
 #include "levels.h"
 #endif
 
-UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
+UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *command)
 {
     dbref aowner;
     int aflags;

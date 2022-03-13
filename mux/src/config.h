@@ -610,7 +610,7 @@ typedef UINT16 UTF16;
 #endif // WIN32
 typedef UINT32 UTF32;
 
-#define T(x)    ((const UTF8 *)x)
+#define T(x)    ((const UTF8 *)(x))
 
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT

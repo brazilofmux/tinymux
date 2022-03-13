@@ -1207,7 +1207,7 @@ extern CLinearTimeAbsolute cs_ltime;
 
 // From speech.cpp
 //
-UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command);
+UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *command);
 
 // From funceval.cpp
 //

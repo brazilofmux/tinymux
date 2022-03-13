@@ -465,7 +465,7 @@ static UTF8* get_channel_from_alias(dbref player, UTF8* alias)
     {
         return c->channels[current];
     }
-    return reinterpret_cast<UTF8*>("");
+    return (UTF8*)"";
 }
 
 // Version 4 start on 2007-MAR-17
@@ -1203,7 +1203,7 @@ static void BuildChannelMessage
     const UTF8* pHeader,
     const struct comuser* user,
     const dbref ch_obj,
-    UTF8* pPose,
+    const UTF8* pPose,
     UTF8** messNormal,
     UTF8** messNoComtitle
 )
@@ -1300,8 +1300,7 @@ static void BuildChannelMessage
     {
     case ':':
         pPose++;
-        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
-                            reinterpret_cast<UTF8*>("channel/pose"));
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true, T("channel/pose"));
         if (newPose)
         {
             pPose = newPose;
@@ -1317,8 +1316,7 @@ static void BuildChannelMessage
 
     case ';':
         pPose++;
-        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
-                            reinterpret_cast<UTF8*>("channel/pose"));
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true, T("channel/pose"));
         if (newPose)
         {
             pPose = newPose;
@@ -1331,14 +1329,12 @@ static void BuildChannelMessage
         break;
 
     default:
-        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
-                            reinterpret_cast<UTF8*>("channel"));
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true, T("channel"));
         if (newPose)
         {
             pPose = newPose;
         }
-        saystring = modSpeech(bChannelSayString ? ch_obj : user->who, pPose,
-                              false, reinterpret_cast<UTF8*>("channel"));
+        saystring = modSpeech(bChannelSayString ? ch_obj : user->who, pPose, false, T("channel"));
         if (saystring)
         {
             safe_chr(' ', *messNormal, &mnptr);
@@ -1390,7 +1386,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
         raw_notify(player, T("No message."));
         return;
     }
-    if (3500 < strlen(reinterpret_cast<char*>(arg2)))
+    if (3500 < strlen(reinterpret_cast<const char*>(arg2)))
     {
         arg2[3500] = '\0';
     }
@@ -1414,11 +1410,11 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
         return;
     }
 
-    if (!strcmp(reinterpret_cast<char*>(arg2), "on"))
+    if (!strcmp(reinterpret_cast<const char*>(arg2), "on"))
     {
         do_joinchannel(player, ch);
     }
-    else if (!strcmp(reinterpret_cast<char*>(arg2), "off"))
+    else if (!strcmp(reinterpret_cast<const char*>(arg2), "off"))
     {
         do_leavechannel(player, ch);
     }
@@ -1426,11 +1422,11 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     {
         raw_notify(player, tprintf(T("You must be on %s to do that."), arg1));
     }
-    else if (!strcmp(reinterpret_cast<char*>(arg2), "who"))
+    else if (!strcmp(reinterpret_cast<const char*>(arg2), "who"))
     {
         do_comwho(player, ch);
     }
-    else if (!strncmp(reinterpret_cast<char*>(arg2), "last", 4)
+    else if (!strncmp(reinterpret_cast<const char*>(arg2), "last", 4)
         && (arg2[4] == '\0'
             || (arg2[4] == ' '
                 && is_integer(arg2 + 5, nullptr))))
@@ -1679,7 +1675,7 @@ void do_joinchannel(dbref player, struct channel* ch)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                            ch->chan_obj, reinterpret_cast<UTF8*>(":has joined this channel."), &messNormal,
+                            ch->chan_obj, T(":has joined this channel."), &messNormal,
                             &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
@@ -1699,7 +1695,7 @@ void do_leavechannel(dbref player, struct channel* ch)
         {
             UTF8 *messNormal, *messNoComtitle;
             BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                                ch->chan_obj, reinterpret_cast<UTF8*>(":has left this channel."), &messNormal,
+                                ch->chan_obj, T(":has left this channel."), &messNormal,
                                 &messNoComtitle);
             SendChannelMessage(player, ch, messNormal, messNoComtitle);
         }
@@ -1981,8 +1977,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
 //
 struct channel* select_channel(UTF8* channel)
 {
-    auto cp = static_cast<::channel*>(hashfindLEN(channel, strlen(reinterpret_cast<char*>(channel)),
-                                                  &mudstate.channel_htab));
+    auto cp = static_cast<::channel*>(hashfindLEN(channel, strlen(reinterpret_cast<char*>(channel)), &mudstate.channel_htab));
     return cp;
 }
 
@@ -2243,7 +2238,7 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
                         UTF8 *messNormal, *messNoComtitle;
                         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
                                             ch->header, user, ch->chan_obj,
-                                            reinterpret_cast<UTF8*>(":has left this channel."), &messNormal,
+                                            T(":has left this channel."), &messNormal,
                                             &messNoComtitle);
                         SendChannelMessage(player, ch, messNormal, messNoComtitle);
                     }
@@ -2832,7 +2827,7 @@ static void do_comconnectraw_notify(const dbref player, UTF8* chan)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-                            ch->chan_obj, reinterpret_cast<UTF8*>(":has connected."), &messNormal,
+                            ch->chan_obj, T(":has connected."), &messNormal,
                             &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
@@ -3470,9 +3465,9 @@ void do_chboot
         UTF8 *mess1, *mess1nct;
         UTF8 *mess2, *mess2nct;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                            ch->chan_obj, reinterpret_cast<UTF8*>(":boots"), &mess1, &mess1nct);
+                            ch->chan_obj, T(":boots"), &mess1, &mess1nct);
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, nullptr, vu,
-                            ch->chan_obj, reinterpret_cast<UTF8*>(":off the channel."), &mess2,
+                            ch->chan_obj, T(":off the channel."), &mess2,
                             &mess2nct);
         UTF8* messNormal = alloc_lbuf("do_chboot.messnormal");
         UTF8* messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
