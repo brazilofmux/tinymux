@@ -20,6 +20,7 @@ author:
  - @npemit now refers to @pemit/noeval.
  - pose now documents /noeval switch.
  - Don't notify permission denied with @edit when QUIET.
+ - Fixed strncpy() corner case in @hook.
 
 # Performance Enhancements:
 
@@ -31,4 +32,8 @@ author:
 
 # Miscellaneous:
 
- - Remove FiranMUX build.
+ - Removed FiranMUX build.
+ - Updated SAL annotations.
+ - Fix ReSharper warnings and accept recommendations.
+ - Updated to C++14 standard.
+ - Replaced attrcache.cpp data structures with STL.
