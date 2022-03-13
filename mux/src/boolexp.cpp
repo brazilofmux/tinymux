@@ -148,13 +148,13 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         // First check the object itself, then its contents.
         //
-        if (check_attr(player, from, a, (UTF8 *)b->sub1))
+        if (check_attr(player, from, a, reinterpret_cast<UTF8*>(b->sub1)))
         {
             return true;
         }
         DOLIST(obj, Contents(player))
         {
-            if (check_attr(obj, from, a, (UTF8 *)b->sub1))
+            if (check_attr(obj, from, a, reinterpret_cast<UTF8*>(b->sub1)))
             {
                 return true;
             }
@@ -205,7 +205,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             restore_global_regs(preserve);
             PopRegisters(preserve, MAX_GLOBAL_REGS);
 
-            bCheck = !string_compare(buff2, (UTF8 *)b->sub1);
+            bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
             free_lbuf(buff2);
         }
         free_lbuf(buff);
@@ -227,7 +227,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             return false;
         }
-        return check_attr(player, from, a, (UTF8 *)(b->sub1)->sub1);
+        return check_attr(player, from, a, reinterpret_cast<UTF8*>((b->sub1)->sub1));
 
     case BOOLEXP_CARRY:
 
@@ -305,7 +305,6 @@ static BOOLEXP *parse_boolexp_E(void);
 
 static BOOLEXP *test_atr(UTF8 *s)
 {
-    UTF8 *s1;
     int anum;
     boolexp_type locktype;
 
@@ -337,6 +336,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     ATTR *attrib = atr_str(buff);
     if (!attrib)
     {
+        UTF8 *s1;
         // Only #1 can lock on numbers
         //
         if (!God(parse_player))
@@ -638,7 +638,7 @@ static BOOLEXP *parse_boolexp_F(void)
 //
 static BOOLEXP *parse_boolexp_T(void)
 {
-    BOOLEXP *b, *b2;
+    BOOLEXP *b;
 
     if ((b = parse_boolexp_F()) != TRUE_BOOLEXP)
     {
@@ -647,7 +647,7 @@ static BOOLEXP *parse_boolexp_T(void)
         {
             parsebuf++;
 
-            b2 = alloc_bool("parse_boolexp_T");
+            const auto b2 = alloc_bool("parse_boolexp_T");
             b2->type = BOOLEXP_AND;
             b2->sub1 = b;
             if ((b2->sub2 = parse_boolexp_T()) == TRUE_BOOLEXP)
