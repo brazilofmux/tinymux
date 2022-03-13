@@ -551,7 +551,7 @@ static CF_HAND(cf_int_array)
         }
     }
 
-    IntArray *pia = (IntArray *)vp;
+    const auto pia = reinterpret_cast<IntArray*>(vp);
     if (nPorts)
     {
         int *q = nullptr;
@@ -639,7 +639,7 @@ static CF_HAND(cf_seconds)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(cmd);
 
-    CLinearTimeDelta *pltd = (CLinearTimeDelta *)vp;
+    auto* pltd = reinterpret_cast<CLinearTimeDelta*>(vp);
     pltd->SetSecondsString(str);
     return 0;
 }
@@ -655,7 +655,7 @@ static NAMETAB bool_names[] =
     {T("no"),      1,  0,  false},
     {T("1"),       1,  0,  true},
     {T("0"),       1,  0,  false},
-    {(UTF8 *)nullptr, 0,  0,  0}
+    {static_cast<UTF8*>(nullptr), 0,  0,  0}
 };
 
 static CF_HAND(cf_bool)
@@ -669,7 +669,7 @@ static CF_HAND(cf_bool)
         cf_log_notfound(player, cmd, T("Value"), str);
         return -1;
     }
-    bool *pb = (bool *)vp;
+    const auto pb = reinterpret_cast<bool*>(vp);
     *pb = isTRUE(i);
     return 0;
 }
@@ -682,7 +682,7 @@ static CF_HAND(cf_option)
     UNUSED_PARAMETER(nExtra);
 
     int i;
-    if (!search_nametab(GOD, (NAMETAB *)pExtra, str, &i))
+    if (!search_nametab(GOD, static_cast<NAMETAB*>(pExtra), str, &i))
     {
         cf_log_notfound(player, cmd, T("Value"), str);
         return -1;
@@ -698,7 +698,7 @@ static CF_HAND(cf_string)
 {
     UNUSED_PARAMETER(pExtra);
 
-    UTF8 *pc = (UTF8 *)vp;
+    auto pc = reinterpret_cast<UTF8*>(vp);
 
     // The following should never happen because extra is always a non-zero
     // constant in the config table.
@@ -711,7 +711,7 @@ static CF_HAND(cf_string)
     // Copy the string to the buffer if it is not too big.
     //
     int retval = 0;
-    size_t nStr = strlen((char *)str);
+    size_t nStr = strlen(reinterpret_cast<char*>(str));
     if (nStr >= nExtra)
     {
         nStr = nExtra - 1;
@@ -763,13 +763,13 @@ static CF_HAND(cf_string_dyn)
 {
     UNUSED_PARAMETER(pExtra);
 
-    UTF8 **ppc = (UTF8 **)vp;
+    const auto ppc = reinterpret_cast<UTF8**>(vp);
 
     // Allocate memory for buffer and copy string to it. If nExtra is non-zero,
     // then there is a size limitation as well.
     //
     int retval = 0;
-    size_t nStr = strlen((char *)str);
+    size_t nStr = strlen(reinterpret_cast<char*>(str));
     if (nExtra && nStr >= nExtra)
     {
         nStr = nExtra - 1;
@@ -807,14 +807,14 @@ static CF_HAND(cf_alias)
     UNUSED_PARAMETER(nExtra);
 
     string_token st(str, T(" \t=,"));
-    UTF8* alias = st.parse();
+    const UTF8* alias = st.parse();
     UTF8* orig = st.parse();
 
     if (orig)
     {
         size_t nCased;
-        UTF8 *pCased = mux_strupr(orig, nCased);
-        void *cp = hashfindLEN(pCased, nCased, (CHashTable *) vp);
+        const UTF8 *pCased = mux_strupr(orig, nCased);
+        void *cp = hashfindLEN(pCased, nCased, reinterpret_cast<CHashTable*>(vp));
         if (nullptr == cp)
         {
             cf_log_notfound(player, cmd, T("Entry"), orig);
