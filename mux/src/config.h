@@ -50,13 +50,6 @@
 #include <io.h>
 #include <process.h>
 
-#include <array>
-#include <deque>
-#include <list>
-#include <map>
-#include <vector>
-#include <algorithm>
-
 #else  // WIN32
 
 // Build Options
@@ -78,6 +71,13 @@
 #endif // SSL_ENABLED
 
 #endif // WIN32
+
+#include <array>
+#include <deque>
+#include <list>
+#include <map>
+#include <vector>
+#include <algorithm>
 
 #ifndef __specstrings
 
