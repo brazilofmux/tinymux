@@ -528,7 +528,8 @@ struct statedata
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
 #if !defined(MEMORY_BASED)
-    CHashTable acache_htab;     // Attribute Cache
+    std::list<Aname> attribute_lru_cache_list;
+    std::map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameCompare> attribute_lru_cache_map;
 #endif // MEMORY_BASED
     CHashTable attr_name_htab;  /* Attribute names hashtable */
     CHashTable channel_htab;    /* Channels hashtable */

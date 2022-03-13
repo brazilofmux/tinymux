@@ -14,6 +14,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+using namespace std;
 
 #if !defined(MEMORY_BASED)
 
@@ -35,18 +36,24 @@ struct attribute_record
 #pragma pack()
 
 static attribute_record temp_record;
-
-struct cache_entry_header
-{
-    struct cache_entry_header* previous_cache_entry;
-    struct cache_entry_header* next_cache_entry;
-    Aname attrKey;
-    size_t nSize;
-};
-
-static struct cache_entry_header* cache_head = nullptr;
-static struct cache_entry_header* cache_trail = nullptr;
 static size_t cache_size = 0;
+static INT64 cache_deletes = 0;
+static INT64 cache_scans = 0;
+static INT64 cache_hits = 0;
+
+void cache_get_stats
+(
+    int* entries,
+    INT64* deletes,
+    INT64* scans,
+    INT64* hits
+)
+{
+    *entries = mudstate.attribute_lru_cache_list.size();
+    *deletes = cache_deletes;
+    *scans = cache_scans;
+    *hits = cache_hits;
+}
 
 int cache_init(_In_z_ const UTF8 *game_dir_file, _In_z_ const UTF8 *game_pag_file, int nCachePages)
 {
@@ -139,98 +146,24 @@ void cache_tick(void)
     hfAttributeFile.Tick();
 }
 
-static void remove_entry_from_list(_In_ cache_entry_header* entry)
-{
-    // How is X positioned?
-    //
-    if (entry == cache_head)
-    {
-        if (entry == cache_trail)
-        {
-            // HEAD --> X --> 0
-            //    0 <--  <-- TAIL
-            //
-            // ASSERT: entry->next_cache_entry == 0;
-            // ASSERT: entry->previous_cache_entry == 0;
-            //
-            cache_head = cache_trail = nullptr;
-        }
-        else
-        {
-            // HEAD  --> X --> Y --> 0
-            //    0 <--   <--   <--  TAIL
-            //
-            // ASSERT: entry->next_cache_entry != 0;
-            // ASSERT: entry->previous_cache_entry == 0;
-            //
-            cache_head = entry->next_cache_entry;
-            cache_head->previous_cache_entry = nullptr;
-            entry->next_cache_entry = nullptr;
-        }
-    }
-    else if (entry == cache_trail)
-    {
-        // HEAD  --> Y --> X --> 0
-        //    0 <--   <--   <-- TAIL
-        //
-        // ASSERT: entry->next_cache_entry == 0;
-        // ASSERT: entry->previous_cache_entry != 0;
-        //
-        cache_trail = entry->previous_cache_entry;
-        cache_trail->next_cache_entry = nullptr;
-        entry->previous_cache_entry = nullptr;
-    }
-    else
-    {
-        // HEAD  --> Y --> X --> Z --> 0
-        //    0 <--   <--   <--   <-- TAIL
-        //
-        // ASSERT: entry->next_cache_entry != 0;
-        // ASSERT: entry->next_cache_entry != 0;
-        //
-        entry->next_cache_entry->previous_cache_entry = entry->previous_cache_entry;
-        entry->previous_cache_entry->next_cache_entry = entry->next_cache_entry;
-        entry->next_cache_entry = nullptr;
-        entry->previous_cache_entry = nullptr;
-    }
-}
-
-static void add_entry_to_list(cache_entry_header* pEntry)
-{
-    if (cache_head)
-    {
-        cache_head->previous_cache_entry = pEntry;
-    }
-    pEntry->next_cache_entry = cache_head;
-    pEntry->previous_cache_entry = 0;
-    cache_head = pEntry;
-    if (!cache_trail)
-    {
-        cache_trail = cache_head;
-    }
-}
-
-static void TrimCache(void)
+static void trim_attribute_cache(void)
 {
     // Check to see if the cache needs to be trimmed.
     //
     while (cache_size > mudconf.max_cache_size)
     {
-        // Blow something away.
-        //
-        cache_entry_header* pCacheEntry = cache_trail;
-        if (!pCacheEntry)
+        if (mudstate.attribute_lru_cache_list.empty())
         {
             cache_size = 0;
             break;
         }
 
-        remove_entry_from_list(pCacheEntry);
-        cache_size -= pCacheEntry->nSize;
-        hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
-            &mudstate.acache_htab);
-        MEMFREE(pCacheEntry);
-        pCacheEntry = nullptr;
+        // Blow the oldest thing away.
+        //
+        const auto it = mudstate.attribute_lru_cache_map.find(mudstate.attribute_lru_cache_list.front());
+        cache_size -= it->second.first.size();
+        mudstate.attribute_lru_cache_map.erase(it);
+        mudstate.attribute_lru_cache_list.pop_front();
     }
 }
 
@@ -243,29 +176,25 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         return nullptr;
     }
 
-    struct cache_entry_header* pCacheEntry;
+    cache_scans++;
     if (!mudstate.bStandAlone)
     {
         // Check the cache, first.
         //
-        pCacheEntry = static_cast<struct cache_entry_header*>(hashfindLEN(nam, sizeof(Aname), &mudstate.acache_htab));
-        if (pCacheEntry)
+        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it != mudstate.attribute_lru_cache_map.end())
         {
-            // It was in the cache, so move this entry to the head of the queue.
-            // and return a pointer to it.
+            cache_hits++;
+
+            // It was in the cache, so indicate this entry as the newest and return it.
             //
-            remove_entry_from_list(pCacheEntry);
-            add_entry_to_list(pCacheEntry);
-            if (sizeof(cache_entry_header) < pCacheEntry->nSize)
-            {
-                *pLen = pCacheEntry->nSize - sizeof(cache_entry_header);
-                return reinterpret_cast<UTF8*>(pCacheEntry + 1);
-            }
-            else
-            {
-                *pLen = 0;
-                return nullptr;
-            }
+            mudstate.attribute_lru_cache_list.splice(
+                mudstate.attribute_lru_cache_list.end(),
+                mudstate.attribute_lru_cache_list,
+                (*it).second.second
+            );
+        	*pLen = (*it).second.first.size();
+            return (*it).second.first.data();
         }
     }
 
@@ -286,19 +215,11 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
             {
                 // Add this information to the cache.
                 //
-                pCacheEntry = static_cast<struct cache_entry_header*>(MEMALLOC(sizeof(cache_entry_header)+nLength));
-                if (pCacheEntry)
-                {
-                    pCacheEntry->attrKey = *nam;
-                    pCacheEntry->nSize = nLength + sizeof(cache_entry_header);
-                    cache_size += pCacheEntry->nSize;
-                    memcpy((char *)(pCacheEntry+1), temp_record.attrText, nLength);
-                    add_entry_to_list(pCacheEntry);
-                    hashaddLEN(nam, sizeof(Aname), pCacheEntry,
-                        &mudstate.acache_htab);
-
-                    TrimCache();
-                }
+                std::vector<UTF8> v(temp_record.attrText, temp_record.attrText + nLength);
+                auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
+                mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it)));
+                cache_size += v.size();
+                trim_attribute_cache();
             }
             return temp_record.attrText;
         }
@@ -309,20 +230,13 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
     //
     if (!mudstate.bStandAlone)
     {
-        // Add this information to the cache.
+        // Add an empty entry in the cache.
         //
-        pCacheEntry = static_cast<struct cache_entry_header*>(MEMALLOC(sizeof(cache_entry_header)));
-        if (pCacheEntry)
-        {
-            pCacheEntry->attrKey = *nam;
-            pCacheEntry->nSize = sizeof(cache_entry_header);
-            cache_size += pCacheEntry->nSize;
-            add_entry_to_list(pCacheEntry);
-            hashaddLEN(nam, sizeof(Aname), pCacheEntry,
-                &mudstate.acache_htab);
-
-            TrimCache();
-        }
+        std::vector<UTF8> v;
+        auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
+        mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it)));
+        cache_size += v.size();
+        trim_attribute_cache();
     }
 
     *pLen = 0;
@@ -402,34 +316,26 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     {
         // Update cache.
         //
-        auto cache_entry = static_cast<struct cache_entry_header*>(hashfindLEN(nam, sizeof(Aname), &mudstate.acache_htab));
-        if (cache_entry)
+        std::vector<UTF8> v(temp_record.attrText, temp_record.attrText + len);
+        auto it2 = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
+
+        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it != mudstate.attribute_lru_cache_map.end())
         {
-            // It was in the cache, so delete it.
+            // It was in the cache map, so replace the pair in the mapping and delete the old list entry.
             //
-            remove_entry_from_list(cache_entry);
-            cache_size -= cache_entry->nSize;
-            hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-            MEMFREE(cache_entry);
-            cache_entry = nullptr;
+            cache_size += v.size() - it->second.first.size();
+            mudstate.attribute_lru_cache_list.erase((*it).second.second);
+            it->second = std::make_pair(v, it2);
         }
-
-        // Add information about the new entry back into the cache.
-        //
-        const size_t nSizeOfEntry = sizeof(cache_entry_header) + len;
-        cache_entry = static_cast<struct cache_entry_header*>(MEMALLOC(nSizeOfEntry));
-        if (cache_entry)
+        else
         {
-            cache_entry->attrKey = *nam;
-            cache_entry->nSize = nSizeOfEntry;
-            cache_size += cache_entry->nSize;
-            memcpy((char *)(cache_entry+1), temp_record.attrText, len);
-            add_entry_to_list(cache_entry);
-            hashaddLEN(nam, sizeof(Aname), cache_entry,
-                &mudstate.acache_htab);
-
-            TrimCache();
+            // It wasn't in the cache map, so create a mapping.
+            //
+            mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it2)));
+            cache_size += v.size();
         }
+        trim_attribute_cache();
     }
     return true;
 }
@@ -479,16 +385,15 @@ void cache_del(_In_ Aname *nam)
     {
         // Update cache.
         //
-        auto cache_entry = static_cast<struct cache_entry_header*>(hashfindLEN(nam, sizeof(Aname), &mudstate.acache_htab));
-        if (cache_entry)
+        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it != mudstate.attribute_lru_cache_map.end())
         {
             // It was in the cache, so delete it.
             //
-            remove_entry_from_list(cache_entry);
-            cache_size -= cache_entry->nSize;
-            hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-            MEMFREE(cache_entry);
-            cache_entry = nullptr;
+            cache_size -= it->second.first.size();
+            mudstate.attribute_lru_cache_list.erase((*it).second.second);
+            mudstate.attribute_lru_cache_map.erase(it);
+            cache_deletes++;
         }
     }
 }

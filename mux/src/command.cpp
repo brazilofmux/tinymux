@@ -3715,27 +3715,40 @@ size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill)
 
 // list_hashstats: List information from hash tables
 //
-static void list_hashstat(dbref player, const UTF8 *tab_name, CHashTable *htab)
+static void list_stats(dbref player, const UTF8* tab_name, unsigned int hashsize, int entries, int max_scan,
+    INT64 deletes, INT64 scans, INT64 hits, INT64 checks)
+{
+    UTF8 buff[MBUF_SIZE];
+    UTF8* p = buff;
+
+    p += LeftJustifyString(p, 13, tab_name);      *p++ = ' ';
+    p += RightJustifyNumber(p, 4, hashsize, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 6, entries, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 7, deletes, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, scans, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, hits, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, checks, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 4, max_scan, ' '); *p = '\0';
+    raw_notify(player, buff);
+}
+
+static void list_hashstat(dbref player, const UTF8* tab_name, CHashTable* htab)
 {
     unsigned int hashsize;
     int          entries, max_scan;
     INT64        deletes, scans, hits, checks;
 
-    htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks,
-        &max_scan);
+    htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks, &max_scan);
+    list_stats(player, tab_name, hashsize, entries, max_scan, deletes, scans, hits, checks);
+}
 
-    UTF8 buff[MBUF_SIZE];
-    UTF8 *p = buff;
+static void list_cachestat(dbref player)
+{
+    int          entries;
+    INT64        deletes, scans, hits;
 
-    p += LeftJustifyString(p,  13, tab_name);      *p++ = ' ';
-    p += RightJustifyNumber(p,  4, hashsize, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p,  6, entries,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p,  7, deletes,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, scans,    ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, hits,     ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, checks,   ' '); *p++ = ' ';
-    p += RightJustifyNumber(p,  4, max_scan, ' '); *p = '\0';
-    raw_notify(player, buff);
+    cache_get_stats(&entries, &deletes, &scans, &hits);
+	list_stats(player, T("Attr. Cache"), 0, entries, 0, deletes, scans, hits, 0);
 }
 
 static void list_hashstats(dbref player)
@@ -3755,7 +3768,7 @@ static void list_hashstats(dbref player)
     list_hashstat(player, T("Mail Messages"), &mudstate.mail_htab);
     list_hashstat(player, T("Channel Names"), &mudstate.channel_htab);
 #if !defined(MEMORY_BASED)
-    list_hashstat(player, T("Attr. Cache"), &mudstate.acache_htab);
+    list_cachestat(player);
 #endif // MEMORY_BASED
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {

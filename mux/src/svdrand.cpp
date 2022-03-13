@@ -169,7 +169,7 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 
 static UINT32 mt[N];
 static int left = 1;
-static UINT32 *next;
+static UINT32 *next_state;
 
 // initializes mt[N] with a seed.
 //
@@ -233,7 +233,7 @@ static void sgenrand_from_array(UINT32 *init_key, int key_length)
     left = 1;
 }
 
-static void next_state(void)
+static void produce_next_state(void)
 {
     UINT32 *p = mt;
     int j;
@@ -256,7 +256,7 @@ static void next_state(void)
     *p = p[M-N] ^ TWIST(p[0], mt[0]);
 
     left = N;
-    next = mt;
+    next_state = mt;
 }
 
 // generates a random number on the interval [0,0xffffffff]
@@ -267,9 +267,9 @@ static UINT32 genrand(void)
 
     if (--left == 0)
     {
-        next_state();
+        produce_next_state();
     }
-    y = *next++;
+    y = *next_state++;
 
     // Tempering.
     //
