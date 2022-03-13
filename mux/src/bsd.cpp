@@ -5904,7 +5904,7 @@ bool mux_in6_addr::isValidMask(int *pnLeadingBits) const
             i++;
         }
 
-        for ( ; i < std::size(m_ia6.s6_addr); i++)
+        for ( ; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             mask = m_ia6.s6_addr[i];
             if (0 != mask)
@@ -5927,7 +5927,7 @@ void mux_in6_addr::makeMask(const int num_leading_bits)
         m_ia6.s6_addr[i] = allones;
     }
 
-    if (num_bytes < std::size(m_ia6.s6_addr))
+    if (num_bytes < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]))
     {
         const size_t num_leftover_bits = num_leading_bits % 8;
         if (num_leftover_bits > 0)
@@ -6940,7 +6940,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
     if (AF_INET6 == it.getFamily())
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        for (size_t i = 0; i < std::size(m_ia6.s6_addr); i++)
+        for (size_t i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
             {
@@ -6967,7 +6967,7 @@ bool mux_in6_addr::clearOutsideMask(const mux_addr &it)
     {
         bool fOutside = false;
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        for (size_t  i = 0; i < std::size(m_ia6.s6_addr); i++)
+        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             if (m_ia6.s6_addr[i] & ~t->m_ia6.s6_addr[i])
             {
@@ -6986,7 +6986,7 @@ mux_addr *mux_in6_addr::calculateEnd(const mux_addr &it) const
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
         auto* e = new mux_in6_addr();
-        for (size_t  i = 0; i < std::size(m_ia6.s6_addr); i++)
+        for (size_t  i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
         {
             e->m_ia6.s6_addr[i] = m_ia6.s6_addr[i] | ~t->m_ia6.s6_addr[i];
         }
