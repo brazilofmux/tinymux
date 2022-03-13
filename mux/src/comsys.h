@@ -191,7 +191,7 @@ void do_addcom(dbref executor, dbref caller, dbref enactor, int eval, int key, i
 //! \param player - player requesting the change
 //! \param channel - channel name to change
 //! \param header - new header to use
-void do_cheader(dbref player, UTF8 *channel, UTF8 *header);
+void do_cheader(dbref player, UTF8 *channel, const UTF8 *header);
 
 //! \brief Locate a channel structure by channel name
 //! \param channel - name of channel to locate
@@ -222,7 +222,7 @@ void do_channelnuke(dbref player);
 
 //! \brief Sort users on channel into dbref order
 //! \param ch - channel to process
-void sort_users(struct channel *ch);
+void sort_users(const struct channel *ch);
 
 //! \brief Process comsys related commands 'alias <cmd>' (from command.cpp)
 //! \param who - enactor
