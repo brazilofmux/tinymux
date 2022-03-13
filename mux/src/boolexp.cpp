@@ -193,8 +193,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         if (bCheck)
         {
-            reg_ref **preserve = nullptr;
-            preserve = PushRegisters(MAX_GLOBAL_REGS);
+	        reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_global_regs(preserve);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
@@ -248,7 +247,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         }
         DOLIST(obj, Contents(player))
         {
-            if (check_attr(obj, from, a, (UTF8 *)(b->sub1)->sub1))
+            if (check_attr(obj, from, a, reinterpret_cast<UTF8*>((b->sub1)->sub1)))
             {
                 return true;
             }
@@ -314,7 +313,6 @@ static BOOLEXP *test_atr(UTF8 *s)
     mux_strncpy(buff, s, LBUF_SIZE-1);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
     {
-        ; // Nothing.
     }
     if (!*s)
     {
@@ -348,7 +346,6 @@ static BOOLEXP *test_atr(UTF8 *s)
         }
         for (s1 = buff; mux_isdigit(*s1); s1++)
         {
-            ; // Nothing.
         }
         if (*s1)
         {
@@ -369,10 +366,10 @@ static BOOLEXP *test_atr(UTF8 *s)
 
     // made it now make the parse tree node
     //
-    BOOLEXP *b = alloc_bool("test_str");
+    auto b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
-    b->sub1 = (BOOLEXP *) StringClone(s);
+    b->sub1 = reinterpret_cast<BOOLEXP*>(StringClone(s));
     free_lbuf(buff);
     return b;
 }
@@ -383,10 +380,8 @@ static BOOLEXP *parse_boolexp_L(void)
 {
     BOOLEXP *b;
     UTF8    *p;
-    UTF8    *buf;
     MSTATE  mstate;
 
-    buf = nullptr;
     skip_whitespace();
 
     switch (*parsebuf)
@@ -406,7 +401,7 @@ static BOOLEXP *parse_boolexp_L(void)
 
         // Must have hit an object ref.  Load the name into our buffer.
         //
-        buf = alloc_lbuf("parse_boolexp_L");
+        UTF8* buf = alloc_lbuf("parse_boolexp_L");
         p = buf;
         while (  *parsebuf
               && *parsebuf != AND_TOKEN

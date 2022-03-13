@@ -49,7 +49,7 @@ void cache_get_stats
     INT64* hits
 )
 {
-    *entries = mudstate.attribute_lru_cache_list.size();
+    *entries = static_cast<int>(mudstate.attribute_lru_cache_list.size());
     *deletes = cache_deletes;
     *scans = cache_scans;
     *hits = cache_hits;

@@ -3744,8 +3744,8 @@ static void list_hashstat(dbref player, const UTF8* tab_name, CHashTable* htab)
 
 static void list_cachestat(dbref player)
 {
-    int          entries;
-    INT64        deletes, scans, hits;
+    int   entries;
+    INT64 deletes, scans, hits;
 
     cache_get_stats(&entries, &deletes, &scans, &hits);
 	list_stats(player, T("Attr. Cache"), 0, entries, 0, deletes, scans, hits, 0);
