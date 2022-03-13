@@ -29,46 +29,46 @@ static NAMETAB attrib_sw[] =
     {T("access"),          1,  CA_GOD,     ATTRIB_ACCESS},
     {T("delete"),          1,  CA_GOD,     ATTRIB_DELETE},
     {T("rename"),          1,  CA_GOD,     ATTRIB_RENAME},
-    {(UTF8 *) nullptr,     0,       0,     0}
+    {static_cast<UTF8*>(nullptr),     0,       0,     0}
 };
 
 static NAMETAB boot_sw[] =
 {
     {T("port"),            1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
     {T("quiet"),           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB break_sw[] =
 {
     {T("inline"),          1,  CA_WIZARD,  BREAK_INLINE},
     {T("queued"),          1,  CA_WIZARD,  BREAK_QUEUED},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB cboot_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  CBOOT_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB comtitle_sw[] =
 {
     {T("off"),             2,  CA_PUBLIC,  COMTITLE_OFF},
     {T("on"),              2,  CA_PUBLIC,  COMTITLE_ON},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB cemit_sw[] =
 {
     {T("noheader"),        1,  CA_PUBLIC,  CEMIT_NOHEADER},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB chown_sw[] =
 {
     {T("nostrip"),         1,  CA_PUBLIC,  CHOWN_NOSTRIP},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB clone_sw[] =
@@ -87,7 +87,7 @@ static NAMETAB clist_sw[] =
 {
     {T("full"),            0,  CA_PUBLIC,  CLIST_FULL},
     {T("headers"),         0,  CA_PUBLIC,  CLIST_HEADERS},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB cset_sw[] =
@@ -105,32 +105,32 @@ static NAMETAB cset_sw[] =
     {T("quiet"),           1,  CA_PUBLIC,  CSET_QUIET},
     {T("spoof"),           1,  CA_PUBLIC,  CSET_SPOOF},
     {T("timestamp_logs"),  1,  CA_PUBLIC,  CSET_LOG_TIME},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB dbck_sw[] =
 {
     {T("full"),            1,  CA_WIZARD,  DBCK_FULL},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB decomp_sw[] =
 {
     {T("dbref"),           1,  CA_PUBLIC,  DECOMP_DBREF},
-    {(UTF8 *) nullptr,     0,           0, 0}
+    {static_cast<UTF8*>(nullptr),     0,           0, 0}
 };
 
 static NAMETAB destroy_sw[] =
 {
     {T("instant"),         4,  CA_PUBLIC,  DEST_INSTANT|SW_MULTIPLE},
     {T("override"),        8,  CA_PUBLIC,  DEST_OVERRIDE|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB dig_sw[] =
 {
     {T("teleport"),        1,  CA_PUBLIC,  DIG_TELEPORT},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB doing_sw[] =
@@ -140,7 +140,7 @@ static NAMETAB doing_sw[] =
     {T("poll"),            1,  CA_PUBLIC,  DOING_POLL},
     {T("quiet"),           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
     {T("unique"),          1,  CA_PUBLIC,  DOING_UNIQUE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB dolist_sw[] =
@@ -148,19 +148,19 @@ static NAMETAB dolist_sw[] =
     {T("delimit"),         1,  CA_PUBLIC,  DOLIST_DELIMIT},
     {T("notify"),          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
     {T("space"),           1,  CA_PUBLIC,  DOLIST_SPACE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB query_sw[] =
 {
     {T("sql"),             1,  CA_PUBLIC,  QUERY_SQL},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB drop_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  DROP_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB dump_sw[] =
@@ -168,7 +168,7 @@ static NAMETAB dump_sw[] =
     {T("flatfile"),        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
     {T("structure"),       1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
     {T("text"),            1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB emit_sw[] =
@@ -176,13 +176,13 @@ static NAMETAB emit_sw[] =
     {T("here"),            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
     {T("html"),            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
     {T("room"),            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB enter_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB examine_sw[] =
@@ -191,14 +191,14 @@ static NAMETAB examine_sw[] =
     {T("debug"),           1,  CA_WIZARD,  EXAM_DEBUG},
     {T("full"),            1,  CA_PUBLIC,  EXAM_LONG},
     {T("parent"),          1,  CA_PUBLIC,  EXAM_PARENT},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB femit_sw[] =
 {
     {T("here"),            1,  CA_PUBLIC,  PEMIT_HERE|SW_MULTIPLE},
     {T("room"),            1,  CA_PUBLIC,  PEMIT_ROOM|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB fixdb_sw[] =
@@ -210,13 +210,13 @@ static NAMETAB fixdb_sw[] =
     {T("owner"),           1,     CA_GOD,  FIXDB_OWNER},
     {T("pennies"),         1,     CA_GOD,  FIXDB_PENNIES},
     {T("rename"),          1,     CA_GOD,  FIXDB_NAME},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB flag_sw[] =
 {
     {T("remove"),          1,     CA_GOD,  FLAG_REMOVE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB folder_sw[] =
@@ -225,13 +225,13 @@ static NAMETAB folder_sw[] =
     {T("list"),            1,    CA_PUBLIC, FOLDER_LIST},
     {T("read"),            1,    CA_PUBLIC, FOLDER_READ},
     {T("set"),             1,    CA_PUBLIC, FOLDER_SET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 static NAMETAB fpose_sw[] =
 {
     {T("default"),         1,  CA_PUBLIC,  0},
     {T("nospace"),         1,  CA_PUBLIC,  SAY_NOSPACE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB function_sw[] =
@@ -240,31 +240,31 @@ static NAMETAB function_sw[] =
     {T("list"),            1,  CA_WIZARD,  FN_LIST},
     {T("preserve"),        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
     {T("privileged"),      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB get_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  GET_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB give_sw[] =
 {
     {T("quiet"),           1,  CA_WIZARD,  GIVE_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB goto_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB halt_sw[] =
 {
     {T("all"),             1,  CA_PUBLIC,  HALT_ALL},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB hook_sw[] =
@@ -300,13 +300,13 @@ static NAMETAB icmd_sw[] =
 static NAMETAB leave_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  MOVE_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB listmotd_sw[] =
 {
     {T("brief"),           1,  CA_WIZARD,  MOTD_BRIEF},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 NAMETAB lock_sw[] =
@@ -329,13 +329,13 @@ NAMETAB lock_sw[] =
     {T("uselock"),         1,  CA_PUBLIC,  A_LUSE},
     {T("userlock"),        4,  CA_PUBLIC,  A_LUSER},
     {T("visiblelock"),     1,  CA_PUBLIC,  A_LVISIBLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB look_sw[] =
 {
     {T("outside"),         1,  CA_PUBLIC,  LOOK_OUTSIDE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB mail_sw[] =
@@ -372,7 +372,7 @@ static NAMETAB mail_sw[] =
     {T("unclear"),         3,  CA_PUBLIC,  MAIL_UNCLEAR},
     {T("untag"),           3,  CA_PUBLIC,  MAIL_UNTAG},
     {T("urgent"),          2,  CA_PUBLIC,  MAIL_URGENT},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB malias_sw[] =
@@ -385,21 +385,21 @@ static NAMETAB malias_sw[] =
     {T("remove"),          1,  CA_PUBLIC,  MALIAS_REMOVE},
     {T("rename"),          1,  CA_PUBLIC,  MALIAS_RENAME},
     {T("status"),          1,  CA_PUBLIC,  MALIAS_STATUS},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB mark_sw[] =
 {
     {T("clear"),           1,  CA_PUBLIC,  MARK_CLEAR},
     {T("set"),             1,  CA_PUBLIC,  MARK_SET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB markall_sw[] =
 {
     {T("clear"),           1,  CA_PUBLIC,  MARK_CLEAR},
     {T("set"),             1,  CA_PUBLIC,  MARK_SET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB motd_sw[] =
@@ -410,7 +410,7 @@ static NAMETAB motd_sw[] =
     {T("full"),            1,  CA_WIZARD,  MOTD_FULL},
     {T("list"),            1,  CA_PUBLIC,  MOTD_LIST},
     {T("wizard"),          1,  CA_WIZARD,  MOTD_WIZ},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB notify_sw[] =
@@ -418,20 +418,20 @@ static NAMETAB notify_sw[] =
     {T("all"),             1,  CA_PUBLIC,  NFY_NFYALL},
     {T("first"),           1,  CA_PUBLIC,  NFY_NFY},
     {T("quiet"),           1,  CA_PUBLIC,  NFY_QUIET|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB open_sw[] =
 {
     {T("inventory"),       1,  CA_PUBLIC,  OPEN_INVENTORY},
     {T("location"),        1,  CA_PUBLIC,  OPEN_LOCATION},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB page_sw[] =
 {
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB pemit_sw[] =
@@ -442,7 +442,7 @@ static NAMETAB pemit_sw[] =
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {T("object"),          1,  CA_PUBLIC,  0},
     {T("silent"),          1,  CA_PUBLIC,  0},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB pose_sw[] =
@@ -450,7 +450,7 @@ static NAMETAB pose_sw[] =
     {T("default"),         1,  CA_PUBLIC,  0},
     {T("noeval"),          3,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {T("nospace"),         3,  CA_PUBLIC,  SAY_NOSPACE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB ps_sw[] =
@@ -459,7 +459,7 @@ static NAMETAB ps_sw[] =
     {T("brief"),           1,  CA_PUBLIC,  PS_BRIEF},
     {T("long"),            1,  CA_PUBLIC,  PS_LONG},
     {T("summary"),         1,  CA_PUBLIC,  PS_SUMM},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB quota_sw[] =
@@ -469,25 +469,25 @@ static NAMETAB quota_sw[] =
     {T("remaining"),       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
     {T("set"),             1,  CA_WIZARD,  QUOTA_SET},
     {T("total"),           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB reference_sw[] =
 {
     {T("list"),            1,  CA_PUBLIC,  REFERENCE_LIST},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB say_sw[] =
 {
     {T("noeval"),          1,  CA_PUBLIC,  SAY_NOEVAL|SW_NOEVAL|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB set_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  SET_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB stats_sw[] =
@@ -495,7 +495,7 @@ static NAMETAB stats_sw[] =
     {T("all"),             1,  CA_PUBLIC,  STAT_ALL},
     {T("me"),              1,  CA_PUBLIC,  STAT_ME},
     {T("player"),          1,  CA_PUBLIC,  STAT_PLAYER},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB sweep_sw[] =
@@ -507,7 +507,7 @@ static NAMETAB sweep_sw[] =
     {T("inventory"),       1,  CA_PUBLIC,  SWEEP_ME|SW_MULTIPLE},
     {T("listeners"),       1,  CA_PUBLIC,  SWEEP_LISTEN|SW_MULTIPLE},
     {T("players"),         1,  CA_PUBLIC,  SWEEP_PLAYER|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB switch_sw[] =
@@ -516,7 +516,7 @@ static NAMETAB switch_sw[] =
     {T("default"),         1,  CA_PUBLIC,  SWITCH_DEFAULT},
     {T("first"),           1,  CA_PUBLIC,  SWITCH_ONE},
     {T("notify"),          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB teleport_sw[] =
@@ -524,7 +524,7 @@ static NAMETAB teleport_sw[] =
     {T("list"),            1,  CA_PUBLIC,  TELEPORT_LIST|SW_MULTIPLE},
     {T("loud"),            1,  CA_PUBLIC,  TELEPORT_DEFAULT},
     {T("quiet"),           1,  CA_PUBLIC,  TELEPORT_QUIET},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB timecheck_sw[] =
@@ -532,32 +532,32 @@ static NAMETAB timecheck_sw[] =
     {T("log"),             1,  CA_WIZARD,  TIMECHK_LOG | SW_MULTIPLE},
     {T("reset"),           1,  CA_WIZARD,  TIMECHK_RESET | SW_MULTIPLE},
     {T("screen"),          1,  CA_WIZARD,  TIMECHK_SCREEN | SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB toad_sw[] =
 {
     {T("no_chown"),        1,  CA_WIZARD,  TOAD_NO_CHOWN|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB trig_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  TRIG_QUIET},
     {T("notify"),          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB wait_sw[] =
 {
     {T("until"),           1,  CA_PUBLIC,   WAIT_UNTIL},
-    {(UTF8 *) nullptr,     0,          0,   0}
+    {static_cast<UTF8*>(nullptr),     0,          0,   0}
 };
 
 static NAMETAB verb_sw[] =
 {
     {T("no_name"),         3,  CA_PUBLIC,   VERB_NONAME},
-    {(UTF8 *) nullptr,     0,          0,   0}
+    {static_cast<UTF8*>(nullptr),     0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
@@ -567,7 +567,7 @@ static NAMETAB wall_sw[] =
     {T("no_prefix"),       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
     {T("pose"),            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
     {T("wizard"),          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,   0}
+    {static_cast<UTF8*>(nullptr),     0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
@@ -577,7 +577,7 @@ static NAMETAB warp_sw[] =
     {T("events"),          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
     {T("idle"),            1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
     {T("queue"),           1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
 
@@ -611,7 +611,7 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {T("report"),      nullptr,    CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_report},
     {T("score"),       nullptr,    CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_score},
     {T("version"),     nullptr,    CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_version},
-    {(UTF8 *)nullptr,  nullptr,    0,           0,          0,          0, nullptr}
+    {static_cast<UTF8*>(nullptr),  nullptr,    0,           0,          0,          0, nullptr}
 };
 
 static CMDENT_ONE_ARG command_table_one_arg[] =
@@ -681,7 +681,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("-"),             nullptr,    CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_postpend},
     {T("~"),             nullptr,    CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_prepend},
     {T("#"),             nullptr,    CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK, 0, CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
-    {(UTF8 *)nullptr,    nullptr,    0,                          0,    0,                  0, nullptr}
+    {static_cast<UTF8*>(nullptr),    nullptr,    0,                          0,    0,                  0, nullptr}
 };
 
 static CMDENT_TWO_ARG command_table_two_arg[] =
@@ -757,7 +757,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("slay"),         nullptr,    CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
     {T("whisper"),      nullptr,    CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("&"),            nullptr,    CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},
-    {(UTF8 *)nullptr,   nullptr,    0,                                                0,           0,                    0, nullptr}
+    {static_cast<UTF8*>(nullptr),   nullptr,    0,                                                0,           0,                    0, nullptr}
 };
 
 static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
@@ -772,15 +772,14 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {T("@switch"),     switch_sw,  CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_switch},
     {T("@trigger"),    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             0, do_trigger},
     {T("@verb"),       verb_sw,    CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
-    {(UTF8 *)nullptr,  nullptr,    0,                                    0,  0,                              0, nullptr}
+    {static_cast<UTF8*>(nullptr),  nullptr,    0,                                    0,  0,                              0, nullptr}
 };
 
 static CMDENT *goto_cmdp;
 
 void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
 {
-    CMDENT_NO_ARG *cp0a;
-    for (cp0a = cmdent; cp0a->cmdname; cp0a++)
+    for (CMDENT_NO_ARG* cp0a = cmdent; cp0a->cmdname; cp0a++)
     {
         if (!hashfindLEN(cp0a->cmdname, strlen((char *)cp0a->cmdname),
                          &mudstate.command_htab))
@@ -2970,7 +2969,7 @@ NAMETAB attraccess_nametab[] =
     {T("regexp"),      1,  CA_PUBLIC,  AF_REGEXP},
     {T("visual"),      1,  CA_PUBLIC,  AF_VISUAL},
     {T("wizard"),      1,  CA_PUBLIC,  AF_WIZARD},
-    {(UTF8 *) nullptr, 0,          0,          0}
+    {static_cast<UTF8*>(nullptr), 0,          0,          0}
 };
 
 NAMETAB indiv_attraccess_nametab[] =
@@ -2986,7 +2985,7 @@ NAMETAB indiv_attraccess_nametab[] =
     {T("trace"),               1,  CA_PUBLIC,  AF_TRACE},
     {T("visual"),              1,  CA_PUBLIC,  AF_VISUAL},
     {T("wizard"),              1,  CA_WIZARD,  AF_WIZARD},
-    {(UTF8 *) nullptr,         0,          0,          0}
+    {static_cast<UTF8*>(nullptr),         0,          0,          0}
 };
 
 static void list_attraccess(dbref player)
@@ -3994,11 +3993,11 @@ NAMETAB list_names[] =
 #ifdef REALITY_LVLS
     {T("rlevels"),            3,  CA_PUBLIC,  LIST_RLEVELS},
 #endif
-    {(UTF8 *) nullptr,        0,  0,          0}
+    {static_cast<UTF8*>(nullptr),        0,  0,          0}
 };
 
-void do_list(dbref executor, dbref caller, dbref enactor, int eval, int key,
-    UTF8 *arg, const UTF8 *cargs[], int ncargs)
+void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int key,
+    UTF8 *arg, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4114,8 +4113,8 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               int nargs, UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], int ncargs)
+void do_assert(const dbref executor, const dbref caller, dbref enactor, const int eval, int key,
+               int nargs, UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
@@ -4142,8 +4141,8 @@ void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
-              int nargs, UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], int ncargs)
+void do_break(const dbref executor, const dbref caller, const dbref enactor, const int eval, int key,
+              const int nargs, UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
@@ -4184,11 +4183,10 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(ncargs);
 
     CMDENT *cmdp;
-    UTF8 *buff1, *pt1, *pt2, *pt3, *atrpt, *pt5;
-    int x, aflags;
-    size_t y;
-    dbref target = NOTHING, aowner, zone;
-    bool bFound, set;
+    UTF8 *pt3, *atrpt;
+    int aflags;
+    dbref target = NOTHING, aowner;
+    bool set;
 
     int loc_set = -1;
     if (  key == ICMD_IROOM
@@ -4243,7 +4241,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                 return;
             }
             notify(player, T("Scanning all locations and zones from your current location:"));
-            bFound = false;
+            bool bFound = false;
             atrpt = atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
@@ -4255,7 +4253,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             free_lbuf(atrpt);
             if (Zone(target) != target)
             {
-                zone = Zone(target);
+                dbref zone = Zone(target);
                 if (  Good_obj(zone)
                    && (  isRoom(zone)
                       || isThing(zone)))
@@ -4344,12 +4342,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         key = loc_set;
     }
 
-    const UTF8 *message = T("");
-    buff1 = alloc_lbuf("do_icmd");
-    for (x = 0; x < nargs; x++)
+    auto message = T("");
+    UTF8* buff1 = alloc_lbuf("do_icmd");
+    for (int x = 0; x < nargs; x++)
     {
-        pt1 = args[x];
-        pt2 = buff1;
+        UTF8* pt1 = args[x];
+        UTF8* pt2 = buff1;
         while (  *pt1
               && pt2 < buff1 + LBUF_SIZE)
         {
@@ -4369,7 +4367,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         }
         if (*pt1)
         {
-            bool bHome, bColon = false;
+            bool bHome;
             if (!string_compare(pt1, T("home")))
             {
                 bHome = true;
@@ -4378,14 +4376,15 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             else
             {
                 bHome = false;
-                cmdp = (CMDENT *) hashfindLEN(pt1, strlen((char *)pt1), &mudstate.command_htab);
+                cmdp = static_cast<CMDENT*>(hashfindLEN(pt1, strlen(reinterpret_cast<char*>(pt1)), &mudstate.command_htab));
             }
             if (cmdp || bHome)
             {
+                bool bColon = false;
                 atrpt = atr_get("do_icmd.4223", target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
-                    aflags = (int)strlen((char *)cmdp->cmdname);
+                    aflags = static_cast<int>(strlen(reinterpret_cast<char*>(cmdp->cmdname)));
                     bColon = (  aflags == 1
                              && *(cmdp->cmdname) == ':');
                 }
@@ -4393,14 +4392,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                 {
                     aflags = 4;
                 }
-                pt5 = atrpt;
+                UTF8* pt5 = atrpt;
                 while (pt1)
                 {
                     if (cmdp)
                     {
                         if (bColon)
                         {
-                            pt1 = (UTF8 *)strstr((char *)pt5, "::");
+                            pt1 = reinterpret_cast<UTF8*>(strstr(reinterpret_cast<char*>(pt5), "::"));
                             if (pt1)
                             {
                                 pt1++;
@@ -4408,12 +4407,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                         }
                         else
                         {
-                            pt1 = (UTF8 *)strstr((char *)pt5, (char *)cmdp->cmdname);
+                            pt1 = reinterpret_cast<UTF8*>(strstr(reinterpret_cast<char*>(pt5), reinterpret_cast<char*>(cmdp->cmdname)));
                         }
                     }
                     else
                     {
-                        pt1 = (UTF8 *)strstr((char *)pt5, "home");
+                        pt1 = reinterpret_cast<UTF8*>(strstr(reinterpret_cast<char*>(pt5), "home"));
                     }
                     if (  pt1
                        && (pt1 > atrpt)
@@ -4449,8 +4448,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             pt3 = tprintf(T(" %d:home"), key + 1);
                         }
 
-                        size_t natrpt = strlen((char *)atrpt);
-                        size_t npt3 = strlen((char *)pt3);
+                        const size_t natrpt = strlen(reinterpret_cast<char*>(atrpt));
+                        const size_t npt3 = strlen(reinterpret_cast<char*>(pt3));
                         if ((natrpt + npt3) < LBUF_SIZE - 1)
                         {
                             mux_strncpy(atrpt + natrpt, pt3, LBUF_SIZE-natrpt-1);
@@ -4476,10 +4475,10 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                         {
                             pt2--;
                         }
-                        y = pt2 - atrpt + 1;
+                        size_t y = pt2 - atrpt + 1;
                         // Save the char that'll be nulled by mux_strncpy.
                         // (Even though it may be unneeded by this point.)
-                        UTF8 cSave = buff1[y];
+                        const UTF8 cSave = buff1[y];
                         mux_strncpy(buff1, atrpt, y);
                         buff1[y] = cSave;
                         if (y == 1)
@@ -4496,7 +4495,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             }
                             if (*pt2)
                             {
-                                size_t natrpt = strlen((char *)atrpt);
+                                const size_t natrpt = strlen(reinterpret_cast<char*>(atrpt));
                                 mux_strncpy(atrpt + natrpt, pt2, LBUF_SIZE-natrpt-1);
                             }
                         }
@@ -4545,7 +4544,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
 // do_train: show someone else in the same room what code you're entering and the result
 // From RhostMUSH, changed to use notify_all_from_inside.
 //
-void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *string, const UTF8 *cargs[], int ncargs)
+void do_train(const dbref executor, const dbref caller, const dbref enactor, const int eval, const int key, UTF8 *string, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
@@ -4557,7 +4556,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         return;
     }
     mudstate.train_nest_lev++;
-    dbref loc = Location(executor);
+    const dbref loc = Location(executor);
     if (!Good_obj(loc))
     {
         notify(executor, T("Bad location."));
@@ -4578,8 +4577,8 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     mudstate.train_nest_lev--;
 }
 
-void do_moniker(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                 int nargs, UTF8 *name, UTF8 *instr, const UTF8 *cargs[], int ncargs)
+void do_moniker(const dbref executor, const dbref caller, const dbref enactor, const int eval, const int key,
+                int nargs, UTF8 *name, UTF8 *instr, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4589,7 +4588,7 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref thing = match_thing(executor, name);
+    const dbref thing = match_thing(executor, name);
     if (!Good_obj(thing))
     {
         return;
@@ -4643,7 +4642,7 @@ static void show_hook(UTF8 *bf, UTF8 *bfptr, int key)
     *bfptr = '\0';
 }
 
-static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff)
+static void hook_loop(const dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
     const UTF8 *pFmt = T("%-32.32s | %s");
@@ -4690,7 +4689,7 @@ static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff
     notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
 }
 
-void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
+void do_hook(const dbref executor, const dbref caller, const dbref enactor, const int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4699,7 +4698,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     UNUSED_PARAMETER(ncargs);
 
     bool negate;
-    UTF8 *s_ptr, *s_ptrbuff, *cbuff, *p;
+    UTF8 *s_ptr, *s_ptrbuff, *p;
     const UTF8 *q;
     auto* cmdp = static_cast<CMDENT*>(nullptr);
 
@@ -4742,7 +4741,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         else
         {
-            cmdp->flags = key | cmdp->flags;
+            cmdp->flags = cmdp->flags | key;
         }
 
         if (cmdp->flags)
@@ -4847,7 +4846,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            cbuff = alloc_sbuf("cbuff_hook");
+            UTF8* cbuff = alloc_sbuf("cbuff_hook");
             for (ATTR *ap = AttrTable; ap->name; ap++)
             {
                 if (ap->flags & AF_NOCMD)
@@ -4864,7 +4863,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                     safe_sb_chr(mux_tolower_ascii(*q), cbuff, &p);
                 }
                 *p = '\0';
-                size_t ncbuff = p - cbuff;
+                const size_t ncbuff = p - cbuff;
                 cmdp = static_cast<CMDENT*>(hashfindLEN(cbuff, ncbuff, &mudstate.command_htab));
                 if (  cmdp
                    && 0 != HOOKMASK(cmdp->flags))
