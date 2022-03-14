@@ -194,9 +194,9 @@ void do_addcom(dbref executor, dbref caller, dbref enactor, int eval, int key, i
 void do_cheader(dbref player, UTF8 *channel, const UTF8 *header);
 
 //! \brief Locate a channel structure by channel name
-//! \param channel - name of channel to locate
+//! \param channel_name - name of channel to locate
 //! @return struct channel pointer or nullptr if not found
-struct channel *select_channel(UTF8 *channel);
+struct channel *select_channel(UTF8 *channel_name);
 
 //! \brief Locate player in the user list for the given channel
 //! \param ch - channel data to search

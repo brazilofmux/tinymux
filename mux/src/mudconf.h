@@ -532,7 +532,7 @@ struct statedata
     std::map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameCompare> attribute_lru_cache_map;
 #endif // MEMORY_BASED
     std::map<std::vector<UTF8>, ATTR *> builtin_attribute_names; /* Attribute names hashtable */
-    CHashTable channel_htab;    /* Channels hashtable */
+    std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
     CHashTable desc_htab;       /* Socket descriptor hashtable */
     CHashTable flags_htab;      /* Flags hashtable */

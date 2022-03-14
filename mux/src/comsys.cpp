@@ -17,6 +17,7 @@
 #include "interface.h"
 #include "mathutil.h"
 #include "powers.h"
+using namespace std;
 
 static int num_channels;
 static comsys_t* comsys_table[NUM_COMSYS];
@@ -524,7 +525,8 @@ void load_comsystem_V4(FILE* fp)
 
         ch->on_users = nullptr;
 
-        hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
+        vector<UTF8> channel_name_vector(ch->name, ch->name+nChannel);
+        mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
 
         ch->type = 127;
         ch->temp1 = 0;
@@ -727,7 +729,8 @@ void load_comsystem_V0123(FILE* fp)
 
         ch->on_users = nullptr;
 
-        hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
+        vector<UTF8> channel_name_vector(ch->name, ch->name + nChannel);
+        mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
 
         ch->type = 127;
         ch->temp1 = 0;
@@ -1140,10 +1143,10 @@ void save_comsystem(FILE* fp)
     // Number of channels.
     //
     mux_fprintf(fp, T("%d\n"), num_channels);
-    for (auto ch = static_cast<channel*>(hash_firstentry(&mudstate.channel_htab));
-         ch;
-         ch = static_cast<channel*>(hash_nextentry(&mudstate.channel_htab)))
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
+        const auto ch = it->second;
+
         // Channel name.
         //
         mux_fprintf(fp, T("%s\n"), ch->name);
@@ -1158,19 +1161,19 @@ void save_comsystem(FILE* fp)
 
         // Count the number of 'valid' users to dump.
         //
-        int nUsers = 0;
+        int number_of_valid_users = 0;
         for (j = 0; j < ch->num_users; j++)
         {
             user = ch->users[j];
             if (user->who >= 0 && user->who < mudstate.db_top)
             {
-                nUsers++;
+                number_of_valid_users++;
             }
         }
 
         // Number of users on this channel.
         //
-        mux_fprintf(fp, T("%d\n"), nUsers);
+        mux_fprintf(fp, T("%d\n"), number_of_valid_users);
         for (j = 0; j < ch->num_users; j++)
         {
             user = ch->users[j];
@@ -1640,7 +1643,7 @@ void do_joinchannel(dbref player, struct channel* ch)
             ch->users = cu;
         }
 
-        for (i = ch->num_users - 1; i <= 0 && ch->users[i - 1]->who > player; i--)
+        for (i = ch->num_users - 1; 0 < i && player < ch->users[i - 1]->who; --i)
         {
             ch->users[i] = ch->users[i - 1];
         }
@@ -1973,12 +1976,18 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     return true;
 }
 
-// Find channel entry by name with the channel hash table.
+// Find struct channel entry by name with the channel_name hash table.
 //
-struct channel* select_channel(UTF8* channel)
+struct channel* select_channel(UTF8* channel_name)
 {
-    auto cp = static_cast<::channel*>(hashfindLEN(channel, strlen(reinterpret_cast<char*>(channel)), &mudstate.channel_htab));
-    return cp;
+    const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
+    const vector<UTF8> channel_vector(channel_name, channel_name + channel_name_length);
+    const auto it = mudstate.channel_names.find(channel_vector);
+    if (it != mudstate.channel_names.end())
+    {
+        return it->second;
+    }
+    return nullptr;
 }
 
 // Locate player in the user's list for the given channel.
@@ -2270,8 +2279,8 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
     }
 }
 
-void do_createchannel(const dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8* channel,
-                      const UTF8* cargs[], int ncargs)
+void do_createchannel(const dbref executor, const dbref caller, dbref enactor, const int eval, const int key, UTF8* channel,
+                      const UTF8* cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2365,15 +2374,25 @@ void do_createchannel(const dbref executor, dbref caller, dbref enactor, int eva
 
     num_channels++;
 
-    hashaddLEN(newchannel->name, nNameNoANSI, newchannel, &mudstate.channel_htab);
+    const vector<UTF8> channel_name(newchannel->name, newchannel->name + nNameNoANSI);
+    mudstate.channel_names.insert(make_pair(channel_name, newchannel));
 
     // Report the channel creation using non-ANSI name.
     //
     raw_notify(executor, tprintf(T("Channel %s created."), newchannel->name));
 }
 
-void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8* channel,
-                       const UTF8* cargs[], int ncargs)
+void do_destroychannel
+(
+    const dbref executor,
+    const dbref caller,
+    const dbref enactor,
+    const int eval,
+    const int key,
+    UTF8* channel_name,
+    const UTF8* cargs[],
+    const int ncargs
+)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2387,21 +2406,25 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
         raw_notify(executor, T("Comsys disabled."));
         return;
     }
-    auto ch = static_cast<::channel*>(hashfindLEN(channel, strlen((char*)channel), &mudstate.channel_htab));
+    const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
+    const vector<UTF8> channel_name_vector(channel_name, channel_name + channel_name_length);
+    const auto it = mudstate.channel_names.find(channel_name_vector);
 
-    if (!ch)
+    if (it != mudstate.channel_names.end())
     {
-        raw_notify(executor, tprintf(T("Could not find channel %s."), channel));
+        raw_notify(executor, tprintf(T("Could not find channel_name %s."), channel_name));
         return;
     }
-    if (!Comm_All(executor)
-        && !Controls(executor, ch->charge_who))
+
+    auto ch = it->second;
+
+    if (  !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     num_channels--;
-    hashdeleteLEN(channel, strlen(reinterpret_cast<char*>(channel)), &mudstate.channel_htab);
 
     for (int j = 0; j < ch->num_users; j++)
     {
@@ -2412,7 +2435,8 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
     ch->users = nullptr;
     MEMFREE(ch);
     ch = nullptr;
-    raw_notify(executor, tprintf(T("Channel %s destroyed."), channel));
+    mudstate.channel_names.erase(it);
+    raw_notify(executor, tprintf(T("Channel %s destroyed."), channel_name));
 }
 
 
@@ -2437,15 +2461,16 @@ static void do_listchannels(dbref player, UTF8* pattern)
 
     raw_notify(player, T("*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages"));
 
-    for (auto ch = static_cast<channel*>(hash_firstentry(&mudstate.channel_htab));
-         ch; ch = static_cast<channel*>(hash_nextentry(&mudstate.channel_htab)))
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
-        if (perm
-            || (ch->type & CHANNEL_PUBLIC)
-            || Controls(player, ch->charge_who))
+        const auto ch = it->second;
+
+        if (  perm
+           || (ch->type & CHANNEL_PUBLIC)
+           || Controls(player, ch->charge_who))
         {
-            if (!bWild
-                || quick_wild(pattern, ch->name))
+            if (  !bWild
+               || quick_wild(pattern, ch->name))
             {
                 UTF8 temp[LBUF_SIZE];
                 mux_sprintf(temp, sizeof(temp),
@@ -2472,16 +2497,16 @@ static void do_listchannels(dbref player, UTF8* pattern)
 
 void do_comtitle
 (
-    dbref executor,
-    dbref caller,
-    dbref enactor,
+    const dbref executor,
+    const dbref caller,
+    const dbref enactor,
     int eval,
-    int key,
-    int nargs,
+    const int key,
+    const int nargs,
     UTF8* arg1,
     UTF8* arg2,
     const UTF8* cargs[],
-    int ncargs
+    const int ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -2549,14 +2574,14 @@ void do_comtitle
 
 void do_comlist
 (
-    dbref executor,
+    const dbref executor,
     dbref caller,
-    dbref enactor,
+    const dbref enactor,
     int eval,
-    int key,
+    const int key,
     UTF8* pattern,
     const UTF8* cargs[],
-    int ncargs
+    const int ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -2585,7 +2610,7 @@ void do_comlist
 
     raw_notify(executor, T("Alias           Channel            Status   Title"));
 
-    comsys_t* c = get_comsys(executor);
+    const comsys_t* c = get_comsys(executor);
     for (int i = 0; i < c->numchannels; i++)
     {
         struct comuser* user = select_user(select_channel(c->channels[i]), executor);
@@ -2615,33 +2640,44 @@ void do_comlist
 
 // Cleanup channels owned by the player.
 //
-void do_channelnuke(dbref player)
+void do_channelnuke(const dbref player)
 {
-    for (auto ch = static_cast<channel*>(hash_firstentry(&mudstate.channel_htab));
-         ch; ch = static_cast<channel*>(hash_nextentry(&mudstate.channel_htab)))
+    bool found = true;
+    while (found)
     {
-        if (player == ch->charge_who)
+        found = false;
+        for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
         {
-            num_channels--;
-            hashdeleteLEN(ch->name, strlen(reinterpret_cast<char*>(ch->name)), &mudstate.channel_htab);
+            auto ch = it->second;
 
-            if (nullptr != ch->users)
+            if (player == ch->charge_who)
             {
-                for (int j = 0; j < ch->num_users; j++)
+                num_channels--;
+
+                if (nullptr != ch->users)
                 {
-                    MEMFREE(ch->users[j]);
-                    ch->users[j] = nullptr;
+                    for (int j = 0; j < ch->num_users; j++)
+                    {
+                        MEMFREE(ch->users[j]);
+                        ch->users[j] = nullptr;
+                    }
+                    MEMFREE(ch->users);
+                    ch->users = nullptr;
                 }
-                MEMFREE(ch->users);
-                ch->users = nullptr;
+                MEMFREE(ch);
+                ch = nullptr;
+
+                // Removing an element invalidates the iterator, so the search much be restarted.
+                //
+                mudstate.channel_names.erase(it);
+                found = true;
+                break;
             }
-            MEMFREE(ch);
-            ch = nullptr;
         }
     }
 }
 
-void do_clearcom(dbref executor, dbref caller, dbref enactor, int eval, int key)
+void do_clearcom(const dbref executor, const dbref caller, const dbref enactor, int eval, const int key)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
@@ -3596,7 +3632,7 @@ void do_chanlist
 
 #define MAX_SUPPORTED_NUM_ENTRIES 10000
 
-    unsigned int entries = mudstate.channel_htab.GetEntryCount();
+    auto entries = mudstate.channel_names.size();
     if (MAX_SUPPORTED_NUM_ENTRIES < entries)
     {
         // Nobody should have so many channels.
@@ -3606,99 +3642,72 @@ void do_chanlist
 
     if (0 < entries)
     {
-        const auto charray =
-            static_cast<chanlist_node*>(MEMALLOC(sizeof(chanlist_node)*entries));
-
-        if (charray)
+        for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
         {
-            struct channel* ch;
-            // Array-ify all the channels.
-            //
-            size_t actualEntries = 0;
-            for (ch = static_cast<channel*>(hash_firstentry(&mudstate.channel_htab));
-                 ch
-                 && actualEntries < entries;
-                 ch = static_cast<channel*>(hash_nextentry(&mudstate.channel_htab)))
-            {
-                if (!bWild
-                    || quick_wild(pattern, ch->name))
-                {
-                    charray[actualEntries].name = ch->name;
-                    charray[actualEntries].ptr = ch;
-                    actualEntries++;
-                }
-            }
+            const auto ch = it->second;
 
-            if (0 < actualEntries)
+            if (!bWild != quick_wild(pattern, ch->name))
             {
-                qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
-
-                for (size_t i = 0; i < actualEntries; i++)
+                if (Comm_All(executor)
+                    || (ch->type & CHANNEL_PUBLIC)
+                    || Controls(executor, ch->charge_who))
                 {
-                    ch = charray[i].ptr;
-                    if (Comm_All(executor)
-                        || (ch->type & CHANNEL_PUBLIC)
-                        || Controls(executor, ch->charge_who))
+                    const UTF8* pBuffer = nullptr;
+                    UTF8* atrstr = nullptr;
+
+                    if (key & CLIST_HEADERS)
                     {
-                        const UTF8* pBuffer = nullptr;
-                        UTF8* atrstr = nullptr;
-
-                        if (key & CLIST_HEADERS)
+                        pBuffer = ch->header;
+                    }
+                    else
+                    {
+                        if (NOTHING != ch->chan_obj)
                         {
-                            pBuffer = ch->header;
+                            atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
+                        }
+
+                        if (nullptr != atrstr && '\0' != atrstr[0])
+                        {
+                            pBuffer = atrstr;
                         }
                         else
                         {
-                            if (NOTHING != ch->chan_obj)
-                            {
-                                atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-                            }
-
-                            if (nullptr != atrstr
-                                && '\0' != atrstr[0])
-                            {
-                                pBuffer = atrstr;
-                            }
-                            else
-                            {
-                                pBuffer = T("No description.");
-                            }
+                            pBuffer = T("No description.");
                         }
+                    }
 
-                        UTF8* temp = alloc_mbuf("do_chanlist_temp");
-                        mux_sprintf(temp, MBUF_SIZE, T("%c%c%c "),
-                                    (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
-                                    (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                                    (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
-                        mux_field iPos(4, 4);
+                    UTF8* temp = alloc_mbuf("do_chanlist_temp");
+                    mux_sprintf(temp, MBUF_SIZE, T("%c%c%c "),
+                        (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
+                        (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
+                        (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
+                    mux_field iPos(4, 4);
 
-                        iPos += StripTabsAndTruncate(ch->name,
-                                                     temp + iPos.m_byte,
-                                                     (MBUF_SIZE - 1) - iPos.m_byte,
-                                                     13);
-                        iPos = PadField(temp, MBUF_SIZE - 1, 18, iPos);
-                        iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
-                                                     temp + iPos.m_byte,
-                                                     (MBUF_SIZE - 1) - iPos.m_byte,
-                                                     15);
-                        iPos = PadField(temp, MBUF_SIZE - 1, 34, iPos);
-                        iPos += StripTabsAndTruncate(pBuffer,
-                                                     temp + iPos.m_byte,
-                                                     (MBUF_SIZE - 1) - iPos.m_byte,
-                                                     45);
-                        iPos = PadField(temp, MBUF_SIZE - 1, 79, iPos);
+                    iPos += StripTabsAndTruncate(ch->name,
+                        temp + iPos.m_byte,
+                        (MBUF_SIZE - 1) - iPos.m_byte,
+                        13);
+                    iPos = PadField(temp, MBUF_SIZE - 1, 18, iPos);
+                    iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
+                        temp + iPos.m_byte,
+                        (MBUF_SIZE - 1) - iPos.m_byte,
+                        15);
+                    iPos = PadField(temp, MBUF_SIZE - 1, 34, iPos);
+                    iPos += StripTabsAndTruncate(pBuffer,
+                        temp + iPos.m_byte,
+                        (MBUF_SIZE - 1) - iPos.m_byte,
+                        45);
+                    iPos = PadField(temp, MBUF_SIZE - 1, 79, iPos);
 
-                        raw_notify(executor, temp);
-                        free_mbuf(temp);
+                    raw_notify(executor, temp);
+                    free_mbuf(temp);
 
-                        if (nullptr != atrstr)
-                        {
-                            free_lbuf(atrstr);
-                        }
+                    if (nullptr != atrstr)
+                    {
+                        free_lbuf(atrstr);
                     }
                 }
             }
-            MEMFREE(charray);
         }
     }
     raw_notify(executor, T("-- End of list of Channels --"));
@@ -3880,16 +3889,16 @@ FUNCTION(fun_channels)
 
     ITL itl;
     ItemToList_Init(&itl, buff, bufc);
-    for (struct channel* chn = static_cast<channel*>(hash_firstentry(&mudstate.channel_htab));
-         chn;
-         chn = static_cast<channel*>(hash_nextentry(&mudstate.channel_htab)))
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
+        const auto ch = it->second;
+
         if ((Comm_All(executor)
-                || (chn->type & CHANNEL_PUBLIC)
-                || Controls(executor, chn->charge_who))
+                || (ch->type & CHANNEL_PUBLIC)
+                || Controls(executor, ch->charge_who))
             && (who == NOTHING
-                || Controls(who, chn->charge_who))
-            && !ItemToList_AddString(&itl, chn->name))
+                || Controls(who, ch->charge_who))
+            && !ItemToList_AddString(&itl, ch->name))
         {
             break;
         }

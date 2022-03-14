@@ -2979,7 +2979,6 @@ int DCL_CDECL main(int argc, char *argv[])
     // Reset all the hash stats
     //
     hashreset(&mudstate.command_htab);
-    hashreset(&mudstate.channel_htab);
     hashreset(&mudstate.mail_htab);
     hashreset(&mudstate.logout_cmd_htab);
     hashreset(&mudstate.func_htab);

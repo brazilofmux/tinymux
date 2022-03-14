@@ -3761,7 +3761,7 @@ static void list_hashstats(const dbref player)
     list_hashstat(player, T("Fwd. lists"), &mudstate.fwdlist_htab);
     list_hashstat(player, T("Excl. $-cmds"), &mudstate.parent_htab);
     list_hashstat(player, T("Mail Messages"), &mudstate.mail_htab);
-    list_hashstat(player, T("Channel Names"), &mudstate.channel_htab);
+    list_hashstat_abbreviated(player, T("Channel Names"), static_cast<int>(mudstate.channel_names.size()));;
 #if !defined(MEMORY_BASED)
     list_hashstat_abbreviated(player, T("Attr. Cache"), static_cast<int>(mudstate.attribute_lru_cache_list.size()));
 #endif // MEMORY_BASED
