@@ -11,6 +11,7 @@
 #include "ansi.h"
 #include <pcre.h>
 #include "mathutil.h"
+using namespace std;
 
 const bool mux_isprint_ascii[256] =
 {
@@ -7891,19 +7892,19 @@ void mux_string::stripWithTable
 
 void mux_string::transform
 (
-    mux_string &sFromSet,
-    mux_string &sToSet,
-    size_t nStart,
-    size_t nLen
+    mux_string &from_set,
+    mux_string &to_set,
+    size_t start_position,
+    size_t length
 )
 {
-    if (m_iLast.m_point <= nStart)
+    if (m_iLast.m_point <= start_position)
     {
         return;
     }
 
-    if (  sFromSet.isAscii()
-       && sToSet.isAscii())
+    if (  from_set.isAscii()
+       && to_set.isAscii())
     {
         // Since both sets use only ASCII characters, we can special case this
         // request.  First, we build a table that maps all possible ASCII
@@ -7916,53 +7917,59 @@ void mux_string::transform
         }
 
         mux_cursor iFromSet, iToSet;
-        sFromSet.cursor_start(iFromSet);
-        sToSet.cursor_start(iToSet);
+        from_set.cursor_start(iFromSet);
+        to_set.cursor_start(iToSet);
         do
         {
-            UTF8 cFrom = sFromSet.m_autf[iFromSet.m_byte];
-            UTF8 cTo = sToSet.m_autf[iToSet.m_byte];
+            UTF8 cFrom = from_set.m_autf[iFromSet.m_byte];
+            UTF8 cTo = to_set.m_autf[iToSet.m_byte];
             asciiTable[cFrom] = cTo;
-        } while (  sFromSet.cursor_next(iFromSet)
-                && sToSet.cursor_next(iToSet));
+        } while (  from_set.cursor_next(iFromSet)
+                && to_set.cursor_next(iToSet));
 
-        transform_Ascii(asciiTable, nStart, nLen);
+        transform_Ascii(asciiTable, start_position, length);
     }
     else
     {
         // This is the more general case.  We use a hash table for mapping.
         //
-        hashflush(&mudstate.scratch_htab);
-
-        mux_cursor iFromSet, iToSet;
-        sFromSet.cursor_start(iFromSet);
-        sToSet.cursor_start(iToSet);
+        mux_cursor from_cursor, to_cursor;
+        from_set.cursor_start(from_cursor);
+        to_set.cursor_start(to_cursor);
+        map<vector<UTF8>, vector<UTF8>> to_from_map;
         do
         {
-            size_t nFrom = utf8_FirstByte[sFromSet.m_autf[iFromSet.m_byte]];
-            hashdeleteLEN(&sFromSet.m_autf[iFromSet.m_byte], nFrom, &mudstate.scratch_htab);
-            hashaddLEN(&sFromSet.m_autf[iFromSet.m_byte], nFrom, &sToSet.m_autf[iToSet.m_byte], &mudstate.scratch_htab);
+            const UTF8* from_sequence = &from_set.m_autf[from_cursor.m_byte];
+            size_t from_sequence_length = utf8_FirstByte[from_sequence[0]];
+            const UTF8* to_sequence = &to_set.m_autf[to_cursor.m_byte];
+            size_t to_sequence_length = utf8_FirstByte[to_sequence[0]];
+            vector<UTF8> from_vector(from_sequence, from_sequence + from_sequence_length);
+            vector<UTF8> to_vector(to_sequence, to_sequence + to_sequence_length);
+            auto it = to_from_map.find(from_vector);
+            if (it == to_from_map.end())
+	            to_from_map.insert(make_pair(from_vector, to_vector));
+            else
+	            it->second = to_vector;
+        } while (from_set.cursor_next(from_cursor) && to_set.cursor_next(to_cursor));
 
-        } while (  sFromSet.cursor_next(iFromSet)
-                && sToSet.cursor_next(iToSet));
-
-        mux_cursor i;
-        if (cursor_from_point(i, static_cast<LBUF_OFFSET>(nStart)))
+        mux_cursor cursor;
+        if (cursor_from_point(cursor, static_cast<LBUF_OFFSET>(start_position)))
         {
             do
             {
-                size_t n = utf8_FirstByte[m_autf[i.m_byte]];
-                UTF8 *p = static_cast<UTF8*>(hashfindLEN(&m_autf[i.m_byte], n, &mudstate.scratch_htab));
-                if (  nullptr != p
-                   && !replace_Point(p, i))
+                const UTF8* this_sequence = &m_autf[cursor.m_byte];
+                size_t this_sequence_length = utf8_FirstByte[this_sequence[0]];
+                vector<UTF8> this_vector(this_sequence, this_sequence + this_sequence_length);
+                auto it = to_from_map.find(this_vector);
+                if (it != to_from_map.end())
                 {
-                    break;
+                    if (!replace_Point(it->second.data(), cursor))
+                    {
+                        break;
+                    }
                 }
-            } while (  cursor_next(i)
-                    && i.m_point < nStart+nLen);
+            } while (cursor_next(cursor) && cursor.m_point < start_position+length);
         }
-
-        hashflush(&mudstate.scratch_htab);
     }
 }
 

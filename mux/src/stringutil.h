@@ -2056,10 +2056,10 @@ public:
     );
     void transform
     (
-        mux_string &sFromSet,
-        mux_string &sToSet,
-        size_t nStart = 0,
-        size_t nLen = (LBUF_SIZE-1)
+        mux_string &from_set,
+        mux_string &to_set,
+        size_t start_position = 0,
+        size_t length = (LBUF_SIZE-1)
     );
     void transform_Ascii
     (
