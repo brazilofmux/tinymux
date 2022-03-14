@@ -193,6 +193,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 /* #undef HAVE_NETINET_IN_H */
 
+/* Define to 1 if you have the <pcre.h> header file. */
+/* #undef HAVE_PCRE_H */
+
 /* Define if pread exists. */
 /* #undef HAVE_PREAD */
 
