@@ -37,3 +37,5 @@ author:
  - Fix ReSharper warnings and accept recommendations.
  - Updated to C++14 standard.
  - Replaced attrcache.cpp data structures with STL.
+ - Re-work general case mux_string::tranform case to use STL map
+   instead of scratch_htab.
