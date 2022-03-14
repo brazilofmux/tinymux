@@ -14,6 +14,7 @@
 #include "command.h"
 #include "interface.h"
 #include "mathutil.h"
+using namespace std;
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.
@@ -825,6 +826,39 @@ static CF_HAND(cf_alias)
         if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
         {
             hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
+        }
+        return 0;
+    }
+    return -1;
+}
+
+static CF_HAND(cf_attr_name_alias)
+{
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
+    string_token st(str, T(" \t=,"));
+    const UTF8* alias = st.parse();
+    UTF8* orig = st.parse();
+
+    if (orig)
+    {
+        size_t nCased;
+        const UTF8* pCased = mux_strupr(orig, nCased);
+        const vector<UTF8> v(pCased, pCased + nCased);
+        const auto it = mudstate.builtin_attribute_names.find(v);
+        if (it == mudstate.builtin_attribute_names.end())
+        {
+            cf_log_notfound(player, cmd, T("Entry"), orig);
+            return -1;
+        }
+
+        pCased = mux_strupr(alias, nCased);
+        const vector <UTF8> alias_vector(pCased, pCased + nCased);
+        const auto it2 = mudstate.builtin_attribute_names.find(alias_vector);
+        if (it == mudstate.builtin_attribute_names.end())
+        {
+            mudstate.builtin_attribute_names.insert(make_pair(alias_vector, it->second));
         }
         return 0;
     }
@@ -1738,7 +1772,7 @@ static CONFPARM conftable[] =
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
     {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       nullptr,            0},
     {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, (int *)&mudstate.attrperm_list,  attraccess_nametab, 0},
-    {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
+    {T("attr_alias"),                cf_attr_name_alias,CA_GOD, CA_DISABLED, nullptr,                         nullptr,            0},
     {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
     {T("attr_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.attr_name_charset,      allow_charset_nametab, 0},
     {T("autozone"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.autozone,        nullptr,            0},

@@ -31,9 +31,7 @@
  * future access patterns are of more interest than past access paterns.
  *
  * \param htab     Hash Table.
- * \return         None.
  */
-
 void hashreset(CHashTable *htab)
 {
     htab->ResetStats();

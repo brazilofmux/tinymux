@@ -29,12 +29,5 @@ void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
 void cache_del(_In_ Aname *nam);
-void cache_get_stats
-(
-    int* entries,
-    INT64* deletes,
-    INT64* scans,
-    INT64* hits
-);
 
 #endif // !_ATTRCACHE_H

@@ -37,23 +37,6 @@ struct attribute_record
 
 static attribute_record temp_record;
 static size_t cache_size = 0;
-static INT64 cache_deletes = 0;
-static INT64 cache_scans = 0;
-static INT64 cache_hits = 0;
-
-void cache_get_stats
-(
-    int* entries,
-    INT64* deletes,
-    INT64* scans,
-    INT64* hits
-)
-{
-    *entries = static_cast<int>(mudstate.attribute_lru_cache_list.size());
-    *deletes = cache_deletes;
-    *scans = cache_scans;
-    *hits = cache_hits;
-}
 
 int cache_init(_In_z_ const UTF8 *game_dir_file, _In_z_ const UTF8 *game_pag_file, int nCachePages)
 {
@@ -176,7 +159,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         return nullptr;
     }
 
-    cache_scans++;
     if (!mudstate.bStandAlone)
     {
         // Check the cache, first.
@@ -184,8 +166,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         const auto it = mudstate.attribute_lru_cache_map.find(*nam);
         if (it != mudstate.attribute_lru_cache_map.end())
         {
-            cache_hits++;
-
             // It was in the cache, so indicate this entry as the newest and return it.
             //
             mudstate.attribute_lru_cache_list.splice(
@@ -215,9 +195,9 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
             {
                 // Add this information to the cache.
                 //
-                std::vector<UTF8> v(temp_record.attrText, temp_record.attrText + nLength);
+                vector<UTF8> v(temp_record.attrText, temp_record.attrText + nLength);
                 auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
-                mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it)));
+                mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
                 cache_size += v.size();
                 trim_attribute_cache();
             }
@@ -232,9 +212,9 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
     {
         // Add an empty entry in the cache.
         //
-        std::vector<UTF8> v;
+        vector<UTF8> v;
         auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
-        mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it)));
+        mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
         cache_size += v.size();
         trim_attribute_cache();
     }
@@ -316,7 +296,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     {
         // Update cache.
         //
-        std::vector<UTF8> v(temp_record.attrText, temp_record.attrText + len);
+        vector<UTF8> v(temp_record.attrText, temp_record.attrText + len);
         auto it2 = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
 
         const auto it = mudstate.attribute_lru_cache_map.find(*nam);
@@ -326,13 +306,13 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
             //
             cache_size += v.size() - it->second.first.size();
             mudstate.attribute_lru_cache_list.erase((*it).second.second);
-            it->second = std::make_pair(v, it2);
+            it->second = make_pair(v, it2);
         }
         else
         {
             // It wasn't in the cache map, so create a mapping.
             //
-            mudstate.attribute_lru_cache_map.insert(std::make_pair(*nam, std::make_pair(v, it2)));
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it2)));
             cache_size += v.size();
         }
         trim_attribute_cache();
@@ -393,7 +373,6 @@ void cache_del(_In_ Aname *nam)
             cache_size -= it->second.first.size();
             mudstate.attribute_lru_cache_list.erase((*it).second.second);
             mudstate.attribute_lru_cache_map.erase(it);
-            cache_deletes++;
         }
     }
 }

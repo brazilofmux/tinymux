@@ -26,6 +26,7 @@
 #include "mathutil.h"
 #include "powers.h"
 #include "vattr.h"
+using namespace std;
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
@@ -1277,14 +1278,15 @@ void init_attrtab(void)
     {
         size_t nLen;
         bool bValid;
-        UTF8 *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
+        const UTF8 *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
         if (!bValid)
         {
             continue;
         }
         anum_extend(a->number);
         anum_set(a->number, a);
-        hashaddLEN(buff, nLen, a, &mudstate.attr_name_htab);
+        vector<UTF8> v(buff, buff + nLen);
+        mudstate.builtin_attribute_names.insert(make_pair(v, a));
     }
 
     // We specifically allow the '*' character at server
@@ -1295,7 +1297,10 @@ void init_attrtab(void)
     {
         anum_extend(a->number);
         anum_set(a->number, a);
-        hashaddLEN((char *)a->name, strlen((char *)a->name), a, &mudstate.attr_name_htab);
+        const UTF8* buff = a->name;
+        const size_t n = strlen(reinterpret_cast<const char*>(buff));
+        vector<UTF8> v(buff, buff+n);
+        mudstate.builtin_attribute_names.insert(make_pair(v, a));
     }
 }
 
@@ -1317,16 +1322,16 @@ ATTR *atr_str(const UTF8 *s)
 
     // Look for a predefined attribute.
     //
-    ATTR *a = (ATTR *)hashfindLEN(buff, nBuffer, &mudstate.attr_name_htab);
-    if (a != nullptr)
+    const vector<UTF8> v(buff, buff + nBuffer);
+    const auto it = mudstate.builtin_attribute_names.find(v);
+    if (it != mudstate.builtin_attribute_names.end())
     {
-        return a;
+        return it->second;
     }
 
     // Nope, look for a user attribute.
     //
-    a = vattr_find_LEN(buff, nBuffer);
-    return a;
+    return vattr_find_LEN(buff, nBuffer);
 }
 
 int GrowFiftyPercent(int x, int low, int high)

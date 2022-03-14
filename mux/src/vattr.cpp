@@ -12,6 +12,7 @@
 #include "command.h"
 #include "functions.h"
 #include "vattr.h"
+using namespace std;
 
 static UTF8 *store_string(const UTF8 *);
 
@@ -107,12 +108,11 @@ static void dbclean_CheckANHtoAT(dbref executor)
     int nOutOfBounds = 0;
     int nInvalid = 0;
 
-    for (ATTR *pa = (ATTR *)hash_firstentry(&mudstate.attr_name_htab);
-         pa;
-         pa = (ATTR *)hash_nextentry(&mudstate.attr_name_htab))
+    for (auto it = mudstate.builtin_attribute_names.begin(); it != mudstate.builtin_attribute_names.end(); ++it)
     {
+        const auto pa = it->second;
         nAttributes++;
-        int iAttr = pa->number;
+        const int iAttr = pa->number;
         if (iAttr <= 0 || iAttr > anum_alc_top)
         {
             nOutOfBounds++;
@@ -128,7 +128,7 @@ static void dbclean_CheckANHtoAT(dbref executor)
                 nInvalid++;
             }
 
-            ATTR *pb = (ATTR *) anum_get(iAttr);
+            const auto pb = (ATTR *) anum_get(iAttr);
             if (pb != pa)
             {
                 nInvalid++;
@@ -139,7 +139,7 @@ static void dbclean_CheckANHtoAT(dbref executor)
     for (ATTR *va = vattr_first(); va; va = vattr_next(va))
     {
         nAttributes++;
-        int iAttr = va->number;
+        const int iAttr = va->number;
         if (iAttr <= 0 || iAttr > anum_alc_top)
         {
             nOutOfBounds++;
@@ -155,7 +155,7 @@ static void dbclean_CheckANHtoAT(dbref executor)
                 nUserDefined++;
             }
 
-            ATTR *vb = (ATTR *) anum_get(iAttr);
+            const auto vb = (ATTR *) anum_get(iAttr);
             if (vb != va)
             {
                 nInvalid++;
@@ -201,8 +201,10 @@ static void dbclean_CheckATtoANH(dbref executor)
                 // Fetch the attribute structure pointer -- which should match the one
                 // from the corresponding table entry.
                 //
-                ATTR *pb = (ATTR *) hashfindLEN(pCased, nCased, &mudstate.attr_name_htab);
-                if (pb != pa)
+                vector<UTF8> v(pCased, pCased + nCased);
+                auto it = mudstate.builtin_attribute_names.find(v);
+                if (  it == mudstate.builtin_attribute_names.end()
+                   || it->second != pa)
                 {
                     nInvalid++;
                 }
@@ -214,7 +216,7 @@ static void dbclean_CheckATtoANH(dbref executor)
         }
         else
         {
-            ATTR *va = (ATTR *) anum_get(iAttr);
+            const auto va = (ATTR *) anum_get(iAttr);
             if (va)
             {
                 nUserDefined++;
