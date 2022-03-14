@@ -18,11 +18,11 @@
 // ---------------------------------------------------------------------------
 // parse_linkable_room: Get a location to link to.
 //
-static dbref parse_linkable_room(dbref player, UTF8 *room_name)
+static dbref parse_linkable_room(const dbref player, const UTF8 *room_name)
 {
     init_match(player, room_name, NOTYPE);
     match_everything(MAT_NO_EXITS | MAT_NUMERIC | MAT_HOME);
-    dbref room = match_result();
+    const dbref room = match_result();
 
     // HOME is always linkable
     //
@@ -53,7 +53,7 @@ static dbref parse_linkable_room(dbref player, UTF8 *room_name)
 // ---------------------------------------------------------------------------
 // open_exit, do_open: Open a new exit and optionally link it somewhere.
 //
-static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
+static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
 {
     if (!Good_obj(loc))
     {
@@ -75,7 +75,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         }
     }
 
-    dbref exit = create_obj(player, TYPE_EXIT, direction, 0);
+    const dbref exit = create_obj(player, TYPE_EXIT, direction, 0);
     if (NOTHING == exit)
     {
         return;
@@ -132,8 +132,8 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     }
 }
 
-void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             UTF8 *direction, UTF8 *links[], int nlinks, const UTF8 *cargs[], int ncargs)
+void do_open(const dbref executor, const dbref caller, const dbref enactor, const int eval, const int key,
+             UTF8 *direction, UTF8 *links[], int nlinks, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -170,7 +170,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (nlinks >= 2)
     {
-        dbref destnum = parse_linkable_room(executor, dest);
+        const dbref destnum = parse_linkable_room(executor, dest);
         if (Good_obj(destnum) || destnum == HOME)
         {
             UTF8 buff[I32BUF_SIZE];
@@ -184,7 +184,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
 // link_exit, do_link: Set destination(exits), dropto(rooms) or
 // home(player,thing)
 
-static void link_exit(dbref player, dbref exit, dbref dest)
+static void link_exit(const dbref player, const dbref exit, const dbref dest)
 {
     // Make sure we can link there
     //
@@ -242,16 +242,16 @@ static void link_exit(dbref player, dbref exit, dbref dest)
 
 void do_link
 (
-    dbref executor,
-    dbref caller,
+    const dbref executor,
+    const dbref caller,
     dbref enactor,
-    int   eval,
-    int   key,
-    int   nargs,
+    const int   eval,
+    const int   key,
+    const int   nargs,
     UTF8 *what,
     UTF8 *where,
     const UTF8 *cargs[],
-    int   ncargs
+    const int   ncargs
 )
 {
     UNUSED_PARAMETER(eval);
@@ -263,7 +263,7 @@ void do_link
     //
     init_match(executor, what, TYPE_EXIT);
     match_everything(0);
-    dbref thing = noisy_match_result();
+    const dbref thing = noisy_match_result();
     if (thing == NOTHING)
     {
         return;
@@ -326,8 +326,8 @@ void do_link
         }
         else
         {
-            dbref nHomeOrig = Home(thing);
-            dbref nHomeNew  = room;
+            const dbref nHomeOrig = Home(thing);
+            const dbref nHomeNew  = room;
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
@@ -378,8 +378,8 @@ void do_link
         }
         else
         {
-            dbref nDroptoOrig = Dropto(thing);
-            dbref nDroptoNew  = room;
+            const dbref nDroptoOrig = Dropto(thing);
+            const dbref nDroptoNew  = room;
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
@@ -422,16 +422,16 @@ void do_link
 //
 void do_parent
 (
-    dbref executor,
-    dbref caller,
+    const dbref executor,
+    const dbref caller,
     dbref enactor,
-    int   eval,
-    int   key,
-    int   nargs,
+    const int   eval,
+    const int   key,
+    const int   nargs,
     UTF8 *tname,
     UTF8 *pname,
     const UTF8 *cargs[],
-    int   ncargs
+    const int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -446,7 +446,7 @@ void do_parent
     //
     init_match(executor, tname, NOTYPE);
     match_everything(0);
-    dbref thing = noisy_match_result();
+    const dbref thing = noisy_match_result();
     if (!Good_obj(thing))
     {
         return;
@@ -510,12 +510,12 @@ void do_parent
         // Setup the appropriate stack arguments.
         //
         UTF8 child[SBUF_SIZE];
-        UTF8 removal[]  = "1";
-        UTF8 addition[] = "0";
+        const UTF8 removal[]  = "1";
+        const UTF8 addition[] = "0";
         UTF8 original_executor[SBUF_SIZE];
         const UTF8 *xargs[3];
 
-        int xnargs = 3;
+        const int xnargs = 3;
         xargs[0] = child;
         xargs[2] = original_executor;
 
@@ -580,8 +580,8 @@ void do_parent
 // ---------------------------------------------------------------------------
 // do_dig: Create a new room.
 //
-void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
-            UTF8 *name, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
+void do_dig(const dbref executor, const dbref caller, const dbref enactor, const int eval, const int key,
+            UTF8 *name, UTF8 *args[], const int nargs, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -595,7 +595,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
         notify_quiet(executor, T("Dig what?"));
         return;
     }
-    dbref room = create_obj(executor, TYPE_ROOM, name, 0);
+    const dbref room = create_obj(executor, TYPE_ROOM, name, 0);
     if (room == NOTHING)
     {
         return;
@@ -639,16 +639,16 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
 //
 void do_create
 (
-    dbref executor,
-    dbref caller,
+    const dbref executor,
+    const dbref caller,
     dbref enactor,
-    int   eval,
-    int   key,
-    int   nargs,
+    const int   eval,
+    const int   key,
+    const int   nargs,
     UTF8 *name,
     UTF8 *coststr,
     const UTF8 *cargs[],
-    int   ncargs
+    const int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -670,7 +670,7 @@ void do_create
         notify_quiet(executor, T("You can\xE2\x80\x99t create an object for less than nothing!"));
         return;
     }
-    dbref thing = create_obj(executor, TYPE_THING, name, cost);
+    const dbref thing = create_obj(executor, TYPE_THING, name, cost);
     if (thing == NOTHING)
     {
         return;
@@ -699,16 +699,16 @@ void do_create
 //
 void do_clone
 (
-    dbref executor,
-    dbref caller,
+    const dbref executor,
+    const dbref caller,
     dbref enactor,
-    int   eval,
+    const int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
     UTF8 *arg2,
     const UTF8 *cargs[],
-    int   ncargs
+    const int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -718,7 +718,7 @@ void do_clone
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref clone, thing, new_owner, loc;
+    dbref loc;
     int cost;
 
     if (  (key & CLONE_INVENTORY)
@@ -738,7 +738,7 @@ void do_clone
 
     init_match(executor, name, NOTYPE);
     match_everything(0);
-    thing = noisy_match_result();
+    dbref thing = noisy_match_result();
     if (  NOTHING == thing
        || AMBIGUOUS == thing)
     {
@@ -773,7 +773,7 @@ void do_clone
 
     // Determine the cost of cloning
     //
-    new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
+    const dbref new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
     if (key & CLONE_SET_COST)
     {
         cost = mux_atol(arg2);
@@ -813,7 +813,7 @@ void do_clone
     //
     bool bValid = false;
     size_t nValidName;
-    UTF8 *pValidName = nullptr;
+    const UTF8 *pValidName = nullptr;
     switch (Typeof(thing))
     {
     case TYPE_THING:
@@ -837,7 +837,7 @@ void do_clone
     {
         clone_name = Name(thing);
     }
-    clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
+    const dbref clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
 
     if (clone == NOTHING)
     {
@@ -952,12 +952,12 @@ void do_clone
 //
 void do_pcreate
 (
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   eval,
-    int   key,
-    int   nargs,
+    const dbref executor,
+    const dbref caller,
+    const dbref enactor,
+    const int   eval,
+    const int   key,
+    const int   nargs,
     UTF8 *name,
     UTF8 *pass,
     const UTF8 *cargs[],
@@ -972,8 +972,8 @@ void do_pcreate
     UNUSED_PARAMETER(ncargs);
 
     const UTF8 *pmsg;
-    bool isrobot = (key == PCRE_ROBOT);
-    dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
+    const bool isrobot = (key == PCRE_ROBOT);
+    const dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
         notify_quiet(executor, tprintf(T("Failure creating \xE2\x80\x98%s\xE2\x80\x99.  %s"), name, pmsg));
@@ -1048,9 +1048,8 @@ static bool can_destroy_player(dbref player, dbref victim)
     return true;
 }
 
-static void ProcessMasterRoomADestroy(dbref destroyer, dbref thing)
+static void ProcessMasterRoomADestroy(const dbref destroyer, const dbref thing)
 {
-    int nxargs = 2;
     const UTF8 *xargs[2];
 
     switch (Typeof(thing))
@@ -1090,6 +1089,7 @@ static void ProcessMasterRoomADestroy(dbref destroyer, dbref thing)
             UTF8* act = atr_pget(master_room_obj, A_ADESTROY, &aowner, &aflags);
             if ('\0' != act[0])
             {
+                const int nxargs = 2;
                 CLinearTimeAbsolute lta;
                 UTF8 buf[SBUF_SIZE];
                 mux_sprintf(buf, SBUF_SIZE, T("#%d"), thing);
@@ -1104,7 +1104,7 @@ static void ProcessMasterRoomADestroy(dbref destroyer, dbref thing)
     }
 }
 
-void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what, const UTF8 *cargs[], int ncargs)
+void do_destroy(const dbref executor, const dbref caller, dbref enactor, const int eval, int key, UTF8 *what, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1187,7 +1187,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
     // Check whether we should perform instant destruction.
     //
-    dbref ThingOwner = Owner(thing);
+    const dbref ThingOwner = Owner(thing);
     bool bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
 
     if (!bInstant)

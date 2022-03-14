@@ -1215,7 +1215,7 @@ void do_query
         }
 
         UTF8 *pQuery = dbname_query;
-        UTF8 *pDBName = parse_to(&pQuery, '/', 0);
+        const UTF8 *pDBName = parse_to(&pQuery, '/', 0);
 
         if (nullptr == pQuery)
         {
@@ -1247,7 +1247,7 @@ static int Show_bFirstLine;
 int Total_SQLTimeout;
 int Shown_SQLTimeout;
 
-static int CallBack_ShowDispatches(PTASK_RECORD p)
+static int CallBack_ShowDispatches(const PTASK_RECORD p)
 {
     Total_SystemTasks++;
     CLinearTimeDelta ltd = p->ltaWhen - Show_lsaNow;
