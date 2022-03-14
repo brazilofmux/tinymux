@@ -10,8 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <csignal>
-
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
@@ -30,7 +28,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
     FILETIME ftKernel;
     FILETIME ftUser;
     GetProcessTimes(game_process_handle, &ftCreate, &ftExit, &ftKernel, &ftUser);
-    ltd.Set100ns(*(INT64 *)(&ftUser));
+    ltd.Set100ns(*reinterpret_cast<INT64*>(&ftUser));
 
 #endif // WINDOWS_PROCESSES
 
@@ -54,7 +52,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
 // ---------------------------------------------------------------------------
 // add_to: Adjust an object's queue or semaphore count.
 //
-static int add_to(dbref executor, int am, int attrnum)
+static int add_to(const dbref executor, const int am, int attrnum)
 {
     int aflags;
     dbref aowner;
@@ -78,12 +76,12 @@ static int add_to(dbref executor, int am, int attrnum)
 // This Task assumes that pEntry is already unlinked from any lists it may
 // have been related to.
 //
-static void Task_RunQueueEntry(void *pEntry, int iUnused)
+static void Task_RunQueueEntry(void *pEntry, const int iUnused)
 {
     UNUSED_PARAMETER(iUnused);
 
-    BQUE *point = (BQUE *)pEntry;
-    dbref executor = point->executor;
+    const auto point = static_cast<BQUE*>(pEntry);
+    const dbref executor = point->executor;
 
     if (  Good_obj(executor)
        && !Going(executor))
@@ -163,9 +161,9 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     alarm_clock.set(mudconf.max_cmdsecs);
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
-                    UTF8 *log_cmdbuf = process_command(executor, point->caller,
-                        point->enactor, point->eval, false, cp, (const UTF8 **)point->env,
-                        point->nargs);
+                    const UTF8 *log_cmdbuf = process_command(executor, point->caller,
+                                                             point->enactor, point->eval, false, cp, const_cast<const UTF8**>(point->env),
+                                                             point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
@@ -227,18 +225,21 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
         }
     }
 
-    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+    for (auto& i : point->scr)
     {
-        if (point->scr[i])
+        if (i)
         {
-            RegRelease(point->scr[i]);
-            point->scr[i] = nullptr;
+            RegRelease(i);
+            i = nullptr;
         }
+    }
 
-        if (mudstate.global_regs[i])
+    for (auto& global_reg : mudstate.global_regs)
+    {
+        if (global_reg)
         {
-            RegRelease(mudstate.global_regs[i]);
-            mudstate.global_regs[i] = nullptr;
+            RegRelease(global_reg);
+            global_reg = nullptr;
         }
     }
 
@@ -259,7 +260,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
 // ---------------------------------------------------------------------------
 // que_want: Do we want this queue entry?
 //
-static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
+static bool que_want(const BQUE *entry, const dbref ptarg, dbref otarg)
 {
     if (  ptarg != NOTHING
        && ptarg != Owner(entry->executor))
@@ -270,25 +271,25 @@ static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
            || otarg == entry->executor);
 }
 
-static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
+static void Task_SemaphoreTimeout(void *pExpired, const int iUnused)
 {
     UNUSED_PARAMETER(iUnused);
 
     // A semaphore has timed out.
     //
-    BQUE *point = (BQUE *)pExpired;
+    const auto point = static_cast<BQUE*>(pExpired);
     add_to(point->u.s.sem, -1, point->u.s.attr);
     point->u.s.sem = NOTHING;
     Task_RunQueueEntry(point, 0);
 }
 
-void Task_SQLTimeout(void *pExpired, int iUnused)
+void Task_SQLTimeout(void *pExpired, const int iUnused)
 {
     UNUSED_PARAMETER(iUnused);
 
     // A SQL Query has timed out.  Actually, this isn't supported.
     //
-    BQUE *point = (BQUE *)pExpired;
+    const auto point = static_cast<BQUE*>(pExpired);
     Task_RunQueueEntry(point, 0);
 }
 
@@ -298,7 +299,7 @@ static int   Halt_Entries;
 static dbref Halt_Player_Run;
 static dbref Halt_Entries_Run;
 
-static int CallBack_HaltQueue(PTASK_RECORD p)
+static int CallBack_HaltQueue(const PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
        || p->fpTask == Task_SQLTimeout
@@ -306,7 +307,7 @@ static int CallBack_HaltQueue(PTASK_RECORD p)
     {
         // This is a @wait, timed Semaphore Task, or timed SQL Query.
         //
-        BQUE *point = (BQUE *)(p->arg_voidptr);
+        const auto point = static_cast<BQUE*>(p->arg_voidptr);
         if (que_want(point, Halt_Player_Target, Halt_Object_Target))
         {
             // Accounting for pennies and queue quota.
@@ -333,12 +334,12 @@ static int CallBack_HaltQueue(PTASK_RECORD p)
                 add_to(point->u.s.sem, -1, point->u.s.attr);
             }
 
-            for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+            for (auto& i : point->scr)
             {
-                if (point->scr[i])
+                if (i)
                 {
-                    RegRelease(point->scr[i]);
-                    point->scr[i] = nullptr;
+                    RegRelease(i);
+                    i = nullptr;
                 }
             }
 
@@ -361,7 +362,7 @@ static int CallBack_HaltQueue(PTASK_RECORD p)
 // (<executor>, <object>) matches only queue entries run from <objects>
 //                        and owned by <executor>.
 //
-int halt_que(dbref executor, dbref object)
+int halt_que(const dbref executor, const dbref object)
 {
     Halt_Player_Target = executor;
     Halt_Object_Target = object;
@@ -385,7 +386,7 @@ int halt_que(dbref executor, dbref object)
 // ---------------------------------------------------------------------------
 // do_halt: Command interface to halt_que.
 //
-void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *target, const UTF8 *cargs[], int ncargs)
+void do_halt(const dbref executor, const dbref caller, dbref enactor, const int eval, int key, UTF8 *target, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -449,7 +450,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
     }
 
-    int numhalted = halt_que(executor_targ, obj_targ);
+    const int numhalted = halt_que(executor_targ, obj_targ);
     if (Quiet(executor))
     {
         return;
@@ -471,7 +472,7 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
     {
         // This represents a semaphore.
         //
-        BQUE *point = (BQUE *)(p->arg_voidptr);
+        const auto point = static_cast<BQUE*>(p->arg_voidptr);
         if (  point->u.s.sem == Notify_Sem
            && (  point->u.s.attr == Notify_Attr
               || !Notify_Attr))
@@ -484,12 +485,12 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 giveto(point->executor, mudconf.waitcost);
                 a_Queue(Owner(point->executor), -1);
 
-                for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+                for (auto& i : point->scr)
                 {
-                    if (point->scr[i])
+                    if (i)
                     {
-                        RegRelease(point->scr[i]);
-                        point->scr[i] = nullptr;
+                        RegRelease(i);
+                        i = nullptr;
                     }
                 }
 
@@ -537,7 +538,7 @@ static int CallBack_NotifySemaphoreFirst(PTASK_RECORD p)
     {
         // This represents a semaphore.
         //
-        BQUE *point = (BQUE *)(p->arg_voidptr);
+        const auto point = static_cast<BQUE*>(p->arg_voidptr);
         if (  point->u.s.sem == Notify_Sem
            && (  point->u.s.attr == Notify_Attr
               || !Notify_Attr))
@@ -633,11 +634,11 @@ void do_notify
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *obj = parse_to(&what, '/', 0);
+    const UTF8 *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
     match_everything(0);
 
-    dbref thing = noisy_match_result();
+    const dbref thing = noisy_match_result();
     if (!Good_obj(thing))
     {
         return;
@@ -652,8 +653,8 @@ void do_notify
         if (  what
            && what[0] != '\0')
         {
-            UTF8 *AttributeName = what;
-            int i = mkattr(executor, AttributeName);
+            const UTF8 *AttributeName = what;
+            const int i = mkattr(executor, AttributeName);
             if (0 < i)
             {
                 atr = i;
@@ -786,10 +787,10 @@ static BQUE *setup_que
 
     // Create the qeue entry and load the save string.
     //
-    BQUE *tmp = alloc_qentry("setup_que.qblock");
+    const auto tmp = alloc_qentry("setup_que.qblock");
     tmp->comm = nullptr;
 
-    UTF8 *tptr = tmp->text = (UTF8 *)MEMALLOC(tlen);
+    UTF8 *tptr = tmp->text = static_cast<UTF8*>(MEMALLOC(tlen));
     ISOUTOFMEMORY(tptr);
 
     if (command)
@@ -864,16 +865,16 @@ static BQUE *setup_que
 //
 void wait_que
 (
-    dbref    executor,
-    dbref    caller,
+    const dbref    executor,
+    const dbref    caller,
     dbref    enactor,
-    int      eval,
-    bool     bTimed,
-    CLinearTimeAbsolute &ltaWhen,
-    dbref    sem,
-    int      attr,
+    const int      eval,
+    const bool     bTimed,
+    const CLinearTimeAbsolute &ltaWhen,
+    const dbref    sem,
+    const int      attr,
     UTF8    *command,
-    int      nargs,
+    const int      nargs,
     const UTF8 *args[],
     reg_ref *sargs[]
 )
@@ -996,14 +997,14 @@ void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prsResultsSet)
 //
 void sql_que
 (
-    dbref    executor,
-    dbref    caller,
-    dbref    enactor,
-    int      eval,
-    dbref    thing,
-    int      attr,
-    UTF8    *dbname,
-    UTF8    *query,
+    const dbref    executor,
+    const dbref    caller,
+    const dbref    enactor,
+    const int      eval,
+    const dbref    thing,
+    const int      attr,
+    const UTF8    *dbname,
+    const UTF8    *query,
     int      nargs,
     const UTF8 *args[],
     reg_ref *sargs[]
@@ -1035,12 +1036,12 @@ void sql_que
         return;
     }
 
-    UINT32 hQuery = next_handle++;
+    const UINT32 hQuery = next_handle++;
 
     tmp->u.hQuery = hQuery;
 
     scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
-    MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
+    const MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
     if (MUX_FAILED(mr))
     {
         scheduler.CancelTask(Task_SQLTimeout, tmp, next_handle);
@@ -1052,10 +1053,10 @@ void sql_que
 //
 void do_wait
 (
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   eval,
+    const dbref executor,
+    const dbref caller,
+    const dbref enactor,
+    const int   eval,
     int   key,
     int   nargs,
     UTF8 *event,
@@ -1092,7 +1093,7 @@ void do_wait
 
     // Semaphore wait with optional timeout.
     //
-    UTF8 *what = parse_to(&event, '/', 0);
+    const UTF8 *what = parse_to(&event, '/', 0);
     init_match(executor, what, NOTYPE);
     match_everything(0);
 
@@ -1129,7 +1130,7 @@ void do_wait
             }
             else
             {
-                UTF8 *EventAttributeName = (UTF8 *)event;
+                const UTF8 *EventAttributeName = (UTF8 *)event;
                 ATTR *ap = atr_str(EventAttributeName);
                 if (!ap)
                 {
@@ -1153,7 +1154,7 @@ void do_wait
             }
         }
 
-        int num = add_to(thing, 1, atr);
+        const int num = add_to(thing, 1, atr);
         if (num <= 0)
         {
             // Thing over-notified, run the command immediately.
@@ -1173,12 +1174,12 @@ void do_wait
 //
 void do_query
 (
-    dbref executor,
-    dbref caller,
+    const dbref executor,
+    const dbref caller,
     dbref enactor,
-    int   eval,
+    const int   eval,
     int   key,
-    int   nargs,
+    const int   nargs,
     UTF8 *dbref_attr,
     UTF8 *dbname_query,
     const UTF8 *cargs[],
@@ -1297,7 +1298,7 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-static void ShowPsLine(BQUE *tmp)
+static void ShowPsLine(const BQUE *tmp)
 {
     UTF8 *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
@@ -1348,7 +1349,7 @@ static int CallBack_ShowWait(PTASK_RECORD p)
     }
 
     Total_RunQueueEntry++;
-    BQUE *tmp = (BQUE *)(p->arg_voidptr);
+    const auto tmp = static_cast<BQUE*>(p->arg_voidptr);
     if (que_want(tmp, Show_Player_Target, Show_Object_Target))
     {
         Shown_RunQueueEntry++;
@@ -1374,7 +1375,7 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
     }
 
     Total_SemaphoreTimeout++;
-    BQUE *tmp = (BQUE *)(p->arg_voidptr);
+    const auto tmp = static_cast<BQUE*>(p->arg_voidptr);
     if (que_want(tmp, Show_Player_Target, Show_Object_Target))
     {
         Shown_SemaphoreTimeout++;
@@ -1400,7 +1401,7 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
     }
 
     Total_SQLTimeout++;
-    BQUE *tmp = (BQUE *)(p->arg_voidptr);
+    const auto tmp = static_cast<BQUE*>(p->arg_voidptr);
     if (que_want(tmp, Show_Player_Target, Show_Object_Target))
     {
         Shown_SQLTimeout++;
@@ -1421,7 +1422,7 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_ps: tell executor what commands they have pending in the queue
 //
-void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *target, const UTF8 *cargs[], int ncargs)
+void do_ps(const dbref executor, const dbref caller, const dbref enactor, const int eval, int key, UTF8 *target, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1429,7 +1430,6 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *bufp;
     dbref executor_targ, obj_targ;
 
     // Figure out what to list the queue for.
@@ -1514,7 +1514,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
 
     // Display stats.
     //
-    bufp = alloc_mbuf("do_ps");
+    UTF8* bufp = alloc_mbuf("do_ps");
     mux_sprintf(bufp, MBUF_SIZE, T("Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d"),
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout,
@@ -1535,7 +1535,7 @@ static int CallBack_Warp(PTASK_RECORD p)
        || p->fpTask == Task_SQLTimeout
        || p->fpTask == Task_SemaphoreTimeout)
     {
-        BQUE *point = (BQUE *)(p->arg_voidptr);
+        const auto point = static_cast<BQUE*>(p->arg_voidptr);
         if (point->IsTimed)
         {
             point->waittime -= ltdWarp;
@@ -1549,7 +1549,7 @@ static int CallBack_Warp(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_queue: Queue management
 //
-void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
+void do_queue(const dbref executor, const dbref caller, const dbref enactor, const int eval, const int key, UTF8 *arg, const UTF8 *cargs[], const int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1559,8 +1559,8 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
     if (key == QUEUE_KICK)
     {
-        int i = mux_atol(arg);
-        int save_minPriority = scheduler.GetMinPriority();
+        const int i = mux_atol(arg);
+        const int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
             notify(executor, T("Warning: automatic dequeueing is disabled."));
@@ -1569,7 +1569,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         CLinearTimeAbsolute lsaNow;
         lsaNow.GetUTC();
         scheduler.ReadyTasks(lsaNow);
-        int ncmds = scheduler.RunTasks(i);
+        const int ncmds = scheduler.RunTasks(i);
         scheduler.SetMinPriority(save_minPriority);
 
         if (!Quiet(executor))
@@ -1579,7 +1579,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     }
     else if (key == QUEUE_WARP)
     {
-        int iWarp = mux_atol(arg);
+        const int iWarp = mux_atol(arg);
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {

@@ -3746,7 +3746,7 @@ static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, 
     raw_notify(player, buff);
 }
 
-static void list_hashstats(dbref player)
+static void list_hashstats(const dbref player)
 {
     raw_notify(player, T("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
     list_hashstat(player, T("Commands"), &mudstate.command_htab);
@@ -3771,7 +3771,6 @@ static void list_hashstats(dbref player)
             mudstate.aHelpDesc[i].ht);
     }
 }
-
 
 // ---------------------------------------------------------------------------
 // list_db_stats: Get useful info from the DB layer about hash stats, etc.
