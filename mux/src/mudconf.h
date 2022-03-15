@@ -6,17 +6,6 @@
 #ifndef MUDCONF_H
 #define MUDCONF_H
 
-#define WIDTHOF_DOING_STRING 45
-#define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
-
-/* CONFDATA:    runtime configurable parameters */
-
-typedef struct tag_int_array
-{
-    int n;
-    int *pi;
-} IntArray;
-
 typedef struct
 {
     const UTF8 *CommandName;

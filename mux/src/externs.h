@@ -7,28 +7,79 @@
 #define EXTERNS_H
 
 #include "_build.h"
+
+#include "timeutil.h"
+#include "svdrand.h"
+#include "svdhash.h"
+
+#include "libmux.h"
+
+class CResultsSet
+{
+public:
+    CResultsSet(QUEUE_INFO* pqi);
+    ~CResultsSet(void);
+    UINT32 Release(void);
+    UINT32 AddRef(void);
+    bool   isLoaded(void);
+    void   SetError(UINT32 iError);
+    UINT32 GetError(void);
+    int    GetRowCount(void);
+    const UTF8* FirstField(int iRow);
+    const UTF8* NextField(void);
+
+private:
+    UINT32 m_cRef;
+    int    m_nFields;
+    size_t m_nBlob;
+    UTF8* m_pBlob;
+    bool   m_bLoaded;
+    UINT32 m_iError;
+    int    m_nRows;
+    PUTF8* m_pRows;
+
+    const UTF8* m_pCurrentField;
+    int         m_iCurrentField;
+};
+
 #include "alloc.h"
+
+#define WIDTHOF_DOING_STRING 45
+#define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
+
+#include "utf8tables.h"
+#include "stringutil.h"
+
+#include "htab.h"
+
 #include "ansi.h"
 #include "attrcache.h"
 #include "attrs.h"
+#include "command.h"
 #include "comsys.h"
 #include "flags.h"
-#include "timeutil.h"
 #include "db.h"
 #include "functions.h"
 #include "funmath.h"
-#include "svdrand.h"
-#include "svdhash.h"
 #include "help.h"
-#include "htab.h"
+
+typedef struct tag_int_array
+{
+    int n;
+    int* pi;
+} IntArray;
+
+#include "interface.h"
+#include "file_c.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
-#include "libmux.h"
 #include "mail.h"
 #include "match.h"
 #include "mathutil.h"
+#include "mguests.h"
 #include "modules.h"
+#include "mudconf.h"
 #include "muxcli.h"
 #include "powers.h"
 #include "misc.h"
@@ -38,43 +89,7 @@
 #ifdef UNIX_NETWORKING
 #include "slave.h"
 #endif
-#include "utf8tables.h"
-#include "stringutil.h"
 #include "vattr.h"
-
-class CResultsSet
-{
-public:
-    CResultsSet(QUEUE_INFO *pqi);
-    ~CResultsSet(void);
-    UINT32 Release(void);
-    UINT32 AddRef(void);
-    bool   isLoaded(void);
-    void   SetError(UINT32 iError);
-    UINT32 GetError(void);
-    int    GetRowCount(void);
-    const UTF8 *FirstField(int iRow);
-    const UTF8 *NextField(void);
-
-private:
-    UINT32 m_cRef;
-    int    m_nFields;
-    size_t m_nBlob;
-    UTF8  *m_pBlob;
-    bool   m_bLoaded;
-    UINT32 m_iError;
-    int    m_nRows;
-    PUTF8 *m_pRows;
-
-    const UTF8 *m_pCurrentField;
-    int         m_iCurrentField;
-};
-
-#include "mudconf.h"
-#include "command.h"
-#include "interface.h"
-#include "mguests.h"
-#include "file_c.h"
 
 // From conf.cpp
 //
