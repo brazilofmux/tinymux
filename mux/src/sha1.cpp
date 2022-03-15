@@ -6,10 +6,9 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 
 #ifndef UNIX_DIGEST
-
-#include "sha1.h"
 
 void SHA1_Init(SHA_CTX *p)
 {

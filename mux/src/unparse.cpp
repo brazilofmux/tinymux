@@ -8,8 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mathutil.h"
-
 // Boolexp decompile formats
 //
 #define F_EXAMINE   1  // Normal

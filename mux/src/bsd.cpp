@@ -10,21 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif // HAVE_SYS_IOCTL_H
-
-#include <csignal>
-
-#include "attrs.h"
-#include "file_c.h"
-#include "mathutil.h"
-
-#ifdef UNIX_NETWORKING
-#include "command.h"
-#include "slave.h"
-#endif
-
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
 extern QUEUE_INFO Queue_In;
 extern QUEUE_INFO Queue_Out;

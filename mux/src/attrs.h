@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef _ATTRS_H
-#define _ATTRS_H
+#ifndef ATTRS_H
+#define ATTRS_H
 
 /* Attribute flags */
 #define AF_ODARK    0x00000001UL // players other than owner can't see it.
@@ -242,4 +242,4 @@
 #define ATR_BUF_CHUNK   100 /* Min size to allocate for attribute buffer */
 #define ATR_BUF_INCR    6   /* Max size of one attribute */
 
-#endif // _ATTRS_H
+#endif //!ATTRS_H

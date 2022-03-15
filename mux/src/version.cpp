@@ -8,9 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "_build.h"
-#include "command.h"
-
 void do_version(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);

@@ -8,12 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "file_c.h"
-#include "mathutil.h"
-#include "powers.h"
-
 static void do_teleport_single
 (
     dbref executor,

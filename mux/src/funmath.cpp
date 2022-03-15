@@ -8,22 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif // HAVE_FLOAT_H
-#include <math.h>
-
-#include "functions.h"
-#include "funmath.h"
-#include "mathutil.h"
-
-#ifdef UNIX_DIGEST
-#include <openssl/sha.h>
-#include <openssl/evp.h>
-#else
-#include "sha1.h"
-#endif
-
 static const long nMaximums[10] =
 {
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999

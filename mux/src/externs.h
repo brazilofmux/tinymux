@@ -6,10 +6,41 @@
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
+#include "_build.h"
+#include "alloc.h"
+#include "ansi.h"
+#include "attrcache.h"
+#include "attrs.h"
+#include "comsys.h"
+#include "flags.h"
+#include "timeutil.h"
 #include "db.h"
-#include "match.h"
+#include "functions.h"
+#include "funmath.h"
+#include "svdrand.h"
+#include "svdhash.h"
+#include "help.h"
+#include "htab.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif // REALITY_LVLS
 #include "libmux.h"
+#include "mail.h"
+#include "match.h"
+#include "mathutil.h"
 #include "modules.h"
+#include "muxcli.h"
+#include "powers.h"
+#include "misc.h"
+#ifndef UNIX_DIGEST
+#include "sha1.h"
+#endif
+#ifdef UNIX_NETWORKING
+#include "slave.h"
+#endif
+#include "utf8tables.h"
+#include "stringutil.h"
+#include "vattr.h"
 
 class CResultsSet
 {
@@ -40,7 +71,10 @@ private:
 };
 
 #include "mudconf.h"
-#include "svdrand.h"
+#include "command.h"
+#include "interface.h"
+#include "mguests.h"
+#include "file_c.h"
 
 // From conf.cpp
 //

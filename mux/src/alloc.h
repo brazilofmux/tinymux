@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef M_ALLOC_H
-#define M_ALLOC_H
+#ifndef ALLOC_H
+#define ALLOC_H
 
 #define POOL_LBUF    0
 #define POOL_SBUF    1
@@ -95,4 +95,4 @@ struct reg_ref
     UTF8    *reg_ptr;
 };
 
-#endif // M_ALLOC_H
+#endif //!ALLOC_H

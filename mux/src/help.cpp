@@ -8,11 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <fcntl.h>
-
-#include "command.h"
-#include "help.h"
-
 // Pointers to this struct is what gets stored in the help_htab's.
 //
 struct help_entry

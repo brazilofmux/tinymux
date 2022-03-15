@@ -14,18 +14,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "functions.h"
-#include "help.h"
-#include "mail.h"
-#include "misc.h"
-#include "mathutil.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
  * maintainers of MUX would like to thank those responsible for PennMUSH 1.50

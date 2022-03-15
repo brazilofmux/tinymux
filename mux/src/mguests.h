@@ -3,11 +3,10 @@
  *
  */
 
-#ifndef __MGUESTS_H
-#define __MGUESTS_H
+#ifndef MGUESTS_H
+#define MGUESTS_H
 
 #include "copyright.h"
-#include "interface.h"
 
 // Zenty does OOP.
 //
@@ -39,4 +38,4 @@ extern CGuests Guest;
 
 #define GUEST_PASSWORD "Guest"
 
-#endif // !__MGUESTS_H
+#endif // !MGUESTS_H

@@ -12,13 +12,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <stdlib.h>
-
-#include "attrs.h"
-#include "comsys.h"
-#include "mguests.h"
-#include "powers.h"
-
 #define GUEST_HYSTERESIS 20
 
 CGuests Guest;

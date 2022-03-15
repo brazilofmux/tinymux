@@ -12,14 +12,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "functions.h"
-#include "mguests.h"
-#include "mathutil.h"
-#include "powers.h"
-#include "vattr.h"
 #include <pcre.h>
 
 // Switch tables for the various commands.

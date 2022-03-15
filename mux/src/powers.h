@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __POWERS_H
-#define __POWERS_H
+#ifndef POWERS_H
+#define POWERS_H
 
 #define POWER_EXT       0x1 /* Lives in extended powers word */
 
@@ -110,4 +110,4 @@ extern bool decode_power(dbref player, UTF8 *powername, POWERSET *pset);
 
 #define Can_SiteAdmin(c)    (((Powers(c) & POW_SITEADMIN) != 0) || Wizard(c))
 
-#endif /* POWERS_H */
+#endif // !POWERS_H

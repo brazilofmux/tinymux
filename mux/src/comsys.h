@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef __COMSYS_H__
-#define __COMSYS_H__
+#ifndef COMSYS_H
+#define COMSYS_H
 
 #define NUM_COMSYS 500
 
@@ -262,4 +262,4 @@ bool test_receive_access(dbref player, struct channel *chan);
 //
 #define UNDEAD(x) (Good_obj(x) && ((Typeof(x) != TYPE_PLAYER) || Connected(x)))
 
-#endif // __COMSYS_H__
+#endif // !COMSYS_H

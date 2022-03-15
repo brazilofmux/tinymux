@@ -4,8 +4,9 @@
  */
 
 #include "copyright.h"
-#include <string.h>
-#include "muxcli.h"
+#include "autoconf.h"
+#include "config.h"
+#include "externs.h"
 
 // 0 -- A non-option argument.
 // 1 -- A short-option argument.

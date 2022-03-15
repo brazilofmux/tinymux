@@ -10,13 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "functions.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
 using namespace std;
 
 static int num_channels;

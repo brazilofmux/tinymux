@@ -12,17 +12,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <csignal>
-
-#include "attrs.h"
-#include "command.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 UTF8 *DCL_CDECL tprintf(__in_z const UTF8 *fmt,...)
 {
     static UTF8 buff[LBUF_SIZE];

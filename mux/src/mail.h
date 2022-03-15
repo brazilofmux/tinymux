@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef _MAIL_H
-#define _MAIL_H
+#ifndef MAIL_H
+#define MAIL_H
 
 #include "copyright.h"
 
@@ -105,4 +105,4 @@ public:
     void AppendItem(struct mail *newp);
 };
 
-#endif // !_MAIL_H
+#endif // !MAIL_H

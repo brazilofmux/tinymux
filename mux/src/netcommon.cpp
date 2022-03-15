@@ -11,20 +11,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <time.h>
-
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "file_c.h"
-#include "functions.h"
-#include "mathutil.h"
-#include "mguests.h"
-#include "powers.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 NAMETAB default_charset_nametab[] =
 {
     {T("ascii"),           5,       0,     CHARSET_ASCII},

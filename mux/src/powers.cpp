@@ -8,9 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "command.h"
-#include "powers.h"
-
 /* ---------------------------------------------------------------------------
  * ph_any: set or clear indicated bit, no security checking
  */

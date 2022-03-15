@@ -5,11 +5,12 @@
 
 #include "copyright.h"
 
-#ifndef __LEVELS_H
-#define __LEVELS_H
+#ifndef LEVELS_H
+#define LEVELS_H
 
-#include "htab.h"
-#include "db.h"
+#include "autoconf.h"
+#include "config.h"
+#include "externs.h"
 
 #define IsReal(R, T) ((R) == (T) || (RxLevel(R) & TxLevel(T)))
 
@@ -44,4 +45,4 @@ void did_it_rlevel
     int   nargs
 );
 
-#endif // __LEVELS_H
+#endif //!LEVELS_H

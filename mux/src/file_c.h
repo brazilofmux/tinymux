@@ -4,10 +4,8 @@
  */
 
 #include "copyright.h"
-#ifndef __FILE_C
-#define __FILE_C
-
-#include "interface.h"
+#ifndef FILE_C
+#define FILE_C
 
 /* File caches.  These _must_ track the fcache array in file_c.cpp */
 
@@ -32,4 +30,4 @@ extern void fcache_send(dbref, int);
 extern void fcache_load(dbref);
 extern void fcache_init(void);
 
-#endif // !__FILE_C
+#endif // !FILE_C

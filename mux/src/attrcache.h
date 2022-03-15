@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef _ATTRCACHE_H
-#define _ATTRCACHE_H
+#ifndef ATTRCACHE_H
+#define ATTRCACHE_H
 
 typedef struct Aname
 {
@@ -26,4 +26,4 @@ void cache_tick(void);
 bool cache_sync(void);
 void cache_del(_In_ Aname *nam);
 
-#endif // !_ATTRCACHE_H
+#endif // !ATTRCACHE_H

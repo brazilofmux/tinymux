@@ -8,17 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "functions.h"
-#include "funmath.h"
-#include "interface.h"
-#include "misc.h"
-#include "mathutil.h"
 #include <pcre.h>
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
 
 #if defined(INLINESQL)
 #include <mysql.h>

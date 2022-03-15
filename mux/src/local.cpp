@@ -10,9 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "command.h"
-#include "functions.h"
-
 // ----------------------------------------------------------------------------
 // local_funlist: List of existing functions in alphabetical order.
 //

@@ -11,10 +11,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "powers.h"
-
 void set_modified(dbref thing)
 {
     CLinearTimeAbsolute ltaNow;

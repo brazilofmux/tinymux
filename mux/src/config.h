@@ -150,6 +150,22 @@
 #endif
 #endif
 
+#ifdef HAVE_FLOAT_H
+#include <float.h>
+#endif // HAVE_FLOAT_H
+#include <math.h>
+
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif // HAVE_SYS_IOCTL_H
+
+#include <csignal>
+
+#ifdef UNIX_DIGEST
+#include <openssl/sha.h>
+#include <openssl/evp.h>
+#endif
+
 #if defined(HAVE_SETRLIMIT) || defined(HAVE_GETRUSAGE)
 #include <sys/resource.h>
 #ifdef NEED_GETRUSAGE_DCL

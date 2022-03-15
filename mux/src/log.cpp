@@ -8,9 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "command.h"
-#include "mathutil.h"
-
 NAMETAB logdata_nametab[] =
 {
     {T("flags"),           1,  0,  LOGOPT_FLAGS},

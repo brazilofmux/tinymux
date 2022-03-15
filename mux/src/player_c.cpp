@@ -14,9 +14,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "mathutil.h"
-
 /*! \brief structure to hold cached data for player-type objects.
  */
 

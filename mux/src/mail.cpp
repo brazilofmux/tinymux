@@ -10,13 +10,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "interface.h"
-
-#include "attrs.h"
-#include "command.h"
-#include "mail.h"
-#include "mathutil.h"
-#include "powers.h"
 
 const UTF8 *DASH_LINE =
     T("\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"

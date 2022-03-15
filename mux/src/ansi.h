@@ -10,8 +10,8 @@
  * problem.
  */
 
-#ifndef _ANSI_H
-#define _ANSI_H
+#ifndef ANSI_H
+#define ANSI_H
 
 #define ESC_CHAR      '\033'
 #define ANSI_ATTR_CMD 'm'
@@ -47,4 +47,4 @@
 #define ANSI_BWHITE     "\033[47m"
 #define XTERM_BG(x)     "\033[48;5;" #x "m"
 
-#endif // !_ANSI_H
+#endif // !ANSI_H

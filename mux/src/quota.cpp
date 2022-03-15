@@ -8,12 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "functions.h"
-#include "mathutil.h"
-#include "powers.h"
-
 // ---------------------------------------------------------------------------
 // count_quota, mung_quota, show_quota, do_quota: Manage quotas.
 //

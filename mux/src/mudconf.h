@@ -3,13 +3,8 @@
  *
  */
 
-#ifndef __CONF_H
-#define __CONF_H
-
-#include "alloc.h"
-#include "htab.h"
-#include "utf8tables.h"
-#include "stringutil.h"
+#ifndef MUDCONF_H
+#define MUDCONF_H
 
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
@@ -602,4 +597,4 @@ extern STATEDATA mudstate;
 #define LOGOPT_OWNER        0x04    /* Report owner of obj if not obj */
 #define LOGOPT_TIMESTAMP    0x08    /* Timestamp log entries */
 
-#endif // !__CONF_H
+#endif // !MUDCONF_H

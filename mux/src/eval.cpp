@@ -14,10 +14,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "functions.h"
-#include "mathutil.h"
-
 //-----------------------------------------------------------------------------
 // parse_to: Split a line at a character, obeying nesting.  The line is
 // destructively modified (a null is inserted where the delimiter was found)

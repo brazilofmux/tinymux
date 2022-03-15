@@ -8,12 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "powers.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 const UTF8 *NOMATCH_MESSAGE      = T("I don\xE2\x80\x99t see that here.");
 const UTF8 *AMBIGUOUS_MESSAGE    = T("I don\xE2\x80\x99t know which one you mean!");
 const UTF8 *NOPERM_MESSAGE       = T("Permission denied.");

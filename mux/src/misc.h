@@ -5,10 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef _MISC_H
-#define _MISC_H
-
-#include "powers.h"
+#ifndef MISC_H
+#define MISC_H
 
 /* Search structure, used by @search and search(). */
 
@@ -44,4 +42,4 @@ extern bool search_setup(dbref, UTF8 *, SEARCH *);
 extern void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *);
 extern bool get_stats(dbref, dbref, STATS *);
 
-#endif // !_MISC_H
+#endif // !MISC_H

@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __FUNCTIONS_H
-#define __FUNCTIONS_H
+#ifndef FUNCTIONS_H
+#define FUNCTIONS_H
 
 typedef struct tagFun
 {
@@ -225,4 +225,4 @@ XFUNCTION(fun_siteinfo);
 // In quota.cpp
 XFUNCTION(fun_hasquota);
 
-#endif // !__FUNCTIONS_H
+#endif // !FUNCTIONS_H

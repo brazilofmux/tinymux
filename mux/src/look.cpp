@@ -8,16 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
-
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define NORMAL_REALM  0
 #define UMBRA_REALM   1

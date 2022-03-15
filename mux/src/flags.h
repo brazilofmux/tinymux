@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __FLAGS_H
-#define __FLAGS_H
+#ifndef FLAGS_H
+#define FLAGS_H
 
 #define FLAG_WORD1    0x0 // 1st word of flags.
 #define FLAG_WORD2    0x1 // 2nd word of flags.
@@ -396,4 +396,4 @@ UTF8 *MakeCanonicalFlagName
 #define Unicode(x)          ((Flags3(x) & MUX_UNICODE) != 0)
 #define s_Unicode(x)        s_Flags((x), FLAG_WORD3, Flags3(x) | MUX_UNICODE)
 
-#endif // !__FLAGS_H
+#endif // !FLAGS_H

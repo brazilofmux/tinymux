@@ -10,19 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "functions.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
-#ifdef UNIX_DIGEST
-#include <openssl/sha.h>
-#else
-#include "sha1.h"
-#endif
-
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
 

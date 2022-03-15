@@ -5,10 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __HTAB_H
-#define __HTAB_H
-
-#include "svdhash.h"
+#ifndef HTAB_H
+#define HTAB_H
 
 typedef struct name_table NAMETAB;
 struct name_table
@@ -92,4 +90,4 @@ extern void display_nametab(dbref, NAMETAB *, const UTF8 *, bool);
 extern void interp_nametab(dbref, NAMETAB *, int, const UTF8 *, const UTF8 *, const UTF8 *);
 extern void listset_nametab(dbref, NAMETAB *, int, const UTF8 *, bool);
 
-#endif // !__HTAB_H
+#endif // !HTAB_H

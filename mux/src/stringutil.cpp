@@ -8,9 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include <pcre.h>
-#include "mathutil.h"
 using namespace std;
 
 const bool mux_isprint_ascii[256] =

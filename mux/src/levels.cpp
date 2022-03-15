@@ -11,12 +11,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "powers.h"
-#include "levels.h"
-#include "mathutil.h"
-
 RLEVEL RxLevel(dbref thing)
 {
     const UTF8 *buff = atr_get_raw(thing, A_RLEVEL);

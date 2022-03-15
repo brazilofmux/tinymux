@@ -8,12 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "mathutil.h"
-#include "mguests.h"
-#include "powers.h"
-
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
              (Location(i) == NOTHING) && \

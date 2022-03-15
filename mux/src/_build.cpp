@@ -5,6 +5,5 @@
  * These declarations are usually overridden by VER_FLG in the Makefile.
  */
 
-#include "_build.h"
 char szBuildDate[] = __DATE__ " " __TIME__;
 char szBuildNum[] = "1";

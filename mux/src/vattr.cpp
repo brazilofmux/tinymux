@@ -8,10 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "functions.h"
-#include "vattr.h"
 using namespace std;
 
 static UTF8 *store_string(const UTF8 *);

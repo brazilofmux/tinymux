@@ -8,14 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif // HAVE_FLOAT_H
-#include <math.h>
-
-#include "stringutil.h"
-#include "mathutil.h"
-
 #ifdef HAVE_IEEE_FP_FORMAT
 
 const UTF8 *mux_FPStrings[8] =

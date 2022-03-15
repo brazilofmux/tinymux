@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef __DB_H
-#define __DB_H
+#ifndef DB_H
+#define DB_H
 
 #ifndef MEMORY_BASED
 #define SYNC                    cache_sync()
@@ -13,10 +13,6 @@
 #define SYNC
 #define CLOSE
 #endif // !MEMORY_BASED
-
-#include "attrcache.h"
-#include "flags.h"
-#include "timeutil.h"
 
 #define ITER_PARENTS(t,p,l) for ((l)=0, (p)=(t); \
                      (Good_obj(p) && \
@@ -285,4 +281,4 @@ public:
     bool get_info(bool bParent);
 };
 
-#endif // !__DB_H
+#endif // !DB_H

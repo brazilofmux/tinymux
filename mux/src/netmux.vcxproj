@@ -638,7 +638,6 @@
     <ClInclude Include="modules.h" />
     <ClInclude Include="mudconf.h" />
     <ClInclude Include="muxcli.h" />
-    <ClInclude Include="pcre.h" />
     <ClInclude Include="powers.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="slave.h" />

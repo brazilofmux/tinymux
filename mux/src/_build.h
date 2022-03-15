@@ -3,15 +3,14 @@
  *
  */
 
-#ifndef MUX_BUILD_NUM
+#ifndef _BUILD_H
+#define _BUILD_H
+
 extern char szBuildNum[];
 #define MUX_BUILD_NUM szBuildNum
-#endif // MUX_BUILD_NUM
 
-#ifndef MUX_BUILD_DATE
 extern char szBuildDate[];
 #define MUX_BUILD_DATE szBuildDate
-#endif // MUX_BUILD_DATE
 
 #define MUX_VERSION       "2.13.0.2"         // Version number
 #define MUX_RELEASE_DATE  "2022-MAR-13"      // Source release date
@@ -20,3 +19,5 @@ extern char szBuildDate[];
 //
 #define ALPHA
 //#define BETA
+
+#endif //!_BUILD_H

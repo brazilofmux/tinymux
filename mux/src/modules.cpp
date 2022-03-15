@@ -10,7 +10,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "interface.h"
 
 static MUX_CLASS_INFO netmux_classes[] =
 {

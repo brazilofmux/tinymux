@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __FUNMATH_H
-#define __FUNMATH_H
+#ifndef FUNMATH_H
+#define FUNMATH_H
 
 XFUNCTION(fun_add);
 XFUNCTION(fun_ladd);
@@ -93,4 +93,4 @@ XFUNCTION(fun_crc32);
 XFUNCTION(fun_sha1);
 XFUNCTION(fun_digest);
 
-#endif
+#endif // !FUNMATH_H

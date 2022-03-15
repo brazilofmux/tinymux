@@ -14,12 +14,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "functions.h"
-#include "mathutil.h"
-#include "misc.h"
 #include <pcre.h>
 
 /* ---------------------------------------------------------------------------

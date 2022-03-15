@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef __COMMAND_H
-#define __COMMAND_H
+#ifndef COMMAND_H
+#define COMMAND_H
 
 #define CMD_NO_ARG(name)       extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #define CMD_ONE_ARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
@@ -309,4 +309,4 @@ extern NAMETAB allow_charset_nametab[];
                                   /* handler (typically via a switch */
                                   /* alias) */
 
-#endif // !__COMMAND_H
+#endif // COMMAND_H

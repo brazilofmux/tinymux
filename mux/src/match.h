@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef M_MATCH_H
-#define M_MATCH_H
+#ifndef MATCH_H
+#define MATCH_H
 
 typedef struct match_state MSTATE;
 struct match_state
@@ -63,4 +63,4 @@ extern void safe_match_result(dbref it, UTF8 *buff, UTF8 **bufc);
 #define MAT_NUMERIC         4   /* Check for un-#ified dbrefs */
 #define MAT_HOME            8   /* Check for 'home' */
 
-#endif // !M_MATCH_H
+#endif // !MATCH_H

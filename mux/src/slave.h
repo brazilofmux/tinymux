@@ -4,7 +4,11 @@
  * This enum doesn't actually appear to be used for anything.
  */
 
+#ifndef SLAVE_H
+#define SLAVE_H
 enum {
     SLAVE_IDENTQ = 'i',
     SLAVE_IPTONAME = 'h'
 };
+
+#endif // !SLAVE_H

@@ -8,21 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include <csignal>
-
-#include "attrs.h"
-#include "command.h"
-#include "comsys.h"
-#include "file_c.h"
-#include "functions.h"
-#include "help.h"
-#include "mguests.h"
-#include "muxcli.h"
 #include <pcre.h>
-#include "powers.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
 
 #if defined(INLINESQL)
 #include <mysql.h>

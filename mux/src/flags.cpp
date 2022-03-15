@@ -8,11 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "command.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
-
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
  */

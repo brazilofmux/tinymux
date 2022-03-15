@@ -8,10 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "mathutil.h"
-#include "vattr.h"
-
 static int g_version;
 static int g_format;
 static int g_flags;

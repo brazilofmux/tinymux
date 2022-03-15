@@ -8,12 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <csignal>
-
-#include "command.h"
-#include "mathutil.h"
-#include "mguests.h"
-
 CScheduler scheduler;
 
 // Free List Reconstruction Task routine.

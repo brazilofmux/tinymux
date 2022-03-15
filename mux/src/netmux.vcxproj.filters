@@ -293,9 +293,6 @@
     <ClInclude Include="muxcli.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pcre.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="powers.h">
       <Filter>Header Files</Filter>
     </ClInclude>

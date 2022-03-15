@@ -3,6 +3,9 @@
  *
  */
 
+#ifndef MUXCLI_H
+#define MUXCLI_H
+
 #define CLI_USER 0
 
 // The following control whether an option is allowed/required.
@@ -28,3 +31,5 @@ void CLI_Process
     int nOptionTable,
     CLI_CALLBACKFUNC *pFunc
 );
+
+#endif // !MUXCLI_H

@@ -8,15 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "attrs.h"
-#include "command.h"
-#include "interface.h"
-#include "mathutil.h"
-#include "powers.h"
-#ifdef REALITY_LVLS
-#include "levels.h"
-#endif // REALITY_LVLS
-
 /* ---------------------------------------------------------------------------
  * process_leave_loc: Generate messages and actions resulting from leaving a
  * place.

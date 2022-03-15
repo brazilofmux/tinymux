@@ -17,8 +17,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mathutil.h"
-
 #define EQUAL(a,b) (mux_tolower_ascii(a) == mux_tolower_ascii(b))
 #define NOTEQUAL(a,b) (mux_tolower_ascii(a) != mux_tolower_ascii(b))
 

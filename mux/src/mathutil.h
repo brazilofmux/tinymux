@@ -5,8 +5,8 @@
 
 #include "copyright.h"
 
-#ifndef __MATHUTIL_H
-#define __MATHUTIL_H
+#ifndef MATHUTIL_H
+#define MATHUTIL_H
 
 #define MUX_FPGROUP_PASS  0x00 // Pass-through to printf
 #define MUX_FPGROUP_ZERO  0x10 // Force to be zero.
@@ -80,4 +80,4 @@ extern const UTF8 Digits16U[17];
 extern const UTF8 Digits16L[17];
 extern void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc);
 
-#endif
+#endif // !MATHUTIL_H
