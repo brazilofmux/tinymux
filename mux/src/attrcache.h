@@ -10,17 +10,13 @@ typedef struct Aname
 {
     unsigned int    object;
     unsigned int    attrnum;
-} Aname;
 
-struct AnameCompare {
-    bool operator()(const Aname lhs, const Aname rhs) const
+    bool operator==(const Aname a) const
     {
-        if (lhs.object != rhs.object)
-            return lhs.object < rhs.object;
-        else
-            return lhs.attrnum < rhs.attrnum;
+        return this->object == a.object
+            && this->attrnum == a.attrnum;
     }
-};
+} Aname;
 
 const UTF8 *cache_get(Aname *nam, size_t *pLen);
 bool cache_put(Aname *nam, const UTF8 *obj, size_t len);

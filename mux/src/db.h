@@ -28,7 +28,7 @@ int get_atr(const UTF8 *name);
 typedef struct attr ATTR;
 struct attr
 {
-    const UTF8 *name;   // This has to be first.  braindeath.
+    const UTF8 *name;   // This has to be first. Brain death.
     int number;         // attr number
     int flags;
 };

@@ -1604,7 +1604,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
 
 // Add player to the given channel.  Transmit join messages as appropriate.
 //
-void do_joinchannel(dbref player, struct channel* ch)
+void do_joinchannel(const dbref player, struct channel* ch)
 {
     int attr;
 

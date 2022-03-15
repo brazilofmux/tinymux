@@ -427,6 +427,22 @@ struct attr_permission_list
 
 #define MAX_ITEXT 100
 
+struct AnameHasher
+{
+    size_t operator()(const Aname& k) const
+    {
+        return CRC32_ProcessInteger2(k.object, k.attrnum);
+    }
+};
+
+struct VectorHasher
+{
+    size_t operator()(const std::vector<UTF8> &v) const
+    {
+        return HASH_ProcessBuffer(0, v.data(), v.size());
+    }
+};
+
 typedef struct statedata STATEDATA;
 struct statedata
 {
@@ -529,9 +545,9 @@ struct statedata
 
 #if !defined(MEMORY_BASED)
     std::list<Aname> attribute_lru_cache_list;
-    std::map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameCompare> attribute_lru_cache_map;
+    std::unordered_map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameHasher> attribute_lru_cache_map;
 #endif // MEMORY_BASED
-    std::map<std::vector<UTF8>, ATTR *> builtin_attribute_names; /* Attribute names hashtable */
+    std::unordered_map<std::vector<UTF8>, ATTR *, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
     CHashTable desc_htab;       /* Socket descriptor hashtable */
