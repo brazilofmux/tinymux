@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+using namespace std;
 
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
 extern QUEUE_INFO Queue_In;
@@ -2050,19 +2051,10 @@ bool new_connection_continue(DESC* d)
                 DebugTotalSockets--;
             }
             d->socket = INVALID_SOCKET;
-#ifdef QQQ
-            *d->prev = d->next;
-            if (d->next)
-            {
-                d->next->prev = d->prev;
-            }
+            auto it = mudstate.descriptor_map.find(d);
+            mudstate.descriptor_list.erase(it->second);
+            mudstate.descriptor_map.erase(it);
 
-            // This descriptor may hang around awhile, clear out the links.
-            //
-            d->next = 0;
-            d->prev = 0;
-
-#endif
             // If we don't have queued IOs, then we can free these, now.
             //
             freeqs(d);
@@ -2316,25 +2308,14 @@ void shutdownsock(DESC *d, int reason)
             //
             d->bConnectionShutdown = true;
 
-            // Protect removing the descriptor from our linked list from
+            // Protect removing the descriptor from our list/map from
             // any interference from the listening thread.
             //
             EnterCriticalSection(&csDescriptorList);
-#ifdef QQQ
-            *d->prev = d->next;
-            if (d->next)
-            {
-                d->next->prev = d->prev;
-            }
-#endif
+            auto it = mudstate.descriptor_map.find(d);
+            mudstate.descriptor_list.erase(it->second);
+            mudstate.descriptor_map.erase(it);
             LeaveCriticalSection(&csDescriptorList);
-
-#ifdef QQQ
-            // This descriptor may hang around awhile, clear out the links.
-            //
-            d->next = 0;
-            d->prev = 0;
-#endif
 
             // Close the connection in 5 seconds.
             //
@@ -2360,18 +2341,9 @@ void shutdownsock(DESC *d, int reason)
         }
         d->socket = INVALID_SOCKET;
 
-#ifdef QQQ
-        *d->prev = d->next;
-        if (d->next)
-        {
-            d->next->prev = d->prev;
-        }
-
-        // This descriptor may hang around awhile, clear out the links.
-        //
-        d->next = 0;
-        d->prev = 0;
-#endif
+        auto it = mudstate.descriptor_map.find(d);
+        mudstate.descriptor_list.erase(it->second);
+        mudstate.descriptor_map.erase(it);
 
         // If we don't have queued IOs, then we can free these, now.
         //
@@ -2414,18 +2386,9 @@ static void shutdownsock_brief(DESC *d)
     // any interference from the listening thread
     //
     EnterCriticalSection(&csDescriptorList);
-#ifdef QQQ
-    *d->prev = d->next;
-    if (d->next)
-    {
-        d->next->prev = d->prev;
-    }
-
-    d->next = nullptr;
-    d->prev = nullptr;
-#endif
-
-    // safe to allow the listening thread to continue now
+    auto it = mudstate.descriptor_map.find(d);
+    mudstate.descriptor_list.erase(it->second);
+    mudstate.descriptor_map.erase(it);
     LeaveCriticalSection(&csDescriptorList);
 
     // post a notification that it is safe to free the descriptor
@@ -2522,7 +2485,8 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     EnterCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
-    mudstate.descriptor_list.push_back(d);
+    auto it = mudstate.descriptor_list.insert(mudstate.descriptor_list.begin(), d);
+    mudstate.descriptor_map.insert(make_pair(d, it));
 
 #if defined(WINDOWS_NETWORKING)
     // ok to continue now

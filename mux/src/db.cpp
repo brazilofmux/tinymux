@@ -17,7 +17,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
 using namespace std;
 
 #ifndef O_ACCMODE
@@ -3932,25 +3931,8 @@ void load_restart_db(void)
         d->quota = mudconf.cmd_quota_max;
         d->program_data = nullptr;
 
-#ifdef QQQ
-        if (descriptor_list)
-        {
-            DESC *p;
-            for (p = descriptor_list; p->next; p = p->next)
-            {
-                ; // Nothing.
-            }
-            d->prev = &p->next;
-            p->next = d;
-            d->next = nullptr;
-        }
-        else
-        {
-            d->next = descriptor_list;
-            d->prev = &descriptor_list;
-            descriptor_list = d;
-        }
-#endif
+        auto it = mudstate.descriptor_list.insert(mudstate.descriptor_list.end(), d);
+        mudstate.descriptor_map.insert(make_pair(d, it));
 
 #if defined(UNIX_NETWORKING_SELECT)
         if (maxd <= d->socket)

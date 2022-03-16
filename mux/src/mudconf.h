@@ -535,6 +535,7 @@ struct statedata
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
     std::list<DESC*> descriptor_list;
+    std::map<DESC*, std::list<DESC*>::iterator> descriptor_map;
     std::multimap<dbref, DESC*> descriptor_multimap;
     CHashTable flags_htab;      /* Flags hashtable */
     CHashTable func_htab;       /* Functions hashtable */
