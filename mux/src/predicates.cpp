@@ -1261,41 +1261,47 @@ void handle_prog(DESC *d, UTF8 *message)
         return;
     }
     dbref aowner;
-    int aflags, i;
+    int aflags;
     UTF8 *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
     wait_que(d->program_data->wait_enactor, d->player, d->player,
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
         cmd,
-        1, (const UTF8 **)&message,
+        1, const_cast<const UTF8**>(&message),
         d->program_data->wait_regs);
 
     // First, set 'all' to a descriptor we find for this player.
     //
-    DESC *all = (DESC *)hashfindLEN(&(d->player), sizeof(d->player), &mudstate.desc_htab) ;
-
-    if (  all
-       && all->program_data)
-    {
-        program_data *program = all->program_data;
-        for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    program_data* program = nullptr;
+    const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+    for (auto it = range.first; it != range.second; ++it)
+    {       
+        DESC* d = it->second;
+        if (it == range.first)
         {
-            if (program->wait_regs[i])
+            program = d->program_data;
+            if (program)
             {
-                RegRelease(program->wait_regs[i]);
-                program->wait_regs[i] = nullptr;
+                for (auto& wait_reg : program->wait_regs)
+                {
+                    if (wait_reg)
+                    {
+                        RegRelease(wait_reg);
+                        wait_reg = nullptr;
+                    }
+                }
             }
         }
-
-        // Set info for all player descriptors to nullptr
-        //
-        DESC_ITER_PLAYER(d->player, all)
+        else
         {
-            mux_assert(program == all->program_data);
-            all->program_data = nullptr;
+            mux_assert(program == d->program_data);
+            d->program_data = nullptr;
         }
-
+    }
+    if (program)
+    {
         MEMFREE(program);
+        program = nullptr;
     }
     atr_clr(d->player, A_PROGCMD);
     free_lbuf(cmd);
@@ -1339,10 +1345,11 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
         notify(player, T("That player is not connected."));
         return;
     }
-    DESC *d;
     bool isprog = false;
-    DESC_ITER_PLAYER(doer, d)
+    const auto range = mudstate.descriptor_multimap.equal_range(doer);
+    for (auto it = range.first; it != range.second; ++it)
     {
+        const DESC* d = it->second;
         if (nullptr != d->program_data)
         {
             isprog = true;
@@ -1355,33 +1362,37 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
         return;
     }
 
-    d = (DESC *)hashfindLEN(&doer, sizeof(doer), &mudstate.desc_htab);
-    int i;
-
-    if (  d
-       && d->program_data)
+    program_data* program = nullptr;
+    const auto range2 = mudstate.descriptor_multimap.equal_range(doer);
+    for (auto it = range2.first; it != range2.second; ++it)
     {
-        program_data *program = d->program_data;
-        for (i = 0; i < MAX_GLOBAL_REGS; i++)
+        DESC* d = it->second;
+        if (it == range2.first)
         {
-            if (program->wait_regs[i])
+            program = d->program_data;
+            if (program)
             {
-                RegRelease(program->wait_regs[i]);
-                program->wait_regs[i] = nullptr;
+                for (auto& wait_reg : program->wait_regs)
+                {
+                    if (wait_reg)
+                    {
+                        RegRelease(wait_reg);
+                        wait_reg = nullptr;
+                    }
+                }
             }
         }
-
-        // Set info for all player descriptors to nullptr.
-        //
-        DESC_ITER_PLAYER(doer, d)
+        else
         {
             mux_assert(program == d->program_data);
             d->program_data = nullptr;
         }
-
-        MEMFREE(program);
     }
-
+    if (program)
+    {
+        MEMFREE(program);
+        program = nullptr;
+    }
     atr_clr(doer, A_PROGCMD);
     notify(player, T("@program cleared."));
     notify(doer, T("Your @program has been terminated."));
@@ -1416,7 +1427,7 @@ void do_prog
         return;
     }
 
-    dbref doer = match_thing(player, name);
+    const dbref doer = match_thing(player, name);
     if (  !(  Prog(player)
            || Prog(Owner(player)))
        && player != doer)
@@ -1438,9 +1449,10 @@ void do_prog
 
     // Check to see if the enactor already has an @prog input pending.
     //
-    DESC *d;
-    DESC_ITER_PLAYER(doer, d)
+    const auto range = mudstate.descriptor_multimap.equal_range(doer);
+    for (auto it = range.first; it != range.second; ++it)
     {
+        DESC* d = it->second;
         if (d->program_data != nullptr)
         {
             notify(player, T("Input already pending."));
@@ -1449,7 +1461,7 @@ void do_prog
     }
 
     UTF8 *msg = command;
-    UTF8 *attrib = parse_to(&msg, ':', 1);
+    const UTF8 *attrib = parse_to(&msg, ':', 1);
 
     if (msg && *msg)
     {
@@ -1509,7 +1521,7 @@ void do_prog
         return;
     }
 
-    program_data *program = (program_data *)MEMALLOC(sizeof(program_data));
+    const auto program = static_cast<program_data*>(MEMALLOC(sizeof(program_data)));
     ISOUTOFMEMORY(program);
     program->wait_enactor = player;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
@@ -1523,8 +1535,10 @@ void do_prog
 
     // Now, start waiting.
     //
-    DESC_ITER_PLAYER(doer, d)
+    const auto range2 = mudstate.descriptor_multimap.equal_range(doer);
+    for (auto it = range2.first; it != range2.second; ++it)
     {
+        DESC* d = it->second;
         d->program_data = program;
 
         queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));

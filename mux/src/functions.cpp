@@ -7602,13 +7602,16 @@ static FUNCTION(fun_height)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        DESC *d;
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            DESC* d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                nHeight = d->height;
-                break;
+                if (d->socket == s)
+                {
+                    nHeight = d->height;
+                    break;
+                }
             }
         }
     }
@@ -7642,13 +7645,16 @@ static FUNCTION(fun_width)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        DESC *d;
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            DESC* d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                nWidth = d->width;
-                break;
+                if (d->socket == s)
+                {
+                    nWidth = d->width;
+                    break;
+                }
             }
         }
     }
@@ -7682,13 +7688,16 @@ static FUNCTION(fun_colordepth)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        DESC *d;
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            DESC* d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                target = d->player;
-                break;
+                if (d->socket == s)
+                {
+                    target = d->player;
+                    break;
+                }
             }
         }
     }
@@ -7746,15 +7755,19 @@ static FUNCTION(fun_idle)
     {
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
-        DESC *d;
+        DESC *d = nullptr;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                bFound = true;
-                break;
+                if (d->socket == s)
+                {
+                    bFound = true;
+                    break;
+                }
             }
         }
         if (  bFound
@@ -7797,15 +7810,19 @@ static FUNCTION(fun_conn)
     {
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
-        DESC *d;
+        DESC *d = nullptr;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                bFound = true;
-                break;
+                if (d->socket == s)
+                {
+                    bFound = true;
+                    break;
+                }
             }
         }
         if (  bFound
@@ -7849,11 +7866,15 @@ static FUNCTION(fun_terminfo)
         SOCKET s = mux_atol(fargs[0]);
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                break;
+                if (d->socket == s)
+                {
+                    break;
+                }
             }
         }
 
@@ -7883,11 +7904,15 @@ static FUNCTION(fun_terminfo)
             return;
         }
 
-        DESC_ITER_CONN(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->player == target)
+            DESC* d = *it;
+            if (d->flags & DS_CONNECTED)
             {
-                break;
+                if (d->player == target)
+                {
+                    break;
+                }
             }
         }
     }
@@ -9963,13 +9988,17 @@ static FUNCTION(fun_cmds)
     {
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
-        DESC *d;
-        DESC_ITER_CONN(d)
+        DESC *d = nullptr;
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
-            if (d->socket == s)
+            d = *it;
+            if ((d)->flags & DS_CONNECTED)
             {
-                bFound = true;
-                break;
+                if (d->socket == s)
+                {
+                    bFound = true;
+                    break;
+                }
             }
         }
         if (  bFound

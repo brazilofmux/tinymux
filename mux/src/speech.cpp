@@ -304,31 +304,34 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 
 static void wall_broadcast(int target, dbref player, UTF8 *message)
 {
-    DESC *d;
-    DESC_ITER_CONN(d)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
-        switch (target)
+        DESC* d = *it;
+        if (d->flags & DS_CONNECTED)
         {
-        case SHOUT_WIZARD:
-
-            if (Wizard(d->player))
+            switch (target)
             {
+            case SHOUT_WIZARD:
+
+                if (Wizard(d->player))
+                {
+                    notify_with_cause(d->player, player, message);
+                }
+                break;
+
+            case SHOUT_ADMIN:
+
+                if (WizRoy(d->player))
+                {
+                    notify_with_cause(d->player, player, message);
+                }
+                break;
+
+            default:
+
                 notify_with_cause(d->player, player, message);
+                break;
             }
-            break;
-
-        case SHOUT_ADMIN:
-
-            if (WizRoy(d->player))
-            {
-                notify_with_cause(d->player, player, message);
-            }
-            break;
-
-        default:
-
-            notify_with_cause(d->player, player, message);
-            break;
         }
     }
 }

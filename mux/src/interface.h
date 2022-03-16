@@ -220,9 +220,6 @@ struct descriptor_data
   int height;
   int quota;
   struct program_data* program_data;
-  struct descriptor_data *hashnext;
-  struct descriptor_data *next;
-  struct descriptor_data **prev;
 
   mux_sockaddr address;
 
@@ -243,8 +240,6 @@ void disable_us(DESC *d, unsigned char chOption);
 #define DS_AUTODARK     0x0002      // Wizard was auto set dark.
 #define DS_PUEBLOCLIENT 0x0004      // Client is Pueblo-enhanced.
 
-extern DESC *descriptor_list;
-extern unsigned int ndescriptors;
 #if defined(WINDOWS_NETWORKING)
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WINDOWS_NETWORKING
@@ -310,7 +305,7 @@ extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle();
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
-extern dbref  find_connected_name(dbref, UTF8 *);
+extern dbref  find_connected_name(dbref, const UTF8 *);
 extern void do_command(DESC *, UTF8 *);
 extern void desc_addhash(DESC *);
 
@@ -324,25 +319,6 @@ extern void handle_prog(DESC *d, UTF8 *message);
 //
 void record_login(dbref, bool, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
-
-
-#define DESC_ITER_PLAYER(p,d) \
-    for ((d)=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; (d) = (d)->hashnext)
-#define DESC_ITER_CONN(d) \
-    for ((d)=descriptor_list;(d);(d)=(d)->next) \
-        if ((d)->flags & DS_CONNECTED)
-#define DESC_ITER_ALL(d) \
-    for ((d)=descriptor_list;(d);(d)=(d)->next)
-
-#define DESC_SAFEITER_PLAYER(p,d,n) \
-    for ((d)=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab), \
-            (n)=(((d)!=nullptr) ? (d)->hashnext : nullptr); \
-         d; \
-         (d)=(n),(n)=(((n)!=nullptr) ? (n)->hashnext : nullptr))
-#define DESC_SAFEITER_ALL(d,n) \
-    for ((d)=descriptor_list,(n)=(((d)!=nullptr) ? (d)->next : nullptr); \
-         d; \
-         (d)=(n),(n)=(((n)!=nullptr) ? (n)->next : nullptr))
 
 // From bsd.cpp.
 //

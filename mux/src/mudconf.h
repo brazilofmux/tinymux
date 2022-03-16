@@ -534,7 +534,8 @@ struct statedata
     std::unordered_map<std::vector<UTF8>, ATTR *, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
-    CHashTable desc_htab;       /* Socket descriptor hashtable */
+    std::list<DESC*> descriptor_list;
+    std::multimap<dbref, DESC*> descriptor_multimap;
     CHashTable flags_htab;      /* Flags hashtable */
     CHashTable func_htab;       /* Functions hashtable */
     CHashTable fwdlist_htab;    /* Room forwardlists */

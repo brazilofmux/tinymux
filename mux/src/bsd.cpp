@@ -30,9 +30,6 @@ port_info main_game_ports[MAX_LISTEN_PORTS];
 int      num_main_game_ports = 0;
 void process_output_socket(DESC *d, int bHandleShutdown);
 
-unsigned int ndescriptors = 0;
-DESC *descriptor_list = nullptr;
-
 static void telnet_setup(DESC *d);
 static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
@@ -311,8 +308,9 @@ static int get_slave_result(void)
         return 1;
     }
 
-    for (DESC *d = descriptor_list; d; d = d->next)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
+        DESC* d = *it;
         if (strcmp(reinterpret_cast<char *>(d->addr), reinterpret_cast<char *>(host_address)) != 0)
         {
             continue;
@@ -789,8 +787,9 @@ static int get_slave_result(void)
     *p = '\0';
     if (mudconf.use_hostname)
     {
-        for (d = descriptor_list; d; d = d->next)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
+            DESC* d = *it;
             if (strcmp((char *)d->addr, (char *)host_address) != 0)
             {
                 continue;
@@ -928,10 +927,9 @@ void shutdown_ssl()
 
 void CleanUpSSLConnections()
 {
-    DESC *d;
-
-    DESC_ITER_ALL(d)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
+        DESC* d = *it;
         if (d->ssl_session)
         {
             shutdownsock(d, R_RESTART);
@@ -1420,9 +1418,9 @@ void shovechars(int nPorts, port_info aPorts[])
         //      scheduler's queue, or endure many redundant calls to
         //      process_output for the same descriptor).
         //
-        DESC *d, *dnext;
-        DESC_SAFEITER_ALL(d, dnext)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
+            DESC* d = *it;
             if (d->bCallProcessOutputLater)
             {
                 d->bCallProcessOutputLater = false;
@@ -1541,8 +1539,9 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Mark sockets that we want to test for change in status.
         //
-        DESC_ITER_ALL(d)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
+            DESC* d = *it;
             if (!d->input_head)
             {
                 FD_SET(d->socket, &input_set);
@@ -1573,8 +1572,9 @@ void shovechars(int nPorts, port_info aPorts[])
 
                 // Search for a bad socket amongst the players.
                 //
-                DESC_ITER_ALL(d)
+                for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
                 {
+                    DESC* d = *it;
                     if (!ValidSocket(d->socket))
                     {
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
@@ -1695,8 +1695,10 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Check for activity on user sockets.
         //
-        DESC_SAFEITER_ALL(d, dnext)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
         {
+            DESC* d = *it;
+
             // Process input from sockets with pending input.
             //
             if (CheckInput(d->socket))
@@ -1723,9 +1725,10 @@ void shovechars(int nPorts, port_info aPorts[])
                     {
                         // Clear the DS_AUTODARK on every related session.
                         //
-                        DESC *d1;
-                        DESC_ITER_PLAYER(d->player, d1)
+                        const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+                        for (auto it = range.first; it != range.second; ++it)
                         {
+                            DESC* d1 = it->second;
                             d1->flags &= ~DS_AUTODARK;
                         }
                         db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
@@ -2256,9 +2259,9 @@ void shutdownsock(DESC *d, int reason)
     //
     if (d->program_data != nullptr)
     {
-        DESC *dtemp;
         int num = 0;
-        DESC_ITER_PLAYER(d->player, dtemp)
+        const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+        for (auto it = range.first; it != range.second; ++it)
         {
             num++;
         }
@@ -2315,17 +2318,21 @@ void shutdownsock(DESC *d, int reason)
             // any interference from the listening thread.
             //
             EnterCriticalSection(&csDescriptorList);
+#ifdef QQQ
             *d->prev = d->next;
             if (d->next)
             {
                 d->next->prev = d->prev;
             }
+#endif
             LeaveCriticalSection(&csDescriptorList);
 
+#ifdef QQQ
             // This descriptor may hang around awhile, clear out the links.
             //
             d->next = 0;
             d->prev = 0;
+#endif
 
             // Close the connection in 5 seconds.
             //
@@ -2386,7 +2393,6 @@ static void shutdownsock_brief(DESC *d)
     d->bConnectionShutdown = true;
     d->bConnectionDropped = true;
 
-
     // cancel any pending reads or writes on this socket
     //
     if (!CancelIo((HANDLE) d->socket))
@@ -2405,7 +2411,7 @@ static void shutdownsock_brief(DESC *d)
     // any interference from the listening thread
     //
     EnterCriticalSection(&csDescriptorList);
-
+#ifdef QQQ
     *d->prev = d->next;
     if (d->next)
     {
@@ -2414,6 +2420,7 @@ static void shutdownsock_brief(DESC *d)
 
     d->next = nullptr;
     d->prev = nullptr;
+#endif
 
     // safe to allow the listening thread to continue now
     LeaveCriticalSection(&csDescriptorList);
@@ -2512,16 +2519,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     EnterCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
-    ndescriptors++;
-
-    if (descriptor_list)
-    {
-        descriptor_list->prev = &d->next;
-    }
-    d->hashnext = nullptr;
-    d->next = descriptor_list;
-    d->prev = &descriptor_list;
-    descriptor_list = d;
+    mudstate.descriptor_list.push_back(d);
 
 #if defined(WINDOWS_NETWORKING)
     // ok to continue now
@@ -4296,10 +4294,9 @@ bool process_input(DESC *d)
 
 void close_sockets(bool emergency, const UTF8 *message)
 {
-    DESC *d, *dnext;
-
-    DESC_SAFEITER_ALL(d, dnext)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
+        DESC* d = *it;
         if (emergency)
         {
 #ifdef UNIX_SSL
@@ -5245,26 +5242,25 @@ static DWORD WINAPI mux_listen_thread(LPVOID pVoid)
 }
 
 
-void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer)
+void Task_FreeDescriptor(void *arg_voidptr, const int arg_Integer)
 {
     UNUSED_PARAMETER(arg_Integer);
 
-    DESC *d = (DESC *)arg_voidptr;
+    const auto d = static_cast<DESC*>(arg_voidptr);
     if (d)
     {
         EnterCriticalSection(&csDescriptorList);
-        ndescriptors--;
         freeqs(d);
         free_desc(d);
         LeaveCriticalSection(&csDescriptorList);
     }
 }
 
-void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
+void Task_DeferredClose(void *arg_voidptr, const int arg_Integer)
 {
     UNUSED_PARAMETER(arg_Integer);
 
-    DESC *d = static_cast<DESC*>(arg_voidptr);
+    auto d = static_cast<DESC*>(arg_voidptr);
     if (d)
     {
         d->bConnectionDropped = true;
@@ -5426,9 +5422,10 @@ void process_windows_tcp(DWORD dwTimeout)
             {
                 // Clear the DS_AUTODARK on every related session.
                 //
-                DESC *d1;
-                DESC_ITER_PLAYER(d->player, d1)
+                const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+                for (auto it = range.first; it != range.second; ++it)
                 {
+                    DESC* d1 = it->second;
                     d1->flags &= ~DS_AUTODARK;
                 }
                 db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
@@ -5572,14 +5569,17 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
             address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
-    DESC *nd;
-    DESC_ITER_CONN(nd)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
-        if (SiteMon(nd->player))
+        DESC* nd = *it;
+        if (nd->flags & DS_CONNECTED)
         {
-            queue_string(nd, send_msg);
-            queue_write_LEN(nd, T("\r\n"), 2);
-            process_output(nd, false);
+            if (SiteMon(nd->player))
+            {
+                queue_string(nd, send_msg);
+                queue_write_LEN(nd, T("\r\n"), 2);
+                process_output(nd, false);
+            }
         }
     }
 }

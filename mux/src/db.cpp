@@ -3625,8 +3625,9 @@ void dump_restart_db(void)
     putstring(f, mudstate.doing_hdr);
     putref(f, mudstate.record_players);
     putref(f, mudstate.restart_count);
-    DESC_ITER_ALL(d)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
+        d = *it;
         putref(f, d->socket);
         putref(f, d->flags);
         putref(f, d->connected_at.ReturnSeconds());
@@ -3965,11 +3966,15 @@ void load_restart_db(void)
         }
     }
 
-    DESC_ITER_CONN(d)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
     {
-        if (!isPlayer(d->player))
+        d = *it;
+        if (d->flags & DS_CONNECTED)
         {
-            shutdownsock(d, R_QUIT);
+            if (!isPlayer(d->player))
+            {
+                shutdownsock(d, R_QUIT);
+            }
         }
     }
 

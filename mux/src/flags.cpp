@@ -278,10 +278,10 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
 
     if (fh_any(target, player, flag, fflags, reset))
     {
-        DESC *dtemp;
-
-        DESC_ITER_PLAYER(target, dtemp)
+        const auto range = mudstate.descriptor_multimap.equal_range(target);
+        for (auto it = range.first; it != range.second; ++it)
         {
+            DESC* dtemp = it->second;
             if (!reset)
             {
                 if (CHARSET_UTF8 != dtemp->encoding)
@@ -308,22 +308,20 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
  * * fh_ascii: only players may set or clear this bit.
  */
 
-static bool fh_ascii(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_ascii(const dbref target, const dbref player, FLAG flag, int fflags, const bool reset)
 {
-    bool result;
-
     if (!isPlayer(target))
     {
         return false;
     }
-    result = fh_any(target, player, flag, fflags, reset);
+    const bool result = fh_any(target, player, flag, fflags, reset);
 
     if (result)
     {
-        DESC *dtemp;
-
-        DESC_ITER_PLAYER(target, dtemp)
+        const auto range = mudstate.descriptor_multimap.equal_range(target);
+        for (auto it = range.first; it != range.second; ++it)
         {
+            DESC* dtemp = it->second;
             if (!reset)
                 dtemp->encoding = CHARSET_ASCII;
             else

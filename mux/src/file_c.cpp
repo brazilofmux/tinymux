@@ -224,12 +224,12 @@ void fcache_dump(DESC *d, int num)
     }
 }
 
-void fcache_send(dbref player, int num)
+void fcache_send(const dbref player, const int num)
 {
-    DESC *d;
-
-    DESC_ITER_PLAYER(player, d)
+    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    for (auto it = range.first; it != range.second; ++it)
     {
+        DESC* d = it->second;
         fcache_dump(d, num);
     }
 }

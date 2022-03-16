@@ -2971,7 +2971,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.flags_htab);
     hashreset(&mudstate.player_htab);
     hashreset(&mudstate.fwdlist_htab);
-    hashreset(&mudstate.desc_htab);
     hashreset(&mudstate.reference_htab);
 
     ValidateConfigurationDbrefs();
