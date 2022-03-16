@@ -2356,7 +2356,7 @@ void shutdownsock(DESC *d, int reason)
 #if defined(WINDOWS_NETWORKING)
 static void shutdownsock_brief(DESC *d)
 {
-    // don't close down the socket twice
+    // Don't close down the socket twice.
     //
     if (d->bConnectionShutdown)
     {
@@ -4259,43 +4259,8 @@ bool process_input(DESC *d)
     return true;
 }
 
-void close_sockets(bool emergency, const UTF8 *message)
+void close_listening_ports(void)
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (emergency)
-        {
-#ifdef UNIX_SSL
-            if (d->ssl_session)
-            {
-                SSL_write(d->ssl_session, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)));
-                SSL_shutdown(d->ssl_session);
-                SSL_free(d->ssl_session);
-                d->ssl_session = nullptr;
-            }
-            else
-#endif
-            {
-                SOCKET_WRITE(d->socket, reinterpret_cast<const char *>(message), strlen(reinterpret_cast<const char *>(message)), 0);
-            }
-
-            if (IS_SOCKET_ERROR(shutdown(d->socket, SD_BOTH)))
-            {
-                log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
-            }
-            if (0 == SOCKET_CLOSE(d->socket))
-            {
-                DebugTotalSockets--;
-            }
-        }
-        else
-        {
-            queue_string(d, message);
-            queue_write_LEN(d, T("\r\n"), 2);
-            shutdownsock(d, R_GOING_DOWN);
-        }
-    }
     for (int i = 0; i < num_main_game_ports; i++)
     {
         if (0 == SOCKET_CLOSE(main_game_ports[i].socket))
@@ -4306,9 +4271,54 @@ void close_sockets(bool emergency, const UTF8 *message)
     }
 }
 
+void close_sockets(const UTF8 *message)
+{
+    auto it = mudstate.descriptor_list.begin();
+    while (it != mudstate.descriptor_list.end())
+    {
+        DESC* d = *it;
+        queue_string(d, message);
+        queue_write_LEN(d, T("\r\n"), 2);
+        shutdownsock(d, R_GOING_DOWN);
+        it = mudstate.descriptor_list.begin();
+    }
+    close_listening_ports();
+}
+
+void close_sockets_emergency(const UTF8* message)
+{
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    {
+        DESC* d = *it;
+#ifdef UNIX_SSL
+        if (d->ssl_session)
+        {
+            SSL_write(d->ssl_session, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)));
+            SSL_shutdown(d->ssl_session);
+            SSL_free(d->ssl_session);
+            d->ssl_session = nullptr;
+        }
+        else
+#endif
+        {
+            SOCKET_WRITE(d->socket, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)), 0);
+        }
+
+        if (IS_SOCKET_ERROR(shutdown(d->socket, SD_BOTH)))
+        {
+            log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
+        }
+        if (0 == SOCKET_CLOSE(d->socket))
+        {
+            DebugTotalSockets--;
+        }
+    }
+    close_listening_ports();
+}
+
 void emergency_shutdown(void)
 {
-    close_sockets(true, T("Going down - Bye"));
+    close_sockets_emergency(T("Going down - Bye"));
 }
 
 

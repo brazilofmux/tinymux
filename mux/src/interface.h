@@ -322,7 +322,8 @@ extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 // From bsd.cpp.
 //
-void close_sockets(bool emergency, const UTF8 *message);
+void close_sockets(const UTF8 *message);
+void close_sockets_emergency(const UTF8* message);
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
 void mux_freeaddrinfo(MUX_ADDRINFO *res);
 int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);

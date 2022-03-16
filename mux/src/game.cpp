@@ -3027,7 +3027,7 @@ int DCL_CDECL main(int argc, char *argv[])
      }
 #endif // INLINESQL
 
-    close_sockets(false, T("Going down - Bye"));
+    close_sockets(T("Going down - Bye"));
     dump_database();
 
     // All shutdown, barring logfiles, should be done, shutdown the
