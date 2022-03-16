@@ -2353,7 +2353,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     return false;
                 }
                 mux_strncpy(user, p, LBUF_SIZE-1);
-                mux_strncpy(password, reinterpret_cast<UTF8*>(GUEST_PASSWORD), LBUF_SIZE-1);
+                mux_strncpy(password, reinterpret_cast<const UTF8*>(GUEST_PASSWORD), LBUF_SIZE-1);
                 isGuest = true;
             }
         }

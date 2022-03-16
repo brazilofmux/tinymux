@@ -3751,7 +3751,6 @@ void load_restart_db(void)
     DESC *d;
     while ((val = getref(f)) != 0)
     {
-        ndescriptors++;
         DebugTotalSockets++;
         d = alloc_desc("restart");
         d->socket = val;
@@ -3932,8 +3931,8 @@ void load_restart_db(void)
         d->nOption = 0;
         d->quota = mudconf.cmd_quota_max;
         d->program_data = nullptr;
-        d->hashnext = nullptr;
 
+#ifdef QQQ
         if (descriptor_list)
         {
             DESC *p;
@@ -3951,6 +3950,7 @@ void load_restart_db(void)
             d->prev = &descriptor_list;
             descriptor_list = d;
         }
+#endif
 
 #if defined(UNIX_NETWORKING_SELECT)
         if (maxd <= d->socket)

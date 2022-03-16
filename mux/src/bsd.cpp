@@ -1520,7 +1520,7 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Listen for new connections if there are free descriptors.
         //
-        if (ndescriptors < avail_descriptors)
+        if (mudstate.descriptor_list.size() < avail_descriptors)
         {
             for (i = 0; i < nPorts; i++)
             {
@@ -2050,6 +2050,7 @@ bool new_connection_continue(DESC* d)
                 DebugTotalSockets--;
             }
             d->socket = INVALID_SOCKET;
+#ifdef QQQ
             *d->prev = d->next;
             if (d->next)
             {
@@ -2061,6 +2062,7 @@ bool new_connection_continue(DESC* d)
             d->next = 0;
             d->prev = 0;
 
+#endif
             // If we don't have queued IOs, then we can free these, now.
             //
             freeqs(d);
@@ -2358,6 +2360,7 @@ void shutdownsock(DESC *d, int reason)
         }
         d->socket = INVALID_SOCKET;
 
+#ifdef QQQ
         *d->prev = d->next;
         if (d->next)
         {
@@ -2368,12 +2371,12 @@ void shutdownsock(DESC *d, int reason)
         //
         d->next = 0;
         d->prev = 0;
+#endif
 
         // If we don't have queued IOs, then we can free these, now.
         //
         freeqs(d);
         free_desc(d);
-        ndescriptors--;
     }
 #endif // WINDOWS_NETWORKING
 }
