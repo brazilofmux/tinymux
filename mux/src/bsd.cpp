@@ -838,8 +838,8 @@ bool initialize_ssl()
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
     OpenSSL_add_all_digests();
-    ssl_ctx = SSL_CTX_new (SSLv23_server_method());
-    tls_ctx = SSL_CTX_new (TLSv1_server_method());
+    ssl_ctx = SSL_CTX_new (TLS_server_method());
+    tls_ctx = SSL_CTX_new (TLS_server_method());
 
     if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
@@ -928,9 +928,10 @@ void shutdown_ssl()
 
 void CleanUpSSLConnections()
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* d = *it;
+        ++it;
         if (d->ssl_session)
         {
             shutdownsock(d, R_RESTART);
@@ -1419,9 +1420,10 @@ void shovechars(int nPorts, port_info aPorts[])
         //      scheduler's queue, or endure many redundant calls to
         //      process_output for the same descriptor).
         //
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
         {
             DESC* d = *it;
+            ++it;
             if (d->bCallProcessOutputLater)
             {
                 d->bCallProcessOutputLater = false;
@@ -1573,9 +1575,10 @@ void shovechars(int nPorts, port_info aPorts[])
 
                 // Search for a bad socket amongst the players.
                 //
-                for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+                for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
                 {
                     DESC* d = *it;
+                    ++it;
                     if (!ValidSocket(d->socket))
                     {
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
@@ -1696,9 +1699,10 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Check for activity on user sockets.
         //
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
         {
             DESC* d = *it;
+            ++it;
 
             // Process input from sockets with pending input.
             //
@@ -1709,11 +1713,8 @@ void shovechars(int nPorts, port_info aPorts[])
                 ENDLOG;
 
 #ifdef UNIX_SSL
-                if (SocketState::SSLAcceptAgain == d->ss)
-                {
-                    if (!new_connection_continue(d)) continue;
-                }
-                if (SocketState::SSLAcceptWantRead == d->ss)
+                if (  SocketState::SSLAcceptAgain == d->ss
+                   || SocketState::SSLAcceptWantRead == d->ss)
                 {
                     if (!new_connection_continue(d)) continue;
                 }
@@ -2051,6 +2052,7 @@ bool new_connection_continue(DESC* d)
                 DebugTotalSockets--;
             }
             d->socket = INVALID_SOCKET;
+
             auto it = mudstate.descriptor_map.find(d);
             mudstate.descriptor_list.erase(it->second);
             mudstate.descriptor_map.erase(it);
@@ -2312,9 +2314,11 @@ void shutdownsock(DESC *d, int reason)
             // any interference from the listening thread.
             //
             EnterCriticalSection(&csDescriptorList);
+
             auto it = mudstate.descriptor_map.find(d);
             mudstate.descriptor_list.erase(it->second);
             mudstate.descriptor_map.erase(it);
+
             LeaveCriticalSection(&csDescriptorList);
 
             // Close the connection in 5 seconds.
@@ -4273,14 +4277,14 @@ void close_listening_ports(void)
 
 void close_sockets(const UTF8 *message)
 {
-    auto it = mudstate.descriptor_list.begin();
-    while (it != mudstate.descriptor_list.end())
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* d = *it;
+        ++it;
+
         queue_string(d, message);
         queue_write_LEN(d, T("\r\n"), 2);
         shutdownsock(d, R_GOING_DOWN);
-        it = mudstate.descriptor_list.begin();
     }
     close_listening_ports();
 }
@@ -5546,9 +5550,10 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
             address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* nd = *it;
+        ++it;
         if (nd->flags & DS_CONNECTED)
         {
             if (SiteMon(nd->player))

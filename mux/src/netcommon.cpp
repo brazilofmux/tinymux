@@ -257,9 +257,10 @@ void DCL_CDECL raw_broadcast(int inflags, __in_z const UTF8 *fmt, ...)
     mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* d = *it;
+        ++it;
         if (d->flags & DS_CONNECTED)
         {
             if ((Flags(d->player) & inflags) == inflags)
@@ -1353,9 +1354,10 @@ int boot_off(const dbref player, const UTF8 *message)
 {
     int count = 0;
     const auto range = mudstate.descriptor_multimap.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
+    for (auto it = range.first; it != range.second; )
     {
         DESC* d = it->second;
+        ++it;
         if (message && *message)
         {
             queue_string(d, message);
@@ -1370,9 +1372,10 @@ int boot_off(const dbref player, const UTF8 *message)
 int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
 {
     int count = 0;
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* d = *it;
+        ++it;
         if (d->flags & DS_CONNECTED)
         {
             if (  d->socket == port
@@ -1555,9 +1558,10 @@ void check_idle(void)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         DESC* d = *it;
+        ++it;
         if (d->flags & DS_AUTODARK)
         {
             continue;
@@ -2992,9 +2996,9 @@ dbref find_connected_name(const dbref player, const UTF8 *name)
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
         {
-            if (Good_obj(player)
-                && !See_Hidden(player)
-                && Hidden(d->player))
+            if (  Good_obj(player)
+               && !See_Hidden(player)
+               && Hidden(d->player))
             {
                 continue;
             }
@@ -3002,8 +3006,8 @@ dbref find_connected_name(const dbref player, const UTF8 *name)
             {
                 continue;
             }
-            if (found != NOTHING
-                && found != d->player)
+            if (  found != NOTHING
+               && found != d->player)
             {
                 return NOTHING;
             }

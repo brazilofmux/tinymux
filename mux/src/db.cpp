@@ -3948,15 +3948,14 @@ void load_restart_db(void)
         }
     }
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
     {
         d = *it;
-        if (d->flags & DS_CONNECTED)
+	++it;
+        if (  (d->flags & DS_CONNECTED)
+           && !isPlayer(d->player))
         {
-            if (!isPlayer(d->player))
-            {
-                shutdownsock(d, R_QUIT);
-            }
+            shutdownsock(d, R_QUIT);
         }
     }
 
