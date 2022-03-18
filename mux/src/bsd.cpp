@@ -838,10 +838,10 @@ bool initialize_ssl()
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
     OpenSSL_add_all_digests();
-    ssl_ctx = SSL_CTX_new (TLS_server_method());
-    tls_ctx = SSL_CTX_new (TLS_server_method());
+    ssl_ctx = SSL_CTX_new(TLS_server_method());
+    tls_ctx = SSL_CTX_new(TLS_server_method());
 
-    if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
+    if (!SSL_CTX_use_certificate_file(ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
         STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
@@ -853,7 +853,7 @@ bool initialize_ssl()
         tls_ctx = nullptr;
         return false;
     }
-    if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
+    if (!SSL_CTX_use_certificate_file(tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
     {
         STARTLOG(LOG_ALWAYS, "NET", "SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
