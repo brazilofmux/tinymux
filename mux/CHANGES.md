@@ -36,6 +36,12 @@ author:
  - Updated SAL annotations.
  - Fix ReSharper warnings and accept recommendations.
  - Updated to C++14 standard.
- - Replaced attrcache.cpp data structures with STL.
+ - Replaced acache_htab, attr_name_htab, channel_htab, desc_htab, and
+   descriptor_list with STL equivalent.
  - Re-work general case mux_string::tranform case to use STL map
    instead of scratch_htab.
+ - Re-work the general case mux_string::tranform case to use STL map
+   instead of scratch_htab.
+ - Update ax_cxx_compile_stdcxx.m4.
+ - Update configure.in and configure.
+ - Concentrate #include files into externs.h.
