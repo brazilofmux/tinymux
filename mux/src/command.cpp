@@ -3743,7 +3743,7 @@ static void list_hashstats(const dbref player)
     raw_notify(player, T("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
     list_hashstat(player, T("Commands"), &mudstate.command_htab);
     list_hashstat(player, T("Logout Cmds"), &mudstate.logout_cmd_htab);
-    list_hashstat(player, T("Functions"), &mudstate.func_htab);
+    list_hashstat_abbreviated(player, T("Functions"), static_cast<int>(mudstate.builtin_functions.size()));;
     list_hashstat_abbreviated(player, T("Flags"), static_cast<int>(mudstate.flag_names_map.size()));;
     list_hashstat(player, T("Powers"), &mudstate.powers_htab);
     list_hashstat_abbreviated(player, T("Attr Names"), static_cast<int>(mudstate.builtin_attribute_names.size()));

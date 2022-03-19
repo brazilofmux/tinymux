@@ -546,7 +546,7 @@ struct statedata
     std::unordered_map<DESC*, std::list<DESC*>::iterator, PointerHasher> descriptors_map;
     std::multimap<dbref, DESC*> dbref_to_descriptors_map;
     std::unordered_map<std::vector<UTF8>, FLAGNAMEENT*, VectorHasher> flag_names_map;
-    CHashTable func_htab;       /* Functions hashtable */
+    std::unordered_map<std::vector<UTF8>, FUN*, VectorHasher> builtin_functions;
     CHashTable fwdlist_htab;    /* Room forwardlists */
     CHashTable logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */
     CHashTable mail_htab;       /* Mail players hashtable */

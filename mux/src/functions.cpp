@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+using namespace std;
 
 #include <pcre.h>
 
@@ -11285,9 +11286,11 @@ void function_add(FUN *fp)
 {
     size_t nCased;
     UTF8 *pCased = mux_strupr(fp->name, nCased);
-    if (nullptr == hashfindLEN(pCased, nCased, &mudstate.func_htab))
+    vector<UTF8> name(pCased, pCased + nCased);
+    const auto it = mudstate.builtin_functions.find(name);
+    if (it == mudstate.builtin_functions.end())
     {
-        hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
+        mudstate.builtin_functions.insert(make_pair(name, fp));
     }
 }
 
@@ -11295,7 +11298,9 @@ void function_remove(FUN *fp)
 {
     size_t nCased;
     UTF8 *pCased = mux_strupr(fp->name, nCased);
-    hashdeleteLEN(pCased, nCased, &mudstate.func_htab);
+    vector<UTF8> name(pCased, pCased + nCased);
+    const auto it = mudstate.builtin_functions.find(name);
+    mudstate.builtin_functions.erase(it);
 }
 
 void functions_add(FUN funlist[])
@@ -11420,7 +11425,9 @@ void do_function
 
     // Verify that the function doesn't exist in the builtin table.
     //
-    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != nullptr)
+    vector<UTF8> name(pName, pName + nLen);
+    const auto it = mudstate.builtin_functions.find(name);
+    if (it != mudstate.builtin_functions.end())
     {
         notify_quiet(executor, T("Function already defined in builtin function table."));
         return;
@@ -11603,9 +11610,11 @@ CF_HAND(cf_func_access)
         *ap++ = '\0';
     }
 
-    FUN *fp = (FUN *)hashfindLEN(str, nstr, &mudstate.func_htab);
-    if (fp)
+    vector<UTF8> name(str, str + nstr);
+    const auto it = mudstate.builtin_functions.find(name);
+    if (it != mudstate.builtin_functions.end())
     {
+        FUN* fp = it->second;
         return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
     }
     UFUN *ufp = (UFUN *)hashfindLEN(str, nstr, &mudstate.ufunc_htab);

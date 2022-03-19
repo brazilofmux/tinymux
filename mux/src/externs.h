@@ -94,6 +94,7 @@ typedef struct tag_int_array
 // From conf.cpp
 //
 void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
+void cf_log_alreadyexists(dbref, const UTF8*, const UTF8*, const UTF8*);
 int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
 void DCL_CDECL cf_log_syntax(dbref player, __in_z UTF8 *cmd, __in_z const UTF8 *fmt, ...);
 void ValidateConfigurationDbrefs(void);

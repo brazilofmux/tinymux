@@ -13,6 +13,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+using namespace std;
 
 //-----------------------------------------------------------------------------
 // parse_to: Split a line at a character, obeying nesting.  The line is
@@ -1431,7 +1432,16 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             if (  0 < nFun
                && nFun <= MAX_UFUN_NAME_LEN)
             {
-                fp = (FUN *)hashfindLEN(mux_scratch, nFun, &mudstate.func_htab);
+                vector<UTF8> name(mux_scratch, mux_scratch + nFun);
+                const auto it = mudstate.builtin_functions.find(name);
+                if (it != mudstate.builtin_functions.end())
+                {
+	                fp = it->second;
+                }
+                else
+                {
+	                fp = nullptr;
+                }
 
                 // If not a builtin func, check for global func.
                 //

@@ -400,6 +400,24 @@ void cf_log_notfound(dbref player, const UTF8 *cmd, const UTF8 *thingname, const
 }
 
 // ---------------------------------------------------------------------------
+// cf_log_alreadyexists: Log a 'already exists' error.
+//
+void cf_log_alreadyexists(dbref player, const UTF8* cmd, const UTF8* thingname, const UTF8* thing)
+{
+    if (mudstate.bReadingConfiguration)
+    {
+        STARTLOG(LOG_STARTUP, "CNF", "NFND");
+        Log.tinyprintf(T("%s: %s %s already exists"), cmd, thingname, thing);
+        ENDLOG;
+    }
+    else
+    {
+        notify(player, tprintf(T("%s %s already exists"), thingname, thing));
+    }
+}
+
+
+// ---------------------------------------------------------------------------
 // cf_log_syntax: Log a syntax error.
 //
 void DCL_CDECL cf_log_syntax(dbref player, __in_z UTF8 *cmd, __in_z const UTF8 *fmt, ...)
@@ -861,46 +879,79 @@ static CF_HAND(cf_attr_name_alias)
     return -1;
 }
 
-// ---------------------------------------------------------------------------
-// cf_name: rename a generic hash table entry
-//
-static CF_HAND(cf_name)
+static int function_name_helper(const dbref player, const UTF8* cmd, const UTF8* existing_name, const UTF8* new_name, bool delete_existing)
 {
+    // Existing function name should exist.
+    //
+    size_t uppercase_length;
+    const UTF8* uppercase = mux_strupr(existing_name, uppercase_length);
+    const vector<UTF8> existing_name_vector(uppercase, uppercase + uppercase_length);
+    const auto it_existing = mudstate.builtin_functions.find(existing_name_vector);
+    if (it_existing == mudstate.builtin_functions.end())
+    {
+        cf_log_notfound(player, cmd, T("Entry"), existing_name);
+        return -1;
+    }
+
+    // New function name should not exist.
+    //
+    uppercase = mux_strupr(new_name, uppercase_length);
+    vector<UTF8> new_function_name(uppercase, uppercase + uppercase_length);
+    const auto it_new = mudstate.builtin_functions.find(new_function_name);
+    if (it_new != mudstate.builtin_functions.end())
+    {
+        cf_log_alreadyexists(player, cmd, T("Entry"), new_name);
+        return -1;
+    }
+    mudstate.builtin_functions.insert(make_pair(new_function_name, it_existing->second));
+    if (delete_existing)
+    {
+        mudstate.builtin_functions.erase(it_existing);
+    }
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// cf_function_name: rename a function
+//
+static CF_HAND(cf_function_name)
+{
+    UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
     string_token st(str, T(" \t=,"));
-    UTF8* oldname = st.parse();
-    UTF8* newname = st.parse();
+    const UTF8* old_name = st.parse();
+    UTF8* new_name = st.parse();
 
-    if (  nullptr != oldname
-       && '\0' != oldname[0]
-       && nullptr != newname
-       && '\0' != newname[0])
+    if (!new_name)
     {
-        size_t nCased;
-        UTF8 *pCased = mux_strupr(oldname, nCased);
-        void *cp = hashfindLEN(pCased, nCased, (CHashTable *) vp);
-        if (nullptr == cp)
-        {
-            cf_log_notfound(player, cmd, T("Entry"), oldname);
-            return -1;
-        }
-
-        size_t bCased = nCased;
-        UTF8 Buffer[LBUF_SIZE];
-        mux_strncpy(Buffer, pCased, sizeof(Buffer)-1);
-        pCased = mux_strupr(newname, nCased);
-        if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
-        {
-            hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
-            hashdeleteLEN(Buffer, bCased, (CHashTable *) vp);
-            return 0;
-        }
+        cf_log_syntax(player, cmd, T("function_name oldname newname : %s"), str);
+        return -1;
     }
-    return -1;
+    return function_name_helper(player, cmd, old_name, new_name, true);
 }
 
+// ---------------------------------------------------------------------------
+// cf_function_alias: create an alias for function
+//
+static CF_HAND(cf_function_alias)
+{
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
+    string_token st(str, T(" \t=,"));
+    const UTF8* function_alias = st.parse();
+    UTF8* function_name = st.parse();
+
+    if (!function_name)
+    {
+        cf_log_syntax(player, cmd, T("function_alias alias funcname : %s"), str);
+        return -1;
+    }
+    return function_name_helper(player, cmd, function_name, function_alias, false);
+}
 
 // ---------------------------------------------------------------------------
 // cf_flagalias: define a flag alias.
@@ -1832,9 +1883,9 @@ static CONFPARM conftable[] =
     {T("full_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.full_file,       nullptr, SIZEOF_PATHNAME},
     {T("full_motd_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.fullmotd_msg,     nullptr,    GBUF_SIZE},
     {T("function_access"),           cf_func_access, CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
-    {T("function_alias"),            cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.func_htab,      nullptr,            0},
+    {T("function_alias"),            cf_function_alias,CA_GOD,  CA_DISABLED, nullptr,                         nullptr,            0},
     {T("function_invocation_limit"), cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_invk_lim,          nullptr,            0},
-    {T("function_name"),             cf_name,        CA_GOD,    CA_DISABLED, (int *)&mudstate.func_htab,      nullptr,            0},
+    {T("function_name"),             cf_function_name, CA_GOD,  CA_DISABLED, nullptr,                         nullptr,            0},
     {T("function_recursion_limit"),  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          nullptr,            0},
     {T("game_dir_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        nullptr, SIZEOF_PATHNAME},
     {T("game_pag_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        nullptr, SIZEOF_PATHNAME},
