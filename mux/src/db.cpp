@@ -3624,7 +3624,7 @@ void dump_restart_db(void)
     putstring(f, mudstate.doing_hdr);
     putref(f, mudstate.record_players);
     putref(f, mudstate.restart_count);
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         d = *it;
         putref(f, d->socket);
@@ -3931,8 +3931,8 @@ void load_restart_db(void)
         d->quota = mudconf.cmd_quota_max;
         d->program_data = nullptr;
 
-        auto it = mudstate.descriptor_list.insert(mudstate.descriptor_list.end(), d);
-        mudstate.descriptor_map.insert(make_pair(d, it));
+        auto it = mudstate.descriptors_list.insert(mudstate.descriptors_list.end(), d);
+        mudstate.descriptors_map.insert(make_pair(d, it));
 
 #if defined(UNIX_NETWORKING_SELECT)
         if (maxd <= d->socket)
@@ -3948,7 +3948,7 @@ void load_restart_db(void)
         }
     }
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         d = *it;
 	++it;

@@ -427,6 +427,14 @@ struct VectorHasher
     }
 };
 
+struct PointerHasher
+{
+	size_t operator()(const void *p) const
+	{
+        return HASH_ProcessBuffer(0, &p, sizeof(void*));
+	}
+};
+
 typedef struct statedata STATEDATA;
 struct statedata
 {
@@ -531,13 +539,13 @@ struct statedata
     std::list<Aname> attribute_lru_cache_list;
     std::unordered_map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameHasher> attribute_lru_cache_map;
 #endif // MEMORY_BASED
-    std::unordered_map<std::vector<UTF8>, ATTR *, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
+    std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */
-    std::list<DESC*> descriptor_list;
-    std::map<DESC*, std::list<DESC*>::iterator> descriptor_map;
-    std::multimap<dbref, DESC*> descriptor_multimap;
-    CHashTable flags_htab;      /* Flags hashtable */
+    std::list<DESC*> descriptors_list;
+    std::unordered_map<DESC*, std::list<DESC*>::iterator, PointerHasher> descriptors_map;
+    std::multimap<dbref, DESC*> dbref_to_descriptors_map;
+    std::unordered_map<std::vector<UTF8>, FLAGNAMEENT*, VectorHasher> flag_names_map;
     CHashTable func_htab;       /* Functions hashtable */
     CHashTable fwdlist_htab;    /* Room forwardlists */
     CHashTable logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */

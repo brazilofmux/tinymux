@@ -304,7 +304,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 
 static void wall_broadcast(int target, dbref player, UTF8 *message)
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)

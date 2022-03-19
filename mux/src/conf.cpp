@@ -924,21 +924,23 @@ static CF_HAND(cf_flagalias)
     }
 
     bool success = false;
-    int  nName;
-    bool bValid;
-    void *cp;
-    UTF8 *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
-    if (bValid)
+    int  name_length;
+    bool valid;
+    UTF8 *name = MakeCanonicalFlagName(orig, &name_length, &valid);
+    if (valid)
     {
-        cp = hashfindLEN(pName, nName, &mudstate.flags_htab);
-        if (cp)
+	    const vector<UTF8> original_name(name, name + name_length);
+        const auto it_original = mudstate.flag_names_map.find(original_name);
+        if (it_original != mudstate.flag_names_map.end())
         {
-            pName = MakeCanonicalFlagName(alias, &nName, &bValid);
-            if (bValid)
+            name = MakeCanonicalFlagName(alias, &name_length, &valid);
+            vector<UTF8> alias_name(name, name + name_length);
+            if (valid)
             {
-                if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
+	            const auto it_alias_name = mudstate.flag_names_map.find(alias_name);
+                if (it_alias_name == mudstate.flag_names_map.end())
                 {
-                    hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
+                    mudstate.flag_names_map.insert(make_pair(alias_name, it_original->second));
                     success = true;
                }
             }
@@ -1136,53 +1138,55 @@ static CF_HAND(cf_set_flags)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    int success, failure;
+    int failure;
+    int success = failure = 0;
 
     // Walk through the tokens.
     //
-    success = failure = 0;
     string_token st(str, T(" \t"));
     UTF8 *sp = st.parse();
-    FLAGSET *fset = (FLAGSET *) vp;
+    const auto flag_set = reinterpret_cast<FLAGSET*>(vp);
 
     while (sp != nullptr)
     {
         // Canonical Flag Name.
         //
-        int  nName;
-        bool bValid;
-        UTF8 *pName = MakeCanonicalFlagName(sp, &nName, &bValid);
-        FLAGNAMEENT *fp = nullptr;
-        if (bValid)
+        int  flag_name_length;
+        bool valid;
+        UTF8 *flag_name = MakeCanonicalFlagName(sp, &flag_name_length, &valid);
+        if (valid)
         {
-            fp = (FLAGNAMEENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
-        }
-        if (fp != nullptr)
-        {
-            // Set the appropriate bit.
-            //
-            if (success == 0)
+            vector<UTF8> flagname(flag_name, flag_name + flag_name_length);
+            auto it = mudstate.flag_names_map.find(flagname);
+            if (it != mudstate.flag_names_map.end())
             {
-                for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+	            const FLAGNAMEENT* flag_name_entry = it->second;
+
+                // Set the appropriate bit.
+                //
+                if (success == 0)
                 {
-                    (*fset).word[i] = 0;
+                    for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+                    {
+                        (*flag_set).word[i] = 0;
+                    }
                 }
-            }
-            FLAGBITENT *fbe = fp->fbe;
-            if (fp->bPositive)
-            {
-                (*fset).word[fbe->flagflag] |= fbe->flagvalue;
+                FLAGBITENT* flag_bit_entity = flag_name_entry->fbe;
+                if (flag_name_entry->bPositive)
+                {
+                    (*flag_set).word[flag_bit_entity->flagflag] |= flag_bit_entity->flagvalue;
+                }
+                else
+                {
+                    (*flag_set).word[flag_bit_entity->flagflag] &= ~(flag_bit_entity->flagvalue);
+                }
+                success++;
             }
             else
             {
-                (*fset).word[fbe->flagflag] &= ~(fbe->flagvalue);
+                cf_log_notfound(player, cmd, T("Entry"), sp);
+                failure++;
             }
-            success++;
-        }
-        else
-        {
-            cf_log_notfound(player, cmd, T("Entry"), sp);
-            failure++;
         }
 
         // Get the next token
@@ -1193,7 +1197,7 @@ static CF_HAND(cf_set_flags)
     {
         for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
         {
-            (*fset).word[i] = 0;
+            (*flag_set).word[i] = 0;
         }
         return 0;
     }

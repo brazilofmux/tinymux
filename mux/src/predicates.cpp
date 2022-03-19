@@ -1273,7 +1273,7 @@ void handle_prog(DESC *d, UTF8 *message)
     // First, set 'all' to a descriptor we find for this player.
     //
     program_data* program = nullptr;
-    const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
     for (auto it = range.first; it != range.second; ++it)
     {       
         DESC* d = it->second;
@@ -1346,7 +1346,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
         return;
     }
     bool isprog = false;
-    const auto range = mudstate.descriptor_multimap.equal_range(doer);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(doer);
     for (auto it = range.first; it != range.second; ++it)
     {
         const DESC* d = it->second;
@@ -1363,7 +1363,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
     }
 
     program_data* program = nullptr;
-    const auto range2 = mudstate.descriptor_multimap.equal_range(doer);
+    const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(doer);
     for (auto it = range2.first; it != range2.second; ++it)
     {
         DESC* d = it->second;
@@ -1449,7 +1449,7 @@ void do_prog
 
     // Check to see if the enactor already has an @prog input pending.
     //
-    const auto range = mudstate.descriptor_multimap.equal_range(doer);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(doer);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -1535,7 +1535,7 @@ void do_prog
 
     // Now, start waiting.
     //
-    const auto range2 = mudstate.descriptor_multimap.equal_range(doer);
+    const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(doer);
     for (auto it = range2.first; it != range2.second; ++it)
     {
         DESC* d = it->second;

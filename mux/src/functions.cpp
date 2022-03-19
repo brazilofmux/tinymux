@@ -7602,7 +7602,7 @@ static FUNCTION(fun_height)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7645,7 +7645,7 @@ static FUNCTION(fun_width)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7688,7 +7688,7 @@ static FUNCTION(fun_colordepth)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7758,7 +7758,7 @@ static FUNCTION(fun_idle)
         DESC *d = nullptr;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7813,7 +7813,7 @@ static FUNCTION(fun_conn)
         DESC *d = nullptr;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7866,7 +7866,7 @@ static FUNCTION(fun_terminfo)
         SOCKET s = mux_atol(fargs[0]);
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -7904,7 +7904,7 @@ static FUNCTION(fun_terminfo)
             return;
         }
 
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -9989,7 +9989,7 @@ static FUNCTION(fun_cmds)
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
         DESC *d = nullptr;
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if ((d)->flags & DS_CONNECTED)

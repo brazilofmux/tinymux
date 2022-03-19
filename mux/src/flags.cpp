@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+using namespace std;
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
@@ -278,7 +279,7 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
 
     if (fh_any(target, player, flag, fflags, reset))
     {
-        const auto range = mudstate.descriptor_multimap.equal_range(target);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* dtemp = it->second;
@@ -318,7 +319,7 @@ static bool fh_ascii(const dbref target, const dbref player, FLAG flag, int ffla
 
     if (result)
     {
-        const auto range = mudstate.descriptor_multimap.equal_range(target);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* dtemp = it->second;
@@ -537,12 +538,15 @@ OBJENT object_types[8] =
 
 void init_flagtab(void)
 {
-    for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
+    for (FLAGNAMEENT *flag_name_entity = gen_flag_names; flag_name_entity->pOrigName; flag_name_entity++)
     {
-        fp->flagname = (UTF8 *)fp->pOrigName;
-        if (!hashfindLEN(fp->flagname, strlen((char *)fp->flagname), &mudstate.flags_htab))
+        flag_name_entity->flagname = const_cast<UTF8*>(flag_name_entity->pOrigName);
+        const size_t flag_name_length = strlen(reinterpret_cast<const char*>(flag_name_entity->pOrigName));
+        vector<UTF8> flag_name(flag_name_entity->pOrigName, flag_name_entity->pOrigName + flag_name_length);
+        auto it = mudstate.flag_names_map.find(flag_name);
+        if (it == mudstate.flag_names_map.end())
         {
-            hashaddLEN(fp->flagname, strlen((char *)fp->flagname), fp, &mudstate.flags_htab);
+            mudstate.flag_names_map.insert(make_pair(flag_name, flag_name_entity));
         }
     }
 }
@@ -620,19 +624,23 @@ UTF8 *MakeCanonicalFlagName
     }
 }
 
-static FLAGNAMEENT *find_flag(const UTF8 *flagname)
+static FLAGNAMEENT* find_flag(const UTF8* input_flag_name)
 {
-    // Convert flagname to canonical lowercase format.
+    // Convert input_flag_name to canonical lowercase format.
     //
-    int nName;
-    bool bValid;
-    UTF8 *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
-    FLAGNAMEENT *fe = nullptr;
-    if (bValid)
+    int flag_name_length;
+    bool valid;
+    UTF8* flag_name = MakeCanonicalFlagName(input_flag_name, &flag_name_length, &valid);
+    if (valid)
     {
-        fe = (FLAGNAMEENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
+	    const vector<UTF8> name(flag_name, flag_name + flag_name_length);
+	    const auto it = mudstate.flag_names_map.find(name);
+        if (it != mudstate.flag_names_map.end())
+        {
+            return it->second;
+        }
     }
-    return fe;
+    return nullptr;
 }
 
 // ---------------------------------------------------------------------------
@@ -1238,57 +1246,42 @@ void decompile_flags(dbref player, dbref thing, UTF8 *thingname)
 // do_flag: Rename flags or remove flag aliases.
 // Based on RhostMUSH code.
 //
-static bool flag_rename(UTF8 *alias, UTF8 *newname)
+static bool flag_rename(UTF8 *existing_flag_name, UTF8 *new_flag_name)
 {
-    int nAlias;
-    bool bValidAlias;
-    UTF8 *pCheckedAlias = MakeCanonicalFlagName(alias, &nAlias, &bValidAlias);
-    if (!bValidAlias)
+    int existing_flag_name_length;
+    bool valid;
+    UTF8 *canonical_existing_flag_name = MakeCanonicalFlagName(existing_flag_name, &existing_flag_name_length, &valid);
+    if (valid)
     {
-        return false;
-    }
-    UTF8 *pAlias = alloc_sbuf("flag_rename.old");
-    memcpy(pAlias, pCheckedAlias, nAlias+1);
-
-    int nNewName;
-    bool bValidNewName;
-    UTF8 *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
-    if (!bValidNewName)
-    {
-        free_sbuf(pAlias);
-        return false;
-    }
-    UTF8 *pNewName = alloc_sbuf("flag_rename.new");
-    memcpy(pNewName, pCheckedNewName, nNewName+1);
-
-    FLAGNAMEENT *flag1;
-    flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, nAlias, &mudstate.flags_htab);
-    if (flag1 != nullptr)
-    {
-        FLAGNAMEENT *flag2;
-        flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, nNewName, &mudstate.flags_htab);
-        if (flag2 == nullptr)
+	    const vector<UTF8> existing_name(canonical_existing_flag_name, canonical_existing_flag_name + existing_flag_name_length);
+        const auto it_existing = mudstate.flag_names_map.find(existing_name);
+        if (it_existing != mudstate.flag_names_map.end())
         {
-            hashaddLEN(pNewName, nNewName, flag1, &mudstate.flags_htab);
-
-            if (flag1->flagname != flag1->pOrigName)
+            int new_flag_name_length;
+            UTF8* canonical_new_flag_name = MakeCanonicalFlagName(new_flag_name, &new_flag_name_length, &valid);
+            if (valid)
             {
-                MEMFREE(flag1->flagname);
+                vector<UTF8> new_name(canonical_new_flag_name, canonical_new_flag_name + new_flag_name_length);
+                const auto it_new = mudstate.flag_names_map.find(new_name);
+                if (it_new == mudstate.flag_names_map.end())
+                {
+                    FLAGNAMEENT* flag_name_entity = it_existing->second;
+                    mudstate.flag_names_map.insert(make_pair(new_name, flag_name_entity));
+                    if (flag_name_entity->flagname != flag_name_entity->pOrigName)
+                    {
+                        MEMFREE(flag_name_entity->flagname);
+                    }
+                    flag_name_entity->flagname = StringCloneLen(canonical_new_flag_name, new_flag_name_length);
+                    return true;
+                }
             }
-            flag1->flagname = StringCloneLen(pNewName, nNewName);
-
-            free_sbuf(pAlias);
-            free_sbuf(pNewName);
-            return true;
         }
     }
-    free_sbuf(pAlias);
-    free_sbuf(pNewName);
     return false;
 }
 
 void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs,
-             UTF8 *flag1, UTF8 *flag2, const UTF8 *cargs[], int ncargs)
+             UTF8 *existing_flag_name, UTF8 *new_flag_name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1302,22 +1295,24 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
         {
             notify(executor, T("Extra argument ignored."));
         }
-        int nAlias;
-        bool bValidAlias;
-        UTF8 *pCheckedAlias = MakeCanonicalFlagName(flag1, &nAlias, &bValidAlias);
-        if (bValidAlias)
+        int flag_name_length;
+        bool valid;
+        UTF8 *canonical_flag_name = MakeCanonicalFlagName(existing_flag_name, &flag_name_length, &valid);
+        if (valid)
         {
-            FLAGNAMEENT *lookup;
-            lookup = (FLAGNAMEENT *)hashfindLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
-            if (lookup)
+	        const vector<UTF8> name(canonical_flag_name, canonical_flag_name + flag_name_length);
+            const auto it = mudstate.flag_names_map.find(name);
+            if (it != mudstate.flag_names_map.end())
             {
-                if (  lookup->flagname != lookup->pOrigName
-                   && mux_stricmp(lookup->flagname, pCheckedAlias) == 0)
+                FLAGNAMEENT* flag_name_entity = it->second;
+
+                if (  flag_name_entity->flagname != flag_name_entity->pOrigName
+                   && mux_stricmp(flag_name_entity->flagname, canonical_flag_name) == 0)
                 {
-                    MEMFREE(lookup->flagname);
-                    lookup->flagname = (UTF8 *)lookup->pOrigName;
-                    hashdeleteLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
-                    notify(executor, tprintf(T("Flag name \xE2\x80\x98%s\xE2\x80\x99 removed from the hash table."), pCheckedAlias));
+                    MEMFREE(flag_name_entity->flagname);
+                    flag_name_entity->flagname = const_cast<UTF8*>(flag_name_entity->pOrigName);
+                    mudstate.flag_names_map.erase(it);
+                    notify(executor, tprintf(T("Flag name \xE2\x80\x98%s\xE2\x80\x99 removed from the hash table."), canonical_flag_name));
                 }
                 else
                 {
@@ -1333,7 +1328,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
             notify(executor, T("You must specify a flag and a name."));
             return;
         }
-        if (flag_rename(flag1, flag2))
+        if (flag_rename(existing_flag_name, new_flag_name))
         {
             notify(executor, T("Flag name changed."));
         }

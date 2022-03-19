@@ -309,7 +309,7 @@ static int get_slave_result(void)
         return 1;
     }
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (strcmp(reinterpret_cast<char *>(d->addr), reinterpret_cast<char *>(host_address)) != 0)
@@ -788,7 +788,7 @@ static int get_slave_result(void)
     *p = '\0';
     if (mudconf.use_hostname)
     {
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (strcmp((char *)d->addr, (char *)host_address) != 0)
@@ -928,7 +928,7 @@ void shutdown_ssl()
 
 void CleanUpSSLConnections()
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* d = *it;
         ++it;
@@ -1420,7 +1420,7 @@ void shovechars(int nPorts, port_info aPorts[])
         //      scheduler's queue, or endure many redundant calls to
         //      process_output for the same descriptor).
         //
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
         {
             DESC* d = *it;
             ++it;
@@ -1523,7 +1523,7 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Listen for new connections if there are free descriptors.
         //
-        if (mudstate.descriptor_list.size() < avail_descriptors)
+        if (mudstate.descriptors_list.size() < avail_descriptors)
         {
             for (i = 0; i < nPorts; i++)
             {
@@ -1542,7 +1542,7 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Mark sockets that we want to test for change in status.
         //
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (!d->input_head)
@@ -1575,7 +1575,7 @@ void shovechars(int nPorts, port_info aPorts[])
 
                 // Search for a bad socket amongst the players.
                 //
-                for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+                for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
                 {
                     DESC* d = *it;
                     ++it;
@@ -1699,7 +1699,7 @@ void shovechars(int nPorts, port_info aPorts[])
 
         // Check for activity on user sockets.
         //
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
         {
             DESC* d = *it;
             ++it;
@@ -1727,7 +1727,7 @@ void shovechars(int nPorts, port_info aPorts[])
                     {
                         // Clear the DS_AUTODARK on every related session.
                         //
-                        const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+                        const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
                         for (auto it = range.first; it != range.second; ++it)
                         {
                             DESC* d1 = it->second;
@@ -2053,9 +2053,9 @@ bool new_connection_continue(DESC* d)
             }
             d->socket = INVALID_SOCKET;
 
-            auto it = mudstate.descriptor_map.find(d);
-            mudstate.descriptor_list.erase(it->second);
-            mudstate.descriptor_map.erase(it);
+            auto it = mudstate.descriptors_map.find(d);
+            mudstate.descriptors_list.erase(it->second);
+            mudstate.descriptors_map.erase(it);
 
             // If we don't have queued IOs, then we can free these, now.
             //
@@ -2256,7 +2256,7 @@ void shutdownsock(DESC *d, int reason)
     if (d->program_data != nullptr)
     {
         int num = 0;
-        const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
         for (auto it = range.first; it != range.second; ++it)
         {
             num++;
@@ -2315,9 +2315,9 @@ void shutdownsock(DESC *d, int reason)
             //
             EnterCriticalSection(&csDescriptorList);
 
-            auto it = mudstate.descriptor_map.find(d);
-            mudstate.descriptor_list.erase(it->second);
-            mudstate.descriptor_map.erase(it);
+            auto it = mudstate.descriptors_map.find(d);
+            mudstate.descriptors_list.erase(it->second);
+            mudstate.descriptors_map.erase(it);
 
             LeaveCriticalSection(&csDescriptorList);
 
@@ -2345,9 +2345,9 @@ void shutdownsock(DESC *d, int reason)
         }
         d->socket = INVALID_SOCKET;
 
-        auto it = mudstate.descriptor_map.find(d);
-        mudstate.descriptor_list.erase(it->second);
-        mudstate.descriptor_map.erase(it);
+        auto it = mudstate.descriptors_map.find(d);
+        mudstate.descriptors_list.erase(it->second);
+        mudstate.descriptors_map.erase(it);
 
         // If we don't have queued IOs, then we can free these, now.
         //
@@ -2390,9 +2390,9 @@ static void shutdownsock_brief(DESC *d)
     // any interference from the listening thread
     //
     EnterCriticalSection(&csDescriptorList);
-    auto it = mudstate.descriptor_map.find(d);
-    mudstate.descriptor_list.erase(it->second);
-    mudstate.descriptor_map.erase(it);
+    auto it = mudstate.descriptors_map.find(d);
+    mudstate.descriptors_list.erase(it->second);
+    mudstate.descriptors_map.erase(it);
     LeaveCriticalSection(&csDescriptorList);
 
     // post a notification that it is safe to free the descriptor
@@ -2489,8 +2489,8 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
     EnterCriticalSection(&csDescriptorList);
 #endif // WINDOWS_NETWORKING
 
-    auto it = mudstate.descriptor_list.insert(mudstate.descriptor_list.begin(), d);
-    mudstate.descriptor_map.insert(make_pair(d, it));
+    auto it = mudstate.descriptors_list.insert(mudstate.descriptors_list.begin(), d);
+    mudstate.descriptors_map.insert(make_pair(d, it));
 
 #if defined(WINDOWS_NETWORKING)
     // ok to continue now
@@ -4277,7 +4277,7 @@ void close_listening_ports(void)
 
 void close_sockets(const UTF8 *message)
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* d = *it;
         ++it;
@@ -4291,7 +4291,7 @@ void close_sockets(const UTF8 *message)
 
 void close_sockets_emergency(const UTF8* message)
 {
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
 #ifdef UNIX_SSL
@@ -5403,7 +5403,7 @@ void process_windows_tcp(DWORD dwTimeout)
             {
                 // Clear the DS_AUTODARK on every related session.
                 //
-                const auto range = mudstate.descriptor_multimap.equal_range(d->player);
+                const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
                 for (auto it = range.first; it != range.second; ++it)
                 {
                     DESC* d1 = it->second;
@@ -5550,7 +5550,7 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
             address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* nd = *it;
         ++it;

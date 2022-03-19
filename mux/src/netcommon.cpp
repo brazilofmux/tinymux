@@ -35,7 +35,7 @@ void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
     ITL itl;
     ItemToList_Init(&itl, buff, bufc);
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
@@ -59,7 +59,7 @@ void make_port_ulist(dbref player, UTF8 *buff, UTF8 **bufc)
     ITL itl;
     UTF8 *tmp = alloc_sbuf("make_port_ulist");
     ItemToList_Init(&itl, buff, bufc, '#');
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
@@ -111,7 +111,7 @@ void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaC
 
     if (nExtraQuota > 0)
     {
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             d->quota += nExtraQuota;
@@ -145,7 +145,7 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
         return;
     }
 
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC *d = it->second;
@@ -179,7 +179,7 @@ void raw_notify(dbref player, const UTF8 *msg)
         return;
     }
 
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -209,7 +209,7 @@ void raw_notify(dbref player, const mux_string &sMsg)
         return;
     }
 
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -231,7 +231,7 @@ void raw_notify_newline(dbref player)
         return;
     }
 
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -257,7 +257,7 @@ void DCL_CDECL raw_broadcast(int inflags, __in_z const UTF8 *fmt, ...)
     mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* d = *it;
         ++it;
@@ -713,7 +713,7 @@ void freeqs(DESC *d)
 void desc_addhash(DESC *d)
 {
     dbref player = d->player;
-    mudstate.descriptor_multimap.insert(make_pair(player, d));
+    mudstate.dbref_to_descriptors_map.insert(make_pair(player, d));
 }
 
 /* ---------------------------------------------------------------------------
@@ -723,10 +723,10 @@ void desc_addhash(DESC *d)
 static void desc_delhash(const DESC *d)
 {
     const dbref player = d->player;
-    const auto it = mudstate.descriptor_multimap.find(player);
-    if (it != mudstate.descriptor_multimap.end())
+    const auto it = mudstate.dbref_to_descriptors_map.find(player);
+    if (it != mudstate.dbref_to_descriptors_map.end())
     {
-        mudstate.descriptor_multimap.erase(it);
+        mudstate.dbref_to_descriptors_map.erase(it);
     }
 }
 
@@ -889,7 +889,7 @@ static void announce_connect(const dbref player, DESC *d)
     desc_addhash(d);
 
     int count = 0;
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
@@ -951,7 +951,7 @@ static void announce_connect(const dbref player, DESC *d)
     }
 
     int num = 0;
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         num++;
@@ -961,7 +961,7 @@ static void announce_connect(const dbref player, DESC *d)
     //
     if (Unicode(player))
     {
-        const auto range = mudstate.descriptor_multimap.equal_range(player);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* dtemp = it->second;
@@ -978,7 +978,7 @@ static void announce_connect(const dbref player, DESC *d)
 
     if (Ascii(player))
     {
-        const auto range = mudstate.descriptor_multimap.equal_range(player);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC *dtemp = it->second;
@@ -1154,7 +1154,7 @@ static void announce_connect(const dbref player, DESC *d)
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
     int num = 0, key;    
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         num++;
@@ -1353,7 +1353,7 @@ void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 int boot_off(const dbref player, const UTF8 *message)
 {
     int count = 0;
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; )
     {
         DESC* d = it->second;
@@ -1372,7 +1372,7 @@ int boot_off(const dbref player, const UTF8 *message)
 int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
 {
     int count = 0;
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* d = *it;
         ++it;
@@ -1406,7 +1406,7 @@ void desc_reload(dbref player)
     dbref aowner;
     FLAG aflags;
 
-    const auto range = mudstate.descriptor_multimap.equal_range(player);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -1430,7 +1430,7 @@ void desc_reload(dbref player)
 int fetch_session(dbref target)
 {
     int count = 0;
-    const auto range = mudstate.descriptor_multimap.equal_range(target);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {        
         count++;
@@ -1443,7 +1443,7 @@ static DESC *find_least_idle(dbref target)
     CLinearTimeAbsolute ltaNewestLastTime;
 
     DESC *dLeastIdle = nullptr;
-    const auto range = mudstate.descriptor_multimap.equal_range(target);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -1508,7 +1508,7 @@ void find_oldest(const dbref target, DESC *dOldest[2])
     dOldest[1] = nullptr;
 
     bool bFound = false;
-    const auto range = mudstate.descriptor_multimap.equal_range(target);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -1558,7 +1558,7 @@ void check_idle(void)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); )
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
         DESC* d = *it;
         ++it;
@@ -1588,7 +1588,7 @@ void check_idle(void)
                     // active session.
                     //
                     bool found = false;
-                    auto range = mudstate.descriptor_multimap.equal_range(d->player);
+                    auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
                     for (auto it = range.first; it != range.second; ++it)
                     {
                         DESC* d1 = it->second;
@@ -1605,7 +1605,7 @@ void check_idle(void)
                     if (!found)
                     {
                         db[d->player].fs.word[FLAG_WORD1] |= DARK;
-                        auto range2 = mudstate.descriptor_multimap.equal_range(d->player);
+                        auto range2 = mudstate.dbref_to_descriptors_map.equal_range(d->player);
                         for (auto it = range2.first; it != range2.second; ++it)
                         {
                             DESC* d1 = it->second;
@@ -1779,7 +1779,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (!(  (  (e->flags & DS_CONNECTED)
@@ -2027,7 +2027,7 @@ static void dump_info(DESC *arg_desc)
     queue_write(arg_desc, tprintf(T("Uptime: %s\r\n"), temp));
 
     int count = 0;
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
@@ -2142,7 +2142,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (key == DOING_MESSAGE)
     {
         bool found = false;
-        const auto range = mudstate.descriptor_multimap.equal_range(executor);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* d = it->second;
@@ -2166,7 +2166,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     {
         DESC *dMax = nullptr;
         CLinearTimeAbsolute ltaMax;
-        const auto range = mudstate.descriptor_multimap.equal_range(executor);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* d = it->second;
@@ -2371,7 +2371,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         else
         {
             nplayers = 0;
-            for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
             {
                 DESC* d2 = *it;
                 if (d2->flags & DS_CONNECTED)
@@ -2458,7 +2458,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // Check to see if the player is currently running an
             // @program. If so, drop the new descriptor into it.
             //
-            const auto range = mudstate.descriptor_multimap.equal_range(player);
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
             for (auto it = range.first; it != range.second; ++it)
             {
                 DESC* d2 = it->second;
@@ -2498,7 +2498,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             announce_connect(player, d);
 
             int num_con = 0;
-            const auto range2 = mudstate.descriptor_multimap.equal_range(player);
+            const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
             for (auto it = range2.first; it != range2.second; ++it)
             {
                 num_con++;
@@ -2553,7 +2553,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         else
         {
             nplayers = 0;
-            for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
             {
                 DESC* d2 = *it;
                 if (d2->flags & DS_CONNECTED)
@@ -2851,7 +2851,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (key == CMD_PUEBLOCLIENT)
     {
-        const auto range = mudstate.descriptor_multimap.equal_range(executor);
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
         for (auto it = range.first; it != range.second; ++it)
         {
             DESC* d = it->second;
@@ -2867,7 +2867,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
     // used connection.
     //
     DESC* dLatest = nullptr;
-    const auto range = mudstate.descriptor_multimap.equal_range(executor);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
@@ -2962,7 +2962,7 @@ void make_ulist(dbref player, UTF8 *buff, UTF8 **bufc, bool bPorts)
     {
         ITL pContext;
         ItemToList_Init(&pContext, buff, bufc, '#');
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -2991,7 +2991,7 @@ void make_ulist(dbref player, UTF8 *buff, UTF8 **bufc, bool bPorts)
 dbref find_connected_name(const dbref player, const UTF8 *name)
 {
     dbref found = NOTHING;
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
@@ -3029,7 +3029,7 @@ FUNCTION(fun_doing)
     if (is_rational(fargs[0]))
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             DESC* d = *it;
             if (d->flags & DS_CONNECTED)
@@ -3061,7 +3061,7 @@ FUNCTION(fun_doing)
         if (  Wizard_Who(executor)
            || !Hidden(victim))
         {
-            for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
             {
                 DESC* d = *it;
                 if (d->flags & DS_CONNECTED)
@@ -3102,7 +3102,7 @@ FUNCTION(fun_host)
     if (isPort)
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -3123,7 +3123,7 @@ FUNCTION(fun_host)
             safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -3206,7 +3206,7 @@ FUNCTION(fun_siteinfo)
     if (isPort)
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -3227,7 +3227,7 @@ FUNCTION(fun_siteinfo)
             safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
-        for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
             if (d->flags & DS_CONNECTED)
@@ -3281,7 +3281,7 @@ int fetch_cmds(const dbref target)
     int sum = 0;
     bool bFound = false;
 
-    const auto range = mudstate.descriptor_multimap.equal_range(target);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;

@@ -110,7 +110,7 @@ void dispatch_KeepAlive(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    for (auto it = mudstate.descriptor_list.begin(); it != mudstate.descriptor_list.end(); ++it)
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (  (d->flags & DS_CONNECTED)

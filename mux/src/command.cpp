@@ -3744,12 +3744,12 @@ static void list_hashstats(const dbref player)
     list_hashstat(player, T("Commands"), &mudstate.command_htab);
     list_hashstat(player, T("Logout Cmds"), &mudstate.logout_cmd_htab);
     list_hashstat(player, T("Functions"), &mudstate.func_htab);
-    list_hashstat(player, T("Flags"), &mudstate.flags_htab);
+    list_hashstat_abbreviated(player, T("Flags"), static_cast<int>(mudstate.flag_names_map.size()));;
     list_hashstat(player, T("Powers"), &mudstate.powers_htab);
     list_hashstat_abbreviated(player, T("Attr Names"), static_cast<int>(mudstate.builtin_attribute_names.size()));
     list_hashstat(player, T("Vattr Names"), &mudstate.vattr_name_htab);
     list_hashstat(player, T("Player Names"), &mudstate.player_htab);
-    list_hashstat_abbreviated(player, T("Net Descr."), static_cast<int>(mudstate.descriptor_multimap.size()));;
+    list_hashstat_abbreviated(player, T("Net Descr."), static_cast<int>(mudstate.dbref_to_descriptors_map.size()));;
     list_hashstat(player, T("Fwd. lists"), &mudstate.fwdlist_htab);
     list_hashstat(player, T("Excl. $-cmds"), &mudstate.parent_htab);
     list_hashstat(player, T("Mail Messages"), &mudstate.mail_htab);
