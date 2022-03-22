@@ -294,34 +294,15 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
 
             // Replace an existing forwardlist, or add a new one.
             //
-            bool bDone = false;
+            bool done;
             FWDLIST *xfp = fwdlist_get(thing);
             if (xfp)
             {
-                if (xfp->data)
-                {
-                    delete [] xfp->data;
-                }
+                delete [] xfp->data;
                 delete xfp;
                 xfp = nullptr;
-
-                bDone = hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
             }
-            else
-            {
-                bDone = hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
-            }
-
-            // If addition or replacement failed, don't leak new forward list.
-            //
-            if (!bDone)
-            {
-                if (fp->data)
-                {
-                    delete [] fp->data;
-                }
-                delete fp;
-            }
+            mudstate.forward_lists[thing] = fp;
         }
         else
         {
@@ -341,14 +322,11 @@ void fwdlist_clr(dbref thing)
     FWDLIST *xfp = fwdlist_get(thing);
     if (xfp)
     {
-        if (xfp->data)
-        {
-            delete [] xfp->data;
-        }
+        delete [] xfp->data;
         delete xfp;
         xfp = nullptr;
-
-        hashdeleteLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab);
+        const auto it = mudstate.forward_lists.find(thing);
+        mudstate.forward_lists.erase(it);
     }
 }
 
@@ -549,8 +527,11 @@ FWDLIST *fwdlist_get(dbref thing)
     }
     else
     {
-        fp = (FWDLIST *) hashfindLEN(&thing, sizeof(thing),
-            &mudstate.fwdlist_htab);
+        const auto it = mudstate.forward_lists.find(thing);
+        if (it != mudstate.forward_lists.end())
+            fp = it->second;
+        else
+            fp = nullptr;
     }
     return fp;
 }

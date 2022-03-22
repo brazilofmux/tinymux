@@ -435,6 +435,14 @@ struct PointerHasher
 	}
 };
 
+struct dbrefHasher
+{
+    size_t operator()(const dbref r) const
+    {
+        return CRC32_ProcessInteger(r);
+    }
+};
+
 typedef struct statedata STATEDATA;
 struct statedata
 {
@@ -547,7 +555,7 @@ struct statedata
     std::multimap<dbref, DESC*> dbref_to_descriptors_map;
     std::unordered_map<std::vector<UTF8>, FLAGNAMEENT*, VectorHasher> flag_names_map;
     std::unordered_map<std::vector<UTF8>, FUN*, VectorHasher> builtin_functions;
-    CHashTable fwdlist_htab;    /* Room forwardlists */
+    std::unordered_map<dbref, FWDLIST*, dbrefHasher> forward_lists;
     CHashTable logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */
     CHashTable mail_htab;       /* Mail players hashtable */
     CHashTable parent_htab;     /* Parent $-command exclusion */
