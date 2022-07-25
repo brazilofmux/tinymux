@@ -14,10 +14,6 @@
  * Load system-dependent header files.
  */
 
-#if !defined(STDC_HEADERS)
-#error MUX requires standard headers.
-#endif
-
 #if defined(WIN32)
 
 // Build Options

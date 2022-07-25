@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 AC_INIT([TinyMUX],[2.13],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
 AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
@@ -273,8 +273,22 @@ AC_SUBST(DL_LIB)
 # Checks for header files.
 #
 AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_TIME
+AC_PROG_EGREP
+
+m4_warn([obsolete],
+[Update your code to rely only on HAVE_SYS_TIME_H,
+then remove this warning and the obsolete code below it.
+All current systems provide time.h; it need not be checked for.
+Not all systems provide sys/time.h, but those that do, all allow
+you to include it and time.h simultaneously.])dnl
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+# Obsolete code to be removed.
+if test $ac_cv_header_sys_time_h = yes; then
+  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is obsolete.])
+fi
+# End of obsolete code.
+
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select.h sys/epoll.h sys/event.h)
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/types.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
@@ -373,60 +387,48 @@ AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE([NEED_GETRLIMIT_DCL], [], [
 AC_C_BIGENDIAN(AC_DEFINE([WORDS_BIGENDIAN], [], [Define if Big Endian.]),AC_DEFINE([WORDS_LITTLEENDIAN], [], [Define if Little Endian.]),AC_DEFINE([WORDS_UNKNOWN], [], [Define if Unknown Endian.]))
 AC_MSG_CHECKING([for in_addr_t])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[in_addr_t foo;]])],[AC_DEFINE([HAVE_IN_ADDR_T], [], [Define if your system has the in_addr_t type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for in_addr])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct in_addr ia;]])],[AC_DEFINE([HAVE_IN_ADDR], [], [Define if your system has the in_addr type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for sockaddr_in])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct sockaddr_in sa;]])],[AC_DEFINE([HAVE_SOCKADDR_IN], [], [Define if your system has the sockaddr_in type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for in6_addr])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct in6_addr i6a;]])],[AC_DEFINE([HAVE_IN6_ADDR], [], [Define if your system has the in6_addr type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for sockaddr_in6])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct sockaddr_in6 sa6;]])],[AC_DEFINE([HAVE_SOCKADDR_IN6], [], [Define if your system has the sockaddr_in6 type.])
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 AC_MSG_CHECKING([for sockaddr_storage])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif]],[[struct sockaddr_storage ss;]])],[AC_DEFINE([HAVE_SOCKADDR_STORAGE], [], [Define if your system has the sockaddr_storage type.])
