@@ -12,6 +12,7 @@
   first_fn insert_fn last_fn ldelete_fn ljust_fn lpad_fn merge_fn mid_fn 
   pickrand_fn replace_fn 
   rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn 
+  squish_fn 
   wrap_fn shutdown
 -
 @startup smoke=

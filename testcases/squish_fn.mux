@@ -1,0 +1,43 @@
+#
+# squish_fn.mux - Test Cases for squish().
+#
+@create test_squish_fn
+-
+@set test_squish_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_squish_fn=
+  @log smoke=Beginning squish() test cases.
+-
+#
+# Test Case #1 - Help file examples.
+#
+&tr.tc001 test_squish_fn=
+  @if strmatch(
+        setr(0,sha1(
+            squish(Foo[space(5)]Bar)
+            [squish(....Foo....Bar....,.)]
+          )
+        ),
+        1A0E54A1D0F3B02CE15A97211B225F537ABF7648
+      )=
+  {
+    @log smoke=TC001: Help file examples. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: Help file examples. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_squish_fn=
+  @log smoke=End squish() test cases.;
+  @notify smoke
+-
+drop test_squish_fn
+-
+#
+# End of Test Cases
+#
