@@ -1266,7 +1266,9 @@
 >256
 "@log smoke=Beginning squish() test cases."
 >257
-"@if strmatch(setr(0,sha1(squish(Foo[space(5)]Bar)[squish(....Foo....Bar....,.)])),1A0E54A1D0F3B02CE15A97211B225F537ABF7648)={@log smoke=TC001: Help file examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: Help file examples. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1(squish(Foo[space(5)]Bar)[squish(....Foo....Bar....,.)])),1A0E54A1D0F3B02CE15A97211B225F537ABF7648)={@log smoke=TC001: Help file examples. Succeeded.},{@log smoke=TC001: Help file examples. Failed (%q0).}"
+>258
+"@if strmatch(setr(0,sha1(squish(ABABCCAB,AB)[squish(%r%rFoo%r%rBar%r%r,%r)])),8805A4353CA2A79E245FC5A754A55075BA3EAC8E)={@log smoke=TC002: Two-character separators. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Two-character separators. Failed (%q0).;@trig me/tr.done}"
 >259
 "@log smoke=End squish() test cases.;@notify smoke"
 <
