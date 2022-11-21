@@ -1681,8 +1681,8 @@ void check_events(void)
 
 }
 
-#define MAX_TRIMMED_NAME_LENGTH 16
-LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, LBUF_OFFSET nMax, LBUF_OFFSET nPad)
+#define MAX_TRIMMED_NAME_LENGTH 31
+LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE], const LBUF_OFFSET nMin, const LBUF_OFFSET nMax, const LBUF_OFFSET nPad)
 {
     mux_field nName = StripTabsAndTruncate(
                                              Moniker(player),
@@ -1720,9 +1720,7 @@ static UTF8 *trimmed_site(UTF8 *szName)
 static void dump_users(DESC *e, const UTF8 *match, int key)
 {
     DESC *d;
-    int count;
-    UTF8 *buf, *fp, *sp, flist[4], slist[4];
-    dbref room_it;
+    UTF8 *fp, *sp, flist[4], slist[4];
 
     if (match)
     {
@@ -1743,13 +1741,13 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
         queue_write(e, T("<pre>"));
     }
 
-    buf = alloc_mbuf("dump_users");
+    UTF8* buf = alloc_mbuf("dump_users");
     if (key == CMD_SESSION)
     {
-        queue_write(e, T("                               "));
+        queue_write(e, T("                                    "));
         queue_write(e, T("     Characters Input----  Characters Output---\r\n"));
     }
-    queue_write(e, T("Player Name        On For Idle "));
+    queue_write(e, T("Player Name             On For Idle "));
     if (key == CMD_SESSION)
     {
         queue_write(e, T("Port Pend  Lost     Total  Pend  Lost     Total\r\n"));
@@ -1774,7 +1772,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
         queue_string(e, mudstate.doing_hdr);
         queue_write_LEN(e, T("\r\n"), 2);
     }
-    count = 0;
+    int count = 0;
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
@@ -1838,7 +1836,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     }
                     else
                     {
-                        room_it = where_room(d->player);
+                        const dbref room_it = where_room(d->player);
                         if (Good_obj(room_it))
                         {
                             if (Hideout(room_it))
@@ -1857,7 +1855,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                         safe_copy_chr_ascii('+', flist, &fp, sizeof(flist)-1);
                     }
                 }
-                int host_info = mudstate.access_list.check(&d->address);
+                const int host_info = mudstate.access_list.check(&d->address);
                 if (host_info & HI_FORBID)
                 {
                     safe_copy_chr_ascii('F', slist, &sp, sizeof(slist)-1);
@@ -1897,15 +1895,15 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
 
             static UTF8 NameField[MBUF_SIZE];
             mux_strncpy(NameField, T("<Unconnected>"), sizeof(NameField)-1);
-            size_t vwNameField = strlen((char *)NameField);
+            size_t vwNameField = strlen(reinterpret_cast<char*>(NameField));
             if (d->flags & DS_CONNECTED)
             {
-                vwNameField = trimmed_name(d->player, NameField, 13, MAX_TRIMMED_NAME_LENGTH, 1);
+                vwNameField = trimmed_name(d->player, NameField, 18, MAX_TRIMMED_NAME_LENGTH, 1);
             }
 
             // The width size allocated to the 'On For' field.
             //
-            size_t nOnFor = 25 - vwNameField;
+            const size_t nOnFor = 30 - vwNameField;
 
             const UTF8 *pTimeStamp1 = time_format_1(ltdConnected.ReturnSeconds(), nOnFor);
             const UTF8 *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
