@@ -114,21 +114,37 @@ FUNCTION(fun_cwho)
         }
     }
 
-    ITL pContext;
+    ITL list_context;
     struct comuser *user;
-    ItemToList_Init(&pContext, buff, bufc, '#');
-    for (user = ch->on_users; user; user = user->on_next)
+    ItemToList_Init(&list_context, buff, bufc, '#');
+    if (CWHO_ALL == match_type)
     {
-        if (  (  match_type == CWHO_ALL
-              || (  (Connected(user->who) || isThing(user->who))
-                 && (  (match_type == CWHO_ON && user->bUserIsOn)
-                    || (match_type == CWHO_OFF && !(user->bUserIsOn)))))
-           && !ItemToList_AddInteger(&pContext, user->who))
+        for (int j = 0; j < ch->num_users; j++)
         {
-            break;
+            user = ch->users[j];
+            if (  (  !Hidden(user->who)
+                  || Wizard_Who(executor)
+                  || See_Hidden(executor))
+               && !ItemToList_AddInteger(&list_context, user->who))
+            {
+                break;
+            }
         }
     }
-    ItemToList_Final(&pContext);
+    else
+    {
+        for (user = ch->on_users; user; user = user->on_next)
+        {
+            if (  (Connected(user->who) || isThing(user->who))
+               && (  (match_type == CWHO_ON && user->bUserIsOn)
+                  || (match_type == CWHO_OFF && !user->bUserIsOn))
+               && !ItemToList_AddInteger(&list_context, user->who))
+            {
+                break;
+            }
+        }
+    }
+    ItemToList_Final(&list_context);
 }
 
 #ifndef BEEP_CHAR
