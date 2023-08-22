@@ -590,39 +590,49 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref exit, loc;
-    int i, quiet;
-
     if (!string_compare(direction, T("home")))
     {
-        // Go home w/o stuff.
-        //
-        if (  (  Fixed(executor)
-              || Fixed(Owner(executor)))
-           && !(WizRoy(executor)))
+        dbref loc = Location(executor);
+        dbref dest = Home(executor);
+        if (  NOTHING != loc
+           && NOTHING != dest
+           && loc == dest)
         {
-            notify(executor, mudconf.fixed_home_msg);
-            return;
+            notify(executor, T("You are already home."));
         }
-
-        if (  (loc = Location(executor)) != NOTHING
-           && !Dark(executor)
-           && !Dark(loc))
+        else
         {
-            // Tell all
+            // Go home w/o stuff.
             //
-            notify_except(loc, executor, executor, tprintf(T("%s goes home."), Moniker(executor)), 0);
-        }
+            if (  (  Fixed(executor)
+                  || Fixed(Owner(executor)))
+               && !(WizRoy(executor)))
+            {
+                notify(executor, mudconf.fixed_home_msg);
+                return;
+            }
 
-        // Give the player the messages
-        //
-        for (i = 0; i < 3; i++)
-        {
-            notify(executor, T("There\xE2\x80\x99s no place like home..."));
+            if (  NOTHING != loc
+               && !Blind(executor)
+               && !Blind(loc)
+               && !Dark(executor)
+               && !Dark(loc))
+            {
+                // Tell all
+                //
+                notify_except(loc, executor, executor, tprintf(T("%s goes home."), Moniker(executor)), 0);
+            }
+
+            // Give the player the messages
+            //
+            for (int i = 0; i < 3; i++)
+            {
+                notify(executor, T("There\xE2\x80\x99s no place like home..."));
+            }
+            move_via_generic(executor, HOME, NOTHING, 0);
+            divest_object(executor);
+            process_sticky_dropto(loc, executor);
         }
-        move_via_generic(executor, HOME, NOTHING, 0);
-        divest_object(executor);
-        process_sticky_dropto(loc, executor);
         return;
     }
 
@@ -631,7 +641,8 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     init_match_check_keys(executor, direction, TYPE_EXIT);
     match_exit();
 
-    exit = match_result();
+    int quiet;
+    dbref exit = match_result();
     switch (exit)
     {
     case NOTHING:       // Try to force the object
