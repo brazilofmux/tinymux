@@ -4,13 +4,13 @@ Index
 
   Index of helpfiles, V1.0 (1 AUG 00)
 
-  +beginner      +cnotes        +finger        +finger-setup  +glance
-  +ic            +info          +info-setup    +knock         +3who*
-  +lwho          +shout         +staff         +staff/all     +timestamp
-  +timestop      +uptime        +view          +view-setup    +warn
-  +where         +who           @register      BACKGROUNDS    CREDITS
-  mutter         OOC            PLACES         places-config  places-options
-  plook
+  +beginner      +cnotes         +finger      +finger-setup  +glance
+  +ic            +info           +info-setup  +knock         +3who*
+  +lwho          +selfboot       +shout       +staff         +staff/all
+  +timestamp     +timestop       +uptime      +view          +view-setup
+  +warn          +where          +who         @register      BACKGROUNDS
+  CREDITS        mp              mutter       OOC            PLACES
+  places-config  places-options  plook
 
   To get help on any of the listed topics, type '+help <topic>'
 -----------------------------------------------------------------------------
