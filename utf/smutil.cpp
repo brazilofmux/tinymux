@@ -3,6 +3,7 @@
 #include <memory.h>
 #include <ctype.h>
 #include <string.h>
+#include <algorithm>
 
 #include "ConvertUTF.h"
 #include "smutil.h"
@@ -693,6 +694,51 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 #endif
 }
 
+// Helper function to emit phrases while respecting size limits
+//
+bool EmitPhrase(int* piBlob, int& nBlob, int maxBlob, bool isRun, int count, const int* values)
+{
+    const int MAX_COPY_LENGTH = 128;
+    const int MAX_RUN_LENGTH = 127;
+
+    while (count > 0)
+    {
+        // Check if we have room in the blob
+        if (2 * maxBlob <= nBlob + 2)
+        {
+            fprintf(stderr, "Blob overflow\n");
+            return false;
+        }
+
+        if (isRun)
+        {
+            // Handle RUN phrase
+            int chunkSize = std::min(count, MAX_RUN_LENGTH);
+            piBlob[nBlob++] = chunkSize;
+            piBlob[nBlob++] = values[0];  // Same value repeated
+            count -= chunkSize;
+        }
+        else
+        {
+            // Handle COPY phrase
+            int chunkSize = std::min(count, MAX_COPY_LENGTH);
+            piBlob[nBlob++] = -chunkSize;  // Negative indicates COPY
+            for (int i = 0; i < chunkSize; i++)
+            {
+                if (2 * maxBlob <= nBlob + 1)
+                {
+                    fprintf(stderr, "Blob overflow\n");
+                    return false;
+                }
+                piBlob[nBlob++] = values[i];
+            }
+            values += chunkSize;
+            count -= chunkSize;
+        }
+    }
+    return true;
+}
+
 void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
 {
     OutputStatus os = {0};
@@ -794,18 +840,11 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                     {
                         // Emit leftover RUN phrase.
                         //
-                        if (2 * m_nStates * m_nColumns <= nBlob)
+                        if (!EmitPhrase(piBlob, nBlob, m_nStates * m_nColumns, true, kRunCount, &kLastValue))
                         {
                             fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                             goto CleanUp;
                         }
-                        piBlob[nBlob++] = kRunCount;
-                        if (2 * m_nStates * m_nColumns <= nBlob)
-                        {
-                            fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                            goto CleanUp;
-                        }
-                        piBlob[nBlob++] = kLastValue;
 
                         piCopy[0] = k;
                         kCopyCount = 1;
@@ -822,20 +861,10 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                 {
                     // Emit leftover COPY phrase.
                     //
-                    if (2 * m_nStates * m_nColumns <= nBlob)
+                    if (!EmitPhrase(piBlob, nBlob, m_nStates * m_nColumns, false, kCopyCount-1, piCopy))
                     {
                         fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                         goto CleanUp;
-                    }
-                    piBlob[nBlob++] = -(kCopyCount-1);
-                    for (t = 0; t < kCopyCount - 1; t++)
-                    {
-                        if (2 * m_nStates * m_nColumns <= nBlob)
-                        {
-                            fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                            goto CleanUp;
-                        }
-                        piBlob[nBlob++] = piCopy[t];
                     }
 
                     kCopyCount = 0;
@@ -854,11 +883,6 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                     }
                     piCopy[kCopyCount++] = k;
                     kLastValue = k;
-                    if (127 < kCopyCount)
-                    {
-                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                        goto CleanUp;
-                    }
                 }
                 else if (1 == kRunCount)
                 {
@@ -871,18 +895,11 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
                 {
                     // Emit RUN phrase.
                     //
-                    if (2 * m_nStates * m_nColumns <= nBlob)
+                    if (!EmitPhrase(piBlob, nBlob, m_nStates * m_nColumns, true, kRunCount, &kLastValue))
                     {
                         fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                         goto CleanUp;
                     }
-                    piBlob[nBlob++] = kRunCount;
-                    if (2 * m_nStates * m_nColumns <= nBlob)
-                    {
-                        fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                        goto CleanUp;
-                    }
-                    piBlob[nBlob++] = kLastValue;
 
                     piCopy[0] = k;
                     kCopyCount = 1;
@@ -896,37 +913,20 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
         {
             // Emit leftover RUN phrase.
             //
-            if (2 * m_nStates * m_nColumns <= nBlob)
+            if (!EmitPhrase(piBlob, nBlob, m_nStates * m_nColumns, true, kRunCount, &kLastValue))
             {
                 fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                 goto CleanUp;
             }
-            piBlob[nBlob++] = kRunCount;
-            if (2 * m_nStates * m_nColumns <= nBlob)
-            {
-                fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                goto CleanUp;
-            }
-            piBlob[nBlob++] = kLastValue;
         }
         else if (0 < kCopyCount)
         {
             // Emit leftover COPY phrase.
             //
-            if (2 * m_nStates * m_nColumns <= nBlob)
+            if (!EmitPhrase(piBlob, nBlob, m_nStates * m_nColumns, false, kCopyCount, piCopy))
             {
                 fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                 goto CleanUp;
-            }
-            piBlob[nBlob++] = -kCopyCount;
-            for (t = 0; t < kCopyCount; t++)
-            {
-                if (2 * m_nStates * m_nColumns <= nBlob)
-                {
-                    fprintf(stderr, "CleanUp, line %d\n", __LINE__);
-                    goto CleanUp;
-                }
-                piBlob[nBlob++] = piCopy[t];
             }
         }
     }
