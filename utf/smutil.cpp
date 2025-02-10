@@ -695,7 +695,7 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 
 void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
 {
-    OutputStatus os;
+    OutputStatus os = {0};
     os.nStates = m_nStates;
     os.nColumns = m_nColumns;
 
