@@ -70,6 +70,43 @@ int nXorTable = 0;
 bool g_bDefault = false;
 int  g_iDefaultState = 0;
 
+void HandleXorArraySafely(const UTF8* pA, const UTF8* pEndA,
+                         const UTF8* pB, const UTF8* pEndB,
+                         UTF8* pXor, size_t xorSize,
+                         bool& bSuccess, size_t& nXor)
+{
+    bSuccess = true;
+
+    // First validate input lengths match
+    size_t lenA = pEndA - pA;
+    size_t lenB = pEndB - pB;
+
+    if (lenA != lenB)
+    {
+        fprintf(stderr, "Warning: Mismatched UTF8 sequence lengths: %zu vs %zu\n", lenA, lenB);
+        bSuccess = false;
+        return;
+    }
+
+    if (lenA > xorSize)
+    {
+        fprintf(stderr, "Warning: UTF8 sequence too long for Xor buffer (%zu > %zu)\n",
+                lenA, xorSize);
+        bSuccess = false;
+        return;
+    }
+
+    // Now do the XOR operation safely
+    nXor = 0;
+    while (pA < pEndA && pB < pEndB && nXor < xorSize)
+    {
+        pXor[nXor] = *pA ^ *pB;
+        pA++;
+        pB++;
+        nXor++;
+    }
+}
+
 #define MAX_POINTS 10
 UTF32 ReadCodePointAndRelatedCodePoints(FILE *fp, int &nRelatedPoints, UTF32 aRelatedPoints[])
 {
@@ -199,41 +236,39 @@ void BuildOutputTable(FILE *fp)
                 // Build XOR entry.
                 //
                 UTF8 Xor[5];
-                UTF8 *pA = TargetA;
-                UTF8 *pB = TargetB;
-                UTF8 *pXor = Xor;
+                size_t nXor = 0;
 
-                while (pA < pTargetA)
-                {
-                    *pXor = *pA ^ *pB;
-                    pA++;
-                    pB++;
-                    pXor++;
-                }
-                size_t nXor = pXor - Xor;
+                bool bSuccess = true;
+                HandleXorArraySafely(TargetA, pTargetA,
+                                   TargetB, pTargetB,
+                                   Xor, sizeof(Xor),
+                                   bSuccess, nXor);
 
-                for (i = 0; i < nXorTable; i++)
+                if (bSuccess)
                 {
-                    if (  aXorTable[i].n_bytes == nXor
-                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    for (i = 0; i < nXorTable; i++)
                     {
-                        bFound = true;
-                        break;
+                        if (  aXorTable[i].n_bytes == nXor
+                           && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                        {
+                            bFound = true;
+                            break;
+                        }
                     }
-                }
 
-                if (!bFound)
-                {
-                    aXorTable[nXorTable].p = new UTF8[nXor];
-                    memcpy(aXorTable[nXorTable].p, Xor, nXor);
-                    aXorTable[nXorTable].n_bytes  = nXor;
-                    aXorTable[nXorTable].n_points = nRelatedPoints;
-                    aXorTable[nXorTable].n_refs   = 0;
-                    nXorTable++;
-                    if (TABLESIZE <= nXorTable)
+                    if (!bFound && nXor > 0)
                     {
-                        fprintf(stderr, "XOR Table full.\n");
-                        exit(0);
+                        aXorTable[nXorTable].p = new UTF8[nXor];
+                        memcpy(aXorTable[nXorTable].p, Xor, nXor);
+                        aXorTable[nXorTable].n_bytes  = nXor;
+                        aXorTable[nXorTable].n_points = nRelatedPoints;
+                        aXorTable[nXorTable].n_refs   = 0;
+                        nXorTable++;
+                        if (TABLESIZE <= nXorTable)
+                        {
+                            fprintf(stderr, "XOR Table full.\n");
+                            exit(0);
+                        }
                     }
                 }
             }
@@ -319,7 +354,7 @@ void TestTable(FILE *fp)
 
                 if (!bFound)
                 {
-                    fprintf(stderr, "Output String not found in Literal Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in Literal Table during testing. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -328,33 +363,31 @@ void TestTable(FILE *fp)
                 // Build XOR entry.
                 //
                 UTF8 Xor[5];
-                UTF8 *pA = TargetA;
-                UTF8 *pB = TargetB;
-                UTF8 *pXor = Xor;
+                size_t nXor = 0;
 
-                while (pA < pTargetA)
-                {
-                    *pXor = *pA ^ *pB;
-                    pA++;
-                    pB++;
-                    pXor++;
-                }
-                size_t nXor = pXor - Xor;
+                bool bSuccess = true;
+                HandleXorArraySafely(TargetA, pTargetA,
+                                   TargetB, pTargetB,
+                                   Xor, sizeof(Xor),
+                                   bSuccess, nXor);
 
-                for (i = 0; i < nXorTable; i++)
+                if (bSuccess)
                 {
-                    if (  aXorTable[i].n_bytes == nXor
-                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    for (i = 0; i < nXorTable; i++)
                     {
-                        bFound = true;
-                        iAcceptingState += nLiteralTable + i;
-                        break;
+                        if (  aXorTable[i].n_bytes == nXor
+                           && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                        {
+                            bFound = true;
+                            iAcceptingState += nLiteralTable + i;
+                            break;
+                        }
                     }
                 }
 
                 if (!bFound)
                 {
-                    fprintf(stderr, "Output String not found in XOR Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in XOR Table or XOR operation failed during testing. This should not happen.\n");
                     exit(0);
                 }
             }
@@ -450,34 +483,32 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
                 // Build XOR entry.
                 //
                 UTF8 Xor[5];
-                UTF8 *pA = TargetA;
-                UTF8 *pB = TargetB;
-                UTF8 *pXor = Xor;
+                size_t nXor = 0;
 
-                while (pA < pTargetA)
-                {
-                    *pXor = *pA ^ *pB;
-                    pA++;
-                    pB++;
-                    pXor++;
-                }
-                size_t nXor = pXor - Xor;
+                bool bSuccess = true;
+                HandleXorArraySafely(TargetA, pTargetA,
+                                   TargetB, pTargetB,
+                                   Xor, sizeof(Xor),
+                                   bSuccess, nXor);
 
-                for (int i = 0; i < nXorTable; i++)
+                if (bSuccess)
                 {
-                    if (  aXorTable[i].n_bytes == nXor
-                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    for (int i = 0; i < nXorTable; i++)
                     {
-                        bFound = true;
-                        iAcceptingState += nLiteralTable + i;
-                        aXorTable[i].n_refs++;
-                        break;
+                        if (  aXorTable[i].n_bytes == nXor
+                           && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                        {
+                            bFound = true;
+                            iAcceptingState += nLiteralTable + i;
+                            aXorTable[i].n_refs++;
+                            break;
+                        }
                     }
                 }
 
                 if (!bFound)
                 {
-                    fprintf(stderr, "Output String not found in XOR Table. This should not happen.\n");
+                    fprintf(stderr, "Output String not found in XOR Table or XOR operation failed. This should not happen.\n");
                     exit(0);
                 }
             }
