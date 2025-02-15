@@ -1152,7 +1152,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
             {
                 fprintf(poc->fpBody, " %3d", iBlob);
             }
-            else if (-127 <= iBlob)
+            else if (-128 <= iBlob)
             {
                 // Negative entries are COPY phrases.
                 //
