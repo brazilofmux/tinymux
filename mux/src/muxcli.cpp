@@ -7,34 +7,180 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
+#include <cctype>
+#include <cstring>
 
-// 0 -- A non-option argument.
-// 1 -- A short-option argument.
-// 2 -- A long-option argument.
-// 3 -- An 'end of options' indicator.
-//
-static int iArgType(char *pArg)
+// Enum for argument types
+enum class ArgType {
+    NonOption = 0,     // A non-option argument
+    ShortOption = 1,   // A short-option argument  (e.g., -c)
+    LongOption = 2,    // A long-option argument   (e.g., --config)
+    EndOfOptions = 3   // An 'end of options' indicator (--)
+};
+
+// Get the type of an argument
+static ArgType getArgType(const std::string& arg)
 {
-    // How many characters from "--" does the argument match?
-    //
-    static char aHHN[3] = "--";
-    int iType = 0;
-    for (; iType < 3 && aHHN[iType] == pArg[iType]; iType++)
-    {
-        // Nothing
-    }
-    if (iType > 3)
-    {
-        iType = 3;
+    // Check if argument starts with "-" or "--"
+    if (arg.empty() || arg[0] != '-') {
+        return ArgType::NonOption;
     }
 
-    // "-" is a special case. It is a non-option argument.
-    //
-    if (iType == 1 && pArg[1] == '\0')
-    {
-        iType = 0;
+    // Single "-" is a special case, treated as non-option
+    if (arg.length() == 1) {
+        return ArgType::NonOption;
     }
-    return iType;
+
+    // "--" alone means end of options
+    if (arg == "--") {
+        return ArgType::EndOfOptions;
+    }
+
+    // Check for long option (starts with "--")
+    if (arg.length() > 2 && arg[1] == '-') {
+        return ArgType::LongOption;
+    }
+
+    return ArgType::ShortOption;
+}
+
+// Process a long option argument
+static void processLongOption(
+    const std::string& arg,
+    std::vector<CLI_OptionEntry>& optionTable,
+    CLI_CALLBACKFUNC* pFunc,
+    int& minNonOption,
+    int argc,
+    char* argv[]
+)
+{
+    // Skip the "--" prefix
+    std::string flagName = arg.substr(2);
+
+    // Handle option=value format
+    size_t equalPos = flagName.find('=');
+    std::string optionName = (equalPos != std::string::npos)
+                          ? flagName.substr(0, equalPos)
+                          : flagName;
+
+    // Find matching option in table
+    auto it = std::find_if(optionTable.begin(), optionTable.end(),
+        [&optionName](const CLI_OptionEntry& entry) {
+            return std::string(entry.m_Flag) == optionName;
+        });
+
+    if (it != optionTable.end()) {
+        switch (it->m_ArgControl) {
+        case CLI_NONE:
+            // Option takes no argument
+            pFunc(&(*it), nullptr);
+            break;
+
+        case CLI_OPTIONAL:
+        case CLI_REQUIRED:
+            // Option takes an argument
+            if (equalPos != std::string::npos) {
+                // Value provided as --option=value
+                pFunc(&(*it), flagName.substr(equalPos + 1).c_str());
+            } else {
+                // Look for a value in the next argument
+                bool found = false;
+                for (; minNonOption < argc; minNonOption++) {
+                    ArgType nextArgType = getArgType(argv[minNonOption]);
+                    if (nextArgType == ArgType::NonOption) {
+                        pFunc(&(*it), argv[minNonOption]);
+                        minNonOption++;
+                        found = true;
+                        break;
+                    } else if (nextArgType == ArgType::EndOfOptions) {
+                        // End of options marker
+                        break;
+                    }
+                }
+
+                // Handle optional arguments that weren't provided
+                if (!found && it->m_ArgControl == CLI_OPTIONAL) {
+                    pFunc(&(*it), nullptr);
+                }
+            }
+            break;
+        }
+    }
+}
+
+// Process a short option argument
+static void processShortOption(
+    const std::string& arg,
+    std::vector<CLI_OptionEntry>& optionTable,
+    CLI_CALLBACKFUNC* pFunc,
+    int& minNonOption,
+    int argc,
+    char* argv[]
+)
+{
+    // Skip the leading '-'
+    std::string options = arg.substr(1);
+
+    // Process each character as a separate option
+    for (size_t i = 0; i < options.length(); ++i) {
+        char currentOpt = options[i];
+
+        // Find the option in the table
+        auto it = std::find_if(optionTable.begin(), optionTable.end(),
+            [currentOpt](const CLI_OptionEntry& entry) {
+                return entry.m_Flag[0] == currentOpt && entry.m_Flag[1] == '\0';
+            });
+
+        if (it != optionTable.end()) {
+            switch (it->m_ArgControl) {
+            case CLI_NONE:
+                // Option takes no argument
+                pFunc(&(*it), nullptr);
+                break;
+
+            case CLI_OPTIONAL:
+            case CLI_REQUIRED:
+                // Option takes an argument
+                if (i + 1 < options.length()) {
+                    // Remaining characters form the argument (e.g., -ovalue)
+                    const char* value = options.c_str() + i + 1;
+
+                    // If next character is '=', skip it
+                    if (value[0] == '=') {
+                        value++;
+                    }
+
+                    pFunc(&(*it), value);
+                    i = options.length(); // Skip remaining characters
+                } else {
+                    // Look for a value in the next argument
+                    bool found = false;
+                    for (; minNonOption < argc; minNonOption++) {
+                        ArgType nextArgType = getArgType(argv[minNonOption]);
+                        if (nextArgType == ArgType::NonOption) {
+                            pFunc(&(*it), argv[minNonOption]);
+                            minNonOption++;
+                            found = true;
+                            break;
+                        } else if (nextArgType == ArgType::EndOfOptions) {
+                            // End of options marker
+                            break;
+                        }
+                    }
+
+                    // Handle optional arguments that weren't provided
+                    if (!found && it->m_ArgControl == CLI_OPTIONAL) {
+                        pFunc(&(*it), nullptr);
+                    }
+                }
+                break;
+            }
+        }
+    }
 }
 
 // Examples:
@@ -55,170 +201,43 @@ void CLI_Process
     CLI_CALLBACKFUNC *pFunc
 )
 {
+    // Convert option table to vector for easier manipulation
+    std::vector<CLI_OptionEntry> optionTableVec(aOptionTable, aOptionTable + nOptionTable);
+
     int minNonOption = 0;
-    int bEndOfOptions = 0;
-    for (int i = 1; i < argc; i++)
-    {
-        char *pArgv = argv[i];
-        int iType = 0;
-        if (!bEndOfOptions)
-        {
-            iType = iArgType(pArgv);
+    bool endOfOptions = false;
+
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        ArgType argType = ArgType::NonOption;
+
+        if (!endOfOptions) {
+            argType = getArgType(arg);
         }
 
-        if (iType == 0)
-        {
-            // Non-option argument.
-            //
-            if (minNonOption <= i)
-            {
-                // We haven't associated it with an option, yet, so
-                // pass it in by itself.
-                //
-                pFunc(0, pArgv);
+        if (argType == ArgType::NonOption) {
+            // Non-option argument
+            if (minNonOption <= i) {
+                // Not associated with an option yet, pass it by itself
+                pFunc(nullptr, argv[i]);
             }
             continue;
         }
 
-        if (minNonOption < i+1)
-        {
-            minNonOption = i+1;
+        if (minNonOption < i + 1) {
+            minNonOption = i + 1;
         }
 
-        if (iType == 3)
-        {
-            // A "--" causes the remaining unpaired arguments to be
-            // treated as non-option arguments.
-            //
-            bEndOfOptions = 1;
+        if (argType == ArgType::EndOfOptions) {
+            // A "--" causes remaining arguments to be treated as non-options
+            endOfOptions = true;
             continue;
         }
 
-        const char *p = pArgv+iType;
-
-        if (iType == 2)
-        {
-            // We have a long option.
-            //
-            const char *pEqual = strchr(p, '=');
-            size_t nLen;
-            if (pEqual)
-            {
-                nLen = pEqual - p;
-            }
-            else
-            {
-                nLen = strlen(p);
-            }
-            for (int j = 0; j < nOptionTable; j++)
-            {
-                if (  !strncmp(aOptionTable[j].m_Flag, p, nLen)
-                   && aOptionTable[j].m_Flag[nLen] == '\0')
-                {
-                    switch (aOptionTable[j].m_ArgControl)
-                    {
-                    case CLI_NONE:
-                        pFunc(aOptionTable + j, 0);
-                        break;
-
-                    case CLI_OPTIONAL:
-                    case CLI_REQUIRED:
-                        if (pEqual)
-                        {
-                            pFunc(aOptionTable + j, pEqual+1);
-                            break;
-                        }
-                        int bFound = 0;
-                        for (; minNonOption < argc; minNonOption++)
-                        {
-                            int iType2 = iArgType(argv[minNonOption]);
-                            if (iType2 == 0)
-                            {
-                                pFunc(aOptionTable + j, argv[minNonOption]);
-                                minNonOption++;
-                                bFound = 1;
-                                break;
-                            }
-                            else if (iType2 == 3)
-                            {
-                                // End of options. Stop.
-                                //
-                                break;
-                            }
-                        }
-                        if (  !bFound
-                           && aOptionTable[j].m_ArgControl == CLI_OPTIONAL)
-                        {
-                            pFunc(aOptionTable + j, 0);
-                        }
-                        break;
-                    }
-                    break;
-                }
-            }
-            continue;
-        }
-
-        // At this point, the only possibilities left are a short
-        // option.
-        //
-        while (*p)
-        {
-            int ch = *p++;
-            for (int j = 0; j < nOptionTable; j++)
-            {
-                if (  aOptionTable[j].m_Flag[0] == ch
-                   && aOptionTable[j].m_Flag[1] == '\0')
-                {
-                    switch (aOptionTable[j].m_ArgControl)
-                    {
-                    case CLI_NONE:
-                        pFunc(aOptionTable + j, 0);
-                        break;
-
-                    case CLI_OPTIONAL:
-                    case CLI_REQUIRED:
-                        if (*p)
-                        {
-                            // Value follows option letter
-                            //
-                            if (*p == '=')
-                            {
-                                p++;
-                            }
-
-                            pFunc(aOptionTable + j, p);
-                            p = "";
-                            break;
-                        }
-                        int bFound = 0;
-                        for (; minNonOption < argc; minNonOption++)
-                        {
-                            int iType2 = iArgType(argv[minNonOption]);
-                            if (iType2 == 0)
-                            {
-                                pFunc(aOptionTable + j, argv[minNonOption]);
-                                minNonOption++;
-                                bFound = 1;
-                                break;
-                            }
-                            else if (iType2 == 3)
-                            {
-                                // End of options. Stop.
-                                //
-                                break;
-                            }
-                        }
-                        if (  !bFound
-                           && aOptionTable[j].m_ArgControl == CLI_OPTIONAL)
-                        {
-                            pFunc(aOptionTable + j, 0);
-                        }
-                        break;
-                    }
-                    break;
-                }
-            }
+        if (argType == ArgType::LongOption) {
+            processLongOption(arg, optionTableVec, pFunc, minNonOption, argc, argv);
+        } else if (argType == ArgType::ShortOption) {
+            processShortOption(arg, optionTableVec, pFunc, minNonOption, argc, argv);
         }
     }
 }

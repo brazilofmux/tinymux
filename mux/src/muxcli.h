@@ -6,6 +6,10 @@
 #ifndef MUXCLI_H
 #define MUXCLI_H
 
+#include <string>
+#include <vector>
+#include <functional>
+
 #define CLI_USER 0
 
 // The following control whether an option is allowed/required.
