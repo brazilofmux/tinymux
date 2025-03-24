@@ -56,10 +56,10 @@ DWORD WINAPI mux_alarm::alarm_proc(LPVOID parameter)
  * The order of execution in this function is important as the semaphore must
  * be in place and in the correct state before the thread begins to use it.
  */
-mux_alarm::mux_alarm() : thread_handle_(CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr)),
-                         semaphore_handle_(CreateSemaphore(nullptr, 0, 1, nullptr))
+mux_alarm::mux_alarm() : semaphore_handle_(CreateSemaphore(nullptr, 0, 1, nullptr)),
+                         thread_handle_(CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr))
 {
-	clear();
+    clear();
 }
 
 /*! \brief Alarm Clock Destructor.
