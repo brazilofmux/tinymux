@@ -991,7 +991,7 @@ bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
 
     // bind our name to the socket
     //
-    int nRet = bind(s, ai->ai_addr, ai->ai_addrlen);
+    int nRet = ::bind(s, ai->ai_addr, ai->ai_addrlen);
     if (IS_SOCKET_ERROR(nRet))
     {
         Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
