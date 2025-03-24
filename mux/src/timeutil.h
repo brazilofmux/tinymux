@@ -119,6 +119,7 @@ public:
     void operator+=(const CLinearTimeDelta& ltd);
 };
 
+#if defined(WINDOWS_THREADS)
 struct HandleDeleter {
     void operator()(HANDLE h) const {
         if (h && h != INVALID_HANDLE_VALUE) {
@@ -126,6 +127,7 @@ struct HandleDeleter {
         }
     }
 };
+#endif // WINDOWS_THREADS
 
 class mux_alarm
 {
