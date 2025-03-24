@@ -449,26 +449,31 @@ const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
     {
         // Calculate SHA-1 Hash.
         //
-        SHA_CTX shac;
-        UTF8 md[SHA_DIGEST_LENGTH];
-        SHA1_Init(&shac);
-        SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
-        SHA1_Final(md, &shac);
+#ifdef UNIX_DIGEST
+        UINT8 md[EVP_MAX_MD_SIZE];
+#else
+        UINT8 md[MUX_SHA1_DIGEST_LENGTH];
+#endif
+        unsigned int len = 0;
+        const UTF8 *parts[] = { szPassword };
+        const size_t lens[] = { strlen((const char *)szPassword) };
+        if (mux_digest_sha1(parts, lens, 1, md, &len))
+        {
+            //          1         2         3         4         5         6
+            // 123456789012345678901234567890123456789012345678901234567890123456
+            // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
+            //
+            static UTF8 buff[LBUF_SIZE];
+            UTF8 *bufc = buff;
 
-        //          1         2         3         4         5         6
-        // 123456789012345678901234567890123456789012345678901234567890123456
-        // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
-        //
-        static UTF8 buff[LBUF_SIZE];
-        UTF8 *bufc = buff;
+            safe_str(szP6HPrefix1SHA1, buff, &bufc);
+            safe_hex(md, len, false, buff, &bufc);
+            safe_chr(':', buff, &bufc);
+            safe_str(szSetting + P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1, buff, &bufc);
+            *bufc = '\0';
 
-        safe_str(szP6HPrefix1SHA1, buff, &bufc);
-        safe_hex(md, SHA_DIGEST_LENGTH, false, buff, &bufc);
-        safe_chr(':', buff, &bufc);
-        safe_str(szSetting + P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1, buff, &bufc);
-        *bufc = '\0';
-
-        return buff;
+            return buff;
+        }
     }
     return szFail;
 }
@@ -611,13 +616,19 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     // Calculate SHA-1 Hash.
     //
-    SHA_CTX shac;
-    UTF8 szHashRaw[SHA_DIGEST_LENGTH + 1];
-    SHA1_Init(&shac);
-    SHA1_Update(&shac, pSaltField, nSaltField);
-    SHA1_Update(&shac, szPassword, strlen((const char *)szPassword));
-    SHA1_Final(szHashRaw, &shac);
-    szHashRaw[SHA_DIGEST_LENGTH] = '\0';
+#ifdef UNIX_DIGEST
+    UINT8 md[EVP_MAX_MD_SIZE+1];
+#else
+    UINT8 md[MUX_SHA1_DIGEST_LENGTH+1];
+#endif
+    unsigned int len = 0;
+    const UTF8 *parts[] = { pSaltField, szPassword };
+    const size_t lens[] = { nSaltField, strlen((const char *)szPassword) };
+    if (!mux_digest_sha1(parts, lens, 2, md, &len))
+    {
+        return szFail;
+    }
+    md[len] = '\0';
 
     //          1         2         3         4
     // 12345678901234567890123456789012345678901234567
@@ -627,7 +638,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     mux_strncpy(buf, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
     buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';
-    EncodeBase64(20, szHashRaw, buf + SHA1_PREFIX_LENGTH + nSaltField + 1);
+    EncodeBase64(len, md, buf + SHA1_PREFIX_LENGTH + nSaltField + 1);
     return buf;
 }
 

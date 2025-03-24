@@ -10,7 +10,7 @@
 
 #ifndef UNIX_DIGEST
 
-void SHA1_Init(SHA_CTX *p)
+void MUX_SHA1_Init(MUX_SHA_CTX *p)
 {
     p->H[0] = 0x67452301;
     p->H[1] = 0xEFCDAB89;
@@ -31,7 +31,7 @@ void SHA1_Init(SHA_CTX *p)
 #define Parity(x,y,z)  ((x) ^ (y) ^ (z))
 #define Maj(x,y,z)     (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
 
-static void SHA1_HashBlock(SHA_CTX *p)
+static void MUX_SHA1_HashBlock(MUX_SHA_CTX *p)
 {
     int t;
     UINT32 W[80];
@@ -102,7 +102,7 @@ static void SHA1_HashBlock(SHA_CTX *p)
     p->H[4] += e;
 }
 
-void SHA1_Update(SHA_CTX *p, __in_ecount(n) const UTF8 *buf, __in size_t n)
+void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n)
 {
     while (n)
     {
@@ -119,19 +119,19 @@ void SHA1_Update(SHA_CTX *p, __in_ecount(n) const UTF8 *buf, __in size_t n)
 
         if (p->nblock == sizeof(p->block))
         {
-            SHA1_HashBlock(p);
+            MUX_SHA1_HashBlock(p);
             p->nblock = 0;
         }
     }
 }
 
-void SHA1_Final(UINT8 md[SHA_DIGEST_LENGTH], SHA_CTX *p)
+void MUX_SHA1_Final(UINT8 md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
 {
     p->block[p->nblock++] = 0x80;
     if (sizeof(p->block) - sizeof(UINT64) < p->nblock)
     {
         memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock);
-        SHA1_HashBlock(p);
+        MUX_SHA1_HashBlock(p);
         memset(p->block, 0, sizeof(p->block) - sizeof(UINT64));
     }
     else
@@ -148,7 +148,7 @@ void SHA1_Final(UINT8 md[SHA_DIGEST_LENGTH], SHA_CTX *p)
     p->block[sizeof(p->block) - 3] = static_cast<UINT8>((p->nTotal >> 16) & 0xFF);
     p->block[sizeof(p->block) - 2] = static_cast<UINT8>((p->nTotal >>  8) & 0xFF);
     p->block[sizeof(p->block) - 1] = static_cast<UINT8>((p->nTotal      ) & 0xFF);
-    SHA1_HashBlock(p);
+    MUX_SHA1_HashBlock(p);
 
     // Serialize 5 UINT32 to 20 UINT8 in big-endian order.
     //
@@ -167,7 +167,7 @@ void SHA1_Final(UINT8 md[SHA_DIGEST_LENGTH], SHA_CTX *p)
 typedef struct
 {
     const UTF8 *p;
-    UINT8 md[SHA_DIGEST_LENGTH];
+    UINT8 md[MUX_SHA1_DIGEST_LENGTH];
 } sha1_test_vector;
 
 #define NUM_VECTORS 5
@@ -214,15 +214,15 @@ int main(int argc, char *argv[])
     int i;
     for (i = 0; i < NUM_VECTORS; i++)
     {
-        SHA_CTX shac;
-        SHA1_Init(&shac);
-        SHA1_Update(&shac, vectors[i].p, strlen((const char *)vectors[i].p));
+        MUX_SHA_CTX shac;
+        MUX_SHA1_Init(&shac);
+        MUX_SHA1_Update(&shac, vectors[i].p, strlen((const char *)vectors[i].p));
 
-        UINT8 md[SHA_DIGEST_LENGTH];
-        SHA1_Final(md, &shac);
+        UINT8 md[MUX_SHA1_DIGEST_LENGTH];
+        MUX_SHA1_Final(md, &shac);
 
         int j;
-        for (j = 0; j < SHA_DIGEST_LENGTH; j++)
+        for (j = 0; j < MUX_SHA1_DIGEST_LENGTH; j++)
         {
             if (md[j] != vectors[i].md[j])
             {

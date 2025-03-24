@@ -2871,17 +2871,76 @@ void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inou
     delete [] buf;
 }
 
-void sha1_helper(int nfargs, __in UTF8 *fargs[], __in UTF8 *buff, __deref_inout UTF8 **bufc)
+bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, UINT8 *out_digest, unsigned int *out_len)
 {
-    SHA_CTX shac;
-    SHA1_Init(&shac);
-    for (int i = 0; i < nfargs; ++i)
-    {
-        SHA1_Update(&shac, fargs[i], strlen((const char *)fargs[i]));
+#ifdef UNIX_DIGEST
+    EVP_MD_CTX *ctx =
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_new();
+    #else
+        EVP_MD_CTX_create();
+    #endif
+
+    if (!ctx)
+        return false;
+
+    if (!EVP_DigestInit_ex(ctx, EVP_sha1(), NULL)) {
+        EVP_MD_CTX_free(ctx);
+        return false;
     }
-    UINT8 md[SHA_DIGEST_LENGTH];
-    SHA1_Final(md, &shac);
-    safe_hex(md, SHA_DIGEST_LENGTH, true, buff, bufc);
+
+    for (int i = 0; i < count; ++i) {
+        if (!EVP_DigestUpdate(ctx, data[i], lens[i])) {
+            EVP_MD_CTX_free(ctx);
+            return false;
+        }
+    }
+
+    if (!EVP_DigestFinal_ex(ctx, out_digest, out_len)) {
+        EVP_MD_CTX_free(ctx);
+        return false;
+    }
+
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+    #else
+        EVP_MD_CTX_destroy(ctx);
+    #endif
+
+#else
+    MUX_SHA_CTX shac;
+    MUX_SHA1_Init(&shac);
+    for (int i = 0; i < count; ++i) {
+        MUX_SHA1_Update(&shac, data[i], lens[i]);
+    }
+    MUX_SHA1_Final(out_digest, &shac);
+    *out_len = MUX_SHA1_DIGEST_LENGTH;
+#endif
+
+    return true;
+}
+
+void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
+{
+#ifdef UNIX_DIGEST
+    UINT8 md[EVP_MAX_MD_SIZE];
+#else
+    UINT8 md[MUX_SHA1_DIGEST_LENGTH];
+#endif
+    unsigned int len = 0;
+    size_t *lens = new size_t[nfargs];
+    for (int i = 0; i < nfargs; i++)
+    {
+        lens[i] = strlen((const char *)fargs[i]);
+    }
+    if (!mux_digest_sha1(const_cast<const UTF8 **>(fargs), lens, nfargs, md, &len))
+    {
+        safe_str(T("#-1 UNSUPPORTED"), buff, bufc);
+        delete lens;
+        return;
+    }
+    delete lens;
+    safe_hex(md, len, true, buff, bufc);
 }
 
 FUNCTION(fun_sha1)
