@@ -1153,7 +1153,7 @@ static void announce_connect(const dbref player, DESC *d)
 
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
-    int num = 0, key;    
+    int num = 0, key;
     const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
@@ -1432,7 +1432,7 @@ int fetch_session(dbref target)
     int count = 0;
     const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
-    {        
+    {
         count++;
     }
     return count;

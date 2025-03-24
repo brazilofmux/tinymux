@@ -2526,7 +2526,7 @@ DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
  * stall.
  *
  * \param dvoid             Network descriptor state.
- * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
+ * \param bHandleShutdown   Whether the shutdownsock() call is being handled.
  * \return                  None.
  */
 
