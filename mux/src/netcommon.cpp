@@ -723,10 +723,13 @@ void desc_addhash(DESC *d)
 static void desc_delhash(const DESC *d)
 {
     const dbref player = d->player;
-    const auto it = mudstate.dbref_to_descriptors_map.find(player);
-    if (it != mudstate.dbref_to_descriptors_map.end())
-    {
-        mudstate.dbref_to_descriptors_map.erase(it);
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+
+    for (auto it = range.first; it != range.second; ++it) {
+        if (it->second == d) {
+            mudstate.dbref_to_descriptors_map.erase(it);
+            return;
+        }
     }
 }
 
