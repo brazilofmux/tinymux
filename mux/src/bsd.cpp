@@ -1758,8 +1758,7 @@ void shovechars(int nPorts, port_info aPorts[])
                 {
                     if (!new_connection_continue(d)) continue;
                 }
-
-                if (SocketState::SSLAcceptWantWrite == d->ss)
+                else if (SocketState::SSLAcceptWantWrite == d->ss)
                 {
                     if (!new_connection_continue(d)) continue;
                 }
