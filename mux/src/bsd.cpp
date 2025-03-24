@@ -1450,6 +1450,10 @@ void shovechars(int nPorts, port_info aPorts[])
 
 #elif defined(UNIX_NETWORKING)
 
+#ifdef UNIX_SSL
+void process_output_ssl(DESC *d, int bHandleShutdown);
+#endif
+
 #if defined(UNIX_NETWORKING_SELECT)
 
 #define CheckInput(x)     FD_ISSET(x, &input_set)
@@ -1718,6 +1722,18 @@ void shovechars(int nPorts, port_info aPorts[])
                 {
                     if (!new_connection_continue(d)) continue;
                 }
+                else if (d->ss == SocketState::SSLWriteWantRead)
+                {
+                    process_output_ssl(d, true);
+                }
+                else if (d->ss == SocketState::SSLReadWantRead)
+                {
+                    if (!process_input(d))
+                    {
+                        shutdownsock(d, R_SOCKDIED);
+                        continue;
+                    }
+                }
                 else
 #endif
                 {
@@ -1761,6 +1777,18 @@ void shovechars(int nPorts, port_info aPorts[])
                 else if (SocketState::SSLAcceptWantWrite == d->ss)
                 {
                     if (!new_connection_continue(d)) continue;
+                }
+                else if (d->ss == SocketState::SSLWriteWantWrite)
+                {
+                    process_output_ssl(d, true);
+                }
+                else if (d->ss == SocketState::SSLReadWantWrite)
+                {
+                    if (!process_input(d))
+                    {
+                        shutdownsock(d, R_SOCKDIED);
+                        continue;
+                    }
                 }
                 else
 #endif
