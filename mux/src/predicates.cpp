@@ -12,7 +12,7 @@
 #include "config.h"
 #include "externs.h"
 
-UTF8 *DCL_CDECL tprintf(__in_z const UTF8 *fmt,...)
+UTF8 *DCL_CDECL tprintf(const UTF8 *fmt,...)
 {
     static UTF8 buff[LBUF_SIZE];
     va_list ap;
@@ -22,7 +22,7 @@ UTF8 *DCL_CDECL tprintf(__in_z const UTF8 *fmt,...)
     return buff;
 }
 
-void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, __in_z const UTF8 *fmt,...)
+void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const UTF8 *fmt,...)
 {
     va_list ap;
     va_start(ap, fmt);

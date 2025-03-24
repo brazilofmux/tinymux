@@ -148,7 +148,7 @@ void log_number(int num)
     Log.WriteInteger(num);
 }
 
-void DCL_CDECL log_printf(__in_z const UTF8 * fmt, ...)
+void DCL_CDECL log_printf(const UTF8 * fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

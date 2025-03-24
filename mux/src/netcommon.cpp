@@ -243,7 +243,7 @@ void raw_notify_newline(dbref player)
  * raw_broadcast: Send message to players who have indicated flags
  */
 
-void DCL_CDECL raw_broadcast(int inflags, __in_z const UTF8 *fmt, ...)
+void DCL_CDECL raw_broadcast(int inflags, const UTF8 *fmt, ...)
 {
     if (!fmt || !*fmt)
     {

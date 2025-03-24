@@ -47,9 +47,9 @@ typedef struct
 } PARSE_FLOAT_RESULT;
 
 int mux_fpclass(double result);
-bool ParseFloat(__out PARSE_FLOAT_RESULT *pfr, __in_z const UTF8 *str, bool bStrict = true);
+bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
-double AddDoubles(__in int n, __in_ecount(n) double pd[]);
+double AddDoubles(int n, double pd[]);
 void fval(UTF8 *buff, UTF8 **bufc, double result);
 double NearestPretty(double R);
 
@@ -57,27 +57,27 @@ size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase);
 size_t mux_ui64tox(UINT64 uval, UTF8 *buf, bool bUpperCase);
 size_t mux_utoa(unsigned long uval, UTF8 *buf);
 size_t mux_ui64toa(UINT64 uval, UTF8 *buf);
-size_t mux_ltoa(long val, __out UTF8 *buf);
-size_t mux_i64toa(INT64 val, __out UTF8 *buf);
-double mux_atof(__in_z const UTF8 *szString, bool bStrict = true);
+size_t mux_ltoa(long val, UTF8 *buf);
+size_t mux_i64toa(INT64 val, UTF8 *buf);
+double mux_atof(const UTF8 *szString, bool bStrict = true);
 
 UTF8 *mux_ltoa_t(long val);
 UTF8 *mux_i64toa_t(INT64 val);
 UTF8 *mux_ftoa(double r, bool bRounded, int frac);
 
-long mux_atol(__in const UTF8 *pString);
-INT64 mux_atoi64(__in const UTF8 *pString);
+long mux_atol(const UTF8 *pString);
+INT64 mux_atoi64(const UTF8 *pString);
 
-void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
-void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc);
+void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
+void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc);
 
-bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits = nullptr);
-bool is_rational(__in_z const UTF8 *str);
-bool is_real(__in_z const UTF8 *str);
+bool is_integer(const UTF8 *str, int *pDigits = nullptr);
+bool is_rational(const UTF8 *str);
+bool is_real(const UTF8 *str);
 
 extern const UTF8 *mux_FPStrings[8];
 extern const UTF8 Digits16U[17];
 extern const UTF8 Digits16L[17];
-extern void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc);
+extern void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
 
 #endif // !MATHUTIL_H

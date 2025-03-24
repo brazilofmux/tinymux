@@ -33,8 +33,8 @@ public:
 
     // IFunction
     //
-    MUX_RESULT Call(unsigned int nKey, __in UTF8* buff, __deref_inout UTF8** bufc, dbref executor, dbref caller,
-                    dbref enactor, int eval, __in UTF8* fargs[], int nfargs, __in const UTF8* cargs[],
+    MUX_RESULT Call(unsigned int nKey, UTF8* buff, UTF8** bufc, dbref executor, dbref caller,
+                    dbref enactor, int eval, UTF8* fargs[], int nfargs, const UTF8* cargs[],
                     int ncargs) override;
 
     CFuncs(void);

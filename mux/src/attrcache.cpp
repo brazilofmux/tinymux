@@ -38,7 +38,7 @@ struct attribute_record
 static attribute_record temp_record;
 static size_t cache_size = 0;
 
-int cache_init(_In_z_ const UTF8 *game_dir_file, _In_z_ const UTF8 *game_pag_file, int nCachePages)
+int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCachePages)
 {
     if (cache_initted)
     {
@@ -328,7 +328,7 @@ bool cache_sync(void)
 
 // Delete this attribute from the database.
 //
-void cache_del(_In_ Aname *nam)
+void cache_del(Aname *nam)
 {
     if (  !nam
        || !cache_initted)

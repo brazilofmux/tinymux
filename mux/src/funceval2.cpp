@@ -2339,8 +2339,8 @@ FUNCTION(fun_regmatchi)
  * instead of a wildcard pattern. The versions ending in i are case-insensitive.
  */
 
-static void real_regrab(__in UTF8 *search, __in const UTF8 *pattern, __in const SEP &sep, __in UTF8 *buff,
-                 __deref_inout UTF8 **bufc, bool cis, bool all)
+static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 *buff,
+                 UTF8 **bufc, bool cis, bool all)
 {
     if (alarm_clock.alarmed)
     {

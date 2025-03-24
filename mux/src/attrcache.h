@@ -20,10 +20,10 @@ typedef struct Aname
 
 const UTF8 *cache_get(Aname *nam, size_t *pLen);
 bool cache_put(Aname *nam, const UTF8 *obj, size_t len);
-int cache_init(_In_z_ const UTF8* game_dir_file, _In_z_ const UTF8* game_pag_file, int nCachePages);
+int cache_init(const UTF8* game_dir_file, const UTF8* game_pag_file, int nCachePages);
 void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
-void cache_del(_In_ Aname *nam);
+void cache_del(Aname *nam);
 
 #endif // !ATTRCACHE_H

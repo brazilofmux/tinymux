@@ -666,7 +666,7 @@ const UTF8 *latin2_utf8[256] =
  * \return          true for valid, false for invalid.
  */
 
-bool utf8_strlen(__in const UTF8 *pString, __out size_t &nString)
+bool utf8_strlen(const UTF8 *pString, size_t &nString)
 {
     nString = 0;
     int i = 0;
@@ -737,7 +737,7 @@ const int g_trimoffset[4][4] =
  * \return          Equivalent string in ASCII codeset.
  */
 
-const UTF8 *ConvertToAscii(__in const UTF8 *pString)
+const UTF8 *ConvertToAscii(const UTF8 *pString)
 {
     static UTF8 buffer[2*LBUF_SIZE];
     UTF8 *q = buffer;
@@ -800,7 +800,7 @@ const UTF8 *ConvertToAscii(__in const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const UTF8 *ConvertToCp437(__in const UTF8 *pString)
+const UTF8 *ConvertToCp437(const UTF8 *pString)
 {
     static UTF8 buffer[2*LBUF_SIZE];
     UTF8 *q = buffer;
@@ -864,7 +864,7 @@ const UTF8 *ConvertToCp437(__in const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const UTF8 *ConvertToLatin1(__in const UTF8 *pString)
+const UTF8 *ConvertToLatin1(const UTF8 *pString)
 {
     static UTF8 buffer[2*LBUF_SIZE];
     UTF8 *q = buffer;
@@ -928,7 +928,7 @@ const UTF8 *ConvertToLatin1(__in const UTF8 *pString)
  * \return          Equivalent string in latin1 codeset.
  */
 
-const UTF8 *ConvertToLatin2(__in const UTF8 *pString)
+const UTF8 *ConvertToLatin2(const UTF8 *pString)
 {
     static UTF8 buffer[2*LBUF_SIZE];
     UTF8 *q = buffer;
@@ -992,7 +992,7 @@ const UTF8 *ConvertToLatin2(__in const UTF8 *pString)
  * \return             Width to allow in formatting.
  */
 
-int ConsoleWidth(__in const UTF8 *pCodePoint)
+int ConsoleWidth(const UTF8 *pCodePoint)
 {
     const UTF8 *p = pCodePoint;
     int iState = TR_WIDTHS_START_STATE;
@@ -3106,7 +3106,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
  * \return           String with exportable ANSI color sequences.
  */
 
-UTF8 *convert_color(__in const UTF8 *pString, bool fNoBleed, bool fColor256)
+UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
 
@@ -3184,7 +3184,7 @@ UTF8 *convert_color(__in const UTF8 *pString, bool fNoBleed, bool fColor256)
     return aBuffer;
 }
 
-UTF8 *strip_color(__in const UTF8 *pString, __out_opt size_t *pnBytes, __out_opt size_t *pnPoints)
+UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
 {
     static UTF8 aBuffer[LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
@@ -3300,7 +3300,7 @@ const unsigned char MU_EscapeNoConvert[256] =
 // Convert raw character sequences into MUX substitutions (type = 1)
 // or strips them (type = 0).
 //
-UTF8 *translate_string(__in const UTF8 *pString, bool bConvert)
+UTF8 *translate_string(const UTF8 *pString, bool bConvert)
 {
     static UTF8 szTranslatedString[LBUF_SIZE];
     UTF8 *pTranslatedString = szTranslatedString;
@@ -3415,7 +3415,7 @@ bool IsDecompFriendly(const UTF8 *pString)
  * munge_space: Compress multiple spaces to one space, also remove leading and
  * trailing spaces.
  */
-UTF8 *munge_space(__in const UTF8 *string)
+UTF8 *munge_space(const UTF8 *string)
 {
     UTF8 *buffer = alloc_lbuf("munge_space");
     const UTF8 *p = string;
@@ -3453,7 +3453,7 @@ UTF8 *munge_space(__in const UTF8 *string)
  * trim_spaces: Remove leading and trailing spaces and space-compress internal
  * spaces.
  */
-UTF8 *trim_spaces(__in const UTF8 *string)
+UTF8 *trim_spaces(const UTF8 *string)
 {
     UTF8 *buffer = alloc_lbuf("trim_spaces");
     const UTF8 *p = string;
@@ -3505,7 +3505,7 @@ UTF8 *trim_spaces(__in const UTF8 *string)
  * * returns a modified pointer to the string ready for another call.
  */
 
-UTF8 *grabto(__deref_inout UTF8 **str, UTF8 targ)
+UTF8 *grabto(UTF8 **str, UTF8 targ)
 {
     UTF8 *savec, *cp;
 
@@ -3521,7 +3521,7 @@ UTF8 *grabto(__deref_inout UTF8 **str, UTF8 targ)
     return savec;
 }
 
-int string_compare(__in const UTF8 *s1, __in const UTF8 *s2)
+int string_compare(const UTF8 *s1, const UTF8 *s2)
 {
     if (  mudstate.bStandAlone
        || mudconf.space_compress)
@@ -3594,7 +3594,7 @@ int string_compare(__in const UTF8 *s1, __in const UTF8 *s2)
     }
 }
 
-int string_prefix(__in const UTF8 *string, __in const UTF8 *prefix)
+int string_prefix(const UTF8 *string, const UTF8 *prefix)
 {
     int count = 0;
 
@@ -3619,7 +3619,7 @@ int string_prefix(__in const UTF8 *string, __in const UTF8 *prefix)
  * accepts only nonempty matches starting at the beginning of a word
  */
 
-const UTF8 *string_match(__in const UTF8 *src, __in const UTF8 *sub)
+const UTF8 *string_match(const UTF8 *src, const UTF8 *sub)
 {
     if ((*sub != '\0') && (src))
     {
@@ -3652,7 +3652,7 @@ const UTF8 *string_match(__in const UTF8 *src, __in const UTF8 *sub)
  * * (mitch 1 feb 91)
  */
 
-UTF8 *replace_string(__in const UTF8 *old, __in const UTF8 *new0, __in const UTF8 *s)
+UTF8 *replace_string(const UTF8 *old, const UTF8 *new0, const UTF8 *s)
 {
     if (!s)
     {
@@ -3711,10 +3711,10 @@ UTF8 *replace_string(__in const UTF8 *old, __in const UTF8 *new0, __in const UTF
 //
 UTF8 *replace_tokens
 (
-    __in const UTF8 *s,
-    __in const UTF8 *pBound,
-    __in const UTF8 *pListPlace,
-    __in const UTF8 *pSwitch
+    const UTF8 *s,
+    const UTF8 *pBound,
+    const UTF8 *pListPlace,
+    const UTF8 *pSwitch
 )
 {
     if (!s)
@@ -3783,7 +3783,7 @@ UTF8 *replace_tokens
     return result;
 }
 
-bool minmatch(__in const UTF8 *str, __in const UTF8 *target, int min)
+bool minmatch(const UTF8 *str, const UTF8 *target, int min)
 {
     while (*str && *target
           && (mux_tolower_ascii(*str) == mux_tolower_ascii(*target)))
@@ -3806,7 +3806,7 @@ bool minmatch(__in const UTF8 *str, __in const UTF8 *target, int min)
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
 //
-UTF8 *StringCloneLen(__in_ecount(nStr) const UTF8 *str, size_t nStr)
+UTF8 *StringCloneLen(const UTF8 *str, size_t nStr)
 {
     UTF8 *buff = (UTF8 *)MEMALLOC(nStr+1);
     if (buff)
@@ -3824,7 +3824,7 @@ UTF8 *StringCloneLen(__in_ecount(nStr) const UTF8 *str, size_t nStr)
 // --------------------------------------------------------------------------
 // StringClone: allocate memory and copy string
 //
-UTF8 *StringClone(__in const UTF8 *str)
+UTF8 *StringClone(const UTF8 *str)
 {
     return StringCloneLen(str, strlen((char *)str));
 }
@@ -3846,7 +3846,7 @@ UTF8 *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer)
  * safe_copy_str - Copy buffers, watching for overflows.
  */
 
-void safe_copy_str(__in const UTF8 *src, __inout_ecount_full(nSizeOfBuffer) UTF8 *buff, __deref_inout UTF8 **bufp, size_t nSizeOfBuffer)
+void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer)
 {
     if (src == nullptr) return;
 
@@ -3859,7 +3859,7 @@ void safe_copy_str(__in const UTF8 *src, __inout_ecount_full(nSizeOfBuffer) UTF8
     *bufp = buff + TrimPartialSequence(tp - buff, buff);
 }
 
-void safe_copy_str_lbuf(__in const UTF8 *src, __inout_ecount_full(LBUF_SIZE) UTF8 *buff, __deref_inout UTF8 **bufp)
+void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 {
     if (src == nullptr)
     {
@@ -3875,7 +3875,7 @@ void safe_copy_str_lbuf(__in const UTF8 *src, __inout_ecount_full(LBUF_SIZE) UTF
     *bufp = buff + TrimPartialSequence(tp - buff, buff);
 }
 
-size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __in UTF8 *buff, __deref_inout UTF8 **bufc)
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
@@ -3887,7 +3887,7 @@ size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __in UTF8 *
     return nLen;
 }
 
-size_t safe_fill(__inout UTF8 *buff, __deref_inout UTF8 **bufc, UTF8 chFill, size_t nSpaces)
+size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFill, size_t nSpaces)
 {
     // Check for buffer limits.
     //
@@ -3904,7 +3904,7 @@ size_t safe_fill(__inout UTF8 *buff, __deref_inout UTF8 **bufc, UTF8 chFill, siz
     return nSpaces;
 }
 
-void utf8_safe_chr(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
+void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
 {
     size_t nLen;
     size_t nLeft;
@@ -4001,7 +4001,7 @@ UTF16 *ConvertToUTF16(UTF32 ch)
     return buffer;
 }
 
-UTF32 ConvertFromUTF8(__in const UTF8 *pString)
+UTF32 ConvertFromUTF8(const UTF8 *pString)
 {
     size_t t = utf8_FirstByte[*pString];
     if (UTF8_CONTINUE <= t)
@@ -4067,7 +4067,7 @@ UTF32 ConvertFromUTF8(__in const UTF8 *pString)
     }
 }
 
-size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch)
+size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch)
 {
     ch = pString[0];
     if (  ch < UNI_SUR_HIGH_START
@@ -4096,7 +4096,7 @@ size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch)
     return 0;
 }
 
-UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length)
+UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length)
 {
     static UTF16 buffer[2*LBUF_SIZE];
     UTF16 *p = buffer;
@@ -4125,7 +4125,7 @@ UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length)
 // We want to remove mal-formed ESC sequences completely and convert the
 // well-formed ones.
 //
-UTF8 *ConvertToUTF8(__in const char *p, size_t *pn)
+UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 {
     *pn = 0;
 
@@ -4252,7 +4252,7 @@ UTF8 *ConvertToUTF8(__in const char *p, size_t *pn)
 // mux_strncpy: Copies up to specified number of chars from source.
 // Note: unlike strncpy(), this null-terminates after copying.
 //
-void mux_strncpy(__out_ecount(length_to_copy + 1) UTF8 *dest, __in const UTF8 *src, size_t length_to_copy)
+void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy)
 {
     size_t i = 0;
     if (  nullptr != src
@@ -4268,7 +4268,7 @@ void mux_strncpy(__out_ecount(length_to_copy + 1) UTF8 *dest, __in const UTF8 *s
     dest[i] = '\0';
 }
 
-bool matches_exit_from_list(__in const UTF8 *str, __in const UTF8 *pattern)
+bool matches_exit_from_list(const UTF8 *str, const UTF8 *pattern)
 {
     const UTF8 *s;
 
@@ -4315,12 +4315,12 @@ bool matches_exit_from_list(__in const UTF8 *str, __in const UTF8 *pattern)
     return false;
 }
 
-void string_token::set_source(__in UTF8* source_arg)
+void string_token::set_source(UTF8* source_arg)
 {
     source = source_arg;
 }
 
-void string_token::set_control(__in const UTF8* control_arg)
+void string_token::set_control(const UTF8* control_arg)
 {
     memset(control, 0, sizeof(control));
 
@@ -4337,7 +4337,7 @@ void string_token::set_control(__in const UTF8* control_arg)
     }
 }
 
-UTF8* string_token::parse_length(__out size_t* length)
+UTF8* string_token::parse_length(size_t* length)
 {
     *length = 0;
     UTF8 *p = source;
@@ -4832,7 +4832,7 @@ void ItemToList_Final(ITL *pContext)
 
 // mux_stricmp - Compare two strings ignoring case.
 //
-int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b)
+int mux_stricmp(const UTF8 *a, const UTF8 *b)
 {
     while (  *a
           && *b
@@ -4860,7 +4860,7 @@ int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b)
 
 // mux_memicmp - Compare two buffers ignoring case.
 //
-int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n)
+int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 {
     UTF8 *p1 = (UTF8 *)p1_arg;
     UTF8 *p2 = (UTF8 *)p2_arg;
@@ -4890,7 +4890,7 @@ int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n)
 
 // mux_strlwr - Convert string to all lower case.
 //
-UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n)
+UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
@@ -4946,7 +4946,7 @@ UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n)
 
 // mux_strupr - Convert string to all upper case.
 //
-UTF8 *mux_strupr(__in const UTF8 *a, size_t &n)
+UTF8 *mux_strupr(const UTF8 *a, size_t &n)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
@@ -5002,7 +5002,7 @@ UTF8 *mux_strupr(__in const UTF8 *a, size_t &n)
 
 // mux_foldmatch - alias for matching.
 //
-UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged)
+UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
@@ -5065,7 +5065,7 @@ UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-size_t DCL_CDECL mux_vsnprintf(_Out_writes_z_(nBuffer) UTF8 *pBuffer, _In_ size_t nBuffer, _In_z_ const UTF8 *pFmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va)
 {
     if (  nullptr == pBuffer
        || nBuffer < 1)
@@ -5452,7 +5452,7 @@ done:
     return iBuffer;
 }
 
-void DCL_CDECL mux_sprintf(_Out_writes_z_(count) UTF8 *buff, _In_ size_t count, __in_z const UTF8 *fmt, ...)
+void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -5460,7 +5460,7 @@ void DCL_CDECL mux_sprintf(_Out_writes_z_(count) UTF8 *buff, _In_ size_t count, 
     va_end(ap);
 }
 
-void DCL_CDECL mux_fprintf(_In_ FILE *fp, _In_z_ const UTF8 *fmt, ...)
+void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...)
 {
     if (nullptr != fp)
     {

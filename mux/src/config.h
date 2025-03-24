@@ -76,41 +76,6 @@
 #include <vector>
 #include <algorithm>
 
-#ifndef __specstrings
-
-// SAL 1
-//
-#define __deref_in
-#define __deref_in_opt
-#define __deref_in_ecount(n)
-#define __deref_inout
-#define __deref_out
-#define __in
-#define __in_z
-#define __in_ecount(n)
-#define __in_opt
-#define __inout
-#define __inout_ecount_full(n)
-#define __out
-#define __out_ecount(n)
-#define __out_opt
-
-// SAL 2
-//
-
-// Structured SAL
-//
-#define _Always_(n)
-#define _In_
-#define _In_z_
-#define _In_reads_(n)
-#define _Out_writes_(n)
-#define _Out_writes_z_(n)
-#define _Ret_writes_(n)
-#define _Success_(n)
-
-#endif
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

@@ -166,7 +166,7 @@ static int DCL_CDECL f_comp_abs(const void *s1, const void *s2)
 // Error of sum is less than 2*epsilon or 1 ulp except for very large n.
 // Return the result that yields the shortest number of base-10 digits.
 //
-double AddDoubles(__in int n, __in_ecount(n) double pd[])
+double AddDoubles(int n, double pd[])
 {
     qsort(pd, n, sizeof(double), f_comp_abs);
     double sum = 0.0;
@@ -230,7 +230,7 @@ void fval(UTF8 *buff, UTF8 **bufc, double result)
 // Ind
 // NaN
 //
-bool ParseFloat(__out PARSE_FLOAT_RESULT *pfr, __in_z const UTF8 *str, bool bStrict)
+bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict)
 {
     memset(pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
@@ -415,7 +415,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double mux_atof(__in_z const UTF8 *szString, bool bStrict)
+double mux_atof(const UTF8 *szString, bool bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -738,7 +738,7 @@ size_t mux_utoa(unsigned long uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_ltoa(long val, __out UTF8 *buf)
+size_t mux_ltoa(long val, UTF8 *buf)
 {
     UTF8 *p = buf;
     if (val < 0)
@@ -757,7 +757,7 @@ UTF8 *mux_ltoa_t(long val)
     return buff;
 }
 
-void safe_ltoa(long val, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
+void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
@@ -788,7 +788,7 @@ size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_i64toa(INT64 val, __out UTF8 *buf)
+size_t mux_i64toa(INT64 val, UTF8 *buf)
 {
     UTF8 *p = buf;
 
@@ -812,7 +812,7 @@ UTF8 *mux_i64toa_t(INT64 val)
     return buff;
 }
 
-void safe_i64toa(INT64 val, __inout UTF8 *buff, __deref_inout UTF8 **bufc)
+void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
@@ -833,7 +833,7 @@ const UTF8 TableATOI[16][10] =
     { 90, 91, 92, 93, 94, 95, 96, 97, 98, 99}
 };
 
-long mux_atol(__in const UTF8 *pString)
+long mux_atol(const UTF8 *pString)
 {
     long sum = 0;
     int LeadingCharacter = 0;
@@ -885,7 +885,7 @@ long mux_atol(__in const UTF8 *pString)
     return sum;
 }
 
-INT64 mux_atoi64(__in const UTF8 *pString)
+INT64 mux_atoi64(const UTF8 *pString)
 {
     INT64 sum = 0;
     int LeadingCharacter = 0;
@@ -937,7 +937,7 @@ INT64 mux_atoi64(__in const UTF8 *pString)
     return sum;
 }
 
-bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits)
+bool is_integer(const UTF8 *str, int *pDigits)
 {
     LBUF_OFFSET i = 0;
     int nDigits = 0;
@@ -997,7 +997,7 @@ bool is_integer(__in_z const UTF8 *str, __out_opt int *pDigits)
     return (!str[i]);
 }
 
-bool is_rational(__in_z const UTF8 *str)
+bool is_rational(const UTF8 *str)
 {
     LBUF_OFFSET i = 0;
 
@@ -1075,7 +1075,7 @@ bool is_rational(__in_z const UTF8 *str)
     return (!str[i]);
 }
 
-bool is_real(__in_z const UTF8 *str)
+bool is_real(const UTF8 *str)
 {
     PARSE_FLOAT_RESULT pfr;
     return ParseFloat(&pfr, str);

@@ -25,10 +25,10 @@
 #define SBUF_SIZE   64      // Small
 
 void pool_init(int, int);
-UTF8* pool_alloc(int poolnum, _In_z_ const UTF8* tag, _In_z_ const UTF8* file, const int line);
-_Ret_writes_(LBUF_SIZE) UTF8* pool_alloc_lbuf(_In_z_ const UTF8* tag, _In_z_ const UTF8* file, const int line);
-void pool_free(int poolnum, _In_ UTF8* buf, _In_z_ const UTF8* file, const int line);
-void pool_free_lbuf(_In_reads_(LBUF_SIZE) UTF8* buf, _In_z_ const UTF8* file, const int line);
+UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line);
+UTF8* pool_alloc_lbuf(const UTF8* tag, const UTF8* file, const int line);
+void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line);
+void pool_free_lbuf(UTF8* buf, const UTF8* file, const int line);
 void list_bufstats(dbref);
 void list_buftrace(dbref);
 void pool_reset(void);

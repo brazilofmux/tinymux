@@ -121,14 +121,14 @@ void pool_init(int poolnum, int poolsize)
  */
 static void pool_err
 (
-    _In_z_ const UTF8 *logsys,
+    const UTF8 *logsys,
     int                logflag,
     int                poolnum,
-    _In_z_ const UTF8 *tag,
-    _In_reads_(sizeof(POOLHDR)) POOLHDR* ph,
-    _In_z_ const UTF8 *action,
-    _In_z_ const UTF8 *reason,
-    _In_z_ const UTF8 *file,
+    const UTF8 *tag,
+    POOLHDR* ph,
+    const UTF8 *action,
+    const UTF8 *reason,
+    const UTF8 *file,
     const int          line
 )
 {
@@ -162,8 +162,8 @@ static void pool_err
 static void pool_vfy
 (
     int poolnum,
-    _In_z_ const UTF8 *tag,
-    _In_z_ const UTF8 *file,
+    const UTF8 *tag,
+    const UTF8 *file,
     const int line
 )
 {
@@ -215,7 +215,7 @@ static void pool_vfy
     }
 }
 
-static void pool_check(_In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
+static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
 {
 	for (int i = 0; i < NUM_POOLS; i++)
     {
@@ -223,7 +223,7 @@ static void pool_check(_In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const in
     }
 }
 
-UTF8 *pool_alloc(int poolnum, _In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
+UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -322,7 +322,7 @@ UTF8 *pool_alloc(int poolnum, _In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, c
     return p;
 }
 
-_Ret_writes_(LBUF_SIZE) UTF8 *pool_alloc_lbuf(_In_z_ const UTF8 *tag, _In_z_ const UTF8 *file, const int line)
+UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
@@ -420,7 +420,7 @@ _Ret_writes_(LBUF_SIZE) UTF8 *pool_alloc_lbuf(_In_z_ const UTF8 *tag, _In_z_ con
     return p;
 }
 
-void pool_free(int poolnum, _In_ UTF8* buf, _In_z_ const UTF8* file, const int line)
+void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
 {
     if (buf == nullptr)
     {
@@ -496,7 +496,7 @@ void pool_free(int poolnum, _In_ UTF8* buf, _In_z_ const UTF8* file, const int l
     }
 }
 
-void pool_free_lbuf(_In_reads_(LBUF_SIZE) UTF8 *buf, _In_z_ const UTF8 *file, const int line)
+void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
 {
     if (buf == nullptr)
     {
@@ -575,7 +575,7 @@ void pool_free_lbuf(_In_reads_(LBUF_SIZE) UTF8 *buf, _In_z_ const UTF8 *file, co
     pools[POOL_LBUF].num_alloc--;
 }
 
-static void pool_trace(const dbref player, const int poolnum, _In_z_ const UTF8 *text)
+static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
 {
 	int numfree = 0;
     notify(player, tprintf(T("----- %s -----"), text));

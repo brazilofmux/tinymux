@@ -8,7 +8,7 @@
 
 #define mux_strlen(x)   strlen((const char *)x)
 
-inline bool isEmpty(__in_opt const UTF8 *p)
+inline bool isEmpty(const UTF8 *p)
 {
     return ((nullptr == p) || ('\0' == p[0]));
 }
@@ -50,7 +50,7 @@ extern const UTF8 *latin2_utf8[256];
 // finds, but it does not validate the entire string.
 //
 extern const int g_trimoffset[4][4];
-inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
+inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 {
     for (size_t i = 0; i < n; i++)
     {
@@ -112,7 +112,7 @@ inline size_t TrimPartialSequence(size_t n, __in_ecount(n) const UTF8 *p)
 
 // utf/cl_Printable.txt
 //
-inline bool mux_isprint(__in const unsigned char *p)
+inline bool mux_isprint(const unsigned char *p)
 {
     unsigned short iState = CL_PRINT_START_STATE;
     do
@@ -161,7 +161,7 @@ inline bool mux_isprint(__in const unsigned char *p)
 
 // utf/cl_AttrNameInitial.txt
 //
-inline bool mux_isattrnameinitial(__in const unsigned char *p)
+inline bool mux_isattrnameinitial(const unsigned char *p)
 {
     unsigned char iState = CL_ATTRNAMEINITIAL_START_STATE;
     do
@@ -210,7 +210,7 @@ inline bool mux_isattrnameinitial(__in const unsigned char *p)
 
 // utf/cl_AttrName.txt
 //
-inline bool mux_isattrname(__in const unsigned char *p)
+inline bool mux_isattrname(const unsigned char *p)
 {
     unsigned char iState = CL_ATTRNAME_START_STATE;
     do
@@ -259,7 +259,7 @@ inline bool mux_isattrname(__in const unsigned char *p)
 
 // utf/cl_Objectname.txt
 //
-inline bool mux_isobjectname(__in const unsigned char *p)
+inline bool mux_isobjectname(const unsigned char *p)
 {
     unsigned char iState = CL_OBJECTNAME_START_STATE;
     do
@@ -308,7 +308,7 @@ inline bool mux_isobjectname(__in const unsigned char *p)
 
 // utf/cl_PlayerName.txt
 //
-inline bool mux_isplayername(__in const unsigned char *p)
+inline bool mux_isplayername(const unsigned char *p)
 {
     unsigned char iState = CL_PLAYERNAME_START_STATE;
     do
@@ -357,7 +357,7 @@ inline bool mux_isplayername(__in const unsigned char *p)
 
 // utf/cl_8859_1.txt
 //
-inline bool mux_is8859_1(__in const unsigned char *p)
+inline bool mux_is8859_1(const unsigned char *p)
 {
     unsigned char iState = CL_8859_1_START_STATE;
     do
@@ -406,7 +406,7 @@ inline bool mux_is8859_1(__in const unsigned char *p)
 
 // utf/cl_8859_2.txt
 //
-inline bool mux_is8859_2(__in const unsigned char *p)
+inline bool mux_is8859_2(const unsigned char *p)
 {
     unsigned char iState = CL_8859_2_START_STATE;
     do
@@ -455,7 +455,7 @@ inline bool mux_is8859_2(__in const unsigned char *p)
 
 // utf/cl_hangul.txt
 //
-inline bool mux_ishangul(__in const unsigned char *p)
+inline bool mux_ishangul(const unsigned char *p)
 {
     unsigned char iState = CL_HANGUL_START_STATE;
     do
@@ -504,7 +504,7 @@ inline bool mux_ishangul(__in const unsigned char *p)
 
 // utf/cl_hiragana.txt
 //
-inline bool mux_ishiragana(__in const unsigned char *p)
+inline bool mux_ishiragana(const unsigned char *p)
 {
     unsigned char iState = CL_HIRAGANA_START_STATE;
     do
@@ -553,7 +553,7 @@ inline bool mux_ishiragana(__in const unsigned char *p)
 
 // utf/cl_kanji.txt
 //
-inline bool mux_iskanji(__in const unsigned char *p)
+inline bool mux_iskanji(const unsigned char *p)
 {
     unsigned char iState = CL_KANJI_START_STATE;
     do
@@ -602,7 +602,7 @@ inline bool mux_iskanji(__in const unsigned char *p)
 
 // utf/cl_katakana.txt
 //
-inline bool mux_iskatakana(__in const unsigned char *p)
+inline bool mux_iskatakana(const unsigned char *p)
 {
     unsigned char iState = CL_KATAKANA_START_STATE;
     do
@@ -651,27 +651,27 @@ inline bool mux_iskatakana(__in const unsigned char *p)
 
 // utf/tr_utf8_ascii.txt
 //
-const UTF8 *ConvertToAscii(__in const UTF8 *pString);
+const UTF8 *ConvertToAscii(const UTF8 *pString);
 
 // utf/tr_utf8_cp437.txt
 //
-const UTF8 *ConvertToCp437(__in const UTF8 *pString);
+const UTF8 *ConvertToCp437(const UTF8 *pString);
 
 // utf/tr_utf8_latin1.txt
 //
-const UTF8 *ConvertToLatin1(__in const UTF8 *pString);
+const UTF8 *ConvertToLatin1(const UTF8 *pString);
 
 // utf/tr_utf8_latin2.txt
 //
-const UTF8 *ConvertToLatin2(__in const UTF8 *pString);
+const UTF8 *ConvertToLatin2(const UTF8 *pString);
 
 // utf/tr_widths.txt
 //
-int ConsoleWidth(__in const UTF8 *pCodePoint);
+int ConsoleWidth(const UTF8 *pCodePoint);
 
 // utf/tr_tolower.txt
 //
-inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 {
     unsigned char iState = TR_TOLOWER_START_STATE;
     do
@@ -730,7 +730,7 @@ inline const string_desc *mux_tolower(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_toupper.txt
 //
-inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
     unsigned char iState = TR_TOUPPER_START_STATE;
     do
@@ -789,7 +789,7 @@ inline const string_desc *mux_toupper(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_totitle.txt
 //
-inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
     unsigned char iState = TR_TOTITLE_START_STATE;
     do
@@ -848,7 +848,7 @@ inline const string_desc *mux_totitle(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_foldpunc.txt
 //
-inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
+inline const string_desc *mux_foldmatch(const unsigned char *p, bool &bXor)
 {
     int iState = TR_FOLDMATCH_START_STATE;
     do
@@ -907,7 +907,7 @@ inline const string_desc *mux_foldmatch(__in const unsigned char *p, bool &bXor)
 
 // utf/tr_Color.txt
 //
-inline int mux_color(__in const unsigned char *p)
+inline int mux_color(const unsigned char *p)
 {
     unsigned short iState = TR_COLOR_START_STATE;
     do
@@ -956,7 +956,7 @@ inline int mux_color(__in const unsigned char *p)
 
 #define mux_haswidth(x) mux_isprint(x)
 
-bool utf8_strlen(__in const UTF8 *pString, __out size_t &nString);
+bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 // This class replaces the functionality of the strtok() C runtime library
 // function. Set the source and control, and then call parse to obtain tokens.
@@ -973,17 +973,17 @@ public:
         memset(control, 0, sizeof(control));
     }
 
-    string_token(__in UTF8* source, __in const UTF8* control) : source(source)
+    string_token(UTF8* source, const UTF8* control) : source(source)
     {
         set_control(control);
     }
 
-    void set_source(__in UTF8* source);
-    void set_control(__in const UTF8* control);
+    void set_source(UTF8* source);
+    void set_control(const UTF8* control);
     UTF8* parse();
 
 private:
-    UTF8* parse_length(__out size_t* length);
+    UTF8* parse_length(size_t* length);
     UTF8* source;
     UTF8 control[256]{};
 };
@@ -1598,50 +1598,50 @@ int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
 UTF8 *LettersToBinary(UTF8 *pLetters);
 
 UTF8 *convert_to_html(const UTF8 *pString);
-UTF8 *convert_color(__in const UTF8 *pString, bool fNoBleed, bool fColor256);
-UTF8 *strip_color(__in const UTF8 *pString, __out_opt size_t *pnLength = 0, __out_opt size_t *pnPoints = 0);
-UTF8 *munge_space(__in const UTF8 *);
-UTF8 *trim_spaces(__in const UTF8 *);
-UTF8 *grabto(__deref_inout UTF8 **, UTF8);
-int  string_compare(__in const UTF8 *, __in const UTF8 *);
-int  string_prefix(__in const UTF8 *, __in const UTF8 *);
-const UTF8 *string_match(__in const UTF8 *, __in const UTF8 *);
-UTF8 *replace_string(__in const UTF8 *, __in const UTF8 *, __in const UTF8 *);
+UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256);
+UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
+UTF8 *munge_space(const UTF8 *);
+UTF8 *trim_spaces(const UTF8 *);
+UTF8 *grabto(UTF8 **, UTF8);
+int  string_compare(const UTF8 *, const UTF8 *);
+int  string_prefix(const UTF8 *, const UTF8 *);
+const UTF8 *string_match(const UTF8 *, const UTF8 *);
+UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
 UTF8 *replace_tokens
 (
-    __in const UTF8 *s,
-    __in const UTF8 *pBound,
-    __in const UTF8 *pListPlace,
-    __in const UTF8 *pSwitch
+    const UTF8 *s,
+    const UTF8 *pBound,
+    const UTF8 *pListPlace,
+    const UTF8 *pSwitch
 );
 #if 0
 char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
 #endif // 0
-bool minmatch(__in const UTF8 *str, __in const UTF8 *target, int min);
-UTF8 *StringCloneLen(__in_ecount(nStr) const UTF8 *str, size_t nStr);
-UTF8 *StringClone(__in const UTF8 *str);
-void safe_copy_str(__in const UTF8 *src, __inout_ecount_full(nSizeOfBuffer) UTF8 *buff, __deref_inout UTF8 **bufp, size_t nSizeOfBuffer);
-void safe_copy_str_lbuf(__in const UTF8 *src, __inout_ecount_full(LBUF_SIZE) UTF8 *buff, __deref_inout UTF8 **bufp);
-size_t safe_copy_buf(__in_ecount(nLen) const UTF8 *src, size_t nLen, __in UTF8 *buff, __deref_inout UTF8 **bufp);
-size_t safe_fill(__inout UTF8 *buff, __deref_inout UTF8 **bufc, UTF8 chFile, size_t nSpaces);
-void safe_chr_utf8(__in const UTF8 *src, __inout UTF8 *buff, __deref_inout UTF8 **bufp);
+bool minmatch(const UTF8 *str, const UTF8 *target, int min);
+UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
+UTF8 *StringClone(const UTF8 *str);
+void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
+void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
+size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
+void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 #define utf8_safe_chr safe_chr_utf8
 UTF8 *ConvertToUTF8(UTF32 ch);
-UTF8 *ConvertToUTF8(__in const char *p, size_t *pn);
+UTF8 *ConvertToUTF8(const char *p, size_t *pn);
 UTF16 *ConvertToUTF16(UTF32 ch);
-UTF32 ConvertFromUTF8(__in const UTF8 *p);
-size_t ConvertFromUTF16(__in UTF16 *pString, UTF32 &ch);
-UTF16 *ConvertFromUTF8ToUTF16(__in const UTF8 *pString, size_t& length);
-UTF8  *ConvertFromUTF16ToUTF8(__in const UTF16 *pSTring);
-void mux_strncpy(__out_ecount(length_to_copy +1) UTF8 *dest, __in const UTF8 *src, size_t length_to_copy);
-bool matches_exit_from_list(__in const UTF8 *, __in const UTF8 *);
-UTF8 *translate_string(__in const UTF8 *, bool);
+UTF32 ConvertFromUTF8(const UTF8 *p);
+size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch);
+UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length);
+UTF8  *ConvertFromUTF16ToUTF8(const UTF16 *pSTring);
+void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
+bool matches_exit_from_list(const UTF8 *, const UTF8 *);
+UTF8 *translate_string(const UTF8 *, bool);
 bool IsDecompFriendly(const UTF8 *pString);
-int mux_stricmp(__in const UTF8 *a, __in const UTF8 *b);
-int mux_memicmp(__in const void *p1_arg, __in const void *p2_arg, size_t n);
-UTF8 *mux_strlwr(__in const UTF8 *a, size_t &n);
-UTF8 *mux_strupr(__in const UTF8 *a, size_t &n);
-UTF8 *mux_foldmatch(__in const UTF8 *a, size_t &n, bool &fChanged);
+int mux_stricmp(const UTF8 *a, const UTF8 *b);
+int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
+UTF8 *mux_strupr(const UTF8 *a, size_t &n);
+UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged);
 
 typedef struct tag_itl
 {
@@ -1661,9 +1661,9 @@ bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
-size_t DCL_CDECL mux_vsnprintf(_Out_writes_z_(nBuffer) UTF8 *pBuffer, _In_ size_t nBuffer, __in_z const UTF8 *pFmt, va_list va);
-void DCL_CDECL mux_sprintf(_Out_writes_z_(count) UTF8 *buff, _In_ size_t count, _In_z_ const UTF8 *fmt, ...);
-void DCL_CDECL mux_fprintf(_In_ FILE *fp, _In_z_ const UTF8 *fmt, ...);
+size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va);
+void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...);
+void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...);
 size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct

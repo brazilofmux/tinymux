@@ -951,8 +951,8 @@ FUNCTION(fun_dist3d)
 
 static void handle_vectors
 (
-    __in UTF8 *vecarg1, __in UTF8 *vecarg2, __inout UTF8 *buff, __deref_inout UTF8 **bufc,
-    __in const SEP &sep, __in const SEP &osep, int flag
+    UTF8 *vecarg1, UTF8 *vecarg2, UTF8 *buff, UTF8 **bufc,
+    const SEP &sep, const SEP &osep, int flag
 )
 {
     // Return if the list is empty.
@@ -2841,7 +2841,7 @@ FUNCTION(fun_crc32)
     safe_i64toa(ulCRC32, buff, bufc);
 }
 
-void safe_hex(UINT8 md[], size_t len, bool bUpper, __in UTF8 *buff, __deref_inout UTF8 **bufc)
+void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
 {
     UTF8 *buf = nullptr;
     try

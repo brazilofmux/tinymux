@@ -96,7 +96,7 @@ typedef struct tag_int_array
 void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
 void cf_log_alreadyexists(dbref, const UTF8*, const UTF8*, const UTF8*);
 int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
-void DCL_CDECL cf_log_syntax(dbref player, __in_z UTF8 *cmd, __in_z const UTF8 *fmt, ...);
+void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...);
 void ValidateConfigurationDbrefs(void);
 #if defined(HAVE_IN_ADDR)
 bool make_canonical_IPv4(const UTF8 *str, in_addr_t *pnIP);
@@ -156,7 +156,7 @@ void finish_mail();
 
 // From netcommon.cpp.
 //
-void DCL_CDECL raw_broadcast(int, __in_z const UTF8 *, ...);
+void DCL_CDECL raw_broadcast(int, const UTF8 *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs);
@@ -337,7 +337,7 @@ void log_perror(const UTF8 *, const UTF8 *,const UTF8 *,
             const UTF8 *);
 void log_text(const UTF8 *);
 void log_number(int);
-void DCL_CDECL log_printf(__in_z const UTF8 *fmt, ...);
+void DCL_CDECL log_printf(const UTF8 *fmt, ...);
 void log_name(dbref);
 void log_name_and_loc(dbref);
 void log_type_and_name(dbref);
@@ -429,8 +429,8 @@ void pcache_reload(dbref);
 void pcache_init(void);
 
 /* From predicates.cpp */
-UTF8 * DCL_CDECL tprintf(__in_z const UTF8 *, ...);
-void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, __in_z const UTF8 *, ...);
+UTF8 * DCL_CDECL tprintf(const UTF8 *, ...);
+void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
 dbref insert_first(dbref, dbref);
 dbref remove_first(dbref, dbref);
 dbref reverse_list(dbref);

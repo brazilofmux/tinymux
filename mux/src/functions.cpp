@@ -58,7 +58,7 @@ UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *sep, size_t *nTrim)
 
 // Trim off leading and trailing spaces if the separator char is a space.
 //
-UTF8 *trim_space_sep(__in UTF8 *str, __in const SEP &sep)
+UTF8 *trim_space_sep(UTF8 *str, const SEP &sep)
 {
     if (  sep.n != 1
        || sep.str[0] != ' ')
@@ -85,7 +85,7 @@ UTF8 *trim_space_sep(__in UTF8 *str, __in const SEP &sep)
 
 // next_token: Point at start of next token in string
 //
-UTF8 *next_token(__deref_inout UTF8 *str, const SEP &sep)
+UTF8 *next_token(UTF8 *str, const SEP &sep)
 {
     if (sep.n == 1)
     {
@@ -125,7 +125,7 @@ UTF8 *next_token(__deref_inout UTF8 *str, const SEP &sep)
 // split_token: Get next token from string as null-term string.  String is
 // destructively modified.
 //
-UTF8 *split_token(__deref_inout UTF8 **sp, const SEP &sep)
+UTF8 *split_token(UTF8 **sp, const SEP &sep)
 {
     UTF8 *str = *sp;
     UTF8 *save = str;
@@ -254,7 +254,7 @@ int AutoDetect::GetType(void)
     return m_CouldBe;
 }
 
-int list2arr(__out_ecount(maxlen) UTF8 *arr[], int maxlen, __in UTF8 *list, __in const SEP &sep)
+int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, const SEP &sep)
 {
     list = trim_space_sep(list, sep);
     if (list[0] == '\0')
@@ -270,7 +270,7 @@ int list2arr(__out_ecount(maxlen) UTF8 *arr[], int maxlen, __in UTF8 *list, __in
     return i;
 }
 
-void arr2list(__in_ecount(alen) UTF8 *arr[], int alen, __inout UTF8 *list, __deref_inout UTF8 **bufc, __in const SEP &sep)
+void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, const SEP &sep)
 {
     int i;
     for (i = 0; i < alen-1; i++)
@@ -326,11 +326,11 @@ static bool nearby_or_control(dbref player, dbref thing)
  */
 bool delim_check
 (
-    __in UTF8 *buff, __deref_inout UTF8 **bufc,
+    UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    __in UTF8 *fargs[], int nfargs,
-    __in const UTF8 *cargs[], int ncargs,
+    UTF8 *fargs[], int nfargs,
+    const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 )
 {
@@ -424,7 +424,7 @@ bool delim_check
  * Added 1/28/91 Philip D. Wasson
  */
 
-int countwords(__in UTF8 *str, __in const SEP &sep)
+int countwords(UTF8 *str, const SEP &sep)
 {
     int n;
 
@@ -4080,8 +4080,8 @@ static int DCL_CDECL i_comp(const void *s1, const void *s2)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(__in UTF8 *buff, __deref_inout UTF8 **bufc, mux_string *sList,
-   int nPositions, int aPositions[], mux_string *sWord, __in const SEP &sep,
+static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
+   int nPositions, int aPositions[], mux_string *sWord, const SEP &sep,
    const SEP &osep, int flag)
 {
     int j;
@@ -7114,8 +7114,8 @@ FUNCTION(fun_sql)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-static void filter_handler(__inout UTF8 *buff, __deref_inout UTF8 **bufc, dbref executor, dbref enactor,
-                    __in_ecount(nfargs) UTF8 *fargs[], int nfargs, __in const SEP &sep, __in const SEP &osep, bool bBool)
+static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enactor,
+                    UTF8 *fargs[], int nfargs, const SEP &sep, const SEP &osep, bool bBool)
 {
     UTF8 *atext;
     dbref thing;
@@ -8206,13 +8206,13 @@ static FUNCTION(fun_sort)
 
 static void handle_sets
 (
-    int                  nfargs,
-    __in UTF8           *fargs[],
-    __in UTF8           *buff,
-    __deref_inout UTF8 **bufc,
-    int                  oper,
-    __in const SEP      &sep,
-    __in const SEP      &osep
+    int             nfargs,
+    UTF8           *fargs[],
+    UTF8           *buff,
+    UTF8 **bufc,
+    int             oper,
+    const SEP      &sep,
+    const SEP      &osep
 )
 {
     UTF8 **ptrs1 = nullptr;
