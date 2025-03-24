@@ -2054,8 +2054,11 @@ bool new_connection_continue(DESC* d)
             d->socket = INVALID_SOCKET;
 
             auto it = mudstate.descriptors_map.find(d);
-            mudstate.descriptors_list.erase(it->second);
-            mudstate.descriptors_map.erase(it);
+            if (it != mudstate.descriptors_map.end()) {
+                auto list_it = it->second;
+                mudstate.descriptors_map.erase(it);
+                mudstate.descriptors_list.erase(list_it);
+            }
 
             // If we don't have queued IOs, then we can free these, now.
             //
