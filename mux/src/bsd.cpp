@@ -2709,6 +2709,8 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output_ssl >");
 
+    if (!d || !d->ssl_session) return;
+
     text_block *tb = d->output_head;
     while (nullptr != tb)
     {
