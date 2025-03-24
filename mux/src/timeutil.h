@@ -5,6 +5,8 @@
  * Cambridge Press, 1998.
  */
 
+#include <memory>
+#include <atomic>
 #ifndef TIMEUTIL_H
 #define TIMEUTIL_H
 
@@ -117,31 +119,35 @@ public:
     void operator+=(const CLinearTimeDelta& ltd);
 };
 
+struct HandleDeleter {
+    void operator()(HANDLE h) const {
+        if (h && h != INVALID_HANDLE_VALUE) {
+            CloseHandle(h);
+        }
+    }
+};
+
 class mux_alarm
 {
 private:
     bool alarm_set_{};
 #if defined(WINDOWS_THREADS)
-    HANDLE thread_handle_;
-volatile HANDLE semaphore_handle_;
-volatile DWORD  alarm_period_in_milliseconds_{};
-static DWORD WINAPI alarm_proc(LPVOID parameter);
+    // Replace raw handles with smart pointers
+    std::unique_ptr<void, HandleDeleter> thread_handle_;
+    std::unique_ptr<void, HandleDeleter> semaphore_handle_;
+    std::atomic<DWORD> alarm_period_in_milliseconds_{};
+    static DWORD WINAPI alarm_proc(LPVOID parameter);
 #endif // WINDOWS_THREADS
-
 public:
-    bool alarmed{};
-
+    std::atomic<bool> alarmed{};
 #if defined(WINDOWS_THREADS)
     ~mux_alarm();
 #endif // WINDOWS_THREADS
-
     mux_alarm();
     static void sleep(CLinearTimeDelta sleep_period);
     static void surrender_slice();
-
     void set(CLinearTimeDelta alarm_period);
     void clear();
-
 #if defined(UNIX_SIGNALS)
     void signal();
 #endif // UNIX_SIGNALS

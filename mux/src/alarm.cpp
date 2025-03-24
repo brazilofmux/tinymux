@@ -26,24 +26,26 @@ mux_alarm alarm_clock;
 
 DWORD WINAPI mux_alarm::alarm_proc(LPVOID parameter)
 {
-    const auto pthis = static_cast<mux_alarm *>(parameter);
-    auto milliseconds = pthis->alarm_period_in_milliseconds_;
+    const auto pthis = static_cast<mux_alarm*>(parameter);
+    auto milliseconds = pthis->alarm_period_in_milliseconds_.load();
+
     for (;;)
     {
-        const auto sem_alarm = pthis->semaphore_handle_;
+        const auto sem_alarm = pthis->semaphore_handle_.get();
         if (sem_alarm == INVALID_HANDLE_VALUE)
         {
             break;
         }
+
         const auto reason = WaitForSingleObject(sem_alarm, milliseconds);
         if (reason == WAIT_TIMEOUT)
         {
-            pthis->alarmed = true;
+            pthis->alarmed.store(true);
             milliseconds = INFINITE;
         }
         else
         {
-            milliseconds = pthis->alarm_period_in_milliseconds_;
+            milliseconds = pthis->alarm_period_in_milliseconds_.load();
         }
     }
     return 1;
@@ -67,11 +69,17 @@ mux_alarm::mux_alarm() : thread_handle_(CreateThread(nullptr, 0, alarm_proc, sta
  */
 mux_alarm::~mux_alarm()
 {
-    const auto save_handle = semaphore_handle_;
-    semaphore_handle_ = INVALID_HANDLE_VALUE;
-    ReleaseSemaphore(save_handle, 1, nullptr);
-    WaitForSingleObject(thread_handle_, static_cast<DWORD>(15 * FACTOR_MS_PER_SECOND));
-    CloseHandle(save_handle);
+    HANDLE sem = semaphore_handle_.release();
+    semaphore_handle_.reset(INVALID_HANDLE_VALUE);
+    ReleaseSemaphore(sem, 1, nullptr);
+
+    if (thread_handle_) {
+        WaitForSingleObject(thread_handle_.get(), static_cast<DWORD>(15 * FACTOR_MS_PER_SECOND));
+    }
+
+    if (sem != INVALID_HANDLE_VALUE) {
+        CloseHandle(sem);
+    }
 }
 
 /*! \brief Sleep Routine.
@@ -100,9 +108,12 @@ void mux_alarm::surrender_slice()
  */
 void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
-    alarm_period_in_milliseconds_ = alarm_period.ReturnMilliseconds();
-    ReleaseSemaphore(semaphore_handle_, 1, nullptr);
-    alarmed = false;
+    alarm_period_in_milliseconds_.store(alarm_period.ReturnMilliseconds());
+    if (semaphore_handle_) {
+        ReleaseSemaphore(semaphore_handle_.get(), 1, nullptr);
+    }
+
+    alarmed.store(false);
     alarm_set_ = true;
 }
 
@@ -112,9 +123,12 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
  */
 void mux_alarm::clear()
 {
-    alarm_period_in_milliseconds_ = INFINITE;
-    ReleaseSemaphore(semaphore_handle_, 1, nullptr);
-    alarmed = false;
+    alarm_period_in_milliseconds_.store(INFINITE);
+    if (semaphore_handle_) {
+        ReleaseSemaphore(semaphore_handle_.get(), 1, nullptr);
+    }
+
+    alarmed.store(false);
     alarm_set_ = false;
 }
 
@@ -178,7 +192,7 @@ void mux_alarm::sleep(CLinearTimeDelta sleep_period)
     INT64 usecTotal = sleep_period.ReturnMicroseconds();
 
     while (  usecTotal
-          && mudstate.shutdown_flag)
+          && !mudstate.shutdown_flag)
     {
         usec = usecTotal;
         if (usecTotal < TIME_1S)
