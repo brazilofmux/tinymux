@@ -16,7 +16,7 @@ game/alias.conf
 game/bin/funcs.dll
 game/bin/libmux.dll
 game/bin/netmux.exe
-game/bin/pcre8.dll
+game/bin/pcre2-8.dll
 game/bin/sample.dll
 game/bin/sum.dll
 game/bin/sqlproxy.dll
