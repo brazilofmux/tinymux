@@ -14,7 +14,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 /* ---------------------------------------------------------------------------
  * fun_grab: a combination of extract() and match(), sortof. We grab the
@@ -2232,60 +2233,73 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         return;
     }
 
-    const char *errptr;
-    int erroffset;
-    // To capture N substrings, you need space for 3(N+1) offsets in the
-    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
-    //
-    const int ovecsize = 6 * MAX_GLOBAL_REGS;
-    int ovec[ovecsize];
+    PCRE2_SIZE erroffset;
+    int errcode;
 
-    pcre *re = pcre_compile((char *)pattern, PCRE_UTF8|(cis ? PCRE_CASELESS : 0),
-        &errptr, &erroffset, nullptr);
+    // Compile the pattern
+    pcre2_code *re = pcre2_compile_8(
+        pattern,                      // pattern string
+        PCRE2_ZERO_TERMINATED,        // pattern is zero-terminated
+        PCRE2_UTF|(cis ? PCRE2_CASELESS : 0),  // options
+        &errcode,                     // for error code
+        &erroffset,                   // for error offset
+        nullptr                       // use default compile context
+    );
+
     if (!re)
     {
-        // Matching error.
-        //
+        // Matching error - get the error message
+        PCRE2_UCHAR errbuf[256];
+        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+
         safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
-        safe_str((UTF8 *)errptr, buff, bufc);
+        safe_str((UTF8 *)errbuf, buff, bufc);
         return;
     }
 
-    int matches = pcre_exec(re, nullptr, (char *)search, static_cast<int>(strlen((char *)search)), 0, 0,
-        ovec, ovecsize);
-    if (matches == 0)
+    // Create match data block for storing results
+    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+    if (!match_data)
     {
-        // There were too many substring matches. See docs for
-        // pcre_copy_substring().
-        //
-        matches = ovecsize / 3;
+        pcre2_code_free(re);
+        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        return;
     }
+
+    // Do the match
+    int matches = pcre2_match(
+        re,                          // compiled pattern
+        search,                      // subject string
+        PCRE2_ZERO_TERMINATED,       // length of subject string
+        0,                          // start offset in subject
+        0,                          // options
+        match_data,                 // block for storing the result
+        nullptr                     // use default match context
+    );
+
     safe_bool(matches > 0, buff, bufc);
-    if (matches < 0)
-    {
-        matches = 0;
-    }
 
     // If we don't have a third argument, we're done.
-    //
-    if (nfargs != 3)
+    if (nfargs != 3 || matches <= 0)
     {
-        MEMFREE(re);
+        pcre2_match_data_free(match_data);
+        pcre2_code_free(re);
         return;
     }
 
-    // We need to parse the list of registers. If a register is
-    // mentioned in the list, then either fill the register with the
-    // subexpression, or if there wasn't a match, clear it.
-    //
+    // We need to parse the list of registers
     const int NSUBEXP = 2 * MAX_GLOBAL_REGS;
     UTF8 *qregs[NSUBEXP];
     SEP sep;
     sep.n = 1;
     memcpy(sep.str, " ", 2);
     int nqregs = list2arr(qregs, NSUBEXP, registers, sep);
-    int i;
-    for (i = 0; i < nqregs; i++)
+
+    // Get ovector pointer for accessing capture groups
+    PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
+
+    // Process each requested register
+    for (int i = 0; i < nqregs; i++)
     {
         int curq;
         if (  qregs[i]
@@ -2294,17 +2308,40 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
            && qregs[i][1] == '\0'
            && curq < MAX_GLOBAL_REGS)
         {
-            UTF8 *p = alloc_lbuf("fun_regmatch");
-            int len = pcre_copy_substring((char *)search, ovec, matches, i, (char *)p,
-                LBUF_SIZE);
-            len = (len > 0 ? len : 0);
+            // Only try to extract the substring if it exists in the match results
+            if (i < matches)
+            {
+                UTF8 *p = alloc_lbuf("fun_regmatch");
+                PCRE2_SIZE outlen = 0;
+                int ret = pcre2_substring_copy_bynumber(
+                    match_data,    // match data block
+                    i,             // capture group number
+                    p,             // output buffer
+                    &outlen        // output length
+                );
 
-            size_t n = len;
-            RegAssign(&mudstate.global_regs[curq], n, p);
-            free_lbuf(p);
+                if (ret >= 0)
+                {
+                    size_t n = static_cast<size_t>(outlen);
+                    RegAssign(&mudstate.global_regs[curq], n, p);
+                }
+                else
+                {
+                    // No match for this capture, clear register
+                    RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+                }
+                free_lbuf(p);
+            }
+            else
+            {
+                // No match for this capture, clear register
+                RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+            }
         }
     }
-    MEMFREE(re);
+
+    pcre2_match_data_free(match_data);
+    pcre2_code_free(re);
 }
 
 FUNCTION(fun_regmatch)
@@ -2346,30 +2383,44 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
     {
         return;
     }
-    pcre *re;
-    pcre_extra *study = nullptr;
-    const char *errptr;
-    int erroffset;
-    // To capture N substrings, you need space for 3(N+1) offsets in the
-    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
-    //
-    const int ovecsize = 6 * MAX_GLOBAL_REGS;
-    int ovec[ovecsize];
 
-    re = pcre_compile((char *)pattern, PCRE_UTF8|(cis ? PCRE_CASELESS : 0),
-        &errptr, &erroffset, nullptr);
+    PCRE2_SIZE erroffset;
+    int errcode;
+
+    // Compile the pattern
+    pcre2_code *re = pcre2_compile_8(
+        pattern,                      // pattern string
+        PCRE2_ZERO_TERMINATED,        // pattern is zero-terminated
+        PCRE2_UTF|(cis ? PCRE2_CASELESS : 0),  // options
+        &errcode,                     // for error code
+        &erroffset,                   // for error offset
+        nullptr                       // use default compile context
+    );
+
     if (!re)
     {
-        // Matching error.
-        //
+        // Matching error - get the error message
+        PCRE2_UCHAR errbuf[256];
+        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+
         safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
-        safe_str((UTF8 *)errptr, buff, bufc);
+        safe_str((UTF8 *)errbuf, buff, bufc);
         return;
     }
 
+    // Create match data block for storing results
+    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+    if (!match_data)
+    {
+        pcre2_code_free(re);
+        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        return;
+    }
+
+    // JIT compile if we're going to use the pattern multiple times
     if (all)
     {
-        study = pcre_study(re, 0, &errptr);
+        pcre2_jit_compile(re, PCRE2_JIT_COMPLETE);
     }
 
     bool first = true;
@@ -2377,30 +2428,39 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
     do
     {
         UTF8 *r = split_token(&s, sep);
-        if (  !alarm_clock.alarmed
-           && pcre_exec(re, study, (char *)r, static_cast<int>(strlen((char *)r)), 0, 0, ovec, ovecsize) >= 0)
+        if (!alarm_clock.alarmed)
         {
-            if (first)
+            int rc = pcre2_match(
+                re,                      // compiled pattern
+                r,                       // subject string
+                PCRE2_ZERO_TERMINATED,   // length of subject string
+                0,                       // start offset in subject
+                0,                       // options
+                match_data,              // block for storing the result
+                nullptr                  // use default match context
+            );
+
+            if (rc >= 0)
             {
-                first = false;
-            }
-            else
-            {
-                print_sep(sep, buff, bufc);
-            }
-            safe_str(r, buff, bufc);
-            if (!all)
-            {
-                break;
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    print_sep(sep, buff, bufc);
+                }
+                safe_str(r, buff, bufc);
+                if (!all)
+                {
+                    break;
+                }
             }
         }
     } while (s);
 
-    MEMFREE(re);
-    if (study)
-    {
-        MEMFREE(study);
-    }
+    pcre2_match_data_free(match_data);
+    pcre2_code_free(re);
 }
 
 FUNCTION(fun_regrab)

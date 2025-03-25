@@ -8,7 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 using namespace std;
 
 const bool mux_isprint_ascii[256] =
@@ -5662,9 +5663,7 @@ CF_HAND(cf_art_rule)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
-
     UTF8 *pCurrent = str;
-
     while (mux_isspace(*pCurrent))
     {
         pCurrent++;
@@ -5680,10 +5679,8 @@ CF_HAND(cf_art_rule)
         cf_log_syntax(player, cmd, T("No article or regexp specified."));
         return -1;
     }
-
     bool bUseAn = false;
     bool bOkay = false;
-
     if (pCurrent - pArticle <= 2)
     {
         if (  'a' == pArticle[0]
@@ -5695,46 +5692,55 @@ CF_HAND(cf_art_rule)
                 bUseAn = true;
                 bOkay = true;
             }
-
             if (mux_isspace(pArticle[1]))
             {
                 bOkay = true;
             }
         }
     }
-
     if (!bOkay)
     {
         *pCurrent = '\0';
         cf_log_syntax(player, cmd, T("Invalid article \xE2\x80\x98%s\xE2\x80\x99."), pArticle);
         return -1;
     }
-
     while (mux_isspace(*pCurrent))
     {
         pCurrent++;
     }
-
     if (*pCurrent == '\0')
     {
         cf_log_syntax(player, cmd, T("No regexp specified."));
         return -1;
     }
 
-    const char *errptr;
-    int erroffset;
-    pcre* reNewRegexp = pcre_compile((char *)pCurrent, PCRE_UTF8, &errptr, &erroffset, nullptr);
+    // PCRE2 compilation
+    PCRE2_SIZE erroffset;
+    int errcode;
+    pcre2_code *reNewRegexp = pcre2_compile_8(
+        pCurrent,                  // pattern string
+        PCRE2_ZERO_TERMINATED,     // pattern is zero-terminated
+        PCRE2_UTF,                 // options
+        &errcode,                  // for error code
+        &erroffset,                // for error offset
+        nullptr                    // use default compile context
+    );
+
     if (!reNewRegexp)
     {
-        cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99:."),
-              pCurrent, errptr);
+        // Get the error message
+        PCRE2_UCHAR errbuf[256];
+        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+
+        cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99: %s"),
+              pCurrent, errbuf);
         return -1;
     }
 
-    pcre_extra *study = pcre_study(reNewRegexp, 0, &errptr);
+    // Optional JIT compilation (replaces pcre_study)
+    pcre2_jit_compile(reNewRegexp, PCRE2_JIT_COMPLETE);
 
     ArtRuleset** arRules = (ArtRuleset **) vp;
-
     ArtRuleset* arNewRule = nullptr;
     try
     {
@@ -5748,24 +5754,18 @@ CF_HAND(cf_art_rule)
     if (nullptr != arNewRule)
     {
         // Push new rule at head of list.
-        //
         arNewRule->m_pNextRule = *arRules;
         arNewRule->m_bUseAn = bUseAn;
         arNewRule->m_pRegexp = reNewRegexp;
-        arNewRule->m_pRegexpStudy = study;
+        // No study field needed anymore
         *arRules = arNewRule;
     }
     else
     {
-        MEMFREE(reNewRegexp);
-        if (study)
-        {
-            MEMFREE(study);
-        }
+        pcre2_code_free(reNewRegexp);
         cf_log_syntax(player, cmd, T("Out of memory."));
         return -1;
     }
-
     return 0;
 }
 

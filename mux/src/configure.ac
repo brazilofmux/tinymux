@@ -214,6 +214,10 @@ AC_SEARCH_LIBS([socket],[socket inet])
 AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
 AC_SEARCH_LIBS([inet_addr],[nsl])
 AC_SEARCH_LIBS([sqrt],[m])
+AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
+    [PCRE2_LIBS="-lpcre2-8"],
+    [AC_MSG_ERROR([PCRE2 library not found])])
+AC_SUBST(PCRE2_LIBS)
 if test "x$ENABLE_SSL" = "xyes"; then
     AC_CHECK_LIB([ssl], [main])
     AC_CHECK_LIB([crypto], [main])
@@ -280,7 +284,21 @@ AC_CHECK_HEADERS(unistd.h stddef.h memory.h string.h errno.h malloc.h sys/select
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/types.h sys/time.h sys/stat.h sys/param.h sys/fcntl.h)
 AC_CHECK_HEADERS(fpu_control.h ieeefp.h fenv.h float.h)
 AC_CHECK_HEADERS(netinet/in.h arpa/inet.h netdb.h sys/socket.h)
-AC_CHECK_HEADERS(pcre.h)
+AC_MSG_CHECKING([for pcre2.h])
+AC_PREPROC_IFELSE(
+  [AC_LANG_SOURCE([[
+    #define PCRE2_CODE_UNIT_WIDTH 8
+    #include <pcre2.h>
+  ]])],
+  [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_PCRE2_H], [1], [Define if pcre2.h exists.])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([pcre2.h header not found, please install PCRE2 development files])
+  ]
+)
 AS_MESSAGE([checking for sys_errlist decl...])
 if test $ac_cv_header_errno_h = no; then
     AC_DEFINE([NEED_SYS_ERRLIST_DCL], [], [Define if you need to declare sys_errlist yourself.])

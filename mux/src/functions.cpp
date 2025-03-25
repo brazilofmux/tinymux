@@ -9,7 +9,8 @@
 #include "externs.h"
 using namespace std;
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #if defined(INLINESQL)
 #include <mysql.h>
@@ -10451,36 +10452,46 @@ static FUNCTION(fun_art)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const int ovecsize = 33;
-    int ovec[ovecsize];
-
     // Drop the input string into lower case.
-    //
     size_t nCased;
     UTF8 *pCased = mux_strlwr(fargs[0], nCased);
 
     // Search for exceptions.
-    //
     ArtRuleset *arRule = mudconf.art_rules;
-
     while (arRule != nullptr)
     {
-        pcre* reRuleRegexp = (pcre *) arRule->m_pRegexp;
-        pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
+        pcre2_code* reRuleRegexp = (pcre2_code *) arRule->m_pRegexp;
 
-        if (  !alarm_clock.alarmed
-           && pcre_exec(reRuleRegexp, reRuleStudy, (char *)pCased, static_cast<int>(nCased),
-                0, 0, ovec, ovecsize) > 0)
+        if (!alarm_clock.alarmed)
         {
-            safe_str(arRule->m_bUseAn ? T("an") : T("a"), buff, bufc);
-            return;
+            // Create match data block for this regexp
+            pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(reRuleRegexp, nullptr);
+            if (match_data)
+            {
+                int rc = pcre2_match(
+                    reRuleRegexp,           // compiled pattern
+                    pCased,                 // subject string
+                    nCased,                 // length of subject string
+                    0,                      // start offset in subject
+                    0,                      // options
+                    match_data,             // block for storing the result
+                    nullptr                 // use default match context
+                );
+
+                pcre2_match_data_free(match_data);
+
+                if (rc > 0)
+                {
+                    safe_str(arRule->m_bUseAn ? T("an") : T("a"), buff, bufc);
+                    return;
+                }
+            }
         }
 
         arRule = arRule->m_pNextRule;
     }
 
     // Default to 'a'.
-    //
     safe_str(T("a"), buff, bufc);
 }
 
@@ -11788,7 +11799,7 @@ MUX_RESULT CFunctions::Add(unsigned int nKey, const UTF8 *name, mux_IFunction *p
     m_pHead = pfn;
 
     function_add(&pfn->fun);
-    
+
     return MUX_S_OK;
 }
 

@@ -12,7 +12,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 // Switch tables for the various commands.
 //
@@ -1558,7 +1559,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
                 if (  (  (aflags & AF_REGEXP)
                       && regexp_match(buff + 1, new0,
-                             ((aflags & AF_CASE) ? PCRE_CASELESS : 0), aargs,
+                             ((aflags & AF_CASE) ? PCRE2_CASELESS : 0), aargs,
                              NUM_ENV_VARS))
                    || (  (aflags & AF_REGEXP) == 0
                       && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))

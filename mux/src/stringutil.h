@@ -1684,7 +1684,6 @@ struct ArtRuleset
     ArtRuleset* m_pNextRule;
 
     void* m_pRegexp;
-    void *m_pRegexpStudy;
     int m_bUseAn;
 };
 

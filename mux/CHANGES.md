@@ -10,6 +10,10 @@ author:
  - Reworked networking to support non-blocking SSL sockets.
  - Require PCRE to be installed instead of using a static, private
    version.
+ - Updated regular expression engine from PCRE to PCRE2
+   * Improved performance with Just-In-Time compilation
+   * Better Unicode support
+   * Modern API with improved memory management
 
 # Feature Additions:
 

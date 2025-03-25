@@ -8,7 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #if defined(INLINESQL)
 #include <mysql.h>
@@ -73,18 +74,22 @@ bool regexp_match
 {
     int matches;
     int i;
-    const char *errptr;
-    int erroffset;
+    PCRE2_SIZE erroffset;
+    int errcode;
 
     /*
      * Load the regexp pattern. This allocates memory which must be
-     * later freed. A free() of the regexp does free all structures
-     * under it.
+     * later freed. PCRE2 code objects must be explicitly freed with pcre2_code_free().
      */
+    pcre2_code *re;
+    if (alarm_clock.alarmed)
+    {
+        return false;
+    }
 
-    pcre *re;
-    if (  alarm_clock.alarmed
-       || (re = pcre_compile((char *)pattern, PCRE_UTF8|case_opt, &errptr, &erroffset, nullptr)) == nullptr)
+    re = pcre2_compile_8(pattern, PCRE2_ZERO_TERMINATED, PCRE2_UTF|case_opt,
+                         &errcode, &erroffset, nullptr);
+    if (re == nullptr)
     {
         /*
          * This is a matching error. We have an error message in
@@ -94,30 +99,25 @@ bool regexp_match
         return false;
     }
 
-    // To capture N substrings, you need space for 3(N+1) offsets in the
-    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
-    //
-    const int ovecsize = 6 * nargs;
-    int *ovec = new int[ovecsize];
+    // Create match data block for storing results
+    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+    if (match_data == nullptr)
+    {
+        pcre2_code_free(re);
+        return false;
+    }
 
     /*
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
-    matches = pcre_exec(re, nullptr, (char *)str, static_cast<int>(strlen((char *)str)), 0, 0, ovec, ovecsize);
+    matches = pcre2_match(re, str, PCRE2_ZERO_TERMINATED, 0, 0, match_data, nullptr);
+
     if (matches < 0)
     {
-        delete [] ovec;
-        MEMFREE(re);
+        pcre2_match_data_free(match_data);
+        pcre2_code_free(re);
         return false;
-    }
-
-    if (matches == 0)
-    {
-        // There were too many substring matches. See docs for
-        // pcre_copy_substring().
-        //
-        matches = ovecsize / 3;
     }
 
     /*
@@ -126,20 +126,40 @@ bool regexp_match
      * go from 1 to 9. We DO PRESERVE THIS PARADIGM, for consistency
      * with other languages.
      */
+    PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
 
-    for (i = 0; i < nargs; ++i)
+    for (i = 0; i < nargs && i < matches; ++i)
     {
         args[i] = alloc_lbuf("regexp_match");
-        if (pcre_copy_substring((char *)str, ovec, matches, i,
-                                (char *)args[i], LBUF_SIZE) < 0)
+        PCRE2_SIZE substring_length = 0;
+
+        // Calculate substring length (equivalent to what pcre_copy_substring would do)
+        int rc = pcre2_substring_length_bynumber(match_data, i, &substring_length);
+        if (rc < 0 || substring_length >= LBUF_SIZE)
+        {
+            free_lbuf(args[i]);
+            args[i] = nullptr;
+            continue;
+        }
+
+        // Get the substring
+        PCRE2_SIZE outlen = 0;
+        rc = pcre2_substring_copy_bynumber(match_data, i, args[i], &outlen);
+        if (rc < 0)
         {
             free_lbuf(args[i]);
             args[i] = nullptr;
         }
     }
 
-    delete [] ovec;
-    MEMFREE(re);
+    // Fill any remaining args with nullptr
+    for (; i < nargs; ++i)
+    {
+        args[i] = nullptr;
+    }
+
+    pcre2_match_data_free(match_data);
+    pcre2_code_free(re);
     return true;
 }
 
@@ -289,7 +309,7 @@ static int atr_match1
         UTF8 *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
             && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
-                ((aflags & AF_CASE) ? PCRE_CASELESS : 0), args, NUM_ENV_VARS))
+                ((aflags & AF_CASE) ? PCRE2_CASELESS : 0), args, NUM_ENV_VARS))
            || (  0 == (aflags & AF_REGEXP)
               && wild(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
                 args, NUM_ENV_VARS)))
@@ -454,27 +474,37 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
     }
     else
     {
-        int case_opt = (aflags & AF_CASE) ? PCRE_CASELESS : 0;
+        int case_opt = (aflags & AF_CASE) ? PCRE2_CASELESS : 0;
         do
         {
-            int erroffset;
-            const char *errptr;
+            PCRE2_SIZE erroffset;
+            int errcode;
             UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
-            pcre *re;
-            if (  !alarm_clock.alarmed
-               && (re = pcre_compile((char *)cp, PCRE_UTF8|case_opt, &errptr, &erroffset, nullptr)) != nullptr)
+            pcre2_code *re;
+            if (!alarm_clock.alarmed)
             {
-                const int ovecsize = 33;
-                int ovec[ovecsize];
-                int matches = pcre_exec(re, nullptr, (char *)msg, static_cast<int>(strlen((char *)msg)), 0, 0,
-                    ovec, ovecsize);
-                if (0 <= matches)
+                re = pcre2_compile_8(cp, PCRE2_ZERO_TERMINATED, PCRE2_UTF|case_opt,
+                                   &errcode, &erroffset, nullptr);
+                if (re != nullptr)
                 {
-                    MEMFREE(re);
-                    free_lbuf(nbuf);
-                    return false;
+                    // Create match data block for storing results
+                    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+                    if (match_data != nullptr)
+                    {
+                        int matches = pcre2_match(re, msg, PCRE2_ZERO_TERMINATED, 0, 0,
+                                               match_data, nullptr);
+
+                        if (0 <= matches)
+                        {
+                            pcre2_match_data_free(match_data);
+                            pcre2_code_free(re);
+                            free_lbuf(nbuf);
+                            return false;
+                        }
+                        pcre2_match_data_free(match_data);
+                    }
+                    pcre2_code_free(re);
                 }
-                MEMFREE(re);
             }
         } while (dp != nullptr);
     }
