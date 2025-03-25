@@ -28,7 +28,7 @@ author:
 
 # Cosmetic Changes:
 
- - None.
+ - Increased trimmed name field length for WHO, DOING, and SESSION displays (from 16 to 31) and adjusted field widths to maintain proper alignment.
 
 # Miscellaneous:
 
@@ -49,3 +49,4 @@ author:
    (unordered_map).
  - Updated to autoconf v2.71 and improved build dependencies to prevent
    race conditions.
+ - Applied const-correctness improvements to functions handling name formatting in the network user display.
