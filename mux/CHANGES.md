@@ -21,6 +21,8 @@ author:
  - pose now documents /noeval switch.
  - Don't notify permission denied with @edit when QUIET.
  - Fixed strncpy() corner case in @hook.
+ - Fixed fun_cwho(,all) command to return all objects and players
+   associated with the channel, ensuring it behaves as documented.
 
 # Performance Enhancements:
 
@@ -28,7 +30,9 @@ author:
 
 # Cosmetic Changes:
 
- - Increased trimmed name field length for WHO, DOING, and SESSION displays (from 16 to 31) and adjusted field widths to maintain proper alignment.
+ - Increased trimmed name field length for WHO, DOING, and SESSION
+   displays (from 16 to 31) and adjusted field widths to maintain proper
+   alignment.
 
 # Miscellaneous:
 
