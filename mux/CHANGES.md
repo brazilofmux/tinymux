@@ -62,3 +62,6 @@ author:
  - Re-enabled timezone caching in timezone.cpp (a change in 2008 had
    inadvertently disabled caching, affecting timezone-related
    performance).
+ - Improved safety of XOR operations in utf/strings.cpp by adding a helper
+   function that validates input lengths and buffer sizes. This change does
+   not affect the output.
