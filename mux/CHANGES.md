@@ -26,6 +26,10 @@ author:
  - Modified home command behavior to disregard the command if the player
    is already at home, and to suppress public announcements in BLIND
    locations.
+ - Fixed several network and SSL-related issues: added defensive null
+   checks, corrected iterator handling, improved SSL state transitions,
+   and fixed a descriptor management bug that could remove the wrong
+   descriptor when a player has multiple connections.
 
 # Performance Enhancements:
 
