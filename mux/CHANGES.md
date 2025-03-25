@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: March 2022
+date: March 2025
 author:
  - Brazil
 ---
@@ -45,3 +45,5 @@ author:
  - Update ax_cxx_compile_stdcxx.m4.
  - Update configure.in and configure.
  - Concentrate #include files into externs.h.
+ - Replaced flags_htab, func_htab, and fwdlist_htab with STL equivalents
+   (unordered_map).
