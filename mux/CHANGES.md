@@ -47,3 +47,5 @@ author:
  - Concentrate #include files into externs.h.
  - Replaced flags_htab, func_htab, and fwdlist_htab with STL equivalents
    (unordered_map).
+ - Updated to autoconf v2.71 and improved build dependencies to prevent
+   race conditions.
