@@ -56,4 +56,6 @@ author:
    (unordered_map).
  - Updated to autoconf v2.71 and improved build dependencies to prevent
    race conditions.
- - Applied const-correctness improvements to functions handling name formatting in the network user display.
+ - Applied const-correctness improvements to functions handling name
+   formatting in the network user display.
+ - Updated +help index in plushelp.txt to include +selfboot and mp.:w
