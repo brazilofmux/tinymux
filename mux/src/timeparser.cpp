@@ -9,7 +9,7 @@
 #include "config.h"
 #include "externs.h"
 
-enum class TokenType {
+enum class NodeType {
     Symbol = 1,
     NumericUnsigned = 2,
     Spaces = 3,
@@ -133,15 +133,15 @@ typedef struct tag_pd_node
     //
     // Further Notes:
     //
-    // TokenType::Symbol is always a -single- (nToken==1) character.
+    // NodeType::Symbol is always a -single- (nToken==1) character.
     //
-    // uTokenType must be one of the PDTT_* values.
+    // uNodeType must be one of the PDTT_* values.
     //
-    // TokenType::NumericSigned, TokenType::NumericaUnsigned, and
-    // TokenType::Text types may have an iToken value associated with
+    // NodeType::NumericSigned, NodeType::NumericaUnsigned, and
+    // NodeType::Text types may have an iToken value associated with
     // them.
     //
-    TokenType uTokenType;
+    NodeType uNodeType;
     UTF8     *pToken;
     size_t    nToken;
     int       iToken;
@@ -871,7 +871,7 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         pNode->iToken = 0;
         pNode->nToken = 1;
         pNode->pToken = p;
-        pNode->uTokenType = TokenType::Symbol;
+        pNode->uNodeType = NodeType::Symbol;
         if (ch == ':')
         {
             pNode->uCouldBe = NodeFlag::TimeFieldSeparator;
@@ -923,7 +923,7 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
 
         if (iType == PD_LEX_DIGIT)
         {
-            pNode->uTokenType = TokenType::NumericUnsigned;
+            pNode->uNodeType = NodeType::NumericUnsigned;
 
             if (1 <= nLen && nLen <= 9)
             {
@@ -936,12 +936,12 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         }
         else if (iType == PD_LEX_SPACE)
         {
-            pNode->uTokenType = TokenType::Spaces;
+            pNode->uNodeType = NodeType::Spaces;
             pNode->uCouldBe = NodeFlag::Whitespace;
         }
         else if (iType == PD_LEX_ALPHA)
         {
-            pNode->uTokenType = TokenType::Text;
+            pNode->uNodeType = NodeType::Text;
 
             // Match Text.
             //
