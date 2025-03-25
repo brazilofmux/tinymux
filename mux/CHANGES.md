@@ -73,3 +73,5 @@ author:
    support multiple consecutive phrases when necessary. This change is
    developer-only and is a necessary precursor to handling certain data
    sets correctly; output remains unchanged.
+ - Name conflicts and deprecated openssl interfaces forced a
+   reorganization in SHA-1 and Digest.
