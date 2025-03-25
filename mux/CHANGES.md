@@ -58,4 +58,7 @@ author:
    race conditions.
  - Applied const-correctness improvements to functions handling name
    formatting in the network user display.
- - Updated +help index in plushelp.txt to include +selfboot and mp.:w
+ - Updated +help index in plushelp.txt to include +selfboot and mp.
+ - Re-enabled timezone caching in timezone.cpp (a change in 2008 had
+   inadvertently disabled caching, affecting timezone-related
+   performance).
