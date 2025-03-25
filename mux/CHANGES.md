@@ -66,12 +66,24 @@ author:
  - Re-enabled timezone caching in timezone.cpp (a change in 2008 had
    inadvertently disabled caching, affecting timezone-related
    performance).
- - Improved safety of XOR operations in utf/strings.cpp by adding a helper
-   function that validates input lengths and buffer sizes. This change does
-   not affect the output.
+ - Improved safety of XOR operations in utf/strings.cpp by adding a
+   helper function that validates input lengths and buffer sizes. This
+   change does not affect the output.
  - Improved the emission of COPY and RUN phrases in utf/smutil.cpp to
    support multiple consecutive phrases when necessary. This change is
    developer-only and is a necessary precursor to handling certain data
    sets correctly; output remains unchanged.
  - Name conflicts and deprecated openssl interfaces forced a
    reorganization in SHA-1 and Digest.
+ - Removed SAL annotations that were interfering with code clarity.
+ - Refreshed muxcli.cpp and its header to modernize code style and clean
+   up legacy constructs.
+ - Updated the mux_alarm class to improve clarity and maintainability.
+ - Removed the unnecessary deleter for mux_alarm on Unix, simplifying
+   memory management.
+ - Reordered operations to avoid a race condition, enhancing stability
+   in concurrent scenarios.
+ - Resolved a naming conflict involving bind() to prevent build
+   ambiguities.
+ - Refactored the time parser by replacing macro constants with
+   C++-style constants for better type safety and clarity.
