@@ -65,3 +65,7 @@ author:
  - Improved safety of XOR operations in utf/strings.cpp by adding a helper
    function that validates input lengths and buffer sizes. This change does
    not affect the output.
+ - Improved the emission of COPY and RUN phrases in utf/smutil.cpp to
+   support multiple consecutive phrases when necessary. This change is
+   developer-only and is a necessary precursor to handling certain data
+   sets correctly; output remains unchanged.
