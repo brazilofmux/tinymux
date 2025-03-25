@@ -1,113 +1,229 @@
-#!/bin/sh
+#!/bin/bash
 #
-# REQUIRED: The two ReferenceDir must already exist. They may be created by
-# untaring a previous distribution.
+# REQUIRED: ReferenceDir must already exist. It may be created by untaring a
+# previous distribution.
 #
-OldBuild=4
-OldVersion=2.13.0.$OldBuild
-NewBuild=5
-NewVersion=2.13.0.$NewBuild
 
-ChangesDir=mux
-ReferenceDir=mux2.13_$OldBuild
-DistroDir=mux2.13
-NewDir=mux2.13_$NewBuild
-patchableFiles=`cat win32/TOC.src.patchable`
-unpatchedFiles=`cat win32/TOC.src.unpatched`
-removeFiles=`cat win32/TOC.src.removed`
+# Error handling
+set -e  # Exit on error
+set -o pipefail
 
-# Build source patchfile
-#
-rm -rf $NewDir\_src $DistroDir
-cp -r $ReferenceDir\_src $DistroDir
-cp -r $ReferenceDir\_src $NewDir\_src
-for i in $patchableFiles;
-do
-    cp $ChangesDir/$i $NewDir\_src/$i
-done
-cp $ChangesDir/src/autoconf-win32.h $NewDir\_src/src/autoconf.h
-cp $ChangesDir/src/modules/autoconf-win32.h $NewDir\_src/src/modules/autoconf.h
-for i in $removeFiles;
-do
-    if [ -e $NewDir\_src/$i ]; then
-        echo Removing: $NewDir\_src/$i
-        rm $NewDir\_src/$i
-    fi
-done
-chmod -R u+rw $DistroDir $NewDir\_src
+# Version information
+OLD_BUILD=4
+OLD_VERSION="2.13.0.$OLD_BUILD"
+NEW_BUILD=5
+NEW_VERSION="2.13.0.$NEW_BUILD"
 
-/cygdrive/c/binpatch/genpatch $DistroDir $NewDir\_src -d mux-$OldVersion-$NewVersion.win32.src.utp
+# Directory structure
+CHANGES_DIR=mux
+REFERENCE_DIR=mux2.13_$OLD_BUILD
+DISTRO_DIR=mux2.13
+NEW_DIR=mux2.13_$NEW_BUILD
 
-# Build source tarballs
-#
-rm -rf $DistroDir
-for i in $unpatchedFiles;
-do
-    cp $ChangesDir/$i $NewDir\_src/$i
+# Process Windows source distribution
+echo "Building Windows source distribution..."
+
+# Read file lists
+patchable_files=$(cat win32/TOC.src.patchable)
+unpatched_files=$(cat win32/TOC.src.unpatched)
+remove_files=$(cat win32/TOC.src.removed)
+
+# Function to clean files
+clean_files() {
+    local dir=$1
+    local remove_list=$2
+
+    for file in $remove_list; do
+        if [ -e "$dir/$file" ]; then
+            echo "Removing: $dir/$file"
+            rm "$dir/$file"
+        fi
+    done
+}
+
+# Prepare directories
+rm -rf ${NEW_DIR}_src $DISTRO_DIR
+cp -r ${REFERENCE_DIR}_src $DISTRO_DIR
+cp -r ${REFERENCE_DIR}_src ${NEW_DIR}_src
+
+# Copy patchable files
+echo "Copying patchable files for Windows source..."
+for file in $patchable_files; do
+    mkdir -p $(dirname "${NEW_DIR}_src/$file")
+    cp "$CHANGES_DIR/$file" "${NEW_DIR}_src/$file"
 done
-for i in $removeFiles;
-do
-    if [ -e $NewDir\_src/$i ]; then
-        echo Removing: $NewDir\_src/$i
-        rm $NewDir\_src/$i
-    fi
+
+# Special Windows configurations
+cp $CHANGES_DIR/src/autoconf-win32.h ${NEW_DIR}_src/src/autoconf.h
+cp $CHANGES_DIR/src/modules/autoconf-win32.h ${NEW_DIR}_src/src/modules/autoconf.h
+
+# Remove files
+echo "Cleaning up removed files for Windows source..."
+clean_files "${NEW_DIR}_src" "$remove_files"
+
+chmod -R u+rw $DISTRO_DIR ${NEW_DIR}_src
+
+# Generate patch file
+echo "Generating Windows source patch file..."
+python3 -c "
+import difflib, sys, os, pathlib
+
+def compare_dirs(dir1, dir2, output):
+    differences = []
+    dir1 = pathlib.Path(dir1)
+    dir2 = pathlib.Path(dir2)
+
+    for path1 in dir1.glob('**/*'):
+        if path1.is_file():
+            rel_path = path1.relative_to(dir1)
+            path2 = dir2 / rel_path
+
+            if path2.exists() and path2.is_file():
+                try:
+                    with open(path1, 'r', errors='replace') as f1, open(path2, 'r', errors='replace') as f2:
+                        text1 = f1.readlines()
+                        text2 = f2.readlines()
+                        diff = list(difflib.unified_diff(
+                            text1, text2,
+                            fromfile=str(path1),
+                            tofile=str(path2)
+                        ))
+                        if diff:
+                            differences.extend(diff)
+                except Exception as e:
+                    print(f'Skipping binary or problematic file: {path1} ({e})')
+
+    with open(output, 'w', encoding='utf-8') as f:
+        f.writelines(differences)
+
+compare_dirs('$DISTRO_DIR', '${NEW_DIR}_src', 'mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch')
+" || echo "Warning: Python patch generation failed"
+
+# Build source distribution
+rm -rf $DISTRO_DIR
+
+# Copy unpatched files
+echo "Copying unpatched files for Windows source..."
+for file in $unpatched_files; do
+    mkdir -p $(dirname "${NEW_DIR}_src/$file")
+    cp "$CHANGES_DIR/$file" "${NEW_DIR}_src/$file"
 done
-cp -r $NewDir\_src $DistroDir
-chmod -R u+rw $DistroDir $NewDir\_src
-if [ -e mux-$NewVersion.win32.src.tar.gz ]; then
-    rm mux-$NewVersion.win32.src.tar.gz
+
+# Final cleanup
+echo "Final cleanup of removed files for Windows source..."
+clean_files "${NEW_DIR}_src" "$remove_files"
+
+cp -r ${NEW_DIR}_src $DISTRO_DIR
+
+# Create archives
+echo "Creating Windows source archives..."
+if [ -e mux-$NEW_VERSION.win32.src.tar.gz ]; then
+    rm mux-$NEW_VERSION.win32.src.tar.gz
 fi
-tar czf mux-$NewVersion.win32.src.tar.gz $DistroDir
-if [ -e mux-$NewVersion.win32.src.zip ]; then
-    rm mux-$NewVersion.win32.src.zip
+tar czf "mux-$NEW_VERSION.win32.src.tar.gz" $DISTRO_DIR
+
+if [ -e mux-$NEW_VERSION.win32.src.zip ]; then
+    rm mux-$NEW_VERSION.win32.src.zip
 fi
-/cygdrive/c/binnt/pkzip -add -recurse -path -maximum mux-$NewVersion.win32.src.zip $DistroDir\\\*.\*
+zip -r "mux-$NEW_VERSION.win32.src.zip" $DISTRO_DIR
 
-patchableFiles=`cat win32/TOC.bin.patchable`
-unpatchedFiles=`cat win32/TOC.bin.unpatched`
-removeFiles=`cat win32/TOC.bin.removed`
+# Process Windows binary distribution
+echo "Building Windows binary distribution..."
 
-# Build binary patchfile
-#
-rm -rf $NewDir\_bin $DistroDir
-cp -r $ReferenceDir\_bin $DistroDir
-cp -r $ReferenceDir\_bin $NewDir\_bin
-for i in $patchableFiles;
-do
-    cp $ChangesDir/$i $NewDir\_bin/$i
-done
-for i in $removeFiles;
-do
-    if [ -e $NewDir\_bin/$i ]; then
-        echo Removing: $NewDir\_bin/$i
-        rm $NewDir\_bin/$i
-    fi
-done
-chmod -R u+rw $DistroDir $NewDir\_bin
+# Read file lists
+patchable_files=$(cat win32/TOC.bin.patchable)
+unpatched_files=$(cat win32/TOC.bin.unpatched)
+remove_files=$(cat win32/TOC.bin.removed)
 
-/cygdrive/c/binpatch/genpatch $DistroDir $NewDir\_bin -d mux-$OldVersion-$NewVersion.win32.bin.utp
+# Prepare directories
+rm -rf ${NEW_DIR}_bin $DISTRO_DIR
+cp -r ${REFERENCE_DIR}_bin $DISTRO_DIR
+cp -r ${REFERENCE_DIR}_bin ${NEW_DIR}_bin
 
-# Build binary tarballs
-#
-rm -rf $DistroDir
-for i in $unpatchedFiles;
-do
-    cp $ChangesDir/$i $NewDir\_bin/$i
+# Copy patchable files
+echo "Copying patchable files for Windows binary..."
+for file in $patchable_files; do
+    mkdir -p $(dirname "${NEW_DIR}_bin/$file")
+    cp "$CHANGES_DIR/$file" "${NEW_DIR}_bin/$file"
 done
-for i in $removeFiles;
-do
-    if [ -e $NewDir\_bin/$i ]; then
-        echo Removing: $NewDir\_bin/$i
-        rm $NewDir\_bin/$i
-    fi
+
+# Remove files
+echo "Cleaning up removed files for Windows binary..."
+clean_files "${NEW_DIR}_bin" "$remove_files"
+
+chmod -R u+rw $DISTRO_DIR ${NEW_DIR}_bin
+
+# Generate patch file
+echo "Generating Windows binary patch file..."
+python3 -c "
+import difflib, sys, os, pathlib
+
+def compare_dirs(dir1, dir2, output):
+    differences = []
+    dir1 = pathlib.Path(dir1)
+    dir2 = pathlib.Path(dir2)
+
+    for path1 in dir1.glob('**/*'):
+        if path1.is_file():
+            rel_path = path1.relative_to(dir1)
+            path2 = dir2 / rel_path
+
+            if path2.exists() and path2.is_file():
+                try:
+                    with open(path1, 'r', errors='replace') as f1, open(path2, 'r', errors='replace') as f2:
+                        text1 = f1.readlines()
+                        text2 = f2.readlines()
+                        diff = list(difflib.unified_diff(
+                            text1, text2,
+                            fromfile=str(path1),
+                            tofile=str(path2)
+                        ))
+                        if diff:
+                            differences.extend(diff)
+                except Exception as e:
+                    print(f'Skipping binary or problematic file: {path1} ({e})')
+
+    with open(output, 'w', encoding='utf-8') as f:
+        f.writelines(differences)
+
+compare_dirs('$DISTRO_DIR', '${NEW_DIR}_bin', 'mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch')
+" || echo "Warning: Python patch generation failed"
+
+# Build binary distribution
+rm -rf $DISTRO_DIR
+
+# Copy unpatched files
+echo "Copying unpatched files for Windows binary..."
+for file in $unpatched_files; do
+    mkdir -p $(dirname "${NEW_DIR}_bin/$file")
+    cp "$CHANGES_DIR/$file" "${NEW_DIR}_bin/$file"
 done
-cp -r $NewDir\_bin $DistroDir
-chmod -R u+rw $DistroDir $NewDir\_bin
-if [ -e mux-$NewVersion.win32.bin.tar.gz ]; then
-    rm mux-$NewVersion.win32.bin.tar.gz
+
+# Final cleanup
+echo "Final cleanup of removed files for Windows binary..."
+clean_files "${NEW_DIR}_bin" "$remove_files"
+
+cp -r ${NEW_DIR}_bin $DISTRO_DIR
+
+# Create archives
+echo "Creating Windows binary archives..."
+if [ -e mux-$NEW_VERSION.win32.bin.tar.gz ]; then
+    rm mux-$NEW_VERSION.win32.bin.tar.gz
 fi
-tar czf mux-$NewVersion.win32.bin.tar.gz $DistroDir
-if [ -e mux-$NewVersion.win32.bin.zip ]; then
-    rm mux-$NewVersion.win32.bin.zip
+tar czf "mux-$NEW_VERSION.win32.bin.tar.gz" $DISTRO_DIR
+
+if [ -e mux-$NEW_VERSION.win32.bin.zip ]; then
+    rm mux-$NEW_VERSION.win32.bin.zip
 fi
-/cygdrive/c/binnt/pkzip -add -recurse -path -maximum mux-$NewVersion.win32.bin.zip $DistroDir\\\*.\*
+zip -r "mux-$NEW_VERSION.win32.bin.zip" $DISTRO_DIR
+
+# Generate checksums
+echo "Generating checksums..."
+sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch > mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.sha256
+sha256sum mux-$NEW_VERSION.win32.src.tar.gz > mux-$NEW_VERSION.win32.src.tar.gz.sha256
+sha256sum mux-$NEW_VERSION.win32.src.zip > mux-$NEW_VERSION.win32.src.zip.sha256
+sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch > mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.sha256
+sha256sum mux-$NEW_VERSION.win32.bin.tar.gz > mux-$NEW_VERSION.win32.bin.tar.gz.sha256
+sha256sum mux-$NEW_VERSION.win32.bin.zip > mux-$NEW_VERSION.win32.bin.zip.sha256
+
+echo "Windows build process completed successfully!"

@@ -1,64 +1,110 @@
-#!/bin/sh
+#!/bin/bash
 #
 # REQUIRED: ReferenceDir must already exist. It may be created by untaring a
 # previous distribution.
 #
-OldBuild=4
-OldVersion=2.13.0.$OldBuild
-NewBuild=5
-NewVersion=2.13.0.$NewBuild
 
-ChangesDir=mux
-ReferenceDir=mux2.13_$OldBuild
-DistroDir=mux2.13
-NewDir=mux2.13_$NewBuild
-patchableFiles=`cat unix/TOC.patchable`
-unpatchedFiles=`cat unix/TOC.unpatched`
-removeFiles=`cat unix/TOC.removed`
+# Error handling
+set -e  # Exit on error
+set -o pipefail
+
+# Version information
+OLD_BUILD=4
+OLD_VERSION="2.13.0.$OLD_BUILD"
+NEW_BUILD=5
+NEW_VERSION="2.13.0.$NEW_BUILD"
+
+# Directory structure
+CHANGES_DIR=mux
+REFERENCE_DIR=mux2.13_$OLD_BUILD
+DISTRO_DIR=mux2.13
+NEW_DIR=mux2.13_$NEW_BUILD
+
+# Load file lists
+patchable_files=$(cat unix/TOC.patchable)
+unpatched_files=$(cat unix/TOC.unpatched)
+remove_files=$(cat unix/TOC.removed)
+
+echo "Building Unix distribution for MUX $NEW_VERSION..."
+
+# Function to clean files
+clean_files() {
+    local dir=$1
+
+    for file in $remove_files; do
+        if [ -e "$dir/$file" ]; then
+            echo "Removing: $dir/$file"
+            rm "$dir/$file"
+        fi
+    done
+}
 
 # Build patchfile
-#
-rm -rf $NewDir $DistroDir
-cp -r $ReferenceDir $DistroDir
-cp -r $ReferenceDir $NewDir
-for i in $patchableFiles;
-do
-    cp $ChangesDir/$i $NewDir/$i
+echo "Preparing directories for patch generation..."
+rm -rf $NEW_DIR $DISTRO_DIR
+cp -r $REFERENCE_DIR $DISTRO_DIR
+cp -r $REFERENCE_DIR $NEW_DIR
+
+echo "Copying patchable files..."
+for file in $patchable_files; do
+    # Ensure directory exists
+    mkdir -p $(dirname "$NEW_DIR/$file")
+    cp "$CHANGES_DIR/$file" "$NEW_DIR/$file"
 done
-for i in $removeFiles;
-do
-    if [ -e $NewDir/$i ]; then
-        echo Removing: $NewDir/$i
-        rm $NewDir/$i
+
+echo "Cleaning up removed files..."
+clean_files $NEW_DIR
+
+echo "Generating patch file..."
+if ! diff -Naudr $DISTRO_DIR $NEW_DIR > mux-$OLD_VERSION-$NEW_VERSION.unix.patch; then
+    echo "Warning: diff command returned non-zero exit code $?, but this is often normal for diff"
+    echo "Checking if patch file was created..."
+    if [ -s mux-$OLD_VERSION-$NEW_VERSION.unix.patch ]; then
+        echo "Patch file was created successfully."
+    else
+        echo "ERROR: Patch file is empty or wasn't created. Exiting."
+        exit 1
     fi
-done
-#diff -Naudr $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
-makepatch -verbose -diff "diff -Naud" $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
-if [ -e mux-$OldVersion-$NewVersion.unix.patch.gz ]; then
-    rm mux-$OldVersion-$NewVersion.unix.patch.gz
 fi
-gzip -9 mux-$OldVersion-$NewVersion.unix.patch
+
+if [ -e mux-$OLD_VERSION-$NEW_VERSION.unix.patch.gz ]; then
+    rm mux-$OLD_VERSION-$NEW_VERSION.unix.patch.gz
+fi
+echo "Compressing patch file..."
+gzip -9 mux-$OLD_VERSION-$NEW_VERSION.unix.patch
 
 # Build tarball
-#
-rm -rf $DistroDir
-for i in $unpatchedFiles;
-do
-    cp $ChangesDir/$i $NewDir/$i
+echo "Preparing for tarball creation..."
+rm -rf $DISTRO_DIR
+
+echo "Copying unpatched files..."
+for file in $unpatched_files; do
+    # Ensure directory exists
+    mkdir -p $(dirname "$NEW_DIR/$file")
+    cp "$CHANGES_DIR/$file" "$NEW_DIR/$file"
 done
-for i in $removeFiles;
-do
-    if [ -e $NewDir/$i ]; then
-        echo Removing: $NewDir/$i
-        rm $NewDir/$i
-    fi
-done
-cp -r $NewDir $DistroDir
-if [ -e mux-$NewVersion.unix.tar.gz ]; then
-    rm mux-$NewVersion.unix.tar.gz
+
+echo "Final cleanup of removed files..."
+clean_files $NEW_DIR
+
+echo "Creating distribution directory..."
+cp -r $NEW_DIR $DISTRO_DIR
+
+echo "Creating compressed tarballs..."
+if [ -e mux-$NEW_VERSION.unix.tar.gz ]; then
+    rm mux-$NEW_VERSION.unix.tar.gz
 fi
-tar czf mux-$NewVersion.unix.tar.gz $DistroDir
-if [ -e mux-$NewVersion.unix.tar.bz2 ]; then
-    rm mux-$NewVersion.unix.tar.bz2
+tar czf mux-$NEW_VERSION.unix.tar.gz $DISTRO_DIR
+
+if [ -e mux-$NEW_VERSION.unix.tar.bz2 ]; then
+    rm mux-$NEW_VERSION.unix.tar.bz2
 fi
-tar cjf mux-$NewVersion.unix.tar.bz2 $DistroDir
+tar cjf mux-$NEW_VERSION.unix.tar.bz2 $DISTRO_DIR
+
+# Generate checksums
+echo "Generating checksums..."
+sha256sum mux-$OLD_VERSION-$NEW_VERSION.unix.patch.gz > mux-$OLD_VERSION-$NEW_VERSION.unix.patch.gz.sha256
+sha256sum mux-$NEW_VERSION.unix.tar.gz > mux-$NEW_VERSION.unix.tar.gz.sha256
+sha256sum mux-$NEW_VERSION.unix.tar.bz2 > mux-$NEW_VERSION.unix.tar.bz2.sha256
+
+echo "Unix build process completed successfully!"
