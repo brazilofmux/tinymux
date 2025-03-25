@@ -20,6 +20,12 @@ REFERENCE_DIR=mux2.13_$OLD_BUILD
 DISTRO_DIR=mux2.13
 NEW_DIR=mux2.13_$NEW_BUILD
 
+echo "Checking for required tools..."
+if ! command -v xdelta3 &> /dev/null; then
+    echo "xdelta3 is required but not found. Please install using apt-cyg install xdelta3"
+    exit 1
+fi
+
 # Process Windows source distribution
 echo "Building Windows source distribution..."
 
@@ -32,7 +38,7 @@ remove_files=$(cat win32/TOC.src.removed)
 clean_files() {
     local dir=$1
     local remove_list=$2
-
+    
     for file in $remove_list; do
         if [ -e "$dir/$file" ]; then
             echo "Removing: $dir/$file"
@@ -63,41 +69,54 @@ clean_files "${NEW_DIR}_src" "$remove_files"
 
 chmod -R u+rw $DISTRO_DIR ${NEW_DIR}_src
 
-# Generate patch file
-echo "Generating Windows source patch file..."
-python3 -c "
-import difflib, sys, os, pathlib
+# Generate patch files using xdelta3
+echo "Generating Windows source patch files..."
+rm -rf patches_src
+mkdir -p patches_src
 
-def compare_dirs(dir1, dir2, output):
-    differences = []
-    dir1 = pathlib.Path(dir1)
-    dir2 = pathlib.Path(dir2)
+find $DISTRO_DIR -type f | while read src_file; do
+    rel_path=${src_file#$DISTRO_DIR/}
+    new_file="${NEW_DIR}_src/$rel_path"
+    
+    if [ -f "$new_file" ]; then
+        # Create directory structure in patches
+        mkdir -p "patches_src/$(dirname $rel_path)"
+        
+        # Check if files are different
+        if ! cmp -s "$src_file" "$new_file"; then
+            echo "Creating patch for: $rel_path"
+            xdelta3 -e -s "$src_file" "$new_file" "patches_src/$rel_path.vcdiff"
+        fi
+    else
+        # File was removed
+        echo "File removed: $rel_path"
+        echo "REMOVED" > "patches_src/$rel_path.removed"
+    fi
+done
 
-    for path1 in dir1.glob('**/*'):
-        if path1.is_file():
-            rel_path = path1.relative_to(dir1)
-            path2 = dir2 / rel_path
+# Find new files
+find ${NEW_DIR}_src -type f | while read new_file; do
+    rel_path=${new_file#${NEW_DIR}_src/}
+    src_file="$DISTRO_DIR/$rel_path"
+    
+    if [ ! -f "$src_file" ]; then
+        # File was added
+        echo "File added: $rel_path"
+        mkdir -p "patches_src/$(dirname $rel_path)"
+        cp "$new_file" "patches_src/$rel_path.new"
+    fi
+done
 
-            if path2.exists() and path2.is_file():
-                try:
-                    with open(path1, 'r', errors='replace') as f1, open(path2, 'r', errors='replace') as f2:
-                        text1 = f1.readlines()
-                        text2 = f2.readlines()
-                        diff = list(difflib.unified_diff(
-                            text1, text2,
-                            fromfile=str(path1),
-                            tofile=str(path2)
-                        ))
-                        if diff:
-                            differences.extend(diff)
-                except Exception as e:
-                    print(f'Skipping binary or problematic file: {path1} ({e})')
+# Create a manifest file
+echo "Creating patch manifest for Windows source..."
+find patches_src -type f | sort > patches_src/MANIFEST
 
-    with open(output, 'w', encoding='utf-8') as f:
-        f.writelines(differences)
-
-compare_dirs('$DISTRO_DIR', '${NEW_DIR}_src', 'mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch')
-" || echo "Warning: Python patch generation failed"
+# Create a combined patch archive
+echo "Creating Windows source patch archive..."
+if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.tar.gz ]; then
+    rm mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.tar.gz
+fi
+tar czf mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.tar.gz patches_src/
 
 # Build source distribution
 rm -rf $DISTRO_DIR
@@ -153,41 +172,54 @@ clean_files "${NEW_DIR}_bin" "$remove_files"
 
 chmod -R u+rw $DISTRO_DIR ${NEW_DIR}_bin
 
-# Generate patch file
-echo "Generating Windows binary patch file..."
-python3 -c "
-import difflib, sys, os, pathlib
+# Generate patch files using xdelta3
+echo "Generating Windows binary patch files..."
+rm -rf patches_bin
+mkdir -p patches_bin
 
-def compare_dirs(dir1, dir2, output):
-    differences = []
-    dir1 = pathlib.Path(dir1)
-    dir2 = pathlib.Path(dir2)
+find $DISTRO_DIR -type f | while read bin_file; do
+    rel_path=${bin_file#$DISTRO_DIR/}
+    new_file="${NEW_DIR}_bin/$rel_path"
+    
+    if [ -f "$new_file" ]; then
+        # Create directory structure in patches
+        mkdir -p "patches_bin/$(dirname $rel_path)"
+        
+        # Check if files are different
+        if ! cmp -s "$bin_file" "$new_file"; then
+            echo "Creating patch for: $rel_path"
+            xdelta3 -e -s "$bin_file" "$new_file" "patches_bin/$rel_path.vcdiff"
+        fi
+    else
+        # File was removed
+        echo "File removed: $rel_path"
+        echo "REMOVED" > "patches_bin/$rel_path.removed"
+    fi
+done
 
-    for path1 in dir1.glob('**/*'):
-        if path1.is_file():
-            rel_path = path1.relative_to(dir1)
-            path2 = dir2 / rel_path
+# Find new files
+find ${NEW_DIR}_bin -type f | while read new_file; do
+    rel_path=${new_file#${NEW_DIR}_bin/}
+    bin_file="$DISTRO_DIR/$rel_path"
+    
+    if [ ! -f "$bin_file" ]; then
+        # File was added
+        echo "File added: $rel_path"
+        mkdir -p "patches_bin/$(dirname $rel_path)"
+        cp "$new_file" "patches_bin/$rel_path.new"
+    fi
+done
 
-            if path2.exists() and path2.is_file():
-                try:
-                    with open(path1, 'r', errors='replace') as f1, open(path2, 'r', errors='replace') as f2:
-                        text1 = f1.readlines()
-                        text2 = f2.readlines()
-                        diff = list(difflib.unified_diff(
-                            text1, text2,
-                            fromfile=str(path1),
-                            tofile=str(path2)
-                        ))
-                        if diff:
-                            differences.extend(diff)
-                except Exception as e:
-                    print(f'Skipping binary or problematic file: {path1} ({e})')
+# Create a manifest file
+echo "Creating patch manifest for Windows binary..."
+find patches_bin -type f | sort > patches_bin/MANIFEST
 
-    with open(output, 'w', encoding='utf-8') as f:
-        f.writelines(differences)
-
-compare_dirs('$DISTRO_DIR', '${NEW_DIR}_bin', 'mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch')
-" || echo "Warning: Python patch generation failed"
+# Create a combined patch archive
+echo "Creating Windows binary patch archive..."
+if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.tar.gz ]; then
+    rm mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.tar.gz
+fi
+tar czf mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.tar.gz patches_bin/
 
 # Build binary distribution
 rm -rf $DISTRO_DIR
@@ -219,10 +251,10 @@ zip -r "mux-$NEW_VERSION.win32.bin.zip" $DISTRO_DIR
 
 # Generate checksums
 echo "Generating checksums..."
-sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch > mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.sha256
+sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.tar.gz > mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.tar.gz.sha256
 sha256sum mux-$NEW_VERSION.win32.src.tar.gz > mux-$NEW_VERSION.win32.src.tar.gz.sha256
 sha256sum mux-$NEW_VERSION.win32.src.zip > mux-$NEW_VERSION.win32.src.zip.sha256
-sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch > mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.sha256
+sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.tar.gz > mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.tar.gz.sha256
 sha256sum mux-$NEW_VERSION.win32.bin.tar.gz > mux-$NEW_VERSION.win32.bin.tar.gz.sha256
 sha256sum mux-$NEW_VERSION.win32.bin.zip > mux-$NEW_VERSION.win32.bin.zip.sha256
 
