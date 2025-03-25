@@ -23,6 +23,9 @@ author:
  - Fixed strncpy() corner case in @hook.
  - Fixed fun_cwho(,all) command to return all objects and players
    associated with the channel, ensuring it behaves as documented.
+ - Modified home command behavior to disregard the command if the player
+   is already at home, and to suppress public announcements in BLIND
+   locations.
 
 # Performance Enhancements:
 
