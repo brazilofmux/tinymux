@@ -41,12 +41,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>packages\pcre.8.33.0.1\build\native\lib\v110\x64\Debug\dynamic\utf8;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\tinymux\mux\src\pcre2\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>packages\pcre.8.33.0.1\build\native\lib\v110\x64\Release\dynamic\utf8;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\tinymux\mux\src\pcre2\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -65,7 +67,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
@@ -95,7 +97,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>2.13</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
@@ -654,19 +656,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\pcre.redist.8.33.0.1\build\native\pcre.redist.targets" Condition="Exists('packages\pcre.redist.8.33.0.1\build\native\pcre.redist.targets')" />
-    <Import Project="packages\pcre.8.33.0.1\build\native\pcre.targets" Condition="Exists('packages\pcre.8.33.0.1\build\native\pcre.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\pcre.redist.8.33.0.1\build\native\pcre.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\pcre.redist.8.33.0.1\build\native\pcre.redist.targets'))" />
-    <Error Condition="!Exists('packages\pcre.8.33.0.1\build\native\pcre.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\pcre.8.33.0.1\build\native\pcre.targets'))" />
-  </Target>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
