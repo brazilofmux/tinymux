@@ -9,6 +9,94 @@
 #include "config.h"
 #include "externs.h"
 
+enum class TokenType {
+    Symbol = 1,
+    NumericUnsigned = 2,
+    Spaces = 3,
+    Text = 4,
+    NumericSigned = 5
+};
+
+enum class NodeFlag : unsigned {
+    Nothing              = 0x00000000,
+    TimeFieldSeparator   = 0x00000001,
+    DateFieldSeparator   = 0x00000002,
+    Whitespace           = 0x00000004,
+    DayOfMonthSuffix     = 0x00000008,
+    Sign                 = 0x00000010,
+    SecondsDecimal       = 0x00000020,
+    Removeable           = 0x00000040,
+    Year                 = 0x00000080,
+    Month                = 0x00000100,
+    DayOfMonth           = 0x00000200,
+    DayOfWeek            = 0x00000400,
+    WeekOfYear           = 0x00000800,
+    DayOfYear            = 0x00001000,
+    YD                   = 0x00002000,
+    YMD                  = 0x00004000,
+    MDY                  = 0x00008000,
+    DMY                  = 0x00010000,
+    DateTimeSeparator    = 0x00020000,
+    TimeZone             = 0x00040000,
+    WeekOfYearPrefix     = 0x00080000,
+    Meridian             = 0x00100000,
+    Minute               = 0x00200000,
+    Second               = 0x00400000,
+    Subsecond            = 0x00800000,
+    HourTime             = 0x01000000,
+    HMSTime              = 0x02000000,
+    HourTimeZone         = 0x04000000,
+    HMSTimeZone          = 0x08000000
+};
+
+// Allows for combining of individual flags
+inline NodeFlag operator|(NodeFlag a, NodeFlag b) {
+    return static_cast<NodeFlag>(
+        static_cast<unsigned>(a) | static_cast<unsigned>(b));
+}
+
+// tests whether any flag in the set is present
+inline bool hasAnyFlag(NodeFlag value, NodeFlag flags) {
+    return (static_cast<unsigned>(value) & static_cast<unsigned>(flags)) != 0;
+}
+
+// tests that all flags in the set are present
+inline bool hasAllFlags(NodeFlag value, NodeFlag flags) {
+    return (static_cast<unsigned>(value) & static_cast<unsigned>(flags))
+           == static_cast<unsigned>(flags);
+}
+
+// tests that all flags are in the set and no others
+inline bool hasOnlyFlags(NodeFlag value, NodeFlag flags) {
+    return (static_cast<unsigned>(value) & ~static_cast<unsigned>(flags)) == 0;
+}
+
+// tests that other flags besides those in the set are present
+inline bool hasAnyFlagsNotIn(NodeFlag value, NodeFlag flags) {
+    return (static_cast<unsigned>(value) & ~static_cast<unsigned>(flags)) != 0;
+}
+
+// allows combining sets of flags
+inline NodeFlag& addFlags(NodeFlag& value, NodeFlag flags) {
+    value = static_cast<NodeFlag>(
+        static_cast<unsigned>(value) | static_cast<unsigned>(flags));
+    return value;
+}
+
+// retains only flags from the set
+inline NodeFlag& keepOnlyFlags(NodeFlag& value, NodeFlag flags) {
+    value = static_cast<NodeFlag>(
+        static_cast<unsigned>(value) & static_cast<unsigned>(flags));
+    return value;
+}
+
+// removes flags from the set
+inline NodeFlag removeFlags(NodeFlag& value, NodeFlag bitsToRemove) {
+    value = static_cast<NodeFlag>(
+        static_cast<unsigned>(value) & ~static_cast<unsigned>(bitsToRemove));
+    return value;
+}
+
 // We must deal with several levels at once. That is, a single
 // character is overlapped by layers and layers of meaning from 'digit'
 // to 'the second digit of the hours field of the timezone'.
@@ -38,26 +126,22 @@ typedef struct tag_pd_node
     // If successful, this bitfield will ultimately only contain a single
     // '1' bit which tells us what it is.
     //
-    unsigned  uCouldBe;
+    NodeFlag  uCouldBe;
 
     // These fields deal with token things and we avoid mixing
     // them up in higher meanings. This is the lowest level.
     //
     // Further Notes:
     //
-    // PDTT_SYMBOL is always a -single- (nToken==1) character.
+    // TokenType::Symbol is always a -single- (nToken==1) character.
     //
     // uTokenType must be one of the PDTT_* values.
     //
-    // PDTT_NUMERIC_* and PDTT_TEXT types may have an
-    // iToken value associated with them.
+    // TokenType::NumericSigned, TokenType::NumericaUnsigned, and
+    // TokenType::Text types may have an iToken value associated with
+    // them.
     //
-#define PDTT_SYMBOL           1 // e.g., :/.-+
-#define PDTT_NUMERIC_UNSIGNED 2 // [0-9]+
-#define PDTT_SPACES           3 // One or more space/tab characters
-#define PDTT_TEXT             4 // 'January' 'Jan' 'T' 'W'
-#define PDTT_NUMERIC_SIGNED   5 // [+-][0-9]+
-    unsigned  uTokenType;
+    TokenType uTokenType;
     UTF8     *pToken;
     size_t    nToken;
     int       iToken;
@@ -69,43 +153,13 @@ typedef struct tag_pd_node
 
 } PD_Node;
 
-#define PDCB_NOTHING              0x00000000
-#define PDCB_TIME_FIELD_SEPARATOR 0x00000001
-#define PDCB_DATE_FIELD_SEPARATOR 0x00000002
-#define PDCB_WHITESPACE           0x00000004
-#define PDCB_DAY_OF_MONTH_SUFFIX  0x00000008
-#define PDCB_SIGN                 0x00000010
-#define PDCB_SECONDS_DECIMAL      0x00000020
-#define PDCB_REMOVEABLE           0x00000040
-#define PDCB_YEAR                 0x00000080
-#define PDCB_MONTH                0x00000100
-#define PDCB_DAY_OF_MONTH         0x00000200
-#define PDCB_DAY_OF_WEEK          0x00000400
-#define PDCB_WEEK_OF_YEAR         0x00000800
-#define PDCB_DAY_OF_YEAR          0x00001000
-#define PDCB_YD                   0x00002000
-#define PDCB_YMD                  0x00004000
-#define PDCB_MDY                  0x00008000
-#define PDCB_DMY                  0x00010000
-#define PDCB_DATE_TIME_SEPARATOR  0x00020000
-#define PDCB_TIMEZONE             0x00040000
-#define PDCB_WEEK_OF_YEAR_PREFIX  0x00080000
-#define PDCB_MERIDIAN             0x00100000
-#define PDCB_MINUTE               0x00200000
-#define PDCB_SECOND               0x00400000
-#define PDCB_SUBSECOND            0x00800000
-#define PDCB_HOUR_TIME            0x01000000
-#define PDCB_HMS_TIME             0x02000000
-#define PDCB_HOUR_TIMEZONE        0x04000000
-#define PDCB_HMS_TIMEZONE         0x08000000
-
 static PD_Node *PD_NewNode(void);
 static void PD_AppendNode(PD_Node *pNode);
 static void PD_InsertAfter(PD_Node *pWhere, PD_Node *pNode);
 typedef void BREAK_DOWN_FUNC(PD_Node *pNode);
 typedef struct tag_pd_breakdown
 {
-    unsigned int mask;
+    NodeFlag mask;
     BREAK_DOWN_FUNC *fpBreakDown;
 } PD_BREAKDOWN;
 
@@ -312,7 +366,7 @@ static bool isValidHMS(size_t nStr, UTF8 *pStr, int iValue)
     return false;
 }
 
-static void SplitLastTwoDigits(PD_Node *pNode, unsigned mask)
+static void SplitLastTwoDigits(PD_Node *pNode, NodeFlag mask)
 {
     PD_Node *p = PD_NewNode();
     if (p)
@@ -328,7 +382,7 @@ static void SplitLastTwoDigits(PD_Node *pNode, unsigned mask)
     }
 }
 
-static void SplitLastThreeDigits(PD_Node *pNode, unsigned mask)
+static void SplitLastThreeDigits(PD_Node *pNode, NodeFlag mask)
 {
     PD_Node *p = PD_NewNode();
     if (p)
@@ -348,23 +402,23 @@ static void SplitLastThreeDigits(PD_Node *pNode, unsigned mask)
 //
 static void BreakDownHMS(PD_Node *pNode)
 {
-    if (pNode->uCouldBe & PDCB_HMS_TIME)
+    if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime))
     {
-        pNode->uCouldBe = PDCB_HOUR_TIME;
+        pNode->uCouldBe = NodeFlag::HourTime;
     }
     else
     {
-        pNode->uCouldBe = PDCB_HOUR_TIMEZONE;
+        pNode->uCouldBe = NodeFlag::HourTimeZone;
     }
     switch (pNode->nToken)
     {
     case 5:
     case 6:
-        SplitLastTwoDigits(pNode, PDCB_SECOND);
+        SplitLastTwoDigits(pNode, NodeFlag::Second);
 
     case 3:
     case 4:
-        SplitLastTwoDigits(pNode, PDCB_MINUTE);
+        SplitLastTwoDigits(pNode, NodeFlag::Minute);
     }
 }
 
@@ -392,9 +446,9 @@ static bool isValidYMD(size_t nStr, UTF8 *pStr, int iValue)
 //
 static void BreakDownYMD(PD_Node *pNode)
 {
-    pNode->uCouldBe = PDCB_YEAR;
-    SplitLastTwoDigits(pNode, PDCB_DAY_OF_MONTH);
-    SplitLastTwoDigits(pNode, PDCB_MONTH);
+    pNode->uCouldBe = NodeFlag::Year;
+    SplitLastTwoDigits(pNode, NodeFlag::DayOfMonth);
+    SplitLastTwoDigits(pNode, NodeFlag::Month);
 }
 
 // This function handles MMDDYY
@@ -421,9 +475,9 @@ static bool isValidMDY(size_t nStr, UTF8 *pStr, int iValue)
 //
 static void BreakDownMDY(PD_Node *pNode)
 {
-    pNode->uCouldBe = PDCB_MONTH;
-    SplitLastTwoDigits(pNode, PDCB_YEAR);
-    SplitLastTwoDigits(pNode, PDCB_DAY_OF_MONTH);
+    pNode->uCouldBe = NodeFlag::Month;
+    SplitLastTwoDigits(pNode, NodeFlag::Year);
+    SplitLastTwoDigits(pNode, NodeFlag::DayOfMonth);
 }
 
 // This function handles DDMMYY
@@ -450,9 +504,9 @@ static bool isValidDMY(size_t nStr, UTF8 *pStr, int iValue)
 //
 static void BreakDownDMY(PD_Node *pNode)
 {
-    pNode->uCouldBe = PDCB_DAY_OF_MONTH;
-    SplitLastTwoDigits(pNode, PDCB_YEAR);
-    SplitLastTwoDigits(pNode, PDCB_MONTH);
+    pNode->uCouldBe = NodeFlag::DayOfMonth;
+    SplitLastTwoDigits(pNode, NodeFlag::Year);
+    SplitLastTwoDigits(pNode, NodeFlag::Month);
 }
 
 // This function handles YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
@@ -476,49 +530,49 @@ static bool isValidYD(size_t nStr, UTF8 *pStr, int iValue)
 //
 static void BreakDownYD(PD_Node *pNode)
 {
-    pNode->uCouldBe = PDCB_YEAR;
-    SplitLastThreeDigits(pNode, PDCB_DAY_OF_YEAR);
+    pNode->uCouldBe = NodeFlag::Year;
+    SplitLastThreeDigits(pNode, NodeFlag::DayOfYear);
 }
 
-static const int InitialCouldBe[9] =
+static const NodeFlag InitialCouldBe[9] =
 {
-    PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_DAY_OF_WEEK|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE|PDCB_SUBSECOND,  // 1
-    PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE|PDCB_MINUTE|PDCB_SECOND|PDCB_SUBSECOND, // 2
-    PDCB_YEAR|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_DAY_OF_YEAR|PDCB_SUBSECOND, // 3
-    PDCB_YEAR|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_YD|PDCB_SUBSECOND, // 4
-    PDCB_YEAR|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_YD|PDCB_SUBSECOND, // 5
-    PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_YD|PDCB_SUBSECOND, // 6
-    PDCB_YMD|PDCB_YD|PDCB_SUBSECOND, // 7
-    PDCB_YMD|PDCB_YD, // 8
-    PDCB_YMD  // 9
+    NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfWeek|NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::HourTime|NodeFlag::HourTimeZone|NodeFlag::Subsecond,  // 1
+    NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYear|NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::HourTime|NodeFlag::HourTimeZone|NodeFlag::Minute|NodeFlag::Second|NodeFlag::Subsecond, // 2
+    NodeFlag::Year|NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::DayOfYear|NodeFlag::Subsecond, // 3
+    NodeFlag::Year|NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::YD|NodeFlag::Subsecond, // 4
+    NodeFlag::Year|NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::YD|NodeFlag::Subsecond, // 5
+    NodeFlag::HMSTime|NodeFlag::HMSTimeZone|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::YD|NodeFlag::Subsecond, // 6
+    NodeFlag::YMD|NodeFlag::YD|NodeFlag::Subsecond, // 7
+    NodeFlag::YMD|NodeFlag::YD, // 8
+    NodeFlag::YMD  // 9
 };
 
 typedef bool PVALIDFUNC(size_t nStr, UTF8 *pStr, int iValue);
 
 typedef struct tag_pd_numeric_valid
 {
-    unsigned mask;
+    NodeFlag mask;
     PVALIDFUNC *fnValid;
 } NUMERIC_VALID_RECORD;
 
 const NUMERIC_VALID_RECORD NumericSet[] =
 {
-    { PDCB_YEAR,         isValidYear       },
-    { PDCB_MONTH,        isValidMonth      },
-    { PDCB_DAY_OF_MONTH, isValidDayOfMonth },
-    { PDCB_DAY_OF_YEAR,  isValidDayOfYear  },
-    { PDCB_WEEK_OF_YEAR, isValidWeekOfYear },
-    { PDCB_DAY_OF_WEEK,  isValidDayOfWeek  },
-    { PDCB_HMS_TIME|PDCB_HMS_TIMEZONE, isValidHMS },
-    { PDCB_YMD,          isValidYMD        },
-    { PDCB_MDY,          isValidMDY        },
-    { PDCB_DMY,          isValidDMY        },
-    { PDCB_YD,           isValidYD         },
-    { PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE, isValidHour },
-    { PDCB_MINUTE,       isValidMinute     },
-    { PDCB_SECOND,       isValidSecond     },
-    { PDCB_SUBSECOND,    isValidSubSecond  },
-    { 0, 0},
+    { NodeFlag::Year,         isValidYear       },
+    { NodeFlag::Month,        isValidMonth      },
+    { NodeFlag::DayOfMonth,   isValidDayOfMonth },
+    { NodeFlag::DayOfYear,    isValidDayOfYear  },
+    { NodeFlag::WeekOfYear,   isValidWeekOfYear },
+    { NodeFlag::DayOfWeek,    isValidDayOfWeek  },
+    { NodeFlag::HMSTime|NodeFlag::HMSTimeZone, isValidHMS },
+    { NodeFlag::YMD,          isValidYMD        },
+    { NodeFlag::MDY,          isValidMDY        },
+    { NodeFlag::DMY,          isValidDMY        },
+    { NodeFlag::YD,           isValidYD         },
+    { NodeFlag::HourTime|NodeFlag::HourTimeZone, isValidHour },
+    { NodeFlag::Minute,       isValidMinute     },
+    { NodeFlag::Second,       isValidSecond     },
+    { NodeFlag::Subsecond,    isValidSubSecond  },
+    { NodeFlag::Nothing, 0},
 };
 
 // This function looks at the numeric token and assigns the initial set
@@ -530,16 +584,15 @@ static void ClassifyNumericToken(PD_Node *pNode)
     UTF8  *pToken = pNode->pToken;
     int    iToken = pNode->iToken;
 
-    unsigned int uCouldBe = InitialCouldBe[nToken-1];
+    NodeFlag uCouldBe = InitialCouldBe[nToken-1];
 
     int i = 0;
-    int mask = 0;
-    while ((mask = NumericSet[i].mask) != 0)
+    NodeFlag mask = NodeFlag::Nothing;
+    while ((mask = NumericSet[i].mask) != NodeFlag::Nothing)
     {
-        if (  (mask & uCouldBe)
-           && !(NumericSet[i].fnValid(nToken, pToken, iToken)))
+        if (hasAnyFlag(uCouldBe, mask) && !(NumericSet[i].fnValid(nToken, pToken, iToken)))
         {
-            uCouldBe &= ~mask;
+            removeFlags(uCouldBe, mask);
         }
         i++;
     }
@@ -549,105 +602,105 @@ static void ClassifyNumericToken(PD_Node *pNode)
 typedef struct
 {
     const UTF8  *szText;
-    unsigned int uCouldBe;
-    int          iValue;
+    NodeFlag    uCouldBe;
+    int         iValue;
 } PD_TEXT_ENTRY;
 
 const PD_TEXT_ENTRY PD_TextTable[] =
 {
-    {T("sun"),       PDCB_DAY_OF_WEEK,   7 },
-    {T("mon"),       PDCB_DAY_OF_WEEK,   1 },
-    {T("tue"),       PDCB_DAY_OF_WEEK,   2 },
-    {T("wed"),       PDCB_DAY_OF_WEEK,   3 },
-    {T("thu"),       PDCB_DAY_OF_WEEK,   4 },
-    {T("fri"),       PDCB_DAY_OF_WEEK,   5 },
-    {T("sat"),       PDCB_DAY_OF_WEEK,   6 },
-    {T("jan"),       PDCB_MONTH,         1 },
-    {T("feb"),       PDCB_MONTH,         2 },
-    {T("mar"),       PDCB_MONTH,         3 },
-    {T("apr"),       PDCB_MONTH,         4 },
-    {T("may"),       PDCB_MONTH,         5 },
-    {T("jun"),       PDCB_MONTH,         6 },
-    {T("jul"),       PDCB_MONTH,         7 },
-    {T("aug"),       PDCB_MONTH,         8 },
-    {T("sep"),       PDCB_MONTH,         9 },
-    {T("oct"),       PDCB_MONTH,        10 },
-    {T("nov"),       PDCB_MONTH,        11 },
-    {T("dec"),       PDCB_MONTH,        12 },
-    {T("january"),   PDCB_MONTH,         1 },
-    {T("february"),  PDCB_MONTH,         2 },
-    {T("march"),     PDCB_MONTH,         3 },
-    {T("april"),     PDCB_MONTH,         4 },
-    {T("may"),       PDCB_MONTH,         5 },
-    {T("june"),      PDCB_MONTH,         6 },
-    {T("july"),      PDCB_MONTH,         7 },
-    {T("august"),    PDCB_MONTH,         8 },
-    {T("september"), PDCB_MONTH,         9 },
-    {T("october"),   PDCB_MONTH,        10 },
-    {T("november"),  PDCB_MONTH,        11 },
-    {T("december"),  PDCB_MONTH,        12 },
-    {T("sunday"),    PDCB_DAY_OF_WEEK,   7 },
-    {T("monday"),    PDCB_DAY_OF_WEEK,   1 },
-    {T("tuesday"),   PDCB_DAY_OF_WEEK,   2 },
-    {T("wednesday"), PDCB_DAY_OF_WEEK,   3 },
-    {T("thursday"),  PDCB_DAY_OF_WEEK,   4 },
-    {T("friday"),    PDCB_DAY_OF_WEEK,   5 },
-    {T("saturday"),  PDCB_DAY_OF_WEEK,   6 },
-    {T("a"),         PDCB_TIMEZONE,    100 },
-    {T("b"),         PDCB_TIMEZONE,    200 },
-    {T("c"),         PDCB_TIMEZONE,    300 },
-    {T("d"),         PDCB_TIMEZONE,    400 },
-    {T("e"),         PDCB_TIMEZONE,    500 },
-    {T("f"),         PDCB_TIMEZONE,    600 },
-    {T("g"),         PDCB_TIMEZONE,    700 },
-    {T("h"),         PDCB_TIMEZONE,    800 },
-    {T("i"),         PDCB_TIMEZONE,    900 },
-    {T("k"),         PDCB_TIMEZONE,   1000 },
-    {T("l"),         PDCB_TIMEZONE,   1100 },
-    {T("m"),         PDCB_TIMEZONE,   1200 },
-    {T("n"),         PDCB_TIMEZONE,   -100 },
-    {T("o"),         PDCB_TIMEZONE,   -200 },
-    {T("p"),         PDCB_TIMEZONE,   -300 },
-    {T("q"),         PDCB_TIMEZONE,   -400 },
-    {T("r"),         PDCB_TIMEZONE,   -500 },
-    {T("s"),         PDCB_TIMEZONE,   -600 },
-    {T("t"),         PDCB_DATE_TIME_SEPARATOR|PDCB_TIMEZONE, -700},
-    {T("u"),         PDCB_TIMEZONE,   -800 },
-    {T("v"),         PDCB_TIMEZONE,   -900 },
-    {T("w"),         PDCB_WEEK_OF_YEAR_PREFIX|PDCB_TIMEZONE,  -1000 },
-    {T("x"),         PDCB_TIMEZONE,  -1100 },
-    {T("y"),         PDCB_TIMEZONE,  -1200 },
-    {T("z"),         PDCB_TIMEZONE,      0 },
-    {T("hst"),       PDCB_TIMEZONE,  -1000 },
-    {T("akst"),      PDCB_TIMEZONE,   -900 },
-    {T("pst"),       PDCB_TIMEZONE,   -800 },
-    {T("mst"),       PDCB_TIMEZONE,   -700 },
-    {T("cst"),       PDCB_TIMEZONE,   -600 },
-    {T("est"),       PDCB_TIMEZONE,   -500 },
-    {T("ast"),       PDCB_TIMEZONE,   -400 },
-    {T("akdt"),      PDCB_TIMEZONE,   -800 },
-    {T("pdt"),       PDCB_TIMEZONE,   -700 },
-    {T("mdt"),       PDCB_TIMEZONE,   -600 },
-    {T("cdt"),       PDCB_TIMEZONE,   -500 },
-    {T("edt"),       PDCB_TIMEZONE,   -400 },
-    {T("adt"),       PDCB_TIMEZONE,   -300 },
-    {T("bst"),       PDCB_TIMEZONE,    100 },
-    {T("ist"),       PDCB_TIMEZONE,    100 },
-    {T("cet"),       PDCB_TIMEZONE,    100 },
-    {T("cest"),      PDCB_TIMEZONE,    200 },
-    {T("eet"),       PDCB_TIMEZONE,    200 },
-    {T("eest"),      PDCB_TIMEZONE,    300 },
-    {T("aest"),      PDCB_TIMEZONE,   1000 },
-    {T("gmt"),       PDCB_TIMEZONE,      0 },
-    {T("ut"),        PDCB_TIMEZONE,      0 },
-    {T("utc"),       PDCB_TIMEZONE,      0 },
-    {T("st"),        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {T("nd"),        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {T("rd"),        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {T("th"),        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {T("am"),        PDCB_MERIDIAN,      0 },
-    {T("pm"),        PDCB_MERIDIAN,     12 },
-    {(UTF8 *) 0, 0, 0}
+    {T("sun"),       NodeFlag::DayOfWeek,   7 },
+    {T("mon"),       NodeFlag::DayOfWeek,   1 },
+    {T("tue"),       NodeFlag::DayOfWeek,   2 },
+    {T("wed"),       NodeFlag::DayOfWeek,   3 },
+    {T("thu"),       NodeFlag::DayOfWeek,   4 },
+    {T("fri"),       NodeFlag::DayOfWeek,   5 },
+    {T("sat"),       NodeFlag::DayOfWeek,   6 },
+    {T("jan"),       NodeFlag::Month,         1 },
+    {T("feb"),       NodeFlag::Month,         2 },
+    {T("mar"),       NodeFlag::Month,         3 },
+    {T("apr"),       NodeFlag::Month,         4 },
+    {T("may"),       NodeFlag::Month,         5 },
+    {T("jun"),       NodeFlag::Month,         6 },
+    {T("jul"),       NodeFlag::Month,         7 },
+    {T("aug"),       NodeFlag::Month,         8 },
+    {T("sep"),       NodeFlag::Month,         9 },
+    {T("oct"),       NodeFlag::Month,        10 },
+    {T("nov"),       NodeFlag::Month,        11 },
+    {T("dec"),       NodeFlag::Month,        12 },
+    {T("january"),   NodeFlag::Month,         1 },
+    {T("february"),  NodeFlag::Month,         2 },
+    {T("march"),     NodeFlag::Month,         3 },
+    {T("april"),     NodeFlag::Month,         4 },
+    {T("may"),       NodeFlag::Month,         5 },
+    {T("june"),      NodeFlag::Month,         6 },
+    {T("july"),      NodeFlag::Month,         7 },
+    {T("august"),    NodeFlag::Month,         8 },
+    {T("september"), NodeFlag::Month,         9 },
+    {T("october"),   NodeFlag::Month,        10 },
+    {T("november"),  NodeFlag::Month,        11 },
+    {T("december"),  NodeFlag::Month,        12 },
+    {T("sunday"),    NodeFlag::DayOfWeek,   7 },
+    {T("monday"),    NodeFlag::DayOfWeek,   1 },
+    {T("tuesday"),   NodeFlag::DayOfWeek,   2 },
+    {T("wednesday"), NodeFlag::DayOfWeek,   3 },
+    {T("thursday"),  NodeFlag::DayOfWeek,   4 },
+    {T("friday"),    NodeFlag::DayOfWeek,   5 },
+    {T("saturday"),  NodeFlag::DayOfWeek,   6 },
+    {T("a"),         NodeFlag::TimeZone,    100 },
+    {T("b"),         NodeFlag::TimeZone,    200 },
+    {T("c"),         NodeFlag::TimeZone,    300 },
+    {T("d"),         NodeFlag::TimeZone,    400 },
+    {T("e"),         NodeFlag::TimeZone,    500 },
+    {T("f"),         NodeFlag::TimeZone,    600 },
+    {T("g"),         NodeFlag::TimeZone,    700 },
+    {T("h"),         NodeFlag::TimeZone,    800 },
+    {T("i"),         NodeFlag::TimeZone,    900 },
+    {T("k"),         NodeFlag::TimeZone,   1000 },
+    {T("l"),         NodeFlag::TimeZone,   1100 },
+    {T("m"),         NodeFlag::TimeZone,   1200 },
+    {T("n"),         NodeFlag::TimeZone,   -100 },
+    {T("o"),         NodeFlag::TimeZone,   -200 },
+    {T("p"),         NodeFlag::TimeZone,   -300 },
+    {T("q"),         NodeFlag::TimeZone,   -400 },
+    {T("r"),         NodeFlag::TimeZone,   -500 },
+    {T("s"),         NodeFlag::TimeZone,   -600 },
+    {T("t"),         NodeFlag::DateTimeSeparator|NodeFlag::TimeZone, -700},
+    {T("u"),         NodeFlag::TimeZone,   -800 },
+    {T("v"),         NodeFlag::TimeZone,   -900 },
+    {T("w"),         NodeFlag::WeekOfYearPrefix|NodeFlag::TimeZone,  -1000 },
+    {T("x"),         NodeFlag::TimeZone,  -1100 },
+    {T("y"),         NodeFlag::TimeZone,  -1200 },
+    {T("z"),         NodeFlag::TimeZone,      0 },
+    {T("hst"),       NodeFlag::TimeZone,  -1000 },
+    {T("akst"),      NodeFlag::TimeZone,   -900 },
+    {T("pst"),       NodeFlag::TimeZone,   -800 },
+    {T("mst"),       NodeFlag::TimeZone,   -700 },
+    {T("cst"),       NodeFlag::TimeZone,   -600 },
+    {T("est"),       NodeFlag::TimeZone,   -500 },
+    {T("ast"),       NodeFlag::TimeZone,   -400 },
+    {T("akdt"),      NodeFlag::TimeZone,   -800 },
+    {T("pdt"),       NodeFlag::TimeZone,   -700 },
+    {T("mdt"),       NodeFlag::TimeZone,   -600 },
+    {T("cdt"),       NodeFlag::TimeZone,   -500 },
+    {T("edt"),       NodeFlag::TimeZone,   -400 },
+    {T("adt"),       NodeFlag::TimeZone,   -300 },
+    {T("bst"),       NodeFlag::TimeZone,    100 },
+    {T("ist"),       NodeFlag::TimeZone,    100 },
+    {T("cet"),       NodeFlag::TimeZone,    100 },
+    {T("cest"),      NodeFlag::TimeZone,    200 },
+    {T("eet"),       NodeFlag::TimeZone,    200 },
+    {T("eest"),      NodeFlag::TimeZone,    300 },
+    {T("aest"),      NodeFlag::TimeZone,   1000 },
+    {T("gmt"),       NodeFlag::TimeZone,      0 },
+    {T("ut"),        NodeFlag::TimeZone,      0 },
+    {T("utc"),       NodeFlag::TimeZone,      0 },
+    {T("st"),        NodeFlag::DayOfMonthSuffix, 0 },
+    {T("nd"),        NodeFlag::DayOfMonthSuffix, 0 },
+    {T("rd"),        NodeFlag::DayOfMonthSuffix, 0 },
+    {T("th"),        NodeFlag::DayOfMonthSuffix, 0 },
+    {T("am"),        NodeFlag::Meridian,      0 },
+    {T("pm"),        NodeFlag::Meridian,     12 },
+    {(UTF8 *)0,      NodeFlag::Nothing,       0 }
 };
 
 #define PD_LEX_INVALID 0
@@ -818,30 +871,30 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         pNode->iToken = 0;
         pNode->nToken = 1;
         pNode->pToken = p;
-        pNode->uTokenType = PDTT_SYMBOL;
+        pNode->uTokenType = TokenType::Symbol;
         if (ch == ':')
         {
-            pNode->uCouldBe = PDCB_TIME_FIELD_SEPARATOR;
+            pNode->uCouldBe = NodeFlag::TimeFieldSeparator;
         }
         else if (ch == '-')
         {
-            pNode->uCouldBe = PDCB_DATE_FIELD_SEPARATOR|PDCB_SIGN;
+            pNode->uCouldBe = NodeFlag::DateFieldSeparator|NodeFlag::Sign;
         }
         else if (ch == '+')
         {
-            pNode->uCouldBe = PDCB_SIGN;
+            pNode->uCouldBe = NodeFlag::Sign;
         }
         else if (ch == '/')
         {
-            pNode->uCouldBe = PDCB_DATE_FIELD_SEPARATOR;
+            pNode->uCouldBe = NodeFlag::DateFieldSeparator;
         }
         else if (ch == '.')
         {
-            pNode->uCouldBe = PDCB_DATE_FIELD_SEPARATOR|PDCB_SECONDS_DECIMAL;
+            pNode->uCouldBe = NodeFlag::DateFieldSeparator|NodeFlag::SecondsDecimal;
         }
         else if (ch == ',')
         {
-            pNode->uCouldBe = PDCB_REMOVEABLE|PDCB_SECONDS_DECIMAL|PDCB_DAY_OF_MONTH_SUFFIX;
+            pNode->uCouldBe = NodeFlag::Removeable|NodeFlag::SecondsDecimal|NodeFlag::DayOfMonthSuffix;
         }
 
         p++;
@@ -866,11 +919,11 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         pNode->nToken = nLen;
         pNode->pToken = pSave;
         pNode->iToken = 0;
-        pNode->uCouldBe = PDCB_NOTHING;
+        pNode->uCouldBe = NodeFlag::Nothing;
 
         if (iType == PD_LEX_DIGIT)
         {
-            pNode->uTokenType = PDTT_NUMERIC_UNSIGNED;
+            pNode->uTokenType = TokenType::NumericUnsigned;
 
             if (1 <= nLen && nLen <= 9)
             {
@@ -883,12 +936,12 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
         }
         else if (iType == PD_LEX_SPACE)
         {
-            pNode->uTokenType = PDTT_SPACES;
-            pNode->uCouldBe = PDCB_WHITESPACE;
+            pNode->uTokenType = TokenType::Spaces;
+            pNode->uCouldBe = NodeFlag::Whitespace;
         }
         else if (iType == PD_LEX_ALPHA)
         {
-            pNode->uTokenType = PDTT_TEXT;
+            pNode->uTokenType = TokenType::Text;
 
             // Match Text.
             //
@@ -918,13 +971,13 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
 
 static const PD_BREAKDOWN BreakDownTable[] =
 {
-    { PDCB_HMS_TIME, BreakDownHMS },
-    { PDCB_HMS_TIMEZONE, BreakDownHMS },
-    { PDCB_YD,  BreakDownYD },
-    { PDCB_YMD, BreakDownYMD },
-    { PDCB_MDY, BreakDownMDY },
-    { PDCB_DMY, BreakDownDMY },
-    { 0, 0 }
+    { NodeFlag::HMSTime, BreakDownHMS },
+    { NodeFlag::HMSTimeZone, BreakDownHMS },
+    { NodeFlag::YD,  BreakDownYD },
+    { NodeFlag::YMD, BreakDownYMD },
+    { NodeFlag::MDY, BreakDownMDY },
+    { NodeFlag::DMY, BreakDownDMY },
+    { NodeFlag::Nothing, 0 }
 };
 
 static void PD_Pass2(void)
@@ -935,137 +988,137 @@ static void PD_Pass2(void)
         PD_Node *pPrev = PD_PrevNode(pNode);
         PD_Node *pNext = PD_NextNode(pNode);
 
-        // Absorb information from PDCB_TIME_FIELD_SEPARATOR.
+        // Absorb information from NodeFlag::TimeFieldSeparator.
         //
-        if (pNode->uCouldBe & PDCB_TIME_FIELD_SEPARATOR)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::TimeFieldSeparator))
         {
             if (pPrev && pNext)
             {
-                if (  (pPrev->uCouldBe & (PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE))
-                   && (pNext->uCouldBe & PDCB_MINUTE))
+                if (  hasAnyFlag(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone)
+                   && hasAnyFlag(pNext->uCouldBe, NodeFlag::Minute))
                 {
-                    pPrev->uCouldBe &= (PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE);
-                    pNext->uCouldBe = PDCB_MINUTE;
+                    keepOnlyFlags(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone);
+                    pNext->uCouldBe = NodeFlag::Minute;
                 }
-                else if (  (pPrev->uCouldBe & PDCB_MINUTE)
-                        && (pNext->uCouldBe & PDCB_SECOND))
+                else if (  hasAnyFlag(pPrev->uCouldBe, NodeFlag::Minute)
+                        && hasAnyFlag(pNext->uCouldBe, NodeFlag::Second))
                 {
-                    pPrev->uCouldBe = PDCB_MINUTE;
-                    pNext->uCouldBe = PDCB_SECOND;
+                    pPrev->uCouldBe = NodeFlag::Minute;
+                    pNext->uCouldBe = NodeFlag::Second;
                 }
             }
-            pNode->uCouldBe = PDCB_REMOVEABLE;
+            pNode->uCouldBe = NodeFlag::Removeable;
         }
 
-        // Absorb information from PDCB_SECONDS_DECIMAL.
+        // Absorb information from NodeFlag::SecondsDecimal.
         //
-        if (pNode->uCouldBe & PDCB_SECONDS_DECIMAL)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::SecondsDecimal))
         {
             if (  pPrev
                && pNext
-               && pPrev->uCouldBe == PDCB_SECOND
-               && (pNext->uCouldBe & PDCB_SUBSECOND))
+               && pPrev->uCouldBe == NodeFlag::Second
+               && hasAnyFlag(pNext->uCouldBe, NodeFlag::Subsecond))
             {
-                pNode->uCouldBe = PDCB_SECONDS_DECIMAL;
-                pNext->uCouldBe = PDCB_SUBSECOND;
+                pNode->uCouldBe = NodeFlag::SecondsDecimal;
+                pNext->uCouldBe = NodeFlag::Subsecond;
             }
             else
             {
-                pNode->uCouldBe &= ~PDCB_SECONDS_DECIMAL;
+                removeFlags(pNode->uCouldBe, NodeFlag::SecondsDecimal);
             }
-            pNode->uCouldBe = PDCB_REMOVEABLE;
+            pNode->uCouldBe = NodeFlag::Removeable;
         }
 
-        // Absorb information from PDCB_SUBSECOND
+        // Absorb information from NodeFlag::Subsecond
         //
-        if (pNode->uCouldBe != PDCB_SUBSECOND)
+        if (pNode->uCouldBe != NodeFlag::Subsecond)
         {
-            pNode->uCouldBe &= ~PDCB_SUBSECOND;
+            removeFlags(pNode->uCouldBe, NodeFlag::Subsecond);
         }
 
-        // Absorb information from PDCB_DATE_FIELD_SEPARATOR.
+        // Absorb information from NodeFlag::DateFieldSeparator.
         //
-        if (pNode->uCouldBe & PDCB_DATE_FIELD_SEPARATOR)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DateFieldSeparator))
         {
-            pNode->uCouldBe &= ~PDCB_DATE_FIELD_SEPARATOR;
+            removeFlags(pNode->uCouldBe, NodeFlag::DateFieldSeparator);
 
-#define PDCB_SEPS (PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_DAY_OF_YEAR|PDCB_WEEK_OF_YEAR|PDCB_DAY_OF_WEEK)
+            const NodeFlag Separators = NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfYear|NodeFlag::WeekOfYear|NodeFlag::DayOfWeek;
             if (  pPrev
                && pNext
-               && (pPrev->uCouldBe & PDCB_SEPS)
-               && (pNext->uCouldBe & PDCB_SEPS))
+               && hasAnyFlag(pPrev->uCouldBe, Separators)
+               && hasAnyFlag(pNext->uCouldBe, Separators))
             {
-                pPrev->uCouldBe &= PDCB_SEPS;
-                pNext->uCouldBe &= PDCB_SEPS;
-                pNode->uCouldBe = PDCB_REMOVEABLE;
+                keepOnlyFlags(pPrev->uCouldBe, Separators);
+                keepOnlyFlags(pNext->uCouldBe, Separators);
+                pNode->uCouldBe = NodeFlag::Removeable;
             }
         }
 
 
-        // Process PDCB_DAY_OF_MONTH_SUFFIX
+        // Process NodeFlag::DayOfMonthSuffix
         //
-        if (pNode->uCouldBe & PDCB_DAY_OF_MONTH_SUFFIX)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonthSuffix))
         {
-            pNode->uCouldBe = PDCB_REMOVEABLE;
+            pNode->uCouldBe = NodeFlag::Removeable;
             if (  pPrev
-               && (pPrev->uCouldBe & PDCB_DAY_OF_MONTH))
+               && hasAnyFlag(pPrev->uCouldBe, NodeFlag::DayOfMonth))
             {
-                pPrev->uCouldBe = PDCB_DAY_OF_MONTH;
+                pPrev->uCouldBe = NodeFlag::DayOfMonth;
             }
         }
 
-        // Absorb semantic meaning of PDCB_SIGN.
+        // Absorb semantic meaning of NodeFlag::Sign.
         //
-        if (pNode->uCouldBe == PDCB_SIGN)
+        if (pNode->uCouldBe == NodeFlag::Sign)
         {
-#define PDCB_SIGNABLES_POS (PDCB_HMS_TIME|PDCB_HMS_TIMEZONE)
-#define PDCB_SIGNABLES_NEG (PDCB_YEAR|PDCB_YD|PDCB_SIGNABLES_POS|PDCB_YMD)
-            unsigned Signable;
+            const NodeFlag SignablePositive = NodeFlag::HMSTime|NodeFlag::HMSTimeZone;
+            const NodeFlag SignableNegative = NodeFlag::Year|NodeFlag::YD|SignablePositive|NodeFlag::YMD;
+            NodeFlag Signable;
             if (pNode->pToken[0] == '-')
             {
-                Signable = PDCB_SIGNABLES_NEG;
+                Signable = SignableNegative;
             }
             else
             {
-                Signable = PDCB_SIGNABLES_POS;
+                Signable = SignablePositive;
             }
             if (  pNext
-               && (pNext->uCouldBe & Signable))
+               && hasAnyFlag(pNext->uCouldBe, Signable))
             {
-                pNext->uCouldBe &= Signable;
+                keepOnlyFlags(pNext->uCouldBe, Signable);
             }
             else
             {
-                pNode->uCouldBe = PDCB_REMOVEABLE;
+                pNode->uCouldBe = NodeFlag::Removeable;
             }
         }
 
         // A timezone HOUR or HMS requires a leading sign.
         //
-        if (pNode->uCouldBe & (PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone))
         {
             if (  !pPrev
-               || pPrev->uCouldBe != PDCB_SIGN)
+               || pPrev->uCouldBe != NodeFlag::Sign)
             {
-                pNode->uCouldBe &= ~(PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE);
+                removeFlags(pNode->uCouldBe, NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone);
             }
         }
 
-        // Likewise, a PDCB_HOUR_TIME or PDCB_HMS_TIME cannot have a
+        // Likewise, a NodeFlag::HourTime or NodeFlag::HMSTime cannot have a
         // leading sign.
         //
-        if (pNode->uCouldBe & (PDCB_HMS_TIME|PDCB_HOUR_TIME))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime))
         {
             if (  pPrev
-               && pPrev->uCouldBe == PDCB_SIGN)
+               && pPrev->uCouldBe == NodeFlag::Sign)
             {
-                pNode->uCouldBe &= ~(PDCB_HMS_TIME|PDCB_HOUR_TIME);
+                removeFlags(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime);
             }
         }
 
-        // Remove PDCB_WHITESPACE.
+        // Remove NodeFlag::Whitespace.
         //
-        if (pNode->uCouldBe & (PDCB_WHITESPACE|PDCB_REMOVEABLE))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Whitespace|NodeFlag::Removeable))
         {
             PD_RemoveNode(pNode);
         }
@@ -1075,32 +1128,32 @@ static void PD_Pass2(void)
 
 typedef struct tag_pd_cantbe
 {
-    unsigned int mask;
-    unsigned int cantbe;
+    NodeFlag mask;
+    NodeFlag cantbe;
 } PD_CANTBE;
 
 const PD_CANTBE CantBeTable[] =
 {
-    { PDCB_YEAR,         PDCB_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY },
-    { PDCB_MONTH,        PDCB_MONTH|PDCB_WEEK_OF_YEAR|PDCB_DAY_OF_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_WEEK_OF_YEAR_PREFIX },
-    { PDCB_DAY_OF_MONTH, PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR|PDCB_DAY_OF_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_WEEK_OF_YEAR_PREFIX },
-    { PDCB_DAY_OF_WEEK,  PDCB_DAY_OF_WEEK },
-    { PDCB_WEEK_OF_YEAR, PDCB_WEEK_OF_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY },
-    { PDCB_DAY_OF_YEAR,  PDCB_DAY_OF_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_WEEK_OF_YEAR_PREFIX },
-    { PDCB_YD,           PDCB_YEAR|PDCB_YD|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_WEEK_OF_YEAR_PREFIX },
-    { PDCB_YMD,          PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_MDY,          PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_DMY,          PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_YMD|PDCB_MDY, PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_MDY|PDCB_DMY, PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_YMD|PDCB_DMY, PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_YMD|PDCB_DMY|PDCB_MDY, PDCB_YEAR|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR_PREFIX|PDCB_WEEK_OF_YEAR|PDCB_YD|PDCB_DAY_OF_YEAR },
-    { PDCB_TIMEZONE, PDCB_TIMEZONE|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE },
-    { PDCB_HOUR_TIME, PDCB_HMS_TIME|PDCB_HOUR_TIME },
-    { PDCB_HOUR_TIMEZONE, PDCB_TIMEZONE|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE },
-    { PDCB_HMS_TIME, PDCB_HMS_TIME|PDCB_HOUR_TIME },
-    { PDCB_HMS_TIMEZONE, PDCB_TIMEZONE|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE },
-    { 0, 0 }
+    { NodeFlag::Year,         NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY },
+    { NodeFlag::Month,        NodeFlag::Month|NodeFlag::WeekOfYear|NodeFlag::DayOfYear|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::WeekOfYearPrefix },
+    { NodeFlag::DayOfMonth, NodeFlag::DayOfMonth|NodeFlag::WeekOfYear|NodeFlag::DayOfYear|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::WeekOfYearPrefix },
+    { NodeFlag::DayOfWeek,  NodeFlag::DayOfWeek },
+    { NodeFlag::WeekOfYear, NodeFlag::WeekOfYear|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY },
+    { NodeFlag::DayOfYear,  NodeFlag::DayOfYear|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYear|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::WeekOfYearPrefix },
+    { NodeFlag::YD,           NodeFlag::Year|NodeFlag::YD|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYear|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::WeekOfYearPrefix },
+    { NodeFlag::YMD,          NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::MDY,          NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::DMY,          NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::YMD|NodeFlag::MDY, NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::MDY|NodeFlag::DMY, NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::YMD|NodeFlag::DMY, NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::YMD|NodeFlag::DMY|NodeFlag::MDY, NodeFlag::Year|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::WeekOfYearPrefix|NodeFlag::WeekOfYear|NodeFlag::YD|NodeFlag::DayOfYear },
+    { NodeFlag::TimeZone, NodeFlag::TimeZone|NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone },
+    { NodeFlag::HourTime, NodeFlag::HMSTime|NodeFlag::HourTime },
+    { NodeFlag::HourTimeZone, NodeFlag::TimeZone|NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone },
+    { NodeFlag::HMSTime, NodeFlag::HMSTime|NodeFlag::HourTime },
+    { NodeFlag::HMSTimeZone, NodeFlag::TimeZone|NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone },
+    { NodeFlag::Nothing, NodeFlag::Nothing }
 };
 
 static void PD_Deduction(void)
@@ -1109,14 +1162,14 @@ static void PD_Deduction(void)
     while (pNode)
     {
         int j =0;
-        while (CantBeTable[j].mask)
+        while (CantBeTable[j].mask != NodeFlag::Nothing)
         {
             if (pNode->uCouldBe == CantBeTable[j].mask)
             {
                 PD_Node *pNodeInner = PD_FirstNode();
                 while (pNodeInner)
                 {
-                    pNodeInner->uCouldBe &= ~CantBeTable[j].cantbe;
+                    removeFlags(pNodeInner->uCouldBe, CantBeTable[j].cantbe);
                     pNodeInner = PD_NextNode(pNodeInner);
                 }
                 pNode->uCouldBe = CantBeTable[j].mask;
@@ -1134,7 +1187,7 @@ static void PD_BreakItDown(void)
     while (pNode)
     {
         int j =0;
-        while (BreakDownTable[j].mask)
+        while (BreakDownTable[j].mask != NodeFlag::Nothing)
         {
             if (pNode->uCouldBe == BreakDownTable[j].mask)
             {
@@ -1157,110 +1210,110 @@ static void PD_Pass5(void)
         PD_Node *pPrev = PD_PrevNode(pNode);
         PD_Node *pNext = PD_NextNode(pNode);
 
-        // If all that is left is PDCB_HMS_TIME and PDCB_HOUR_TIME, then
-        // it's PDCB_HOUR_TIME.
+        // If all that is left is NodeFlag::HMSTime and NodeFlag::HourTime, then
+        // it's NodeFlag::HourTime.
         //
-        if (pNode->uCouldBe == (PDCB_HMS_TIME|PDCB_HOUR_TIME))
+        if (pNode->uCouldBe == (NodeFlag::HMSTime|NodeFlag::HourTime))
         {
-            pNode->uCouldBe = PDCB_HOUR_TIME;
+            pNode->uCouldBe = NodeFlag::HourTime;
         }
-        if (pNode->uCouldBe == (PDCB_HMS_TIMEZONE|PDCB_HOUR_TIMEZONE))
+        if (pNode->uCouldBe == (NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone))
         {
-            pNode->uCouldBe = PDCB_HOUR_TIMEZONE;
+            pNode->uCouldBe = NodeFlag::HourTimeZone;
         }
 
-        // PDCB_MINUTE must follow an PDCB_HOUR_TIME or PDCB_HOUR_TIMEZONE.
+        // NodeFlag::Minute must follow an NodeFlag::HourTime or NodeFlag::HourTimeZone.
         //
-        if (pNode->uCouldBe & PDCB_MINUTE)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Minute))
         {
             if (  !pPrev
-               || !(pPrev->uCouldBe & (PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE)))
+               || !hasAnyFlag(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone))
             {
-                pNode->uCouldBe &= ~PDCB_MINUTE;
+                removeFlags(pNode->uCouldBe, NodeFlag::Minute);
             }
         }
 
-        // PDCB_SECOND must follow an PDCB_MINUTE.
+        // NodeFlag::Second must follow an NodeFlag::Minute.
         //
-        if (pNode->uCouldBe & PDCB_SECOND)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Second))
         {
             if (  !pPrev
-               || !(pPrev->uCouldBe & PDCB_MINUTE))
+               || !hasAnyFlag(pPrev->uCouldBe, NodeFlag::Minute))
             {
-                pNode->uCouldBe &= ~PDCB_SECOND;
+                removeFlags(pNode->uCouldBe, NodeFlag::Second);
             }
         }
 
         // YMD MDY DMY
         //
-        // PDCB_DAY_OF_MONTH cannot follow PDCB_YEAR.
+        // NodeFlag::DayOfMonth cannot follow NodeFlag::Year.
         //
-        if (  (pNode->uCouldBe & PDCB_DAY_OF_MONTH)
+        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonth)
            && pPrev
-           && pPrev->uCouldBe == PDCB_YEAR)
+           && pPrev->uCouldBe == NodeFlag::Year)
         {
-            pNode->uCouldBe &= ~PDCB_DAY_OF_MONTH;
+            removeFlags(pNode->uCouldBe, NodeFlag::DayOfMonth);
         }
 
         // Timezone cannot occur before the time.
         //
-        if (  (pNode->uCouldBe & PDCB_TIMEZONE)
+        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::TimeZone)
            && !bMightHaveSeenTimeHour)
         {
-            pNode->uCouldBe &= ~PDCB_TIMEZONE;
+            removeFlags(pNode->uCouldBe, NodeFlag::TimeZone);
         }
 
         // TimeDateSeparator cannot occur after the time.
         //
-        if (  (pNode->uCouldBe & PDCB_DATE_TIME_SEPARATOR)
+        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::DateTimeSeparator)
            && bHaveSeenTimeHour)
         {
-            pNode->uCouldBe &= ~PDCB_DATE_TIME_SEPARATOR;
+            removeFlags(pNode->uCouldBe, NodeFlag::DateTimeSeparator);
         }
 
-        if (pNode->uCouldBe == PDCB_DATE_TIME_SEPARATOR)
+        if (pNode->uCouldBe == NodeFlag::DateTimeSeparator)
         {
             PD_Node *pNodeInner = PD_FirstNode();
             while (pNodeInner && pNodeInner != pNode)
             {
-                pNodeInner->uCouldBe &= ~(PDCB_TIMEZONE|PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE|PDCB_MINUTE|PDCB_SECOND|PDCB_SUBSECOND|PDCB_MERIDIAN|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE);
+                removeFlags(pNodeInner->uCouldBe, NodeFlag::TimeZone|NodeFlag::HourTime|NodeFlag::HourTimeZone|NodeFlag::Minute|NodeFlag::Second|NodeFlag::Subsecond|NodeFlag::Meridian|NodeFlag::HMSTime|NodeFlag::HMSTimeZone);
                 pNodeInner = PD_NextNode(pNodeInner);
             }
             pNodeInner = pNext;
             while (pNodeInner)
             {
-                pNodeInner->uCouldBe &= ~(PDCB_WEEK_OF_YEAR_PREFIX|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_DAY_OF_WEEK|PDCB_WEEK_OF_YEAR|PDCB_DAY_OF_YEAR);
+                removeFlags(pNodeInner->uCouldBe, NodeFlag::WeekOfYearPrefix|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfWeek|NodeFlag::WeekOfYear|NodeFlag::DayOfYear);
                 pNodeInner = PD_NextNode(pNodeInner);
             }
-            pNode->uCouldBe = PDCB_REMOVEABLE;
+            pNode->uCouldBe = NodeFlag::Removeable;
         }
 
-        if (pNode->uCouldBe & PDCB_WEEK_OF_YEAR_PREFIX)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::WeekOfYearPrefix))
         {
             if (  pNext
-               && (pNext->uCouldBe & PDCB_WEEK_OF_YEAR))
+               && hasAnyFlag(pNext->uCouldBe, NodeFlag::WeekOfYear))
             {
-                pNext->uCouldBe = PDCB_WEEK_OF_YEAR;
-                pNode->uCouldBe = PDCB_REMOVEABLE;
+                pNext->uCouldBe = NodeFlag::WeekOfYear;
+                pNode->uCouldBe = NodeFlag::Removeable;
             }
-            else if (pNode->uCouldBe == PDCB_WEEK_OF_YEAR_PREFIX)
+            else if (pNode->uCouldBe == NodeFlag::WeekOfYearPrefix)
             {
-                pNode->uCouldBe = PDCB_REMOVEABLE;
+                pNode->uCouldBe = NodeFlag::Removeable;
             }
         }
 
-        if (pNode->uCouldBe & (PDCB_HOUR_TIME|PDCB_HMS_TIME))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
         {
-            if ((pNode->uCouldBe & ~(PDCB_HOUR_TIME|PDCB_HMS_TIME)) == 0)
+            if (hasOnlyFlags(pNode->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
             {
                 bHaveSeenTimeHour = true;
             }
             bMightHaveSeenTimeHour = true;
         }
 
-        // Remove PDCB_REMOVEABLE.
+        // Remove NodeFlag::Removeable.
         //
-        if (pNode->uCouldBe & PDCB_REMOVEABLE)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Removeable))
         {
             PD_RemoveNode(pNode);
         }
@@ -1281,75 +1334,75 @@ static void PD_Pass6(void)
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
     {
-        if (pNode->uCouldBe & (PDCB_HMS_TIME|PDCB_HOUR_TIME))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime))
         {
             cTime++;
         }
-        if (pNode->uCouldBe & PDCB_WEEK_OF_YEAR)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::WeekOfYear))
         {
             cWeekOfYear++;
         }
-        if (pNode->uCouldBe & (PDCB_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cYear++;
         }
-        if (pNode->uCouldBe & (PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cMonth++;
         }
-        if (pNode->uCouldBe & (PDCB_DAY_OF_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonth|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cDayOfMonth++;
         }
-        if (pNode->uCouldBe & PDCB_DAY_OF_WEEK)
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfWeek))
         {
             cDayOfWeek++;
         }
-        if (pNode->uCouldBe & (PDCB_DAY_OF_YEAR|PDCB_YD))
+        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfYear|NodeFlag::YD))
         {
             cDayOfYear++;
         }
         pNode = PD_NextNode(pNode);
     }
 
-    unsigned OnlyOneMask = 0;
-    unsigned CantBeMask = 0;
+    NodeFlag OnlyOneMask = NodeFlag::Nothing;
+    NodeFlag CantBeMask = NodeFlag::Nothing;
     if (cYear == 1)
     {
-        OnlyOneMask |= PDCB_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY;
+        addFlags(OnlyOneMask, NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY);
     }
     if (cTime == 1)
     {
-        OnlyOneMask |= PDCB_HMS_TIME|PDCB_HOUR_TIME;
+        addFlags(OnlyOneMask, NodeFlag::HMSTime|NodeFlag::HourTime);
     }
     if (cMonth == 0 || cDayOfMonth == 0)
     {
-        CantBeMask |= PDCB_MONTH|PDCB_DAY_OF_MONTH;
+        addFlags(CantBeMask, NodeFlag::Month|NodeFlag::DayOfMonth);
     }
     if (cDayOfWeek == 0)
     {
-        CantBeMask |= PDCB_WEEK_OF_YEAR;
+        addFlags(CantBeMask, NodeFlag::WeekOfYear);
     }
     if (  cMonth == 1 && cDayOfMonth == 1
        && (cWeekOfYear != 1 || cDayOfWeek != 1)
        && cDayOfYear != 1)
     {
-        OnlyOneMask |= PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
-        OnlyOneMask |= PDCB_DAY_OF_MONTH;
-        CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_YD;
+        addFlags(OnlyOneMask, NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY);
+        addFlags(OnlyOneMask, NodeFlag::DayOfMonth);
+        addFlags(CantBeMask, NodeFlag::WeekOfYear|NodeFlag::YD);
     }
     else if (cDayOfYear == 1 && (cWeekOfYear != 1 || cDayOfWeek != 1))
     {
-        OnlyOneMask |= PDCB_DAY_OF_YEAR|PDCB_YD;
-        CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
-        CantBeMask |= PDCB_DAY_OF_MONTH;
+        addFlags(OnlyOneMask, NodeFlag::DayOfYear|NodeFlag::YD);
+        addFlags(CantBeMask, NodeFlag::WeekOfYear|NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY);
+        addFlags(CantBeMask, NodeFlag::DayOfMonth);
     }
     else if (cWeekOfYear == 1 && cDayOfWeek == 1)
     {
-        OnlyOneMask |= PDCB_WEEK_OF_YEAR;
-        OnlyOneMask |= PDCB_DAY_OF_WEEK;
-        CantBeMask |= PDCB_YD|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
-        CantBeMask |= PDCB_DAY_OF_MONTH;
+        addFlags(OnlyOneMask, NodeFlag::WeekOfYear);
+        addFlags(OnlyOneMask, NodeFlag::DayOfWeek);
+        addFlags(CantBeMask, NodeFlag::YD|NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY);
+        addFlags(CantBeMask, NodeFlag::DayOfMonth);
     }
 
     // Also, if we match OnlyOneMask, then force only something in
@@ -1358,13 +1411,13 @@ static void PD_Pass6(void)
     pNode = PD_FirstNode();
     while (pNode)
     {
-        if (pNode->uCouldBe & OnlyOneMask)
+        if (hasAnyFlag(pNode->uCouldBe, OnlyOneMask))
         {
-            pNode->uCouldBe &= OnlyOneMask;
+            keepOnlyFlags(pNode->uCouldBe, OnlyOneMask);
         }
-        if (pNode->uCouldBe & ~CantBeMask)
+        if (hasAnyFlagsNotIn(pNode->uCouldBe, CantBeMask))
         {
-            pNode->uCouldBe &= ~CantBeMask;
+            removeFlags(pNode->uCouldBe, CantBeMask);
         }
         pNode = PD_NextNode(pNode);
     }
@@ -1389,53 +1442,53 @@ static bool PD_GetFields(ALLFIELDS *paf)
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
     {
-        if (pNode->uCouldBe == PDCB_YEAR)
+        if (pNode->uCouldBe == NodeFlag::Year)
         {
             paf->iYear = pNode->iToken;
             PD_Node *pPrev = PD_PrevNode(pNode);
             if (  pPrev
-               && pPrev->uCouldBe == PDCB_SIGN
+               && pPrev->uCouldBe == NodeFlag::Sign
                && pPrev->pToken[0] == '-')
             {
                 paf->iYear = -paf->iYear;
             }
         }
-        else if (pNode->uCouldBe == PDCB_DAY_OF_YEAR)
+        else if (pNode->uCouldBe == NodeFlag::DayOfYear)
         {
             paf->iDayOfYear = pNode->iToken;
         }
-        else if (pNode->uCouldBe == PDCB_MONTH)
+        else if (pNode->uCouldBe == NodeFlag::Month)
         {
             paf->iMonthOfYear = pNode->iToken;
         }
-        else if (pNode->uCouldBe == PDCB_DAY_OF_MONTH)
+        else if (pNode->uCouldBe == NodeFlag::DayOfMonth)
         {
             paf->iDayOfMonth = pNode->iToken;
         }
-        else if (pNode->uCouldBe == PDCB_WEEK_OF_YEAR)
+        else if (pNode->uCouldBe == NodeFlag::WeekOfYear)
         {
             paf->iWeekOfYear = pNode->iToken;
         }
-        else if (pNode->uCouldBe == PDCB_DAY_OF_WEEK)
+        else if (pNode->uCouldBe == NodeFlag::DayOfWeek)
         {
             paf->iDayOfWeek = pNode->iToken;
         }
-        else if (pNode->uCouldBe == PDCB_HOUR_TIME)
+        else if (pNode->uCouldBe == NodeFlag::HourTime)
         {
             paf->iHourTime = pNode->iToken;
             pNode = PD_NextNode(pNode);
             if (  pNode
-               && pNode->uCouldBe == PDCB_MINUTE)
+               && pNode->uCouldBe == NodeFlag::Minute)
             {
                 paf->iMinuteTime = pNode->iToken;
                 pNode = PD_NextNode(pNode);
                 if (  pNode
-                   && pNode->uCouldBe == PDCB_SECOND)
+                   && pNode->uCouldBe == NodeFlag::Second)
                 {
                     paf->iSecondTime = pNode->iToken;
                     pNode = PD_NextNode(pNode);
                     if (  pNode
-                       && pNode->uCouldBe == PDCB_SUBSECOND)
+                       && pNode->uCouldBe == NodeFlag::Subsecond)
                     {
                         unsigned short ms, us, ns;
                         ParseDecimalSeconds(pNode->nToken, pNode->pToken, &ms,
@@ -1449,7 +1502,7 @@ static bool PD_GetFields(ALLFIELDS *paf)
                 }
             }
             if (  pNode
-               && pNode->uCouldBe == PDCB_MERIDIAN)
+               && pNode->uCouldBe == NodeFlag::Meridian)
             {
                 if (paf->iHourTime == 12)
                 {
@@ -1460,19 +1513,19 @@ static bool PD_GetFields(ALLFIELDS *paf)
             }
             continue;
         }
-        else if (pNode->uCouldBe == PDCB_HOUR_TIMEZONE)
+        else if (pNode->uCouldBe == NodeFlag::HourTimeZone)
         {
             paf->iMinuteTimeZone = pNode->iToken * 60;
             PD_Node *pPrev = PD_PrevNode(pNode);
             if (  pPrev
-               && pPrev->uCouldBe == PDCB_SIGN
+               && pPrev->uCouldBe == NodeFlag::Sign
                && pPrev->pToken[0] == '-')
             {
                 paf->iMinuteTimeZone = -paf->iMinuteTimeZone;
             }
             pNode = PD_NextNode(pNode);
             if (  pNode
-               && pNode->uCouldBe == PDCB_MINUTE)
+               && pNode->uCouldBe == NodeFlag::Minute)
             {
                 if (paf->iMinuteTimeZone < 0)
                 {
@@ -1486,7 +1539,7 @@ static bool PD_GetFields(ALLFIELDS *paf)
             }
             continue;
         }
-        else if (pNode->uCouldBe == PDCB_TIMEZONE)
+        else if (pNode->uCouldBe == NodeFlag::TimeZone)
         {
             if (pNode->iToken < 0)
             {
@@ -1499,7 +1552,7 @@ static bool PD_GetFields(ALLFIELDS *paf)
                                 + pNode->iToken % 100;
             }
         }
-        else if (pNode->uCouldBe & (PDCB_SIGN|PDCB_DATE_TIME_SEPARATOR))
+        else if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Sign|NodeFlag::DateTimeSeparator))
         {
             ; // Nothing
         }
