@@ -8,6 +8,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include <list>
 
 enum class NodeType {
     Symbol = 1,
@@ -101,7 +102,7 @@ inline NodeFlag removeFlags(NodeFlag& value, NodeFlag bitsToRemove) {
 // character is overlapped by layers and layers of meaning from 'digit'
 // to 'the second digit of the hours field of the timezone'.
 //
-typedef struct tag_pd_node
+struct PD_Node
 {
     // The following is a bitfield which contains a '1' bit for every
     // possible meaning associated with this token. This bitfield is
@@ -146,17 +147,11 @@ typedef struct tag_pd_node
     size_t    nToken;
     int       iToken;
 
-    // Link to previous and next node.
-    //
-    struct tag_pd_node *pNextNode;
-    struct tag_pd_node *pPrevNode;
+};
 
-} PD_Node;
+static std::list<PD_Node> nodeList;
 
-static PD_Node *PD_NewNode(void);
-static void PD_AppendNode(PD_Node *pNode);
-static void PD_InsertAfter(PD_Node *pWhere, PD_Node *pNode);
-typedef void BREAK_DOWN_FUNC(PD_Node *pNode);
+typedef void BREAK_DOWN_FUNC(std::list<PD_Node>::iterator iter);
 typedef struct tag_pd_breakdown
 {
     NodeFlag mask;
@@ -366,59 +361,57 @@ static bool isValidHMS(size_t nStr, UTF8 *pStr, int iValue)
     return false;
 }
 
-static void SplitLastTwoDigits(PD_Node *pNode, NodeFlag mask)
+static std::list<PD_Node>::iterator PD_InsertAfter(std::list<PD_Node>::iterator pos, const PD_Node& node);
+
+static void SplitLastTwoDigits(std::list<PD_Node>::iterator iter, NodeFlag mask)
 {
-    PD_Node *p = PD_NewNode();
-    if (p)
-    {
-        *p = *pNode;
-        p->uCouldBe = mask;
-        p->nToken = 2;
-        p->pToken += pNode->nToken - 2;
-        p->iToken = pNode->iToken % 100;
-        pNode->nToken -= 2;
-        pNode->iToken /= 100;
-        PD_InsertAfter(pNode, p);
-    }
+    PD_Node newNode = *iter;
+    newNode.uCouldBe = mask;
+    newNode.nToken = 2;
+    newNode.pToken += iter->nToken - 2;
+    newNode.iToken = iter->iToken % 100;
+
+    iter->nToken -= 2;
+    iter->iToken /= 100;
+
+    PD_InsertAfter(iter, newNode);
 }
 
-static void SplitLastThreeDigits(PD_Node *pNode, NodeFlag mask)
+static void SplitLastThreeDigits(std::list<PD_Node>::iterator iter, NodeFlag mask)
 {
-    PD_Node *p = PD_NewNode();
-    if (p)
-    {
-        *p = *pNode;
-        p->uCouldBe = mask;
-        p->nToken = 3;
-        p->pToken += pNode->nToken - 3;
-        p->iToken = pNode->iToken % 1000;
-        pNode->nToken -= 3;
-        pNode->iToken /= 1000;
-        PD_InsertAfter(pNode, p);
-    }
+    PD_Node newNode = *iter;
+    newNode.uCouldBe = mask;
+    newNode.nToken = 3;
+    newNode.pToken += iter->nToken - 3;
+    newNode.iToken = iter->iToken % 1000;
+
+    iter->nToken -= 3;
+    iter->iToken /= 1000;
+
+    PD_InsertAfter(iter, newNode);
 }
 
 // This function breaks down H, HH, HMM, HHMM, HMMSS, HHMMSS
 //
-static void BreakDownHMS(PD_Node *pNode)
+static void BreakDownHMS(std::list<PD_Node>::iterator iter)
 {
-    if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime))
+    if (hasAnyFlag(iter->uCouldBe, NodeFlag::HMSTime))
     {
-        pNode->uCouldBe = NodeFlag::HourTime;
+        iter->uCouldBe = NodeFlag::HourTime;
     }
     else
     {
-        pNode->uCouldBe = NodeFlag::HourTimeZone;
+        iter->uCouldBe = NodeFlag::HourTimeZone;
     }
-    switch (pNode->nToken)
+    switch (iter->nToken)
     {
     case 5:
     case 6:
-        SplitLastTwoDigits(pNode, NodeFlag::Second);
+        SplitLastTwoDigits(iter, NodeFlag::Second);
 
     case 3:
     case 4:
-        SplitLastTwoDigits(pNode, NodeFlag::Minute);
+        SplitLastTwoDigits(iter, NodeFlag::Minute);
     }
 }
 
@@ -444,11 +437,11 @@ static bool isValidYMD(size_t nStr, UTF8 *pStr, int iValue)
 
 // This function breaks down YYMMDD, YYYMMDD, YYYYMMDD, YYYYYMMDD
 //
-static void BreakDownYMD(PD_Node *pNode)
+static void BreakDownYMD(std::list<PD_Node>::iterator iter)
 {
-    pNode->uCouldBe = NodeFlag::Year;
-    SplitLastTwoDigits(pNode, NodeFlag::DayOfMonth);
-    SplitLastTwoDigits(pNode, NodeFlag::Month);
+    iter->uCouldBe = NodeFlag::Year;
+    SplitLastTwoDigits(iter, NodeFlag::DayOfMonth);
+    SplitLastTwoDigits(iter, NodeFlag::Month);
 }
 
 // This function handles MMDDYY
@@ -473,11 +466,11 @@ static bool isValidMDY(size_t nStr, UTF8 *pStr, int iValue)
 
 // This function breaks down MMDDYY
 //
-static void BreakDownMDY(PD_Node *pNode)
+static void BreakDownMDY(std::list<PD_Node>::iterator iter)
 {
-    pNode->uCouldBe = NodeFlag::Month;
-    SplitLastTwoDigits(pNode, NodeFlag::Year);
-    SplitLastTwoDigits(pNode, NodeFlag::DayOfMonth);
+    iter->uCouldBe = NodeFlag::Month;
+    SplitLastTwoDigits(iter, NodeFlag::Year);
+    SplitLastTwoDigits(iter, NodeFlag::DayOfMonth);
 }
 
 // This function handles DDMMYY
@@ -502,11 +495,11 @@ static bool isValidDMY(size_t nStr, UTF8 *pStr, int iValue)
 
 // This function breaks down DDMMYY
 //
-static void BreakDownDMY(PD_Node *pNode)
+static void BreakDownDMY(std::list<PD_Node>::iterator iter)
 {
-    pNode->uCouldBe = NodeFlag::DayOfMonth;
-    SplitLastTwoDigits(pNode, NodeFlag::Year);
-    SplitLastTwoDigits(pNode, NodeFlag::Month);
+    iter->uCouldBe = NodeFlag::DayOfMonth;
+    SplitLastTwoDigits(iter, NodeFlag::Year);
+    SplitLastTwoDigits(iter, NodeFlag::Month);
 }
 
 // This function handles YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
@@ -528,10 +521,10 @@ static bool isValidYD(size_t nStr, UTF8 *pStr, int iValue)
 
 // This function breaks down YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
 //
-static void BreakDownYD(PD_Node *pNode)
+static void BreakDownYD(std::list<PD_Node>::iterator iter)
 {
-    pNode->uCouldBe = NodeFlag::Year;
-    SplitLastThreeDigits(pNode, NodeFlag::DayOfYear);
+    iter->uCouldBe = NodeFlag::Year;
+    SplitLastThreeDigits(iter, NodeFlag::DayOfYear);
 }
 
 static const NodeFlag InitialCouldBe[9] =
@@ -578,11 +571,11 @@ const NUMERIC_VALID_RECORD NumericSet[] =
 // This function looks at the numeric token and assigns the initial set
 // of possibilities.
 //
-static void ClassifyNumericToken(PD_Node *pNode)
+static void ClassifyNumericToken(PD_Node& node)
 {
-    size_t nToken = pNode->nToken;
-    UTF8  *pToken = pNode->pToken;
-    int    iToken = pNode->iToken;
+    size_t nToken = node.nToken;
+    UTF8  *pToken = node.pToken;
+    int    iToken = node.iToken;
 
     NodeFlag uCouldBe = InitialCouldBe[nToken-1];
 
@@ -596,7 +589,7 @@ static void ClassifyNumericToken(PD_Node *pNode)
         }
         i++;
     }
-    pNode->uCouldBe = uCouldBe;
+    node.uCouldBe = uCouldBe;
 }
 
 typedef struct
@@ -733,215 +726,139 @@ const char LexTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-static int nNodes = 0;
-#define MAX_NODES 200
-static PD_Node Nodes[MAX_NODES];
-
-static PD_Node *PD_Head = 0;
-static PD_Node *PD_Tail = 0;
-
 static void PD_Reset(void)
 {
-    nNodes = 0;
-    PD_Head = 0;
-    PD_Tail = 0;
+    nodeList.clear();
 }
 
-PD_Node *PD_NewNode(void)
+static PD_Node CreateNewNode(void)
 {
-    if (nNodes < MAX_NODES)
-    {
-        return Nodes+(nNodes++);
-    }
-    return nullptr;
+    PD_Node node;
+    memset(&node, 0, sizeof(PD_Node));
+    return node;
 }
 
-static PD_Node *PD_FirstNode(void)
+static std::list<PD_Node>::iterator PD_FirstNode(void)
 {
-    return PD_Head;
+    return nodeList.begin();
 }
 
-#if 0
-static PD_Node *PD_LastNode(void)
+static std::list<PD_Node>::iterator PD_LastNode(void)
 {
-    return PD_Tail;
-}
-#endif
-
-static PD_Node *PD_NextNode(PD_Node *pNode)
-{
-    return pNode->pNextNode;
+    return nodeList.empty() ? nodeList.end() : std::prev(nodeList.end());
 }
 
-static PD_Node *PD_PrevNode(PD_Node *pNode)
+static std::list<PD_Node>::iterator PD_AppendNode(const PD_Node& node)
 {
-    return pNode->pPrevNode;
+    nodeList.push_back(node);
+    return std::prev(nodeList.end());
 }
 
-// PD_AppendNode - Appends a node onto the end of the list. It's used during
-// the first pass over the date string; these nodes are therefore always
-// elemental nodes. It might be possible to append a group node. However,
-// usually group nodes a created at a later from recognizing a deeper semantic
-// meaning of an elemental node and this promotion event could happen anywhere
-// in the sequence. The order of promotion isn't clear during the first pass
-// over the date string.
-//
-void PD_AppendNode(PD_Node *pNode)
+static std::list<PD_Node>::iterator PD_InsertAfter(std::list<PD_Node>::iterator pos, const PD_Node& node)
 {
-    if (!PD_Head)
-    {
-        PD_Head = PD_Tail = pNode;
-        return;
-    }
-    pNode->pNextNode = 0;
-    PD_Tail->pNextNode = pNode;
-    pNode->pPrevNode = PD_Tail;
-    PD_Tail = pNode;
+    return nodeList.insert(std::next(pos), node);
 }
 
-void PD_InsertAfter(PD_Node *pWhere, PD_Node *pNode)
+static std::list<PD_Node>::iterator PD_RemoveNode(std::list<PD_Node>::iterator pos)
 {
-    pNode->pPrevNode = pWhere;
-    pNode->pNextNode = pWhere->pNextNode;
-
-    pWhere->pNextNode = pNode;
-    if (pNode->pNextNode)
-    {
-        pNode->pNextNode->pPrevNode = pNode;
-    }
-    else
-    {
-        PD_Tail = pNode;
-    }
+    return nodeList.erase(pos);
 }
 
-static void PD_RemoveNode(PD_Node *pNode)
+static std::list<PD_Node>::iterator PD_NextNode(std::list<PD_Node>::iterator pos)
 {
-    if (pNode == PD_Head)
-    {
-        if (pNode == PD_Tail)
-        {
-            PD_Head = PD_Tail = 0;
-        }
-        else
-        {
-            PD_Head = pNode->pNextNode;
-            PD_Head->pPrevNode = 0;
-            pNode->pNextNode = 0;
-        }
-    }
-    else if (pNode == PD_Tail)
-    {
-        PD_Tail = pNode->pPrevNode;
-        PD_Tail->pNextNode = 0;
-        pNode->pPrevNode = 0;
-    }
-    else
-    {
-        pNode->pNextNode->pPrevNode = pNode->pPrevNode;
-        pNode->pPrevNode->pNextNode = pNode->pNextNode;
-        pNode->pNextNode = 0;
-        pNode->pPrevNode = 0;
-    }
+    return std::next(pos);
 }
 
-static PD_Node *PD_ScanNextToken(UTF8 **ppString)
+static std::list<PD_Node>::iterator PD_PrevNode(std::list<PD_Node>::iterator pos)
 {
-    UTF8 *p = *ppString;
+    return pos == nodeList.begin() ? nodeList.end() : std::prev(pos);
+}
+
+static std::list<PD_Node>::iterator PD_ScanNextToken(UTF8** ppString)
+{
+    UTF8* p = *ppString;
     int ch = *p;
     if (ch == 0)
     {
-        return nullptr;
+        return nodeList.end();
     }
-    PD_Node *pNode;
+
+    PD_Node node = CreateNewNode();
     int iType = LexTable[ch];
     if (iType == PD_LEX_EOS || iType == PD_LEX_INVALID)
     {
-        return nullptr;
+        return nodeList.end();
     }
     else if (iType == PD_LEX_SYMBOL)
     {
-        pNode = PD_NewNode();
-        if (!pNode)
-        {
-            return nullptr;
-        }
-        pNode->pNextNode = 0;
-        pNode->pPrevNode = 0;
-        pNode->iToken = 0;
-        pNode->nToken = 1;
-        pNode->pToken = p;
-        pNode->uNodeType = NodeType::Symbol;
+        node.iToken = 0;
+        node.nToken = 1;
+        node.pToken = p;
+        node.uNodeType = NodeType::Symbol;
         if (ch == ':')
         {
-            pNode->uCouldBe = NodeFlag::TimeFieldSeparator;
+            node.uCouldBe = NodeFlag::TimeFieldSeparator;
         }
         else if (ch == '-')
         {
-            pNode->uCouldBe = NodeFlag::DateFieldSeparator|NodeFlag::Sign;
+            node.uCouldBe = NodeFlag::DateFieldSeparator | NodeFlag::Sign;
         }
         else if (ch == '+')
         {
-            pNode->uCouldBe = NodeFlag::Sign;
+            node.uCouldBe = NodeFlag::Sign;
         }
         else if (ch == '/')
         {
-            pNode->uCouldBe = NodeFlag::DateFieldSeparator;
+            node.uCouldBe = NodeFlag::DateFieldSeparator;
         }
         else if (ch == '.')
         {
-            pNode->uCouldBe = NodeFlag::DateFieldSeparator|NodeFlag::SecondsDecimal;
+            node.uCouldBe = NodeFlag::DateFieldSeparator | NodeFlag::SecondsDecimal;
         }
         else if (ch == ',')
         {
-            pNode->uCouldBe = NodeFlag::Removeable|NodeFlag::SecondsDecimal|NodeFlag::DayOfMonthSuffix;
+            node.uCouldBe = NodeFlag::Removeable | NodeFlag::SecondsDecimal | NodeFlag::DayOfMonthSuffix;
         }
 
         p++;
     }
     else
     {
-        UTF8 *pSave = p;
+        UTF8* pSave = p;
         do
         {
             p++;
             ch = *p;
         } while (iType == LexTable[ch]);
 
-        pNode = PD_NewNode();
-        if (!pNode)
-        {
-            return nullptr;
-        }
-        pNode->pNextNode = 0;
-        pNode->pPrevNode = 0;
+        node = CreateNewNode();
         size_t nLen = p - pSave;
-        pNode->nToken = nLen;
-        pNode->pToken = pSave;
-        pNode->iToken = 0;
-        pNode->uCouldBe = NodeFlag::Nothing;
+        node.nToken = nLen;
+        node.pToken = pSave;
+        node.iToken = 0;
+        node.uCouldBe = NodeFlag::Nothing;
 
         if (iType == PD_LEX_DIGIT)
         {
-            pNode->uNodeType = NodeType::NumericUnsigned;
+            node.uNodeType = NodeType::NumericUnsigned;
 
             if (1 <= nLen && nLen <= 9)
             {
                 UTF8 buff[10];
                 memcpy(buff, pSave, nLen);
                 buff[nLen] = '\0';
-                pNode->iToken = mux_atol(buff);
-                ClassifyNumericToken(pNode);
+                node.iToken = mux_atol(buff);
+                ClassifyNumericToken(node);
             }
         }
         else if (iType == PD_LEX_SPACE)
         {
-            pNode->uNodeType = NodeType::Spaces;
-            pNode->uCouldBe = NodeFlag::Whitespace;
+            node.uNodeType = NodeType::Spaces;
+            node.uCouldBe = NodeFlag::Whitespace;
         }
         else if (iType == PD_LEX_ALPHA)
         {
-            pNode->uNodeType = NodeType::Text;
+            node.uNodeType = NodeType::Text;
 
             // Match Text.
             //
@@ -949,11 +866,11 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
             bool bFound = false;
             while (PD_TextTable[j].szText)
             {
-                if (  strlen((char *)PD_TextTable[j].szText) == nLen
-                   && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
+                if (strlen((char*)PD_TextTable[j].szText) == nLen
+                    && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
                 {
-                    pNode->uCouldBe = PD_TextTable[j].uCouldBe;
-                    pNode->iToken = PD_TextTable[j].iValue;
+                    node.uCouldBe = PD_TextTable[j].uCouldBe;
+                    node.iToken = PD_TextTable[j].iValue;
                     bFound = true;
                     break;
                 }
@@ -961,12 +878,12 @@ static PD_Node *PD_ScanNextToken(UTF8 **ppString)
             }
             if (!bFound)
             {
-                return nullptr;
+                return nodeList.end();
             }
         }
     }
     *ppString = p;
-    return pNode;
+    return PD_AppendNode(node);
 }
 
 static const PD_BREAKDOWN BreakDownTable[] =
@@ -982,99 +899,98 @@ static const PD_BREAKDOWN BreakDownTable[] =
 
 static void PD_Pass2(void)
 {
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iter = nodeList.begin();
+    while (iter != nodeList.end())
     {
-        PD_Node *pPrev = PD_PrevNode(pNode);
-        PD_Node *pNext = PD_NextNode(pNode);
+        auto iterNext = PD_NextNode(iter);
+        auto iterPrev = PD_PrevNode(iter);
 
         // Absorb information from NodeFlag::TimeFieldSeparator.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::TimeFieldSeparator))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::TimeFieldSeparator))
         {
-            if (pPrev && pNext)
+            if (iterPrev != nodeList.end() && iterNext != nodeList.end())
             {
-                if (  hasAnyFlag(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone)
-                   && hasAnyFlag(pNext->uCouldBe, NodeFlag::Minute))
+                if (hasAnyFlag(iterPrev->uCouldBe, NodeFlag::HourTime | NodeFlag::HourTimeZone)
+                    && hasAnyFlag(iterNext->uCouldBe, NodeFlag::Minute))
                 {
-                    keepOnlyFlags(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone);
-                    pNext->uCouldBe = NodeFlag::Minute;
+                    keepOnlyFlags(iterPrev->uCouldBe, NodeFlag::HourTime | NodeFlag::HourTimeZone);
+                    iterNext->uCouldBe = NodeFlag::Minute;
                 }
-                else if (  hasAnyFlag(pPrev->uCouldBe, NodeFlag::Minute)
-                        && hasAnyFlag(pNext->uCouldBe, NodeFlag::Second))
+                else if (hasAnyFlag(iterPrev->uCouldBe, NodeFlag::Minute)
+                    && hasAnyFlag(iterNext->uCouldBe, NodeFlag::Second))
                 {
-                    pPrev->uCouldBe = NodeFlag::Minute;
-                    pNext->uCouldBe = NodeFlag::Second;
+                    iterPrev->uCouldBe = NodeFlag::Minute;
+                    iterNext->uCouldBe = NodeFlag::Second;
                 }
             }
-            pNode->uCouldBe = NodeFlag::Removeable;
+            iter->uCouldBe = NodeFlag::Removeable;
         }
 
         // Absorb information from NodeFlag::SecondsDecimal.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::SecondsDecimal))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::SecondsDecimal))
         {
-            if (  pPrev
-               && pNext
-               && pPrev->uCouldBe == NodeFlag::Second
-               && hasAnyFlag(pNext->uCouldBe, NodeFlag::Subsecond))
+            if (  iterPrev != nodeList.begin()
+               && iterNext != nodeList.end()
+               && iterPrev->uCouldBe == NodeFlag::Second
+               && hasAnyFlag(iterNext->uCouldBe, NodeFlag::Subsecond))
             {
-                pNode->uCouldBe = NodeFlag::SecondsDecimal;
-                pNext->uCouldBe = NodeFlag::Subsecond;
+                iter->uCouldBe = NodeFlag::SecondsDecimal;
+                iterNext->uCouldBe = NodeFlag::Subsecond;
             }
             else
             {
-                removeFlags(pNode->uCouldBe, NodeFlag::SecondsDecimal);
+                removeFlags(iter->uCouldBe, NodeFlag::SecondsDecimal);
             }
-            pNode->uCouldBe = NodeFlag::Removeable;
+            iter->uCouldBe = NodeFlag::Removeable;
         }
 
         // Absorb information from NodeFlag::Subsecond
         //
-        if (pNode->uCouldBe != NodeFlag::Subsecond)
+        if (iter->uCouldBe != NodeFlag::Subsecond)
         {
-            removeFlags(pNode->uCouldBe, NodeFlag::Subsecond);
+            removeFlags(iter->uCouldBe, NodeFlag::Subsecond);
         }
 
         // Absorb information from NodeFlag::DateFieldSeparator.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DateFieldSeparator))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::DateFieldSeparator))
         {
-            removeFlags(pNode->uCouldBe, NodeFlag::DateFieldSeparator);
+            removeFlags(iter->uCouldBe, NodeFlag::DateFieldSeparator);
 
-            const NodeFlag Separators = NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfYear|NodeFlag::WeekOfYear|NodeFlag::DayOfWeek;
-            if (  pPrev
-               && pNext
-               && hasAnyFlag(pPrev->uCouldBe, Separators)
-               && hasAnyFlag(pNext->uCouldBe, Separators))
+            const NodeFlag Separators = NodeFlag::Year | NodeFlag::Month | NodeFlag::DayOfMonth | NodeFlag::DayOfYear | NodeFlag::WeekOfYear | NodeFlag::DayOfWeek;
+            if (  iterPrev != nodeList.begin()
+               && iterNext != nodeList.end()
+               && hasAnyFlag(iterPrev->uCouldBe, Separators)
+               && hasAnyFlag(iterNext->uCouldBe, Separators))
             {
-                keepOnlyFlags(pPrev->uCouldBe, Separators);
-                keepOnlyFlags(pNext->uCouldBe, Separators);
-                pNode->uCouldBe = NodeFlag::Removeable;
+                keepOnlyFlags(iterPrev->uCouldBe, Separators);
+                keepOnlyFlags(iterNext->uCouldBe, Separators);
+                iter->uCouldBe = NodeFlag::Removeable;
             }
         }
 
-
         // Process NodeFlag::DayOfMonthSuffix
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonthSuffix))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::DayOfMonthSuffix))
         {
-            pNode->uCouldBe = NodeFlag::Removeable;
-            if (  pPrev
-               && hasAnyFlag(pPrev->uCouldBe, NodeFlag::DayOfMonth))
+            iter->uCouldBe = NodeFlag::Removeable;
+            if (  iterPrev != nodeList.begin()
+               && hasAnyFlag(iterPrev->uCouldBe, NodeFlag::DayOfMonth))
             {
-                pPrev->uCouldBe = NodeFlag::DayOfMonth;
+                iterPrev->uCouldBe = NodeFlag::DayOfMonth;
             }
         }
 
         // Absorb semantic meaning of NodeFlag::Sign.
         //
-        if (pNode->uCouldBe == NodeFlag::Sign)
+        if (iter->uCouldBe == NodeFlag::Sign)
         {
-            const NodeFlag SignablePositive = NodeFlag::HMSTime|NodeFlag::HMSTimeZone;
-            const NodeFlag SignableNegative = NodeFlag::Year|NodeFlag::YD|SignablePositive|NodeFlag::YMD;
+            const NodeFlag SignablePositive = NodeFlag::HMSTime | NodeFlag::HMSTimeZone;
+            const NodeFlag SignableNegative = NodeFlag::Year | NodeFlag::YD | SignablePositive | NodeFlag::YMD;
             NodeFlag Signable;
-            if (pNode->pToken[0] == '-')
+            if (iter->pToken[0] == '-')
             {
                 Signable = SignableNegative;
             }
@@ -1082,47 +998,54 @@ static void PD_Pass2(void)
             {
                 Signable = SignablePositive;
             }
-            if (  pNext
-               && hasAnyFlag(pNext->uCouldBe, Signable))
+            if (  iterNext != nodeList.end()
+               && hasAnyFlag(iterNext->uCouldBe, Signable))
             {
-                keepOnlyFlags(pNext->uCouldBe, Signable);
+                keepOnlyFlags(iterNext->uCouldBe, Signable);
             }
             else
             {
-                pNode->uCouldBe = NodeFlag::Removeable;
+                iter->uCouldBe = NodeFlag::Removeable;
             }
         }
 
         // A timezone HOUR or HMS requires a leading sign.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::HMSTimeZone | NodeFlag::HourTimeZone))
         {
-            if (  !pPrev
-               || pPrev->uCouldBe != NodeFlag::Sign)
+            if (  iterPrev == nodeList.begin()
+               || iterPrev->uCouldBe != NodeFlag::Sign)
             {
-                removeFlags(pNode->uCouldBe, NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone);
+                removeFlags(iter->uCouldBe, NodeFlag::HMSTimeZone | NodeFlag::HourTimeZone);
             }
         }
 
         // Likewise, a NodeFlag::HourTime or NodeFlag::HMSTime cannot have a
         // leading sign.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::HMSTime | NodeFlag::HourTime))
         {
-            if (  pPrev
-               && pPrev->uCouldBe == NodeFlag::Sign)
+            if (  iterPrev == nodeList.begin()
+               && iterPrev->uCouldBe == NodeFlag::Sign)
             {
-                removeFlags(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime);
+                removeFlags(iter->uCouldBe, NodeFlag::HMSTime | NodeFlag::HourTime);
             }
         }
 
-        // Remove NodeFlag::Whitespace.
-        //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Whitespace|NodeFlag::Removeable))
+        iter = iterNext;
+    }
+
+    iter = nodeList.begin();
+    while (iter != nodeList.end())
+    {
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Whitespace | NodeFlag::Removeable))
         {
-            PD_RemoveNode(pNode);
+            iter = PD_RemoveNode(iter);
         }
-        pNode = pNext;
+        else
+        {
+            ++iter;
+        }
     }
 }
 
@@ -1158,45 +1081,45 @@ const PD_CANTBE CantBeTable[] =
 
 static void PD_Deduction(void)
 {
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iterOuter = PD_FirstNode();
+    while (iterOuter != nodeList.end())
     {
         int j =0;
         while (CantBeTable[j].mask != NodeFlag::Nothing)
         {
-            if (pNode->uCouldBe == CantBeTable[j].mask)
+            if (iterOuter->uCouldBe == CantBeTable[j].mask)
             {
-                PD_Node *pNodeInner = PD_FirstNode();
-                while (pNodeInner)
+                auto iterInner = PD_FirstNode();
+                while (iterInner != nodeList.end())
                 {
-                    removeFlags(pNodeInner->uCouldBe, CantBeTable[j].cantbe);
-                    pNodeInner = PD_NextNode(pNodeInner);
+                    removeFlags(iterInner->uCouldBe, CantBeTable[j].cantbe);
+                    iterInner = PD_NextNode(iterInner);
                 }
-                pNode->uCouldBe = CantBeTable[j].mask;
+                iterOuter->uCouldBe = CantBeTable[j].mask;
                 break;
             }
             j++;
         }
-        pNode = PD_NextNode(pNode);
+        iterOuter = PD_NextNode(iterOuter);
     }
 }
 
 static void PD_BreakItDown(void)
 {
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iter = PD_FirstNode();
+    while (iter != nodeList.end())
     {
         int j =0;
         while (BreakDownTable[j].mask != NodeFlag::Nothing)
         {
-            if (pNode->uCouldBe == BreakDownTable[j].mask)
+            if (iter->uCouldBe == BreakDownTable[j].mask)
             {
-                BreakDownTable[j].fpBreakDown(pNode);
+                BreakDownTable[j].fpBreakDown(iter);
                 break;
             }
             j++;
         }
-        pNode = PD_NextNode(pNode);
+        iter = PD_NextNode(iter);
     }
 }
 
@@ -1204,43 +1127,43 @@ static void PD_Pass5(void)
 {
     bool bHaveSeenTimeHour = false;
     bool bMightHaveSeenTimeHour = false;
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iter = PD_FirstNode();
+    while (iter != nodeList.end())
     {
-        PD_Node *pPrev = PD_PrevNode(pNode);
-        PD_Node *pNext = PD_NextNode(pNode);
+        auto iterPrev = PD_PrevNode(iter);
+        auto iterNext = PD_NextNode(iter);
 
         // If all that is left is NodeFlag::HMSTime and NodeFlag::HourTime, then
         // it's NodeFlag::HourTime.
         //
-        if (pNode->uCouldBe == (NodeFlag::HMSTime|NodeFlag::HourTime))
+        if (iter->uCouldBe == (NodeFlag::HMSTime|NodeFlag::HourTime))
         {
-            pNode->uCouldBe = NodeFlag::HourTime;
+            iter->uCouldBe = NodeFlag::HourTime;
         }
-        if (pNode->uCouldBe == (NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone))
+        if (iter->uCouldBe == (NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone))
         {
-            pNode->uCouldBe = NodeFlag::HourTimeZone;
+            iter->uCouldBe = NodeFlag::HourTimeZone;
         }
 
         // NodeFlag::Minute must follow an NodeFlag::HourTime or NodeFlag::HourTimeZone.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Minute))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Minute))
         {
-            if (  !pPrev
-               || !hasAnyFlag(pPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone))
+            if (  iterPrev == nodeList.begin()
+               || !hasAnyFlag(iterPrev->uCouldBe, NodeFlag::HourTime|NodeFlag::HourTimeZone))
             {
-                removeFlags(pNode->uCouldBe, NodeFlag::Minute);
+                removeFlags(iter->uCouldBe, NodeFlag::Minute);
             }
         }
 
         // NodeFlag::Second must follow an NodeFlag::Minute.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Second))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Second))
         {
-            if (  !pPrev
-               || !hasAnyFlag(pPrev->uCouldBe, NodeFlag::Minute))
+            if (  iterPrev == nodeList.begin()
+               || !hasAnyFlag(iterPrev->uCouldBe, NodeFlag::Minute))
             {
-                removeFlags(pNode->uCouldBe, NodeFlag::Second);
+                removeFlags(iter->uCouldBe, NodeFlag::Second);
             }
         }
 
@@ -1248,63 +1171,63 @@ static void PD_Pass5(void)
         //
         // NodeFlag::DayOfMonth cannot follow NodeFlag::Year.
         //
-        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonth)
-           && pPrev
-           && pPrev->uCouldBe == NodeFlag::Year)
+        if (  hasAnyFlag(iter->uCouldBe, NodeFlag::DayOfMonth)
+           && iterPrev != nodeList.begin()
+           && iterPrev->uCouldBe == NodeFlag::Year)
         {
-            removeFlags(pNode->uCouldBe, NodeFlag::DayOfMonth);
+            removeFlags(iter->uCouldBe, NodeFlag::DayOfMonth);
         }
 
         // Timezone cannot occur before the time.
         //
-        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::TimeZone)
+        if (  hasAnyFlag(iter->uCouldBe, NodeFlag::TimeZone)
            && !bMightHaveSeenTimeHour)
         {
-            removeFlags(pNode->uCouldBe, NodeFlag::TimeZone);
+            removeFlags(iter->uCouldBe, NodeFlag::TimeZone);
         }
 
         // TimeDateSeparator cannot occur after the time.
         //
-        if (  hasAnyFlag(pNode->uCouldBe, NodeFlag::DateTimeSeparator)
+        if (  hasAnyFlag(iter->uCouldBe, NodeFlag::DateTimeSeparator)
            && bHaveSeenTimeHour)
         {
-            removeFlags(pNode->uCouldBe, NodeFlag::DateTimeSeparator);
+            removeFlags(iter->uCouldBe, NodeFlag::DateTimeSeparator);
         }
 
-        if (pNode->uCouldBe == NodeFlag::DateTimeSeparator)
+        if (iter->uCouldBe == NodeFlag::DateTimeSeparator)
         {
-            PD_Node *pNodeInner = PD_FirstNode();
-            while (pNodeInner && pNodeInner != pNode)
+            auto iterInner = PD_FirstNode();
+            while (iterInner != nodeList.end() && iterInner != iter)
             {
-                removeFlags(pNodeInner->uCouldBe, NodeFlag::TimeZone|NodeFlag::HourTime|NodeFlag::HourTimeZone|NodeFlag::Minute|NodeFlag::Second|NodeFlag::Subsecond|NodeFlag::Meridian|NodeFlag::HMSTime|NodeFlag::HMSTimeZone);
-                pNodeInner = PD_NextNode(pNodeInner);
+                removeFlags(iterInner->uCouldBe, NodeFlag::TimeZone|NodeFlag::HourTime|NodeFlag::HourTimeZone|NodeFlag::Minute|NodeFlag::Second|NodeFlag::Subsecond|NodeFlag::Meridian|NodeFlag::HMSTime|NodeFlag::HMSTimeZone);
+                iterInner = PD_NextNode(iterInner);
             }
-            pNodeInner = pNext;
-            while (pNodeInner)
+            iterInner = iterNext;
+            while (iterInner != nodeList.end())
             {
-                removeFlags(pNodeInner->uCouldBe, NodeFlag::WeekOfYearPrefix|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfWeek|NodeFlag::WeekOfYear|NodeFlag::DayOfYear);
-                pNodeInner = PD_NextNode(pNodeInner);
+                removeFlags(iterInner->uCouldBe, NodeFlag::WeekOfYearPrefix|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::Year|NodeFlag::Month|NodeFlag::DayOfMonth|NodeFlag::DayOfWeek|NodeFlag::WeekOfYear|NodeFlag::DayOfYear);
+                iterInner = PD_NextNode(iterInner);
             }
-            pNode->uCouldBe = NodeFlag::Removeable;
+            iter->uCouldBe = NodeFlag::Removeable;
         }
 
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::WeekOfYearPrefix))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::WeekOfYearPrefix))
         {
-            if (  pNext
-               && hasAnyFlag(pNext->uCouldBe, NodeFlag::WeekOfYear))
+            if (  iterNext != nodeList.end()
+               && hasAnyFlag(iterNext->uCouldBe, NodeFlag::WeekOfYear))
             {
-                pNext->uCouldBe = NodeFlag::WeekOfYear;
-                pNode->uCouldBe = NodeFlag::Removeable;
+                iterNext->uCouldBe = NodeFlag::WeekOfYear;
+                iter->uCouldBe = NodeFlag::Removeable;
             }
-            else if (pNode->uCouldBe == NodeFlag::WeekOfYearPrefix)
+            else if (iter->uCouldBe == NodeFlag::WeekOfYearPrefix)
             {
-                pNode->uCouldBe = NodeFlag::Removeable;
+                iter->uCouldBe = NodeFlag::Removeable;
             }
         }
 
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
         {
-            if (hasOnlyFlags(pNode->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
+            if (hasOnlyFlags(iter->uCouldBe, NodeFlag::HourTime|NodeFlag::HMSTime))
             {
                 bHaveSeenTimeHour = true;
             }
@@ -1313,11 +1236,11 @@ static void PD_Pass5(void)
 
         // Remove NodeFlag::Removeable.
         //
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Removeable))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Removeable))
         {
-            PD_RemoveNode(pNode);
+            PD_RemoveNode(iter);
         }
-        pNode = pNext;
+        iter = iterNext;
     }
 }
 
@@ -1331,38 +1254,38 @@ static void PD_Pass6(void)
     int cDayOfWeek = 0;
     int cTime = 0;
 
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iter = PD_FirstNode();
+    while (iter != nodeList.end())
     {
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::HMSTime|NodeFlag::HourTime))
         {
             cTime++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::WeekOfYear))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::WeekOfYear))
         {
             cWeekOfYear++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cYear++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::Month|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cMonth++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfMonth|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::DayOfMonth|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY))
         {
             cDayOfMonth++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfWeek))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::DayOfWeek))
         {
             cDayOfWeek++;
         }
-        if (hasAnyFlag(pNode->uCouldBe, NodeFlag::DayOfYear|NodeFlag::YD))
+        if (hasAnyFlag(iter->uCouldBe, NodeFlag::DayOfYear|NodeFlag::YD))
         {
             cDayOfYear++;
         }
-        pNode = PD_NextNode(pNode);
+        iter = PD_NextNode(iter);
     }
 
     NodeFlag OnlyOneMask = NodeFlag::Nothing;
@@ -1408,18 +1331,18 @@ static void PD_Pass6(void)
     // Also, if we match OnlyOneMask, then force only something in
     // OnlyOneMask.
     //
-    pNode = PD_FirstNode();
-    while (pNode)
+    iter = PD_FirstNode();
+    while (iter != nodeList.end())
     {
-        if (hasAnyFlag(pNode->uCouldBe, OnlyOneMask))
+        if (hasAnyFlag(iter->uCouldBe, OnlyOneMask))
         {
-            keepOnlyFlags(pNode->uCouldBe, OnlyOneMask);
+            keepOnlyFlags(iter->uCouldBe, OnlyOneMask);
         }
-        if (hasAnyFlagsNotIn(pNode->uCouldBe, CantBeMask))
+        if (hasAnyFlagsNotIn(iter->uCouldBe, CantBeMask))
         {
-            removeFlags(pNode->uCouldBe, CantBeMask);
+            removeFlags(iter->uCouldBe, CantBeMask);
         }
-        pNode = PD_NextNode(pNode);
+        iter = PD_NextNode(iter);
     }
 }
 
@@ -1439,120 +1362,120 @@ static bool PD_GetFields(ALLFIELDS *paf)
     paf->iNanosecondTime  = NOT_PRESENT;
     paf->iMinuteTimeZone  = NOT_PRESENT;
 
-    PD_Node *pNode = PD_FirstNode();
-    while (pNode)
+    auto iter = PD_FirstNode();
+    while (iter != nodeList.end())
     {
-        if (pNode->uCouldBe == NodeFlag::Year)
+        if (iter->uCouldBe == NodeFlag::Year)
         {
-            paf->iYear = pNode->iToken;
-            PD_Node *pPrev = PD_PrevNode(pNode);
-            if (  pPrev
-               && pPrev->uCouldBe == NodeFlag::Sign
-               && pPrev->pToken[0] == '-')
+            paf->iYear = iter->iToken;
+            auto iterPrev = PD_PrevNode(iter);
+            if (  iterPrev != nodeList.begin()
+               && iterPrev->uCouldBe == NodeFlag::Sign
+               && iterPrev->pToken[0] == '-')
             {
                 paf->iYear = -paf->iYear;
             }
         }
-        else if (pNode->uCouldBe == NodeFlag::DayOfYear)
+        else if (iter->uCouldBe == NodeFlag::DayOfYear)
         {
-            paf->iDayOfYear = pNode->iToken;
+            paf->iDayOfYear = iter->iToken;
         }
-        else if (pNode->uCouldBe == NodeFlag::Month)
+        else if (iter->uCouldBe == NodeFlag::Month)
         {
-            paf->iMonthOfYear = pNode->iToken;
+            paf->iMonthOfYear = iter->iToken;
         }
-        else if (pNode->uCouldBe == NodeFlag::DayOfMonth)
+        else if (iter->uCouldBe == NodeFlag::DayOfMonth)
         {
-            paf->iDayOfMonth = pNode->iToken;
+            paf->iDayOfMonth = iter->iToken;
         }
-        else if (pNode->uCouldBe == NodeFlag::WeekOfYear)
+        else if (iter->uCouldBe == NodeFlag::WeekOfYear)
         {
-            paf->iWeekOfYear = pNode->iToken;
+            paf->iWeekOfYear = iter->iToken;
         }
-        else if (pNode->uCouldBe == NodeFlag::DayOfWeek)
+        else if (iter->uCouldBe == NodeFlag::DayOfWeek)
         {
-            paf->iDayOfWeek = pNode->iToken;
+            paf->iDayOfWeek = iter->iToken;
         }
-        else if (pNode->uCouldBe == NodeFlag::HourTime)
+        else if (iter->uCouldBe == NodeFlag::HourTime)
         {
-            paf->iHourTime = pNode->iToken;
-            pNode = PD_NextNode(pNode);
-            if (  pNode
-               && pNode->uCouldBe == NodeFlag::Minute)
+            paf->iHourTime = iter->iToken;
+            iter = PD_NextNode(iter);
+            if (  iter != nodeList.end()
+               && iter->uCouldBe == NodeFlag::Minute)
             {
-                paf->iMinuteTime = pNode->iToken;
-                pNode = PD_NextNode(pNode);
-                if (  pNode
-                   && pNode->uCouldBe == NodeFlag::Second)
+                paf->iMinuteTime = iter->iToken;
+                iter = PD_NextNode(iter);
+                if (  iter != nodeList.end()
+                   && iter->uCouldBe == NodeFlag::Second)
                 {
-                    paf->iSecondTime = pNode->iToken;
-                    pNode = PD_NextNode(pNode);
-                    if (  pNode
-                       && pNode->uCouldBe == NodeFlag::Subsecond)
+                    paf->iSecondTime = iter->iToken;
+                    iter = PD_NextNode(iter);
+                    if (  iter != nodeList.end()
+                       && iter->uCouldBe == NodeFlag::Subsecond)
                     {
                         unsigned short ms, us, ns;
-                        ParseDecimalSeconds(pNode->nToken, pNode->pToken, &ms,
+                        ParseDecimalSeconds(iter->nToken, iter->pToken, &ms,
                             &us, &ns);
 
                         paf->iMillisecondTime = ms;
                         paf->iMicrosecondTime = us;
                         paf->iNanosecondTime  = ns;
-                        pNode = PD_NextNode(pNode);
+                        iter = PD_NextNode(iter);
                     }
                 }
             }
-            if (  pNode
-               && pNode->uCouldBe == NodeFlag::Meridian)
+            if (  iter != nodeList.end()
+               && iter->uCouldBe == NodeFlag::Meridian)
             {
                 if (paf->iHourTime == 12)
                 {
                     paf->iHourTime = 0;
                 }
-                paf->iHourTime += pNode->iToken;
-                pNode = PD_NextNode(pNode);
+                paf->iHourTime += iter->iToken;
+                iter = PD_NextNode(iter);
             }
             continue;
         }
-        else if (pNode->uCouldBe == NodeFlag::HourTimeZone)
+        else if (iter->uCouldBe == NodeFlag::HourTimeZone)
         {
-            paf->iMinuteTimeZone = pNode->iToken * 60;
-            PD_Node *pPrev = PD_PrevNode(pNode);
-            if (  pPrev
-               && pPrev->uCouldBe == NodeFlag::Sign
-               && pPrev->pToken[0] == '-')
+            paf->iMinuteTimeZone = iter->iToken * 60;
+            auto iterPrev = PD_PrevNode(iter);
+            if (  iterPrev != nodeList.begin()
+               && iterPrev->uCouldBe == NodeFlag::Sign
+               && iterPrev->pToken[0] == '-')
             {
                 paf->iMinuteTimeZone = -paf->iMinuteTimeZone;
             }
-            pNode = PD_NextNode(pNode);
-            if (  pNode
-               && pNode->uCouldBe == NodeFlag::Minute)
+            iter = PD_NextNode(iter);
+            if (  iter != nodeList.end()
+               && iter->uCouldBe == NodeFlag::Minute)
             {
                 if (paf->iMinuteTimeZone < 0)
                 {
-                    paf->iMinuteTimeZone -= pNode->iToken;
+                    paf->iMinuteTimeZone -= iter->iToken;
                 }
                 else
                 {
-                    paf->iMinuteTimeZone += pNode->iToken;
+                    paf->iMinuteTimeZone += iter->iToken;
                 }
-                pNode = PD_NextNode(pNode);
+                iter = PD_NextNode(iter);
             }
             continue;
         }
-        else if (pNode->uCouldBe == NodeFlag::TimeZone)
+        else if (iter->uCouldBe == NodeFlag::TimeZone)
         {
-            if (pNode->iToken < 0)
+            if (iter->iToken < 0)
             {
-                paf->iMinuteTimeZone = (pNode->iToken / 100) * 60
-                                - ((-pNode->iToken) % 100);
+                paf->iMinuteTimeZone = (iter->iToken / 100) * 60
+                                - ((-iter->iToken) % 100);
             }
             else
             {
-                paf->iMinuteTimeZone = (pNode->iToken / 100) * 60
-                                + pNode->iToken % 100;
+                paf->iMinuteTimeZone = (iter->iToken / 100) * 60
+                                + iter->iToken % 100;
             }
         }
-        else if (hasAnyFlag(pNode->uCouldBe, NodeFlag::Sign|NodeFlag::DateTimeSeparator))
+        else if (hasAnyFlag(iter->uCouldBe, NodeFlag::Sign|NodeFlag::DateTimeSeparator))
         {
             ; // Nothing
         }
@@ -1560,7 +1483,7 @@ static bool PD_GetFields(ALLFIELDS *paf)
         {
             return false;
         }
-        pNode = PD_NextNode(pNode);
+        iter = PD_NextNode(iter);
     }
     return true;
 }
@@ -1690,15 +1613,6 @@ bool ParseDate
 )
 {
     PD_Reset();
-
-    UTF8 *p = pDateString;
-    PD_Node *pNode;
-    for (  pNode = PD_ScanNextToken(&p);
-           pNode;
-           pNode = PD_ScanNextToken(&p))
-    {
-        PD_AppendNode(pNode);
-    }
 
     PD_Pass2();
 
