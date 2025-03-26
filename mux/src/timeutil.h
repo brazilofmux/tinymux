@@ -34,6 +34,7 @@ class CLinearTimeAbsolute
     friend bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
     friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
@@ -58,7 +59,7 @@ public:
     void  ReturnUniqueString(UTF8 *buffer, size_t nBuffer);
     UTF8 *ReturnDateString(int nFracDigits = 0);
     bool  ReturnFields(FIELDEDTIME *arg_tStruct);
-    INT64 ReturnSeconds(void);
+    INT64 ReturnSeconds(void) const;
     UTF8 *ReturnSecondsString(int nFracDigits = 0);
     INT64 Return100ns(void);
 
@@ -185,7 +186,11 @@ const CLinearTimeDelta time_15m   = 15*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
-void TIME_Initialize(void);
+namespace TimezoneCache {
+    void initialize(void);
+    CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst);
+    CLinearTimeDelta getCurrentLocalOffset(bool* is_dst);
+}
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);

@@ -33,6 +33,11 @@ bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
     return lta.m_tAbsolute <= ltb.m_tAbsolute;
 }
 
+bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
+{
+    return lta.m_tAbsolute >= ltb.m_tAbsolute;
+}
+
 CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd)
 {
     CLinearTimeAbsolute t;
@@ -82,7 +87,7 @@ void CLinearTimeAbsolute::SetSeconds(INT64 arg_tSeconds)
     m_tAbsolute += EPOCH_OFFSET;
 }
 
-INT64 CLinearTimeAbsolute::ReturnSeconds(void)
+INT64 CLinearTimeAbsolute::ReturnSeconds(void) const
 {
     // INT64 is in hundreds of nanoseconds.
     // And the Epoch is 0:00 1/1/1601 instead of 0:00 1/1/1970
@@ -232,16 +237,16 @@ bool CLinearTimeAbsolute::SetSecondsString(UTF8 *arg_szSeconds)
 void CLinearTimeAbsolute::UTC2Local(void)
 {
     bool bDST;
-    CLinearTimeDelta ltd = QueryLocalOffsetAtUTC(*this, &bDST);
+    CLinearTimeDelta ltd = TimezoneCache::queryLocalOffsetAtUTC(*this, &bDST);
     m_tAbsolute += ltd.m_tDelta;
 }
 
 void CLinearTimeAbsolute::Local2UTC(void)
 {
     bool bDST1, bDST2;
-    CLinearTimeDelta ltdOffset1 = QueryLocalOffsetAtUTC(*this, &bDST1);
+    CLinearTimeDelta ltdOffset1 = TimezoneCache::queryLocalOffsetAtUTC(*this, &bDST1);
     CLinearTimeAbsolute ltaUTC2 = *this - ltdOffset1;
-    CLinearTimeDelta ltdOffset2 = QueryLocalOffsetAtUTC(ltaUTC2, &bDST2);
+    CLinearTimeDelta ltdOffset2 = TimezoneCache::queryLocalOffsetAtUTC(ltaUTC2, &bDST2);
 
     CLinearTimeAbsolute ltaLocalGuess = ltaUTC2 + ltdOffset2;
     if (ltaLocalGuess == *this)

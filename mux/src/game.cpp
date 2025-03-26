@@ -2756,7 +2756,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // TODO: Create platform interface
 
-    TIME_Initialize();
+    TimezoneCache::initialize();
     SeedRandomNumberGenerator();
 
     Log.SetBasename(pErrorBasename);
