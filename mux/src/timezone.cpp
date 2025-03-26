@@ -72,7 +72,7 @@ namespace TimezoneCache {
             int touch_counter = 0;
             bool initialized = false;
             std::once_flag init_flag;
-            std::mutex cache_mutex; // Mutex to protect cache access/modification
+            std::mutex cache_mutex;
 
             CacheState() {
                 nearest_year_of_type.fill(-1);
