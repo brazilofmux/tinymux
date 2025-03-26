@@ -34,6 +34,8 @@ author:
    checks, corrected iterator handling, improved SSL state transitions,
    and fixed a descriptor management bug that could remove the wrong
    descriptor when a player has multiple connections.
+ - Fixed a string ownership bug in upated muxcli.cpp (introduced in
+   2.13.0.5). Neither side persisted the value. Serious.
 
 # Performance Enhancements:
 
