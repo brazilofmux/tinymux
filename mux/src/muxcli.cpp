@@ -22,6 +22,8 @@ enum class ArgType {
     EndOfOptions = 3   // An 'end of options' indicator (--)
 };
 
+static std::vector<std::string> persistentStrings;
+
 // Get the type of an argument
 static ArgType getArgType(const std::string& arg)
 {
@@ -85,7 +87,8 @@ static void processLongOption(
             // Option takes an argument
             if (equalPos != std::string::npos) {
                 // Value provided as --option=value
-                pFunc(&(*it), flagName.substr(equalPos + 1).c_str());
+                persistentStrings.push_back(flagName.substr(equalPos + 1));
+                pFunc(&(*it), persistentStrings.back().c_str());
             } else {
                 // Look for a value in the next argument
                 bool found = false;
@@ -154,7 +157,8 @@ static void processShortOption(
                         value++;
                     }
 
-                    pFunc(&(*it), value);
+                    persistentStrings.push_back(options.substr(i + 1));
+                    pFunc(&(*it), persistentStrings.back().c_str());
                     i = options.length(); // Skip remaining characters
                 } else {
                     // Look for a value in the next argument
