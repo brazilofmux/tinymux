@@ -2279,4 +2279,10 @@ public:
     LBUF_OFFSET Count(void) { return m_nWords; }
 };
 
+inline int mux_min(int x, int y)
+{
+    if (x < y) return x;
+    else return y;
+}
+
 #endif // STRINGUTIL_H

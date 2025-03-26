@@ -121,7 +121,7 @@ public:
 
     string_view substr(size_t pos, size_t count = npos) const {
         if (pos >= len_) return string_view();
-        size_t rcount = min(count, len_ - pos);
+        size_t rcount = mux_min(count, len_ - pos);
         return string_view(ptr_ + pos, rcount);
     }
 };
@@ -1386,7 +1386,7 @@ static bool PD_GetFields(ALLFIELDS* paf, NodeList& nodes)
                             // Parse as decimal: convert to string and use standard function
                             // or directly parse from the string_view
                             char buff[8];
-                            size_t len = min(iter->tokenView.size(), size_t(7));
+                            size_t len = mux_min(iter->tokenView.size(), size_t(7));
                             for (size_t i = 0; i < len; i++) {
                                 buff[i] = iter->tokenView[i];
                             }
@@ -1532,7 +1532,7 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
             return false;
         }
         INT64 i64 = lta.Return100ns();
-        INT64 j64;
+        int64_t j64;
         i64FloorDivisionMod(i64+FACTOR_100NS_PER_DAY, FACTOR_100NS_PER_WEEK, &j64);
         i64 -= j64;
 

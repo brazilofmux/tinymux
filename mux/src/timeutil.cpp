@@ -106,7 +106,7 @@ int iMod(int x, int y)
     }
 }
 
-INT64 i64Mod(INT64 x, INT64 y)
+int64_t i64Mod(int64_t x, int64_t y)
 {
     if (y < 0)
     {
@@ -182,7 +182,7 @@ int iFloorDivision(int x, int y)
     }
 }
 
-INT64 i64FloorDivision(INT64 x, INT64 y)
+int64_t i64FloorDivision(int64_t x, int64_t y)
 {
     if (y < 0)
     {
@@ -245,7 +245,7 @@ int iFloorDivisionMod(int x, int y, int *piMod)
     }
 }
 
-INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
+int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod)
 {
     if (y < 0)
     {
@@ -327,7 +327,7 @@ int iRemainder(int x, int y)
     }
 }
 
-INT64 i64Remainder(INT64 x, INT64 y)
+int64_t i64Remainder(int64_t x, int64_t y)
 {
     if (y < 0)
     {
@@ -385,7 +385,7 @@ int iDivision(int x, int y)
     }
 }
 
-INT64 i64Division(INT64 x, INT64 y)
+int64_t i64Division(int64_t x, int64_t y)
 {
     if (y < 0)
     {
@@ -418,7 +418,7 @@ inline int iFloorDivision(int x, int y)
     return x / y;
 }
 
-inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
+inline int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t*piMod)
 {
     if (INT64_MIN_VALUE == x && -1 == y)
     {
@@ -432,7 +432,7 @@ inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 }
 #endif // LARGEST_INT_LTE_NEG_QUOTIENT
 
-bool ParseFractionalSecondsString(INT64& i64, const UTF8* str)
+bool ParseFractionalSecondsString(int64_t& i64, const UTF8* str)
 {
     bool bMinus = false;
     i64 = 0;
@@ -575,10 +575,10 @@ bool ParseFractionalSecondsString(INT64& i64, const UTF8* str)
     return true;
 }
 
-void ConvertToSecondsString(UTF8 *buffer, INT64 n64, int nFracDigits)
+void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits)
 {
-    INT64 Leftover;
-    INT64 lt = i64FloorDivisionMod(n64, FACTOR_100NS_PER_SECOND, &Leftover);
+    int64_t Leftover;
+    auto lt = i64FloorDivisionMod(n64, FACTOR_100NS_PER_SECOND, &Leftover);
 
     size_t n = mux_i64toa(lt, buffer);
     if (Leftover == 0)
@@ -800,7 +800,7 @@ bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
 
 bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
 {
-    INT64 ns100;
+    int64_t ns100;
     memset(ft, 0, sizeof(FIELDEDTIME));
     int d0 = static_cast<int>(i64FloorDivisionMod(lt, FACTOR_100NS_PER_DAY, &ns100));
     GregorianDate gd = GregorianFromFixed_Adjusted(d0);

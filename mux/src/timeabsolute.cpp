@@ -220,7 +220,7 @@ void CLinearTimeAbsolute::GetLocal(void)
 
 bool CLinearTimeAbsolute::SetSecondsString(UTF8 *arg_szSeconds)
 {
-    INT64 t;
+    int64_t t;
     const INT64 tEarliest = EARLIEST_VALID_DATE;
     const INT64 tLatest   = LATEST_VALID_DATE;
     ParseFractionalSecondsString(t, arg_szSeconds);

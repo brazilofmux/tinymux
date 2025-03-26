@@ -1053,12 +1053,6 @@ inline int mux_abs(int x)
     else return -x;
 }
 
-inline int mux_min(int x, int y)
-{
-    if (x < y) return x;
-    else return y;
-}
-
 inline void rgb2yuv16(RGB *rgb, YUV *yuv)
 {
     yuv->y = mux_min(mux_abs( 2104*rgb->r + 4310*rgb->g +  802*rgb->b + 4096 +  131072) >> 13, 235);

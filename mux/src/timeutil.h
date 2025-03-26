@@ -232,16 +232,16 @@ namespace TimezoneCache {
 }
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
-INT64 i64Mod(INT64 x, INT64 y);
-INT64 i64FloorDivision(INT64 x, INT64 y);
-inline INT64 i64Division(INT64 x, INT64 y) { return x / y; }
-inline INT64 i64Remainder(INT64 x, INT64 y) { return x % y; }
+int64_t i64Mod(int64_t x, int64_t y);
+int64_t i64FloorDivision(int64_t x, int64_t y);
+inline int64_t i64Division(int64_t x, int64_t y) { return x / y; }
+inline int64_t i64Remainder(int64_t x, int64_t y) { return x % y; }
 int iFloorDivisionMod(int x, int y, int *piMod);
 #else // SMALLEST_INT_GTE_NEG_QUOTIENT
-inline INT64 i64Mod(INT64 x, INT64 y) { return x % y; }
-inline INT64 i64FloorDivision(INT64 x, INT64 y) { return x / y; }
-INT64 i64Division(INT64 x, INT64 y);
-INT64 i64Remainder(INT64 x, INT64 y);
+inline int64_t i64Mod(int64_t x, int64_t y) { return x % y; }
+inline int64_t i64FloorDivision(int64_t x, int64_t y) { return x / y; }
+int64_t i64Division(int64_t x, int64_t y);
+int64_t i64Remainder(int64_t x, int64_t y);
 inline int iFloorDivisionMod(int x, int y, int *piMod) \
 {                   \
     *piMod = x % y; \
@@ -251,13 +251,13 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 
 int iMod(int x, int y);
 int iFloorDivision(int x, int y);
-INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod);
+int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod);
 bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
 void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano);
 bool isLeapYear(long iYear);
-void ConvertToSecondsString(UTF8 *buffer, INT64 n64, int nFracDigits);
-bool ParseFractionalSecondsString(INT64 &i64, const UTF8 *str);
+void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits);
+bool ParseFractionalSecondsString(int64_t &i64, const UTF8 *str);
 void GetUTCLinearTime(INT64 *plt);
 bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
 CLinearTimeDelta QueryLocalOffsetAtUTC
