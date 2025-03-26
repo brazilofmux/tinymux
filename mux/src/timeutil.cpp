@@ -707,10 +707,20 @@ static int FixedFromGregorian_Adjusted(int iYear, int iMonth, int iDay)
     return iFixedDay - 584389;
 }
 
+struct GregorianDate {
+    int iYear;
+    int iMonth;
+    int iDayOfYear;
+    int iDayOfMonth;
+    int iDayOfWeek;
+};
+
 // Epoch of iFixedDay should be 1 R.D.
 //
-static void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDayOfYear, int &iDayOfMonth, int &iDayOfWeek)
+static GregorianDate GregorianFromFixed(int iFixedDay)
 {
+    GregorianDate result;
+
     int d0 = iFixedDay - 1;
     int d1, n400 = iFloorDivisionMod(d0, 146097, &d1);
     int d2, n100 = iFloorDivisionMod(d1,  36524, &d2);
@@ -718,11 +728,11 @@ static void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDa
     int d4, n1   = iFloorDivisionMod(d3,    365, &d4);
     d4 = d4 + 1;
 
-    iYear = 400*n400 + 100*n100 + 4*n4 + n1;
+    result.iYear = 400*n400 + 100*n100 + 4*n4 + n1;
 
     if (n100 != 4 && n1 != 4)
     {
-        iYear = iYear + 1;
+        result.iYear = result.iYear + 1;
     }
 
     static int cache_iYear = 99999;
@@ -730,16 +740,16 @@ static void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDa
     static int cache_iMar1st = 0;
     int iFixedDayOfJanuary1st;
     int iFixedDayOfMarch1st;
-    if (iYear == cache_iYear)
+    if (result.iYear == cache_iYear)
     {
         iFixedDayOfJanuary1st = cache_iJan1st;
         iFixedDayOfMarch1st = cache_iMar1st;
     }
     else
     {
-        cache_iYear = iYear;
-        cache_iJan1st = iFixedDayOfJanuary1st = FixedFromGregorian(iYear, 1, 1);
-        cache_iMar1st = iFixedDayOfMarch1st = FixedFromGregorian(iYear, 3, 1);
+        cache_iYear = result.iYear;
+        cache_iJan1st = iFixedDayOfJanuary1st = FixedFromGregorian(result.iYear, 1, 1);
+        cache_iMar1st = iFixedDayOfMarch1st = FixedFromGregorian(result.iYear, 3, 1);
     }
 
 
@@ -749,7 +759,7 @@ static void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDa
     {
         iCorrection = 0;
     }
-    else if (isLeapYear(iYear))
+    else if (isLeapYear(result.iYear))
     {
         iCorrection = 1;
     }
@@ -758,21 +768,22 @@ static void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDa
         iCorrection = 2;
     }
 
-    iMonth = (12*(iPriorDays+iCorrection)+373)/367;
-    iDayOfMonth = iFixedDay - FixedFromGregorian(iYear, iMonth, 1) + 1;
-    iDayOfYear = iPriorDays + 1;
+    result.iMonth = (12*(iPriorDays+iCorrection)+373)/367;
+    result.iDayOfMonth = iFixedDay - FixedFromGregorian(result.iYear, result.iMonth, 1) + 1;
+    result.iDayOfYear = iPriorDays + 1;
 
     // Calculate the Day of week using the linear progression of days.
     //
-    iDayOfWeek = iMod(iFixedDay, 7);
+    result.iDayOfWeek = iMod(iFixedDay, 7);
+    return result;
 }
 
-static void GregorianFromFixed_Adjusted(int iFixedDay, int &iYear, int &iMonth, int &iDayOfYear, int &iDayOfMonth, int &iDayOfWeek)
+static GregorianDate GregorianFromFixed_Adjusted(int iFixedDay)
 {
     // We need to convert the Epoch to 1 R.D. from
     // (00:00:00 UTC, January 1, 1601)
     //
-    GregorianFromFixed(iFixedDay + 584389, iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek);
+    return GregorianFromFixed(iFixedDay + 584389);
 }
 
 bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
@@ -802,21 +813,19 @@ bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
 bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
 {
     INT64 ns100;
-    int iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek;
-
     memset(ft, 0, sizeof(FIELDEDTIME));
     int d0 = static_cast<int>(i64FloorDivisionMod(lt, FACTOR_100NS_PER_DAY, &ns100));
-    GregorianFromFixed_Adjusted(d0, iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek);
-    if (!isValidDate(iYear, iMonth, iDayOfMonth))
+    GregorianDate gd = GregorianFromFixed_Adjusted(d0);
+    if (!isValidDate(gd.iYear, gd.iMonth, gd.iDayOfMonth))
     {
         return false;
     }
 
-    ft->iYear       = static_cast<short>(iYear);
-    ft->iMonth      = static_cast<unsigned short>(iMonth);
-    ft->iDayOfYear  = static_cast<unsigned short>(iDayOfYear);
-    ft->iDayOfMonth = static_cast<unsigned short>(iDayOfMonth);
-    ft->iDayOfWeek  = static_cast<unsigned short>(iDayOfWeek);
+    ft->iYear       = static_cast<short>(gd.iYear);
+    ft->iMonth      = static_cast<unsigned short>(gd.iMonth);
+    ft->iDayOfYear  = static_cast<unsigned short>(gd.iDayOfYear);
+    ft->iDayOfMonth = static_cast<unsigned short>(gd.iDayOfMonth);
+    ft->iDayOfWeek  = static_cast<unsigned short>(gd.iDayOfWeek);
 
     ft->iHour = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_HOUR);
     ns100 = ns100 % FACTOR_100NS_PER_HOUR;

@@ -548,7 +548,7 @@ typedef struct tag_pd_numeric_valid
     PVALIDFUNC *fnValid;
 } NUMERIC_VALID_RECORD;
 
-const NUMERIC_VALID_RECORD NumericSet[] =
+const std::vector<NUMERIC_VALID_RECORD> NumericSet =
 {
     { NodeFlag::Year,         isValidYear       },
     { NodeFlag::Month,        isValidMonth      },
@@ -565,7 +565,6 @@ const NUMERIC_VALID_RECORD NumericSet[] =
     { NodeFlag::Minute,       isValidMinute     },
     { NodeFlag::Second,       isValidSecond     },
     { NodeFlag::Subsecond,    isValidSubSecond  },
-    { NodeFlag::Nothing, 0},
 };
 
 // This function looks at the numeric token and assigns the initial set
@@ -578,16 +577,13 @@ static void ClassifyNumericToken(PD_Node& node)
     int    iToken = node.iToken;
 
     NodeFlag uCouldBe = InitialCouldBe[nToken-1];
-
-    int i = 0;
-    NodeFlag mask = NodeFlag::Nothing;
-    while ((mask = NumericSet[i].mask) != NodeFlag::Nothing)
+    for (int i = 0; i < NumericSet.size(); ++i)
     {
+        auto mask = NumericSet[i].mask;
         if (hasAnyFlag(uCouldBe, mask) && !(NumericSet[i].fnValid(nToken, pToken, iToken)))
         {
             removeFlags(uCouldBe, mask);
         }
-        i++;
     }
     node.uCouldBe = uCouldBe;
 }
@@ -599,7 +595,7 @@ typedef struct
     int         iValue;
 } PD_TEXT_ENTRY;
 
-const PD_TEXT_ENTRY PD_TextTable[] =
+const std::vector<PD_TEXT_ENTRY> PD_TextTable =
 {
     {T("sun"),       NodeFlag::DayOfWeek,   7 },
     {T("mon"),       NodeFlag::DayOfWeek,   1 },
@@ -692,8 +688,7 @@ const PD_TEXT_ENTRY PD_TextTable[] =
     {T("rd"),        NodeFlag::DayOfMonthSuffix, 0 },
     {T("th"),        NodeFlag::DayOfMonthSuffix, 0 },
     {T("am"),        NodeFlag::Meridian,      0 },
-    {T("pm"),        NodeFlag::Meridian,     12 },
-    {(UTF8 *)0,      NodeFlag::Nothing,       0 }
+    {T("pm"),        NodeFlag::Meridian,     12 }
 };
 
 #define PD_LEX_INVALID 0
@@ -738,12 +733,12 @@ static PD_Node CreateNewNode(void)
     return node;
 }
 
-static std::list<PD_Node>::iterator PD_FirstNode(void)
+static auto PD_FirstNode() -> std::list<PD_Node>::iterator
 {
     return nodeList.begin();
 }
 
-static std::list<PD_Node>::iterator PD_LastNode(void)
+static auto PD_LastNode() -> std::list<PD_Node>::iterator
 {
     return nodeList.empty() ? nodeList.end() : std::prev(nodeList.end());
 }
@@ -864,10 +859,10 @@ static std::list<PD_Node>::iterator PD_ScanNextToken(UTF8** ppString)
             //
             int j = 0;
             bool bFound = false;
-            while (PD_TextTable[j].szText)
+            while (j < PD_TextTable.size())
             {
-                if (strlen((char*)PD_TextTable[j].szText) == nLen
-                    && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
+                if (  strlen((char*)PD_TextTable[j].szText) == nLen
+                   && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
                 {
                     node.uCouldBe = PD_TextTable[j].uCouldBe;
                     node.iToken = PD_TextTable[j].iValue;
@@ -886,7 +881,7 @@ static std::list<PD_Node>::iterator PD_ScanNextToken(UTF8** ppString)
     return PD_AppendNode(node);
 }
 
-static const PD_BREAKDOWN BreakDownTable[] =
+static const std::vector<PD_BREAKDOWN> BreakDownTable =
 {
     { NodeFlag::HMSTime, BreakDownHMS },
     { NodeFlag::HMSTimeZone, BreakDownHMS },
@@ -894,7 +889,6 @@ static const PD_BREAKDOWN BreakDownTable[] =
     { NodeFlag::YMD, BreakDownYMD },
     { NodeFlag::MDY, BreakDownMDY },
     { NodeFlag::DMY, BreakDownDMY },
-    { NodeFlag::Nothing, 0 }
 };
 
 static void PD_Pass2(void)
@@ -1055,7 +1049,7 @@ typedef struct tag_pd_cantbe
     NodeFlag cantbe;
 } PD_CANTBE;
 
-const PD_CANTBE CantBeTable[] =
+const std::vector<PD_CANTBE> CantBeTable =
 {
     { NodeFlag::Year,         NodeFlag::Year|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY },
     { NodeFlag::Month,        NodeFlag::Month|NodeFlag::WeekOfYear|NodeFlag::DayOfYear|NodeFlag::YD|NodeFlag::YMD|NodeFlag::MDY|NodeFlag::DMY|NodeFlag::WeekOfYearPrefix },
@@ -1076,50 +1070,34 @@ const PD_CANTBE CantBeTable[] =
     { NodeFlag::HourTimeZone, NodeFlag::TimeZone|NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone },
     { NodeFlag::HMSTime, NodeFlag::HMSTime|NodeFlag::HourTime },
     { NodeFlag::HMSTimeZone, NodeFlag::TimeZone|NodeFlag::HMSTimeZone|NodeFlag::HourTimeZone },
-    { NodeFlag::Nothing, NodeFlag::Nothing }
 };
 
 static void PD_Deduction(void)
 {
-    auto iterOuter = PD_FirstNode();
-    while (iterOuter != nodeList.end())
+    for (auto& node : nodeList)
     {
-        int j =0;
-        while (CantBeTable[j].mask != NodeFlag::Nothing)
+        for (const auto& cantBe : CantBeTable)
         {
-            if (iterOuter->uCouldBe == CantBeTable[j].mask)
+            if (node.uCouldBe == cantBe.mask)
             {
-                auto iterInner = PD_FirstNode();
-                while (iterInner != nodeList.end())
-                {
-                    removeFlags(iterInner->uCouldBe, CantBeTable[j].cantbe);
-                    iterInner = PD_NextNode(iterInner);
-                }
-                iterOuter->uCouldBe = CantBeTable[j].mask;
+                for (auto& nodeInner : nodeList)
+                    removeFlags(nodeInner.uCouldBe, cantBe.cantbe);
+                node.uCouldBe = cantBe.mask;
                 break;
             }
-            j++;
         }
-        iterOuter = PD_NextNode(iterOuter);
     }
 }
 
 static void PD_BreakItDown(void)
 {
-    auto iter = PD_FirstNode();
-    while (iter != nodeList.end())
+    for (auto iter = nodeList.begin(); iter != nodeList.end(); ++iter)
     {
-        int j =0;
-        while (BreakDownTable[j].mask != NodeFlag::Nothing)
+        for (const auto& breakDown : BreakDownTable)
         {
-            if (iter->uCouldBe == BreakDownTable[j].mask)
-            {
-                BreakDownTable[j].fpBreakDown(iter);
-                break;
-            }
-            j++;
+            if (iter->uCouldBe == breakDown.mask)
+                breakDown.fpBreakDown(iter);
         }
-        iter = PD_NextNode(iter);
     }
 }
 

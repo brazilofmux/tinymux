@@ -147,9 +147,9 @@ static void test_time_t(void)
 
     // Search for the highest supported value of time_t.
     //
-    time_t tUpper = time_t_largest();
-    time_t tLower = 0;
-    time_t tMid;
+    auto tUpper = time_t_largest();
+    auto tLower = time_t{ 0 };
+    auto tMid = time_t{};
     while (tLower < tUpper)
     {
         tMid = time_t_midpoint(tLower+1, tUpper);
