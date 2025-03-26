@@ -432,105 +432,94 @@ inline INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 }
 #endif // LARGEST_INT_LTE_NEG_QUOTIENT
 
-bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str)
+bool ParseFractionalSecondsString(INT64& i64, const UTF8* str)
 {
     bool bMinus = false;
-
     i64 = 0;
-
     bool bGotOne;
 
-    // Leading spaces.
-    //
-    while (mux_isspace(*str))
+    const UTF8* cursor = str;
+
+    // Leading spaces
+    while (mux_isspace(*cursor))
     {
-        str++;
+        cursor++;
     }
 
     // Leading minus
-    //
-    if (*str == '-')
+    if (*cursor == '-')
     {
         bMinus = true;
-        str++;
+        cursor++;
 
         // But not if just a minus
-        //
-        if (!*str)
+        if (!*cursor)
         {
             return false;
         }
     }
 
-    // Need at least one digit.
-    //
+    // Need at least one digit
     bGotOne = false;
-    UTF8 *pIntegerStart = str;
-    if (mux_isdigit(*str))
+    const UTF8* pIntegerStart = cursor;
+    if (mux_isdigit(*cursor))
     {
         bGotOne = true;
-        str++;
+        cursor++;
     }
 
     // The number (int)
-    //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(*cursor))
     {
-        str++;
+        cursor++;
     }
-    UTF8 *pIntegerEnd = str;
+    const UTF8* pIntegerEnd = cursor;
 
-    // Decimal point.
-    //
-    if (*str == '.')
+    // Decimal point
+    if (*cursor == '.')
     {
-        str++;
+        cursor++;
     }
 
     // Need at least one digit
-    //
-    UTF8 *pFractionalStart = str;
-    if (mux_isdigit(*str))
+    const UTF8* pFractionalStart = cursor;
+    if (mux_isdigit(*cursor))
     {
         bGotOne = true;
-        str++;
+        cursor++;
     }
 
     // The number (fract)
-    //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(*cursor))
     {
-        str++;
+        cursor++;
     }
-    UTF8 *pFractionalEnd = str;
+    const UTF8* pFractionalEnd = cursor;
 
-    // Trailing spaces.
-    //
-    while (mux_isspace(*str))
+    // Trailing spaces
+    while (mux_isspace(*cursor))
     {
-        str++;
+        cursor++;
     }
 
-    if (*str || !bGotOne)
+    if (*cursor || !bGotOne)
     {
         return false;
     }
 
 #define PFSS_PRECISION 7
-    UTF8   aBuffer[64];
+    UTF8 aBuffer[64];
     size_t nBufferAvailable = sizeof(aBuffer) - PFSS_PRECISION - 1;
-    UTF8  *p = aBuffer;
+    UTF8* p = aBuffer;
 
-    // Sign.
-    //
+    // Sign
     if (bMinus)
     {
         *p++ = '-';
         nBufferAvailable--;
     }
 
-    // Integer part.
-    //
+    // Integer part
     bool bOverUnderflow = false;
     size_t n = pIntegerEnd - pIntegerStart;
     if (n > 0)
@@ -545,8 +534,7 @@ bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str)
         nBufferAvailable -= n;
     }
 
-    // Fractional part.
-    //
+    // Fractional part
     n = pFractionalEnd - pFractionalStart;
     if (n > 0)
     {
@@ -559,8 +547,7 @@ bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str)
         nBufferAvailable -= n;
     }
 
-    // Handle trailing zeroes.
-    //
+    // Handle trailing zeroes
     n = PFSS_PRECISION - n;
     if (n > 0)
     {
@@ -584,6 +571,7 @@ bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str)
     {
         i64 = mux_atoi64(aBuffer);
     }
+
     return true;
 }
 

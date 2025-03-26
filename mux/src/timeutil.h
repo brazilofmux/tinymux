@@ -5,10 +5,16 @@
  * Cambridge Press, 1998.
  */
 
-#include <memory>
-#include <atomic>
 #ifndef TIMEUTIL_H
 #define TIMEUTIL_H
+
+#include <chrono>
+#include <memory>
+#include <atomic>
+#include <cstdint>
+
+using UnderlyingTickType = std::int64_t;
+using HectoNanoseconds = std::chrono::duration<UnderlyingTickType, std::ratio<1, 10'000'000>>;
 
 typedef struct
 {
@@ -76,49 +82,82 @@ public:
 bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
 bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
 
-class CLinearTimeDelta
-{
-    friend class CLinearTimeAbsolute;
-    friend bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
-    friend CLinearTimeDelta operator*(const CLinearTimeDelta& ltdA, int nScaler);
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltdA, const CLinearTimeDelta& ltdB);
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
+class CLinearTimeDelta {
+public:
+    // --- Chrono Integration ---
+    // Define the equivalent chrono duration type publicly
+    using HectoNanoseconds = std::chrono::duration<UnderlyingTickType, std::ratio<1, 10'000'000>>;
+
+    // Constructor from chrono duration (explicit to avoid accidental conversions)
+    explicit CLinearTimeDelta(const HectoNanoseconds& duration) noexcept;
+
+    // Conversion function to chrono duration
+    HectoNanoseconds ToChronoDuration() const noexcept;
+
+    // Optional: Conversion operator (allows implicit conversion TO chrono)
+    // operator HectoNanoseconds() const noexcept;
+
+    // Optional: Setter from chrono duration
+    void SetChronoDuration(const HectoNanoseconds& duration) noexcept;
+
+    // --- Existing Interface (Keep for compatibility) ---
+
+    // Static buffer - still recommend changing this eventually for thread safety
+    // For now, keep the original signature
+    UTF8* ReturnSecondsString(int nFracDigits = 7); // Default precision matches 100ns
+
+    // Constructors
+    CLinearTimeDelta() noexcept;
+    CLinearTimeDelta(UnderlyingTickType arg_t100ns) noexcept; // Use standard type
+    CLinearTimeDelta(CLinearTimeAbsolute t0, CLinearTimeAbsolute t1);
+
+    // Conversions (Consider adding const)
+    void ReturnTimeValueStruct(struct timeval* tv) const;
+#ifdef HAVE_NANOSLEEP
+    void ReturnTimeSpecStruct(struct timespec* ts) const;
+#endif // HAVE_NANOSLEEP
+
+    // Setters
+    void SetTimeValueStruct(const struct timeval* tv); // Pass const*
+    void SetMilliseconds(long arg_dwMilliseconds); // Or std::int64_t?
+    void SetSecondsString(const UTF8* arg_szSeconds); // Use const*
+    void SetSeconds(UnderlyingTickType arg_tSeconds); // Use standard type
+    void Set100ns(UnderlyingTickType arg_t100ns) noexcept; // Use standard type
+
+    // Getters (Mark const)
+    long ReturnMilliseconds() const; // Return type may truncate
+    UnderlyingTickType ReturnMicroseconds() const; // Return type fits
+    UnderlyingTickType Return100ns() const noexcept;
+    long ReturnDays() const; // Return type may truncate
+    long ReturnSeconds() const; // Return type may truncate
+
+    // Operators
+    CLinearTimeDelta& operator+=(const CLinearTimeDelta& ltd) noexcept;
+    CLinearTimeDelta& operator-=(const CLinearTimeDelta& ltd) noexcept;
+
+    // Comparison operators (declare as friends or non-members)
+    friend bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend bool operator>=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
 
 private:
-    INT64 m_tDelta;
-    static UTF8 m_Buffer[I64BUF_SIZE*2];
+    UnderlyingTickType m_tDelta; // The core data: count of 100ns intervals
 
-public:
-    CLinearTimeDelta(void);
-    CLinearTimeDelta(INT64 arg_t100ns);
-    CLinearTimeDelta(CLinearTimeAbsolute, CLinearTimeAbsolute);
+    // Still unsafe static buffer - keep for now
+    static UTF8 m_Buffer[I64BUF_SIZE * 2];
 
-    void ReturnTimeValueStruct(struct timeval *tv);
-#ifdef HAVE_NANOSLEEP
-    void ReturnTimeSpecStruct(struct timespec *ts);
-#endif
-    long ReturnMilliseconds(void);
-    INT64 ReturnMicroseconds(void);
-    long ReturnDays(void);
-    long ReturnSeconds(void);
-    UTF8 *ReturnSecondsString(int nFracDigits = 0);
-    INT64 Return100ns(void);
-
-    void SetTimeValueStruct(struct timeval *tv);
-    void SetMilliseconds(unsigned long arg_dwMilliseconds);
-    void SetSeconds(INT64 arg_tSeconds);
-    void SetSecondsString(UTF8 *arg_szSeconds);
-    void Set100ns(INT64 arg_t100ns);
-
-    void operator+=(const CLinearTimeDelta& ltd);
+    // Make relevant conversion factors accessible if needed internally
+    // static constexpr UnderlyingTickType FACTOR_100NS_PER_SECOND = 10'000'000; // etc.
 };
+
+// Non-member operators (use UnderlyingTickType, check division by zero)
+CLinearTimeDelta operator-(const CLinearTimeAbsolute& ltaA, const CLinearTimeAbsolute& ltaB);
+CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+CLinearTimeDelta operator*(const CLinearTimeDelta& ltd, int Scale);
+UnderlyingTickType operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
 
 #if defined(WINDOWS_THREADS)
 struct HandleDeleter {
@@ -218,7 +257,7 @@ void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano);
 bool isLeapYear(long iYear);
 void ConvertToSecondsString(UTF8 *buffer, INT64 n64, int nFracDigits);
-bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str);
+bool ParseFractionalSecondsString(INT64 &i64, const UTF8 *str);
 void GetUTCLinearTime(INT64 *plt);
 bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
 CLinearTimeDelta QueryLocalOffsetAtUTC

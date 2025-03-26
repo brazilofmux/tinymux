@@ -41,13 +41,13 @@ bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd)
 {
     CLinearTimeAbsolute t;
-    t.m_tAbsolute = lta.m_tAbsolute - ltd.m_tDelta;
+    t.m_tAbsolute = lta.m_tAbsolute - ltd.Return100ns();
     return t;
 }
 
 CLinearTimeAbsolute::CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, const CLinearTimeDelta& ltdOffset)
 {
-    m_tAbsolute = ltaOrigin.m_tAbsolute + ltdOffset.m_tDelta;
+    m_tAbsolute = ltaOrigin.m_tAbsolute + ltdOffset.Return100ns();
 }
 
 UTF8 *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
@@ -117,7 +117,7 @@ bool CLinearTimeAbsolute::SetString(const UTF8 *arg_tBuffer)
 CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltaA, const CLinearTimeDelta& ltdB)
 {
     CLinearTimeAbsolute lta;
-    lta.m_tAbsolute = ltaA.m_tAbsolute + ltdB.m_tDelta;
+    lta.m_tAbsolute = ltaA.m_tAbsolute + ltdB.Return100ns();
     return lta;
 }
 
@@ -128,12 +128,12 @@ void CLinearTimeAbsolute::operator=(const CLinearTimeAbsolute& lta)
 
 void CLinearTimeAbsolute::operator-=(const CLinearTimeDelta& ltd)
 {
-    m_tAbsolute -= ltd.m_tDelta;
+    m_tAbsolute -= ltd.Return100ns();
 }
 
 void CLinearTimeAbsolute::operator+=(const CLinearTimeDelta& ltd)
 {
-    m_tAbsolute += ltd.m_tDelta;
+    m_tAbsolute += ltd.Return100ns();
 }
 
 bool CLinearTimeAbsolute::SetFields(FIELDEDTIME *arg_tStruct)
@@ -238,7 +238,7 @@ void CLinearTimeAbsolute::UTC2Local(void)
 {
     bool bDST;
     CLinearTimeDelta ltd = TimezoneCache::queryLocalOffsetAtUTC(*this, &bDST);
-    m_tAbsolute += ltd.m_tDelta;
+    m_tAbsolute += ltd.Return100ns();
 }
 
 void CLinearTimeAbsolute::Local2UTC(void)
