@@ -1592,6 +1592,11 @@ bool ParseDate
 {
     PD_Reset();
 
+    UTF8 * p = pDateString;
+    for (auto iter = PD_ScanNextToken(&p); iter != nodeList.end(); iter = PD_ScanNextToken(&p))
+    {
+    }
+
     PD_Pass2();
 
     PD_Deduction();
