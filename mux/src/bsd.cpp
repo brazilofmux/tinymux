@@ -1238,8 +1238,12 @@ void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSS
 #ifdef UNIX_SSL
           || 0 != piaSSL->n
 #endif
-         ))
+          ))
     {
+        STARTLOG(LOG_ALWAYS, "NET", "FATAL");
+        log_text(T("Unable to open any listening ports. Server shutting down."));
+        ENDLOG;
+
 #if defined(WINDOWS_NETWORKING)
         WSACleanup();
 #endif // WINDOWS_NETWORKING
