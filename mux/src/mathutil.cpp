@@ -107,40 +107,27 @@ static double AddWithError(double& err, double a, double b)
 //
 double NearestPretty(double R)
 {
-    UTF8 *rve = nullptr;
+    UTF8* rve = nullptr;
     int decpt;
     int bNegative;
     const int mode = 0;
 
-    double ulpR = ulp(R);
-    double R0 = R-ulpR;
-    double R1 = R+ulpR;
+    double ulpR = mux_ulp(R);
+    double finalR = R;
 
-    // R.
-    //
-    UTF8 *p = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
-    size_t nDigits = rve - p;
-
-    // R-ulp(R)
-    //
-    p = mux_dtoa(R0, mode, 50, &decpt, &bNegative, &rve);
-    size_t nDigitsR0 = rve - p;
-    if (nDigitsR0 < nDigits)
+    size_t nDigits = 10000;
+    for (int i = -4; i <= 4; i++)
     {
-        nDigits = rve - p;
-        R  = R0;
+        double testR = R + ulpR * (double)i;
+        UTF8* p = mux_dtoa(testR, mode, 50, &decpt, &bNegative, &rve);
+        size_t nDigitsR0 = rve - p;
+        if (nDigitsR0 < nDigits)
+        {
+            nDigits = rve - p;
+            finalR = testR;
+        }
     }
-
-    // R+ulp(R)
-    //
-    p = mux_dtoa(R1, mode, 50, &decpt, &bNegative, &rve);
-    size_t nDigitsR1 = rve - p;
-    if (nDigitsR1 < nDigits)
-    {
-        nDigits = rve - p;
-        R = R1;
-    }
-    return R;
+    return finalR;
 }
 
 // Compare for decreasing order by absolute value.

@@ -1229,10 +1229,9 @@ void FLOAT_Initialize(void);
 void mux_FPInit();
 void mux_FPSet();
 void mux_FPRestore();
-double ulp(double);
-double mux_strtod(const UTF8 *s00, UTF8 **se);
-UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-             UTF8 **rve);
+double mux_strtod(const UTF8* s00, UTF8** se);
+double mux_ulp(double);
+UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign, UTF8 **rve);
 
 // From wiz.cpp
 //
