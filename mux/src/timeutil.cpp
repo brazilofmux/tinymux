@@ -774,7 +774,7 @@ static GregorianDate GregorianFromFixed_Adjusted(int iFixedDay)
     return GregorianFromFixed(iFixedDay + 584389);
 }
 
-bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
+bool FieldedTimeToLinearTime(FIELDEDTIME *ft, int64_t *plt)
 {
     if (!isValidDate(ft->iYear, ft->iMonth, ft->iDayOfMonth))
     {
@@ -798,7 +798,7 @@ bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
     return true;
 }
 
-bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
+bool LinearTimeToFieldedTime(int64_t lt, FIELDEDTIME *ft)
 {
     int64_t ns100;
     memset(ft, 0, sizeof(FIELDEDTIME));
@@ -1049,14 +1049,14 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 //
 #if defined(WINDOWS_TIME)
 
-void GetUTCLinearTime(INT64 *plt)
+void GetUTCLinearTime(int64_t *plt)
 {
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
 #elif defined(UNIX_TIME)
 
-void GetUTCLinearTime(INT64 *plt)
+void GetUTCLinearTime(int64_t *plt)
 {
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;

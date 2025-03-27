@@ -136,8 +136,8 @@ CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeD
 //! Subtract time delta from absolute time
 CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
 
-bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
-bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
+bool FieldedTimeToLinearTime(FIELDEDTIME *ft, int64_t *plt);
+bool LinearTimeToFieldedTime(int64_t lt, FIELDEDTIME *ft);
 
 class CLinearTimeDelta {
 public:
@@ -315,7 +315,7 @@ void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
 bool isLeapYear(long iYear);
 void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits);
 bool ParseFractionalSecondsString(int64_t &i64, const UTF8 *str);
-void GetUTCLinearTime(INT64 *plt);
+void GetUTCLinearTime(int64_t *plt);
 bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
 CLinearTimeDelta QueryLocalOffsetAtUTC
 (
