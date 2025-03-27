@@ -741,12 +741,19 @@ size_t mux_utoa(unsigned long uval, UTF8 *buf)
 size_t mux_ltoa(long val, UTF8 *buf)
 {
     UTF8 *p = buf;
-    if (val < 0)
+    unsigned long uval;
+    bool is_negative = val < 0;
+
+    if (is_negative)
     {
         *p++ = '-';
-        val = -val;
+        uval = (val == LONG_MIN) ? ((unsigned long)LONG_MAX + 1) : (unsigned long)(-val);
     }
-    p += mux_utoa((unsigned long)val, p);
+    else
+    {
+        uval = (unsigned long)val;
+    }
+    p += mux_utoa(uval, p);
     return p - buf;
 }
 
@@ -788,21 +795,20 @@ size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_i64toa(INT64 val, UTF8 *buf)
-{
-    UTF8 *p = buf;
+size_t mux_i64toa(INT64 val, UTF8* buf) {
+    UTF8* p = buf;
+    UINT64 uval;
+    bool is_negative = val < 0;
 
-    if (val < 0)
-    {
+    if (is_negative) {
         *p++ = '-';
-        val = -val;
+        uval = (val == INT64_MIN) ? ((UINT64)INT64_MAX + 1) : (UINT64)(-val);
     }
-    UINT64 uval = (UINT64)val;
-
+    else {
+        uval = (UINT64)val;
+    }
     p += mux_ui64toa(uval, p);
-
-    size_t nLength = p - buf;
-    return nLength;
+    return p - buf;
 }
 
 UTF8 *mux_i64toa_t(INT64 val)
