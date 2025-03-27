@@ -52,6 +52,7 @@ src/create.cpp
 src/db.cpp
 src/db.h
 src/db_rw.cpp
+src/dtoa.c
 src/eval.cpp
 src/externs.h
 src/file_c.cpp
