@@ -601,7 +601,7 @@ static FUNCTION(fun_time)
     {
         nPrecision = mux_atol(fargs[1]);
     }
-    UTF8 *temp = ltaNow.ReturnDateString(nPrecision);
+    const UTF8 *temp = ltaNow.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
 }
 
@@ -680,7 +680,7 @@ static FUNCTION(fun_convsecs)
         {
             nPrecision = mux_atol(fargs[2]);
         }
-        UTF8 *temp = lta.ReturnDateString(nPrecision);
+        const UTF8 *temp = lta.ReturnDateString(nPrecision);
         safe_str(temp, buff, bufc);
     }
     else

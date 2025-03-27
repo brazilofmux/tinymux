@@ -36,48 +36,105 @@ class CLinearTimeDelta;
 class CLinearTimeAbsolute
 {
     friend class CLinearTimeDelta;
-    friend bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
+    friend bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
 
 private:
-    INT64  m_tAbsolute;
+    UnderlyingTickType m_tAbsolute;
     static int m_nCount;
-    static UTF8 m_Buffer[I64BUF_SIZE*2];
+    static UTF8 m_Buffer[I64BUF_SIZE * 2];
 
 public:
-    //CLinearTimeAbsolute(int tInitial);
-    CLinearTimeAbsolute(void);
-    CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, const CLinearTimeDelta& ltdOffset);
-    CLinearTimeAbsolute(const CLinearTimeAbsolute& lta);
-    void operator=(const CLinearTimeAbsolute& lta);
-    void operator+=(const CLinearTimeDelta& ltdOffset);
-    void operator-=(const CLinearTimeDelta& ltdOffset);
+    //! Default constructor - initializes to epoch (zero)
+    CLinearTimeAbsolute() noexcept;
 
-    void GetUTC(void);
-    void GetLocal(void);
+    //! Constructor from origin time plus offset
+    CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, const CLinearTimeDelta& ltdOffset) noexcept;
 
-    void  ReturnUniqueString(UTF8 *buffer, size_t nBuffer);
-    UTF8 *ReturnDateString(int nFracDigits = 0);
-    bool  ReturnFields(FIELDEDTIME *arg_tStruct);
-    INT64 ReturnSeconds(void) const;
-    UTF8 *ReturnSecondsString(int nFracDigits = 0);
-    INT64 Return100ns(void);
+    //! Copy constructor
+    CLinearTimeAbsolute(const CLinearTimeAbsolute& lta) noexcept;
 
-    void SetSeconds(INT64 arg_tSeconds);
-    bool SetSecondsString(UTF8 *arg_szSeconds);
-    bool SetFields(FIELDEDTIME *arg_tStruct);
-    bool SetString(const UTF8 *arg_tBuffer);
-    void Set100ns(INT64 arg_t100ns);
+    //! Assignment operator
+    CLinearTimeAbsolute& operator=(const CLinearTimeAbsolute& lta) noexcept;
 
-    void UTC2Local(void);
-    void Local2UTC(void);
+    //! Add time delta to this time
+    CLinearTimeAbsolute& operator+=(const CLinearTimeDelta& ltdOffset) noexcept;
+
+    //! Subtract time delta from this time
+    CLinearTimeAbsolute& operator-=(const CLinearTimeDelta& ltdOffset) noexcept;
+
+    //! Get UTC time
+    void GetUTC();
+
+    //! Get local time
+    void GetLocal();
+
+    //! Return a unique string representation
+    void ReturnUniqueString(UTF8* buffer, size_t nBuffer) const;
+
+    //! Return date as string with optional fractional digits
+    const UTF8* ReturnDateString(int nFracDigits = 0) const;
+
+    //! Convert time to fielded representation
+    bool ReturnFields(FIELDEDTIME* arg_tStruct) const;
+
+    //! Get seconds since Unix epoch
+    UnderlyingTickType ReturnSeconds() const noexcept;
+
+    //! Get seconds as string with optional fractional digits
+    const UTF8* ReturnSecondsString(int nFracDigits = 0) const;
+
+    //! Get raw 100ns ticks
+    UnderlyingTickType Return100ns() const noexcept;
+
+    //! Set time from seconds since Unix epoch
+    void SetSeconds(UnderlyingTickType arg_tSeconds) noexcept;
+
+    //! Set time from seconds string
+    bool SetSecondsString(UTF8* arg_szSeconds);
+
+    //! Set time from fielded time
+    bool SetFields(FIELDEDTIME* arg_tStruct);
+
+    //! Set time from string representation
+    bool SetString(const UTF8* arg_tBuffer);
+
+    //! Set raw 100ns ticks
+    void Set100ns(UnderlyingTickType arg_t100ns) noexcept;
+
+    //! Convert UTC time to local time
+    void UTC2Local();
+
+    //! Convert local time to UTC
+    void Local2UTC();
 };
+
+//! Less than comparison
+bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+
+//! Greater than comparison
+bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+
+//! Equality comparison
+bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+
+//! Less than or equal comparison
+bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+
+//! Greater than or equal comparison
+bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+
+//! Add time delta to absolute time
+CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+
+//! Subtract time delta from absolute time
+CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
 
 bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
 bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);

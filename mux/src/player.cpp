@@ -16,8 +16,8 @@
 typedef struct hostdtm HOSTDTM;
 struct hostdtm
 {
-    UTF8 *host;
-    UTF8 *dtm;
+    const UTF8 *host;
+    const UTF8 *dtm;
 };
 
 typedef struct logindata LDATA;
@@ -128,10 +128,10 @@ void record_login
 (
     dbref player,
     bool  isgood,
-    UTF8  *ldate,
-    UTF8  *lhost,
-    UTF8  *lusername,
-    UTF8  *lipaddr
+    const UTF8  *ldate,
+    const UTF8  *lhost,
+    const UTF8  *lusername,
+    const UTF8  *lipaddr
 )
 {
     LDATA login_info;
@@ -686,7 +686,7 @@ dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF
 {
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    UTF8 *time_str = ltaNow.ReturnDateString(7);
+    const UTF8 *time_str = ltaNow.ReturnDateString(7);
 
     dbref player = lookup_player(NOTHING, name, false);
     if (player == NOTHING)
@@ -840,7 +840,7 @@ void do_password
  * do_last: Display login history data.
  */
 
-static void disp_from_on(dbref player, UTF8 *dtm_str, UTF8 *host_str)
+static void disp_from_on(dbref player, const UTF8 *dtm_str, const UTF8 *host_str)
 {
     if (dtm_str && *dtm_str && host_str && *host_str)
     {
@@ -1041,7 +1041,7 @@ void delete_all_player_names()
 }
 #endif
 
-dbref lookup_player_name(UTF8 *name, bool &bAlias)
+dbref lookup_player_name(const UTF8 *name, bool &bAlias)
 {
     dbref thing = NOTHING;
     size_t nCased;
@@ -1189,7 +1189,7 @@ void badname_remove(UTF8 *bad_name)
     }
 }
 
-bool badname_check(UTF8 *bad_name)
+bool badname_check(const UTF8 *bad_name)
 {
     BADNAME *bp;
 

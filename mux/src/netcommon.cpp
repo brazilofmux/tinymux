@@ -1141,7 +1141,7 @@ static void announce_connect(const dbref player, DESC *d)
     free_lbuf(buf);
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    UTF8 *time_str = ltaNow.ReturnDateString(7);
+    const UTF8 *time_str = ltaNow.ReturnDateString(7);
 
     UTF8 host_address[MBUF_SIZE];
     d->address.ntop(host_address, sizeof(host_address));
@@ -2024,7 +2024,7 @@ static void dump_info(DESC *arg_desc)
 
     CLinearTimeAbsolute lta = mudstate.start_time;
     lta.UTC2Local();
-    UTF8 *temp = lta.ReturnDateString();
+    const UTF8 *temp = lta.ReturnDateString();
     queue_write(arg_desc, tprintf(T("Uptime: %s\r\n"), temp));
 
     int count = 0;

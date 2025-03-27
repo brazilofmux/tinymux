@@ -317,7 +317,7 @@ extern void handle_prog(DESC *d, UTF8 *message);
 
 // From player.cpp
 //
-void record_login(dbref, bool, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
+void record_login(dbref, bool, const UTF8 *, const UTF8 *, const UTF8 *, const UTF8 *);
 extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 // From bsd.cpp.

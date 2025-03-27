@@ -2311,7 +2311,7 @@ static void send_mail
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
 
-    UTF8 *pTimeStr = ltaNow.ReturnDateString(0);
+    const UTF8 *pTimeStr = ltaNow.ReturnDateString(0);
 
     // Initialize the appropriate fields.
     //
