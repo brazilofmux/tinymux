@@ -220,7 +220,7 @@ static struct
     { CATEGORY_OTHER|SUBCATEGORY_FORMAT,              "Cf" },
     { CATEGORY_OTHER|SUBCATEGORY_SURROGATE,           "Cs" },
     { CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE,         "Co" },
-    { 0, NULL }
+    { 0, nullptr }
 };
 
 #define BIDI_LEFT_TO_RIGHT               1
@@ -276,7 +276,7 @@ static struct
     { BIDI_RIGHT_TO_LEFT_ISOLATE,      "RLI" },
     { BIDI_FIRST_STRONG_ISOLATE,       "FSI" },
     { BIDI_POP_DIRECTIONAL_ISOLATE,    "PDI" },
-    { 0, NULL }
+    { 0, nullptr }
 };
 
 #define DECOMP_TYPE_NONE               0
@@ -320,7 +320,7 @@ static struct
     { DECOMP_TYPE_SQUARE,              "square"   },
     { DECOMP_TYPE_FRACTION,            "fraction" },
     { DECOMP_TYPE_COMPAT,              "compat"   },
-    { 0, NULL }
+    { 0, nullptr }
 };
 
 #define WIDTH_TYPE_NONE                0
@@ -363,7 +363,7 @@ static struct
     { "CP437",      "cl_437.txt",    "tr_utf8_cp437_out.txt",  MAPPING_CP437 },
     { "ISO-8859-1", "cl_8859_1.txt", "tr_utf8_latin1_out.txt", MAPPING_ISO_8859_1 },
     { "ISO-8859-2", "cl_8859_2.txt", "tr_utf8_latin2_out.txt", MAPPING_ISO_8859_2 },
-    { NULL, 0 }
+    { nullptr, 0 }
 };
 
 class CodePoint
@@ -536,7 +536,7 @@ bool CodePoint::GetWidthType(int *pn)
 CodePoint::CodePoint()
 {
     m_bDefined = false;
-    m_pDescription = NULL;
+    m_pDescription = nullptr;
     m_category = CATEGORY_OTHER|SUBCATEGORY_NOT_ASSIGNED;
     m_class = 0;
     m_bidi = BIDI_LEFT_TO_RIGHT; // BUG: The default is not the same for all code point values.
@@ -546,11 +546,11 @@ CodePoint::CodePoint()
     m_bHaveDecimalDigitValue = false;
     m_nDigitValue = 0;
     m_bHaveDigitValue = false;
-    m_pNumericValue = NULL;
+    m_pNumericValue = nullptr;
     m_bHaveNumericValue = false;
     m_bBidiMirrored = false;
-    m_pUnicode1Name = NULL;
-    m_pISOComment = NULL;
+    m_pUnicode1Name = nullptr;
+    m_pISOComment = nullptr;
     m_SimpleUppercaseMapping = UNI_EOF;
     m_SimpleLowercaseMapping = UNI_EOF;
     m_SimpleTitlecaseMapping = UNI_EOF;
@@ -565,20 +565,20 @@ CodePoint::CodePoint()
 
 CodePoint::~CodePoint()
 {
-    if (NULL != m_pDescription)
+    if (nullptr != m_pDescription)
     {
         delete [] m_pDescription;
-        m_pDescription = NULL;
+        m_pDescription = nullptr;
     }
     m_bDefined = false;
 }
 
 void CodePoint::SetDescription(const char *pDescription)
 {
-    if (NULL != m_pDescription)
+    if (nullptr != m_pDescription)
     {
         delete [] m_pDescription;
-        m_pDescription = NULL;
+        m_pDescription = nullptr;
     }
     size_t n = strlen(pDescription);
     m_pDescription = new char[n+1];
@@ -588,10 +588,10 @@ void CodePoint::SetDescription(const char *pDescription)
 
 void CodePoint::SetUnicode1Name(const char *p)
 {
-    if (NULL != m_pUnicode1Name)
+    if (nullptr != m_pUnicode1Name)
     {
         delete [] m_pUnicode1Name;
-        m_pUnicode1Name = NULL;
+        m_pUnicode1Name = nullptr;
     }
     size_t n = strlen(p);
     m_pUnicode1Name = new char[n+1];
@@ -600,10 +600,10 @@ void CodePoint::SetUnicode1Name(const char *p)
 
 void CodePoint::SetISOComment(const char *p)
 {
-    if (NULL != m_pISOComment)
+    if (nullptr != m_pISOComment)
     {
         delete [] m_pISOComment;
-        m_pISOComment = NULL;
+        m_pISOComment = nullptr;
     }
     size_t n = strlen(p);
     m_pISOComment = new char[n+1];
@@ -643,7 +643,7 @@ private:
     CodePoint cp[codepoints+1];
 };
 
-UniData *g_UniData = NULL;
+UniData *g_UniData = nullptr;
 
 void UniData::GetDecomposition(UTF32 pt, int dt, int &nPoints, UTF32 pts[])
 {
@@ -709,11 +709,11 @@ int main(int argc, char *argv[])
 void UniData::LoadUnicodeDataFile(void)
 {
     FILE *fp = fopen("UnicodeData.txt", "r");
-    if (NULL != fp)
+    if (nullptr != fp)
     {
         char buffer1[1024];
         char buffer2[1024];
-        while (NULL != ReadLine(fp, buffer1, sizeof(buffer1)))
+        while (nullptr != ReadLine(fp, buffer1, sizeof(buffer1)))
         {
             bool  bRange = false;
             bool  bRangeValid = false;
@@ -730,7 +730,7 @@ void UniData::LoadUnicodeDataFile(void)
                    && strcmp(&aFields1[1][n1-8], ", First>") == 0)
                 {
                     bRange = true;
-                    if (NULL != ReadLine(fp, buffer2, sizeof(buffer2)))
+                    if (nullptr != ReadLine(fp, buffer2, sizeof(buffer2)))
                     {
                         ParseFields(buffer2, 15, nFields2, aFields2);
                         if (  2 <= nFields2
@@ -902,12 +902,12 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
         if (6 <= nFields)
         {
             bool bValid = false;
-            char *pDecomposition_Mapping = NULL;
-            const char *pDecomposition_Type = NULL;
+            char *pDecomposition_Mapping = nullptr;
+            const char *pDecomposition_Type = nullptr;
             if ('<' == aFields[5][0])
             {
                char *p = strchr(aFields[5]+1, '>');
-               if (NULL != p)
+               if (nullptr != p)
                {
                    *p++ = '\0';
                    while (mux_isspace(*p))
@@ -1075,10 +1075,10 @@ void UniData::LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[])
 void UniData::LoadEastAsianWidth(void)
 {
     FILE *fp = fopen("EastAsianWidth.txt", "r");
-    if (NULL != fp)
+    if (nullptr != fp)
     {
         char buffer[1024];
-        while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+        while (nullptr != ReadLine(fp, buffer, sizeof(buffer)))
         {
             int   nFields;
             char *aFields[2];
@@ -1091,7 +1091,7 @@ void UniData::LoadEastAsianWidth(void)
                 int nWidth;
 
                 char *p = strchr(aFields[0], '.');
-                if (NULL == p)
+                if (nullptr == p)
                 {
                     ptEnd = ptStart = DecodeCodePoint(aFields[0]);
                 }
@@ -1187,7 +1187,7 @@ void UniData::LoadMappings(void)
 void UniData::SaveDecompositions()
 {
     FILE *fp = fopen("Decompositions.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1221,7 +1221,7 @@ void UniData::SaveDecompositions()
 void UniData::SaveCombiningClass()
 {
     FILE *fp = fopen("tr_class.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1312,7 +1312,7 @@ void UniData::SaveCombiningClass()
 void UniData::SaveWidths()
 {
     FILE *fp = fopen("tr_widths.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1344,7 +1344,7 @@ void UniData::SaveMappings()
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
     {
         FILE *fp = fopen(MappingTypeTable[iMapping].pOutput, "w+");
-        if (NULL == fp)
+        if (nullptr == fp)
         {
             return;
         }
@@ -1359,7 +1359,7 @@ void UniData::SaveMappings()
                     char *pUnicode1Name = cp[pt].GetUnicode1Name();
                     fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
                         cp[pt].GetDescription(),
-                        (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                        (nullptr == pUnicode1Name) ? "" : pUnicode1Name);
                 }
                 else
                 {
@@ -1384,7 +1384,7 @@ void UniData::SaveMappings()
                         char *pUnicode1Name = cp[pt].GetUnicode1Name();
                         fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
                             cp[pt].GetDescription(),
-                            (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                            (nullptr == pUnicode1Name) ? "" : pUnicode1Name);
                     }
                     else if (  cp[pt].GetDigitValue(&decimal)
                             && 0 <= decimal
@@ -1394,7 +1394,7 @@ void UniData::SaveMappings()
                         char *pUnicode1Name = cp[pt].GetUnicode1Name();
                         fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), ch,
                             cp[pt].GetDescription(),
-                            (NULL == pUnicode1Name) ? "" : pUnicode1Name);
+                            (nullptr == pUnicode1Name) ? "" : pUnicode1Name);
                     }
                 }
             }
@@ -1406,7 +1406,7 @@ void UniData::SaveMappings()
 void UniData::SaveTranslateToUpper(void)
 {
     FILE *fp = fopen("tr_toupper.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1423,7 +1423,7 @@ void UniData::SaveTranslateToUpper(void)
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptUpper),
-                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                    cp[pt].GetDescription(), (nullptr == p) ? "" : p);
             }
         }
     }
@@ -1433,7 +1433,7 @@ void UniData::SaveTranslateToUpper(void)
 void UniData::SaveTranslateToLower(void)
 {
     FILE *fp = fopen("tr_tolower.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1450,7 +1450,7 @@ void UniData::SaveTranslateToLower(void)
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptLower),
-                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                    cp[pt].GetDescription(), (nullptr == p) ? "" : p);
             }
         }
     }
@@ -1460,7 +1460,7 @@ void UniData::SaveTranslateToLower(void)
 void UniData::SaveTranslateToTitle(void)
 {
     FILE *fp = fopen("tr_totitle.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1477,7 +1477,7 @@ void UniData::SaveTranslateToTitle(void)
             {
                 char *p = cp[pt].GetUnicode1Name();
                 fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptTitle),
-                    cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                    cp[pt].GetDescription(), (nullptr == p) ? "" : p);
             }
         }
     }
@@ -1487,7 +1487,7 @@ void UniData::SaveTranslateToTitle(void)
 void UniData::SaveTranslateDecimalValue(void)
 {
     FILE *fp = fopen("tr_decimal_value.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1501,7 +1501,7 @@ void UniData::SaveTranslateDecimalValue(void)
             if (cp[pt].GetDecimalDigitValue(&n))
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), n, cp[pt].GetDescription(), (NULL == p) ? "" : p);
+                fprintf(fp, "%04X;%u;%s;%s\n", static_cast<unsigned int>(pt), n, cp[pt].GetDescription(), (nullptr == p) ? "" : p);
             }
         }
     }
@@ -1511,7 +1511,7 @@ void UniData::SaveTranslateDecimalValue(void)
 void UniData::SaveMasterFile(void)
 {
     FILE *fp = fopen("UnicodeMaster.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1576,7 +1576,7 @@ void UniData::SaveMasterFile(void)
                 fprintf(fp, ";");
             }
 
-            char *pNumericValue = NULL;
+            char *pNumericValue = nullptr;
             if (cp[pt].GetNumericValue(&pNumericValue))
             {
                 fprintf(fp, ";%s", pNumericValue);
@@ -1688,7 +1688,7 @@ void UniData::Prohibit(void)
 void UniData::SaveClassifyPrintable(void)
 {
     FILE *fp = fopen("cl_Printable.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1754,7 +1754,7 @@ void UniData::SaveClassifyPrintable(void)
                 fprintf(fp, ";");
             }
 
-            char *pNumericValue = NULL;
+            char *pNumericValue = nullptr;
             if (cp[pt].GetNumericValue(&pNumericValue))
             {
                 fprintf(fp, ";%s", pNumericValue);
@@ -1832,7 +1832,7 @@ void UniData::SaveClassifyPrintable(void)
 void UniData::SaveClassifyPrivateUse()
 {
     FILE *fp = fopen("cl_PrivateUse.txt", "w+");
-    if (NULL == fp)
+    if (nullptr == fp)
     {
         return;
     }
@@ -1859,7 +1859,7 @@ const char *CodePoint::GetCategoryName(void)
         }
         i++;
     }
-    return NULL;
+    return nullptr;
 }
 
 const char *CodePoint::GetBiDiName(void)
@@ -1873,7 +1873,7 @@ const char *CodePoint::GetBiDiName(void)
         }
         i++;
     }
-    return NULL;
+    return nullptr;
 }
 
 const char *CodePoint::GetDecompositionTypeName(void)
@@ -1887,16 +1887,16 @@ const char *CodePoint::GetDecompositionTypeName(void)
         }
         i++;
     }
-    return NULL;
+    return nullptr;
 }
 
 void UniData::LoadUnicodeHanFile(void)
 {
     FILE *fp = fopen("UnicodeHan.txt", "r");
-    if (NULL != fp)
+    if (nullptr != fp)
     {
         char buffer[1024];
-        while (NULL != ReadLine(fp, buffer, sizeof(buffer)))
+        while (nullptr != ReadLine(fp, buffer, sizeof(buffer)))
         {
             int   nFields;
             char *aFields[2];
@@ -1906,7 +1906,7 @@ void UniData::LoadUnicodeHanFile(void)
             {
                 UTF32 pt1, pt2;
                 char *p = strchr(aFields[0], '-');
-                if (NULL != p)
+                if (nullptr != p)
                 {
                     *p++ = '\0';
                     pt1 = DecodeCodePoint(aFields[0]);

@@ -17,12 +17,12 @@ char *ReadLine(FILE *fp, char *buffer, size_t bufsize)
 {
     for (;;)
     {
-        if (NULL == fgets(buffer, bufsize, fp))
+        if (nullptr == fgets(buffer, bufsize, fp))
         {
-            return NULL;
+            return nullptr;
         }
         char *p = strchr(buffer, '#');
-        if (NULL != p)
+        if (nullptr != p)
         {
             for (;buffer < p; --p)
             {
@@ -68,7 +68,7 @@ void ParseFields(char *buffer, int max_fields, int &nFields, char *aFields[])
 
         aFields[nFields++] = p;
         char *q = strchr(p, ';');
-        if (NULL == q)
+        if (nullptr == q)
         {
             // Trim trailing whitespace.
             //
@@ -113,7 +113,7 @@ void ParsePoints(char *buffer, int max_points, int &nPoints, const char *aPoints
 
         aPoints[nPoints++] = p;
         char *q = strchr(p, ' ');
-        if (NULL == q)
+        if (nullptr == q)
         {
             break;
         }
@@ -172,7 +172,7 @@ State *StateMachine::AllocateState(void)
         p->next[i] = &m_Undefined;
         ValidateStatePointer(p->next[i], __LINE__);
     }
-    p->merged = NULL;
+    p->merged = nullptr;
     return p;
 }
 
@@ -221,9 +221,9 @@ void StateMachine::Final(void)
     for (i = 0; i < m_nStates; i++)
     {
         FreeState(m_stt[i]);
-        m_stt[i] = NULL;
+        m_stt[i] = nullptr;
     }
-    m_StartingState = NULL;
+    m_StartingState = nullptr;
     m_nStates = 0;
 }
 
@@ -311,8 +311,8 @@ bool StateMachine::RowsEqual(State *p, State *q)
     {
         return true;
     }
-    else if (  NULL == p
-            || NULL == q)
+    else if (  nullptr == p
+            || nullptr == q)
     {
         return false;
     }
@@ -368,7 +368,7 @@ void StateMachine::MergeAcceptingStates(void)
     int i;
     for (i = 0; i < m_nStates; i++)
     {
-        m_stt[i]->merged = NULL;
+        m_stt[i]->merged = nullptr;
     }
 
     for (i = 0; i < m_nStates; i++)
@@ -383,7 +383,7 @@ void StateMachine::MergeAcceptingStates(void)
         }
 
         bool bMatched = false;
-        State *pLastState = NULL;
+        State *pLastState = nullptr;
         int k;
         for (k = 0; k < 256; k++)
         {
@@ -403,7 +403,7 @@ void StateMachine::MergeAcceptingStates(void)
                 break;
             }
 
-            if (NULL == pLastState)
+            if (nullptr == pLastState)
             {
                 bMatched = true;
                 pLastState = pi->next[k];
@@ -431,14 +431,14 @@ void StateMachine::MergeAcceptingStates(void)
     {
         State *pi = m_stt[i];
         ValidateStatePointer(pi, __LINE__);
-        if (NULL == pi->merged)
+        if (nullptr == pi->merged)
         {
             int j;
             for (j = 0; j < 256; j++)
             {
                 State *pj = pi->next[j];
                 ValidateStatePointer(pj, __LINE__);
-                if (NULL != pj->merged)
+                if (nullptr != pj->merged)
                 {
                     ValidateStatePointer(pj->merged, __LINE__);
                     pi->next[j] = pj->merged;
@@ -454,7 +454,7 @@ void StateMachine::MergeAcceptingStates(void)
     {
         State *pi = m_stt[i];
         ValidateStatePointer(pi, __LINE__);
-        if (NULL == pi->merged)
+        if (nullptr == pi->merged)
         {
             i++;
         }
@@ -462,7 +462,7 @@ void StateMachine::MergeAcceptingStates(void)
         {
             ValidateStatePointer(pi->merged, __LINE__);
             FreeState(pi);
-            m_stt[i] = NULL;
+            m_stt[i] = nullptr;
 
             int k;
             m_nStates--;
@@ -474,7 +474,7 @@ void StateMachine::MergeAcceptingStates(void)
     }
 
     OutputStatus os;
-    OutputTables(NULL, &os);
+    OutputTables(nullptr, &os);
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
@@ -484,7 +484,7 @@ void StateMachine::RemoveDuplicateRows(void)
     int i, j;
     for (i = 0; i < m_nStates; i++)
     {
-        m_stt[i]->merged = NULL;
+        m_stt[i]->merged = nullptr;
     }
 
     // Find and mark duplicate rows.
@@ -493,13 +493,13 @@ void StateMachine::RemoveDuplicateRows(void)
     {
         State *pi = m_stt[i];
         ValidateStatePointer(pi, __LINE__);
-        if (NULL == pi->merged)
+        if (nullptr == pi->merged)
         {
             for (j = i+1; j < m_nStates; j++)
             {
                 State *pj = m_stt[j];
                 ValidateStatePointer(pj, __LINE__);
-                if (NULL == pj->merged)
+                if (nullptr == pj->merged)
                 {
                     if (RowsEqual(pi, pj))
                     {
@@ -533,13 +533,13 @@ void StateMachine::RemoveDuplicateRows(void)
     {
         State *pi = m_stt[i];
         ValidateStatePointer(pi, __LINE__);
-        if (NULL == pi->merged)
+        if (nullptr == pi->merged)
         {
             for (j = 0; j < 256; j++)
             {
                 State *pj = pi->next[j];
                 ValidateStatePointer(pj, __LINE__);
-                if (NULL != pj->merged)
+                if (nullptr != pj->merged)
                 {
                     ValidateStatePointer(pj->merged, __LINE__);
                     pi->next[j] = pj->merged;
@@ -555,7 +555,7 @@ void StateMachine::RemoveDuplicateRows(void)
     {
         State *pi = m_stt[i];
         ValidateStatePointer(pi, __LINE__);
-        if (NULL == pi->merged)
+        if (nullptr == pi->merged)
         {
             i++;
         }
@@ -563,7 +563,7 @@ void StateMachine::RemoveDuplicateRows(void)
         {
             ValidateStatePointer(pi->merged, __LINE__);
             FreeState(pi);
-            m_stt[i] = NULL;
+            m_stt[i] = nullptr;
 
             int k;
             m_nStates--;
@@ -575,7 +575,7 @@ void StateMachine::RemoveDuplicateRows(void)
     }
 
     OutputStatus os;
-    OutputTables(NULL, &os);
+    OutputTables(nullptr, &os);
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
@@ -637,7 +637,7 @@ void StateMachine::DetectDuplicateColumns(void)
     }
 
     OutputStatus os;
-    OutputTables(NULL, &os);
+    OutputTables(nullptr, &os);
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
@@ -769,17 +769,17 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
     // Mapping from state number to position in blob which contains
     // run-length-compressed row.
     //
-    int *piCopy = NULL;
-    int *piBlobOffsets = NULL;;
-    int *piBlob = NULL;
+    int *piCopy = nullptr;
+    int *piBlobOffsets = nullptr;
+    int *piBlob = nullptr;
 
     int nBlob = 0;
     piCopy = new int[m_nColumns];
     piBlobOffsets = new int[m_nStates];
     piBlob = new int[2*m_nStates*m_nColumns];
-    if (  NULL == piCopy
-       || NULL == piBlobOffsets
-       || NULL == piBlob)
+    if (  nullptr == piCopy
+       || nullptr == piBlobOffsets
+       || nullptr == piBlob)
     {
         fprintf(stderr, "CleanUp, line %d\n", __LINE__);
         goto CleanUp;
@@ -1037,7 +1037,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
         }
     }
 
-    if (NULL != poc)
+    if (nullptr != poc)
     {
         fprintf(poc->fpInclude, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
         fprintf(poc->fpBody, "// %d states, %d columns, %d bytes\n//\n", m_nStates, m_nColumns, os.SizeOfMachine);
@@ -1191,7 +1191,7 @@ CleanUp:
     delete piBlobOffsets;
     delete piBlob;
 
-    if (NULL != pos)
+    if (nullptr != pos)
     {
         *pos = os;
     }

@@ -28,7 +28,7 @@ UTF32 ReadCodePoint(FILE *fp)
 {
     char buffer[1024];
     char *p = ReadLine(fp, buffer, sizeof(buffer));
-    if (NULL == p)
+    if (nullptr == p)
     {
         return UNI_EOF;
     }
@@ -251,7 +251,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     fprintf(stderr, "%d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
 
     OutputStatus os;
-    sm.OutputTables(NULL, &os);
+    sm.OutputTables(nullptr, &os);
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
@@ -289,7 +289,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     oc.fpInclude = fpInclude;
     oc.UpperPrefix = UpperPrefix;
     oc.LowerPrefix = LowerPrefix;
-    sm.OutputTables(&oc, NULL);
+    sm.OutputTables(&oc, nullptr);
 }
 
 int main(int argc, char *argv[])
@@ -315,9 +315,9 @@ int main(int argc, char *argv[])
     FILE *fp = fopen(pFilename, "rb");
     FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
     FILE *fpInclude = fopen("utf8tables.h.txt", "a");
-    if (  NULL == fp
-       || NULL == fpBody
-       || NULL == fpInclude)
+    if (  nullptr == fp
+       || nullptr == fpBody
+       || nullptr == fpInclude)
     {
         fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt.\n", pFilename);
         exit(0);

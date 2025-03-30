@@ -32,7 +32,7 @@ UTF32 ReadCodePointAndValue(FILE *fp, int &Value)
 {
     char buffer[1024];
     char *p = ReadLine(fp, buffer, sizeof(buffer));
-    if (NULL == p)
+    if (nullptr == p)
     {
         Value = -1;
         return UNI_EOF;
@@ -230,7 +230,7 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     fprintf(stderr, "%d code points.\n", cIncluded);
 
     OutputStatus os;
-    sm.OutputTables(NULL, &os);
+    sm.OutputTables(nullptr, &os);
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
@@ -281,13 +281,13 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     oc.fpInclude = fpInclude;
     oc.UpperPrefix = UpperPrefix;
     oc.LowerPrefix = LowerPrefix;
-    sm.OutputTables(&oc, NULL);
+    sm.OutputTables(&oc, nullptr);
 }
 
 int main(int argc, char *argv[])
 {
-    const char *pPrefix = NULL;
-    const char *pFilename = NULL;
+    const char *pPrefix = nullptr;
+    const char *pFilename = nullptr;
 
     if (argc < 3)
     {
@@ -321,11 +321,11 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (NULL == pPrefix)
+                if (nullptr == pPrefix)
                 {
                     pPrefix = argv[j];
                 }
-                else if (NULL == pFilename)
+                else if (nullptr == pFilename)
                 {
                     pFilename = argv[j];
                 }
@@ -336,9 +336,9 @@ int main(int argc, char *argv[])
     FILE *fp = fopen(pFilename, "rb");
     FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
     FILE *fpInclude = fopen("utf8tables.h.txt", "a");
-    if (  NULL == fp
-       || NULL == fpBody
-       || NULL == fpInclude)
+    if (  nullptr == fp
+       || nullptr == fpBody
+       || nullptr == fpInclude)
     {
         fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt\n", pFilename);
         exit(0);
