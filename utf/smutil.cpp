@@ -8,6 +8,11 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
+namespace {
+    constexpr int MAX_RLE_RUN_LENGTH = 127;
+    constexpr int MAX_RLE_COPY_LENGTH = 128;
+}
+
 char *ReadLine(FILE *fp, char *buffer, size_t bufsize)
 {
     for (;;)
@@ -233,7 +238,7 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
        || NUM_ACCEPTING_STATES < AcceptingState)
     {
         fprintf(stderr, "Accepting state exceeds supported range.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     if (m_nLargestAcceptingState < AcceptingState)
@@ -254,7 +259,7 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
             if (NUM_STATES <= m_nStates)
             {
                 fprintf(stderr, "Limit of %d states exceeded.\n", NUM_STATES);
-                exit(0);
+                exit(EXIT_FAILURE);
             }
             pState->next[ch] = p;
             pState = p;
@@ -263,7 +268,7 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
                 && pState->next[ch] < (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
         {
             fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         else
         {
@@ -286,12 +291,12 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
                 && pState->next[ch] < (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
         {
             fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         else
         {
             fprintf(stderr, "Already recorded as prefix of another string. This shouldn't happen.\n");
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         pStart++;
     }
@@ -690,7 +695,7 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
     }
 
     fprintf(stderr, "Invalid state pointer. This should not happen. Line %d\n", iLine);
-    exit(0);
+    exit(EXIT_FAILURE);
 #endif
 }
 
@@ -698,9 +703,6 @@ void StateMachine::ValidateStatePointer(State *pState, int iLine)
 //
 bool EmitPhrase(int* piBlob, int& nBlob, int maxBlob, bool isRun, int count, const int* values)
 {
-    const int MAX_COPY_LENGTH = 128;
-    const int MAX_RUN_LENGTH = 127;
-
     while (count > 0)
     {
         // Check if we have room in the blob
@@ -713,7 +715,7 @@ bool EmitPhrase(int* piBlob, int& nBlob, int maxBlob, bool isRun, int count, con
         if (isRun)
         {
             // Handle RUN phrase
-            int chunkSize = std::min(count, MAX_RUN_LENGTH);
+            int chunkSize = std::min(count, MAX_RLE_RUN_LENGTH);
             piBlob[nBlob++] = chunkSize;
             piBlob[nBlob++] = values[0];  // Same value repeated
             count -= chunkSize;
@@ -721,7 +723,7 @@ bool EmitPhrase(int* piBlob, int& nBlob, int maxBlob, bool isRun, int count, con
         else
         {
             // Handle COPY phrase
-            int chunkSize = std::min(count, MAX_COPY_LENGTH);
+            int chunkSize = std::min(count, MAX_RLE_COPY_LENGTH);
             piBlob[nBlob++] = -chunkSize;  // Negative indicates COPY
             for (int i = 0; i < chunkSize; i++)
             {
@@ -832,7 +834,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
             {
                 if (0 < kRunCount)
                 {
-                    if (kRunCount < 127)
+                    if (kRunCount < MAX_RLE_RUN_LENGTH)
                     {
                         kRunCount++;
                     }
@@ -1152,7 +1154,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
             {
                 fprintf(poc->fpBody, " %3d", iBlob);
             }
-            else if (-128 <= iBlob)
+            else if (-MAX_RLE_COPY_LENGTH <= iBlob)
             {
                 // Negative entries are COPY phrases.
                 //
@@ -1160,7 +1162,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
             }
             else
             {
-                // Negative entries should not be larger than -127.
+                // Negative entries should not be larger than -MAX_RLE_COPY_LENGTH.
                 //
                 fprintf(stderr, "CleanUp, line %d\n", __LINE__);
                 goto CleanUp;
@@ -1210,7 +1212,7 @@ void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     if (&m_Undefined == pState)
     {
         fprintf(stderr, "Final State is undefined.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     char *p = reinterpret_cast<char *>(pState);
@@ -1219,6 +1221,6 @@ void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     if (iState != AcceptingState)
     {
         fprintf(stderr, "State Transition Table does not work.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 }
