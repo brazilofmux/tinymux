@@ -1,0 +1,52 @@
+Visual Studio Project Structure for GANL
+
+1. Solution: ganl.sln
+   - Platform: x64, Win32
+   - Configuration: Debug, Release
+
+2. Projects:
+   a. ganl_common (Static Library)
+      - Files: 
+        - include/ganl/io_buffer.h
+        - include/ganl/network_types.h
+        - include/ganl/connection.h
+        - src/common/io_buffer.cpp
+        - src/common/connection.cpp
+      - Include directories: include/
+
+   b. ganl_platform_iocp (Static Library)
+      - Files:
+        - include/ganl/network_engine.h
+        - src/platform/iocp/*.h
+        - src/platform/iocp/*.cpp
+      - Include directories: include/
+      - Dependencies: ganl_common
+
+   c. ganl_ssl_schannel (Static Library)
+      - Files:
+        - include/ganl/secure_transport.h
+        - src/ssl/schannel/*.h
+        - src/ssl/schannel/*.cpp
+      - Include directories: include/
+      - Dependencies: ganl_common
+
+   d. ganl_protocol_telnet (Static Library)
+      - Files:
+        - include/ganl/protocol_handler.h
+        - src/protocol/telnet/*.h
+        - src/protocol/telnet/*.cpp
+      - Include directories: include/
+      - Dependencies: ganl_common
+
+   e. echo_server (Executable)
+      - Files:
+        - tools/echo_server/main.cpp
+      - Include directories: include/
+      - Dependencies: ganl_common, ganl_platform_iocp, ganl_ssl_schannel, ganl_protocol_telnet
+
+Windows-specific settings:
+- Character Set: Unicode
+- C++ Language Standard: C++14
+- Additional include directories: $(ProjectDir)/../include
+- Additional library directories: $(OutDir)
+- Link libraries: ws2_32.lib, secur32.lib
