@@ -93,3 +93,4 @@ author:
    ambiguities.
  - Refactored the time parser by replacing macro constants with
    C++-style constants for better type safety and clarity.
+ - Updated to C++17 standard.
