@@ -28,7 +28,6 @@
 #endif // HAVE_SYS_IOCTL_H
 
 #include <signal.h>
-#include "slave.h"
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif // HAVE_ARPA_INET_H

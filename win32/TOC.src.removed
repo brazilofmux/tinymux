@@ -8,3 +8,4 @@ README
 SGP
 src/pcre.cpp
 src/pcre.h
+src/slave.h
