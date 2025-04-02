@@ -21,6 +21,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run smoke tests: `cd testcases/tools && ./Makesmoke && ./Smoke`
 - Test output in: `testcases/smoke.log`
 
+## Release Process
+- Update version numbers in:
+  - `dounix.sh` and `dowin32.sh`: Update OLD_BUILD and NEW_BUILD
+  - `mux/src/_build.h`: Update MUX_VERSION and MUX_RELEASE_DATE
+- Building release packages:
+  - Unix/Linux/FreeBSD: Run `./dounix.sh` from repository root
+  - Windows: Run `./dowin32.sh` from repository root
+- Release artifacts include:
+  - Full distribution archives (.tar.gz, .tar.bz2)
+  - Patch files for upgrading from previous version
+  - SHA256 checksums for all files
+
 ## Code Style Guidelines
 - Indentation: 4 spaces, no tabs
 - Bracing: Opening braces on same line: `if (condition) {`
