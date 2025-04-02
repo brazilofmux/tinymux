@@ -9,9 +9,9 @@ set -e  # Exit on error
 set -o pipefail
 
 # Version information
-OLD_BUILD=4
+OLD_BUILD=5
 OLD_VERSION="2.13.0.$OLD_BUILD"
-NEW_BUILD=5
+NEW_BUILD=6
 NEW_VERSION="2.13.0.$NEW_BUILD"
 
 # Directory structure
