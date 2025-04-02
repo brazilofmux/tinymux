@@ -7265,9 +7265,10 @@ rm -rf conftest*
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gettimeofday dcl..." >&5
 printf "%s\n" "$as_me: checking for gettimeofday dcl..." >&6;}
-if test $ac_cv_header_time = yes && test $ac_cv_header_sys_time_h = yes ; then
+if test "$ac_cv_header_time" = yes && test "$ac_cv_header_sys_time_h" = yes ; then
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
 #include <time.h>
 #include <sys/time.h>
 
@@ -7283,7 +7284,7 @@ printf "%s\n" "#define NEED_GETTIMEOFDAY_DCL /**/" >>confdefs.h
 fi
 rm -rf conftest*
 
-elif test $ac_cv_header_sys_time_h = yes ; then
+elif test "$ac_cv_header_sys_time_h" = yes ; then
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/time.h>

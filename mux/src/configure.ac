@@ -343,10 +343,12 @@ AC_EGREP_HEADER(fread,stdio.h,AC_DEFINE([EXTENDED_STDIO_DCLS], [], [Define if st
 AS_MESSAGE([checking for extended socket dcls...])
 AC_EGREP_HEADER(setsockopt,sys/socket.h,AC_DEFINE([EXTENDED_SOCKET_DCLS], [], [Define if sys/socket.h defines lots of extra functions.]))
 AS_MESSAGE([checking for gettimeofday dcl...])
-if test $ac_cv_header_time = yes && test $ac_cv_header_sys_time_h = yes ; then
-AC_EGREP_HEADER(gettimeofday,[time.h>
-#include <sys/time.h], ,AC_DEFINE([NEED_GETTIMEOFDAY_DCL], [], [Define if you need to declare gettimeofday yourself.]))
-elif test $ac_cv_header_sys_time_h = yes ; then
+if test "$ac_cv_header_time" = yes && test "$ac_cv_header_sys_time_h" = yes ; then
+AC_EGREP_CPP([gettimeofday], [
+#include <time.h>
+#include <sys/time.h>
+],, AC_DEFINE([NEED_GETTIMEOFDAY_DCL], [], [Define if you need to declare gettimeofday yourself.]))
+elif test "$ac_cv_header_sys_time_h" = yes ; then
 AC_EGREP_HEADER(gettimeofday,sys/time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
 else
 AC_EGREP_HEADER(gettimeofday,time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
