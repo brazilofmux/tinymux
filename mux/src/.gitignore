@@ -1,0 +1,19 @@
+# Object files
+*.o
+*.so
+*.a
+
+# Build artifacts
+netmux
+slave
+stubslave
+stamp-h1
+buildnum.data
+.depend
+config.log
+config.status
+autoconf.h
+Makefile
+
+# Autom4te cache directory
+autom4te.cache/

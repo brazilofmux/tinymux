@@ -34,10 +34,12 @@ game.
     system.  There may also be some `#defines` in `config.h` that you may
     want to change, but in general, the defaults should not be changed.
 
-3.  Run `make depend`, then `make`.  This will produce `netmux`, `slave`, and
-    `dbconvert`.
+3.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
 
-4.  When starting from a TinyMUX from scratch, do the following:
+4.  Run `make install` to create the necessary symlinks in the game/bin directory.
+    After installation, the `dbconvert` command will be a symlink to `netmux`.
+
+5.  When starting from a TinyMUX from scratch, do the following:
 
       - cd to the game directory.  `cd ../game`
       - Make your configuration file, as described in `docs/CONFIGURATION`
@@ -46,12 +48,12 @@ game.
       - Log into the game as player wizard `connect wizard potrzebie` and
         shut it down again.
 
-5.  Edit the .txt files in `game/text` to your liking.  In particular,
+6.  Edit the .txt files in `game/text` to your liking.  In particular,
     `connect.txt` and `motd.txt`.
 
-6.  Start TinyMUX 2.13 by running `./Startmux` again.
+7.  Start TinyMUX 2.13 by running `./Startmux` again.
 
-7.  `@ccreate` a channel named `Public`, and a channel named `Guests`
+8.  `@ccreate` a channel named `Public`, and a channel named `Guests`
     from within the TinyMUX.  Created players will automatically be
     joined to `Public` with alias `pub`, guests will automatically join
     `Guests` with alias `g`.
@@ -112,10 +114,12 @@ upgrade.
     system.  There may also be some `#defines` in `config.h` that you may
     want to change, but in general, the defaults should not be changed.
 
-3.  Run `make depend`, then `make`.  This will produce `netmux`, `slave`, and
-    `dbconvert`.
+3.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
 
-4.  Place/change your files.
+4.  Run `make install` to create the necessary symlinks in the game/bin directory.
+    After installation, the `dbconvert` command will be a symlink to `netmux`.
+
+5.  Place/change your files.
 
     - Put databases in `game/data`.
 
@@ -131,5 +135,5 @@ upgrade.
       accordingly, BEFORE you restart the game, or else ALL `@mail` older
       than the default value of 14 days will be deleted.
 
-5.  Start TinyMUX 2.13 by running `./Startmux`.
+6.  Start TinyMUX 2.13 by running `./Startmux`.
 

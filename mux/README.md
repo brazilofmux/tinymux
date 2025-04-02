@@ -99,3 +99,23 @@ formalized. Sometimes, due to lack of available time, it is ad-hoc.
 TinyMUX 2.13 should run on most Unixes with BSD-style sockets and a C++
 compiler that groks function prototypes. It is 64-bit clean code
 supporting both IPv4 and IPv6.
+
+# Build System:
+
+The build system has been modernized with autoconf and automake. The older
+build process required `./configure; make depend; make`, but the new process
+is `./configure; make; make install`. Dependency tracking is now handled
+automatically by automake, and the install step creates the necessary
+symlinks in the game/bin directory.
+
+For Debian package maintainers or others requiring deterministic builds without
+embedded timestamps or incrementing build numbers, use:
+
+```
+DEBIAN_BUILD=1 ./configure
+make
+make install
+```
+
+This will produce binaries with static version information suitable for
+packaging.
