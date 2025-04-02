@@ -86,9 +86,6 @@ typedef struct tag_int_array
 #ifndef UNIX_DIGEST
 #include "sha1.h"
 #endif
-#ifdef UNIX_NETWORKING
-#include "slave.h"
-#endif
 #include "vattr.h"
 
 // From conf.cpp
