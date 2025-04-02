@@ -40,7 +40,7 @@ The integration will follow a phased approach to maintain stability while progre
    - Add GANL to the build system (Makefiles, autoconf)
    - Make GANL compilable in TinyMUX's environment
    - Create compatibility layer for platform definitions
-   
+
 2. **Define integration points**
    - Identify key connection points between MUX game logic and networking
    - Create mapping between GANL types and TinyMUX types
@@ -57,11 +57,11 @@ The integration will follow a phased approach to maintain stability while progre
    - Add GANL main loop alongside `shovechars()`
    - Create configuration option to select networking system
    - Enable GANL to use existing TinyMUX SSL certificates
-   
+
 2. **Create notification bridge**
    - Modify `raw_notify()` to route through the appropriate system
    - Create adapter functions for command handling
-   
+
 3. **Implement concrete classes**
    - Create `MuxProtocolHandler` implementing the GANL `ProtocolHandler` interface
    - Implement `OpenSSLTransport` and/or `SChannelTransport` for secure connections
@@ -136,7 +136,7 @@ The `DESC` structure contains many aspects that will be distributed across sever
 
 GANL provides a cleaner abstraction for SSL/TLS through the `SecureTransport` interface:
 
-1. **Certificate configuration:** 
+1. **Certificate configuration:**
    - Use existing TinyMUX certificate paths
    - Add configuration options for GANL-specific TLS settings
 

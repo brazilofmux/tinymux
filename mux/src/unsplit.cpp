@@ -32,7 +32,7 @@ static unsigned char itt[256] =
 
 const unsigned char stt[13][8] =
 {
-//     0   1   2   3   4   5   6   7 
+//     0   1   2   3   4   5   6   7
 //   Any  LF  CR  SP   /   :  nm   \   classes
 //
     { 13,  1, 11,  5,  0,  0,  0,  9 }, //  0 Have name --> emit ch

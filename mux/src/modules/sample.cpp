@@ -148,7 +148,7 @@ MUX_RESULT CSample::FinalConstruct(void)
     if (MUX_SUCCEEDED(mr))
     {
         bool fStarted;
-        mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO")); 
+        mr = m_pILog->start_log(&fStarted, LOG_ALWAYS, T("INI"), T("INFO"));
         if (MUX_SUCCEEDED(mr) && fStarted)
         {
             mr = m_pILog->log_text(T("CSample::CSample()." ENDLINE));

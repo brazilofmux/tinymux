@@ -97,7 +97,7 @@ name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
  - `cd` to the `game` directory.
 
  - Type `./Backup`
-    
+
  - Restart the game using `./Startmux`
 
  - Move the backup to onsite and offsite storage locations.

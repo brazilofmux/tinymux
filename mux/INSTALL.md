@@ -77,7 +77,7 @@ game.
 
  - The syntax of the `db_unload` script is:
 
-``` 
+```
        ./db_unload netmux netmux.db.new netmux.flat
 ```
 
