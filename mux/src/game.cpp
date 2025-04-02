@@ -3041,7 +3041,40 @@ int DCL_CDECL main(int argc, char *argv[])
 
     init_timer();
 
+#ifdef USE_GANL
+    // Initialize GANL networking if enabled
+    if (initialize_ganl_networking())
+    {
+        // Set up GANL listeners for the same ports
+        for (int i = 0; i < num_main_game_ports; i++)
+        {
+            mux_sockaddr *msa = &main_game_ports[i].msa;
+            UTF8 host[128];
+            UTF8 serv[64];
+            int flags = NI_NUMERICHOST|NI_NUMERICSERV;
+
+            if (0 == mux_getnameinfo(msa, host, sizeof(host), serv, sizeof(serv), flags))
+            {
+                bool ssl = false;
+#ifdef UNIX_SSL
+                ssl = main_game_ports[i].fSSL;
+#endif
+                ganl_add_listener((char *)host, atoi((char *)serv), ssl);
+            }
+        }
+
+        // Process GANL events directly
+        ganl_process_events(0);
+    }
+    else
+    {
+        // Fall back to traditional networking
+        shovechars(num_main_game_ports, main_game_ports);
+    }
+#else
+    // Traditional networking
     shovechars(num_main_game_ports, main_game_ports);
+#endif
 
 #ifdef INLINESQL
      if (mush_database)
@@ -3054,6 +3087,10 @@ int DCL_CDECL main(int argc, char *argv[])
      }
 #endif // INLINESQL
 
+#ifdef USE_GANL
+    // Shutdown GANL networking if enabled
+    shutdown_ganl_networking();
+#endif
     close_sockets(T("Going down - Bye"));
     dump_database();
 

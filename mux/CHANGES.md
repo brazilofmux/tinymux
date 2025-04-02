@@ -94,3 +94,12 @@ author:
  - Refactored the time parser by replacing macro constants with
    C++-style constants for better type safety and clarity.
  - Updated to C++17 standard.
+ - Modernized build system with autoconf/automake and moved from manual
+   dependency tracking to automatic tracking.
+ - Added support for deterministic builds for Debian packaging (via
+   DEBIAN_BUILD environment variable).
+ - Integrated GANL (Game Abstraction Network Library) as a static library:
+   * Platform-specific network implementations (epoll, kqueue, select)
+   * SSL/TLS support via OpenSSL and SChannel
+   * Telnet protocol handling implementation
+   * Improved buffer management

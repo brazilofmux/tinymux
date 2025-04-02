@@ -14,6 +14,14 @@
 
 #include "libmux.h"
 
+// GANL integration functions
+#ifdef USE_GANL
+bool initialize_ganl_networking(void);
+void shutdown_ganl_networking(void);
+void ganl_process_events(int timeout_ms);
+bool ganl_add_listener(const char* host, int port, bool use_ssl);
+#endif
+
 class CResultsSet
 {
 public:

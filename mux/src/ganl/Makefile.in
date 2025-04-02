@@ -14,7 +14,9 @@
 
 @SET_MAKE@
 
-# Makefile.am for TinyMUX 2.13 modules
+# Makefile.am for GANL (Game/Graphics Abstraction Network Library)
+
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -89,18 +91,49 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = modules
+
+# Platform-specific source files
+@HAVE_EPOLL_TRUE@am__append_1 = src/epoll_network_engine.cpp
+@HAVE_KQUEUE_TRUE@am__append_2 = src/kqueue_network_engine.cpp
+subdir = ganl
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(noinst_HEADERS) \
+	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/autoconf.h autoconf.h \
+CONFIG_HEADER = $(top_builddir)/autoconf.h \
+	$(top_builddir)/modules/autoconf.h \
 	$(top_builddir)/tools/autoconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libganl_a_AR = $(AR) $(ARFLAGS)
+libganl_a_LIBADD =
+am__libganl_a_SOURCES_DIST = src/connection.cpp src/io_buffer.cpp \
+	src/network_engine_factory.cpp src/openssl_transport.cpp \
+	src/secure_transport_factory.cpp src/select_network_engine.cpp \
+	src/telnet_protocol_handler.cpp src/epoll_network_engine.cpp \
+	src/kqueue_network_engine.cpp
+am__dirstamp = $(am__leading_dot)dirstamp
+@HAVE_EPOLL_TRUE@am__objects_1 = src/epoll_network_engine.$(OBJEXT)
+@HAVE_KQUEUE_TRUE@am__objects_2 = src/kqueue_network_engine.$(OBJEXT)
+am_libganl_a_OBJECTS = src/connection.$(OBJEXT) \
+	src/io_buffer.$(OBJEXT) src/network_engine_factory.$(OBJEXT) \
+	src/openssl_transport.$(OBJEXT) \
+	src/secure_transport_factory.$(OBJEXT) \
+	src/select_network_engine.$(OBJEXT) \
+	src/telnet_protocol_handler.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
+libganl_a_OBJECTS = $(am_libganl_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -113,15 +146,41 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-SOURCES =
-DIST_SOURCES =
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/modules -I$(top_builddir)/tools
+depcomp = $(SHELL) $(top_srcdir)/depcomp
+am__maybe_remake_depfiles = depfiles
+am__depfiles_remade = src/$(DEPDIR)/connection.Po \
+	src/$(DEPDIR)/epoll_network_engine.Po \
+	src/$(DEPDIR)/io_buffer.Po \
+	src/$(DEPDIR)/kqueue_network_engine.Po \
+	src/$(DEPDIR)/network_engine_factory.Po \
+	src/$(DEPDIR)/openssl_transport.Po \
+	src/$(DEPDIR)/secure_transport_factory.Po \
+	src/$(DEPDIR)/select_network_engine.Po \
+	src/$(DEPDIR)/telnet_protocol_handler.Po
+am__mv = mv -f
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_@AM_V@)
+am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
+am__v_CXX_0 = @echo "  CXX     " $@;
+am__v_CXX_1 = 
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
+am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
+am__v_CXXLD_0 = @echo "  CXXLD   " $@;
+am__v_CXXLD_1 = 
+SOURCES = $(libganl_a_SOURCES)
+DIST_SOURCES = $(am__libganl_a_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP) \
-	autoconf.h.in
+HEADERS = $(noinst_HEADERS)
+am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
 # *not* preserved.
@@ -138,8 +197,7 @@ am__define_uniq_tagged_files = \
   unique=`for i in $$list; do \
     if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
   done | $(am__uniquify_input)`
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/autoconf.h.in \
-	install-sh
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -268,20 +326,40 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
-# Shared build flags
-AM_CPPFLAGS = -I$(top_srcdir)
+# Include paths
+AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir)/include -I$(srcdir)
 
-# Module source files
-MODULES_SRC = funcs.cpp sample.cpp sum.cpp sqlproxy.cpp sqlslave.cpp
+# Library definition
+noinst_LIBRARIES = libganl.a
 
-# No need for manual dependency tracking - automake handles this now
+# Common source files for libganl.a
+libganl_a_SOURCES = src/connection.cpp src/io_buffer.cpp \
+	src/network_engine_factory.cpp src/openssl_transport.cpp \
+	src/secure_transport_factory.cpp src/select_network_engine.cpp \
+	src/telnet_protocol_handler.cpp $(am__append_1) \
+	$(am__append_2)
 
-# Clean up additional files
-CLEANFILES = *.so *.so~
-all: autoconf.h
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+# Header files (for distribution)
+noinst_HEADERS = \
+    include/connection.h \
+    include/epoll_network_engine.h \
+    include/io_buffer.h \
+    include/kqueue_network_engine.h \
+    include/network_engine_factory.h \
+    include/network_engine.h \
+    include/network_types.h \
+    include/openssl_transport.h \
+    include/protocol_handler.h \
+    include/secure_transport_factory.h \
+    include/secure_transport.h \
+    include/select_network_engine.h \
+    include/session_manager.h \
+    include/telnet_protocol_handler.h
+
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -291,9 +369,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign modules/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign ganl/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign modules/Makefile
+	  $(AUTOMAKE) --foreign ganl/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -312,16 +390,76 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-autoconf.h: stamp-h2
-	@test -f $@ || rm -f stamp-h2
-	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) stamp-h2
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+src/$(am__dirstamp):
+	@$(MKDIR_P) src
+	@: > src/$(am__dirstamp)
+src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/$(DEPDIR)
+	@: > src/$(DEPDIR)/$(am__dirstamp)
+src/connection.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/io_buffer.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/network_engine_factory.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/openssl_transport.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/secure_transport_factory.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/select_network_engine.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/telnet_protocol_handler.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/epoll_network_engine.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/kqueue_network_engine.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 
-stamp-h2: $(srcdir)/autoconf.h.in $(top_builddir)/config.status
-	@rm -f stamp-h2
-	cd $(top_builddir) && $(SHELL) ./config.status modules/autoconf.h
+libganl.a: $(libganl_a_OBJECTS) $(libganl_a_DEPENDENCIES) $(EXTRA_libganl_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libganl.a
+	$(AM_V_AR)$(libganl_a_AR) libganl.a $(libganl_a_OBJECTS) $(libganl_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libganl.a
 
-distclean-hdr:
-	-rm -f autoconf.h stamp-h2
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+	-rm -f src/*.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/connection.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/epoll_network_engine.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io_buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/kqueue_network_engine.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/network_engine_factory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openssl_transport.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/secure_transport_factory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/select_network_engine.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/telnet_protocol_handler.Po@am__quote@ # am--include-marker
+
+$(am__depfiles_remade):
+	@$(MKDIR_P) $(@D)
+	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade)
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -409,7 +547,7 @@ distdir-am: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile autoconf.h all-local
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -433,22 +571,33 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
+		-rm -f src/$(DEPDIR)/connection.Po
+	-rm -f src/$(DEPDIR)/epoll_network_engine.Po
+	-rm -f src/$(DEPDIR)/io_buffer.Po
+	-rm -f src/$(DEPDIR)/kqueue_network_engine.Po
+	-rm -f src/$(DEPDIR)/network_engine_factory.Po
+	-rm -f src/$(DEPDIR)/openssl_transport.Po
+	-rm -f src/$(DEPDIR)/secure_transport_factory.Po
+	-rm -f src/$(DEPDIR)/select_network_engine.Po
+	-rm -f src/$(DEPDIR)/telnet_protocol_handler.Po
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -468,7 +617,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-exec-local
+install-exec-am:
 
 install-html: install-html-am
 
@@ -491,12 +640,21 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+		-rm -f src/$(DEPDIR)/connection.Po
+	-rm -f src/$(DEPDIR)/epoll_network_engine.Po
+	-rm -f src/$(DEPDIR)/io_buffer.Po
+	-rm -f src/$(DEPDIR)/kqueue_network_engine.Po
+	-rm -f src/$(DEPDIR)/network_engine_factory.Po
+	-rm -f src/$(DEPDIR)/openssl_transport.Po
+	-rm -f src/$(DEPDIR)/secure_transport_factory.Po
+	-rm -f src/$(DEPDIR)/select_network_engine.Po
+	-rm -f src/$(DEPDIR)/telnet_protocol_handler.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -508,52 +666,23 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: all install-am install-strip
+.MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am all-local check check-am clean \
-	clean-generic cscopelist-am ctags ctags-am distclean \
-	distclean-generic distclean-hdr distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-local install-html \
+.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
+	clean-generic clean-noinstLIBRARIES cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
-
-# Need to build modules as shared objects
-all-local: funcs.so sample.so sum.so sqlproxy.so sqlslave.so
-
-# Generic rule for building module shared objects
-funcs.so: funcs.cpp funcs.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
-
-sample.so: sample.cpp sample.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
-
-sum.so: sum.cpp sum.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
-
-sqlproxy.so: sqlproxy.cpp sql.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
-
-# SQL slave needs special treatment for SQL libraries
-sqlslave.so: sqlslave.cpp sql.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @SQL_INCLUDE@ @DYNAMICLIB_CXXFLAGS@ -o $@ $< @SQL_LIBPATH@ @SQL_LIBS@ $(PCRE2_LIBS)
-
-# Installation
-install-exec-local:
-	$(MKDIR_P) $(abs_top_srcdir)/../game/bin
-	cd $(abs_top_srcdir)/../game/bin && rm -f funcs.so && $(LN_S) $(abs_builddir)/funcs.so .
-	cd $(abs_top_srcdir)/../game/bin && rm -f sample.so && $(LN_S) $(abs_builddir)/sample.so .
-	cd $(abs_top_srcdir)/../game/bin && rm -f sum.so && $(LN_S) $(abs_builddir)/sum.so .
-	cd $(abs_top_srcdir)/../game/bin && rm -f sqlproxy.so && $(LN_S) $(abs_builddir)/sqlproxy.so .
-	cd $(abs_top_srcdir)/../game/bin && rm -f sqlslave.so && $(LN_S) $(abs_builddir)/sqlslave.so .
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
