@@ -4,6 +4,7 @@ AC_PREREQ([2.71])
 AC_INIT([TinyMUX],[2.13],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
 AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
+AM_INIT_AUTOMAKE([foreign])
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
 AC_ARG_ENABLE(
@@ -11,22 +12,24 @@ AC_ARG_ENABLE(
   AS_HELP_STRING([--enable-realitylvls],[enable Reality  Levels (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
+      reality_enabled=no
       AC_MSG_RESULT(no)
     else
+      reality_enabled=yes
       REALITY_LVLS="-DREALITY_LVLS"
       LIBS="-lstdc++"
-      REALITY_SRC="levels.cpp"
-      REALITY_OBJ="levels.o"
       AC_MSG_RESULT(yes)
     fi
   ],
   [
+    reality_enabled=no
     AC_MSG_RESULT(no)
   ])
+AM_CONDITIONAL([REALITY_ENABLED], [test "x$reality_enabled" = "xyes"])
 AC_SUBST(REALITY_LVLS)
 AC_SUBST(LIBS)
-AC_SUBST(REALITY_SRC)
-AC_SUBST(REALITY_OBJ)
+AC_SUBST(REALITY_SRC, [""])
+AC_SUBST(REALITY_OBJ, [""])
 
 AC_MSG_CHECKING(whether to enable WOD Realms)
 AC_ARG_ENABLE(
@@ -68,18 +71,20 @@ AC_ARG_ENABLE(
   AS_HELP_STRING([--enable-stubslave],[enable Stub Slave (default is NO)]),
   [
     if test "x$enableval" = "xno"; then
+      stubslave_enabled=no
       AC_MSG_RESULT(no)
     else
+      stubslave_enabled=yes
       STUB_SLAVE="-DSTUB_SLAVE"
-      STUBSLAVE_TARGET="stubslave"
       AC_MSG_RESULT(yes)
     fi
   ],
   [
+    stubslave_enabled=no
     AC_MSG_RESULT(no)
   ])
+AM_CONDITIONAL([STUBSLAVE_ENABLED], [test "x$stubslave_enabled" = "xyes"])
 AC_SUBST(STUB_SLAVE)
-AC_SUBST(STUBSLAVE_TARGET)
 
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
@@ -202,6 +207,7 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_RANLIB
 AC_CANONICAL_HOST
 AC_USE_SYSTEM_EXTENSIONS
 m4_include([m4/ax_cxx_compile_stdcxx.m4])
@@ -602,5 +608,9 @@ if test -c /dev/urandom; then
   AC_DEFINE([HAVE_DEV_URANDOM], [], [Define if the character special file /dev/urandom is present.])
 fi
 
-AC_CONFIG_FILES([modules/Makefile tools/Makefile Makefile])
+AC_CONFIG_FILES([
+    Makefile
+    modules/Makefile
+    tools/Makefile
+])
 AC_OUTPUT

@@ -62,6 +62,7 @@ game/data/db_load
 game/data/db_unload
 game/text/help.txt
 game/text/wizhelp.txt
+src/Makefile.am
 src/Makefile.in
 src/_build.cpp
 src/_build.h
@@ -129,6 +130,7 @@ src/mathutil.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
+src/modules/Makefile.am
 src/modules/Makefile.in
 src/modules/autoconf.h.in
 src/modules/install-sh
@@ -179,9 +181,9 @@ src/timeutil.h
 src/timezone.cpp
 src/tools/announce.c
 src/tools/autoconf.h.in
+src/tools/Makefile.am
 src/tools/Makefile.in
 src/unparse.cpp
-src/unsplit.cpp
 src/utf8tables.cpp
 src/utf8tables.h
 src/vattr.cpp

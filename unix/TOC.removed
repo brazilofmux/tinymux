@@ -9,3 +9,4 @@ SGP
 src/pcre.cpp
 src/pcre.h
 src/slave.h
+src/unsplit.cpp
