@@ -654,6 +654,10 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+HAVE_KQUEUE_FALSE
+HAVE_KQUEUE_TRUE
+HAVE_EPOLL_FALSE
+HAVE_EPOLL_TRUE
 EGREP
 GREP
 DL_LIB
@@ -707,6 +711,9 @@ STUB_SLAVE
 STUBSLAVE_ENABLED_FALSE
 STUBSLAVE_ENABLED_TRUE
 MEMORY_BASED
+USE_GANL
+GANL_ENABLED_FALSE
+GANL_ENABLED_TRUE
 WOD_REALMS
 REALITY_OBJ
 REALITY_SRC
@@ -789,6 +796,7 @@ enable_option_checking
 enable_silent_rules
 enable_realitylvls
 enable_wodrealms
+enable_ganl
 enable_memorybased
 enable_stubslave
 enable_inlinesql
@@ -1443,6 +1451,8 @@ Optional Features:
   --disable-silent-rules  verbose build output (undo: "make V=0")
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
+  --enable-ganl           Use GANL networking system (experimental, default is
+                          NO)
   --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
@@ -3935,6 +3945,41 @@ else $as_nop
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
+fi
+
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable GANL networking" >&5
+printf %s "checking whether to enable GANL networking... " >&6; }
+# Check whether --enable-ganl was given.
+if test ${enable_ganl+y}
+then :
+  enableval=$enable_ganl;
+    if test "x$enableval" = "xno"; then
+      ganl_enabled=no
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    else
+      ganl_enabled=yes
+      USE_GANL="-DUSE_GANL"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    fi
+
+else $as_nop
+
+    ganl_enabled=no
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+fi
+
+ if test "x$ganl_enabled" = "xyes"; then
+  GANL_ENABLED_TRUE=
+  GANL_ENABLED_FALSE='#'
+else
+  GANL_ENABLED_TRUE='#'
+  GANL_ENABLED_FALSE=
 fi
 
 
@@ -10473,6 +10518,52 @@ then :
 
 fi
 
+
+# Check for platform-specific network APIs
+# epoll (Linux)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for epoll support" >&5
+printf %s "checking for epoll support... " >&6; }
+if test "$ac_cv_func_epoll_create" = "yes" && \
+   test "$ac_cv_func_epoll_ctl" = "yes" && \
+   test "$ac_cv_func_epoll_wait" = "yes"; then
+  epoll_ok=yes
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+  epoll_ok=no
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+ if test "$epoll_ok" = "yes"; then
+  HAVE_EPOLL_TRUE=
+  HAVE_EPOLL_FALSE='#'
+else
+  HAVE_EPOLL_TRUE='#'
+  HAVE_EPOLL_FALSE=
+fi
+
+
+# kqueue (FreeBSD, macOS)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for kqueue support" >&5
+printf %s "checking for kqueue support... " >&6; }
+if test "$ac_cv_func_kqueue" = "yes" && \
+   test "$ac_cv_func_kevent" = "yes"; then
+  kqueue_ok=yes
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+  kqueue_ok=no
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+ if test "$kqueue_ok" = "yes"; then
+  HAVE_KQUEUE_TRUE=
+  HAVE_KQUEUE_FALSE='#'
+else
+  HAVE_KQUEUE_TRUE='#'
+  HAVE_KQUEUE_FALSE=
+fi
+
 ac_fn_c_check_func "$LINENO" "EVP_MD_CTX_create" "ac_cv_func_EVP_MD_CTX_create"
 if test "x$ac_cv_func_EVP_MD_CTX_create" = xyes
 then :
@@ -10865,7 +10956,7 @@ printf "%s\n" "#define HAVE_DEV_URANDOM /**/" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files Makefile modules/Makefile tools/Makefile"
+ac_config_files="$ac_config_files Makefile modules/Makefile tools/Makefile ganl/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -10996,6 +11087,10 @@ if test -z "${REALITY_ENABLED_TRUE}" && test -z "${REALITY_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"REALITY_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${GANL_ENABLED_TRUE}" && test -z "${GANL_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"GANL_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${STUBSLAVE_ENABLED_TRUE}" && test -z "${STUBSLAVE_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"STUBSLAVE_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -11013,6 +11108,14 @@ if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
+if test -z "${HAVE_EPOLL_TRUE}" && test -z "${HAVE_EPOLL_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_EPOLL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_KQUEUE_TRUE}" && test -z "${HAVE_KQUEUE_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_KQUEUE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
@@ -11607,6 +11710,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "modules/Makefile") CONFIG_FILES="$CONFIG_FILES modules/Makefile" ;;
     "tools/Makefile") CONFIG_FILES="$CONFIG_FILES tools/Makefile" ;;
+    "ganl/Makefile") CONFIG_FILES="$CONFIG_FILES ganl/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

@@ -4,7 +4,7 @@ AC_PREREQ([2.71])
 AC_INIT([TinyMUX],[2.13],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
 AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
 AC_ARG_ENABLE(
@@ -47,6 +47,27 @@ AC_ARG_ENABLE(
     AC_MSG_RESULT(no)
   ])
 AC_SUBST(WOD_REALMS)
+
+AC_MSG_CHECKING(whether to enable GANL networking)
+AC_ARG_ENABLE(
+  [ganl],
+  AS_HELP_STRING([--enable-ganl],[Use GANL networking system (experimental, default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      ganl_enabled=no
+      AC_MSG_RESULT(no)
+    else
+      ganl_enabled=yes
+      USE_GANL="-DUSE_GANL"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    ganl_enabled=no
+    AC_MSG_RESULT(no)
+  ])
+AM_CONDITIONAL([GANL_ENABLED], [test "x$ganl_enabled" = "xyes"])
+AC_SUBST(USE_GANL)
 
 AC_MSG_CHECKING(whether to enable Memory-Based Database)
 AC_ARG_ENABLE(
@@ -453,6 +474,32 @@ AC_FUNC_FORK
 AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getnameinfo getaddrinfo inet_ntop inet_pton getpagesize getrusage gettimeofday)
 AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep log2)
 AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait kqueue kevent)
+
+# Check for platform-specific network APIs
+# epoll (Linux)
+AC_MSG_CHECKING([for epoll support])
+if test "$ac_cv_func_epoll_create" = "yes" && \
+   test "$ac_cv_func_epoll_ctl" = "yes" && \
+   test "$ac_cv_func_epoll_wait" = "yes"; then
+  epoll_ok=yes
+  AC_MSG_RESULT([yes])
+else
+  epoll_ok=no
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([HAVE_EPOLL], [test "$epoll_ok" = "yes"])
+
+# kqueue (FreeBSD, macOS)
+AC_MSG_CHECKING([for kqueue support])
+if test "$ac_cv_func_kqueue" = "yes" && \
+   test "$ac_cv_func_kevent" = "yes"; then
+  kqueue_ok=yes
+  AC_MSG_RESULT([yes])
+else
+  kqueue_ok=no
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([HAVE_KQUEUE], [test "$kqueue_ok" = "yes"])
 AC_CHECK_FUNCS(EVP_MD_CTX_create EVP_MD_CTX_new SHA_Init)
 AS_MESSAGE([checking for pread and pwrite...])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -612,5 +659,6 @@ AC_CONFIG_FILES([
     Makefile
     modules/Makefile
     tools/Makefile
+    ganl/Makefile
 ])
 AC_OUTPUT
