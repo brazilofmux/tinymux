@@ -107,3 +107,15 @@ build process required `./configure; make depend; make`, but the new process
 is `./configure; make; make install`. Dependency tracking is now handled
 automatically by automake, and the install step creates the necessary
 symlinks in the game/bin directory.
+
+For Debian package maintainers or others requiring deterministic builds without
+embedded timestamps or incrementing build numbers, use:
+
+```
+DEBIAN_BUILD=1 ./configure
+make
+make install
+```
+
+This will produce binaries with static version information suitable for
+packaging.
