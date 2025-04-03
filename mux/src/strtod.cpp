@@ -210,7 +210,7 @@ void FLOAT_Initialize(void)
 
 double mux_strtod(const UTF8* s00, UTF8** se)
 {
-    return strtod((const char*)s00, (char**)se);
+    return dtoa_strtod((const char*)s00, (char**)se);
 }
 
 double mux_ulp(double d)
