@@ -1285,6 +1285,15 @@ modules-local:
 	$(MAKE) -C modules
 
 # Version number routines
+# The DEBIAN_BUILD environment variable can be set to create deterministic builds
+# Example: DEBIAN_BUILD=1 ./configure && make
+version.o: version.cpp
+	if [ "x$(DEBIAN_BUILD)" = "x1" ]; then \
+		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
+	else \
+		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
+	fi
+
 version.cpp: version.cpp
 	touch version.cpp
 
