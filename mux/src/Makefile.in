@@ -137,7 +137,8 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp levels.cpp version.cpp
+	wiz.cpp ganl_types.cpp ganl_mux_session.cpp ganl_main.cpp \
+	ganl_telnet.cpp levels.cpp version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
 am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
@@ -157,7 +158,9 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
 	unparse.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
-	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1)
+	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) \
+	ganl_types.$(OBJEXT) ganl_mux_session.$(OBJEXT) \
+	ganl_main.$(OBJEXT) ganl_telnet.$(OBJEXT) $(am__objects_1)
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -193,10 +196,12 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/file_c.Po ./$(DEPDIR)/flags.Po \
 	./$(DEPDIR)/funceval.Po ./$(DEPDIR)/funceval2.Po \
 	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
-	./$(DEPDIR)/game.Po ./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po \
-	./$(DEPDIR)/levels.Po ./$(DEPDIR)/libmux.Po \
-	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
-	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
+	./$(DEPDIR)/game.Po ./$(DEPDIR)/ganl_main.Po \
+	./$(DEPDIR)/ganl_mux_session.Po ./$(DEPDIR)/ganl_telnet.Po \
+	./$(DEPDIR)/ganl_types.Po ./$(DEPDIR)/help.Po \
+	./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po \
+	./$(DEPDIR)/libmux.Po ./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po \
+	./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
 	./$(DEPDIR)/mathutil.Po ./$(DEPDIR)/mguests.Po \
 	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
 	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/netcommon.Po \
@@ -469,7 +474,8 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp $(am__append_1)
+	wiz.cpp ganl_types.cpp ganl_mux_session.cpp ganl_main.cpp \
+	ganl_telnet.cpp $(am__append_1)
 noinst_LIBRARIES = libmux.a
 
 # libmux library
@@ -637,6 +643,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funmath.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/game.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_main.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_mux_session.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_telnet.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_types.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levels.Po@am__quote@ # am--include-marker
@@ -1074,6 +1084,10 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_main.Po
+	-rm -f ./$(DEPDIR)/ganl_mux_session.Po
+	-rm -f ./$(DEPDIR)/ganl_telnet.Po
+	-rm -f ./$(DEPDIR)/ganl_types.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
@@ -1188,6 +1202,10 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_main.Po
+	-rm -f ./$(DEPDIR)/ganl_mux_session.Po
+	-rm -f ./$(DEPDIR)/ganl_telnet.Po
+	-rm -f ./$(DEPDIR)/ganl_types.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po

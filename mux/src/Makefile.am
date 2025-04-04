@@ -19,7 +19,8 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp sha1.cpp \
     speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp timer.cpp \
     timeabsolute.cpp timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-    unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+    unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
+    ganl_types.cpp ganl_mux_session.cpp ganl_main.cpp ganl_telnet.cpp
 
 # Add reality levels if enabled
 if REALITY_ENABLED
