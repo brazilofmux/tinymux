@@ -10,6 +10,7 @@ noinst_LIBRARIES = libganl.a
 libganl_a_SOURCES = \
     src/connection.cpp \
     src/io_buffer.cpp \
+    src/network_address.cpp \
     src/network_engine_factory.cpp \
     src/openssl_transport.cpp \
     src/secure_transport_factory.cpp \

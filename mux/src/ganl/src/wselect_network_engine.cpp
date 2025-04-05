@@ -560,64 +560,22 @@ namespace ganl {
     // --- Utility Methods ---
 
     std::string WSelectNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
+        // We can now leverage the NetworkAddress class for consistent formatting
+        return getRemoteNetworkAddress(conn).toString();
+    }
+
+    NetworkAddress WSelectNetworkEngine::getRemoteNetworkAddress(ConnectionHandle conn) {
         SocketFD sock = static_cast<SocketFD>(conn);
         sockaddr_storage addrStorage;
         int addrLen = sizeof(addrStorage); // Use int for Windows socklen_t equivalent
 
         if (::getpeername(sock, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) == SOCKET_ERROR) {
             GANL_WSELECT_DEBUG(sock, "getpeername failed: " << getErrorString(translateError(getLastError())));
-            return "unknown";
+            return NetworkAddress(); // Return invalid address
         }
 
-        if (addrStorage.ss_family == AF_INET || addrStorage.ss_family == AF_INET6) {
-            WCHAR wIpStr[INET6_ADDRSTRLEN * 2]; // Ample buffer for WCHAR IP + Port + separators
-            DWORD wIpStrLen = sizeof(wIpStr) / sizeof(WCHAR);
-
-            // Use the W version for better Unicode/Internationalization support on Windows
-            if (WSAAddressToStringW(reinterpret_cast<LPSOCKADDR>(&addrStorage), addrLen, NULL, wIpStr, &wIpStrLen) == 0) {
-                // Successfully got wide string (like L"192.168.1.1:12345" or L"[::1]:12345")
-                // Convert WCHAR* to std::string (UTF-8 recommended)
-                try {
-#if defined(_MSC_VER) && _MSC_VER >= 1900 // VS 2015+ might need this header for codecvt
-#include <Windows.h> // For CP_UTF8 if needed below
-#endif
-#pragma warning(push)
-#pragma warning(disable: 4996) // Temporarily disable deprecation warning for wstring_convert
-                    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-                    std::string utf8Addr = converter.to_bytes(wIpStr);
-                    // WSAAddressToString includes the port, so return directly
-                    return utf8Addr;
-#pragma warning(pop)
-                }
-                catch (const std::exception& e) {
-                    GANL_WSELECT_DEBUG(sock, "Error converting wide string address: " << e.what());
-                    // Fallback to older/ASCII method if conversion fails
-                }
-            }
-            else {
-                GANL_WSELECT_DEBUG(sock, "WSAAddressToStringW failed: " << getErrorString(translateError(getLastError())));
-                // Fallback
-            }
-        }
-
-        // Fallback parsing using inet_ntop (might need specific Winsock variant like InetNtopA)
-        char ipStr[INET6_ADDRSTRLEN];
-        int port = 0;
-
-        if (addrStorage.ss_family == AF_INET) {
-            sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(&addrStorage);
-            InetNtopA(AF_INET, &addr4->sin_addr, ipStr, sizeof(ipStr));
-            port = ntohs(addr4->sin_port);
-        }
-        else if (addrStorage.ss_family == AF_INET6) {
-            sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(&addrStorage);
-            InetNtopA(AF_INET6, &addr6->sin6_addr, ipStr, sizeof(ipStr));
-            port = ntohs(addr6->sin6_port);
-        }
-        else {
-            return "unknown";
-        }
-        return std::string(ipStr) + ":" + std::to_string(port);
+        // Create and return NetworkAddress from the raw sockaddr
+        return NetworkAddress(reinterpret_cast<struct sockaddr*>(&addrStorage), static_cast<socklen_t>(addrLen));
     }
 
     std::string WSelectNetworkEngine::getErrorString(ErrorCode error) {

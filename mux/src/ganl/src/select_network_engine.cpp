@@ -616,6 +616,11 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
 // --- Utility Methods ---
 
 std::string SelectNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
+    // We can leverage the NetworkAddress class for consistent formatting
+    return getRemoteNetworkAddress(conn).toString();
+}
+
+NetworkAddress SelectNetworkEngine::getRemoteNetworkAddress(ConnectionHandle conn) {
     SocketFD fd = static_cast<SocketFD>(conn);
     sockaddr_storage addrStorage;
     socklen_t addrLen = sizeof(addrStorage);
@@ -623,25 +628,11 @@ std::string SelectNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
     // Perform syscall outside lock
     if (::getpeername(fd, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) == -1) {
         // Log error potentially based on errno
-        return "unknown";
+        return NetworkAddress(); // Return invalid address
     }
 
-    char ipStr[INET6_ADDRSTRLEN];
-    int port = 0;
-
-    if (addrStorage.ss_family == AF_INET) {
-        sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(&addrStorage);
-        inet_ntop(AF_INET, &addr4->sin_addr, ipStr, sizeof(ipStr));
-        port = ntohs(addr4->sin_port);
-    } else if (addrStorage.ss_family == AF_INET6) {
-        sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(&addrStorage);
-        inet_ntop(AF_INET6, &addr6->sin6_addr, ipStr, sizeof(ipStr));
-        port = ntohs(addr6->sin6_port);
-    } else {
-        return "unknown";
-    }
-
-    return std::string(ipStr) + ":" + std::to_string(port);
+    // Create and return NetworkAddress from the raw sockaddr
+    return NetworkAddress(reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
 }
 
 std::string SelectNetworkEngine::getErrorString(ErrorCode error) {

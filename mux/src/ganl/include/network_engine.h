@@ -119,6 +119,14 @@ public:
     virtual std::string getRemoteAddress(ConnectionHandle conn) = 0;
 
     /**
+     * Get remote network address for a connection
+     *
+     * @param conn Connection handle
+     * @return NetworkAddress object containing the raw socket address
+     */
+    virtual NetworkAddress getRemoteNetworkAddress(ConnectionHandle conn) = 0;
+
+    /**
      * Get string representation of an error code
      *
      * @param error Error code

@@ -63,6 +63,7 @@ public:
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
 
     std::string getRemoteAddress(ConnectionHandle conn) override;
+    NetworkAddress getRemoteNetworkAddress(ConnectionHandle conn) override;
     std::string getErrorString(ErrorCode error) override;
 
 private:

@@ -119,15 +119,16 @@ am__v_AR_1 =
 libganl_a_AR = $(AR) $(ARFLAGS)
 libganl_a_LIBADD =
 am__libganl_a_SOURCES_DIST = src/connection.cpp src/io_buffer.cpp \
-	src/network_engine_factory.cpp src/openssl_transport.cpp \
-	src/secure_transport_factory.cpp src/select_network_engine.cpp \
-	src/telnet_protocol_handler.cpp src/epoll_network_engine.cpp \
-	src/kqueue_network_engine.cpp
+	src/network_address.cpp src/network_engine_factory.cpp \
+	src/openssl_transport.cpp src/secure_transport_factory.cpp \
+	src/select_network_engine.cpp src/telnet_protocol_handler.cpp \
+	src/epoll_network_engine.cpp src/kqueue_network_engine.cpp
 am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_EPOLL_TRUE@am__objects_1 = src/epoll_network_engine.$(OBJEXT)
 @HAVE_KQUEUE_TRUE@am__objects_2 = src/kqueue_network_engine.$(OBJEXT)
 am_libganl_a_OBJECTS = src/connection.$(OBJEXT) \
-	src/io_buffer.$(OBJEXT) src/network_engine_factory.$(OBJEXT) \
+	src/io_buffer.$(OBJEXT) src/network_address.$(OBJEXT) \
+	src/network_engine_factory.$(OBJEXT) \
 	src/openssl_transport.$(OBJEXT) \
 	src/secure_transport_factory.$(OBJEXT) \
 	src/select_network_engine.$(OBJEXT) \
@@ -153,6 +154,7 @@ am__depfiles_remade = src/$(DEPDIR)/connection.Po \
 	src/$(DEPDIR)/epoll_network_engine.Po \
 	src/$(DEPDIR)/io_buffer.Po \
 	src/$(DEPDIR)/kqueue_network_engine.Po \
+	src/$(DEPDIR)/network_address.Po \
 	src/$(DEPDIR)/network_engine_factory.Po \
 	src/$(DEPDIR)/openssl_transport.Po \
 	src/$(DEPDIR)/secure_transport_factory.Po \
@@ -334,10 +336,10 @@ noinst_LIBRARIES = libganl.a
 
 # Common source files for libganl.a
 libganl_a_SOURCES = src/connection.cpp src/io_buffer.cpp \
-	src/network_engine_factory.cpp src/openssl_transport.cpp \
-	src/secure_transport_factory.cpp src/select_network_engine.cpp \
-	src/telnet_protocol_handler.cpp $(am__append_1) \
-	$(am__append_2)
+	src/network_address.cpp src/network_engine_factory.cpp \
+	src/openssl_transport.cpp src/secure_transport_factory.cpp \
+	src/select_network_engine.cpp src/telnet_protocol_handler.cpp \
+	$(am__append_1) $(am__append_2)
 
 # Header files (for distribution)
 noinst_HEADERS = \
@@ -402,6 +404,8 @@ src/connection.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/io_buffer.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/network_address.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/network_engine_factory.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/openssl_transport.$(OBJEXT): src/$(am__dirstamp) \
@@ -433,6 +437,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/epoll_network_engine.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io_buffer.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/kqueue_network_engine.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/network_address.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/network_engine_factory.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openssl_transport.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/secure_transport_factory.Po@am__quote@ # am--include-marker
@@ -590,6 +595,7 @@ distclean: distclean-am
 	-rm -f src/$(DEPDIR)/epoll_network_engine.Po
 	-rm -f src/$(DEPDIR)/io_buffer.Po
 	-rm -f src/$(DEPDIR)/kqueue_network_engine.Po
+	-rm -f src/$(DEPDIR)/network_address.Po
 	-rm -f src/$(DEPDIR)/network_engine_factory.Po
 	-rm -f src/$(DEPDIR)/openssl_transport.Po
 	-rm -f src/$(DEPDIR)/secure_transport_factory.Po
@@ -644,6 +650,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/$(DEPDIR)/epoll_network_engine.Po
 	-rm -f src/$(DEPDIR)/io_buffer.Po
 	-rm -f src/$(DEPDIR)/kqueue_network_engine.Po
+	-rm -f src/$(DEPDIR)/network_address.Po
 	-rm -f src/$(DEPDIR)/network_engine_factory.Po
 	-rm -f src/$(DEPDIR)/openssl_transport.Po
 	-rm -f src/$(DEPDIR)/secure_transport_factory.Po
