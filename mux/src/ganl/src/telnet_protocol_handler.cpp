@@ -695,6 +695,17 @@ namespace ganl {
 
         GANL_TELNET_DEBUG(conn, "Processing subnegotiation data for OPT " << static_cast<int>(opt) << ". Data size: " << buffer.size());
 
+        // Create a temporary IoBuffer with the subnegotiation data for passing to derived classes
+        IoBuffer subnegotiationData;
+        if (!buffer.empty()) {
+            subnegotiationData.append(buffer.data(), buffer.size());
+        }
+
+        // Call the virtual method to allow derived classes to handle the data
+        handleTelnetSubnegotiation(conn, opt, subnegotiationData, telnet_responses_out);
+
+        // Continue with built-in handling of standard options
+
         switch (opt) {
         case TelnetOption::NAWS:
             // IAC SB NAWS <16-bit width> <16-bit height> IAC SE

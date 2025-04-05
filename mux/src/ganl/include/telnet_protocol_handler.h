@@ -145,6 +145,26 @@ namespace ganl {
         void processSubnegotiationData(ConnectionHandle conn, TelnetOption opt, IoBuffer& telnet_responses_out);
         void sendTelnetCommand(IoBuffer& buffer, TelnetCommand cmd, TelnetOption opt);
         void updateNegotiationStatus(ConnectionHandle conn);
+
+        /**
+         * Handle Telnet subnegotiation data
+         *
+         * Called when a complete IAC SB <option> ... IAC SE sequence is detected.
+         * Derived classes can override this to handle specific options.
+         *
+         * @param conn The connection handle
+         * @param option The telnet option code (e.g., NAWS, TTYPE)
+         * @param subnegotiationData Buffer containing the raw data between SB and SE (excluding IAC escapes)
+         * @param telnet_responses_out Buffer for any telnet responses to be sent
+         */
+        virtual void handleTelnetSubnegotiation(ConnectionHandle conn,
+                                               TelnetOption option,
+                                               const IoBuffer& subnegotiationData,
+                                               IoBuffer& telnet_responses_out)
+        {
+            // Base implementation is empty - derived classes can override
+            // to handle application-specific telnet options
+        }
     };
 
 } // namespace ganl
