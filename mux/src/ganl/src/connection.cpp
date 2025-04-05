@@ -184,14 +184,21 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
 
     switch (event.type) {
         case IoEventType::Read:
+            // Verify buffer handling - for IoBuffer integration
+            if (event.buffer != &encryptedInput_) {
+                // This is only a sanity check - the buffer reference should match our buffer
+                GANL_CONN_DEBUG(handle_, "Warning: Read event buffer (" << event.buffer
+                          << ") doesn't match encryptedInput_ (" << &encryptedInput_ << ")");
+            }
+
             // Ensure bytesTransferred doesn't exceed buffer space (shouldn't happen with correct postRead)
-             if (event.bytesTransferred > encryptedInput_.writableBytes() && pendingRead_) {
-                  std::cerr << "[Conn:" << handle_ << "] ERROR: Read returned more bytes (" << event.bytesTransferred
-                            << ") than available write space (" << encryptedInput_.writableBytes() << ")!" << std::endl;
-                  // Commit only what fits? Or close? Let's close for safety.
-                  handleError(event.error); // Treat as an error
-                  break;
-             }
+            if (event.bytesTransferred > encryptedInput_.writableBytes() && pendingRead_) {
+                std::cerr << "[Conn:" << handle_ << "] ERROR: Read returned more bytes (" << event.bytesTransferred
+                          << ") than available write space (" << encryptedInput_.writableBytes() << ")!" << std::endl;
+                // Commit only what fits? Or close? Let's close for safety.
+                handleError(event.error); // Treat as an error
+                break;
+            }
             handleRead(event.bytesTransferred);
             break;
 
@@ -757,7 +764,6 @@ bool ConnectionBase::postRead() {
     IoBuffer& encryptedInput = encryptedInput_;
     encryptedInput.ensureWritable(4096);
     size_t readSize = encryptedInput.writableBytes();
-    char* bufferPtr = encryptedInput.writePtr();
 
     if (readSize == 0) {
         // This should ideally not happen if ensureWritable works, but handle defensively.
@@ -766,9 +772,9 @@ bool ConnectionBase::postRead() {
          return false;
     }
 
-    GANL_CONN_DEBUG(handle_, "Posting read for up to " << readSize << " bytes into buffer @" << static_cast<void*>(bufferPtr));
+    GANL_CONN_DEBUG(handle_, "Posting read for up to " << readSize << " bytes into IoBuffer");
     ErrorCode error = 0;
-    if (!networkEngine_.postRead(handle_, bufferPtr, readSize, error)) {
+    if (!networkEngine_.postRead(handle_, encryptedInput, error)) {
         // Immediate error posting read
         GANL_CONN_DEBUG(handle_, "Immediate error posting read: " << error << " (" << networkEngine_.getErrorString(error) << ").");
         // Don't set pendingRead_

@@ -177,7 +177,7 @@ namespace ganl {
 
         // Add socket to internal tracking BUT do not add to select sets yet
         // Context is null until startListening is called
-        addSocketInternal(sock, SocketInfo{ SocketType::Listener, nullptr, false, false });
+        addSocketInternal(sock, SocketInfo{ SocketType::Listener, nullptr, false, false, nullptr, "" });
         GANL_WSELECT_DEBUG(sock, "Listener socket created (FD=" << sock << ").");
 
         return static_cast<ListenerHandle>(sock);
@@ -276,7 +276,7 @@ namespace ganl {
 
     // --- I/O Operations ---
 
-    bool WSelectNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) {
+    bool WSelectNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
         SocketFD sock = static_cast<SocketFD>(conn);
         error = 0;
         if (!initialized_) { error = ENXIO; return false; }
@@ -288,10 +288,12 @@ namespace ganl {
             return false;
         }
 
-        // Buffer/length parameters are ignored for select readiness model.
-        // Just register interest.
+        // Store the IoBuffer reference
+        sockIt->second.activeReadBuffer = &buffer;
+
+        // For select readiness model, we just register interest
         if (!sockIt->second.wantRead) {
-            GANL_WSELECT_DEBUG(sock, "postRead: Setting wantRead=true and updating FD sets.");
+            GANL_WSELECT_DEBUG(sock, "postRead: Setting wantRead=true and updating FD sets. IoBuffer@" << &buffer);
             sockIt->second.wantRead = true;
             // Update master FD sets
             if (masterReadFds_.fd_count < FD_SETSIZE && masterErrorFds_.fd_count < FD_SETSIZE) {
@@ -301,12 +303,13 @@ namespace ganl {
             else {
                 GANL_WSELECT_DEBUG(sock, "Warning: FD_SETSIZE limit reached, cannot add socket to select read set.");
                 sockIt->second.wantRead = false; // Revert interest if cannot add
+                sockIt->second.activeReadBuffer = nullptr; // Reset buffer reference
                 error = ENOBUFS;
                 return false;
             }
         }
         else {
-            GANL_WSELECT_DEBUG(sock, "postRead: wantRead already true.");
+            GANL_WSELECT_DEBUG(sock, "postRead: wantRead already true. Updating IoBuffer reference to " << &buffer);
         }
         return true;
     }
@@ -495,6 +498,10 @@ namespace ganl {
                 GANL_WSELECT_DEBUG(sock, "Connection readable.");
                 // Don't clear wantRead here. The Connection must explicitly call postRead(false)
                 // or close the connection if it doesn't want more read events.
+
+                // But we can clear the buffer reference after generating the event
+                IoBuffer* bufferRef = info.activeReadBuffer;
+                info.activeReadBuffer = nullptr; // Reset buffer reference after this event cycle
                 if (eventCount < maxEvents) {
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Read;
@@ -503,7 +510,14 @@ namespace ganl {
                     ev.bytesTransferred = 0; // Readiness: signal ready, don't report bytes
                     ev.error = 0;
                     ev.context = contextPtr; // Connection's context (ConnectionBase*)
-                    GANL_WSELECT_DEBUG(sock, "Generated Read event.");
+
+                    // Include the IoBuffer in the event
+                    if (info.activeReadBuffer) {
+                        ev.buffer = info.activeReadBuffer;
+                        GANL_WSELECT_DEBUG(sock, "Generated Read event with IoBuffer@" << info.activeReadBuffer);
+                    } else {
+                        GANL_WSELECT_DEBUG(sock, "Generated Read event without IoBuffer");
+                    }
                 }
             } // End Connection Read Handling
 
@@ -647,7 +661,7 @@ namespace ganl {
 
         // Store socket info and add to master sets
         // New connections initially want read, context is null until associateContext
-        SocketInfo newInfo{ SocketType::Connection, nullptr, true, false };
+        SocketInfo newInfo{ SocketType::Connection, nullptr, true, false, nullptr, "" };
         addSocketInternal(clientSock, newInfo); // Adds to sockets_, monitoredSockets_, and master FD sets
 
         GANL_WSELECT_DEBUG(clientSock, "New connection registered.");

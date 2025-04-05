@@ -25,15 +25,19 @@ struct PerIoData {
     char* buffer;
     size_t bufferSize;
     IocpNetworkEngine* engine;
+    IoBuffer* ioBuffer{nullptr}; // Reference to IoBuffer for memory-managed operations
 
     // --- Accept specific fields ---
     SOCKET acceptSocket;
     char acceptBuffer[2 * (sizeof(SOCKADDR_IN) + 16)];
     ListenerHandle listenerHandle;
 
-    // Constructors
+    // Constructors for legacy char* buffer operations
     PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, IocpNetworkEngine* eng);
-    PerIoData(ListenerHandle listener, IocpNetworkEngine* eng); // Keep signature the same
+    // Constructor for IoBuffer-based Read operations
+    PerIoData(OpType type, ConnectionHandle conn, IoBuffer& buffer, IocpNetworkEngine* eng);
+    // Constructor for Accept operations
+    PerIoData(ListenerHandle listener, IocpNetworkEngine* eng);
 
     ~PerIoData();
 };
@@ -54,7 +58,7 @@ public:
     bool associateContext(ConnectionHandle conn, void* context, ErrorCode& error) override;
     void closeConnection(ConnectionHandle conn) override;
 
-    bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) override;
+    bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
 
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
@@ -72,6 +76,8 @@ private:
         SocketType type;
         void* context;    // Connection* or listener context
         bool pendingRead; // Tracks if a read operation is pending
+        IoBuffer* activeReadBuffer{nullptr}; // Tracks the active IoBuffer for reads
+        std::string remoteAddress; // Stores the remote address string
     };
 
     // Structure to store listener information

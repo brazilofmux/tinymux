@@ -60,7 +60,7 @@ namespace ganl {
         bool associateContext(ConnectionHandle conn, void* context, ErrorCode& error) override;
         void closeConnection(ConnectionHandle conn) override;
 
-        bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) override;
+        bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
         bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
 
         int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
@@ -83,7 +83,8 @@ namespace ganl {
             void* context{ nullptr };
             bool wantRead{ false };
             bool wantWrite{ false };
-            // Removed readBuffer/readBufferSize
+            IoBuffer* activeReadBuffer{ nullptr }; // Track active IoBuffer for reads
+            std::string remoteAddress; // Store the remote address string
         };
 
         // Listener-specific information

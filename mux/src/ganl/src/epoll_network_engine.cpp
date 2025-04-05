@@ -1,4 +1,5 @@
 #include "epoll_network_engine.h"
+#include "io_buffer.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -163,7 +164,12 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
     // Store basic info under lock
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sockets_[fd] = SocketInfo{SocketType::Listener, context: nullptr, events: 0};
+        sockets_[fd] = SocketInfo{
+            SocketType::Listener,
+            context: nullptr,
+            events: 0,
+            activeReadBuffer: nullptr
+        };
     }
     GANL_EPOLL_DEBUG(fd, "Listener created successfully.");
 
@@ -310,23 +316,28 @@ void EpollNetworkEngine::closeConnection(ConnectionHandle conn) {
 // postRead: With epoll ET, we rely on EPOLLIN notification. The Connection object
 //           is responsible for reading all available data when notified.
 //           This function doesn't need to do anything besides potentially verifying
-//           that the socket is still valid and registered for input.
-bool EpollNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) {
+//           that the socket is still valid and registered for input and tracking the IoBuffer.
+bool EpollNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
     int fd = static_cast<int>(conn);
     error = 0;
+    GANL_EPOLL_DEBUG(fd, "postRead(IoBuffer) called.");
 
-    // Verify socket validity under lock
+    // Verify socket validity under lock and store buffer reference
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto sockIt = sockets_.find(fd);
         if (sockIt == sockets_.end() || sockIt->second.type != SocketType::Connection) {
-            GANL_EPOLL_DEBUG(fd, "Warning: postRead on invalid/non-connection handle.");
+            GANL_EPOLL_DEBUG(fd, "Warning: postRead(IoBuffer) on invalid/non-connection handle.");
             error = EBADF;
             return false;
         }
+        // Store buffer reference
+        sockIt->second.activeReadBuffer = &buffer;
+        GANL_EPOLL_DEBUG(fd, "Stored IoBuffer reference " << &buffer << " for connection " << fd);
     } // Mutex released
 
-    GANL_EPOLL_DEBUG(fd, "postRead called (No-op for epoll - relying on EPOLLIN notification).");
+    // For epoll, this is almost a no-op since we're already registered for read events
+    GANL_EPOLL_DEBUG(fd, "postRead(IoBuffer) successful (relying on EPOLLIN notification).");
     return true;
 }
 
@@ -445,25 +456,49 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
             // Check for errors/hup first
             if (revents & (EPOLLERR | EPOLLHUP)) {
-                 // ... (getsockopt SO_ERROR as before) ...
+                 // We could use getsockopt with SO_ERROR here to get the specific error
                 if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
-                     // ... (populate Error/Close event as before using socketInfoCopy.context) ...
+                     ev.type = IoEventType::Close; // Or IoEventType::Error based on error detection
                      ev.connection = connHandle;
                      ev.context = socketInfoCopy.context; // Use copied context
+                     ev.buffer = socketInfoCopy.activeReadBuffer; // Include IoBuffer reference if available
+                     ev.bytesTransferred = 0;
+                     ev.error = 0; // Could set to actual error if detected
+
+                     // Clear buffer reference after generating the event for enhanced safety
+                     if (socketInfoCopy.activeReadBuffer) {
+                         std::lock_guard<std::mutex> lock(mutex_);
+                         auto sockIt = sockets_.find(fd);
+                         if (sockIt != sockets_.end()) {
+                             sockIt->second.activeReadBuffer = nullptr;
+                             GANL_EPOLL_DEBUG(fd, "Cleared activeReadBuffer after generating Close/Error event");
+                         }
+                     }
                 }
                 connectionClosed = true;
             }
 
             // Handle Read Readiness
             if (!connectionClosed && (revents & EPOLLIN)) {
-                // ... (populate Read event as before using socketInfoCopy.context) ...
                 if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
                      ev.type = IoEventType::Read;
                      ev.connection = connHandle;
                      ev.context = socketInfoCopy.context; // Use copied context
-                     // ...
+                     ev.buffer = socketInfoCopy.activeReadBuffer; // Include IoBuffer reference if available
+                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
+                     ev.error = 0;
+
+                     // Clear buffer reference after generating the event for enhanced safety
+                     if (socketInfoCopy.activeReadBuffer) {
+                         std::lock_guard<std::mutex> lock(mutex_);
+                         auto sockIt = sockets_.find(fd);
+                         if (sockIt != sockets_.end()) {
+                             sockIt->second.activeReadBuffer = nullptr;
+                             GANL_EPOLL_DEBUG(fd, "Cleared activeReadBuffer after generating Read event");
+                         }
+                     }
                 }
             }
 
@@ -475,6 +510,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
                     ev.context = socketInfoCopy.context;
+                    ev.buffer = nullptr; // Write operations don't use buffer reference
                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
                     ev.error = 0;
                 }
@@ -582,7 +618,12 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     uint32_t initialEvents = EPOLLIN | EPOLLET;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sockets_[clientFd] = SocketInfo{SocketType::Connection, context: nullptr, events: initialEvents};
+        sockets_[clientFd] = SocketInfo{
+            SocketType::Connection,
+            context: nullptr,
+            events: initialEvents,
+            activeReadBuffer: nullptr
+        };
     } // Mutex released
     // --- End map update ---
 

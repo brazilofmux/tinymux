@@ -31,7 +31,7 @@ public:
     void closeConnection(ConnectionHandle conn) override;
 
     // postRead is mostly a no-op for epoll since connections are always registered for read interest
-    bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) override;
+    bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
     // postWrite enables EPOLLOUT interest to indicate the connection wants to write
     // Write interest is automatically disabled in processEvents after handleWrite is called
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
@@ -49,6 +49,7 @@ private:
         SocketType type;
         void* context{nullptr}; // Connection* or listenerContext
         uint32_t events{0};     // Currently registered epoll events (EPOLLIN, EPOLLOUT, etc.)
+        IoBuffer* activeReadBuffer{nullptr}; // Active IoBuffer for read operations
     };
 
     struct ListenerInfo {

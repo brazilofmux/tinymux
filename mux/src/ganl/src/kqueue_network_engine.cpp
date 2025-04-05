@@ -170,7 +170,12 @@ ListenerHandle KqueueNetworkEngine::createListener(const std::string& host, uint
     // Store basic info (listener context is stored in startListening)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sockets_[fd] = SocketInfo{SocketType::Listener, context: nullptr}; // Store socket type
+        sockets_[fd] = SocketInfo{
+            SocketType::Listener,
+            context: nullptr,     // Context will be set in startListening
+            activeReadBuffer: nullptr,
+            remoteAddress: ""
+        };
     }
     GANL_KQUEUE_DEBUG(fd, "Listener created successfully.");
 
@@ -294,10 +299,10 @@ void KqueueNetworkEngine::closeConnection(ConnectionHandle conn) {
 
 // --- I/O Operations ---
 
-bool KqueueNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) {
+bool KqueueNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
     int fd = static_cast<int>(conn);
     error = 0;
-    GANL_KQUEUE_DEBUG(fd, "postRead called (Ensuring EVFILT_READ enabled)");
+    GANL_KQUEUE_DEBUG(fd, "postRead called with IoBuffer@" << &buffer << " (Ensuring EVFILT_READ enabled)");
 
     // Verify socket exists and is a connection
     {
@@ -308,18 +313,31 @@ bool KqueueNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t l
             error = EBADF;
             return false;
         }
+
+        // Store the IoBuffer reference
+        sockIt->second.activeReadBuffer = &buffer;
     }
 
     // Ensure EVFILT_READ is enabled. Using EV_ADD will add it if not present,
     // or modify it if already present (effectively enabling if disabled).
     if (!updateKevent(fd, EVFILT_READ, EV_ADD | EV_ENABLE, error)) {
-         GANL_KQUEUE_DEBUG(fd, "Failed to enable EVFILT_READ: " << strerror(error));
-         // If error is EEXIST or similar, it might already be enabled, which is okay.
-         // However, updateKevent should handle this. If it returns false, assume failure.
+        GANL_KQUEUE_DEBUG(fd, "Failed to enable EVFILT_READ: " << strerror(error));
+
+        // Reset buffer reference on failure
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto sockIt = sockets_.find(fd);
+            if (sockIt != sockets_.end()) {
+                sockIt->second.activeReadBuffer = nullptr;
+            }
+        }
+
+        // If error is EEXIST or similar, it might already be enabled, which is okay.
+        // However, updateKevent should handle this. If it returns false, assume failure.
         return false;
     }
 
-    GANL_KQUEUE_DEBUG(fd, "EVFILT_READ ensured.");
+    GANL_KQUEUE_DEBUG(fd, "EVFILT_READ ensured with IoBuffer@" << &buffer);
     return true;
 }
 
@@ -463,7 +481,25 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                      ev.bytesTransferred = 0;
                      // kev.data often contains the socket error code on EOF
                      ev.error = static_cast<ErrorCode>(kev.data);
-                     GANL_KQUEUE_DEBUG(fd, "Generated Close event. EOF data (error code): " << ev.error << " (" << getErrorString(ev.error) << ")");
+
+                     // Include IoBuffer in Close event if available
+                     IoBuffer* bufferRef = nullptr;
+                     {
+                         std::lock_guard<std::mutex> lock(mutex_);
+                         auto sockIt = sockets_.find(fd);
+                         if (sockIt != sockets_.end()) {
+                             bufferRef = sockIt->second.activeReadBuffer;
+                             // Clear the buffer reference after generating the event
+                             sockIt->second.activeReadBuffer = nullptr;
+                         }
+                     }
+
+                     if (bufferRef) {
+                         ev.buffer = bufferRef;
+                         GANL_KQUEUE_DEBUG(fd, "Generated Close event with IoBuffer@" << bufferRef);
+                     } else {
+                         GANL_KQUEUE_DEBUG(fd, "Generated Close event without IoBuffer");
+                     }
                  }
                  connectionClosed = true;
             }
@@ -471,10 +507,23 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             // Check for EV_ERROR (independent of EOF)
             if (kev.flags & EV_ERROR) {
                 GANL_KQUEUE_DEBUG(fd, "EV_ERROR detected.");
-                 // If we already generated a Close event from EOF, don't generate another error event unless needed?
-                 // Let's prioritize Error if EV_ERROR is set. Overwrite previous Close if necessary.
-                 int currentEventIndex = connectionClosed ? eventCount - 1 : eventCount;
-                 if (currentEventIndex < maxEvents) {
+                // If we already generated a Close event from EOF, don't generate another error event unless needed?
+                // Let's prioritize Error if EV_ERROR is set. Overwrite previous Close if necessary.
+                int currentEventIndex = connectionClosed ? eventCount - 1 : eventCount;
+
+                // Only get the buffer reference if we haven't already processed it in EV_EOF
+                IoBuffer* bufferRef = nullptr;
+                if (!connectionClosed) {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto sockIt = sockets_.find(fd);
+                    if (sockIt != sockets_.end()) {
+                        bufferRef = sockIt->second.activeReadBuffer;
+                        // Clear the buffer reference after generating the event
+                        sockIt->second.activeReadBuffer = nullptr;
+                    }
+                }
+
+                if (currentEventIndex < maxEvents) {
                     if (!connectionClosed) eventCount++; // Only increment if not overwriting Close
                     IoEvent& ev = events[currentEventIndex];
                     ev.type = IoEventType::Error;
@@ -483,9 +532,16 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                     ev.bytesTransferred = 0;
                     // kev.data contains the error code when EV_ERROR is set
                     ev.error = static_cast<ErrorCode>(kev.data);
-                    GANL_KQUEUE_DEBUG(fd, "Generated Error event. Error code: " << ev.error << " (" << getErrorString(ev.error) << ")");
-                 }
-                 connectionClosed = true;
+
+                    // Include buffer in Error event if available
+                    if (bufferRef) {
+                        ev.buffer = bufferRef;
+                        GANL_KQUEUE_DEBUG(fd, "Generated Error event with IoBuffer@" << bufferRef);
+                    } else {
+                        GANL_KQUEUE_DEBUG(fd, "Generated Error event. Error code: " << ev.error << " (" << getErrorString(ev.error) << ")");
+                    }
+                }
+                connectionClosed = true;
             }
 
             // Handle Read Readiness (if not closed/errored)
@@ -499,7 +555,25 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                      // kev.data provides hint of bytes available, but we signal readiness (0)
                      ev.bytesTransferred = 0; // Signal readiness
                      ev.error = 0;
-                     GANL_KQUEUE_DEBUG(fd, "Generated Read event.");
+
+                     // Include IoBuffer in the event
+                     IoBuffer* bufferRef = nullptr;
+                     {
+                         std::lock_guard<std::mutex> lock(mutex_);
+                         auto sockIt = sockets_.find(fd);
+                         if (sockIt != sockets_.end()) {
+                             bufferRef = sockIt->second.activeReadBuffer;
+                             // Clear the buffer reference after generating the event
+                             sockIt->second.activeReadBuffer = nullptr;
+                         }
+                     }
+
+                     if (bufferRef) {
+                         ev.buffer = bufferRef;
+                         GANL_KQUEUE_DEBUG(fd, "Generated Read event with IoBuffer@" << bufferRef);
+                     } else {
+                         GANL_KQUEUE_DEBUG(fd, "Generated Read event without IoBuffer");
+                     }
                      // NOTE: Connection::handleRead *must* loop read() until EAGAIN because filter is level-triggered
                  } else {
                      GANL_KQUEUE_DEBUG(fd, "Max events reached, skipping EVFILT_READ handling.");
@@ -624,7 +698,23 @@ ConnectionHandle KqueueNetworkEngine::acceptConnection(ListenerHandle listener, 
     // Store info about the new socket
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sockets_[clientFd] = SocketInfo{SocketType::Connection, context: nullptr};
+
+        // Get the remote address string for debugging and storage
+        sockaddr_storage addrStorage;
+        socklen_t addrLen = sizeof(addrStorage);
+        std::string remoteAddr = "unknown";
+
+        if (getpeername(clientFd, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) != -1) {
+            NetworkAddress netAddr(reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
+            remoteAddr = netAddr.toString();
+        }
+
+        sockets_[clientFd] = SocketInfo{
+            SocketType::Connection,
+            context: nullptr,
+            activeReadBuffer: nullptr,
+            remoteAddress: remoteAddr
+        };
     }
     GANL_KQUEUE_DEBUG(clientFd, "New connection socket registered.");
 

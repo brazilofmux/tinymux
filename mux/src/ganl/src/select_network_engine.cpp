@@ -308,10 +308,10 @@ void SelectNetworkEngine::closeConnection(ConnectionHandle conn) {
 
 // --- I/O Operations ---
 
-bool SelectNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) {
+bool SelectNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
     SocketFD fd = static_cast<SocketFD>(conn);
     error = 0;
-    GANL_SELECT_DEBUG(fd, "postRead called.");
+    GANL_SELECT_DEBUG(fd, "postRead(IoBuffer) called.");
 
     std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized_) {
@@ -324,6 +324,10 @@ bool SelectNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t l
         error = EINVAL;
         return false;
     }
+
+    // Store buffer reference
+    sockIt->second.activeReadBuffer = &buffer;
+    GANL_SELECT_DEBUG(fd, "Stored IoBuffer reference " << &buffer << " for connection " << fd);
 
     // Ensure read interest is registered
     if (!sockIt->second.wantRead) {
@@ -485,7 +489,8 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                  ev.bytesTransferred = 0;
                  ev.error = socketError;
                  ev.context = contextPtr;
-                 GANL_SELECT_DEBUG(fd, "Generated Error event. Code=" << ev.error);
+                 ev.buffer = (infoCopy.type == SocketType::Connection) ? infoCopy.activeReadBuffer : nullptr;
+                 GANL_SELECT_DEBUG(fd, "Generated Error event. Code=" << ev.error << ", Buffer=" << ev.buffer);
             }
             // Mark for closure after processing this event cycle
             fdsToClose.push_back({fd, contextPtr});
@@ -510,6 +515,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                      ev.context = contextPtr; // Listener's context
                      ev.bytesTransferred = 0;
                      ev.error = 0;
+                     ev.buffer = nullptr; // Accept events don't have associated buffers
                  } else {
                      if (acceptError != EAGAIN && acceptError != EWOULDBLOCK) {
                          GANL_SELECT_DEBUG(fd, "Error accepting connection: " << getErrorString(acceptError));
@@ -521,6 +527,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                             ev.bytesTransferred = 0;
                             ev.error = acceptError;
                             ev.context = contextPtr;
+                            ev.buffer = nullptr; // Listener errors don't have associated buffers
                          }
                          // Mark listener for closure? Or just report error? Report error for now.
                          // fdsToClose.push_back({fd, contextPtr});
@@ -545,7 +552,19 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 ev.context = contextPtr;
                 ev.bytesTransferred = 0; // Indicate readiness
                 ev.error = 0;
-                GANL_SELECT_DEBUG(fd, "Generated Read event.");
+                ev.buffer = infoCopy.activeReadBuffer; // Include IoBuffer reference if available
+                GANL_SELECT_DEBUG(fd, "Generated Read event. Buffer=" << ev.buffer);
+
+                // Clear the buffer reference after generating the event
+                if (infoCopy.activeReadBuffer) {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto sockIt = sockets_.find(fd);
+                    if (sockIt != sockets_.end()) {
+                        sockIt->second.activeReadBuffer = nullptr;
+                        GANL_SELECT_DEBUG(fd, "Cleared activeReadBuffer after generating Read event");
+                    }
+                }
+
                 // Connection::handleRead will perform the actual read()
                 // Do NOT clear wantRead here for level-triggered select
             } else {
@@ -581,6 +600,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 ev.context = contextPtr;
                 ev.bytesTransferred = 0; // Indicate readiness
                 ev.error = 0;
+                ev.buffer = nullptr; // Write events don't use buffer reference
                 GANL_SELECT_DEBUG(fd, "Generated Write event.");
                 // Connection::handleWrite will perform actual write() and call postWrite again if needed
             } else if (generateWriteEvent) {
@@ -606,6 +626,8 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
               ev.context = savedContext; // Use saved context
               ev.bytesTransferred = 0;
               ev.error = 0; // Error was reported previously
+              // Note: Buffer reference is already handled in the initial Error event
+              ev.buffer = nullptr; // Socket is already closed, no buffer reference available
               GANL_SELECT_DEBUG(fdToClose, "Generated Close event after error.");
          }
     }

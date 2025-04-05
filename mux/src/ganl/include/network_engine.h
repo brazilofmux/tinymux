@@ -2,6 +2,7 @@
 #define GANL_NETWORK_ENGINE_H
 
 #include "network_types.h"
+#include "io_buffer.h"
 #include <string>
 
 namespace ganl {
@@ -73,15 +74,14 @@ public:
     virtual void closeConnection(ConnectionHandle conn) = 0;
 
     /**
-     * Post an asynchronous read operation
+     * Post an asynchronous read operation using an IoBuffer
      *
      * @param conn Connection handle
-     * @param buffer Buffer to read into
-     * @param length Maximum length to read
+     * @param buffer Reference to an IoBuffer to read into
      * @param error Error code output variable
      * @return true if operation posted, false on immediate error
      */
-    virtual bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) = 0;
+    virtual bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) = 0;
 
     /**
      * Post an asynchronous write operation

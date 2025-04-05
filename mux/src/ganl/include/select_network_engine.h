@@ -50,8 +50,8 @@ public:
     void closeConnection(ConnectionHandle conn) override;
 
     // postRead: For select, this typically just ensures read interest is registered.
-    // The actual read buffer is managed by the Connection class.
-    bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) override;
+    // The actual IoBuffer is managed by the Connection class.
+    bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
 
     // postWrite: Registers write interest (wantWrite=true).
     // The Connection object is responsible for performing the actual write
@@ -80,7 +80,7 @@ private:
         void* context{nullptr};       // Connection* or listener context pointer
         bool wantRead{false};         // Interest in read readiness (set by default for connections/listeners)
         bool wantWrite{false};        // Interest in write readiness (set by postWrite)
-        // Removed readBuffer and readBufferSize - managed by Connection
+        IoBuffer* activeReadBuffer{nullptr}; // Reference to active IoBuffer for read operations
     };
 
     // Listener-specific information

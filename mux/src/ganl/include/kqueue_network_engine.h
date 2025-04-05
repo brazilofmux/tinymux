@@ -31,7 +31,7 @@ public:
     void closeConnection(ConnectionHandle conn) override;
 
     // postRead ensures EVFILT_READ is enabled
-    bool postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) override;
+    bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
     // postWrite enables EVFILT_WRITE interest
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
 
@@ -47,6 +47,8 @@ private:
     struct SocketInfo {
         SocketType type;
         void* context{nullptr}; // Connection* or listenerContext
+        IoBuffer* activeReadBuffer{nullptr}; // Track active IoBuffer for reads
+        std::string remoteAddress; // Store the remote address string
         // Kqueue doesn't require storing registered events as explicitly as epoll
         // The state is managed directly via kevent calls.
     };

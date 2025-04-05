@@ -34,6 +34,19 @@ namespace ganl {
             << ", size=" << bufferSize);
     }
 
+    // Constructor for IoBuffer-based Read operations
+    PerIoData::PerIoData(OpType type, ConnectionHandle conn, IoBuffer& buffer, IocpNetworkEngine* eng)
+        : opType(type), connection(conn), buffer(buffer.writePtr()),
+          bufferSize(buffer.writableBytes()), engine(eng), acceptSocket(INVALID_SOCKET),
+          ioBuffer(&buffer) {
+        ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+        wsaBuf.buf = this->buffer;
+        wsaBuf.len = static_cast<ULONG>(bufferSize);
+        GANL_IOCP_DEBUG(conn, "PerIoData created for IoBuffer-based Read operation, buffer="
+            << static_cast<void*>(this->buffer) << ", size=" << bufferSize
+            << ", IoBuffer@" << ioBuffer);
+    }
+
     // Constructor for Accept operations
     PerIoData::PerIoData(ListenerHandle listener, IocpNetworkEngine* eng)
         : opType(OpType::Accept),
@@ -234,7 +247,7 @@ namespace ganl {
         // Initialize socket info structures
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            sockets_[listenSocket] = { SocketType::Listener, nullptr, false, "" };
+            sockets_[listenSocket] = { SocketType::Listener, nullptr, false, nullptr, "" };
             listeners_[listenSocket] = { nullptr, false, 0 };
         }
 
@@ -403,9 +416,9 @@ namespace ganl {
         GANL_IOCP_DEBUG(socket, "Connection closed");
     }
 
-    bool IocpNetworkEngine::postRead(ConnectionHandle conn, char* buffer, size_t length, ErrorCode& error) {
+    bool IocpNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
         SOCKET socket = static_cast<SOCKET>(conn);
-        GANL_IOCP_DEBUG(socket, "Posting read for up to " << length << " bytes");
+        GANL_IOCP_DEBUG(socket, "Posting IoBuffer-based read for up to " << buffer.writableBytes() << " bytes");
         error = 0;
 
         if (!initialized_) {
@@ -431,21 +444,23 @@ namespace ganl {
                 return false;
             }
 
-            // Mark as having a pending read
+            // Store the buffer reference and mark as having a pending read
+            it->second.activeReadBuffer = &buffer;
             it->second.pendingRead = true;
         }
 
-        // Create per-I/O data structure
+        // Create per-I/O data structure for IoBuffer-based read
         std::unique_ptr<PerIoData> perIoData = std::make_unique<PerIoData>(
-            PerIoData::OpType::Read, conn, buffer, length, this);
+            PerIoData::OpType::Read, conn, buffer, this);
 
         // Post WSARecv
         if (!postWSARecv(conn, perIoData.get(), error)) {
-            // Reset pendingRead flag on failure
+            // Reset pendingRead flag and buffer reference on failure
             std::lock_guard<std::mutex> lock(mutex_);
             auto it = sockets_.find(socket);
             if (it != sockets_.end()) {
                 it->second.pendingRead = false;
+                it->second.activeReadBuffer = nullptr;
             }
             return false;
         }
@@ -453,7 +468,7 @@ namespace ganl {
         // Release ownership of perIoData (will be cleaned up after operation completes)
         perIoData.release();
 
-        GANL_IOCP_DEBUG(socket, "Read posted successfully");
+        GANL_IOCP_DEBUG(socket, "IoBuffer-based read posted successfully");
         return true;
     }
 
@@ -604,6 +619,30 @@ namespace ganl {
                 event.connection = perIoData->connection; // Should match 'socket' if it's a connection
                 event.context = socketContext;
 
+                // Get the IoBuffer from PerIoData or SocketInfo
+                IoBuffer* readBuffer = perIoData->ioBuffer;
+
+                // If readBuffer is null, this was likely a legacy non-IoBuffer read
+                if (!readBuffer) {
+                    GANL_IOCP_DEBUG(socket, "No IoBuffer associated with this read operation");
+                } else {
+                    // Set the buffer in the event
+                    event.buffer = readBuffer;
+
+                    // If the read was successful, update the buffer write position
+                    if (result && bytesTransferred > 0) {
+                        GANL_IOCP_DEBUG(socket, "Committing " << bytesTransferred << " bytes to IoBuffer");
+                        readBuffer->commitWrite(bytesTransferred);
+                    }
+
+                    // Reset the active buffer reference in SocketInfo
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto it = sockets_.find(socket);
+                    if (it != sockets_.end()) {
+                        it->second.activeReadBuffer = nullptr;
+                    }
+                }
+
                 if (!result) { // Read failed
                     if (operationError == ERROR_HANDLE_EOF || operationError == WSAECONNRESET || operationError == WSAECONNABORTED) {
                         // Graceful close or connection reset by peer
@@ -635,6 +674,11 @@ namespace ganl {
             case PerIoData::OpType::Write:
                 event.connection = perIoData->connection; // Should match 'socket'
                 event.context = socketContext;
+
+                // Include buffer reference in event if available
+                if (perIoData->ioBuffer) {
+                    event.buffer = perIoData->ioBuffer;
+                }
 
                 if (!result) { // Write failed
                     if (operationError == WSAECONNRESET || operationError == WSAECONNABORTED) {
@@ -1078,7 +1122,7 @@ namespace ganl {
         // --- Add socket to internal maps ---
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            sockets_[acceptSocket] = { SocketType::Connection, nullptr, false, remoteAddress }; // Context starts as null
+            sockets_[acceptSocket] = { SocketType::Connection, nullptr, false, nullptr, remoteAddress }; // Context starts as null
         }
 
         GANL_IOCP_DEBUG(acceptSocket, "Connection accepted successfully from " << remoteAddress);

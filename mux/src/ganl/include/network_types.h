@@ -47,6 +47,7 @@ struct IoEvent {
     size_t bytesTransferred{0};
     ErrorCode error{0};
     void* context{nullptr};
+    class IoBuffer* buffer{nullptr}; // Reference to the buffer used for I/O operation
 };
 
 // Network address class for raw socket address access
