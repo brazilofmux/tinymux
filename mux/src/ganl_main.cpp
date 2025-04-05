@@ -10,7 +10,7 @@
 #include "ganl/include/secure_transport_factory.h"
 
 // Global instances of key GANL components
-static std::unique_ptr<ganl::NetworkEngine> g_networkEngine;
+std::unique_ptr<ganl::NetworkEngine> g_networkEngine;
 static std::unique_ptr<ganl::SecureTransport> g_secureTransport;
 static bool g_ganl_initialized = false;
 
@@ -91,6 +91,15 @@ void ganl_process_events(int timeout_ms)
     // Get up to 100 events at a time
     int numEvents = g_networkEngine->processEvents(timeout_ms, g_events, 100);
 
+    // Log events processed if there are any
+    if (numEvents > 0) {
+        STARTLOG(LOG_DEBUG, "NET", "GANL");
+        UTF8 buf[MBUF_SIZE];
+        mux_sprintf(buf, sizeof(buf), T("Processed %d network events"), numEvents);
+        log_text(buf);
+        ENDLOG;
+    }
+
     // Handle events
     for (int i = 0; i < numEvents; i++) {
         const ganl::IoEvent& event = g_events[i];
@@ -100,26 +109,76 @@ void ganl_process_events(int timeout_ms)
                 // New connection accepted
                 std::string remoteAddress = g_networkEngine->getRemoteAddress(event.connection);
 
-                // Create a TinyMUX descriptor for this connection
-                mux_sockaddr addr;
-                DESC* d = nullptr;
+                STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                UTF8 buf[MBUF_SIZE];
+                mux_sprintf(buf, sizeof(buf), T("New connection from %s"), remoteAddress.c_str());
+                log_text(buf);
+                ENDLOG;
 
-                // TODO: Actually initialize the descriptor correctly
-                // For now this is a placeholder
+                // Get the raw network address for site checking
+                ganl::NetworkAddress netAddr = g_networkEngine->getRemoteNetworkAddress(event.connection);
 
-                // Just use a temporary structure for now
-                d = alloc_desc("ganl_accept");
-                // Store the connection handle as the socket
-                d->socket = static_cast<SOCKET>(event.connection);
-                d->connected_at.GetUTC();
-                d->last_time = d->connected_at;
+                // During integration, we're temporarily skipping site checks
+                if (false) { // Disabled during development
+                    // Placeholder for site checking - will implement later
+                    mux_sockaddr maddr;
+                    int siteResult = 0; // Always allow connections during integration
 
-                // Associate the descriptor with the connection
-                // Store a simple mapping from connection to descriptor
-                // We'll implement a real protocol handler later
+                    if (false) { // Never execute during integration
+                        STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                        // Variable 'buf' is declared earlier
+                        // mux_sprintf(buf, sizeof(buf), T("Connection from %s rejected by site checks (result=%d)"),
+                        //          remoteAddress.c_str(), siteResult);
+                        // log_text(buf);
+                        ENDLOG;
 
-                // Associate the descriptor with our MuxProtocolHandler
+                        // Close the connection (passing only the connection handle)
+                        g_networkEngine->closeConnection(event.connection);
+                        break;
+                    }
+                }
+                // Fallback to string-based check is also disabled during integration
+                else if (false) { // Disabled during development
+                    STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                    // Variable 'buf' is declared earlier
+                    // mux_sprintf(buf, sizeof(buf), T("Connection from %s rejected by site checks (string-based)"),
+                    //          remoteAddress.c_str());
+                    // log_text(buf);
+                    ENDLOG;
+
+                    // Close the connection (passing only the connection handle)
+                    g_networkEngine->closeConnection(event.connection);
+                    break;
+                }
+
+                // Associate the connection with our telnet protocol handler
                 g_muxProtocolHandler.createProtocolContext(event.connection);
+
+                // Register with session manager which will create a descriptor
+                ganl::SessionId sessionId = g_muxSessionManager.onConnectionOpen(event.connection, remoteAddress);
+                if (sessionId == ganl::InvalidSessionId) {
+                    STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                    log_text(T("Failed to create session for new connection"));
+                    ENDLOG;
+
+                    // Close the connection (passing only the connection handle)
+                    g_networkEngine->closeConnection(event.connection);
+                    break;
+                }
+
+                // Get the descriptor for this connection
+                DESC* d = g_muxSessionManager.getDescriptor(sessionId);
+                if (d == nullptr) {
+                    STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                    log_text(T("Failed to get descriptor for new connection"));
+                    ENDLOG;
+
+                    // Close the connection (passing only the connection handle)
+                    g_networkEngine->closeConnection(event.connection);
+                    break;
+                }
+
+                // Associate the descriptor with our telnet protocol handler
                 g_muxProtocolHandler.associateWithDescriptor(event.connection, d);
 
                 // Start telnet negotiation
@@ -128,14 +187,27 @@ void ganl_process_events(int timeout_ms)
 
                 // Send initial telnet negotiation
                 if (telnetCommands.readableBytes() > 0) {
+                    STARTLOG(LOG_DEBUG, "NET", "GANL");
+                    UTF8 telnetBuf[MBUF_SIZE];
+                    mux_sprintf(telnetBuf, sizeof(telnetBuf), T("Sending %d bytes of telnet negotiation"),
+                              static_cast<int>(telnetCommands.readableBytes()));
+                    log_text(telnetBuf);
+                    ENDLOG;
+
                     ganl::ErrorCode error = 0;
-                    size_t len = telnetCommands.readableBytes();
                     const char* data = telnetCommands.readPtr();
+                    size_t len = telnetCommands.readableBytes();
                     g_networkEngine->postWrite(event.connection, data, len, error);
                 }
 
-                // Register with session manager
-                g_muxSessionManager.onConnectionOpen(event.connection, remoteAddress);
+                // Post initial read
+                ganl::ErrorCode error = 0;
+                char* buffer = new char[4096]; // Use a reasonably sized buffer
+                g_networkEngine->postRead(event.connection, buffer, 4096, error);
+
+                // Send welcome message
+                welcome_user(d);
+
                 break;
             }
 
@@ -145,14 +217,24 @@ void ganl_process_events(int timeout_ms)
                 DESC* d = g_muxProtocolHandler.getDescriptorForConnection(event.connection);
 
                 if (d != nullptr) {
+                    // Find session ID for this descriptor
+                    ganl::SessionId sessionId = g_muxSessionManager.getSessionIdFromDesc(d);
+
                     // Process the input data through our telnet handler
                     ganl::IoBuffer inputData;
                     ganl::IoBuffer appData;
                     ganl::IoBuffer telnetResponses;
 
-                    // Create a buffer to hold the read data
-                    char buffer[4096]; // Use a reasonably sized buffer
-                    size_t len = event.bytesTransferred;
+                    // During integration, we'll use a simpler approach to handle read data
+                    char buffer[4096] = {0}; // Placeholder buffer
+                    size_t len = event.bytesTransferred; // We'll still record the transfer size
+
+                    STARTLOG(LOG_DEBUG, "NET", "GANL");
+                    UTF8 logbuf[MBUF_SIZE];
+                    mux_sprintf(logbuf, sizeof(logbuf), T("Read %d bytes from connection %d"),
+                             static_cast<int>(len), static_cast<int>(event.connection));
+                    log_text(logbuf);
+                    ENDLOG;
 
                     if (len > 0) {
                         // Copy the data into our input buffer
@@ -163,6 +245,13 @@ void ganl_process_events(int timeout_ms)
 
                         // Send any telnet responses
                         if (telnetResponses.readableBytes() > 0) {
+                            STARTLOG(LOG_DEBUG, "NET", "GANL");
+                            UTF8 respBuf[MBUF_SIZE];
+                            mux_sprintf(respBuf, sizeof(respBuf), T("Sending %d bytes of telnet responses"),
+                                      static_cast<int>(telnetResponses.readableBytes()));
+                            log_text(respBuf);
+                            ENDLOG;
+
                             ganl::ErrorCode error = 0;
                             const char* respData = telnetResponses.readPtr();
                             size_t respLen = telnetResponses.readableBytes();
@@ -174,25 +263,37 @@ void ganl_process_events(int timeout_ms)
                             // Convert to a string and process as a command
                             std::string commandLine(appData.readPtr(), appData.readableBytes());
 
+                            STARTLOG(LOG_DEBUG, "NET", "GANL");
+                            UTF8 cmdBuf[MBUF_SIZE];
+                            mux_sprintf(cmdBuf, sizeof(cmdBuf), T("Received command: %s"),
+                                      commandLine.c_str());
+                            log_text(cmdBuf);
+                            ENDLOG;
+
                             // Update the last activity time
                             d->last_time.GetUTC();
 
-                            // Process the input using TinyMUX's command handling
-                            // TODO: Update this to use proper MUX handling
-                            // For now, we'll directly queue the command to the descriptor
-                            do_command(d, const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(commandLine.c_str())));
+                            // Process the input using our session manager
+                            g_muxSessionManager.onDataReceived(sessionId, commandLine);
                         }
                     }
 
                     // Post another read
                     ganl::ErrorCode error = 0;
-                    g_networkEngine->postRead(event.connection, buffer, sizeof(buffer), error);
+                    char* readBuffer = new char[4096]; // Use a new buffer for each read
+                    g_networkEngine->postRead(event.connection, readBuffer, 4096, error);
                 }
                 break;
             }
 
             case ganl::IoEventType::Write: {
                 // Ready to write data - nothing special needed here
+                STARTLOG(LOG_DEBUG, "NET", "GANL");
+                UTF8 logbuf[MBUF_SIZE];
+                mux_sprintf(logbuf, sizeof(logbuf), T("Write of %d bytes completed"),
+                         static_cast<int>(event.bytesTransferred));
+                log_text(logbuf);
+                ENDLOG;
                 break;
             }
 
@@ -201,47 +302,106 @@ void ganl_process_events(int timeout_ms)
                 // Get the descriptor for this connection from our MuxProtocolHandler
                 DESC* d = g_muxProtocolHandler.getDescriptorForConnection(event.connection);
 
+                STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                UTF8 logbuf[MBUF_SIZE];
+                mux_sprintf(logbuf, sizeof(logbuf), T("Connection %d closed"),
+                         static_cast<int>(event.connection));
+                log_text(logbuf);
+                ENDLOG;
+
+                // Find session ID for this descriptor
+                ganl::SessionId sessionId = ganl::InvalidSessionId;
                 if (d != nullptr) {
-                    // Clean up using TinyMUX's connection shutdown
-                    shutdownsock(d, R_QUIT);
+                    sessionId = g_muxSessionManager.getSessionIdFromDesc(d);
                 }
 
                 // Clean up GANL resources
                 g_muxProtocolHandler.destroyProtocolContext(event.connection);
 
-                ganl::SessionId sessionId = ganl::InvalidSessionId;
-                if (d != nullptr) {
-                    sessionId = g_muxSessionManager.getSessionIdFromDesc(d);
-                }
-                g_muxSessionManager.onConnectionClose(sessionId,
-                                                      ganl::DisconnectReason::NetworkError);
+                // Notify session manager
+                g_muxSessionManager.onConnectionClose(sessionId, ganl::DisconnectReason::NetworkError);
+
+                // Delete any queued buffers associated with this connection
+                // GANL does not provide buffers in IoEvent structure yet
+                // We'll add buffer clean-up later when GANL is enhanced
                 break;
             }
 
             case ganl::IoEventType::Error: {
                 // Error occurred
-                // Get the descriptor for this connection from our MuxProtocolHandler
                 DESC* d = g_muxProtocolHandler.getDescriptorForConnection(event.connection);
 
+                STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                UTF8 logbuf[MBUF_SIZE];
+                mux_sprintf(logbuf, sizeof(logbuf), T("Error on connection %d: code=%d"),
+                         static_cast<int>(event.connection), static_cast<int>(event.error));
+                log_text(logbuf);
+                ENDLOG;
+
+                // Find session ID for this descriptor
+                ganl::SessionId sessionId = ganl::InvalidSessionId;
                 if (d != nullptr) {
-                    // Clean up using TinyMUX's connection shutdown
-                    shutdownsock(d, R_SOCKDIED);
+                    sessionId = g_muxSessionManager.getSessionIdFromDesc(d);
                 }
 
                 // Clean up GANL resources
                 g_muxProtocolHandler.destroyProtocolContext(event.connection);
 
-                ganl::SessionId sessionId = ganl::InvalidSessionId;
-                if (d != nullptr) {
-                    sessionId = g_muxSessionManager.getSessionIdFromDesc(d);
-                }
-                g_muxSessionManager.onConnectionClose(sessionId,
-                                                      ganl::DisconnectReason::TlsError);
+                // For now during integration, just use NetworkError for all errors
+                ganl::DisconnectReason reason = ganl::DisconnectReason::NetworkError;
+                // We'll implement detailed error handling in the next integration phase
+
+                // Notify session manager
+                g_muxSessionManager.onConnectionClose(sessionId, reason);
+
+                // Delete any queued buffers associated with this connection
+                // GANL does not provide buffers in IoEvent structure yet
+                // We'll add buffer clean-up later when GANL is enhanced
                 break;
             }
 
             default:
+                STARTLOG(LOG_ALWAYS, "NET", "GANL");
+                UTF8 logbuf[MBUF_SIZE];
+                mux_sprintf(logbuf, sizeof(logbuf), T("Unknown event type: %d"),
+                         static_cast<int>(event.type));
+                log_text(logbuf);
+                ENDLOG;
                 break;
+        }
+    }
+
+    // Check for idle sessions after processing events
+    static CLinearTimeAbsolute last_idle_check;
+    CLinearTimeAbsolute now;
+    now.GetUTC();
+
+    if (false) { // Disable idle checking during integration
+        last_idle_check = now;
+
+        STARTLOG(LOG_DEBUG, "NET", "GANL");
+        log_text(T("Checking for idle sessions"));
+        ENDLOG;
+
+        // For each session, check if it's idle
+        for (const auto& sessionId : g_muxSessionManager) {
+            DESC* d = g_muxSessionManager.getDescriptor(sessionId);
+            if (!d) {
+                continue;
+            }
+
+            // Check for idle timeout
+            if (false) { // Disable idle checking during integration
+                STARTLOG(LOG_ALWAYS, "NET", "IDLE");
+                UTF8 logbuf[MBUF_SIZE];
+                mux_sprintf(logbuf, sizeof(logbuf), T("Session %lu idle timeout"),
+                         static_cast<unsigned long>(sessionId));
+                log_text(logbuf);
+                ENDLOG;
+
+                // Disconnect the session
+                g_muxSessionManager.disconnectSession(sessionId, ganl::DisconnectReason::Timeout);
+            }
         }
     }
 }
