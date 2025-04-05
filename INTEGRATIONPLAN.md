@@ -167,6 +167,13 @@ GANL provides a cleaner abstraction for SSL/TLS through the `SecureTransport` in
    - Map existing state models to new state machine
    - Ensure clean handling of in-progress connections during server restart
 
+5. **Socket address handling integration**
+   - GANL provides remote addresses as formatted strings (e.g., "192.168.1.100:12345")
+   - TinyMUX uses a sophisticated `mux_sockaddr` class that wraps `sockaddr` structures
+   - TinyMUX needs raw socket address data for site checking, security, and admin features
+   - Need to create a conversion layer or request GANL API enhancement to expose raw `sockaddr` data
+   - This integration point is critical for site bans, IP-based restrictions, and player connection tracking
+
 ## Testing Strategy
 
 1. **Unit Tests**

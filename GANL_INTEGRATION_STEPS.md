@@ -167,6 +167,33 @@ fi
 8. Implement side-by-side mode (both networking systems simultaneously)
 9. Create migration tools and documentation
 
+## Address Handling Integration
+
+TinyMUX uses a sophisticated address handling system through the `mux_sockaddr` class that supports:
+- IPv4 and IPv6 addresses
+- Address manipulation, comparison, and formatting
+- Integration with site access lists for player connection control
+
+This creates a critical integration point with GANL:
+
+1. **Current Issue:**
+   - GANL provides remote addresses as formatted strings (e.g., "192.168.1.100:12345")
+   - TinyMUX needs raw socket address data (`sockaddr_in`/`sockaddr_in6`) for:
+     - Site access control (banning/allowing by IP range)
+     - Player connection tracking
+     - Admin commands that display connection information
+
+2. **Possible Solutions:**
+   - Request an enhancement to GANL API to expose raw socket address structures
+   - Create a conversion layer that parses GANL address strings into TinyMUX `mux_sockaddr` objects
+   - Enhance GANL's `getRemoteAddress()` to optionally return the raw sockaddr structure
+
+3. **Implementation Plan:**
+   - Create a utility function to convert between GANL address strings and TinyMUX `mux_sockaddr`
+   - Enhance the `MuxSessionManager::onConnectionOpen()` to properly initialize descriptor addresses
+   - Ensure site checks and IP-based restrictions work with GANL connections
+   - Verify that all address-related admin commands continue to function
+
 ## Testing Strategy
 
 1. Build with GANL disabled (traditional TinyMUX)
@@ -174,4 +201,5 @@ fi
 3. Test connection handling with the new system
 4. Verify SSL functionality
 5. Test telnet negotiation
-6. Test under load
+6. Verify site restrictions and IP-based access control
+7. Test under load
