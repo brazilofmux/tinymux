@@ -60,6 +60,7 @@ public:
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
 
     std::string getRemoteAddress(ConnectionHandle conn) override;
+    NetworkAddress getRemoteNetworkAddress(ConnectionHandle conn) override;
     std::string getErrorString(ErrorCode error) override;
 
 private:
@@ -71,7 +72,6 @@ private:
         SocketType type;
         void* context;    // Connection* or listener context
         bool pendingRead; // Tracks if a read operation is pending
-        std::string remoteAddress; // Cached remote address (for getRemoteAddress)
     };
 
     // Structure to store listener information

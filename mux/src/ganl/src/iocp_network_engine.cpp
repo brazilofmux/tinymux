@@ -796,85 +796,24 @@ namespace ganl {
     std::string IocpNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
         SOCKET socket = static_cast<SOCKET>(conn);
 
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto it = sockets_.find(socket);
-            if (it != sockets_.end() && !it->second.remoteAddress.empty()) {
-                // Return cached address if available
-                return it->second.remoteAddress;
-            }
-        }
+        // Get the address using NetworkAddress class
+        NetworkAddress addr = getRemoteNetworkAddress(conn);
+        // Convert to string and return directly, removing caching.
+        return addr.toString();
+    }
 
-        // Get the address if not cached
+    NetworkAddress IocpNetworkEngine::getRemoteNetworkAddress(ConnectionHandle conn) {
+        SOCKET socket = static_cast<SOCKET>(conn);
         sockaddr_storage addrStorage;
         int addrLen = sizeof(addrStorage);
 
         if (getpeername(socket, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) == SOCKET_ERROR) {
             GANL_IOCP_DEBUG(socket, "getpeername failed: " << WSAGetLastError());
-            return "unknown";
+            return NetworkAddress(); // Return invalid address
         }
 
-        std::string address;
-
-        // First try WSAAddressToStringW for better IPv6 support
-        if (addrStorage.ss_family == AF_INET || addrStorage.ss_family == AF_INET6) {
-            WCHAR wIpStr[INET6_ADDRSTRLEN * 2]; // Large buffer for WCHAR IP + Port + separators
-            DWORD wIpStrLen = sizeof(wIpStr) / sizeof(WCHAR);
-
-            if (WSAAddressToStringW(reinterpret_cast<LPSOCKADDR>(&addrStorage), addrLen, nullptr,
-                                   wIpStr, &wIpStrLen) == 0) {
-                // Convert WCHAR* to std::string
-                try {
-                    #pragma warning(push)
-                    #pragma warning(disable: 4996) // Disable deprecated warning
-                    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-                    address = converter.to_bytes(wIpStr);
-                    #pragma warning(pop)
-                }
-                catch (const std::exception& e) {
-                    GANL_IOCP_DEBUG(socket, "Error converting address: " << e.what());
-                    // Fall through to fallback method
-                    address.clear();
-                }
-            }
-        }
-
-        // Fallback method using inet_ntop if WSAAddressToStringW failed
-        if (address.empty()) {
-            char ipStr[INET6_ADDRSTRLEN];
-            int port = 0;
-
-            if (addrStorage.ss_family == AF_INET) {
-                sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(&addrStorage);
-                if (InetNtopA(AF_INET, &addr4->sin_addr, ipStr, sizeof(ipStr)) != nullptr) {
-                    port = ntohs(addr4->sin_port);
-                    address = std::string(ipStr) + ":" + std::to_string(port);
-                }
-            }
-            else if (addrStorage.ss_family == AF_INET6) {
-                sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(&addrStorage);
-                if (InetNtopA(AF_INET6, &addr6->sin6_addr, ipStr, sizeof(ipStr)) != nullptr) {
-                    port = ntohs(addr6->sin6_port);
-                    address = "[" + std::string(ipStr) + "]:" + std::to_string(port);
-                }
-            }
-
-            if (address.empty()) {
-                GANL_IOCP_DEBUG(socket, "Address conversion failed");
-                return "unknown";
-            }
-        }
-
-        // Cache the address
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto it = sockets_.find(socket);
-            if (it != sockets_.end()) {
-                it->second.remoteAddress = address;
-            }
-        }
-
-        return address;
+        // Create and return NetworkAddress from the raw sockaddr
+        return NetworkAddress(reinterpret_cast<struct sockaddr*>(&addrStorage), static_cast<socklen_t>(addrLen));
     }
 
     std::string IocpNetworkEngine::getErrorString(ErrorCode error) {

@@ -4,6 +4,15 @@
 #include <cstdint>
 #include <string>
 
+// Include system-specific socket headers
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 namespace ganl {
 
 // Handle types
@@ -38,6 +47,40 @@ struct IoEvent {
     size_t bytesTransferred{0};
     ErrorCode error{0};
     void* context{nullptr};
+};
+
+// Network address class for raw socket address access
+class NetworkAddress {
+public:
+    enum class Family { IPv4, IPv6 };
+
+    // Default constructor creates an invalid/empty address
+    NetworkAddress() = default;
+
+    // Construct from sockaddr (makes a copy of the address)
+    NetworkAddress(const struct sockaddr* addr, socklen_t addrLen);
+
+    // Get address family
+    Family getFamily() const;
+
+    // Get string representation (IP:port format)
+    std::string toString() const;
+
+    // Raw access methods
+    const struct sockaddr* getSockAddr() const;
+    socklen_t getSockAddrLen() const;
+
+    // Basic convenience method
+    uint16_t getPort() const;
+
+    // Check if address is valid
+    bool isValid() const;
+
+private:
+    // Use sockaddr_storage to store any type of address
+    struct sockaddr_storage storage_{};
+    socklen_t addrLen_{0};
+    bool valid_{false};
 };
 
 // TLS result type

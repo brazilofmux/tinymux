@@ -499,32 +499,22 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 // --- Utility Methods ---
 
 std::string EpollNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
+    // We can now use the NetworkAddress class for consistent formatting
+    return getRemoteNetworkAddress(conn).toString();
+}
+
+NetworkAddress EpollNetworkEngine::getRemoteNetworkAddress(ConnectionHandle conn) {
     int fd = static_cast<int>(conn);
     sockaddr_storage addrStorage; // Use sockaddr_storage for IPv4/IPv6 compatibility
     socklen_t addrLen = sizeof(addrStorage);
 
     if (getpeername(fd, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) == -1) {
         GANL_EPOLL_DEBUG(fd, "getpeername failed: " << strerror(errno));
-        return "unknown";
+        return NetworkAddress(); // Return invalid address
     }
 
-    char ipStr[INET6_ADDRSTRLEN]; // Large enough for IPv6
-    int port = 0;
-
-    if (addrStorage.ss_family == AF_INET) {
-        sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(&addrStorage);
-        inet_ntop(AF_INET, &addr4->sin_addr, ipStr, sizeof(ipStr));
-        port = ntohs(addr4->sin_port);
-    } else if (addrStorage.ss_family == AF_INET6) {
-        sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(&addrStorage);
-        inet_ntop(AF_INET6, &addr6->sin6_addr, ipStr, sizeof(ipStr));
-        port = ntohs(addr6->sin6_port);
-    } else {
-        GANL_EPOLL_DEBUG(fd, "Unknown address family in getpeername result: " << addrStorage.ss_family);
-        return "unknown";
-    }
-
-    return std::string(ipStr) + ":" + std::to_string(port);
+    // Create and return NetworkAddress from the raw sockaddr
+    return NetworkAddress(reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
 }
 
 std::string EpollNetworkEngine::getErrorString(ErrorCode error) {
