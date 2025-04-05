@@ -314,17 +314,23 @@ namespace ganl {
         return true;
     }
 
-    bool WSelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+    bool WSelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
         SocketFD sock = static_cast<SocketFD>(conn);
         error = 0;
         if (!initialized_) { error = ENXIO; return false; }
-        GANL_WSELECT_DEBUG(sock, "Posting write interest (data/length ignored by engine).");
+        GANL_WSELECT_DEBUG(sock, "Posting write interest" << (userContext ? " with user context" : "") << " (data/length ignored by engine).");
 
         auto sockIt = sockets_.find(sock);
         if (sockIt == sockets_.end() || sockIt->second.type != SocketType::Connection) {
             GANL_WSELECT_DEBUG(sock, "Error: postWrite on invalid/non-connection handle.");
             error = EINVAL;
             return false;
+        }
+
+        // Store the user context for the write operation
+        sockIt->second.writeUserContext = userContext;
+        if (userContext) {
+            GANL_WSELECT_DEBUG(sock, "Stored write user context " << userContext);
         }
 
         // This engine is stateless regarding write data. Just register interest.
@@ -339,6 +345,7 @@ namespace ganl {
             else {
                 GANL_WSELECT_DEBUG(sock, "Warning: FD_SETSIZE limit reached, cannot add socket to select write set.");
                 sockIt->second.wantWrite = false; // Revert interest
+                sockIt->second.writeUserContext = nullptr; // Clear user context on failure
                 error = ENOBUFS;
                 return false;
             }
@@ -349,6 +356,11 @@ namespace ganl {
 
         GANL_WSELECT_DEBUG(sock, "Write interest registered successfully.");
         return true;
+    }
+
+    // Backward compatibility implementation
+    bool WSelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+        return postWrite(conn, data, length, nullptr, error);
     }
 
 
@@ -543,7 +555,21 @@ namespace ganl {
                     ev.listener = InvalidListenerHandle;
                     ev.bytesTransferred = 0; // Readiness: signal ready, don't report bytes
                     ev.error = 0;
-                    ev.context = contextPtr; // Connection's context (ConnectionBase*)
+
+                    // Use the write user context if available, otherwise use the connection context
+                    if (info.writeUserContext) {
+                        ev.context = info.writeUserContext;
+                        GANL_WSELECT_DEBUG(sock, "Using write user context " << info.writeUserContext << " for Write event");
+                    } else {
+                        ev.context = contextPtr;
+                    }
+
+                    // Clear the write user context after generating the event
+                    sockIt->second.writeUserContext = nullptr;
+                    if (info.writeUserContext) {
+                        GANL_WSELECT_DEBUG(sock, "Cleared write user context after generating Write event");
+                    }
+
                     GANL_WSELECT_DEBUG(sock, "Generated Write event. Cleared wantWrite and removed from masterWriteFds.");
                 }
 

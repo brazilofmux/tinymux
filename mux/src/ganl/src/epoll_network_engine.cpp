@@ -341,18 +341,18 @@ bool EpollNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, Error
     return true;
 }
 
-// postWrite: Called by Connection when it has data to write.
+// postWrite: Called by Connection when it has data to write with user context.
 //            This function ensures EPOLLOUT is registered for the socket to indicate write interest.
 //            It does NOT perform the write itself.
-bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
     int fd = static_cast<int>(conn);
     error = 0;
-    GANL_EPOLL_DEBUG(fd, "postWrite called to register write interest");
+    GANL_EPOLL_DEBUG(fd, "postWrite called to register write interest" << (userContext ? " with context" : ""));
 
     uint32_t currentEvents = 0;
     bool needsModification = false;
 
-    // Check current event flags under lock
+    // Check current event flags under lock and store user context
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto sockIt = sockets_.find(fd);
@@ -361,6 +361,13 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
             error = EBADF;
             return false;
         }
+
+        // Store the user context for the write operation
+        sockIt->second.writeUserContext = userContext;
+        if (userContext) {
+            GANL_EPOLL_DEBUG(fd, "Stored write user context " << userContext);
+        }
+
         currentEvents = sockIt->second.events;
         if (!(currentEvents & EPOLLOUT)) {
             needsModification = true;
@@ -376,6 +383,11 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
         GANL_EPOLL_DEBUG(fd, "EPOLLOUT already set.");
         return true; // Already interested in writing
     }
+}
+
+// Backward compatibility implementation that calls the contextual version
+bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+    return postWrite(conn, data, length, nullptr, error);
 }
 
 // --- Event Processing ---
@@ -509,7 +521,15 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
-                    ev.context = socketInfoCopy.context;
+
+                    // Use the write user context if available, otherwise use the connection context
+                    if (socketInfoCopy.writeUserContext) {
+                        ev.context = socketInfoCopy.writeUserContext;
+                        GANL_EPOLL_DEBUG(fd, "Using write user context " << socketInfoCopy.writeUserContext << " for Write event");
+                    } else {
+                        ev.context = socketInfoCopy.context;
+                    }
+
                     ev.buffer = nullptr; // Write operations don't use buffer reference
                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
                     ev.error = 0;
@@ -520,6 +540,19 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                 if (socketInfoCopy.events & EPOLLOUT) {
                     GANL_EPOLL_DEBUG(fd, "Disabling EPOLLOUT after generating Write event.");
                     ErrorCode modError = 0;
+
+                    // Clear the write user context since we've completed the operation
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto sockIt = sockets_.find(fd);
+                        if (sockIt != sockets_.end()) {
+                            if (sockIt->second.writeUserContext) {
+                                GANL_EPOLL_DEBUG(fd, "Cleared write user context after generating Write event");
+                                sockIt->second.writeUserContext = nullptr;
+                            }
+                        }
+                    }
+
                     // modifyEpollFlags will re-lock briefly to update the map
                     if (!modifyEpollFlags(fd, socketInfoCopy.events & ~EPOLLOUT, modError)) {
                         GANL_EPOLL_DEBUG(fd, "Error disabling EPOLLOUT: " << strerror(modError) << ".");

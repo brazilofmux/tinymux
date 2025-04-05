@@ -1,4 +1,3 @@
-// secure_transport_factory.cpp
 #include "secure_transport_factory.h"
 
 // Include platform-specific headers conditionally

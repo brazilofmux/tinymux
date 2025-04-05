@@ -341,12 +341,12 @@ bool KqueueNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, Erro
     return true;
 }
 
-bool KqueueNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+bool KqueueNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
     int fd = static_cast<int>(conn);
     error = 0;
-    GANL_KQUEUE_DEBUG(fd, "postWrite called (Enabling EVFILT_WRITE)");
+    GANL_KQUEUE_DEBUG(fd, "postWrite called" << (userContext ? " with user context" : "") << " (Enabling EVFILT_WRITE)");
 
-    // Verify socket exists and is a connection
+    // Verify socket exists and is a connection and store user context
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto sockIt = sockets_.find(fd);
@@ -354,6 +354,12 @@ bool KqueueNetworkEngine::postWrite(ConnectionHandle conn, const char* data, siz
             GANL_KQUEUE_DEBUG(fd, "Error: postWrite on invalid/non-connection handle.");
             error = EBADF;
             return false;
+        }
+
+        // Store the user context for the write operation
+        sockIt->second.writeUserContext = userContext;
+        if (userContext) {
+            GANL_KQUEUE_DEBUG(fd, "Stored write user context " << userContext);
         }
     }
 
@@ -363,11 +369,26 @@ bool KqueueNetworkEngine::postWrite(ConnectionHandle conn, const char* data, siz
     // after generating the Write event.
     if (!updateKevent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, error)) {
         GANL_KQUEUE_DEBUG(fd, "Failed to enable EVFILT_WRITE: " << strerror(error));
+
+        // Clear the user context on failure
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto sockIt = sockets_.find(fd);
+            if (sockIt != sockets_.end()) {
+                sockIt->second.writeUserContext = nullptr;
+            }
+        }
+
         return false;
     }
 
     GANL_KQUEUE_DEBUG(fd, "EVFILT_WRITE enabled.");
     return true;
+}
+
+// Backward compatibility implementation
+bool KqueueNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+    return postWrite(conn, data, length, nullptr, error);
 }
 
 // --- Event Processing ---
@@ -587,10 +608,29 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
-                    ev.context = currentContext;
+
+                    // Check if a write user context is available
+                    void* writeContext = nullptr;
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto sockIt = sockets_.find(fd);
+                        if (sockIt != sockets_.end()) {
+                            writeContext = sockIt->second.writeUserContext;
+                        }
+                    }
+
+                    // Use the write user context if available, otherwise use the connection context
+                    if (writeContext) {
+                        ev.context = writeContext;
+                        GANL_KQUEUE_DEBUG(fd, "Using write user context " << writeContext << " for Write event");
+                    } else {
+                        ev.context = currentContext;
+                    }
+
                     // kev.data provides hint of buffer space, but we signal readiness (0)
                     ev.bytesTransferred = 0; // Signal readiness
                     ev.error = 0;
+                    ev.buffer = nullptr; // Write operations don't use buffer reference
                     GANL_KQUEUE_DEBUG(fd, "Generated Write event.");
                     // NOTE: Connection::handleWrite *must* loop write() until EAGAIN or buffer empty
 
@@ -598,6 +638,19 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                     // to prevent spinning, as it's level-triggered.
                     ErrorCode disableError = 0;
                     GANL_KQUEUE_DEBUG(fd, "Disabling EVFILT_WRITE after generating Write event.");
+
+                    // Clear the write user context since we've completed the operation
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto sockIt = sockets_.find(fd);
+                        if (sockIt != sockets_.end()) {
+                            if (sockIt->second.writeUserContext) {
+                                GANL_KQUEUE_DEBUG(fd, "Cleared write user context after generating Write event");
+                                sockIt->second.writeUserContext = nullptr;
+                            }
+                        }
+                    }
+
                     // Use EV_DISABLE instead of EV_DELETE if we might need it again soon.
                     // Using EV_DELETE might be simpler if postWrite always uses EV_ADD. Let's use EV_DISABLE.
                     if (!updateKevent(fd, EVFILT_WRITE, EV_DISABLE, disableError)) {

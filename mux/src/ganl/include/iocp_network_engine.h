@@ -26,6 +26,7 @@ struct PerIoData {
     size_t bufferSize;
     IocpNetworkEngine* engine;
     IoBuffer* ioBuffer{nullptr}; // Reference to IoBuffer for memory-managed operations
+    void* userContext{nullptr};  // User-provided context for Write operations
 
     // --- Accept specific fields ---
     SOCKET acceptSocket;
@@ -36,6 +37,8 @@ struct PerIoData {
     PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, IocpNetworkEngine* eng);
     // Constructor for IoBuffer-based Read operations
     PerIoData(OpType type, ConnectionHandle conn, IoBuffer& buffer, IocpNetworkEngine* eng);
+    // Constructor for Write operations with user context
+    PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, void* context, IocpNetworkEngine* eng);
     // Constructor for Accept operations
     PerIoData(ListenerHandle listener, IocpNetworkEngine* eng);
 
@@ -59,7 +62,8 @@ public:
     void closeConnection(ConnectionHandle conn) override;
 
     bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
-    bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
+    bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
+    // The non-contextual version is inherited from the base class
 
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
 

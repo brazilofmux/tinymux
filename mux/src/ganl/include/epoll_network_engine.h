@@ -34,6 +34,7 @@ public:
     bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
     // postWrite enables EPOLLOUT interest to indicate the connection wants to write
     // Write interest is automatically disabled in processEvents after handleWrite is called
+    bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
 
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
@@ -50,6 +51,7 @@ private:
         void* context{nullptr}; // Connection* or listenerContext
         uint32_t events{0};     // Currently registered epoll events (EPOLLIN, EPOLLOUT, etc.)
         IoBuffer* activeReadBuffer{nullptr}; // Active IoBuffer for read operations
+        void* writeUserContext{nullptr}; // User context for write operations
     };
 
     struct ListenerInfo {

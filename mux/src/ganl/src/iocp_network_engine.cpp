@@ -47,6 +47,18 @@ namespace ganl {
             << ", IoBuffer@" << ioBuffer);
     }
 
+    // Constructor for Write operations with user context
+    PerIoData::PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, void* context, IocpNetworkEngine* eng)
+        : opType(type), connection(conn), buffer(buf), bufferSize(size), engine(eng),
+          acceptSocket(INVALID_SOCKET), userContext(context) {
+        ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+        wsaBuf.buf = buffer;
+        wsaBuf.len = static_cast<ULONG>(bufferSize);
+        GANL_IOCP_DEBUG(conn, "PerIoData created for Write operation with context, buffer="
+            << static_cast<void*>(buffer) << ", size=" << bufferSize
+            << ", userContext=" << userContext);
+    }
+
     // Constructor for Accept operations
     PerIoData::PerIoData(ListenerHandle listener, IocpNetworkEngine* eng)
         : opType(OpType::Accept),
@@ -472,9 +484,9 @@ namespace ganl {
         return true;
     }
 
-    bool IocpNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+    bool IocpNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
         SOCKET socket = static_cast<SOCKET>(conn);
-        GANL_IOCP_DEBUG(socket, "Posting write for " << length << " bytes");
+        GANL_IOCP_DEBUG(socket, "Posting write for " << length << " bytes with context " << userContext);
         error = 0;
 
         if (!initialized_) {
@@ -494,11 +506,11 @@ namespace ganl {
             }
         }
 
-        // Create per-I/O data structure
+        // Create per-I/O data structure with user context
         // Note: For write operations, we use const_cast because WSASend takes non-const buffer
         // This is safe because WSASend won't modify the buffer, but the API requires non-const
         std::unique_ptr<PerIoData> perIoData = std::make_unique<PerIoData>(
-            PerIoData::OpType::Write, conn, const_cast<char*>(data), length, this);
+            PerIoData::OpType::Write, conn, const_cast<char*>(data), length, userContext, this);
 
         // Post WSASend
         if (!postWSASend(conn, perIoData.get(), error)) {
@@ -508,9 +520,11 @@ namespace ganl {
         // Release ownership of perIoData (will be cleaned up after operation completes)
         perIoData.release();
 
-        GANL_IOCP_DEBUG(socket, "Write posted successfully");
+        GANL_IOCP_DEBUG(socket, "Write posted successfully with context " << userContext);
         return true;
     }
+
+    // The compatibility version has been moved to the base class as a non-virtual method
 
     int IocpNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
         if (!initialized_ || iocp_ == INVALID_HANDLE_VALUE) {
@@ -678,6 +692,12 @@ namespace ganl {
                 // Include buffer reference in event if available
                 if (perIoData->ioBuffer) {
                     event.buffer = perIoData->ioBuffer;
+                }
+
+                // Include user context from the operation if available
+                if (perIoData->userContext) {
+                    event.context = perIoData->userContext;
+                    GANL_IOCP_DEBUG(socket, "Including user context " << perIoData->userContext << " in Write event");
                 }
 
                 if (!result) { // Write failed

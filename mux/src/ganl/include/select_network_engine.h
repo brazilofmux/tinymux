@@ -56,7 +56,9 @@ public:
     // postWrite: Registers write interest (wantWrite=true).
     // The Connection object is responsible for performing the actual write
     // when notified via a Write event.
-    bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
+    // The userContext will be included in the IoEvent for write completions.
+    bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
+    // The non-contextual version is inherited from the base class
 
     // processEvents: Calls select() and generates events based on FD readiness.
     // For Read/Write events, bytesTransferred will be 0 (signifying readiness).
@@ -81,6 +83,7 @@ private:
         bool wantRead{false};         // Interest in read readiness (set by default for connections/listeners)
         bool wantWrite{false};        // Interest in write readiness (set by postWrite)
         IoBuffer* activeReadBuffer{nullptr}; // Reference to active IoBuffer for read operations
+        void* writeUserContext{nullptr}; // User context for write operations
     };
 
     // Listener-specific information

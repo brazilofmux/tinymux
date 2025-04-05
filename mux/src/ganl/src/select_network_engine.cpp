@@ -341,10 +341,10 @@ bool SelectNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, Erro
     return true;
 }
 
-bool SelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) {
+bool SelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
     SocketFD fd = static_cast<SocketFD>(conn);
     error = 0;
-    GANL_SELECT_DEBUG(fd, "postWrite called to register write interest.");
+    GANL_SELECT_DEBUG(fd, "postWrite called to register write interest with context " << userContext);
 
     std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized_) {
@@ -358,20 +358,20 @@ bool SelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, siz
         return false;
     }
 
-    // REMOVED: Check for pendingWrites_.count(fd) - engine doesn't buffer now.
+    // Store the user context for the write operation
+    sockIt->second.writeUserContext = userContext;
+    GANL_SELECT_DEBUG(fd, "Stored write user context " << userContext << " for connection " << fd);
 
-    // Just ensure write interest is set
+    // Ensure write interest is set
     if (!sockIt->second.wantWrite) {
         GANL_SELECT_DEBUG(fd, "Setting wantWrite=true and updating FD sets.");
         sockIt->second.wantWrite = true;
         updateFdSets(fd, sockIt->second); // Use locked version
     } else {
-         GANL_SELECT_DEBUG(fd, "wantWrite already true.");
+         GANL_SELECT_DEBUG(fd, "wantWrite already true, updating context.");
     }
 
-    // REMOVED: pendingWrites_[fd] = ...
-
-    GANL_SELECT_DEBUG(fd, "Write interest registered successfully.");
+    GANL_SELECT_DEBUG(fd, "Write interest registered successfully with context " << userContext);
     return true;
 }
 
@@ -597,11 +597,31 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 IoEvent& ev = events[eventCount++];
                 ev.type = IoEventType::Write;
                 ev.connection = fd;
-                ev.context = contextPtr;
+
+                // Use the write user context if available, otherwise use the connection context
+                void* writeContext = infoCopy.writeUserContext;
+                if (writeContext) {
+                    ev.context = writeContext;
+                    GANL_SELECT_DEBUG(fd, "Using write user context " << writeContext << " for Write event");
+                } else {
+                    ev.context = contextPtr;
+                    GANL_SELECT_DEBUG(fd, "No write user context, using connection context " << contextPtr);
+                }
+
                 ev.bytesTransferred = 0; // Indicate readiness
                 ev.error = 0;
                 ev.buffer = nullptr; // Write events don't use buffer reference
-                GANL_SELECT_DEBUG(fd, "Generated Write event.");
+                GANL_SELECT_DEBUG(fd, "Generated Write event with context " << ev.context);
+
+                // Also clear the user context since we're done with this write operation
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto sockIt = sockets_.find(fd);
+                    if (sockIt != sockets_.end()) {
+                        sockIt->second.writeUserContext = nullptr;
+                    }
+                }
+
                 // Connection::handleWrite will perform actual write() and call postWrite again if needed
             } else if (generateWriteEvent) {
                  GANL_SELECT_DEBUG(fd, "Max events reached, skipping Write event generation (but wantWrite cleared).");

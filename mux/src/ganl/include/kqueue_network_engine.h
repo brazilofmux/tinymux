@@ -32,7 +32,9 @@ public:
 
     // postRead ensures EVFILT_READ is enabled
     bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
-    // postWrite enables EVFILT_WRITE interest
+    // postWrite enables EVFILT_WRITE interest with user context
+    bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
+    // postWrite backward compatibility function
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
 
     int processEvents(int timeoutMs, IoEvent* events, int maxEvents) override;
@@ -49,6 +51,7 @@ private:
         void* context{nullptr}; // Connection* or listenerContext
         IoBuffer* activeReadBuffer{nullptr}; // Track active IoBuffer for reads
         std::string remoteAddress; // Store the remote address string
+        void* writeUserContext{nullptr}; // User context for write operations
         // Kqueue doesn't require storing registered events as explicitly as epoll
         // The state is managed directly via kevent calls.
     };
