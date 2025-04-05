@@ -482,7 +482,8 @@ namespace ganl {
                         ev.bytesTransferred = 0; // Not relevant for accept
                         ev.error = 0;
                         ev.context = contextPtr; // Use listener's context for accept event
-                        GANL_WSELECT_DEBUG(sock, "Generated Accept event for new connection " << newConn);
+                        ev.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
+                        GANL_WSELECT_DEBUG(sock, "Generated Accept event for new connection " << newConn << " from " << ev.remoteAddress.toString());
                     }
                     else {
                         if (acceptError != WSAEWOULDBLOCK) {
@@ -679,6 +680,10 @@ namespace ganl {
         }
         GANL_WSELECT_DEBUG(listenerSock, "accept() successful. New socket: " << clientSock);
 
+        // Create a NetworkAddress object from the client address immediately after accept
+        NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), static_cast<socklen_t>(clientLen));
+        GANL_WSELECT_DEBUG(clientSock, "Client address: " << remoteAddr.toString());
+
         if (!setNonBlocking(clientSock, error)) {
             GANL_WSELECT_DEBUG(clientSock, "Failed to set non-blocking on accepted socket: " << getErrorString(error));
             closeSocket(clientSock);
@@ -687,10 +692,10 @@ namespace ganl {
 
         // Store socket info and add to master sets
         // New connections initially want read, context is null until associateContext
-        SocketInfo newInfo{ SocketType::Connection, nullptr, true, false, nullptr, "" };
+        SocketInfo newInfo{ SocketType::Connection, nullptr, true, false, nullptr, remoteAddr.toString(), nullptr };
         addSocketInternal(clientSock, newInfo); // Adds to sockets_, monitoredSockets_, and master FD sets
 
-        GANL_WSELECT_DEBUG(clientSock, "New connection registered.");
+        GANL_WSELECT_DEBUG(clientSock, "New connection registered from " << remoteAddr.toString());
         return static_cast<ConnectionHandle>(clientSock);
     }
 

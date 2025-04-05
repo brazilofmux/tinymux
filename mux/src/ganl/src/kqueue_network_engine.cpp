@@ -463,6 +463,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                       ev.context = currentContext; // Listener context stored in SocketInfo
                       ev.bytesTransferred = 0;
                       ev.error = 0;
+                      ev.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
                  } else {
                       // Error accepting
                       if (acceptError == EAGAIN || acceptError == EWOULDBLOCK) {
@@ -728,6 +729,10 @@ ConnectionHandle KqueueNetworkEngine::acceptConnection(ListenerHandle listener, 
     }
     GANL_KQUEUE_DEBUG(listenerFd, "accept() successful. New FD: " << clientFd);
 
+    // Create a NetworkAddress object from the client address immediately after accept
+    NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
+    GANL_KQUEUE_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
+
     // Set non-blocking and close-on-exec for the new socket
     if (!setNonBlocking(clientFd, error)) {
         GANL_KQUEUE_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
@@ -752,21 +757,15 @@ ConnectionHandle KqueueNetworkEngine::acceptConnection(ListenerHandle listener, 
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        // Get the remote address string for debugging and storage
-        sockaddr_storage addrStorage;
-        socklen_t addrLen = sizeof(addrStorage);
-        std::string remoteAddr = "unknown";
-
-        if (getpeername(clientFd, reinterpret_cast<sockaddr*>(&addrStorage), &addrLen) != -1) {
-            NetworkAddress netAddr(reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
-            remoteAddr = netAddr.toString();
-        }
+        // Use the address we already captured
+        std::string remoteAddrStr = remoteAddr.toString();
 
         sockets_[clientFd] = SocketInfo{
             SocketType::Connection,
             context: nullptr,
             activeReadBuffer: nullptr,
-            remoteAddress: remoteAddr
+            remoteAddress: remoteAddrStr,
+            writeUserContext: nullptr
         };
     }
     GANL_KQUEUE_DEBUG(clientFd, "New connection socket registered.");

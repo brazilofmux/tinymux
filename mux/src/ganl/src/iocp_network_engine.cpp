@@ -743,6 +743,7 @@ namespace ganl {
                         event.context = socketContext; // Listener's context
                         event.error = 0;
                         event.bytesTransferred = 0; // Not relevant for Accept event itself
+                        event.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
                         eventCount++;
 
                         // --- IMPORTANT: Post the next AcceptEx ---

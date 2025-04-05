@@ -516,6 +516,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                      ev.bytesTransferred = 0;
                      ev.error = 0;
                      ev.buffer = nullptr; // Accept events don't have associated buffers
+                     ev.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
                  } else {
                      if (acceptError != EAGAIN && acceptError != EWOULDBLOCK) {
                          GANL_SELECT_DEBUG(fd, "Error accepting connection: " << getErrorString(acceptError));
@@ -714,6 +715,10 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
     }
     GANL_SELECT_DEBUG(listenerFd, "accept() successful. New FD: " << clientFd);
 
+    // Create a NetworkAddress object from the client address immediately after accept
+    NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
+    GANL_SELECT_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
+
     // Perform non-blocking set outside lock
     if (!setNonBlocking(clientFd, error)) {
         GANL_SELECT_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << getErrorString(error));
@@ -731,7 +736,7 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
              return InvalidConnectionHandle;
         }
         // New connections always want read initially, never write until requested
-        SocketInfo newInfo{SocketType::Connection, nullptr, true, false};
+        SocketInfo newInfo{SocketType::Connection, nullptr, true, false, nullptr, nullptr};
         sockets_[clientFd] = newInfo;
         updateFdSets(clientFd, newInfo); // Use locked version
     }

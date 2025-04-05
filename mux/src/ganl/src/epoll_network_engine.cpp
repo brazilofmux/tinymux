@@ -442,6 +442,8 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                           ev.context = socketInfoCopy.context; // Use copied context
                           ev.bytesTransferred = 0;
                           ev.error = 0;
+                          // Populate the remoteAddress field directly from the socket
+                          ev.remoteAddress = getRemoteNetworkAddress(newConn);
                      } else {
                           // ... (handle acceptError EAGAIN/EWOULDBLOCK or real error as before) ...
                           break;
@@ -632,6 +634,10 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     }
     GANL_EPOLL_DEBUG(listenerFd, "accept() successful. New FD: " << clientFd);
 
+    // Create a NetworkAddress object from the client address
+    NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
+    GANL_EPOLL_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
+
     // Set non-blocking and close-on-exec if accept4 wasn't used
     if (!setNonBlocking(clientFd, error)) {
         GANL_EPOLL_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
@@ -655,7 +661,8 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
             SocketType::Connection,
             context: nullptr,
             events: initialEvents,
-            activeReadBuffer: nullptr
+            activeReadBuffer: nullptr,
+            writeUserContext: nullptr
         };
     } // Mutex released
     // --- End map update ---
