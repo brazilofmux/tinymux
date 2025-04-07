@@ -410,19 +410,45 @@ namespace ganl {
             return;
         }
 
+        // First check if socket is already closed/removed
+        bool socketExists = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            socketExists = sockets_.find(socket) != sockets_.end();
+
+            if (socketExists) {
+                // Remove from map under lock
+                sockets_.erase(socket);
+                GANL_IOCP_DEBUG(socket, "Socket removed from map.");
+            } else {
+                GANL_IOCP_DEBUG(socket, "Socket not found in map, likely already closed.");
+                return; // Skip further operations if already removed
+            }
+        }
+
         // Cancel all pending I/O operations on this socket
         cancelIoOperations(socket);
 
         // Shutdown the socket first to send FIN
-        ::shutdown(socket, SD_BOTH);
+        if (::shutdown(socket, SD_BOTH) == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if (error != WSAENOTCONN && error != WSAECONNRESET && error != WSAECONNABORTED) {
+                GANL_IOCP_DEBUG(socket, "Warning: shutdown(socket, SD_BOTH) failed: " << getErrorString(error));
+            } else {
+                GANL_IOCP_DEBUG(socket, "Socket already disconnected or invalid.");
+            }
+        }
 
         // Close the socket
-        closesocket(socket);
-
-        // Remove from internal map
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            sockets_.erase(socket);
+        if (closesocket(socket) == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if (error != WSAENOTSOCK) {
+                GANL_IOCP_DEBUG(socket, "Warning: closesocket(socket) failed: " << getErrorString(error));
+            } else {
+                GANL_IOCP_DEBUG(socket, "Socket already closed or invalid.");
+            }
+        } else {
+            GANL_IOCP_DEBUG(socket, "Socket closed successfully.");
         }
 
         GANL_IOCP_DEBUG(socket, "Connection closed");

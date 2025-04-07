@@ -282,10 +282,20 @@ void EpollNetworkEngine::closeConnection(ConnectionHandle conn) {
     int fd = static_cast<int>(conn);
     GANL_EPOLL_DEBUG(fd, "Closing connection...");
 
-    // Remove from map under lock FIRST
+    // Check if socket is already closed/removed
+    bool socketExists = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sockets_.erase(fd);
+        socketExists = sockets_.find(fd) != sockets_.end();
+
+        if (socketExists) {
+            // Remove from map under lock
+            sockets_.erase(fd);
+            GANL_EPOLL_DEBUG(fd, "Socket removed from map.");
+        } else {
+            GANL_EPOLL_DEBUG(fd, "Socket not found in map, likely already closed.");
+            return; // Skip further operations if already removed
+        }
     } // Mutex released
 
     // --- Perform syscalls outside the lock ---
@@ -293,16 +303,30 @@ void EpollNetworkEngine::closeConnection(ConnectionHandle conn) {
         if (epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) == -1) {
             if (errno != EBADF && errno != ENOENT) {
                 GANL_EPOLL_DEBUG(fd, "Warning: epoll_ctl(DEL) failed: " << strerror(errno));
+            } else {
+                GANL_EPOLL_DEBUG(fd, "Socket already removed from epoll or bad file descriptor.");
             }
         } else {
             GANL_EPOLL_DEBUG(fd, "epoll_ctl(DEL) successful.");
         }
     }
 
-    ::shutdown(fd, SHUT_RDWR); // Optional
+    // Attempt graceful shutdown first
+    if (::shutdown(fd, SHUT_RDWR) == -1) {
+        if (errno != ENOTCONN && errno != EBADF) {
+            GANL_EPOLL_DEBUG(fd, "Warning: shutdown(fd, SHUT_RDWR) failed: " << strerror(errno));
+        } else {
+            GANL_EPOLL_DEBUG(fd, "Socket already disconnected or invalid.");
+        }
+    }
 
+    // Then close the file descriptor
     if (close(fd) == -1) {
-        GANL_EPOLL_DEBUG(fd, "Warning: close(fd) failed: " << strerror(errno));
+        if (errno == EBADF) {
+            GANL_EPOLL_DEBUG(fd, "File descriptor already closed or invalid.");
+        } else {
+            GANL_EPOLL_DEBUG(fd, "Warning: close(fd) failed: " << strerror(errno));
+        }
     } else {
         GANL_EPOLL_DEBUG(fd, "close(fd) successful.");
     }

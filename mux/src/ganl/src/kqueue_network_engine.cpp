@@ -274,6 +274,22 @@ void KqueueNetworkEngine::closeConnection(ConnectionHandle conn) {
     int fd = static_cast<int>(conn);
     GANL_KQUEUE_DEBUG(fd, "Closing connection...");
 
+    // First check if socket is already closed/removed
+    bool socketExists = false;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        socketExists = sockets_.find(fd) != sockets_.end();
+
+        if (socketExists) {
+            // Remove from map under lock
+            sockets_.erase(fd);
+            GANL_KQUEUE_DEBUG(fd, "Socket removed from map.");
+        } else {
+            GANL_KQUEUE_DEBUG(fd, "Socket not found in map, likely already closed.");
+            return; // Skip further operations if already removed
+        }
+    }
+
     // Remove filters from kqueue (ignore errors)
     if (kqueueFd_ != -1) {
         ErrorCode ignoredError = 0;
@@ -281,18 +297,26 @@ void KqueueNetworkEngine::closeConnection(ConnectionHandle conn) {
         updateKevent(fd, EVFILT_WRITE, EV_DELETE, ignoredError);
     }
 
-    // Close socket FD
-    if (close(fd) == -1) {
-        GANL_KQUEUE_DEBUG(fd, "Warning: close(fd) failed: " << strerror(errno));
-    } else {
-         GANL_KQUEUE_DEBUG(fd, "close(fd) successful.");
+    // Attempt graceful shutdown first
+    if (::shutdown(fd, SHUT_RDWR) == -1) {
+        if (errno != ENOTCONN && errno != EBADF) {
+            GANL_KQUEUE_DEBUG(fd, "Warning: shutdown(fd, SHUT_RDWR) failed: " << strerror(errno));
+        } else {
+            GANL_KQUEUE_DEBUG(fd, "Socket already disconnected or invalid.");
+        }
     }
 
-    // Remove from map
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        sockets_.erase(fd);
+    // Then close the file descriptor
+    if (close(fd) == -1) {
+        if (errno == EBADF) {
+            GANL_KQUEUE_DEBUG(fd, "File descriptor already closed or invalid.");
+        } else {
+            GANL_KQUEUE_DEBUG(fd, "Warning: close(fd) failed: " << strerror(errno));
+        }
+    } else {
+        GANL_KQUEUE_DEBUG(fd, "close(fd) successful.");
     }
+
     GANL_KQUEUE_DEBUG(fd, "Connection closed and removed from maps.");
 }
 

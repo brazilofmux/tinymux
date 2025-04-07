@@ -30,7 +30,27 @@ namespace ganl {
     // --- Platform Abstraction Helpers ---
 
     void WSelectNetworkEngine::closeSocket(SocketFD sock) {
-        ::closesocket(sock);
+        // Attempt graceful shutdown first
+        if (::shutdown(sock, SD_BOTH) == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if (error != WSAENOTCONN && error != WSAECONNRESET && error != WSAECONNABORTED && error != WSAENOTSOCK) {
+                GANL_WSELECT_DEBUG(sock, "Warning: shutdown(sock, SD_BOTH) failed: " << getErrorString(translateError(error)));
+            } else {
+                GANL_WSELECT_DEBUG(sock, "Socket already disconnected or invalid.");
+            }
+        }
+
+        // Then close the file descriptor
+        if (::closesocket(sock) == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if (error != WSAENOTSOCK) {
+                GANL_WSELECT_DEBUG(sock, "Warning: closesocket(sock) failed: " << getErrorString(translateError(error)));
+            } else {
+                GANL_WSELECT_DEBUG(sock, "Socket already closed or invalid.");
+            }
+        } else {
+            GANL_WSELECT_DEBUG(sock, "Socket closed successfully.");
+        }
     }
 
     ErrorCode WSelectNetworkEngine::getLastError() {
@@ -264,14 +284,22 @@ namespace ganl {
         if (!initialized_) return;
 
         // Check if it exists before trying to remove/close
-        if (sockets_.count(sock)) {
-            GANL_WSELECT_DEBUG(sock, "Closing connection...");
-            removeSocketInternal(sock); // Removes from maps and sets
-            closeSocket(sock);
-            GANL_WSELECT_DEBUG(sock, "Connection closed and removed.");
-        } else {
-            GANL_WSELECT_DEBUG(sock, "Attempted to close connection that was not found (already closed?).");
+        bool socketExists = false;
+        {
+            socketExists = sockets_.count(sock) > 0;
+
+            if (socketExists) {
+                GANL_WSELECT_DEBUG(sock, "Closing connection...");
+                removeSocketInternal(sock); // Removes from maps and sets
+            } else {
+                GANL_WSELECT_DEBUG(sock, "Socket not found in map, likely already closed.");
+                return; // Skip further operations if already removed
+            }
         }
+
+        // Close the socket with proper error handling
+        closeSocket(sock);
+        GANL_WSELECT_DEBUG(sock, "Connection closed and removed.");
     }
 
     // --- I/O Operations ---

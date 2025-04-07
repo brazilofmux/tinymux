@@ -10,6 +10,8 @@
 #include <string>
 #include <algorithm>
 #include <atomic>
+#include <mutex>
+#include <set>
 
 // Platform-specific includes
 #if defined(_WIN32) || defined(WIN32)
@@ -96,17 +98,27 @@ ConnectionBase::~ConnectionBase() {
     if (getState() != ConnectionState::Closed) {
         GANL_CONN_DEBUG(handle_, "WARNING: Destructor called on non-closed connection (State: " << static_cast<int>(getState()) << "). Forcing cleanup.");
 
-        // 1. Ensure the underlying socket close is requested from the network engine.
-        //    This might be redundant if the object is being destroyed because the
-        //    network event loop is shutting down, but it's safer to ensure it's called.
-        //    The network engine's closeConnection should be safe to call multiple times.
-        networkEngine_.closeConnection(handle_);
+        // Request socket close if needed
+        if (!socketClosed_ && getState() != ConnectionState::Closing) {
+            GANL_CONN_DEBUG(handle_, "Requesting network engine to close the connection.");
+            networkEngine_.closeConnection(handle_);
+            socketClosed_ = true;
+        } else {
+            GANL_CONN_DEBUG(handle_, "Socket already closed or in closing state. Skipping network engine close.");
+        }
 
-        // 2. Perform resource cleanup directly using the non-virtual helper.
-        //    Use ServerShutdown as the reason for this unexpected/forced closure.
-        cleanupResources(disconnectReason_);
+        // Perform resource cleanup if not already done
+        if (!resourcesCleanedUp_) {
+            // Use ServerShutdown as the reason for this unexpected/forced closure if no reason set
+            if (disconnectReason_ == DisconnectReason::Unknown) {
+                disconnectReason_ = DisconnectReason::ServerShutdown;
+            }
+            cleanupResources(disconnectReason_);
+        } else {
+            GANL_CONN_DEBUG(handle_, "Resources already cleaned up. Skipping cleanup in destructor.");
+        }
 
-        // 3. DO NOT transition state here. The object is being destroyed.
+        // DO NOT transition state here. The object is being destroyed.
         GANL_CONN_DEBUG(handle_, "Forced cleanup complete in destructor.");
     }
     else {
@@ -497,12 +509,21 @@ void ConnectionBase::handleClose() {
         return;
     }
 
-    // Perform the actual cleanup using the non-virtual helper
-    cleanupResources(disconnectReason_);
+    // Mark socket as closed since this is a confirmation from the network engine
+    socketClosed_ = true;
 
-    // Transition to the final state *after* cleanup
+    // Check if we need to clean up resources
+    if (!resourcesCleanedUp_) {
+        // This is a case where handleClose is called without resources being cleaned up already
+        GANL_CONN_DEBUG(handle_, "Cleaning up resources in handleClose.");
+        cleanupResources(disconnectReason_);
+    } else {
+        GANL_CONN_DEBUG(handle_, "Resources were already cleaned up. Skipping cleanup in handleClose.");
+    }
+
+    // Transition to the final state after any cleanup
     transitionToState(ConnectionState::Closed);
-    GANL_CONN_DEBUG(handle_, "Connection resources cleaned up and state set to Closed.");
+    GANL_CONN_DEBUG(handle_, "Connection state set to Closed.");
 
     // The Connection object might be destroyed shortly after this if the SessionManager
     // releases its shared_ptr upon receiving the onConnectionClose notification.
@@ -532,7 +553,7 @@ void ConnectionBase::close(DisconnectReason reason) {
         return;
     }
 
-    // 1. Transition to Closing state
+    // 1. Transition to Closing state and record the reason
     transitionToState(ConnectionState::Closing);
     disconnectReason_ = reason;
 
@@ -561,14 +582,27 @@ void ConnectionBase::close(DisconnectReason reason) {
         // If result is Success or Closed, TLS shutdown is done or already happened.
     }
 
-    // 3. Request network layer to close the connection
-    GANL_CONN_DEBUG(handle_, "Requesting network engine close connection.");
-    networkEngine_.closeConnection(handle_);
+    // 3. Request network layer to close the connection if not already closed
+    if (!socketClosed_) {
+        GANL_CONN_DEBUG(handle_, "Requesting network engine close connection.");
+        networkEngine_.closeConnection(handle_);
+        socketClosed_ = true;
+    } else {
+        GANL_CONN_DEBUG(handle_, "Socket already closed. Skipping network engine close request.");
+    }
 
-    // 4. Final cleanup (TLS/Protocol context destruction, SessionManager notification,
-    //    transition to Closed state) is deferred to handleClose(), which is triggered
-    //    by the network engine confirming the closure.
-    GANL_CONN_DEBUG(handle_, "Close initiated. Waiting for handleClose event for final cleanup.");
+    // 4. Perform resource cleanup if not already done
+    if (!resourcesCleanedUp_) {
+        cleanupResources(disconnectReason_);
+        // cleanupResources will set resourcesCleanedUp_ = true
+    } else {
+        GANL_CONN_DEBUG(handle_, "Resources already cleaned up. Skipping cleanup.");
+    }
+
+    // Note: We intentionally don't transition to Closed state here.
+    // That's only done in handleClose which might be triggered by the network engine,
+    // or if this connection is destroyed before that happens, the destructor will handle it.
+    GANL_CONN_DEBUG(handle_, "Close and cleanup completed. Waiting for possible handleClose event.");
 }
 
 void ConnectionBase::startTlsHandshake() {
@@ -829,6 +863,15 @@ void ConnectionBase::cleanupResources(DisconnectReason reason) {
 
     GANL_CONN_DEBUG(handle_, "Performing resource cleanup. Reason: " << static_cast<int>(reason));
 
+    // Check if already cleaned up using the instance flag
+    if (resourcesCleanedUp_) {
+        GANL_CONN_DEBUG(handle_, "Resources already cleaned up for this connection. Skipping.");
+        return;
+    }
+
+    // Mark as cleaned up at the beginning to prevent any potential re-entry issues
+    resourcesCleanedUp_ = true;
+
     // Clean up TLS context
     if (useTls_ && secureTransport_ != nullptr) {
         // It's important that destroySessionContext is safe to call even if the context
@@ -854,6 +897,7 @@ void ConnectionBase::cleanupResources(DisconnectReason reason) {
     else {
         GANL_CONN_DEBUG(handle_, "Session ID already invalid or cleanup called previously. Skipping SessionManager notification.");
     }
+
     GANL_CONN_DEBUG(handle_, "Resource cleanup finished.");
 }
 

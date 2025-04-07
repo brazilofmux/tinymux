@@ -48,7 +48,25 @@ IoModel SelectNetworkEngine::getIoModelType() const {
 
 // --- Platform Abstraction Helpers ---
 void SelectNetworkEngine::closeSocket(SocketFD fd) {
-    ::close(fd);
+    // Attempt graceful shutdown first
+    if (::shutdown(fd, SHUT_RDWR) == -1) {
+        if (errno != ENOTCONN && errno != EBADF) {
+            GANL_SELECT_DEBUG(fd, "Warning: shutdown(fd, SHUT_RDWR) failed: " << strerror(errno));
+        } else {
+            GANL_SELECT_DEBUG(fd, "Socket already disconnected or invalid.");
+        }
+    }
+
+    // Then close the file descriptor
+    if (::close(fd) == -1) {
+        if (errno == EBADF) {
+            GANL_SELECT_DEBUG(fd, "File descriptor already closed or invalid.");
+        } else {
+            GANL_SELECT_DEBUG(fd, "Warning: close(fd) failed: " << strerror(errno));
+        }
+    } else {
+        GANL_SELECT_DEBUG(fd, "close(fd) successful.");
+    }
 }
 
 ErrorCode SelectNetworkEngine::getLastError() {

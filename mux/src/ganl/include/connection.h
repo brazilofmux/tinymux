@@ -171,6 +171,10 @@ private:
     ConnectionState state_{ ConnectionState::Initializing };
     DisconnectReason disconnectReason_{ DisconnectReason::Unknown };
 
+    // Cleanup state tracking
+    bool resourcesCleanedUp_{ false };  // Track if resources have been cleaned up
+    bool socketClosed_{ false };        // Track if socket has been closed
+
     // Configuration flags
     bool useTls_{ false };
     bool pendingRead_{ false };
