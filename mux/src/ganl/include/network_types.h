@@ -136,12 +136,13 @@ enum class DisconnectReason {
     LoginFailed
 };
 
+// Use different names to avoid conflict with TinyMUX macros
 enum class EncodingType {
-    ASCII,
+    Ascii,    // Was ASCII - renamed to avoid conflict with TinyMUX ASCII macro
     Latin1,
-    UTF8,
-    CP437,
-    CP1252
+    Utf8,     // Was UTF8 - renamed to match TinyMUX style
+    Cp437,    // Was CP437 - renamed to match style
+    Cp1252    // Was CP1252 - renamed to match style
 };
 
 struct ProtocolState {
@@ -149,7 +150,7 @@ struct ProtocolState {
     bool telnetEcho{false};
     bool telnetSGA{false};
     bool telnetEOR{false};
-    EncodingType encoding{EncodingType::ASCII};
+    EncodingType encoding{EncodingType::Ascii}; // Updated to use renamed enum value
     bool supportsANSI{false};
     bool supportsMXP{false};
     uint16_t width{80};

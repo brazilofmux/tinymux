@@ -63,7 +63,7 @@ namespace ganl {
         bool isStartTlsNegotiated(ConnectionHandle conn);
         bool isReadyForApplication(ConnectionHandle conn);
 
-    private:
+    protected:
         enum class ParserState { Normal, IAC, Command, Subnegotiation, Subnegotiation_IAC };
 
         enum class OptionNegotiationState {
@@ -72,6 +72,16 @@ namespace ganl {
             ReceivedWill, ReceivedDo
         };
 
+        void handleTelnetStandaloneCommand(ConnectionHandle conn, TelnetCommand cmd, IoBuffer& telnet_responses_out);
+        void handleTelnetOptionNegotiation(ConnectionHandle conn, TelnetCommand cmd, TelnetOption opt, IoBuffer& telnet_responses_out);
+        void processSubnegotiationData(ConnectionHandle conn, TelnetOption opt, IoBuffer& telnet_responses_out);
+        void sendTelnetCommand(IoBuffer& buffer, TelnetCommand cmd, TelnetOption opt);
+        void updateNegotiationStatus(ConnectionHandle conn);
+
+        // Get the current state of an option negotiation
+        OptionNegotiationState getOptionState(ConnectionHandle conn, TelnetOption opt) const;
+
+    private:
         struct TelnetContext {
             ProtocolState state;
             std::vector<char> inputBuffer;
@@ -139,12 +149,6 @@ namespace ganl {
 
         std::map<ConnectionHandle, TelnetContext> contexts_;
         std::chrono::seconds negotiationTimeoutDuration_{ 10 }; // Configurable timeout
-
-        void handleTelnetStandaloneCommand(ConnectionHandle conn, TelnetCommand cmd, IoBuffer& telnet_responses_out);
-        void handleTelnetOptionNegotiation(ConnectionHandle conn, TelnetCommand cmd, TelnetOption opt, IoBuffer& telnet_responses_out);
-        void processSubnegotiationData(ConnectionHandle conn, TelnetOption opt, IoBuffer& telnet_responses_out);
-        void sendTelnetCommand(IoBuffer& buffer, TelnetCommand cmd, TelnetOption opt);
-        void updateNegotiationStatus(ConnectionHandle conn);
 
         /**
          * Handle Telnet subnegotiation data

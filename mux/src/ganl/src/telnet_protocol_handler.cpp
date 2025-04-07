@@ -57,7 +57,7 @@ namespace ganl {
 
         TelnetContext& context = it->second;
         context.state = {}; // Default initialize ProtocolState (including telnetEOR{false})
-        context.state.encoding = EncodingType::ASCII;
+        context.state.encoding = EncodingType::Ascii;
         context.state.width = 80;
         context.state.height = 24;
         context.parserState = ParserState::Normal;
@@ -107,7 +107,7 @@ namespace ganl {
     EncodingType TelnetProtocolHandler::getEncoding(ConnectionHandle conn) {
         auto it = contexts_.find(conn);
         if (it == contexts_.end()) {
-            return EncodingType::ASCII; // Default
+            return EncodingType::Ascii; // Default
         }
         return it->second.state.encoding; // Directly access state for getter
     }
@@ -854,7 +854,7 @@ namespace ganl {
                     // --- End of filled-in part ---
 
                     // Update context encoding using its own method
-                    context.setEncoding(EncodingType::UTF8);
+                    context.setEncoding(EncodingType::Utf8);
                     context.charsetDataReceived = true; // Mark settled
 
                 }
@@ -873,7 +873,7 @@ namespace ganl {
                     };
                     telnet_responses_out.append(sb_reject, sizeof(sb_reject));
 
-                    context.setEncoding(EncodingType::ASCII); // Fallback
+                    context.setEncoding(EncodingType::Ascii); // Fallback
                     context.charsetDataReceived = true; // Mark settled (negatively)
                 }
 
@@ -883,8 +883,8 @@ namespace ganl {
                 // ... (handling as before) ...
                 std::string accepted(buffer.begin() + 1, buffer.end());
                 GANL_TELNET_DEBUG(conn, "Received CHARSET ACCEPTED: " << accepted);
-                EncodingType newEncoding = EncodingType::ASCII;
-                if (accepted == "UTF-8") newEncoding = EncodingType::UTF8;
+                EncodingType newEncoding = EncodingType::Ascii;
+                if (accepted == "UTF-8") newEncoding = EncodingType::Utf8;
                 else if (accepted == "ISO-8859-1") newEncoding = EncodingType::Latin1;
                 context.setEncoding(newEncoding);
                 context.charsetDataReceived = true;
@@ -894,7 +894,7 @@ namespace ganl {
                 // Client rejected a charset we offered (if we sent REQUEST)
                 // ... (handling as before) ...
                 GANL_TELNET_DEBUG(conn, "Received CHARSET REJECTED.");
-                context.setEncoding(EncodingType::ASCII);
+                context.setEncoding(EncodingType::Ascii);
                 context.charsetDataReceived = true;
 
             }
