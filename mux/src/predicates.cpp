@@ -1275,7 +1275,7 @@ void handle_prog(DESC *d, UTF8 *message)
     program_data* program = nullptr;
     const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
     for (auto it = range.first; it != range.second; ++it)
-    {       
+    {
         DESC* d = it->second;
         if (it == range.first)
         {

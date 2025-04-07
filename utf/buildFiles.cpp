@@ -1366,7 +1366,7 @@ void UniData::SaveMappings()
                     int   nPoints = 0;
                     UTF32 pts[100];
                     GetDecomposition(pt, DECOMP_TYPE_ALL, nPoints, pts);
-    
+
                     UTF32 pt2;
                     int cnt = 0;
                     for (pt2 = 0; pt2 < nPoints; pt2++)
@@ -1376,7 +1376,7 @@ void UniData::SaveMappings()
                             cnt++;
                         }
                     }
-    
+
                     int decimal;
                     if (  1 == cnt
                        && cp[pts[0]].IsMapping(MappingTypeTable[iMapping].Type, ch))
