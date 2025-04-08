@@ -41,13 +41,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\src\pcre2\include;C:\tinymux\mux\src\ganl\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\tinymux\mux\src\pcre2\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\src\pcre2\include;C:\tinymux\mux\src\ganl\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\tinymux\mux\src\pcre2\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -57,17 +57,17 @@
       <HeaderFileName />
     </Midl>
     <ClCompile>
-      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;UNICODE;WOD_REALMS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;WIN32;USE_GANL;_CONSOLE;UNICODE;WOD_REALMS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader />
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>secur32.lib;crypt32.lib;ws2_32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
@@ -84,20 +84,20 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;UNICODE;WOD_REALMS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;USE_GANL;_CONSOLE;UNICODE;WOD_REALMS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader />
       <CallingConvention>FastCall</CallingConvention>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>secur32.lib;crypt32.lib;ws2_32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>2.13</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
@@ -266,6 +266,16 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="ganl\src\connection.cpp" />
+    <ClCompile Include="ganl\src\iocp_network_engine.cpp" />
+    <ClCompile Include="ganl\src\io_buffer.cpp" />
+    <ClCompile Include="ganl\src\network_address.cpp" />
+    <ClCompile Include="ganl\src\network_engine_factory.cpp" />
+    <ClCompile Include="ganl\src\schannel_transport.cpp" />
+    <ClCompile Include="ganl\src\secure_transport_factory.cpp" />
+    <ClCompile Include="ganl\src\telnet_protocol_handler.cpp" />
+    <ClCompile Include="ganl\src\wselect_network_engine.cpp" />
+    <ClCompile Include="ganl_adapter.cpp" />
     <ClCompile Include="help.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
@@ -627,6 +637,20 @@
     <ClInclude Include="flags.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="funmath.h" />
+    <ClInclude Include="ganl\include\connection.h" />
+    <ClInclude Include="ganl\include\iocp_network_engine.h" />
+    <ClInclude Include="ganl\include\io_buffer.h" />
+    <ClInclude Include="ganl\include\network_engine.h" />
+    <ClInclude Include="ganl\include\network_engine_factory.h" />
+    <ClInclude Include="ganl\include\network_types.h" />
+    <ClInclude Include="ganl\include\protocol_handler.h" />
+    <ClInclude Include="ganl\include\schannel_transport.h" />
+    <ClInclude Include="ganl\include\secure_transport.h" />
+    <ClInclude Include="ganl\include\secure_transport_factory.h" />
+    <ClInclude Include="ganl\include\session_manager.h" />
+    <ClInclude Include="ganl\include\telnet_protocol_handler.h" />
+    <ClInclude Include="ganl\include\wselect_network_engine.h" />
+    <ClInclude Include="ganl_adapter.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="htab.h" />
     <ClInclude Include="interface.h" />

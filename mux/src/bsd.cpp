@@ -9,6 +9,11 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+
+#ifdef USE_GANL
+#include "ganl_adapter.h"
+#endif
+
 using namespace std;
 
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
@@ -32,7 +37,7 @@ int      num_main_game_ports = 0;
 void process_output_socket(DESC *d, int bHandleShutdown);
 
 static void telnet_setup(DESC *d);
-static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
+void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
 static DESC *new_connection_initial(port_info* Port);
@@ -2127,7 +2132,7 @@ static const UTF8 *disc_reasons[] =
 
 // Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
 //
-static const UTF8 *disc_messages[] =
+const UTF8 *disc_messages[] =
 {
     T("Unknown"),
     T("Quit"),
@@ -2144,6 +2149,9 @@ static const UTF8 *disc_messages[] =
 
 void shutdownsock(DESC *d, int reason)
 {
+#ifdef USE_GANL
+    ganl_close_connection(d, reason);
+#else
     UTF8 *buff;
 
     if (  R_LOGOUT == reason
@@ -2389,6 +2397,7 @@ void shutdownsock(DESC *d, int reason)
         free_desc(d);
     }
 #endif // WINDOWS_NETWORKING
+#endif // USE_GANL
 }
 
 #if defined(WINDOWS_NETWORKING)

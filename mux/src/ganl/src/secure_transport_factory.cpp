@@ -29,6 +29,7 @@ namespace ganl {
             type = SecureTransportType::OpenSSL;
 #endif
 
+#if 0
             std::cout << "Auto-selected secure transport type: ";
             switch (type) {
             case SecureTransportType::Schannel: std::cout << "Schannel"; break;
@@ -36,6 +37,7 @@ namespace ganl {
             default: std::cout << "none"; break;
             }
             std::cout << std::endl;
+#endif
         }
 
         // Create the requested transport type

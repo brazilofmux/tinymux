@@ -655,60 +655,63 @@ namespace ganl {
             // Process based on operation type
             switch (perIoData->opType) {
             case PerIoData::OpType::Read:
-                event.type = IoEventType::Read; // Default to Read
-                event.connection = perIoData->connection; // Should match 'socket' if it's a connection
-                event.context = socketContext;
+                {
+                    event.type = IoEventType::Read; // Default to Read
+                    event.connection = perIoData->connection; // Should match 'socket' if it's a connection
+                    event.context = socketContext;
 
-                // Get the IoBuffer from PerIoData or SocketInfo
-                IoBuffer* readBuffer = perIoData->ioBuffer;
+                    // Get the IoBuffer from PerIoData or SocketInfo
+                    IoBuffer* readBuffer = perIoData->ioBuffer;
 
-                // If readBuffer is null, this was likely a legacy non-IoBuffer read
-                if (!readBuffer) {
-                    GANL_IOCP_DEBUG(socket, "No IoBuffer associated with this read operation");
-                } else {
-                    // Set the buffer in the event
-                    event.buffer = readBuffer;
-
-                    // If the read was successful, update the buffer write position
-                    if (result && bytesTransferred > 0) {
-                        GANL_IOCP_DEBUG(socket, "Committing " << bytesTransferred << " bytes to IoBuffer");
-                        readBuffer->commitWrite(bytesTransferred);
-                    }
-
-                    // Reset the active buffer reference in SocketInfo
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    auto it = sockets_.find(socket);
-                    if (it != sockets_.end()) {
-                        it->second.activeReadBuffer = nullptr;
-                    }
-                }
-
-                if (!result) { // Read failed
-                    if (operationError == ERROR_HANDLE_EOF || operationError == WSAECONNRESET || operationError == WSAECONNABORTED) {
-                        // Graceful close or connection reset by peer
-                        event.type = IoEventType::Close;
-                        GANL_IOCP_DEBUG(socket, "Read completed with EOF/Reset. BytesTransferred=" << bytesTransferred << ". Reporting Close event.");
+                    // If readBuffer is null, this was likely a legacy non-IoBuffer read
+                    if (!readBuffer) {
+                        GANL_IOCP_DEBUG(socket, "No IoBuffer associated with this read operation");
                     }
                     else {
-                        // Other error
-                        event.type = IoEventType::Error;
-                        GANL_IOCP_DEBUG(socket, "Read completed with error: " << operationError << ". Reporting Error event.");
+                        // Set the buffer in the event
+                        event.buffer = readBuffer;
+
+                        // If the read was successful, update the buffer write position
+                        if (result && bytesTransferred > 0) {
+                            GANL_IOCP_DEBUG(socket, "Committing " << bytesTransferred << " bytes to IoBuffer");
+                            readBuffer->commitWrite(bytesTransferred);
+                        }
+
+                        // Reset the active buffer reference in SocketInfo
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto it = sockets_.find(socket);
+                        if (it != sockets_.end()) {
+                            it->second.activeReadBuffer = nullptr;
+                        }
                     }
-                    // Bytes transferred might be 0 on error, but could be non-zero if some data read before error.
-                    // The event structure correctly reports the error code and bytes transferred.
+
+                    if (!result) { // Read failed
+                        if (operationError == ERROR_HANDLE_EOF || operationError == WSAECONNRESET || operationError == WSAECONNABORTED) {
+                            // Graceful close or connection reset by peer
+                            event.type = IoEventType::Close;
+                            GANL_IOCP_DEBUG(socket, "Read completed with EOF/Reset. BytesTransferred=" << bytesTransferred << ". Reporting Close event.");
+                        }
+                        else {
+                            // Other error
+                            event.type = IoEventType::Error;
+                            GANL_IOCP_DEBUG(socket, "Read completed with error: " << operationError << ". Reporting Error event.");
+                        }
+                        // Bytes transferred might be 0 on error, but could be non-zero if some data read before error.
+                        // The event structure correctly reports the error code and bytes transferred.
+                    }
+                    else { // Read succeeded
+                        if (bytesTransferred == 0) {
+                            // Read succeeded but returned 0 bytes - this indicates graceful close by peer.
+                            event.type = IoEventType::Close;
+                            GANL_IOCP_DEBUG(socket, "Read completed successfully with 0 bytes. Reporting Close event.");
+                        }
+                        else {
+                            // Successful read with data
+                            GANL_IOCP_DEBUG(socket, "Read completed successfully. BytesTransferred=" << bytesTransferred << ". Reporting Read event.");
+                        }
+                    }
+                    eventCount++; // Increment count for Read, Close, or Error derived from Read
                 }
-                else { // Read succeeded
-                    if (bytesTransferred == 0) {
-                        // Read succeeded but returned 0 bytes - this indicates graceful close by peer.
-                        event.type = IoEventType::Close;
-                        GANL_IOCP_DEBUG(socket, "Read completed successfully with 0 bytes. Reporting Close event.");
-                    }
-                    else {
-                        // Successful read with data
-                        GANL_IOCP_DEBUG(socket, "Read completed successfully. BytesTransferred=" << bytesTransferred << ". Reporting Read event.");
-                    }
-                }
-                eventCount++; // Increment count for Read, Close, or Error derived from Read
                 break;
 
             case PerIoData::OpType::Write:

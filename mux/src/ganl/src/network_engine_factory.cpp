@@ -49,6 +49,7 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
             type = NetworkEngineType::Select;
         #endif
 
+#if 0
         std::cout << "Auto-selected network engine type: ";
         switch (type) {
             case NetworkEngineType::Epoll: std::cout << "epoll"; break;
@@ -59,6 +60,7 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
             default: std::cout << "unknown"; break;
         }
         std::cout << std::endl;
+#endif
     }
 
     // Create the requested engine type

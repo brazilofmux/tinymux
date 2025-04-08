@@ -1576,6 +1576,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
         return;
     }
 
+#ifdef USE_GANL
+    notify(executor, T("Restart is not supported with the GANL networking layer."));
+    return;
+#endif
+
     bool bDenied = false;
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)

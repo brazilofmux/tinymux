@@ -204,6 +204,36 @@
     <ClCompile Include="wiz.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ganl_adapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\io_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\iocp_network_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\network_address.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\network_engine_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\schannel_transport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\secure_transport_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\telnet_protocol_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ganl\src\wselect_network_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_build.h">
@@ -315,6 +345,48 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vattr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl_adapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\connection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\io_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\iocp_network_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\network_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\network_engine_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\network_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\protocol_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\schannel_transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\secure_transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\secure_transport_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\session_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\telnet_protocol_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl\include\wselect_network_engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

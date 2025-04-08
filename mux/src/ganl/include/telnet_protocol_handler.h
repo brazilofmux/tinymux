@@ -150,6 +150,7 @@ namespace ganl {
         std::map<ConnectionHandle, TelnetContext> contexts_;
         std::chrono::seconds negotiationTimeoutDuration_{ 10 }; // Configurable timeout
 
+    public:
         /**
          * Handle Telnet subnegotiation data
          *

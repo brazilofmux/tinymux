@@ -10,6 +10,11 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+
+#ifdef USE_GANL
+#include "ganl_adapter.h"
+#endif
+
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -179,6 +184,18 @@ void raw_notify(dbref player, const UTF8 *msg)
         return;
     }
 
+#ifdef USE_GANL
+    // Iterate through descriptors for the player using the adapter map
+    // This requires exposing a way to iterate player descs via the adapter or using existing TinyMUX map
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+    for (auto it = range.first; it != range.second; ++it) {
+        DESC* d = it->second;
+        if (g_GanlAdapter.get_handle(d) != ganl::InvalidConnectionHandle) { // Check if GANL knows it
+            ganl_send_data_str(d, msg);
+            ganl_send_data_str(d, T("\r\n")); // GANL expects raw bytes
+        }
+    }
+#else
     const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)
     {
@@ -186,6 +203,7 @@ void raw_notify(dbref player, const UTF8 *msg)
         queue_string(d, msg);
         queue_write_LEN(d, T("\r\n"), 2);
     }
+#endif
 }
 
 void raw_notify(dbref player, const mux_string &sMsg)
@@ -526,7 +544,7 @@ void queue_write(DESC *d, const UTF8 *b)
     queue_write_LEN(d, b, strlen((const char *)b));
 }
 
-static const UTF8 *encode_iac(const UTF8 *szString)
+const UTF8 *encode_iac(const UTF8 *szString)
 {
     static UTF8 Buffer[2*LBUF_SIZE];
     UTF8 *pBuffer = Buffer;
@@ -887,7 +905,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
     *p = '\0';
 }
 
-static void announce_connect(const dbref player, DESC *d)
+void announce_connect(const dbref player, DESC *d)
 {
     desc_addhash(d);
 
@@ -2284,7 +2302,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     return;
 }
 
-static const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
+const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
 
 static bool check_connect(DESC *d, UTF8 *msg)
 {
