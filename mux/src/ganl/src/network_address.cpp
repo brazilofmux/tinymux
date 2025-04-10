@@ -1,6 +1,8 @@
 #include "network_types.h"
 #include <cstring>
-//#include <arpa/inet.h>
+#ifndef WIN32
+#include <arpa/inet.h>
+#endif
 
 namespace ganl {
 

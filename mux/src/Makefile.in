@@ -129,11 +129,11 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	boolexp.cpp bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp \
 	create.cpp db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp \
 	funceval.cpp funceval2.cpp functions.cpp funmath.cpp game.cpp \
-	help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp \
-	match.cpp mathutil.cpp mguests.cpp modules.cpp move.cpp \
-	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
+	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
+	mail.cpp match.cpp mathutil.cpp mguests.cpp modules.cpp \
+	move.cpp muxcli.cpp netcommon.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp \
+	rob.cpp set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -145,16 +145,17 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
 	eval.$(OBJEXT) file_c.$(OBJEXT) flags.$(OBJEXT) \
 	funceval.$(OBJEXT) funceval2.$(OBJEXT) functions.$(OBJEXT) \
-	funmath.$(OBJEXT) game.$(OBJEXT) help.$(OBJEXT) htab.$(OBJEXT) \
-	local.$(OBJEXT) log.$(OBJEXT) look.$(OBJEXT) mail.$(OBJEXT) \
-	match.$(OBJEXT) mathutil.$(OBJEXT) mguests.$(OBJEXT) \
-	modules.$(OBJEXT) move.$(OBJEXT) muxcli.$(OBJEXT) \
-	netcommon.$(OBJEXT) object.$(OBJEXT) predicates.$(OBJEXT) \
-	player.$(OBJEXT) player_c.$(OBJEXT) plusemail.$(OBJEXT) \
-	powers.$(OBJEXT) quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) \
-	sha1.$(OBJEXT) speech.$(OBJEXT) stringutil.$(OBJEXT) \
-	strtod.$(OBJEXT) svdrand.$(OBJEXT) svdhash.$(OBJEXT) \
-	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
+	funmath.$(OBJEXT) game.$(OBJEXT) ganl_adapter.$(OBJEXT) \
+	help.$(OBJEXT) htab.$(OBJEXT) local.$(OBJEXT) log.$(OBJEXT) \
+	look.$(OBJEXT) mail.$(OBJEXT) match.$(OBJEXT) \
+	mathutil.$(OBJEXT) mguests.$(OBJEXT) modules.$(OBJEXT) \
+	move.$(OBJEXT) muxcli.$(OBJEXT) netcommon.$(OBJEXT) \
+	object.$(OBJEXT) predicates.$(OBJEXT) player.$(OBJEXT) \
+	player_c.$(OBJEXT) plusemail.$(OBJEXT) powers.$(OBJEXT) \
+	quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) sha1.$(OBJEXT) \
+	speech.$(OBJEXT) stringutil.$(OBJEXT) strtod.$(OBJEXT) \
+	svdrand.$(OBJEXT) svdhash.$(OBJEXT) timer.$(OBJEXT) \
+	timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
 	unparse.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
 	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1)
@@ -193,10 +194,10 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/file_c.Po ./$(DEPDIR)/flags.Po \
 	./$(DEPDIR)/funceval.Po ./$(DEPDIR)/funceval2.Po \
 	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
-	./$(DEPDIR)/game.Po ./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po \
-	./$(DEPDIR)/levels.Po ./$(DEPDIR)/libmux.Po \
-	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
-	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
+	./$(DEPDIR)/game.Po ./$(DEPDIR)/ganl_adapter.Po \
+	./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po \
+	./$(DEPDIR)/libmux.Po ./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po \
+	./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
 	./$(DEPDIR)/mathutil.Po ./$(DEPDIR)/mguests.Po \
 	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
 	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/netcommon.Po \
@@ -460,12 +461,12 @@ AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_L
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
 	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
-	funceval2.cpp functions.cpp funmath.cpp game.cpp help.cpp \
-	htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
-	mathutil.cpp mguests.cpp modules.cpp move.cpp muxcli.cpp \
-	netcommon.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
+	funceval2.cpp functions.cpp funmath.cpp game.cpp \
+	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
+	mail.cpp match.cpp mathutil.cpp mguests.cpp modules.cpp \
+	move.cpp muxcli.cpp netcommon.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp \
+	rob.cpp set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -637,6 +638,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funmath.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/game.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_adapter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levels.Po@am__quote@ # am--include-marker
@@ -1074,6 +1076,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
@@ -1188,6 +1191,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
