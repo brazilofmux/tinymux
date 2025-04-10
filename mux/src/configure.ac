@@ -661,4 +661,12 @@ AC_CONFIG_FILES([
     tools/Makefile
     ganl/Makefile
 ])
+
+PKG_CHECK_MODULES([OPENSSL], [openssl], [],
+  [AC_MSG_ERROR([OpenSSL development libraries not found. Install openssl and pkg-config.])]
+)
+
+AC_SUBST([OPENSSL_CFLAGS])
+AC_SUBST([OPENSSL_LIBS])
+
 AC_OUTPUT
