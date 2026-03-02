@@ -1,0 +1,43 @@
+#
+# strip_fn.mux - Test Cases for strip().
+#
+@create test_strip_fn
+-
+@set test_strip_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strip_fn=
+  @log smoke=Beginning strip() test cases.
+-
+#
+# Test Case #1 - Basic strip operations.
+#
+&tr.tc001 test_strip_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strip(hello,lo)]
+            [strip(abcabc,ac)]
+          )
+        ),
+        9BEEFDC398F3D4EECCDF309812C3D196E82DFDB4
+      )=
+  {
+    @log smoke=TC001: strip basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: strip basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strip_fn=
+  @log smoke=End strip() test cases.;
+  @notify smoke
+-
+drop test_strip_fn
+-
+#
+# End of Test Cases
+#

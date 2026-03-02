@@ -1,0 +1,43 @@
+#
+# sub_fn.mux - Test Cases for sub().
+#
+@create test_sub_fn
+-
+@set test_sub_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sub_fn=
+  @log smoke=Beginning sub() test cases.
+-
+#
+# Test Case #1 - Basic subtraction operations.
+#
+&tr.tc001 test_sub_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sub(10,3)]
+            [sub(3,10)]
+          )
+        ),
+        CBE2F7E7A1B6E93DDF92D0A47B39E0D230ECD2ED
+      )=
+  {
+    @log smoke=TC001: sub basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: sub basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sub_fn=
+  @log smoke=End sub() test cases.;
+  @notify smoke
+-
+drop test_sub_fn
+-
+#
+# End of Test Cases
+#

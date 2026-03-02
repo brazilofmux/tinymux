@@ -1,0 +1,43 @@
+#
+# space_fn.mux - Test Cases for space().
+#
+@create test_space_fn
+-
+@set test_space_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_space_fn=
+  @log smoke=Beginning space() test cases.
+-
+#
+# Test Case #1 - Basic space operations.
+#
+&tr.tc001 test_space_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strlen(space(5))]
+            [strlen(space(0))]
+          )
+        ),
+        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+      )=
+  {
+    @log smoke=TC001: space basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: space basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_space_fn=
+  @log smoke=End space() test cases.;
+  @notify smoke
+-
+drop test_space_fn
+-
+#
+# End of Test Cases
+#

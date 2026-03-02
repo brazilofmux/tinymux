@@ -1,0 +1,43 @@
+#
+# atan_fn.mux - Test Cases for atan().
+#
+@create test_atan_fn
+-
+@set test_atan_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_atan_fn=
+  @log smoke=Beginning atan() test cases.
+-
+#
+# Test Case #1 - Basic arc tangent operations.
+#
+&tr.tc001 test_atan_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(atan(0),6)]
+            [round(atan(1),6)]
+          )
+        ),
+        4CD14EE477B177655E351763BBC97CF17AF2C74F
+      )=
+  {
+    @log smoke=TC001: atan basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: atan basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_atan_fn=
+  @log smoke=End atan() test cases.;
+  @notify smoke
+-
+drop test_atan_fn
+-
+#
+# End of Test Cases
+#

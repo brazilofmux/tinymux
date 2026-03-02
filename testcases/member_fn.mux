@@ -1,0 +1,43 @@
+#
+# member_fn.mux - Test Cases for member().
+#
+@create test_member_fn
+-
+@set test_member_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_member_fn=
+  @log smoke=Beginning member() test cases.
+-
+#
+# Test Case #1 - Basic member operations.
+#
+&tr.tc001 test_member_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [member(a b c d,c)]
+            [member(a b c d,x)]
+          )
+        ),
+        22D200F8670DBDB3E253A90EEE5098477C95C23D
+      )=
+  {
+    @log smoke=TC001: member basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: member basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_member_fn=
+  @log smoke=End member() test cases.;
+  @notify smoke
+-
+drop test_member_fn
+-
+#
+# End of Test Cases
+#

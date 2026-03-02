@@ -1,0 +1,44 @@
+#
+# inc_fn.mux - Test Cases for inc().
+#
+@create test_inc_fn
+-
+@set test_inc_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_inc_fn=
+  @log smoke=Beginning inc() test cases.
+-
+#
+# Test Case #1 - Basic increment operations.
+#
+&tr.tc001 test_inc_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [inc(5)]
+            [inc(0)]
+            [inc(-3)]
+          )
+        ),
+        DA956729BFECA8DCA4A802679359ED605BF367F7
+      )=
+  {
+    @log smoke=TC001: inc basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: inc basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_inc_fn=
+  @log smoke=End inc() test cases.;
+  @notify smoke
+-
+drop test_inc_fn
+-
+#
+# End of Test Cases
+#

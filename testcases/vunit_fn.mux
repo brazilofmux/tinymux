@@ -1,0 +1,43 @@
+#
+# vunit_fn.mux - Test Cases for vunit().
+#
+@create test_vunit_fn
+-
+@set test_vunit_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vunit_fn=
+  @log smoke=Beginning vunit() test cases.
+-
+#
+# Test Case #1 - Basic unit vector operations.
+#
+&tr.tc001 test_vunit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vunit(3 4)]
+            [vunit(0 0 1)]
+          )
+        ),
+        7CDE719B301CDA72179AF33267D600C25A063EF1
+      )=
+  {
+    @log smoke=TC001: vunit basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vunit basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vunit_fn=
+  @log smoke=End vunit() test cases.;
+  @notify smoke
+-
+drop test_vunit_fn
+-
+#
+# End of Test Cases
+#

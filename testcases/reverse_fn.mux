@@ -1,0 +1,43 @@
+#
+# reverse_fn.mux - Test Cases for reverse().
+#
+@create test_reverse_fn
+-
+@set test_reverse_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_reverse_fn=
+  @log smoke=Beginning reverse() test cases.
+-
+#
+# Test Case #1 - Basic reverse operations.
+#
+&tr.tc001 test_reverse_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [reverse(abcdef)]
+            [reverse(12345)]
+          )
+        ),
+        BE76EC6E1C94467F992F131EBA9F091423C4BCD4
+      )=
+  {
+    @log smoke=TC001: reverse basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: reverse basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_reverse_fn=
+  @log smoke=End reverse() test cases.;
+  @notify smoke
+-
+drop test_reverse_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# shr_fn.mux - Test Cases for shr().
+#
+@create test_shr_fn
+-
+@set test_shr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_shr_fn=
+  @log smoke=Beginning shr() test cases.
+-
+#
+# Test Case #1 - Basic shift right operations.
+#
+&tr.tc001 test_shr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [shr(8,2)]
+            [shr(255,4)]
+          )
+        ),
+        828F720439CEFAEB3ACC7A7BABCE0A28ABAA07A3
+      )=
+  {
+    @log smoke=TC001: shr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: shr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_shr_fn=
+  @log smoke=End shr() test cases.;
+  @notify smoke
+-
+drop test_shr_fn
+-
+#
+# End of Test Cases
+#

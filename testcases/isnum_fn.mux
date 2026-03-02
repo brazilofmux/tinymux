@@ -1,0 +1,44 @@
+#
+# isnum_fn.mux - Test Cases for isnum().
+#
+@create test_isnum_fn
+-
+@set test_isnum_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isnum_fn=
+  @log smoke=Beginning isnum() test cases.
+-
+#
+# Test Case #1 - Basic numeric checking operations.
+#
+&tr.tc001 test_isnum_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isnum(5)]
+            [isnum(5.5)]
+            [isnum(abc)]
+          )
+        ),
+        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+      )=
+  {
+    @log smoke=TC001: isnum basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isnum basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isnum_fn=
+  @log smoke=End isnum() test cases.;
+  @notify smoke
+-
+drop test_isnum_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,42 @@
+#
+# right_fn.mux - Test Cases for right().
+#
+@create test_right_fn
+-
+@set test_right_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_right_fn=
+  @log smoke=Beginning right() test cases.
+-
+#
+# Test Case #1 - Basic right operations.
+#
+&tr.tc001 test_right_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [right(abcdefgh,3)]
+          )
+        ),
+        3F7B1E2A98DEA15069FDC2542560C21BF5FD8234
+      )=
+  {
+    @log smoke=TC001: right basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: right basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_right_fn=
+  @log smoke=End right() test cases.;
+  @notify smoke
+-
+drop test_right_fn
+-
+#
+# End of Test Cases
+#

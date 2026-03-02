@@ -1,0 +1,42 @@
+#
+# splice_fn.mux - Test Cases for splice().
+#
+@create test_splice_fn
+-
+@set test_splice_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_splice_fn=
+  @log smoke=Beginning splice() test cases.
+-
+#
+# Test Case #1 - Basic splice operations.
+#
+&tr.tc001 test_splice_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [splice(a b c d e,c,X)]
+          )
+        ),
+        B2738F873B0EBFF86F0D2787AD629083958B6C77
+      )=
+  {
+    @log smoke=TC001: splice basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: splice basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_splice_fn=
+  @log smoke=End splice() test cases.;
+  @notify smoke
+-
+drop test_splice_fn
+-
+#
+# End of Test Cases
+#

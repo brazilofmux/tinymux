@@ -1,0 +1,43 @@
+#
+# strcat_fn.mux - Test Cases for strcat().
+#
+@create test_strcat_fn
+-
+@set test_strcat_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strcat_fn=
+  @log smoke=Beginning strcat() test cases.
+-
+#
+# Test Case #1 - Basic string concatenation operations.
+#
+&tr.tc001 test_strcat_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strcat(hello,world)]
+            [strcat(a,b,c)]
+          )
+        ),
+        F6231112EF165E24A023417F1AF02B506886E95E
+      )=
+  {
+    @log smoke=TC001: strcat basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: strcat basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strcat_fn=
+  @log smoke=End strcat() test cases.;
+  @notify smoke
+-
+drop test_strcat_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# grab_fn.mux - Test Cases for grab().
+#
+@create test_grab_fn
+-
+@set test_grab_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_grab_fn=
+  @log smoke=Beginning grab() test cases.
+-
+#
+# Test Case #1 - Basic grab operations.
+#
+&tr.tc001 test_grab_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [grab(foo bar baz,b*)]
+            [grab(one two three,t*)]
+          )
+        ),
+        749621B34AD278B3FA17458FD452D3E16E55295C
+      )=
+  {
+    @log smoke=TC001: grab basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: grab basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_grab_fn=
+  @log smoke=End grab() test cases.;
+  @notify smoke
+-
+drop test_grab_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# alphamax_fn.mux - Test Cases for alphamax().
+#
+@create test_alphamax_fn
+-
+@set test_alphamax_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_alphamax_fn=
+  @log smoke=Beginning alphamax() test cases.
+-
+#
+# Test Case #1 - Basic alphamax operations.
+#
+&tr.tc001 test_alphamax_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [alphamax(foo,bar,baz)]
+            [alphamax(abc,xyz,mno)]
+          )
+        ),
+        3B6938B4BC35AF3CB9706E69B737B20C04BABD54
+      )=
+  {
+    @log smoke=TC001: alphamax basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: alphamax basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_alphamax_fn=
+  @log smoke=End alphamax() test cases.;
+  @notify smoke
+-
+drop test_alphamax_fn
+-
+#
+# End of Test Cases
+#

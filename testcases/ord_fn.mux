@@ -1,0 +1,44 @@
+#
+# ord_fn.mux - Test Cases for ord().
+#
+@create test_ord_fn
+-
+@set test_ord_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ord_fn=
+  @log smoke=Beginning ord() test cases.
+-
+#
+# Test Case #1 - Basic ordinal operations.
+#
+&tr.tc001 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(A)]
+            [ord(a)]
+            [ord(0)]
+          )
+        ),
+        C69C11D49DED684EF34A88AF439794CEDB5EA87C
+      )=
+  {
+    @log smoke=TC001: ord basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ord basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ord_fn=
+  @log smoke=End ord() test cases.;
+  @notify smoke
+-
+drop test_ord_fn
+-
+#
+# End of Test Cases
+#

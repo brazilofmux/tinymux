@@ -1,0 +1,44 @@
+#
+# isint_fn.mux - Test Cases for isint().
+#
+@create test_isint_fn
+-
+@set test_isint_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isint_fn=
+  @log smoke=Beginning isint() test cases.
+-
+#
+# Test Case #1 - Basic integer checking operations.
+#
+&tr.tc001 test_isint_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isint(5)]
+            [isint(5.5)]
+            [isint(abc)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: isint basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isint basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isint_fn=
+  @log smoke=End isint() test cases.;
+  @notify smoke
+-
+drop test_isint_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,42 @@
+#
+# dist3d_fn.mux - Test Cases for dist3d().
+#
+@create test_dist3d_fn
+-
+@set test_dist3d_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_dist3d_fn=
+  @log smoke=Beginning dist3d() test cases.
+-
+#
+# Test Case #1 - Basic 3D distance operations.
+#
+&tr.tc001 test_dist3d_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [dist3d(0,0,0,1,2,2)]
+          )
+        ),
+        77DE68DAECD823BABBB58EDB1C8E14D7106E83BB
+      )=
+  {
+    @log smoke=TC001: dist3d basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: dist3d basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_dist3d_fn=
+  @log smoke=End dist3d() test cases.;
+  @notify smoke
+-
+drop test_dist3d_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# exptime_fn.mux - Test Cases for exptime().
+#
+@create test_exptime_fn
+-
+@set test_exptime_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_exptime_fn=
+  @log smoke=Beginning exptime() test cases.
+-
+#
+# Test Case #1 - Basic exptime operations.
+#
+&tr.tc001 test_exptime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [exptime(3661)]
+            [exptime(86400)]
+          )
+        ),
+        3A8B7F011F10D47E72AF96576D4874F51C8B75A8
+      )=
+  {
+    @log smoke=TC001: exptime basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: exptime basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_exptime_fn=
+  @log smoke=End exptime() test cases.;
+  @notify smoke
+-
+drop test_exptime_fn
+-
+#
+# End of Test Cases
+#

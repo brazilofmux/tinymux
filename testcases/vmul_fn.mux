@@ -1,0 +1,43 @@
+#
+# vmul_fn.mux - Test Cases for vmul().
+#
+@create test_vmul_fn
+-
+@set test_vmul_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vmul_fn=
+  @log smoke=Beginning vmul() test cases.
+-
+#
+# Test Case #1 - Basic vector multiply operations.
+#
+&tr.tc001 test_vmul_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vmul(1 2 3,2)]
+            [vmul(0 0 0,5)]
+          )
+        ),
+        571022336F2590A6ADE42BEA63153951F705C1BA
+      )=
+  {
+    @log smoke=TC001: vmul basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vmul basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vmul_fn=
+  @log smoke=End vmul() test cases.;
+  @notify smoke
+-
+drop test_vmul_fn
+-
+#
+# End of Test Cases
+#

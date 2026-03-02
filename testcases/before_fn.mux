@@ -1,0 +1,43 @@
+#
+# before_fn.mux - Test Cases for before().
+#
+@create test_before_fn
+-
+@set test_before_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_before_fn=
+  @log smoke=Beginning before() test cases.
+-
+#
+# Test Case #1 - Basic before operations.
+#
+&tr.tc001 test_before_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [before(foo-bar,-)]
+            [before(foobar,-)]
+          )
+        ),
+        CDD05D67167C0781016BD5908276304AF444A12D
+      )=
+  {
+    @log smoke=TC001: before basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: before basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_before_fn=
+  @log smoke=End before() test cases.;
+  @notify smoke
+-
+drop test_before_fn
+-
+#
+# End of Test Cases
+#

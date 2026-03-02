@@ -1,0 +1,44 @@
+#
+# log_fn.mux - Test Cases for log().
+#
+@create test_log_fn
+-
+@set test_log_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_log_fn=
+  @log smoke=Beginning log() test cases.
+-
+#
+# Test Case #1 - Basic common logarithm operations.
+#
+&tr.tc001 test_log_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(log(100),6)]
+            [round(log(10),6)]
+            [round(log(1),6)]
+          )
+        ),
+        F30911627F0896390989D4A2255C8DDF8F56B761
+      )=
+  {
+    @log smoke=TC001: log basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: log basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_log_fn=
+  @log smoke=End log() test cases.;
+  @notify smoke
+-
+drop test_log_fn
+-
+#
+# End of Test Cases
+#

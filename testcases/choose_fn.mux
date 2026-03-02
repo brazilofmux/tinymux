@@ -1,0 +1,43 @@
+#
+# choose_fn.mux - Test Cases for choose().
+#
+@create test_choose_fn
+-
+@set test_choose_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_choose_fn=
+  @log smoke=Beginning choose() test cases.
+-
+#
+# Test Case #1 - Basic choose operations.
+#
+&tr.tc001 test_choose_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [choose(2,a b c)]
+            [choose(1,x|y|z,|)]
+          )
+        ),
+        131B277CBE1A009BE71C183279AE649F8AEA6B10
+      )=
+  {
+    @log smoke=TC001: choose basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: choose basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_choose_fn=
+  @log smoke=End choose() test cases.;
+  @notify smoke
+-
+drop test_choose_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# max_fn.mux - Test Cases for max().
+#
+@create test_max_fn
+-
+@set test_max_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_max_fn=
+  @log smoke=Beginning max() test cases.
+-
+#
+# Test Case #1 - Basic maximum operations.
+#
+&tr.tc001 test_max_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [max(1,5,3)]
+            [max(-1,-5,-3)]
+          )
+        ),
+        377EB704F59A32DC0C615859A9E7BB66246A732D
+      )=
+  {
+    @log smoke=TC001: max basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: max basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_max_fn=
+  @log smoke=End max() test cases.;
+  @notify smoke
+-
+drop test_max_fn
+-
+#
+# End of Test Cases
+#

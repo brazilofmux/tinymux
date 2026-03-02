@@ -1,0 +1,43 @@
+#
+# strmem_fn.mux - Test Cases for strmem().
+#
+@create test_strmem_fn
+-
+@set test_strmem_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strmem_fn=
+  @log smoke=Beginning strmem() test cases.
+-
+#
+# Test Case #1 - Basic strmem operations.
+#
+&tr.tc001 test_strmem_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmem(hello)]
+            [strmem()]
+          )
+        ),
+        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+      )=
+  {
+    @log smoke=TC001: strmem basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: strmem basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strmem_fn=
+  @log smoke=End strmem() test cases.;
+  @notify smoke
+-
+drop test_strmem_fn
+-
+#
+# End of Test Cases
+#

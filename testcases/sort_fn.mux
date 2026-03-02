@@ -1,0 +1,43 @@
+#
+# sort_fn.mux - Test Cases for sort().
+#
+@create test_sort_fn
+-
+@set test_sort_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sort_fn=
+  @log smoke=Beginning sort() test cases.
+-
+#
+# Test Case #1 - Basic sort operations.
+#
+&tr.tc001 test_sort_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(3 1 4 1 5)]
+            [sort(c a b d)]
+          )
+        ),
+        D88F262663DF5362C32EA420B09EB4B0DF3D165D
+      )=
+  {
+    @log smoke=TC001: sort basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: sort basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sort_fn=
+  @log smoke=End sort() test cases.;
+  @notify smoke
+-
+drop test_sort_fn
+-
+#
+# End of Test Cases
+#

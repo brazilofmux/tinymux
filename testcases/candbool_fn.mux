@@ -1,0 +1,43 @@
+#
+# candbool_fn.mux - Test Cases for candbool().
+#
+@create test_candbool_fn
+-
+@set test_candbool_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_candbool_fn=
+  @log smoke=Beginning candbool() test cases.
+-
+#
+# Test Case #1 - Basic candbool operations.
+#
+&tr.tc001 test_candbool_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [candbool(1,1,1)]
+            [candbool(1,0,1)]
+          )
+        ),
+        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+      )=
+  {
+    @log smoke=TC001: candbool basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: candbool basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_candbool_fn=
+  @log smoke=End candbool() test cases.;
+  @notify smoke
+-
+drop test_candbool_fn
+-
+#
+# End of Test Cases
+#

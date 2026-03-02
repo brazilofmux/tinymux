@@ -1,0 +1,44 @@
+#
+# or_fn.mux - Test Cases for or().
+#
+@create test_or_fn
+-
+@set test_or_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_or_fn=
+  @log smoke=Beginning or() test cases.
+-
+#
+# Test Case #1 - Basic logical OR operations.
+#
+&tr.tc001 test_or_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [or(1,0)]
+            [or(0,0)]
+            [or(1,1)]
+          )
+        ),
+        DBC0F004854457F59FB16AB863A3A1722CEF553F
+      )=
+  {
+    @log smoke=TC001: or basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: or basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_or_fn=
+  @log smoke=End or() test cases.;
+  @notify smoke
+-
+drop test_or_fn
+-
+#
+# End of Test Cases
+#

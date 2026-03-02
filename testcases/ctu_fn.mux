@@ -1,0 +1,43 @@
+#
+# ctu_fn.mux - Test Cases for ctu().
+#
+@create test_ctu_fn
+-
+@set test_ctu_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ctu_fn=
+  @log smoke=Beginning ctu() test cases.
+-
+#
+# Test Case #1 - Basic angle conversion operations.
+#
+&tr.tc001 test_ctu_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(ctu(180,d,r),6)]
+            [round(ctu(pi(),r,d),6)]
+          )
+        ),
+        8FDD95D11E02B044D3671EFA512561151B8C8DB4
+      )=
+  {
+    @log smoke=TC001: ctu basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ctu basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ctu_fn=
+  @log smoke=End ctu() test cases.;
+  @notify smoke
+-
+drop test_ctu_fn
+-
+#
+# End of Test Cases
+#

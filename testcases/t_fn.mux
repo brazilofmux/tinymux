@@ -1,0 +1,45 @@
+#
+# t_fn.mux - Test Cases for t().
+#
+@create test_t_fn
+-
+@set test_t_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_t_fn=
+  @log smoke=Beginning t() test cases.
+-
+#
+# Test Case #1 - Basic truth value operations.
+#
+&tr.tc001 test_t_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [t(1)]
+            [t(0)]
+            [t(abc)]
+            [t()]
+          )
+        ),
+        1966E694BAD90686516F99CDF432800FDCA39290
+      )=
+  {
+    @log smoke=TC001: t basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: t basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_t_fn=
+  @log smoke=End t() test cases.;
+  @notify smoke
+-
+drop test_t_fn
+-
+#
+# End of Test Cases
+#

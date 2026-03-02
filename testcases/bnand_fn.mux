@@ -1,0 +1,43 @@
+#
+# bnand_fn.mux - Test Cases for bnand().
+#
+@create test_bnand_fn
+-
+@set test_bnand_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_bnand_fn=
+  @log smoke=Beginning bnand() test cases.
+-
+#
+# Test Case #1 - Basic bitwise NAND operations.
+#
+&tr.tc001 test_bnand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [bnand(12,10)]
+            [bnand(255,0)]
+          )
+        ),
+        6669A0B552F1C52BB2C8D3C5DC13449FA1B365A9
+      )=
+  {
+    @log smoke=TC001: bnand basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: bnand basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_bnand_fn=
+  @log smoke=End bnand() test cases.;
+  @notify smoke
+-
+drop test_bnand_fn
+-
+#
+# End of Test Cases
+#

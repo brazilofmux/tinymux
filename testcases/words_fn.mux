@@ -1,0 +1,43 @@
+#
+# words_fn.mux - Test Cases for words().
+#
+@create test_words_fn
+-
+@set test_words_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_words_fn=
+  @log smoke=Beginning words() test cases.
+-
+#
+# Test Case #1 - Basic words operations.
+#
+&tr.tc001 test_words_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [words(a b c d)]
+            [words(a|b|c,|)]
+          )
+        ),
+        0286DD552C9BEA9A69ECB3759E7B94777635514B
+      )=
+  {
+    @log smoke=TC001: words basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: words basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_words_fn=
+  @log smoke=End words() test cases.;
+  @notify smoke
+-
+drop test_words_fn
+-
+#
+# End of Test Cases
+#

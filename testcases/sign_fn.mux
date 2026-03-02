@@ -1,0 +1,44 @@
+#
+# sign_fn.mux - Test Cases for sign().
+#
+@create test_sign_fn
+-
+@set test_sign_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_sign_fn=
+  @log smoke=Beginning sign() test cases.
+-
+#
+# Test Case #1 - Basic sign operations.
+#
+&tr.tc001 test_sign_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sign(-5)]
+            [sign(0)]
+            [sign(5)]
+          )
+        ),
+        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+      )=
+  {
+    @log smoke=TC001: sign basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: sign basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sign_fn=
+  @log smoke=End sign() test cases.;
+  @notify smoke
+-
+drop test_sign_fn
+-
+#
+# End of Test Cases
+#

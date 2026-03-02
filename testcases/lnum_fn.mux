@@ -1,0 +1,43 @@
+#
+# lnum_fn.mux - Test Cases for lnum().
+#
+@create test_lnum_fn
+-
+@set test_lnum_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lnum_fn=
+  @log smoke=Beginning lnum() test cases.
+-
+#
+# Test Case #1 - Basic lnum operations.
+#
+&tr.tc001 test_lnum_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lnum(5)]
+            [lnum(3,7)]
+          )
+        ),
+        F00A3D64A2341EC861A5D99F7223566A657B468A
+      )=
+  {
+    @log smoke=TC001: lnum basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: lnum basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lnum_fn=
+  @log smoke=End lnum() test cases.;
+  @notify smoke
+-
+drop test_lnum_fn
+-
+#
+# End of Test Cases
+#

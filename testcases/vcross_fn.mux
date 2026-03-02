@@ -1,0 +1,43 @@
+#
+# vcross_fn.mux - Test Cases for vcross().
+#
+@create test_vcross_fn
+-
+@set test_vcross_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vcross_fn=
+  @log smoke=Beginning vcross() test cases.
+-
+#
+# Test Case #1 - Basic vector cross product operations.
+#
+&tr.tc001 test_vcross_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vcross(1 0 0,0 1 0)]
+            [vcross(1 2 3,4 5 6)]
+          )
+        ),
+        345A91FAF64A62EE4950186E751A6D49118415F5
+      )=
+  {
+    @log smoke=TC001: vcross basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vcross basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vcross_fn=
+  @log smoke=End vcross() test cases.;
+  @notify smoke
+-
+drop test_vcross_fn
+-
+#
+# End of Test Cases
+#

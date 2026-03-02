@@ -1,0 +1,44 @@
+#
+# comp_fn.mux - Test Cases for comp().
+#
+@create test_comp_fn
+-
+@set test_comp_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_comp_fn=
+  @log smoke=Beginning comp() test cases.
+-
+#
+# Test Case #1 - Basic string comparison operations.
+#
+&tr.tc001 test_comp_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [comp(a,b)]
+            [comp(a,a)]
+            [comp(b,a)]
+          )
+        ),
+        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+      )=
+  {
+    @log smoke=TC001: comp basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: comp basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_comp_fn=
+  @log smoke=End comp() test cases.;
+  @notify smoke
+-
+drop test_comp_fn
+-
+#
+# End of Test Cases
+#

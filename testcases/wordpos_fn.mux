@@ -1,0 +1,43 @@
+#
+# wordpos_fn.mux - Test Cases for wordpos().
+#
+@create test_wordpos_fn
+-
+@set test_wordpos_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_wordpos_fn=
+  @log smoke=Beginning wordpos() test cases.
+-
+#
+# Test Case #1 - Basic wordpos operations.
+#
+&tr.tc001 test_wordpos_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [wordpos(This is a test,is)]
+            [wordpos(This is a test,missing)]
+          )
+        ),
+        BC48E0536C4B69953C8272D54CF4A62C65AD28B1
+      )=
+  {
+    @log smoke=TC001: wordpos basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: wordpos basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_wordpos_fn=
+  @log smoke=End wordpos() test cases.;
+  @notify smoke
+-
+drop test_wordpos_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# after_fn.mux - Test Cases for after().
+#
+@create test_after_fn
+-
+@set test_after_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_after_fn=
+  @log smoke=Beginning after() test cases.
+-
+#
+# Test Case #1 - Basic after operations.
+#
+&tr.tc001 test_after_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [after(foo-bar,-)]
+            [after(foobar,-)]
+          )
+        ),
+        62CDB7020FF920E5AA642C3D4066950DD1F01F4D
+      )=
+  {
+    @log smoke=TC001: after basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: after basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_after_fn=
+  @log smoke=End after() test cases.;
+  @notify smoke
+-
+drop test_after_fn
+-
+#
+# End of Test Cases
+#

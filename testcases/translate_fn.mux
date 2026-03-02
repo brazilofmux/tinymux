@@ -1,0 +1,42 @@
+#
+# translate_fn.mux - Test Cases for translate().
+#
+@create test_translate_fn
+-
+@set test_translate_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_translate_fn=
+  @log smoke=Beginning translate() test cases.
+-
+#
+# Test Case #1 - Basic translate operations.
+#
+&tr.tc001 test_translate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [translate(hello,0)]
+          )
+        ),
+        AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
+      )=
+  {
+    @log smoke=TC001: translate basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: translate basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_translate_fn=
+  @log smoke=End translate() test cases.;
+  @notify smoke
+-
+drop test_translate_fn
+-
+#
+# End of Test Cases
+#

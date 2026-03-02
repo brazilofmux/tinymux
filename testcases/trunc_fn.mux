@@ -1,0 +1,43 @@
+#
+# trunc_fn.mux - Test Cases for trunc().
+#
+@create test_trunc_fn
+-
+@set test_trunc_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_trunc_fn=
+  @log smoke=Beginning trunc() test cases.
+-
+#
+# Test Case #1 - Basic truncation operations.
+#
+&tr.tc001 test_trunc_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [trunc(4.7)]
+            [trunc(-4.7)]
+          )
+        ),
+        77975F30B602199B5E111F58876E62CC0BDF8ECD
+      )=
+  {
+    @log smoke=TC001: trunc basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: trunc basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_trunc_fn=
+  @log smoke=End trunc() test cases.;
+  @notify smoke
+-
+drop test_trunc_fn
+-
+#
+# End of Test Cases
+#

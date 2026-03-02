@@ -1,0 +1,44 @@
+#
+# chr_fn.mux - Test Cases for chr().
+#
+@create test_chr_fn
+-
+@set test_chr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_chr_fn=
+  @log smoke=Beginning chr() test cases.
+-
+#
+# Test Case #1 - Basic character operations.
+#
+&tr.tc001 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(65)]
+            [chr(48)]
+            [chr(97)]
+          )
+        ),
+        1D1A20E2CB932B590BF3718DD9FFA455C38A8910
+      )=
+  {
+    @log smoke=TC001: chr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: chr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_chr_fn=
+  @log smoke=End chr() test cases.;
+  @notify smoke
+-
+drop test_chr_fn
+-
+#
+# End of Test Cases
+#

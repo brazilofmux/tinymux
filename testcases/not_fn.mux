@@ -1,0 +1,44 @@
+#
+# not_fn.mux - Test Cases for not().
+#
+@create test_not_fn
+-
+@set test_not_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_not_fn=
+  @log smoke=Beginning not() test cases.
+-
+#
+# Test Case #1 - Basic logical NOT operations.
+#
+&tr.tc001 test_not_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [not(0)]
+            [not(1)]
+            [not(5)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: not basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: not basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_not_fn=
+  @log smoke=End not() test cases.;
+  @notify smoke
+-
+drop test_not_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# ucstr_fn.mux - Test Cases for ucstr().
+#
+@create test_ucstr_fn
+-
+@set test_ucstr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ucstr_fn=
+  @log smoke=Beginning ucstr() test cases.
+-
+#
+# Test Case #1 - Basic uppercase string operations.
+#
+&tr.tc001 test_ucstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ucstr(hello)]
+            [ucstr(hElLo)]
+          )
+        ),
+        FF7AAB7D326C086155B2FC188713A5E1DAECF28C
+      )=
+  {
+    @log smoke=TC001: ucstr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ucstr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ucstr_fn=
+  @log smoke=End ucstr() test cases.;
+  @notify smoke
+-
+drop test_ucstr_fn
+-
+#
+# End of Test Cases
+#

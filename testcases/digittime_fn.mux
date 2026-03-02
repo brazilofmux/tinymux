@@ -1,0 +1,43 @@
+#
+# digittime_fn.mux - Test Cases for digittime().
+#
+@create test_digittime_fn
+-
+@set test_digittime_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_digittime_fn=
+  @log smoke=Beginning digittime() test cases.
+-
+#
+# Test Case #1 - Basic digittime operations.
+#
+&tr.tc001 test_digittime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [digittime(3661)]
+            [digittime(0)]
+          )
+        ),
+        1EBB873C74A9937B73EBDCC1F7948C890E78BE6E
+      )=
+  {
+    @log smoke=TC001: digittime basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: digittime basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_digittime_fn=
+  @log smoke=End digittime() test cases.;
+  @notify smoke
+-
+drop test_digittime_fn
+-
+#
+# End of Test Cases
+#

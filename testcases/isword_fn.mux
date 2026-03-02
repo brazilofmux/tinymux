@@ -1,0 +1,43 @@
+#
+# isword_fn.mux - Test Cases for isword().
+#
+@create test_isword_fn
+-
+@set test_isword_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isword_fn=
+  @log smoke=Beginning isword() test cases.
+-
+#
+# Test Case #1 - Basic word checking operations.
+#
+&tr.tc001 test_isword_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isword(hello)]
+            [isword(123)]
+          )
+        ),
+        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+      )=
+  {
+    @log smoke=TC001: isword basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isword basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isword_fn=
+  @log smoke=End isword() test cases.;
+  @notify smoke
+-
+drop test_isword_fn
+-
+#
+# End of Test Cases
+#

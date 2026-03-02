@@ -1,0 +1,42 @@
+#
+# revwords_fn.mux - Test Cases for revwords().
+#
+@create test_revwords_fn
+-
+@set test_revwords_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_revwords_fn=
+  @log smoke=Beginning revwords() test cases.
+-
+#
+# Test Case #1 - Basic revwords operations.
+#
+&tr.tc001 test_revwords_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [revwords(a b c d)]
+          )
+        ),
+        6E770FFF792B95DAE77978226C63E9AA5AB87BE3
+      )=
+  {
+    @log smoke=TC001: revwords basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: revwords basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_revwords_fn=
+  @log smoke=End revwords() test cases.;
+  @notify smoke
+-
+drop test_revwords_fn
+-
+#
+# End of Test Cases
+#

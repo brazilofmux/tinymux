@@ -1,0 +1,44 @@
+#
+# floor_fn.mux - Test Cases for floor().
+#
+@create test_floor_fn
+-
+@set test_floor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_floor_fn=
+  @log smoke=Beginning floor() test cases.
+-
+#
+# Test Case #1 - Basic floor operations.
+#
+&tr.tc001 test_floor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [floor(4.7)]
+            [floor(-4.7)]
+            [floor(0)]
+          )
+        ),
+        58E44B5B1E80571A98AED5F49C105D78A4DF1D1D
+      )=
+  {
+    @log smoke=TC001: floor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: floor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_floor_fn=
+  @log smoke=End floor() test cases.;
+  @notify smoke
+-
+drop test_floor_fn
+-
+#
+# End of Test Cases
+#

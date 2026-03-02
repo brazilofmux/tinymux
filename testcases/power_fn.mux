@@ -1,0 +1,43 @@
+#
+# power_fn.mux - Test Cases for power().
+#
+@create test_power_fn
+-
+@set test_power_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_power_fn=
+  @log smoke=Beginning power() test cases.
+-
+#
+# Test Case #1 - Basic power operations.
+#
+&tr.tc001 test_power_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [power(2,10)]
+            [power(3,3)]
+          )
+        ),
+        D86861CB9132E3172DE60BD3D1B3A5810FAE1D92
+      )=
+  {
+    @log smoke=TC001: power basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: power basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_power_fn=
+  @log smoke=End power() test cases.;
+  @notify smoke
+-
+drop test_power_fn
+-
+#
+# End of Test Cases
+#

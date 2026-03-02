@@ -1,0 +1,43 @@
+#
+# min_fn.mux - Test Cases for min().
+#
+@create test_min_fn
+-
+@set test_min_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_min_fn=
+  @log smoke=Beginning min() test cases.
+-
+#
+# Test Case #1 - Basic minimum operations.
+#
+&tr.tc001 test_min_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [min(1,5,3)]
+            [min(-1,-5,-3)]
+          )
+        ),
+        C21121BC3D131CAA637B02486F7004319310DDBF
+      )=
+  {
+    @log smoke=TC001: min basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: min basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_min_fn=
+  @log smoke=End min() test cases.;
+  @notify smoke
+-
+drop test_min_fn
+-
+#
+# End of Test Cases
+#

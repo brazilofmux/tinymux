@@ -1,0 +1,43 @@
+#
+# dist2d_fn.mux - Test Cases for dist2d().
+#
+@create test_dist2d_fn
+-
+@set test_dist2d_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_dist2d_fn=
+  @log smoke=Beginning dist2d() test cases.
+-
+#
+# Test Case #1 - Basic 2D distance operations.
+#
+&tr.tc001 test_dist2d_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [dist2d(0,0,3,4)]
+            [dist2d(1,1,4,5)]
+          )
+        ),
+        8EFFEE409C625E1A2D8F5033631840E6CE1DCB64
+      )=
+  {
+    @log smoke=TC001: dist2d basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: dist2d basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_dist2d_fn=
+  @log smoke=End dist2d() test cases.;
+  @notify smoke
+-
+drop test_dist2d_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# singletime_fn.mux - Test Cases for singletime().
+#
+@create test_singletime_fn
+-
+@set test_singletime_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_singletime_fn=
+  @log smoke=Beginning singletime() test cases.
+-
+#
+# Test Case #1 - Basic singletime operations.
+#
+&tr.tc001 test_singletime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [singletime(3661)]
+            [singletime(86400)]
+          )
+        ),
+        83C560906CDE029162678346EB560D71810907F9
+      )=
+  {
+    @log smoke=TC001: singletime basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: singletime basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_singletime_fn=
+  @log smoke=End singletime() test cases.;
+  @notify smoke
+-
+drop test_singletime_fn
+-
+#
+# End of Test Cases
+#

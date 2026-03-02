@@ -1,0 +1,43 @@
+#
+# cat_fn.mux - Test Cases for cat().
+#
+@create test_cat_fn
+-
+@set test_cat_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cat_fn=
+  @log smoke=Beginning cat() test cases.
+-
+#
+# Test Case #1 - Basic cat operations.
+#
+&tr.tc001 test_cat_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [cat(hello,world)]
+            [cat(a,b,c)]
+          )
+        ),
+        DE9E53BBE477FFCCA4920FDDD0B8CE4C9284CD24
+      )=
+  {
+    @log smoke=TC001: cat basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: cat basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_cat_fn=
+  @log smoke=End cat() test cases.;
+  @notify smoke
+-
+drop test_cat_fn
+-
+#
+# End of Test Cases
+#

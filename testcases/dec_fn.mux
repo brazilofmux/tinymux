@@ -1,0 +1,44 @@
+#
+# dec_fn.mux - Test Cases for dec().
+#
+@create test_dec_fn
+-
+@set test_dec_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_dec_fn=
+  @log smoke=Beginning dec() test cases.
+-
+#
+# Test Case #1 - Basic decrement operations.
+#
+&tr.tc001 test_dec_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [dec(5)]
+            [dec(0)]
+            [dec(-3)]
+          )
+        ),
+        20E8D2FBE879AFBA877F8F82787C8B17EE5EE98C
+      )=
+  {
+    @log smoke=TC001: dec basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: dec basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_dec_fn=
+  @log smoke=End dec() test cases.;
+  @notify smoke
+-
+drop test_dec_fn
+-
+#
+# End of Test Cases
+#

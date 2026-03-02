@@ -1,0 +1,44 @@
+#
+# add_fn.mux - Test Cases for add().
+#
+@create test_add_fn
+-
+@set test_add_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_add_fn=
+  @log smoke=Beginning add() test cases.
+-
+#
+# Test Case #1 - Basic addition operations.
+#
+&tr.tc001 test_add_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [add(1,2)]
+            [add(1,2,3)]
+            [add(-1,1)]
+          )
+        ),
+        A1773D62A609DD09E98EA1AEBEDDBD949B78BF83
+      )=
+  {
+    @log smoke=TC001: add basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: add basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_add_fn=
+  @log smoke=End add() test cases.;
+  @notify smoke
+-
+drop test_add_fn
+-
+#
+# End of Test Cases
+#

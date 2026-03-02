@@ -1,0 +1,43 @@
+#
+# mul_fn.mux - Test Cases for mul().
+#
+@create test_mul_fn
+-
+@set test_mul_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_mul_fn=
+  @log smoke=Beginning mul() test cases.
+-
+#
+# Test Case #1 - Basic multiplication operations.
+#
+&tr.tc001 test_mul_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mul(2,3)]
+            [mul(2,3,4)]
+          )
+        ),
+        5DCA477752FC50226595C6A93528EAF3297DBCF8
+      )=
+  {
+    @log smoke=TC001: mul basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: mul basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_mul_fn=
+  @log smoke=End mul() test cases.;
+  @notify smoke
+-
+drop test_mul_fn
+-
+#
+# End of Test Cases
+#

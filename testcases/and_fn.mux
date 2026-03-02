@@ -1,0 +1,44 @@
+#
+# and_fn.mux - Test Cases for and().
+#
+@create test_and_fn
+-
+@set test_and_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_and_fn=
+  @log smoke=Beginning and() test cases.
+-
+#
+# Test Case #1 - Basic logical AND operations.
+#
+&tr.tc001 test_and_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [and(1,1)]
+            [and(1,0)]
+            [and(0,0)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: and basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: and basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_and_fn=
+  @log smoke=End and() test cases.;
+  @notify smoke
+-
+drop test_and_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# strlen_fn.mux - Test Cases for strlen().
+#
+@create test_strlen_fn
+-
+@set test_strlen_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strlen_fn=
+  @log smoke=Beginning strlen() test cases.
+-
+#
+# Test Case #1 - Basic string length operations.
+#
+&tr.tc001 test_strlen_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strlen(hello)]
+            [strlen()]
+          )
+        ),
+        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+      )=
+  {
+    @log smoke=TC001: strlen basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: strlen basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strlen_fn=
+  @log smoke=End strlen() test cases.;
+  @notify smoke
+-
+drop test_strlen_fn
+-
+#
+# End of Test Cases
+#

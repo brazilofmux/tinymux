@@ -1,0 +1,43 @@
+#
+# repeat_fn.mux - Test Cases for repeat().
+#
+@create test_repeat_fn
+-
+@set test_repeat_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_repeat_fn=
+  @log smoke=Beginning repeat() test cases.
+-
+#
+# Test Case #1 - Basic repeat operations.
+#
+&tr.tc001 test_repeat_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [repeat(ab,3)]
+            [repeat(x,5)]
+          )
+        ),
+        F54E92CD4B50BF07BEE26CDDEBBD59CF248D4CE1
+      )=
+  {
+    @log smoke=TC001: repeat basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: repeat basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_repeat_fn=
+  @log smoke=End repeat() test cases.;
+  @notify smoke
+-
+drop test_repeat_fn
+-
+#
+# End of Test Cases
+#

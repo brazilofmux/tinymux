@@ -1,0 +1,43 @@
+#
+# alphamin_fn.mux - Test Cases for alphamin().
+#
+@create test_alphamin_fn
+-
+@set test_alphamin_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_alphamin_fn=
+  @log smoke=Beginning alphamin() test cases.
+-
+#
+# Test Case #1 - Basic alphamin operations.
+#
+&tr.tc001 test_alphamin_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [alphamin(foo,bar,baz)]
+            [alphamin(abc,xyz,mno)]
+          )
+        ),
+        B16999A6F9FF9454937771D40476507F07DD9574
+      )=
+  {
+    @log smoke=TC001: alphamin basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: alphamin basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_alphamin_fn=
+  @log smoke=End alphamin() test cases.;
+  @notify smoke
+-
+drop test_alphamin_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# remainder_fn.mux - Test Cases for remainder().
+#
+@create test_remainder_fn
+-
+@set test_remainder_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_remainder_fn=
+  @log smoke=Beginning remainder() test cases.
+-
+#
+# Test Case #1 - Basic remainder operations.
+#
+&tr.tc001 test_remainder_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [remainder(10,3)]
+            [remainder(-10,3)]
+          )
+        ),
+        D787669EE4A103FE0B361FE31C10EA037C72F27C
+      )=
+  {
+    @log smoke=TC001: remainder basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: remainder basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_remainder_fn=
+  @log smoke=End remainder() test cases.;
+  @notify smoke
+-
+drop test_remainder_fn
+-
+#
+# End of Test Cases
+#

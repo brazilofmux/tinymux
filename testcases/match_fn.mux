@@ -1,0 +1,43 @@
+#
+# match_fn.mux - Test Cases for match().
+#
+@create test_match_fn
+-
+@set test_match_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_match_fn=
+  @log smoke=Beginning match() test cases.
+-
+#
+# Test Case #1 - Basic match operations.
+#
+&tr.tc001 test_match_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [match(a b c d,c)]
+            [match(a b c d,x)]
+          )
+        ),
+        22D200F8670DBDB3E253A90EEE5098477C95C23D
+      )=
+  {
+    @log smoke=TC001: match basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: match basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_match_fn=
+  @log smoke=End match() test cases.;
+  @notify smoke
+-
+drop test_match_fn
+-
+#
+# End of Test Cases
+#

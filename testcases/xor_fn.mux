@@ -1,0 +1,44 @@
+#
+# xor_fn.mux - Test Cases for xor().
+#
+@create test_xor_fn
+-
+@set test_xor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_xor_fn=
+  @log smoke=Beginning xor() test cases.
+-
+#
+# Test Case #1 - Basic logical XOR operations.
+#
+&tr.tc001 test_xor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [xor(1,0)]
+            [xor(1,1)]
+            [xor(0,0)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: xor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: xor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_xor_fn=
+  @log smoke=End xor() test cases.;
+  @notify smoke
+-
+drop test_xor_fn
+-
+#
+# End of Test Cases
+#

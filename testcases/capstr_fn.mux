@@ -1,0 +1,43 @@
+#
+# capstr_fn.mux - Test Cases for capstr().
+#
+@create test_capstr_fn
+-
+@set test_capstr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_capstr_fn=
+  @log smoke=Beginning capstr() test cases.
+-
+#
+# Test Case #1 - Basic capitalize string operations.
+#
+&tr.tc001 test_capstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [capstr(hello world)]
+            [capstr(HELLO)]
+          )
+        ),
+        DF3AF98FE50A1D6B1AE69F48B7B3C6FDAC2D2B28
+      )=
+  {
+    @log smoke=TC001: capstr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: capstr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_capstr_fn=
+  @log smoke=End capstr() test cases.;
+  @notify smoke
+-
+drop test_capstr_fn
+-
+#
+# End of Test Cases
+#

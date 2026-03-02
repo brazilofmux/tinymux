@@ -1,0 +1,43 @@
+#
+# acos_fn.mux - Test Cases for acos().
+#
+@create test_acos_fn
+-
+@set test_acos_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_acos_fn=
+  @log smoke=Beginning acos() test cases.
+-
+#
+# Test Case #1 - Basic arc cosine operations.
+#
+&tr.tc001 test_acos_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(acos(0),6)]
+            [round(acos(1),6)]
+          )
+        ),
+        5E7684E933DF828D2705500AAF5EF26A07AD327A
+      )=
+  {
+    @log smoke=TC001: acos basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: acos basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_acos_fn=
+  @log smoke=End acos() test cases.;
+  @notify smoke
+-
+drop test_acos_fn
+-
+#
+# End of Test Cases
+#
