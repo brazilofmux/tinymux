@@ -1065,7 +1065,7 @@ FUNCTION(fun_squish)
 
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->compress(sep.str);
+    sStr->compress(sep.str, sep.n);
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 

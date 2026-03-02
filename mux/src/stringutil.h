@@ -1959,7 +1959,7 @@ public:
     void append(const UTF8 *pStr, size_t nLen);
     void append_TextPlain(const UTF8 *pStr);
     void append_TextPlain(const UTF8 *pStr, size_t nLen);
-    void compress(const UTF8 *ch);
+    void compress(const UTF8 *ch, size_t nSep);
     void compress_Spaces(void);
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
     void edit(mux_string &sFrom, const mux_string &sTo);

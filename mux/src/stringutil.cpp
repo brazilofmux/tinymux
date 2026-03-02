@@ -6136,11 +6136,11 @@ void mux_string::append_TextPlain(const UTF8 *pStr, size_t nLen)
  * \return         None.
  */
 
-void mux_string::compress(const UTF8 *ch)
+void mux_string::compress(const UTF8 *ch, size_t nSep)
 {
     mux_cursor i, j;
     cursor_start(i);
-    LBUF_OFFSET nChar = utf8_FirstByte[ch[0]];
+    LBUF_OFFSET nChar = static_cast<LBUF_OFFSET>(nSep);
     LBUF_OFFSET k;
 
     while (i < m_iLast)
@@ -6153,7 +6153,7 @@ void mux_string::compress(const UTF8 *ch)
             {
                 k++;
             }
-            if (1 < k)
+            if (nChar < k)
             {
                 j = i;
                 while (  j.m_byte < i.m_byte + k
@@ -6165,8 +6165,13 @@ void mux_string::compress(const UTF8 *ch)
                 {
                     cursor_prev(j);
                 }
-                cursor_next(i);
-                delete_Chars(i, j);
+                mux_cursor iKeep = i;
+                LBUF_OFFSET nSkip = nChar;
+                while (nSkip > 0 && cursor_next(iKeep))
+                {
+                    nSkip--;
+                }
+                delete_Chars(iKeep, j);
             }
         }
         cursor_next(i);
