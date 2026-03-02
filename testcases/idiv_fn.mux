@@ -1,0 +1,43 @@
+#
+# idiv_fn.mux - Test Cases for idiv().
+#
+@create test_idiv_fn
+-
+@set test_idiv_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_idiv_fn=
+  @log smoke=Beginning idiv() test cases.
+-
+#
+# Test Case #1 - Basic integer division.
+#
+&tr.tc001 test_idiv_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [idiv(10,3)]
+            [idiv(-10,3)]
+          )
+        ),
+        FF75E69EBA7F7BC73BF2E2524DE4C41D32D61506
+      )=
+  {
+    @log smoke=TC001: idiv basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: idiv basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_idiv_fn=
+  @log smoke=End idiv() test cases.;
+  @notify smoke
+-
+drop test_idiv_fn
+-
+#
+# End of Test Cases
+#

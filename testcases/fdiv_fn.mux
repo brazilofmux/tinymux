@@ -1,0 +1,44 @@
+#
+# fdiv_fn.mux - Test Cases for fdiv().
+#
+@create test_fdiv_fn
+-
+@set test_fdiv_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_fdiv_fn=
+  @log smoke=Beginning fdiv() test cases.
+-
+#
+# Test Case #1 - Basic floating-point division.
+#
+&tr.tc001 test_fdiv_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [fdiv(10,3)]
+            [fdiv(-10,3)]
+            [fdiv(1,0)]
+          )
+        ),
+        B734EF39217FCB76DE683FD1CC575178A897C9FA
+      )=
+  {
+    @log smoke=TC001: fdiv basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: fdiv basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_fdiv_fn=
+  @log smoke=End fdiv() test cases.;
+  @notify smoke
+-
+drop test_fdiv_fn
+-
+#
+# End of Test Cases
+#

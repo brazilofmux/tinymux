@@ -1,0 +1,43 @@
+#
+# matchall_fn.mux - Test Cases for matchall().
+#
+@create test_matchall_fn
+-
+@set test_matchall_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_matchall_fn=
+  @log smoke=Beginning matchall() test cases.
+-
+#
+# Test Case #1 - Basic wildcard list matching.
+#
+&tr.tc001 test_matchall_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [matchall(one two three,t*)]
+            [matchall(one two three,*o*)]
+          )
+        ),
+        652A3C234080E80381E36F708AA71143FC7ABA01
+      )=
+  {
+    @log smoke=TC001: matchall basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: matchall basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_matchall_fn=
+  @log smoke=End matchall() test cases.;
+  @notify smoke
+-
+drop test_matchall_fn
+-
+#
+# End of Test Cases
+#

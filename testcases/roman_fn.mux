@@ -1,0 +1,46 @@
+#
+# roman_fn.mux - Test Cases for roman().
+#
+@create test_roman_fn
+-
+@set test_roman_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_roman_fn=
+  @log smoke=Beginning roman() test cases.
+-
+#
+# Test Case #1 - Basic roman numeral conversions.
+#
+&tr.tc001 test_roman_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [roman(1)]
+            [roman(4)]
+            [roman(9)]
+            [roman(42)]
+            [roman(1999)]
+          )
+        ),
+        A1752932657A663A99E42C51FB5E2F4A95680427
+      )=
+  {
+    @log smoke=TC001: roman basic conversions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: roman basic conversions. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_roman_fn=
+  @log smoke=End roman() test cases.;
+  @notify smoke
+-
+drop test_roman_fn
+-
+#
+# End of Test Cases
+#

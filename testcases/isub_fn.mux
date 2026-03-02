@@ -1,0 +1,43 @@
+#
+# isub_fn.mux - Test Cases for isub().
+#
+@create test_isub_fn
+-
+@set test_isub_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isub_fn=
+  @log smoke=Beginning isub() test cases.
+-
+#
+# Test Case #1 - Basic integer subtraction.
+#
+&tr.tc001 test_isub_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isub(10,3)]
+            [isub(3,10)]
+          )
+        ),
+        CBE2F7E7A1B6E93DDF92D0A47B39E0D230ECD2ED
+      )=
+  {
+    @log smoke=TC001: isub basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isub basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isub_fn=
+  @log smoke=End isub() test cases.;
+  @notify smoke
+-
+drop test_isub_fn
+-
+#
+# End of Test Cases
+#

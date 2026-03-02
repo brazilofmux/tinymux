@@ -1,0 +1,43 @@
+#
+# tr_fn.mux - Test Cases for tr().
+#
+@create test_tr_fn
+-
+@set test_tr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_tr_fn=
+  @log smoke=Beginning tr() test cases.
+-
+#
+# Test Case #1 - Basic transliteration operations.
+#
+&tr.tc001 test_tr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [tr(Hello,aeiou,*)]
+            [tr(Hello,el,EL)]
+          )
+        ),
+        42AF85D4DBC0CA06706544CF78238B60B44BB96A
+      )=
+  {
+    @log smoke=TC001: tr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: tr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_tr_fn=
+  @log smoke=End tr() test cases.;
+  @notify smoke
+-
+drop test_tr_fn
+-
+#
+# End of Test Cases
+#

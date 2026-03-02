@@ -1,0 +1,44 @@
+#
+# spellnum_fn.mux - Test Cases for spellnum().
+#
+@create test_spellnum_fn
+-
+@set test_spellnum_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_spellnum_fn=
+  @log smoke=Beginning spellnum() test cases.
+-
+#
+# Test Case #1 - Basic number spelling.
+#
+&tr.tc001 test_spellnum_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [spellnum(0)]
+            [spellnum(1)]
+            [spellnum(42)]
+          )
+        ),
+        60DB062A036A0CF8BCE532DD9BF03FE027854474
+      )=
+  {
+    @log smoke=TC001: spellnum basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: spellnum basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_spellnum_fn=
+  @log smoke=End spellnum() test cases.;
+  @notify smoke
+-
+drop test_spellnum_fn
+-
+#
+# End of Test Cases
+#

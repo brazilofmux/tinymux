@@ -1,0 +1,43 @@
+#
+# band_fn.mux - Test Cases for band().
+#
+@create test_band_fn
+-
+@set test_band_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_band_fn=
+  @log smoke=Beginning band() test cases.
+-
+#
+# Test Case #1 - Basic bitwise AND.
+#
+&tr.tc001 test_band_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [band(12,10)]
+            [band(255,15)]
+          )
+        ),
+        D528EDAA45E66E08A9ECE98272130B42E77CEF55
+      )=
+  {
+    @log smoke=TC001: band basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: band basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_band_fn=
+  @log smoke=End band() test cases.;
+  @notify smoke
+-
+drop test_band_fn
+-
+#
+# End of Test Cases
+#

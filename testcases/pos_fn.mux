@@ -1,0 +1,43 @@
+#
+# pos_fn.mux - Test Cases for pos().
+#
+@create test_pos_fn
+-
+@set test_pos_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_pos_fn=
+  @log smoke=Beginning pos() test cases.
+-
+#
+# Test Case #1 - Basic substring position.
+#
+&tr.tc001 test_pos_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [pos(cd,abcdef)]
+            [pos(xy,abcdef)]
+          )
+        ),
+        C24F6B8389BC8FB2D6943DED3EE5497E7AE09DD0
+      )=
+  {
+    @log smoke=TC001: pos basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: pos basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pos_fn=
+  @log smoke=End pos() test cases.;
+  @notify smoke
+-
+drop test_pos_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# imul_fn.mux - Test Cases for imul().
+#
+@create test_imul_fn
+-
+@set test_imul_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_imul_fn=
+  @log smoke=Beginning imul() test cases.
+-
+#
+# Test Case #1 - Basic integer multiplication.
+#
+&tr.tc001 test_imul_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [imul(2,3)]
+            [imul(2,3,4)]
+          )
+        ),
+        5DCA477752FC50226595C6A93528EAF3297DBCF8
+      )=
+  {
+    @log smoke=TC001: imul basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: imul basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_imul_fn=
+  @log smoke=End imul() test cases.;
+  @notify smoke
+-
+drop test_imul_fn
+-
+#
+# End of Test Cases
+#

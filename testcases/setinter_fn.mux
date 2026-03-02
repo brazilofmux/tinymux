@@ -1,0 +1,43 @@
+#
+# setinter_fn.mux - Test Cases for setinter().
+#
+@create test_setinter_fn
+-
+@set test_setinter_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_setinter_fn=
+  @log smoke=Beginning setinter() test cases.
+-
+#
+# Test Case #1 - Basic set intersection.
+#
+&tr.tc001 test_setinter_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setinter(a b c,b c d)]
+            [setinter(a|b|c,b|c|d,|)]
+          )
+        ),
+        501C4B9A1B2965F7B1541E952C917C37C8D07ECC
+      )=
+  {
+    @log smoke=TC001: setinter basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: setinter basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_setinter_fn=
+  @log smoke=End setinter() test cases.;
+  @notify smoke
+-
+drop test_setinter_fn
+-
+#
+# End of Test Cases
+#

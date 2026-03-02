@@ -1,0 +1,43 @@
+#
+# case_fn.mux - Test Cases for case().
+#
+@create test_case_fn
+-
+@set test_case_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_case_fn=
+  @log smoke=Beginning case() test cases.
+-
+#
+# Test Case #1 - Basic case matching.
+#
+&tr.tc001 test_case_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [case(2,1,one,2,two,default)]
+            [case(5,1,one,2,two,default)]
+          )
+        ),
+        3F334237D4E7CB885808C57FE3DADDC6338BA0E8
+      )=
+  {
+    @log smoke=TC001: case basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: case basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_case_fn=
+  @log smoke=End case() test cases.;
+  @notify smoke
+-
+drop test_case_fn
+-
+#
+# End of Test Cases
+#

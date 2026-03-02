@@ -1,0 +1,42 @@
+#
+# vadd_fn.mux - Test Cases for vadd().
+#
+@create test_vadd_fn
+-
+@set test_vadd_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vadd_fn=
+  @log smoke=Beginning vadd() test cases.
+-
+#
+# Test Case #1 - Basic vector addition.
+#
+&tr.tc001 test_vadd_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vadd(1 2 3,4 5 6)]
+          )
+        ),
+        8624F757FF1E0A8D0E74163D35A15824F72BDD9C
+      )=
+  {
+    @log smoke=TC001: vadd basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vadd basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vadd_fn=
+  @log smoke=End vadd() test cases.;
+  @notify smoke
+-
+drop test_vadd_fn
+-
+#
+# End of Test Cases
+#

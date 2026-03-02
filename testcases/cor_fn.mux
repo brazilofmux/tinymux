@@ -1,0 +1,43 @@
+#
+# cor_fn.mux - Test Cases for cor().
+#
+@create test_cor_fn
+-
+@set test_cor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cor_fn=
+  @log smoke=Beginning cor() test cases.
+-
+#
+# Test Case #1 - Basic short-circuit OR.
+#
+&tr.tc001 test_cor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [cor(0,0,0)]
+            [cor(0,1,0)]
+          )
+        ),
+        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+      )=
+  {
+    @log smoke=TC001: cor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: cor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_cor_fn=
+  @log smoke=End cor() test cases.;
+  @notify smoke
+-
+drop test_cor_fn
+-
+#
+# End of Test Cases
+#

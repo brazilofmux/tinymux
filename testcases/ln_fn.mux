@@ -1,0 +1,43 @@
+#
+# ln_fn.mux - Test Cases for ln().
+#
+@create test_ln_fn
+-
+@set test_ln_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ln_fn=
+  @log smoke=Beginning ln() test cases.
+-
+#
+# Test Case #1 - Basic natural log operations.
+#
+&tr.tc001 test_ln_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(ln(1),6)]
+            [round(ln(e()),6)]
+          )
+        ),
+        8044D509143674B12A096BBDAA46FA5AEAC7AF17
+      )=
+  {
+    @log smoke=TC001: ln basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ln basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ln_fn=
+  @log smoke=End ln() test cases.;
+  @notify smoke
+-
+drop test_ln_fn
+-
+#
+# End of Test Cases
+#

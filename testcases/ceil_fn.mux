@@ -1,0 +1,45 @@
+#
+# ceil_fn.mux - Test Cases for ceil().
+#
+@create test_ceil_fn
+-
+@set test_ceil_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ceil_fn=
+  @log smoke=Beginning ceil() test cases.
+-
+#
+# Test Case #1 - Basic ceiling operations.
+#
+&tr.tc001 test_ceil_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ceil(4.2)]
+            [ceil(-4.2)]
+            [ceil(0)]
+            [ceil(4.0)]
+          )
+        ),
+        D3326E3B0D2BAF734A84EAD4F3B99DCCD034D062
+      )=
+  {
+    @log smoke=TC001: ceil basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ceil basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ceil_fn=
+  @log smoke=End ceil() test cases.;
+  @notify smoke
+-
+drop test_ceil_fn
+-
+#
+# End of Test Cases
+#

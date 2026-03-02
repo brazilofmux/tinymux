@@ -1,0 +1,43 @@
+#
+# lmax_fn.mux - Test Cases for lmax().
+#
+@create test_lmax_fn
+-
+@set test_lmax_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lmax_fn=
+  @log smoke=Beginning lmax() test cases.
+-
+#
+# Test Case #1 - Basic list maximum.
+#
+&tr.tc001 test_lmax_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lmax(3 1 4 1 5)]
+            [lmax(3|1|4,|)]
+          )
+        ),
+        80E28A51CBC26FA4BD34938C5E593B36146F5E0C
+      )=
+  {
+    @log smoke=TC001: lmax basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: lmax basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lmax_fn=
+  @log smoke=End lmax() test cases.;
+  @notify smoke
+-
+drop test_lmax_fn
+-
+#
+# End of Test Cases
+#

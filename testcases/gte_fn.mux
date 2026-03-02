@@ -1,0 +1,44 @@
+#
+# gte_fn.mux - Test Cases for gte().
+#
+@create test_gte_fn
+-
+@set test_gte_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_gte_fn=
+  @log smoke=Beginning gte() test cases.
+-
+#
+# Test Case #1 - Basic greater-than-or-equal comparisons.
+#
+&tr.tc001 test_gte_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(2,1)]
+            [gte(1,1)]
+            [gte(1,2)]
+          )
+        ),
+        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+      )=
+  {
+    @log smoke=TC001: gte basic comparisons. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: gte basic comparisons. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_gte_fn=
+  @log smoke=End gte() test cases.;
+  @notify smoke
+-
+drop test_gte_fn
+-
+#
+# End of Test Cases
+#

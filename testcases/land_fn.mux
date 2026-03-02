@@ -1,0 +1,43 @@
+#
+# land_fn.mux - Test Cases for land().
+#
+@create test_land_fn
+-
+@set test_land_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_land_fn=
+  @log smoke=Beginning land() test cases.
+-
+#
+# Test Case #1 - Basic list AND.
+#
+&tr.tc001 test_land_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [land(1 1 1)]
+            [land(1 0 1)]
+          )
+        ),
+        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+      )=
+  {
+    @log smoke=TC001: land basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: land basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_land_fn=
+  @log smoke=End land() test cases.;
+  @notify smoke
+-
+drop test_land_fn
+-
+#
+# End of Test Cases
+#

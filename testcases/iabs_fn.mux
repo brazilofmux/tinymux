@@ -1,0 +1,44 @@
+#
+# iabs_fn.mux - Test Cases for iabs().
+#
+@create test_iabs_fn
+-
+@set test_iabs_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_iabs_fn=
+  @log smoke=Beginning iabs() test cases.
+-
+#
+# Test Case #1 - Basic integer absolute value.
+#
+&tr.tc001 test_iabs_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iabs(-5)]
+            [iabs(5)]
+            [iabs(0)]
+          )
+        ),
+        CF94DB48FB7AA4DA74260DA3F6C7E4722E913B72
+      )=
+  {
+    @log smoke=TC001: iabs basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: iabs basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_iabs_fn=
+  @log smoke=End iabs() test cases.;
+  @notify smoke
+-
+drop test_iabs_fn
+-
+#
+# End of Test Cases
+#

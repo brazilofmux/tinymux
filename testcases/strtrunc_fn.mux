@@ -1,0 +1,44 @@
+#
+# strtrunc_fn.mux - Test Cases for strtrunc().
+#
+@create test_strtrunc_fn
+-
+@set test_strtrunc_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strtrunc_fn=
+  @log smoke=Beginning strtrunc() test cases.
+-
+#
+# Test Case #1 - Basic string truncation.
+#
+&tr.tc001 test_strtrunc_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strtrunc(abcdefgh,5)]
+            [strtrunc(abcdefgh,0)]
+            [strtrunc(abcdefgh,20)]
+          )
+        ),
+        C98A908EA9E37A0CD40837648883D2E30FC963C0
+      )=
+  {
+    @log smoke=TC001: strtrunc basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: strtrunc basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strtrunc_fn=
+  @log smoke=End strtrunc() test cases.;
+  @notify smoke
+-
+drop test_strtrunc_fn
+-
+#
+# End of Test Cases
+#

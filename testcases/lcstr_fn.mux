@@ -1,0 +1,44 @@
+#
+# lcstr_fn.mux - Test Cases for lcstr().
+#
+@create test_lcstr_fn
+-
+@set test_lcstr_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lcstr_fn=
+  @log smoke=Beginning lcstr() test cases.
+-
+#
+# Test Case #1 - Basic lowercase operations.
+#
+&tr.tc001 test_lcstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lcstr(FOO)]
+            [lcstr(FoO)]
+            [lcstr(123)]
+          )
+        ),
+        E7E82E298B9C50EB2B368584370BE0FCFEA1CC03
+      )=
+  {
+    @log smoke=TC001: lcstr basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: lcstr basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lcstr_fn=
+  @log smoke=End lcstr() test cases.;
+  @notify smoke
+-
+drop test_lcstr_fn
+-
+#
+# End of Test Cases
+#

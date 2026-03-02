@@ -1,0 +1,43 @@
+#
+# itemize_fn.mux - Test Cases for itemize().
+#
+@create test_itemize_fn
+-
+@set test_itemize_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_itemize_fn=
+  @log smoke=Beginning itemize() test cases.
+-
+#
+# Test Case #1 - Basic itemization.
+#
+&tr.tc001 test_itemize_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [itemize(a b c)]
+            [itemize(a b c d,|,or)]
+          )
+        ),
+        0F2D469051B670CB19757357255658F4A53027E6
+      )=
+  {
+    @log smoke=TC001: itemize basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: itemize basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_itemize_fn=
+  @log smoke=End itemize() test cases.;
+  @notify smoke
+-
+drop test_itemize_fn
+-
+#
+# End of Test Cases
+#

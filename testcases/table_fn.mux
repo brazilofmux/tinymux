@@ -1,0 +1,42 @@
+#
+# table_fn.mux - Test Cases for table().
+#
+@create test_table_fn
+-
+@set test_table_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_table_fn=
+  @log smoke=Beginning table() test cases.
+-
+#
+# Test Case #1 - Basic table formatting.
+#
+&tr.tc001 test_table_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [table(a b c d e f,2)]
+          )
+        ),
+        0A22A353B58BFDB91D6925AC0066D8E90DD7D0D7
+      )=
+  {
+    @log smoke=TC001: table basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: table basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_table_fn=
+  @log smoke=End table() test cases.;
+  @notify smoke
+-
+drop test_table_fn
+-
+#
+# End of Test Cases
+#

@@ -6,13 +6,28 @@
 @set smoke=INHERIT QUIET
 -
 &suite.list smoke=
-  accent_fn atan2_fn 
-  center_fn cmd_say columns_fn convtime_fn cpad_fn digest_fn edit_fn 
-  elements_fn escape_fn extract_fn 
-  first_fn insert_fn last_fn ldelete_fn ljust_fn lpad_fn merge_fn mid_fn 
-  pickrand_fn replace_fn 
-  rest_fn rjust_fn rpad_fn secure_fn sha1_fn shuffle_fn shl_fn sin_fn sqrt_fn 
-  squish_fn 
+  accent_fn andbool_fn asin_fn atan2_fn 
+  band_fn baseconv_fn bor_fn bxor_fn 
+  cand_fn case_fn ceil_fn center_fn cmd_say columns_fn convtime_fn cor_fn 
+  cos_fn cpad_fn crc32_fn 
+  delete_fn digest_fn 
+  e_fn edit_fn elements_fn eq_fn escape_fn exp_fn extract_fn 
+  fdiv_fn first_fn floordiv_fn fmod_fn 
+  graball_fn gt_fn gte_fn 
+  iadd_fn iabs_fn idiv_fn imul_fn insert_fn isign_fn israt_fn isub_fn 
+  itemize_fn 
+  ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn 
+  ln_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn 
+  matchall_fn merge_fn mid_fn 
+  neq_fn 
+  orbool_fn 
+  pi_fn pickrand_fn pos_fn 
+  remove_fn replace_fn rest_fn rjust_fn roman_fn round_fn rpad_fn 
+  secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shuffle_fn shl_fn 
+  sin_fn spellnum_fn sqrt_fn squish_fn strmatch_fn stripansi_fn strtrunc_fn 
+  switch_fn 
+  table_fn tan_fn tr_fn 
+  vadd_fn vdot_fn vmag_fn vsub_fn 
   wrap_fn shutdown
 -
 @startup smoke=

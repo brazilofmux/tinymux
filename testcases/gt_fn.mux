@@ -1,0 +1,44 @@
+#
+# gt_fn.mux - Test Cases for gt().
+#
+@create test_gt_fn
+-
+@set test_gt_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_gt_fn=
+  @log smoke=Beginning gt() test cases.
+-
+#
+# Test Case #1 - Basic greater-than comparisons.
+#
+&tr.tc001 test_gt_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gt(2,1)]
+            [gt(1,2)]
+            [gt(1,1)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: gt basic comparisons. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: gt basic comparisons. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_gt_fn=
+  @log smoke=End gt() test cases.;
+  @notify smoke
+-
+drop test_gt_fn
+-
+#
+# End of Test Cases
+#

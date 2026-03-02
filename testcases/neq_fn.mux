@@ -1,0 +1,43 @@
+#
+# neq_fn.mux - Test Cases for neq().
+#
+@create test_neq_fn
+-
+@set test_neq_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_neq_fn=
+  @log smoke=Beginning neq() test cases.
+-
+#
+# Test Case #1 - Basic inequality comparisons.
+#
+&tr.tc001 test_neq_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [neq(1,1)]
+            [neq(1,2)]
+          )
+        ),
+        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+      )=
+  {
+    @log smoke=TC001: neq basic comparisons. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: neq basic comparisons. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_neq_fn=
+  @log smoke=End neq() test cases.;
+  @notify smoke
+-
+drop test_neq_fn
+-
+#
+# End of Test Cases
+#

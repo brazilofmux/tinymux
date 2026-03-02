@@ -1,0 +1,43 @@
+#
+# baseconv_fn.mux - Test Cases for baseconv().
+#
+@create test_baseconv_fn
+-
+@set test_baseconv_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_baseconv_fn=
+  @log smoke=Beginning baseconv() test cases.
+-
+#
+# Test Case #1 - Basic base conversion operations.
+#
+&tr.tc001 test_baseconv_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [baseconv(255,10,16)]
+            [baseconv(FF,16,10)]
+          )
+        ),
+        B840CF11BD395FCEBF0810FA8686414ADE2F7697
+      )=
+  {
+    @log smoke=TC001: baseconv basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: baseconv basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_baseconv_fn=
+  @log smoke=End baseconv() test cases.;
+  @notify smoke
+-
+drop test_baseconv_fn
+-
+#
+# End of Test Cases
+#

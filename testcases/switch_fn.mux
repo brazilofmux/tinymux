@@ -1,0 +1,43 @@
+#
+# switch_fn.mux - Test Cases for switch().
+#
+@create test_switch_fn
+-
+@set test_switch_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_switch_fn=
+  @log smoke=Beginning switch() test cases.
+-
+#
+# Test Case #1 - Basic switch matching.
+#
+&tr.tc001 test_switch_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [switch(foo,f*,found,default)]
+            [switch(bar,f*,found,default)]
+          )
+        ),
+        53B0B81724DD3015D700A45E587A6C89E490070C
+      )=
+  {
+    @log smoke=TC001: switch basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: switch basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_switch_fn=
+  @log smoke=End switch() test cases.;
+  @notify smoke
+-
+drop test_switch_fn
+-
+#
+# End of Test Cases
+#

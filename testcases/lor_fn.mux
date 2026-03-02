@@ -1,0 +1,43 @@
+#
+# lor_fn.mux - Test Cases for lor().
+#
+@create test_lor_fn
+-
+@set test_lor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lor_fn=
+  @log smoke=Beginning lor() test cases.
+-
+#
+# Test Case #1 - Basic list OR.
+#
+&tr.tc001 test_lor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lor(0 0 0)]
+            [lor(0 1 0)]
+          )
+        ),
+        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+      )=
+  {
+    @log smoke=TC001: lor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: lor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lor_fn=
+  @log smoke=End lor() test cases.;
+  @notify smoke
+-
+drop test_lor_fn
+-
+#
+# End of Test Cases
+#

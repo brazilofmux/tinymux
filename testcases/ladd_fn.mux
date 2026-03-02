@@ -1,0 +1,43 @@
+#
+# ladd_fn.mux - Test Cases for ladd().
+#
+@create test_ladd_fn
+-
+@set test_ladd_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ladd_fn=
+  @log smoke=Beginning ladd() test cases.
+-
+#
+# Test Case #1 - Basic list addition.
+#
+&tr.tc001 test_ladd_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ladd(1 2 3)]
+            [ladd(1|2|3,|)]
+          )
+        ),
+        59129AACFB6CEBBE2C52F30EF3424209F7252E82
+      )=
+  {
+    @log smoke=TC001: ladd basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: ladd basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ladd_fn=
+  @log smoke=End ladd() test cases.;
+  @notify smoke
+-
+drop test_ladd_fn
+-
+#
+# End of Test Cases
+#

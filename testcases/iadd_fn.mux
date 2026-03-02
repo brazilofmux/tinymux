@@ -1,0 +1,44 @@
+#
+# iadd_fn.mux - Test Cases for iadd().
+#
+@create test_iadd_fn
+-
+@set test_iadd_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_iadd_fn=
+  @log smoke=Beginning iadd() test cases.
+-
+#
+# Test Case #1 - Basic integer addition.
+#
+&tr.tc001 test_iadd_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [iadd(1,2)]
+            [iadd(1,2,3)]
+            [iadd()]
+          )
+        ),
+        A1773D62A609DD09E98EA1AEBEDDBD949B78BF83
+      )=
+  {
+    @log smoke=TC001: iadd basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: iadd basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_iadd_fn=
+  @log smoke=End iadd() test cases.;
+  @notify smoke
+-
+drop test_iadd_fn
+-
+#
+# End of Test Cases
+#

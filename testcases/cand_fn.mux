@@ -1,0 +1,43 @@
+#
+# cand_fn.mux - Test Cases for cand().
+#
+@create test_cand_fn
+-
+@set test_cand_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cand_fn=
+  @log smoke=Beginning cand() test cases.
+-
+#
+# Test Case #1 - Basic short-circuit AND.
+#
+&tr.tc001 test_cand_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [cand(1,1,1)]
+            [cand(1,0,1)]
+          )
+        ),
+        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+      )=
+  {
+    @log smoke=TC001: cand basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: cand basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_cand_fn=
+  @log smoke=End cand() test cases.;
+  @notify smoke
+-
+drop test_cand_fn
+-
+#
+# End of Test Cases
+#

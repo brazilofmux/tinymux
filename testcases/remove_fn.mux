@@ -1,0 +1,43 @@
+#
+# remove_fn.mux - Test Cases for remove().
+#
+@create test_remove_fn
+-
+@set test_remove_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_remove_fn=
+  @log smoke=Beginning remove() test cases.
+-
+#
+# Test Case #1 - Basic list element removal.
+#
+&tr.tc001 test_remove_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [remove(a b c d,c)]
+            [remove(a|b|c,b,|)]
+          )
+        ),
+        16FE8E3DD3748B772E7C845998A4BF777D310815
+      )=
+  {
+    @log smoke=TC001: remove basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: remove basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_remove_fn=
+  @log smoke=End remove() test cases.;
+  @notify smoke
+-
+drop test_remove_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# setunion_fn.mux - Test Cases for setunion().
+#
+@create test_setunion_fn
+-
+@set test_setunion_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_setunion_fn=
+  @log smoke=Beginning setunion() test cases.
+-
+#
+# Test Case #1 - Basic set union.
+#
+&tr.tc001 test_setunion_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setunion(a b c,b c d)]
+            [setunion(a|b|c,b|c|d,|)]
+          )
+        ),
+        1E7FC49F2592B7D5BEA67CF67CCA81570B738117
+      )=
+  {
+    @log smoke=TC001: setunion basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: setunion basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_setunion_fn=
+  @log smoke=End setunion() test cases.;
+  @notify smoke
+-
+drop test_setunion_fn
+-
+#
+# End of Test Cases
+#

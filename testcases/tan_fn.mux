@@ -1,0 +1,43 @@
+#
+# tan_fn.mux - Test Cases for tan().
+#
+@create test_tan_fn
+-
+@set test_tan_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_tan_fn=
+  @log smoke=Beginning tan() test cases.
+-
+#
+# Test Case #1 - Basic tangent operations.
+#
+&tr.tc001 test_tan_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(tan(0),6)]
+            [round(tan(fdiv(pi(),4)),6)]
+          )
+        ),
+        8044D509143674B12A096BBDAA46FA5AEAC7AF17
+      )=
+  {
+    @log smoke=TC001: tan basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: tan basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_tan_fn=
+  @log smoke=End tan() test cases.;
+  @notify smoke
+-
+drop test_tan_fn
+-
+#
+# End of Test Cases
+#

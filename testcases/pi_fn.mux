@@ -1,0 +1,42 @@
+#
+# pi_fn.mux - Test Cases for pi().
+#
+@create test_pi_fn
+-
+@set test_pi_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_pi_fn=
+  @log smoke=Beginning pi() test cases.
+-
+#
+# Test Case #1 - pi() constant.
+#
+&tr.tc001 test_pi_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(pi(),6)]
+          )
+        ),
+        47E2AFC2724B13B51FD0C236C888137BF2C6D36C
+      )=
+  {
+    @log smoke=TC001: pi constant. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: pi constant. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pi_fn=
+  @log smoke=End pi() test cases.;
+  @notify smoke
+-
+drop test_pi_fn
+-
+#
+# End of Test Cases
+#

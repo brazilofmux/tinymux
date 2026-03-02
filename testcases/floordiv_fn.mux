@@ -1,0 +1,43 @@
+#
+# floordiv_fn.mux - Test Cases for floordiv().
+#
+@create test_floordiv_fn
+-
+@set test_floordiv_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_floordiv_fn=
+  @log smoke=Beginning floordiv() test cases.
+-
+#
+# Test Case #1 - Basic floor division.
+#
+&tr.tc001 test_floordiv_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [floordiv(10,3)]
+            [floordiv(-10,3)]
+          )
+        ),
+        28A4AA67DFDE939FFDB66E6975C4B676643E27DC
+      )=
+  {
+    @log smoke=TC001: floordiv basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: floordiv basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_floordiv_fn=
+  @log smoke=End floordiv() test cases.;
+  @notify smoke
+-
+drop test_floordiv_fn
+-
+#
+# End of Test Cases
+#

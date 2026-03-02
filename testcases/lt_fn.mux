@@ -1,0 +1,44 @@
+#
+# lt_fn.mux - Test Cases for lt().
+#
+@create test_lt_fn
+-
+@set test_lt_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lt_fn=
+  @log smoke=Beginning lt() test cases.
+-
+#
+# Test Case #1 - Basic less-than comparisons.
+#
+&tr.tc001 test_lt_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lt(1,2)]
+            [lt(2,1)]
+            [lt(1,1)]
+          )
+        ),
+        310B86E0B62B828562FC91C7BE5380A992B2786A
+      )=
+  {
+    @log smoke=TC001: lt basic comparisons. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: lt basic comparisons. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lt_fn=
+  @log smoke=End lt() test cases.;
+  @notify smoke
+-
+drop test_lt_fn
+-
+#
+# End of Test Cases
+#

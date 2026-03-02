@@ -1,0 +1,43 @@
+#
+# graball_fn.mux - Test Cases for graball().
+#
+@create test_graball_fn
+-
+@set test_graball_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_graball_fn=
+  @log smoke=Beginning graball() test cases.
+-
+#
+# Test Case #1 - Basic wildcard grab all.
+#
+&tr.tc001 test_graball_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [graball(foo bar baz,b*)]
+            [graball(foo bar baz,*oo)]
+          )
+        ),
+        3AE6ED1BF430F326C25376D76C7A4CD0A08AC8DE
+      )=
+  {
+    @log smoke=TC001: graball basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: graball basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_graball_fn=
+  @log smoke=End graball() test cases.;
+  @notify smoke
+-
+drop test_graball_fn
+-
+#
+# End of Test Cases
+#

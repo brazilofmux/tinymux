@@ -1,0 +1,44 @@
+#
+# israt_fn.mux - Test Cases for israt().
+#
+@create test_israt_fn
+-
+@set test_israt_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_israt_fn=
+  @log smoke=Beginning israt() test cases.
+-
+#
+# Test Case #1 - Basic rational number detection.
+#
+&tr.tc001 test_israt_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [israt(1.5)]
+            [israt(1)]
+            [israt(abc)]
+          )
+        ),
+        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+      )=
+  {
+    @log smoke=TC001: israt basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: israt basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_israt_fn=
+  @log smoke=End israt() test cases.;
+  @notify smoke
+-
+drop test_israt_fn
+-
+#
+# End of Test Cases
+#

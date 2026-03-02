@@ -1,0 +1,42 @@
+#
+# vdot_fn.mux - Test Cases for vdot().
+#
+@create test_vdot_fn
+-
+@set test_vdot_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vdot_fn=
+  @log smoke=Beginning vdot() test cases.
+-
+#
+# Test Case #1 - Basic dot product.
+#
+&tr.tc001 test_vdot_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vdot(1 2 3,4 5 6)]
+          )
+        ),
+        CB4E5208B4CD87268B208E49452ED6E89A68E0B8
+      )=
+  {
+    @log smoke=TC001: vdot basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vdot basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vdot_fn=
+  @log smoke=End vdot() test cases.;
+  @notify smoke
+-
+drop test_vdot_fn
+-
+#
+# End of Test Cases
+#

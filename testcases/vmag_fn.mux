@@ -1,0 +1,43 @@
+#
+# vmag_fn.mux - Test Cases for vmag().
+#
+@create test_vmag_fn
+-
+@set test_vmag_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vmag_fn=
+  @log smoke=Beginning vmag() test cases.
+-
+#
+# Test Case #1 - Basic vector magnitude.
+#
+&tr.tc001 test_vmag_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vmag(3 4)]
+            [vmag(1 2 2)]
+          )
+        ),
+        C5B76DA3E608D34EDB07244CD9B875EE86906328
+      )=
+  {
+    @log smoke=TC001: vmag basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vmag basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vmag_fn=
+  @log smoke=End vmag() test cases.;
+  @notify smoke
+-
+drop test_vmag_fn
+-
+#
+# End of Test Cases
+#

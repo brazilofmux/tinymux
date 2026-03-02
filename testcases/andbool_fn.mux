@@ -1,0 +1,43 @@
+#
+# andbool_fn.mux - Test Cases for andbool().
+#
+@create test_andbool_fn
+-
+@set test_andbool_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_andbool_fn=
+  @log smoke=Beginning andbool() test cases.
+-
+#
+# Test Case #1 - Basic boolean AND.
+#
+&tr.tc001 test_andbool_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [andbool(1,1,1)]
+            [andbool(1,0,1)]
+          )
+        ),
+        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+      )=
+  {
+    @log smoke=TC001: andbool basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: andbool basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_andbool_fn=
+  @log smoke=End andbool() test cases.;
+  @notify smoke
+-
+drop test_andbool_fn
+-
+#
+# End of Test Cases
+#

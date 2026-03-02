@@ -1,0 +1,43 @@
+#
+# bxor_fn.mux - Test Cases for bxor().
+#
+@create test_bxor_fn
+-
+@set test_bxor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_bxor_fn=
+  @log smoke=Beginning bxor() test cases.
+-
+#
+# Test Case #1 - Basic bitwise XOR.
+#
+&tr.tc001 test_bxor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [bxor(12,10)]
+            [bxor(255,255)]
+          )
+        ),
+        E6C3DD630428FD54834172B8FD2735FED9416DA4
+      )=
+  {
+    @log smoke=TC001: bxor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: bxor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_bxor_fn=
+  @log smoke=End bxor() test cases.;
+  @notify smoke
+-
+drop test_bxor_fn
+-
+#
+# End of Test Cases
+#

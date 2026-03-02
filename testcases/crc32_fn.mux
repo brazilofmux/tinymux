@@ -1,0 +1,43 @@
+#
+# crc32_fn.mux - Test Cases for crc32().
+#
+@create test_crc32_fn
+-
+@set test_crc32_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_crc32_fn=
+  @log smoke=Beginning crc32() test cases.
+-
+#
+# Test Case #1 - Basic CRC32 checksums.
+#
+&tr.tc001 test_crc32_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [crc32(Hello)]
+            [crc32(abc)]
+          )
+        ),
+        AD8BA279B14380D1716B313A77BC9A29EFA35DEF
+      )=
+  {
+    @log smoke=TC001: crc32 basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: crc32 basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_crc32_fn=
+  @log smoke=End crc32() test cases.;
+  @notify smoke
+-
+drop test_crc32_fn
+-
+#
+# End of Test Cases
+#

@@ -1,0 +1,43 @@
+#
+# bor_fn.mux - Test Cases for bor().
+#
+@create test_bor_fn
+-
+@set test_bor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_bor_fn=
+  @log smoke=Beginning bor() test cases.
+-
+#
+# Test Case #1 - Basic bitwise OR.
+#
+&tr.tc001 test_bor_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [bor(12,10)]
+            [bor(0,0)]
+          )
+        ),
+        C28ACA23F1EF3718A464383D925C66842078EDAA
+      )=
+  {
+    @log smoke=TC001: bor basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: bor basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_bor_fn=
+  @log smoke=End bor() test cases.;
+  @notify smoke
+-
+drop test_bor_fn
+-
+#
+# End of Test Cases
+#

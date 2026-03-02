@@ -1,0 +1,42 @@
+#
+# e_fn.mux - Test Cases for e().
+#
+@create test_e_fn
+-
+@set test_e_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_e_fn=
+  @log smoke=Beginning e() test cases.
+-
+#
+# Test Case #1 - e() constant.
+#
+&tr.tc001 test_e_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(e(),6)]
+          )
+        ),
+        D4F0C68A63BF494C135C3E3A25C3961E66E2E788
+      )=
+  {
+    @log smoke=TC001: e constant. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: e constant. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_e_fn=
+  @log smoke=End e() test cases.;
+  @notify smoke
+-
+drop test_e_fn
+-
+#
+# End of Test Cases
+#

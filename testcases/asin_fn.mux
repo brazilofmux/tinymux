@@ -1,0 +1,43 @@
+#
+# asin_fn.mux - Test Cases for asin().
+#
+@create test_asin_fn
+-
+@set test_asin_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_asin_fn=
+  @log smoke=Beginning asin() test cases.
+-
+#
+# Test Case #1 - Basic arcsine operations.
+#
+&tr.tc001 test_asin_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [round(asin(0),6)]
+            [round(asin(1),6)]
+          )
+        ),
+        1E75CDF7D5DB5228AD2D4F7502DE18E90323665F
+      )=
+  {
+    @log smoke=TC001: asin basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: asin basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_asin_fn=
+  @log smoke=End asin() test cases.;
+  @notify smoke
+-
+drop test_asin_fn
+-
+#
+# End of Test Cases
+#

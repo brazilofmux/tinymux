@@ -1,0 +1,44 @@
+#
+# isign_fn.mux - Test Cases for isign().
+#
+@create test_isign_fn
+-
+@set test_isign_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isign_fn=
+  @log smoke=Beginning isign() test cases.
+-
+#
+# Test Case #1 - Basic integer sign.
+#
+&tr.tc001 test_isign_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isign(-5)]
+            [isign(0)]
+            [isign(5)]
+          )
+        ),
+        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+      )=
+  {
+    @log smoke=TC001: isign basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isign basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isign_fn=
+  @log smoke=End isign() test cases.;
+  @notify smoke
+-
+drop test_isign_fn
+-
+#
+# End of Test Cases
+#

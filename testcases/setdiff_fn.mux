@@ -1,0 +1,43 @@
+#
+# setdiff_fn.mux - Test Cases for setdiff().
+#
+@create test_setdiff_fn
+-
+@set test_setdiff_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_setdiff_fn=
+  @log smoke=Beginning setdiff() test cases.
+-
+#
+# Test Case #1 - Basic set difference.
+#
+&tr.tc001 test_setdiff_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setdiff(a b c d,b d)]
+            [setdiff(a|b|c|d,b|d,|)]
+          )
+        ),
+        195EEEBBC2945D7BAD1F47E87B42E04021C1676B
+      )=
+  {
+    @log smoke=TC001: setdiff basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: setdiff basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_setdiff_fn=
+  @log smoke=End setdiff() test cases.;
+  @notify smoke
+-
+drop test_setdiff_fn
+-
+#
+# End of Test Cases
+#

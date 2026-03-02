@@ -1,0 +1,42 @@
+#
+# vsub_fn.mux - Test Cases for vsub().
+#
+@create test_vsub_fn
+-
+@set test_vsub_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_vsub_fn=
+  @log smoke=Beginning vsub() test cases.
+-
+#
+# Test Case #1 - Basic vector subtraction.
+#
+&tr.tc001 test_vsub_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [vsub(4 5 6,1 2 3)]
+          )
+        ),
+        30B2CD7FACF5A44EBCF05B245BEECC5D1B24FCEC
+      )=
+  {
+    @log smoke=TC001: vsub basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: vsub basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vsub_fn=
+  @log smoke=End vsub() test cases.;
+  @notify smoke
+-
+drop test_vsub_fn
+-
+#
+# End of Test Cases
+#

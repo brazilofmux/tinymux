@@ -1,0 +1,43 @@
+#
+# stripansi_fn.mux - Test Cases for stripansi().
+#
+@create test_stripansi_fn
+-
+@set test_stripansi_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_stripansi_fn=
+  @log smoke=Beginning stripansi() test cases.
+-
+#
+# Test Case #1 - Basic stripansi operations.
+#
+&tr.tc001 test_stripansi_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [stripansi(%xrHello%xn)]
+            [stripansi(NoAnsi)]
+          )
+        ),
+        BA75635A10439C791E7814BC41AE0B1DA6602844
+      )=
+  {
+    @log smoke=TC001: stripansi basic operations. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: stripansi basic operations. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_stripansi_fn=
+  @log smoke=End stripansi() test cases.;
+  @notify smoke
+-
+drop test_stripansi_fn
+-
+#
+# End of Test Cases
+#
