@@ -129,11 +129,11 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	boolexp.cpp bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp \
 	create.cpp db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp \
 	funceval.cpp funceval2.cpp functions.cpp funmath.cpp game.cpp \
-	help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp \
-	match.cpp mathutil.cpp mguests.cpp modules.cpp move.cpp \
-	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
+	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
+	mail.cpp match.cpp mathutil.cpp mguests.cpp modules.cpp \
+	move.cpp muxcli.cpp netcommon.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp \
+	rob.cpp set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -145,24 +145,26 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
 	eval.$(OBJEXT) file_c.$(OBJEXT) flags.$(OBJEXT) \
 	funceval.$(OBJEXT) funceval2.$(OBJEXT) functions.$(OBJEXT) \
-	funmath.$(OBJEXT) game.$(OBJEXT) help.$(OBJEXT) htab.$(OBJEXT) \
-	local.$(OBJEXT) log.$(OBJEXT) look.$(OBJEXT) mail.$(OBJEXT) \
-	match.$(OBJEXT) mathutil.$(OBJEXT) mguests.$(OBJEXT) \
-	modules.$(OBJEXT) move.$(OBJEXT) muxcli.$(OBJEXT) \
-	netcommon.$(OBJEXT) object.$(OBJEXT) predicates.$(OBJEXT) \
-	player.$(OBJEXT) player_c.$(OBJEXT) plusemail.$(OBJEXT) \
-	powers.$(OBJEXT) quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) \
-	sha1.$(OBJEXT) speech.$(OBJEXT) stringutil.$(OBJEXT) \
-	strtod.$(OBJEXT) svdrand.$(OBJEXT) svdhash.$(OBJEXT) \
-	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
+	funmath.$(OBJEXT) game.$(OBJEXT) ganl_adapter.$(OBJEXT) \
+	help.$(OBJEXT) htab.$(OBJEXT) local.$(OBJEXT) log.$(OBJEXT) \
+	look.$(OBJEXT) mail.$(OBJEXT) match.$(OBJEXT) \
+	mathutil.$(OBJEXT) mguests.$(OBJEXT) modules.$(OBJEXT) \
+	move.$(OBJEXT) muxcli.$(OBJEXT) netcommon.$(OBJEXT) \
+	object.$(OBJEXT) predicates.$(OBJEXT) player.$(OBJEXT) \
+	player_c.$(OBJEXT) plusemail.$(OBJEXT) powers.$(OBJEXT) \
+	quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) sha1.$(OBJEXT) \
+	speech.$(OBJEXT) stringutil.$(OBJEXT) strtod.$(OBJEXT) \
+	svdrand.$(OBJEXT) svdhash.$(OBJEXT) timer.$(OBJEXT) \
+	timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
 	unparse.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
 	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1)
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
-netmux_DEPENDENCIES = libmux.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+netmux_DEPENDENCIES = libmux.a ganl/libganl.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -193,10 +195,10 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/file_c.Po ./$(DEPDIR)/flags.Po \
 	./$(DEPDIR)/funceval.Po ./$(DEPDIR)/funceval2.Po \
 	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
-	./$(DEPDIR)/game.Po ./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po \
-	./$(DEPDIR)/levels.Po ./$(DEPDIR)/libmux.Po \
-	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
-	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
+	./$(DEPDIR)/game.Po ./$(DEPDIR)/ganl_adapter.Po \
+	./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po \
+	./$(DEPDIR)/libmux.Po ./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po \
+	./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
 	./$(DEPDIR)/mathutil.Po ./$(DEPDIR)/mguests.Po \
 	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
 	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/netcommon.Po \
@@ -368,6 +370,8 @@ MEMORY_BASED = @MEMORY_BASED@
 MKDIR_P = @MKDIR_P@
 MUX_LIBS = @MUX_LIBS@
 OBJEXT = @OBJEXT@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
+OPENSSL_LIBS = @OPENSSL_LIBS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -377,6 +381,9 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PCRE2_LIBS = @PCRE2_LIBS@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 REALITY_LVLS = @REALITY_LVLS@
 SELFCHECK = @SELFCHECK@
@@ -388,6 +395,7 @@ SQL_LIBS = @SQL_LIBS@
 SSL = @SSL@
 STRIP = @STRIP@
 STUB_SLAVE = @STUB_SLAVE@
+USE_GANL = @USE_GANL@
 VERSION = @VERSION@
 WOD_REALMS = @WOD_REALMS@
 abs_builddir = @abs_builddir@
@@ -444,23 +452,23 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = tools . modules
+SUBDIRS = tools ganl . modules
 
 # Shared build flags
-AM_CPPFLAGS = $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL)
+AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
+    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS)
 
 
 # Base source files for building netmux
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
 	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
-	funceval2.cpp functions.cpp funmath.cpp game.cpp help.cpp \
-	htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
-	mathutil.cpp mguests.cpp modules.cpp move.cpp muxcli.cpp \
-	netcommon.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
+	funceval2.cpp functions.cpp funmath.cpp game.cpp \
+	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
+	mail.cpp match.cpp mathutil.cpp mguests.cpp modules.cpp \
+	move.cpp muxcli.cpp netcommon.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp \
+	rob.cpp set.cpp sha1.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -472,7 +480,7 @@ libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS)
+netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -632,6 +640,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funmath.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/game.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_adapter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levels.Po@am__quote@ # am--include-marker
@@ -685,15 +694,17 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .cpp.o:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
 .cpp.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -1067,6 +1078,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
@@ -1181,6 +1193,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
 	-rm -f ./$(DEPDIR)/game.Po
+	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po

@@ -1,0 +1,2010 @@
+#ifdef USE_GANL
+
+#include "ganl_adapter.h"
+#include "connection.h" // Include ConnectionBase definition
+#include "network_types.h"
+
+#include <chrono>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <iostream>
+#include <limits>
+#include <thread> // For sleep
+#include <cerrno>
+#include <cstdarg>
+
+#ifdef UNIX_SSL
+#include <openssl/ssl.h>
+extern SSL_CTX* tls_ctx;
+#endif
+
+#if defined(_WIN32) || defined(WIN32)
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <unistd.h>
+#endif
+
+extern const UTF8* disc_messages[];
+extern const UTF8* connect_fail;
+void site_mon_send(const SOCKET port, const UTF8* address, DESC* d, const UTF8* msg);
+void announce_connect(const dbref player, DESC* d);
+
+namespace
+{
+    void GanlLog(const UTF8* fmt, ...)
+    {
+        if (!fmt)
+        {
+            return;
+        }
+
+        UTF8 buffer[LBUF_SIZE];
+        va_list ap;
+        va_start(ap, fmt);
+        mux_vsnprintf(buffer, LBUF_SIZE, fmt, ap);
+        va_end(ap);
+
+        Log.tinyprintf(T("GANL %s" ENDLINE), buffer);
+        Log.Flush();
+    }
+
+    struct RemoteEndpoint
+    {
+        std::string host;
+        uint16_t port{0};
+    };
+
+    RemoteEndpoint ParseRemoteAddress(const std::string& remoteAddress)
+    {
+        RemoteEndpoint endpoint;
+        if (remoteAddress.empty())
+        {
+            return endpoint;
+        }
+
+        std::string hostPart = remoteAddress;
+        std::string portPart;
+
+        if (!remoteAddress.empty() && remoteAddress.front() == '[')
+        {
+            const auto closing = remoteAddress.find(']');
+            if (closing != std::string::npos)
+            {
+                hostPart = remoteAddress.substr(1, closing - 1);
+                const auto colon = remoteAddress.find(':', closing);
+                if (colon != std::string::npos)
+                {
+                    portPart = remoteAddress.substr(colon + 1);
+                }
+            }
+        }
+        else
+        {
+            const auto colon = remoteAddress.rfind(':');
+            if (colon != std::string::npos)
+            {
+                hostPart = remoteAddress.substr(0, colon);
+                portPart = remoteAddress.substr(colon + 1);
+            }
+        }
+
+        endpoint.host = hostPart;
+        if (!portPart.empty())
+        {
+            char* endptr = nullptr;
+            const unsigned long parsed = std::strtoul(portPart.c_str(), &endptr, 10);
+            if (endptr != nullptr && *endptr == '\0' && parsed <= std::numeric_limits<uint16_t>::max())
+            {
+                endpoint.port = static_cast<uint16_t>(parsed);
+            }
+        }
+        return endpoint;
+    }
+
+    bool PopulateDescriptorAddress(DESC* d, const RemoteEndpoint& endpoint)
+    {
+        if (!d || endpoint.host.empty())
+        {
+            return false;
+        }
+
+        UTF8 hostBuf[MBUF_SIZE];
+        UTF8 portBuf[16];
+
+        std::memset(hostBuf, 0, sizeof(hostBuf));
+        std::memset(portBuf, 0, sizeof(portBuf));
+
+        std::strncpy(reinterpret_cast<char*>(hostBuf), endpoint.host.c_str(), sizeof(hostBuf) - 1);
+        if (endpoint.port != 0)
+        {
+            std::snprintf(reinterpret_cast<char*>(portBuf), sizeof(portBuf), "%u", endpoint.port);
+        }
+
+        MUX_ADDRINFO hints{};
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+
+        MUX_ADDRINFO* res = nullptr;
+        const UTF8* service = (endpoint.port != 0) ? portBuf : nullptr;
+        const int status = mux_getaddrinfo(hostBuf, service, &hints, &res);
+        if (status != 0 || res == nullptr || res->ai_addr == nullptr)
+        {
+            if (res != nullptr)
+            {
+                mux_freeaddrinfo(res);
+            }
+            return false;
+        }
+
+        const size_t addrLen = static_cast<size_t>(res->ai_addrlen);
+        if (addrLen <= d->address.maxaddrlen())
+        {
+            std::memcpy(d->address.sa(), res->ai_addr, addrLen);
+        }
+        mux_freeaddrinfo(res);
+        return true;
+    }
+
+    bool ApplyNetworkAddressToDesc(DESC* d, const ganl::NetworkAddress& netAddr)
+    {
+        if (!d || !netAddr.isValid())
+        {
+            return false;
+        }
+
+        const struct sockaddr* sa = netAddr.getSockAddr();
+        const socklen_t len = netAddr.getSockAddrLen();
+        if (len <= 0 || static_cast<size_t>(len) > d->address.maxaddrlen())
+        {
+            return false;
+        }
+
+        std::memcpy(d->address.sa(), sa, static_cast<size_t>(len));
+        return true;
+    }
+
+    int MapGanlReasonToMux(ganl::DisconnectReason reason)
+    {
+        switch (reason)
+        {
+        case ganl::DisconnectReason::UserQuit:     return R_QUIT;
+        case ganl::DisconnectReason::Timeout:      return R_TIMEOUT;
+        case ganl::DisconnectReason::AdminKick:    return R_BOOT;
+        case ganl::DisconnectReason::ServerShutdown:
+            return R_GOING_DOWN;
+        case ganl::DisconnectReason::LoginFailed:  return R_BADLOGIN;
+        case ganl::DisconnectReason::GameFull:     return R_GAMEFULL;
+        case ganl::DisconnectReason::TlsError:
+        case ganl::DisconnectReason::NetworkError:
+        case ganl::DisconnectReason::ProtocolError:
+            return R_SOCKDIED;
+        default:
+            return R_UNKNOWN;
+        }
+    }
+
+    int ClampMuxReason(int mux_reason)
+    {
+        if (mux_reason < R_MIN || mux_reason > R_MAX)
+        {
+            return R_UNKNOWN;
+        }
+        return mux_reason;
+    }
+
+    void InitializeTelnetOptions(DESC* d, bool connectionIsTls)
+    {
+        if (!d)
+        {
+            return;
+        }
+
+        enable_us(d, TELNET_EOR);
+        enable_him(d, TELNET_EOR);
+        enable_him(d, TELNET_SGA);
+        enable_him(d, TELNET_TTYPE);
+        enable_him(d, TELNET_NAWS);
+        enable_him(d, TELNET_ENV);
+//        enable_him(d, TELNET_OLDENV);
+        enable_us(d, TELNET_CHARSET);
+        enable_him(d, TELNET_CHARSET);
+#ifdef UNIX_SSL
+        if (!connectionIsTls && (tls_ctx != nullptr))
+        {
+            enable_him(d, TELNET_STARTTLS);
+        }
+#endif
+    }
+
+    void FinalizeGanlConnection(GanlAdapter& adapter, DESC* d, bool connectionIsTls)
+    {
+        if (!d)
+        {
+            return;
+        }
+
+        InitializeTelnetOptions(d, connectionIsTls);
+
+        UTF8* siteBuffer = alloc_mbuf("ganl_connection.address");
+        if (siteBuffer != nullptr)
+        {
+            const struct sockaddr* sa = d->address.saro();
+            if (sa != nullptr && sa->sa_family != 0)
+            {
+                d->address.ntop(siteBuffer, MBUF_SIZE);
+            }
+            else if (d->addr[0] != '\0')
+            {
+                std::strncpy(reinterpret_cast<char*>(siteBuffer), reinterpret_cast<const char*>(d->addr), MBUF_SIZE - 1);
+                siteBuffer[MBUF_SIZE - 1] = '\0';
+            }
+            else
+            {
+                siteBuffer[0] = '\0';
+            }
+
+            site_mon_send(d->socket, siteBuffer, d, T("Connection"));
+            free_mbuf(siteBuffer);
+        }
+
+        if (mudconf.use_hostname && d->addr[0] != '\0')
+        {
+            adapter.queue_dns_lookup(d->addr);
+        }
+
+        d->ss = SocketState::Accepted;
+        welcome_user(d);
+
+        GanlLog(T("READY socket=%d player=%d tls=%s"),
+            d->socket,
+            d->player,
+            connectionIsTls ? T("yes") : T("no"));
+    }
+
+    void HandleConnectedDescriptorPreAnnounce(DESC* d, int mux_reason, const CLinearTimeAbsolute& ltaNow)
+    {
+        if (!d || d->player == NOTHING)
+        {
+            return;
+        }
+
+        mux_reason = ClampMuxReason(mux_reason);
+
+        atr_add_raw(d->player, A_REASON, disc_messages[mux_reason]);
+
+        long anFields[4] = {0, 0, 0, 0};
+        fetch_ConnectionInfoFields(d->player, anFields);
+        anFields[CIF_NUMCONNECTS]++;
+
+        DESC* dOldest[2] = {nullptr, nullptr};
+        find_oldest(d->player, dOldest);
+        if (dOldest[0])
+        {
+            CLinearTimeDelta ltdFull = ltaNow - dOldest[0]->connected_at;
+            const long tFull = ltdFull.ReturnSeconds();
+            if (dOldest[0] == d)
+            {
+                CLinearTimeDelta ltdPart;
+                if (dOldest[1])
+                {
+                    ltdPart = dOldest[1]->connected_at - dOldest[0]->connected_at;
+                }
+                else
+                {
+                    ltdPart = ltdFull;
+                }
+                const long tPart = ltdPart.ReturnSeconds();
+                anFields[CIF_TOTALTIME] += tPart;
+                if (anFields[CIF_LONGESTCONNECT] < tFull)
+                {
+                    anFields[CIF_LONGESTCONNECT] = tFull;
+                }
+            }
+            anFields[CIF_LASTCONNECT] = tFull;
+        }
+        CLinearTimeAbsolute ltaLogout = ltaNow;
+        put_ConnectionInfoFields(d->player, anFields, ltaLogout);
+
+        if (mux_reason == R_LOGOUT)
+        {
+            STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
+            UTF8* buff = alloc_mbuf("ganl_close.LOG.logout");
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            log_text(buff);
+            log_name(d->player);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_messages[mux_reason]);
+            log_text(buff);
+            free_mbuf(buff);
+            ENDLOG;
+        }
+        else
+        {
+            fcache_dump(d, FC_QUIT);
+            STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
+            UTF8* buff = alloc_mbuf("ganl_close.LOG.disconn");
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            log_text(buff);
+            log_name(d->player);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_messages[mux_reason]);
+            log_text(buff);
+            free_mbuf(buff);
+            ENDLOG;
+            site_mon_send(d->socket, d->addr, d, T("Disconnection"));
+        }
+
+        STARTLOG(LOG_ACCOUNTING, "DIS", "ACCT");
+        CLinearTimeDelta ltd = ltaNow - d->connected_at;
+        const int Seconds = ltd.ReturnSeconds();
+        UTF8* accnt = alloc_lbuf("ganl_close.LOG.accnt");
+        const auto flags = decode_flags(GOD, &(db[d->player].fs));
+        const auto locPlayer = Location(d->player);
+        const auto penPlayer = Pennies(d->player);
+        const auto PlayerName = PureName(d->player);
+        mux_sprintf(accnt, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"),
+            d->player, flags, d->command_count, Seconds, locPlayer, penPlayer,
+            d->addr, disc_messages[mux_reason], PlayerName);
+        log_text(accnt);
+        free_lbuf(accnt);
+        free_sbuf(flags);
+        ENDLOG;
+    }
+
+    void HandleUnconnectedDescriptorClose(DESC* d)
+    {
+        if (!d)
+        {
+            return;
+        }
+
+        STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
+        UTF8* buff = alloc_mbuf("ganl_close.LOG.neverconn");
+        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected."),
+            d->socket, d->addr);
+        log_text(buff);
+        free_mbuf(buff);
+        ENDLOG;
+        site_mon_send(d->socket, d->addr, d, T("N/C Connection Closed"));
+    }
+
+    void ResetDescriptorForLogout(DESC* d)
+    {
+        if (!d)
+        {
+            return;
+        }
+
+        process_output(d, false);
+        clearstrings(d);
+        freeqs(d);
+
+        if (d->flags & DS_CONNECTED)
+        {
+            d->flags &= ~DS_CONNECTED;
+        }
+
+        if (d->program_data != nullptr)
+        {
+            int num = 0;
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                num++;
+            }
+
+            if (0 == num)
+            {
+                for (auto& wait_reg : d->program_data->wait_regs)
+                {
+                    if (wait_reg)
+                    {
+                        RegRelease(wait_reg);
+                        wait_reg = nullptr;
+                    }
+                }
+                MEMFREE(d->program_data);
+                atr_clr(d->player, A_PROGCMD);
+            }
+            d->program_data = nullptr;
+        }
+
+        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+
+        if (d->player != NOTHING)
+        {
+            const dbref player = d->player;
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                if (it->second == d)
+                {
+                    mudstate.dbref_to_descriptors_map.erase(it);
+                    break;
+                }
+            }
+        }
+
+        d->connected_at.GetUTC();
+        d->retries_left = mudconf.retry_limit;
+        d->command_count = 0;
+        d->timeout = mudconf.idle_timeout;
+        d->player = NOTHING;
+        d->username[0] = '\0';
+        d->doing[0] = '\0';
+        d->quota = mudconf.cmd_quota_max;
+        d->last_time = d->connected_at;
+        d->input_tot = d->input_size;
+        d->output_tot = 0;
+        d->encoding = d->negotiated_encoding;
+
+        welcome_user(d);
+    }
+}
+
+// --- GANL Callback Implementations ---
+
+class GanlTinyMuxSessionManager : public ganl::SessionManager {
+private:
+    GanlAdapter& adapter_;
+
+public:
+    GanlTinyMuxSessionManager(GanlAdapter& adapter) : adapter_(adapter) {}
+    ~GanlTinyMuxSessionManager() override = default;
+
+    bool initialize() override { /* TODO: Any TinyMUX session init? */ return true; }
+    void shutdown() override { /* TODO: Any TinyMUX session cleanup? */ }
+
+    ganl::SessionId onConnectionOpen(ganl::ConnectionHandle handle, const std::string& remoteAddress) override {
+        GanlAdapter::ListenerContext listenerCtx{0, false};
+        ganl::NetworkAddress remoteNetAddr;
+        bool useTls = false;
+
+        {
+            std::lock_guard<std::mutex> lock(adapter_.mutex_);
+            auto ctxIt = adapter_.connection_listener_map_.find(handle);
+            if (ctxIt != adapter_.connection_listener_map_.end()) {
+                listenerCtx = ctxIt->second;
+                adapter_.connection_listener_map_.erase(ctxIt);
+            }
+
+            auto addrIt = adapter_.pending_remote_addresses_.find(handle);
+            if (addrIt != adapter_.pending_remote_addresses_.end()) {
+                remoteNetAddr = addrIt->second;
+                adapter_.pending_remote_addresses_.erase(addrIt);
+            }
+
+            auto tlsIt = adapter_.pending_tls_flags_.find(handle);
+            if (tlsIt != adapter_.pending_tls_flags_.end()) {
+                useTls = tlsIt->second;
+                adapter_.pending_tls_flags_.erase(tlsIt);
+            }
+        }
+
+        std::shared_ptr<ganl::ConnectionBase> conn;
+        {
+            std::lock_guard<std::mutex> lock(adapter_.mutex_);
+            auto itConn = adapter_.handle_to_conn_.find(handle);
+            if (itConn != adapter_.handle_to_conn_.end()) {
+                conn = itConn->second;
+            }
+        }
+        if (!conn) {
+            std::cerr << "[GANL Adapter] Missing ConnectionBase for handle " << handle << std::endl;
+            return ganl::InvalidSessionId;
+        }
+
+        DESC* d = adapter_.allocate_desc();
+        if (!d) {
+            std::cerr << "[GANL Adapter] Failed to allocate DESC for handle " << handle << std::endl;
+            return ganl::InvalidSessionId;
+        }
+
+        d->socket = static_cast<int>(handle);
+        d->flags = 0;
+        d->connected_at.GetUTC();
+        d->last_time = d->connected_at;
+        d->retries_left = mudconf.retry_limit;
+        d->command_count = 0;
+        d->timeout = mudconf.idle_timeout;
+        d->player = NOTHING;
+        d->addr[0] = '\0';
+        d->doing[0] = '\0';
+        d->username[0] = '\0';
+        d->output_prefix = nullptr;
+        d->output_suffix = nullptr;
+        d->output_size = 0;
+        d->output_tot = 0;
+        d->output_lost = 0;
+        d->output_head = nullptr;
+        d->output_tail = nullptr;
+        d->input_head = nullptr;
+        d->input_tail = nullptr;
+        d->input_size = 0;
+        d->input_tot = 0;
+        d->input_lost = 0;
+        d->raw_input = nullptr;
+        d->raw_input_at = nullptr;
+        d->nOption = 0;
+        d->raw_input_state = NVT_IS_NORMAL;
+        d->raw_codepoint_state = CL_PRINT_START_STATE;
+        d->raw_codepoint_length = 0;
+        d->quota = mudconf.cmd_quota_max;
+        d->program_data = nullptr;
+        d->ttype = nullptr;
+        d->height = 24;
+        d->width = 78;
+        d->encoding = mudconf.default_charset;
+        d->negotiated_encoding = mudconf.default_charset;
+
+        for (auto& state : d->nvt_him_state) {
+            state = OPTION_NO;
+        }
+        for (auto& state : d->nvt_us_state) {
+            state = OPTION_NO;
+        }
+
+        const RemoteEndpoint endpoint = ParseRemoteAddress(remoteAddress);
+        bool haveSockAddr = ApplyNetworkAddressToDesc(d, remoteNetAddr);
+        if (!haveSockAddr && !endpoint.host.empty()) {
+            haveSockAddr = PopulateDescriptorAddress(d, endpoint);
+        }
+        if (!haveSockAddr) {
+            std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+        }
+
+        if (haveSockAddr) {
+            d->address.ntop(d->addr, sizeof(d->addr));
+        } else if (!endpoint.host.empty()) {
+            std::strncpy(reinterpret_cast<char*>(d->addr), endpoint.host.c_str(), sizeof(d->addr) - 1);
+            d->addr[sizeof(d->addr) - 1] = '\0';
+        } else if (!remoteAddress.empty()) {
+            std::strncpy(reinterpret_cast<char*>(d->addr), remoteAddress.c_str(), sizeof(d->addr) - 1);
+            d->addr[sizeof(d->addr) - 1] = '\0';
+        }
+
+        DebugTotalSockets++;
+
+        UTF8 addrText[MBUF_SIZE];
+        addrText[0] = '\0';
+        if (haveSockAddr) {
+            d->address.ntop(addrText, MBUF_SIZE);
+        } else if (d->addr[0] != '\0') {
+            std::strncpy(reinterpret_cast<char*>(addrText), reinterpret_cast<const char*>(d->addr), MBUF_SIZE - 1);
+            addrText[MBUF_SIZE - 1] = '\0';
+        }
+
+        if (haveSockAddr && mudstate.access_list.isForbid(&d->address)) {
+            STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+            UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
+            mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
+                d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
+            log_text(logBuf);
+            free_mbuf(logBuf);
+            ENDLOG;
+
+            UTF8* siteBuffer = alloc_mbuf("ganl_connection.address");
+            if (siteBuffer != nullptr)
+            {
+                d->address.ntop(siteBuffer, MBUF_SIZE);
+                site_mon_send(d->socket, siteBuffer, nullptr, T("Connection refused"));
+                free_mbuf(siteBuffer);
+            }
+            fcache_rawdump(static_cast<SOCKET>(d->socket), FC_CONN_SITE);
+
+            DebugTotalSockets--;
+            adapter_.free_desc2(d);
+            return ganl::InvalidSessionId;
+        }
+
+        auto listIt = mudstate.descriptors_list.insert(mudstate.descriptors_list.begin(), d);
+        mudstate.descriptors_map.insert(std::make_pair(d, listIt));
+
+#ifdef UNIX_SSL
+        d->ss = useTls ? SocketState::SSLAcceptAgain : SocketState::Accepted;
+#else
+        d->ss = SocketState::Accepted;
+#endif
+
+        adapter_.add_mapping(handle, d, conn);
+
+        const unsigned short resolvedPort = haveSockAddr ? d->address.port() : endpoint.port;
+
+        STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
+        Log.tinyprintf(T("[%d/%s] Connection opened (remote port %u)"),
+            d->socket,
+            addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+            static_cast<unsigned int>(resolvedPort));
+        ENDLOG;
+
+        GanlLog(T("ACPT handle=%u socket=%d remote='%s' tls=%s"),
+            static_cast<unsigned int>(handle),
+            d->socket,
+            addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+            useTls ? T("yes") : T("no"));
+
+        // With the raw passthrough handler, GANL completes TLS at the
+        // transport layer before calling onConnectionOpen. Always finalize
+        // immediately.
+        FinalizeGanlConnection(adapter_, d, useTls);
+
+        return static_cast<ganl::SessionId>(handle);
+    }
+
+    void onDataReceived(ganl::SessionId sessionId, const std::string& data) override {
+        ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
+        DESC* d = adapter_.get_desc(handle);
+        if (!d) {
+            return;
+        }
+
+        // Feed raw bytes through TinyMUX's existing NVT parser.
+        // process_input_helper handles all telnet negotiation, charset
+        // detection, and command queuing.
+        process_input_helper(d, const_cast<char*>(data.data()),
+                             static_cast<int>(data.size()));
+    }
+
+    void onConnectionClose(ganl::SessionId sessionId, ganl::DisconnectReason reason) override {
+        ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
+        DESC* d = adapter_.get_desc(handle);
+        if (!d) {
+            //GANL_CONN_DEBUG(handle, "Close notification for unknown/closed session.");
+            return;
+        }
+
+        GanlLog(T("CLOSE socket=%d player=%d reason=%d"),
+            d->socket,
+            d->player,
+            static_cast<int>(reason));
+
+        const CLinearTimeAbsolute ltaNow = [&]() {
+            CLinearTimeAbsolute tmp; tmp.GetUTC(); return tmp;
+        }();
+
+        const int mux_reason = MapGanlReasonToMux(reason);
+        const int clamped_reason = ClampMuxReason(mux_reason);
+
+        if (clamped_reason == R_LOGOUT)
+        {
+            if (d->player != NOTHING)
+            {
+                HandleConnectedDescriptorPreAnnounce(d, clamped_reason, ltaNow);
+                announce_disconnect(d->player, d, disc_messages[clamped_reason]);
+            }
+            else
+            {
+                HandleUnconnectedDescriptorClose(d);
+            }
+
+            ResetDescriptorForLogout(d);
+            return;
+        }
+
+        if (d->player != NOTHING) {
+            HandleConnectedDescriptorPreAnnounce(d, clamped_reason, ltaNow);
+            announce_disconnect(d->player, d, disc_messages[clamped_reason]);
+        }
+        else {
+            HandleUnconnectedDescriptorClose(d);
+        }
+
+        // Cleanup TinyMUX resources associated with the DESC
+        process_output(d, false);
+        clearstrings(d);
+        freeqs(d);
+
+        if (d->flags & DS_CONNECTED)
+        {
+            d->flags &= ~DS_CONNECTED;
+        }
+
+        if (d->program_data != nullptr)
+        {
+            int num = 0;
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                num++;
+            }
+
+            if (num == 0)
+            {
+                for (auto& wait_reg : d->program_data->wait_regs)
+                {
+                    if (wait_reg)
+                    {
+                        RegRelease(wait_reg);
+                        wait_reg = nullptr;
+                    }
+                }
+                MEMFREE(d->program_data);
+                atr_clr(d->player, A_PROGCMD);
+            }
+            d->program_data = nullptr;
+        }
+
+        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+
+        if (d->player != NOTHING)
+        {
+            const dbref player = d->player;
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+            for (auto itPlayer = range.first; itPlayer != range.second; ++itPlayer)
+            {
+                if (itPlayer->second == d)
+                {
+                    mudstate.dbref_to_descriptors_map.erase(itPlayer);
+                    break;
+                }
+            }
+        }
+
+        auto mapIt = mudstate.descriptors_map.find(d);
+        if (mapIt != mudstate.descriptors_map.end()) {
+            mudstate.descriptors_list.erase(mapIt->second);
+            mudstate.descriptors_map.erase(mapIt);
+        }
+
+        // Remove mapping FIRST
+        adapter_.remove_mapping(d);
+
+        // Then free the DESC structure
+        adapter_.free_desc2(d);
+
+        DebugTotalSockets--;
+    }
+
+    bool sendToSession(ganl::SessionId sessionId, const std::string& message) override {
+        ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
+        DESC* d = adapter_.get_desc(handle);
+        if (!d) return false;
+
+        // Directly send using adapter's send_data
+        adapter_.send_data(d, message.c_str(), message.length());
+        return true;
+    }
+
+    bool broadcastMessage(const std::string& message, ganl::SessionId except = ganl::InvalidSessionId) override {
+        if (message.empty()) {
+            return true;
+        }
+
+        const ganl::ConnectionHandle exceptHandle = (except != ganl::InvalidSessionId)
+            ? static_cast<ganl::ConnectionHandle>(except)
+            : ganl::InvalidConnectionHandle;
+
+        bool sentAny = false;
+        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+            DESC* target = *it;
+            if (!target) {
+                continue;
+            }
+
+            const ganl::ConnectionHandle handle = adapter_.get_handle(target);
+            if (exceptHandle != ganl::InvalidConnectionHandle && handle == exceptHandle) {
+                continue;
+            }
+
+            adapter_.send_data(target, message.c_str(), message.size());
+            sentAny = true;
+        }
+        return sentAny;
+    }
+
+    bool disconnectSession(ganl::SessionId sessionId, ganl::DisconnectReason reason) override {
+        ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
+        DESC* d = adapter_.get_desc(handle);
+        if (!d) return false;
+
+        adapter_.close_connection(d, reason);
+        return true;
+    }
+
+    bool authenticateSession(ganl::SessionId sessionId, ganl::ConnectionHandle connHandle,
+        const std::string& username, const std::string& password) override {
+        UNUSED_PARAMETER(sessionId);
+
+        DESC* d = adapter_.get_desc(connHandle);
+        if (!d) {
+            return false;
+        }
+
+        UTF8* user = alloc_lbuf("ganl_auth.user");
+        UTF8* pass = alloc_lbuf("ganl_auth.pass");
+        if (!user || !pass) {
+            if (user) {
+                free_lbuf(user);
+            }
+            if (pass) {
+                free_lbuf(pass);
+            }
+            return false;
+        }
+
+        mux_strncpy(user, reinterpret_cast<const UTF8*>(username.c_str()), LBUF_SIZE - 1);
+        mux_strncpy(pass, reinterpret_cast<const UTF8*>(password.c_str()), LBUF_SIZE - 1);
+
+        auto cleanupBuffers = [&]() {
+            if (user) {
+                free_lbuf(user);
+                user = nullptr;
+            }
+            if (pass) {
+                free_lbuf(pass);
+                pass = nullptr;
+            }
+        };
+
+        auto logReject = [&](const UTF8* logcode, const UTF8* logtype, const UTF8* logreason, dbref playerRef) {
+            STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, T("RJCT"));
+            UTF8* buff = alloc_mbuf("ganl_auth.reject");
+            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
+            log_text(buff);
+            free_mbuf(buff);
+            if (playerRef != NOTHING) {
+                log_name(playerRef);
+            } else {
+                log_text(user);
+            }
+            log_text(T(" ("));
+            log_text(logreason);
+            log_text(T(")"));
+            ENDLOG;
+        };
+
+        auto rejectWithMessage = [&](const UTF8* logcode, const UTF8* logtype, const UTF8* logreason,
+                                     dbref playerRef, int filecache, const UTF8* motd,
+                                     ganl::DisconnectReason reason) {
+            logReject(logcode, logtype, logreason, playerRef);
+            fcache_dump(d, filecache);
+            if (motd && *motd) {
+                queue_string(d, motd);
+                queue_write_LEN(d, T("\r\n"), 2);
+            }
+            cleanupBuffers();
+            adapter_.close_connection(d, reason);
+            return false;
+        };
+
+        const int hostInfo = mudstate.access_list.check(&d->address);
+
+        GanlLog(T("AUTH attempt socket=%d user='%s' addr='%s'"),
+            d->socket,
+            user,
+            d->addr);
+        bool isGuestConnect = false;
+
+        if (string_prefix(user, mudconf.guest_prefix)) {
+            if (hostInfo & HI_NOGUEST) {
+                GanlLog(T("AUTH reject guest-forbid socket=%d addr='%s'"), d->socket, d->addr);
+                return rejectWithMessage(T("CONN"), T("Connect"), T("Guest Site Forbidden"), NOTHING,
+                    FC_CONN_REG, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+            }
+
+            if (mudconf.control_flags & CF_LOGIN) {
+                if (mudconf.number_guests <= 0 || !Good_obj(mudconf.guest_char) || !(mudconf.control_flags & CF_GUEST)) {
+                    queue_write(d, T("Guest logins are disabled.\r\n"));
+                    GanlLog(T("AUTH reject guest-disabled socket=%d addr='%s'"), d->socket, d->addr);
+                    cleanupBuffers();
+                    return false;
+                }
+
+                const UTF8* guestUser = Guest.Create(d);
+                if (!guestUser) {
+                    GanlLog(T("AUTH reject guest-create socket=%d addr='%s'"), d->socket, d->addr);
+                    cleanupBuffers();
+                    return false;
+                }
+
+                mux_strncpy(user, guestUser, LBUF_SIZE - 1);
+                mux_strncpy(pass, reinterpret_cast<const UTF8*>(GUEST_PASSWORD), LBUF_SIZE - 1);
+                isGuestConnect = true;
+            }
+        }
+
+        int nplayers;
+        if (mudconf.max_players < 0) {
+            nplayers = mudconf.max_players - 1;
+        } else {
+            nplayers = 0;
+            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+                DESC* d2 = *it;
+                if (d2->flags & DS_CONNECTED) {
+                    nplayers++;
+                }
+            }
+        }
+
+        UTF8 hostAddress[MBUF_SIZE];
+        hostAddress[0] = '\0';
+        const struct sockaddr* sa = d->address.saro();
+        if (sa != nullptr && sa->sa_family != 0) {
+            d->address.ntop(hostAddress, sizeof(hostAddress));
+        } else if (d->addr[0] != '\0') {
+            mux_strncpy(hostAddress, reinterpret_cast<const UTF8*>(d->addr), sizeof(hostAddress) - 1);
+        } else {
+            std::string remote = adapter_.get_engine()->getRemoteAddress(connHandle);
+            mux_strncpy(hostAddress, reinterpret_cast<const UTF8*>(remote.c_str()), sizeof(hostAddress) - 1);
+        }
+
+        dbref player = connect_player(user, pass, d->addr, d->username, hostAddress);
+        if (player == NOTHING || (!isGuestConnect && Guest.CheckGuest(player))) {
+            queue_write(d, connect_fail);
+            STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
+            UTF8* buff = alloc_lbuf("ganl_auth.badconnect");
+            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
+            log_text(buff);
+            free_lbuf(buff);
+            ENDLOG;
+
+            GanlLog(T("AUTH reject bad-password socket=%d user='%s' retries_left=%d"),
+                d->socket,
+                user,
+                d->retries_left - 1);
+
+            if (--(d->retries_left) <= 0) {
+                GanlLog(T("AUTH reject retries-exhausted socket=%d user='%s'"), d->socket, user);
+                cleanupBuffers();
+                adapter_.close_connection(d, ganl::DisconnectReason::LoginFailed);
+            } else {
+                cleanupBuffers();
+            }
+            return false;
+        }
+
+        const bool loginsEnabled = (mudconf.control_flags & CF_LOGIN) != 0;
+        const bool belowCap = (mudconf.max_players < 0) || (nplayers < mudconf.max_players);
+        const bool privileged = RealWizRoy(player) || God(player);
+
+        if (!( (loginsEnabled && belowCap) || privileged )) {
+            if (!loginsEnabled) {
+            GanlLog(T("AUTH reject logins-disabled socket=%d user='%s'"), d->socket, user);
+            return rejectWithMessage(T("CON"), T("Connect"), T("Logins Disabled"), player,
+                FC_CONN_DOWN, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+        }
+        GanlLog(T("AUTH reject game-full socket=%d user='%s'"), d->socket, user);
+        return rejectWithMessage(T("CON"), T("Connect"), T("Game Full"), player,
+            FC_CONN_FULL, mudconf.fullmotd_msg, ganl::DisconnectReason::GameFull);
+        }
+
+        if (Guest(player) && (hostInfo & HI_NOGUEST)) {
+            GanlLog(T("AUTH reject host-guest-forbid socket=%d player=#%d"), d->socket, player);
+            return rejectWithMessage(T("CON"), T("Connect"), T("Guest Site Forbidden"), player,
+                FC_CONN_SITE, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+        }
+
+        STARTLOG(LOG_LOGIN, "CON", "LOGIN");
+        UTF8* loginBuff = alloc_mbuf("ganl_auth.login");
+        mux_sprintf(loginBuff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
+        log_text(loginBuff);
+        log_name_and_loc(player);
+        free_mbuf(loginBuff);
+        ENDLOG;
+
+        d->flags |= DS_CONNECTED;
+        d->connected_at.GetUTC();
+        d->player = player;
+
+        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+        for (auto it = range.first; it != range.second; ++it) {
+            DESC* d2 = it->second;
+            if (d2->program_data != nullptr && d->program_data == nullptr) {
+                d->program_data = d2->program_data;
+            } else if (d2->program_data != nullptr) {
+                mux_assert(d->program_data == d2->program_data);
+            }
+        }
+
+        ganl_associate_player(d, player);
+
+        announce_connect(player, d);
+
+        int numConnections = 0;
+        const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
+        for (auto it = range2.first; it != range2.second; ++it) {
+            numConnections++;
+        }
+
+        local_connect(player, 0, numConnections);
+
+        ServerEventsSinkNode* sinkNode = g_pServerEventsSinkListHead;
+        while (nullptr != sinkNode) {
+            sinkNode->pSink->connect(player, 0, numConnections);
+            sinkNode = sinkNode->pNext;
+        }
+
+        if (nullptr != d->program_data) {
+            queue_write_LEN(d, T(">\377\371"), 3);
+        }
+
+        GanlLog(T("AUTH success socket=%d player=#%d sessions=%d"),
+            d->socket,
+            player,
+            numConnections);
+
+        cleanupBuffers();
+        return true;
+    }
+
+    void onAuthenticationSuccess(ganl::SessionId sessionId, int playerId) {
+        // This might be redundant if authenticateSession handles everything.
+        // Could be used for post-authentication setup if needed.
+        //GANL_CONN_DEBUG(static_cast<ganl::ConnectionHandle>(sessionId), "onAuthenticationSuccess called for Player #" << playerId);
+    }
+
+    int getPlayerId(ganl::SessionId sessionId) override {
+        DESC* d = adapter_.get_desc(static_cast<ganl::ConnectionHandle>(sessionId));
+        return (d && d->player != NOTHING) ? d->player : -1;
+    }
+
+    ganl::SessionState getSessionState(ganl::SessionId sessionId) override {
+        DESC* d = adapter_.get_desc(static_cast<ganl::ConnectionHandle>(sessionId));
+        if (!d) return ganl::SessionState::Closed;
+        if (d->player == NOTHING) return ganl::SessionState::Authenticating; // Or Connecting?
+        return ganl::SessionState::Connected;
+    }
+
+    ganl::SessionStats getSessionStats(ganl::SessionId sessionId) override {
+        DESC* d = adapter_.get_desc(static_cast<ganl::ConnectionHandle>(sessionId));
+        ganl::SessionStats stats = {};
+        if (d) {
+            // Approximate mapping
+            stats.bytesReceived = d->input_tot;
+            stats.bytesSent = d->output_tot;
+            stats.commandsProcessed = d->command_count;
+            stats.connectedAt = d->connected_at.ReturnSeconds();
+            stats.lastActivity = d->last_time.ReturnSeconds();
+        }
+        return stats;
+    }
+
+    ganl::ConnectionHandle getConnectionHandle(ganl::SessionId sessionId) override {
+        // Simple mapping: Session ID is the Connection Handle
+        return static_cast<ganl::ConnectionHandle>(sessionId);
+    }
+
+    // --- Address Checks (delegate to TinyMUX) ---
+    bool isAddressAllowed(const std::string& address) override {
+        // Rework: Need NetworkAddress
+        // ganl::NetworkAddress netAddr = ... ; // How to construct from string? Needs helper
+        // return !mudstate.access_list.isForbid(&netAddr);
+        return true; // Placeholder
+    }
+    bool isAddressRegistered(const std::string& address) override {
+        // Rework needed
+        return false; // Placeholder
+    }
+    bool isAddressForbidden(const std::string& address) override {
+        // Rework needed
+        return false; // Placeholder
+    }
+    bool isAddressSuspect(const std::string& address) override {
+        // Rework needed
+        return false; // Placeholder
+    }
+
+    std::string getLastSessionErrorString(ganl::SessionId sessionId) {
+        // TODO: Store last error per session if needed
+        return "";
+    }
+};
+
+
+// RawPassthroughHandler: Passes raw decrypted bytes through without any
+// telnet parsing. TinyMUX's process_input_helper() handles all telnet
+// negotiation, charset detection, and MUD-specific quirks.
+//
+class RawPassthroughHandler : public ganl::ProtocolHandler {
+public:
+    RawPassthroughHandler() = default;
+    ~RawPassthroughHandler() override = default;
+
+    bool createProtocolContext(ganl::ConnectionHandle) override { return true; }
+    void destroyProtocolContext(ganl::ConnectionHandle) override {}
+
+    bool processInput(ganl::ConnectionHandle conn, ganl::IoBuffer& in,
+        ganl::IoBuffer& app_out, ganl::IoBuffer& telnet_out,
+        bool consumeInput = true) override
+    {
+        UNUSED_PARAMETER(conn);
+        UNUSED_PARAMETER(telnet_out);
+
+        // Move all bytes directly to app_out without telnet parsing.
+        size_t avail = in.readableBytes();
+        if (avail > 0) {
+            app_out.append(in.readPtr(), avail);
+            if (consumeInput) {
+                in.consumeRead(avail);
+            }
+        }
+        return true;
+    }
+
+    bool formatOutput(ganl::ConnectionHandle conn, ganl::IoBuffer& in,
+        ganl::IoBuffer& out, bool consumeInput = true) override
+    {
+        UNUSED_PARAMETER(conn);
+
+        // Pass output through without modification.
+        // TinyMUX already handles color conversion in queue_string() ->
+        // convert_color() -> queue_write_LEN() before output reaches here.
+        size_t avail = in.readableBytes();
+        if (avail > 0) {
+            out.append(in.readPtr(), avail);
+            if (consumeInput) {
+                in.consumeRead(avail);
+            }
+        }
+        return true;
+    }
+
+    // Negotiation is a no-op. TinyMUX sends its own IAC sequences via
+    // the output queue through process_input_helper().
+    void startNegotiation(ganl::ConnectionHandle, ganl::IoBuffer&) override {}
+    ganl::NegotiationStatus getNegotiationStatus(ganl::ConnectionHandle) override
+    {
+        return ganl::NegotiationStatus::Completed;
+    }
+    bool consumeStateChanges(ganl::ConnectionHandle,
+        ganl::ProtocolState&, ganl::ProtocolStateChangeFlags&) override
+    {
+        return false;
+    }
+
+    bool setEncoding(ganl::ConnectionHandle, ganl::EncodingType) override { return true; }
+    ganl::EncodingType getEncoding(ganl::ConnectionHandle) override
+    {
+        return ganl::EncodingType::Utf8;
+    }
+    ganl::ProtocolState getProtocolState(ganl::ConnectionHandle) override
+    {
+        return ganl::ProtocolState{};
+    }
+    void updateWidth(ganl::ConnectionHandle, uint16_t) override {}
+    void updateHeight(ganl::ConnectionHandle, uint16_t) override {}
+    std::string getLastProtocolErrorString(ganl::ConnectionHandle) override { return ""; }
+};
+
+// --- Global Adapter Instance ---
+GanlAdapter g_GanlAdapter;
+
+// --- GanlAdapter Implementation ---
+
+GanlAdapter::GanlAdapter() = default;
+
+GanlAdapter::~GanlAdapter() {
+    // Shutdown should be called explicitly, but ensure cleanup if not
+    shutdown();
+}
+
+bool GanlAdapter::initialize() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (initialized_) return true;
+
+    Log.WriteString(T("Initializing GANL Adapter...\n"));
+
+    // 1. Create Network Engine
+    networkEngine_ = ganl::NetworkEngineFactory::createEngine();
+    if (!networkEngine_) {
+        std::cerr << "[GANL Adapter] FATAL: Failed to create network engine." << std::endl;
+        Log.WriteString(T("FATAL: Failed to create GANL network engine.\n"));
+        return false;
+    }
+    Log.tinyprintf(T("Using GANL Network Engine: %d\n"), networkEngine_->getIoModelType());
+
+
+    // 2. Initialize Network Engine
+    if (!networkEngine_->initialize()) {
+        std::cerr << "[GANL Adapter] FATAL: Failed to initialize network engine." << std::endl;
+        Log.WriteString(T("FATAL: Failed to initialize GANL network engine.\n"));
+        networkEngine_.reset(); // Release the failed engine
+        return false;
+    }
+
+    // 3. Create Secure Transport (TLS/SSL)
+    // TODO: Make transport type configurable?
+    secureTransport_ = ganl::SecureTransportFactory::createTransport();
+    if (secureTransport_) {
+        ganl::TlsConfig tlsConfig;
+        tlsConfig.certificateFile = (const char*)mudconf.ssl_certificate_file; // Assuming UTF8 is compatible
+        tlsConfig.keyFile = (const char*)mudconf.ssl_certificate_key;
+        tlsConfig.password = (const char*)mudconf.ssl_certificate_password;
+        // tlsConfig.verifyPeer = false; // Default
+
+        if (!secureTransport_->initialize(tlsConfig)) {
+            std::cerr << "[GANL Adapter] Warning: Failed to initialize secure transport: "
+                << secureTransport_->getLastTlsErrorString(0) << std::endl;
+            Log.tinyprintf(T("Warning: Failed to initialize GANL secure transport: %s\n"),
+                secureTransport_->getLastTlsErrorString(0).c_str());
+            secureTransport_.reset(); // Don't use TLS if init failed
+        }
+        else {
+            Log.WriteString(T("GANL Secure Transport initialized.\n"));
+        }
+    }
+    else {
+        Log.WriteString(T("No GANL Secure Transport available or created.\n"));
+    }
+
+    // 4. Create Protocol Handler (raw passthrough — TinyMUX handles telnet)
+    protocolHandler_ = std::make_unique<RawPassthroughHandler>();
+
+    // 5. Create Session Manager
+    sessionManager_ = std::make_unique<GanlTinyMuxSessionManager>(*this);
+    if (!sessionManager_->initialize()) {
+        std::cerr << "[GANL Adapter] FATAL: Failed to initialize session manager." << std::endl;
+        Log.WriteString(T("FATAL: Failed to initialize GANL session manager.\n"));
+        // Need proper cleanup
+        networkEngine_->shutdown();
+        networkEngine_.reset();
+        if (secureTransport_) secureTransport_->shutdown();
+        secureTransport_.reset();
+        protocolHandler_.reset();
+        sessionManager_.reset();
+        return false;
+    }
+
+    // 6. Create Listeners based on mudconf
+    ganl::ErrorCode error = 0;
+    for (int i = 0; i < mudconf.ports.n; ++i) {
+        int port = mudconf.ports.pi[i];
+        std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : ""; // Handle null IP address
+
+        ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
+        if (handle != ganl::InvalidListenerHandle) {
+            // Store listener context
+            listener_contexts_[handle] = { port, false };
+            if (networkEngine_->startListening(handle, &listener_contexts_[handle] /* Pass context */, error)) {
+                port_listeners_[port] = handle;
+                Log.tinyprintf(T("GANL listening on %s:%d (Handle: %llu)\n"),
+                    host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
+            }
+            else {
+                Log.tinyprintf(T("GANL failed to start listening on port %d: %s\n"),
+                    port, networkEngine_->getErrorString(error).c_str());
+                networkEngine_->closeListener(handle); // Clean up created listener
+            }
+        }
+        else {
+            Log.tinyprintf(T("GANL failed to create listener for port %d: %s\n"),
+                port, networkEngine_->getErrorString(error).c_str());
+        }
+    }
+
+    // Create SSL Listeners
+    if (secureTransport_) { // Only if TLS is initialized
+        for (int i = 0; i < mudconf.sslPorts.n; ++i) {
+            int port = mudconf.sslPorts.pi[i];
+            std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : ""; // Handle null IP address
+
+            ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
+            if (handle != ganl::InvalidListenerHandle) {
+                // Store listener context
+                listener_contexts_[handle] = { port, true };
+                if (networkEngine_->startListening(handle, &listener_contexts_[handle] /* Pass context */, error)) {
+                    ssl_port_listeners_[port] = handle;
+                    Log.tinyprintf(T("GANL listening with SSL on %s:%d (Handle: %llu)\n"),
+                        host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
+                }
+                else {
+                    Log.tinyprintf(T("GANL failed to start SSL listening on port %d: %s\n"),
+                        port, networkEngine_->getErrorString(error).c_str());
+                    networkEngine_->closeListener(handle); // Clean up created listener
+                }
+            }
+            else {
+                Log.tinyprintf(T("GANL failed to create SSL listener for port %d: %s\n"),
+                    port, networkEngine_->getErrorString(error).c_str());
+            }
+        }
+    }
+
+
+    if (port_listeners_.empty() && ssl_port_listeners_.empty()) {
+        Log.WriteString(T("Warning: No GANL listeners successfully started.\n"));
+        // Continue? Or fail? Let's continue for now.
+    }
+
+#if !defined(_WIN32)
+    if (mudconf.use_hostname) {
+        start_dns_slave();
+    }
+#endif
+
+
+    initialized_ = true;
+    Log.WriteString(T("GANL Adapter initialized.\n"));
+    return true;
+}
+
+void GanlAdapter::shutdown() {
+    std::unique_lock<std::mutex> lock(mutex_); // Use unique_lock for manual control
+    if (!initialized_) return;
+    initialized_ = false; // Mark as shutting down immediately
+
+    Log.WriteString(T("Shutting down GANL Adapter...\n"));
+
+    // Release lock before calling potentially blocking shutdown methods
+    lock.unlock();
+
+#if !defined(_WIN32)
+    shutdown_dns_slave();
+#endif
+
+    // Close listeners first
+    // Create copies of handles to avoid iterator invalidation during closeListener call
+    std::vector<ganl::ListenerHandle> plainHandles, sslHandles;
+    plainHandles.reserve(port_listeners_.size());
+    for (const auto& pair : port_listeners_) plainHandles.push_back(pair.second);
+    sslHandles.reserve(ssl_port_listeners_.size());
+    for (const auto& pair : ssl_port_listeners_) sslHandles.push_back(pair.second);
+
+    for (ganl::ListenerHandle handle : plainHandles) networkEngine_->closeListener(handle);
+    for (ganl::ListenerHandle handle : sslHandles) networkEngine_->closeListener(handle);
+
+
+    // Shutdown Session Manager (should notify TinyMUX about remaining connections)
+    if (sessionManager_) {
+        sessionManager_->shutdown();
+        sessionManager_.reset();
+    }
+
+    // Shutdown Protocol Handler (if needed)
+    if (protocolHandler_) {
+        // protocolHandler_->shutdown(); // Assuming no specific shutdown needed
+        protocolHandler_.reset();
+    }
+
+    // Shutdown Secure Transport
+    if (secureTransport_) {
+        secureTransport_->shutdown();
+        secureTransport_.reset();
+    }
+
+    // Shutdown Network Engine LAST
+    if (networkEngine_) {
+        networkEngine_->shutdown();
+        networkEngine_.reset();
+    }
+
+    // Re-acquire lock to clear maps safely
+    lock.lock();
+    port_listeners_.clear();
+    ssl_port_listeners_.clear();
+    handle_to_desc_.clear();
+    desc_to_handle_.clear();
+    handle_to_conn_.clear();
+    listener_contexts_.clear();
+
+    Log.WriteString(T("GANL Adapter shut down.\n"));
+}
+
+void GanlAdapter::run_main_loop() {
+    Log.WriteString(T("GANL: Entering main loop.\n"));
+
+    ltaLastSlice_.GetUTC();
+
+    while (!mudstate.shutdown_flag) {
+        int timeout_ms = 100; // Default timeout for processEvents
+
+        // Calculate minimum timeout based on scheduled tasks
+        CLinearTimeAbsolute ltaNextTask;
+        if (scheduler.WhenNext(&ltaNextTask)) {
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetUTC();
+            if (ltaNextTask > ltaNow) {
+                CLinearTimeDelta ltdToNext = ltaNextTask - ltaNow;
+                int timeout_ms = ltdToNext.ReturnMilliseconds();
+            }
+            else {
+                timeout_ms = 0; // Task is due now or overdue
+            }
+        }
+
+        // Process Network Events
+        constexpr int MAX_EVENTS_PER_CALL = 64;
+        ganl::IoEvent events[MAX_EVENTS_PER_CALL];
+        int num_events = networkEngine_->processEvents(timeout_ms, events, MAX_EVENTS_PER_CALL);
+
+        if (num_events < 0) {
+            Log.WriteString(T("GANL: Network engine processEvents error. Shutting down.\n"));
+            mudstate.shutdown_flag = true;
+            break;
+        }
+
+        // Dispatch network events to Connection objects
+        for (int i = 0; i < num_events; ++i) {
+            if (dns_slave_ && (events[i].connection == dns_slave_->handle || events[i].context == dns_slave_.get())) {
+                handle_dns_slave_event(events[i]);
+                continue;
+            }
+
+            if (events[i].type == ganl::IoEventType::Accept) {
+                ganl::ConnectionHandle connHandle = events[i].connection;
+                if (connHandle != ganl::InvalidConnectionHandle) {
+                    ListenerContext listenerCtx{0, false};
+                    bool useTls = false;
+                    if (events[i].context) {
+                        auto* ctx = static_cast<ListenerContext*>(events[i].context);
+                        listenerCtx = *ctx;
+                        useTls = ctx->is_ssl;
+                    }
+
+                    std::shared_ptr<ganl::ConnectionBase> conn = ganl::ConnectionFactory::createConnection(
+                        connHandle,
+                        *networkEngine_,
+                        secureTransport_.get(),
+                        *protocolHandler_,
+                        *sessionManager_);
+
+                    if (!conn) {
+                        Log.tinyprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
+                            static_cast<unsigned long long>(connHandle));
+                        networkEngine_->closeConnection(connHandle);
+                        continue;
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        connection_listener_map_[connHandle] = listenerCtx;
+                        pending_remote_addresses_[connHandle] = events[i].remoteAddress;
+                        pending_tls_flags_[connHandle] = useTls;
+                        handle_to_conn_[connHandle] = conn;
+                    }
+
+                    if (!conn->initialize(useTls)) {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        handle_to_conn_.erase(connHandle);
+                        connection_listener_map_.erase(connHandle);
+                        pending_remote_addresses_.erase(connHandle);
+                        pending_tls_flags_.erase(connHandle);
+                    }
+                }
+                continue;
+            }
+            else if (events[i].connection != ganl::InvalidConnectionHandle) {
+                std::shared_ptr<ganl::ConnectionBase> conn = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto it = handle_to_conn_.find(events[i].connection);
+                    if (it != handle_to_conn_.end()) {
+                        conn = it->second; // Get the shared_ptr
+                    }
+                }
+                if (conn) {
+                    // Event context should be the ConnectionBase* itself
+                    if (events[i].context == conn.get()) {
+                        conn->handleNetworkEvent(events[i]);
+                    }
+                    else {
+                        std::cerr << "[GANL Adapter] Mismatched context for event on handle "
+                            << events[i].connection << "! Expected " << conn.get()
+                            << ", Got " << events[i].context << std::endl;
+                    }
+                }
+                else {
+                    //GANL_CONN_DEBUG(events[i].connection, "Warning: Event received for untracked/closed connection.");
+                }
+            }
+            // TODO: Handle listener errors? (events[i].listener != InvalidListenerHandle)
+        }
+
+        // Process TinyMUX Tasks (Timers, Idle, Quotas, etc.)
+        process_tinyMUX_tasks();
+
+    } // end while (!mudstate.shutdown_flag)
+
+    Log.WriteString(T("GANL: Exiting main loop.\n"));
+}
+
+// Helper to run periodic TinyMUX tasks (quotas, scheduler, output flush).
+void GanlAdapter::process_tinyMUX_tasks() {
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+
+    // Update command quotas (same as shovechars timeslice logic).
+    update_quotas(ltaLastSlice_, ltaNow);
+    ltaLastSlice_ = ltaNow;
+
+    // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
+    scheduler.RunTasks(ltaNow);
+
+    // Flush pending output so queued text reaches clients promptly.
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if (d && nullptr != d->output_head)
+        {
+            process_output(d, false);
+        }
+    }
+
+    Log.Flush();
+}
+
+
+bool GanlAdapter::start_dns_slave() {
+#if defined(_WIN32)
+    return false;
+#else
+    if (!mudconf.use_hostname || !networkEngine_) {
+        return false;
+    }
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (dns_slave_) {
+        return true;
+    }
+
+    auto channel = std::make_unique<DnsSlaveChannel>();
+    ganl::SlaveSpawnOptions options;
+    options.executable = "bin/slave";
+    options.arguments = {"slave"};
+    options.attachToStandardIO = true;
+    options.communicationFd = 0;
+    options.connectionContext = channel.get();
+
+    ganl::ErrorCode error = 0;
+    ganl::ConnectionHandle handle = networkEngine_->spawnSlave(options, error);
+    if (handle == ganl::InvalidConnectionHandle) {
+        lock.unlock();
+        Log.tinyprintf(T("GANL: Failed to spawn DNS slave: %s\n"),
+            networkEngine_->getErrorString(error).c_str());
+        return false;
+    }
+
+    channel->handle = handle;
+    channel->fd = static_cast<int>(handle);
+    dns_slave_ = std::move(channel);
+    lock.unlock();
+
+    Log.WriteString(T("GANL: DNS slave channel started.\n"));
+    return true;
+#endif
+}
+
+void GanlAdapter::shutdown_dns_slave() {
+#if defined(_WIN32)
+    std::lock_guard<std::mutex> lock(mutex_);
+    dns_slave_.reset();
+#else
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (!dns_slave_) {
+        return;
+    }
+
+    auto handle = dns_slave_->handle;
+    dns_slave_.reset();
+    lock.unlock();
+
+    if (networkEngine_ && handle != ganl::InvalidConnectionHandle) {
+        networkEngine_->closeConnection(handle);
+    }
+#endif
+}
+
+void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
+#if defined(_WIN32)
+    UNUSED_PARAMETER(numericAddress);
+#else
+    if (!mudconf.use_hostname || !numericAddress || *numericAddress == '\0') {
+        return;
+    }
+
+    bool needShutdown = false;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (!dns_slave_) {
+            return;
+        }
+
+        dns_slave_->pendingWrites.emplace_back(reinterpret_cast<const char*>(numericAddress));
+        dns_slave_->pendingWrites.back().push_back('\n');
+        needShutdown = !flush_dns_slave_writes_locked();
+    }
+
+    if (needShutdown) {
+        shutdown_dns_slave();
+    }
+#endif
+}
+
+void GanlAdapter::handle_dns_slave_event(const ganl::IoEvent& event) {
+#if defined(_WIN32)
+    UNUSED_PARAMETER(event);
+#else
+    bool needShutdown = false;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (!dns_slave_ || (event.connection != dns_slave_->handle && event.context != dns_slave_.get())) {
+            return;
+        }
+
+        switch (event.type) {
+        case ganl::IoEventType::Read:
+            needShutdown = !process_dns_slave_read_locked();
+            break;
+        case ganl::IoEventType::Write:
+            needShutdown = !process_dns_slave_write_locked();
+            break;
+        case ganl::IoEventType::Close:
+        case ganl::IoEventType::Error:
+            needShutdown = true;
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (needShutdown) {
+        shutdown_dns_slave();
+    }
+#endif
+}
+
+bool GanlAdapter::process_dns_slave_read_locked() {
+#if defined(_WIN32)
+    return true;
+#else
+    if (!dns_slave_) {
+        return false;
+    }
+
+    char buffer[MBUF_SIZE];
+    ssize_t nbytes = read(dns_slave_->fd, buffer, sizeof(buffer));
+    if (nbytes > 0) {
+        dns_slave_->readBuffer.append(buffer, static_cast<size_t>(nbytes));
+
+        size_t newlinePos = std::string::npos;
+        while ((newlinePos = dns_slave_->readBuffer.find('\n')) != std::string::npos) {
+            std::string line = dns_slave_->readBuffer.substr(0, newlinePos);
+            dns_slave_->readBuffer.erase(0, newlinePos + 1);
+
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+
+            if (line.empty()) {
+                continue;
+            }
+
+            size_t spacePos = line.find(' ');
+            if (spacePos == std::string::npos) {
+                continue;
+            }
+
+            std::string numeric = line.substr(0, spacePos);
+            std::string hostname = line.substr(spacePos + 1);
+            if (!hostname.empty()) {
+                apply_reverse_dns_result(numeric, hostname);
+            }
+        }
+        return true;
+    }
+
+    if (nbytes == 0) {
+        Log.WriteString(T("GANL: DNS slave closed its connection.\n"));
+        return false;
+    }
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return true;
+    }
+
+    Log.tinyprintf(T("GANL: DNS slave read error: %s\n"), strerror(errno));
+    return false;
+#endif
+}
+
+bool GanlAdapter::flush_dns_slave_writes_locked() {
+#if defined(_WIN32)
+    return true;
+#else
+    if (!dns_slave_) {
+        return false;
+    }
+
+    while (true) {
+        if (dns_slave_->currentWrite.empty()) {
+            if (dns_slave_->pendingWrites.empty()) {
+                dns_slave_->writeInterest = false;
+                return true;
+            }
+            dns_slave_->currentWrite = std::move(dns_slave_->pendingWrites.front());
+            dns_slave_->pendingWrites.pop_front();
+        }
+
+        const char* data = dns_slave_->currentWrite.data();
+        size_t remaining = dns_slave_->currentWrite.size();
+        ssize_t written = mux_write(dns_slave_->fd, data, remaining);
+        if (written > 0) {
+            dns_slave_->currentWrite.erase(0, static_cast<size_t>(written));
+            continue;
+        }
+
+        if (written == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            if (!dns_slave_->writeInterest) {
+                ganl::ErrorCode error = 0;
+                if (networkEngine_->postWrite(dns_slave_->handle, nullptr, 0, dns_slave_.get(), error)) {
+                    dns_slave_->writeInterest = true;
+                } else {
+                    Log.tinyprintf(T("GANL: Failed to request write interest for DNS slave: %s\n"),
+                        networkEngine_->getErrorString(error).c_str());
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Log.tinyprintf(T("GANL: DNS slave write error: %s\n"), strerror(errno));
+        return false;
+    }
+#endif
+}
+
+bool GanlAdapter::process_dns_slave_write_locked() {
+#if defined(_WIN32)
+    return true;
+#else
+    return flush_dns_slave_writes_locked();
+#endif
+}
+
+void GanlAdapter::apply_reverse_dns_result(const std::string& numericAddress, const std::string& hostname) {
+#if defined(_WIN32)
+    UNUSED_PARAMETER(numericAddress);
+    UNUSED_PARAMETER(hostname);
+#else
+    UTF8 numericBuffer[MBUF_SIZE];
+    UTF8 hostBuffer[MBUF_SIZE];
+
+    std::strncpy(reinterpret_cast<char*>(numericBuffer), numericAddress.c_str(), sizeof(numericBuffer) - 1);
+    numericBuffer[sizeof(numericBuffer) - 1] = '\0';
+    std::strncpy(reinterpret_cast<char*>(hostBuffer), hostname.c_str(), sizeof(hostBuffer) - 1);
+    hostBuffer[sizeof(hostBuffer) - 1] = '\0';
+
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+        DESC* d = *it;
+        if (std::strcmp(reinterpret_cast<const char*>(d->addr), reinterpret_cast<const char*>(numericBuffer)) != 0) {
+            continue;
+        }
+
+        std::strncpy(reinterpret_cast<char*>(d->addr), reinterpret_cast<const char*>(hostBuffer), sizeof(d->addr) - 1);
+        d->addr[sizeof(d->addr) - 1] = '\0';
+
+        if (d->player != NOTHING) {
+            if (d->username[0]) {
+                atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"), d->username, d->addr));
+            } else {
+                atr_add_raw(d->player, A_LASTSITE, d->addr);
+            }
+            atr_add_raw(d->player, A_LASTIP, numericBuffer);
+        }
+    }
+#endif
+}
+
+
+void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {
+    if (!d) return;
+    std::shared_ptr<ganl::ConnectionBase> conn = get_connection(d);
+    if (conn) {
+        // Convert char* to std::string for ConnectionBase interface
+        conn->sendDataToClient(std::string(data, len));
+    }
+    else {
+        //GANL_CONN_DEBUG(d->socket, "Attempted send on unmapped/closed connection.");
+    }
+}
+
+void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
+    if (!d) return;
+    std::shared_ptr<ganl::ConnectionBase> conn = get_connection(d);
+    if (conn) {
+        conn->close(reason);
+        // Note: Connection::close() might trigger SessionManager::onConnectionClose
+        // which can lead to remove_mapping and free_desc being called.
+    }
+    else {
+        //GANL_CONN_DEBUG(d->socket, "Attempted close on unmapped/closed connection.");
+        const CLinearTimeAbsolute ltaNow = [&]() {
+            CLinearTimeAbsolute tmp; tmp.GetUTC(); return tmp;
+        }();
+        const int mux_reason = MapGanlReasonToMux(reason);
+        const int clamped_reason = ClampMuxReason(mux_reason);
+
+        if (clamped_reason == R_LOGOUT)
+        {
+            if (d->player != NOTHING)
+            {
+                HandleConnectedDescriptorPreAnnounce(d, clamped_reason, ltaNow);
+                announce_disconnect(d->player, d, disc_messages[clamped_reason]);
+            }
+            else
+            {
+                HandleUnconnectedDescriptorClose(d);
+            }
+
+            ResetDescriptorForLogout(d);
+            return;
+        }
+
+        if (d->player != NOTHING)
+        {
+            HandleConnectedDescriptorPreAnnounce(d, clamped_reason, ltaNow);
+            announce_disconnect(d->player, d, disc_messages[clamped_reason]);
+        }
+        else
+        {
+            HandleUnconnectedDescriptorClose(d);
+        }
+
+        process_output(d, false);
+        clearstrings(d);
+        freeqs(d);
+        if (d->flags & DS_CONNECTED)
+        {
+            d->flags &= ~DS_CONNECTED;
+        }
+        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        free_desc(d); // Free DESC if GANL doesn't know about it
+    }
+}
+
+std::string GanlAdapter::get_remote_address(DESC* d) {
+    if (!d) return "";
+    // Use the stored address in DESC for now
+    return (const char*)d->addr;
+    // Future:
+    // ganl::ConnectionHandle handle = get_handle(d);
+    // if (handle != ganl::InvalidConnectionHandle) {
+    //     return networkEngine_->getRemoteAddress(handle);
+    // }
+    // return "";
+}
+
+int GanlAdapter::get_socket_descriptor(DESC* d) {
+    if (!d) return -1;
+    // Return the ConnectionHandle cast to int as a pseudo-descriptor
+    // This is risky if handles exceed int range, but needed for some legacy funcs.
+    return static_cast<int>(get_handle(d));
+}
+
+
+// --- Mapping Implementation ---
+void GanlAdapter::add_mapping(ganl::ConnectionHandle handle, DESC* d, std::shared_ptr<ganl::ConnectionBase> conn) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    handle_to_desc_[handle] = d;
+    desc_to_handle_[d] = handle;
+    handle_to_conn_[handle] = conn; // Store the shared_ptr
+    //GANL_CONN_DEBUG(handle, "Mapped Handle <-> DESC " << d << " and Connection " << conn.get());
+}
+
+void GanlAdapter::remove_mapping(DESC* d) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it_dth = desc_to_handle_.find(d);
+    if (it_dth != desc_to_handle_.end()) {
+        ganl::ConnectionHandle handle = it_dth->second;
+        handle_to_desc_.erase(handle);
+        handle_to_conn_.erase(handle); // Remove connection pointer
+        desc_to_handle_.erase(it_dth); // Use iterator for efficiency
+        //GANL_CONN_DEBUG(handle, "Unmapped Handle <-> DESC " << d);
+    }
+    else {
+        // Attempting to remove DESC not in map (might happen if already closed)
+        //GANL_CONN_DEBUG(0, "Warning: Attempted remove_mapping for unknown DESC " << d);
+    }
+}
+
+DESC* GanlAdapter::get_desc(ganl::ConnectionHandle handle) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = handle_to_desc_.find(handle);
+    return (it != handle_to_desc_.end()) ? it->second : nullptr;
+}
+
+std::shared_ptr<ganl::ConnectionBase> GanlAdapter::get_connection(DESC* d) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it_dth = desc_to_handle_.find(d);
+    if (it_dth != desc_to_handle_.end()) {
+        ganl::ConnectionHandle handle = it_dth->second;
+        auto it_htc = handle_to_conn_.find(handle);
+        if (it_htc != handle_to_conn_.end()) {
+            return it_htc->second; // Return the shared_ptr
+        }
+    }
+    return nullptr; // Return null shared_ptr if not found
+}
+
+
+ganl::ConnectionHandle GanlAdapter::get_handle(DESC* d) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = desc_to_handle_.find(d);
+    return (it != desc_to_handle_.end()) ? it->second : ganl::InvalidConnectionHandle;
+}
+
+
+// --- DESC Allocation ---
+DESC* GanlAdapter::allocate_desc() {
+    // Use TinyMUX's pool allocator
+    return alloc_desc("ganl_connection");
+}
+
+void GanlAdapter::free_desc2(DESC* d) {
+    // Use TinyMUX's pool allocator
+    free_desc(d);
+}
+
+
+// --- Public Interface Functions ---
+
+void ganl_initialize() {
+    if (!g_GanlAdapter.initialize()) {
+        // Handle fatal initialization error - perhaps exit?
+        std::cerr << "FATAL: GANL Adapter initialization failed." << std::endl;
+        exit(1);
+    }
+}
+
+void ganl_shutdown() {
+    g_GanlAdapter.shutdown();
+}
+
+void ganl_main_loop() {
+    g_GanlAdapter.run_main_loop();
+}
+
+void ganl_send_data_str(DESC* d, const UTF8* data) {
+    if (data) {
+        g_GanlAdapter.send_data(d, (const char*)data, strlen((const char*)data));
+    }
+}
+
+void ganl_close_connection(DESC* d, int reason) {
+    if (!d) {
+        return;
+    }
+
+    if (reason == R_LOGOUT) {
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+
+        if (d->player != NOTHING)
+        {
+            HandleConnectedDescriptorPreAnnounce(d, R_LOGOUT, ltaNow);
+            announce_disconnect(d->player, d, disc_messages[R_LOGOUT]);
+        }
+        else
+        {
+            HandleUnconnectedDescriptorClose(d);
+        }
+
+        ResetDescriptorForLogout(d);
+        return;
+    }
+
+    // Map TinyMUX reason to GANL reason
+    ganl::DisconnectReason ganl_reason = ganl::DisconnectReason::Unknown;
+    switch (reason) {
+    case R_QUIT:       ganl_reason = ganl::DisconnectReason::UserQuit; break;
+    case R_TIMEOUT:    ganl_reason = ganl::DisconnectReason::Timeout; break;
+    case R_BOOT:       ganl_reason = ganl::DisconnectReason::AdminKick; break;
+    case R_SOCKDIED:   ganl_reason = ganl::DisconnectReason::NetworkError; break;
+    case R_GOING_DOWN: ganl_reason = ganl::DisconnectReason::ServerShutdown; break;
+    case R_BADLOGIN:   ganl_reason = ganl::DisconnectReason::LoginFailed; break;
+    case R_GAMEDOWN:   ganl_reason = ganl::DisconnectReason::ServerShutdown; break; // Or LoginFailed?
+    case R_GAMEFULL:   ganl_reason = ganl::DisconnectReason::GameFull; break;
+    case R_RESTART:    ganl_reason = ganl::DisconnectReason::ServerShutdown; break; // Restart unsupported
+    default:           ganl_reason = ganl::DisconnectReason::Unknown; break;
+    }
+    g_GanlAdapter.close_connection(d, ganl_reason);
+}
+
+void ganl_associate_player(DESC* d, dbref player) {
+    if (d) {
+        d->player = player;
+    }
+}
+
+#endif // USE_GANL

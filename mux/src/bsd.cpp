@@ -32,7 +32,7 @@ int      num_main_game_ports = 0;
 void process_output_socket(DESC *d, int bHandleShutdown);
 
 static void telnet_setup(DESC *d);
-static void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
+void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
 #if defined(UNIX_NETWORKING)
 static DESC *new_connection_initial(port_info* Port);
@@ -2127,7 +2127,7 @@ static const UTF8 *disc_reasons[] =
 
 // Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
 //
-static const UTF8 *disc_messages[] =
+const UTF8 *disc_messages[] =
 {
     T("Unknown"),
     T("Quit"),
@@ -2812,13 +2812,45 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
 
 #endif // UNIX_NETWORKING
 
+#ifdef USE_GANL
+#include "ganl_adapter.h"
+
+static void process_output_ganl(DESC *d, int bHandleShutdown)
+{
+    UNUSED_PARAMETER(bHandleShutdown);
+
+    text_block *tb = d->output_head;
+    while (nullptr != tb)
+    {
+        if (0 < tb->hdr.nchars)
+        {
+            g_GanlAdapter.send_data(d, (const char*)tb->hdr.start, tb->hdr.nchars);
+            d->output_size -= tb->hdr.nchars;
+            tb->hdr.nchars = 0;
+        }
+        text_block *save = tb;
+        tb = tb->hdr.nxt;
+        MEMFREE(save);
+        d->output_head = tb;
+        if (tb == nullptr)
+        {
+            d->output_tail = nullptr;
+        }
+    }
+}
+#endif // USE_GANL
+
 void process_output(DESC *d, int bHandleShutdown)
 {
-#ifdef UNIX_SSL
+#ifdef USE_GANL
+    process_output_ganl(d, bHandleShutdown);
+#elif defined(UNIX_SSL)
     if (d->ssl_session) process_output_ssl(d, bHandleShutdown);
     else
-#endif
         process_output_socket(d, bHandleShutdown);
+#else
+        process_output_socket(d, bHandleShutdown);
+#endif
 }
 
 /*! \brief Table to quickly classify characters recieved from the wire with
@@ -3361,7 +3393,7 @@ void telnet_setup(DESC *d)
  * \param pBytes   Point to received bytes.
  * \param nBytes   Number of received bytes in above buffer.
  */
-static void process_input_helper(DESC *d, char *pBytes, int nBytes)
+void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
     char szUTF8[] = "UTF-8";
     char szISO8859_1[] = "ISO-8859-1";

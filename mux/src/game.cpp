@@ -11,6 +11,10 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
+#ifdef USE_GANL
+#include "ganl_adapter.h"
+#endif
+
 #if defined(INLINESQL)
 #include <mysql.h>
 
@@ -3041,7 +3045,13 @@ int DCL_CDECL main(int argc, char *argv[])
 
     init_timer();
 
+#ifdef USE_GANL
+    ganl_initialize();
+    ganl_main_loop();
+    ganl_shutdown();
+#else
     shovechars(num_main_game_ports, main_game_ports);
+#endif
 
 #ifdef INLINESQL
      if (mush_database)

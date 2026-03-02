@@ -270,6 +270,7 @@ extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
 extern void shovechars(int nPorts, port_info aPorts[]);
 void process_output(DESC *, int);
+void process_input_helper(DESC *d, char *pBytes, int nBytes);
 #if defined(HAVE_WORKING_FORK)
 extern void dump_restart_db(void);
 #endif // HAVE_WORKING_FORK

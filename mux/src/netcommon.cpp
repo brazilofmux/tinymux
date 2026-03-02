@@ -887,7 +887,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
     *p = '\0';
 }
 
-static void announce_connect(const dbref player, DESC *d)
+void announce_connect(const dbref player, DESC *d)
 {
     desc_addhash(d);
 
@@ -2284,7 +2284,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     return;
 }
 
-static const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
+const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
 
 static bool check_connect(DESC *d, UTF8 *msg)
 {
