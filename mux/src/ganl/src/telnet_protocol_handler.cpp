@@ -339,7 +339,7 @@ namespace ganl {
         }
     }
 
-
+#undef min
     // --- Data Processing ---
     bool TelnetProtocolHandler::processInput(ConnectionHandle conn, IoBuffer& decrypted_in,
         IoBuffer& app_data_out, IoBuffer& telnet_responses_out, bool consumeInput) {
@@ -349,8 +349,20 @@ namespace ganl {
             return false;
         }
 
-        bool processedOk = true;
+        // DEBUG: Show first bytes of input
         size_t initialReadable = decrypted_in.readableBytes();
+        if (initialReadable > 0) {
+            const char* ptr = decrypted_in.readPtr();
+            std::string hexdump;
+            for (size_t i = 0; i < std::min(initialReadable, size_t(80)); i++) {
+                char buf[8];
+                snprintf(buf, sizeof(buf), "%02x ", (unsigned char)ptr[i]);
+                hexdump += buf;
+            }
+            GANL_TELNET_DEBUG(conn, "processInput called with " << initialReadable << " bytes. First 80 hex: [" << hexdump << "]");
+        }
+
+        bool processedOk = true;
         size_t totalConsumed = 0;
 
         while (totalConsumed < initialReadable) {
@@ -364,6 +376,13 @@ namespace ganl {
             if (current_it == contexts_.end()) return false; // Context disappeared mid-processing?
             TelnetContext& context = current_it->second;
 
+            // DEBUG: Show parser state and byte for first 20 bytes and nulls
+            if (totalConsumed < 20 || uc == 0) {
+                GANL_TELNET_DEBUG(conn, "Byte[" << totalConsumed << "]: 0x" << std::hex << (int)uc << std::dec
+                    << " state=" << static_cast<int>(context.parserState)
+                    << " neg_status=" << static_cast<int>(context.currentNegotiationStatus));
+            }
+
             switch (context.parserState) {
             case ParserState::Normal:
                 if (uc == static_cast<unsigned char>(TelnetCommand::IAC)) {
@@ -374,6 +393,15 @@ namespace ganl {
                     // Simple: Treat CR as potential end-of-line trigger if buffer has content
                     // More robust: Wait for subsequent LF or NUL, or treat as NL if neither follows
                     if (!context.inputBuffer.empty()) {
+                        // DEBUG: Show what we're about to output
+                        std::string hexdump;
+                        for (size_t i = 0; i < std::min(context.inputBuffer.size(), size_t(32)); i++) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "%02x ", (unsigned char)context.inputBuffer[i]);
+                            hexdump += buf;
+                        }
+                        GANL_TELNET_DEBUG(conn, "Outputting line from inputBuffer (CR): size=" << context.inputBuffer.size() << " hex=[" << hexdump << "]");
+
                         std::string line(context.inputBuffer.data(), context.inputBuffer.size());
                         app_data_out.append(line.data(), line.size());
                         app_data_out.append("\n", 1); // Normalize to LF
@@ -383,6 +411,15 @@ namespace ganl {
                 else if (uc == '\n') {
                     if (!context.sawCR) { // Avoid double newline for CRLF
                         if (!context.inputBuffer.empty()) {
+                            // DEBUG: Show what we're about to output
+                            std::string hexdump;
+                            for (size_t i = 0; i < std::min(context.inputBuffer.size(), size_t(32)); i++) {
+                                char buf[8];
+                                snprintf(buf, sizeof(buf), "%02x ", (unsigned char)context.inputBuffer[i]);
+                                hexdump += buf;
+                            }
+                            GANL_TELNET_DEBUG(conn, "Outputting line from inputBuffer (LF): size=" << context.inputBuffer.size() << " hex=[" << hexdump << "]");
+
                             std::string line(context.inputBuffer.data(), context.inputBuffer.size());
                             app_data_out.append(line.data(), line.size());
                             app_data_out.append("\n", 1); // Normalize to LF
@@ -398,6 +435,15 @@ namespace ganl {
                 else if (uc == '\0' && context.sawCR) {
                     // Handle CR NUL as newline
                     if (!context.inputBuffer.empty()) {
+                        // DEBUG: Show what we're about to output
+                        std::string hexdump;
+                        for (size_t i = 0; i < std::min(context.inputBuffer.size(), size_t(32)); i++) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "%02x ", (unsigned char)context.inputBuffer[i]);
+                            hexdump += buf;
+                        }
+                        GANL_TELNET_DEBUG(conn, "Outputting line from inputBuffer (CR-NUL): size=" << context.inputBuffer.size() << " hex=[" << hexdump << "]");
+
                         std::string line(context.inputBuffer.data(), context.inputBuffer.size());
                         app_data_out.append(line.data(), line.size());
                         app_data_out.append("\n", 1); // Normalize to LF
@@ -407,6 +453,13 @@ namespace ganl {
                 }
                 else {
                     // Regular character
+                    // DEBUG: Show what character we're adding (especially nulls)
+                    if (uc == 0 || uc == 0xe2 || context.inputBuffer.size() < 10) {
+                        GANL_TELNET_DEBUG(conn, "Adding byte to inputBuffer: 0x" << std::hex << (int)uc << std::dec
+                            << " ('" << (uc >= 32 && uc < 127 ? (char)uc : '?') << "')"
+                            << " buffer_size=" << context.inputBuffer.size()
+                            << " neg_status=" << static_cast<int>(context.currentNegotiationStatus));
+                    }
                     context.inputBuffer.push_back(static_cast<char>(uc));
                     context.sawCR = false;
                 }
@@ -458,6 +511,7 @@ namespace ganl {
             case ParserState::Subnegotiation_IAC:
                 if (uc == static_cast<unsigned char>(TelnetCommand::SE)) {
                     processSubnegotiationData(conn, context.lastOpt, telnet_responses_out);
+                    context.subnegotiationBuffer.clear(); // Clear buffer after processing
                     context.parserState = ParserState::Normal;
                     // Check if subnegotiation affects overall status
                     if (context.currentNegotiationStatus == NegotiationStatus::InProgress) {
@@ -470,6 +524,7 @@ namespace ganl {
                 }
                 else {
                     GANL_TELNET_DEBUG(conn, "Sub: Error! IAC followed by invalid byte " << uc << ". Ignoring SB.");
+                    context.subnegotiationBuffer.clear(); // Clear buffer on error
                     context.parserState = ParserState::Normal;
                     context.lastError = "Invalid byte after IAC during subnegotiation";
                     processedOk = false; // Indicate an error occurred
@@ -596,11 +651,33 @@ namespace ganl {
                 context.currentNegotiationStatus = NegotiationStatus::Completed;
                 GANL_TELNET_DEBUG(conn, "Telnet negotiation settled. Status -> Completed.");
             }
+
+            // Clear any bytes accumulated during negotiation that shouldn't be treated as commands
+            if (!context.inputBuffer.empty()) {
+                GANL_TELNET_DEBUG(conn, "Clearing " << context.inputBuffer.size() << " bytes from inputBuffer after negotiation.");
+                context.inputBuffer.clear();
+            }
+            if (!context.subnegotiationBuffer.empty()) {
+                GANL_TELNET_DEBUG(conn, "Clearing " << context.subnegotiationBuffer.size() << " bytes from subnegotiationBuffer after negotiation.");
+                context.subnegotiationBuffer.clear();
+            }
+            context.sawCR = false; // Reset line ending state
         }
         else if (context.negotiationTimedOut) {
             // Timeout occurred before essentials were settled. Force completion.
             GANL_TELNET_DEBUG(conn, "Negotiation timed out before essentials settled. Status -> Completed (forced).");
             context.currentNegotiationStatus = NegotiationStatus::Completed;
+
+            // Clear any bytes accumulated during negotiation
+            if (!context.inputBuffer.empty()) {
+                GANL_TELNET_DEBUG(conn, "Clearing " << context.inputBuffer.size() << " bytes from inputBuffer after timeout.");
+                context.inputBuffer.clear();
+            }
+            if (!context.subnegotiationBuffer.empty()) {
+                GANL_TELNET_DEBUG(conn, "Clearing " << context.subnegotiationBuffer.size() << " bytes from subnegotiationBuffer after timeout.");
+                context.subnegotiationBuffer.clear();
+            }
+            context.sawCR = false;
         }
         else {
             // Still waiting for essential responses, not timed out yet.

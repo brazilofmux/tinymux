@@ -204,6 +204,9 @@
     <ClCompile Include="wiz.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ganl_adapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_build.h">
@@ -315,6 +318,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vattr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ganl_adapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

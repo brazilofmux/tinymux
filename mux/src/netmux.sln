@@ -16,6 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlprox
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave.vcxproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ganl", "ganl\ganl.vcxproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -50,6 +52,10 @@ Global
 		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Debug|x64.Build.0 = Debug|x64
 		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Release|x64.ActiveCfg = Release|x64
 		{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}.Release|x64.Build.0 = Release|x64
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|x64.ActiveCfg = Debug|x64
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|x64.Build.0 = Debug|x64
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.ActiveCfg = Release|x64
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

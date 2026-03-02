@@ -539,6 +539,9 @@
 #endif
 
 
+/* Define to enable GANL networking system. */
+#define USE_GANL
+
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD

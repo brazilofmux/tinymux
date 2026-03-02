@@ -456,6 +456,11 @@ bool ConnectionBase::processProtocolData() {
         switch (status) {
         case NegotiationStatus::Completed:
             GANL_CONN_DEBUG(handle_, "Telnet negotiation COMPLETED successfully.");
+            // Clear any accumulated negotiation debris from applicationInput_
+            if (applicationInput_.readableBytes() > 0) {
+                GANL_CONN_DEBUG(handle_, "Clearing " << applicationInput_.readableBytes() << " bytes of negotiation debris from applicationInput_.");
+                applicationInput_.clear();
+            }
             transitionToState(ConnectionState::Running);
             // Optional: Notify SessionManager to send welcome, etc.
             // sessionManager_.onNegotiationComplete(sessionId_);

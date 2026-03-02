@@ -17,12 +17,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -41,13 +41,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\src\ganl\include;C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\tinymux\mux\src\pcre2\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\src\ganl\include;C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\tinymux\mux\src\pcre2\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -67,7 +67,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
@@ -97,7 +97,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>2.13</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
@@ -610,6 +610,14 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="ganl_adapter.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alloc.h" />
@@ -649,11 +657,15 @@
     <ClInclude Include="timeutil.h" />
     <ClInclude Include="vattr.h" />
     <ClInclude Include="_build.h" />
+    <ClInclude Include="ganl_adapter.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="libmux.vcxproj">
       <Project>{fea073c1-4f18-42a1-ac39-1a2ec0a65e92}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="ganl\ganl.vcxproj">
+      <Project>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
