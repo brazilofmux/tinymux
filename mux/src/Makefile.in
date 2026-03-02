@@ -361,6 +361,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MEMORY_BASED = @MEMORY_BASED@
@@ -378,8 +379,6 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PCRE2_LIBS = @PCRE2_LIBS@
 RANLIB = @RANLIB@
 REALITY_LVLS = @REALITY_LVLS@
-REALITY_OBJ = @REALITY_OBJ@
-REALITY_SRC = @REALITY_SRC@
 SELFCHECK = @SELFCHECK@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -445,10 +444,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = tools
-
-# Build optimizations
-AM_CXXFLAGS = -g -O
+SUBDIRS = tools . modules
 
 # Shared build flags
 AM_CPPFLAGS = $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
@@ -1045,8 +1041,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic clean-local \
-	clean-noinstLIBRARIES mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
+	mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -1252,7 +1248,7 @@ uninstall-am: uninstall-binPROGRAMS
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am all-local \
 	am--depfiles am--refresh check check-am clean \
-	clean-binPROGRAMS clean-cscope clean-generic clean-local \
+	clean-binPROGRAMS clean-cscope clean-generic \
 	clean-noinstLIBRARIES cscope cscopelist-am ctags ctags-am dist \
 	dist-all dist-bzip2 dist-gzip dist-lzip dist-shar dist-tarZ \
 	dist-xz dist-zip dist-zstd distcheck distclean \
@@ -1275,36 +1271,28 @@ uninstall-am: uninstall-binPROGRAMS
 # No unsplit utility anymore
 
 # Dynamic library (for modules)
-all-local: libmux.so modules-local
+all-local: libmux.so
 
 libmux.so: libmux.cpp
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
-
-# Build modules after libmux.so is available
-modules-local:
-	$(MAKE) -C modules
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # Version number routines
 # The DEBIAN_BUILD environment variable can be set to create deterministic builds
 # Example: DEBIAN_BUILD=1 ./configure && make
-version.o: version.cpp
+version.o: version.cpp FORCE
 	if [ "x$(DEBIAN_BUILD)" = "x1" ]; then \
-		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
+		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
 	else \
-		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
+		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
 	fi
 
-version.cpp: version.cpp
-	touch version.cpp
+.PHONY: FORCE
+FORCE:
 
 # Custom install-exec-hook to create symlinks
 install-exec-hook:
 	cd $(DESTDIR)$(bindir) && rm -f dbconvert && ln -s netmux dbconvert
-	cd $(DESTDIR)$(bindir) && rm -f libmux.so && ln -s $(abs_builddir)/libmux.so .
-
-# Clean modules
-clean-local:
-	$(MAKE) -C modules clean
+	cd $(DESTDIR)$(bindir) && rm -f libmux.so && $(LN_S) $(abs_builddir)/libmux.so .
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

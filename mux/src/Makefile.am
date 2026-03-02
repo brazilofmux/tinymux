@@ -1,9 +1,6 @@
 # Makefile.am for TinyMUX 2.13
 
-SUBDIRS = tools
-
-# Build optimizations
-AM_CXXFLAGS = -g -O
+SUBDIRS = tools . modules
 
 # Shared build flags
 AM_CPPFLAGS = $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
@@ -52,27 +49,23 @@ stubslave_LDADD = libmux.a $(LIBS) $(STUBLIBS)
 # No unsplit utility anymore
 
 # Dynamic library (for modules)
-all-local: libmux.so modules-local
+all-local: libmux.so
 
 libmux.so: libmux.cpp
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
-
-# Build modules after libmux.so is available
-modules-local:
-	$(MAKE) -C modules
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # Version number routines
 # The DEBIAN_BUILD environment variable can be set to create deterministic builds
 # Example: DEBIAN_BUILD=1 ./configure && make
-version.o: version.cpp
+version.o: version.cpp FORCE
 	if [ "x$(DEBIAN_BUILD)" = "x1" ]; then \
-		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
+		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
 	else \
-		$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
+		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
 	fi
 
-version.cpp: version.cpp
-	touch version.cpp
+.PHONY: FORCE
+FORCE:
 
 # Installation
 bindir = $(abs_top_srcdir)/../game/bin
@@ -80,16 +73,12 @@ bindir = $(abs_top_srcdir)/../game/bin
 # Custom install-exec-hook to create symlinks
 install-exec-hook:
 	cd $(DESTDIR)$(bindir) && rm -f dbconvert && ln -s netmux dbconvert
-	cd $(DESTDIR)$(bindir) && rm -f libmux.so && ln -s $(abs_builddir)/libmux.so .
+	cd $(DESTDIR)$(bindir) && rm -f libmux.so && $(LN_S) $(abs_builddir)/libmux.so .
 
 # No need for manual dependency tracking - automake handles this now
 
 # Clean up additional files
 CLEANFILES = libmux.so
-
-# Clean modules
-clean-local:
-	$(MAKE) -C modules clean
 
 # Additional distributions
 EXTRA_DIST = buildnum.sh

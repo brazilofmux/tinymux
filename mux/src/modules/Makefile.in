@@ -184,6 +184,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MEMORY_BASED = @MEMORY_BASED@
@@ -201,8 +202,6 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PCRE2_LIBS = @PCRE2_LIBS@
 RANLIB = @RANLIB@
 REALITY_LVLS = @REALITY_LVLS@
-REALITY_OBJ = @REALITY_OBJ@
-REALITY_SRC = @REALITY_SRC@
 SELFCHECK = @SELFCHECK@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -270,13 +269,13 @@ top_srcdir = @top_srcdir@
 # Shared build flags
 AM_CPPFLAGS = -I$(top_srcdir)
 
-# Module source files
-MODULES_SRC = funcs.cpp sample.cpp sum.cpp sqlproxy.cpp sqlslave.cpp
-
-# No need for manual dependency tracking - automake handles this now
-
 # Clean up additional files
 CLEANFILES = *.so *.so~
+
+# Source files to include in distribution
+EXTRA_DIST = funcs.cpp funcs.h sample.cpp sample.h sum.cpp sum.h \
+    sqlproxy.cpp sql.h sqlslave.cpp
+
 all: autoconf.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -530,20 +529,20 @@ all-local: funcs.so sample.so sum.so sqlproxy.so sqlslave.so
 
 # Generic rule for building module shared objects
 funcs.so: funcs.cpp funcs.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 sample.so: sample.cpp sample.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 sum.so: sum.cpp sum.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 sqlproxy.so: sqlproxy.cpp sql.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @DYNAMICLIB_CXXFLAGS@ -o $@ $< $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 # SQL slave needs special treatment for SQL libraries
 sqlslave.so: sqlslave.cpp sql.h
-	$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) @SQL_INCLUDE@ @DYNAMICLIB_CXXFLAGS@ -o $@ $< @SQL_LIBPATH@ @SQL_LIBS@ $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(SQL_INCLUDE) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(SQL_LIBPATH) $(SQL_LIBS) $(PCRE2_LIBS)
 
 # Installation
 install-exec-local:
