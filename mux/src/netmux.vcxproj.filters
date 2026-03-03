@@ -117,6 +117,9 @@
     <ClCompile Include="muxcli.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="netaddr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="netcommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,7 +153,16 @@
     <ClCompile Include="sha1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="signals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sitemon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="speech.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ssl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stringutil.cpp">
@@ -163,6 +175,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="svdrand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="telnet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="timeabsolute.cpp">
