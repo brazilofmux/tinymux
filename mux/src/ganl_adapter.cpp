@@ -457,6 +457,25 @@ public:
     void shutdown() override { /* TODO: Any TinyMUX session cleanup? */ }
 
     ganl::SessionId onConnectionOpen(ganl::ConnectionHandle handle, const std::string& remoteAddress) override {
+        // During @restart, DESCs already exist — just wire up the mappings.
+        if (adapter_.restarting_) {
+            for (DESC* d : mudstate.descriptors_list) {
+                if (d && d->socket == static_cast<int>(handle)) {
+                    std::shared_ptr<ganl::ConnectionBase> conn;
+                    {
+                        std::lock_guard<std::mutex> lock(adapter_.mutex_);
+                        auto it = adapter_.handle_to_conn_.find(handle);
+                        if (it != adapter_.handle_to_conn_.end()) {
+                            conn = it->second;
+                        }
+                    }
+                    adapter_.add_mapping(handle, d, conn);
+                    return static_cast<ganl::SessionId>(handle);
+                }
+            }
+            return ganl::InvalidSessionId;
+        }
+
         GanlAdapter::ListenerContext listenerCtx{0, false};
         ganl::NetworkAddress remoteNetAddr;
         bool useTls = false;
@@ -1258,76 +1277,154 @@ bool GanlAdapter::initialize() {
         return false;
     }
 
-    // 6. Create Listeners based on mudconf
+    // 6. Set up listeners and connections — branching on restart vs. fresh start.
     ganl::ErrorCode error = 0;
-    for (int i = 0; i < mudconf.ports.n; ++i) {
-        int port = mudconf.ports.pi[i];
-        std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : ""; // Handle null IP address
 
-        ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
-        if (handle != ganl::InvalidListenerHandle) {
-            // Store listener context
-            listener_contexts_[handle] = { port, false };
-            if (networkEngine_->startListening(handle, &listener_contexts_[handle] /* Pass context */, error)) {
+    if (mudstate.restarting) {
+        // --- Restart path: adopt surviving fds from before exec ---
+        restarting_ = true;
+
+        // Adopt listener fds from main_game_ports[] (populated by load_restart_db).
+        for (int i = 0; i < num_main_game_ports; ++i) {
+            int fd = static_cast<int>(main_game_ports[i].socket);
+            if (fd < 0) {
+                continue;
+            }
+
+            bool isSsl = false;
+#ifdef UNIX_SSL
+            isSsl = main_game_ports[i].fSSL;
+#endif
+            int port = main_game_ports[i].msa.port();
+
+            ganl::ListenerHandle handle = networkEngine_->adoptListener(fd, error);
+            if (handle == ganl::InvalidListenerHandle) {
+                Log.tinyprintf(T("GANL: Failed to adopt listener fd %d for port %d: %s\n"),
+                    fd, port, networkEngine_->getErrorString(error).c_str());
+                continue;
+            }
+
+            listener_contexts_[handle] = { port, isSsl };
+            if (!networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
+                Log.tinyprintf(T("GANL: Failed to start adopted listener fd %d for port %d: %s\n"),
+                    fd, port, networkEngine_->getErrorString(error).c_str());
+                networkEngine_->closeListener(handle);
+                continue;
+            }
+
+            if (isSsl) {
+                ssl_port_listeners_[port] = handle;
+            } else {
                 port_listeners_[port] = handle;
-                Log.tinyprintf(T("GANL listening on %s:%d (Handle: %llu)\n"),
-                    host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
             }
-            else {
-                Log.tinyprintf(T("GANL failed to start listening on port %d: %s\n"),
-                    port, networkEngine_->getErrorString(error).c_str());
-                networkEngine_->closeListener(handle); // Clean up created listener
-            }
-        }
-        else {
-            Log.tinyprintf(T("GANL failed to create listener for port %d: %s\n"),
-                port, networkEngine_->getErrorString(error).c_str());
-        }
-    }
 
-    // Create SSL Listeners
-    if (secureTransport_) { // Only if TLS is initialized
-        for (int i = 0; i < mudconf.sslPorts.n; ++i) {
-            int port = mudconf.sslPorts.pi[i];
-            std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : ""; // Handle null IP address
+            Log.tinyprintf(T("GANL: Adopted listener fd %d for %sport %d\n"),
+                fd, isSsl ? "SSL " : "", port);
+        }
+
+        // Adopt surviving connection fds from the descriptor list
+        // (loaded by load_restart_db into mudstate.descriptors_list).
+        for (DESC* d : mudstate.descriptors_list) {
+            if (!d || d->socket < 0) {
+                continue;
+            }
+
+            ganl::ConnectionHandle connHandle = networkEngine_->adoptConnection(
+                d->socket, nullptr, error);
+            if (connHandle == ganl::InvalidConnectionHandle) {
+                Log.tinyprintf(T("GANL: Failed to adopt connection fd %d: %s\n"),
+                    d->socket, networkEngine_->getErrorString(error).c_str());
+                continue;
+            }
+
+            auto conn = ganl::ConnectionFactory::createConnection(
+                connHandle,
+                *networkEngine_,
+                nullptr,  // No TLS for surviving connections
+                *protocolHandler_,
+                *sessionManager_);
+
+            if (!conn) {
+                Log.tinyprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
+                    d->socket);
+                networkEngine_->closeConnection(connHandle);
+                continue;
+            }
+
+            {
+                handle_to_conn_[connHandle] = conn;
+            }
+
+            // initialize(false) triggers onConnectionOpen via the restart path
+            if (!conn->initialize(false)) {
+                Log.tinyprintf(T("GANL: Connection initialize failed for adopted fd %d\n"),
+                    d->socket);
+                handle_to_conn_.erase(connHandle);
+                continue;
+            }
+
+            Log.tinyprintf(T("GANL: Adopted connection fd %d (player %d)\n"),
+                d->socket, d->player);
+        }
+
+        restarting_ = false;
+    } else {
+        // --- Normal (fresh) start path ---
+        for (int i = 0; i < mudconf.ports.n; ++i) {
+            int port = mudconf.ports.pi[i];
+            std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : "";
 
             ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
             if (handle != ganl::InvalidListenerHandle) {
-                // Store listener context
-                listener_contexts_[handle] = { port, true };
-                if (networkEngine_->startListening(handle, &listener_contexts_[handle] /* Pass context */, error)) {
-                    ssl_port_listeners_[port] = handle;
-                    Log.tinyprintf(T("GANL listening with SSL on %s:%d (Handle: %llu)\n"),
+                listener_contexts_[handle] = { port, false };
+                if (networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
+                    port_listeners_[port] = handle;
+                    Log.tinyprintf(T("GANL listening on %s:%d (Handle: %llu)\n"),
                         host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
                 }
                 else {
-                    Log.tinyprintf(T("GANL failed to start SSL listening on port %d: %s\n"),
+                    Log.tinyprintf(T("GANL failed to start listening on port %d: %s\n"),
                         port, networkEngine_->getErrorString(error).c_str());
-                    networkEngine_->closeListener(handle); // Clean up created listener
+                    networkEngine_->closeListener(handle);
                 }
             }
             else {
-                Log.tinyprintf(T("GANL failed to create SSL listener for port %d: %s\n"),
+                Log.tinyprintf(T("GANL failed to create listener for port %d: %s\n"),
                     port, networkEngine_->getErrorString(error).c_str());
+            }
+        }
+
+        // Create SSL Listeners
+        if (secureTransport_) {
+            for (int i = 0; i < mudconf.sslPorts.n; ++i) {
+                int port = mudconf.sslPorts.pi[i];
+                std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : "";
+
+                ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
+                if (handle != ganl::InvalidListenerHandle) {
+                    listener_contexts_[handle] = { port, true };
+                    if (networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
+                        ssl_port_listeners_[port] = handle;
+                        Log.tinyprintf(T("GANL listening with SSL on %s:%d (Handle: %llu)\n"),
+                            host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
+                    }
+                    else {
+                        Log.tinyprintf(T("GANL failed to start SSL listening on port %d: %s\n"),
+                            port, networkEngine_->getErrorString(error).c_str());
+                        networkEngine_->closeListener(handle);
+                    }
+                }
+                else {
+                    Log.tinyprintf(T("GANL failed to create SSL listener for port %d: %s\n"),
+                        port, networkEngine_->getErrorString(error).c_str());
+                }
             }
         }
     }
 
-
     if (port_listeners_.empty() && ssl_port_listeners_.empty()) {
         Log.WriteString(T("Warning: No GANL listeners successfully started.\n"));
-        // Continue? Or fail? Let's continue for now.
     }
-
-    // Skip GANL DNS slave - TinyMUX's boot_slave() already handles DNS lookups.
-    // GANL's spawnSlave with attachToStandardIO can block when the legacy slave
-    // has already been started.
-    // #if !defined(_WIN32)
-    //     if (mudconf.use_hostname) {
-    //         start_dns_slave();
-    //     }
-    // #endif
-
 
     initialized_ = true;
     Log.WriteString(T("GANL Adapter initialized.\n"));
@@ -1437,6 +1534,158 @@ void GanlAdapter::shutdown() {
     listener_contexts_.clear();
 
     Log.WriteString(T("GANL Adapter shut down.\n"));
+}
+
+void GanlAdapter::prepare_for_restart() {
+    Log.WriteString(T("GANL: Preparing for @restart...\n"));
+
+    // 1. Populate main_game_ports[] from listener handles so dump_restart_db()
+    //    can serialize them.  Listener handles ARE the file descriptors.
+    num_main_game_ports = 0;
+    for (const auto& pair : port_listeners_) {
+        if (num_main_game_ports >= MAX_LISTEN_PORTS
+#ifdef UNIX_SSL
+            * 2
+#endif
+           ) {
+            break;
+        }
+        int idx = num_main_game_ports++;
+        main_game_ports[idx].socket = static_cast<SOCKET>(pair.second);
+#ifdef UNIX_SSL
+        main_game_ports[idx].fSSL = false;
+#endif
+        socklen_t n = main_game_ports[idx].msa.maxaddrlen();
+        getsockname(static_cast<int>(pair.second),
+                     main_game_ports[idx].msa.sa(), &n);
+    }
+    for (const auto& pair : ssl_port_listeners_) {
+        if (num_main_game_ports >= MAX_LISTEN_PORTS
+#ifdef UNIX_SSL
+            * 2
+#endif
+           ) {
+            break;
+        }
+        int idx = num_main_game_ports++;
+        main_game_ports[idx].socket = static_cast<SOCKET>(pair.second);
+#ifdef UNIX_SSL
+        main_game_ports[idx].fSSL = true;
+#endif
+        socklen_t n = main_game_ports[idx].msa.maxaddrlen();
+        getsockname(static_cast<int>(pair.second),
+                     main_game_ports[idx].msa.sa(), &n);
+    }
+
+    // 2. Close TLS connections — their in-process session state cannot
+    //    survive exec.  Non-TLS connections are kept open.
+#ifdef UNIX_SSL
+    {
+        std::vector<DESC*> tls_descs;
+        for (DESC* d : mudstate.descriptors_list) {
+            if (d && d->ss != SocketState::Accepted) {
+                tls_descs.push_back(d);
+            }
+        }
+        for (DESC* d : tls_descs) {
+            close_connection(d, ganl::DisconnectReason::ServerShutdown);
+        }
+    }
+#endif
+
+    // 3. Flush output for remaining non-TLS connections.
+    for (DESC* d : mudstate.descriptors_list) {
+        if (d) {
+            process_output(d, false);
+        }
+    }
+    {
+        constexpr int MAX_EVENTS = 64;
+        ganl::IoEvent events[MAX_EVENTS];
+        int num = networkEngine_->processEvents(100, events, MAX_EVENTS);
+        for (int i = 0; i < num; ++i) {
+            if (events[i].connection != ganl::InvalidConnectionHandle) {
+                std::lock_guard<std::mutex> lk(mutex_);
+                auto it = handle_to_conn_.find(events[i].connection);
+                if (it != handle_to_conn_.end() && it->second) {
+                    it->second->handleNetworkEvent(events[i]);
+                }
+            }
+        }
+    }
+
+    // 4. Clear desc mappings so Connection destructors won't trigger
+    //    onConnectionClose cleanup for surviving connections.
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        handle_to_desc_.clear();
+        desc_to_handle_.clear();
+    }
+
+    // 5. Detach all remaining connection fds from the engine.
+    {
+        std::vector<ganl::ConnectionHandle> connHandles;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            connHandles.reserve(handle_to_conn_.size());
+            for (const auto& pair : handle_to_conn_) {
+                connHandles.push_back(pair.first);
+            }
+        }
+        for (ganl::ConnectionHandle h : connHandles) {
+            networkEngine_->detachConnection(h);
+        }
+    }
+
+    // 6. Detach all listener fds from the engine.
+    for (const auto& pair : port_listeners_) {
+        networkEngine_->detachListener(pair.second);
+    }
+    for (const auto& pair : ssl_port_listeners_) {
+        networkEngine_->detachListener(pair.second);
+    }
+
+    // 7. Clear handle_to_conn_ — Connection objects destruct safely
+    //    (closeConnection = no-op since fd already detached,
+    //     onConnectionClose = no-op since desc mappings cleared).
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        handle_to_conn_.clear();
+    }
+
+    // 8. Shut down engine, transport, session manager, protocol handler.
+#if !defined(_WIN32)
+    shutdown_dns_slave();
+#endif
+    if (sessionManager_) {
+        sessionManager_->shutdown();
+        sessionManager_.reset();
+    }
+    if (protocolHandler_) {
+        protocolHandler_.reset();
+    }
+    if (secureTransport_) {
+        secureTransport_->shutdown();
+        secureTransport_.reset();
+    }
+    if (networkEngine_) {
+        networkEngine_->shutdown();
+        networkEngine_.reset();
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        port_listeners_.clear();
+        ssl_port_listeners_.clear();
+        listener_contexts_.clear();
+        connection_listener_map_.clear();
+        pending_remote_addresses_.clear();
+        pending_tls_flags_.clear();
+        pending_finalizations_.clear();
+        initialized_ = false;
+    }
+
+    Log.WriteString(T("GANL: Ready for exec.\n"));
 }
 
 void GanlAdapter::run_main_loop() {
@@ -2081,7 +2330,7 @@ void ganl_close_connection(DESC* d, int reason) {
     case R_BADLOGIN:   ganl_reason = ganl::DisconnectReason::LoginFailed; break;
     case R_GAMEDOWN:   ganl_reason = ganl::DisconnectReason::ServerShutdown; break; // Or LoginFailed?
     case R_GAMEFULL:   ganl_reason = ganl::DisconnectReason::GameFull; break;
-    case R_RESTART:    ganl_reason = ganl::DisconnectReason::ServerShutdown; break; // Restart unsupported
+    case R_RESTART:    ganl_reason = ganl::DisconnectReason::ServerShutdown; break;
     default:           ganl_reason = ganl::DisconnectReason::Unknown; break;
     }
     g_GanlAdapter.close_connection(d, ganl_reason);

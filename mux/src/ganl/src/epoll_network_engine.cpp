@@ -139,9 +139,6 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
 #ifdef SOCK_NONBLOCK
         sockFlags |= SOCK_NONBLOCK;
 #endif
-#ifdef SOCK_CLOEXEC
-        sockFlags |= SOCK_CLOEXEC;
-#endif
 
         fd = ::socket(ai->ai_family, sockFlags, ai->ai_protocol);
         if (fd == -1) {
@@ -198,6 +195,44 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
     return static_cast<ListenerHandle>(fd);
 }
 
+ListenerHandle EpollNetworkEngine::adoptListener(int fd, ErrorCode& error) {
+    error = 0;
+    if (fd < 0) {
+        error = EBADF;
+        return InvalidListenerHandle;
+    }
+
+    if (epollFd_ == -1) {
+        error = EINVAL;
+        return InvalidListenerHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (sockets_.find(fd) != sockets_.end()) {
+            error = EEXIST;
+            return InvalidListenerHandle;
+        }
+    }
+
+    if (!setNonBlocking(fd, error)) {
+        return InvalidListenerHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_[fd] = SocketInfo{
+            SocketType::Listener,
+            context: nullptr,
+            events: 0,
+            activeReadBuffer: nullptr
+        };
+    }
+
+    GANL_EPOLL_DEBUG(fd, "Adopted external listener successfully.");
+    return static_cast<ListenerHandle>(fd);
+}
+
 ConnectionHandle EpollNetworkEngine::adoptConnection(int fd, void* connectionContext, ErrorCode& error) {
     error = 0;
     if (fd < 0) {
@@ -221,11 +256,6 @@ ConnectionHandle EpollNetworkEngine::adoptConnection(int fd, void* connectionCon
 
     if (!setNonBlocking(fd, error)) {
         return InvalidConnectionHandle;
-    }
-
-    int flags = fcntl(fd, F_GETFD, 0);
-    if (flags != -1) {
-        fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
 
     uint32_t initialEvents = EPOLLIN | EPOLLET;
@@ -342,6 +372,52 @@ void EpollNetworkEngine::closeListener(ListenerHandle listener) {
     // --- End syscalls ---
 
     GANL_EPOLL_DEBUG(fd, "Listener closed and removed from maps.");
+}
+
+void EpollNetworkEngine::detachConnection(ConnectionHandle conn) {
+    int fd = static_cast<int>(conn);
+    GANL_EPOLL_DEBUG(fd, "Detaching connection (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it == sockets_.end()) {
+            GANL_EPOLL_DEBUG(fd, "Socket not found in map, nothing to detach.");
+            return;
+        }
+        sockets_.erase(it);
+    }
+
+    if (epollFd_ != -1) {
+        if (epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) == -1) {
+            if (errno != EBADF && errno != ENOENT) {
+                GANL_EPOLL_DEBUG(fd, "Warning: epoll_ctl(DEL) failed during detach: " << strerror(errno));
+            }
+        }
+    }
+
+    GANL_EPOLL_DEBUG(fd, "Connection detached (fd left open).");
+}
+
+void EpollNetworkEngine::detachListener(ListenerHandle listener) {
+    int fd = static_cast<int>(listener);
+    GANL_EPOLL_DEBUG(fd, "Detaching listener (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        listeners_.erase(listener);
+        sockets_.erase(fd);
+    }
+
+    if (epollFd_ != -1) {
+        if (epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) == -1) {
+            if (errno != EBADF && errno != ENOENT) {
+                GANL_EPOLL_DEBUG(fd, "Warning: epoll_ctl(DEL) failed during detach: " << strerror(errno));
+            }
+        }
+    }
+
+    GANL_EPOLL_DEBUG(fd, "Listener detached (fd left open).");
 }
 
 // --- Connection Management ---
@@ -753,16 +829,12 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
     GANL_EPOLL_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
 
-    // Set non-blocking and close-on-exec if accept4 wasn't used
+    // Set non-blocking for the new socket
     if (!setNonBlocking(clientFd, error)) {
         GANL_EPOLL_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
         close(clientFd);
         return InvalidConnectionHandle;
     }
-    int flags = fcntl(clientFd, F_GETFD, 0);
-    if (flags != -1) {
-        fcntl(clientFd, F_SETFD, flags | FD_CLOEXEC);
-    } // Ignore error if F_GETFD fails
 
     // Optional: Set TCP_NODELAY?
     // int opt = 1;

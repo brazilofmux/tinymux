@@ -47,7 +47,10 @@ public:
     // --- Initialization/Shutdown ---
     bool initialize();
     void shutdown();
+    void prepare_for_restart();
     void run_main_loop();
+
+    bool restarting_{false};
 
     // --- TinyMUX Interface ---
     void send_data(DESC* d, const char* data, size_t len);

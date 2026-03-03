@@ -160,11 +160,6 @@ ListenerHandle KqueueNetworkEngine::createListener(const std::string& host, uint
             continue;
         }
 
-        int flags = fcntl(fd, F_GETFD, 0);
-        if (flags != -1) {
-            fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-        }
-
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
             setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
@@ -205,6 +200,45 @@ ListenerHandle KqueueNetworkEngine::createListener(const std::string& host, uint
     return static_cast<ListenerHandle>(fd);
 }
 
+ListenerHandle KqueueNetworkEngine::adoptListener(int fd, ErrorCode& error) {
+    error = 0;
+    if (fd < 0) {
+        error = EBADF;
+        return InvalidListenerHandle;
+    }
+
+    if (kqueueFd_ == -1) {
+        error = EINVAL;
+        return InvalidListenerHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (sockets_.find(fd) != sockets_.end()) {
+            error = EEXIST;
+            return InvalidListenerHandle;
+        }
+    }
+
+    if (!setNonBlocking(fd, error)) {
+        return InvalidListenerHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_[fd] = SocketInfo{
+            SocketType::Listener,
+            context: nullptr,
+            activeReadBuffer: nullptr,
+            remoteAddress: "",
+            writeUserContext: nullptr
+        };
+    }
+
+    GANL_KQUEUE_DEBUG(fd, "Adopted external listener successfully.");
+    return static_cast<ListenerHandle>(fd);
+}
+
 ConnectionHandle KqueueNetworkEngine::adoptConnection(int fd, void* connectionContext, ErrorCode& error) {
     error = 0;
     if (fd < 0) {
@@ -228,11 +262,6 @@ ConnectionHandle KqueueNetworkEngine::adoptConnection(int fd, void* connectionCo
     if (!setNonBlocking(fd, error)) {
         GANL_KQUEUE_DEBUG(fd, "Failed to set non-blocking on adopted socket: " << strerror(error));
         return InvalidConnectionHandle;
-    }
-
-    int flags = fcntl(fd, F_GETFD, 0);
-    if (flags != -1) {
-        fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
 
     if (!updateKevent(fd, EVFILT_READ, EV_ADD | EV_ENABLE, error)) {
@@ -334,6 +363,46 @@ void KqueueNetworkEngine::closeListener(ListenerHandle listener) {
         sockets_.erase(fd);
     }
     GANL_KQUEUE_DEBUG(fd, "Listener closed and removed from map.");
+}
+
+void KqueueNetworkEngine::detachConnection(ConnectionHandle conn) {
+    int fd = static_cast<int>(conn);
+    GANL_KQUEUE_DEBUG(fd, "Detaching connection (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it == sockets_.end()) {
+            GANL_KQUEUE_DEBUG(fd, "Socket not found in map, nothing to detach.");
+            return;
+        }
+        sockets_.erase(it);
+    }
+
+    if (kqueueFd_ != -1) {
+        ErrorCode ignoredError = 0;
+        updateKevent(fd, EVFILT_READ, EV_DELETE, ignoredError);
+        updateKevent(fd, EVFILT_WRITE, EV_DELETE, ignoredError);
+    }
+
+    GANL_KQUEUE_DEBUG(fd, "Connection detached (fd left open).");
+}
+
+void KqueueNetworkEngine::detachListener(ListenerHandle listener) {
+    int fd = static_cast<int>(listener);
+    GANL_KQUEUE_DEBUG(fd, "Detaching listener (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_.erase(fd);
+    }
+
+    if (kqueueFd_ != -1) {
+        ErrorCode ignoredError = 0;
+        updateKevent(fd, EVFILT_READ, EV_DELETE, ignoredError);
+    }
+
+    GANL_KQUEUE_DEBUG(fd, "Listener detached (fd left open).");
 }
 
 // --- Connection Management ---
@@ -848,15 +917,11 @@ ConnectionHandle KqueueNetworkEngine::acceptConnection(ListenerHandle listener, 
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
     GANL_KQUEUE_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
 
-    // Set non-blocking and close-on-exec for the new socket
+    // Set non-blocking for the new socket
     if (!setNonBlocking(clientFd, error)) {
         GANL_KQUEUE_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
         close(clientFd);
         return InvalidConnectionHandle;
-    }
-    int flags = fcntl(clientFd, F_GETFD, 0);
-    if (flags != -1) {
-        fcntl(clientFd, F_SETFD, flags | FD_CLOEXEC);
     }
 
     // Add the new connection socket to kqueue for reading

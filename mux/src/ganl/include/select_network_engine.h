@@ -43,6 +43,7 @@ public:
     void shutdown() override;
 
     ListenerHandle createListener(const std::string& host, uint16_t port, ErrorCode& error) override;
+    ListenerHandle adoptListener(int fd, ErrorCode& error) override;
     ConnectionHandle adoptConnection(int fd, void* connectionContext, ErrorCode& error) override;
     ConnectionHandle spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) override;
     bool startListening(ListenerHandle listener, void* listenerContext, ErrorCode& error) override;
@@ -50,6 +51,8 @@ public:
 
     bool associateContext(ConnectionHandle conn, void* context, ErrorCode& error) override;
     void closeConnection(ConnectionHandle conn) override;
+    void detachConnection(ConnectionHandle conn) override;
+    void detachListener(ListenerHandle listener) override;
 
     // postRead: For select, this typically just ensures read interest is registered.
     // The actual IoBuffer is managed by the Connection class.

@@ -246,6 +246,36 @@ ListenerHandle SelectNetworkEngine::createListener(const std::string& host, uint
     return static_cast<ListenerHandle>(fd);
 }
 
+ListenerHandle SelectNetworkEngine::adoptListener(int fd, ErrorCode& error) {
+    error = 0;
+    if (fd < 0) {
+        error = EBADF;
+        return InvalidListenerHandle;
+    }
+
+    if (!setNonBlocking(fd, error)) {
+        GANL_SELECT_DEBUG(fd, "Failed to set non-blocking on adopted listener: " << getErrorString(error));
+        return InvalidListenerHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!initialized_) {
+            error = ESHUTDOWN;
+            return InvalidListenerHandle;
+        }
+        if (sockets_.find(fd) != sockets_.end()) {
+            error = EEXIST;
+            return InvalidListenerHandle;
+        }
+
+        sockets_[fd] = SocketInfo{SocketType::Listener, nullptr, false, false};
+    }
+
+    GANL_SELECT_DEBUG(fd, "Adopted external listener successfully.");
+    return static_cast<ListenerHandle>(fd);
+}
+
 ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionContext, ErrorCode& error) {
     error = 0;
     if (fd < 0) {
@@ -256,11 +286,6 @@ ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionCo
     if (!setNonBlocking(fd, error)) {
         GANL_SELECT_DEBUG(fd, "Failed to set non-blocking on adopted socket: " << getErrorString(error));
         return InvalidConnectionHandle;
-    }
-
-    int flags = fcntl(fd, F_GETFD, 0);
-    if (flags != -1) {
-        fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
 
     {
@@ -352,6 +377,40 @@ void SelectNetworkEngine::closeListener(ListenerHandle listener) {
     closeSocket(fd);
 
     GANL_SELECT_DEBUG(fd, "Listener closed and removed.");
+}
+
+void SelectNetworkEngine::detachConnection(ConnectionHandle conn) {
+    SocketFD fd = static_cast<SocketFD>(conn);
+    GANL_SELECT_DEBUG(fd, "Detaching connection (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it == sockets_.end()) {
+            GANL_SELECT_DEBUG(fd, "Socket not found in map, nothing to detach.");
+            return;
+        }
+        removeFd(fd);
+    }
+
+    GANL_SELECT_DEBUG(fd, "Connection detached (fd left open).");
+}
+
+void SelectNetworkEngine::detachListener(ListenerHandle listener) {
+    SocketFD fd = static_cast<SocketFD>(listener);
+    GANL_SELECT_DEBUG(fd, "Detaching listener (no close)...");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it == sockets_.end()) {
+            GANL_SELECT_DEBUG(fd, "Listener not found in map, nothing to detach.");
+            return;
+        }
+        removeFd(fd);
+    }
+
+    GANL_SELECT_DEBUG(fd, "Listener detached (fd left open).");
 }
 
 // --- Connection Management ---

@@ -63,6 +63,20 @@ public:
     }
 
     /**
+     * Adopt an already-created, bound, and listening socket fd into the engine.
+     * Used during @restart to reclaim listener fds that survived exec.
+     *
+     * @param fd Native descriptor to adopt (ownership is transferred on success)
+     * @param error Error code output variable (set on failure)
+     * @return Listener handle on success, InvalidListenerHandle on failure
+     */
+    virtual ListenerHandle adoptListener(int fd, ErrorCode& error) {
+        (void)fd;
+        error = ENOTSUP;
+        return InvalidListenerHandle;
+    }
+
+    /**
      * Adopt an already-created connection file descriptor into the engine.
      *
      * @param fd Native descriptor to monitor (ownership is transferred on success)
@@ -119,6 +133,26 @@ public:
      * @param conn Connection handle
      */
     virtual void closeConnection(ConnectionHandle conn) = 0;
+
+    /**
+     * Detach a connection from the engine without closing the file descriptor.
+     * The socket is deregistered from the I/O multiplexer and removed from
+     * internal tracking, but shutdown() and close() are NOT called.
+     * This is used during @restart to release fds that will survive exec.
+     *
+     * @param conn Connection handle
+     */
+    virtual void detachConnection(ConnectionHandle conn) { (void)conn; }
+
+    /**
+     * Detach a listener from the engine without closing the file descriptor.
+     * The socket is deregistered from the I/O multiplexer and removed from
+     * internal tracking, but close() is NOT called.
+     * This is used during @restart to release fds that will survive exec.
+     *
+     * @param listener Listener handle
+     */
+    virtual void detachListener(ListenerHandle listener) { (void)listener; }
 
     /**
      * Post an asynchronous read operation using an IoBuffer
