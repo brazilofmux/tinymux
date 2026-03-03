@@ -472,7 +472,14 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 
 int make_nonblocking(SOCKET s)
 {
-#if defined(O_NONBLOCK)
+#if defined(_WIN32)
+    unsigned long on = 1;
+    if (ioctlsocket(s, FIONBIO, &on) != 0)
+    {
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctlsocket"));
+        return -1;
+    }
+#elif defined(O_NONBLOCK)
     if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
     {
         log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
@@ -497,7 +504,7 @@ int make_nonblocking(SOCKET s)
         log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctl"));
         return -1;
     }
-#endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
+#endif // _WIN32, O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
     return 0;
 }
 

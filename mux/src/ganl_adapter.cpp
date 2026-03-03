@@ -23,6 +23,23 @@ extern SSL_CTX* tls_ctx;
 #include <unistd.h>
 #endif
 
+#if defined(_WIN32)
+static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
+{
+    switch (dwCtrlType)
+    {
+    case CTRL_C_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+        mudstate.shutdown_flag = true;
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+#endif
+
 extern const UTF8* disc_messages[];
 extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
@@ -1707,6 +1724,10 @@ void GanlAdapter::run_main_loop() {
     Log.WriteString(T("GANL: Entering main loop.\n"));
     Log.Flush();
 
+#if defined(_WIN32)
+    SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+#endif
+
     if (mudconf.use_hostname) {
         start_dns_slave();
     }
@@ -1845,6 +1866,10 @@ void GanlAdapter::run_main_loop() {
         process_tinyMUX_tasks();
 
     } // end while (!mudstate.shutdown_flag)
+
+#if defined(_WIN32)
+    SetConsoleCtrlHandler(ConsoleCtrlHandler, FALSE);
+#endif
 
     Log.WriteString(T("GANL: Exiting main loop.\n"));
 }
