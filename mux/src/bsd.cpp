@@ -30,17 +30,7 @@ port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
 int      num_main_game_ports = 0;
-void process_output_socket(DESC *d, int bHandleShutdown);
-
-static void telnet_setup(DESC *d);
 void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
-static DESC *initializesock(SOCKET, MUX_SOCKADDR *msa);
-#if defined(UNIX_NETWORKING)
-static DESC *new_connection_initial(port_info* Port);
-static bool new_connection_continue(DESC* d);
-static void new_connection_final(DESC* d);
-static bool process_input(DESC*);
-#endif
 static int make_nonblocking(SOCKET s);
 
 pid_t game_pid;
@@ -340,10 +330,6 @@ static int get_slave_result(void)
 
 #if defined(UNIX_NETWORKING)
 
-#if defined(UNIX_NETWORKING_SELECT)
-int maxd = 0;
-#endif // UNIX_NETWORKING_SELECT
-
 #if defined(HAVE_WORKING_FORK)
 
 pid_t slave_pid = 0;
@@ -501,12 +487,6 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
         CleanUpStubSlaveSocket();
         goto failure;
     }
-    if (  !IS_INVALID_SOCKET(stubslave_socket)
-       && maxd <= stubslave_socket)
-    {
-        maxd = stubslave_socket + 1;
-    }
-
     STARTLOG(LOG_ALWAYS, "NET", "STUB");
     log_text(T("Stub slave started on fd "));
     log_number(stubslave_socket);
@@ -604,6 +584,69 @@ static int StubSlaveWrite(void)
         }
     }
     return 0;
+}
+
+extern "C" MUX_RESULT DCL_API pipepump(void)
+{
+    mudstate.debug_cmd = T("< pipepump >");
+
+    if (IS_INVALID_SOCKET(stubslave_socket))
+    {
+        return MUX_E_FAIL;
+    }
+
+    fd_set input_set;
+    fd_set output_set;
+
+    FD_ZERO(&input_set);
+    FD_ZERO(&output_set);
+
+    FD_SET(stubslave_socket, &input_set);
+    if (0 < Pipe_QueueLength(&Queue_Out))
+    {
+        FD_SET(stubslave_socket, &output_set);
+    }
+
+    int nfds = stubslave_socket + 1;
+    int found = select(nfds, &input_set, &output_set, nullptr, nullptr);
+
+    if (IS_SOCKET_ERROR(found))
+    {
+        int iSocketError = SOCKET_LAST_ERROR;
+        if (SOCKET_EBADF == iSocketError)
+        {
+            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
+            struct stat fstatbuf;
+            if (  !IS_INVALID_SOCKET(stubslave_socket)
+               && fstat(stubslave_socket, &fstatbuf) < 0)
+            {
+                CleanUpStubSlaveSocket();
+                return MUX_E_FAIL;
+            }
+        }
+        else if (iSocketError != SOCKET_EINTR)
+        {
+            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
+        }
+        return MUX_S_OK;
+    }
+
+    if (FD_ISSET(stubslave_socket, &input_set))
+    {
+        while (0 == StubSlaveRead())
+        {
+            ; // Nothing.
+        }
+    }
+
+    if (!IS_INVALID_SOCKET(stubslave_socket))
+    {
+        if (FD_ISSET(stubslave_socket, &output_set))
+        {
+            StubSlaveWrite();
+        }
+    }
+    return MUX_S_OK;
 }
 
 #endif // STUB_SLAVE
@@ -715,14 +758,6 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
         CleanUpSlaveSocket();
         goto failure;
     }
-
-#if defined(UNIX_NETWORKING_SELECT)
-    if (  !IS_INVALID_SOCKET(slave_socket)
-       && maxd <= slave_socket)
-    {
-        maxd = slave_socket + 1;
-    }
-#endif // UNIX_NETWORKING_SELECT
 
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
     log_text(T("DNS lookup slave started on fd "));
@@ -961,296 +996,6 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 }
 
 
-bool make_socket(SOCKET *ps, MUX_ADDRINFO *ai)
-{
-    // Create a TCP/IP stream socket
-    //
-    SOCKET s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-    if (IS_INVALID_SOCKET(s))
-    {
-        log_perror(T("NET"), T("FAIL"), nullptr, T("creating socket"));
-        return false;
-    }
-    DebugTotalSockets++;
-
-    int opt = 1;
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
-    {
-        log_perror(T("NET"), T("FAIL"), nullptr, T("SO_REUSEADDR"));
-    }
-
-#if defined(HAVE_SOCKADDR_IN6)
-    if (AF_INET6 == ai->ai_family)
-    {
-        opt = 1;
-        if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)) < 0)
-        {
-            log_perror(T("NET"), T("FAIL"), nullptr, T("IPV6_V6ONLY"));
-        }
-    }
-#endif
-
-    // bind our name to the socket
-    //
-    int nRet = ::bind(s, ai->ai_addr, ai->ai_addrlen);
-    if (IS_SOCKET_ERROR(nRet))
-    {
-        Log.tinyprintf(T("Error %ld on bind" ENDLINE), SOCKET_LAST_ERROR);
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        return false;
-    }
-
-    // Set the socket to listen
-    //
-    nRet = listen(s, SOMAXCONN);
-
-    if (nRet)
-    {
-        Log.tinyprintf(T("Error %ld on listen" ENDLINE), SOCKET_LAST_ERROR);
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        return false;
-    }
-    *ps = s;
-
-#if defined(WINDOWS_NETWORKING)
-
-    // Create the listening thread.
-    //
-    HANDLE hThread = CreateThread(nullptr, 0, mux_listen_thread, (LPVOID)ps, 0, nullptr);
-    if (nullptr == hThread)
-    {
-        log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
-        if (0 == SOCKET_CLOSE(s))
-        {
-            DebugTotalSockets--;
-        }
-        return false;
-    }
-#endif
-    return true;
-}
-
-#if defined(UNIX_NETWORKING)
-
-bool ValidSocket(SOCKET s)
-{
-    struct stat fstatbuf;
-    if (fstat(s, &fstatbuf) < 0)
-    {
-        return false;
-    }
-    return true;
-}
-
-#endif // UNIX_NETWORKING
-
-void PortInfoClose(int *pnPorts, port_info aPorts[], int i)
-{
-    if (0 == SOCKET_CLOSE(aPorts[i].socket))
-    {
-        DebugTotalSockets--;
-        (*pnPorts)--;
-        int k = *pnPorts;
-        if (i != k)
-        {
-            aPorts[i] = aPorts[k];
-        }
-        aPorts[k].socket = INVALID_SOCKET;
-        aPorts[k].fMatched = false;
-    }
-}
-
-void PortInfoOpen(int *pnPorts, port_info aPorts[], MUX_ADDRINFO *ai, bool fSSL)
-{
-    int k = *pnPorts;
-    if (  k < MAX_LISTEN_PORTS
-       && make_socket(&aPorts[k].socket, ai)
-       && !IS_INVALID_SOCKET(aPorts[k].socket)
-#if defined(UNIX_NETWORKING)
-       && ValidSocket(aPorts[k].socket)
-#endif // UNIX_NETWORKING
-       )
-    {
-#if defined(UNIX_NETWORKING_SELECT)
-        if (maxd <= aPorts[k].socket)
-        {
-            maxd = aPorts[k].socket + 1;
-        }
-#endif // UNIX_NETWORKING_SELECT
-        socklen_t len = aPorts[k].msa.maxaddrlen();
-        getsockname(aPorts[k].socket, aPorts[k].msa.sa(), &len);
-        aPorts[k].fMatched = true;
-#ifdef UNIX_SSL
-        aPorts[k].fSSL = fSSL;
-#else
-        UNUSED_PARAMETER(fSSL);
-#endif
-        (*pnPorts)++;
-    }
-}
-
-void PortInfoOpenClose(int *pnPorts, port_info aPorts[], IntArray *pia, const UTF8 *ip_address, bool fSSL)
-{
-    MUX_ADDRINFO hints = {};
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    for (int j = 0; j < pia->n; j++)
-    {
-        UTF8 sPort[20] = {};
-        const unsigned short usPort = pia->pi[j];
-        UTF8 *bufc = sPort;
-        safe_ltoa(usPort, sPort, &bufc);
-        *bufc = '\0';
-
-        MUX_ADDRINFO *servinfo;
-        if (0 == mux_getaddrinfo(ip_address, sPort, &hints, &servinfo))
-        {
-            for (MUX_ADDRINFO *ai = servinfo; nullptr != ai; ai = ai->ai_next)
-            {
-                int n = 0;
-                for (int i = 0; i < *pnPorts; i++)
-                {
-                    mux_sockaddr msa(ai->ai_addr);
-                    if (aPorts[i].msa == msa)
-                    {
-                        if (0 == n)
-                        {
-                            aPorts[i].fMatched = true;
-                        }
-                        else
-                        {
-                            // We do not need more than one socket for this address.
-                            //
-                            PortInfoClose(pnPorts, aPorts, i);
-                        }
-                        n++;
-                    }
-                }
-
-                if (0 == n)
-                {
-                    PortInfoOpen(pnPorts, aPorts, ai, fSSL);
-                }
-            }
-            mux_freeaddrinfo(servinfo);
-        }
-    }
-}
-
-void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address)
-{
-#if !defined(UNIX_SSL)
-    UNUSED_PARAMETER(piaSSL);
-#endif
-
-#if defined(WINDOWS_NETWORKING)
-    // If we are running Windows NT we must create a completion port,
-    // and start up a listening thread for new connections.  Create
-    // initial IO completion port, so threads have something to wait on
-    //
-    CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1);
-
-    if (!CompletionPort)
-    {
-        Log.tinyprintf(T("Error %ld on CreateIoCompletionPort" ENDLINE),  GetLastError());
-        return;
-    }
-
-    // Initialize the critical section
-    //
-    if (!bDescriptorListInit)
-    {
-        __try
-        {
-            InitializeCriticalSection(&csDescriptorList);
-            bDescriptorListInit = true;
-        }
-        __except(EXCEPTION_EXECUTE_HANDLER)
-        {
-        }
-    }
-#endif
-
-    for (int i = 0; i < *pnPorts; i++)
-    {
-        aPorts[i].fMatched = false;
-    }
-
-    UTF8 *sAddress = nullptr;
-    UTF8 *sp = nullptr;
-
-    // If ip_address is nullptr, we pass nullptr to mux_getaddrinfo() once. Otherwise, we pass each address (separated by space
-    // delimiter).
-    //
-    string_token st;
-    if (nullptr != ip_address)
-    {
-        sAddress = StringClone(ip_address);
-        st.set_source(sAddress);
-        st.set_control(T(" \t"));
-        sp = st.parse();
-    }
-
-    do
-    {
-        PortInfoOpenClose(pnPorts, aPorts, pia, sp, false);
-#if defined(UNIX_SSL)
-        if (piaSSL && nullptr != ssl_ctx)
-        {
-            PortInfoOpenClose(pnPorts, aPorts, piaSSL, sp, true);
-        }
-#endif
-
-        if (nullptr != ip_address)
-        {
-            sp = st.parse();
-        }
-
-    } while (nullptr != sp);
-
-    if (nullptr != sAddress)
-    {
-        MEMFREE(sAddress);
-        sAddress = nullptr;
-    }
-
-    for (int i = 0; i < *pnPorts; i++)
-    {
-        if (!aPorts[i].fMatched)
-        {
-            PortInfoClose(pnPorts, aPorts, i);
-        }
-    }
-
-    // If we were asked to listen on at least one port, but we aren't
-    // listening to at least one port, we should bring the game down.
-    //
-    if (  0 == *pnPorts
-       && (  0 != pia->n
-#ifdef UNIX_SSL
-          || 0 != piaSSL->n
-#endif
-          ))
-    {
-        STARTLOG(LOG_ALWAYS, "NET", "FATAL");
-        log_text(T("Unable to open any listening ports. Server shutting down."));
-        ENDLOG;
-
-#if defined(WINDOWS_NETWORKING)
-        WSACleanup();
-#endif // WINDOWS_NETWORKING
-        exit(1);
-    }
-}
 
 int make_nonblocking(SOCKET s)
 {
@@ -1294,24 +1039,6 @@ int make_nonblocking(SOCKET s)
     return 0;
 }
 
-static void make_nolinger(SOCKET s)
-{
-#if defined(HAVE_LINGER)
-    struct linger ling {};
-    ling.l_onoff = 0;
-    ling.l_linger = 0;
-    if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&ling), sizeof(ling))))
-    {
-        log_perror(T("NET"), T("FAIL"), T("linger"), T("setsockopt"));
-    }
-#endif // HAVE_LINGER
-}
-
-static void config_socket(SOCKET s)
-{
-    make_nonblocking(s);
-    make_nolinger(s);
-}
 
 #if defined(WINDOWS_NETWORKING)
 
@@ -1453,661 +1180,7 @@ void shovechars(int nPorts, port_info aPorts[])
     }
 }
 
-#elif defined(UNIX_NETWORKING)
-
-#ifdef UNIX_SSL
-void process_output_ssl(DESC *d, int bHandleShutdown);
-#endif
-
-#if defined(UNIX_NETWORKING_SELECT)
-
-#define CheckInput(x)     FD_ISSET(x, &input_set)
-#define CheckOutput(x)    FD_ISSET(x, &output_set)
-
-void shovechars(int nPorts, port_info aPorts[])
-{
-    fd_set input_set, output_set;
-    int found;
-    DESC *d, *dnext, *newd;
-    unsigned int avail_descriptors;
-    int maxfds;
-    int i;
-
-    mudstate.debug_cmd = T("< shovechars_select >");
-
-    CLinearTimeAbsolute ltaLastSlice;
-    ltaLastSlice.GetUTC();
-
-#ifdef HAVE_GETDTABLESIZE
-    maxfds = getdtablesize();
-#else // HAVE_GETDTABLESIZE
-    maxfds = sysconf(_SC_OPEN_MAX);
-#endif // HAVE_GETDTABLESIZE
-
-    avail_descriptors = maxfds - 7;
-
-    while (!mudstate.shutdown_flag)
-    {
-        CLinearTimeAbsolute ltaCurrent;
-        ltaCurrent.GetUTC();
-        update_quotas(ltaLastSlice, ltaCurrent);
-
-        // Check the scheduler.
-        //
-        scheduler.RunTasks(ltaCurrent);
-        CLinearTimeAbsolute ltaWakeUp;
-        if (scheduler.WhenNext(&ltaWakeUp))
-        {
-            if (ltaWakeUp < ltaCurrent)
-            {
-                ltaWakeUp = ltaCurrent;
-            }
-        }
-        else
-        {
-            CLinearTimeDelta ltd = time_30m;
-            ltaWakeUp = ltaCurrent + ltd;
-        }
-
-        if (mudstate.shutdown_flag)
-        {
-            break;
-        }
-
-        FD_ZERO(&input_set);
-        FD_ZERO(&output_set);
-
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
-        // Listen for replies from the stubslave socket.
-        //
-        if (!IS_INVALID_SOCKET(stubslave_socket))
-        {
-            FD_SET(stubslave_socket, &input_set);
-            if (0 < Pipe_QueueLength(&Queue_Out))
-            {
-                FD_SET(stubslave_socket, &output_set);
-            }
-        }
-#endif // HAVE_WORKING_FORK && STUB_SLAVE
-
-        // Listen for new connections if there are free descriptors.
-        //
-        if (mudstate.descriptors_list.size() < avail_descriptors)
-        {
-            for (i = 0; i < nPorts; i++)
-            {
-                FD_SET(aPorts[i].socket, &input_set);
-            }
-        }
-
-#if defined(HAVE_WORKING_FORK)
-        // Listen for replies from the slave socket.
-        //
-        if (!IS_INVALID_SOCKET(slave_socket))
-        {
-            FD_SET(slave_socket, &input_set);
-        }
-#endif // HAVE_WORKING_FORK
-
-        // Mark sockets that we want to test for change in status.
-        //
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            DESC* d = *it;
-            if (!d->input_head)
-            {
-                FD_SET(d->socket, &input_set);
-            }
-            if (d->output_head)
-            {
-                FD_SET(d->socket, &output_set);
-            }
-        }
-
-        // Wait for something to happen.
-        //
-        struct timeval timeout;
-        CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
-        ltdTimeout.ReturnTimeValueStruct(&timeout);
-        found = select(maxd, &input_set, &output_set, static_cast<fd_set *>(nullptr), &timeout);
-
-        if (IS_SOCKET_ERROR(found))
-        {
-            int iSocketError = SOCKET_LAST_ERROR;
-            if (iSocketError == SOCKET_EBADF)
-            {
-                // This one is bad, as it results in a spiral of
-                // doom, unless we can figure out what the bad file
-                // descriptor is and get rid of it.
-                //
-                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
-
-                // Search for a bad socket amongst the players.
-                //
-                for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
-                {
-                    DESC* d = *it;
-                    ++it;
-                    if (!ValidSocket(d->socket))
-                    {
-                        STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text(T("Bad socket "));
-                        log_number(d->socket);
-                        ENDLOG;
-                        shutdownsock(d, R_SOCKDIED);
-                    }
-                }
-
-#if defined(HAVE_WORKING_FORK)
-                if (  !IS_INVALID_SOCKET(slave_socket)
-                   && !ValidSocket(slave_socket))
-                {
-                    // Try to restart the slave, since it presumably died.
-                    //
-                    STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                    log_text(T("Bad slave socket "));
-                    log_number(slave_socket);
-                    ENDLOG;
-                    boot_slave(GOD, GOD, GOD, 0, 0);
-                }
-
-#if defined(STUB_SLAVE)
-                if (  !IS_INVALID_SOCKET(stubslave_socket)
-                   && !ValidSocket(stubslave_socket))
-                {
-                    CleanUpStubSlaveSocket();
-                }
-#endif // STUB_SLAVE
-#endif // HAVE_WORKING_FORK
-
-                for (i = 0; i < nPorts; i++)
-                {
-                    if (!ValidSocket(aPorts[i].socket))
-                    {
-                        // That's it. Game over.
-                        //
-                        STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text(T("Bad game port socket "));
-                        log_number(aPorts[i].socket);
-                        ENDLOG;
-                        return;
-                    }
-                }
-            }
-            else if (iSocketError != SOCKET_EINTR)
-            {
-                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
-            }
-            continue;
-        }
-
-#if defined(HAVE_WORKING_FORK)
-        // Get usernames and hostnames.
-        //
-        if (  !IS_INVALID_SOCKET(slave_socket)
-           && CheckInput(slave_socket))
-        {
-            while (0 == get_slave_result())
-            {
-                ; // Nothing.
-            }
-        }
-
-#if defined(STUB_SLAVE)
-        // Get data from stubslave.
-        //
-        if (!IS_INVALID_SOCKET(stubslave_socket))
-        {
-            if (CheckInput(stubslave_socket))
-            {
-                while (0 == StubSlaveRead())
-                {
-                    ; // Nothing.
-                }
-            }
-
-            Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Out);
-
-            if (!IS_INVALID_SOCKET(stubslave_socket))
-            {
-                if (CheckOutput(stubslave_socket))
-                {
-                    StubSlaveWrite();
-                }
-            }
-        }
-#endif // STUB_SLAVE
-#endif // HAVE_WORKING_FORK
-
-        // Check for new connection requests.
-        //
-        for (i = 0; i < nPorts; i++)
-        {
-            if (CheckInput(aPorts[i].socket))
-            {
-                int iSocketError;
-                newd = new_connection_initial(&aPorts[i]);
-                if (nullptr != newd)
-                {
-                   bool fConnectionOpen = true;
-#ifdef UNIX_SSL
-                   if (SocketState::SSLAcceptAgain == newd->ss)
-                   {
-                       fConnectionOpen = new_connection_continue(newd);
-                   }
-#endif
-                   if (  fConnectionOpen
-                      && !IS_INVALID_SOCKET(newd->socket)
-                      && maxd <= newd->socket)
-                   {
-                       maxd = newd->socket + 1;
-                   }
-                }
-            }
-        }
-
-        // Check for activity on user sockets.
-        //
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
-        {
-            DESC* d = *it;
-            ++it;
-
-            // Process input from sockets with pending input.
-            //
-            if (CheckInput(d->socket))
-            {
-                STARTLOG(LOG_DEBUG, "NET", "SSL");
-                log_printf(T("shovechars(), CheckInput (%u)."), d->socket);
-                ENDLOG;
-
-#ifdef UNIX_SSL
-                if (  SocketState::SSLAcceptAgain == d->ss
-                   || SocketState::SSLAcceptWantRead == d->ss)
-                {
-                    if (!new_connection_continue(d)) continue;
-                }
-                else if (d->ss == SocketState::SSLWriteWantRead)
-                {
-                    process_output_ssl(d, true);
-                }
-                else if (d->ss == SocketState::SSLReadWantRead)
-                {
-                    if (!process_input(d))
-                    {
-                        shutdownsock(d, R_SOCKDIED);
-                        continue;
-                    }
-                }
-                else
-#endif
-                {
-                    // Undo autodark
-                    //
-                    if (d->flags & DS_AUTODARK)
-                    {
-                        // Clear the DS_AUTODARK on every related session.
-                        //
-                        const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
-                        for (auto it = range.first; it != range.second; ++it)
-                        {
-                            DESC* d1 = it->second;
-                            d1->flags &= ~DS_AUTODARK;
-                        }
-                        db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
-                    }
-
-                    // Process received data.
-                    //
-                    if (!process_input(d))
-                    {
-                        shutdownsock(d, R_SOCKDIED);
-                        continue;
-                    }
-                }
-            }
-
-            // Process output for sockets with pending output.
-            //
-            if (CheckOutput(d->socket))
-            {
-                STARTLOG(LOG_DEBUG, "NET", "SSL");
-                log_printf(T("shovechars(), CheckOutput (%u)."), d->socket);
-                ENDLOG;
-#ifdef UNIX_SSL
-                if (SocketState::SSLAcceptAgain == d->ss)
-                {
-                    if (!new_connection_continue(d)) continue;
-                }
-                else if (SocketState::SSLAcceptWantWrite == d->ss)
-                {
-                    if (!new_connection_continue(d)) continue;
-                }
-                else if (d->ss == SocketState::SSLWriteWantWrite)
-                {
-                    process_output_ssl(d, true);
-                }
-                else if (d->ss == SocketState::SSLReadWantWrite)
-                {
-                    if (!process_input(d))
-                    {
-                        shutdownsock(d, R_SOCKDIED);
-                        continue;
-                    }
-                }
-                else
-#endif
-                {
-                    process_output(d, true);
-                }
-            }
-        }
-    }
-}
-
-#endif // UNIX_NETWORKING_SELECT
-
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
-extern "C" MUX_RESULT DCL_API pipepump(void)
-{
-    fd_set input_set;
-    fd_set output_set;
-    int found;
-
-    mudstate.debug_cmd = T("< pipepump >");
-
-    if (IS_INVALID_SOCKET(stubslave_socket))
-    {
-        return MUX_E_FAIL;
-    }
-
-    FD_ZERO(&input_set);
-    FD_ZERO(&output_set);
-
-    // Listen for replies from the stubslave socket.
-    //
-    FD_SET(stubslave_socket, &input_set);
-    if (0 < Pipe_QueueLength(&Queue_Out))
-    {
-        FD_SET(stubslave_socket, &output_set);
-    }
-
-    // Wait for something to happen.
-    //
-    found = select(maxd, &input_set, &output_set, (fd_set *) nullptr, nullptr);
-
-    if (IS_SOCKET_ERROR(found))
-    {
-        int iSocketError = SOCKET_LAST_ERROR;
-        if (SOCKET_EBADF == iSocketError)
-        {
-            // The socket became invalid.
-            //
-            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
-
-            if (  !IS_INVALID_SOCKET(stubslave_socket)
-               && !ValidSocket(stubslave_socket))
-            {
-                CleanUpStubSlaveSocket();
-                return MUX_E_FAIL;
-            }
-        }
-        else if (iSocketError != SOCKET_EINTR)
-        {
-            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
-        }
-        return MUX_S_OK;
-    }
-
-    // Get data from from stubslave.
-    //
-    if (CheckInput(stubslave_socket))
-    {
-        while (0 == StubSlaveRead())
-        {
-            ; // Nothing.
-        }
-    }
-
-    if (!IS_INVALID_SOCKET(stubslave_socket))
-    {
-        if (CheckOutput(stubslave_socket))
-        {
-            StubSlaveWrite();
-        }
-    }
-    return MUX_S_OK;
-}
-#endif // HAVE_WORKINGFORK && STUB_SLAVE
-
-// new_connection_final(). Call when SocketState::Accepted.
-//
-void new_connection_final(DESC* d)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection_final >");
-
-    STARTLOG(LOG_DEBUG, "NET", "SSL");
-    log_printf(T("new_connection_final() (%u)."), d->socket);
-    ENDLOG;
-
-    telnet_setup(d);
-
-    // Initialize everything before sending the sitemon info, so that we
-    // can pass the descriptor, d.
-    //
-    UTF8 *pBuffer = alloc_mbuf("new_connection.address");
-    d->address.ntop(pBuffer, MBUF_SIZE);
-    site_mon_send(d->socket, pBuffer, d, T("Connection"));
-    free_mbuf(pBuffer);
-    pBuffer = nullptr;
-
-    welcome_user(d);
-    mudstate.debug_cmd = cmdsave;
-}
-
-
-void check_connection_failure(int iSocketError)
-{
-    if (  iSocketError
-       && iSocketError != SOCKET_EINTR)
-    {
-        STARTLOG(LOG_ALWAYS, "NET", "FAIL");
-        log_printf(T("new_connection() failed with %u."), iSocketError);
-        ENDLOG;
-    }
-}
-
-// new_connection_initial(). Call when connection made to open port.
-//
-DESC *new_connection_initial(port_info* Port)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection_initial >");
-
-#ifdef SOCKLEN_T_DCL
-    socklen_t addr_len;
-#else // SOCKLEN_T_DCL
-    int addr_len;
-#endif // SOCKLEN_T_DCL
-    mux_sockaddr addr;
-    addr_len = addr.maxaddrlen();
-
-    SOCKET newsock = accept(Port->socket, addr.sa(), &addr_len);
-
-    if (IS_INVALID_SOCKET(newsock))
-    {
-        check_connection_failure(SOCKET_LAST_ERROR);
-        mudstate.debug_cmd = cmdsave;
-        return nullptr;
-    }
-
-    UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
-    addr.ntop(pBuffM2, MBUF_SIZE);
-    unsigned short usPort = addr.port();
-
-    DebugTotalSockets++;
-    if (mudstate.access_list.isForbid(&addr))
-    {
-        STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-        UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
-        mux_sprintf(pBuffM1, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"), newsock, pBuffM2, usPort);
-        log_text(pBuffM1);
-        free_mbuf(pBuffM1); pBuffM1 = nullptr;
-        ENDLOG;
-
-        // Report site monitor information.
-        //
-        site_mon_send(newsock, pBuffM2, nullptr, T("Connection refused"));
-        free_mbuf(pBuffM2); pBuffM2 = nullptr;
-
-        fcache_rawdump(newsock, FC_CONN_SITE);
-        shutdown(newsock, SD_BOTH);
-        if (0 == SOCKET_CLOSE(newsock))
-        {
-            DebugTotalSockets--;
-        }
-        newsock = INVALID_SOCKET;
-        errno = 0;
-        check_connection_failure(SOCKET_LAST_ERROR);
-        mudstate.debug_cmd = cmdsave;
-        return nullptr;
-    }
-
-#if defined(HAVE_WORKING_FORK)
-    // Make slave request
-    //
-    if (  !IS_INVALID_SOCKET(slave_socket)
-       && mudconf.use_hostname)
-    {
-        UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
-        mux_sprintf(pBuffL1, LBUF_SIZE, T("%s\n"), pBuffM2);
-        size_t len = strlen((char *)pBuffL1);
-        if (mux_write(slave_socket, pBuffL1, len) < 0)
-        {
-            CleanUpSlaveSocket();
-            CleanUpSlaveProcess();
-
-            STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-            log_text(T("write() of slave request failed. Slave stopped."));
-            ENDLOG;
-        }
-        free_lbuf(pBuffL1); pBuffL1 = nullptr;
-    }
-#endif // HAVE_WORKING_FORK
-
-    STARTLOG(LOG_NET, "NET", "CONN");
-    UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
-    mux_sprintf(pBuffM3, MBUF_SIZE, T("[%u/%s] Connection opened (remote port %d)"), newsock, pBuffM2, usPort);
-    free_mbuf(pBuffM2); pBuffM2 = nullptr;
-    log_text(pBuffM3);
-    free_mbuf(pBuffM3); pBuffM3 = nullptr;
-    ENDLOG;
-
-    config_socket(newsock);
-    DESC *d = initializesock(newsock, &addr);
-
-#ifdef UNIX_SSL
-    if (Port->fSSL && nullptr != ssl_ctx)
-    {
-        d->ssl_session = SSL_new(ssl_ctx);
-        SSL_set_fd(d->ssl_session, d->socket);
-        d->ss = SocketState::SSLAcceptAgain;
-    }
-    else
-#endif
-    {
-        d->ss = SocketState::Accepted;
-        new_connection_final(d);
-    }
-    mudstate.debug_cmd = cmdsave;
-    return d;
-}
-
-#ifdef UNIX_SSL
-// new_connection_continue(). Call when SocketState::SSLAcceptAgain, SocketState::SSLAcceptWantWrite, and SocketState::SSLAcceptWantRead
-//
-bool new_connection_continue(DESC* d)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< new_connection_continue >");
-
-    int ssl_result = SSL_accept(d->ssl_session);
-    if (1 == ssl_result)
-    {
-        STARTLOG(LOG_DEBUG, "NET", "SSL");
-        log_printf(T("new_connection_continue(), SSL_accept (%u): Set SocketState::Accepted."), d->socket);
-        ENDLOG;
-        d->ss = SocketState::Accepted;
-        new_connection_final(d);
-    }
-    else
-    {
-        int iSocketError = SSL_get_error(d->ssl_session, ssl_result);
-        if (  SOCKET_EWOULDBLOCK == iSocketError
-#ifdef SOCKET_EAGAIN
-           || SOCKET_EAGAIN      == iSocketError
-#endif
-           || SOCKET_EINTR       == iSocketError
-           )
-        {
-            STARTLOG(LOG_DEBUG, "NET", "SSL");
-            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptAgain."), d->socket);
-            ENDLOG;
-            d->ss = SocketState::SSLAcceptAgain;
-        }
-        else if (SSL_ERROR_WANT_WRITE == iSocketError)
-        {
-            STARTLOG(LOG_DEBUG, "NET", "SSL");
-            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantWrite."), d->socket);
-            ENDLOG;
-            d->ss = SocketState::SSLAcceptWantWrite;
-        }
-        else if (SSL_ERROR_WANT_READ  == iSocketError)
-        {
-            STARTLOG(LOG_DEBUG, "NET", "SSL");
-            log_printf(T("new_connection(), SSL_accept (%u): Set SocketState::SSLAcceptWantRead."), d->socket);
-            ENDLOG;
-            d->ss = SocketState::SSLAcceptWantRead;
-        }
-        else
-        {
-            SSL_free(d->ssl_session);
-            d->ssl_session = nullptr;
-            STARTLOG(LOG_ALWAYS, "NET", "SSL");
-            log_text(T("SSL negotiation failed: "));
-            log_number(iSocketError);
-            ENDLOG;
-            shutdown(d->socket, SD_BOTH);
-            if (0 == SOCKET_CLOSE(d->socket))
-            {
-                DebugTotalSockets--;
-            }
-            d->socket = INVALID_SOCKET;
-
-            auto it = mudstate.descriptors_map.find(d);
-            if (it != mudstate.descriptors_map.end()) {
-                auto list_it = it->second;
-                mudstate.descriptors_map.erase(it);
-                mudstate.descriptors_list.erase(list_it);
-            }
-
-            // If we don't have queued IOs, then we can free these, now.
-            //
-            freeqs(d);
-            free_desc(d);
-
-            check_connection_failure(iSocketError);
-            errno = 0;
-            return false;
-        }
-    }
-    mudstate.debug_cmd = cmdsave;
-    return true;
-}
-#endif
-
-#endif // UNIX_NETWORKING
+#endif // WINDOWS_NETWORKING
 
 // Disconnect reasons that get written to the logfile
 //
@@ -2443,106 +1516,6 @@ static void shutdownsock_brief(DESC *d)
 }
 #endif // WINDOWS_NETWORKING
 
-// This function must be thread safe WinNT
-//
-DESC *initializesock(SOCKET s, MUX_SOCKADDR *msa)
-{
-    DESC *d;
-
-#if defined(WINDOWS_NETWORKING)
-    // protect adding the descriptor from the linked list from
-    // any interference from socket shutdowns
-    //
-    EnterCriticalSection(&csDescriptorList);
-#endif // WINDOWS_NETWORKING
-
-    d = alloc_desc("init_sock");
-
-#if defined(WINDOWS_NETWORKING)
-    LeaveCriticalSection(&csDescriptorList);
-#endif // WINDOWS_NETWORKING
-
-    d->ss = SocketState::Accepted;
-    d->socket = s;
-#ifdef UNIX_SSL
-    d->ssl_session = nullptr;
-#endif
-    d->flags = 0;
-    d->connected_at.GetUTC();
-    d->last_time = d->connected_at;
-    d->retries_left = mudconf.retry_limit;
-    d->command_count = 0;
-    d->timeout = mudconf.idle_timeout;
-
-    // Be sure #0 isn't wizard. Shouldn't be.
-    //
-    d->player = 0;
-
-    d->addr[0] = '\0';
-    d->doing[0] = '\0';
-    d->username[0] = '\0';
-    d->output_prefix = nullptr;
-    d->output_suffix = nullptr;
-    d->output_size = 0;
-    d->output_tot = 0;
-    d->output_lost = 0;
-    d->output_head = nullptr;
-    d->output_tail = nullptr;
-    d->input_head = nullptr;
-    d->input_tail = nullptr;
-    d->input_size = 0;
-    d->input_tot = 0;
-    d->input_lost = 0;
-    d->raw_input = nullptr;
-    d->raw_input_at = nullptr;
-    d->nOption = 0;
-    d->raw_input_state = NVT_IS_NORMAL;
-    d->raw_codepoint_state = CL_PRINT_START_STATE;
-    d->raw_codepoint_length = 0;
-    for (auto& i : d->nvt_him_state)
-    {
-        i = OPTION_NO;
-    }
-    for (auto& i : d->nvt_us_state)
-    {
-        i = OPTION_NO;
-    }
-    d->ttype = nullptr;
-    d->encoding = mudconf.default_charset;
-    d->negotiated_encoding = mudconf.default_charset;
-    d->height = 24;
-    d->width = 78;
-    d->quota = mudconf.cmd_quota_max;
-    d->program_data = nullptr;
-    d->address = *msa;
-    msa->ntop(d->addr, sizeof(d->addr));
-
-#if defined(WINDOWS_NETWORKING)
-    // protect adding the descriptor from the linked list from
-    // any interference from socket shutdowns
-    //
-    EnterCriticalSection(&csDescriptorList);
-#endif // WINDOWS_NETWORKING
-
-    auto it = mudstate.descriptors_list.insert(mudstate.descriptors_list.begin(), d);
-    mudstate.descriptors_map.insert(make_pair(d, it));
-
-#if defined(WINDOWS_NETWORKING)
-    // ok to continue now
-    //
-    LeaveCriticalSection(&csDescriptorList);
-
-    d->OutboundOverlapped.hEvent = nullptr;
-    d->InboundOverlapped.hEvent = nullptr;
-    d->InboundOverlapped.Offset = 0;
-    d->InboundOverlapped.OffsetHigh = 0;
-    d->bConnectionShutdown = false; // not shutdown yet
-    d->bConnectionDropped = false; // not dropped yet
-    d->bCallProcessOutputLater = false;
-#endif // WINDOWS_NETWORKING
-    return d;
-}
-
 #if defined(WINDOWS_NETWORKING)
 
 /*! \brief Service network request for more output to a specific descriptor.
@@ -2671,147 +1644,7 @@ void process_output_socket(DESC *d, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#elif defined(UNIX_NETWORKING)
-
-/*! \brief Service network request for more output to a specific socket.
- *
- * This function is called when the network wants to consume more data, but it
- * must also be called to kick-start output to the network, so truthfully, the
- * call can come from shovechars or the output routines.  Currently, this is
- * not being called by the task queue, but it is in a form that is callable by
- * the task queue.
- *
- * \param dvoid             Network descriptor state.
- * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
- * \return                  None.
- */
-
-void process_output_socket(DESC *d, int bHandleShutdown)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< process_output >");
-
-    text_block *tb = d->output_head;
-    while (nullptr != tb)
-    {
-        while (0 < tb->hdr.nchars)
-        {
-            int cnt = SOCKET_WRITE(d->socket, reinterpret_cast<char *>(tb->hdr.start), tb->hdr.nchars, 0);
-            if (IS_SOCKET_ERROR(cnt))
-            {
-                int iSocketError = SOCKET_LAST_ERROR;
-                mudstate.debug_cmd = cmdsave;
-                if (  SOCKET_EWOULDBLOCK   == iSocketError
-#ifdef SOCKET_EAGAIN
-                   || SOCKET_EAGAIN        == iSocketError
-#endif
-                   || SOCKET_EINTR         == iSocketError
-                )
-                {
-                    // The call would have blocked, so we need to mark the
-                    // buffer we used as read-only and try again later with
-                    // the exactly same buffer.
-                    //
-                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
-                }
-                else if (bHandleShutdown)
-                {
-                    shutdownsock(d, R_SOCKDIED);
-                }
-                return;
-            }
-            d->output_size -= cnt;
-            tb->hdr.nchars -= cnt;
-            tb->hdr.start += cnt;
-        }
-        text_block *save = tb;
-        tb = tb->hdr.nxt;
-        MEMFREE(save);
-        save = nullptr;
-        d->output_head = tb;
-        if (tb == nullptr)
-        {
-            d->output_tail = nullptr;
-        }
-    }
-
-    mudstate.debug_cmd = cmdsave;
-}
-
-#ifdef UNIX_SSL
-void process_output_ssl(DESC *d, int bHandleShutdown)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< process_output_ssl >");
-
-    if (!d || !d->ssl_session) return;
-
-    text_block *tb = d->output_head;
-    while (nullptr != tb)
-    {
-        while (0 < tb->hdr.nchars)
-        {
-            int cnt = SSL_write(d->ssl_session, reinterpret_cast<char *>(tb->hdr.start), tb->hdr.nchars);
-            if (IS_SOCKET_ERROR(cnt))
-            {
-                int iSocketError = SSL_get_error(d->ssl_session, cnt);
-                mudstate.debug_cmd = cmdsave;
-                if (  SOCKET_EWOULDBLOCK   == iSocketError
-#ifdef SOCKET_EAGAIN
-                   || SOCKET_EAGAIN        == iSocketError
-#endif
-                   || SOCKET_EINTR         == iSocketError
-                   || SSL_ERROR_WANT_WRITE == iSocketError
-                   || SSL_ERROR_WANT_READ  == iSocketError
-                )
-                {
-                    // The call would have blocked, so we need to mark the
-                    // buffer we used as read-only and try again later with
-                    // the exactly same buffer.
-                    //
-                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
-
-                    if (SSL_ERROR_WANT_WRITE == iSocketError)
-                    {
-                        STARTLOG(LOG_DEBUG, "NET", "SSL");
-                        log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantWrite."), d->socket);
-                        ENDLOG;
-                        d->ss = SocketState::SSLWriteWantWrite;
-                    }
-                    else if (SSL_ERROR_WANT_READ == iSocketError)
-                    {
-                        STARTLOG(LOG_DEBUG, "NET", "SSL");
-                        log_printf(T("process_output_ssl(), SSL_write (%u): Set SocketState::SSLWriteWantRead."), d->socket);
-                        ENDLOG;
-                        d->ss = SocketState::SSLWriteWantRead;
-                    }
-                }
-                else if (bHandleShutdown)
-                {
-                    shutdownsock(d, R_SOCKDIED);
-                }
-                return;
-            }
-            d->output_size -= cnt;
-            tb->hdr.nchars -= cnt;
-            tb->hdr.start += cnt;
-        }
-        text_block *save = tb;
-        tb = tb->hdr.nxt;
-        MEMFREE(save);
-        save = nullptr;
-        d->output_head = tb;
-        if (tb == nullptr)
-        {
-            d->output_tail = nullptr;
-        }
-    }
-
-    mudstate.debug_cmd = cmdsave;
-}
-#endif // UNIX_SSL
-
-#endif // UNIX_NETWORKING
+#endif // WINDOWS_NETWORKING
 
 static void process_output_ganl(DESC *d, int bHandleShutdown)
 {
@@ -3345,27 +2178,6 @@ void disable_us(DESC *d, unsigned char chOption)
  *
  * \param d        Player connection on which the input arrived.
  */
-void telnet_setup(DESC *d)
-{
-    // Attempt negotation of EOR so we can use that, and if that succeeds,
-    // code elsewhere will attempt the negotation of SGA for our side as well.
-    //
-    enable_us(d, TELNET_EOR);
-    enable_him(d, TELNET_EOR);
-    enable_him(d, TELNET_SGA);
-    enable_him(d, TELNET_TTYPE);
-    enable_him(d, TELNET_NAWS);
-    enable_him(d, TELNET_ENV);
-//    EnableHim(d, TELNET_OLDENV);
-    enable_us(d, TELNET_CHARSET);
-    enable_him(d, TELNET_CHARSET);
-#ifdef UNIX_SSL
-    if (!d->ssl_session && (tls_ctx != nullptr))
-    {
-        enable_him(d, TELNET_STARTTLS);
-    }
-#endif
-}
 
 /*! \brief Parse raw data from network connection into command lines and
  * Telnet indications.
@@ -4257,68 +3069,6 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
     d->input_lost += nLostBytes;
 }
 
-bool process_input(DESC *d)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< process_input >");
-
-    char buf[LBUF_SIZE];
-    const auto got = mux_socket_read(d, buf, sizeof(buf), 0);
-    if (  IS_SOCKET_ERROR(got)
-       || 0 == got)
-    {
-#ifdef UNIX_SSL
-        int iSocketError;
-        if (d->ssl_session)
-        {
-           iSocketError = SSL_get_error(d->ssl_session, got);
-        }
-        else
-        {
-           iSocketError = SOCKET_LAST_ERROR;
-        }
-#else
-        const int iSocketError = SOCKET_LAST_ERROR;
-#endif
-        mudstate.debug_cmd = cmdsave;
-
-        if (  IS_SOCKET_ERROR(got)
-           && (  SOCKET_EWOULDBLOCK   == iSocketError
-#ifdef SOCKET_EAGAIN
-              || SOCKET_EAGAIN        == iSocketError
-#endif
-              || SOCKET_EINTR         == iSocketError
-#ifdef UNIX_SSL
-              || SSL_ERROR_WANT_WRITE == iSocketError
-              || SSL_ERROR_WANT_READ  == iSocketError
-#endif
-              )
-           )
-        {
-#ifdef UNIX_SSL
-            if (SSL_ERROR_WANT_WRITE == iSocketError)
-            {
-                STARTLOG(LOG_DEBUG, "NET", "SSL");
-                log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantWrite."), d->socket);
-                ENDLOG;
-                d->ss = SocketState::SSLReadWantWrite;
-            }
-            else if (SSL_ERROR_WANT_READ == iSocketError)
-            {
-                STARTLOG(LOG_DEBUG, "NET", "SSL");
-                log_printf(T("process_input(), SSL_read (%u): Set SocketState::SSLReadWantRead."), d->socket);
-                ENDLOG;
-                d->ss = SocketState::SSLReadWantRead;
-            }
-#endif // UNIX_SSL
-            return true;
-        }
-        return false;
-    }
-    process_input_helper(d, buf, got);
-    mudstate.debug_cmd = cmdsave;
-    return true;
-}
 
 void close_listening_ports(void)
 {
@@ -4332,19 +3082,6 @@ void close_listening_ports(void)
     }
 }
 
-void close_sockets(const UTF8 *message)
-{
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
-    {
-        DESC* d = *it;
-        ++it;
-
-        queue_string(d, message);
-        queue_write_LEN(d, T("\r\n"), 2);
-        shutdownsock(d, R_GOING_DOWN);
-    }
-    close_listening_ports();
-}
 
 void close_sockets_emergency(const UTF8* message)
 {

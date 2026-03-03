@@ -267,8 +267,6 @@ extern int      num_main_game_ports;
 
 extern void emergency_shutdown();
 extern void shutdownsock(DESC *, int);
-extern void SetupPorts(int *pnPorts, port_info aPorts[], IntArray *pia, IntArray *piaSSL, const UTF8 *ip_address);
-extern void shovechars(int nPorts, port_info aPorts[]);
 void process_output(DESC *, int);
 void process_input_helper(DESC *d, char *pBytes, int nBytes);
 #if defined(HAVE_WORKING_FORK)
@@ -323,7 +321,6 @@ extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 // From bsd.cpp.
 //
-void close_sockets(const UTF8 *message);
 void close_sockets_emergency(const UTF8* message);
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
 void mux_freeaddrinfo(MUX_ADDRINFO *res);
@@ -349,10 +346,6 @@ void CleanUpSSLConnections(void);
 #endif
 
 extern NAMETAB sigactions_nametab[];
-
-#if defined(UNIX_NETWORKING_SELECT)
-extern int maxd;
-#endif // UNIX_NETWORKING_SELECT
 
 extern long DebugTotalSockets;
 

@@ -3676,13 +3676,6 @@ void load_restart_db(void)
                 mux_assert(0);
             }
 
-#if defined(UNIX_NETWORKING_SELECT)
-            if (maxd <= main_game_ports[i].socket)
-            {
-                maxd = main_game_ports[i].socket + 1;
-            }
-#endif // UNIX_NETWORKING_SELECT
-
             if (3 <= version)
             {
 #ifdef UNIX_SSL
@@ -3914,13 +3907,6 @@ void load_restart_db(void)
 
         auto it = mudstate.descriptors_list.insert(mudstate.descriptors_list.end(), d);
         mudstate.descriptors_map.insert(make_pair(d, it));
-
-#if defined(UNIX_NETWORKING_SELECT)
-        if (maxd <= d->socket)
-        {
-            maxd = d->socket + 1;
-        }
-#endif // UNIX_NETWORKING_SELECT
 
         desc_addhash(d);
         if (isPlayer(d->player))

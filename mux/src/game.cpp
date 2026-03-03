@@ -1296,7 +1296,7 @@ void do_shutdown
     }
 
     // Do we perform a normal or an emergency shutdown? Normal
-    // shutdown is handled by exiting the main loop in shovechars,
+    // shutdown is handled by exiting the GANL main loop,
     // emergency shutdown is done here.
     //
     if (key & SHUTDN_PANIC)
