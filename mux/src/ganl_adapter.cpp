@@ -669,6 +669,21 @@ public:
 
         GanlLog(T("RECV socket=%d len=%d"), d->socket, static_cast<int>(data.size()));
 
+        // Undo autodark
+        //
+        if (d->flags & DS_AUTODARK)
+        {
+            // Clear the DS_AUTODARK on every related session.
+            //
+            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                DESC* d1 = it->second;
+                d1->flags &= ~DS_AUTODARK;
+            }
+            db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+        }
+
         // Feed raw bytes through TinyMUX's existing NVT parser.
         // process_input_helper handles all telnet negotiation, charset
         // detection, and command queuing.
