@@ -121,6 +121,15 @@ public:
 
     void process_tinyMUX_tasks(); // Helper to run timers, quotas etc.
 
+    // Deferred finalization for TLS connections. welcome_user() cannot be
+    // called until the TLS handshake completes and the GANL connection
+    // reaches Running state, otherwise output sits in applicationOutput_.
+    struct PendingFinalization {
+        ganl::ConnectionHandle handle;
+        bool isTls;
+    };
+    std::vector<PendingFinalization> pending_finalizations_;
+
     CLinearTimeAbsolute ltaLastSlice_; // For quota updates
 };
 

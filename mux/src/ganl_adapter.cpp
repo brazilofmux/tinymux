@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <iostream>
 #include <limits>
-#include <thread> // For sleep
 #include <cerrno>
 #include <cstdarg>
 
@@ -491,13 +490,15 @@ public:
             }
         }
         if (!conn) {
-            std::cerr << "[GANL Adapter] Missing ConnectionBase for handle " << handle << std::endl;
+            Log.tinyprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
+                static_cast<unsigned long long>(handle));
             return ganl::InvalidSessionId;
         }
 
         DESC* d = adapter_.allocate_desc();
         if (!d) {
-            std::cerr << "[GANL Adapter] Failed to allocate DESC for handle " << handle << std::endl;
+            Log.tinyprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
+                static_cast<unsigned long long>(handle));
             return ganl::InvalidSessionId;
         }
 
@@ -624,10 +625,17 @@ public:
             addrText[0] != '\0' ? addrText : T("UNKNOWN"),
             useTls ? T("yes") : T("no"));
 
-        // With the raw passthrough handler, GANL completes TLS at the
-        // transport layer before calling onConnectionOpen. Always finalize
-        // immediately.
-        FinalizeGanlConnection(adapter_, d, useTls);
+        if (useTls) {
+            // For TLS connections, defer finalization until the TLS handshake
+            // completes and the GANL connection reaches Running state.
+            // Sending welcome text before TLS is established causes it to
+            // buffer in applicationOutput_ and never get flushed.
+            std::lock_guard<std::mutex> lock(adapter_.mutex_);
+            adapter_.pending_finalizations_.push_back({handle, true});
+        } else {
+            // Non-TLS connections can be finalized immediately.
+            FinalizeGanlConnection(adapter_, d, false);
+        }
 
         return static_cast<ganl::SessionId>(handle);
     }
@@ -1307,11 +1315,14 @@ bool GanlAdapter::initialize() {
         // Continue? Or fail? Let's continue for now.
     }
 
-#if !defined(_WIN32)
-    if (mudconf.use_hostname) {
-        start_dns_slave();
-    }
-#endif
+    // Skip GANL DNS slave - TinyMUX's boot_slave() already handles DNS lookups.
+    // GANL's spawnSlave with attachToStandardIO can block when the legacy slave
+    // has already been started.
+    // #if !defined(_WIN32)
+    //     if (mudconf.use_hostname) {
+    //         start_dns_slave();
+    //     }
+    // #endif
 
 
     initialized_ = true;
@@ -1334,7 +1345,6 @@ void GanlAdapter::shutdown() {
 #endif
 
     // Close listeners first
-    // Create copies of handles to avoid iterator invalidation during closeListener call
     std::vector<ganl::ListenerHandle> plainHandles, sslHandles;
     plainHandles.reserve(port_listeners_.size());
     for (const auto& pair : port_listeners_) plainHandles.push_back(pair.second);
@@ -1344,20 +1354,66 @@ void GanlAdapter::shutdown() {
     for (ganl::ListenerHandle handle : plainHandles) networkEngine_->closeListener(handle);
     for (ganl::ListenerHandle handle : sslHandles) networkEngine_->closeListener(handle);
 
+    // Send farewell message to all connected clients.
+    for (auto it = mudstate.descriptors_list.begin();
+         it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if (d) {
+            queue_string(d, T("Going down - Bye"));
+            queue_write_LEN(d, T("\r\n"), 2);
+            process_output(d, false);
+        }
+    }
 
-    // Shutdown Session Manager (should notify TinyMUX about remaining connections)
+    // process_output buffers data in GANL's encryptedOutput_ and registers
+    // write interest via postWrite(). We must process events so the network
+    // engine actually flushes the farewell message to the wire.
+    {
+        constexpr int MAX_EVENTS = 64;
+        ganl::IoEvent events[MAX_EVENTS];
+        int num = networkEngine_->processEvents(100, events, MAX_EVENTS);
+        for (int i = 0; i < num; ++i) {
+            if (events[i].connection != ganl::InvalidConnectionHandle) {
+                std::lock_guard<std::mutex> lk(mutex_);
+                auto it = handle_to_conn_.find(events[i].connection);
+                if (it != handle_to_conn_.end() && it->second) {
+                    it->second->handleNetworkEvent(events[i]);
+                }
+            }
+        }
+    }
+
+    // Close all connections before destroying the network engine.
+    // We must close them explicitly so their destructors don't try to access
+    // a destroyed engine.
+    {
+        std::vector<std::shared_ptr<ganl::ConnectionBase>> connsToClose;
+        {
+            std::lock_guard<std::mutex> connLock(mutex_);
+            connsToClose.reserve(handle_to_conn_.size());
+            for (auto& pair : handle_to_conn_) {
+                connsToClose.push_back(pair.second);
+            }
+            handle_to_conn_.clear();
+        }
+        for (auto& conn : connsToClose) {
+            if (conn && conn->getState() != ganl::ConnectionState::Closed) {
+                conn->close(ganl::DisconnectReason::ServerShutdown);
+            }
+        }
+        connsToClose.clear();
+    }
+
     if (sessionManager_) {
         sessionManager_->shutdown();
         sessionManager_.reset();
     }
 
-    // Shutdown Protocol Handler (if needed)
     if (protocolHandler_) {
-        // protocolHandler_->shutdown(); // Assuming no specific shutdown needed
         protocolHandler_.reset();
     }
 
-    // Shutdown Secure Transport
     if (secureTransport_) {
         secureTransport_->shutdown();
         secureTransport_.reset();
@@ -1369,13 +1425,11 @@ void GanlAdapter::shutdown() {
         networkEngine_.reset();
     }
 
-    // Re-acquire lock to clear maps safely
     lock.lock();
     port_listeners_.clear();
     ssl_port_listeners_.clear();
     handle_to_desc_.clear();
     desc_to_handle_.clear();
-    handle_to_conn_.clear();
     listener_contexts_.clear();
 
     Log.WriteString(T("GANL Adapter shut down.\n"));
@@ -1383,7 +1437,7 @@ void GanlAdapter::shutdown() {
 
 void GanlAdapter::run_main_loop() {
     Log.WriteString(T("GANL: Entering main loop.\n"));
-
+    Log.Flush();
     ltaLastSlice_.GetUTC();
 
     while (!mudstate.shutdown_flag) {
@@ -1396,7 +1450,7 @@ void GanlAdapter::run_main_loop() {
             ltaNow.GetUTC();
             if (ltaNextTask > ltaNow) {
                 CLinearTimeDelta ltdToNext = ltaNextTask - ltaNow;
-                int timeout_ms = ltdToNext.ReturnMilliseconds();
+                timeout_ms = ltdToNext.ReturnMilliseconds();
             }
             else {
                 timeout_ms = 0; // Task is due now or overdue
@@ -1479,9 +1533,8 @@ void GanlAdapter::run_main_loop() {
                         conn->handleNetworkEvent(events[i]);
                     }
                     else {
-                        std::cerr << "[GANL Adapter] Mismatched context for event on handle "
-                            << events[i].connection << "! Expected " << conn.get()
-                            << ", Got " << events[i].context << std::endl;
+                        Log.tinyprintf(T("GANL: Mismatched context for event on handle %llu\n"),
+                            static_cast<unsigned long long>(events[i].connection));
                     }
                 }
                 else {
@@ -1507,6 +1560,36 @@ void GanlAdapter::process_tinyMUX_tasks() {
     // Update command quotas (same as shovechars timeslice logic).
     update_quotas(ltaLastSlice_, ltaNow);
     ltaLastSlice_ = ltaNow;
+
+    // Finalize TLS connections that have completed their handshake.
+    // We deferred welcome_user() until the connection reaches Running state
+    // so that output doesn't get stuck in GANL's applicationOutput_ buffer.
+    if (!pending_finalizations_.empty()) {
+        std::vector<PendingFinalization> ready;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto it = pending_finalizations_.begin();
+            while (it != pending_finalizations_.end()) {
+                auto connIt = handle_to_conn_.find(it->handle);
+                if (connIt != handle_to_conn_.end() && connIt->second &&
+                    connIt->second->getState() == ganl::ConnectionState::Running) {
+                    ready.push_back(*it);
+                    it = pending_finalizations_.erase(it);
+                } else if (connIt == handle_to_conn_.end()) {
+                    // Connection was closed before TLS completed
+                    it = pending_finalizations_.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+        for (auto& pf : ready) {
+            DESC* d = get_desc(pf.handle);
+            if (d) {
+                FinalizeGanlConnection(*this, d, pf.isTls);
+            }
+        }
+    }
 
     // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
     scheduler.RunTasks(ltaNow);

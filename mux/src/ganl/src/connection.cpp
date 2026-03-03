@@ -456,11 +456,9 @@ bool ConnectionBase::processProtocolData() {
         switch (status) {
         case NegotiationStatus::Completed:
             GANL_CONN_DEBUG(handle_, "Telnet negotiation COMPLETED successfully.");
-            // Clear any accumulated negotiation debris from applicationInput_
-            if (applicationInput_.readableBytes() > 0) {
-                GANL_CONN_DEBUG(handle_, "Clearing " << applicationInput_.readableBytes() << " bytes of negotiation debris from applicationInput_.");
-                applicationInput_.clear();
-            }
+            // Do NOT clear applicationInput_ here. With a raw passthrough
+            // protocol handler, all bytes are application data and must be
+            // delivered to the session manager for processing.
             transitionToState(ConnectionState::Running);
             // Optional: Notify SessionManager to send welcome, etc.
             // sessionManager_.onNegotiationComplete(sessionId_);
@@ -479,43 +477,19 @@ bool ConnectionBase::processProtocolData() {
         }
     } // End if (getState() == ConnectionState::TelnetNegotiating)
 
-    // Process fully formed application lines/commands from applicationInput_
+    // Pass raw bytes from applicationInput_ directly to the session manager.
+    // With a raw passthrough protocol handler, the session manager (TinyMUX)
+    // handles all line detection, telnet parsing, and command queuing.
+    // Do NOT trim or modify the data — newlines are critical for command detection.
     if (applicationInput_.readableBytes() > 0) {
-        GANL_CONN_DEBUG(handle_, "Processing " << applicationInput_.readableBytes() << " bytes of application data from protocol handler.");
+        size_t nbytes = applicationInput_.readableBytes();
+        GANL_CONN_DEBUG(handle_, "Processing " << nbytes << " bytes of application data from protocol handler.");
 
-        // Example: Assume ProtocolHandler gives one line/command at a time, null-terminated or similar.
-        // Here, we'll just consume everything and pass it. Refine based on ProtocolHandler contract.
-        std::string commandLine = applicationInput_.consumeReadAllAsString();
+        std::string rawData = applicationInput_.consumeReadAllAsString();
 
-        // Trim trailing whitespace/newlines commonly added by telnet/line mode
-        // Find the last non-whitespace character
-        size_t endpos = commandLine.find_last_not_of(" \t\r\n");
-        if (std::string::npos != endpos) {
-            commandLine = commandLine.substr(0, endpos + 1);
-        } else {
-            // String is all whitespace, clear it
-            commandLine.clear();
-        }
-
-        if (!commandLine.empty() && sessionId_ != InvalidSessionId) {
-            GANL_CONN_DEBUG(handle_, "Passing command to SessionManager: '" << commandLine << "'");
-            // TODO: Update session stats (last activity, commands processed)
-            sessionManager_.onDataReceived(sessionId_, commandLine);
-        } else if (commandLine.empty()) {
-             GANL_CONN_DEBUG(handle_, "Ignoring empty command line after trimming.");
-        } else {
-             GANL_CONN_DEBUG(handle_, "No valid session ID. Ignoring command: '" << commandLine << "'");
-        }
-
-        if (getState() == ConnectionState::Running) { // Add check?
-            GANL_CONN_DEBUG(handle_, "Processing " << applicationInput_.readableBytes() << " bytes of application data from protocol handler.");
-            // ... (consume applicationInput_, pass to SessionManager) ...
-        }
-        else {
-            // Buffer app data received during negotiation? Or discard? Depends on protocol.
-            GANL_CONN_DEBUG(handle_, "Buffering/Ignoring application data received during negotiation phase.");
-            // For simplicity, let's assume ProtocolHandler buffers commands until negotiation completes,
-            // or SessionManager handles commands differently based on SessionState.
+        if (sessionId_ != InvalidSessionId) {
+            GANL_CONN_DEBUG(handle_, "Passing " << rawData.size() << " raw bytes to SessionManager.");
+            sessionManager_.onDataReceived(sessionId_, rawData);
         }
     }
 
@@ -794,7 +768,23 @@ void ConnectionBase::startTelnetNegotiation() {
           if (!postRead()) {
               GANL_CONN_DEBUG(handle_, "Failed to post read during telnet negotiation start. Closing.");
               close(DisconnectReason::NetworkError);
+              return;
           }
+     }
+
+     // Check if negotiation is already complete (e.g., RawPassthroughHandler
+     // returns Completed immediately). Without this check, the transition to
+     // Running only happens in processProtocolData() which requires incoming
+     // data — causing welcome text to be delayed until the client sends something.
+     if (getState() == ConnectionState::TelnetNegotiating) {
+         NegotiationStatus status = protocolHandler_.getNegotiationStatus(handle_);
+         if (status == NegotiationStatus::Completed) {
+             GANL_CONN_DEBUG(handle_, "Telnet negotiation already complete at start. Transitioning to Running.");
+             transitionToState(ConnectionState::Running);
+         } else if (status == NegotiationStatus::Failed) {
+             GANL_CONN_DEBUG(handle_, "Telnet negotiation failed at start. Closing.");
+             close(DisconnectReason::ProtocolError);
+         }
      }
 }
 

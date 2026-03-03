@@ -3021,11 +3021,13 @@ int DCL_CDECL main(int argc, char *argv[])
             DebugTotalFiles--;
         }
     }
+#ifndef USE_GANL
 #ifdef UNIX_SSL
     SetupPorts(&num_main_game_ports, main_game_ports, &mudconf.ports, &mudconf.sslPorts, mudconf.ip_address);
 #else
     SetupPorts(&num_main_game_ports, main_game_ports, &mudconf.ports, nullptr, mudconf.ip_address);
 #endif
+#endif // !USE_GANL
 
 #if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
     boot_slave(GOD, GOD, GOD, 0, 0);
@@ -3064,7 +3066,9 @@ int DCL_CDECL main(int argc, char *argv[])
      }
 #endif // INLINESQL
 
+#ifndef USE_GANL
     close_sockets(T("Going down - Bye"));
+#endif
     dump_database();
 
     // All shutdown, barring logfiles, should be done, shutdown the
