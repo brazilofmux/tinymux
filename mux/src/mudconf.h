@@ -174,7 +174,7 @@ struct confdata
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
-#if defined(UNIX_SSL) || (defined(_WIN32) && defined(USE_GANL))
+#if defined(UNIX_SSL) || defined(_WIN32)
     IntArray    sslPorts;       // SSL ports
 
     UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem or .p12)

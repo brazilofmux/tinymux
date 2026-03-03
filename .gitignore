@@ -14,11 +14,20 @@ mux/src/pcre2/
 # Game runtime files
 mux/game/bin/*.exe
 mux/game/bin/*.dll
+mux/game/bin/*.so
+mux/game/bin/announce
+mux/game/bin/dbconvert
 mux/game/bin/dosign.bat
+mux/game/bin/netmux
+mux/game/bin/slave
+mux/game/bin/stubslave
 mux/game/*.dll
 mux/game/*.log
 mux/game/netmux.pid
 mux/game/shutdown.status
+mux/game/data/*.db
+mux/game/data/*.db.new
+mux/game/data/*.db.old
 mux/game/data/netmux.dir
 mux/game/data/netmux.pag
 
@@ -39,6 +48,9 @@ patches_bin/
 # Local utility scripts
 get_patch.bat
 get_xdelta3.bat
+
+# Test output
+testcases/smoke.log
 
 # Claude Code
 .claude/

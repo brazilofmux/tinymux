@@ -15,9 +15,8 @@ game.
 
     This will customize `autoconf.h` and `Makefile` for your system.
 
-    SSL support and GANL networking are enabled by default. OpenSSL is a
-    required dependency. Use `--disable-ganl` to fall back to legacy
-    select-based networking.
+    SSL support is always enabled; OpenSSL is a required dependency.
+    GANL is the networking implementation.
 
     Optional packages are documented separately and enabled with the
     following configuration options:
@@ -30,7 +29,6 @@ game.
       | `--enable-wodrealms`   | See docs/REALMS.                                    |
       | `--enable-inlinesql`   | Enables in-line MySQL support.                      |
       | `--enable-deprecated`  | Enables deprecated features.                        |
-      | `--disable-ganl`       | Use legacy select-based networking instead of GANL. |
 
 2. Run `make`. This will produce `netmux`, `slave`, and other executables.
 

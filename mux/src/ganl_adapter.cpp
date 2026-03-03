@@ -1,7 +1,4 @@
 #include "autoconf.h"
-
-#ifdef USE_GANL
-
 #include "ganl_adapter.h"
 #include "connection.h" // Include ConnectionBase definition
 #include "network_types.h"
@@ -2383,5 +2380,3 @@ void ganl_associate_player(DESC* d, dbref player) {
         d->player = player;
     }
 }
-
-#endif // USE_GANL

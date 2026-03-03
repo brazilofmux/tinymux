@@ -12,9 +12,7 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef USE_GANL
 #include "ganl_adapter.h"
-#endif
 
 UTF8 *DCL_CDECL tprintf(const UTF8 *fmt,...)
 {
@@ -1614,13 +1612,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     log_name(executor);
     ENDLOG;
 
-#ifdef USE_GANL
     g_GanlAdapter.prepare_for_restart();
-#else
-#ifdef UNIX_SSL
-    CleanUpSSLConnections();
-#endif
-#endif
 
     local_presync_database();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;

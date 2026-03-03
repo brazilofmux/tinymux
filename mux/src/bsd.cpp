@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ganl_adapter.h"
 using namespace std;
 
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
@@ -2812,9 +2813,6 @@ void process_output_ssl(DESC *d, int bHandleShutdown)
 
 #endif // UNIX_NETWORKING
 
-#ifdef USE_GANL
-#include "ganl_adapter.h"
-
 static void process_output_ganl(DESC *d, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
@@ -2838,19 +2836,10 @@ static void process_output_ganl(DESC *d, int bHandleShutdown)
         }
     }
 }
-#endif // USE_GANL
 
 void process_output(DESC *d, int bHandleShutdown)
 {
-#ifdef USE_GANL
     process_output_ganl(d, bHandleShutdown);
-#elif defined(UNIX_SSL)
-    if (d->ssl_session) process_output_ssl(d, bHandleShutdown);
-    else
-        process_output_socket(d, bHandleShutdown);
-#else
-        process_output_socket(d, bHandleShutdown);
-#endif
 }
 
 /*! \brief Table to quickly classify characters recieved from the wire with

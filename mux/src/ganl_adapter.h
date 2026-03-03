@@ -3,8 +3,6 @@
 #define GANL_ADAPTER_H
 
 #include "autoconf.h"
-
-#ifdef USE_GANL
 #include "config.h"
 #include "externs.h"
 
@@ -147,5 +145,4 @@ void ganl_send_data_str(DESC* d, const UTF8* data);
 void ganl_close_connection(DESC* d, int reason); // TinyMUX reason codes
 void ganl_associate_player(DESC* d, dbref player); // Needed after successful login
 
-#endif // USE_GANL
 #endif // GANL_ADAPTER_H

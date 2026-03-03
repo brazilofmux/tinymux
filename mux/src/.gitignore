@@ -7,13 +7,23 @@
 netmux
 slave
 stubslave
-stamp-h1
+stamp-h*
 buildnum.data
 .depend
 config.log
 config.status
 autoconf.h
 Makefile
+
+# Dependency tracking
+.deps/
+.dirstamp
+
+# Built tools
+tools/announce
+
+# Editor/autotool backup files
+*~
 
 # Autom4te cache directory
 autom4te.cache/

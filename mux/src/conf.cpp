@@ -68,7 +68,7 @@ void cf_init(void)
         ISOUTOFMEMORY(mudconf.ports.pi);
     }
 
-#if defined(UNIX_SSL) || (defined(_WIN32) && defined(USE_GANL))
+#if defined(UNIX_SSL) || defined(_WIN32)
     mudconf.sslPorts.n = 0;
     mudconf.sslPorts.pi = nullptr;
     mudconf.ssl_certificate_file[0] = '\0';
@@ -1970,7 +1970,7 @@ static CONFPARM conftable[] =
     {T("player_starting_home"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             nullptr,            0},
     {T("player_starting_room"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             nullptr,            0},
     {T("port"),                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           nullptr, MAX_LISTEN_PORTS},
-#if defined(UNIX_SSL) || (defined(_WIN32) && defined(USE_GANL))
+#if defined(UNIX_SSL) || defined(_WIN32)
     {T("port_ssl"),                  cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.sslPorts,        nullptr, MAX_LISTEN_PORTS},
 #endif
     {T("postdump_message"),          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     nullptr,          256},
@@ -2014,7 +2014,7 @@ static CONFPARM conftable[] =
     {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      nullptr,            0},
     {T("sitemon_site"),              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    nullptr,   HC_SITEMON},
     {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  nullptr,            0},
-#if defined(UNIX_SSL) || (defined(_WIN32) && defined(USE_GANL))
+#if defined(UNIX_SSL) || defined(_WIN32)
     {T("ssl_certificate_file"),      cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_file,nullptr,       128},
     {T("ssl_certificate_key"),       cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_key, nullptr,       128},
     {T("ssl_certificate_password"),  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_password, nullptr,  128},

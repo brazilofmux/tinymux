@@ -46,26 +46,7 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(WOD_REALMS)
 
-AC_MSG_CHECKING(whether to enable GANL networking)
-AC_ARG_ENABLE(
-  [ganl],
-  AS_HELP_STRING([--disable-ganl],[Use legacy select-based networking instead of GANL (default is GANL enabled)]),
-  [
-    if test "x$enableval" = "xno"; then
-      ganl_enabled=no
-      AC_MSG_RESULT(no)
-    else
-      ganl_enabled=yes
-      USE_GANL="-DUSE_GANL"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    ganl_enabled=yes
-    USE_GANL="-DUSE_GANL"
-    AC_MSG_RESULT(yes)
-  ])
-AM_CONDITIONAL([GANL_ENABLED], [test "x$ganl_enabled" = "xyes"])
+USE_GANL="-DUSE_GANL"
 AC_SUBST(USE_GANL)
 
 AC_MSG_CHECKING(whether to enable Memory-Based Database)

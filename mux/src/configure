@@ -718,8 +718,6 @@ STUBSLAVE_ENABLED_FALSE
 STUBSLAVE_ENABLED_TRUE
 MEMORY_BASED
 USE_GANL
-GANL_ENABLED_FALSE
-GANL_ENABLED_TRUE
 WOD_REALMS
 REALITY_LVLS
 REALITY_ENABLED_FALSE
@@ -800,7 +798,6 @@ enable_option_checking
 enable_silent_rules
 enable_realitylvls
 enable_wodrealms
-enable_ganl
 enable_memorybased
 enable_stubslave
 enable_inlinesql
@@ -1459,8 +1456,6 @@ Optional Features:
   --disable-silent-rules  verbose build output (undo: "make V=0")
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
-  --disable-ganl          Use legacy select-based networking instead of GANL
-                          (default is GANL enabled)
   --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
@@ -3961,40 +3956,7 @@ fi
 
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable GANL networking" >&5
-printf %s "checking whether to enable GANL networking... " >&6; }
-# Check whether --enable-ganl was given.
-if test ${enable_ganl+y}
-then :
-  enableval=$enable_ganl;
-    if test "x$enableval" = "xno"; then
-      ganl_enabled=no
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-    else
-      ganl_enabled=yes
-      USE_GANL="-DUSE_GANL"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-
-else $as_nop
-
-    ganl_enabled=yes
-    USE_GANL="-DUSE_GANL"
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-fi
-
- if test "x$ganl_enabled" = "xyes"; then
-  GANL_ENABLED_TRUE=
-  GANL_ENABLED_FALSE='#'
-else
-  GANL_ENABLED_TRUE='#'
-  GANL_ENABLED_FALSE=
-fi
-
+USE_GANL="-DUSE_GANL"
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable Memory-Based Database" >&5
@@ -11294,10 +11256,6 @@ fi
 
 if test -z "${REALITY_ENABLED_TRUE}" && test -z "${REALITY_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"REALITY_ENABLED\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${GANL_ENABLED_TRUE}" && test -z "${GANL_ENABLED_FALSE}"; then
-  as_fn_error $? "conditional \"GANL_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${STUBSLAVE_ENABLED_TRUE}" && test -z "${STUBSLAVE_ENABLED_FALSE}"; then
