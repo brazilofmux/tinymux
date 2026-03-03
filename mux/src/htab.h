@@ -8,6 +8,8 @@
 #ifndef HTAB_H
 #define HTAB_H
 
+#include <vector>
+
 typedef struct name_table NAMETAB;
 struct name_table
 {
@@ -50,22 +52,45 @@ struct bque
 
 class CBitField
 {
-    unsigned int nBitsPer;
-    unsigned int nShift;
-    unsigned int nMask;
-    unsigned int nMaximum;
-    size_t  nInts;
-    UINT32 *pInts;
-    UINT32 *pMasks;
+    std::vector<bool> m_bits;
 
 public:
-    CBitField(unsigned int max = 0);
-    void Resize(unsigned int max);
-    ~CBitField(void);
-    void ClearAll(void);
-    void Set(unsigned int i);
-    void Clear(unsigned int i);
-    bool IsSet(unsigned int i);
+    CBitField(unsigned int max = 0) : m_bits(max ? max + 1 : 0, false) {}
+    ~CBitField() = default;
+
+    void Resize(unsigned int max)
+    {
+        if (max + 1 > m_bits.size())
+        {
+            m_bits.resize(max + 1, false);
+        }
+    }
+
+    void ClearAll(void)
+    {
+        m_bits.assign(m_bits.size(), false);
+    }
+
+    void Set(unsigned int i)
+    {
+        if (i < m_bits.size())
+        {
+            m_bits[i] = true;
+        }
+    }
+
+    void Clear(unsigned int i)
+    {
+        if (i < m_bits.size())
+        {
+            m_bits[i] = false;
+        }
+    }
+
+    bool IsSet(unsigned int i)
+    {
+        return i < m_bits.size() && m_bits[i];
+    }
 };
 
 extern NAMETAB powers_nametab[];
