@@ -5,13 +5,13 @@ title: INSTALL
 ---
 
 Please note that there are two sets of instructions included in this
-file.  Please skip to _Instructions for Existing Games_ for how to
+file. Please skip to _Instructions for Existing Games_ for how to
 upgrade your server or to compile in preparation for moving an existing
 game.
 
 # Instructions for New Installations:
 
-1.  `cd src/` to the source directory.  Run `./configure`.
+1. `cd src/` to the source directory. Run `./configure`.
 
     This will customize `autoconf.h` and `Makefile` for your system.
 
@@ -22,45 +22,45 @@ game.
     Optional packages are documented separately and enabled with the
     following configuration options:
 
-      |                        |                                                  |
-      |------------------------|--------------------------------------------------|
-      | `--enable-memorybased` | See docs/MEMORY.                                 |
-      | `--enable-realitylvls` | See REALITY and REALITY.SETUP.                   |
-      | `--enable-stubslave`   | See MODULES.                                     |
-      | `--enable-wodrealms`   | See docs/REALMS.                                 |
-      | `--enable-inlinesql`   | Enables in-line MySQL support.                   |
-      | `--enable-deprecated`  | Enables deprecated features.                     |
+      |                        |                                                     |
+      |------------------------|-----------------------------------------------------|
+      | `--enable-memorybased` | See docs/MEMORY.                                    |
+      | `--enable-realitylvls` | See REALITY and REALITY.SETUP.                      |
+      | `--enable-stubslave`   | See MODULES.                                        |
+      | `--enable-wodrealms`   | See docs/REALMS.                                    |
+      | `--enable-inlinesql`   | Enables in-line MySQL support.                      |
+      | `--enable-deprecated`  | Enables deprecated features.                        |
       | `--disable-ganl`       | Use legacy select-based networking instead of GANL. |
 
-2.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
+2. Run `make`. This will produce `netmux`, `slave`, and other executables.
 
-3.  Run `make install` to create the necessary symlinks in the `game/bin`
+3. Run `make install` to create the necessary symlinks in the `game/bin`
     directory. This step is required. After installation, the `dbconvert`
     command will be a symlink to `netmux`.
 
-5.  When starting from a TinyMUX from scratch, do the following:
+5. When starting from a TinyMUX from scratch, do the following:
 
-      - cd to the game directory.  `cd ../game`
+      - cd to the game directory. `cd ../game`
       - Make your configuration file, as described in `docs/CONFIGURATION`
-      - Type `./Startmux`.  TinyMUX 2.13 automatically creates a minimal DB
+      - Type `./Startmux`. TinyMUX 2.13 automatically creates a minimal DB
         if one does not exist in the `game/data` directory.
       - Log into the game as player wizard `connect wizard potrzebie` and
         shut it down again.
 
-6.  Edit the .txt files in `game/text` to your liking.  In particular,
+6. Edit the .txt files in `game/text` to your liking. In particular,
     `connect.txt` and `motd.txt`.
 
-7.  Start TinyMUX 2.13 by running `./Startmux` again.
+7. Start TinyMUX 2.13 by running `./Startmux` again.
 
-8.  `@ccreate` a channel named `Public`, and a channel named `Guests`
-    from within the TinyMUX.  Created players will automatically be
+8. `@ccreate` a channel named `Public`, and a channel named `Guests`
+    from within the TinyMUX. Created players will automatically be
     joined to `Public` with alias `pub`, guests will automatically join
     `Guests` with alias `g`.
 
 # Changes to dbconvert:
 
  - `dbconvert` is the means by which the binary game data is converted to
-   flatfile format and back again.  The `db_load` and `db_unload` scripts
+   flatfile format and back again. The `db_load` and `db_unload` scripts
    simplify the process for the user.
 
  - The syntax of the `db_load` script is:
@@ -92,27 +92,27 @@ game.
 # Instructions for Existing Games:
 
 NOTE: It is HIGHLY recommended that you preserve an earlier setup if you
-can, to make conversion a bit less painful.  If you had one while
+can, to make conversion a bit less painful. If you had one while
 converting, make sure the conversion process has completed successfully
-before you delete your old distribution.  We cannot stress enough to you
+before you delete your old distribution. We cannot stress enough to you
 the importance of protecting your data throughout any conversion or
 upgrade.
 
-1.  `cd src/` to the source directory.  Run `./configure`.
+1. `cd src/` to the source directory. Run `./configure`.
 
     This will customize `autoconf.h` and `Makefile` for your system.
     Add `--enable-wodrealms` to enable WOD Realms (See docs/REALMS).
     Add `--enable-memorybased` to enable Memory-Based database handling
-    (as opposed to the default disk-based database handling.  See
-    `docs/MEMORY`).  See the new installation instructions above for the
+    (as opposed to the default disk-based database handling. See
+    `docs/MEMORY`). See the new installation instructions above for the
     full list of configure options.
 
-2.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
+2. Run `make`. This will produce `netmux`, `slave`, and other executables.
 
-3.  Run `make install` to create the necessary symlinks in the `game/bin`
-    directory.  This step is required.
+3. Run `make install` to create the necessary symlinks in the `game/bin`
+    directory. This step is required.
 
-5.  Place/change your files.
+5. Place/change your files.
 
     - Put databases in `game/data`.
 
@@ -128,5 +128,5 @@ upgrade.
       accordingly, BEFORE you restart the game, or else ALL `@mail` older
       than the default value of 14 days will be deleted.
 
-6.  Start TinyMUX 2.13 by running `./Startmux`.
+6. Start TinyMUX 2.13 by running `./Startmux`.
 

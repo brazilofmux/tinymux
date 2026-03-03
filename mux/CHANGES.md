@@ -11,9 +11,9 @@ author:
  - Require PCRE to be installed instead of using a static, private
    version.
  - Updated regular expression engine from PCRE to PCRE2
-   * Improved performance with Just-In-Time compilation
-   * Better Unicode support
-   * Modern API with improved memory management
+   - Improved performance with Just-In-Time compilation
+   - Better Unicode support
+   - Modern API with improved memory management
 
 # Feature Additions:
 

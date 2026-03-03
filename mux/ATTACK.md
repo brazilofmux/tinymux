@@ -49,7 +49,7 @@ As a player, `WIZARD`, or `#1`, you can prevent a spam attack with:
 
 Usually, queueing commands will drain an attacker's store of coins.
 However, if they happen to obtain the free_money power (or `WIZARD`
-permissions ... by which time you are toast anyway), then they can
+permissions... by which time you are toast anyway), then they can
 attack the queue.
 
 As a `WIZARD` or `#1`, you can remedy this attack with:

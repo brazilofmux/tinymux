@@ -17,18 +17,18 @@ need it.
  - It is worth noting that keeping a record of changes in the `#1` character
    password might save you some flatfile hacking for forgotten passwords.
 
- - The default port has been changed to `2860`.  Change this in the
+ - The default port has been changed to `2860`. Change this in the
    `netmux.conf` or `GAMENAME.conf` file.
 
- - Always be sure to ftp files in binary mode.  Otherwise, you can expect
+ - Always be sure to ftp files in binary mode. Otherwise, you can expect
    your data to be unusable.
 
- - Default `GAMENAME` will be `netmux`.  If you changed the `GAMENAME` in
+ - Default `GAMENAME` will be `netmux`. If you changed the `GAMENAME` in
    `mux.config`, be sure to change the filenames in `GAMENAME.conf` as well,
    otherwise, TinyMUX and (perhaps more importantly), `./Backup`, won't be
    able to find your DB.
 
- - Read `wizhelp config parameters` when you get the TinyMUX started.  If you
+ - Read `wizhelp config parameters` when you get the TinyMUX started. If you
    are porting from PennMUSH, for example, where the master room is set
    as `#2`, you would have to place the config parameter `master_room #2` in
    your configuration file.
@@ -38,16 +38,16 @@ need it.
    value of 14 days will be deleted.
 
  - `./Backup` has superceeded the traditional use of `db_unload` for making
-   flatfiles.  The script makes a flatfile of the DB and also creates a `tar.gz`
+   flatfiles. The script makes a flatfile of the DB and also creates a `tar.gz`
    file containing the `mail.db`, `comsys.db`, configuration files, and the
-   customized files in `game/text`.  When porting, all you have to do is place
+   customized files in `game/text`. When porting, all you have to do is place
    the backup in the game directory, extract the archive and `db_load` before
    restarting the game.
 
 # Changes to `dbconvert`:
 
 `./dbconvert` is the means by which the binary game data is converted to
-flatfile format and back again.  The `db_load` and `db_unload` scripts
+flatfile format and back again. The `db_load` and `db_unload` scripts
 simplify the process for the user.
 
 The syntax of `db_load` is:
@@ -75,21 +75,21 @@ This converts binary data to flatfile for would be done with `dbconvert` thus:
    portable!
 
  - When you unload the database to flatfile format it is important to
-   use your original `db_unload` or `dbconvert`.  *We cannot stress this enough.*
+   use your original `db_unload` or `dbconvert`. *We cannot stress this enough.*
    Data loss is possible, especially since `db_unload` or `dbconvert` sometimes
    changes between releases.
 
- - Flatfiles are the most stable format to store and move your data in.  Yes,
+ - Flatfiles are the most stable format to store and move your data in. Yes,
    the occasional miracle happens to let someone bring a game back up from
-   binary data moved from the nether regions of the net.  However, this isn't
-   the place for beginners or the faint of heart.  As always, store backups
+   binary data moved from the nether regions of the net. However, this isn't
+   the place for beginners or the faint of heart. As always, store backups
    offline.
 
 # On Making Backups:
 
-TinyMUX 2.13 includes a backup script.  It produces a flatfile with the
+TinyMUX 2.13 includes a backup script. It produces a flatfile with the
 name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
-`comsys.db` which will appear in the `game` directory.  To make use of the
+`comsys.db` which will appear in the `game` directory. To make use of the
 `Backup` script:
 
  - `@shutdown` the game.
@@ -104,13 +104,13 @@ name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
 
 # On Tools:
 
- - `announce.c` sits and listens on a specified port.  Whenever anyone
+ - `announce.c` sits and listens on a specified port. Whenever anyone
    connects, it announces a message and disconnects them.
 
- - You should create a message and call the file `message_file`.  This will
+ - You should create a message and call the file `message_file`. This will
    serve as your announcement to people trying to connect.
 
- - Compile `announce.c` by typing `gcc -o announce announce.c`.  If you are
+ - Compile `announce.c` by typing `gcc -o announce announce.c`. If you are
    not using the GNU compiler, substitute the C compiler in use on your
    system.
 
