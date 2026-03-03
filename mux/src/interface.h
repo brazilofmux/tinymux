@@ -115,7 +115,6 @@ typedef struct program_data
 #define TELNET_OLDENV   ((unsigned char)'\x24')
 #define TELNET_ENV      ((unsigned char)'\x27')
 #define TELNET_CHARSET  ((unsigned char)'\x2A')
-#define TELNET_STARTTLS ((unsigned char)'\x2E')
 
 // Telnet Option Negotiation States
 //
@@ -168,10 +167,6 @@ struct descriptor_data
 {
   SocketState ss;
   SOCKET socket;
-
-#ifdef UNIX_SSL
-  SSL *ssl_session;
-#endif
 
   CLinearTimeAbsolute connected_at;
   CLinearTimeAbsolute last_time;
@@ -241,9 +236,6 @@ typedef struct port_info
 
 #define MAX_LISTEN_PORTS 30
 #ifdef UNIX_SSL
-extern bool initialize_ssl();
-extern void shutdown_ssl();
-
 extern port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
 extern port_info main_game_ports[MAX_LISTEN_PORTS];

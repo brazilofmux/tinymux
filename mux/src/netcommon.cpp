@@ -467,13 +467,6 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
             //      the same exact write request later than to extend the
             //      request to something larger.
             //
-#ifdef UNIX_SSL
-            if (d->ssl_session)
-            {
-                tp->hdr.flags |= TBLK_FLAG_LOCKED;
-            }
-            else
-#endif
             if (0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
             {
                 STARTLOG(LOG_NET, "NET", "WRITE");

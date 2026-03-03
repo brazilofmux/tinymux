@@ -10,10 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef UNIX_SSL
-extern SSL_CTX *tls_ctx;
-#endif
-
 /*! \brief Table to quickly classify characters recieved from the wire with
  * their Telnet meaning.
  *
@@ -292,12 +288,6 @@ static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
             const unsigned char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             send_sb(d, chOption, TELNETSB_SEND, aEnvReq, 2);
         }
-#ifdef UNIX_SSL
-        else if ((TELNET_STARTTLS == chOption) && (tls_ctx != nullptr))
-        {
-            send_sb(d, TELNET_STARTTLS, TELNETSB_FOLLOWS);
-        }
-#endif
         else if (TELNET_BINARY == chOption)
         {
             enable_us(d, TELNET_BINARY);
@@ -367,9 +357,6 @@ static bool desired_him_option(DESC *d, unsigned char chOption)
        || TELNET_SGA     == chOption
        || TELNET_ENV     == chOption
        || TELNET_BINARY  == chOption
-#ifdef UNIX_SSL
-       || ((TELNET_STARTTLS== chOption) && (tls_ctx != nullptr))
-#endif
        || TELNET_CHARSET == chOption)
     {
         return true;
@@ -1011,19 +998,6 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
                     }
                     break;
-
-#ifdef UNIX_SSL
-                case TELNET_STARTTLS:
-                    if (  2 == m
-                       && TELNETSB_FOLLOWS == d->aOption[1]
-                       && tls_ctx != nullptr)
-                    {
-                       d->ssl_session = SSL_new(tls_ctx);
-                       SSL_set_fd(d->ssl_session, d->socket);
-                       d->ss = SocketState::SSLAcceptAgain;
-                    }
-                    break;
-#endif
 
                 case TELNET_TTYPE:
                     if (  2 <= m

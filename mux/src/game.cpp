@@ -2831,14 +2831,6 @@ int DCL_CDECL main(int argc, char *argv[])
     init_sql();
 #endif // INLINESQL
 
-#ifdef UNIX_SSL
-    if (!initialize_ssl())
-    {
-        // Do some extra handling?
-        // We do log all errors in initialize_ssl, so it may be unneeded.
-    }
-#endif
-
     fcache_init();
     helpindex_init();
 
@@ -2999,10 +2991,6 @@ int DCL_CDECL main(int argc, char *argv[])
     finish_mail();
     finish_cmdtab();
     db_free();
-#endif
-
-#ifdef UNIX_SSL
-    shutdown_ssl();
 #endif
 
     return 0;

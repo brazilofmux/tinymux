@@ -3745,9 +3745,6 @@ void load_restart_db(void)
         d->raw_codepoint_length = 0;
         d->ttype = nullptr;
         d->encoding = mudconf.default_charset;
-#ifdef UNIX_SSL
-        d->ssl_session = nullptr;
-#endif
         if (3 <= version)
         {
             d->raw_input_state              = getref(f);

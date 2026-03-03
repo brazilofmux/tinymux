@@ -7952,7 +7952,7 @@ static FUNCTION(fun_terminfo)
     }
 
 #ifdef UNIX_SSL
-    if (d->ssl_session)
+    if (d->ss != SocketState::Accepted)
     {
         safe_str(T(" ssl"), buff, bufc);
     }

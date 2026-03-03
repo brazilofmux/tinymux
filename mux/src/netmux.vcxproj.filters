@@ -162,9 +162,6 @@
     <ClCompile Include="speech.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ssl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stringutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

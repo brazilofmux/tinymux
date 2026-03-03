@@ -15,7 +15,7 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
     modules.cpp move.cpp muxcli.cpp netaddr.cpp netcommon.cpp object.cpp \
     predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \
     quota.cpp rob.cpp set.cpp sha1.cpp signals.cpp sitemon.cpp \
-    speech.cpp ssl.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
+    speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
     telnet.cpp timer.cpp timeabsolute.cpp timedelta.cpp timeparser.cpp \
     timeutil.cpp timezone.cpp unparse.cpp utf8tables.cpp vattr.cpp \
     walkdb.cpp wild.cpp wiz.cpp

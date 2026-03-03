@@ -134,7 +134,7 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	move.cpp muxcli.cpp netaddr.cpp netcommon.cpp object.cpp \
 	predicates.cpp player.cpp player_c.cpp plusemail.cpp \
 	powers.cpp quota.cpp rob.cpp set.cpp sha1.cpp signals.cpp \
-	sitemon.cpp speech.cpp ssl.cpp stringutil.cpp strtod.cpp \
+	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -155,7 +155,7 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	player.$(OBJEXT) player_c.$(OBJEXT) plusemail.$(OBJEXT) \
 	powers.$(OBJEXT) quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) \
 	sha1.$(OBJEXT) signals.$(OBJEXT) sitemon.$(OBJEXT) \
-	speech.$(OBJEXT) ssl.$(OBJEXT) stringutil.$(OBJEXT) \
+	speech.$(OBJEXT) stringutil.$(OBJEXT) \
 	strtod.$(OBJEXT) svdrand.$(OBJEXT) svdhash.$(OBJEXT) \
 	telnet.$(OBJEXT) timer.$(OBJEXT) timeabsolute.$(OBJEXT) \
 	timedelta.$(OBJEXT) timeparser.$(OBJEXT) timeutil.$(OBJEXT) \
@@ -211,7 +211,7 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/predicates.Po ./$(DEPDIR)/quota.Po \
 	./$(DEPDIR)/rob.Po ./$(DEPDIR)/set.Po ./$(DEPDIR)/sha1.Po \
 	./$(DEPDIR)/signals.Po ./$(DEPDIR)/sitemon.Po \
-	./$(DEPDIR)/slave.Po ./$(DEPDIR)/speech.Po ./$(DEPDIR)/ssl.Po \
+	./$(DEPDIR)/slave.Po ./$(DEPDIR)/speech.Po \
 	./$(DEPDIR)/stringutil.Po ./$(DEPDIR)/strtod.Po \
 	./$(DEPDIR)/stubslave.Po ./$(DEPDIR)/svdhash.Po \
 	./$(DEPDIR)/svdrand.Po ./$(DEPDIR)/telnet.Po \
@@ -474,7 +474,7 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	move.cpp muxcli.cpp netaddr.cpp netcommon.cpp object.cpp \
 	predicates.cpp player.cpp player_c.cpp plusemail.cpp \
 	powers.cpp quota.cpp rob.cpp set.cpp sha1.cpp signals.cpp \
-	sitemon.cpp speech.cpp ssl.cpp stringutil.cpp strtod.cpp \
+	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp \
 	svdrand.cpp svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
@@ -677,7 +677,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sitemon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/speech.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stringutil.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strtod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
@@ -1120,7 +1119,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/sitemon.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/speech.Po
-	-rm -f ./$(DEPDIR)/ssl.Po
 	-rm -f ./$(DEPDIR)/stringutil.Po
 	-rm -f ./$(DEPDIR)/strtod.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
@@ -1240,7 +1238,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/sitemon.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/speech.Po
-	-rm -f ./$(DEPDIR)/ssl.Po
 	-rm -f ./$(DEPDIR)/stringutil.Po
 	-rm -f ./$(DEPDIR)/strtod.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po

@@ -13,7 +13,6 @@
 using namespace std;
 
 #ifdef UNIX_SSL
-SSL_CTX  *tls_ctx = nullptr;
 port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
 port_info main_game_ports[MAX_LISTEN_PORTS];
@@ -264,15 +263,6 @@ void shutdownsock(DESC *d, int reason)
         //
         scheduler.CancelTask(Task_ProcessCommand, d, 0);
 
-#ifdef UNIX_SSL
-        if (d->ssl_session)
-        {
-            SSL_shutdown(d->ssl_session);
-            SSL_free(d->ssl_session);
-            d->ssl_session = nullptr;
-        }
-#endif
-
         shutdown(d->socket, SD_BOTH);
         if (0 == SOCKET_CLOSE(d->socket))
         {
@@ -335,19 +325,7 @@ void close_sockets_emergency(const UTF8* message)
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
-#ifdef UNIX_SSL
-        if (d->ssl_session)
-        {
-            SSL_write(d->ssl_session, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)));
-            SSL_shutdown(d->ssl_session);
-            SSL_free(d->ssl_session);
-            d->ssl_session = nullptr;
-        }
-        else
-#endif
-        {
-            SOCKET_WRITE(d->socket, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)), 0);
-        }
+        SOCKET_WRITE(d->socket, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)), 0);
 
         if (IS_SOCKET_ERROR(shutdown(d->socket, SD_BOTH)))
         {
