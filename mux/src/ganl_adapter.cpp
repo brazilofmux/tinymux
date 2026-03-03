@@ -212,12 +212,11 @@ namespace
 //        enable_him(d, TELNET_OLDENV);
         enable_us(d, TELNET_CHARSET);
         enable_him(d, TELNET_CHARSET);
-#ifdef UNIX_SSL
-        if (!connectionIsTls && (tls_ctx != nullptr))
-        {
-            enable_him(d, TELNET_STARTTLS);
-        }
-#endif
+        // STARTTLS is not offered under GANL.  The in-band upgrade
+        // path in process_input_helper() drives SSL_new/SSL_set_fd
+        // directly on the socket fd, which conflicts with GANL's
+        // network engine owning that fd.  Clients wanting TLS should
+        // connect to the TLS listener port instead.
     }
 
     void FinalizeGanlConnection(GanlAdapter& adapter, DESC* d, bool connectionIsTls)
