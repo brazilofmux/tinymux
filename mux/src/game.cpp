@@ -2474,9 +2474,6 @@ static void init_sql(void)
 #endif // INLINESQL
 long DebugTotalFiles = 3;
 long DebugTotalSockets = 0;
-#ifdef MEMORY_ACCOUNTING
-long DebugTotalMemory = 0;
-#endif
 
 #define CLI_DO_CONFIG_FILE CLI_USER+0
 #define CLI_DO_MINIMAL     CLI_USER+1
@@ -2721,15 +2718,6 @@ int DCL_CDECL main(int argc, char *argv[])
     write_pidfile(mudconf.pid_file);
 
     build_signal_names_table();
-
-#ifdef MEMORY_ACCOUNTING
-    extern CHashFile hfAllocData;
-    extern CHashFile hfIdentData;
-    extern bool bMemAccountingInitialized;
-    hfAllocData.Open("svdptrs.dir", "svdptrs.pag", 40);
-    hfIdentData.Open("svdlines.dir", "svdlines.pag", 40);
-    bMemAccountingInitialized = true;
-#endif
 
     mudstate.restart_time.GetUTC();
     mudstate.start_time = mudstate.restart_time;

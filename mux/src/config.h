@@ -593,22 +593,9 @@ extern bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo);
 extern void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory((UTF8 *)__FILE__, __LINE__); }}
 
-//#define MEMORY_ACCOUNTING
-
-// Memory Allocation Accounting
-//
-#ifdef MEMORY_ACCOUNTING
-extern void *MemAllocate(size_t n, const char *f, int l);
-extern void MemFree(void *p, const char *f, int l);
-extern void *MemRealloc(void *p, size_t n, const char *f, int l);
-#define MEMALLOC(n)          MemAllocate((n), __FILE__, __LINE__)
-#define MEMFREE(p)           MemFree((p), __FILE__, __LINE__)
-#define MEMREALLOC(p, n)     MemRealloc((p), (n), __FILE__, __LINE__)
-#else // MEMORY_ACCOUNTING
 #define MEMALLOC(n)          malloc((n))
 #define MEMFREE(p)           free((p))
 #define MEMREALLOC(p, n)     realloc((p),(n))
-#endif // MEMORY_ACCOUNTING
 
 // If it's Hewlett Packard, then getrusage is provided a different
 // way.

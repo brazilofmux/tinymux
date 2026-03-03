@@ -56,15 +56,12 @@ typedef struct command_block
     UTF8    cmd[LBUF_SIZE - sizeof(command_block_header)];
 } command_block;
 
-#define TBLK_FLAG_LOCKED    0x01
-
 typedef struct text_block_header
 {
     struct text_block *nxt;
     UTF8    *start;
     UTF8    *end;
     size_t   nchars;
-    int      flags;
 }   text_block_header;
 
 typedef struct text_block

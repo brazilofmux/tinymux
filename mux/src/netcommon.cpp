@@ -323,7 +323,6 @@ static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;
             tp->hdr.nchars = 0;
-            tp->hdr.flags = 0;
 
             d->output_head = tp;
             d->output_tail = tp;
@@ -346,12 +345,8 @@ static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
         // See if there is enough space in the buffer to hold the
         // string.  If so, copy it and update the pointers.
         //
-        // We cannot update a buffer marked TBLK_FLAG_LOCKED.  If fact, we
-        // should not read or write to such a buffer in any fashion.
-        //
         left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
-        if (  n <= left
-           && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
+        if (n <= left)
         {
             memcpy(tp->hdr.end, b, n);
             tp->hdr.end += n;
@@ -363,8 +358,7 @@ static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
             // The buffer we have will not fit into the existing block.  Copy
             // what will fit, allocate another buffer, and retry.
             //
-            if (  0 < left
-               && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
+            if (0 < left)
             {
                 memcpy(tp->hdr.end, b, left);
                 tp->hdr.end += left;
@@ -380,7 +374,6 @@ static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
                 tp->hdr.start = tp->data;
                 tp->hdr.end = tp->data;
                 tp->hdr.nchars = 0;
-                tp->hdr.flags = 0;
 
                 d->output_tail->hdr.nxt = tp;
                 d->output_tail = tp;
@@ -427,12 +420,8 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
     //
     // TODO: The threshold for this should perhaps be lowered, but we should
     // not lower it to the point that process_output is called on every call
-    // to queue_write_LEN(). Also, there may be an interaction with
-    // TBLK_FLAG_LOCKED in that part of the queue cannot be thrown away.  We
-    // should be carefull to avoid a state where process_output() is
-    // inadvertantly called on every queue_write_LEN() call. Finally, if we
-    // could know somehow that process_output() would be unproductive, then
-    // we wouldn't make even the following call.
+    // to queue_write_LEN(). If we could know somehow that process_output()
+    // would be unproductive, then we wouldn't make even the following call.
     //
     if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
     {
@@ -454,42 +443,26 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         }
         else
         {
-            // We cannot modify TBLK_FLAG_LOCKED buffers for three reasons:
-            //
-            //   1) It breaks SSL,
-            //
-            //   2) We use this feature on the Windows build to handle
-            //      asyncronous I/O, and for Windows Async I/O, a program is
-            //      not allowed to read or write to a buffer involved in an
-            //      asyncronous I/O request, and
-            //
-            //   3) It is more proper when given an EWOULDBLOCK error to try
-            //      the same exact write request later than to extend the
-            //      request to something larger.
-            //
-            if (0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
+            STARTLOG(LOG_NET, "NET", "WRITE");
+            UTF8 *buf = alloc_lbuf("queue_write.LOG");
+            mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %d chars discarded by "),
+                d->socket, d->addr, tp->hdr.nchars);
+            log_text(buf);
+            free_lbuf(buf);
+            if (d->flags & DS_CONNECTED)
             {
-                STARTLOG(LOG_NET, "NET", "WRITE");
-                UTF8 *buf = alloc_lbuf("queue_write.LOG");
-                mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %d chars discarded by "),
-                    d->socket, d->addr, tp->hdr.nchars);
-                log_text(buf);
-                free_lbuf(buf);
-                if (d->flags & DS_CONNECTED)
-                {
-                    log_name(d->player);
-                }
-                ENDLOG;
-                d->output_size -= tp->hdr.nchars;
-                d->output_head = tp->hdr.nxt;
-                d->output_lost += tp->hdr.nchars;
-                if (d->output_head == nullptr)
-                {
-                    d->output_tail = nullptr;
-                }
-                MEMFREE(tp);
-                tp = nullptr;
+                log_name(d->player);
             }
+            ENDLOG;
+            d->output_size -= tp->hdr.nchars;
+            d->output_head = tp->hdr.nxt;
+            d->output_lost += tp->hdr.nchars;
+            if (d->output_head == nullptr)
+            {
+                d->output_tail = nullptr;
+            }
+            MEMFREE(tp);
+            tp = nullptr;
         }
     }
 

@@ -165,20 +165,6 @@ static UTF16 *CopyUTF16(const UTF16 *pString)
 }
 #endif // WINDOWS_FILES
 
-#define MINIMUM_SIZE 8
-
-static UINT32 GrowByFactor(UINT32 i)
-{
-    if (i < MINIMUM_SIZE)
-    {
-        return MINIMUM_SIZE;
-    }
-    else
-    {
-        return 2*i;
-    }
-}
-
 /*! \brief Adds a module.
  *
  * \param aModuleName[]  Filename of Module
