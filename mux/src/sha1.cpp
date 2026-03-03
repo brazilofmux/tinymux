@@ -21,11 +21,11 @@ void MUX_SHA1_Init(MUX_SHA_CTX *p)
     p->nblock = 0;
 }
 
-#ifdef WINDOWS_INSTRINSICS
+#ifdef WINDOWS_INTRINSICS
 #define ROTL(d,n) _lrotl(d,n)
-#else // WINDOWS_INSTRINSICS
+#else // WINDOWS_INTRINSICS
 #define ROTL(d,n) (((d) << (n)) | ((d) >> (32-(n))))
-#endif // WINDOWS_INSTRINSICS
+#endif // WINDOWS_INTRINSICS
 
 #define Ch(x,y,z)      (((x) & (y)) ^ (~(x) & (z)))
 #define Parity(x,y,z)  ((x) ^ (y) ^ (z))
@@ -161,80 +161,5 @@ void MUX_SHA1_Final(UINT8 md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
         md[j + 3] = (UINT8)(h      );
     }
 }
-
-#if 0
-
-typedef struct
-{
-    const UTF8 *p;
-    UINT8 md[MUX_SHA1_DIGEST_LENGTH];
-} sha1_test_vector;
-
-#define NUM_VECTORS 5
-sha1_test_vector vectors[NUM_VECTORS] =
-{
-    {
-        T("abc"),
-        { 0xA9, 0x99, 0x3E, 0x36, 0x47, 0x06, 0x81, 0x6A, 0xBA, 0x3E, 0x25, 0x71, 0x78, 0x50, 0xC2, 0x6C, 0x9C, 0xD0, 0xD8, 0x9D }
-    },
-    {
-        // 64-byte block composed of 55 bytes, 1-byte pad (0x80), and 8-byte
-        // length.
-        //
-        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop"),
-        { 0x47, 0xB1, 0x72, 0x81, 0x07, 0x95, 0x69, 0x9F, 0xE7, 0x39, 0x19, 0x7D, 0x1A, 0x1F, 0x59, 0x60, 0x70, 0x02, 0x42, 0xF1 }
-    },
-    {
-        // First 64-byte block composed of 56 bytes, 1-byte pad (0x80), and 7
-        // zeros.  Second 64-byte block composed of 56 zeros (0x00) and 8-byte
-        // length.
-        //
-        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
-        { 0x84, 0x98, 0x3E, 0x44, 0x1C, 0x3B, 0xD2, 0x6E, 0xBA, 0xAE, 0x4A, 0xA1, 0xF9, 0x51, 0x29, 0xE5, 0xE5, 0x46, 0x70, 0xF1 }
-    },
-    {
-        // First 64-byte block composed of 63 bytes and 1-byte pad (0x80).
-        // Second 64-byte block composed of 56 zeros (0x00), and 8-byte
-        // length.
-        //
-        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567"),
-        { 0x55, 0xA0, 0xC4, 0x2A, 0x00, 0xBD, 0x4B, 0x49, 0x6A, 0x16, 0xD1, 0xAC, 0x32, 0xE2, 0x0B, 0x5A, 0x7F, 0xA3, 0xE0, 0x87 }
-    },
-    {
-        // First 64-byte block composed of 64 bytes.  Second 64-byte block
-        // composed of 1-byte pad (0x80), 55 zeros (0x00), and 8-byte length.
-        //
-        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678"),
-        { 0x9E, 0xF5, 0xC6, 0x82, 0xD9, 0x39, 0x14, 0xE7, 0x7A, 0x5D, 0x34, 0x5A, 0xBB, 0x95, 0x74, 0x36, 0x44, 0x5A, 0x6F, 0xB6 }
-    }
-};
-
-int main(int argc, char *argv[])
-{
-    int i;
-    for (i = 0; i < NUM_VECTORS; i++)
-    {
-        MUX_SHA_CTX shac;
-        MUX_SHA1_Init(&shac);
-        MUX_SHA1_Update(&shac, vectors[i].p, strlen((const char *)vectors[i].p));
-
-        UINT8 md[MUX_SHA1_DIGEST_LENGTH];
-        MUX_SHA1_Final(md, &shac);
-
-        int j;
-        for (j = 0; j < MUX_SHA1_DIGEST_LENGTH; j++)
-        {
-            if (md[j] != vectors[i].md[j])
-            {
-                printf("Failed. Expected 0x%02X. Found 0x%02X" ENDLINE, vectors[i].md[j], md[j]);
-                return 0;
-            }
-        }
-    }
-    printf("%s", T("Passed." ENDLINE));
-    return 1;
-}
-
-#endif
 
 #endif

@@ -67,35 +67,6 @@ static bool ph_wiz(dbref target, dbref player, POWER power, int fpowers, bool re
     return (ph_any(target, player, power, fpowers, reset));
 }
 
-#if 0
-
-/* ---------------------------------------------------------------------------
- * ph_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
- */
-
-bool ph_wizroy(dbref target, dbref player, POWER power, int fpowers, bool reset)
-{
-    if (!WizRoy(player))
-    {
-        return false;
-    }
-    return (ph_any(target, player, power, fpowers, reset));
-}
-
-/* ---------------------------------------------------------------------------
- * ph_inherit: only players may set or clear this bit.
- */
-
-bool ph_inherit(dbref target, dbref player, POWER power, int fpowers, bool reset)
-{
-    if (!Inherits(player))
-    {
-        return false;
-    }
-    return (ph_any(target, player, power, fpowers, reset));
-}
-#endif
-
 static POWERENT gen_powers[] =
 {
     {T("announce"),        POW_ANNOUNCE,   0, 0,   ph_wiz},

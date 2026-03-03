@@ -1614,9 +1614,6 @@ UTF8 *replace_tokens
     const UTF8 *pListPlace,
     const UTF8 *pSwitch
 );
-#if 0
-char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
-#endif // 0
 bool minmatch(const UTF8 *str, const UTF8 *target, int min);
 UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
 UTF8 *StringClone(const UTF8 *str);

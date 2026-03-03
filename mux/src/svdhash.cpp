@@ -903,13 +903,6 @@ bool CHashPage::HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void
     HP_PHEAPOFFSET poPrev = &(m_pHeader->m_oFreeList);
     while (oNext != HP_NIL_OFFSET)
     {
-#if 0
-        if (!ValidateFreeBlock(oPrevious))
-        {
-            ValidateFreeList();
-            return false;
-        }
-#endif // 0
         unsigned char *pBlockStart = m_pHeapStart + oNext;
         HP_PHEAPNODE pNode = (HP_PHEAPNODE)pBlockStart;
         if (pNode->nBlockSize >= nRequired)
@@ -1065,21 +1058,6 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             }
         }
     }
-#if 0
-    int nRecords0, nRecords1;
-    HP_HEAPLENGTH nAllocatedSize0, nAllocatedSize1;
-    int    temp;
-    hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
-    hp1.GetStats(0, &nRecords1, &nAllocatedSize1, &temp);
-    Log.tinyprintf(T("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE),
-        nRecords, nAllocatedSize, nRecords0, nAllocatedSize0, nRecords1,
-        nAllocatedSize1);
-    if (nRecords0 + nRecords1 != nRecords)
-    {
-        Log.WriteString("Lost something" ENDLINE);
-        return false;
-    }
-#endif // 0
     return true;
 }
 

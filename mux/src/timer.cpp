@@ -185,24 +185,6 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
 }
 #endif // !MEMORY_BASED
 
-#if 0
-void dispatch_CleanChannels(void *pUnused, int iUnused)
-{
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< cleanchannels >");
-    do_cleanupchannels();
-
-    // Schedule ourselves again.
-    //
-    CLinearTimeAbsolute ltaNextTime;
-    ltaNextTime.GetUTC();
-    CLinearTimeDelta ltd = time_15m;
-    ltaNextTime += ltd;
-    scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
-    mudstate.debug_cmd = cmdsave;
-}
-#endif // 0
-
 static void dispatch_CanRestart(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
@@ -260,12 +242,6 @@ void init_timer(void)
     scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM,
         dispatch_CacheTick, 0, 0);
 #endif // !MEMORY_BASED
-
-#if 0
-    // Setup comsys channel scrubbing.
-    //
-    scheduler.DeferTask(ltaNow+time_45s, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
-#endif // 0
 
     // Setup one-shot task to enable restarting 10 seconds after startmux.
     //

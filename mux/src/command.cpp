@@ -1425,16 +1425,6 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
         // If an unparsed command, just give it to the handler
         //
-#if 0
-        // This never happens.
-        //
-        if (cmdp->callseq & CS_UNPARSE)
-        {
-            // Add CEF_HOOK_ARGS before uncommenting
-            (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, unp_command);
-            break;
-        }
-#endif
         // Interpret if necessary, but not twice for CS_ADDED.
         //
         if ((interp & EV_EVAL) && !(cmdp->callseq & CS_ADDED))

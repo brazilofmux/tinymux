@@ -3824,19 +3824,6 @@ UTF8 *StringClone(const UTF8 *str)
     return StringCloneLen(str, strlen((char *)str));
 }
 
-#if 0
-// --------------------------------------------------------------------------
-// BufferCloneLen: allocate memory and copy buffer
-//
-UTF8 *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer)
-{
-    UTF8 *buff = (UTF8 *)MEMALLOC(nBuffer);
-    ISOUTOFMEMORY(buff);
-    memcpy(buff, pBuffer, nBuffer);
-    return buff;
-}
-#endif // 0
-
 /* ---------------------------------------------------------------------------
  * safe_copy_str - Copy buffers, watching for overflows.
  */

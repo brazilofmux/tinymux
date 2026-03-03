@@ -1050,46 +1050,6 @@ static CF_HAND(cf_poweralias)
     return (success ? 0 : -1);
 }
 
-#if 0
-// ---------------------------------------------------------------------------
-// cf_or_in_bits: OR in bits from namelist to a word.
-//
-static CF_HAND(cf_or_in_bits)
-{
-    UNUSED_PARAMETER(nExtra);
-
-    int f, success, failure;
-
-    // Walk through the tokens.
-    //
-    success = failure = 0;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, " \t");
-    UTF8 *sp = mux_strtok_parse(&tts);
-    while (sp != nullptr)
-    {
-        // Set the appropriate bit.
-        //
-        if (search_nametab(GOD, (NAMETAB *)pExtra, sp, &f))
-        {
-            *vp |= f;
-            success++;
-        }
-        else
-        {
-            cf_log_notfound(player, cmd, "Entry", sp);
-            failure++;
-        }
-
-        // Get the next token.
-        //
-        sp = mux_strtok_parse(&tts);
-    }
-    return cf_status_from_succfail(player, cmd, success, failure);
-}
-#endif
-
 // ---------------------------------------------------------------------------
 // cf_modify_bits: set or clear bits in a flag word from a namelist.
 //
@@ -1138,48 +1098,6 @@ CF_HAND(cf_modify_bits)
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
-
-#if 0
-// ---------------------------------------------------------------------------
-// cf_set_bits: Clear flag word and then set specified bits from namelist.
-//
-static CF_HAND(cf_set_bits)
-{
-    UNUSED_PARAMETER(nExtra);
-
-    int f, success, failure;
-
-    // Walk through the tokens
-    //
-    success = failure = 0;
-    *vp = 0;
-
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, " \t");
-    UTF8 *sp = mux_strtok_parse(&tts);
-    while (sp != nullptr)
-    {
-        // Set the appropriate bit.
-        //
-        if (search_nametab(GOD, (NAMETAB *)pExtra, sp, &f))
-        {
-            *vp |= f;
-            success++;
-        }
-        else
-        {
-            cf_log_notfound(player, cmd, "Entry", sp);
-            failure++;
-        }
-
-        // Get the next token.
-        //
-        sp = mux_strtok_parse(&tts);
-    }
-    return cf_status_from_succfail(player, cmd, success, failure);
-}
-#endif
 
 // ---------------------------------------------------------------------------
 // cf_set_flags: Clear flag word and then set from a flags htab.

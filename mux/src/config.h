@@ -25,7 +25,7 @@
 #define WINDOWS_CRYPT
 #define WINDOWS_TIME
 #define WINDOWS_THREADS
-#define WINDOWS_INSTRINSICS
+#define WINDOWS_INTRINSICS
 //#define WINDOWS_SSL
 
 #if (_MSC_VER >= 1400)
@@ -171,14 +171,6 @@ extern int getdtablesize(void);
 #include <netdb.h>
 #endif // HAVE_NETDB_H
 
-#if defined(UNIX_NETWORKING_EPOLL) && defined(HAVE_SYS_EPOLL_H)
-#include <sys/epoll.h>
-#endif // UNIX_NETWORKING_EPOLL && HAVE_SYS_EPOLL_H
-
-#if defined(UNIX_NETWORKING_SELECT) && defined(HAVE_SYS_SELECT_H)
-#include <sys/select.h>
-#endif // UNIX_NETWORKING_SELECT && HAVE_SYS_SELECT_H
-
 #ifdef UNIX_SSL
 #include <openssl/ssl.h>
 #endif
@@ -229,24 +221,6 @@ extern int getpagesize(void);
 extern int errno;
 #endif
 
-// Assure that malloc, realloc, and free are defined.
-//
-#if !defined(MALLOC_IN_STDLIB_H)
-#if   defined(HAVE_MALLOC_H)
-#include <malloc.h>
-#ifdef WIN32
-#include <crtdbg.h>
-#endif // WIN32
-#elif defined(NEED_MALLOC_DCL)
-extern char *malloc(int);
-extern char *realloc(char *, int);
-extern int   free(char *);
-#endif
-#endif
-
-#ifdef NEED_SYS_ERRLIST_DCL
-extern char *sys_errlist[];
-#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

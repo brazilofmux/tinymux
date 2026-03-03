@@ -665,15 +665,6 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
             }
         }
     }
-#if 0
-    else if (GOD == player)
-    {
-        // When GOD doesn't have a password, we need to a way to set one.
-        //
-        bValidPass = true;
-        ChangePassword(player, pPassword);
-    }
-#endif
     free_lbuf(pTarget);
     return bValidPass;
 }

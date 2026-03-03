@@ -3776,16 +3776,8 @@ FUNCTION(fun_comtitle)
         user = select_user(chn, victim);
         if (user)
         {
-            // Do we want this function to evaluate the comtitle or not?
-#if 0
-          UTF8 *nComTitle = GetComtitle(user);
-          safe_str(nComTitle, buff, bufc);
-          FreeComtitle(nComTitle);
-          return;
-#else
             safe_str(user->title, buff, bufc);
             return;
-#endif
         }
     }
     safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
