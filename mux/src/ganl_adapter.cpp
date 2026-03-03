@@ -1706,6 +1706,11 @@ void GanlAdapter::prepare_for_restart() {
 void GanlAdapter::run_main_loop() {
     Log.WriteString(T("GANL: Entering main loop.\n"));
     Log.Flush();
+
+    if (mudconf.use_hostname) {
+        start_dns_slave();
+    }
+
     ltaLastSlice_.GetUTC();
 
     // Calculate available descriptor limit, reserving 7 for system use
@@ -2378,5 +2383,21 @@ void ganl_close_connection(DESC* d, int reason) {
 void ganl_associate_player(DESC* d, dbref player) {
     if (d) {
         d->player = player;
+    }
+}
+
+void do_startslave(dbref executor, dbref caller, dbref enactor,
+                   int eval, int key)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
+
+    g_GanlAdapter.shutdown_dns_slave();
+    if (g_GanlAdapter.start_dns_slave()) {
+        notify(executor, T("DNS slave restarted."));
+    } else {
+        notify(executor, T("DNS slave failed to start."));
     }
 }

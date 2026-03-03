@@ -311,11 +311,6 @@ int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *h
 void mux_freeaddrinfo(MUX_ADDRINFO *res);
 int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
 #if defined(HAVE_WORKING_FORK)
-void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
-#endif
-#if defined(HAVE_WORKING_FORK)
-void CleanUpSlaveSocket(void);
-void CleanUpSlaveProcess(void);
 #ifdef STUB_SLAVE
 void CleanUpStubSlaveSocket(void);
 void WaitOnStubSlaveProcess(void);

@@ -2983,8 +2983,6 @@ int DCL_CDECL main(int argc, char *argv[])
     CLOSE;
 
 #if defined(HAVE_WORKING_FORK)
-    CleanUpSlaveSocket();
-    CleanUpSlaveProcess();
 #ifdef STUB_SLAVE
     CleanUpStubSlaveSocket();
     WaitOnStubSlaveProcess();

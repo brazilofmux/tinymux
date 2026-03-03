@@ -11,6 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ganl_adapter.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -591,9 +592,7 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {T("@mark_all"),   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
     {T("@readcache"),  nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
     {T("@restart"),    nullptr,    CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
-#if defined(HAVE_WORKING_FORK)
-    {T("@startslave"), nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
-#endif // HAVE_WORKING_FORK
+    {T("@startslave"), nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_startslave},
     {T("@timecheck"),  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
     {T("clearcom"),    nullptr,    CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
     {T("info"),        nullptr,    CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},

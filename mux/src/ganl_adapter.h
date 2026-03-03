@@ -144,5 +144,7 @@ void ganl_main_loop();
 void ganl_send_data_str(DESC* d, const UTF8* data);
 void ganl_close_connection(DESC* d, int reason); // TinyMUX reason codes
 void ganl_associate_player(DESC* d, dbref player); // Needed after successful login
+void do_startslave(dbref executor, dbref caller, dbref enactor,
+                   int eval, int key);
 
 #endif // GANL_ADAPTER_H

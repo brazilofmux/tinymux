@@ -1639,8 +1639,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #elif defined(UNIX_PROCESSES)
 #if defined(HAVE_WORKING_FORK)
     dump_restart_db();
-    CleanUpSlaveSocket();
-    CleanUpSlaveProcess();
 #endif // HAVE_WORKING_FORK
 
     Log.StopLogging();

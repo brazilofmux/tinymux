@@ -37,35 +37,10 @@ pid_t game_pid;
 
 #if defined(HAVE_WORKING_FORK)
 
-pid_t slave_pid = 0;
-int slave_socket = INVALID_SOCKET;
 #ifdef STUB_SLAVE
 pid_t stubslave_pid = 0;
 int stubslave_socket = INVALID_SOCKET;
 #endif // STUB_SLAVE
-
-void CleanUpSlaveSocket(void)
-{
-    if (!IS_INVALID_SOCKET(slave_socket))
-    {
-        shutdown(slave_socket, SD_BOTH);
-        if (0 == SOCKET_CLOSE(slave_socket))
-        {
-            DebugTotalSockets--;
-        }
-        slave_socket = INVALID_SOCKET;
-    }
-}
-
-void CleanUpSlaveProcess(void)
-{
-    if (slave_pid > 0)
-    {
-        kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, nullptr, 0);
-    }
-    slave_pid = 0;
-}
 
 #ifdef STUB_SLAVE
 void CleanUpStubSlaveSocket(void)
@@ -355,212 +330,6 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 }
 
 #endif // STUB_SLAVE
-
-/*! \brief Lauch reverse-DNS slave process.
- *
- * This spawns the reverse-DNS slave process and creates a socket-oriented,
- * bi-directional communiocation path between that process and this
- * process. Any existing slave process is killed.
- *
- * \param executor dbref of Executor.
- * \param caller   dbref of Caller.
- * \param enactor  dbref of Enactor.
- * \return         None.
- */
-
-void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
-
-    const char *pFailedFunc = nullptr;
-    int sv[2];
-    int i;
-    int maxfds;
-
-#ifdef HAVE_GETDTABLESIZE
-    maxfds = getdtablesize();
-#else // HAVE_GETDTABLESIZE
-    maxfds = sysconf(_SC_OPEN_MAX);
-#endif // HAVE_GETDTABLESIZE
-
-    CleanUpSlaveSocket();
-    CleanUpSlaveProcess();
-
-    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
-    {
-        pFailedFunc = "socketpair() error: ";
-        goto failure;
-    }
-
-    // Set to nonblocking.
-    //
-    if (make_nonblocking(sv[0]) < 0)
-    {
-        pFailedFunc = "make_nonblocking() error: ";
-        mux_close(sv[0]);
-        mux_close(sv[1]);
-        goto failure;
-    }
-    slave_pid = fork();
-    switch (slave_pid)
-    {
-    case -1:
-
-        pFailedFunc = "fork() error: ";
-        mux_close(sv[0]);
-        mux_close(sv[1]);
-        goto failure;
-
-    case 0:
-
-        // If we don't clear this alarm, the child will eventually receive a
-        // SIG_PROF.
-        //
-        alarm_clock.clear();
-
-        // Child.  The following calls to dup2() assume only the minimal
-        // dup2() functionality.  That is, the destination descriptor is
-        // always available for it, and sv[1] is never that descriptor.
-        // It is likely that the standard defined behavior of dup2()
-        // would handle the job by itself more directly, but a little
-        // extra code is low-cost insurance.
-        //
-        mux_close(sv[0]);
-        if (sv[1] != 0)
-        {
-            mux_close(0);
-            if (dup2(sv[1], 0) == -1)
-            {
-                _exit(1);
-            }
-        }
-        if (sv[1] != 1)
-        {
-            mux_close(1);
-            if (dup2(sv[1], 1) == -1)
-            {
-                _exit(1);
-            }
-        }
-        for (i = 3; i < maxfds; i++)
-        {
-            mux_close(i);
-        }
-        execlp("bin/slave", "slave", static_cast<char *>(nullptr));
-        _exit(1);
-    }
-    close(sv[1]);
-
-    slave_socket = sv[0];
-    DebugTotalSockets++;
-    if (make_nonblocking(slave_socket) < 0)
-    {
-        pFailedFunc = "make_nonblocking() error: ";
-        CleanUpSlaveSocket();
-        goto failure;
-    }
-
-    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-    log_text(T("DNS lookup slave started on fd "));
-    log_number(slave_socket);
-    ENDLOG;
-    return;
-
-failure:
-
-    CleanUpSlaveProcess();
-    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-    log_text((UTF8 *)pFailedFunc);
-    log_number(errno);
-    ENDLOG;
-}
-
-// Get a result from the slave
-//
-static int get_slave_result(void)
-{
-    DESC *d;
-
-    UTF8 *buf = alloc_lbuf("slave_buf");
-
-    int len = mux_read(slave_socket, buf, LBUF_SIZE-1);
-    if (len < 0)
-    {
-        int iSocketError = SOCKET_LAST_ERROR;
-        if (  iSocketError == SOCKET_EAGAIN
-           || iSocketError == SOCKET_EWOULDBLOCK)
-        {
-            free_lbuf(buf);
-            return -1;
-        }
-        CleanUpSlaveSocket();
-        CleanUpSlaveProcess();
-        free_lbuf(buf);
-
-        STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-        log_text(T("read() of slave result failed. Slave stopped."));
-        ENDLOG;
-
-        return -1;
-    }
-    else if (0 == len)
-    {
-        free_lbuf(buf);
-        return -1;
-    }
-    buf[len] = '\0';
-
-    UTF8 *host_name = alloc_lbuf("slave_host_name");
-    UTF8 *host_address = alloc_lbuf("slave_host_address");
-    UTF8 *p;
-    if (sscanf((char *)buf, "%s %s", host_address, host_name) != 2)
-    {
-        goto Done;
-    }
-    p = (UTF8 *)strchr((char *)buf, '\n');
-    if (!p)
-    {
-        goto Done;
-    }
-    *p = '\0';
-    if (mudconf.use_hostname)
-    {
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            DESC* d = *it;
-            if (strcmp((char *)d->addr, (char *)host_address) != 0)
-            {
-                continue;
-            }
-
-            strncpy((char *)d->addr, (char *)host_name, 50);
-            d->addr[50] = '\0';
-            if (d->player != 0)
-            {
-                if (d->username[0])
-                {
-                    atr_add_raw(d->player, A_LASTSITE, tprintf(T("%s@%s"),
-                        d->username, d->addr));
-                }
-                else
-                {
-                    atr_add_raw(d->player, A_LASTSITE, d->addr);
-                }
-                atr_add_raw(d->player, A_LASTIP, host_address);
-            }
-        }
-    }
-
-Done:
-    free_lbuf(buf);
-    free_lbuf(host_name);
-    free_lbuf(host_address);
-    return 0;
-}
 
 #endif // HAVE_WORKING_FORK
 
@@ -2877,19 +2646,8 @@ static void DCL_CDECL sighandler(int sig)
             if (  WIFEXITED(stat_buf)
                || WIFSIGNALED(stat_buf))
             {
-                if (child == slave_pid)
-                {
-                    // The reverse-DNS slave process ended unexpectedly.
-                    //
-                    CleanUpSlaveSocket();
-                    slave_pid = 0;
-
-                    LogStatBuf(stat_buf, "SLAVE");
-
-                    continue;
-                }
 #ifdef STUB_SLAVE
-                else if (child == stubslave_pid)
+                if (child == stubslave_pid)
                 {
                     // The Stub slave process ended unexpectedly.
                     //
@@ -2899,9 +2657,10 @@ static void DCL_CDECL sighandler(int sig)
 
                     continue;
                 }
+                else
 #endif // STUB_SLAVE
-                else if (  mudconf.fork_dump
-                        && mudstate.dumping)
+                if (  mudconf.fork_dump
+                   && mudstate.dumping)
                 {
                     mudstate.dumped = child;
                     if (mudstate.dumper == mudstate.dumped)
@@ -2936,11 +2695,11 @@ static void DCL_CDECL sighandler(int sig)
 #if defined(HAVE_WORKING_FORK)
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef STUB_SLAVE
-            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, slave_pid=%d, stubslave_pid=%d" ENDLINE),
-                mudstate.dumper, child, slave_pid, stubslave_pid);
+            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, stubslave_pid=%d" ENDLINE),
+                mudstate.dumper, child, stubslave_pid);
 #else
-            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE),
-                mudstate.dumper, child, slave_pid);
+            Log.tinyprintf(T("mudstate.dumper=%d, child=%d" ENDLINE),
+                mudstate.dumper, child);
 #endif // STUB_SLAVE
             ENDLOG;
 #endif // HAVE_WORKING_FORK
@@ -3068,9 +2827,6 @@ static void DCL_CDECL sighandler(int sig)
 
 #if defined(UNIX_PROCESSES)
 #if defined(HAVE_WORKING_FORK)
-            CleanUpSlaveSocket();
-            CleanUpSlaveProcess();
-
             // Try our best to dump a core first
             //
             if (!fork())
