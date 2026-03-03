@@ -33,7 +33,7 @@ typedef struct pool_header
     union
     {
         const UTF8     *buf_tag;    // Debugging/trace tag
-        UINT64 align;               // Not used.
+        uint64_t align;               // Not used.
     } u;
 } POOLHDR;
 
@@ -60,10 +60,10 @@ typedef struct pooldata
     unsigned int poolmagic;         // Magic number specific to this pool
     POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
-    UINT64 tot_alloc;               // Total buffers allocated
-    UINT64 num_alloc;               // Number of buffers currently allocated
-    UINT64 max_alloc;               // Max # buffers allocated at one time
-    UINT64 num_lost;                // Buffers lost due to corruption
+    uint64_t tot_alloc;               // Total buffers allocated
+    uint64_t num_alloc;               // Number of buffers currently allocated
+    uint64_t max_alloc;               // Max # buffers allocated at one time
+    uint64_t num_lost;                // Buffers lost due to corruption
 } POOL;
 
 static POOL pools[NUM_POOLS];
@@ -612,11 +612,11 @@ void list_bufstats(dbref player)
         UTF8 *p = buff;
 
         p += LeftJustifyString(p,  12, poolnames[i]);                   *p++ = ' ';
-        p += RightJustifyNumber(p,  5, static_cast<INT64>(pools[i].pool_client_size), ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, static_cast<INT64>(pools[i].num_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, static_cast<INT64>(pools[i].max_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 16, static_cast<INT64>(pools[i].tot_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p,  6, static_cast<INT64>(pools[i].num_lost),         ' '); *p = '\0';
+        p += RightJustifyNumber(p,  5, static_cast<int64_t>(pools[i].pool_client_size), ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, static_cast<int64_t>(pools[i].num_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, static_cast<int64_t>(pools[i].max_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 16, static_cast<int64_t>(pools[i].tot_alloc),        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p,  6, static_cast<int64_t>(pools[i].num_lost),         ' '); *p = '\0';
         notify(player, buff);
     }
 }

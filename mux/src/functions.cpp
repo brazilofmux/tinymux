@@ -551,7 +551,7 @@ static FUNCTION(fun_rand)
             int lower = mux_atol(fargs[0]);
             int higher = mux_atol(fargs[1]);
             if (  lower <= higher
-               && (unsigned int)(higher-lower) <= INT32_MAX_VALUE)
+               && (unsigned int)(higher-lower) <= INT32_MAX)
             {
                 safe_ltoa(RandomINT32(lower, higher), buff, bufc);
             }
@@ -6758,7 +6758,7 @@ static FUNCTION(fun_choose)
         }
     }
 
-    INT32 num = RandomINT32(0, sum-1);
+    int32_t num = RandomINT32(0, sum-1);
 
     for (i = 0; i < n_weights; i++)
     {
@@ -7804,7 +7804,7 @@ typedef struct qsort_record
     {
         double d;
         long   l;
-        INT64  i64;
+        int64_t  i64;
     } u;
     UTF8 *str;
 } q_rec;
@@ -11458,8 +11458,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IFunctionsControl
     //
@@ -11469,7 +11469,7 @@ public:
     virtual ~CFunctions();
 
 private:
-    UINT32          m_cRef;
+    uint32_t          m_cRef;
     FunctionsNode  *m_pHead;
 };
 
@@ -11518,13 +11518,13 @@ MUX_RESULT CFunctions::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFunctions::AddRef(void)
+uint32_t CFunctions::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFunctions::Release(void)
+uint32_t CFunctions::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -11634,13 +11634,13 @@ MUX_RESULT CFunctionsFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFunctionsFactory::AddRef(void)
+uint32_t CFunctionsFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFunctionsFactory::Release(void)
+uint32_t CFunctionsFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

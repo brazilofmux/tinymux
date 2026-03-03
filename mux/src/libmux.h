@@ -23,8 +23,8 @@
 #define LIBMUX_H
 
 typedef int MUX_RESULT;
-typedef UINT64 MUX_CID;
-typedef UINT64 MUX_IID;
+typedef uint64_t MUX_CID;
+typedef uint64_t MUX_IID;
 
 #define MUX_S_OK                 (0)
 #define MUX_S_FALSE              (1)
@@ -73,7 +73,7 @@ const MUX_IID mux_IID_IRpcStubBuffer    = UINT64_C(0x0000000100000014);
 const MUX_IID mux_IID_IPSFactoryBuffer  = UINT64_C(0x0000000100000015);
 const MUX_IID mux_IID_IMarshal          = UINT64_C(0x0000000100000016);
 
-const UINT32  CHANNEL_INVALID           = 0xFFFFFFFFul;
+const uint32_t  CHANNEL_INVALID           = 0xFFFFFFFFul;
 
 #define interface class
 
@@ -81,8 +81,8 @@ interface mux_IUnknown
 {
 public:
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv) = 0;
-    virtual UINT32     AddRef(void) = 0;
-    virtual UINT32     Release(void) = 0;
+    virtual uint32_t     AddRef(void) = 0;
+    virtual uint32_t     Release(void) = 0;
 };
 
 interface mux_IClassFactory : public mux_IUnknown
@@ -116,7 +116,7 @@ typedef MUX_RESULT FDISC(struct channel_info *pci, QUEUE_INFO *pqi);
 
 typedef struct channel_info
 {
-     UINT32    nChannel;
+     uint32_t    nChannel;
      FCALL    *pfCall;
      FMSG     *pfMsg;
      FDISC    *pfDisc;
@@ -126,17 +126,17 @@ typedef struct channel_info
 extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc);
 extern "C" void          DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p);
 extern "C" void          DCL_EXPORT DCL_API Pipe_AppendQueue(QUEUE_INFO *pqiOut, QUEUE_INFO *pqiIn);
-extern "C" bool          DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 nReturnChannel, QUEUE_INFO *pqiFrame);
+extern "C" bool          DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t nReturnChannel, QUEUE_INFO *pqiFrame);
 extern "C" void          DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi);
-extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel);
+extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(uint32_t nChannel);
 extern "C" void          DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci);
-extern "C" bool          DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1]);
+extern "C" bool          DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, uint8_t ach[1]);
 extern "C" bool          DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pch);
 extern "C" void          DCL_EXPORT DCL_API Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
 extern "C" size_t        DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
-extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 nChannel, QUEUE_INFO *pqi);
-extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 nChannel, QUEUE_INFO *pqi);
-extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 
 
 // The following is part of what is called 'Standard Marshaling'.  Since this
@@ -145,7 +145,7 @@ extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 nChannel,
 interface mux_IRpcProxyBuffer : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Connect(UINT32 nChannel) = 0;
+    virtual MUX_RESULT Connect(uint32_t nChannel) = 0;
     virtual void       Disconnect(void);
 };
 
@@ -156,7 +156,7 @@ public:
     virtual void       Disconnect(void) = 0;
     virtual MUX_RESULT Invoke(QUEUE_INFO *pqi) = 0;
     virtual MUX_RESULT IsSupported(MUX_IID riid) = 0;
-    virtual UINT32     CountRefs(void) = 0;
+    virtual uint32_t     CountRefs(void) = 0;
 };
 
 interface mux_IPSFactoryBuffer : public mux_IUnknown
@@ -239,15 +239,15 @@ class x : public mux_IClassFactory                                              
 {                                                                                              \
 public:                                                                                        \
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);                                \
-    virtual UINT32     AddRef(void);                                                           \
-    virtual UINT32     Release(void);                                                          \
+    virtual uint32_t     AddRef(void);                                                           \
+    virtual uint32_t     Release(void);                                                          \
     virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);   \
     virtual MUX_RESULT LockServer(bool bLock);                                                 \
     x(void);                                                                                   \
     virtual ~x();                                                                              \
                                                                                                \
 private:                                                                                       \
-    UINT32 m_cRef;                                                                             \
+    uint32_t m_cRef;                                                                             \
 };
 
 #endif // LIBMUX_H

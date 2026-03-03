@@ -18,13 +18,13 @@ using namespace std;
 typedef struct confparm
 {
     const UTF8 *pname;            // parm name
-    int (*interpreter)(int *vp, UTF8 *str, void *pExtra, UINT32 nExtra,
+    int (*interpreter)(int *vp, UTF8 *str, void *pExtra, uint32_t nExtra,
                        dbref player, UTF8 *cmd); // routine to interp parameter
     int flags;              // control flags
     int rperms;             // read permission flags.
     int *loc;               // where to store value
     void *pExtra;           // extra pointer for interpreter
-    UINT32 nExtra;          // extra data for interpreter
+    uint32_t nExtra;          // extra data for interpreter
 } CONFPARM;
 
 // ---------------------------------------------------------------------------

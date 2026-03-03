@@ -97,8 +97,8 @@ static PipePump   *g_fpPipePump = nullptr;
 static QUEUE_INFO *g_pQueue_In  = nullptr;
 static QUEUE_INFO *g_pQueue_Out = nullptr;
 
-static std::map<UINT32, CHANNEL_INFO *> g_Channels;
-static UINT32 nNextChannel;
+static std::map<uint32_t, CHANNEL_INFO *> g_Channels;
+static uint32_t nNextChannel;
 
 static LibraryState    g_LibraryState   = eLibraryDown;
 static process_context g_ProcessContext = IsUninitialized;
@@ -429,8 +429,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         QUEUE_INFO qiFrame;
 
         Pipe_InitializeQueueInfo(&qiFrame);
-        Pipe_AppendBytes(&qiFrame, sizeof(cid), (UINT8*)(&cid));
-        Pipe_AppendBytes(&qiFrame, sizeof(iid), (UINT8*)(&iid));
+        Pipe_AppendBytes(&qiFrame, sizeof(cid), (uint8_t*)(&cid));
+        Pipe_AppendBytes(&qiFrame, sizeof(iid), (uint8_t*)(&iid));
 
         mr = Pipe_SendCallPacketAndWait(0, &qiFrame);
 
@@ -1014,8 +1014,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -1029,7 +1029,7 @@ public:
     virtual ~CStandardMarshaler();
 
 private:
-    UINT32          m_cRef;
+    uint32_t          m_cRef;
     MUX_IID         m_riid;
     marshal_context m_ctx;
 };
@@ -1198,9 +1198,9 @@ extern "C" void DCL_EXPORT DCL_API Pipe_FreeChannel(CHANNEL_INFO *pci)
     }
 }
 
-extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(UINT32 nChannel)
+extern "C" PCHANNEL_INFO DCL_EXPORT DCL_API Pipe_FindChannel(uint32_t nChannel)
 {
-    std::map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(nChannel);
+    std::map<uint32_t, CHANNEL_INFO *>::iterator it = g_Channels.find(nChannel);
     if (g_Channels.end() != it)
     {
         return it->second;
@@ -1327,7 +1327,7 @@ extern "C" void DCL_EXPORT DCL_API Pipe_EmptyQueue(QUEUE_INFO *pqi)
     }
 }
 
-extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1])
+extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, uint8_t ach[1])
 {
     QUEUE_BLOCK *pBlock;
 
@@ -1365,7 +1365,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[1])
 
 extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
 {
-    UINT8 *pch = (UINT8 *)pv;
+    uint8_t *pch = (uint8_t *)pv;
 
     size_t nCopied = 0;
     QUEUE_BLOCK *pBlock;
@@ -1444,20 +1444,20 @@ FrameType     g_eType = eUnknown;
 
 union LENGTH
 {
-    UINT32 n;
-    UINT8 ch[4];
+    uint32_t n;
+    uint8_t ch[4];
 } Length = { 0 };
 
-UINT32        g_nChannel = 0;
+uint32_t        g_nChannel = 0;
 size_t        g_nLengthRemaining = 0;
 
-const UINT8 CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };  // 17, 14,  9, 20
-const UINT8 ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };  //  7, 13,  6, 18
-const UINT8 MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };  // 19, 15,  3,  8
-const UINT8 DiscMagic[4]   = { 0x96, 0x0A, 0xA3, 0x81 };  // 12,  1, 16, 10
-const UINT8 EndMagic[4]    = { 0x27, 0x11, 0x8B, 0x26 };  //  5,  2, 11,  4
+const uint8_t CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };  // 17, 14,  9, 20
+const uint8_t ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };  //  7, 13,  6, 18
+const uint8_t MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };  // 19, 15,  3,  8
+const uint8_t DiscMagic[4]   = { 0x96, 0x0A, 0xA3, 0x81 };  // 12,  1, 16, 10
+const uint8_t EndMagic[4]    = { 0x27, 0x11, 0x8B, 0x26 };  //  5,  2, 11,  4
 
-const UINT8 decoder_itt[256] =
+const uint8_t decoder_itt[256] =
 {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 //
@@ -1480,7 +1480,7 @@ const UINT8 decoder_itt[256] =
     0,  0,  0,  0,  0,  0, 19,  0,  0, 20,  0,  0,  0,  0,  0,  0   // F
 };
 
-const UINT8 decoder_stt[23][21] =
+const uint8_t decoder_stt[23][21] =
 {
 //     0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
 //
@@ -1511,9 +1511,9 @@ const UINT8 decoder_stt[23][21] =
 
 // Decode bytes out of Queue_In to Queue_Frame.
 //
-extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT8 buffer[512];
+    uint8_t buffer[512];
 
     if (8 == g_iState)
     {
@@ -1537,7 +1537,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
         }
     }
 
-    UINT8 ch;
+    uint8_t ch;
     while (Pipe_GetByte(g_pQueue_In, &ch))
     {
         g_iState = decoder_stt[g_iState][decoder_itt[ch]];
@@ -1632,7 +1632,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
                     }
                     else
                     {
-                        std::map<UINT32, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
+                        std::map<uint32_t, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
                         PCHANNEL_INFO pci;
                         if (g_Channels.end() != it && nullptr != (pci = it->second))
                         {
@@ -1649,7 +1649,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
 
                                     // Send Queue_Frame back to sender.
                                     //
-                                    UINT32 nReturn = (UINT32)(sizeof(g_nChannel) + Pipe_QueueLength(pqiFrame));
+                                    uint32_t nReturn = (uint32_t)(sizeof(g_nChannel) + Pipe_QueueLength(pqiFrame));
 
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
@@ -1694,7 +1694,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(UINT32 iReturnChannel, QUEU
     return false;
 }
 
-static MUX_RESULT Pipe_SendReceive(UINT32 iReturnChannel, QUEUE_INFO *pqi)
+static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
 {
     MUX_RESULT mr = MUX_S_OK;
     for (;;)
@@ -1709,9 +1709,9 @@ static MUX_RESULT Pipe_SendReceive(UINT32 iReturnChannel, QUEUE_INFO *pqi)
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = (UINT32)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(CallMagic), CallMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1720,9 +1720,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(UINT32 iRetu
     return Pipe_SendReceive(iReturnChannel, pqiFrame);
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = (UINT32)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(MsgMagic), MsgMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1731,9 +1731,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(UINT32 iReturnChanne
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(UINT32 iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    UINT32 nLength = (UINT32)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(DiscMagic), DiscMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1773,13 +1773,13 @@ MUX_RESULT CStandardMarshaler::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CStandardMarshaler::AddRef(void)
+uint32_t CStandardMarshaler::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CStandardMarshaler::Release(void)
+uint32_t CStandardMarshaler::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -1892,7 +1892,7 @@ MUX_RESULT CStandardMarshaler::ReleaseMarshalData(QUEUE_INFO *pqi)
     if (  Pipe_GetBytes(pqi, &nWanted, &riid)
        && sizeof(riid) == nWanted)
     {
-        UINT32 nChannel;
+        uint32_t nChannel;
         nWanted = sizeof(nChannel);
         if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
            && sizeof(nChannel) == nWanted)

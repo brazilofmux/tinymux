@@ -174,7 +174,7 @@ public:
 interface mux_IQuerySink : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet) = 0;
+    virtual MUX_RESULT Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet) = 0;
 };
 
 interface mux_IQueryControl : public mux_IUnknown
@@ -182,7 +182,7 @@ interface mux_IQueryControl : public mux_IUnknown
 public:
     virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword) = 0;
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink) = 0;
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery) = 0;
+    virtual MUX_RESULT Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery) = 0;
 };
 
 extern MUX_RESULT init_modules(void);

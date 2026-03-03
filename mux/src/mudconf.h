@@ -580,7 +580,7 @@ extern STATEDATA mudstate;
 
 /* Configuration parameter handler definition */
 
-#define CF_HAND(proc)   int proc(int *vp, UTF8 *str, void *pExtra, UINT32 nExtra, dbref player, UTF8 *cmd)
+#define CF_HAND(proc)   int proc(int *vp, UTF8 *str, void *pExtra, uint32_t nExtra, dbref player, UTF8 *cmd)
 
 /* Global flags */
 

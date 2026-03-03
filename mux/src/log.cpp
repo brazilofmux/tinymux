@@ -688,8 +688,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_ILog
     //
@@ -706,7 +706,7 @@ public:
     virtual ~CLog();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 CLog::CLog(void) : m_cRef(1)
@@ -736,13 +736,13 @@ MUX_RESULT CLog::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CLog::AddRef(void)
+uint32_t CLog::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CLog::Release(void)
+uint32_t CLog::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -838,13 +838,13 @@ MUX_RESULT CLogFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CLogFactory::AddRef(void)
+uint32_t CLogFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CLogFactory::Release(void)
+uint32_t CLogFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

@@ -34,7 +34,7 @@ void MUX_SHA1_Init(MUX_SHA_CTX *p)
 static void MUX_SHA1_HashBlock(MUX_SHA_CTX *p)
 {
     int t;
-    UINT32 W[80];
+    uint32_t W[80];
 
     // Prepare Message Schedule, {W sub t}.
     //
@@ -51,13 +51,13 @@ static void MUX_SHA1_HashBlock(MUX_SHA_CTX *p)
         W[t] = ROTL(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
     }
 
-    UINT32 a = p->H[0];
-    UINT32 b = p->H[1];
-    UINT32 c = p->H[2];
-    UINT32 d = p->H[3];
-    UINT32 e = p->H[4];
+    uint32_t a = p->H[0];
+    uint32_t b = p->H[1];
+    uint32_t c = p->H[2];
+    uint32_t d = p->H[3];
+    uint32_t e = p->H[4];
 
-    UINT32 T;
+    uint32_t T;
     for (t =  0; t <= 19; t++)
     {
         T = ROTL(a,5) + Ch(b,c,d) + e + 0x5A827999 + W[t];
@@ -125,40 +125,40 @@ void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n)
     }
 }
 
-void MUX_SHA1_Final(UINT8 md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
+void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
 {
     p->block[p->nblock++] = 0x80;
-    if (sizeof(p->block) - sizeof(UINT64) < p->nblock)
+    if (sizeof(p->block) - sizeof(uint64_t) < p->nblock)
     {
         memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock);
         MUX_SHA1_HashBlock(p);
-        memset(p->block, 0, sizeof(p->block) - sizeof(UINT64));
+        memset(p->block, 0, sizeof(p->block) - sizeof(uint64_t));
     }
     else
     {
-        memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock - sizeof(UINT64));
+        memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock - sizeof(uint64_t));
     }
     p->nTotal *= 8;
 
-    p->block[sizeof(p->block) - 8] = static_cast<UINT8>((p->nTotal >> 56) & 0xFF);
-    p->block[sizeof(p->block) - 7] = static_cast<UINT8>((p->nTotal >> 48) & 0xFF);
-    p->block[sizeof(p->block) - 6] = static_cast<UINT8>((p->nTotal >> 40) & 0xFF);
-    p->block[sizeof(p->block) - 5] = static_cast<UINT8>((p->nTotal >> 32) & 0xFF);
-    p->block[sizeof(p->block) - 4] = static_cast<UINT8>((p->nTotal >> 24) & 0xFF);
-    p->block[sizeof(p->block) - 3] = static_cast<UINT8>((p->nTotal >> 16) & 0xFF);
-    p->block[sizeof(p->block) - 2] = static_cast<UINT8>((p->nTotal >>  8) & 0xFF);
-    p->block[sizeof(p->block) - 1] = static_cast<UINT8>((p->nTotal      ) & 0xFF);
+    p->block[sizeof(p->block) - 8] = static_cast<uint8_t>((p->nTotal >> 56) & 0xFF);
+    p->block[sizeof(p->block) - 7] = static_cast<uint8_t>((p->nTotal >> 48) & 0xFF);
+    p->block[sizeof(p->block) - 6] = static_cast<uint8_t>((p->nTotal >> 40) & 0xFF);
+    p->block[sizeof(p->block) - 5] = static_cast<uint8_t>((p->nTotal >> 32) & 0xFF);
+    p->block[sizeof(p->block) - 4] = static_cast<uint8_t>((p->nTotal >> 24) & 0xFF);
+    p->block[sizeof(p->block) - 3] = static_cast<uint8_t>((p->nTotal >> 16) & 0xFF);
+    p->block[sizeof(p->block) - 2] = static_cast<uint8_t>((p->nTotal >>  8) & 0xFF);
+    p->block[sizeof(p->block) - 1] = static_cast<uint8_t>((p->nTotal      ) & 0xFF);
     MUX_SHA1_HashBlock(p);
 
-    // Serialize 5 UINT32 to 20 UINT8 in big-endian order.
+    // Serialize 5 uint32_t to 20 uint8_t in big-endian order.
     //
-    for (int i = 0, j = 0; i <= 4; i++, j += sizeof(UINT32))
+    for (int i = 0, j = 0; i <= 4; i++, j += sizeof(uint32_t))
     {
-        UINT32 h = p->H[i];
-        md[j + 0] = (UINT8)(h >> 24);
-        md[j + 1] = (UINT8)(h >> 16);
-        md[j + 2] = (UINT8)(h >>  8);
-        md[j + 3] = (UINT8)(h      );
+        uint32_t h = p->H[i];
+        md[j + 0] = (uint8_t)(h >> 24);
+        md[j + 1] = (uint8_t)(h >> 16);
+        md[j + 2] = (uint8_t)(h >>  8);
+        md[j + 3] = (uint8_t)(h      );
     }
 }
 

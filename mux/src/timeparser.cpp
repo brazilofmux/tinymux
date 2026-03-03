@@ -1531,7 +1531,7 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
         {
             return false;
         }
-        INT64 i64 = lta.Return100ns();
+        int64_t i64 = lta.Return100ns();
         int64_t j64;
         i64FloorDivisionMod(i64+FACTOR_100NS_PER_DAY, FACTOR_100NS_PER_WEEK, &j64);
         i64 -= j64;

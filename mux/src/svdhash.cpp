@@ -20,7 +20,7 @@ int cs_dbwrites = 0;    // total write-throughs
 int cs_whits    = 0;    // writes into cached pages
 int cs_rhits    = 0;    // read from cached pages
 
-static const UINT32 CRC32_Table[256] =
+static const uint32_t CRC32_Table[256] =
 {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
     0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
@@ -91,47 +91,47 @@ static const UINT32 CRC32_Table[256] =
 // Portable CRC-32 routine. These slower routines are less compiler and
 // platform dependent and still get the job done.
 //
-UINT32 CRC32_ProcessBuffer
+uint32_t CRC32_ProcessBuffer
 (
-    UINT32         ulCrc,
+    uint32_t         ulCrc,
     const void    *arg_pBuffer,
     size_t         nBuffer
 )
 {
-    UINT8 *pBuffer = (UINT8 *)arg_pBuffer;
+    uint8_t *pBuffer = (uint8_t *)arg_pBuffer;
 
     ulCrc = ~ulCrc;
     while (nBuffer--)
     {
-        ulCrc  = CRC32_Table[((UINT8)*pBuffer++) ^ (UINT8)ulCrc] ^ (ulCrc >> 8);
+        ulCrc  = CRC32_Table[((uint8_t)*pBuffer++) ^ (uint8_t)ulCrc] ^ (ulCrc >> 8);
     }
     return ~ulCrc;
 }
 
-UINT32 CRC32_ProcessInteger(UINT32 nInteger)
+uint32_t CRC32_ProcessInteger(uint32_t nInteger)
 {
-    UINT32 ulCrc;
+    uint32_t ulCrc;
     ulCrc  = ~nInteger;
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
-UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
+uint32_t CRC32_ProcessInteger2(uint32_t nInteger1, uint32_t nInteger2)
 {
-    UINT32 ulCrc;
+    uint32_t ulCrc;
     ulCrc  = ~nInteger1;
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
     ulCrc ^= nInteger2;
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
@@ -168,14 +168,14 @@ UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
  * \return             Resulting hash value.
  */
 
-UINT32 HASH_ProcessBuffer
+uint32_t HASH_ProcessBuffer
 (
-    UINT32       ulHash,
+    uint32_t       ulHash,
     const void  *arg_pBuffer,
     size_t       nBuffer
 )
 {
-    UINT8 *pBuffer = (UINT8 *)arg_pBuffer;
+    uint8_t *pBuffer = (uint8_t *)arg_pBuffer;
     ulHash = ~ulHash;
 
     if (nBuffer <= 16)
@@ -183,47 +183,47 @@ UINT32 HASH_ProcessBuffer
         pBuffer -= 16 - nBuffer;
         switch (nBuffer)
         {
-        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 8:  ulHash ^= *(UINT32 *)(pBuffer + 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash ^= *(UINT32 *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        case 8:  ulHash ^= *(uint32_t *)(pBuffer + 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash ^= *(uint32_t *)(pBuffer + 12);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
 #endif
 
-        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        case 4:  ulHash ^= *(uint32_t *)(pBuffer + 12);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
 #endif
 
-        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (UINT8)ulHash] ^ (ulHash >> 8);
-        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
         case 0:  return ~ulHash;
         }
     }
@@ -232,8 +232,8 @@ UINT32 HASH_ProcessBuffer
     size_t nMedium = (nBuffer >> 4) & 255;
     size_t nLarge  = nBuffer >> 12;
 
-    UINT32 s1 = ulHash & 0xFFFF;
-    UINT32 s2 = (ulHash >> 16) & 0xFFFF;
+    uint32_t s1 = ulHash & 0xFFFF;
+    uint32_t s2 = (ulHash >> 16) & 0xFFFF;
 
     while (nLarge--)
     {
@@ -245,15 +245,15 @@ UINT32 HASH_ProcessBuffer
             k--;
         }
         ulHash  = ~s1;
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
         ulHash ^= s2;
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
         ulHash = ~ulHash;
         s1 = ulHash & 0xFFFF;
         s2 = (ulHash >> 16) & 0xFFFF;
@@ -287,21 +287,21 @@ UINT32 HASH_ProcessBuffer
     }
 
     ulHash  = ~s1;
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
     ulHash ^= s2;
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
     return ~ulHash;
 }
 
-UINT32 munge_hash(const UTF8 *pBuffer)
+uint32_t munge_hash(const UTF8 *pBuffer)
 {
-    UINT32 h = 0;
+    uint32_t h = 0;
     while (*pBuffer)
     {
         h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
@@ -392,7 +392,7 @@ static void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
     }
 }
 
-static const UINT32 anGroupMask[33] =
+static const uint32_t anGroupMask[33] =
 {
     0x00000000U,
     0x80000000U, 0xC0000000U, 0xE0000000U, 0xF0000000U,
@@ -447,15 +447,15 @@ void CHashPage::GetStats
     HP_HEAPLENGTH nExtra,
     int *pnRecords,
     HP_HEAPLENGTH *pnAllocatedSize,
-    UINT32        *pnGoodDirSize
+    uint32_t        *pnGoodDirSize
 )
 {
-    UINT32  nSize  = 0;
-    UINT32  nCount = 0;
+    uint32_t  nSize  = 0;
+    uint32_t  nCount = 0;
 
     // Count and measure all the records in this page.
     //
-    for (UINT32 iDir = 0; iDir < m_pHeader->m_nDirSize; iDir++)
+    for (uint32_t iDir = 0; iDir < m_pHeader->m_nDirSize; iDir++)
     {
         if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
         {
@@ -477,15 +477,15 @@ void CHashPage::GetStats
     // If we have records to talk about, or even if we are trying to reserve
     // space, then do the math.
     //
-    UINT32 nGoodDirSize = 100;
+    uint32_t nGoodDirSize = 100;
     if (  nExtra != 0
        || nCount != 0)
     {
         size_t nSpaceTmp   = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
-        mux_assert(nSpaceTmp <= UINT32_MAX_VALUE);
-        UINT32 nSpace      = static_cast<UINT32>(nSpaceTmp);
-        UINT32 nMinDirSize = nCount;
-        UINT32 nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
+        mux_assert(nSpaceTmp <= UINT32_MAX);
+        uint32_t nSpace      = static_cast<uint32_t>(nSpaceTmp);
+        uint32_t nMinDirSize = nCount;
+        uint32_t nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
 
         if (nExtra)
         {
@@ -500,8 +500,8 @@ void CHashPage::GetStats
         }
 
 #define FILL_FACTOR 1
-        UINT32 nAverageSize = (nSize + nCount/2)/nCount;
-        UINT32 nHeapGoal = (nSpace * nAverageSize)/(nAverageSize + sizeof(HP_HEAPOFFSET) + FILL_FACTOR);
+        uint32_t nAverageSize = (nSize + nCount/2)/nCount;
+        uint32_t nHeapGoal = (nSpace * nAverageSize)/(nAverageSize + sizeof(HP_HEAPOFFSET) + FILL_FACTOR);
         nGoodDirSize = (nSpace - nHeapGoal + sizeof(HP_HEAPOFFSET)/2)/sizeof(HP_HEAPOFFSET);
         if (nGoodDirSize < nMinDirSize)
         {
@@ -523,7 +523,7 @@ void CHashPage::SetFixedPointers(void)
     m_pTrailer = (HP_PTRAILER)(m_pPage + m_nPageSize - sizeof(HP_TRAILER));
 }
 
-void CHashPage::Empty(UINT32 arg_nDepth, UINT32 arg_nHashGroup, UINT32 arg_nDirSize)
+void CHashPage::Empty(uint32_t arg_nDepth, uint32_t arg_nHashGroup, uint32_t arg_nDirSize)
 {
     memset(m_pPage, 0, m_nPageSize);
 
@@ -537,7 +537,7 @@ void CHashPage::Empty(UINT32 arg_nDepth, UINT32 arg_nHashGroup, UINT32 arg_nDirS
     if (arg_nDirSize > 0)
     {
         ChoosePrimes(arg_nDirSize, m_pHeader->m_Primes);
-        for (UINT32 iDir = 0; iDir < arg_nDirSize; iDir++)
+        for (uint32_t iDir = 0; iDir < arg_nDirSize; iDir++)
         {
             m_pDirectory[iDir] = HP_DIR_EMPTY;
         }
@@ -555,13 +555,13 @@ void CHashPage::Empty(UINT32 arg_nDepth, UINT32 arg_nHashGroup, UINT32 arg_nDirS
 #ifdef HP_PROTECTION
 void CHashPage::Protection(void)
 {
-    UINT32 ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
+    uint32_t ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
     m_pTrailer->m_checksum = ul;
 }
 
 bool CHashPage::Validate(void)
 {
-    UINT32 ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
+    uint32_t ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
     if (ul != m_pTrailer->m_checksum)
     {
         return false;
@@ -574,7 +574,7 @@ bool CHashPage::Validate(void)
 // This function validates a block associated with a particular
 // Dir entry and blows that entry away if it's suspect.
 //
-bool CHashPage::ValidateAllocatedBlock(UINT32 iDir)
+bool CHashPage::ValidateAllocatedBlock(uint32_t iDir)
 {
     if (iDir >= m_pHeader->m_nDirSize)
     {
@@ -688,7 +688,7 @@ bool CHashPage::ValidateFreeList(void)
 
 // Insert - Inserts a new record if there is room.
 //
-int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+int CHashPage::Insert(HP_HEAPLENGTH nRecord, uint32_t nHash, void *pRecord)
 {
     int ret = HP_INSERT_SUCCESS;
     m_pHeader->m_nTotalInsert++;
@@ -697,7 +697,7 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #ifdef HP_PROTECTION
         // First, is this page dealing with keys like this at all?
         //
-        UINT32 nDepth = m_pHeader->m_nDepth;
+        uint32_t nDepth = m_pHeader->m_nDepth;
         if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
         {
             Log.WriteString("CHashPage::Insert - Inserting into the wrong page." ENDLINE);
@@ -707,8 +707,8 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         // Where do we begin our first probe?
         //
-        UINT32 di   = m_pHeader->m_Primes[nHash & 15];
-        UINT32 iDir = (nHash >> 4) % (m_pHeader->m_nDirSize);
+        uint32_t di   = m_pHeader->m_Primes[nHash & 15];
+        uint32_t iDir = (nHash >> 4) % (m_pHeader->m_nDirSize);
         m_nProbesLeft = m_pHeader->m_nDirSize;
         while (m_nProbesLeft-- && (m_pDirectory[iDir] < HP_DIR_DELETED))
         {
@@ -751,24 +751,24 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 //        iDir == HP_DIR_EMPTY to interate through all the records with the
 //        desired hash key.
 //
-UINT32 CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
+uint32_t CHashPage::FindFirstKey(uint32_t nHash, unsigned int *numchecks)
 {
 #ifdef HP_PROTECTION
     // First, is this page dealing with keys like this at all?
     //
-    UINT32 nDepth = m_pHeader->m_nDepth;
+    uint32_t nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
     {
         return HP_DIR_EMPTY;
     }
 #endif // HP_PROTECTION
 
-    const UINT32 nDirSize = m_pHeader->m_nDirSize;
+    const uint32_t nDirSize = m_pHeader->m_nDirSize;
 
     // Where do we begin our first probe?
     //
-    UINT32 iDir = (nHash >> 4) % nDirSize;
-    UINT32 sOffset = m_pDirectory[iDir];
+    uint32_t iDir = (nHash >> 4) % nDirSize;
+    uint32_t sOffset = m_pDirectory[iDir];
     if (sOffset < HP_DIR_DELETED)
     {
         HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + sOffset);
@@ -790,7 +790,7 @@ UINT32 CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
     // || pNode->u.s.nHash != nHash
 
     m_nProbesLeft = nDirSize - 1;
-    UINT32 di = m_pHeader->m_Primes[nHash & 15];
+    uint32_t di = m_pHeader->m_Primes[nHash & 15];
 
     iDir += di;
     if (iDir >= nDirSize)
@@ -829,26 +829,26 @@ UINT32 CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
 //        directory index or HP_DIR_EMPTY if no hash keys are found.
 //
 //
-UINT32 CHashPage::FindNextKey(UINT32 iDir, UINT32 nHash, unsigned int *numchecks)
+uint32_t CHashPage::FindNextKey(uint32_t iDir, uint32_t nHash, unsigned int *numchecks)
 {
     *numchecks = 0;
 
 #ifdef HP_PROTECTION
     // First, is this page dealing with keys like this at all?
     //
-    UINT32 nDepth = m_pHeader->m_nDepth;
+    uint32_t nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
     {
         return HP_DIR_EMPTY;
     }
 #endif // HP_PROTECTION
 
-    UINT32 nDirSize = m_pHeader->m_nDirSize;
+    uint32_t nDirSize = m_pHeader->m_nDirSize;
 
     // Where do we begin our first probe? If this is the first call, i will be HP_DIR_EMPTY.
     // On calls after that, it will be what we returned on the previous call.
     //
-    UINT32 di = m_pHeader->m_Primes[nHash & 15];
+    uint32_t di = m_pHeader->m_Primes[nHash & 15];
     iDir += di;
     if (iDir >= nDirSize)
     {
@@ -881,7 +881,7 @@ UINT32 CHashPage::FindNextKey(UINT32 iDir, UINT32 nHash, unsigned int *numchecks
 // HeapAlloc - Return true if there was enough room to copy the record into the heap, otherwise,
 //             it returns false.
 //
-bool CHashPage::HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+bool CHashPage::HeapAlloc(uint32_t iDir, HP_HEAPLENGTH nRecord, uint32_t nHash, void *pRecord)
 {
     //ValidateFreeList();
     if (m_pDirectory[iDir] < HP_DIR_DELETED)
@@ -911,7 +911,7 @@ bool CHashPage::HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void
             //
             // Do we cut it into two blocks or take the whole thing?
             //
-            UINT32 nNewBlockSize = pNode->nBlockSize - nRequired;
+            uint32_t nNewBlockSize = pNode->nBlockSize - nRequired;
             if (nNewBlockSize >= EXPAND_TO_BOUNDARY(HP_MIN_HEAP_ALLOC+1))
             {
                 // There is enough for leftovers, split it.
@@ -955,7 +955,7 @@ bool CHashPage::HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void
 // HeapFree - Returns to the heap the space for the record associated with iDir. It
 //            always succeeds even if there wasn't a record there to delete.
 //
-void CHashPage::HeapFree(UINT32 iDir)
+void CHashPage::HeapFree(uint32_t iDir)
 {
     //ValidateFreeList();
     if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
@@ -979,7 +979,7 @@ void CHashPage::HeapFree(UINT32 iDir)
     }
 }
 
-void CHashPage::HeapCopy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashPage::HeapCopy(uint32_t iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     if (pnRecord == 0 || pRecord == 0) return;
 
@@ -994,7 +994,7 @@ void CHashPage::HeapCopy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
     }
 }
 
-void CHashPage::HeapUpdate(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord)
+void CHashPage::HeapUpdate(uint32_t iDir, HP_HEAPLENGTH nRecord, void *pRecord)
 {
     if (nRecord == 0 || pRecord == 0) return;
 
@@ -1013,7 +1013,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     //
     int           nRecords;
     HP_HEAPLENGTH nAllocatedSize;
-    UINT32        nGoodDirSize;
+    uint32_t        nGoodDirSize;
     GetStats(0, &nRecords, &nAllocatedSize, &nGoodDirSize);
     if (nRecords == 0)
     {
@@ -1023,10 +1023,10 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
 
     // Initialize that type of HashPage and copy records over.
     //
-    UINT32 nNewDepth = m_pHeader->m_nDepth + 1;
-    UINT32 nBitMask = 1 << (32-nNewDepth);
-    UINT32 nHashGroup0 = m_pHeader->m_nHashGroup & (~nBitMask);
-    UINT32 nHashGroup1 = nHashGroup0 | nBitMask;
+    uint32_t nNewDepth = m_pHeader->m_nDepth + 1;
+    uint32_t nBitMask = 1 << (32-nNewDepth);
+    uint32_t nHashGroup0 = m_pHeader->m_nHashGroup & (~nBitMask);
+    uint32_t nHashGroup1 = nHashGroup0 | nBitMask;
     hp0.Empty(nNewDepth, nHashGroup0, nGoodDirSize);
     hp1.Empty(nNewDepth, nHashGroup1, nGoodDirSize);
     for (int iDir = 0; iDir < m_pHeader->m_nDirSize; iDir++)
@@ -1034,7 +1034,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
         if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
         {
             HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + m_pDirectory[iDir]);
-            UINT32 nHash = pNode->u.s.nHash;
+            uint32_t nHash = pNode->u.s.nHash;
             if ((nHash & anGroupMask[nNewDepth]) == (nHashGroup0 & anGroupMask[nNewDepth]))
             {
                 if (!IS_HP_SUCCESS(hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
@@ -1063,18 +1063,18 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
 
 void CHashPage::GetRange
 (
-    UINT32 arg_nDirDepth,
-    UINT32 &nStart,
-    UINT32 &nEnd
+    uint32_t arg_nDirDepth,
+    uint32_t &nStart,
+    uint32_t &nEnd
 )
 {
-    UINT32 nBase = 0;
+    uint32_t nBase = 0;
     int nShift = 32 - arg_nDirDepth;
     if (arg_nDirDepth > 0)
     {
         nBase = m_pHeader->m_nHashGroup >> nShift;
     }
-    UINT32 ulMask = anGroupMask[nShift + m_pHeader->m_nDepth];
+    uint32_t ulMask = anGroupMask[nShift + m_pHeader->m_nDepth];
     nStart = nBase & ulMask;
     nEnd   = nBase | ~ulMask;
 }
@@ -1095,7 +1095,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         DWORD nWritten;
         if (!WriteFile(hFile, m_pPage, m_nPageSize, &nWritten, 0) || nWritten != m_nPageSize)
         {
-            UINT32 cc = GetLastError();
+            uint32_t cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
                 Log.tinyprintf(T("CHashPage::Write - WriteFile error %u." ENDLINE), cc);
@@ -1120,7 +1120,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         DWORD nRead;
         if (!ReadFile(hFile, m_pPage, m_nPageSize, &nRead, 0) || nRead != m_nPageSize)
         {
-            UINT32 cc = GetLastError();
+            uint32_t cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
                 Log.tinyprintf(T("CHashPage::Read - ReadFile error %u." ENDLINE), cc);
@@ -1216,7 +1216,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 
 #endif // MEMORY_BASED
 
-UINT32 CHashPage::GetDepth(void)
+uint32_t CHashPage::GetDepth(void)
 {
     return m_pHeader->m_nDepth;
 }
@@ -1239,7 +1239,7 @@ bool CHashPage::Defrag(HP_HEAPLENGTH nExtra)
     //
     int           nRecords;
     HP_HEAPLENGTH nAllocatedSize;
-    UINT32        nGoodDirSize;
+    uint32_t        nGoodDirSize;
     GetStats(nExtra, &nRecords, &nAllocatedSize, &nGoodDirSize);
 
     // Initialize that type of HashPage and copy records over.
@@ -1282,7 +1282,7 @@ void CHashPage::SetVariablePointers(void)
     m_nDirEmptyTrigger = (m_pHeader->m_nDirSize)/7;
 }
 
-UINT32 CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
+uint32_t CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     for (m_iDir = 0; m_iDir < m_pHeader->m_nDirSize; m_iDir++)
     {
@@ -1297,7 +1297,7 @@ UINT32 CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HP_DIR_EMPTY;
 }
 
-UINT32 CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
+uint32_t CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     for (m_iDir++; m_iDir < m_pHeader->m_nDirSize; m_iDir++)
     {
@@ -1533,7 +1533,7 @@ bool CHashFile::RebuildDirectory(void)
 
     // Re-build the directory from CHashPages.
     //
-    for (UINT32 oPage = 0; oPage < oEndOfFile; oPage += HF_SIZEOF_PAGE)
+    for (uint32_t oPage = 0; oPage < oEndOfFile; oPage += HF_SIZEOF_PAGE)
     {
         int iCache;
         if ((iCache = AllocateEmptyPage(0, nullptr)) < 0)
@@ -1553,7 +1553,7 @@ bool CHashFile::RebuildDirectory(void)
             Log.WriteString(T("CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE));
         }
 
-        UINT32 nPageDepth = m_Cache[iCache].m_hp.GetDepth();
+        uint32_t nPageDepth = m_Cache[iCache].m_hp.GetDepth();
         while (m_nDirDepth < nPageDepth)
         {
             if (!DoubleDirectory())
@@ -1561,7 +1561,7 @@ bool CHashFile::RebuildDirectory(void)
                 return false;
             }
         }
-        UINT32 nStart, nEnd;
+        uint32_t nStart, nEnd;
         m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
         for ( ; nStart <= nEnd; nStart++)
         {
@@ -1577,7 +1577,7 @@ bool CHashFile::RebuildDirectory(void)
 
     // Validate that the directory does not have holes.
     //
-    for (UINT32 iFileDir = 0; iFileDir < m_nDir; iFileDir++)
+    for (uint32_t iFileDir = 0; iFileDir < m_nDir; iFileDir++)
     {
         if (m_pDir[iFileDir] == 0xFFFFFFFFUL)
         {
@@ -1592,9 +1592,9 @@ bool CHashFile::RebuildDirectory(void)
 bool CHashFile::ReadDirectory(void)
 {
 #if defined(WINDOWS_FILES)
-    UINT32 cc = SetFilePointer(m_hDirFile, 0, 0, FILE_END);
+    uint32_t cc = SetFilePointer(m_hDirFile, 0, 0, FILE_END);
 #elif defined(UNIX_FILES)
-    UINT32 cc = mux_lseek(m_hDirFile, 0, SEEK_END);
+    uint32_t cc = mux_lseek(m_hDirFile, 0, SEEK_END);
 #endif // UNIX_FILES
     if (cc == 0xFFFFFFFFUL)
     {
@@ -1882,12 +1882,12 @@ CHashFile::~CHashFile(void)
     CloseAll();
 }
 
-bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+bool CHashFile::Insert(HP_HEAPLENGTH nRecord, uint32_t nHash, void *pRecord)
 {
     cs_writes++;
     for (;;)
     {
-        UINT32 iFileDir = nHash >> (32-m_nDirDepth);
+        uint32_t iFileDir = nHash >> (32-m_nDirDepth);
         if (iFileDir >= m_nDir)
         {
             Log.WriteString(T("CHashFile::Insert - iFileDir out of range." ENDLINE));
@@ -1900,7 +1900,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             return false;
         }
 
-        UINT32 nStart, nEnd;
+        uint32_t nStart, nEnd;
         m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
         if (iFileDir < nStart || nEnd < iFileDir)
         {
@@ -2066,7 +2066,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 bool CHashFile::DoubleDirectory(void)
 {
     unsigned int nNewDir     = 2 * m_nDir;
-    UINT32       nNewDirDepth = m_nDirDepth + 1;
+    uint32_t       nNewDirDepth = m_nDirDepth + 1;
 
 
     HF_PFILEOFFSET pNewDir = nullptr;
@@ -2129,11 +2129,11 @@ bool CHashFile::DoubleDirectory(void)
     return true;
 }
 
-UINT32 CHashFile::FindFirstKey(UINT32 nHash)
+uint32_t CHashFile::FindFirstKey(uint32_t nHash)
 {
     cs_reads++;
 
-    UINT32 iFileDir = nHash >> (32-m_nDirDepth);
+    uint32_t iFileDir = nHash >> (32-m_nDirDepth);
     if (iFileDir >= m_nDir)
     {
         Log.WriteString(T("CHashFile::Insert - iFileDir out of range." ENDLINE));
@@ -2146,7 +2146,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
         cs_fails++;
         return HF_FIND_END;
     }
-    UINT32 nStart, nEnd;
+    uint32_t nStart, nEnd;
     m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
     if (iFileDir < nStart || nEnd < iFileDir)
     {
@@ -2156,7 +2156,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
     }
 
     unsigned int numchecks;
-    UINT32 iDir = m_Cache[iCache].m_hp.FindFirstKey(nHash, &numchecks);
+    uint32_t iDir = m_Cache[iCache].m_hp.FindFirstKey(nHash, &numchecks);
 
     if (iDir == HP_DIR_EMPTY)
     {
@@ -2166,7 +2166,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
     return iDir;
 }
 
-UINT32 CHashFile::FindNextKey(UINT32 iDir, UINT32 nHash)
+uint32_t CHashFile::FindNextKey(uint32_t iDir, uint32_t nHash)
 {
     cs_reads++;
 
@@ -2182,12 +2182,12 @@ UINT32 CHashFile::FindNextKey(UINT32 iDir, UINT32 nHash)
     return iDir;
 }
 
-void CHashFile::Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashFile::Copy(uint32_t iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_Cache[iCache].m_hp.HeapCopy(iDir, pnRecord, pRecord);
 }
 
-void CHashFile::Remove(UINT32 iDir)
+void CHashFile::Remove(uint32_t iDir)
 {
     cs_dels++;
     m_Cache[iCache].m_hp.HeapFree(iDir);
@@ -2240,7 +2240,7 @@ int CHashFile::AllocateEmptyPage(int nSafe, int Safe[])
         {
             if (HF_CACHE_EMPTY != m_Cache[i].m_iState)
             {
-                UINT32 nStart, nEnd;
+                uint32_t nStart, nEnd;
                 m_Cache[i].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
                 for ( ; nStart <= nEnd; nStart++)
                 {
@@ -2319,7 +2319,7 @@ void CHashFile::Tick(void)
     }
 }
 
-int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
+int CHashFile::ReadCache(uint32_t iFileDir, int *phits)
 {
     int iCache = m_hpCacheLookup[iFileDir];
     HF_FILEOFFSET oPage = m_pDir[iFileDir];
@@ -2343,7 +2343,7 @@ int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
                 m_Cache[iCache].m_iState = HF_CACHE_CLEAN;
                 ResetAge(iCache);
 
-                UINT32 nStart, nEnd;
+                uint32_t nStart, nEnd;
                 m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
                 for ( ; nStart <= nEnd; nStart++)
                 {
@@ -2383,7 +2383,7 @@ void CHashTable::Init(void)
     m_nChecks = 0;
     m_nMaxScan = 0;
 
-    UINT32 nDirRequest = 2;
+    uint32_t nDirRequest = 2;
     try
     {
         m_pDir = new pCHashPage[nDirRequest];
@@ -2430,11 +2430,11 @@ void CHashTable::ResetStats(void)
     m_nChecks = 0;
 }
 
-bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
+bool CHashTable::Insert(HP_HEAPLENGTH nRecord, uint32_t  nHash, void *pRecord)
 {
     for (;;)
     {
-        UINT32  iTableDir = nHash >> (32 - m_nDirDepth);
+        uint32_t  iTableDir = nHash >> (32 - m_nDirDepth);
 #ifdef HP_PROTECTION
         if (iTableDir >= m_nDir)
         {
@@ -2448,7 +2448,7 @@ bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
             Log.WriteString(T("CHashTable::Insert - Page wasn\xE2\x80\x99t valid." ENDLINE));
             return false;
         }
-        UINT32  nStart, nEnd;
+        uint32_t  nStart, nEnd;
 #ifdef HP_PROTECTION
         m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
         if (iTableDir < nStart || nEnd < iTableDir)
@@ -2560,10 +2560,10 @@ bool CHashTable::DoubleDirectory(void)
     return false;
 }
 
-UINT32 CHashTable::FindFirstKey(UINT32  nHash)
+uint32_t CHashTable::FindFirstKey(uint32_t  nHash)
 {
     m_nScans++;
-    UINT32  iTableDir = nHash >> (32-m_nDirDepth);
+    uint32_t  iTableDir = nHash >> (32-m_nDirDepth);
 #ifdef HP_PROTECTION
     if (iTableDir >= m_nDir)
     {
@@ -2578,7 +2578,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
         return HF_FIND_END;
     }
 #ifdef HP_PROTECTION
-    UINT32  nStart, nEnd;
+    uint32_t  nStart, nEnd;
     m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
     if (iTableDir < nStart || nEnd < iTableDir)
     {
@@ -2588,7 +2588,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
 #endif // HP_PROTECTION
     unsigned int numchecks;
 
-    UINT32 iDir = m_hpLast->FindFirstKey(nHash, &numchecks);
+    uint32_t iDir = m_hpLast->FindFirstKey(nHash, &numchecks);
 
     m_nChecks += numchecks;
     if (numchecks > m_nMaxScan)
@@ -2603,7 +2603,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
     return iDir;
 }
 
-UINT32 CHashTable::FindNextKey(UINT32 iDir, UINT32  nHash)
+uint32_t CHashTable::FindNextKey(uint32_t iDir, uint32_t  nHash)
 {
     m_nScans++;
     unsigned int numchecks;
@@ -2623,19 +2623,19 @@ UINT32 CHashTable::FindNextKey(UINT32 iDir, UINT32  nHash)
     return iDir;
 }
 
-void CHashTable::Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashTable::Copy(uint32_t iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_hpLast->HeapCopy(iDir, pnRecord, pRecord);
 }
 
-void CHashTable::Remove(UINT32 iDir)
+void CHashTable::Remove(uint32_t iDir)
 {
     m_nEntries--;
     m_nDeletions++;
     m_hpLast->HeapFree(iDir);
 }
 
-void CHashTable::Update(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord)
+void CHashTable::Update(uint32_t iDir, HP_HEAPLENGTH nRecord, void *pRecord)
 {
     m_hpLast->HeapUpdate(iDir, nRecord, pRecord);
 }
@@ -2671,7 +2671,7 @@ void CHashTable::Reset(void)
     Init();
 }
 
-UINT32 CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
+uint32_t CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_hpLast = 0;
     for (m_iPage = 0; m_iPage < m_nDir; m_iPage++)
@@ -2680,7 +2680,7 @@ UINT32 CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
         m_hpLast = m_pDir[m_iPage];
         if (m_hpLast)
         {
-            UINT32 iDir = m_hpLast->FindFirst(pnRecord, pRecord);
+            uint32_t iDir = m_hpLast->FindFirst(pnRecord, pRecord);
             if (iDir != HP_DIR_EMPTY)
             {
                 return iDir;
@@ -2690,11 +2690,11 @@ UINT32 CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HF_FIND_END;
 }
 
-UINT32 CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
+uint32_t CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     if (m_hpLast)
     {
-        UINT32 iDir = m_hpLast->FindNext(pnRecord, pRecord);
+        uint32_t iDir = m_hpLast->FindNext(pnRecord, pRecord);
         if (iDir != HP_DIR_EMPTY)
         {
             return iDir;
@@ -2711,7 +2711,7 @@ UINT32 CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
         m_hpLast = m_pDir[m_iPage];
         if (m_hpLast)
         {
-            UINT32 iDir = m_hpLast->FindFirst(pnRecord, pRecord);
+            uint32_t iDir = m_hpLast->FindFirst(pnRecord, pRecord);
             if (iDir != HP_DIR_EMPTY)
             {
                 return iDir;
@@ -2730,10 +2730,10 @@ void CHashTable::GetStats
 (
     unsigned int *hashsize,
     int *entries,
-    INT64 *deletes,
-    INT64 *scans,
-    INT64 *hits,
-    INT64 *checks,
+    int64_t *deletes,
+    int64_t *scans,
+    int64_t *hits,
+    int64_t *checks,
     int *max_scan
 )
 {

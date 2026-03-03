@@ -74,6 +74,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <cstdint>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -320,15 +321,6 @@ typedef char  boolexp_type;
 #define DCL_EXPORT __declspec(dllexport)
 #define DCL_API    __stdcall
 
-typedef __int64          INT64;
-typedef unsigned __int64 UINT64;
-#ifndef INT64_C
-#define INT64_C(c)       (c ## i64)
-#endif // INT64_C
-#ifndef UINT64_C
-#define UINT64_C(c)      (c ## ui64)
-#endif // UINT64_C
-
 #define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
 // 1600 is Visual C++ 10.0 (2010)
@@ -375,15 +367,6 @@ typedef unsigned __int64 UINT64;
 #endif // O_BINARY
 typedef int HANDLE;
 
-typedef long long          INT64;
-typedef unsigned long long UINT64;
-#ifndef INT64_C
-#define INT64_C(c)       (c ## ll)
-#endif // INT64_C
-#ifndef UINT64_C
-#define UINT64_C(c)      (c ## ull)
-#endif
-
 #define mux_tzset   tzset
 #define mux_getpid  getpid
 #define mux_close   close
@@ -396,123 +379,42 @@ typedef unsigned long long UINT64;
 #endif // WIN32
 
 
-#define INT64_MAX_VALUE  INT64_C(9223372036854775807)
-#define INT64_MIN_VALUE  (INT64_C(-9223372036854775807) - 1)
-#define UINT64_MAX_VALUE UINT64_C(0xffffffffffffffff)
-
 #define isTRUE(x) ((x) != 0)
 
-// Find the minimum-sized integer type that will hold 32-bits.
-// Promote to 64-bits if necessary.
-//
-#if SIZEOF_INT == 4
-typedef int              INT32;
-typedef unsigned int     UINT32;
 #define I32BUF_SIZE LONGEST_I32
 #ifdef CAN_UNALIGN_INT
 #define UNALIGNED32
 #endif
-#elif SIZEOF_LONG == 4
-typedef long             INT32;
-typedef unsigned long    UINT32;
-#define I32BUF_SIZE LONGEST_I32
-#ifdef CAN_UNALIGN_LONG
-#define UNALIGNED32
-#endif
-#elif SIZEOF_SHORT == 4
-typedef short            INT32;
-typedef unsigned short   UINT32;
-#define I32BUF_SIZE LONGEST_I32
-#ifdef CAN_UNALIGN_SHORT
-#define UNALIGNED32
-#endif
-#else
-typedef INT64            INT32;
-typedef UINT64           UINT32;
-#define I32BUF_SIZE LONGEST_I64
-#ifdef CAN_UNALIGN_LONGLONG
-#define UNALIGNED32
-#endif
-#endif // SIZEOF INT32
-#define INT32_MIN_VALUE  (-2147483647 - 1)
-#define INT32_MAX_VALUE  2147483647
-#define UINT32_MAX_VALUE 0xFFFFFFFFU
 
-// Find the minimum-sized integer type that will hold 16-bits.
-// Promote to 32-bits if necessary.
-//
-#if SIZEOF_INT == 2
-typedef int              INT16;
-typedef unsigned int     UINT16;
-#define I16BUF_SIZE LONGEST_I16
-#ifdef CAN_UNALIGN_INT
-#define UNALIGNED16
-#endif
-#elif SIZEOF_LONG == 2
-typedef long             INT16;
-typedef unsigned long    UINT16;
-#define I16BUF_SIZE LONGEST_I16
-#ifdef CAN_UNALIGN_LONG
-#define UNALIGNED16
-#endif
-#elif SIZEOF_SHORT == 2
-typedef short            INT16;
-typedef unsigned short   UINT16;
 #define I16BUF_SIZE LONGEST_I16
 #ifdef CAN_UNALIGN_SHORT
 #define UNALIGNED16
 #endif
-#else
-typedef INT32            INT16;
-typedef UINT32           UINT16;
-#define I16BUF_SIZE I32BUF_SIZE
-#ifdef UNALIGNED32
-#define UNALIGNED16
-#endif
-#endif // SIZEOF INT16
-#define INT16_MIN_VALUE  (-32768)
-#define INT16_MAX_VALUE  32767
-#define UINT16_MAX_VALUE 0xFFFFU
 
-#if LBUF_SIZE < UINT16_MAX_VALUE
-typedef UINT16 LBUF_OFFSET;
-#elif LBUF_SIZE < UINT32_MAX_VALUE
-typedef UINT32 LBUF_OFFSET;
+#if LBUF_SIZE < UINT16_MAX
+typedef uint16_t LBUF_OFFSET;
+#elif LBUF_SIZE < UINT32_MAX
+typedef uint32_t LBUF_OFFSET;
 #else
 typedef size_t LBUF_OFFSET;
 #endif
 
-typedef   signed char INT8;
-typedef unsigned char UINT8;
 #define I8BUF_SIZE  LONGEST_I8
 
-// Develop an unsigned integer type which is the same size as a pointer.
-//
 #define SIZEOF_UINT_PTR SIZEOF_VOID_P
-#if SIZEOF_UNSIGNED_INT == SIZEOF_VOID_P
-typedef unsigned int MUX_UINT_PTR;
-#elif SIZEOF_UNSIGNED_LONG_LONG == SIZEOF_VOID_P
-typedef UINT64 MUX_UINT_PTR;
-#elif SIZEOF_UNSIGNED_LONG == SIZEOF_VOID_P
-typedef unsigned long MUX_UINT_PTR;
-#elif SIZEOF_UNSIGNED_SHORT == SIZEOF_VOID_P
-typedef unsigned short MUX_UINT_PTR;
-#else
-#error TinyMUX cannot find an integer type with same size as a pointer.
-#endif
 
 #ifndef HAVE_IN_ADDR_T
-typedef UINT32 in_addr_t;
+typedef uint32_t in_addr_t;
 #endif
 
-typedef UINT8  UTF8;
-typedef UINT8 *PUTF8;
+typedef uint8_t  UTF8;
+typedef uint8_t *PUTF8;
 #ifdef WIN32
 typedef wchar_t UTF16;
 #else
-typedef UINT16 UTF16;
+typedef uint16_t UTF16;
 #endif // WIN32
-typedef UINT32 UTF32;
+typedef uint32_t UTF32;
 
 #define T(x)    ((const UTF8 *)(x))
 

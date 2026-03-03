@@ -22,7 +22,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
     FILETIME ftKernel;
     FILETIME ftUser;
     GetProcessTimes(GetCurrentProcess(), &ftCreate, &ftExit, &ftKernel, &ftUser);
-    ltd.Set100ns(*reinterpret_cast<INT64*>(&ftUser));
+    ltd.Set100ns(*reinterpret_cast<int64_t*>(&ftUser));
 
 #endif // WINDOWS_PROCESSES
 
@@ -933,7 +933,7 @@ void wait_que
 
 #if defined(STUB_SLAVE)
 bool   QueryComplete_bDone   = false;
-UINT32 QueryComplete_hQuery  = 0;
+uint32_t QueryComplete_hQuery  = 0;
 CResultsSet *QueryComplete_prsResultsSet = nullptr;
 
 static int CallBack_QueryComplete(PTASK_RECORD p)
@@ -971,7 +971,7 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
 // Therefore, we only want to raise the priority of the corresponding take
 // from SUSPENDED to OBJECT.
 //
-void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prsResultsSet)
+void query_complete(uint32_t hQuery, uint32_t iError, CResultsSet *prsResultsSet)
 {
     if (nullptr != prsResultsSet)
     {
@@ -1004,7 +1004,7 @@ void sql_que
     reg_ref *sargs[]
 )
 {
-    static UINT32 next_handle = 0;
+    static uint32_t next_handle = 0;
 
     if (  !(mudconf.control_flags & CF_INTERP)
        || nullptr == mudstate.pIQueryControl)
@@ -1030,7 +1030,7 @@ void sql_que
         return;
     }
 
-    const UINT32 hQuery = next_handle++;
+    const uint32_t hQuery = next_handle++;
 
     tmp->u.hQuery = hQuery;
 

@@ -24,8 +24,8 @@ public:
     // mux_IUnknown
     //
     MUX_RESULT QueryInterface(MUX_IID iid, void** ppv) override;
-    UINT32 AddRef(void) override;
-    UINT32 Release(void) override;
+    uint32_t AddRef(void) override;
+    uint32_t Release(void) override;
 
     // IFunctionSinkControl
     //
@@ -42,7 +42,7 @@ public:
     virtual ~CFuncs();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 class CFuncsFactory : public mux_IClassFactory
@@ -51,8 +51,8 @@ public:
     // mux_IUnknown
     //
     MUX_RESULT QueryInterface(MUX_IID iid, void** ppv) override;
-    UINT32 AddRef(void) override;
-    UINT32 Release(void) override;
+    uint32_t AddRef(void) override;
+    uint32_t Release(void) override;
 
     // mux_IClassFactory
     //
@@ -63,7 +63,7 @@ public:
     virtual ~CFuncsFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 #endif // FUNCS_H

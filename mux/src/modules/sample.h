@@ -28,8 +28,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IServerEventsSink
     //
@@ -55,7 +55,7 @@ public:
     virtual ~CSample();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 class CSampleFactory : public mux_IClassFactory
@@ -64,8 +64,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -76,7 +76,7 @@ public:
     virtual ~CSampleFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 interface ISum : public mux_IUnknown
@@ -91,8 +91,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -111,8 +111,8 @@ public:
     virtual ~CSumProxy();
 
 private:
-    UINT32 m_nChannel;
-    UINT32 m_cRef;
+    uint32_t m_nChannel;
+    uint32_t m_cRef;
 };
 
 class CSumProxyFactory : public mux_IClassFactory
@@ -121,8 +121,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -133,7 +133,7 @@ public:
     virtual ~CSumProxyFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 #endif // SAMPLE_H

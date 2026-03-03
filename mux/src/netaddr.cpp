@@ -14,7 +14,7 @@
 typedef struct
 {
     int    nShift;
-    UINT32 maxValue;
+    uint32_t maxValue;
     size_t maxOctLen;
     size_t maxDecLen;
     size_t maxHexLen;

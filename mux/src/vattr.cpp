@@ -26,10 +26,10 @@ static size_t stringblock_hwm = 0;
 
 ATTR *vattr_find_LEN(const UTF8 *pAttrName, size_t nAttrName)
 {
-    UINT32 nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
+    uint32_t nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
 
     CHashTable *pht = &mudstate.vattr_name_htab;
-    UINT32 iDir = pht->FindFirstKey(nHash);
+    uint32_t iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -74,7 +74,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
         // This entry cannot already be in the hash table because we've checked it
         // above with vattr_find_LEN.
         //
-        UINT32 nHash = HASH_ProcessBuffer(0, pName, nName);
+        uint32_t nHash = HASH_ProcessBuffer(0, pName, nName);
         mudstate.vattr_name_htab.Insert(sizeof(number), nHash, &number);
 
         anum_extend(vp->number);
@@ -409,9 +409,9 @@ static int dbclean_RemoveStaleAttributeNames(void)
 
                 // Delete from hashtable.
                 //
-                UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
+                uint32_t nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
                 CHashTable *pht = &mudstate.vattr_name_htab;
-                UINT32 iDir = pht->FindFirstKey(nHash);
+                uint32_t iDir = pht->FindFirstKey(nHash);
                 while (iDir != HF_FIND_END)
                 {
                     HP_HEAPLENGTH nRecord;
@@ -474,9 +474,9 @@ static void dbclean_RenumberAttributes(int cVAttributes)
             // Change vattr_name_htab mapping as well to point to
             // iAllocated instead of iAttr.
             //
-            UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
+            uint32_t nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
             CHashTable *pht = &mudstate.vattr_name_htab;
-            UINT32 iDir = pht->FindFirstKey(nHash);
+            uint32_t iDir = pht->FindFirstKey(nHash);
             while (iDir != HF_FIND_END)
             {
                 HP_HEAPLENGTH nRecord;
@@ -633,9 +633,9 @@ void vattr_delete_LEN(UTF8 *pName, size_t nName)
 {
     // Delete from hashtable.
     //
-    UINT32 nHash = HASH_ProcessBuffer(0, pName, nName);
+    uint32_t nHash = HASH_ProcessBuffer(0, pName, nName);
     CHashTable *pht = &mudstate.vattr_name_htab;
-    UINT32 iDir = pht->FindFirstKey(nHash);
+    uint32_t iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -657,9 +657,9 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
 {
     // Find and Delete old name from hashtable.
     //
-    UINT32 nHash = HASH_ProcessBuffer(0, pOldName, nOldName);
+    uint32_t nHash = HASH_ProcessBuffer(0, pOldName, nOldName);
     CHashTable *pht = &mudstate.vattr_name_htab;
-    UINT32 iDir = pht->FindFirstKey(nHash);
+    uint32_t iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -687,7 +687,7 @@ ATTR *vattr_first(void)
 {
     HP_HEAPLENGTH nRecord;
     int anum;
-    UINT32 iDir = mudstate.vattr_name_htab.FindFirst(&nRecord, &anum);
+    uint32_t iDir = mudstate.vattr_name_htab.FindFirst(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
         return (ATTR *)anum_table[anum];
@@ -703,7 +703,7 @@ ATTR *vattr_next(ATTR *vp)
 
     HP_HEAPLENGTH nRecord;
     int anum;
-    UINT32 iDir = mudstate.vattr_name_htab.FindNext(&nRecord, &anum);
+    uint32_t iDir = mudstate.vattr_name_htab.FindNext(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
         return (ATTR *)anum_table[anum];

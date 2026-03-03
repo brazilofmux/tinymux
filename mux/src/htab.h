@@ -36,7 +36,7 @@ struct bque
             dbref   sem;            // blocking semaphore
             int     attr;           // blocking attribute
         } s;
-        UINT32 hQuery;              // blocking query
+        uint32_t hQuery;              // blocking query
     } u;
     int     nargs;                  // How many args I have
     UTF8    *text;                  // buffer for comm, env, and scr text

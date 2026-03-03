@@ -108,17 +108,17 @@ namespace TimezoneCache {
         static time_t time_t_largest(void)
         {
             time_t t;
-            if (sizeof(INT64) <= sizeof(time_t))
+            if (sizeof(int64_t) <= sizeof(time_t))
             {
-                t = static_cast<time_t>(INT64_MAX_VALUE);
+                t = static_cast<time_t>(INT64_MAX);
             }
             else
             {
-                t = static_cast<time_t>(INT32_MAX_VALUE);
+                t = static_cast<time_t>(INT32_MAX);
             }
 
 #if defined(TIMEUTIL_TIME_T_MAX_VALUE)
-            INT64 t64 = static_cast<INT64>(t);
+            int64_t t64 = static_cast<int64_t>(t);
             if (TIMEUTIL_TIME_T_MAX_VALUE < t64)
             {
                 t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
@@ -143,16 +143,16 @@ namespace TimezoneCache {
         static time_t time_t_smallest(void)
         {
             time_t t;
-            if (sizeof(INT64) <= sizeof(time_t))
+            if (sizeof(int64_t) <= sizeof(time_t))
             {
-                t = static_cast<time_t>(INT64_MIN_VALUE);
+                t = static_cast<time_t>(INT64_MIN);
             }
             else
             {
-                t = static_cast<time_t>(INT32_MIN_VALUE);
+                t = static_cast<time_t>(INT32_MIN);
             }
 #if defined(TIMEUTIL_TIME_T_MIN_VALUE)
-            INT64 t64 = static_cast<INT64>(t);
+            int64_t t64 = static_cast<int64_t>(t);
             if (t64 < TIMEUTIL_TIME_T_MIN_VALUE)
             {
                 t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
@@ -178,8 +178,8 @@ namespace TimezoneCache {
             time_t t_min = time_t_smallest();
 
             // Cast appropriately for comparison
-            if (seconds_count > static_cast<INT64>(t_max)) return t_max;
-            if (seconds_count < static_cast<INT64>(t_min)) return t_min;
+            if (seconds_count > static_cast<int64_t>(t_max)) return t_max;
+            if (seconds_count < static_cast<int64_t>(t_min)) return t_min;
 
             return static_cast<time_t>(seconds_count);
         }

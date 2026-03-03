@@ -9,8 +9,8 @@
 #include "../modules.h"
 #include "sum.h"
 
-static INT32 g_cComponents  = 0;
-static INT32 g_cServerLocks = 0;
+static int32_t g_cComponents  = 0;
+static int32_t g_cServerLocks = 0;
 
 #define NUM_CLASSES 1
 static MUX_CLASS_INFO sum_classes[NUM_CLASSES] =
@@ -114,13 +114,13 @@ MUX_RESULT CSum::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSum::AddRef(void)
+uint32_t CSum::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSum::Release(void)
+uint32_t CSum::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -183,7 +183,7 @@ MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         return MUX_E_NOINTERFACE;
     }
 
-    UINT32 iMethod;
+    uint32_t iMethod;
     size_t nWanted = sizeof(iMethod);
     if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
@@ -296,7 +296,7 @@ MUX_RESULT CSum::ReleaseMarshalData(QUEUE_INFO *pqi)
     // to release the reference to the component.  This is only implemented on
     // the server side -- not the proxy.
     //
-    UINT32 nChannel;
+    uint32_t nChannel;
     size_t nWanted = sizeof(nChannel);
     if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
        && sizeof(nChannel) == nWanted)
@@ -361,13 +361,13 @@ MUX_RESULT CSumFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSumFactory::AddRef(void)
+uint32_t CSumFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSumFactory::Release(void)
+uint32_t CSumFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

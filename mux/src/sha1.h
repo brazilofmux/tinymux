@@ -8,9 +8,9 @@
 
 typedef struct
 {
-    UINT64   nTotal;
-    UINT32   H[5];
-    UINT8    block[64];
+    uint64_t   nTotal;
+    uint32_t   H[5];
+    uint8_t    block[64];
     size_t   nblock;
 } MUX_SHA_CTX;
 
@@ -18,6 +18,6 @@ typedef struct
 
 void MUX_SHA1_Init(MUX_SHA_CTX *p);
 void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n);
-void MUX_SHA1_Final(UINT8 md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p);
+void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p);
 
 #endif // SHA1_H

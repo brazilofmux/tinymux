@@ -178,8 +178,8 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         }
     }
 
-    const UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
-    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
+    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
 
     while (iDir != HF_FIND_END)
     {
@@ -251,7 +251,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
 
     // Removal from DB.
     //
-    const UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
     if (cache_redirected)
     {
@@ -266,7 +266,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
         return true;
     }
 
-    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
+    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -345,8 +345,8 @@ void cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
-    const UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
-    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
+    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
 
     while (iDir != HF_FIND_END)
     {

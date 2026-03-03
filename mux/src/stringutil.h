@@ -990,7 +990,7 @@ private:
 
 // Color State
 //
-typedef UINT64 ColorState;
+typedef uint64_t ColorState;
 
 // Indexes into the aColors table:
 //
@@ -1653,7 +1653,7 @@ typedef struct tag_itl
 void ItemToList_Init(ITL *pContext, UTF8 *arg_buff, UTF8 **arg_bufc,
     UTF8 arg_chPrefix = 0, UTF8 arg_chSep = ' ');
 bool ItemToList_AddInteger(ITL *pContext, int i);
-bool ItemToList_AddInteger64(ITL *pContext, INT64 i);
+bool ItemToList_AddInteger64(ITL *pContext, int64_t i);
 bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
@@ -1965,7 +1965,7 @@ public:
     }
 
     void append(dbref num);
-    void append(INT64 iInt);
+    void append(int64_t iInt);
     void append(long lLong);
     void append
     (
@@ -1986,7 +1986,7 @@ public:
     [[nodiscard]] LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
     [[nodiscard]] ColorState export_Color(size_t n) const;
     [[nodiscard]] double export_Float(bool bStrict = true) const;
-    [[nodiscard]] INT64 export_I64() const;
+    [[nodiscard]] int64_t export_I64() const;
     [[nodiscard]] long export_Long() const;
     LBUF_OFFSET export_TextColor
     (
@@ -2011,7 +2011,7 @@ public:
         size_t nBytesMax = (LBUF_SIZE-1)
     ) const;
     void import(dbref num);
-    void import(INT64 iInt);
+    void import(int64_t iInt);
     void import(long lLong);
     void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
     void import(const UTF8 *pStr);
@@ -2033,7 +2033,7 @@ public:
     }
 
     void prepend(dbref num);
-    void prepend(INT64 iInt);
+    void prepend(int64_t iInt);
     void prepend(long lLong);
     void prepend(const mux_string &sStr);
     void prepend(const UTF8 *pStr);

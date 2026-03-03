@@ -9,8 +9,8 @@
 #include "../modules.h"
 #include "sample.h"
 
-static INT32 g_cComponents  = 0;
-static INT32 g_cServerLocks = 0;
+static int32_t g_cComponents  = 0;
+static int32_t g_cServerLocks = 0;
 
 static ISample *g_pISample = NULL;
 
@@ -220,13 +220,13 @@ MUX_RESULT CSample::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSample::AddRef(void)
+uint32_t CSample::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSample::Release(void)
+uint32_t CSample::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -278,13 +278,13 @@ MUX_RESULT CSampleFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSampleFactory::AddRef(void)
+uint32_t CSampleFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSampleFactory::Release(void)
+uint32_t CSampleFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -546,13 +546,13 @@ MUX_RESULT CSumProxy::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSumProxy::AddRef(void)
+uint32_t CSumProxy::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSumProxy::Release(void)
+uint32_t CSumProxy::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -634,7 +634,7 @@ MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 3;
+    uint32_t iMethod = 3;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
     struct FRAME
@@ -701,13 +701,13 @@ MUX_RESULT CSumProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CSumProxyFactory::AddRef(void)
+uint32_t CSumProxyFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CSumProxyFactory::Release(void)
+uint32_t CSumProxyFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

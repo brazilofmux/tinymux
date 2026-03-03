@@ -9,8 +9,8 @@
 #include "../modules.h"
 #include "funcs.h"
 
-static INT32 g_cComponents = 0;
-static INT32 g_cServerLocks = 0;
+static int32_t g_cComponents = 0;
+static int32_t g_cServerLocks = 0;
 
 static mux_IFunctionSinkControl* g_pIFunctionSinkControl = nullptr;
 
@@ -198,13 +198,13 @@ MUX_RESULT CFuncs::QueryInterface(MUX_IID iid, void** ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFuncs::AddRef()
+uint32_t CFuncs::AddRef()
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFuncs::Release()
+uint32_t CFuncs::Release()
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -366,13 +366,13 @@ MUX_RESULT CFuncsFactory::QueryInterface(MUX_IID iid, void** ppv)
     return MUX_S_OK;
 }
 
-UINT32 CFuncsFactory::AddRef()
+uint32_t CFuncsFactory::AddRef()
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CFuncsFactory::Release()
+uint32_t CFuncsFactory::Release()
 {
     m_cRef--;
     if (0 == m_cRef)

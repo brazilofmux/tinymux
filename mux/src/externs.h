@@ -19,22 +19,22 @@ class CResultsSet
 public:
     CResultsSet(QUEUE_INFO* pqi);
     ~CResultsSet(void);
-    UINT32 Release(void);
-    UINT32 AddRef(void);
+    uint32_t Release(void);
+    uint32_t AddRef(void);
     bool   isLoaded(void);
-    void   SetError(UINT32 iError);
-    UINT32 GetError(void);
+    void   SetError(uint32_t iError);
+    uint32_t GetError(void);
     int    GetRowCount(void);
     const UTF8* FirstField(int iRow);
     const UTF8* NextField(void);
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
     int    m_nFields;
     size_t m_nBlob;
     UTF8* m_pBlob;
     bool   m_bLoaded;
-    UINT32 m_iError;
+    uint32_t m_iError;
     int    m_nRows;
     PUTF8* m_pRows;
 
@@ -92,7 +92,7 @@ typedef struct tag_int_array
 //
 void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
 void cf_log_alreadyexists(dbref, const UTF8*, const UTF8*, const UTF8*);
-int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
+int  cf_modify_bits(int *, UTF8 *, void *, uint32_t, dbref, UTF8 *);
 void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...);
 void ValidateConfigurationDbrefs(void);
 #if defined(HAVE_IN_ADDR)
@@ -168,7 +168,7 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
               const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
-void query_complete(UINT32 hQuery, UINT32 iError, CResultsSet *prs);
+void query_complete(uint32_t hQuery, uint32_t iError, CResultsSet *prs);
 
 #if defined(UNIX_CRYPT)
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -325,7 +325,7 @@ bool mux_open(int *pfh, const UTF8 *filename, int oflag);
 const UTF8 *mux_strerror(int errnum);
 
 /* From htab.cpp */
-int  cf_ntab_access(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
+int  cf_ntab_access(int *, UTF8 *, void *, uint32_t, dbref, UTF8 *);
 
 /* From log.cpp */
 bool start_log(const UTF8 *primary, const UTF8 *secondary);
@@ -533,7 +533,7 @@ void cache_prefix_cmds(void);
 UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     UTF8 *, const UTF8 *[], int);
 size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
-size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill);
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
 
 #define Protect(f) (cmdp->perms & f)
 

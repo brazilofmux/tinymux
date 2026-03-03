@@ -19,8 +19,8 @@
 #endif
 
 #if 0
-#define Long INT32
-typedef UINT32 ULong;
+#define Long int32_t
+typedef uint32_t ULong;
 
 #ifndef Omit_Private_Memory
 #ifndef PRIVATE_MEM

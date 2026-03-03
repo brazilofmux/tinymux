@@ -208,10 +208,10 @@ static void EncodeBase64(size_t nIn, const UTF8 *pIn, UTF8 *pOut)
 {
     size_t nTriples  = nIn/3;
     size_t nLeftover = nIn%3;
-    UINT32 stage;
+    uint32_t stage;
 
-    const UINT8 *p = (const UINT8 *)pIn;
-          UINT8 *q = (      UINT8 *)pOut;
+    const uint8_t *p = (const uint8_t *)pIn;
+          uint8_t *q = (      uint8_t *)pOut;
 
     while (nTriples--)
     {
@@ -269,7 +269,7 @@ const UTF8 szFail[] = "$FAIL$$";
 
 const UTF8 szSHA1Prefix[] = "$SHA1$";
 #define SHA1_PREFIX_LENGTH (sizeof(szSHA1Prefix)-1)
-#define SHA1_HASH_LENGTH 5*sizeof(UINT32)
+#define SHA1_HASH_LENGTH 5*sizeof(uint32_t)
 #define SHA1_ENCODED_HASH_LENGTH ENCODED_LENGTH(SHA1_HASH_LENGTH)
 #define SHA1_SALT_LENGTH 9
 #define SHA1_ENCODED_SALT_LENGTH ENCODED_LENGTH(SHA1_SALT_LENGTH)
@@ -327,7 +327,7 @@ static const UTF8 *GenerateSalt(int iType)
         {
             // Map random number to set 'a-zA-Z0-9./'.
             //
-            INT32 j = RandomINT32(0, sizeof(Base64Table)-1);
+            int32_t j = RandomINT32(0, sizeof(Base64Table)-1);
             UTF8 ch = Base64Table[j];
             if ('+' == ch)
             {
@@ -372,7 +372,7 @@ static const UTF8 *GenerateSalt(int iType)
         {
             // Map random number to set 'a-zA-Z0-9./'.
             //
-            INT32 j = RandomINT32(0, sizeof(Base64Table)-1);
+            int32_t j = RandomINT32(0, sizeof(Base64Table)-1);
             UTF8 ch = Base64Table[j];
             if ('+' == ch)
             {
@@ -450,9 +450,9 @@ const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
         // Calculate SHA-1 Hash.
         //
 #ifdef UNIX_DIGEST
-        UINT8 md[EVP_MAX_MD_SIZE];
+        uint8_t md[EVP_MAX_MD_SIZE];
 #else
-        UINT8 md[MUX_SHA1_DIGEST_LENGTH];
+        uint8_t md[MUX_SHA1_DIGEST_LENGTH];
 #endif
         unsigned int len = 0;
         const UTF8 *parts[] = { szPassword };
@@ -617,9 +617,9 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     // Calculate SHA-1 Hash.
     //
 #ifdef UNIX_DIGEST
-    UINT8 md[EVP_MAX_MD_SIZE+1];
+    uint8_t md[EVP_MAX_MD_SIZE+1];
 #else
-    UINT8 md[MUX_SHA1_DIGEST_LENGTH+1];
+    uint8_t md[MUX_SHA1_DIGEST_LENGTH+1];
 #endif
     unsigned int len = 0;
     const UTF8 *parts[] = { pSaltField, szPassword };

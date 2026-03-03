@@ -32,7 +32,7 @@ const UTF8 *mux_FPStrings[8] =
 
 typedef union
 {
-    UINT64 ui64;
+    uint64_t ui64;
     double d;
 } SpecialFloatUnion;
 
@@ -678,7 +678,7 @@ size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase)
     return p - buf;
 }
 
-size_t mux_ui64tox(UINT64 uval, UTF8 *buf, bool bUpperCase)
+size_t mux_ui64tox(uint64_t uval, UTF8 *buf, bool bUpperCase)
 {
     UTF8 *p = buf;
     UTF8 *q = p;
@@ -758,7 +758,7 @@ void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
     safe_copy_buf(temp, n, buff, bufc);
 }
 
-size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
+size_t mux_ui64toa(uint64_t uval, UTF8 *buf)
 {
     UTF8 *p = buf;
     UTF8 *q = p;
@@ -782,30 +782,30 @@ size_t mux_ui64toa(UINT64 uval, UTF8 *buf)
     return p - buf;
 }
 
-size_t mux_i64toa(INT64 val, UTF8* buf) {
+size_t mux_i64toa(int64_t val, UTF8* buf) {
     UTF8* p = buf;
-    UINT64 uval;
+    uint64_t uval;
     bool is_negative = val < 0;
 
     if (is_negative) {
         *p++ = '-';
-        uval = (val == INT64_MIN) ? ((UINT64)INT64_MAX + 1) : (UINT64)(-val);
+        uval = (val == INT64_MIN) ? ((uint64_t)INT64_MAX + 1) : (uint64_t)(-val);
     }
     else {
-        uval = (UINT64)val;
+        uval = (uint64_t)val;
     }
     p += mux_ui64toa(uval, p);
     return p - buf;
 }
 
-UTF8 *mux_i64toa_t(INT64 val)
+UTF8 *mux_i64toa_t(int64_t val)
 {
     static UTF8 buff[I64BUF_SIZE];
     mux_i64toa(val, buff);
     return buff;
 }
 
-void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
+void safe_i64toa(int64_t val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
@@ -878,9 +878,9 @@ long mux_atol(const UTF8 *pString)
     return sum;
 }
 
-INT64 mux_atoi64(const UTF8 *pString)
+int64_t mux_atoi64(const UTF8 *pString)
 {
-    INT64 sum = 0;
+    int64_t sum = 0;
     int LeadingCharacter = 0;
 
     // Convert ASCII digits

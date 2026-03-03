@@ -7,6 +7,6 @@
 #define SVDRAND_H
 
 void SeedRandomNumberGenerator();
-INT32 RandomINT32(INT32 lLow, INT32 lHigh);
+int32_t RandomINT32(int32_t lLow, int32_t lHigh);
 
 #endif // SVDRAND_H

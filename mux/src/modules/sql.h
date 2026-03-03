@@ -14,8 +14,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -26,7 +26,7 @@ public:
     virtual ~CQueryServerFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 class CQuerySinkProxy : public mux_IQuerySink, public mux_IMarshal
@@ -35,8 +35,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -48,15 +48,15 @@ public:
 
     // mux_IQuerySink
     //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
+    virtual MUX_RESULT Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet);
 
     CQuerySinkProxy(void);
     MUX_RESULT FinalConstruct(void);
     virtual ~CQuerySinkProxy();
 
 private:
-    UINT32 m_cRef;
-    UINT32 m_nChannel;
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
 };
 
 class CQuerySinkProxyFactory : public mux_IClassFactory
@@ -65,8 +65,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -77,7 +77,7 @@ public:
     virtual ~CQuerySinkProxyFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 class CQueryControlProxy : public mux_IQueryControl, public mux_IMarshal
@@ -86,8 +86,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -101,15 +101,15 @@ public:
     //
     virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
+    virtual MUX_RESULT Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
 
     CQueryControlProxy(void);
     MUX_RESULT FinalConstruct(void);
     virtual ~CQueryControlProxy();
 
 private:
-    UINT32 m_cRef;
-    UINT32 m_nChannel;
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
 };
 
 class CQueryControlProxyFactory : public mux_IClassFactory
@@ -118,8 +118,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -130,7 +130,7 @@ public:
     virtual ~CQueryControlProxyFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 #endif // SQL_H

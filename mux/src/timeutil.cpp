@@ -13,13 +13,13 @@
 #include "config.h"
 #include "externs.h"
 
-const INT64 FACTOR_MS_PER_SECOND    = INT64_C(1000);
-const INT64 FACTOR_US_PER_SECOND    = INT64_C(1000000);
-const INT64 FACTOR_100NS_PER_SECOND = INT64_C(10000000);
-const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
-const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
-const INT64 FACTOR_100NS_PER_DAY    = FACTOR_100NS_PER_HOUR*24;
-const INT64 FACTOR_100NS_PER_WEEK   = FACTOR_100NS_PER_DAY*7;
+const int64_t FACTOR_MS_PER_SECOND    = INT64_C(1000);
+const int64_t FACTOR_US_PER_SECOND    = INT64_C(1000000);
+const int64_t FACTOR_100NS_PER_SECOND = INT64_C(10000000);
+const int64_t FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
+const int64_t FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
+const int64_t FACTOR_100NS_PER_DAY    = FACTOR_100NS_PER_HOUR*24;
+const int64_t FACTOR_100NS_PER_WEEK   = FACTOR_100NS_PER_DAY*7;
 
 const UTF8 *DayOfWeekString[7] =
 {
@@ -112,7 +112,7 @@ int64_t i64Mod(int64_t x, int64_t y)
     {
         if (x <= 0)
         {
-            if (INT64_MIN_VALUE == x && -1 == y)
+            if (INT64_MIN == x && -1 == y)
             {
                 return 0;
             }
@@ -251,7 +251,7 @@ int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod)
     {
         if (x <= 0)
         {
-            if (INT64_MIN_VALUE == x && -1 == y)
+            if (INT64_MIN == x && -1 == y)
             {
                 *piMod = 0;
             }
@@ -333,7 +333,7 @@ int64_t i64Remainder(int64_t x, int64_t y)
     {
         if (x <= 0)
         {
-            if (INT64_MIN_VALUE == x && -1 == y)
+            if (INT64_MIN == x && -1 == y)
             {
                 return 0;
             }
@@ -420,7 +420,7 @@ inline int iFloorDivision(int x, int y)
 
 inline int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t*piMod)
 {
-    if (INT64_MIN_VALUE == x && -1 == y)
+    if (INT64_MIN == x && -1 == y)
     {
         *piMod = 0;
     }
@@ -560,11 +560,11 @@ bool ParseFractionalSecondsString(int64_t& i64, const UTF8* str)
     {
         if (bMinus)
         {
-            i64 = INT64_MIN_VALUE;
+            i64 = INT64_MIN;
         }
         else
         {
-            i64 = INT64_MAX_VALUE;
+            i64 = INT64_MAX;
         }
     }
     else
@@ -785,7 +785,7 @@ bool FieldedTimeToLinearTime(FIELDEDTIME *ft, int64_t *plt)
     int iFixedDay = FixedFromGregorian_Adjusted(ft->iYear, ft->iMonth, ft->iDayOfMonth);
     ft->iDayOfWeek = static_cast<unsigned short>(iMod(iFixedDay+1, 7));
 
-    INT64 lt;
+    int64_t lt;
     lt  = iFixedDay * FACTOR_100NS_PER_DAY;
     lt += ft->iHour * FACTOR_100NS_PER_HOUR;
     lt += ft->iMinute * FACTOR_100NS_PER_MINUTE;
@@ -1066,7 +1066,7 @@ void GetUTCLinearTime(int64_t *plt)
 
     gettimeofday(&tv, &tz);
 
-    *plt = (((INT64)tv.tv_sec) * FACTOR_100NS_PER_SECOND)
+    *plt = (((int64_t)tv.tv_sec) * FACTOR_100NS_PER_SECOND)
          + (tv.tv_usec * FACTOR_100NS_PER_MICROSECOND)
          + EPOCH_OFFSET;
 #else

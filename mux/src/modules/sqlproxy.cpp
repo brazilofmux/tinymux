@@ -9,8 +9,8 @@
 #include "../modules.h"
 #include "sql.h"
 
-static INT32 g_cComponents  = 0;
-static INT32 g_cServerLocks = 0;
+static int32_t g_cComponents  = 0;
+static int32_t g_cServerLocks = 0;
 
 #define NUM_CLASSES 1
 static MUX_CLASS_INFO sum_classes[NUM_CLASSES] =
@@ -113,13 +113,13 @@ MUX_RESULT CQueryControlProxy::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryControlProxy::AddRef(void)
+uint32_t CQueryControlProxy::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryControlProxy::Release(void)
+uint32_t CQueryControlProxy::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -201,7 +201,7 @@ MUX_RESULT CQueryControlProxy::Connect(const UTF8 *pServer, const UTF8 *pDatabas
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 3;
+    uint32_t iMethod = 3;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
     struct FRAME
@@ -256,7 +256,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 4;
+    uint32_t iMethod = 4;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
     mr = mux_MarshalInterface(&qiFrame, IID_IQuerySink, pIQuerySink, CrossProcess);
@@ -287,7 +287,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
     return mr;
 }
 
-MUX_RESULT CQueryControlProxy::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
+MUX_RESULT CQueryControlProxy::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
     // Communicate with the remote component to service this request.
     //
@@ -296,12 +296,12 @@ MUX_RESULT CQueryControlProxy::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseN
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 5;
+    uint32_t iMethod = 5;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
     struct FRAME
     {
-        UINT32 iQueryHandle;
+        uint32_t iQueryHandle;
         size_t nDatabaseName;
         size_t nQuery;
     } CallFrame;
@@ -349,13 +349,13 @@ MUX_RESULT CQueryControlProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryControlProxyFactory::AddRef(void)
+uint32_t CQueryControlProxyFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryControlProxyFactory::Release(void)
+uint32_t CQueryControlProxyFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

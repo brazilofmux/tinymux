@@ -22,8 +22,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -42,7 +42,7 @@ public:
     virtual ~CSum();
 
 private:
-    UINT32        m_cRef;
+    uint32_t        m_cRef;
 };
 
 class CSumFactory : public mux_IClassFactory
@@ -51,8 +51,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IClassFactory
     //
@@ -63,7 +63,7 @@ public:
     virtual ~CSumFactory();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 #endif // SUM_H

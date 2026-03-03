@@ -1350,22 +1350,22 @@ PALETTE_ENTRY palette[] =
     { { 238, 238, 238 }, { 226, 128, 128, 339 }, { 188, 225 },  7, 15},
 };
 
-INT64 diff(const YUV &yuv1, const YUV &yuv2)
+int64_t diff(const YUV &yuv1, const YUV &yuv2)
 {
     // The human eye is twice as sensitive to changes in Y.  We use 1.5 times.
     //
-    INT64 dy = (INT64)(yuv1.y2-yuv2.y2);
-    INT64 du = (INT64)(yuv1.u-yuv2.u);
-    INT64 dv = (INT64)(yuv1.v-yuv2.v);
+    int64_t dy = (int64_t)(yuv1.y2-yuv2.y2);
+    int64_t du = (int64_t)(yuv1.u-yuv2.u);
+    int64_t dv = (int64_t)(yuv1.v-yuv2.v);
 
-    INT64 r = dy*dy + du*du + dv*dv;
+    int64_t r = dy*dy + du*du + dv*dv;
     return r;
 }
 
-void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest);
-void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest);
+void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, int64_t &rBest);
+void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, int64_t &rBest);
 
-void NearestIndex_tree_y(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+void NearestIndex_tree_y(int iHere, const YUV &yuv, int &iBest, int64_t &rBest)
 {
     if (-1 == iHere)
     {
@@ -1378,25 +1378,25 @@ void NearestIndex_tree_y(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = diff(yuv, palette[iBest].yuv);
     }
 
-    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    int64_t rHere = diff(yuv, palette[iHere].yuv);
     if (rHere < rBest)
     {
         iBest = iHere;
         rBest = rHere;
     }
 
-    INT64 d = (INT64)(yuv.y2 - palette[iHere].yuv.y2);
+    int64_t d = (int64_t)(yuv.y2 - palette[iHere].yuv.y2);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_u(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
-    INT64 rAxis = d*d;
+    int64_t rAxis = d*d;
     if (rAxis < rBest)
     {
         NearestIndex_tree_u(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
     }
 }
 
-void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, int64_t &rBest)
 {
     if (-1 == iHere)
     {
@@ -1409,25 +1409,25 @@ void NearestIndex_tree_u(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = diff(yuv, palette[iBest].yuv);
     }
 
-    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    int64_t rHere = diff(yuv, palette[iHere].yuv);
     if (rHere < rBest)
     {
         iBest = iHere;
         rBest = rHere;
     }
 
-    INT64 d = (INT64)(yuv.u - palette[iHere].yuv.u);
+    int64_t d = (int64_t)(yuv.u - palette[iHere].yuv.u);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_v(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
-    INT64 rAxis = d*d;
+    int64_t rAxis = d*d;
     if (rAxis < rBest)
     {
         NearestIndex_tree_v(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
     }
 }
 
-void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
+void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, int64_t &rBest)
 {
     if (-1 == iHere)
     {
@@ -1440,18 +1440,18 @@ void NearestIndex_tree_v(int iHere, const YUV &yuv, int &iBest, INT64 &rBest)
         rBest = diff(yuv, palette[iBest].yuv);
     }
 
-    INT64 rHere = diff(yuv, palette[iHere].yuv);
+    int64_t rHere = diff(yuv, palette[iHere].yuv);
     if (rHere < rBest)
     {
         iBest = iHere;
         rBest = rHere;
     }
 
-    INT64 d = (INT64)(yuv.v - palette[iHere].yuv.v);
+    int64_t d = (int64_t)(yuv.v - palette[iHere].yuv.v);
     int iNearChild = (d < 0)?0:1;
     NearestIndex_tree_y(palette[iHere].child[iNearChild], yuv, iBest, rBest);
 
-    INT64 rAxis = d*d;
+    int64_t rAxis = d*d;
     if (rAxis < rBest)
     {
         NearestIndex_tree_y(palette[iHere].child[1-iNearChild], yuv, iBest, rBest);
@@ -1463,7 +1463,7 @@ int FindNearestPaletteEntry(RGB &rgb, bool fColor256)
     YUV yuv16;
     rgb2yuv16(&rgb, &yuv16);
 
-    INT64 d;
+    int64_t d;
     int j = -1;
     NearestIndex_tree_y(fColor256 ? PALETTE256_ROOT : PALETTE16_ROOT, yuv16, j, d);
     return j;
@@ -1475,11 +1475,11 @@ int FindNearestPalette8Entry(RGB &rgb)
     rgb2yuv16(&rgb, &yuv16);
 
     int iNearest = 0;
-    INT64 rNearest = diff(yuv16, palette[0].yuv);
+    int64_t rNearest = diff(yuv16, palette[0].yuv);
 
     for (int i = 1; i < 8; i++)
     {
-        INT64 r = diff(yuv16, palette[i].yuv);
+        int64_t r = diff(yuv16, palette[i].yuv);
         if (r < rNearest)
         {
             rNearest = r;
@@ -1502,7 +1502,7 @@ int FindNearestPalette8Entry(RGB &rgb)
 #define CS_FG_CYAN    UINT64_C(0x0000000001000006)    // FOREGROUND CYAN (0,187,187)
 #define CS_FG_WHITE   UINT64_C(0x0000000001000007)    // FOREGROUND WHITE (187,187,187)
 #define CS_FG_INDEXED UINT64_C(0x0000000001000000)
-#define CS_FG(x)      (CS_FG_INDEXED | static_cast<UINT64>(x))
+#define CS_FG(x)      (CS_FG_INDEXED | static_cast<uint64_t>(x))
 #define CS_FG_FIELD(x) ((x) & UINT64_C(0x0000000000FFFFFF))
 #define CS_FG_FIELD_INDEXED(x) ((x) & UINT64_C(0x00000000000000FF))
 #define CS_FG_DEFAULT CS_FG(NUM_FG)
@@ -1519,7 +1519,7 @@ int FindNearestPalette8Entry(RGB &rgb)
 #define CS_BG_CYAN    UINT64_C(0x0100000600000000)    // BACKGROUND CYAN (0,187,187)
 #define CS_BG_WHITE   UINT64_C(0x0100000700000000)    // BACKGROUND WHITE (187,187,187)
 #define CS_BG_INDEXED UINT64_C(0x0100000000000000)
-#define CS_BG(x)      (CS_BG_INDEXED | (static_cast<UINT64>(x) << 32))
+#define CS_BG(x)      (CS_BG_INDEXED | (static_cast<uint64_t>(x) << 32))
 #define CS_BG_FIELD(x) (((x) & UINT64_C(0x00FFFFFF00000000)) >> 32)
 #define CS_BG_FIELD_INDEXED(x) (((x) & UINT64_C(0x000000FF00000000)) >> 32)
 #define CS_BG_DEFAULT CS_BG(NUM_BG)
@@ -4732,7 +4732,7 @@ bool ItemToList_AddInteger(ITL *pContext, int i)
     return true;
 }
 
-bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
+bool ItemToList_AddInteger64(ITL *pContext, int64_t i64)
 {
     UTF8 smbuf[SBUF_SIZE];
     UTF8 *p = smbuf;
@@ -5150,7 +5150,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             }
                             else if (2 == nLongs)
                             {
-                                INT64 i = va_arg(va, INT64);
+                                int64_t i = va_arg(va, int64_t);
                                 cbBuff = cpBuff = mux_i64toa(i, Buff);
                             }
                             else
@@ -5197,7 +5197,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             //
                             union
                             {
-                                MUX_UINT_PTR ui;
+                                uintptr_t ui;
                                 void *pv;
                             } u;
                             u.pv = va_arg(va, void *);
@@ -5209,7 +5209,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
 #error Size of pointer is larger size of largest known integer.
 #endif
                             bWidth = true;
-                            nWidth = 2*sizeof(MUX_UINT_PTR);
+                            nWidth = 2*sizeof(uintptr_t);
                             bZeroPadded = true;
                         }
                         else
@@ -5232,7 +5232,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             }
                             else if (2 == nLongs)
                             {
-                                UINT64 ui = va_arg(va, UINT64);
+                                uint64_t ui = va_arg(va, uint64_t);
                                 cbBuff = cpBuff = bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff);
                             }
                             else
@@ -5915,7 +5915,7 @@ void mux_string::append(dbref num)
     append_TextPlain(mux_ltoa_t(num));
 }
 
-void mux_string::append(INT64 iInt)
+void mux_string::append(int64_t iInt)
 {
     append_TextPlain(mux_i64toa_t(iInt));
 }
@@ -6417,7 +6417,7 @@ double mux_string::export_Float(bool bStrict) const
     return mux_atof(m_autf, bStrict);
 }
 
-INT64 mux_string::export_I64() const
+int64_t mux_string::export_I64() const
 {
     return mux_atoi64(m_autf);
 }
@@ -7189,13 +7189,13 @@ void mux_string::import(dbref num)
     m_iLast(n, n);
 }
 
-/*! \brief Converts and Imports an INT64.
+/*! \brief Converts and Imports an int64_t.
  *
- * \param iInt     INT64 to convert and import.
+ * \param iInt     int64_t to convert and import.
  * \return         None.
  */
 
-void mux_string::import(INT64 iInt)
+void mux_string::import(int64_t iInt)
 {
     m_vcs.clear();
 
@@ -7359,7 +7359,7 @@ void mux_string::prepend(long lLong)
     append(sStore);
 }
 
-void mux_string::prepend(INT64 iInt)
+void mux_string::prepend(int64_t iInt)
 {
     mux_string sStore(*this);
     import(iInt);

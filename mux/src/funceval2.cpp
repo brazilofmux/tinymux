@@ -135,7 +135,7 @@ FUNCTION(fun_scramble)
         mux_cursor iStart, iEnd;
         while (0 < nPoints)
         {
-            iPoint = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(nPoints-1)));
+            iPoint = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(nPoints-1)));
             sStr->cursor_from_point(iStart, iPoint);
             sStr->cursor_from_point(iEnd, iPoint + 1);
             sOut->append(*sStr, iStart, iEnd);
@@ -234,7 +234,7 @@ FUNCTION(fun_shuffle)
         {
             sOut->append(osep.str, osep.n);
         }
-        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(n-1)));
+        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(n-1)));
         iStart = words->wordBegin(i);
         iEnd = words->wordEnd(i);
         sOut->append(*sIn, iStart, iEnd);
@@ -282,7 +282,7 @@ FUNCTION(fun_pickrand)
     if (  nullptr != sStr
        && nullptr != words)
     {
-        INT32 n = static_cast<INT32>(words->find_Words(sep.str));
+        int32_t n = static_cast<int32_t>(words->find_Words(sep.str));
 
         if (0 < n)
         {
@@ -904,11 +904,11 @@ FUNCTION(fun_foreach)
  * Borrowed from TinyMUSH 2.2
  * Hash table rewrite by Ian and Alierak.
  */
-#if LBUF_SIZE < UINT16_MAX_VALUE
-typedef UINT16 NHASH;
+#if LBUF_SIZE < UINT16_MAX
+typedef uint16_t NHASH;
 #define ShiftHash(x) (x) >>= 16
 #else
-typedef UINT32 NHASH;
+typedef uint32_t NHASH;
 #define ShiftHash(x)
 #endif
 
@@ -957,7 +957,7 @@ FUNCTION(fun_munge)
     }
 
     std::vector<munge_htab_rec> htab(1 + 2 * nWords);
-    std::vector<UINT16> tails(1 + nWords);
+    std::vector<uint16_t> tails(1 + nWords);
 
     int iNext = 1 + nWords;  // first unused hash slot past starting area
 
@@ -971,7 +971,7 @@ FUNCTION(fun_munge)
          nullptr != pKey && nullptr != pValue;
          pKey = split_token(&p1, sep), pValue = split_token(&p2, sep))
     {
-        UINT32 nHash = munge_hash(pKey);
+        uint32_t nHash = munge_hash(pKey);
         int nHashSlot = 1 + (nHash % nWords);
         ShiftHash(nHash);
 
@@ -1026,7 +1026,7 @@ FUNCTION(fun_munge)
              nullptr != result;
              result = split_token(&bp, sep))
         {
-            UINT32 nHash = munge_hash(result);
+            uint32_t nHash = munge_hash(result);
             int nHashSlot = 1 + (nHash % nWords);
             ShiftHash(nHash);
 
@@ -1126,18 +1126,18 @@ FUNCTION(fun_lrand)
     {
         n_times = LBUF_SIZE;
     }
-    INT32 iLower = mux_atol(fargs[0]);
-    INT32 iUpper = mux_atol(fargs[1]);
+    int32_t iLower = mux_atol(fargs[0]);
+    int32_t iUpper = mux_atol(fargs[1]);
 
     if (iLower <= iUpper)
     {
         for (int i = 0; i < n_times-1; i++)
         {
-            INT32 val = RandomINT32(iLower, iUpper);
+            int32_t val = RandomINT32(iLower, iUpper);
             safe_ltoa(val, buff, bufc);
             print_sep(sep, buff, bufc);
         }
-        INT32 val = RandomINT32(iLower, iUpper);
+        int32_t val = RandomINT32(iLower, iUpper);
         safe_ltoa(val, buff, bufc);
     }
 }
@@ -1177,7 +1177,7 @@ FUNCTION(fun_dumping)
 #endif // HAVE_WORKING_FORK
 }
 
-static size_t mux_Pack0(INT64 val, int iRadix, UTF8 symbols[], UTF8 *buf)
+static size_t mux_Pack0(int64_t val, int iRadix, UTF8 symbols[], UTF8 *buf)
 {
     UTF8 *p = buf;
 
@@ -1192,8 +1192,8 @@ static size_t mux_Pack0(INT64 val, int iRadix, UTF8 symbols[], UTF8 *buf)
     UTF8 *q = p;
     while (val > iRadix-1)
     {
-        INT64 iDiv  = val / iRadix;
-        INT64 iTerm = val - iDiv * iRadix;
+        int64_t iDiv  = val / iRadix;
+        int64_t iTerm = val - iDiv * iRadix;
         val = iDiv;
         *p++ = symbols[iTerm];
     }
@@ -1241,7 +1241,7 @@ static UTF8 aRadixPenn36[] =
 static UTF8 aRadixPenn64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-static bool mux_Unpack(UTF8 *p, INT64 &val, int iRadixFrom, int iRadixTo, bool fPennBehavior)
+static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool fPennBehavior)
 {
     if (10 == iRadixFrom)
     {
@@ -1353,7 +1353,7 @@ static bool mux_Unpack(UTF8 *p, INT64 &val, int iRadixFrom, int iRadixTo, bool f
     return true;
 }
 
-static void mux_Pack1(INT64 val, int iRadixTo, bool fPennBehavior, UTF8 *buff, UTF8 **bufc)
+static void mux_Pack1(int64_t val, int iRadixTo, bool fPennBehavior, UTF8 *buff, UTF8 **bufc)
 {
     if (10 == iRadixTo)
     {
@@ -1413,7 +1413,7 @@ FUNCTION(fun_unpack)
         fPennBehavior = xlate(fargs[2]);
     }
 
-    INT64 val;
+    int64_t val;
     if (!mux_Unpack(fargs[0], val, iRadix, 10, fPennBehavior))
     {
         safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
@@ -1441,7 +1441,7 @@ FUNCTION(fun_pack)
         safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
     }
-    INT64 val = mux_atoi64(fargs[0]);
+    int64_t val = mux_atoi64(fargs[0]);
 
     // Validate that the radix is between 2 and 64.
     //
@@ -1499,7 +1499,7 @@ FUNCTION(fun_baseconv)
         return;
     }
 
-    INT64 val;
+    int64_t val;
     if (!mux_Unpack(fargs[0], val, iRadixFrom, iRadixTo, true))
     {
         safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
@@ -2492,6 +2492,7 @@ FUNCTION(fun_translate)
     bool type = (ch == 'p' || ch == '1');
     safe_str(translate_string(fargs[0], type), buff, bufc);
 }
+
 
 // -------------------------------------------------------------------------
 // fun_lrooms:  Takes a dbref (room), an int (N), and an optional bool (B).

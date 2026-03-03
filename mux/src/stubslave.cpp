@@ -25,7 +25,7 @@ DEFINE_FACTORY(CStubSlaveFactory)
 
 extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
 {
-    static UINT8 arg[QUEUE_BLOCK_SIZE];
+    static uint8_t arg[QUEUE_BLOCK_SIZE];
     size_t nWanted = sizeof(arg);
     while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
           && 0 < nWanted)
@@ -129,8 +129,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -156,7 +156,7 @@ public:
     virtual ~CStubSlave();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 CStubSlave::CStubSlave(void) : m_cRef(1)
@@ -190,13 +190,13 @@ MUX_RESULT CStubSlave::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CStubSlave::AddRef(void)
+uint32_t CStubSlave::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CStubSlave::Release(void)
+uint32_t CStubSlave::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -259,7 +259,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         return MUX_E_NOINTERFACE;
     }
 
-    UINT32 iMethod;
+    uint32_t iMethod;
     size_t nWanted = sizeof(iMethod);
     if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
@@ -550,7 +550,7 @@ MUX_RESULT CStubSlave::ReleaseMarshalData(QUEUE_INFO *pqi)
     // to release the reference to the component.  This is only implemented on
     // the server side -- not the proxy.
     //
-    UINT32 nChannel;
+    uint32_t nChannel;
     size_t nWanted = sizeof(nChannel);
     if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
        && sizeof(nChannel) == nWanted)
@@ -635,13 +635,13 @@ MUX_RESULT CStubSlaveFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CStubSlaveFactory::AddRef(void)
+uint32_t CStubSlaveFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CStubSlaveFactory::Release(void)
+uint32_t CStubSlaveFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

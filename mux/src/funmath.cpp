@@ -105,7 +105,7 @@ FUNCTION(fun_iadd)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 sum = 0;
+    int64_t sum = 0;
     for (int i = 0; i < nfargs; i++)
     {
         sum += mux_atoi64(fargs[i]);
@@ -159,9 +159,9 @@ FUNCTION(fun_isub)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 a = mux_atoi64(fargs[0]);
-    INT64 b = mux_atoi64(fargs[1]);
-    INT64 diff = a - b;
+    int64_t a = mux_atoi64(fargs[0]);
+    int64_t b = mux_atoi64(fargs[1]);
+    int64_t diff = a - b;
     safe_i64toa(diff, buff, bufc);
 }
 
@@ -197,7 +197,7 @@ FUNCTION(fun_imul)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 prod = 1;
+    int64_t prod = 1;
     for (int i = 0; i < nfargs; i++)
     {
         prod *= mux_atoi64(fargs[i]);
@@ -545,7 +545,7 @@ FUNCTION(fun_isign)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 num = mux_atoi64(fargs[0]);
+    int64_t num = mux_atoi64(fargs[0]);
 
     if (num < 0)
     {
@@ -575,7 +575,7 @@ FUNCTION(fun_shl)
         long  b = mux_atol(fargs[1]);
         if (0 <= b)
         {
-            INT64 a = mux_atoi64(fargs[0]);
+            int64_t a = mux_atoi64(fargs[0]);
             safe_i64toa(a << b, buff, bufc);
         }
         else
@@ -605,7 +605,7 @@ FUNCTION(fun_shr)
         long  b = mux_atol(fargs[1]);
         if (0 <= b)
         {
-            INT64 a = mux_atoi64(fargs[0]);
+            int64_t a = mux_atoi64(fargs[0]);
             safe_i64toa(a >> b, buff, bufc);
         }
         else
@@ -736,7 +736,7 @@ FUNCTION(fun_idiv)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 bot, top;
+    int64_t bot, top;
 
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
@@ -761,7 +761,7 @@ FUNCTION(fun_floordiv)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 bot, top;
+    int64_t bot, top;
 
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
@@ -786,7 +786,7 @@ FUNCTION(fun_mod)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 bot, top;
+    int64_t bot, top;
 
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
@@ -808,7 +808,7 @@ FUNCTION(fun_remainder)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 bot, top;
+    int64_t bot, top;
 
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
@@ -861,7 +861,7 @@ FUNCTION(fun_iabs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 num = mux_atoi64(fargs[0]);
+    int64_t num = mux_atoi64(fargs[0]);
 
     if (num == 0)
     {
@@ -2425,7 +2425,7 @@ void CSpellNum::FractionalDigits(size_t n, const UTF8 *p)
         }
         AddWord(bigones[d]);
         AddWord(T("th"));
-        INT64 i64 = mux_atoi64(p);
+        int64_t i64 = mux_atoi64(p);
         if (i64 != 1)
         {
             AddWord(T("s"));
@@ -2701,7 +2701,7 @@ FUNCTION(fun_band)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UINT64 val = UINT64_MAX_VALUE;
+    uint64_t val = UINT64_MAX;
     for (int i = 0; i < nfargs; i++)
     {
         if (is_integer(fargs[i], nullptr))
@@ -2726,7 +2726,7 @@ FUNCTION(fun_bor)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UINT64 val = 0;
+    uint64_t val = 0;
     for (int i = 0; i < nfargs; i++)
     {
         if (is_integer(fargs[i], nullptr))
@@ -2755,8 +2755,8 @@ FUNCTION(fun_bnand)
     if (  is_integer(fargs[0], nullptr)
        && is_integer(fargs[1], nullptr))
     {
-        INT64 a = mux_atoi64(fargs[0]);
-        INT64 b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         safe_i64toa(a & ~(b), buff, bufc);
     }
     else
@@ -2774,7 +2774,7 @@ FUNCTION(fun_bxor)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UINT64 val = 0;
+    uint64_t val = 0;
     for (int i = 0; i < nfargs; i++)
     {
         if (is_integer(fargs[i], nullptr))
@@ -2799,7 +2799,7 @@ FUNCTION(fun_crc32)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UINT32 ulCRC32 = 0;
+    uint32_t ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
         size_t n = strlen((char *)fargs[i]);
@@ -2808,7 +2808,7 @@ FUNCTION(fun_crc32)
     safe_i64toa(ulCRC32, buff, bufc);
 }
 
-void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
+void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
 {
     std::vector<UTF8> buf((len * 2) + 1);
 
@@ -2816,7 +2816,7 @@ void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
     const UTF8 *Digits16 = bUpper ? Digits16U : Digits16L;
     for (size_t i = 0; i < len; i++)
     {
-        UINT8 c = md[i];
+        uint8_t c = md[i];
         buf[bufoffset++] = Digits16[(c >> 4) & 0x0F];
         buf[bufoffset++] = Digits16[(c     ) & 0x0F];
     }
@@ -2824,7 +2824,7 @@ void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
     safe_str(buf.data(), buff, bufc);
 }
 
-bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, UINT8 *out_digest, unsigned int *out_len)
+bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, uint8_t *out_digest, unsigned int *out_len)
 {
 #ifdef UNIX_DIGEST
     EVP_MD_CTX *ctx =
@@ -2876,9 +2876,9 @@ bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, UINT8 *
 void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
 {
 #ifdef UNIX_DIGEST
-    UINT8 md[EVP_MAX_MD_SIZE];
+    uint8_t md[EVP_MAX_MD_SIZE];
 #else
-    UINT8 md[MUX_SHA1_DIGEST_LENGTH];
+    uint8_t md[MUX_SHA1_DIGEST_LENGTH];
 #endif
     unsigned int len = 0;
     std::vector<size_t> lens(nfargs);
@@ -2941,7 +2941,7 @@ FUNCTION(fun_digest)
     }
 
     unsigned int len = 0;
-    UINT8 md[EVP_MAX_MD_SIZE];
+    uint8_t md[EVP_MAX_MD_SIZE];
     EVP_DigestFinal(ctx, md, &len);
 #if HAVE_EVP_MD_CTX_NEW
     EVP_MD_CTX_free(ctx);

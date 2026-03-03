@@ -220,8 +220,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IServerEventsControl
     //
@@ -231,7 +231,7 @@ public:
     virtual ~CServerEventsSource();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
     mux_IServerEventsSink *m_pSink;
 };
 
@@ -298,13 +298,13 @@ MUX_RESULT CServerEventsSource::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CServerEventsSource::AddRef(void)
+uint32_t CServerEventsSource::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CServerEventsSource::Release(void)
+uint32_t CServerEventsSource::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -393,13 +393,13 @@ MUX_RESULT CServerEventsSourceFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CServerEventsSourceFactory::AddRef(void)
+uint32_t CServerEventsSourceFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CServerEventsSourceFactory::Release(void)
+uint32_t CServerEventsSourceFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -453,8 +453,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -481,8 +481,8 @@ public:
     virtual ~CStubSlaveProxy();
 
 private:
-    UINT32 m_cRef;
-    UINT32 m_nChannel;
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
     UTF8  *m_pModuleName;
 };
 
@@ -522,13 +522,13 @@ MUX_RESULT CStubSlaveProxy::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CStubSlaveProxy::AddRef(void)
+uint32_t CStubSlaveProxy::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CStubSlaveProxy::Release(void)
+uint32_t CStubSlaveProxy::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -614,7 +614,7 @@ MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFile
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 3;
+    uint32_t iMethod = 3;
     struct FRAME
     {
         size_t nModuleName;
@@ -666,7 +666,7 @@ MUX_RESULT CStubSlaveProxy::RemoveModule(const UTF8 aModuleName[])
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 4;
+    uint32_t iMethod = 4;
     struct FRAME
     {
         size_t nModuleName;
@@ -711,7 +711,7 @@ MUX_RESULT CStubSlaveProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 5;
+    uint32_t iMethod = 5;
     struct FRAME
     {
         int    iModule;
@@ -800,7 +800,7 @@ MUX_RESULT CStubSlaveProxy::ModuleMaintenance(void)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 6;
+    uint32_t iMethod = 6;
 
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
@@ -837,7 +837,7 @@ MUX_RESULT CStubSlaveProxy::ShutdownSlave(void)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 7;
+    uint32_t iMethod = 7;
 
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
@@ -894,13 +894,13 @@ MUX_RESULT CStubSlaveProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CStubSlaveProxyFactory::AddRef(void)
+uint32_t CStubSlaveProxyFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CStubSlaveProxyFactory::Release(void)
+uint32_t CStubSlaveProxyFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -964,8 +964,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -977,13 +977,13 @@ public:
 
     // mux_IQuerySink
     //
-    virtual MUX_RESULT Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet);
+    virtual MUX_RESULT Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet);
 
     CQueryClient(void);
     virtual ~CQueryClient();
 
 private:
-    UINT32 m_cRef;
+    uint32_t m_cRef;
 };
 
 CQueryClient::CQueryClient(void) : m_cRef(1)
@@ -1017,13 +1017,13 @@ MUX_RESULT CQueryClient::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryClient::AddRef(void)
+uint32_t CQueryClient::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryClient::Release(void)
+uint32_t CQueryClient::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -1061,7 +1061,7 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         return MUX_E_NOINTERFACE;
     }
 
-    UINT32 iMethod;
+    uint32_t iMethod;
     size_t nWanted = sizeof(iMethod);
     if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
@@ -1076,12 +1076,12 @@ MUX_RESULT CQueryClient_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
     //
     switch (iMethod)
     {
-    case 3:  // MUX_RESULT Result(UINT32 iQueryHandle, const UTF8 *pResultSet)
+    case 3:  // MUX_RESULT Result(uint32_t iQueryHandle, const UTF8 *pResultSet)
         {
             struct FRAME
             {
-                UINT32 iQueryHandle;
-                UINT32 iError;
+                uint32_t iQueryHandle;
+                uint32_t iError;
             } CallFrame;
 
             struct RETURN
@@ -1209,7 +1209,7 @@ MUX_RESULT CQueryClient::ReleaseMarshalData(QUEUE_INFO *pqi)
     // to release the reference to the component.  This is only implemented on
     // the server side -- not the proxy.
     //
-    UINT32 nChannel;
+    uint32_t nChannel;
     size_t nWanted = sizeof(nChannel);
     if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
        && sizeof(nChannel) == nWanted)
@@ -1234,7 +1234,7 @@ MUX_RESULT CQueryClient::DisconnectObject(void)
     return MUX_S_OK;
 }
 
-MUX_RESULT CQueryClient::Result(UINT32 hQuery, UINT32 iError, QUEUE_INFO *pqiResultsSet)
+MUX_RESULT CQueryClient::Result(uint32_t hQuery, uint32_t iError, QUEUE_INFO *pqiResultsSet)
 {
 #if defined(STUB_SLAVE)
     CResultsSet *prs = nullptr;
@@ -1285,13 +1285,13 @@ MUX_RESULT CQueryClientFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryClientFactory::AddRef(void)
+uint32_t CQueryClientFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryClientFactory::Release(void)
+uint32_t CQueryClientFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -1419,12 +1419,12 @@ bool CResultsSet::isLoaded(void)
     return m_bLoaded;
 }
 
-void CResultsSet::SetError(UINT32 iError)
+void CResultsSet::SetError(uint32_t iError)
 {
     m_iError = iError;
 }
 
-UINT32 CResultsSet::GetError(void)
+uint32_t CResultsSet::GetError(void)
 {
     return m_iError;
 }
@@ -1484,7 +1484,7 @@ CResultsSet::~CResultsSet(void)
     }
 }
 
-UINT32 CResultsSet::Release(void)
+uint32_t CResultsSet::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -1495,7 +1495,7 @@ UINT32 CResultsSet::Release(void)
     return m_cRef;
 }
 
-UINT32 CResultsSet::AddRef(void)
+uint32_t CResultsSet::AddRef(void)
 {
     m_cRef++;
     return m_cRef;

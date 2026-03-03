@@ -19,8 +19,8 @@ public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual UINT32     AddRef(void);
-    virtual UINT32     Release(void);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
 
     // mux_IMarshal
     //
@@ -34,14 +34,14 @@ public:
     //
     virtual MUX_RESULT Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword);
     virtual MUX_RESULT Advise(mux_IQuerySink *pIQuerySink);
-    virtual MUX_RESULT Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
+    virtual MUX_RESULT Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery);
 
     CQueryServer(void);
     MUX_RESULT FinalConstruct(void);
     virtual ~CQueryServer();
 
 private:
-    UINT32          m_cRef;
+    uint32_t          m_cRef;
     mux_IQuerySink *m_pIQuerySink;
 #if defined(HAVE_MYSQL)
     MYSQL          *m_database;
@@ -54,8 +54,8 @@ private:
     void ConnectionHelper();
 };
 
-static INT32 g_cComponents  = 0;
-static INT32 g_cServerLocks = 0;
+static int32_t g_cComponents  = 0;
+static int32_t g_cServerLocks = 0;
 
 #define NUM_CLASSES 2
 static MUX_CLASS_INFO sum_classes[NUM_CLASSES] =
@@ -222,13 +222,13 @@ MUX_RESULT CQueryServer::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryServer::AddRef(void)
+uint32_t CQueryServer::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryServer::Release(void)
+uint32_t CQueryServer::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -291,7 +291,7 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         return MUX_E_NOINTERFACE;
     }
 
-    UINT32 iMethod;
+    uint32_t iMethod;
     size_t nWanted = sizeof(iMethod);
     if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
        || nWanted != sizeof(iMethod))
@@ -421,11 +421,11 @@ MUX_RESULT CQueryControl_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
         }
         break;
 
-    case 5:  // MUX_RESULT Query(UINT32 iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery);
+    case 5:  // MUX_RESULT Query(uint32_t iQueryHandle, UTF8 *pDatabaseName, UTF8 *pQuery);
         {
             struct FRAME
             {
-                UINT32 iQueryHandle;
+                uint32_t iQueryHandle;
                 size_t nDatabaseName;
                 size_t nQuery;
             } CallFrame;
@@ -580,7 +580,7 @@ MUX_RESULT CQueryServer::ReleaseMarshalData(QUEUE_INFO *pqi)
     // to release the reference to the component.  This is only implemented on
     // the server side -- not the proxy.
     //
-    UINT32 nChannel;
+    uint32_t nChannel;
     size_t nWanted = sizeof(nChannel);
     if (  Pipe_GetBytes(pqi, &nWanted, &nChannel)
        && sizeof(nChannel) == nWanted)
@@ -688,7 +688,7 @@ MUX_RESULT CQueryServer::Advise(mux_IQuerySink *pIQuerySink)
     return MUX_S_OK;
 }
 
-MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
+MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName, const UTF8 *pQuery)
 {
     UNUSED_PARAMETER(pDatabaseName);
 
@@ -697,7 +697,7 @@ MUX_RESULT CQueryServer::Query(UINT32 iQueryHandle, const UTF8 *pDatabaseName, c
         return MUX_E_NOTREADY;
     }
 
-    UINT32 iError = QS_SUCCESS;
+    uint32_t iError = QS_SUCCESS;
 
     QUEUE_INFO qiResultsSet;
     Pipe_InitializeQueueInfo(&qiResultsSet);
@@ -820,13 +820,13 @@ MUX_RESULT CQueryServerFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQueryServerFactory::AddRef(void)
+uint32_t CQueryServerFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQueryServerFactory::Release(void)
+uint32_t CQueryServerFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -929,13 +929,13 @@ MUX_RESULT CQuerySinkProxy::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQuerySinkProxy::AddRef(void)
+uint32_t CQuerySinkProxy::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQuerySinkProxy::Release(void)
+uint32_t CQuerySinkProxy::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)
@@ -1007,7 +1007,7 @@ MUX_RESULT CQuerySinkProxy::DisconnectObject(void)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INFO *pqiResultsSet)
+MUX_RESULT CQuerySinkProxy::Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet)
 {
     UNUSED_PARAMETER(iQueryHandle);
 
@@ -1018,13 +1018,13 @@ MUX_RESULT CQuerySinkProxy::Result(UINT32 iQueryHandle, UINT32 iError, QUEUE_INF
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    UINT32 iMethod = 3;
+    uint32_t iMethod = 3;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
 
     struct FRAME
     {
-        UINT32 iQueryHandle;
-        UINT32 iError;
+        uint32_t iQueryHandle;
+        uint32_t iError;
     } CallFrame;
 
     CallFrame.iQueryHandle = iQueryHandle;
@@ -1086,13 +1086,13 @@ MUX_RESULT CQuerySinkProxyFactory::QueryInterface(MUX_IID iid, void **ppv)
     return MUX_S_OK;
 }
 
-UINT32 CQuerySinkProxyFactory::AddRef(void)
+uint32_t CQuerySinkProxyFactory::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
 }
 
-UINT32 CQuerySinkProxyFactory::Release(void)
+uint32_t CQuerySinkProxyFactory::Release(void)
 {
     m_cRef--;
     if (0 == m_cRef)

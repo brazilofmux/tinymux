@@ -3712,7 +3712,7 @@ size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value)
     return nWidth;
 }
 
-size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill)
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill)
 {
     UTF8   buffer[I64BUF_SIZE];
     size_t nReturn = 0;
@@ -3740,7 +3740,7 @@ static void list_hashstat(const dbref player, const UTF8* tab_name, CHashTable* 
 {
     unsigned int hashsize;
     int          entries, max_scan;
-    INT64        deletes, scans, hits, checks;
+    int64_t        deletes, scans, hits, checks;
 
     htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks, &max_scan);
 
