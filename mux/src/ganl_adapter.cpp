@@ -45,6 +45,7 @@ extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
 void site_mon_send(const SOCKET port, const UTF8* address, DESC* d, const UTF8* msg);
 void announce_connect(const dbref player, DESC* d);
+UTF8* ConvertCRLFtoSpace(const UTF8* pString);
 
 namespace
 {
@@ -1474,6 +1475,7 @@ void GanlAdapter::shutdown() {
     lock.unlock();
 
     shutdown_dns_slave();
+    shutdown_email_channel();
 
     // Close listeners first
     std::vector<ganl::ListenerHandle> plainHandles, sslHandles;
@@ -1685,6 +1687,7 @@ void GanlAdapter::prepare_for_restart() {
 
     // 8. Shut down engine, transport, session manager, protocol handler.
     shutdown_dns_slave();
+    shutdown_email_channel();
     if (sessionManager_) {
         sessionManager_->shutdown();
         sessionManager_.reset();
@@ -1774,6 +1777,11 @@ void GanlAdapter::run_main_loop() {
         for (int i = 0; i < num_events; ++i) {
             if (dns_slave_ && (events[i].connection == dns_slave_->handle || events[i].context == dns_slave_.get())) {
                 handle_dns_slave_event(events[i]);
+                continue;
+            }
+
+            if (email_channel_ && (events[i].connection == email_channel_->handle || events[i].context == email_channel_.get())) {
+                handle_email_channel_event(events[i]);
                 continue;
             }
 
@@ -2304,6 +2312,465 @@ void GanlAdapter::drain_dns_results() {
     }
 }
 #endif
+
+
+// ---------------------------------------------------------------------------
+// Email channel — async SMTP client via GANL event-driven I/O
+// ---------------------------------------------------------------------------
+
+bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
+                                   const UTF8* subject, const UTF8* encodedBody) {
+    if (!networkEngine_) {
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (email_channel_) {
+            notify(executor, T("@email: Another email is already in progress."));
+            return false;
+        }
+    }
+
+    // DNS resolution (blocking — acceptable for same-box SMTP).
+    MUX_ADDRINFO hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags    = AI_ADDRCONFIG;
+
+    UTF8* pMailServer = ConvertCRLFtoSpace(mudconf.mail_server);
+
+    MUX_ADDRINFO* servinfo = nullptr;
+    if (0 != mux_getaddrinfo(pMailServer, reinterpret_cast<const UTF8*>("25"),
+                             &hints, &servinfo)) {
+        notify(executor, tprintf(T("@email: Unable to resolve hostname %s!"),
+            pMailServer));
+        return false;
+    }
+
+    // Try each address until we find a socket we can connect on.
+    // We create the socket, adopt it into GANL (which sets non-blocking),
+    // then call connect().  A non-blocking connect returns EINPROGRESS
+    // (Unix) or WSAEWOULDBLOCK (Windows) when it cannot complete
+    // immediately, which is normal for async operation.
+    //
+    SOCKET sockFd = INVALID_SOCKET;
+    struct sockaddr_storage connectAddr;
+    socklen_t connectAddrLen = 0;
+
+    for (MUX_ADDRINFO* p = servinfo; nullptr != p; p = p->ai_next) {
+        SOCKET s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (IS_INVALID_SOCKET(s)) {
+            continue;
+        }
+        sockFd = s;
+        memcpy(&connectAddr, p->ai_addr, p->ai_addrlen);
+        connectAddrLen = p->ai_addrlen;
+        break;
+    }
+    mux_freeaddrinfo(servinfo);
+
+    if (IS_INVALID_SOCKET(sockFd)) {
+        notify(executor, T("@email: Unable to connect to mailserver, aborting!"));
+        return false;
+    }
+
+    auto channel = std::make_unique<EmailChannel>();
+    channel->fd       = static_cast<int>(sockFd);
+    channel->executor = executor;
+    channel->state    = EmailChannel::State::Connecting;
+
+    // Copy all static-buffer results into stable std::string storage.
+    channel->recipientAddr = reinterpret_cast<const char*>(recipient);
+    channel->subject       = reinterpret_cast<const char*>(subject);
+    channel->encodedBody   = reinterpret_cast<const char*>(encodedBody);
+    channel->senderAddr    = reinterpret_cast<const char*>(
+        ConvertCRLFtoSpace(mudconf.mail_sendaddr));
+    channel->senderName    = reinterpret_cast<const char*>(
+        ConvertCRLFtoSpace(mudconf.mail_sendname));
+    channel->ehloHost      = reinterpret_cast<const char*>(
+        ConvertCRLFtoSpace(mudconf.mail_ehlo));
+
+    // adoptConnection sets non-blocking and registers with the I/O engine.
+    ganl::ErrorCode error = 0;
+    ganl::ConnectionHandle handle = networkEngine_->adoptConnection(
+        static_cast<int>(sockFd), channel.get(), error);
+    if (handle == ganl::InvalidConnectionHandle) {
+        SOCKET_CLOSE(sockFd);
+        notify(executor, T("@email: Unable to register socket with network engine."));
+        return false;
+    }
+
+    channel->handle = handle;
+
+    // Now that the fd is non-blocking (via adoptConnection), initiate
+    // the connect.  Expect EINPROGRESS / EWOULDBLOCK for async.
+    int rc = connect(static_cast<int>(sockFd),
+                     reinterpret_cast<struct sockaddr*>(&connectAddr),
+                     connectAddrLen);
+    if (rc != 0) {
+        int err = SOCKET_LAST_ERROR;
+        if (err != SOCKET_EWOULDBLOCK
+#if !defined(_WIN32)
+            && err != EINPROGRESS
+#endif
+           ) {
+            networkEngine_->closeConnection(handle);
+            notify(executor, T("@email: Unable to connect to mailserver, aborting!"));
+            return false;
+        }
+    }
+
+    // Register write interest so we get notified when connect() completes
+    // (socket becomes writable = connected).
+    if (!networkEngine_->postWrite(handle, nullptr, 0, channel.get(), error)) {
+        networkEngine_->closeConnection(handle);
+        notify(executor, T("@email: Unable to register socket with network engine."));
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        email_channel_ = std::move(channel);
+    }
+
+    return true;
+}
+
+void GanlAdapter::shutdown_email_channel() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (!email_channel_) {
+        return;
+    }
+
+    auto handle = email_channel_->handle;
+    email_channel_.reset();
+    lock.unlock();
+
+    if (networkEngine_ && handle != ganl::InvalidConnectionHandle) {
+        networkEngine_->closeConnection(handle);
+    }
+}
+
+void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
+    bool needCleanup = false;
+    const UTF8* errorMsg = nullptr;
+
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (!email_channel_ || (event.connection != email_channel_->handle &&
+                                event.context != email_channel_.get())) {
+            return;
+        }
+
+        switch (event.type) {
+        case ganl::IoEventType::Write:
+            if (email_channel_->state == EmailChannel::State::Connecting) {
+                // Check if non-blocking connect() succeeded.
+                int sockerr = 0;
+                socklen_t errlen = sizeof(sockerr);
+                if (getsockopt(email_channel_->fd, SOL_SOCKET, SO_ERROR,
+                               &sockerr, &errlen) < 0 || sockerr != 0) {
+                    errorMsg = T("@email: Unable to connect to mailserver, aborting!");
+                    needCleanup = true;
+                } else {
+                    email_channel_->state = EmailChannel::State::WaitGreeting;
+                }
+            } else {
+                if (!flush_email_writes_locked()) {
+                    errorMsg = T("@email: Connection to mailserver lost.");
+                    needCleanup = true;
+                }
+            }
+            break;
+
+        case ganl::IoEventType::Read:
+            if (!process_email_read_locked()) {
+                // process_email_read_locked handles its own notifications
+                // for protocol errors.  A false return with no state
+                // transition means a read error.
+                if (email_channel_ &&
+                    email_channel_->state != EmailChannel::State::Done &&
+                    email_channel_->state != EmailChannel::State::Error) {
+                    errorMsg = T("@email: Connection to mailserver lost.");
+                }
+                needCleanup = true;
+            }
+            break;
+
+        case ganl::IoEventType::Close:
+        case ganl::IoEventType::Error:
+            if (email_channel_->state != EmailChannel::State::Done &&
+                email_channel_->state != EmailChannel::State::SentQuit) {
+                errorMsg = T("@email: Connection to mailserver lost.");
+            }
+            needCleanup = true;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    if (needCleanup) {
+        if (errorMsg) {
+            email_notify_and_cleanup(errorMsg);
+        } else {
+            shutdown_email_channel();
+        }
+    }
+}
+
+bool GanlAdapter::process_email_read_locked() {
+    if (!email_channel_) {
+        return false;
+    }
+
+    // Loop reads until EAGAIN (edge-triggered epoll).
+    for (;;) {
+        char buffer[MBUF_SIZE];
+        ssize_t nbytes = mux_read(email_channel_->fd, buffer, sizeof(buffer));
+        if (nbytes > 0) {
+            email_channel_->readBuffer.append(buffer,
+                static_cast<size_t>(nbytes));
+        } else if (nbytes == 0) {
+            // Connection closed by remote.
+            if (email_channel_->state == EmailChannel::State::SentQuit ||
+                email_channel_->state == EmailChannel::State::Done) {
+                email_channel_->state = EmailChannel::State::Done;
+                return false; // Signal cleanup (not an error)
+            }
+            return false;
+        } else {
+            if (SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
+                break;
+            }
+            return false;
+        }
+    }
+
+    // Extract complete lines from the read buffer.  SMTP multi-line
+    // responses have '-' at position 3 for continuation lines; only the
+    // final line (with ' ' at position 3) is passed to the state machine.
+    size_t newlinePos;
+    while ((newlinePos = email_channel_->readBuffer.find('\n'))
+           != std::string::npos) {
+        std::string line = email_channel_->readBuffer.substr(0, newlinePos);
+        email_channel_->readBuffer.erase(0, newlinePos + 1);
+
+        // Strip trailing CR.
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
+            line.pop_back();
+        }
+
+        if (line.empty()) {
+            continue;
+        }
+
+        // SMTP multi-line: if char at position 3 is '-', it's a
+        // continuation line — skip it and wait for the final line.
+        if (line.size() > 3 && line[3] == '-') {
+            continue;
+        }
+
+        email_advance_state_locked(line);
+
+        if (email_channel_->state == EmailChannel::State::Done ||
+            email_channel_->state == EmailChannel::State::Error) {
+            return false; // Signal cleanup
+        }
+    }
+
+    return true;
+}
+
+void GanlAdapter::email_queue_write_locked(const std::string& data) {
+    if (!email_channel_) {
+        return;
+    }
+
+    email_channel_->pendingWrites.push_back(data);
+    // Try to flush immediately; if EAGAIN, postWrite will be called.
+    flush_email_writes_locked();
+}
+
+bool GanlAdapter::flush_email_writes_locked() {
+    if (!email_channel_) {
+        return false;
+    }
+
+    while (true) {
+        if (email_channel_->currentWrite.empty()) {
+            if (email_channel_->pendingWrites.empty()) {
+                email_channel_->writeInterest = false;
+                return true;
+            }
+            email_channel_->currentWrite = std::move(
+                email_channel_->pendingWrites.front());
+            email_channel_->pendingWrites.pop_front();
+        }
+
+        const char* data = email_channel_->currentWrite.data();
+        size_t remaining = email_channel_->currentWrite.size();
+        ssize_t written = mux_write(email_channel_->fd, data, remaining);
+        if (written > 0) {
+            email_channel_->currentWrite.erase(
+                0, static_cast<size_t>(written));
+            continue;
+        }
+
+        if (written == -1 && SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
+            if (!email_channel_->writeInterest) {
+                ganl::ErrorCode error = 0;
+                if (networkEngine_->postWrite(email_channel_->handle,
+                        nullptr, 0, email_channel_.get(), error)) {
+                    email_channel_->writeInterest = true;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Write error.
+        return false;
+    }
+}
+
+void GanlAdapter::email_advance_state_locked(const std::string& responseLine) {
+    if (!email_channel_ || responseLine.empty()) {
+        return;
+    }
+
+    char code = responseLine[0];
+
+    switch (email_channel_->state) {
+    case EmailChannel::State::WaitGreeting:
+        if (code == '2') {
+            // Good greeting, send EHLO.
+            email_queue_write_locked(
+                "EHLO " + email_channel_->ehloHost + "\r\n");
+            email_channel_->state = EmailChannel::State::SentEhlo;
+        } else {
+            // Bad greeting — notify and quit.
+            notify(email_channel_->executor,
+                tprintf(T("@email: Invalid mailserver greeting (%s)"),
+                    responseLine.c_str()));
+            email_queue_write_locked("QUIT\r\n");
+            email_channel_->state = EmailChannel::State::SentQuit;
+        }
+        break;
+
+    case EmailChannel::State::SentEhlo:
+        if (code != '2') {
+            // Warn but continue (matching original behavior).
+            notify(email_channel_->executor,
+                tprintf(T("@email: Error response on EHLO (%s)"),
+                    responseLine.c_str()));
+        }
+        // Send MAIL FROM.
+        email_queue_write_locked(
+            "MAIL FROM:<" + email_channel_->senderAddr + ">\r\n");
+        email_channel_->state = EmailChannel::State::SentMailFrom;
+        break;
+
+    case EmailChannel::State::SentMailFrom:
+        if (code != '2') {
+            // Warn but continue (matching original behavior).
+            notify(email_channel_->executor,
+                tprintf(T("@email: Error response on MAIL FROM (%s)"),
+                    responseLine.c_str()));
+        }
+        // Send RCPT TO.
+        email_queue_write_locked(
+            "RCPT TO:<" + email_channel_->recipientAddr + ">\r\n");
+        email_channel_->state = EmailChannel::State::SentRcptTo;
+        break;
+
+    case EmailChannel::State::SentRcptTo:
+        if (code != '2') {
+            // RCPT TO error — abort.
+            notify(email_channel_->executor,
+                tprintf(T("@email: Error response on RCPT TO (%s)"),
+                    responseLine.c_str()));
+            email_queue_write_locked("QUIT\r\n");
+            email_channel_->state = EmailChannel::State::SentQuit;
+        } else {
+            email_queue_write_locked("DATA\r\n");
+            email_channel_->state = EmailChannel::State::SentData;
+        }
+        break;
+
+    case EmailChannel::State::SentData:
+        if (code != '3') {
+            // DATA error — abort.
+            notify(email_channel_->executor,
+                tprintf(T("@email: Error response on DATA (%s)"),
+                    responseLine.c_str()));
+            email_queue_write_locked("QUIT\r\n");
+            email_channel_->state = EmailChannel::State::SentQuit;
+        } else {
+            // Send headers + encoded body.
+            std::string payload;
+            payload += "From: " + email_channel_->senderName +
+                       " <" + email_channel_->senderAddr + ">\r\n";
+            payload += "To: " + email_channel_->recipientAddr + "\r\n";
+            payload += "X-Mailer: TinyMUX ";
+            payload += reinterpret_cast<const char*>(mudstate.short_ver);
+            payload += "\r\n";
+            payload += "Subject: " + email_channel_->subject + "\r\n\r\n";
+            payload += email_channel_->encodedBody;
+            email_queue_write_locked(payload);
+            email_channel_->state = EmailChannel::State::SentBody;
+        }
+        break;
+
+    case EmailChannel::State::SentBody:
+        if (code == '2') {
+            // Success — extract message from response (skip "250 ").
+            const char* detail = "";
+            if (responseLine.size() > 4) {
+                detail = responseLine.c_str() + 4;
+            }
+            notify(email_channel_->executor,
+                tprintf(T("@email: Mail sent to %s (%s)"),
+                    email_channel_->recipientAddr.c_str(), detail));
+        } else {
+            notify(email_channel_->executor,
+                tprintf(T("@email: Message rejected (%s)"),
+                    responseLine.c_str()));
+        }
+        email_queue_write_locked("QUIT\r\n");
+        email_channel_->state = EmailChannel::State::SentQuit;
+        break;
+
+    case EmailChannel::State::SentQuit:
+        // Any response after QUIT — we're done.
+        email_channel_->state = EmailChannel::State::Done;
+        break;
+
+    default:
+        break;
+    }
+}
+
+void GanlAdapter::email_notify_and_cleanup(const UTF8* message) {
+    dbref executor = NOTHING;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (email_channel_) {
+            executor = email_channel_->executor;
+        }
+    }
+
+    if (executor != NOTHING && message) {
+        notify(executor, message);
+    }
+
+    shutdown_email_channel();
+}
 
 
 void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {

@@ -138,6 +138,51 @@ public:
     bool flush_dns_slave_writes_locked();
     void apply_reverse_dns_result(const std::string& numericAddress, const std::string& hostname);
 
+    struct EmailChannel {
+        ganl::ConnectionHandle handle{ganl::InvalidConnectionHandle};
+        int fd{-1};
+
+        enum class State {
+            Connecting,      // Waiting for non-blocking connect() to complete
+            WaitGreeting,    // Waiting for 220 greeting
+            SentEhlo,        // Sent EHLO, waiting for 250
+            SentMailFrom,    // Sent MAIL FROM, waiting for 250
+            SentRcptTo,      // Sent RCPT TO, waiting for 250
+            SentData,        // Sent DATA, waiting for 354
+            SentBody,        // Sent headers+body, waiting for 250
+            SentQuit,        // Sent QUIT, draining
+            Done,
+            Error
+        };
+        State state{State::Connecting};
+
+        // Buffered I/O (same pattern as DnsSlaveChannel)
+        std::deque<std::string> pendingWrites;
+        std::string currentWrite;
+        std::string readBuffer;
+        bool writeInterest{false};
+
+        // SMTP conversation data (captured at launch)
+        dbref executor{NOTHING};
+        std::string recipientAddr;
+        std::string subject;
+        std::string encodedBody;
+        std::string senderAddr;
+        std::string senderName;
+        std::string ehloHost;
+    };
+    std::unique_ptr<EmailChannel> email_channel_;
+
+    bool start_email_send(dbref executor, const UTF8* recipient,
+                          const UTF8* subject, const UTF8* encodedBody);
+    void shutdown_email_channel();
+    void handle_email_channel_event(const ganl::IoEvent& event);
+    bool process_email_read_locked();
+    bool flush_email_writes_locked();
+    void email_queue_write_locked(const std::string& data);
+    void email_advance_state_locked(const std::string& responseLine);
+    void email_notify_and_cleanup(const UTF8* message);
+
     void process_tinyMUX_tasks(); // Helper to run timers, quotas etc.
 
     // Deferred finalization for TLS connections. welcome_user() cannot be
