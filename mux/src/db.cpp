@@ -17,6 +17,8 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+
+#include <filesystem>
 using namespace std;
 
 #ifndef O_ACCMODE
@@ -3932,79 +3934,27 @@ void load_restart_db(void)
 }
 #endif // HAVE_WORKING_FORK
 
-#if defined(WINDOWS_FILES)
-
-int ReplaceFile(UTF8 *old_name_arg, UTF8 *new_name_arg)
-{
-    size_t new_name_length;
-    UTF16 *new_name = ConvertFromUTF8ToUTF16(new_name_arg, new_name_length);
-    if (nullptr == new_name)
-    {
-        return -1;
-    }
-
-    const size_t n = (new_name_length+1) * sizeof(UTF16);
-    const auto p = static_cast<UTF16*>(MEMALLOC(n));
-    if (nullptr == p)
-    {
-        return -1;
-    }
-    memcpy(p, new_name, n);
-    new_name = p;
-
-    size_t old_name_length;
-    UTF16 *old_name = ConvertFromUTF8ToUTF16(old_name_arg, old_name_length);
-    if (nullptr == old_name)
-    {
-        MEMFREE(new_name);
-        return -1;
-    }
-
-    DeleteFile(new_name);
-    if (MoveFile(old_name, new_name))
-    {
-        MEMFREE(new_name);
-        return 0;
-    }
-    else
-    {
-        Log.tinyprintf(T("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE),
-            old_name, new_name_arg, GetLastError());
-    }
-    MEMFREE(new_name);
-    return -1;
-}
-
-void RemoveFile(const UTF8 *name)
-{
-    size_t new_name_length;
-    UTF16 *file_to_delete = ConvertFromUTF8ToUTF16(name, new_name_length);
-    if (nullptr != file_to_delete)
-    {
-        DeleteFile(file_to_delete);
-    }
-}
-
-#endif // WINDOWS_FILES
-
-#if defined(UNIX_FILES)
-
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    if (rename((char *)old_name, (char *)new_name) == 0)
+    std::error_code ec;
+    std::filesystem::rename(
+        std::filesystem::u8path(reinterpret_cast<const char*>(old_name)),
+        std::filesystem::u8path(reinterpret_cast<const char*>(new_name)),
+        ec);
+    if (ec)
     {
-        return 0;
+        Log.tinyprintf(T("rename %s to %s fails: %s (%d)" ENDLINE),
+            old_name, new_name, ec.message().c_str(), ec.value());
+        return -1;
     }
-    else
-    {
-        Log.tinyprintf(T("rename %s to %s fails with errno of %s(%d)" ENDLINE), old_name, new_name, strerror(errno), errno);
-    }
-    return -1;
+    return 0;
 }
 
 void RemoveFile(const UTF8 *name)
 {
-    unlink((char *)name);
+    std::error_code ec;
+    std::filesystem::remove(
+        std::filesystem::u8path(reinterpret_cast<const char*>(name)),
+        ec);
 }
-#endif // UNIX_FILES
 

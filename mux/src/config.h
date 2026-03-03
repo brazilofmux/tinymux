@@ -243,10 +243,8 @@ extern int    fseek(FILE *, long, int);
 extern int    fwrite(void *, size_t, size_t, FILE *);
 extern pid_t  getpid(void);
 extern int    pclose(FILE *);
-extern int    rename(char *, char *);
 extern time_t time(time_t *);
 extern int    ungetc(int, FILE *);
-extern int    unlink(const char *);
 #endif
 
 #ifdef HAVE_SYS_SOCKET_H
