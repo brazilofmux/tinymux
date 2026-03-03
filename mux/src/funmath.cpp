@@ -962,15 +962,13 @@ static void handle_vectors
         return;
     }
 
-    UTF8 **v1 = new UTF8 *[(LBUF_SIZE+1)/2];
-    ISOUTOFMEMORY(v1);
-    UTF8 **v2 = new UTF8 *[(LBUF_SIZE+1)/2];
-    ISOUTOFMEMORY(v2);
+    std::vector<UTF8*> v1((LBUF_SIZE+1)/2);
+    std::vector<UTF8*> v2((LBUF_SIZE+1)/2);
 
     // Split the list up, or return if the list is empty.
     //
-    int n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, sep);
-    int m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, sep);
+    int n = list2arr(v1.data(), (LBUF_SIZE+1)/2, vecarg1, sep);
+    int m = list2arr(v2.data(), (LBUF_SIZE+1)/2, vecarg2, sep);
 
     // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
@@ -983,8 +981,6 @@ static void handle_vectors
               || m == 1)))
     {
         safe_str(T("#-1 VECTORS MUST BE SAME DIMENSIONS"), buff, bufc);
-        delete [] v1;
-        delete [] v2;
         return;
     }
 
@@ -1183,8 +1179,6 @@ static void handle_vectors
         //
         safe_str(T("#-1 UNIMPLEMENTED"), buff, bufc);
     }
-    delete [] v1;
-    delete [] v2;
 }
 
 FUNCTION(fun_vadd)
@@ -1286,42 +1280,29 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    UTF8 **v1 = nullptr;
-    try
+    std::vector<UTF8*> v1(LBUF_SIZE/2);
+    int n = list2arr(v1.data(), LBUF_SIZE/2, fargs[0], sep);
+
+    // Calculate the magnitude.
+    //
+    double res = 0.0;
+    for (int i = 0; i < n; i++)
     {
-        v1 = new UTF8 *[LBUF_SIZE/2];
+        double tmp = mux_atof(v1[i]);
+        res += tmp * tmp;
     }
-    catch (...)
+
+    if (res > 0)
     {
-        ; // Nothing.
+        mux_FPRestore();
+        double result = sqrt(res);
+        mux_FPSet();
+
+        fval(buff, bufc, result);
     }
-
-    if (nullptr != v1)
+    else
     {
-        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
-
-        // Calculate the magnitude.
-        //
-        double res = 0.0;
-        for (int i = 0; i < n; i++)
-        {
-            double tmp = mux_atof(v1[i]);
-            res += tmp * tmp;
-        }
-
-        if (res > 0)
-        {
-            mux_FPRestore();
-            double result = sqrt(res);
-            mux_FPSet();
-
-            fval(buff, bufc, result);
-        }
-        else
-        {
-            safe_chr('0', buff, bufc);
-        }
-        delete [] v1;
+        safe_chr('0', buff, bufc);
     }
 }
 
@@ -1340,52 +1321,38 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    UTF8 **v1 = nullptr;
-    try
+    std::vector<UTF8*> v1(LBUF_SIZE/2);
+    int n = list2arr(v1.data(), LBUF_SIZE/2, fargs[0], sep);
+
+    // Calculate the magnitude.
+    //
+    int i;
+    double res = 0.0;
+    for (i = 0; i < n; i++)
     {
-        v1 = new UTF8 *[LBUF_SIZE/2];
+        double tmp = mux_atof(v1[i]);
+        res += tmp * tmp;
     }
-    catch (...)
+
+    if (res <= 0)
     {
-        ; // Nothing.
+        safe_str(T("#-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
+            buff, bufc);
+        return;
     }
 
-    if (nullptr != v1)
+    for (i = 0; i < n; i++)
     {
-        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], sep);
-
-        // Calculate the magnitude.
-        //
-        int i;
-        double res = 0.0;
-        for (i = 0; i < n; i++)
+        if (0 != i)
         {
-            double tmp = mux_atof(v1[i]);
-            res += tmp * tmp;
+            print_sep(sep, buff, bufc);
         }
 
-        if (res <= 0)
-        {
-            safe_str(T("#-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
-                buff, bufc);
-            delete [] v1;
-            return;
-        }
+        mux_FPRestore();
+        double result = sqrt(res);
+        mux_FPSet();
 
-        for (i = 0; i < n; i++)
-        {
-            if (0 != i)
-            {
-                print_sep(sep, buff, bufc);
-            }
-
-            mux_FPRestore();
-            double result = sqrt(res);
-            mux_FPSet();
-
-            fval(buff, bufc, mux_atof(v1[i]) / result);
-        }
-        delete [] v1;
+        fval(buff, bufc, mux_atof(v1[i]) / result);
     }
 }
 
@@ -2843,20 +2810,7 @@ FUNCTION(fun_crc32)
 
 void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
 {
-    UTF8 *buf = nullptr;
-    try
-    {
-        buf = new UTF8[(len * 2) + 1];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == buf)
-    {
-        return;
-    }
+    std::vector<UTF8> buf((len * 2) + 1);
 
     int bufoffset = 0;
     const UTF8 *Digits16 = bUpper ? Digits16U : Digits16L;
@@ -2867,8 +2821,7 @@ void safe_hex(UINT8 md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
         buf[bufoffset++] = Digits16[(c     ) & 0x0F];
     }
     buf[bufoffset] = '\0';
-    safe_str(buf, buff, bufc);
-    delete [] buf;
+    safe_str(buf.data(), buff, bufc);
 }
 
 bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, UINT8 *out_digest, unsigned int *out_len)
@@ -2928,18 +2881,16 @@ void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
     UINT8 md[MUX_SHA1_DIGEST_LENGTH];
 #endif
     unsigned int len = 0;
-    size_t *lens = new size_t[nfargs];
+    std::vector<size_t> lens(nfargs);
     for (int i = 0; i < nfargs; i++)
     {
         lens[i] = strlen((const char *)fargs[i]);
     }
-    if (!mux_digest_sha1(const_cast<const UTF8 **>(fargs), lens, nfargs, md, &len))
+    if (!mux_digest_sha1(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
     {
         safe_str(T("#-1 UNSUPPORTED"), buff, bufc);
-        delete lens;
         return;
     }
-    delete lens;
     safe_hex(md, len, true, buff, bufc);
 }
 

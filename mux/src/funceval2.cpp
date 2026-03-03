@@ -405,16 +405,15 @@ FUNCTION(fun_sortby)
 
     UTF8 *list = alloc_lbuf("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    const auto ptrs = new UTF8 * [LBUF_SIZE / 2];
-    const int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    std::vector<UTF8*> ptrs(LBUF_SIZE / 2);
+    const int nptrs = list2arr(ptrs.data(), LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)
     {
-        mincomp_sort(&ctx, reinterpret_cast<void**>(ptrs), nptrs);
+        mincomp_sort(&ctx, reinterpret_cast<void**>(ptrs.data()), nptrs);
     }
 
-    arr2list(ptrs, nptrs, buff, bufc, osep);
-    delete[] ptrs;
+    arr2list(ptrs.data(), nptrs, buff, bufc, osep);
     free_lbuf(list);
     free_lbuf(ctx.buff);
     free_lbuf(atext);
@@ -957,35 +956,8 @@ FUNCTION(fun_munge)
         return;
     }
 
-    munge_htab_rec *htab = nullptr;
-    UINT16 *tails = nullptr;
-    try
-    {
-        htab = new munge_htab_rec[1 + 2 * nWords];
-        tails = new UINT16[1 + nWords];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (  nullptr == htab
-       || nullptr == tails)
-    {
-        free_lbuf(atext);
-        free_lbuf(list1);
-        if (nullptr != htab)
-        {
-            delete [] htab;
-        }
-        else if (nullptr != tails)
-        {
-            delete [] tails;
-        }
-        return;
-    }
-    memset(htab, 0, sizeof(munge_htab_rec) * (1 + 2 * nWords));
-    memset(tails, 0, sizeof(UINT16) * (1 + nWords));
+    std::vector<munge_htab_rec> htab(1 + 2 * nWords);
+    std::vector<UINT16> tails(1 + nWords);
 
     int iNext = 1 + nWords;  // first unused hash slot past starting area
 
@@ -1019,15 +991,12 @@ FUNCTION(fun_munge)
         htab[nHashSlot].nKeyOffset = static_cast<LBUF_OFFSET>(1 + pKey - fargs[1]);
         htab[nHashSlot].nValueOffset = static_cast<LBUF_OFFSET>(pValue - fargs[2]);
     }
-    delete [] tails;
-
     if (  nullptr != pKey
        || nullptr != pValue)
     {
         safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
         free_lbuf(atext);
         free_lbuf(list1);
-        delete [] htab;
         return;
     }
 
@@ -1086,7 +1055,6 @@ FUNCTION(fun_munge)
             }
         }
     }
-    delete [] htab;
     free_lbuf(rlist);
 }
 

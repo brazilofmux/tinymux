@@ -2467,23 +2467,7 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
     }
     else if (string_prefix(T("sanity"), action))
     {
-        int *ai = nullptr;
-        try
-        {
-            ai = new int[mudstate.mail_db_top];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == ai)
-        {
-            raw_notify(player, T("Out of memory."));
-            return;
-        }
-
-        memset(ai, 0, mudstate.mail_db_top * sizeof(int));
+        std::vector<int> ai(mudstate.mail_db_top, 0);
 
         DO_WHOLE_DB(thing)
         {
@@ -2559,9 +2543,6 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
                 raw_notify(player, T("Some mailbag items are referred to less often than the mailbag item indicates."));
             }
         }
-
-        delete [] ai;
-        ai = nullptr;
         raw_notify(player, T("Mail sanity check completed."));
     }
     else if (string_prefix(T("fix"), action))
@@ -2571,23 +2552,7 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
         if (mail_list)
         {
             raw_notify(player, tprintf(T("Re-counting mailbag reference counts.")));
-            int *ai = nullptr;
-            try
-            {
-                ai = new int[mudstate.mail_db_top];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-
-            if (nullptr == ai)
-            {
-                raw_notify(player, T("Out of memory."));
-                return;
-            }
-
-            memset(ai, 0, mudstate.mail_db_top * sizeof(int));
+            std::vector<int> ai(mudstate.mail_db_top, 0);
 
             DO_WHOLE_DB(thing)
             {
@@ -2621,8 +2586,6 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
                 raw_notify(player, T("Some reference counts were wrong [FIXED]."));
             }
 
-            delete [] ai;
-            ai = nullptr;
         }
 
         raw_notify(player, tprintf(T("Removing @mail that is associated with non-players.")));

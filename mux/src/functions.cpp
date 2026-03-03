@@ -6717,45 +6717,15 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    PUTF8 *elems = nullptr;
-    try
-    {
-        elems = new PUTF8[LBUF_SIZE/2];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    std::vector<PUTF8> elems(LBUF_SIZE/2);
+    std::vector<PUTF8> weights(LBUF_SIZE/2);
 
-    if (nullptr == elems)
-    {
-        return;
-    }
-
-    PUTF8 *weights = nullptr;
-    try
-    {
-        weights = new PUTF8[LBUF_SIZE/2];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == weights)
-    {
-        delete [] elems;
-        return;
-    }
-
-    int n_elems   = list2arr(elems, LBUF_SIZE/2, fargs[0], isep);
-    int n_weights = list2arr(weights, LBUF_SIZE/2, fargs[1], sepSpace);
+    int n_elems   = list2arr(elems.data(), LBUF_SIZE/2, fargs[0], isep);
+    int n_weights = list2arr(weights.data(), LBUF_SIZE/2, fargs[1], sepSpace);
 
     if (n_elems != n_weights)
     {
         safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
-        delete [] elems;
-        delete [] weights;
         return;
     }
 
@@ -6781,8 +6751,6 @@ static FUNCTION(fun_choose)
             if (sum_next < sum)
             {
                 safe_str(T("#-1 OVERFLOW"), buff, bufc);
-                delete [] elems;
-                delete [] weights;
                 return;
             }
             sum = sum_next;
@@ -6801,8 +6769,6 @@ static FUNCTION(fun_choose)
             break;
         }
     }
-    delete [] elems;
-    delete [] weights;
 }
 
 /*
@@ -6850,53 +6816,30 @@ FUNCTION(fun_distribute)
         return;
     }
 
-    int *bin_array = nullptr;
-    try
+    std::vector<int> bin_array(bins, 0);
+
+    // Distribute points over bin.  For each point, pick a random bin for
+    // it and increment that bin's count.
+    //
+    int current_point;
+    for (current_point = 0; current_point < points; current_point++)
     {
-        bin_array = new int[bins];
-    }
-    catch (...)
-    {
-        ; // Nothing.
+        int which_bin = RandomINT32(0, bins-1);
+        ++(bin_array[which_bin]);
     }
 
-    if (nullptr == bin_array)
+    // Convert the array to real output.
+    //
+    bool first = true;
+    int current_bin;
+    for (current_bin = 0; current_bin < bins; current_bin++)
     {
-        safe_str(T("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE"), buff, bufc);
-    }
-    else
-    {
-        // Initialize bins.
-        //
-        int current_bin;
-        for (current_bin = 0; current_bin < bins; current_bin++)
+        if (!first)
         {
-            bin_array[current_bin] = 0;
+            print_sep(osep, buff, bufc);
         }
-
-        // Distribute points over bin.  For each point, pick a random bin for
-        // it and increment that bin's count.
-        //
-        int current_point;
-        for (current_point = 0; current_point < points; current_point++)
-        {
-            int which_bin = RandomINT32(0, bins-1);
-            ++(bin_array[which_bin]);
-        }
-
-        // Convert the array to real output.
-        //
-        bool first = true;
-        for (current_bin = 0; current_bin < bins; current_bin++)
-        {
-            if (!first)
-            {
-                print_sep(osep, buff, bufc);
-            }
-            first = false;
-            safe_ltoa(bin_array[current_bin], buff, bufc);
-        }
-        delete [] bin_array;
+        first = false;
+        safe_ltoa(bin_array[current_bin], buff, bufc);
     }
 }
 
@@ -8106,46 +8049,18 @@ static void handle_sets
     const SEP      &osep
 )
 {
-    UTF8 **ptrs1 = nullptr;
-    try
-    {
-        ptrs1 = new UTF8 *[LBUF_SIZE/2];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == ptrs1)
-    {
-        return;
-    }
-
-    UTF8 **ptrs2 = nullptr;
-    try
-    {
-        ptrs2 = new UTF8 *[LBUF_SIZE/2];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == ptrs2)
-    {
-        delete [] ptrs1;
-        return;
-    }
+    std::vector<UTF8*> ptrs1(LBUF_SIZE/2);
+    std::vector<UTF8*> ptrs2(LBUF_SIZE/2);
 
     int val;
 
     UTF8 *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
-    int n1 = list2arr(ptrs1, LBUF_SIZE/2, list1, sep);
+    int n1 = list2arr(ptrs1.data(), LBUF_SIZE/2, list1, sep);
 
     UTF8 *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
-    int n2 = list2arr(ptrs2, LBUF_SIZE/2, list2, sep);
+    int n2 = list2arr(ptrs2.data(), LBUF_SIZE/2, list2, sep);
 
     int sort_type = ASCII_LIST;
     if (5 <= nfargs)
@@ -8176,8 +8091,8 @@ static void handle_sets
         case '\0':
             {
                 AutoDetect ad;
-                ad.ExamineList(n1, ptrs1);
-                ad.ExamineList(n2, ptrs2);
+                ad.ExamineList(n1, ptrs1.data());
+                ad.ExamineList(n2, ptrs2.data());
                 sort_type = ad.GetType();
             }
             break;
@@ -8185,23 +8100,19 @@ static void handle_sets
     }
 
     SortContext sc1;
-    if (!do_asort_start(&sc1, n1, ptrs1, sort_type))
+    if (!do_asort_start(&sc1, n1, ptrs1.data(), sort_type))
     {
         free_lbuf(list1);
         free_lbuf(list2);
-        delete [] ptrs1;
-        delete [] ptrs2;
         return;
     }
 
     SortContext sc2;
-    if (!do_asort_start(&sc2, n2, ptrs2, sort_type))
+    if (!do_asort_start(&sc2, n2, ptrs2.data(), sort_type))
     {
         do_asort_finish(&sc1);
         free_lbuf(list1);
         free_lbuf(list2);
-        delete [] ptrs1;
-        delete [] ptrs2;
         return;
     }
 
@@ -8457,8 +8368,6 @@ static void handle_sets
     do_asort_finish(&sc2);
     free_lbuf(list1);
     free_lbuf(list2);
-    delete [] ptrs1;
-    delete [] ptrs2;
 }
 
 static FUNCTION(fun_setunion)
