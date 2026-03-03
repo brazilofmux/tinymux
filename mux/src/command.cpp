@@ -3855,8 +3855,12 @@ static void list_process(dbref player)
 #else // HAVE_GETDTABLESIZE
     int maxfds = sysconf(_SC_OPEN_MAX);
 #endif // HAVE_GETDTABLESIZE
-    int psize = getpagesize();
-    raw_notify(player, tprintf(T("Process ID:  %10d        %10d bytes per page"), game_pid, psize));
+    long psize = sysconf(_SC_PAGESIZE);
+    if (psize <= 0)
+    {
+        psize = 4096;
+    }
+    raw_notify(player, tprintf(T("Process ID:  %10d        %10ld bytes per page"), game_pid, psize));
 #else // UNIX_NETWORKING
     raw_notify(player, tprintf(T("Process ID:  %10d"), game_pid));
 #endif // UNIX_NETWORKING
@@ -3871,7 +3875,7 @@ static void list_process(dbref player)
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
     raw_notify(player,
            tprintf(T("Max res mem: %10ld pages  %10ld bytes"),
-               usage.ru_maxrss, (usage.ru_maxrss * psize)));
+               usage.ru_maxrss, (usage.ru_maxrss * (long)psize)));
     raw_notify(player,
            tprintf(T("Page faults: %10ld hard   %10ld soft   %10ld swapouts"),
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));

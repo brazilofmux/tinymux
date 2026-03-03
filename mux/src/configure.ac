@@ -297,7 +297,6 @@ else
     AC_EGREP_HEADER(sys_errlist,errno.h, ,AC_EGREP_HEADER(sys_errlist,stdio.h,,AC_DEFINE(NEED_SYS_ERRLIST_DCL)))
 fi
 
-AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE([NEED_GETPAGESIZE_DCL], [], [Define if you need to declare getpagesize yourself.]))
 if test $ac_cv_header_ieeefp_h = yes; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <ieeefp.h>
@@ -435,7 +434,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #
 AC_FUNC_VPRINTF
 AC_FUNC_FORK
-AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getnameinfo getaddrinfo inet_ntop inet_pton getpagesize getrusage gettimeofday)
+AC_CHECK_FUNCS(crypt getdtablesize gethostbyaddr gethostbyname getnameinfo getaddrinfo inet_ntop inet_pton getrusage gettimeofday)
 AC_CHECK_FUNCS(localtime_r nanosleep select setitimer setrlimit socket srandom tzset usleep log2)
 AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait kqueue kevent)
 

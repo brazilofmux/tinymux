@@ -106,9 +106,6 @@
 /* Define to 1 if you have the `getnameinfo' function. */
 #define HAVE_GETNAMEINFO 1
 
-/* Define to 1 if you have the `getpagesize' function. */
-/* #undef HAVE_GETPAGESIZE */
-
 /* Define to 1 if you have the `getrusage' function. */
 /* #undef HAVE_GETRUSAGE */
 
@@ -348,8 +345,6 @@
 /* Define if malloc/realloc/free are defined in stdlib.h. */
 #define MALLOC_IN_STDLIB_H
 
-/* Define if you need to declare getpagesize yourself. */
-/* #undef NEED_GETPAGESIZE_DCL */
 
 /* Define if you need to declare getrlimit yourself. */
 /* #undef NEED_GETRLIMIT_DCL */

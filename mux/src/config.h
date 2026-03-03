@@ -175,45 +175,6 @@ extern int getdtablesize(void);
 #include <openssl/ssl.h>
 #endif
 
-#ifdef HAVE_GETPAGESIZE
-
-#ifdef NEED_GETPAGESIZE_DECL
-extern int getpagesize(void);
-#endif // NEED_GETPAGESIZE_DECL
-
-#else // HAVE_GETPAGESIZE
-
-#ifdef _SC_PAGESIZE
-#define getpagesize() sysconf(_SC_PAGESIZE)
-#else // _SC_PAGESIZE
-
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif // HAVE_SYS_PARAM_H
-
-#ifdef EXEC_PAGESIZE
-#define getpagesize() EXEC_PAGESIZE
-#else // EXEC_PAGESIZE
-#ifdef NBPG
-#ifndef CLSIZE
-#define CLSIZE 1
-#endif // CLSIZE
-#define getpagesize() NBPG * CLSIZE
-#else // NBPG
-#ifdef PAGESIZE
-#define getpagesize() PAGESIZE
-#else // PAGESIZE
-#ifdef NBPC
-#define getpagesize() NBPC
-#else // NBPC
-#define getpagesize() 0
-#endif // NBPC
-#endif // PAGESIZE
-#endif // NBPG
-#endif // EXEC_PAGESIZE
-
-#endif // _SC_PAGESIZE
-#endif // HAVE_GETPAGESIZE
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>

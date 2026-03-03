@@ -8644,22 +8644,6 @@ rm -rf conftest*
 
 fi
 
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <unistd.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "getpagesize" >/dev/null 2>&1
-then :
-
-else $as_nop
-
-printf "%s\n" "#define NEED_GETPAGESIZE_DCL /**/" >>confdefs.h
-
-fi
-rm -rf conftest*
-
 if test $ac_cv_header_ieeefp_h = yes; then
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -10367,12 +10351,6 @@ ac_fn_c_check_func "$LINENO" "inet_pton" "ac_cv_func_inet_pton"
 if test "x$ac_cv_func_inet_pton" = xyes
 then :
   printf "%s\n" "#define HAVE_INET_PTON 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getpagesize" "ac_cv_func_getpagesize"
-if test "x$ac_cv_func_getpagesize" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETPAGESIZE 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "getrusage" "ac_cv_func_getrusage"
