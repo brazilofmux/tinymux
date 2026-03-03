@@ -879,8 +879,9 @@ void do_addcommand
         return;
     }
 
-    CMDENT *old = (CMDENT *)hashfindLEN(pName, strlen((char *)pName),
-        &mudstate.command_htab);
+    size_t nName = strlen((char *)pName);
+    auto it_old = mudstate.command_htab.find(std::vector<UTF8>(pName, pName + nName));
+    CMDENT *old = (it_old != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_old->second) : nullptr;
 
     CMDENT *cmd;
     ADDENT *add, *nextp;
@@ -917,7 +918,7 @@ void do_addcommand
             // Delete the old built-in (which will later be added back as
             // __name).
             //
-            hashdeleteLEN(pName, strlen((char *)pName), &mudstate.command_htab);
+            mudstate.command_htab.erase(std::vector<UTF8>(pName, pName + nName));
         }
 
         cmd = nullptr;
@@ -952,7 +953,7 @@ void do_addcommand
         add->next = nullptr;
         cmd->addent = add;
 
-        hashaddLEN(pName, strlen((char *)pName), cmd, &mudstate.command_htab);
+        mudstate.command_htab.emplace(std::vector<UTF8>(pName, pName + nName), cmd);
 
         if (  old
            && strcmp((char *)pName, (char *)old->cmdname) == 0)
@@ -962,9 +963,10 @@ void do_addcommand
             // aliases.
             //
             UTF8 *p = tprintf(T("__%s"), pName);
-            hashdeleteLEN(p, strlen((char *)p), &mudstate.command_htab);
-            hashreplall(old, cmd, &mudstate.command_htab);
-            hashaddLEN(p, strlen((char *)p), old, &mudstate.command_htab);
+            size_t nP = strlen((char *)p);
+            mudstate.command_htab.erase(std::vector<UTF8>(p, p + nP));
+            for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
+            mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nP), old);
         }
     }
 
@@ -995,7 +997,10 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
 
     if (*pCased)
     {
-        old = (CMDENT *)hashfindLEN(pCased, nCased, &mudstate.command_htab);
+        {
+            auto it = mudstate.command_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+            old = (it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it->second) : nullptr;
+        }
 
         if (  old
            && (old->callseq & CS_ADDED))
@@ -1022,18 +1027,17 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
     }
     else
     {
-        UTF8 *pKeyName;
-        int  nKeyName;
-        for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
-             old != nullptr;
-             old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyName, &pKeyName))
+        for (auto &[key, val] : mudstate.command_htab)
         {
+            old = static_cast<CMDENT*>(val);
             if (old->callseq & CS_ADDED)
             {
-                pKeyName[nKeyName] = '\0';
+                const UTF8 *pKeyName = key.data();
+                int nKeyName = static_cast<int>(key.size());
                 for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
                 {
-                    if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
+                    if (  static_cast<size_t>(nKeyName) != strlen((char *)nextp->name)
+                       || memcmp(pKeyName, nextp->name, nKeyName) != 0)
                     {
                         continue;
                     }
@@ -1111,7 +1115,10 @@ void do_delcommand
 
     CMDENT *old, *cmd;
     ADDENT *prev = nullptr, *nextp;
-    old = (CMDENT *)hashfindLEN(pCased, nCased, &mudstate.command_htab);
+    {
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+        old = (it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it->second) : nullptr;
+    }
 
     if (  old
        && (old->callseq & CS_ADDED))
@@ -1131,20 +1138,23 @@ void do_delcommand
                 MEMFREE(prev);
                 prev = nullptr;
             }
-            hashdeleteLEN(pCased, nCased, &mudstate.command_htab);
-            cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
+            mudstate.command_htab.erase(std::vector<UTF8>(pCased, pCased + nCased));
+            {
+                auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                cmd = (it_cmd != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd->second) : nullptr;
+            }
             if (cmd)
             {
-                hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname), cmd,
-                    &mudstate.command_htab);
+                size_t nCmdName = strlen((char *)cmd->cmdname);
+                mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName), cmd);
                 if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
                 {
-                    hashaddLEN(pCased, nCased, cmd, &mudstate.command_htab);
+                    mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased), cmd);
                 }
 
-                hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
-                hashaddLEN(p__Name, n__Name, cmd, &mudstate.command_htab);
-                hashreplall(old, cmd, &mudstate.command_htab);
+                mudstate.command_htab.erase(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                mudstate.command_htab.emplace(std::vector<UTF8>(p__Name, p__Name + n__Name), cmd);
+                for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
             }
             else
             {
@@ -1173,25 +1183,26 @@ void do_delcommand
                     {
                         if (!nextp->next)
                         {
-                            hashdeleteLEN(pCased, nCased, &mudstate.command_htab);
-                            cmd = (CMDENT *)hashfindLEN(p__Name, n__Name,
-                                &mudstate.command_htab);
+                            mudstate.command_htab.erase(std::vector<UTF8>(pCased, pCased + nCased));
+                            {
+                                auto it_cmd2 = mudstate.command_htab.find(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                                cmd = (it_cmd2 != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd2->second) : nullptr;
+                            }
                             if (cmd)
                             {
-                                hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname),
-                                    cmd, &mudstate.command_htab);
+                                size_t nCmdName = strlen((char *)cmd->cmdname);
+                                mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName),
+                                    cmd);
                                 if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
                                 {
-                                    hashaddLEN(pCased, nCased, cmd,
-                                        &mudstate.command_htab);
+                                    mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased),
+                                        cmd);
                                 }
 
-                                hashdeleteLEN(p__Name, n__Name,
-                                    &mudstate.command_htab);
-                                hashaddLEN(p__Name, n__Name, cmd,
-                                    &mudstate.command_htab);
-                                hashreplall(old, cmd,
-                                    &mudstate.command_htab);
+                                mudstate.command_htab.erase(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                                mudstate.command_htab.emplace(std::vector<UTF8>(p__Name, p__Name + n__Name),
+                                    cmd);
+                                for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
                             }
                             MEMFREE(old->cmdname);
                             old->cmdname = nullptr;
@@ -2971,11 +2982,9 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
     reference_entry *htab_entry;
     bool match_found = false;
 
-    CHashTable* htab = &mudstate.reference_htab;
-    for (  htab_entry = (struct reference_entry *) hash_firstentry(htab);
-           nullptr != htab_entry;
-           htab_entry = (struct reference_entry *) hash_nextentry(htab))
+    for (auto &[ref_key, ref_val] : mudstate.reference_htab)
     {
+        htab_entry = static_cast<reference_entry*>(ref_val);
         if (  (  global_only
               && '_' == htab_entry->name[0])
            || (  !global_only
@@ -3080,8 +3089,9 @@ void do_reference
 
     UTF8 tbuf[LBUF_SIZE];
     size_t tbuf_len = refstr.export_TextPlain(tbuf);
-    struct reference_entry *result = (reference_entry *)hashfindLEN(
-        tbuf, tbuf_len, &mudstate.reference_htab);
+    auto it_ref = mudstate.reference_htab.find(std::vector<UTF8>(tbuf, tbuf + tbuf_len));
+    struct reference_entry *result = (it_ref != mudstate.reference_htab.end())
+        ? static_cast<reference_entry*>(it_ref->second) : nullptr;
 
     enum { Delete, Add, Update, NotFound, Redundant, OutOfMemory } eOperation;
 
@@ -3127,7 +3137,7 @@ void do_reference
         result->name = nullptr;
         MEMFREE(result);
         result = nullptr;
-        hashdeleteLEN(tbuf, tbuf_len, &mudstate.reference_htab);
+        mudstate.reference_htab.erase(std::vector<UTF8>(tbuf, tbuf + tbuf_len));
     }
 
     if (  Update == eOperation
@@ -3147,7 +3157,7 @@ void do_reference
             result->target = target;
             result->owner = executor;
             result->name = StringCloneLen(tbuf, tbuf_len);
-            hashaddLEN(tbuf, tbuf_len, result, &mudstate.reference_htab);
+            mudstate.reference_htab.emplace(std::vector<UTF8>(tbuf, tbuf + tbuf_len), result);
         }
         else
         {

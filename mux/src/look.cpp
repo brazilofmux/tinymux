@@ -896,7 +896,7 @@ static void look_atrs1
         //
         if (  check_exclude
            && (  (pattr->flags & AF_PRIVATE)
-              || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
+              || mudstate.parent_htab.find(ca) != mudstate.parent_htab.end()))
         {
             continue;
         }
@@ -931,7 +931,7 @@ static void look_atrs1
             {
                 if (hash_insert)
                 {
-                    hashaddLEN(&ca, sizeof(ca), pattr, &mudstate.parent_htab);
+                    mudstate.parent_htab.emplace(ca, pattr);
                 }
                 view_atr(player, thing, &cattr, buf, aowner, aflags, false);
             }
@@ -976,7 +976,7 @@ static void look_atrs(dbref player, dbref thing, bool check_parents)
     {
         hash_insert = true;
         check_exclude = false;
-        hashflush(&mudstate.parent_htab);
+        mudstate.parent_htab.clear();
         ITER_PARENTS(thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))

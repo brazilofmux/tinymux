@@ -829,17 +829,19 @@ static CF_HAND(cf_alias)
     {
         size_t nCased;
         const UTF8 *pCased = mux_strupr(orig, nCased);
-        void *cp = hashfindLEN(pCased, nCased, reinterpret_cast<CHashTable*>(vp));
-        if (nullptr == cp)
+        auto pMap = reinterpret_cast<StringPtrMap*>(vp);
+        auto it = pMap->find(std::vector<UTF8>(pCased, pCased + nCased));
+        if (it == pMap->end())
         {
             cf_log_notfound(player, cmd, T("Entry"), orig);
             return -1;
         }
+        void *cp = it->second;
 
         pCased = mux_strupr(alias, nCased);
-        if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
+        if (pMap->find(std::vector<UTF8>(pCased, pCased + nCased)) == pMap->end())
         {
-            hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
+            pMap->emplace(std::vector<UTF8>(pCased, pCased + nCased), cp);
         }
         return 0;
     }
@@ -1032,13 +1034,14 @@ static CF_HAND(cf_poweralias)
     UTF8 *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
     if (bValid)
     {
-        cp = hashfindLEN(pName, nName, &mudstate.powers_htab);
-        if (cp)
+        auto it = mudstate.powers_htab.find(std::vector<UTF8>(pName, pName + nName));
+        if (it != mudstate.powers_htab.end())
         {
+            cp = it->second;
             pName = MakeCanonicalFlagName(alias, &nName, &bValid);
             if (bValid)
             {
-                hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
+                mudstate.powers_htab.emplace(std::vector<UTF8>(pName, pName + nName), cp);
                 success = true;
             }
         }
@@ -1402,17 +1405,19 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
         cmdp->switches = nullptr;
 
         // TODO: If a command is deleted with one or both of the two
-        // hashdeleteLEN() calls below, what guarantee do we have that parts
+        // erase() calls below, what guarantee do we have that parts
         // of the command weren't dynamically allocated.  This might leak
         // memory.
         //
         const UTF8 *p = cmdp->cmdname;
-        hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
-        hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
+        size_t nLen = strlen((const char *)p);
+        mudstate.command_htab.erase(std::vector<UTF8>(p, p + nLen));
+        mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nLen), cmdp);
 
         p = tprintf(T("__%s"), cmdp->cmdname);
-        hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
-        hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
+        nLen = strlen((const char *)p);
+        mudstate.command_htab.erase(std::vector<UTF8>(p, p + nLen));
+        mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nLen), cmdp);
     }
     else
     {
@@ -1478,7 +1483,11 @@ static CF_HAND(cf_hook)
     hookcmd = st.parse();
     if (hookcmd != nullptr)
     {
-       cmdp = (CMDENT *)hashfindLEN(hookcmd, strlen((char *)hookcmd), &mudstate.command_htab);
+       {
+           size_t nHookCmd = strlen((char *)hookcmd);
+           auto it = mudstate.command_htab.find(std::vector<UTF8>(hookcmd, hookcmd + nHookCmd));
+           cmdp = (it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it->second) : nullptr;
+       }
     }
     else
     {

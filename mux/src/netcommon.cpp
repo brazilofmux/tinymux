@@ -2197,7 +2197,7 @@ void init_logout_cmdtab(void)
     //
     for (cp = logout_cmdtable; cp->flag; cp++)
     {
-        hashaddLEN(cp->name, strlen((char *)cp->name), cp, &mudstate.logout_cmd_htab);
+        mudstate.logout_cmd_htab.emplace(std::vector<UTF8>(cp->name, cp->name + strlen((char *)cp->name)), cp);
     }
 }
 
@@ -2743,7 +2743,8 @@ void do_command(DESC *d, UTF8 *command)
 
     // Look up the command in the logged-out command table.
     //
-    NAMETAB *cp = (NAMETAB *)hashfindLEN(command, iArg, &mudstate.logout_cmd_htab);
+    auto it_logout = mudstate.logout_cmd_htab.find(std::vector<UTF8>(command, command + iArg));
+    NAMETAB *cp = (it_logout != mudstate.logout_cmd_htab.end()) ? static_cast<NAMETAB*>(it_logout->second) : nullptr;
     if (cp == nullptr)
     {
         // Not in the logged-out command table, so maybe a connect attempt.

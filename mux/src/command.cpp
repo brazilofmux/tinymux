@@ -773,11 +773,11 @@ void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
 {
     for (CMDENT_NO_ARG* cp0a = cmdent; cp0a->cmdname; cp0a++)
     {
-        if (!hashfindLEN(cp0a->cmdname, strlen((char *)cp0a->cmdname),
-                         &mudstate.command_htab))
+        size_t nLen = strlen(reinterpret_cast<const char*>(cp0a->cmdname));
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(cp0a->cmdname, cp0a->cmdname + nLen));
+        if (it == mudstate.command_htab.end())
         {
-            hashaddLEN(cp0a->cmdname, strlen((char *)cp0a->cmdname), cp0a,
-                       &mudstate.command_htab);
+            mudstate.command_htab.emplace(std::vector<UTF8>(cp0a->cmdname, cp0a->cmdname + nLen), cp0a);
         }
     }
 }
@@ -787,11 +787,11 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[])
     CMDENT_ONE_ARG *cp1a;
     for (cp1a = cmdent; cp1a->cmdname; cp1a++)
     {
-        if (!hashfindLEN(cp1a->cmdname, strlen((char *)cp1a->cmdname),
-                        &mudstate.command_htab))
+        size_t nLen = strlen(reinterpret_cast<const char*>(cp1a->cmdname));
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(cp1a->cmdname, cp1a->cmdname + nLen));
+        if (it == mudstate.command_htab.end())
         {
-            hashaddLEN(cp1a->cmdname, strlen((char *)cp1a->cmdname), cp1a,
-                       &mudstate.command_htab);
+            mudstate.command_htab.emplace(std::vector<UTF8>(cp1a->cmdname, cp1a->cmdname + nLen), cp1a);
         }
     }
 }
@@ -801,11 +801,11 @@ void commands_two_arg_add(CMDENT_TWO_ARG cmdent[])
     CMDENT_TWO_ARG *cp2a;
     for (cp2a = cmdent; cp2a->cmdname; cp2a++)
     {
-        if (!hashfindLEN(cp2a->cmdname, strlen((char *)cp2a->cmdname),
-                         &mudstate.command_htab))
+        size_t nLen = strlen(reinterpret_cast<const char*>(cp2a->cmdname));
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(cp2a->cmdname, cp2a->cmdname + nLen));
+        if (it == mudstate.command_htab.end())
         {
-            hashaddLEN(cp2a->cmdname, strlen((char *)cp2a->cmdname), cp2a,
-                       &mudstate.command_htab);
+            mudstate.command_htab.emplace(std::vector<UTF8>(cp2a->cmdname, cp2a->cmdname + nLen), cp2a);
         }
     }
 }
@@ -815,11 +815,11 @@ void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
     CMDENT_TWO_ARG_ARGV *cp2aa;
     for (cp2aa = cmdent; cp2aa->cmdname; cp2aa++)
     {
-        if (!hashfindLEN(cp2aa->cmdname, strlen((char *)cp2aa->cmdname),
-                         &mudstate.command_htab))
+        size_t nLen = strlen(reinterpret_cast<const char*>(cp2aa->cmdname));
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(cp2aa->cmdname, cp2aa->cmdname + nLen));
+        if (it == mudstate.command_htab.end())
         {
-            hashaddLEN(cp2aa->cmdname, strlen((char *)cp2aa->cmdname), cp2aa,
-                       &mudstate.command_htab);
+            mudstate.command_htab.emplace(std::vector<UTF8>(cp2aa->cmdname, cp2aa->cmdname + nLen), cp2aa);
         }
     }
 }
@@ -865,7 +865,7 @@ void init_cmdtab(void)
             cp2a->callseq = CS_TWO_ARG;
             cp2a->flags = CEF_ALLOC;
             cp2a->handler = do_setattr;
-            hashaddLEN(cp2a->cmdname, nBuffer, cp2a, &mudstate.command_htab);
+            mudstate.command_htab.emplace(std::vector<UTF8>(cp2a->cmdname, cp2a->cmdname + nBuffer), cp2a);
         }
         else
         {
@@ -882,7 +882,11 @@ void init_cmdtab(void)
 
     cache_prefix_cmds();
 
-    goto_cmdp = static_cast<CMDENT*>(hashfindLEN((char*)"goto", strlen("goto"), &mudstate.command_htab));
+    {
+        const UTF8 *tmp = reinterpret_cast<const UTF8*>("goto");
+        auto it = mudstate.command_htab.find(std::vector<UTF8>(tmp, tmp + 4));
+        goto_cmdp = (it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it->second) : nullptr;
+    }
 }
 
 static CMDENT *g_prefix_cmds[256];
@@ -903,26 +907,25 @@ void finish_cmdtab()
 
     // First pass is to get rid of aliases.
     //
-    CHashTable ht;
+    StringPtrMap ht;
     CMDENT *cmdp;
-    for (cmdp = (CMDENT *)hash_firstentry(&mudstate.command_htab);
-         cmdp != nullptr;
-         cmdp = (CMDENT *)hash_nextentry(&mudstate.command_htab))
+    for (auto &[key, val] : mudstate.command_htab)
     {
+        cmdp = static_cast<CMDENT*>(val);
         if (0 == (cmdp->flags & CEF_VISITED))
         {
             cmdp->flags |= CEF_VISITED;
-            hashaddLEN(cmdp->cmdname, strlen((char *)cmdp->cmdname), cmdp, &ht);
+            size_t nLen = strlen(reinterpret_cast<char*>(cmdp->cmdname));
+            ht.emplace(std::vector<UTF8>(cmdp->cmdname, cmdp->cmdname + nLen), cmdp);
         }
     }
-    hashflush(&mudstate.command_htab);
+    mudstate.command_htab.clear();
 
     // Second pass is to free unique CMDENTs and related things.
     //
-    for (cmdp = (CMDENT *)hash_firstentry(&ht);
-         cmdp != nullptr;
-         cmdp = (CMDENT *)hash_nextentry(&ht))
+    for (auto &[htkey, htval] : ht)
     {
+        cmdp = static_cast<CMDENT*>(htval);
         if (cmdp->callseq & CS_ADDED)
         {
             ADDENT *nextp = cmdp->addent;
@@ -962,8 +965,13 @@ void cache_prefix_cmds(void)
 {
     clear_prefix_cmds();
 
-#define SET_PREFIX_CMD(s) g_prefix_cmds[(unsigned char)(s)[0]] = \
-        (CMDENT *) hashfindLEN((char *)(s), 1, &mudstate.command_htab)
+#define SET_PREFIX_CMD(s) \
+    do { \
+        const UTF8 *_tmp = reinterpret_cast<const UTF8*>(s); \
+        auto _it = mudstate.command_htab.find(std::vector<UTF8>(_tmp, _tmp + 1)); \
+        g_prefix_cmds[(unsigned char)(s)[0]] = \
+            (_it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(_it->second) : nullptr; \
+    } while (0)
     SET_PREFIX_CMD("\"");
     SET_PREFIX_CMD(":");
     SET_PREFIX_CMD(";");
@@ -2189,7 +2197,10 @@ UTF8 *process_command
 
     // Check for a builtin command (or an alias of a builtin command)
     //
-    cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
+    {
+        auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(LowerCaseCommand, LowerCaseCommand + nLowerCaseCommand));
+        cmdp = (it_cmd != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd->second) : nullptr;
+    }
 
     /* If command is checked to ignore NONMATCHING switches, fall through */
     if (cmdp)
@@ -2377,7 +2388,11 @@ UTF8 *process_command
                     cval = zonecmdtest(executor, T("leave"));
                 }
 
-                cmdp = (CMDENT *)hashfindLEN("leave", strlen("leave"), &mudstate.command_htab);
+                {
+                    const UTF8 *tmp_leave = reinterpret_cast<const UTF8*>("leave");
+                    auto it_leave = mudstate.command_htab.find(std::vector<UTF8>(tmp_leave, tmp_leave + 5));
+                    cmdp = (it_leave != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_leave->second) : nullptr;
+                }
 
                 hval = 0;
                 if (  (cmdp->flags & (CEF_HOOK_IGNORE|CEF_HOOK_PERMIT))
@@ -2468,7 +2483,11 @@ UTF8 *process_command
                         cval = zonecmdtest(executor, T("enter"));
                     }
 
-                    cmdp = (CMDENT *)hashfindLEN("enter", strlen("enter"), &mudstate.command_htab);
+                    {
+                        const UTF8 *tmp_enter = reinterpret_cast<const UTF8*>("enter");
+                        auto it_enter = mudstate.command_htab.find(std::vector<UTF8>(tmp_enter, tmp_enter + 5));
+                        cmdp = (it_enter != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_enter->second) : nullptr;
+                    }
 
                     hval = 0;
                     if (  (cmdp->flags & (CEF_HOOK_IGNORE|CEF_HOOK_PERMIT))
@@ -2867,7 +2886,8 @@ static void list_cmdaccess(dbref player)
             continue;
         }
 
-        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff2, nBuffer, &mudstate.command_htab);
+        auto it_b2 = mudstate.command_htab.find(std::vector<UTF8>(buff2, buff2 + nBuffer));
+        CMDENT *cmdp = (it_b2 != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_b2->second) : nullptr;
         if (  nullptr != cmdp
            && check_access(player, cmdp->perms)
            && !(cmdp->perms & CF_DARK))
@@ -3011,7 +3031,11 @@ CF_HAND(cf_access)
         }
     }
 
-    cmdp = (CMDENT *)hashfindLEN(str, strlen((char *)str), &mudstate.command_htab);
+    {
+        size_t nStr = strlen(reinterpret_cast<char*>(str));
+        auto it_str = mudstate.command_htab.find(std::vector<UTF8>(str, str + nStr));
+        cmdp = (it_str != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_str->second) : nullptr;
+    }
     if (cmdp != nullptr)
     {
         if (set_switch)
@@ -3056,7 +3080,8 @@ CF_HAND(cf_acmd_access)
             continue;
         }
 
-        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
+        auto it_bf = mudstate.command_htab.find(std::vector<UTF8>(buff, buff + nBuffer));
+        CMDENT *cmdp = (it_bf != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_bf->second) : nullptr;
         if (cmdp != nullptr)
         {
             int save = cmdp->perms;
@@ -3190,7 +3215,12 @@ CF_HAND(cf_cmd_alias)
 
         // Look up the command
         //
-        cmdp = (CMDENT *) hashfindLEN(orig, strlen((char *)orig), (CHashTable *) vp);
+        {
+            StringPtrMap *htab = reinterpret_cast<StringPtrMap*>(vp);
+            size_t nOrig = strlen(reinterpret_cast<char*>(orig));
+            auto it_orig = htab->find(std::vector<UTF8>(orig, orig + nOrig));
+            cmdp = (it_orig != htab->end()) ? static_cast<CMDENT*>(it_orig->second) : nullptr;
+        }
         if (cmdp == nullptr || cmdp->switches == nullptr)
         {
             cf_log_notfound(player, cmd, T("Command"), orig);
@@ -3206,46 +3236,56 @@ CF_HAND(cf_cmd_alias)
             return -1;
         }
 
-        if (!hashfindLEN(alias, strlen(reinterpret_cast<char*>(alias)), reinterpret_cast<CHashTable*>(vp)))
         {
-            // Create the new command table entry.
-            //
-            cmd2 = nullptr;
-            try
+            StringPtrMap *htab_chk = reinterpret_cast<StringPtrMap*>(vp);
+            size_t nAlias = strlen(reinterpret_cast<char*>(alias));
+            auto it_alias = htab_chk->find(std::vector<UTF8>(alias, alias + nAlias));
+            if (it_alias == htab_chk->end())
             {
-                cmd2 = new CMDENT;
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            ISOUTOFMEMORY(cmd2);
-            cmd2->cmdname = StringClone(alias);
-            cmd2->switches = cmdp->switches;
-            cmd2->perms = cmdp->perms | nt->perm;
-            cmd2->extra = (cmdp->extra | nt->flag) & ~SW_MULTIPLE;
-            if (!(nt->flag & SW_MULTIPLE))
-            {
-                cmd2->extra |= SW_GOT_UNIQUE;
-            }
-            cmd2->callseq = cmdp->callseq;
-            cmd2->handler = cmdp->handler;
-            cmd2->flags = CEF_ALLOC;
+                // Create the new command table entry.
+                //
+                cmd2 = nullptr;
+                try
+                {
+                    cmd2 = new CMDENT;
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+                ISOUTOFMEMORY(cmd2);
+                cmd2->cmdname = StringClone(alias);
+                cmd2->switches = cmdp->switches;
+                cmd2->perms = cmdp->perms | nt->perm;
+                cmd2->extra = (cmdp->extra | nt->flag) & ~SW_MULTIPLE;
+                if (!(nt->flag & SW_MULTIPLE))
+                {
+                    cmd2->extra |= SW_GOT_UNIQUE;
+                }
+                cmd2->callseq = cmdp->callseq;
+                cmd2->handler = cmdp->handler;
+                cmd2->flags = CEF_ALLOC;
 
-            hashaddLEN(cmd2->cmdname, strlen(reinterpret_cast<char*>(cmd2->cmdname)), cmd2, reinterpret_cast<CHashTable*>(vp));
+                size_t nCmd2 = strlen(reinterpret_cast<char*>(cmd2->cmdname));
+                htab_chk->emplace(std::vector<UTF8>(cmd2->cmdname, cmd2->cmdname + nCmd2), cmd2);
+            }
         }
     }
     else
     {
         // A normal (non-switch) alias
         //
-        void *hp = hashfindLEN(orig, strlen((char *)orig), (CHashTable *) vp);
+        StringPtrMap *htab_ns = reinterpret_cast<StringPtrMap*>(vp);
+        size_t nOrig2 = strlen(reinterpret_cast<char*>(orig));
+        auto it_hp = htab_ns->find(std::vector<UTF8>(orig, orig + nOrig2));
+        void *hp = (it_hp != htab_ns->end()) ? it_hp->second : nullptr;
         if (hp == nullptr)
         {
             cf_log_notfound(player, cmd, T("Entry"), orig);
             return -1;
         }
-        hashaddLEN(alias, strlen((char *)alias), hp, (CHashTable *) vp);
+        size_t nAlias2 = strlen(reinterpret_cast<char*>(alias));
+        htab_ns->emplace(std::vector<UTF8>(alias, alias + nAlias2), hp);
     }
     return 0;
 }
@@ -3731,26 +3771,26 @@ static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, 
 static void list_hashstats(const dbref player)
 {
     raw_notify(player, T("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
-    list_hashstat(player, T("Commands"), &mudstate.command_htab);
-    list_hashstat(player, T("Logout Cmds"), &mudstate.logout_cmd_htab);
+    list_hashstat_abbreviated(player, T("Commands"), static_cast<int>(mudstate.command_htab.size()));
+    list_hashstat_abbreviated(player, T("Logout Cmds"), static_cast<int>(mudstate.logout_cmd_htab.size()));
     list_hashstat_abbreviated(player, T("Functions"), static_cast<int>(mudstate.builtin_functions.size()));;
     list_hashstat_abbreviated(player, T("Flags"), static_cast<int>(mudstate.flag_names_map.size()));;
-    list_hashstat(player, T("Powers"), &mudstate.powers_htab);
+    list_hashstat_abbreviated(player, T("Powers"), static_cast<int>(mudstate.powers_htab.size()));
     list_hashstat_abbreviated(player, T("Attr Names"), static_cast<int>(mudstate.builtin_attribute_names.size()));
     list_hashstat(player, T("Vattr Names"), &mudstate.vattr_name_htab);
-    list_hashstat(player, T("Player Names"), &mudstate.player_htab);
+    list_hashstat_abbreviated(player, T("Player Names"), static_cast<int>(mudstate.player_htab.size()));
     list_hashstat_abbreviated(player, T("Net Descr."), static_cast<int>(mudstate.dbref_to_descriptors_map.size()));;
     list_hashstat_abbreviated(player, T("Fwd. lists"), static_cast<int>(mudstate.forward_lists.size()));
-    list_hashstat(player, T("Excl. $-cmds"), &mudstate.parent_htab);
-    list_hashstat(player, T("Mail Messages"), &mudstate.mail_htab);
+    list_hashstat_abbreviated(player, T("Excl. $-cmds"), static_cast<int>(mudstate.parent_htab.size()));
+    list_hashstat_abbreviated(player, T("Mail Messages"), static_cast<int>(mudstate.mail_htab.size()));
     list_hashstat_abbreviated(player, T("Channel Names"), static_cast<int>(mudstate.channel_names.size()));;
 #if !defined(MEMORY_BASED)
     list_hashstat_abbreviated(player, T("Attr. Cache"), static_cast<int>(mudstate.attribute_lru_cache_list.size()));
 #endif // MEMORY_BASED
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
-        list_hashstat(player, mudstate.aHelpDesc[i].pBaseFilename,
-            mudstate.aHelpDesc[i].ht);
+        list_hashstat_abbreviated(player, mudstate.aHelpDesc[i].pBaseFilename,
+            static_cast<int>(mudstate.aHelpDesc[i].ht->size()));
     }
 }
 
@@ -4353,7 +4393,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             else
             {
                 bHome = false;
-                cmdp = static_cast<CMDENT*>(hashfindLEN(pt1, strlen(reinterpret_cast<char*>(pt1)), &mudstate.command_htab));
+                {
+                    size_t nPt1 = strlen(reinterpret_cast<char*>(pt1));
+                    auto it_pt1 = mudstate.command_htab.find(std::vector<UTF8>(pt1, pt1 + nPt1));
+                    cmdp = (it_pt1 != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_pt1->second) : nullptr;
+                }
             }
             if (cmdp || bHome)
             {
@@ -4685,7 +4729,11 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
              || (key & CEF_HOOK_LIST))
           && *name))
     {
-        cmdp = static_cast<CMDENT*>(hashfindLEN(name, strlen((char*)name), &mudstate.command_htab));
+        {
+            size_t nName = strlen(reinterpret_cast<char*>(name));
+            auto it_name = mudstate.command_htab.find(std::vector<UTF8>(name, name + nName));
+            cmdp = (it_name != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_name->second) : nullptr;
+        }
         if (!cmdp)
         {
             notify(executor, T("@hook: Non-existent command name given."));
@@ -4841,7 +4889,10 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                 }
                 *p = '\0';
                 const size_t ncbuff = p - cbuff;
-                cmdp = static_cast<CMDENT*>(hashfindLEN(cbuff, ncbuff, &mudstate.command_htab));
+                {
+                    auto it_cb = mudstate.command_htab.find(std::vector<UTF8>(cbuff, cbuff + ncbuff));
+                    cmdp = (it_cb != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cb->second) : nullptr;
+                }
                 if (  cmdp
                    && 0 != HOOKMASK(cmdp->flags))
                 {

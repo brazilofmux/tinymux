@@ -1447,7 +1447,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 //
                 if (nullptr == fp)
                 {
-                    ufp = (UFUN *)hashfindLEN(mux_scratch, nFun, &mudstate.ufunc_htab);
+                    auto it_ufunc = mudstate.ufunc_htab.find(std::vector<UTF8>(mux_scratch, mux_scratch + nFun));
+                    ufp = (it_ufunc != mudstate.ufunc_htab.end()) ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
                 }
             }
 

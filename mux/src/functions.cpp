@@ -11249,7 +11249,8 @@ void do_function
        || (  2 == nargs
           && '\0' == target[0]))
     {
-        ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
+        auto it_ufunc = mudstate.ufunc_htab.find(std::vector<UTF8>(pName, pName + nLen));
+        ufp = (it_ufunc != mudstate.ufunc_htab.end()) ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
         if (nullptr == ufp)
         {
             notify_quiet(executor, tprintf(T("Function %s not found."), pName));
@@ -11271,7 +11272,7 @@ void do_function
                     }
                 }
             }
-            hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
+            mudstate.ufunc_htab.erase(std::vector<UTF8>(pName, pName + nLen));
             delete ufp;
             notify_quiet(executor, tprintf(T("Function %s deleted."), pName));
         }
@@ -11312,7 +11313,8 @@ void do_function
 
     // See if function already exists.  If so, redefine it.
     //
-    ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
+    auto it_ufunc2 = mudstate.ufunc_htab.find(std::vector<UTF8>(pName, pName + nLen));
+    ufp = (it_ufunc2 != mudstate.ufunc_htab.end()) ? static_cast<UFUN*>(it_ufunc2->second) : nullptr;
 
     if (!ufp)
     {
@@ -11349,7 +11351,7 @@ void do_function
             }
             ufp2->next = ufp;
         }
-        hashaddLEN(pName, nLen, ufp, &mudstate.ufunc_htab);
+        mudstate.ufunc_htab.emplace(std::vector<UTF8>(pName, pName + nLen), ufp);
     }
     ufp->obj = obj;
     ufp->atr = pattr->number;
@@ -11427,7 +11429,8 @@ CF_HAND(cf_func_access)
         FUN* fp = it->second;
         return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
     }
-    UFUN *ufp = (UFUN *)hashfindLEN(str, nstr, &mudstate.ufunc_htab);
+    auto it_ufunc = mudstate.ufunc_htab.find(std::vector<UTF8>(str, str + nstr));
+    UFUN *ufp = (it_ufunc != mudstate.ufunc_htab.end()) ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
     if (ufp)
     {
         return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);

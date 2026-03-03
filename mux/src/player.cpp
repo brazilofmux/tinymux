@@ -920,11 +920,12 @@ bool add_player_name(dbref player, const UTF8 *name, bool bAlias)
     size_t nCased;
     UTF8  *pCased = mux_strlwr(name, nCased);
 
-    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased,
-        &mudstate.player_htab);
+    auto it = mudstate.player_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
 
-    if (nullptr != p)
+    if (it != mudstate.player_htab.end())
     {
+        player_name_entry *p = static_cast<player_name_entry *>(it->second);
+
         // Entry found in the hashtable.  Succeed if the numbers are already
         // correctly in the hash table.
         //
@@ -959,17 +960,15 @@ bool add_player_name(dbref player, const UTF8 *name, bool bAlias)
         {
             p->dbPlayer = player;
             p->bAlias = bAlias;
-            stat = hashreplLEN(pCased, nCased, p, &mudstate.player_htab);
-            if (stat)
-            {
-                delete pOrig;
-                pOrig = nullptr;
-            }
+            it->second = p;
+            stat = true;
+            delete pOrig;
+            pOrig = nullptr;
         }
     }
     else
     {
-        p = nullptr;
+        player_name_entry *p = nullptr;
         try
         {
             p = new player_name_entry;
@@ -983,7 +982,8 @@ bool add_player_name(dbref player, const UTF8 *name, bool bAlias)
         {
             p->dbPlayer = player;
             p->bAlias = bAlias;
-            stat = hashaddLEN(pCased, nCased, p, &mudstate.player_htab);
+            mudstate.player_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased), p);
+            stat = true;
         }
     }
     return stat;
@@ -999,36 +999,38 @@ bool delete_player_name(dbref player, const UTF8 *name, bool bAlias)
     size_t nCased;
     UTF8  *pCased = mux_strlwr(name, nCased);
 
-    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased,
-        &mudstate.player_htab);
+    auto it = mudstate.player_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
 
-    if (  nullptr == p
-       || (  Good_obj(p->dbPlayer)
-          && isPlayer(p->dbPlayer)
-          && (  p->dbPlayer != player
-             || p->bAlias != bAlias)))
+    if (it == mudstate.player_htab.end())
+    {
+        return false;
+    }
+
+    player_name_entry *p = static_cast<player_name_entry *>(it->second);
+
+    if (  Good_obj(p->dbPlayer)
+       && isPlayer(p->dbPlayer)
+       && (  p->dbPlayer != player
+          || p->bAlias != bAlias))
     {
         return false;
     }
 
     delete p;
     p = nullptr;
-    hashdeleteLEN(pCased, nCased, &mudstate.player_htab);
+    mudstate.player_htab.erase(it);
     return true;
 }
 
 #ifdef SELFCHECK
 void delete_all_player_names()
 {
-    player_name_entry *pne;
-    for (pne = (player_name_entry *)hash_firstentry(&mudstate.player_htab);
-         nullptr != pne;
-         pne = (player_name_entry *)hash_nextentry(&mudstate.player_htab))
+    for (auto &[key, val] : mudstate.player_htab)
     {
+        player_name_entry *pne = static_cast<player_name_entry *>(val);
         delete pne;
-        pne = nullptr;
     }
-    hashflush(&mudstate.player_htab);
+    mudstate.player_htab.clear();
 }
 #endif
 
@@ -1037,12 +1039,16 @@ dbref lookup_player_name(const UTF8 *name, bool &bAlias)
     dbref thing = NOTHING;
     size_t nCased;
     UTF8  *pCased = mux_strlwr(name, nCased);
-    player_name_entry *p = (player_name_entry *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
-    if (  nullptr != p
-       && Good_obj(p->dbPlayer))
+    auto it = mudstate.player_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+    if (it != mudstate.player_htab.end())
     {
-        thing = p->dbPlayer;
-        bAlias = p->bAlias;
+        player_name_entry *p = static_cast<player_name_entry *>(it->second);
+        if (  nullptr != p
+           && Good_obj(p->dbPlayer))
+        {
+            thing = p->dbPlayer;
+            bAlias = p->bAlias;
+        }
     }
     return thing;
 }

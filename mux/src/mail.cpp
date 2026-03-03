@@ -4926,7 +4926,8 @@ void do_mail
 
 struct mail *MailList::FirstItem(void)
 {
-    m_miHead = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    auto it_first = mudstate.mail_htab.find(m_player);
+    m_miHead = (it_first != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_first->second) : nullptr;
     m_mi = m_miHead;
     m_bRemoved = false;
     return m_mi;
@@ -4976,12 +4977,13 @@ void MailList::RemoveItem(void)
     {
         if (miNext == m_miHead)
         {
-            hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+            mudstate.mail_htab.erase(m_player);
             miNext   = nullptr;
         }
         else
         {
-            hashreplLEN(&m_player, sizeof(m_player), miNext, &mudstate.mail_htab);
+            auto it_repl = mudstate.mail_htab.find(m_player);
+            if (it_repl != mudstate.mail_htab.end()) it_repl->second = miNext;
         }
         m_miHead = miNext;
     }
@@ -5008,8 +5010,8 @@ void MailList::RemoveItem(void)
 
 void MailList::AppendItem(struct mail *miNew)
 {
-    struct mail *miHead = (struct mail *)
-        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    auto it_append = mudstate.mail_htab.find(m_player);
+    struct mail *miHead = (it_append != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_append->second) : nullptr;
 
     if (miHead)
     {
@@ -5025,7 +5027,7 @@ void MailList::AppendItem(struct mail *miNew)
     }
     else
     {
-        hashaddLEN(&m_player, sizeof(m_player), miNew, &mudstate.mail_htab);
+        mudstate.mail_htab.emplace(m_player, miNew);
         miNew->next = miNew;
         miNew->prev = miNew;
     }
@@ -5033,12 +5035,12 @@ void MailList::AppendItem(struct mail *miNew)
 
 void MailList::RemoveAll(void)
 {
-    struct mail *miHead = (struct mail *)
-        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    auto it_removeall = mudstate.mail_htab.find(m_player);
+    struct mail *miHead = (it_removeall != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_removeall->second) : nullptr;
 
     if (nullptr != miHead)
     {
-        hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+        mudstate.mail_htab.erase(it_removeall);
     }
 
     struct mail *mi;

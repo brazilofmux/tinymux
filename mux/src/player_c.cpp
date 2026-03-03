@@ -29,7 +29,7 @@ typedef struct player_cache
 
 /*! \brief Hash Table which maps player dbref to PCACHE entry.
  */
-static CHashTable pcache_htab;
+static DbrefPtrMap pcache_htab;
 
 /*! \brief The head of a singly-linked list of all PCACHE entries.
  */
@@ -107,7 +107,8 @@ static void pcache_reload1(dbref player, PCACHE *pp)
 
 static PCACHE *pcache_find(dbref player)
 {
-    PCACHE *pp = (PCACHE *)hashfindLEN(&player, sizeof(player), &pcache_htab);
+    auto it = pcache_htab.find(player);
+    PCACHE *pp = (it != pcache_htab.end()) ? static_cast<PCACHE*>(it->second) : nullptr;
     if (pp)
     {
         pp->cflags |= PF_REF;
@@ -120,7 +121,7 @@ static PCACHE *pcache_find(dbref player)
     pcache_reload1(player, pp);
     pp->next = pcache_head;
     pcache_head = pp;
-    hashaddLEN(&player, sizeof(player), pp, &pcache_htab);
+    pcache_htab.emplace(player, pp);
     return pp;
 }
 
@@ -202,7 +203,7 @@ void pcache_trim(void)
             }
 
             pcache_save(pp);
-            hashdeleteLEN(&(pp->player), sizeof(pp->player), &pcache_htab);
+            pcache_htab.erase(pp->player);
             free_pcache(pp);
         }
         pp = ppnext;

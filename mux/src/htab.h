@@ -68,20 +68,6 @@ public:
     bool IsSet(unsigned int i);
 };
 
-void hashreset(CHashTable *);
-void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab);
-bool hashaddLEN(const void *pKey, size_t nKey, void *pData,
-                CHashTable *htab);
-void hashdeleteLEN(const void *Str, size_t nStr, CHashTable *htab);
-void hashflush(CHashTable *);
-bool hashreplLEN(const void *Str, size_t nStr, void *hashdata,
-                 CHashTable *htab);
-void hashreplall(const void *, void *, CHashTable *);
-void *hash_nextentry(CHashTable *htab);
-void *hash_firstentry(CHashTable *htab);
-void *hash_firstkey(CHashTable *htab, int *, UTF8 **);
-void *hash_nextkey(CHashTable *htab, int *, UTF8 **);
-
 extern NAMETAB powers_nametab[];
 
 extern bool search_nametab(dbref, NAMETAB *, const UTF8 *, int *);

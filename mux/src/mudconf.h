@@ -6,10 +6,29 @@
 #ifndef MUDCONF_H
 #define MUDCONF_H
 
+struct VectorHasher
+{
+    size_t operator()(const std::vector<UTF8> &v) const
+    {
+        return HASH_ProcessBuffer(0, v.data(), v.size());
+    }
+};
+
+struct dbrefHasher
+{
+    size_t operator()(const dbref r) const
+    {
+        return CRC32_ProcessInteger(r);
+    }
+};
+
+using StringPtrMap = std::unordered_map<std::vector<UTF8>, void*, VectorHasher>;
+using DbrefPtrMap  = std::unordered_map<dbref, void*, dbrefHasher>;
+
 typedef struct
 {
     const UTF8 *CommandName;
-    CHashTable *ht;
+    StringPtrMap *ht;
     UTF8       *pBaseFilename;
     bool       bEval;
 } HELP_DESC;
@@ -418,28 +437,12 @@ struct AnameHasher
     }
 };
 
-struct VectorHasher
-{
-    size_t operator()(const std::vector<UTF8> &v) const
-    {
-        return HASH_ProcessBuffer(0, v.data(), v.size());
-    }
-};
-
 struct PointerHasher
 {
 	size_t operator()(const void *p) const
 	{
         return HASH_ProcessBuffer(0, &p, sizeof(void*));
 	}
-};
-
-struct dbrefHasher
-{
-    size_t operator()(const dbref r) const
-    {
-        return CRC32_ProcessInteger(r);
-    }
 };
 
 typedef struct statedata STATEDATA;
@@ -548,20 +551,20 @@ struct statedata
 #endif // MEMORY_BASED
     std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
-    CHashTable command_htab;    /* Commands hashtable */
+    StringPtrMap command_htab;  /* Commands hashtable */
     std::list<DESC*> descriptors_list;
     std::unordered_map<DESC*, std::list<DESC*>::iterator, PointerHasher> descriptors_map;
     std::multimap<dbref, DESC*> dbref_to_descriptors_map;
     std::unordered_map<std::vector<UTF8>, FLAGNAMEENT*, VectorHasher> flag_names_map;
     std::unordered_map<std::vector<UTF8>, FUN*, VectorHasher> builtin_functions;
     std::unordered_map<dbref, FWDLIST*, dbrefHasher> forward_lists;
-    CHashTable logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */
-    CHashTable mail_htab;       /* Mail players hashtable */
-    CHashTable parent_htab;     /* Parent $-command exclusion */
-    CHashTable player_htab;     /* Player name->number hashtable */
-    CHashTable powers_htab;     /* Powers hashtable */
-    CHashTable reference_htab;  /* @reference hashtable */
-    CHashTable ufunc_htab;      /* Local functions hashtable */
+    StringPtrMap logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */
+    DbrefPtrMap  mail_htab;     /* Mail players hashtable */
+    DbrefPtrMap  parent_htab;   /* Parent $-command exclusion */
+    StringPtrMap player_htab;   /* Player name->number hashtable */
+    StringPtrMap powers_htab;   /* Powers hashtable */
+    StringPtrMap reference_htab; /* @reference hashtable */
+    StringPtrMap ufunc_htab;    /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
 
     CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.

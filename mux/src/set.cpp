@@ -1626,7 +1626,7 @@ void find_wild_attrs(dbref player, dbref thing, const UTF8 *str, bool check_excl
 
         if (  check_exclude
            && (  (pattr->flags & AF_PRIVATE)
-              || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
+              || mudstate.parent_htab.find(ca) != mudstate.parent_htab.end()))
         {
             continue;
         }
@@ -1657,7 +1657,7 @@ void find_wild_attrs(dbref player, dbref thing, const UTF8 *str, bool check_excl
             olist_add(ca);
             if (hash_insert)
             {
-                hashaddLEN(&ca, sizeof(ca), pattr, &mudstate.parent_htab);
+                mudstate.parent_htab.emplace(ca, pattr);
             }
         }
     }
@@ -1707,7 +1707,7 @@ bool parse_attrib_wild(dbref player, const UTF8 *str, dbref *thing,
     {
         check_exclude = false;
         hash_insert = check_parents;
-        hashflush(&mudstate.parent_htab);
+        mudstate.parent_htab.clear();
         ITER_PARENTS(*thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))

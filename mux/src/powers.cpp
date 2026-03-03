@@ -115,9 +115,10 @@ void init_powertab(void)
         size_t nCased;
         UTF8 *pCased = mux_strupr(fp->powername, nCased);
 
-        if (!hashfindLEN(pCased, nCased, &mudstate.powers_htab))
+        auto it_powers = mudstate.powers_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+        if (it_powers == mudstate.powers_htab.end())
         {
-            hashaddLEN(pCased, nCased, fp, &mudstate.powers_htab);
+            mudstate.powers_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased), fp);
         }
     }
 }
@@ -159,7 +160,8 @@ static POWERENT *find_power(dbref thing, UTF8 *powername)
     //
     size_t nCased;
     UTF8 *pCased = mux_strupr(powername, nCased);
-    POWERENT *p = (POWERENT *)hashfindLEN(pCased, nCased, &mudstate.powers_htab);
+    auto it_powers = mudstate.powers_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+    POWERENT *p = (it_powers != mudstate.powers_htab.end()) ? static_cast<POWERENT*>(it_powers->second) : nullptr;
     return p;
 }
 
@@ -168,7 +170,9 @@ bool decode_power(dbref player, UTF8 *powername, POWERSET *pset)
     pset->word1 = 0;
     pset->word2 = 0;
 
-    POWERENT *pent = (POWERENT *)hashfindLEN(powername, strlen((char *)powername), &mudstate.powers_htab);
+    size_t nPowername = strlen((char *)powername);
+    auto it_powers = mudstate.powers_htab.find(std::vector<UTF8>(powername, powername + nPowername));
+    POWERENT *pent = (it_powers != mudstate.powers_htab.end()) ? static_cast<POWERENT*>(it_powers->second) : nullptr;
     if (!pent)
     {
         notify(player, tprintf(T("%s: Power not found."), powername));

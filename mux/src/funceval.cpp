@@ -224,7 +224,9 @@ FUNCTION(fun_zone)
 
 bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc)
 {
-    CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen((const char *)name), &mudstate.command_htab);
+    size_t nName = strlen((const char *)name);
+    auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(name, name + nName));
+    CMDENT *cmdp = (it_cmd != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd->second) : nullptr;
     if (cmdp)
     {
         // Perform checks similiar to (but not exactly like) the
@@ -528,8 +530,8 @@ FUNCTION(fun_textfile)
     size_t nCased;
     UTF8  *pCased = mux_strlwr(fargs[0], nCased);
 
-    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)hashfindLEN(pCased, nCased,
-        &mudstate.command_htab);
+    auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
+    CMDENT_ONE_ARG *cmdp = (it_cmd != mudstate.command_htab.end()) ? static_cast<CMDENT_ONE_ARG*>(it_cmd->second) : nullptr;
 
     if (  !cmdp
        || cmdp->handler != do_help)

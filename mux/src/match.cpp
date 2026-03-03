@@ -197,9 +197,9 @@ static dbref absolute_named_reference(UTF8 *name)
     size_t nReferenceName = 0;
     nReferenceName = sRef.export_TextPlain(pReferenceName);
 
-    struct reference_entry *result = (reference_entry *)hashfindLEN(
-        pReferenceName, nReferenceName, &mudstate.reference_htab);
+    auto it = mudstate.reference_htab.find(std::vector<UTF8>(pReferenceName, pReferenceName + nReferenceName));
     free_lbuf(pReferenceName);
+    struct reference_entry *result = (it != mudstate.reference_htab.end()) ? static_cast<struct reference_entry *>(it->second) : nullptr;
 
     if (  nullptr != result
        && Good_obj(result->target))

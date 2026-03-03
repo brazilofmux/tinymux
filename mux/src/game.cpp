@@ -212,9 +212,9 @@ static int atr_match1
                    && 0 == (ap->flags & AF_NOPROG)
                    && (  !check_exclude
                       || (  0 == (ap->flags & AF_PRIVATE)
-                         && !hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab))))
+                         && mudstate.parent_htab.find(ap->number) == mudstate.parent_htab.end())))
                 {
-                    hashaddLEN(&(ap->number), sizeof(ap->number), &atr, &mudstate.parent_htab);
+                    mudstate.parent_htab.emplace(ap->number, &atr);
                 }
             }
             atr_pop();
@@ -273,7 +273,7 @@ static int atr_match1
         if (  check_exclude
            && (  (ap->flags & AF_PRIVATE)
               || (aflags & AF_PRIVATE)
-              || hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab)))
+              || mudstate.parent_htab.find(ap->number) != mudstate.parent_htab.end()))
         {
             continue;
         }
@@ -283,7 +283,7 @@ static int atr_match1
         //
         if (hash_insert)
         {
-            hashaddLEN(&(ap->number), sizeof(ap->number), &atr, &mudstate.parent_htab);
+            mudstate.parent_htab.emplace(ap->number, &atr);
         }
 
         if (aflags & AF_NOPROG)
@@ -405,7 +405,7 @@ bool atr_match
     //
     exclude = false;
     insert = true;
-    hashflush(&mudstate.parent_htab);
+    mudstate.parent_htab.clear();
     ITER_PARENTS(thing, parent, lev)
     {
         if (!Good_obj(Parent(parent)))
@@ -2888,13 +2888,7 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
 
-    // Reset all the hash stats
-    //
-    hashreset(&mudstate.command_htab);
-    hashreset(&mudstate.mail_htab);
-    hashreset(&mudstate.logout_cmd_htab);
-    hashreset(&mudstate.player_htab);
-    hashreset(&mudstate.reference_htab);
+    // Hash stats reset is unnecessary for STL containers.
 
     ValidateConfigurationDbrefs();
     process_preload();

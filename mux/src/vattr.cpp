@@ -547,20 +547,18 @@ static void dbclean_RenumberAttributes(int cVAttributes)
 
     // Traverse entire @addcommand data structure.
     //
-    int nKeyLength;
-    UTF8 *pKeyName;
-    CMDENT *old;
-    for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyLength, &pKeyName);
-         old != nullptr;
-         old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyLength, &pKeyName))
+    for (auto &[cmdkey, cmdval] : mudstate.command_htab)
     {
+        CMDENT *old = static_cast<CMDENT*>(cmdval);
         if (old && (old->callseq & CS_ADDED))
         {
-            pKeyName[nKeyLength] = '\0';
+            const UTF8 *pKeyName = cmdkey.data();
+            int nKeyLength = static_cast<int>(cmdkey.size());
             ADDENT *nextp;
             for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
             {
-                if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
+                if (memcmp(pKeyName, nextp->name, nKeyLength) != 0
+                    || nextp->name[nKeyLength] != '\0')
                 {
                     continue;
                 }

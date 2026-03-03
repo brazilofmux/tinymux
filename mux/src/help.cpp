@@ -19,24 +19,21 @@ struct help_entry
 
 void helpindex_clean(int iHelpfile)
 {
-    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    StringPtrMap *htab = mudstate.aHelpDesc[iHelpfile].ht;
     if (nullptr == htab)
     {
         return;
     }
 
-    struct help_entry *htab_entry;
-    for (htab_entry = (struct help_entry *)hash_firstentry(htab);
-         htab_entry;
-         htab_entry = (struct help_entry *)hash_nextentry(htab))
+    for (auto &[key, val] : *htab)
     {
+        struct help_entry *htab_entry = static_cast<struct help_entry *>(val);
         if (htab_entry->key)
         {
             MEMFREE(htab_entry->key);
             htab_entry->key = nullptr;
         }
         delete htab_entry;
-        htab_entry = nullptr;
     }
     delete mudstate.aHelpDesc[iHelpfile].ht;
     mudstate.aHelpDesc[iHelpfile].ht = nullptr;
@@ -119,8 +116,8 @@ static void helpindex_read(int iHelpfile)
 {
     helpindex_clean(iHelpfile);
 
-    mudstate.aHelpDesc[iHelpfile].ht = new CHashTable;
-    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    mudstate.aHelpDesc[iHelpfile].ht = new StringPtrMap;
+    StringPtrMap *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     UTF8 szTextFilename[SBUF_SIZE+8];
     mux_sprintf(szTextFilename, sizeof(szTextFilename), T("%s.txt"),
@@ -168,8 +165,10 @@ static void helpindex_read(int iHelpfile)
                 continue;
             }
 
-            struct help_entry *htab_entry =
-              (struct help_entry *)hashfindLEN(pCased, nTopic, htab);
+            std::vector<UTF8> vkey(pCased, pCased + nTopic);
+            auto it = htab->find(vkey);
+            struct help_entry *htab_entry = (it != htab->end())
+                ? static_cast<struct help_entry *>(it->second) : nullptr;
 
             if (htab_entry)
             {
@@ -178,7 +177,7 @@ static void helpindex_read(int iHelpfile)
                     continue;
                 }
 
-                hashdeleteLEN(pCased, nTopic, htab);
+                htab->erase(it);
 
                 if (htab_entry->key)
                 {
@@ -206,7 +205,7 @@ static void helpindex_read(int iHelpfile)
                 htab_entry->key = bOriginal ? StringCloneLen(pCased, nTopic) : nullptr;
                 bOriginal = false;
 
-                hashaddLEN(pCased, nTopic, htab_entry, htab);
+                htab->emplace(vkey, htab_entry);
             }
         }
     }
@@ -216,7 +215,6 @@ static void helpindex_read(int iHelpfile)
     {
         DebugTotalFiles--;
     }
-    hashreset(htab);
 }
 
 void helpindex_load(dbref player)
@@ -256,16 +254,14 @@ static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
     return topic;
 }
 
-static void ReportMatchedTopics(dbref executor, const UTF8 *topic, CHashTable *htab)
+static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap *htab)
 {
     bool matched = false;
     UTF8 *topic_list = nullptr;
     UTF8 *buffp = nullptr;
-    struct help_entry *htab_entry;
-    for (htab_entry = (struct help_entry *)hash_firstentry(htab);
-         htab_entry != nullptr;
-         htab_entry = (struct help_entry *)hash_nextentry(htab))
+    for (auto &[key, val] : *htab)
     {
+        struct help_entry *htab_entry = static_cast<struct help_entry *>(val);
         mudstate.wild_invk_ctr = 0;
         if (  htab_entry->key
            && quick_wild(topic, htab_entry->key))
@@ -407,9 +403,10 @@ static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
     size_t nTopic;
     const UTF8 *topic = MakeCanonicalTopicName(topic_arg, nTopic);
 
-    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
-    struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+    StringPtrMap *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    auto it = htab->find(std::vector<UTF8>(topic, topic + nTopic));
+    struct help_entry *htab_entry = (it != htab->end())
+        ? static_cast<struct help_entry *>(it->second) : nullptr;
 
     if (htab_entry)
     {
@@ -481,9 +478,10 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
     size_t nTopic;
     const UTF8 *topic = MakeCanonicalTopicName(topic_arg, nTopic);
 
-    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
-    struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+    StringPtrMap *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    auto it = htab->find(std::vector<UTF8>(topic, topic + nTopic));
+    struct help_entry *htab_entry = (it != htab->end())
+        ? static_cast<struct help_entry *>(it->second) : nullptr;
 
     if (htab_entry)
     {
