@@ -1460,8 +1460,8 @@ Optional Features:
   --disable-silent-rules  verbose build output (undo: "make V=0")
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
-  --enable-ganl           Use GANL networking system (experimental, default is
-                          NO)
+  --disable-ganl          Use legacy select-based networking instead of GANL
+                          (default is GANL enabled)
   --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
@@ -3982,9 +3982,10 @@ printf "%s\n" "yes" >&6; }
 
 else $as_nop
 
-    ganl_enabled=no
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
+    ganl_enabled=yes
+    USE_GANL="-DUSE_GANL"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 
 fi
 
