@@ -5771,12 +5771,10 @@ CF_HAND(cf_art_rule)
  * \return         None.
  */
 
-mux_string::mux_string(void)
+mux_string::mux_string()
 {
     m_iLast = CursorMin;
     m_autf[0] = '\0';
-    m_ncs = 0;
-    m_pcs = nullptr;
 }
 
 /*! \brief Constructs mux_string object.
@@ -5791,9 +5789,38 @@ mux_string::mux_string(const mux_string &sStr)
 {
     m_iLast = CursorMin;
     m_autf[0] = '\0';
-    m_ncs = 0;
-    m_pcs = nullptr;
     import(sStr);
+}
+
+mux_string& mux_string::operator=(const mux_string &sStr)
+{
+    if (this != &sStr)
+    {
+        import(sStr);
+    }
+    return *this;
+}
+
+mux_string::mux_string(mux_string &&sStr) noexcept
+    : m_iLast(sStr.m_iLast),
+      m_vcs(std::move(sStr.m_vcs))
+{
+    memcpy(m_autf, sStr.m_autf, m_iLast.m_byte + 1);
+    sStr.m_iLast = CursorMin;
+    sStr.m_autf[0] = '\0';
+}
+
+mux_string& mux_string::operator=(mux_string &&sStr) noexcept
+{
+    if (this != &sStr)
+    {
+        m_iLast = sStr.m_iLast;
+        memcpy(m_autf, sStr.m_autf, m_iLast.m_byte + 1);
+        m_vcs = std::move(sStr.m_vcs);
+        sStr.m_iLast = CursorMin;
+        sStr.m_autf[0] = '\0';
+    }
+    return *this;
 }
 
 /*! \brief Constructs mux_string object from an ANSI string.
@@ -5809,21 +5836,7 @@ mux_string::mux_string(const UTF8 *pStr)
 {
     m_iLast = CursorMin;
     m_autf[0] = '\0';
-    m_ncs = 0;
-    m_pcs = nullptr;
     import(pStr);
-}
-
-/*! \brief Destructs mux_string object.
- *
- * This destructor deletes the m_pcs array if necessary.
- *
- * \return         None.
- */
-
-mux_string::~mux_string(void)
-{
-    realloc_m_pcs(0);
 }
 
 /*! \brief Self-checks mux_string to validate the invariant.
@@ -5833,7 +5846,7 @@ mux_string::~mux_string(void)
  * \return         None.
  */
 
-void mux_string::Validate(void) const
+void mux_string::Validate() const
 {
     // m_iLast.m_byte is always between 0 and LBUF_SIZE-1 inclusively.
     //
@@ -5845,19 +5858,17 @@ void mux_string::Validate(void) const
 
     // m_iLast.m_point is always between 0 and LBUF_SIZE-1 inclusively.
     //
-    mux_assert(m_ncs <= LBUF_SIZE-1);
+    mux_assert(m_vcs.size() <= LBUF_SIZE-1);
 
-    // When m_pcs is nullptr, m_ncs must be 0, and this is equivalent to every
-    // code point having CS_NORMAL color.  When m_pcs is not nullptr, m_ncs
-    // must be between 1 and LBUF_SIZE-1, inclusively, and it must be large
-    // enough to contain colors for every code point.
+    // When m_vcs is empty, it is equivalent to every code point having
+    // CS_NORMAL color.  When m_vcs is non-empty, its size must be between
+    // 1 and LBUF_SIZE-1, inclusively, and it must be large enough to
+    // contain colors for every code point.
     //
-    mux_assert(  ( nullptr == m_pcs
-                 && 0 == m_ncs)
-              || ( nullptr != m_pcs
-                 && 1 <= m_ncs
-                 && m_ncs <= LBUF_SIZE-1
-                 && m_iLast.m_point <= m_ncs));
+    mux_assert(  m_vcs.empty()
+              || (  1 <= m_vcs.size()
+                 && m_vcs.size() <= LBUF_SIZE-1
+                 && m_iLast.m_point <= m_vcs.size()));
 
     // m_iLast.m_byte bytes of m_atuf[] contain the non-color UTF-8-encoded
     // code points.  A terminating '\0' at m_autf[m_iLast.m_byte] is not
@@ -5899,14 +5910,14 @@ void mux_string::Validate(void) const
     mux_assert(nbytes == m_iLast.m_byte);
     mux_assert(npoints == m_iLast.m_point);
 
-    if (nullptr != m_pcs)
+    if (!m_vcs.empty())
     {
         // Every ColorState must be valid.
         //
         size_t i;
         for (i = 0; i < m_iLast.m_point; i++)
         {
-            ValidateColorState(m_pcs[i]);
+            ValidateColorState(m_vcs[i]);
         }
     }
 }
@@ -5962,26 +5973,26 @@ void mux_string::append(const mux_string &sStr, mux_cursor iStart, mux_cursor iE
     LBUF_OFFSET nBytes = iEnd.m_byte - iStart.m_byte;
     LBUF_OFFSET nPoints = iEnd.m_point - iStart.m_point;
 
-    if (  0 != m_ncs
-       || 0 != sStr.m_ncs)
+    if (  !m_vcs.empty()
+       || !sStr.m_vcs.empty())
     {
         // One of the strings specifies ColorStates, so the result will need
         // to as well.
         //
-        realloc_m_pcs(m_iLast.m_point + nPoints);
+        ensure_color_capacity(m_iLast.m_point + nPoints);
     }
 
     memcpy(m_autf + m_iLast.m_byte, sStr.m_autf + iStart.m_byte, nBytes);
 
-    if (0 != sStr.m_ncs)
+    if (!sStr.m_vcs.empty())
     {
-        memcpy(m_pcs + m_iLast.m_point, sStr.m_pcs + iStart.m_point, nPoints * sizeof(m_pcs[0]));
+        memcpy(m_vcs.data() + m_iLast.m_point, sStr.m_vcs.data() + iStart.m_point, nPoints * sizeof(m_vcs[0]));
     }
-    else if (0 != m_ncs)
+    else if (!m_vcs.empty())
     {
         for (size_t i = 0; i < nPoints; i++)
         {
-            m_pcs[m_iLast.m_point + i] = CS_NORMAL;
+            m_vcs[m_iLast.m_point + i] = CS_NORMAL;
         }
     }
 
@@ -6011,12 +6022,9 @@ void mux_string::append(const UTF8 *pStr)
         nLen = nAvail;
     }
 
-    mux_string *sNew = new mux_string;
-
-    sNew->import(pStr, nLen);
-
-    append(*sNew);
-    delete sNew;
+    mux_string sNew;
+    sNew.import(pStr, nLen);
+    append(sNew);
 }
 
 void mux_string::append(const UTF8 *pStr, size_t nLen)
@@ -6039,11 +6047,9 @@ void mux_string::append(const UTF8 *pStr, size_t nLen)
         nLen = nAvail;
     }
 
-    mux_string *sNew = new mux_string;
-
-    sNew->import(pStr, nLen);
-    append(*sNew);
-    delete sNew;
+    mux_string sNew;
+    sNew.import(pStr, nLen);
+    append(sNew);
 }
 
 void mux_string::append_TextPlain(const UTF8 *pStr)
@@ -6072,15 +6078,15 @@ void mux_string::append_TextPlain(const UTF8 *pStr)
         j = i;
     }
 
-    if (0 != m_ncs)
+    if (!m_vcs.empty())
     {
         // Note that mux_string invariant is not maintained on the following
-        // call to realloc_m_pcs().
+        // call to ensure_color_capacity().
         //
-        realloc_m_pcs(j.m_point);
+        ensure_color_capacity(j.m_point);
         for (size_t k = m_iLast.m_point; k < j.m_point; k++)
         {
-            m_pcs[k] = CS_NORMAL;
+            m_vcs[k] = CS_NORMAL;
         }
     }
 
@@ -6104,12 +6110,12 @@ void mux_string::append_TextPlain(const UTF8 *pStr, size_t nLen)
         nLen = (LBUF_SIZE-1) - m_iLast.m_byte;
     }
 
-    if (0 != m_ncs)
+    if (!m_vcs.empty())
     {
-        realloc_m_pcs(m_iLast.m_point + nLen);
+        ensure_color_capacity(m_iLast.m_point + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_iLast.m_point + i] = CS_NORMAL;
+            m_vcs[m_iLast.m_point + i] = CS_NORMAL;
         }
     }
 
@@ -6187,7 +6193,7 @@ void mux_string::compress(const UTF8 *ch, size_t nSep)
  * \return         None.
  */
 
-void mux_string::compress_Spaces(void)
+void mux_string::compress_Spaces()
 {
     mux_cursor i = CursorMin, j = CursorMin;
     while (i < m_iLast)
@@ -6241,9 +6247,9 @@ void mux_string::delete_Chars(mux_cursor iStart, mux_cursor iEnd)
     size_t nBytesMove = m_iLast.m_byte - iEnd.m_byte;
     size_t nPointsMove = m_iLast.m_point - iEnd.m_point;
     memmove(m_autf + iStart.m_byte, m_autf + iEnd.m_byte, nBytesMove);
-    if (0 != m_ncs)
+    if (!m_vcs.empty())
     {
-        memmove(m_pcs + iStart.m_point, m_pcs + iEnd.m_point, nPointsMove * sizeof(m_pcs[0]));
+        memmove(m_vcs.data() + iStart.m_point, m_vcs.data() + iEnd.m_point, nPointsMove * sizeof(m_vcs[0]));
     }
     m_iLast(m_iLast.m_byte - (iEnd.m_byte - iStart.m_byte), m_iLast.m_point - (iEnd.m_point - iStart.m_point));
     m_autf[m_iLast.m_byte] = '\0';
@@ -6319,10 +6325,10 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
 }
 
-void mux_string::encode_Html(void)
+void mux_string::encode_Html()
 {
     mux_cursor iPos = CursorMin;
-    mux_string *sTo = new mux_string;
+    mux_string sTo;
     while (iPos < m_iLast)
     {
         const UTF8 *pTo = nullptr;
@@ -6347,21 +6353,20 @@ void mux_string::encode_Html(void)
 
         if (nullptr != pTo)
         {
-            sTo->import(pTo);
-            if (nullptr != m_pcs)
+            sTo.import(pTo);
+            if (!m_vcs.empty())
             {
-                ColorState cs = m_pcs[iPos.m_point];
-                sTo->realloc_m_pcs(sTo->m_iLast.m_point);
-                for (size_t i = 0; i < sTo->m_iLast.m_point; i++)
+                ColorState cs = m_vcs[iPos.m_point];
+                sTo.ensure_color_capacity(sTo.m_iLast.m_point);
+                for (size_t i = 0; i < sTo.m_iLast.m_point; i++)
                 {
-                    sTo->m_pcs[i] = cs;
+                    sTo.m_vcs[i] = cs;
                 }
             }
-            replace_Chars(*sTo, iPos, mux_cursor(1, 1));
+            replace_Chars(sTo, iPos, mux_cursor(1, 1));
         }
         cursor_next(iPos);
     }
-    delete sTo;
 }
 
 // This function is deprecated.
@@ -6412,12 +6417,12 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 ColorState mux_string::export_Color(size_t n) const
 {
     if (  m_iLast.m_point <= n
-       || 0 == m_ncs)
+       || m_vcs.empty())
     {
         return CS_NORMAL;
     }
-    ValidateColorState(m_pcs[n]);
-    return m_pcs[n];
+    ValidateColorState(m_vcs[n]);
+    return m_vcs[n];
 }
 
 double mux_string::export_Float(bool bStrict) const
@@ -6425,12 +6430,12 @@ double mux_string::export_Float(bool bStrict) const
     return mux_atof(m_autf, bStrict);
 }
 
-INT64 mux_string::export_I64(void) const
+INT64 mux_string::export_I64() const
 {
     return mux_atoi64(m_autf);
 }
 
-long mux_string::export_Long(void) const
+long mux_string::export_Long() const
 {
     return mux_atol(m_autf);
 }
@@ -6484,7 +6489,7 @@ LBUF_OFFSET mux_string::export_TextColor
     //
     LBUF_OFFSET nBytesWanted  = iEnd.m_byte - iStart.m_byte;
     LBUF_OFFSET nPointsWanted = iEnd.m_point - iStart.m_point;
-    if (0 == m_ncs)
+    if (m_vcs.empty())
     {
         return export_TextPlain(pBuffer, iStart, iEnd, nBytesMax);
     }
@@ -6500,7 +6505,7 @@ LBUF_OFFSET mux_string::export_TextColor
     {
         while (iPos < iEnd)
         {
-            if (csPrev != m_pcs[iPos.m_point])
+            if (csPrev != m_vcs[iPos.m_point])
             {
                 if (iCopy < iPos)
                 {
@@ -6511,11 +6516,11 @@ LBUF_OFFSET mux_string::export_TextColor
                 }
 
                 pTransition = ColorTransitionBinary( csPrev,
-                                                     m_pcs[iPos.m_point],
+                                                     m_vcs[iPos.m_point],
                                                      &nTransition);
                 memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
                 nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
-                csPrev = m_pcs[iPos.m_point];
+                csPrev = m_vcs[iPos.m_point];
             }
             cursor_next(iPos);
         }
@@ -6541,9 +6546,9 @@ LBUF_OFFSET mux_string::export_TextColor
     LBUF_OFFSET nChar = 0;
     while (iPos < iEnd)
     {
-        if (csPrev != m_pcs[iPos.m_point])
+        if (csPrev != m_vcs[iPos.m_point])
         {
-            pTransition = ColorTransitionBinary( csPrev, m_pcs[iPos.m_point],
+            pTransition = ColorTransitionBinary( csPrev, m_vcs[iPos.m_point],
                                                  &nTransition);
         }
         else
@@ -6556,7 +6561,7 @@ LBUF_OFFSET mux_string::export_TextColor
             if (  !bNearEnd
                || nTransition)
             {
-                ColorBinaryNormal(m_pcs[iPos.m_point], &nNeededAfter);
+                ColorBinaryNormal(m_vcs[iPos.m_point], &nNeededAfter);
                 bNearEnd = true;
             }
             if (nBytesMax < nDone + nTransition + nChar + nNeededAfter)
@@ -6571,7 +6576,7 @@ LBUF_OFFSET mux_string::export_TextColor
         {
             memcpy(pBuffer + nDone, pTransition, nTransition * sizeof(pTransition[0]));
             nDone = static_cast<LBUF_OFFSET>(nDone + nTransition);
-            csPrev = m_pcs[iPos.m_point];
+            csPrev = m_vcs[iPos.m_point];
         }
         memcpy(pBuffer + nDone, m_autf + iPos.m_byte, nChar * sizeof(m_autf[0]));
         nDone = static_cast<LBUF_OFFSET>(nDone + nChar);
@@ -6605,7 +6610,7 @@ UTF8 *mux_string::export_TextConverted
 ) const
 {
     static UTF8 Buffer[2*LBUF_SIZE];
-    if (  0 == m_ncs
+    if (  m_vcs.empty()
        || 0 == m_iLast.m_point
        || !fColor)
     {
@@ -6632,13 +6637,13 @@ UTF8 *mux_string::export_TextConverted
     ColorState csCurrent = CS_NORMAL;
     UTF8 *pTransition = nullptr;
 
-    bool bPlentyOfRoom = (m_iLast.m_byte + (COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH * m_ncs) + nNormal + 1) < sizeof(Buffer);
+    bool bPlentyOfRoom = (m_iLast.m_byte + (COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH * m_vcs.size()) + nNormal + 1) < sizeof(Buffer);
 
     if (bPlentyOfRoom)
     {
         while (curIn < m_iLast)
         {
-            csCurrent = m_pcs[curIn.m_point];
+            csCurrent = m_vcs[curIn.m_point];
             ValidateColorState(csCurrent);
             if (csPrev != csCurrent)
             {
@@ -6682,7 +6687,7 @@ UTF8 *mux_string::export_TextConverted
     LBUF_OFFSET nChar = 0;
     while (curIn < m_iLast)
     {
-        csCurrent = m_pcs[curIn.m_point];
+        csCurrent = m_vcs[curIn.m_point];
         ValidateColorState(csCurrent);
         if (csPrev != csCurrent)
         {
@@ -6746,7 +6751,7 @@ void mux_string::export_TextHtml
     UTF8  *aBuffer
 ) const
 {
-    if (  0 == m_ncs
+    if (  m_vcs.empty()
        || 0 == m_iLast.m_point)
     {
         export_TextPlain(aBuffer);
@@ -6763,7 +6768,7 @@ void mux_string::export_TextHtml
 
     HTMLtag tagmap[5] = {HTMLtag::kIntense, HTMLtag::kUnderline, HTMLtag::kBlink, HTMLtag::kInverse, HTMLtag::kColor };
 
-    if (CS_NORMAL == m_pcs[0])
+    if (CS_NORMAL == m_vcs[0])
     {
         List[nList].fBeginEnd = true;
         List[nList].kTag = HTMLtag::kNormal;
@@ -6777,7 +6782,7 @@ void mux_string::export_TextHtml
 
     for (size_t i = 0; i < m_iLast.m_point; i++)
     {
-        csNext = m_pcs[i];
+        csNext = m_vcs[i];
         if (0 != (csNext & ~CS_ALLBITS))
         {
             STARTLOG(LOG_BUGS, "BUG", "INFO");
@@ -7119,7 +7124,7 @@ void mux_string::export_TextHtml
                 {
                     cursor_next(cur);
                 } while (  cur < m_iLast
-                        && m_pcs[curStart.m_point] == m_pcs[cur.m_point]);
+                        && m_vcs[curStart.m_point] == m_vcs[cur.m_point]);
 
                 size_t n = cur.m_byte - curStart.m_byte;
                 if (0 < n)
@@ -7186,7 +7191,7 @@ LBUF_OFFSET mux_string::export_TextPlain
 
 void mux_string::import(dbref num)
 {
-    realloc_m_pcs(0);
+    m_vcs.clear();
 
     m_autf[0] = '#';
     LBUF_OFFSET n = 1;
@@ -7205,7 +7210,7 @@ void mux_string::import(dbref num)
 
 void mux_string::import(INT64 iInt)
 {
-    realloc_m_pcs(0);
+    m_vcs.clear();
 
     // mux_i64toa() sets the '\0'.
     //
@@ -7221,7 +7226,7 @@ void mux_string::import(INT64 iInt)
 
 void mux_string::import(long lLong)
 {
-    realloc_m_pcs(0);
+    m_vcs.clear();
 
     // mux_ltoa() sets the '\0'.
     //
@@ -7242,7 +7247,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
     {
         m_iLast = CursorMin;
         m_autf[m_iLast.m_byte] = '\0';
-        realloc_m_pcs(0);
+        m_vcs.clear();
     }
     else
     {
@@ -7250,14 +7255,14 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
         memcpy(m_autf, sStr.m_autf + iStart.m_byte, m_iLast.m_byte);
         m_autf[m_iLast.m_byte] = '\0';
 
-        if (0 == sStr.m_ncs)
+        if (sStr.m_vcs.empty())
         {
-            realloc_m_pcs(0);
+            m_vcs.clear();
         }
         else
         {
-            realloc_m_pcs(m_iLast.m_point);
-            memcpy(m_pcs, sStr.m_pcs + iStart.m_point, m_iLast.m_point * sizeof(m_pcs[0]));
+            ensure_color_capacity(m_iLast.m_point);
+            memcpy(m_vcs.data(), sStr.m_vcs.data() + iStart.m_point, m_iLast.m_point * sizeof(m_vcs[0]));
         }
     }
 }
@@ -7303,7 +7308,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
        || '\0' == *pStr
        || 0 == nLen)
     {
-        realloc_m_pcs(0);
+        m_vcs.clear();
         m_autf[m_iLast.m_byte] = '\0';
         return;
     }
@@ -7344,126 +7349,80 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
 
     if (fColor)
     {
-        realloc_m_pcs(m_iLast.m_point);
-        memcpy(m_pcs, acsTemp, m_iLast.m_point * sizeof(m_pcs[0]));
+        ensure_color_capacity(m_iLast.m_point);
+        memcpy(m_vcs.data(), acsTemp, m_iLast.m_point * sizeof(m_vcs[0]));
     }
     else
     {
-        realloc_m_pcs(0);
+        m_vcs.clear();
     }
 }
 
 void mux_string::prepend(dbref num)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(num);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
 void mux_string::prepend(long lLong)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(lLong);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
 void mux_string::prepend(INT64 iInt)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(iInt);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
 void mux_string::prepend(const mux_string &sStr)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(sStr);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
 void mux_string::prepend(const UTF8 *pStr)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(pStr);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
 void mux_string::prepend(const UTF8 *pStr, size_t n)
 {
-    mux_string *sStore = new mux_string(*this);
-
+    mux_string sStore(*this);
     import(pStr, n);
-    append(*sStore);
-    delete sStore;
+    append(sStore);
 }
 
-/*! \brief Resizes or deletes the m_pcs array if necessary.
+/*! \brief Ensures the color vector has at least the required capacity.
  *
- * If asked to resize the array to 0, this method will delete the
- * array and set m_pcs to nullptr.  Otherwise when this method returns
- * the m_pcs array will exist and have at least the required size.
- * Any color states that were already initialized and would fit within
- * the resulting array will be preserved.
+ * If asked to ensure capacity of 0, this method clears the vector.
+ * Otherwise when this method returns, m_vcs will have at least the
+ * required size.  Any color states that were already initialized will
+ * be preserved.  New entries are initialized to CS_NORMAL.
  *
- * \param ncs      Size of m_pcs array required.
+ * \param ncs      Minimum size of m_vcs required.
  * \return         None.
  */
 
-void mux_string::realloc_m_pcs(size_t ncs)
+void mux_string::ensure_color_capacity(size_t ncs)
 {
-    if (  0 == ncs
-       && 0 != m_ncs)
+    if (0 == ncs)
     {
-        delete [] m_pcs;
-        m_pcs = nullptr;
-        m_ncs = 0;
+        m_vcs.clear();
     }
-    else if (m_ncs < ncs)
+    else if (m_vcs.size() < ncs)
     {
-        // extend in chunks of 8
+        // Extend in chunks of 8 (preserving existing growth strategy).
         //
-        ncs |= 0x7;
-        ncs++;
-
-        ColorState *pcsOld = m_pcs;
-        m_pcs = nullptr;
-        try
-        {
-            m_pcs = new ColorState[ncs];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        ISOUTOFMEMORY(m_pcs);
-
-        if (0 == m_ncs)
-        {
-            // Initialize the implicit CS_NORMAL ColorStates to maintain the
-            // mux_string invariant.
-            //
-            for (size_t i = 0; i < ncs; i++)
-            {
-                m_pcs[i] = CS_NORMAL;
-            }
-        }
-        else
-        {
-            memcpy(m_pcs, pcsOld, m_ncs * sizeof(m_pcs[0]));
-            delete [] pcsOld;
-        }
-
-        m_ncs = ncs;
+        ncs = (ncs | 0x7) + 1;
+        m_vcs.resize(ncs, CS_NORMAL);
     }
 }
 
@@ -7528,15 +7487,15 @@ void mux_string::replace_Chars
 
         // Update color if necessary to be consistent with the move.
         //
-        if (0 != m_ncs)
+        if (!m_vcs.empty())
         {
-            realloc_m_pcs(iLast.m_point);
+            ensure_color_capacity(iLast.m_point);
 
             // Propagate the last color state out further.
             //
             for (int i = m_iLast.m_point; i < iLast.m_point; i++)
             {
-                m_pcs[i] = m_pcs[m_iLast.m_point-1];
+                m_vcs[i] = m_vcs[m_iLast.m_point-1];
             }
 
             // If there is a move operation, the color also needs to be moved.
@@ -7545,21 +7504,21 @@ void mux_string::replace_Chars
             //
             if (CursorMin < nMove)
             {
-                memmove(m_pcs + iStart.m_point + nCopy.m_point,
-                        m_pcs + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_pcs[0]));
+                memmove(m_vcs.data() + iStart.m_point + nCopy.m_point,
+                        m_vcs.data() + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_vcs[0]));
             }
         }
-        else if (0 != sTo.m_ncs)
+        else if (!sTo.m_vcs.empty())
         {
-            realloc_m_pcs(iLast.m_point);
+            ensure_color_capacity(iLast.m_point);
         }
 
         m_iLast = iLast;
     }
-    else if (  0 == m_ncs
-            && 0 != sTo.m_ncs)
+    else if (  m_vcs.empty()
+            && !sTo.m_vcs.empty())
     {
-        realloc_m_pcs(m_iLast.m_point);
+        ensure_color_capacity(m_iLast.m_point);
     }
 
     // Copy replacement text over substring.
@@ -7568,9 +7527,9 @@ void mux_string::replace_Chars
 
     // If the replacement string contains color, replace the color as well.
     //
-    if (0 != sTo.m_ncs)
+    if (!sTo.m_vcs.empty())
     {
-        memcpy(m_pcs + iStart.m_point, sTo.m_pcs, nCopy.m_point * sizeof(m_pcs[0]));
+        memcpy(m_vcs.data() + iStart.m_point, sTo.m_vcs.data(), nCopy.m_point * sizeof(m_vcs[0]));
     }
 
     m_autf[m_iLast.m_byte] = '\0';
@@ -7624,20 +7583,19 @@ void mux_string::replace_Char(const mux_cursor &i, const mux_string &sStr, const
  * \return         None.
  */
 
-void mux_string::reverse(void)
+void mux_string::reverse()
 {
-    mux_string *sTemp = new mux_string;
-    sTemp->realloc_m_pcs(m_ncs);
+    mux_string sTemp;
+    sTemp.ensure_color_capacity(m_vcs.size());
 
     mux_cursor i = m_iLast, j = i;
 
     while (cursor_prev(i))
     {
-        sTemp->append(*this, i, j);
+        sTemp.append(*this, i, j);
         j = i;
     }
-    import(*sTemp);
-    delete sTemp;
+    import(sTemp);
 }
 
 /*! \brief Searches text for a specified pattern.
@@ -7751,15 +7709,6 @@ bool mux_string::search
 
 // This function is deprecated.
 //
-void mux_string::set_Char(size_t n, const UTF8 cChar)
-{
-    if (m_iLast.m_byte <= n)
-    {
-        return;
-    }
-    m_autf[n] = cChar;
-}
-
 void mux_string::set_Color(size_t n, ColorState csColor)
 {
     ValidateColorState(csColor);
@@ -7768,15 +7717,15 @@ void mux_string::set_Color(size_t n, ColorState csColor)
     {
         return;
     }
-    if (  0 == m_ncs
+    if (  m_vcs.empty()
        && csColor != CS_NORMAL)
     {
-        realloc_m_pcs(m_iLast.m_point);
+        ensure_color_capacity(m_iLast.m_point);
     }
 
-    if (0 != m_ncs)
+    if (!m_vcs.empty())
     {
-        m_pcs[n] = csColor;
+        m_vcs[n] = csColor;
     }
 }
 
@@ -8136,9 +8085,9 @@ void mux_string::truncate(mux_cursor iEnd)
     m_autf[m_iLast.m_byte] = '\0';
 }
 
-void mux_string::UpperCase(void)
+void mux_string::UpperCase()
 {
-    mux_string *sTo = nullptr;
+    mux_string sTo;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
@@ -8165,35 +8114,19 @@ void mux_string::UpperCase(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (nullptr == sTo)
-                {
-                    try
-                    {
-                        sTo = new mux_string();
-                    }
-                    catch (...)
-                    {
-                        ; // Nothing.
-                    }
-                }
-                if (nullptr != sTo)
-                {
-                    mux_cursor len;
-                    len.m_byte = utf8_FirstByte[*p];
-                    len.m_point = 1;
-                    sTo->import(qDesc->p);
-                    replace_Chars(*sTo, i, len);
-                }
+                mux_cursor len;
+                len.m_byte = utf8_FirstByte[*p];
+                len.m_point = 1;
+                sTo.import(qDesc->p);
+                replace_Chars(sTo, i, len);
             }
         }
     }
-    delete sTo;
-    sTo = nullptr;
 }
 
-void mux_string::LowerCase(void)
+void mux_string::LowerCase()
 {
-    mux_string *sTo = nullptr;
+    mux_string sTo;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
@@ -8220,35 +8153,19 @@ void mux_string::LowerCase(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (nullptr == sTo)
-                {
-                    try
-                    {
-                        sTo = new mux_string();
-                    }
-                    catch (...)
-                    {
-                        ; // Nothing.
-                    }
-                }
-                if (nullptr != sTo)
-                {
-                    mux_cursor len;
-                    len.m_byte = utf8_FirstByte[*p];
-                    len.m_point = 1;
-                    sTo->import(qDesc->p);
-                    replace_Chars(*sTo, i, len);
-                }
+                mux_cursor len;
+                len.m_byte = utf8_FirstByte[*p];
+                len.m_point = 1;
+                sTo.import(qDesc->p);
+                replace_Chars(sTo, i, len);
             }
         }
     }
-    delete sTo;
-    sTo = nullptr;
 }
 
-void mux_string::UpperCaseFirst(void)
+void mux_string::UpperCaseFirst()
 {
-    mux_string *sTo = nullptr;
+    mux_string sTo;
     mux_cursor i = CursorMin;
     if (i < m_iLast)
     {
@@ -8276,33 +8193,17 @@ void mux_string::UpperCaseFirst(void)
                 // Since an XOR-type string_desc covers the case there the bytes are equal, a literal-type string_desc will always
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
-                if (nullptr == sTo)
-                {
-                    try
-                    {
-                        sTo = new mux_string();
-                    }
-                    catch (...)
-                    {
-                        ; // Nothing.
-                    }
-                }
-                if (nullptr != sTo)
-                {
-                    mux_cursor len;
-                    len.m_byte = utf8_FirstByte[*p];
-                    len.m_point = 1;
-                    sTo->import(qDesc->p);
-                    replace_Chars(*sTo, i, len);
-                }
+                mux_cursor len;
+                len.m_byte = utf8_FirstByte[*p];
+                len.m_point = 1;
+                sTo.import(qDesc->p);
+                replace_Chars(sTo, i, len);
             }
         }
     }
-    delete sTo;
-    sTo = nullptr;
 }
 
-void mux_string::FoldForMatching(void)
+void mux_string::FoldForMatching()
 {
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {

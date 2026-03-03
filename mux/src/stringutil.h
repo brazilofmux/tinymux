@@ -1895,55 +1895,76 @@ static const mux_cursor curAscii(1, 1);
 
 class mux_string
 {
-    // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
+    // m_iLast, m_autf, and m_vcs work together as follows:
     //
-    // m_nutf is always between 0 and LBUF_SIZE-1 inclusively.  The first
-    // m_nutf bytes of m_atuf[] contain the non-color UTF-8-encoded code
-    // points.  A terminating '\0' at m_autf[m_nutf] is not included in this
-    // size even though '\0' is a UTF-8 code point.  In this way, m_nutf
-    // corresponds to strlen() in units of bytes.  The use of both a length
-    // and a terminating '\0' is intentionally redundant.
+    // m_iLast.m_byte is always between 0 and LBUF_SIZE-1 inclusively.
+    // The first m_iLast.m_byte bytes of m_autf[] contain the non-color
+    // UTF-8-encoded code points.  A terminating '\0' at
+    // m_autf[m_iLast.m_byte] is not included in this size even though
+    // '\0' is a UTF-8 code point.  In this way, m_iLast.m_byte
+    // corresponds to strlen() in units of bytes.  The use of both a
+    // length and a terminating '\0' is intentionally redundant.
     //
-    // m_ncp is between 0 and LBUF_SIZE-1 inclusively and represents the
-    // number of non-color UTF-8-encoded code points stored in m_autf[].
-    // The terminating '\0' is not included in this size.  In this way, m_ncp
-    // corresponds to strlen() in units of code points.
+    // m_iLast.m_point is between 0 and LBUF_SIZE-1 inclusively and
+    // represents the number of non-color UTF-8-encoded code points
+    // stored in m_autf[].  The terminating '\0' is not included in this
+    // size.  In this way, m_iLast.m_point corresponds to strlen() in
+    // units of code points.
     //
-    // If color is associated with the above code points, m_pcs will point
-    // to an array of ColorStates, otherwise, it is nullptr.  When m_pcs is
-    // nullptr, it is equivalent to every code point having CS_NORMAL color.
-    // Each color state corresponds with a UTF-8 code point in m_autf[].
-    // There is no guaranteed association between a position in m_autf[] and
-    // a position in m_pcs because UTF-8 code points are variable length.
+    // If color is associated with the above code points, m_vcs will be
+    // non-empty.  When m_vcs is empty, it is equivalent to every code
+    // point having CS_NORMAL color.  Each color state corresponds with
+    // a UTF-8 code point in m_autf[].  There is no guaranteed
+    // association between a position in m_autf[] and a position in
+    // m_vcs because UTF-8 code points are variable length.
     //
-    // Not all ColorStates in m_pcs may be used. m_ncs is between 0 and
-    // LBUF_SIZE-1 inclusively and represents how many ColorStates are
-    // allocated and available for use.  m_ncp is always less than or equal to
-    // m_ncs.
+    // Not all ColorStates in m_vcs may be used. m_vcs.size() is between
+    // 0 and LBUF_SIZE-1 inclusively and represents how many ColorStates
+    // are allocated and available for use.  m_iLast.m_point is always
+    // less than or equal to m_vcs.size().
     //
-    // To recap, m_nutf has units of bytes while m_ncp and m_ncs are in units
-    // of code points.
+    // To recap, m_iLast.m_byte has units of bytes while m_iLast.m_point
+    // and m_vcs.size() are in units of code points.
     //
 private:
     mux_cursor  m_iLast;
     UTF8        m_autf[LBUF_SIZE];
-    size_t      m_ncs;
-    ColorState *m_pcs;
-    void realloc_m_pcs(size_t ncs);
+    std::vector<ColorState> m_vcs;
+    void ensure_color_capacity(size_t ncs);
 
 public:
-    mux_string(void);
+    mux_string();
     mux_string(const mux_string &sStr);
+    mux_string& operator=(const mux_string &sStr);
+    mux_string(mux_string &&sStr) noexcept;
+    mux_string& operator=(mux_string &&sStr) noexcept;
     mux_string(const UTF8 *pStr);
-    ~mux_string(void);
+    ~mux_string() = default;
 
-    void Validate(void) const;
+    void Validate() const;
 
-    inline bool isAscii(void)
+    [[nodiscard]] inline bool isAscii() const
     {
         // If every byte corresponds to a point, then all the bytes must be ASCII.
         //
         return (m_iLast.m_byte == m_iLast.m_point);
+    }
+
+    [[nodiscard]] bool empty() const
+    {
+        return (0 == m_iLast.m_byte);
+    }
+
+    void clear()
+    {
+        m_iLast = CursorMin;
+        m_autf[0] = '\0';
+        m_vcs.clear();
+    }
+
+    [[nodiscard]] const UTF8 *data() const
+    {
+        return m_autf;
     }
 
     void append(dbref num);
@@ -1960,16 +1981,16 @@ public:
     void append_TextPlain(const UTF8 *pStr);
     void append_TextPlain(const UTF8 *pStr, size_t nLen);
     void compress(const UTF8 *ch, size_t nSep);
-    void compress_Spaces(void);
+    void compress_Spaces();
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
     void edit(mux_string &sFrom, const mux_string &sTo);
-    void encode_Html(void);
-    UTF8 export_Char(size_t n) const; // Deprecated.
-    LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
-    ColorState export_Color(size_t n) const;
-    double export_Float(bool bStrict = true) const;
-    INT64 export_I64(void) const;
-    long export_Long(void) const;
+    void encode_Html();
+    [[nodiscard]] UTF8 export_Char(size_t n) const; // Deprecated.
+    [[nodiscard]] LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
+    [[nodiscard]] ColorState export_Color(size_t n) const;
+    [[nodiscard]] double export_Float(bool bStrict = true) const;
+    [[nodiscard]] INT64 export_I64() const;
+    [[nodiscard]] long export_Long() const;
     LBUF_OFFSET export_TextColor
     (
         UTF8 *pBuffer,
@@ -1977,7 +1998,7 @@ public:
         mux_cursor iEnd   = CursorMax,
         size_t nBytesMax = (LBUF_SIZE-1)
     ) const;
-    UTF8 *export_TextConverted
+    [[nodiscard]] UTF8 *export_TextConverted
     (
         bool fColor,
         bool fNoBleed,
@@ -1999,17 +2020,17 @@ public:
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
 
-    inline mux_cursor length_cursor(void) const
+    [[nodiscard]] inline mux_cursor length_cursor() const
     {
         return m_iLast;
     }
 
-    inline size_t length_byte(void) const
+    [[nodiscard]] inline size_t length_byte() const
     {
         return m_iLast.m_byte;
     }
 
-    inline size_t length_point(void) const
+    [[nodiscard]] inline size_t length_point() const
     {
         return m_iLast.m_point;
     }
@@ -2023,24 +2044,23 @@ public:
     void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
     bool replace_Point(const UTF8 *p, const mux_cursor &i);
     void replace_Char(const mux_cursor &i, const mux_string &sStr, const mux_cursor &j);
-    void reverse(void);
-    bool search
+    void reverse();
+    [[nodiscard]] bool search
     (
         const UTF8 *pPattern,
         mux_cursor *iPos = nullptr,
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd = CursorMax
     ) const;
-    bool search
+    [[nodiscard]] bool search
     (
         const mux_string &sPattern,
         mux_cursor *iPos = nullptr,
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd = CursorMax
     ) const;
-    void set_Char(size_t n, const UTF8 cChar); // Deprecated.
     void set_Color(size_t n, ColorState csColor);
-    bool compare_Char(const mux_cursor &i, const mux_string &sStr) const;
+    [[nodiscard]] bool compare_Char(const mux_cursor &i, const mux_string &sStr) const;
     void strip
     (
         const UTF8 *pStripSet,
@@ -2085,10 +2105,10 @@ public:
         }
     }
 
-    void UpperCase(void);
-    void LowerCase(void);
-    void UpperCaseFirst(void);
-    void FoldForMatching(void);
+    void UpperCase();
+    void LowerCase();
+    void UpperCaseFirst();
+    void FoldForMatching();
 
     // mux_string_cursor c;
     // cursor_start(c);
@@ -2241,7 +2261,7 @@ public:
         return false;
     }
 
-    inline bool IsEscape(mux_cursor &c)
+    [[nodiscard]] inline bool IsEscape(const mux_cursor &c) const
     {
         return mux_isescape(m_autf[c.m_byte]);
     }
@@ -2249,9 +2269,9 @@ public:
     friend class mux_words;
 };
 
-inline bool isEmpty(const mux_string *p)
+[[nodiscard]] inline bool isEmpty(const mux_string *p)
 {
-    return ((nullptr == p) || (0 == p->length_byte()));
+    return ((nullptr == p) || p->empty());
 }
 
 // String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.
