@@ -2475,7 +2475,7 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
                 int sockerr = 0;
                 socklen_t errlen = sizeof(sockerr);
                 if (getsockopt(email_channel_->fd, SOL_SOCKET, SO_ERROR,
-                               &sockerr, &errlen) < 0 || sockerr != 0) {
+                               reinterpret_cast<char*>(&sockerr), &errlen) < 0 || sockerr != 0) {
                     errorMsg = T("@email: Unable to connect to mailserver, aborting!");
                     needCleanup = true;
                 } else {
@@ -2534,7 +2534,7 @@ bool GanlAdapter::process_email_read_locked() {
     // Loop reads until EAGAIN (edge-triggered epoll).
     for (;;) {
         char buffer[MBUF_SIZE];
-        ssize_t nbytes = mux_read(email_channel_->fd, buffer, sizeof(buffer));
+        int nbytes = mux_read(email_channel_->fd, buffer, sizeof(buffer));
         if (nbytes > 0) {
             email_channel_->readBuffer.append(buffer,
                 static_cast<size_t>(nbytes));
@@ -2617,7 +2617,7 @@ bool GanlAdapter::flush_email_writes_locked() {
 
         const char* data = email_channel_->currentWrite.data();
         size_t remaining = email_channel_->currentWrite.size();
-        ssize_t written = mux_write(email_channel_->fd, data, remaining);
+        int written = mux_write(email_channel_->fd, data, remaining);
         if (written > 0) {
             email_channel_->currentWrite.erase(
                 0, static_cast<size_t>(written));
