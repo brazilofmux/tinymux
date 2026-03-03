@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build Commands
 - Configure: `./configure [options]` (options: --enable-memorybased, --enable-realitylvls, etc.)
-- Standard configuration: `./configure --enable-realitylvls --enable-wodrealms --enable-stubslave --enable-ssl`
+- Standard configuration: `./configure --enable-realitylvls --enable-wodrealms --enable-stubslave`
 - Generate dependencies: `make depend` (important after code changes)
 - Build: `make`
 - Clean: `make clean` or `make realclean`

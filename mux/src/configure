@@ -807,7 +807,6 @@ enable_inlinesql
 enable_selfcheck
 with_mysql_include
 with_mysql_libs
-enable_ssl
 enable_deprecated
 enable_dependency_tracking
 '
@@ -1467,7 +1466,6 @@ Optional Features:
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
-  --enable-ssl            enable SSL encryption support (default is NO)
   --enable-deprecated     enable deprecated features (default is NO)
   --enable-dependency-tracking
                           do not reject slow dependency extractors
@@ -4170,29 +4168,7 @@ fi
 
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable SSL support" >&5
-printf %s "checking whether to enable SSL support... " >&6; }
-# Check whether --enable-ssl was given.
-if test ${enable_ssl+y}
-then :
-  enableval=$enable_ssl;
-    if test "x$enableval" = "xno"; then
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-    else
-      ENABLE_SSL="yes"
-      SSL="-DSSL_ENABLED"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-
-else $as_nop
-
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-fi
-
+SSL="-DSSL_ENABLED"
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable deprecated features" >&5
@@ -7876,8 +7852,7 @@ else $as_nop
 fi
 
 
-if test "x$ENABLE_SSL" = "xyes"; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lssl" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lssl" >&5
 printf %s "checking for main in -lssl... " >&6; }
 if test ${ac_cv_lib_ssl_main+y}
 then :
@@ -7917,7 +7892,7 @@ then :
 
 fi
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lcrypto" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lcrypto" >&5
 printf %s "checking for main in -lcrypto... " >&6; }
 if test ${ac_cv_lib_crypto_main+y}
 then :
@@ -7957,7 +7932,6 @@ then :
 
 fi
 
-fi
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

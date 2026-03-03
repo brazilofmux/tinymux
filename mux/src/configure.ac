@@ -186,22 +186,7 @@ AC_ARG_WITH(
   ])
 AC_SUBST(SQL_LIBPATH)
 
-AC_MSG_CHECKING(whether to enable SSL support)
-AC_ARG_ENABLE(
-  [ssl],
-  AS_HELP_STRING([--enable-ssl],[enable SSL encryption support (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      ENABLE_SSL="yes"
-      SSL="-DSSL_ENABLED"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
+SSL="-DSSL_ENABLED"
 AC_SUBST(SSL)
 
 AC_MSG_CHECKING(whether to enable deprecated features)
@@ -245,10 +230,8 @@ AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
     [PCRE2_LIBS="-lpcre2-8"],
     [AC_MSG_ERROR([PCRE2 library not found])])
 AC_SUBST(PCRE2_LIBS)
-if test "x$ENABLE_SSL" = "xyes"; then
-    AC_CHECK_LIB([ssl], [main])
-    AC_CHECK_LIB([crypto], [main])
-fi
+AC_CHECK_LIB([ssl], [main])
+AC_CHECK_LIB([crypto], [main])
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"
