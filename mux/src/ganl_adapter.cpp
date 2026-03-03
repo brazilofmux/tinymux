@@ -1280,6 +1280,7 @@ bool GanlAdapter::initialize() {
     // 6. Set up listeners and connections — branching on restart vs. fresh start.
     ganl::ErrorCode error = 0;
 
+#if defined(HAVE_WORKING_FORK)
     if (mudstate.restarting) {
         // --- Restart path: adopt surviving fds from before exec ---
         restarting_ = true;
@@ -1368,7 +1369,9 @@ bool GanlAdapter::initialize() {
         }
 
         restarting_ = false;
-    } else {
+    } else
+#endif // HAVE_WORKING_FORK
+    {
         // --- Normal (fresh) start path ---
         for (int i = 0; i < mudconf.ports.n; ++i) {
             int port = mudconf.ports.pi[i];
