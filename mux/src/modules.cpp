@@ -332,6 +332,7 @@ MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink
         {
             return MUX_E_FAIL;
         }
+        p = p->pNext;
     }
 
     // Allocate a list node.

@@ -791,7 +791,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
         return MUX_E_NOTREADY;
     }
 
-    MUX_RESULT mr MUX_S_OK;
+    MUX_RESULT mr = MUX_S_OK;
     if (nullptr == g_pModule)
     {
         std::map<const UTF8 *, Module *, ltstr>::iterator it = g_ModulesByName.find(aModuleName);

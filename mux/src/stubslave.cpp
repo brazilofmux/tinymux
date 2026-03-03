@@ -343,12 +343,12 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
             if (nullptr != pModuleName)
             {
-                delete pModuleName;
+                delete [] pModuleName;
                 pModuleName = nullptr;
             }
             if (nullptr != pFileName)
             {
-                delete pFileName;
+                delete [] pFileName;
                 pFileName = nullptr;
             }
         }
@@ -404,7 +404,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 
             if (nullptr != pModuleName)
             {
-                delete pModuleName;
+                delete [] pModuleName;
                 pModuleName = nullptr;
             }
         }

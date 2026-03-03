@@ -621,11 +621,8 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
     // Save new Server/Database/User/Password values.  These are used later if reconnection is necessary.
     //
     m_pServer = pServer;
-    delete [] m_pDatabase;
     m_pDatabase = pDatabase;
-    delete [] m_pUser;
     m_pUser = pUser;
-    delete [] m_pPassword;
     m_pPassword = pPassword;
 
 #if defined(HAVE_MYSQL)
