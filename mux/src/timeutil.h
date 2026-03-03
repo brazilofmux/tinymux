@@ -12,6 +12,9 @@
 #include <memory>
 #include <atomic>
 #include <cstdint>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 using UnderlyingTickType = std::int64_t;
 using HectoNanoseconds = std::chrono::duration<UnderlyingTickType, std::ratio<1, 10'000'000>>;
@@ -216,40 +219,27 @@ CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& 
 CLinearTimeDelta operator*(const CLinearTimeDelta& ltd, int Scale);
 UnderlyingTickType operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
 
-#if defined(WINDOWS_THREADS)
-struct HandleDeleter {
-    void operator()(HANDLE h) const {
-        if (h && h != INVALID_HANDLE_VALUE) {
-            CloseHandle(h);
-        }
-    }
-};
-#endif // WINDOWS_THREADS
-
 class mux_alarm
 {
 private:
     bool alarm_set_{};
-#if defined(WINDOWS_THREADS)
-    // Replace raw handles with smart pointers
-    std::unique_ptr<void, HandleDeleter> thread_handle_;
-    std::unique_ptr<void, HandleDeleter> semaphore_handle_;
-    std::atomic<DWORD> alarm_period_in_milliseconds_{};
-    static DWORD WINAPI alarm_proc(LPVOID parameter);
-#endif // WINDOWS_THREADS
+    std::thread alarm_thread_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    bool shutdown_{};
+    std::chrono::milliseconds alarm_period_{0};
+    bool wake_{};                    // spurious-wakeup guard
+
+    void alarm_proc();
+
 public:
     std::atomic<bool> alarmed{};
-#if defined(WINDOWS_THREADS)
-    ~mux_alarm();
-#endif // WINDOWS_THREADS
     mux_alarm();
+    ~mux_alarm();
     static void sleep(CLinearTimeDelta sleep_period);
     static void surrender_slice();
     void set(CLinearTimeDelta alarm_period);
     void clear();
-#if defined(UNIX_SIGNALS)
-    void signal();
-#endif // UNIX_SIGNALS
 };
 
 extern mux_alarm alarm_clock;

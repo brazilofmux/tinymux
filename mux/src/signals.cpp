@@ -501,16 +501,6 @@ static void DCL_CDECL sighandler(int sig)
         scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
         break;
 
-#ifdef HAVE_SETITIMER
-    case SIGPROF:
-
-        // Softcode is running longer than is reasonable.  Apply the brakes.
-        //
-        log_signal(sig);
-        alarm_clock.signal();
-        break;
-#endif
-
 #endif // UNIX_SIGNALS
 
     case SIGINT:
@@ -696,10 +686,6 @@ void set_signals(void)
     signal(SIGUSR2, CAST_SIGNAL_FUNC sighandler);
     signal(SIGTRAP, CAST_SIGNAL_FUNC sighandler);
     signal(SIGILL,  CAST_SIGNAL_FUNC sighandler);
-#ifdef HAVE_SETITIMER
-    signal(SIGPROF,  CAST_SIGNAL_FUNC sighandler);
-#endif
-
 #ifdef SIGXCPU
     signal(SIGXCPU, CAST_SIGNAL_FUNC sighandler);
 #endif // SIGXCPU

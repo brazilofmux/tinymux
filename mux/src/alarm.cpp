@@ -12,54 +12,54 @@
 
 mux_alarm alarm_clock;
 
-// OS Dependent Routines:
-//
-#if defined(WINDOWS_TIME)
-
 /*! \brief Alarm Clock Thread Procedure.
  *
- * This thread takes requests to wait. If the allowed time runs out, alarmed is set.
- *
- * \param parameter  Void pointer to mux_alarm instance.
- * \return Always 1.
+ * This thread waits on a condition variable. When set() is called, it waits
+ * with a timeout; if the timeout expires, alarmed is set. When clear() is
+ * called, the thread returns to waiting indefinitely.
  */
-
-DWORD WINAPI mux_alarm::alarm_proc(LPVOID parameter)
+void mux_alarm::alarm_proc()
 {
-    const auto pthis = static_cast<mux_alarm*>(parameter);
-    auto milliseconds = pthis->alarm_period_in_milliseconds_.load();
-
+    std::unique_lock<std::mutex> lock(mutex_);
     for (;;)
     {
-        const auto sem_alarm = pthis->semaphore_handle_.get();
-        if (sem_alarm == INVALID_HANDLE_VALUE)
+        // Wait until signaled or timeout expires.
+        //
+        wake_ = false;
+        if (alarm_period_.count() == 0)
         {
-            break;
-        }
-
-        const auto reason = WaitForSingleObject(sem_alarm, milliseconds);
-        if (reason == WAIT_TIMEOUT)
-        {
-            pthis->alarmed.store(true);
-            milliseconds = INFINITE;
+            // No alarm set -- wait indefinitely for a signal.
+            //
+            cv_.wait(lock, [this]{ return wake_; });
         }
         else
         {
-            milliseconds = pthis->alarm_period_in_milliseconds_.load();
+            // Alarm is set -- wait with timeout.
+            //
+            if (!cv_.wait_for(lock, alarm_period_, [this]{ return wake_; }))
+            {
+                // Timed out -- fire the alarm.
+                //
+                alarmed.store(true);
+                alarm_period_ = std::chrono::milliseconds(0);
+                continue;
+            }
+        }
+
+        if (shutdown_)
+        {
+            break;
         }
     }
-    return 1;
 }
 
 /*! \brief Alarm Clock Constructor.
  *
- * The order of execution in this function is important as the semaphore must
- * be in place and in the correct state before the thread begins to use it.
+ * Launches the alarm thread which waits on the condition variable.
  */
-mux_alarm::mux_alarm() : semaphore_handle_(CreateSemaphore(nullptr, 0, 1, nullptr)),
-                         thread_handle_(CreateThread(nullptr, 0, alarm_proc, static_cast<LPVOID>(this), 0, nullptr))
+mux_alarm::mux_alarm()
 {
-    clear();
+    alarm_thread_ = std::thread(&mux_alarm::alarm_proc, this);
 }
 
 /*! \brief Alarm Clock Destructor.
@@ -69,16 +69,15 @@ mux_alarm::mux_alarm() : semaphore_handle_(CreateSemaphore(nullptr, 0, 1, nullpt
  */
 mux_alarm::~mux_alarm()
 {
-    HANDLE sem = semaphore_handle_.release();
-    semaphore_handle_.reset(INVALID_HANDLE_VALUE);
-    ReleaseSemaphore(sem, 1, nullptr);
-
-    if (thread_handle_) {
-        WaitForSingleObject(thread_handle_.get(), static_cast<DWORD>(15 * FACTOR_MS_PER_SECOND));
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        shutdown_ = true;
+        wake_ = true;
+        cv_.notify_one();
     }
-
-    if (sem != INVALID_HANDLE_VALUE) {
-        CloseHandle(sem);
+    if (alarm_thread_.joinable())
+    {
+        alarm_thread_.join();
     }
 }
 
@@ -89,17 +88,18 @@ mux_alarm::~mux_alarm()
  */
 void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
-    ::Sleep(sleep_period.ReturnMilliseconds());
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(sleep_period.ReturnMilliseconds()));
 }
 
 /*! \brief Surrenders a little time.
  *
- * On most operating system, a request to sleep for 0 is a polite way of
- * giving other threads the remainder of your time slice.
+ * On most operating systems, a request to yield is a polite way of giving
+ * other threads the remainder of your time slice.
  */
 void mux_alarm::surrender_slice()
 {
-    ::Sleep(0);
+    std::this_thread::yield();
 }
 
 /*! \brief Set the Alarm Clock.
@@ -108,13 +108,13 @@ void mux_alarm::surrender_slice()
  */
 void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
-    alarm_period_in_milliseconds_.store(alarm_period.ReturnMilliseconds());
-    if (semaphore_handle_) {
-        ReleaseSemaphore(semaphore_handle_.get(), 1, nullptr);
-    }
-
+    std::lock_guard<std::mutex> lock(mutex_);
+    alarm_period_ = std::chrono::milliseconds(
+        alarm_period.ReturnMilliseconds());
     alarmed.store(false);
     alarm_set_ = true;
+    wake_ = true;
+    cv_.notify_one();
 }
 
 /*! \brief Clear the Alarm Clock.
@@ -123,163 +123,10 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
  */
 void mux_alarm::clear()
 {
-    alarm_period_in_milliseconds_.store(INFINITE);
-    if (semaphore_handle_) {
-        ReleaseSemaphore(semaphore_handle_.get(), 1, nullptr);
-    }
-
+    std::lock_guard<std::mutex> lock(mutex_);
+    alarm_period_ = std::chrono::milliseconds(0);
     alarmed.store(false);
     alarm_set_ = false;
+    wake_ = true;
+    cv_.notify_one();
 }
-
-#elif defined(UNIX_TIME)
-
-/*! \brief Alarm Clock Constructor.
- *
- * The UNIX version of the Alarm Clock is built on signals, so there isn't
- * much to initialize.
- */
-mux_alarm::mux_alarm()
-{
-    alarmed = false;
-    alarm_set_ = false;
-}
-
-/*! \brief Sleep Routine.
- *
- * A sleep request does not prevent signals from firing, so typically,
- * the server sleeps while the Alarm Clock is not set.
- */
-void mux_alarm::sleep(CLinearTimeDelta sleep_period)
-{
-#if defined(HAVE_NANOSLEEP)
-    struct timespec req;
-    sleep_period.ReturnTimeSpecStruct(&req);
-    while (!mudstate.shutdown_flag)
-    {
-        struct timespec rem;
-        if (  nanosleep(&req, &rem) == -1
-           && errno == EINTR)
-        {
-            req = rem;
-        }
-        else
-        {
-            break;
-        }
-    }
-#else
-#if defined(HAVE_SETITIMER)
-    struct itimerval oit;
-    bool bSaved = false;
-    if (alarm_set_)
-    {
-        // Save existing timer and disable.
-        //
-        struct itimerval it;
-        it.it_value.tv_sec = 0;
-        it.it_value.tv_usec = 0;
-        it.it_interval.tv_sec = 0;
-        it.it_interval.tv_usec = 0;
-        setitimer(ITIMER_PROF, &it, &oit);
-        bSaved = true;
-        alarm_set_ = false;
-    }
-#endif
-#if defined(HAVE_USLEEP)
-#define TIME_1S 1000000
-    unsigned long usec;
-    INT64 usecTotal = sleep_period.ReturnMicroseconds();
-
-    while (  usecTotal
-          && !mudstate.shutdown_flag)
-    {
-        usec = usecTotal;
-        if (usecTotal < TIME_1S)
-        {
-            usec = usecTotal;
-        }
-        else
-        {
-            usec = TIME_1S-1;
-        }
-        usleep(usec);
-        usecTotal -= usec;
-    }
-#else
-    ::sleep(sleep_period.ReturnSeconds());
-#endif
-#ifdef HAVE_SETITIMER
-    if (bSaved)
-    {
-        // Restore and re-enabled timer.
-        //
-        setitimer(ITIMER_PROF, &oit, nullptr);
-        alarm_set_ = true;
-    }
-#endif
-#endif
-}
-
-/*! \brief Surrenders a little time.
- *
- * One most operating system, a request to sleep for 0 is a polite way of
- * giving other threads the remainder of your time slice.
- */
-void mux_alarm::surrender_slice()
-{
-    ::sleep(0);
-}
-
-/*! \brief Set the Alarm Clock.
- *
- * This sets the Alarm Clock to fire after a certain time has passed by
- * requesting a SIG_PROF to fire at that time.  Note that SIG_PROF is used
- * by the profiler, so the Alarm Clock must be disable in autoconf.h before
- * the server can be profiled.
- */
-void mux_alarm::set(CLinearTimeDelta alarm_period)
-{
-#ifdef HAVE_SETITIMER
-    struct itimerval it;
-    alarm_period.ReturnTimeValueStruct(&it.it_value);
-    it.it_interval.tv_sec = 0;
-    it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, nullptr);
-    alarm_set_ = true;
-    alarmed  = false;
-#endif
-}
-
-/*! \brief Clear the Alarm Clock.
- *
- * This turns the Alarm Clock off.
- */
-void mux_alarm::clear()
-{
-#ifdef HAVE_SETITIMER
-    // Turn off the timer.
-    //
-    struct itimerval it;
-    it.it_value.tv_sec = 0;
-    it.it_value.tv_usec = 0;
-    it.it_interval.tv_sec = 0;
-    it.it_interval.tv_usec = 0;
-    setitimer(ITIMER_PROF, &it, nullptr);
-    alarm_set_ = false;
-    alarmed  = false;
-#endif
-}
-
-/*! \brief Clear the Alarm Clock.
- *
- * Like the AlarmProc above, this routine is called when a SIGPROF signal
- * occurs indicating that the allowed time has passed.
- */
-void mux_alarm::signal()
-{
-    alarm_set_ = false;
-    alarmed  = true;
-}
-
-#endif // UNIX_TIME
