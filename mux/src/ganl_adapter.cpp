@@ -1473,9 +1473,7 @@ void GanlAdapter::shutdown() {
     // Release lock before calling potentially blocking shutdown methods
     lock.unlock();
 
-#if !defined(_WIN32)
     shutdown_dns_slave();
-#endif
 
     // Close listeners first
     std::vector<ganl::ListenerHandle> plainHandles, sslHandles;
@@ -1686,9 +1684,7 @@ void GanlAdapter::prepare_for_restart() {
     }
 
     // 8. Shut down engine, transport, session manager, protocol handler.
-#if !defined(_WIN32)
     shutdown_dns_slave();
-#endif
     if (sessionManager_) {
         sessionManager_->shutdown();
         sessionManager_.reset();
@@ -1916,6 +1912,11 @@ void GanlAdapter::process_tinyMUX_tasks() {
     // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
     scheduler.RunTasks(ltaNow);
 
+#if defined(_WIN32)
+    // Collect completed reverse DNS lookups from worker threads.
+    drain_dns_results();
+#endif
+
     // Flush pending output so queued text reaches clients promptly.
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
@@ -1932,7 +1933,22 @@ void GanlAdapter::process_tinyMUX_tasks() {
 
 bool GanlAdapter::start_dns_slave() {
 #if defined(_WIN32)
-    return false;
+    if (!mudconf.use_hostname) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(dnsMutex_);
+    if (!dnsThreads_.empty()) {
+        return true; // Already started.
+    }
+
+    dnsShuttingDown_ = false;
+    for (int i = 0; i < DNS_THREAD_COUNT; ++i) {
+        dnsThreads_.emplace_back(&GanlAdapter::dns_worker_func, this);
+    }
+
+    Log.tinyprintf(T("GANL: DNS worker threads started (%d threads).\n"), DNS_THREAD_COUNT);
+    return true;
 #else
     if (!mudconf.use_hostname || !networkEngine_) {
         return false;
@@ -1972,8 +1988,29 @@ bool GanlAdapter::start_dns_slave() {
 
 void GanlAdapter::shutdown_dns_slave() {
 #if defined(_WIN32)
-    std::lock_guard<std::mutex> lock(mutex_);
-    dns_slave_.reset();
+    {
+        std::lock_guard<std::mutex> lock(dnsMutex_);
+        if (dnsThreads_.empty()) {
+            return;
+        }
+        dnsShuttingDown_ = true;
+        dnsRequests_.clear();
+    }
+    dnsCv_.notify_all();
+
+    for (auto& t : dnsThreads_) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(dnsMutex_);
+        dnsThreads_.clear();
+        dnsResults_.clear();
+    }
+
+    Log.WriteString(T("GANL: DNS worker threads stopped.\n"));
 #else
     std::unique_lock<std::mutex> lock(mutex_);
     if (!dns_slave_) {
@@ -1992,7 +2029,18 @@ void GanlAdapter::shutdown_dns_slave() {
 
 void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
 #if defined(_WIN32)
-    UNUSED_PARAMETER(numericAddress);
+    if (!mudconf.use_hostname || !numericAddress || *numericAddress == '\0') {
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(dnsMutex_);
+        if (dnsShuttingDown_ || dnsThreads_.empty()) {
+            return;
+        }
+        dnsRequests_.emplace_back(reinterpret_cast<const char*>(numericAddress));
+    }
+    dnsCv_.notify_one();
 #else
     if (!mudconf.use_hostname || !numericAddress || *numericAddress == '\0') {
         return;
@@ -2158,10 +2206,6 @@ bool GanlAdapter::process_dns_slave_write_locked() {
 }
 
 void GanlAdapter::apply_reverse_dns_result(const std::string& numericAddress, const std::string& hostname) {
-#if defined(_WIN32)
-    UNUSED_PARAMETER(numericAddress);
-    UNUSED_PARAMETER(hostname);
-#else
     UTF8 numericBuffer[MBUF_SIZE];
     UTF8 hostBuffer[MBUF_SIZE];
 
@@ -2188,8 +2232,78 @@ void GanlAdapter::apply_reverse_dns_result(const std::string& numericAddress, co
             atr_add_raw(d->player, A_LASTIP, numericBuffer);
         }
     }
-#endif
 }
+
+#if defined(_WIN32)
+void GanlAdapter::dns_worker_func() {
+    for (;;) {
+        std::string ip;
+        {
+            std::unique_lock<std::mutex> lock(dnsMutex_);
+            dnsCv_.wait(lock, [this]() {
+                return dnsShuttingDown_ || !dnsRequests_.empty();
+            });
+
+            if (dnsShuttingDown_) {
+                return;
+            }
+
+            ip = std::move(dnsRequests_.front());
+            dnsRequests_.pop_front();
+        }
+
+        // Parse the numeric address string into a sockaddr via getaddrinfo
+        // with AI_NUMERICHOST (no DNS query, just parsing).
+        struct addrinfo hints;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_NUMERICHOST;
+
+        struct addrinfo* servinfo = nullptr;
+        int rv = getaddrinfo(ip.c_str(), nullptr, &hints, &servinfo);
+        if (rv != 0 || !servinfo) {
+            if (servinfo) {
+                freeaddrinfo(servinfo);
+            }
+            continue;
+        }
+
+        // Reverse lookup via getnameinfo.
+        char hostbuf[NI_MAXHOST];
+        rv = getnameinfo(servinfo->ai_addr, static_cast<socklen_t>(servinfo->ai_addrlen),
+                         hostbuf, sizeof(hostbuf), nullptr, 0, 0);
+        freeaddrinfo(servinfo);
+
+        if (rv != 0) {
+            continue;
+        }
+
+        // Only publish if the hostname differs from the numeric address.
+        std::string resolved(hostbuf);
+        if (resolved == ip) {
+            continue;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(dnsMutex_);
+            dnsResults_.emplace_back(std::move(ip), std::move(resolved));
+        }
+    }
+}
+
+void GanlAdapter::drain_dns_results() {
+    std::deque<std::pair<std::string, std::string>> local;
+    {
+        std::lock_guard<std::mutex> lock(dnsMutex_);
+        local.swap(dnsResults_);
+    }
+
+    for (const auto& result : local) {
+        apply_reverse_dns_result(result.first, result.second);
+    }
+}
+#endif
 
 
 void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {

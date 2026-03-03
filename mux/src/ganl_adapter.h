@@ -17,11 +17,15 @@
 #include "session_manager.h"
 #include "connection.h"
 
+#include <condition_variable>
 #include <memory>
 #include <deque>
 #include <map>
 #include <mutex>
 #include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 
 // Forward declare TinyMUX DESC if not fully included via externs.h
 struct descriptor_data;
@@ -110,6 +114,20 @@ public:
         bool writeInterest{false};
     };
     std::unique_ptr<DnsSlaveChannel> dns_slave_;
+
+#if defined(_WIN32)
+    // Windows DNS thread pool for reverse lookups.
+    static constexpr int DNS_THREAD_COUNT = 3;
+    std::vector<std::thread> dnsThreads_;
+    std::mutex dnsMutex_;
+    std::condition_variable dnsCv_;
+    std::deque<std::string> dnsRequests_;
+    std::deque<std::pair<std::string, std::string>> dnsResults_;
+    bool dnsShuttingDown_{false};
+
+    void dns_worker_func();
+    void drain_dns_results();
+#endif
 
     bool start_dns_slave();
     void shutdown_dns_slave();
