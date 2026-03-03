@@ -12,6 +12,7 @@
 #define SECURITY_WIN32
 #include <windows.h>
 #include <wincrypt.h>
+#include <ncrypt.h>
 #include <schannel.h>
 #include <security.h>
 
@@ -84,6 +85,15 @@ namespace ganl {
         TlsResult mapSchannelError(SECURITY_STATUS status, SessionContext& context);
         std::string getSchannelErrorString(SECURITY_STATUS status);
 
+        // Certificate loading helpers
+        bool initializeFromPfx(const TlsConfig& config);
+        bool initializeFromPem(const TlsConfig& config);
+        bool loadPemCertificate(const std::string& certFile, PCCERT_CONTEXT& outCert);
+        bool loadPemPrivateKey(const std::string& keyFile, NCRYPT_KEY_HANDLE& outKey);
+
+        // Certificate selection helper
+        static int scoreCertForServerTls(PCCERT_CONTEXT cert);
+
         // Member variables
         std::mutex mutex_;                       // Mutex for thread safety
         std::map<ConnectionHandle, std::unique_ptr<SessionContext>> sessions_; // Session contexts
@@ -92,6 +102,7 @@ namespace ganl {
         HCERTSTORE certStore_;                   // Certificate store handle
         PCCERT_CONTEXT serverCertContext_;       // Server certificate context
         bool certStoreOpen_;                     // Whether the certificate store is open
+        NCRYPT_KEY_HANDLE ncryptKey_{0};         // CNG key handle for PEM-loaded keys
 
         TlsConfig config_;                       // TLS configuration
         std::string lastGlobalError_;            // Last global error message

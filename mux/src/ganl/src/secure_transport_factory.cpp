@@ -15,7 +15,6 @@
 #define HAVE_OPENSSL 0
 #endif
 
-#include <iostream>
 #include <sstream>
 
 namespace ganl {
@@ -28,14 +27,6 @@ namespace ganl {
 #elif HAVE_OPENSSL
             type = SecureTransportType::OpenSSL;
 #endif
-
-            std::cout << "Auto-selected secure transport type: ";
-            switch (type) {
-            case SecureTransportType::Schannel: std::cout << "Schannel"; break;
-            case SecureTransportType::OpenSSL: std::cout << "OpenSSL"; break;
-            default: std::cout << "none"; break;
-            }
-            std::cout << std::endl;
         }
 
         // Create the requested transport type
@@ -44,7 +35,6 @@ namespace ganl {
 #if HAVE_OPENSSL
             return std::make_unique<OpenSSLTransport>();
 #else
-            std::cerr << "Error: OpenSSL transport requested but not available on this platform." << std::endl;
             return nullptr;
 #endif
 
@@ -52,12 +42,10 @@ namespace ganl {
 #if HAVE_SCHANNEL
             return std::make_unique<SchannelTransport>();
 #else
-            std::cerr << "Error: Schannel transport requested but not available on this platform." << std::endl;
             return nullptr;
 #endif
 
         default:
-            std::cerr << "Error: No supported secure transport available." << std::endl;
             return nullptr;
         }
     }

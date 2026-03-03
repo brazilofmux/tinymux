@@ -1,18 +1,12 @@
 #include "telnet_protocol_handler.h"
-#include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
 #include <chrono>
 #include <vector> // Ensure vector is included for subnegotiationBuffer
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_TELNET_DEBUG(conn, x) \
-    do { std::cerr << "[TelnetPH:" << conn << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_TELNET_DEBUG(conn, x) do {} while (0)
-#endif
 
 namespace ganl {
 
@@ -91,11 +85,9 @@ namespace ganl {
 
     // --- Constructor / Destructor ---
     TelnetProtocolHandler::TelnetProtocolHandler() {
-        std::cerr << "[TelnetPH] Handler Created." << std::endl;
     }
 
     TelnetProtocolHandler::~TelnetProtocolHandler() {
-        std::cerr << "[TelnetPH] Handler Destroyed." << std::endl;
     }
 
     // --- Context Management ---

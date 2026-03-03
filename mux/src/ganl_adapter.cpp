@@ -1,3 +1,5 @@
+#include "autoconf.h"
+
 #ifdef USE_GANL
 
 #include "ganl_adapter.h"
@@ -8,7 +10,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
-#include <iostream>
 #include <limits>
 #include <cerrno>
 #include <cstdarg>
@@ -94,7 +95,7 @@ namespace
         {
             char* endptr = nullptr;
             const unsigned long parsed = std::strtoul(portPart.c_str(), &endptr, 10);
-            if (endptr != nullptr && *endptr == '\0' && parsed <= std::numeric_limits<uint16_t>::max())
+            if (endptr != nullptr && *endptr == '\0' && parsed <= (std::numeric_limits<uint16_t>::max)())
             {
                 endpoint.port = static_cast<uint16_t>(parsed);
             }
@@ -647,6 +648,8 @@ public:
             return;
         }
 
+        GanlLog(T("RECV socket=%d len=%d"), d->socket, static_cast<int>(data.size()));
+
         // Feed raw bytes through TinyMUX's existing NVT parser.
         // process_input_helper handles all telnet negotiation, charset
         // detection, and command queuing.
@@ -1191,12 +1194,17 @@ bool GanlAdapter::initialize() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (initialized_) return true;
 
+    // Register GANL logging callback so the library can write to the game log.
+    ganl::setLogger([](const char* msg) {
+        Log.tinyprintf(T("GANL %s" ENDLINE), msg);
+        Log.Flush();
+    });
+
     Log.WriteString(T("Initializing GANL Adapter...\n"));
 
     // 1. Create Network Engine
     networkEngine_ = ganl::NetworkEngineFactory::createEngine();
     if (!networkEngine_) {
-        std::cerr << "[GANL Adapter] FATAL: Failed to create network engine." << std::endl;
         Log.WriteString(T("FATAL: Failed to create GANL network engine.\n"));
         return false;
     }
@@ -1205,7 +1213,6 @@ bool GanlAdapter::initialize() {
 
     // 2. Initialize Network Engine
     if (!networkEngine_->initialize()) {
-        std::cerr << "[GANL Adapter] FATAL: Failed to initialize network engine." << std::endl;
         Log.WriteString(T("FATAL: Failed to initialize GANL network engine.\n"));
         networkEngine_.reset(); // Release the failed engine
         return false;
@@ -1222,8 +1229,6 @@ bool GanlAdapter::initialize() {
         // tlsConfig.verifyPeer = false; // Default
 
         if (!secureTransport_->initialize(tlsConfig)) {
-            std::cerr << "[GANL Adapter] Warning: Failed to initialize secure transport: "
-                << secureTransport_->getLastTlsErrorString(0) << std::endl;
             Log.tinyprintf(T("Warning: Failed to initialize GANL secure transport: %s\n"),
                 secureTransport_->getLastTlsErrorString(0).c_str());
             secureTransport_.reset(); // Don't use TLS if init failed
@@ -1242,7 +1247,6 @@ bool GanlAdapter::initialize() {
     // 5. Create Session Manager
     sessionManager_ = std::make_unique<GanlTinyMuxSessionManager>(*this);
     if (!sessionManager_->initialize()) {
-        std::cerr << "[GANL Adapter] FATAL: Failed to initialize session manager." << std::endl;
         Log.WriteString(T("FATAL: Failed to initialize GANL session manager.\n"));
         // Need proper cleanup
         networkEngine_->shutdown();
@@ -2025,7 +2029,6 @@ void GanlAdapter::free_desc2(DESC* d) {
 void ganl_initialize() {
     if (!g_GanlAdapter.initialize()) {
         // Handle fatal initialization error - perhaps exit?
-        std::cerr << "FATAL: GANL Adapter initialization failed." << std::endl;
         exit(1);
     }
 }

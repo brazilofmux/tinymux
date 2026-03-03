@@ -2,6 +2,7 @@
 #define GANL_NETWORK_TYPES_H
 
 #include <cstdint>
+#include <cstdarg>
 #include <string>
 
 // Include system-specific socket headers
@@ -177,6 +178,17 @@ enum class IoModel {
     Readiness,  // select, poll, epoll, kqueue
     Completion  // IOCP, io_uring (potentially)
 };
+
+// --- Dependency-injected logging ---
+//
+// The host application provides a logging callback via setLogger().
+// GANL code calls logMessage() at important diagnostic points (errors,
+// state transitions).  If no callback is registered, calls are no-ops.
+
+using LogCallback = void(*)(const char* message);
+
+void setLogger(LogCallback cb);
+void logMessage(const char* fmt, ...);
 
 } // namespace ganl
 

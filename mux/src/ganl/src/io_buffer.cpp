@@ -2,16 +2,11 @@
 #include <algorithm>
 #include <cstring>
 #include <stdexcept>
-#include <iostream> // Added for std::cerr
 #include <iomanip>  // Added for std::hex/std::setw if needed later, good practice
 #include <sstream>
 
-// Define a macro for debug logging to easily disable it later
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_BUFFER_DEBUG(x) do { std::cerr << "[IoBuffer Debug][this=" << this << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_BUFFER_DEBUG(x) do {} while (0)
-#endif
 
 namespace ganl {
 

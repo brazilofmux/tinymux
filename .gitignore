@@ -1,0 +1,44 @@
+# Visual Studio build intermediates
+mux/src/bin_debug/
+mux/src/bin_release/
+mux/src/x64/
+mux/src/ganl/x64/
+mux/src/modules/x64/
+
+# Visual Studio user settings
+*.vcxproj.user
+
+# PCRE2 local build
+mux/src/pcre2/
+
+# Game runtime files
+mux/game/bin/*.exe
+mux/game/bin/*.dll
+mux/game/bin/dosign.bat
+mux/game/*.dll
+mux/game/*.log
+mux/game/netmux.pid
+mux/game/shutdown.status
+mux/game/data/netmux.dir
+mux/game/data/netmux.pag
+
+# SSL certificates (local)
+mux/game/*.crt
+mux/game/*.key
+mux/game/*.p12
+mux/game/*.pem
+mux/game/*.pfx
+
+# Release/patch archives
+mux2.13/
+mux2.13_*_src/
+mux2.13_*_bin/
+patches_src/
+patches_bin/
+
+# Local utility scripts
+get_patch.bat
+get_xdelta3.bat
+
+# Claude Code
+.claude/

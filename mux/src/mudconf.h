@@ -174,13 +174,12 @@ struct confdata
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
-#ifdef UNIX_SSL
+#if defined(UNIX_SSL) || (defined(_WIN32) && defined(USE_GANL))
     IntArray    sslPorts;       // SSL ports
 
-    // Due to OpenSSL requirements, these have to be char, NOT UTF8.  Sorry. :(
-    UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem format)
-    UTF8    ssl_certificate_key[128];       // SSL certificate private key file (.pem format)
-    UTF8    ssl_certificate_password[128];  // SSL certificate private key password
+    UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem or .p12)
+    UTF8    ssl_certificate_key[128];       // SSL certificate private key file (.pem)
+    UTF8    ssl_certificate_password[128];  // SSL certificate password
 #endif
 
     UTF8    guest_prefix[32];   /* Prefix for the guest char's name */

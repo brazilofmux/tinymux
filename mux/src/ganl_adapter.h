@@ -2,9 +2,9 @@
 #ifndef GANL_ADAPTER_H
 #define GANL_ADAPTER_H
 
-#ifdef USE_GANL
-
 #include "autoconf.h"
+
+#ifdef USE_GANL
 #include "config.h"
 #include "externs.h"
 

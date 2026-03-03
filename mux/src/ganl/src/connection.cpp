@@ -4,7 +4,6 @@
 #include <protocol_handler.h>
 #include <session_manager.h>
 
-#include <iostream>
 #include <iomanip>
 #include <memory>
 #include <string>
@@ -67,13 +66,8 @@ using SocketReturnType = int; // recv/send return int
 using SocketReturnType = ssize_t; // read/write return ssize_t
 #endif
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_CONN_DEBUG(handle, x) \
-    do { std::cerr << "[Conn:" << handle << "][State:" << static_cast<int>(getState()) << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_CONN_DEBUG(handle, x) do {} while (0)
-#endif
 
 namespace ganl {
 
@@ -146,8 +140,6 @@ bool ConnectionBase::initialize(bool useTls) {
     // Associate this Connection object pointer with the network handle
     ErrorCode error = 0;
     if (!networkEngine_.associateContext(handle_, this, error)) {
-        std::cerr << "[Conn:" << handle_ << "] FATAL: Failed to associate connection context: "
-            << networkEngine_.getErrorString(error) << std::endl;
         transitionToState(ConnectionState::Closed); // Mark as unusable
         return false;
     }
@@ -155,7 +147,6 @@ bool ConnectionBase::initialize(bool useTls) {
     // Create session with the manager *before* potential TLS handshake requires interaction
     sessionId_ = sessionManager_.onConnectionOpen(handle_, getRemoteAddress());
     if (sessionId_ == InvalidSessionId) {
-        std::cerr << "[Conn:" << handle_ << "] FATAL: SessionManager rejected connection from " << getRemoteAddress() << std::endl;
         networkEngine_.closeConnection(handle_); // Ask network to close socket
         transitionToState(ConnectionState::Closing); // Move to closing state
         return false;
@@ -187,8 +178,6 @@ bool ConnectionBase::initialize(bool useTls) {
 void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
     // Ensure the context matches this connection object
     if (event.context != this) {
-         std::cerr << "[Conn:???] Received event for handle " << event.connection
-                   << " but context doesn't match this=" << this << ", event.context=" << event.context << std::endl;
          // Avoid processing events not meant for this instance
          return;
     }
@@ -213,8 +202,6 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
 
             // Ensure bytesTransferred doesn't exceed buffer space (shouldn't happen with correct postRead)
             if (event.bytesTransferred > encryptedInput_.writableBytes() && pendingRead_) {
-                std::cerr << "[Conn:" << handle_ << "] ERROR: Read returned more bytes (" << event.bytesTransferred
-                          << ") than available write space (" << encryptedInput_.writableBytes() << ")!" << std::endl;
                 // Commit only what fits? Or close? Let's close for safety.
                 handleError(event.error); // Treat as an error
                 break;
@@ -614,7 +601,9 @@ void ConnectionBase::startTlsHandshake() {
 
     // Create the per-connection TLS context
     if (!secureTransport_->createSessionContext(handle_, true /* isServer */)) {
-        GANL_CONN_DEBUG(handle_, "Failed to create TLS session context: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
+        std::string err = secureTransport_->getLastTlsErrorString(handle_);
+        GANL_CONN_DEBUG(handle_, "Failed to create TLS session context: " << err << ". Closing.");
+        ganl::logMessage("TLS[%u] createSessionContext failed: %s", (unsigned)handle_, err.c_str());
         close(DisconnectReason::TlsError);
         return;
     }
@@ -703,16 +692,19 @@ bool ConnectionBase::continueTlsHandshake() {
 
         case TlsResult::Closed: // Should not happen during handshake?
             GANL_CONN_DEBUG(handle_, "TLS session closed unexpectedly during handshake. Closing.");
+            ganl::logMessage("TLS[%u] session closed unexpectedly during handshake", (unsigned)handle_);
             close(DisconnectReason::TlsError);
             return false;
 
         case TlsResult::Error:
         default:
-            GANL_CONN_DEBUG(handle_, "TLS Handshake Error: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
-            // Don't use getLastError() here, use the specific TLS error function
-            //lastError_ = secureTransport_->getLastTlsErrorString(handle_);
+        {
+            std::string err = secureTransport_->getLastTlsErrorString(handle_);
+            GANL_CONN_DEBUG(handle_, "TLS Handshake Error: " << err << ". Closing.");
+            ganl::logMessage("TLS[%u] handshake error: %s", (unsigned)handle_, err.c_str());
             close(DisconnectReason::TlsError);
             return false;
+        }
     }
 }
 
@@ -814,7 +806,6 @@ bool ConnectionBase::postRead() {
 
     if (readSize == 0) {
         // This should ideally not happen if ensureWritable works, but handle defensively.
-         std::cerr << "[Conn:" << handle_ << "] ERROR: No writable space in encryptedInput_ even after ensureWritable! Cannot post read." << std::endl;
          close(DisconnectReason::ServerShutdown); // Internal error
          return false;
     }
@@ -1208,8 +1199,6 @@ void CompletionConnection::handleRead(size_t bytesTransferred)
         }
         else {
             // Error: IOCP reported more bytes than buffer space - should not happen if postRead is correct
-            std::cerr << "[Conn:" << handle_ << "] ERROR: IOCP Read returned more bytes (" << bytesTransferred
-                << ") than available write space (" << encryptedInput.writableBytes() << ")!" << std::endl;
             needsClose = true;
             closeReason = DisconnectReason::NetworkError;
             success = false; // Indicate processing failure
@@ -1337,7 +1326,6 @@ std::shared_ptr<ConnectionBase> ConnectionFactory::createConnection(
     }
     else {
         // Handle error - Unknown model
-        std::cerr << "FATAL: Unknown Network Engine IO Model in Factory!" << std::endl;
         return nullptr;
     }
 }

@@ -1,18 +1,12 @@
 #include "wselect_network_engine.h"
-#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <vector>
 #include <locale> // For codecvt (might need C++11/14/17 depending on exact usage)
 #include <codecvt> // For std::wstring_convert (Deprecated in C++17, but often available)
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_WSELECT_DEBUG(sock, x) \
-    do { std::cerr << "[WSelect:" << (sock == 0 ? "Global" : std::to_string(static_cast<unsigned long long>(sock))) << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_WSELECT_DEBUG(sock, x) do {} while (0)
-#endif
 
 namespace ganl {
 
@@ -78,11 +72,9 @@ namespace ganl {
             int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
             if (result != 0) {
                 // Use result directly as ErrorCode, as translateError isn't needed here
-                std::cerr << "[WSelect:0] FATAL: WSAStartup failed: " << getErrorString(result) << std::endl;
                 return false;
             }
             if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
-                std::cerr << "[WSelect:0] FATAL: Could not find a usable version of Winsock.dll" << std::endl;
                 WSACleanup();
                 return false;
             }
@@ -490,7 +482,6 @@ namespace ganl {
                 GANL_WSELECT_DEBUG(0, "select() interrupted (WSAEINTR).");
                 return 0; // Not an error, just return 0 events
             }
-            std::cerr << "[WSelect:0] CRITICAL: select() failed: " << getErrorString(translateError(wsaError)) << std::endl;
             // Consider generating error events for all monitored sockets? Or just return -1?
             return -1; // Indicate critical failure
         }

@@ -1,17 +1,11 @@
 #include "schannel_transport.h"
-#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <cassert>
 #include <fstream>
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_SCHANNEL_DEBUG(conn, x) \
-    do { std::cerr << "[Schannel:" << (conn == 0 ? "Global" : std::to_string(conn)) << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_SCHANNEL_DEBUG(conn, x) do {} while (0)
-#endif
 
 // Helper functions to check and set flags in SecBufferDesc
 #define SCHANNEL_BUFFER_TOKEN_FLAG     (1)
@@ -58,6 +52,73 @@ namespace ganl {
         shutdown();
     }
 
+    // --- Certificate scoring for smart selection ---
+
+    int SchannelTransport::scoreCertForServerTls(PCCERT_CONTEXT cert) {
+        // Check for private key — base requirement.
+        DWORD keyInfoSize = 0;
+        BOOL hasKey = CertGetCertificateContextProperty(cert,
+            CERT_KEY_PROV_INFO_PROP_ID, nullptr, &keyInfoSize);
+        if (!hasKey) {
+            // Also check CNG key handle property.
+            NCRYPT_KEY_HANDLE hKey = 0;
+            DWORD cbData = sizeof(hKey);
+            hasKey = CertGetCertificateContextProperty(cert,
+                CERT_NCRYPT_KEY_HANDLE_PROP_ID, &hKey, &cbData);
+        }
+        if (!hasKey) {
+            return 0;
+        }
+
+        int score = 1;
+
+        // +10 if NOT a CA cert (check Basic Constraints extension).
+        PCERT_EXTENSION bcExt = CertFindExtension(szOID_BASIC_CONSTRAINTS2,
+            cert->pCertInfo->cExtension, cert->pCertInfo->rgExtension);
+        if (bcExt) {
+            DWORD cbDecoded = 0;
+            CERT_BASIC_CONSTRAINTS2_INFO* bcInfo = nullptr;
+            if (CryptDecodeObjectEx(X509_ASN_ENCODING, szOID_BASIC_CONSTRAINTS2,
+                    bcExt->Value.pbData, bcExt->Value.cbData,
+                    CRYPT_DECODE_ALLOC_FLAG, nullptr, &bcInfo, &cbDecoded)) {
+                if (!bcInfo->fCA) {
+                    score += 10;
+                }
+                LocalFree(bcInfo);
+            }
+        } else {
+            // No Basic Constraints extension — likely a leaf cert.
+            score += 10;
+        }
+
+        // Check Enhanced Key Usage extension.
+        PCERT_EXTENSION ekuExt = CertFindExtension(szOID_ENHANCED_KEY_USAGE,
+            cert->pCertInfo->cExtension, cert->pCertInfo->rgExtension);
+        if (ekuExt) {
+            DWORD cbDecoded = 0;
+            CERT_ENHKEY_USAGE* ekuInfo = nullptr;
+            if (CryptDecodeObjectEx(X509_ASN_ENCODING, szOID_ENHANCED_KEY_USAGE,
+                    ekuExt->Value.pbData, ekuExt->Value.cbData,
+                    CRYPT_DECODE_ALLOC_FLAG, nullptr, &ekuInfo, &cbDecoded)) {
+                for (DWORD i = 0; i < ekuInfo->cUsageIdentifier; i++) {
+                    if (strcmp(ekuInfo->rgpszUsageIdentifier[i],
+                              szOID_PKIX_KP_SERVER_AUTH) == 0) {
+                        score += 5;
+                        break;
+                    }
+                }
+                LocalFree(ekuInfo);
+            }
+        } else {
+            // No EKU extension — unrestricted cert, acceptable.
+            score += 2;
+        }
+
+        return score;
+    }
+
+    // --- Initialize: dispatch by file format ---
+
     bool SchannelTransport::initialize(const TlsConfig& config) {
         GANL_SCHANNEL_DEBUG(0, "Initializing Schannel Transport");
         std::lock_guard<std::mutex> lock(mutex_);
@@ -69,6 +130,39 @@ namespace ganl {
             return false;
         }
 
+        // Detect format and dispatch.
+        const std::string& certFile = config.certificateFile;
+        size_t dotPos = certFile.rfind('.');
+        std::string ext;
+        if (dotPos != std::string::npos) {
+            ext = certFile.substr(dotPos);
+            // Lowercase the extension for comparison.
+            for (auto& ch : ext) {
+                ch = static_cast<char>(tolower(static_cast<unsigned char>(ch)));
+            }
+        }
+
+        if (ext == ".p12" || ext == ".pfx") {
+            ganl::logMessage("TLS: Certificate file '%s' detected as PFX format",
+                certFile.c_str());
+            return initializeFromPfx(config);
+        }
+
+        if (!config.keyFile.empty()) {
+            ganl::logMessage("TLS: Certificate file '%s' with key file '%s' detected as PEM format",
+                certFile.c_str(), config.keyFile.c_str());
+            return initializeFromPem(config);
+        }
+
+        lastGlobalError_ = "Cannot determine certificate format for '" + certFile +
+            "': use .p12/.pfx or provide a separate key file";
+        ganl::logMessage("TLS initialize: %s", lastGlobalError_.c_str());
+        return false;
+    }
+
+    // --- PFX (.p12) loading path ---
+
+    bool SchannelTransport::initializeFromPfx(const TlsConfig& config) {
         // Open the .p12 file with STL
         std::ifstream pfxFile(config.certificateFile, std::ios::binary);
         if (!pfxFile) {
@@ -77,7 +171,7 @@ namespace ganl {
             return false;
         }
 
-        // Get file size (C++17 way)
+        // Get file size
         pfxFile.seekg(0, std::ios::end);
         std::streampos size = pfxFile.tellg();
         pfxFile.seekg(0, std::ios::beg);
@@ -103,7 +197,6 @@ namespace ganl {
                     GANL_SCHANNEL_DEBUG(0, "Error: " << lastGlobalError_);
                     return false;
                 }
-                // Remove null terminator from std::wstring
                 widePassword.resize(wcslen(widePassword.c_str()));
             } else {
                 lastGlobalError_ = "Failed to determine password conversion size: " + std::to_string(GetLastError());
@@ -113,27 +206,345 @@ namespace ganl {
         }
 
         CRYPT_DATA_BLOB pfxBlob = { (DWORD)size, (BYTE*)buffer.data() };
-        HCERTSTORE tempStore = PFXImportCertStore(&pfxBlob, widePassword.empty() ? L"" : widePassword.c_str(), 0);
-        if (!tempStore) {
-            lastGlobalError_ = "Failed to import .p12: " + std::to_string(GetLastError());
-            GANL_SCHANNEL_DEBUG(0, "Error: " << lastGlobalError_);
+
+        // Try import strategies in order of preference.
+        struct { DWORD flags; const char* desc; } importStrategies[] = {
+            { CRYPT_USER_KEYSET | CRYPT_EXPORTABLE, "USER_KEYSET|EXPORTABLE" },
+            { CRYPT_EXPORTABLE,                     "EXPORTABLE" },
+        };
+
+        for (auto& strategy : importStrategies) {
+            HCERTSTORE tryStore = PFXImportCertStore(&pfxBlob,
+                widePassword.empty() ? L"" : widePassword.c_str(),
+                strategy.flags);
+            if (!tryStore) {
+                ganl::logMessage("TLS: PFXImportCertStore(%s) failed: %u",
+                    strategy.desc, (unsigned)GetLastError());
+                continue;
+            }
+            ganl::logMessage("TLS: PFXImportCertStore(%s) succeeded", strategy.desc);
+
+            // Enumerate ALL certificates, score them, pick best candidate.
+            struct CertCandidate {
+                PCCERT_CONTEXT cert;
+                int score;
+                int index;
+                char name[256];
+            };
+            std::vector<CertCandidate> candidates;
+
+            PCCERT_CONTEXT tryCert = nullptr;
+            int certIndex = 0;
+            while ((tryCert = CertEnumCertificatesInStore(tryStore, tryCert)) != nullptr) {
+                CertCandidate c;
+                c.index = certIndex;
+                c.name[0] = '\0';
+                CertGetNameStringA(tryCert, CERT_NAME_SIMPLE_DISPLAY_TYPE,
+                    0, nullptr, c.name, sizeof(c.name));
+                c.score = scoreCertForServerTls(tryCert);
+                c.cert = CertDuplicateCertificateContext(tryCert);
+
+                ganl::logMessage("TLS: Cert[%d] subject='%s' score=%d",
+                    certIndex, c.name, c.score);
+
+                if (c.score > 0) {
+                    candidates.push_back(c);
+                } else {
+                    CertFreeCertificateContext(c.cert);
+                }
+                certIndex++;
+            }
+
+            // Sort candidates by score descending.
+            std::sort(candidates.begin(), candidates.end(),
+                [](const CertCandidate& a, const CertCandidate& b) {
+                    return a.score > b.score;
+                });
+
+            // Try AcquireCredentialsHandle with each candidate in priority order.
+            for (auto& c : candidates) {
+                SCHANNEL_CRED cred = { 0 };
+                cred.dwVersion = SCHANNEL_CRED_VERSION;
+                cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
+                cred.dwMinimumCipherStrength = 128;
+                cred.cCreds = 1;
+                cred.paCred = &c.cert;
+                cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+
+                CredHandle testCredHandle;
+                SecInvalidateHandle(&testCredHandle);
+                TimeStamp expiry;
+                SECURITY_STATUS status = AcquireCredentialsHandle(
+                    NULL,
+                    const_cast<LPWSTR>(UNISP_NAME_W),
+                    SECPKG_CRED_INBOUND,
+                    NULL,
+                    &cred,
+                    NULL, NULL,
+                    &testCredHandle,
+                    &expiry);
+
+                if (SUCCEEDED(status)) {
+                    FreeCredentialsHandle(&testCredHandle);
+                    serverCertContext_ = c.cert;   // takes ownership
+                    certStore_ = tryStore;
+                    certStoreOpen_ = true;
+                    ganl::logMessage("TLS: Selected cert[%d] '%s' (score=%d) with %s",
+                        c.index, c.name, c.score, strategy.desc);
+
+                    // Free remaining candidates.
+                    for (auto& other : candidates) {
+                        if (other.cert != c.cert) {
+                            CertFreeCertificateContext(other.cert);
+                        }
+                    }
+                    return true;
+                }
+
+                ganl::logMessage("TLS: AcquireCredentialsHandle(%s) cert[%d] '%s' failed: %s",
+                    strategy.desc, c.index, c.name,
+                    getSchannelErrorString(status).c_str());
+            }
+
+            // None of the candidates worked — free them all.
+            for (auto& c : candidates) {
+                CertFreeCertificateContext(c.cert);
+            }
+            CertCloseStore(tryStore, 0);
+        }
+
+        lastGlobalError_ = "All .p12 import strategies failed for " + config.certificateFile;
+        ganl::logMessage("TLS initialize: %s", lastGlobalError_.c_str());
+        return false;
+    }
+
+    // --- PEM (.crt + .key) loading path ---
+
+    bool SchannelTransport::loadPemCertificate(const std::string& certFile, PCCERT_CONTEXT& outCert) {
+        // Read the PEM file.
+        std::ifstream file(certFile, std::ios::binary);
+        if (!file) {
+            lastGlobalError_ = "Failed to open certificate file: " + certFile;
+            return false;
+        }
+        std::string pem((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+        file.close();
+
+        // Decode PEM to DER.
+        DWORD cbBinary = 0;
+        if (!CryptStringToBinaryA(pem.c_str(), static_cast<DWORD>(pem.size()),
+                CRYPT_STRING_BASE64HEADER, nullptr, &cbBinary, nullptr, nullptr)) {
+            lastGlobalError_ = "CryptStringToBinaryA(size) failed: " + std::to_string(GetLastError());
             return false;
         }
 
-        // Note: This assumes the first certificate found in the PFX store is the desired server certificate.
-        // In a production environment, you might want to search for a specific certificate or validate it further.
-        serverCertContext_ = CertEnumCertificatesInStore(tempStore, NULL);
-        if (!serverCertContext_) {
-            CertCloseStore(tempStore, 0);
-            lastGlobalError_ = "No certificate in .p12: " + std::to_string(GetLastError());
-            GANL_SCHANNEL_DEBUG(0, "Error: " << lastGlobalError_);
+        std::vector<BYTE> derCert(cbBinary);
+        if (!CryptStringToBinaryA(pem.c_str(), static_cast<DWORD>(pem.size()),
+                CRYPT_STRING_BASE64HEADER, derCert.data(), &cbBinary, nullptr, nullptr)) {
+            lastGlobalError_ = "CryptStringToBinaryA(decode) failed: " + std::to_string(GetLastError());
             return false;
         }
 
-        certStore_ = tempStore;
+        // Create certificate context from DER.
+        outCert = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+            derCert.data(), cbBinary);
+        if (!outCert) {
+            lastGlobalError_ = "CertCreateCertificateContext failed: " + std::to_string(GetLastError());
+            return false;
+        }
+
+        char subjectName[256] = {0};
+        CertGetNameStringA(outCert, CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            0, nullptr, subjectName, sizeof(subjectName));
+        ganl::logMessage("TLS: PEM certificate loaded successfully: '%s'", subjectName);
+        return true;
+    }
+
+    bool SchannelTransport::loadPemPrivateKey(const std::string& keyFile, NCRYPT_KEY_HANDLE& outKey) {
+        // Read the PEM file.
+        std::ifstream file(keyFile, std::ios::binary);
+        if (!file) {
+            lastGlobalError_ = "Failed to open key file: " + keyFile;
+            return false;
+        }
+        std::string pem((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+        file.close();
+
+        // Check for encrypted keys (not supported).
+        if (pem.find("ENCRYPTED PRIVATE KEY") != std::string::npos) {
+            lastGlobalError_ = "Encrypted private keys are not supported; use an unencrypted PKCS#8 key";
+            return false;
+        }
+
+        // Check for traditional RSA format (not supported).
+        if (pem.find("BEGIN RSA PRIVATE KEY") != std::string::npos) {
+            lastGlobalError_ = "Traditional RSA key format not supported; convert to PKCS#8 (BEGIN PRIVATE KEY)";
+            return false;
+        }
+
+        // Decode PEM to DER.
+        DWORD cbBinary = 0;
+        if (!CryptStringToBinaryA(pem.c_str(), static_cast<DWORD>(pem.size()),
+                CRYPT_STRING_BASE64HEADER, nullptr, &cbBinary, nullptr, nullptr)) {
+            lastGlobalError_ = "CryptStringToBinaryA(key size) failed: " + std::to_string(GetLastError());
+            return false;
+        }
+
+        std::vector<BYTE> derKey(cbBinary);
+        if (!CryptStringToBinaryA(pem.c_str(), static_cast<DWORD>(pem.size()),
+                CRYPT_STRING_BASE64HEADER, derKey.data(), &cbBinary, nullptr, nullptr)) {
+            lastGlobalError_ = "CryptStringToBinaryA(key decode) failed: " + std::to_string(GetLastError());
+            return false;
+        }
+
+        // Unwrap PKCS#8 envelope to get the inner RSA key.
+        CRYPT_PRIVATE_KEY_INFO* pkcs8Info = nullptr;
+        DWORD cbPkcs8 = 0;
+        if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                PKCS_PRIVATE_KEY_INFO, derKey.data(), cbBinary,
+                CRYPT_DECODE_ALLOC_FLAG, nullptr, &pkcs8Info, &cbPkcs8)) {
+            lastGlobalError_ = "CryptDecodeObjectEx(PKCS_PRIVATE_KEY_INFO) failed: " +
+                std::to_string(GetLastError());
+            return false;
+        }
+
+        // Convert the inner key blob to a CNG RSA blob.
+        DWORD cbCngBlob = 0;
+        BYTE* pCngBlob = nullptr;
+        BOOL bResult = CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+            CNG_RSA_PRIVATE_KEY_BLOB,
+            pkcs8Info->PrivateKey.pbData, pkcs8Info->PrivateKey.cbData,
+            CRYPT_DECODE_ALLOC_FLAG, nullptr, &pCngBlob, &cbCngBlob);
+        LocalFree(pkcs8Info);
+
+        if (!bResult) {
+            lastGlobalError_ = "CryptDecodeObjectEx(CNG_RSA_PRIVATE_KEY_BLOB) failed: " +
+                std::to_string(GetLastError()) + " (only RSA keys are supported)";
+            return false;
+        }
+
+        // Import into CNG as an ephemeral key (no key name → not persisted).
+        NCRYPT_PROV_HANDLE hProv = 0;
+        SECURITY_STATUS secStatus = NCryptOpenStorageProvider(&hProv,
+            MS_KEY_STORAGE_PROVIDER, 0);
+        if (FAILED(secStatus)) {
+            LocalFree(pCngBlob);
+            lastGlobalError_ = "NCryptOpenStorageProvider failed: " + std::to_string(secStatus);
+            return false;
+        }
+
+        secStatus = NCryptImportKey(hProv, 0, BCRYPT_RSAPRIVATE_BLOB, nullptr,
+            &outKey, pCngBlob, cbCngBlob, 0);
+        LocalFree(pCngBlob);
+        NCryptFreeObject(hProv);
+
+        if (FAILED(secStatus)) {
+            lastGlobalError_ = "NCryptImportKey failed: " + std::to_string(secStatus);
+            return false;
+        }
+
+        ganl::logMessage("TLS: PEM private key loaded successfully via CNG");
+        return true;
+    }
+
+    bool SchannelTransport::initializeFromPem(const TlsConfig& config) {
+        // Step 1: Load the certificate.
+        PCCERT_CONTEXT pemCert = nullptr;
+        if (!loadPemCertificate(config.certificateFile, pemCert)) {
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 2: Load the private key.
+        NCRYPT_KEY_HANDLE hKey = 0;
+        if (!loadPemPrivateKey(config.keyFile, hKey)) {
+            CertFreeCertificateContext(pemCert);
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 3: Create an in-memory certificate store.
+        HCERTSTORE memStore = CertOpenStore(CERT_STORE_PROV_MEMORY, 0, 0, 0, nullptr);
+        if (!memStore) {
+            NCryptFreeObject(hKey);
+            CertFreeCertificateContext(pemCert);
+            lastGlobalError_ = "CertOpenStore(MEMORY) failed: " + std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 4: Add the certificate to the store and get a store-bound context.
+        PCCERT_CONTEXT storeCert = nullptr;
+        if (!CertAddCertificateContextToStore(memStore, pemCert,
+                CERT_STORE_ADD_ALWAYS, &storeCert)) {
+            CertCloseStore(memStore, 0);
+            NCryptFreeObject(hKey);
+            CertFreeCertificateContext(pemCert);
+            lastGlobalError_ = "CertAddCertificateContextToStore failed: " + std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+        CertFreeCertificateContext(pemCert);  // store now owns its copy
+
+        // Step 5: Associate the CNG key with the store certificate.
+        // Caller retains ownership of the key handle.
+        if (!CertSetCertificateContextProperty(storeCert,
+                CERT_NCRYPT_KEY_HANDLE_PROP_ID, 0, &hKey)) {
+            CertFreeCertificateContext(storeCert);
+            CertCloseStore(memStore, 0);
+            NCryptFreeObject(hKey);
+            lastGlobalError_ = "CertSetCertificateContextProperty(NCRYPT_KEY_HANDLE) failed: " +
+                std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 6: Verify with AcquireCredentialsHandle.
+        SCHANNEL_CRED cred = { 0 };
+        cred.dwVersion = SCHANNEL_CRED_VERSION;
+        cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
+        cred.dwMinimumCipherStrength = 128;
+        cred.cCreds = 1;
+        cred.paCred = &storeCert;
+        cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+
+        CredHandle testCredHandle;
+        SecInvalidateHandle(&testCredHandle);
+        TimeStamp expiry;
+        SECURITY_STATUS status = AcquireCredentialsHandle(
+            NULL,
+            const_cast<LPWSTR>(UNISP_NAME_W),
+            SECPKG_CRED_INBOUND,
+            NULL,
+            &cred,
+            NULL, NULL,
+            &testCredHandle,
+            &expiry);
+
+        if (FAILED(status)) {
+            CertFreeCertificateContext(storeCert);
+            CertCloseStore(memStore, 0);
+            NCryptFreeObject(hKey);
+            lastGlobalError_ = "AcquireCredentialsHandle(PEM) failed: " +
+                getSchannelErrorString(status);
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        FreeCredentialsHandle(&testCredHandle);
+
+        // Step 7: Store results.
+        serverCertContext_ = storeCert;
+        certStore_ = memStore;
         certStoreOpen_ = true;
-        GANL_SCHANNEL_DEBUG(0, "Loaded .p12 from " << config.certificateFile);
+        ncryptKey_ = hKey;
 
+        char subjectName[256] = {0};
+        CertGetNameStringA(storeCert, CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            0, nullptr, subjectName, sizeof(subjectName));
+        ganl::logMessage("TLS: PEM initialization complete: '%s'", subjectName);
         return true;
     }
 
@@ -162,6 +573,12 @@ namespace ganl {
 
         // Clear all session contexts
         sessions_.clear();
+
+        // Free CNG key handle BEFORE freeing the cert context that references it.
+        if (ncryptKey_ != 0) {
+            NCryptFreeObject(ncryptKey_);
+            ncryptKey_ = 0;
+        }
 
         // Free certificate context
         if (serverCertContext_ != nullptr) {
@@ -194,6 +611,7 @@ namespace ganl {
         // Acquire credentials
         if (!acquireCredentials(*context)) {
             GANL_SCHANNEL_DEBUG(conn, "Error: Failed to acquire credentials: " << context->lastError);
+            ganl::logMessage("TLS[%u] createSessionContext: credential acquisition failed", (unsigned)conn);
             return false;
         }
 
@@ -533,7 +951,6 @@ namespace ganl {
                 tempInputView.append(inBuffers[0].pvBuffer, inBuffers[0].cbBuffer);
             }
             GANL_SCHANNEL_DEBUG(conn, "Buffer content BEFORE AcceptSecurityContext call:");
-            ganl::utils::dumpIoBufferHex(std::cerr, tempInputView, 1024); // Dump max 1k
 
             // --- Call AcceptSecurityContext ---
             SECURITY_STATUS status = AcceptSecurityContext(
@@ -605,6 +1022,7 @@ namespace ganl {
 
                 if (status == SEC_E_OK) {
                     context.established = true;
+                    ganl::logMessage("TLS[%u] handshake complete", (unsigned)conn);
                     if (!queryStreamSizes(context)) { return TlsResult::Error; }
                     break; // Handshake done, exit loop
                 }
@@ -647,6 +1065,7 @@ namespace ganl {
             if (FAILED(status)) {
                 context.lastError = "AcceptSecurityContext failed: " + getSchannelErrorString(status);
                 GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+                ganl::logMessage("TLS[%u] handshake: %s", (unsigned)conn, context.lastError.c_str());
                 context.handshakeBuffer.clear(); // Clear buffer on error
                 return TlsResult::Error; // Return error immediately
             }
@@ -804,6 +1223,7 @@ namespace ganl {
             // Other error
             context.lastError = "DecryptMessage failed: " + getSchannelErrorString(status);
             GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+            ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
             context.incompleteBuffer.clear();
             return TlsResult::Error;
         }
@@ -903,6 +1323,7 @@ namespace ganl {
             // Error encrypting
             context.lastError = "EncryptMessage failed: " + getSchannelErrorString(status);
             GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+            ganl::logMessage("TLS[%u] encrypt: %s", (unsigned)conn, context.lastError.c_str());
             return TlsResult::Error;
         }
     }
@@ -960,6 +1381,7 @@ namespace ganl {
 
         if (FAILED(status)) {
             context.lastError = "AcquireCredentialsHandle failed: " + getSchannelErrorString(status);
+            ganl::logMessage("TLS acquireCredentials failed: %s", context.lastError.c_str());
             return false;
         }
 
@@ -1027,7 +1449,9 @@ namespace ganl {
         );
 
         if (result == 0 || buffer == nullptr) {
-            return "Unknown Schannel error: " + std::to_string(status);
+            char hexBuf[32];
+            snprintf(hexBuf, sizeof(hexBuf), "0x%08X", (unsigned int)status);
+            return std::string("Unknown Schannel error: ") + hexBuf;
         }
 
         std::string message(buffer);
@@ -1039,7 +1463,9 @@ namespace ganl {
             message = message.substr(0, endpos + 1);
         }
 
-        return message + " (0x" + std::to_string(status) + ")";
+        char hexBuf[32];
+        snprintf(hexBuf, sizeof(hexBuf), "0x%08X", (unsigned int)status);
+        return message + " (" + hexBuf + ")";
     }
 
 } // namespace ganl

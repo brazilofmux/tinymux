@@ -28,7 +28,6 @@
     #define HAVE_IOCP 0
 #endif
 
-#include <iostream>
 #include <sstream>
 #include <memory>
 
@@ -48,17 +47,6 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
         #else
             type = NetworkEngineType::Select;
         #endif
-
-        std::cout << "Auto-selected network engine type: ";
-        switch (type) {
-            case NetworkEngineType::Epoll: std::cout << "epoll"; break;
-            case NetworkEngineType::Kqueue: std::cout << "kqueue"; break;
-            case NetworkEngineType::IOCP: std::cout << "IOCP"; break;
-            case NetworkEngineType::Select: std::cout << "select"; break;
-            case NetworkEngineType::WSelect: std::cout << "Windows select"; break;
-            default: std::cout << "unknown"; break;
-        }
-        std::cout << std::endl;
     }
 
     // Create the requested engine type
@@ -66,7 +54,6 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
         case NetworkEngineType::Select:
 #if defined(_WIN32) || defined(WIN32)
             // On Windows, redirect Select to WSelect for better compatibility
-            std::cout << "Note: Redirecting Select to WSelect on Windows platform" << std::endl;
             return std::make_unique<WSelectNetworkEngine>();
 #else
             return std::make_unique<SelectNetworkEngine>();
@@ -76,7 +63,6 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
 #if HAVE_WSELECT
             return std::make_unique<WSelectNetworkEngine>();
 #else
-            std::cerr << "Error: Windows Select engine requested but not available on this platform." << std::endl;
             return nullptr;
 #endif
 
@@ -84,7 +70,6 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
             #if HAVE_EPOLL
                 return std::make_unique<EpollNetworkEngine>();
             #else
-                std::cerr << "Error: epoll engine requested but not available on this platform." << std::endl;
                 return nullptr;
             #endif
 
@@ -92,7 +77,6 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
             #if HAVE_KQUEUE
                 return std::make_unique<KqueueNetworkEngine>();
             #else
-                std::cerr << "Error: kqueue engine requested but not available on this platform." << std::endl;
                 return nullptr;
             #endif
 
@@ -100,12 +84,10 @@ std::unique_ptr<NetworkEngine> NetworkEngineFactory::createEngine(NetworkEngineT
             #if HAVE_IOCP
                 return std::make_unique<IocpNetworkEngine>();
             #else
-                std::cerr << "Error: IOCP engine requested but not available on this platform." << std::endl;
                 return nullptr;
             #endif
 
         default:
-            std::cerr << "Error: Unknown network engine type." << std::endl;
             return nullptr;
     }
 }

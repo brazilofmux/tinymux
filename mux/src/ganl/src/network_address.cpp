@@ -1,5 +1,6 @@
 #include <network_types.h>
 #include <cstring>
+#include <cstdio>
 
 #if defined(_WIN32) || defined(WIN32)
 #include <winsock2.h>
@@ -86,6 +87,26 @@ uint16_t NetworkAddress::getPort() const {
 
 bool NetworkAddress::isValid() const {
     return valid_;
+}
+
+// --- Dependency-injected logging implementation ---
+
+static LogCallback s_logCallback = nullptr;
+
+void setLogger(LogCallback cb) {
+    s_logCallback = cb;
+}
+
+void logMessage(const char* fmt, ...) {
+    if (!s_logCallback) {
+        return;
+    }
+    char buf[2048];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    s_logCallback(buf);
 }
 
 } // namespace ganl

@@ -67,7 +67,8 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ganl.lib;wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;ncrypt.lib;pcre2-8d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\bin_debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
@@ -97,7 +98,8 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ganl.lib;wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;ncrypt.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <Version>2.13</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>

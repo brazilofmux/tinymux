@@ -1,5 +1,4 @@
 #include "iocp_network_engine.h"
-#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <memory>
@@ -12,13 +11,8 @@
 // Need to link with Mswsock.lib for AcceptEx and related functions
 #pragma comment(lib, "mswsock.lib")
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
-#define GANL_IOCP_DEBUG(sock, x) \
-    do { std::cerr << "[IOCP:" << sock << "] " << x << std::endl; } while (0)
-#else
+// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_IOCP_DEBUG(sock, x) do {} while (0)
-#endif
 
 namespace ganl {
 
@@ -695,14 +689,10 @@ namespace ganl {
                 if (!readBuffer) {
                     GANL_IOCP_DEBUG(socket, "No IoBuffer associated with this read operation");
                 } else {
-                    // Set the buffer in the event
+                    // Set the buffer in the event so handleRead can commit the bytes.
+                    // Do NOT commitWrite here — CompletionConnection::handleRead
+                    // commits exactly bytesTransferred bytes to avoid double-counting.
                     event.buffer = readBuffer;
-
-                    // If the read was successful, update the buffer write position
-                    if (result && bytesTransferred > 0) {
-                        GANL_IOCP_DEBUG(socket, "Committing " << bytesTransferred << " bytes to IoBuffer");
-                        readBuffer->commitWrite(bytesTransferred);
-                    }
 
                     // Reset the active buffer reference in SocketInfo
                     std::lock_guard<std::mutex> lock(mutex_);
