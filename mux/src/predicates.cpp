@@ -1634,9 +1634,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     SYNC;
     CLOSE;
 
-#if defined(WINDOWS_NETWORKING)
-    WSACleanup();
-#endif // WINDOWS_NETWORKING
 #if defined(WINDOWS_PROCESSES)
     exit(12345678);
 #elif defined(UNIX_PROCESSES)

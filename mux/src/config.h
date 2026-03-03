@@ -18,7 +18,6 @@
 
 // Build Options
 //
-#define WINDOWS_NETWORKING
 #define WINDOWS_SIGNALS
 #define WINDOWS_PROCESSES
 #define WINDOWS_FILES

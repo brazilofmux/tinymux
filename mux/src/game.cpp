@@ -2474,10 +2474,6 @@ static void init_sql(void)
 #endif // INLINESQL
 long DebugTotalFiles = 3;
 long DebugTotalSockets = 0;
-#if defined(WINDOWS_NETWORKING)
-long DebugTotalThreads = 1;
-long DebugTotalSemaphores = 0;
-#endif // WINDOWS_NETWORKING
 #ifdef MEMORY_ACCOUNTING
 long DebugTotalMemory = 0;
 #endif
@@ -2595,60 +2591,6 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         bSyntaxError = true;
     }
 }
-
-#if defined(WINDOWS_NETWORKING)
-void DetectWindowsCapabilities()
-{
-    // Get a handle to ws2_32.dll
-    //
-    HINSTANCE hInstWs2_32 = LoadLibrary(L"ws2_32");
-    if (nullptr != hInstWs2_32)
-    {
-        fpGetNameInfo = (function_getnameinfo *)GetProcAddress(hInstWs2_32, "getnameinfo");
-        fpGetAddrInfo = (function_getaddrinfo *)GetProcAddress(hInstWs2_32, "getaddrinfo");
-        fpFreeAddrInfo = (function_freeaddrinfo *)GetProcAddress(hInstWs2_32, "freeaddrinfo");
-
-        // These interfaces are all-or-nothing.
-        //
-        if (  nullptr == fpGetNameInfo
-           || nullptr == fpGetAddrInfo
-           || nullptr == fpFreeAddrInfo)
-        {
-            fpGetNameInfo = nullptr;
-            fpGetAddrInfo = nullptr;
-            fpFreeAddrInfo = nullptr;
-            FreeLibrary(hInstWs2_32);
-            hInstWs2_32 = nullptr;
-        }
-    }
-
-    if (nullptr == hInstWs2_32)
-    {
-        // Get a handle to wship6.dll (part of the Windows 2000 IPv6 technology preview).
-        //
-        HINSTANCE hInstWship6 = LoadLibrary(L"wship6");
-        if (nullptr != hInstWship6)
-        {
-            fpGetNameInfo = (function_getnameinfo *)GetProcAddress(hInstWship6, "getnameinfo");
-            fpGetAddrInfo = (function_getaddrinfo *)GetProcAddress(hInstWship6, "getaddrinfo");
-            fpFreeAddrInfo = (function_freeaddrinfo *)GetProcAddress(hInstWship6, "freeaddrinfo");
-
-            // These interfaces are all-or-nothing.
-            //
-            if (  nullptr == fpGetNameInfo
-               || nullptr == fpGetAddrInfo
-               || nullptr == fpFreeAddrInfo)
-            {
-                fpGetNameInfo = nullptr;
-                fpGetAddrInfo = nullptr;
-                fpFreeAddrInfo = nullptr;
-                FreeLibrary(hInstWship6);
-                hInstWship6 = nullptr;
-            }
-        }
-    }
-}
-#endif // WINDOWS_NETWORKING
 
 #define DBCONVERT_NAME1 T("dbconvert")
 #define DBCONVERT_NAME2 T("dbconvert.exe")
@@ -2788,34 +2730,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hfIdentData.Open("svdlines.dir", "svdlines.pag", 40);
     bMemAccountingInitialized = true;
 #endif
-
-#if defined(WINDOWS_NETWORKING)
-
-    game_process_handle = GetCurrentProcess();
-    DetectWindowsCapabilities();
-
-    // Initialize WinSock.
-    //
-    WORD wVersionRequested = MAKEWORD(2,2);
-    WSADATA wsaData;
-    if (WSAStartup(wVersionRequested, &wsaData) != 0)
-    {
-        Log.WriteString(T("ERROR: Could not initialize WinSock." ENDLINE));
-        return 101;
-    }
-
-    if (  LOBYTE(wsaData.wVersion) != 2
-       || HIBYTE(wsaData.wVersion) != 2)
-    {
-        // We can't run on this version of WinSock.
-        //
-        Log.tinyprintf(T("INFO: WinSock v%d.%d instead of v2.2." ENDLINE),
-            LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
-        //WSACleanup();
-        //return 102;
-    }
-
-#endif // WINDOWS_NETWORKING
 
     mudstate.restart_time.GetUTC();
     mudstate.start_time = mudstate.restart_time;
@@ -3020,10 +2934,6 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
 
-#if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
-    boot_slave(GOD, GOD, GOD, 0, 0);
-#endif // HAVE_WORKING_FORK
-
     // All intialization should be complete, allow the local
     // extensions to configure themselves.
     //
@@ -3080,9 +2990,6 @@ int DCL_CDECL main(int argc, char *argv[])
     WaitOnStubSlaveProcess();
 #endif
 #endif // HAVE_WORKING_FORK
-#if defined(WINDOWS_NETWORKING)
-    shutdown_slave();
-#endif
 
 #ifdef SELFCHECK
     // Go ahead and explicitly free the memory for these things so
@@ -3098,13 +3005,6 @@ int DCL_CDECL main(int argc, char *argv[])
     finish_cmdtab();
     db_free();
 #endif
-
-#if defined(WINDOWS_NETWORKING)
-    // Critical section not needed any more.
-    //
-    DeleteCriticalSection(&csDescriptorList);
-    WSACleanup();
-#endif // WINDOWS_NETWORKING
 
 #ifdef UNIX_SSL
     shutdown_ssl();

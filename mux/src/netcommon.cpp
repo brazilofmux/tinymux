@@ -506,19 +506,6 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
     d->output_size += n;
     d->output_tot += n;
 
-#if defined(WINDOWS_NETWORKING)
-    // As part of the heuristics for good performance, we may not call
-    // process_output now, but if output is not flowing, we mark that output
-    // should be kick-started the next time shovechars() is looking at this
-    // descriptor.
-    //
-    if (  !d->bConnectionDropped
-       && nullptr != d->output_head
-       && 0 == (d->output_head->hdr.flags & TBLK_FLAG_LOCKED))
-    {
-        d->bCallProcessOutputLater = true;
-    }
-#endif // WINDOWS_NETWORKING
 }
 
 void queue_write(DESC *d, const UTF8 *b)

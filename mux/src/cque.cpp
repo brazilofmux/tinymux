@@ -1275,16 +1275,6 @@ static int CallBack_ShowDispatches(const PTASK_RECORD p)
     {
         notify(Show_Player, tprintf(T("[%d]Further command quota"), ltd.ReturnSeconds()));
     }
-#if defined(WINDOWS_NETWORKING)
-    else if (p->fpTask == Task_FreeDescriptor)
-    {
-        notify(Show_Player, tprintf(T("[%d]Delayed descriptor deallocation"), ltd.ReturnSeconds()));
-    }
-    else if (p->fpTask == Task_DeferredClose)
-    {
-        notify(Show_Player, tprintf(T("[%d]Delayed socket close"), ltd.ReturnSeconds()));
-    }
-#endif
     else
     {
         Total_SystemTasks--;

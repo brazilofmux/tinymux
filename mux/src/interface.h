@@ -173,17 +173,6 @@ struct descriptor_data
   SSL *ssl_session;
 #endif
 
-#if defined(WINDOWS_NETWORKING)
-  // these are for the Windows NT TCP/IO
-#define SIZEOF_OVERLAPPED_BUFFERS 512
-  char input_buffer[SIZEOF_OVERLAPPED_BUFFERS];         // buffer for reading
-  OVERLAPPED InboundOverlapped;   // for asynchronous reading
-  OVERLAPPED OutboundOverlapped;  // for asynchronous writing
-  bool bConnectionDropped;        // true if we cannot send to player
-  bool bConnectionShutdown;       // true if connection has been shutdown
-  bool bCallProcessOutputLater;   // Does the socket need priming for output.
-#endif // WINDOWS_NETWORKING
-
   CLinearTimeAbsolute connected_at;
   CLinearTimeAbsolute last_time;
 
@@ -239,10 +228,6 @@ void disable_us(DESC *d, unsigned char chOption);
 #define DS_CONNECTED    0x0001      // player is connected.
 #define DS_AUTODARK     0x0002      // Wizard was auto set dark.
 #define DS_PUEBLOCLIENT 0x0004      // Client is Pueblo-enhanced.
-
-#if defined(WINDOWS_NETWORKING)
-extern CRITICAL_SECTION csDescriptorList;
-#endif // WINDOWS_NETWORKING
 
 typedef struct port_info
 {
@@ -325,11 +310,8 @@ void close_sockets_emergency(const UTF8* message);
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
 void mux_freeaddrinfo(MUX_ADDRINFO *res);
 int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
-#if defined(HAVE_WORKING_FORK) || defined(WINDOWS_THREADS)
+#if defined(HAVE_WORKING_FORK)
 void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
-#endif
-#if defined(WINDOWS_THREADS)
-void shutdown_slave();
 #endif
 #if defined(HAVE_WORKING_FORK)
 void CleanUpSlaveSocket(void);
@@ -348,27 +330,5 @@ void CleanUpSSLConnections(void);
 extern NAMETAB sigactions_nametab[];
 
 extern long DebugTotalSockets;
-
-#if defined(WINDOWS_NETWORKING)
-extern long DebugTotalThreads;
-extern long DebugTotalSemaphores;
-extern HANDLE game_process_handle;
-typedef int __stdcall function_getnameinfo(const SOCKADDR *socket_address, socklen_t socket_address_length, PCHAR pNodeBuffer,
-    DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
-typedef int __stdcall function_getaddrinfo(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints,
-    PADDRINFOA *ppResult);
-typedef void __stdcall function_freeaddrinfo(PADDRINFOA address_information);
-
-extern function_getnameinfo *fpGetNameInfo;
-extern function_getaddrinfo *fpGetAddrInfo;
-extern function_freeaddrinfo *fpFreeAddrInfo;
-#endif // WINDOWS_NETWORKING
-
-// From timer.cpp
-//
-#if defined(WINDOWS_NETWORKING)
-void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
-void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
-#endif // WINDOWS_NETWORKING
 
 #endif // !INTERFACE_H
