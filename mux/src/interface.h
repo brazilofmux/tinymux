@@ -310,17 +310,9 @@ void close_sockets_emergency(const UTF8* message);
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
 void mux_freeaddrinfo(MUX_ADDRINFO *res);
 int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
-#if defined(HAVE_WORKING_FORK)
-#ifdef STUB_SLAVE
-void CleanUpStubSlaveSocket(void);
-void WaitOnStubSlaveProcess(void);
-void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
 extern "C" MUX_RESULT DCL_API pipepump(void);
-#endif // STUB_SLAVE
-#endif // HAVE_WORKING_FORK
-#ifdef UNIX_SSL
-void CleanUpSSLConnections(void);
-#endif
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
 extern NAMETAB sigactions_nametab[];
 

@@ -13,7 +13,6 @@
 
 #ifdef UNIX_SSL
 #include <openssl/ssl.h>
-extern SSL_CTX* tls_ctx;
 #endif
 
 #if defined(_WIN32) || defined(WIN32)

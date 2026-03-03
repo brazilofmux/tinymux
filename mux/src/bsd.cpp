@@ -13,7 +13,6 @@
 using namespace std;
 
 #ifdef UNIX_SSL
-SSL_CTX  *ssl_ctx = nullptr;
 SSL_CTX  *tls_ctx = nullptr;
 port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
@@ -37,26 +36,6 @@ extern "C" MUX_RESULT DCL_API pipepump(void)
 #endif // STUB_SLAVE
 
 #endif // HAVE_WORKING_FORK
-
-
-
-int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
-{
-    int result;
-
-#ifdef UNIX_SSL
-    if (d->ssl_session)
-    {
-        result = SSL_read(d->ssl_session, buffer, nBytes);
-    }
-    else
-#endif
-    {
-        result = SOCKET_READ(d->socket, buffer, nBytes, flags);
-    }
-
-    return result;
-}
 
 
 // Disconnect reasons that get written to the logfile
@@ -313,7 +292,7 @@ void shutdownsock(DESC *d, int reason)
 }
 
 
-static void process_output_ganl(DESC *d, int bHandleShutdown)
+void process_output(DESC *d, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
@@ -335,11 +314,6 @@ static void process_output_ganl(DESC *d, int bHandleShutdown)
             d->output_tail = nullptr;
         }
     }
-}
-
-void process_output(DESC *d, int bHandleShutdown)
-{
-    process_output_ganl(d, bHandleShutdown);
 }
 
 
