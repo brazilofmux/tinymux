@@ -183,6 +183,17 @@ public:
     void email_advance_state_locked(const std::string& responseLine);
     void email_notify_and_cleanup(const UTF8* message);
 
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+    struct StubSlaveChannel {
+        int fd{-1};
+    };
+    std::unique_ptr<StubSlaveChannel> stubslave_channel_;
+
+    bool boot_stubslave();
+    void shutdown_stubslave();
+    MUX_RESULT pump_stubslave();
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
+
     void process_tinyMUX_tasks(); // Helper to run timers, quotas etc.
 
     // Deferred finalization for TLS connections. welcome_user() cannot be

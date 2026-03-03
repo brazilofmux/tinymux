@@ -1078,6 +1078,10 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
 extern long DebugTotalFiles;
 extern pid_t game_pid;
 
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+extern pid_t stubslave_pid;
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
+
 // From timer.cpp
 //
 void init_timer(void);

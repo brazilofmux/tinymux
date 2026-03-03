@@ -21,6 +21,9 @@ extern SSL_CTX* tls_ctx;
 #else
 #include <netdb.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/wait.h>
 #endif
 
 #if defined(_WIN32)
@@ -2771,6 +2774,256 @@ void GanlAdapter::email_notify_and_cleanup(const UTF8* message) {
 
     shutdown_email_channel();
 }
+
+
+// --- Stub Slave Channel ---
+
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+
+extern QUEUE_INFO Queue_In;
+extern QUEUE_INFO Queue_Out;
+extern pid_t stubslave_pid;
+
+bool GanlAdapter::boot_stubslave()
+{
+    const char *pFailedFunc = nullptr;
+    int sv[2];
+    int i;
+    int maxfds;
+
+#ifdef HAVE_GETDTABLESIZE
+    maxfds = getdtablesize();
+#else
+    maxfds = sysconf(_SC_OPEN_MAX);
+#endif
+
+    shutdown_stubslave();
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+    {
+        pFailedFunc = "socketpair() error: ";
+        goto failure;
+    }
+
+    // Set parent end to nonblocking.
+    //
+    {
+        int flags = fcntl(sv[0], F_GETFL, 0);
+        if (flags < 0 || fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) < 0)
+        {
+            pFailedFunc = "fcntl(O_NONBLOCK) error: ";
+            mux_close(sv[0]);
+            mux_close(sv[1]);
+            goto failure;
+        }
+    }
+
+    stubslave_pid = fork();
+    switch (stubslave_pid)
+    {
+    case -1:
+
+        pFailedFunc = "fork() error: ";
+        mux_close(sv[0]);
+        mux_close(sv[1]);
+        goto failure;
+
+    case 0:
+
+        // If we don't clear this alarm, the child will eventually receive a
+        // SIG_PROF.
+        //
+        alarm_clock.clear();
+
+        // Child.  The following calls to dup2() assume only the minimal
+        // dup2() functionality.  That is, the destination descriptor is
+        // always available for it, and sv[1] is never that descriptor.
+        // It is likely that the standard defined behavior of dup2()
+        // would handle the job by itself more directly, but a little
+        // extra code is low-cost insurance.
+        //
+        mux_close(sv[0]);
+        if (sv[1] != 0)
+        {
+            mux_close(0);
+            if (dup2(sv[1], 0) == -1)
+            {
+                _exit(1);
+            }
+        }
+        if (sv[1] != 1)
+        {
+            mux_close(1);
+            if (dup2(sv[1], 1) == -1)
+            {
+                _exit(1);
+            }
+        }
+        for (i = 3; i < maxfds; i++)
+        {
+            mux_close(i);
+        }
+        execlp("bin/stubslave", "stubslave", static_cast<char *>(nullptr));
+        _exit(1);
+    }
+    mux_close(sv[1]);
+
+    stubslave_channel_ = std::make_unique<StubSlaveChannel>();
+    stubslave_channel_->fd = sv[0];
+    DebugTotalSockets++;
+
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+    log_text(T("Stub slave started on fd "));
+    log_number(stubslave_channel_->fd);
+    ENDLOG;
+    return true;
+
+failure:
+
+    if (stubslave_pid > 0)
+    {
+        waitpid(stubslave_pid, nullptr, 0);
+    }
+    stubslave_pid = 0;
+
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+    log_text(T(pFailedFunc));
+    log_number(errno);
+    ENDLOG;
+    return false;
+}
+
+void GanlAdapter::shutdown_stubslave()
+{
+    if (stubslave_channel_)
+    {
+        if (stubslave_channel_->fd >= 0)
+        {
+            ::shutdown(stubslave_channel_->fd, SD_BOTH);
+            if (0 == SOCKET_CLOSE(stubslave_channel_->fd))
+            {
+                DebugTotalSockets--;
+            }
+        }
+        stubslave_channel_.reset();
+    }
+
+    if (stubslave_pid > 0)
+    {
+        waitpid(stubslave_pid, nullptr, 0);
+    }
+    stubslave_pid = 0;
+}
+
+MUX_RESULT GanlAdapter::pump_stubslave()
+{
+    mudstate.debug_cmd = T("< pipepump >");
+
+    if (!stubslave_channel_ || stubslave_channel_->fd < 0)
+    {
+        return MUX_E_FAIL;
+    }
+
+    int fd = stubslave_channel_->fd;
+
+    struct pollfd pfd;
+    pfd.fd = fd;
+    pfd.events = POLLIN;
+    if (0 < Pipe_QueueLength(&Queue_Out))
+    {
+        pfd.events |= POLLOUT;
+    }
+    pfd.revents = 0;
+
+    int found = poll(&pfd, 1, -1);
+
+    if (found < 0)
+    {
+        int iSocketError = errno;
+        if (EBADF == iSocketError)
+        {
+            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
+            struct stat fstatbuf;
+            if (fstat(fd, &fstatbuf) < 0)
+            {
+                shutdown_stubslave();
+                return MUX_E_FAIL;
+            }
+        }
+        else if (EINTR != iSocketError)
+        {
+            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
+        }
+        return MUX_S_OK;
+    }
+
+    if (pfd.revents & (POLLIN | POLLHUP | POLLERR))
+    {
+        char buf[LBUF_SIZE];
+        for (;;)
+        {
+            int len = mux_read(fd, buf, sizeof(buf));
+            if (len < 0)
+            {
+                int iSocketError = errno;
+                if (EAGAIN == iSocketError || EWOULDBLOCK == iSocketError)
+                {
+                    break;
+                }
+                shutdown_stubslave();
+
+                STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                log_text(T("read() of stubslave failed. Stubslave stopped."));
+                ENDLOG;
+
+                return MUX_E_FAIL;
+            }
+            else if (0 == len)
+            {
+                // EOF — stubslave closed its end.
+                //
+                shutdown_stubslave();
+
+                STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                log_text(T("Stubslave pipe closed (EOF). Stubslave stopped."));
+                ENDLOG;
+
+                return MUX_E_FAIL;
+            }
+            Pipe_AppendBytes(&Queue_In, len, buf);
+        }
+    }
+
+    if (  stubslave_channel_
+       && stubslave_channel_->fd >= 0
+       && (pfd.revents & POLLOUT))
+    {
+        char buf[LBUF_SIZE];
+        size_t nWanted = sizeof(buf);
+        if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
+           && 0 < nWanted)
+        {
+            int len = mux_write(stubslave_channel_->fd, buf, nWanted);
+            if (len < 0)
+            {
+                int iSocketError = errno;
+                if (EAGAIN != iSocketError && EWOULDBLOCK != iSocketError)
+                {
+                    shutdown_stubslave();
+
+                    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                    log_text(T("write() of stubslave failed. Stubslave stopped."));
+                    ENDLOG;
+
+                    return MUX_E_FAIL;
+                }
+            }
+        }
+    }
+    return MUX_S_OK;
+}
+
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
 
 void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {

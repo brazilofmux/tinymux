@@ -2766,7 +2766,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // on is complete.
     //
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
-    boot_stubslave(GOD, GOD, GOD, 0);
+    g_GanlAdapter.boot_stubslave();
     init_stubslave();
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
 
@@ -2982,12 +2982,9 @@ int DCL_CDECL main(int argc, char *argv[])
     final_modules();
     CLOSE;
 
-#if defined(HAVE_WORKING_FORK)
-#ifdef STUB_SLAVE
-    CleanUpStubSlaveSocket();
-    WaitOnStubSlaveProcess();
-#endif
-#endif // HAVE_WORKING_FORK
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+    g_GanlAdapter.shutdown_stubslave();
+#endif // HAVE_WORKING_FORK && STUB_SLAVE
 
 #ifdef SELFCHECK
     // Go ahead and explicitly free the memory for these things so
