@@ -27,6 +27,7 @@ extern SSL_CTX* tls_ctx;
 #endif
 
 extern const UTF8* disc_messages[];
+extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
 void site_mon_send(const SOCKET port, const UTF8* address, DESC* d, const UTF8* msg);
 void announce_connect(const dbref player, DESC* d);
@@ -315,7 +316,7 @@ namespace
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
             log_text(buff);
             log_name(d->player);
-            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_messages[mux_reason]);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -328,7 +329,7 @@ namespace
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
             log_text(buff);
             log_name(d->player);
-            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_messages[mux_reason]);
+            mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -345,7 +346,7 @@ namespace
         const auto PlayerName = PureName(d->player);
         mux_sprintf(accnt, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"),
             d->player, flags, d->command_count, Seconds, locPlayer, penPlayer,
-            d->addr, disc_messages[mux_reason], PlayerName);
+            d->addr, disc_reasons[mux_reason], PlayerName);
         log_text(accnt);
         free_lbuf(accnt);
         free_sbuf(flags);
@@ -1711,6 +1712,16 @@ void GanlAdapter::run_main_loop() {
     Log.Flush();
     ltaLastSlice_.GetUTC();
 
+    // Calculate available descriptor limit, reserving 7 for system use
+    // (logging, slave pipes, etc.) — same as legacy shovechars().
+    //
+    unsigned int avail_descriptors;
+#ifdef HAVE_GETDTABLESIZE
+    avail_descriptors = getdtablesize() - 7;
+#else
+    avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
+#endif
+
     while (!mudstate.shutdown_flag) {
         int timeout_ms = 100; // Default timeout for processEvents
 
@@ -1749,6 +1760,18 @@ void GanlAdapter::run_main_loop() {
             if (events[i].type == ganl::IoEventType::Accept) {
                 ganl::ConnectionHandle connHandle = events[i].connection;
                 if (connHandle != ganl::InvalidConnectionHandle) {
+
+                    // Reject if we've exhausted available descriptors.
+                    //
+                    if (mudstate.descriptors_list.size() >= avail_descriptors)
+                    {
+                        STARTLOG(LOG_NET, "NET", "FULL");
+                        Log.tinyprintf(T("%.90s"), T("Descriptor limit reached, rejecting connection."));
+                        ENDLOG;
+                        networkEngine_->closeConnection(connHandle);
+                        continue;
+                    }
+
                     ListenerContext listenerCtx{0, false};
                     bool useTls = false;
                     if (events[i].context) {

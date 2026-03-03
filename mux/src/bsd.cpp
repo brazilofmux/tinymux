@@ -2110,7 +2110,7 @@ bool new_connection_continue(DESC* d)
 
 // Disconnect reasons that get written to the logfile
 //
-static const UTF8 *disc_reasons[] =
+const UTF8 *disc_reasons[] =
 {
     T("Unspecified"),
     T("Quit"),
