@@ -1715,7 +1715,9 @@ void GanlAdapter::run_main_loop() {
     // (logging, slave pipes, etc.) — same as legacy shovechars().
     //
     unsigned int avail_descriptors;
-#ifdef HAVE_GETDTABLESIZE
+#if defined(_WIN32)
+    avail_descriptors = FD_SETSIZE - 7;
+#elif defined(HAVE_GETDTABLESIZE)
     avail_descriptors = getdtablesize() - 7;
 #else
     avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
