@@ -1,6 +1,6 @@
 ---
 author: Brazil
-date: February 2021
+date: March 2026
 title: INSTALL
 ---
 
@@ -14,6 +14,11 @@ game.
 1.  `cd src/` to the source directory.  Run `./configure`.
 
     This will customize `autoconf.h` and `Makefile` for your system.
+
+    SSL support and GANL networking are enabled by default. OpenSSL is a
+    required dependency. Use `--disable-ganl` to fall back to legacy
+    select-based networking.
+
     Optional packages are documented separately and enabled with the
     following configuration options:
 
@@ -24,20 +29,14 @@ game.
       | `--enable-stubslave`   | See MODULES.                                     |
       | `--enable-wodrealms`   | See docs/REALMS.                                 |
       | `--enable-inlinesql`   | Enables in-line MySQL support.                   |
-      | `--enable-ssl`         | See SSL.                                         |
       | `--enable-deprecated`  | Enables deprecated features.                     |
+      | `--disable-ganl`       | Use legacy select-based networking instead of GANL. |
 
-2.  Edit the configuration section of the `Makefile`.  This is usually not
-    needed.  Most likely, all you will need to change are any C++ flags
-    needed by your particular C++ compiler, (in particular
-    `-fpcc-struct-return`), and any esoteric libraries needed by your
-    system.  There may also be some `#defines` in `config.h` that you may
-    want to change, but in general, the defaults should not be changed.
+2.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
 
-3.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
-
-4.  Run `make install` to create the necessary symlinks in the game/bin directory.
-    After installation, the `dbconvert` command will be a symlink to `netmux`.
+3.  Run `make install` to create the necessary symlinks in the `game/bin`
+    directory. This step is required. After installation, the `dbconvert`
+    command will be a symlink to `netmux`.
 
 5.  When starting from a TinyMUX from scratch, do the following:
 
@@ -101,23 +100,17 @@ upgrade.
 
 1.  `cd src/` to the source directory.  Run `./configure`.
 
-    This will customize `autoconf.h` and `Makefile` for your system.  Add the
-    option `--enable-wodrealms` to enable WOD Realms (See docs/REALMS).
+    This will customize `autoconf.h` and `Makefile` for your system.
+    Add `--enable-wodrealms` to enable WOD Realms (See docs/REALMS).
     Add `--enable-memorybased` to enable Memory-Based database handling
     (as opposed to the default disk-based database handling.  See
-    `docs/MEMORY`).
+    `docs/MEMORY`).  See the new installation instructions above for the
+    full list of configure options.
 
-2.  Edit the Configuration section of the `Makefile`.  This is usually not
-    needed.  Most likely, all you will need to change are any C++ flags
-    needed by your particular C++ compiler, (in particular
-    `--fpcc-struct-return`), and any esoteric libraries needed by your
-    system.  There may also be some `#defines` in `config.h` that you may
-    want to change, but in general, the defaults should not be changed.
+2.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
 
-3.  Run `make`.  This will produce `netmux`, `slave`, and other executables.
-
-4.  Run `make install` to create the necessary symlinks in the game/bin directory.
-    After installation, the `dbconvert` command will be a symlink to `netmux`.
+3.  Run `make install` to create the necessary symlinks in the `game/bin`
+    directory.  This step is required.
 
 5.  Place/change your files.
 

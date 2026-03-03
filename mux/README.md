@@ -1,6 +1,6 @@
 ---
 author: Brazil
-date: August 2020
+date: March 2026
 title: README (Unix)
 ---
 
@@ -78,19 +78,16 @@ formalized. Sometimes, due to lack of available time, it is ad-hoc.
     located or to develop a workaround or fix for the bug.
 
 -   Send mail about it to: `brazilofmux@gmail.com` If the bug crashes the
-    TinyMUX, try to include the following information from running `dbx`
-    (or `gdb`) on the resulting core file:
+    TinyMUX, try to include the following information from running `gdb`
+    on the resulting core file:
 
     -   Output of the `where` command.
 
-    -   Output of the `dump` command for each procedure level.
+    -   Output of the `info locals` command for each frame.
 
--   To use `gdb` or `dbx`, make sure you are in the `game` directory, and
-    type:
+-   To use `gdb`, make sure you are in the `game` directory, and type:
 
     -   `gdb bin/netmux core`
-
-    -   `dbx bin/netmux core`
 
 -   From there, simply type 'help' for help, or 'quit' to exit.
 

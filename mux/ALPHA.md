@@ -1,10 +1,9 @@
 ---
 title: TinyMUX 2.13 ALPHA
-date: June 2020
+date: March 2026
 author:
  - Brazil
 ---
 
-# General Cautions During the Alpha Period:
-
- - It is known that SSL blocks. That is in the process of being fixed.
+The alpha period for TinyMUX 2.13 has concluded. All known issues from
+that period have been resolved, including non-blocking SSL support.

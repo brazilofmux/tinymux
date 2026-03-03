@@ -5,17 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 - Configure: `./configure [options]` (options: --enable-memorybased, --enable-realitylvls, etc.)
 - Standard configuration: `./configure --enable-realitylvls --enable-wodrealms --enable-stubslave`
-- Generate dependencies: `make depend` (important after code changes)
+- GANL networking and SSL are enabled by default; use `--disable-ganl` for legacy networking
 - Build: `make`
+- Install: `make install` (required — creates symlinks in game/bin)
 - Clean: `make clean` or `make realclean`
 - Run server: `cd mux/game && ./bin/netmux` (starts the MUD server)
-
-## Updating Dependencies
-- When making significant code changes, update dependencies:
-  1. Run `./configure` with appropriate options
-  2. Run `make depend` to regenerate .depend
-  3. Run `make` to verify build succeeds
-  4. Commit updated .depend file
+- Dependency tracking is handled automatically by automake
 
 ## Testing
 - Run smoke tests: `cd testcases/tools && ./Makesmoke && ./Smoke`
