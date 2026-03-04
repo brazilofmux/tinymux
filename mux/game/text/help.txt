@@ -5799,10 +5799,15 @@ COMTITLE
 
   This command allows you to prefix your name on a channel with a title.
   The second form contains a switch that allow you to turn on or off
-  the ability to see comtitles. <option> can be on of the following:
+  the ability to see comtitles. <option> can be one of the following:
 
     on      - comtitles are shown to you.
     off     - poses are shown to you without their comtitles.
+    gag     - suppress join/leave/connect/disconnect messages on this
+              channel. Only affects what you see; your own joins/leaves
+              are still visible to others.
+    ungag   - resume seeing join/leave/connect/disconnect messages on
+              this channel.
 
   Anonymous channels (@cset/anon) do not allow their comtitles to be
   turned off.
@@ -5812,6 +5817,10 @@ COMTITLE
     Title set to 'The Great and Powerful' on channel Public.
     > pub :waves to everyone.
     [Public] The Great and Powerful Foobar waves to everyone.
+    > comtitle/gag pub
+    Join/leave messages are now gagged for channel Public
+    > comtitle/ungag pub
+    Join/leave messages are now ungagged for channel Public
 
   Related Topics: comlist, addcom, alias, delcom, @cset
 

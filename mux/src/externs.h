@@ -629,6 +629,8 @@ extern int anum_alc_top;
 #define CBOOT_QUIET     1   // Cboot without a message
 #define COMTITLE_ON     1   // Turn Comtitles on.
 #define COMTITLE_OFF    2   // Turn Comtitles off.
+#define COMTITLE_GAG    3   // Gag join/leave messages.
+#define COMTITLE_UNGAG  4   // Ungag join/leave messages.
 #define CRE_INVENTORY   0   /* Create object in my inventory */
 #define CRE_LOCATION    1   /* Create object in my location */
 #define CRE_SET_LOC     2   /* ARG2 is location of new object */

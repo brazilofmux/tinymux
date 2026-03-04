@@ -48,8 +48,10 @@ static NAMETAB cboot_sw[] =
 
 static NAMETAB comtitle_sw[] =
 {
+    {T("gag"),             1,  CA_PUBLIC,  COMTITLE_GAG},
     {T("off"),             2,  CA_PUBLIC,  COMTITLE_OFF},
     {T("on"),              2,  CA_PUBLIC,  COMTITLE_ON},
+    {T("ungag"),           1,  CA_PUBLIC,  COMTITLE_UNGAG},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 

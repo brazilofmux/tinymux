@@ -48,6 +48,8 @@ struct comuser
     UTF8 *title;
     //! Status of the title
     bool ComTitleStatus;
+    //! Whether join/leave messages are suppressed for this user
+    bool bGagJoinLeave;
     //! Pointer to the next user on the channel
     struct comuser *on_next;
 };
@@ -156,7 +158,7 @@ void sort_com_aliases(comsys_t *c);
 //! \param msgNormal - message to send with comtitle
 //! \param msgNoComtitle - message to send w/o comtitle
 void SendChannelMessage(dbref player, struct channel *ch, UTF8 *msgNormal,
-    UTF8 *msgNoComtitle);
+    UTF8 *msgNoComtitle, bool bJoinLeaveMsg = false);
 
 //! \brief Process '<alias> who' command to show online channel users
 //! \brief player - enacting player

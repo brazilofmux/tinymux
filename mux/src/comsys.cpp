@@ -41,6 +41,15 @@ static void do_setcomtitlestatus(const dbref player, struct channel* ch, const b
     }
 }
 
+static void do_setgagjoinleavestatus(const dbref player, struct channel* ch, const bool status)
+{
+    struct comuser* user = select_user(ch, player);
+    if (ch && user)
+    {
+        user->bGagJoinLeave = status;
+    }
+}
+
 static void do_setnewtitle(const dbref player, struct channel* ch, const UTF8* pValidatedTitle)
 {
     struct comuser* user = select_user(ch, player);
@@ -71,7 +80,7 @@ void save_comsys(UTF8* filename)
     }
     DebugTotalFiles++;
 
-    mux_fprintf(fp, T("+V4\n"));
+    mux_fprintf(fp, T("+V5\n"));
     mux_fprintf(fp, T("*** Begin CHANNELS ***\n"));
 
     save_channels(fp);
@@ -460,6 +469,171 @@ static const UTF8* get_channel_from_alias(dbref player, UTF8* alias)
         return c->channels[current];
     }
     return T("");
+}
+
+// Version 5 start on 2026-MAR-04
+//
+//   -- Adds bGagJoinLeave as a 4th number on each user line.
+//
+void load_comsystem_V5(FILE* fp)
+{
+    UTF8 temp[LBUF_SIZE];
+
+    num_channels = 0;
+
+    int nc = 0;
+    if (nullptr == fgets(reinterpret_cast<char*>(temp), sizeof(temp), fp))
+    {
+        return;
+    }
+    nc = mux_atol(temp);
+
+    num_channels = nc;
+
+    for (int i = 0; i < nc; i++)
+    {
+        int anum[10];
+
+        auto ch = static_cast<channel*>(MEMALLOC(sizeof(struct channel)));
+        ISOUTOFMEMORY(ch);
+
+        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        if (nChannel > MAX_CHANNEL_LEN)
+        {
+            nChannel = MAX_CHANNEL_LEN;
+        }
+        if (temp[nChannel - 1] == '\n')
+        {
+            // Get rid of trailing '\n'.
+            //
+            nChannel--;
+        }
+        memcpy(ch->name, temp, nChannel);
+        ch->name[nChannel] = '\0';
+
+        size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+        if (nHeader > MAX_HEADER_LEN)
+        {
+            nHeader = MAX_HEADER_LEN;
+        }
+        if (temp[nHeader - 1] == '\n')
+        {
+            nHeader--;
+        }
+        memcpy(ch->header, temp, nHeader);
+        ch->header[nHeader] = '\0';
+
+        ch->on_users = nullptr;
+
+        vector<UTF8> channel_name_vector(ch->name, ch->name+nChannel);
+        mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
+
+        ch->type = 127;
+        ch->temp1 = 0;
+        ch->temp2 = 0;
+        ch->charge = 0;
+        ch->charge_who = NOTHING;
+        ch->amount_col = 0;
+        ch->num_messages = 0;
+        ch->chan_obj = NOTHING;
+
+        mux_assert(ReadListOfNumbers(fp, 8, anum));
+        ch->type = anum[0];
+        ch->temp1 = anum[1];
+        ch->temp2 = anum[2];
+        ch->charge = anum[3];
+        ch->charge_who = anum[4];
+        ch->amount_col = anum[5];
+        ch->num_messages = anum[6];
+        ch->chan_obj = anum[7];
+
+        ch->num_users = 0;
+        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
+        ch->max_users = ch->num_users;
+        if (ch->num_users > 0)
+        {
+            ch->users = static_cast<comuser**>(calloc(ch->max_users, sizeof(struct comuser*)));
+            ISOUTOFMEMORY(ch->users);
+
+            int jAdded = 0;
+            for (int j = 0; j < ch->num_users; j++)
+            {
+                struct comuser t_user = {};
+
+                t_user.who = NOTHING;
+                t_user.bUserIsOn = false;
+                t_user.ComTitleStatus = false;
+
+                mux_assert(ReadListOfNumbers(fp, 4, anum));
+                t_user.who = anum[0];
+                t_user.bUserIsOn = (anum[1] ? true : false);
+                t_user.ComTitleStatus = (anum[2] ? true : false);
+                t_user.bGagJoinLeave = (anum[3] ? true : false);
+
+                // Read Comtitle.
+                //
+                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                const UTF8* pTitle = temp;
+
+                if (!Good_dbref(t_user.who))
+                {
+                    Log.tinyprintf(
+                        T("load_comsystem: dbref %d out of range [0, %d)." ENDLINE), t_user.who, mudstate.db_top);
+                }
+                else if (isGarbage(t_user.who))
+                {
+                    Log.tinyprintf(T("load_comsystem: dbref is GARBAGE." ENDLINE), t_user.who);
+                }
+                else
+                {
+                    // Validate comtitle.
+                    //
+                    if (3 < nTitle && temp[0] == 't' && temp[1] == ':')
+                    {
+                        pTitle = temp + 2;
+                        nTitle -= 2;
+                        if (pTitle[nTitle - 1] == '\n')
+                        {
+                            // Get rid of trailing '\n'.
+                            //
+                            nTitle--;
+                        }
+                        if (nTitle <= 0 || MAX_TITLE_LEN < nTitle)
+                        {
+                            nTitle = 0;
+                            pTitle = temp;
+                        }
+                    }
+                    else
+                    {
+                        nTitle = 0;
+                    }
+
+                    auto* user = static_cast<comuser*>(MEMALLOC(sizeof(struct comuser)));
+                    ISOUTOFMEMORY(user);
+                    memcpy(user, &t_user, sizeof(struct comuser));
+
+                    user->title = StringCloneLen(pTitle, nTitle);
+                    ch->users[jAdded++] = user;
+
+                    if (!(isPlayer(user->who))
+                        && !(Going(user->who)
+                            && (God(Owner(user->who)))))
+                    {
+                        do_joinchannel(user->who, ch);
+                    }
+                    user->on_next = ch->on_users;
+                    ch->on_users = user;
+                }
+            }
+            ch->num_users = jAdded;
+            sort_users(ch);
+        }
+        else
+        {
+            ch->users = nullptr;
+        }
+    }
 }
 
 // Version 4 start on 2007-MAR-17
@@ -1015,6 +1189,31 @@ void load_channels_V0123(FILE* fp)
     }
 }
 
+void load_comsys_V5(FILE* fp)
+{
+    char buffer[200];
+    if (fgets(buffer, sizeof(buffer), fp)
+        && strcmp(buffer, "*** Begin CHANNELS ***\n") == 0)
+    {
+        load_channels_V4(fp);
+    }
+    else
+    {
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin CHANNELS." ENDLINE));
+        return;
+    }
+
+    if (fgets(buffer, sizeof(buffer), fp)
+        && strcmp(buffer, "*** Begin COMSYS ***\n") == 0)
+    {
+        load_comsystem_V5(fp);
+    }
+    else
+    {
+        Log.tinyprintf(T("Error: Couldn\xE2\x80\x99t find Begin COMSYS." ENDLINE));
+    }
+}
+
 void load_comsys_V4(FILE* fp)
 {
     char buffer[200];
@@ -1103,7 +1302,13 @@ void load_comsys(UTF8* filename)
                 //
                 if (fgets(reinterpret_cast<char*>(nbuf1), sizeof(nbuf1), fp))
                 {
-                    if (strncmp(reinterpret_cast<char*>(nbuf1), "+V4", 3) == 0)
+                    if (strncmp(reinterpret_cast<char*>(nbuf1), "+V5", 3) == 0)
+                    {
+                        // Started v5 on 2026-MAR-04.
+                        //
+                        load_comsys_V5(fp);
+                    }
+                    else if (strncmp(reinterpret_cast<char*>(nbuf1), "+V4", 3) == 0)
                     {
                         // Started v4 on 2007-MAR-13.
                         //
@@ -1174,9 +1379,9 @@ void save_comsystem(FILE* fp)
             {
                 user = ch->users[j];
 
-                // Write user state: dbref, on flag, and comtitle status.
+                // Write user state: dbref, on flag, comtitle status, and gag status.
                 //
-                mux_fprintf(fp, T("%d %d %d\n"), user->who, user->bUserIsOn, user->ComTitleStatus);
+                mux_fprintf(fp, T("%d %d %d %d\n"), user->who, user->bUserIsOn, user->ComTitleStatus, user->bGagJoinLeave);
 
                 // Write user title data.
                 //
@@ -1484,7 +1689,8 @@ void SendChannelMessage
     const dbref executor,
     struct channel* ch,
     UTF8* msgNormal,
-    UTF8* msgNoComtitle
+    UTF8* msgNoComtitle,
+    const bool bJoinLeaveMsg
 )
 {
     // Transmit messages.
@@ -1494,6 +1700,10 @@ void SendChannelMessage
 
     for (struct comuser* user = ch->on_users; user; user = user->on_next)
     {
+        if (bJoinLeaveMsg && user->bGagJoinLeave)
+        {
+            continue;
+        }
         if (user->bUserIsOn
             && test_receive_access(user->who, ch))
         {
@@ -1683,7 +1893,7 @@ void do_joinchannel(const dbref player, struct channel* ch)
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
                             ch->chan_obj, T(":has joined this channel."), &messNormal,
                             &messNoComtitle);
-        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
     ChannelMOTD(ch->chan_obj, user->who, attr);
 }
@@ -1703,7 +1913,7 @@ void do_leavechannel(dbref player, struct channel* ch)
             BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
                                 ch->chan_obj, T(":has left this channel."), &messNormal,
                                 &messNoComtitle);
-            SendChannelMessage(player, ch, messNormal, messNoComtitle);
+            SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
         }
         ChannelMOTD(ch->chan_obj, user->who, A_COMOFF);
         user->bUserIsOn = false;
@@ -2264,7 +2474,7 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
                                             ch->header, user, ch->chan_obj,
                                             T(":has left this channel."), &messNormal,
                                             &messNoComtitle);
-                        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+                        SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
                     }
                     raw_notify(player, tprintf(T("You have left channel %s."),
                                                channel));
@@ -2572,6 +2782,16 @@ void do_comtitle
                 raw_notify(executor, tprintf(T("Comtitles are now on for channel %s"), channel));
                 do_setcomtitlestatus(executor, ch, true);
             }
+            else if (key == COMTITLE_GAG)
+            {
+                raw_notify(executor, tprintf(T("Join/leave messages are now gagged for channel %s"), channel));
+                do_setgagjoinleavestatus(executor, ch, true);
+            }
+            else if (key == COMTITLE_UNGAG)
+            {
+                raw_notify(executor, tprintf(T("Join/leave messages are now ungagged for channel %s"), channel));
+                do_setgagjoinleavestatus(executor, ch, false);
+            }
             else
             {
                 UTF8* pValidatedTitleValue = RestrictTitleValue(arg2);
@@ -2635,11 +2855,12 @@ void do_comlist
                 || quick_wild(pattern, c->channels[i]))
             {
                 UTF8* p =
-                    tprintf(T("%-15.15s %-18.18s %s %s %s"),
+                    tprintf(T("%-15.15s %-18.18s %s %s%s %s"),
                             c->alias + i * ALIAS_SIZE,
                             c->channels[i],
                             (user->bUserIsOn ? "on " : "off"),
                             (user->ComTitleStatus ? "con " : "coff"),
+                            (user->bGagJoinLeave ? " gag" : ""),
                             user->title);
                 raw_notify(executor, p);
             }
@@ -2858,7 +3079,7 @@ static void do_comdisconnectraw_notify(const dbref player, UTF8* chan)
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
                             ch->chan_obj, T(":has disconnected."), &messNormal,
                             &messNoComtitle);
-        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
 }
 
@@ -2880,7 +3101,7 @@ static void do_comconnectraw_notify(const dbref player, UTF8* chan)
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
                             ch->chan_obj, T(":has connected."), &messNormal,
                             &messNoComtitle);
-        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
 }
 
