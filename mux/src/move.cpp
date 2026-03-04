@@ -50,7 +50,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
                     && (  Dark(thing)
                        || Dark(loc))
                     && (  !canhear
-                       || (  Wizard(thing)
+                       || (  Can_Dark(thing)
                           && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OLEAVE;
@@ -78,7 +78,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
         if (  (  !Dark(thing)
               && !Dark(loc))
            || (  canhear
-              && !(Wizard(thing) && Dark(thing))))
+              && !(Can_Dark(thing) && Dark(thing))))
         {
 #ifdef REALITY_LVLS
             notify_except2_rlevel(loc, thing, thing, cause,
@@ -124,7 +124,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
                     && (  Dark(thing)
                        || Dark(loc))
                     && (  !canhear
-                       || (  Wizard(thing)
+                       || (  Can_Dark(thing)
                           && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OENTER;
@@ -151,7 +151,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
        && canhear
        && !Blind(thing)
        && !Blind(loc)
-       && !(Dark(thing) && Wizard(thing)))
+       && !(Dark(thing) && Can_Dark(thing)))
     {
 #ifdef REALITY_LVLS
         notify_except2_rlevel(loc, thing, thing, cause,
@@ -340,7 +340,7 @@ static void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int 
     bool canhear = Hearer(thing);
 
     // Dark wizards don't trigger OSUCC/ASUCC
-    bool quiet = (  (Wizard(thing) && Dark(thing))
+    bool quiet = (  (Can_Dark(thing) && Dark(thing))
                  || (hush & HUSH_EXIT));
     int aattr = quiet ? 0 : A_ASUCC;
 
@@ -568,7 +568,7 @@ void move_exit(dbref player, dbref exit, bool divest, const UTF8 *failmsg, int h
     }
     else
     {
-        if ((Wizard(player) && Dark(player)) || (hush & HUSH_EXIT))
+        if ((Can_Dark(player) && Dark(player)) || (hush & HUSH_EXIT))
         {
             oattr = 0;
             aattr = 0;

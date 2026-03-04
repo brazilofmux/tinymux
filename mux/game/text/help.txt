@@ -6366,7 +6366,12 @@ DARK
   show up in the Obvious Exits: list.  Puppets and objects that can
   listen cannot be DARK.
 
-  Related Topics:
+  Players with the 'hide' power can set themselves DARK to hide from
+  the WHO list. Players with the 'dark' power can set themselves DARK
+  to be fully hidden: invisible in room contents, with no arrival or
+  departure messages, just like a dark wizard.
+
+  Related Topics: hide, dark (power)
 
 & DEAD
 DEAD
@@ -11439,6 +11444,7 @@ POWERS LIST
   builder           Can build, if the builder power is enabled.
   chown_anything    Can @chown anything to anyone.
   comm_all          Like a wizard with respect to channels.
+  dark              Full in-room hiding when set DARK (like a wizard).
   control_all       Can modify any object in the database.
   expanded_who      Sees the wizard WHO, and SESSION commands.
   find_unfindable   Can locate unfindable people.
@@ -11446,7 +11452,7 @@ POWERS LIST
   free_quota        Unlimited quota.
   guest             Is this a guest character?
   halt              Can @halt anything, and @halt/all.
-  hide              DARK flag is effective for hiding.
+  hide              DARK flag hides from WHO list only.
   idle              No idle timeout.
   link_anywhere     Can @link an exit to any destination.
   long_fingers      Can get, look, whisper, etc from a distance.

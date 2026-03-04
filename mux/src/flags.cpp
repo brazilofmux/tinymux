@@ -154,7 +154,7 @@ static bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool 
     if (  !reset
        && isPlayer(target)
        && !(  (target == player)
-           && Can_Hide(player))
+           && (Can_Hide(player) || Can_Dark(player)))
        && !Wizard(player))
     {
         return false;

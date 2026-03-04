@@ -75,6 +75,7 @@ static POWERENT gen_powers[] =
     {T("chown_anything"),  POW_CHOWN_ANY,  0, 0,   ph_wiz},
     {T("comm_all"),        POW_COMM_ALL,   0, 0,   ph_wiz},
     {T("control_all"),     POW_CONTROL_ALL,0, 0,   ph_god},
+    {T("dark"),            POW_DARK,       0, 0,   ph_wiz},
     {T("expanded_who"),    POW_WIZARD_WHO, 0, 0,   ph_wiz},
     {T("find_unfindable"), POW_FIND_UNFIND,0, 0,   ph_wiz},
     {T("free_money"),      POW_FREE_MONEY, 0, 0,   ph_wiz},

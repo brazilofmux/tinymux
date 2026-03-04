@@ -283,7 +283,7 @@ UTF8 *MakeCanonicalFlagName
                                ) \
                             )
 #define RealWizard(x)       (Wizard(x))
-#define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \
+#define Dark(x)             (((Flags(x) & DARK) != 0) && (Can_Dark(x) || \
                             !(isPlayer(x) || (Puppet(x) && Has_contents(x)))))
 #define Jump_ok(x)          (((Flags(x) & JUMP_OK) != 0) && Has_contents(x))
 #define Sticky(x)           ((Flags(x) & STICKY) != 0)
