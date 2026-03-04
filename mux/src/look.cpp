@@ -1177,14 +1177,53 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     }
 #endif
 
-    // Get the name and db-number if we can examine it.
-    //
-    int can_see_thing = Examinable(player, thing);
-    if (can_see_thing)
+    if (isPlayer(thing))
     {
-        UTF8 *buff = unparse_object(player, thing, true);
-        notify(player, buff);
-        free_lbuf(buff);
+        // Players use @moniker, not @nameformat.
+        //
+        if (Examinable(player, thing))
+        {
+            UTF8 *buff = unparse_object(player, thing, true);
+            notify(player, buff);
+            free_lbuf(buff);
+        }
+    }
+    else
+    {
+        // Use @nameformat if present on things and exits.
+        //
+        dbref aowner;
+        int aflags;
+        UTF8 *NameFormat = atr_pget(thing, A_NAMEFORMAT, &aowner, &aflags);
+
+        if (*NameFormat)
+        {
+            UTF8 *FormatOutput = alloc_lbuf("look_simple.FO");
+            UTF8 *tPtr = FormatOutput;
+
+            reg_ref **preserve = nullptr;
+            preserve = PushRegisters(MAX_GLOBAL_REGS);
+            save_and_clear_global_regs(preserve);
+
+            mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, thing,
+                player, player,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                0, 0);
+            *tPtr = '\0';
+
+            restore_global_regs(preserve);
+            PopRegisters(preserve, MAX_GLOBAL_REGS);
+            notify(player, FormatOutput);
+
+            free_lbuf(FormatOutput);
+        }
+        else if (Examinable(player, thing))
+        {
+            UTF8 *buff = unparse_object(player, thing, true);
+            notify(player, buff);
+            free_lbuf(buff);
+        }
+        free_lbuf(NameFormat);
     }
     int iDescDefault = A_DESC;
     int iADescDefault = A_ADESC;
