@@ -7,7 +7,7 @@
 -
 &suite.list smoke=
   abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn 
-  and_fn andbool_fn asin_fn atan_fn atan2_fn 
+  and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn 
   band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn 
   cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn 
   choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn

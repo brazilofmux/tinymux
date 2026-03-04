@@ -1,0 +1,83 @@
+#
+# attrib_set_fn.mux - Test Cases for attrib_set().
+#
+@create test_attrib_set_fn
+-
+@set test_attrib_set_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_attrib_set_fn=
+  @log smoke=Beginning attrib_set() test cases.
+-
+#
+# Test Case #1 - Set an attribute, verify with get().
+#
+&tr.tc001 test_attrib_set_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [attrib_set(me/tc001_data,Twenty Pink Pigs)]
+            [get(me/tc001_data)]
+          )
+        ),
+        CD1DA8F1161ECED623ADE356C7A8B5CBC4EDF326
+      )=
+  {
+    @log smoke=TC001: attrib_set set attribute. Succeeded.
+  },
+  {
+    @log smoke=TC001: attrib_set set attribute. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Clear an attribute (one arg), verify empty.
+#
+&tr.tc002 test_attrib_set_fn=
+  @eval attrib_set(me/tc002_data,Something);
+  @if strmatch(
+        setr(0,sha1(
+            [attrib_set(me/tc002_data)]
+            [get(me/tc002_data)]
+          )
+        ),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC002: attrib_set clear attribute. Succeeded.
+  },
+  {
+    @log smoke=TC002: attrib_set clear attribute. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Set with empty value, verify cleared.
+#
+&tr.tc003 test_attrib_set_fn=
+  @eval attrib_set(me/tc003_data,Something);
+  @if strmatch(
+        setr(0,sha1(
+            [attrib_set(me/tc003_data,)]
+            [get(me/tc003_data)]
+          )
+        ),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC003: attrib_set empty value clears. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: attrib_set empty value clears. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_attrib_set_fn=
+  @log smoke=End attrib_set() test cases.;
+  @notify smoke
+-
+drop test_attrib_set_fn
+-
+#
+# End of Test Cases
+#

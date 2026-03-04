@@ -4744,6 +4744,27 @@ ATTRCNT()
 
   Related Topics: lattr()
 
+& ATTRIB_SET()
+ATTRIB_SET()
+
+  FUNCTION: attrib_set(<object>/<attribute>[, <value>])
+
+  Sets or clears an attribute on <object>.  This is a PennMUSH-compatible
+  alternative to set(<object>, <attribute>:<value>).
+
+  If <value> is given, the attribute is set to that value.  If <value> is
+  omitted or empty, the attribute is cleared.  Returns nothing.
+
+  Examples:
+
+  > think [attrib_set(me/foo,Twenty Pink Pigs)]
+  > think [get(me/foo)]
+  Twenty Pink Pigs
+  > think [attrib_set(me/foo)]
+  > think [get(me/foo)]
+
+  Related Topics: SET(), @set
+
 & ATTRIB2
 ATTRIBUTE OWNERSHIP (continued)
 

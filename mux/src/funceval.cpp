@@ -941,6 +941,67 @@ FUNCTION(fun_set)
     flag_set(thing, executor, fargs[1], 0);
 }
 
+FUNCTION(fun_attrib_set)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@set"), buff, bufc))
+    {
+        return;
+    }
+
+    // Parse <object>/<attr> from first argument.
+    //
+    const UTF8 *pAttrName;
+    dbref thing;
+    if (!parse_thing_slash(executor, fargs[0], &pAttrName, &thing))
+    {
+        safe_str(T("#-1 BAD ARGUMENT FORMAT TO ATTRIB_SET"), buff, bufc);
+        return;
+    }
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+
+    // Create or find the attribute.
+    //
+    int atr = mkattr(executor, pAttrName);
+    if (atr <= 0)
+    {
+        safe_str(T("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
+        return;
+    }
+    ATTR *pattr = atr_num(atr);
+    if (!pattr)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+    if (!bCanSetAttr(executor, thing, pattr))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    // If two args, set the attribute; if one arg, clear it.
+    //
+    if (nfargs >= 2)
+    {
+        set_attr_internal(executor, thing, atr, fargs[1], 0, buff, bufc);
+    }
+    else
+    {
+        UTF8 empty[] = { '\0' };
+        set_attr_internal(executor, thing, atr, empty, 0, buff, bufc);
+    }
+}
+
 // Generate a substitution array.
 //
 static size_t GenCode(UTF8 *pCode, size_t nCode, const UTF8 *pCodeASCII)

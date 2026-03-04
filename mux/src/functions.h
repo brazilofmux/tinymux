@@ -219,6 +219,7 @@ XFUNCTION(fun_pemit);
 XFUNCTION(fun_remit);
 XFUNCTION(fun_cemit);
 XFUNCTION(fun_set);
+XFUNCTION(fun_attrib_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
 XFUNCTION(fun_trigger);
