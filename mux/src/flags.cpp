@@ -396,6 +396,7 @@ static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
 static FLAGBITENT fbeAlone          = { ALONE,        ' ',    FLAG_WORD3, 0,                    fh_wiz};
+static FLAGBITENT fbeNoExamine      = { NOEXAMINE,    'E',    FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
@@ -481,7 +482,9 @@ FLAGNAMEENT gen_flag_names[] =
     {T("MONITOR"),         true, &fbeMonitor        },
     {T("MYOPIC"),          true, &fbeMyopic         },
     {T("NO_COMMAND"),      true, &fbeNoCommand      },
+    {T("NO_EXAMINE"),      true, &fbeNoExamine      },
     {T("NOBLEED"),         true, &fbeNoBleed        },
+    {T("NOEXAMINE"),       true, &fbeNoExamine      },
     {T("NOSPOOF"),         true, &fbeNoSpoof        },
     {T("OPAQUE"),          true, &fbeOpaque         },
     {T("OPEN_OK"),         true, &fbeOpenOk         },

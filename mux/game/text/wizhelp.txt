@@ -39,6 +39,23 @@ ALONE
   suppresses all inter-player notification propagation.
 
   Related Topics: BLIND, AUDITORIUM, @set.
+& NOEXAMINE
+NOEXAMINE
+
+  FLAG: NOEXAMINE(E)  ()
+
+  When set on an object, it prevents anyone from examining or
+  @decompiling the object, regardless of ownership, zone control,
+  or the VISUAL flag.  All switches of examine are blocked.
+
+  Wizards and Royalty are immune to this flag and can still examine
+  the object normally.
+
+  This flag is aliased to NO_EXAMINE for compatibility.
+
+  Setting: @set <object>=NOEXAMINE  (wizard/royalty only)
+
+  Related Topics: VISUAL, examine, @decompile, @set.
 
 & @ADDCOMMAND
 @ADDCOMMAND

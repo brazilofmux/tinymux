@@ -1700,6 +1700,12 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         olist_push();
         if (parse_attrib_wild(executor, name, &thing, do_parent, true, false))
         {
+            if (NoExamine(thing) && !WizRoy(executor))
+            {
+                notify_quiet(executor, NOPERM_MESSAGE);
+                olist_pop();
+                return;
+            }
             exam_wildattrs(executor, thing, do_parent);
             olist_pop();
             return;
@@ -1715,6 +1721,12 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         {
             return;
         }
+    }
+
+    if (NoExamine(thing) && !WizRoy(executor))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
     }
 
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
@@ -2550,6 +2562,13 @@ void do_decomp
     //
     if (NOTHING == thing)
     {
+        olist_pop();
+        return;
+    }
+
+    if (NoExamine(thing) && !WizRoy(executor))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
         olist_pop();
         return;
     }

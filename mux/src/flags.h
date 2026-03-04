@@ -106,6 +106,7 @@ constexpr unsigned int SITEMON      = 0x00000400;      // Sitemonitor Flag
 constexpr unsigned int CMDCHECK     = 0x00000800;      // Has @icmd set
 constexpr unsigned int MUX_UNICODE  = 0x00001000;      // UTF-8 override flag
 constexpr unsigned int ALONE        = 0x00002000;      // Suppress inter-player notifications in room
+constexpr unsigned int NOEXAMINE    = 0x00004000;      // Blocks examine and @decompile.
 constexpr unsigned int MARK_0       = 0x00400000;      // User-defined flags.
 constexpr unsigned int MARK_1       = 0x00800000;
 constexpr unsigned int MARK_2       = 0x01000000;
@@ -339,6 +340,7 @@ UTF8 *MakeCanonicalFlagName
 #define c_Connected(x)      s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
 #define SiteMon(x)          ((Flags3(x) & SITEMON) != 0)
 #define Alone(x)            ((Flags3(x) & ALONE) != 0)
+#define NoExamine(x)        ((Flags3(x) & NOEXAMINE) != 0)
 #define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)
