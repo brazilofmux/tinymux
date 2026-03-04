@@ -942,7 +942,8 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         notify(executor, T("I couldn\xE2\x80\x99t find that player."));
     }
-    else if (!Controls(executor, target))
+    else if (!(  WizRoy(executor)
+              || Controls(executor, target)))
     {
         notify(executor, NOPERM_MESSAGE);
     }

@@ -2068,7 +2068,8 @@ Related Topics: @name.
   This command displays a short 'connection history' for <player>, showing
   recent successful and failed connection attempts, as well as the total
   number of successful and failed connections.
-  You can only display information about yourself.
+  You can display information about yourself, or about any player you
+  control. Wizard and Royalty players may view any player's history.
 
 & @LEAVE
 @LEAVE
