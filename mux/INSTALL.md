@@ -9,6 +9,34 @@ file. Please skip to _Instructions for Existing Games_ for how to
 upgrade your server or to compile in preparation for moving an existing
 game.
 
+# Prerequisites:
+
+TinyMUX requires a C++17 compiler and the following development
+libraries. Install them before running `./configure`.
+
+**Debian / Ubuntu:**
+```
+sudo apt install build-essential libssl-dev libpcre2-dev pkg-config
+```
+
+**Fedora / RHEL / Rocky:**
+```
+sudo dnf install gcc-c++ openssl-devel pcre2-devel pkgconf-pkg-config make
+```
+
+**FreeBSD:**
+```
+pkg install gmake pcre2 openssl pkgconf
+```
+
+**macOS (Homebrew):**
+```
+brew install openssl pcre2 pkg-config
+```
+
+If `./configure` fails, the error message will usually indicate which
+library or tool is missing.
+
 # Instructions for New Installations:
 
 1. `cd src/` to the source directory. Run `./configure`.
@@ -36,7 +64,7 @@ game.
     directory. This step is required. After installation, the `dbconvert`
     command will be a symlink to `netmux`.
 
-5. When starting from a TinyMUX from scratch, do the following:
+4. When starting from a TinyMUX from scratch, do the following:
 
       - cd to the game directory. `cd ../game`
       - Make your configuration file, as described in `docs/CONFIGURATION`
@@ -45,12 +73,12 @@ game.
       - Log into the game as player wizard `connect wizard potrzebie` and
         shut it down again.
 
-6. Edit the .txt files in `game/text` to your liking. In particular,
+5. Edit the .txt files in `game/text` to your liking. In particular,
     `connect.txt` and `motd.txt`.
 
-7. Start TinyMUX 2.13 by running `./Startmux` again.
+6. Start TinyMUX 2.13 by running `./Startmux` again.
 
-8. `@ccreate` a channel named `Public`, and a channel named `Guests`
+7. `@ccreate` a channel named `Public`, and a channel named `Guests`
     from within the TinyMUX. Created players will automatically be
     joined to `Public` with alias `pub`, guests will automatically join
     `Guests` with alias `g`.
@@ -110,7 +138,7 @@ upgrade.
 3. Run `make install` to create the necessary symlinks in the `game/bin`
     directory. This step is required.
 
-5. Place/change your files.
+4. Place/change your files.
 
     - Put databases in `game/data`.
 
@@ -126,5 +154,5 @@ upgrade.
       accordingly, BEFORE you restart the game, or else ALL `@mail` older
       than the default value of 14 days will be deleted.
 
-6. Start TinyMUX 2.13 by running `./Startmux`.
+5. Start TinyMUX 2.13 by running `./Startmux`.
 
