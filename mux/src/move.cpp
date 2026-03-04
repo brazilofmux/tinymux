@@ -54,7 +54,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
                           && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OLEAVE;
-    int aattr = quiet ? 0 : A_ALEAVE;
+    int aattr = A_ALEAVE;
     int pattr = (quiet || (!mudconf.terse_movemsg && Terse(thing))) ? 0 : A_LEAVE;
     did_it(thing, loc, pattr, nullptr, oattr, nullptr, aattr, 0, nullptr, 0);
 
@@ -128,7 +128,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
                           && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OENTER;
-    int aattr = quiet ? 0 : A_AENTER;
+    int aattr = A_AENTER;
     int pattr = (quiet || (!mudconf.terse_movemsg && Terse(thing))) ? 0 : A_ENTER;
 
     did_it(thing, loc, pattr, nullptr, oattr, nullptr, aattr, 0, nullptr, 0);
