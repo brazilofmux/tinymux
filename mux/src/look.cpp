@@ -874,8 +874,24 @@ static void look_atrs1
     bool bFoundCommands = false;
     bool bFoundListens  = false;
 
+    // Collect attribute numbers, then sort by name for alphabetical output.
+    //
     unsigned char *as;
+    std::vector<int> atrs;
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
+        atrs.push_back(ca);
+    }
+    std::sort(atrs.begin(), atrs.end(), [](int a, int b)
+    {
+        ATTR *pa = atr_num(a);
+        ATTR *pb = atr_num(b);
+        if (!pa) return false;
+        if (!pb) return true;
+        return mux_stricmp(pa->name, pb->name) < 0;
+    });
+
+    for (int ca : atrs)
     {
         if (  ca == A_DESC
            || ca == A_LOCK)
@@ -2694,14 +2710,36 @@ void do_decomp
     free_boolexp(pBoolExp);
     pBoolExp = nullptr;
 
-    // Report attributes.
+    // Report attributes.  Collect and sort by name for alphabetical output.
     //
     int ca;
     unsigned char *as;
+    std::vector<int> decomp_atrs;
+    if (fWildDecomp)
+    {
+        for (ca = olist_first(); NOTHING != ca; ca = olist_next())
+        {
+            decomp_atrs.push_back(ca);
+        }
+    }
+    else
+    {
+        for (ca = atr_head(thing, &as); 0 != ca; ca = atr_next(&as))
+        {
+            decomp_atrs.push_back(ca);
+        }
+    }
+    std::sort(decomp_atrs.begin(), decomp_atrs.end(), [](int a, int b)
+    {
+        ATTR *pa = atr_num(a);
+        ATTR *pb = atr_num(b);
+        if (!pa) return false;
+        if (!pb) return true;
+        return mux_stricmp(pa->name, pb->name) < 0;
+    });
+
     UTF8 *buff = alloc_mbuf("do_decomp.attr_name");
-    for (  ca = (fWildDecomp ? olist_first() : atr_head(thing, &as));
-           fWildDecomp ? (NOTHING != ca) : (0 != ca);
-           ca = (fWildDecomp ? olist_next() : atr_next(&as)))
+    for (int ca : decomp_atrs)
     {
         ATTR *pattr = atr_num(ca);
         if (!pattr)
