@@ -2132,6 +2132,11 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
         return false;
     }
 
+    if (NoModify(target) && !WizRoy(executor))
+    {
+        return false;
+    }
+
     int mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST;
     if (!God(executor))
     {
@@ -2185,6 +2190,11 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
 {
     if (!tattr)
+    {
+        return false;
+    }
+
+    if (NoModify(target) && !WizRoy(executor))
     {
         return false;
     }

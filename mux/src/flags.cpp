@@ -397,6 +397,7 @@ static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
 static FLAGBITENT fbeAlone          = { ALONE,        ' ',    FLAG_WORD3, 0,                    fh_wiz};
 static FLAGBITENT fbeNoExamine      = { NOEXAMINE,    'E',    FLAG_WORD3, 0,                    fh_wizroy};
+static FLAGBITENT fbeNoModify       = { NOMODIFY,     ' ',    FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
@@ -485,6 +486,8 @@ FLAGNAMEENT gen_flag_names[] =
     {T("NO_EXAMINE"),      true, &fbeNoExamine      },
     {T("NOBLEED"),         true, &fbeNoBleed        },
     {T("NOEXAMINE"),       true, &fbeNoExamine      },
+    {T("NOMODIFY"),        true, &fbeNoModify       },
+    {T("NO_MODIFY"),       true, &fbeNoModify       },
     {T("NOSPOOF"),         true, &fbeNoSpoof        },
     {T("OPAQUE"),          true, &fbeOpaque         },
     {T("OPEN_OK"),         true, &fbeOpenOk         },
@@ -729,8 +732,16 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
                 bool bCurrentlySet = (db[target].fs.word[fbe->flagflag] & fbe->flagvalue) != 0;
                 if (bNegate == bCurrentlySet)
                 {
-                    // State needs to change. Invoke the flag handler,
-                    // and print feedback.
+                    // State needs to change. Check NOMODIFY first.
+                    //
+                    if (NoModify(target) && !WizRoy(player))
+                    {
+                        notify(player, NOPERM_MESSAGE);
+                        bDone = true;
+                        continue;
+                    }
+
+                    // Invoke the flag handler, and print feedback.
                     //
                     if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, bNegate))
                     {

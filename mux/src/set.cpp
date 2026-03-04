@@ -38,6 +38,14 @@ dbref match_controlled_handler(dbref executor, const UTF8 *name, bool bQuiet)
 
     if (Controls(executor, mat))
     {
+        if (NoModify(mat) && !WizRoy(executor))
+        {
+            if (!bQuiet)
+            {
+                notify_quiet(executor, NOPERM_MESSAGE);
+            }
+            return NOTHING;
+        }
         return mat;
     }
     if (!bQuiet)
@@ -111,6 +119,12 @@ void do_chzone
        && db[executor].owner != db[thing].owner)
     {
         notify(executor, T("You don\xE2\x80\x99t have the power to shift reality."));
+        return;
+    }
+
+    if (NoModify(thing) && !WizRoy(executor))
+    {
+        notify(executor, NOPERM_MESSAGE);
         return;
     }
 
@@ -538,6 +552,11 @@ void do_lock
             notify_quiet(executor, T("You can\xE2\x80\x99t lock that!"));
             return;
         }
+        if (NoModify(thing) && !WizRoy(executor))
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            return;
+        }
     }
 
     static UTF8 pRestrictedKeyText[LBUF_SIZE];
@@ -664,6 +683,10 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     default:
 
         if (!Controls(executor, exit))
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+        }
+        else if (NoModify(exit) && !WizRoy(executor))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
         }
@@ -966,6 +989,12 @@ void do_chown
         return;
     }
     nOwnerOrig = Owner(thing);
+
+    if (NoModify(thing) && !WizRoy(executor))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
+    }
 
     if (!*newown || !(string_compare(newown, T("me"))))
     {

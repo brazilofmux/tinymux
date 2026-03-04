@@ -203,6 +203,12 @@ static void link_exit(const dbref player, const dbref exit, const dbref dest)
         return;
     }
 
+    if (NoModify(exit) && !WizRoy(player))
+    {
+        notify_quiet(player, NOPERM_MESSAGE);
+        return;
+    }
+
     // Handle costs
     //
     int cost = mudconf.linkcost;
@@ -300,6 +306,11 @@ void do_link
             notify_quiet(executor, NOPERM_MESSAGE);
             break;
         }
+        if (NoModify(thing) && !WizRoy(executor))
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            break;
+        }
         init_match(executor, where, NOTYPE);
         match_everything(MAT_NO_EXITS);
         room = noisy_match_result();
@@ -350,6 +361,11 @@ void do_link
         // Set dropto.
         //
         if (!Controls(executor, thing))
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            break;
+        }
+        if (NoModify(thing) && !WizRoy(executor))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             break;
@@ -454,6 +470,12 @@ void do_parent
     //
     if (  Going(thing)
        || !Controls(executor, thing))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
+    }
+
+    if (NoModify(thing) && !WizRoy(executor))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         return;

@@ -57,6 +57,25 @@ NOEXAMINE
 
   Related Topics: VISUAL, examine, @decompile, @set.
 
+& NOMODIFY
+NOMODIFY
+
+  FLAG: NOMODIFY  ()
+
+  When set on an object, it prevents any modification to that object,
+  including attribute changes, flag changes, name changes, ownership
+  transfers, zone changes, lock changes, link changes, and parent
+  changes.  Even the owner cannot modify the object.
+
+  Wizards and Royalty are immune to this flag and can still modify
+  the object normally.
+
+  This flag is aliased to NO_MODIFY for compatibility.
+
+  Setting: @set <object>=NOMODIFY  (wizard/royalty only)
+
+  Related Topics: NOEXAMINE, SAFE, @set.
+
 & @ADDCOMMAND
 @ADDCOMMAND
 
