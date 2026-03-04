@@ -1,0 +1,96 @@
+#
+# parenmatch_fn.mux - Test Cases for parenmatch().
+#
+@create test_parenmatch_fn
+-
+@set test_parenmatch_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_parenmatch_fn=
+  @log smoke=Beginning parenmatch() test cases.
+-
+#
+# Test Case #1 - stripansi preserves text through coloring.
+#
+&tr.tc001 test_parenmatch_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [stripansi(parenmatch(add(1,2)))]
+          )
+        ),
+        D5A8828BA17D151A6DF39383DF446C0CC28F8DBC
+      )=
+  {
+    @log smoke=TC001: parenmatch stripansi. Succeeded.
+  },
+  {
+    @log smoke=TC001: parenmatch stripansi. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Colored output for matched nested brackets.
+#
+&tr.tc002 test_parenmatch_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [parenmatch(add(mul(1,2),3))]
+          )
+        ),
+        9A6DC4AA576D20EE70DE44E50D75A29B44931E31
+      )=
+  {
+    @log smoke=TC002: parenmatch nested. Succeeded.
+  },
+  {
+    @log smoke=TC002: parenmatch nested. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Mixed bracket types.
+#
+&tr.tc003 test_parenmatch_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [parenmatch([get(obj/attr)])]
+          )
+        ),
+        11EC92F3724ADE71BC32634C1271CC961FA9EE69
+      )=
+  {
+    @log smoke=TC003: parenmatch mixed brackets. Succeeded.
+  },
+  {
+    @log smoke=TC003: parenmatch mixed brackets. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Mismatched brackets (missing closer).
+#
+&tr.tc004 test_parenmatch_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [parenmatch(add(1,2)]
+          )
+        ),
+        2636BDF1F05E40F3715ED671C9BBCB1577C16ABC
+      )=
+  {
+    @log smoke=TC004: parenmatch mismatched. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: parenmatch mismatched. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_parenmatch_fn=
+  @log smoke=End parenmatch() test cases.;
+  @notify smoke
+-
+drop test_parenmatch_fn
+-
+#
+# End of Test Cases
+#

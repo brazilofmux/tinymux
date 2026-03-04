@@ -2257,6 +2257,166 @@ static FUNCTION(fun_parent)
 
 /*
  * ---------------------------------------------------------------------------
+ * * fun_parenmatch: Highlights brackets by nesting depth using ANSI colors.
+ * * Mismatched brackets are shown in red.
+ */
+
+static FUNCTION(fun_parenmatch)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *pInput = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(pInput));
+
+    // Depth color cycle (6 colors).
+    //
+    static const char *depthColors[] =
+    {
+        COLOR_FG_GREEN,
+        COLOR_FG_YELLOW,
+        COLOR_FG_BLUE,
+        COLOR_FG_MAGENTA,
+        COLOR_FG_CYAN,
+        COLOR_FG_WHITE
+    };
+    static const int nColors = 6;
+
+    // Bracket type definitions.
+    //
+    static const UTF8 openers[] = { '(', '[', '{' };
+    static const UTF8 closers[] = { ')', ']', '}' };
+    static const int nBracketTypes = 3;
+
+    // Pass 1: Identify mismatched brackets.
+    //
+    bool *bMismatch = new bool[nLen];
+    memset(bMismatch, 0, nLen * sizeof(bool));
+
+    for (int bt = 0; bt < nBracketTypes; bt++)
+    {
+        UTF8 chOpen = openers[bt];
+        UTF8 chClose = closers[bt];
+
+        // Forward scan: detect excess closers.
+        //
+        int depth = 0;
+        for (size_t i = 0; i < nLen; i++)
+        {
+            if (pInput[i] == chOpen)
+            {
+                depth++;
+            }
+            else if (pInput[i] == chClose)
+            {
+                if (depth > 0)
+                {
+                    depth--;
+                }
+                else
+                {
+                    bMismatch[i] = true;
+                }
+            }
+        }
+
+        // Backward scan: detect excess openers.
+        //
+        depth = 0;
+        for (size_t i = nLen; i > 0; i--)
+        {
+            size_t idx = i - 1;
+            if (pInput[idx] == chClose)
+            {
+                depth++;
+            }
+            else if (pInput[idx] == chOpen)
+            {
+                if (depth > 0)
+                {
+                    depth--;
+                }
+                else
+                {
+                    bMismatch[idx] = true;
+                }
+            }
+        }
+    }
+
+    // Pass 2: Output with colors.
+    //
+    int depths[3] = { 0, 0, 0 };
+
+    for (size_t i = 0; i < nLen; i++)
+    {
+        UTF8 ch = pInput[i];
+
+        // Check if this is a bracket character.
+        //
+        int bt;
+        bool bOpener = false;
+        bool bCloser = false;
+        for (bt = 0; bt < nBracketTypes; bt++)
+        {
+            if (ch == openers[bt])
+            {
+                bOpener = true;
+                break;
+            }
+            else if (ch == closers[bt])
+            {
+                bCloser = true;
+                break;
+            }
+        }
+
+        if (bOpener || bCloser)
+        {
+            if (bMismatch[i])
+            {
+                safe_str(reinterpret_cast<const UTF8 *>(COLOR_FG_RED), buff, bufc);
+                safe_chr(ch, buff, bufc);
+                safe_str(reinterpret_cast<const UTF8 *>(COLOR_RESET), buff, bufc);
+            }
+            else if (bOpener)
+            {
+                int d = depths[bt];
+                safe_str(reinterpret_cast<const UTF8 *>(depthColors[d % nColors]), buff, bufc);
+                safe_chr(ch, buff, bufc);
+                safe_str(reinterpret_cast<const UTF8 *>(COLOR_RESET), buff, bufc);
+                depths[bt]++;
+            }
+            else // bCloser
+            {
+                depths[bt]--;
+                if (depths[bt] < 0)
+                {
+                    depths[bt] = 0;
+                }
+                int d = depths[bt];
+                safe_str(reinterpret_cast<const UTF8 *>(depthColors[d % nColors]), buff, bufc);
+                safe_chr(ch, buff, bufc);
+                safe_str(reinterpret_cast<const UTF8 *>(COLOR_RESET), buff, bufc);
+            }
+        }
+        else
+        {
+            safe_chr(ch, buff, bufc);
+        }
+    }
+
+    delete[] bMismatch;
+}
+
+/*
+ * ---------------------------------------------------------------------------
  * * fun_mid: mid(foobar,2,3) returns oba
  */
 
@@ -11259,6 +11419,7 @@ static FUN builtin_function_list[] =
     {T("OWNER"),       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("PACK"),        fun_pack,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("PARENT"),      fun_parent,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("PARENMATCH"), fun_parenmatch,       1, 1,       1, FN_NOEVAL, CA_PUBLIC},
 #ifdef DEPRECATED
     {T("PEEK"),        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
 #endif // DEPRECATED

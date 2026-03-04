@@ -11180,6 +11180,29 @@ PARENT_OK
 
   Related Topics: @lock/parent.
 
+& PARENMATCH()
+PARENMATCH()
+
+  COMMAND: parenmatch(<string>)
+
+  Highlights brackets in <string> by nesting depth using ANSI colors, making
+  it easier to debug complex softcode with nested function calls. The argument
+  is not evaluated, so brackets are preserved exactly as written.
+
+  Matching brackets at the same nesting depth share the same color. The color
+  cycle uses green, yellow, blue, magenta, cyan, and white, repeating for
+  deeper nesting levels. Mismatched brackets (unbalanced openers or closers)
+  are shown in red.
+
+  All three bracket types are supported: parentheses (), square brackets [],
+  and curly braces {}.
+
+  Example:
+    > think parenmatch(add(mul(1,2),3))
+    Displays 'add(mul(1,2),3)' with each bracket pair colored by depth.
+
+  Related Topics: ansi(), stripansi().
+
 & PEERING
 PEERING
 
