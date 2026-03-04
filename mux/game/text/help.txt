@@ -9805,6 +9805,11 @@ MAIL-REVIEWING
   @mail/retract <player>=<msglist>
         Retracts (deletes) unread messages you have sent to <player>.
 
+  Note: If a player is destroyed and their dbref is recycled to a new
+  player, the new player cannot review or retract mail sent by the
+  previous occupant. Likewise, replying to mail whose sender's dbref
+  has been recycled is not permitted.
+
 & MAIL-SENDING
 MAIL-SENDING
 

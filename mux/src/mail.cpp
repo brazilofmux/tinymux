@@ -1595,6 +1595,30 @@ static UTF8 *status_chars(struct mail *mp)
     return res;
 }
 
+// Returns true if mp was sent by the current incarnation of player.
+// Guards against recycled dbref: if the mail predates the player's
+// creation, a previous player held this dbref.
+//
+static bool mail_from_player(dbref player, struct mail *mp)
+{
+    if (mp->from != player)
+    {
+        return false;
+    }
+    const UTF8 *pCreated = atr_get_raw(player, A_CREATED);
+    if (nullptr == pCreated)
+    {
+        return false;
+    }
+    CLinearTimeAbsolute ltaCreated, ltaMail;
+    if (  ltaCreated.SetString(pCreated)
+       && ltaMail.SetString(mp->time))
+    {
+        return ltaCreated <= ltaMail;
+    }
+    return false;
+}
+
 static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 {
     dbref target = lookup_player(player, name, true);
@@ -1618,7 +1642,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
         MailList ml(target);
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
-            if (mp->from == player)
+            if (mail_from_player(player, mp))
             {
                 i++;
 
@@ -1644,7 +1668,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
         MailList ml(target);
         for (mp = ml.FirstItem(); !ml.IsEnd() && !alarm_clock.alarmed; mp = ml.NextItem())
         {
-            if (mp->from == player)
+            if (mail_from_player(player, mp))
             {
                 i++;
                 if (mail_match(mp, ms, i))
@@ -2065,6 +2089,11 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     if (!mp)
     {
         raw_notify(player, T("MAIL: You can\xE2\x80\x99t reply to non-existent messages."));
+        return;
+    }
+    if (!mail_from_player(mp->from, mp))
+    {
+        raw_notify(player, T("MAIL: The original sender no longer exists."));
         return;
     }
     UTF8 *tolist = alloc_lbuf("do_mail_reply.tolist");
@@ -4777,7 +4806,7 @@ static void do_mail_retract1(dbref player, UTF8 *name, UTF8 *msglist)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (mp->from == player)
+        if (mail_from_player(player, mp))
         {
             i++;
             if (mail_match(mp, ms, i))
