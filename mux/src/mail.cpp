@@ -1678,8 +1678,124 @@ static bool mail_from_player(dbref player, struct mail *mp)
     return false;
 }
 
+static void do_mail_review_all(dbref player, UTF8 *msglist)
+{
+    struct mail *mp;
+    struct mail_selector ms;
+    int i = 0, j = 0;
+    UTF8 szSubjectBuffer[MBUF_SIZE];
+    UTF8 szFromName[MBUF_SIZE];
+
+    if (  !msglist
+       || !*msglist)
+    {
+        // Summary mode: list all sent messages grouped by recipient.
+        //
+        for (auto &kv : mudstate.mail_htab)
+        {
+            dbref target = kv.first;
+            bool bHeader = false;
+
+            MailList ml(target);
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+            {
+                if (mail_from_player(player, mp))
+                {
+                    i++;
+
+                    if (!bHeader)
+                    {
+                        trimmed_name(target, szFromName, 25, 25, 0);
+                        raw_notify(player, tprintf(T(MAIL_LINE), szFromName));
+                        bHeader = true;
+                    }
+
+                    trimmed_name(mp->from, szFromName, 16, 16, 0);
+
+                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
+                    size_t nSize = MessageFetchSize(mp->number);
+                    raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
+                                   status_chars(mp),
+                                   i, nSize,
+                                   szFromName,
+                                   szSubjectBuffer));
+                }
+            }
+        }
+
+        if (0 == i)
+        {
+            raw_notify(player, T("MAIL: You have no matching messages."));
+        }
+        else
+        {
+            raw_notify(player, DASH_LINE);
+        }
+    }
+    else
+    {
+        // Detail mode: show full messages matching msglist.
+        //
+        if (!parse_msglist(msglist, &ms, player))
+        {
+            return;
+        }
+
+        for (auto &kv : mudstate.mail_htab)
+        {
+            dbref target = kv.first;
+
+            MailList ml(target);
+            for (mp = ml.FirstItem(); !ml.IsEnd() && !alarm_clock.alarmed; mp = ml.NextItem())
+            {
+                if (mail_from_player(player, mp))
+                {
+                    i++;
+                    if (mail_match(mp, ms, i))
+                    {
+                        j++;
+                        UTF8 *status = status_string(mp);
+                        const UTF8 *str = MessageFetch(mp->number);
+
+                        trimmed_name(mp->from, szFromName, 16, 16, 0);
+
+                        StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+
+                        raw_notify(player, DASH_LINE);
+                        raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s"),
+                                       i, szFromName,
+                                       mp->time,
+                                       (Connected(mp->from) &&
+                                       (!Hidden(mp->from) || See_Hidden(player))) ?
+                                       " (Conn)" : "      ", 0,
+                                       status, szSubjectBuffer));
+                        free_lbuf(status);
+                        raw_notify(player, DASH_LINE);
+                        raw_notify(player, str);
+                        raw_notify(player, DASH_LINE);
+                    }
+                }
+            }
+        }
+
+        if (!j)
+        {
+            raw_notify(player,
+                    T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+        }
+    }
+}
+
 static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 {
+    if (  name
+       && '\0' != name[0]
+       && 0 == mux_stricmp(name, T("all")))
+    {
+        do_mail_review_all(player, msglist);
+        return;
+    }
+
     dbref target = lookup_player(player, name, true);
     if (target == NOTHING)
     {

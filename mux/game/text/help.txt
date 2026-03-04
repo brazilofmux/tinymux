@@ -9806,6 +9806,12 @@ MAIL-REVIEWING
   @mail/review <player>=<msglist>
         Reads the messages you have sent to <player>.
 
+  @mail/review all
+        Reviews all messages you have sent to all players.
+
+  @mail/review all=<msglist>
+        Reads specific messages from all mail you have sent.
+
   @mail/retract <player>=<msglist>
         Retracts (deletes) unread messages you have sent to <player>.
 
