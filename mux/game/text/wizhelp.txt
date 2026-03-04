@@ -3084,6 +3084,14 @@ HOOK SETUP
          I_<command> - ignore            P_<command> - permit
          A_<command> - after             B_<command> - before
 
+  7)  Single-character commands map to the following attribute names:
+         "         -> say       (e.g., I_SAY)
+         : or ;    -> pose      (e.g., I_POSE)
+         \         -> @emit     (e.g., I_@EMIT)
+         #         -> @force    (e.g., I_@FORCE)
+         &         -> @set      (e.g., I_@SET)
+         - or ~    -> @mail     (e.g., I_@MAIL)
+
 { see 'wizhelp hook setup2' for examples }
 
 & HOOK SETUP2

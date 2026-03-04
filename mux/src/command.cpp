@@ -660,7 +660,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("@eval"),         nullptr,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_eval},
     {T("@find"),         nullptr,    CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_find},
     {T("@halt"),         halt_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_halt},
-    {T("@hook"),         hook_sw,    CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_hook},
+    {T("@hook"),         hook_sw,    CA_GOD,                     0,  CS_ONE_ARG|CS_NOINTERP, 0, do_hook},
     {T("@kick"),         nullptr,    CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, 0, do_queue},
     {T("@last"),         nullptr,    CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_last},
     {T("@list"),         nullptr,    CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list},
