@@ -55,7 +55,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
 
     int oattr = quiet ? 0 : A_OLEAVE;
     int aattr = quiet ? 0 : A_ALEAVE;
-    int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_LEAVE;
+    int pattr = (quiet || (!mudconf.terse_movemsg && Terse(thing))) ? 0 : A_LEAVE;
     did_it(thing, loc, pattr, nullptr, oattr, nullptr, aattr, 0, nullptr, 0);
 
     // Do OXENTER for receiving room
@@ -129,7 +129,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
 
     int oattr = quiet ? 0 : A_OENTER;
     int aattr = quiet ? 0 : A_AENTER;
-    int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_ENTER;
+    int pattr = (quiet || (!mudconf.terse_movemsg && Terse(thing))) ? 0 : A_ENTER;
 
     did_it(thing, loc, pattr, nullptr, oattr, nullptr, aattr, 0, nullptr, 0);
 
