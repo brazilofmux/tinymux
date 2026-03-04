@@ -13013,6 +13013,7 @@ STRMEM()
   Related Topics: strlen().
 
 & STRTRUNC()
+& LEFT()
 STRTRUNC()
 
   FUNCTION: strtrunc(<string>,<number>)
@@ -13021,7 +13022,9 @@ STRTRUNC()
   <number> is greater than the length of <string>, it just returns <string>.
   Much more efficient than the equivalent mid().
 
-  Related Topics: mid(), ljust().
+  left() is an alias for strtrunc().
+
+  Related Topics: mid(), ljust(), right().
 
 & SUB()
 SUB()
