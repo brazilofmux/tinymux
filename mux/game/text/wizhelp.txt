@@ -76,6 +76,21 @@ NOMODIFY
 
   Related Topics: NOEXAMINE, SAFE, @set.
 
+& INDESTRUCTIBLE
+INDESTRUCTIBLE
+
+  FLAG: INDESTRUCTIBLE  ()
+
+  When set on an object, it prevents the object from being destroyed
+  by any means, by anyone, including Wizards.  The flag must be
+  removed before the object can be destroyed.
+
+  Only Wizards and Royalty can set or clear this flag.
+
+  Setting: @set <object>=INDESTRUCTIBLE  (wizard/royalty only)
+
+  Related Topics: SAFE, DESTROY_OK, @destroy, NOMODIFY.
+
 & @ADDCOMMAND
 @ADDCOMMAND
 

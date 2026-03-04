@@ -859,6 +859,12 @@ static void purge_going(void)
             continue;
         }
 
+        if (Indestructible(i))
+        {
+            db[i].fs.word[FLAG_WORD1] &= ~GOING;
+            continue;
+        }
+
         const UTF8 *p;
         switch (Typeof(i))
         {

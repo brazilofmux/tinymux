@@ -398,6 +398,7 @@ static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeAlone          = { ALONE,        ' ',    FLAG_WORD3, 0,                    fh_wiz};
 static FLAGBITENT fbeNoExamine      = { NOEXAMINE,    'E',    FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeNoModify       = { NOMODIFY,     ' ',    FLAG_WORD3, 0,                    fh_wizroy};
+static FLAGBITENT fbeIndestructible = { INDESTRUCTIBLE, ' ',  FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
@@ -464,6 +465,7 @@ FLAGNAMEENT gen_flag_names[] =
     {T("HEAD"),            true, &fbeHead           },
     {T("HTML"),            true, &fbeHtml           },
     {T("IMMORTAL"),        true, &fbeImmortal       },
+    {T("INDESTRUCTIBLE"),  true, &fbeIndestructible },
     {T("INHERIT"),         true, &fbeInherit        },
     {T("JUMP_OK"),         true, &fbeJumpOk         },
     {T("KEEPALIVE"),       true, &fbeKeepAlive      },

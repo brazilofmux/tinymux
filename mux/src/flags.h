@@ -108,6 +108,7 @@ constexpr unsigned int MUX_UNICODE  = 0x00001000;      // UTF-8 override flag
 constexpr unsigned int ALONE        = 0x00002000;      // Suppress inter-player notifications in room
 constexpr unsigned int NOEXAMINE    = 0x00004000;      // Blocks examine and @decompile.
 constexpr unsigned int NOMODIFY     = 0x00008000;      // Blocks all modifications.
+constexpr unsigned int INDESTRUCTIBLE = 0x00010000;    // Cannot be destroyed.
 constexpr unsigned int MARK_0       = 0x00400000;      // User-defined flags.
 constexpr unsigned int MARK_1       = 0x00800000;
 constexpr unsigned int MARK_2       = 0x01000000;
@@ -343,6 +344,7 @@ UTF8 *MakeCanonicalFlagName
 #define Alone(x)            ((Flags3(x) & ALONE) != 0)
 #define NoExamine(x)        ((Flags3(x) & NOEXAMINE) != 0)
 #define NoModify(x)         ((Flags3(x) & NOMODIFY) != 0)
+#define Indestructible(x)   ((Flags3(x) & INDESTRUCTIBLE) != 0)
 #define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)

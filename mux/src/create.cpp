@@ -1178,6 +1178,14 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
         return;
     }
 
+    // Check INDESTRUCTIBLE flag -- cannot be bypassed, even by Wizards.
+    //
+    if (Indestructible(thing))
+    {
+        notify_quiet(executor, T("That object is indestructible."));
+        return;
+    }
+
     // Make sure we're not trying to destroy a special object.
     //
     if (!destroyable(thing))
