@@ -104,6 +104,7 @@ void cf_init(void)
     mux_strncpy(mudconf.fixed_tel_msg, T("You are fixed in place and cannot teleport."), sizeof(mudconf.fixed_tel_msg)-1);
     mux_strncpy(mudconf.public_channel, T("Public"), sizeof(mudconf.public_channel)-1);
     mux_strncpy(mudconf.public_channel_alias, T("pub"), sizeof(mudconf.public_channel_alias)-1);
+    mudconf.player_channels[0] = '\0';
     mux_strncpy(mudconf.guests_channel, T("Guests"), sizeof(mudconf.guests_channel)-1);
     mux_strncpy(mudconf.guests_channel_alias, T("g"), sizeof(mudconf.guests_channel_alias)-1);
     mux_strncpy(mudconf.pueblo_msg, T("</xch_mudtext><img xch_mode=html>"), sizeof(mudconf.pueblo_msg)-1);
@@ -1905,6 +1906,7 @@ static CONFPARM conftable[] =
     {T("pcreate_per_hour"),          cf_int,         CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pcreate_per_hour),nullptr,            0},
     {T("public_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.public_channel),   nullptr,           32},
     {T("public_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.public_channel_alias), nullptr,       32},
+    {T("player_channels"),           cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.player_channels),  nullptr, LBUF_SIZE},
     {T("public_flags"),              cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pub_flags),       nullptr,            0},
     {T("pueblo_message"),            cf_string,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(mudconf.pueblo_msg),       nullptr,    GBUF_SIZE},
     {T("queue_active_chunk"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.active_q_chunk,         nullptr,            0},

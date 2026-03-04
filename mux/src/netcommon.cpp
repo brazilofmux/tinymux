@@ -2448,6 +2448,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             else
             {
                 AddToPublicChannel(player);
+                AddToPlayerChannels(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);

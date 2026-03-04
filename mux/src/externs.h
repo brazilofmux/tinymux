@@ -408,6 +408,7 @@ void  empty_obj(dbref);
 /* From player.cpp */
 dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
 void AddToPublicChannel(dbref player);
+void AddToPlayerChannels(dbref player);
 bool add_player_name(dbref player, const UTF8 *name, bool bAlias);
 bool delete_player_name(dbref player, const UTF8 *name, bool bAlias);
 void delete_all_player_names();

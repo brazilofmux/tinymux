@@ -209,6 +209,7 @@ struct confdata
     UTF8    one_coin[32];       /* name of one coin (ie. "penny") */
     UTF8    public_channel[32]; /* Name of public channel */
     UTF8    public_channel_alias[32]; /* Name of public channel alias */
+    UTF8    player_channels[LBUF_SIZE]; /* Channel+alias pairs for new players */
     UTF8    dump_msg[256];      /* Message displayed when @dump-ing */
     UTF8    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
     UTF8    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */

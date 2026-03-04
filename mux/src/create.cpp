@@ -978,6 +978,7 @@ void do_pcreate
         return;
     }
     AddToPublicChannel(newplayer);
+    AddToPlayerChannels(newplayer);
     if (isrobot)
     {
         move_object(newplayer, Location(executor));

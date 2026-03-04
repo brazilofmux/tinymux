@@ -723,6 +723,74 @@ void AddToPublicChannel(dbref player)
     }
 }
 
+void AddToPlayerChannels(dbref player)
+{
+    if ('\0' == mudconf.player_channels[0])
+    {
+        return;
+    }
+
+    UTF8 *buff = alloc_lbuf("AddToPlayerChannels");
+    mux_strncpy(buff, mudconf.player_channels, LBUF_SIZE - 1);
+
+    UTF8 *p = buff;
+    while ('\0' != *p)
+    {
+        // Skip leading spaces.
+        //
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
+        if ('\0' == *p)
+        {
+            break;
+        }
+
+        // Channel name.
+        //
+        UTF8 *channel = p;
+        while ('\0' != *p && !mux_isspace(*p))
+        {
+            p++;
+        }
+        if ('\0' != *p)
+        {
+            *p++ = '\0';
+        }
+
+        // Skip spaces between channel and alias.
+        //
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
+        if ('\0' == *p)
+        {
+            // Odd trailing token (channel without alias) — skip.
+            //
+            break;
+        }
+
+        // Alias.
+        //
+        UTF8 *alias = p;
+        while ('\0' != *p && !mux_isspace(*p))
+        {
+            p++;
+        }
+        if ('\0' != *p)
+        {
+            *p++ = '\0';
+        }
+
+        do_addcom(player, player, player, 0, 0, 2, alias, channel,
+            nullptr, 0);
+    }
+
+    free_lbuf(buff);
+}
+
 /* ---------------------------------------------------------------------------
  * create_player: Create a new player.
  */
