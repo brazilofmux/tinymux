@@ -2858,10 +2858,15 @@ Related Topics: @name.
 & @OEMIT
 @OEMIT
 
-  COMMAND: @oemit <player>=<message>
+  COMMAND: @oemit[/list] <object>[=<message>]
 
-  Emits <message> to everyone in the current location of <player> except
-  <player>.
+  Emits <message> to everyone in the current location of <object> except
+  <object>.
+
+  When the /list switch is given, <object> may be a space-separated list of
+  objects.  The message is emitted to the room of the first object on the
+  list, excluding all listed objects from receiving the message.  Only the
+  first object's room is used, preventing multi-room spam.
 
   Related Topics: @remit, @emit, @pemit, @npemit, SPOOFING.
 
@@ -10792,10 +10797,14 @@ OBJMEM()
 & OEMIT()
 OEMIT()
 
-  FUNCTION: oemit(<object>, <message>)
+  FUNCTION: oemit(<object-list>, <message>)
 
-  A side effect function that has the same effect as @oemit <object> =
-  <message>.
+  A side effect function that has the same effect as @oemit/list
+  <object-list> = <message>.
+
+  <object-list> may be a single object or a space-separated list of objects.
+  When a list is given, the message is emitted to the room of the first
+  object, excluding all listed objects from receiving the message.
 
   Related Topics: @oemit
 

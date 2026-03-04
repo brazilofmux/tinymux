@@ -348,7 +348,7 @@ FUNCTION(fun_oemit)
     {
         return;
     }
-    do_pemit_single(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, fargs[1]);
+    do_pemit_list(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, fargs[1]);
 }
 
 FUNCTION(fun_emit)

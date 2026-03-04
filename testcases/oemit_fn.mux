@@ -1,0 +1,58 @@
+#
+# oemit_fn.mux - Test Cases for oemit().
+#
+@create test_oemit_fn
+-
+@set test_oemit_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_oemit_fn=
+  @log smoke=Beginning oemit() test cases.
+-
+#
+# Test Case #1 - Single target (existing behavior).
+#
+&tr.tc001 test_oemit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [oemit(me,Test single target)]
+          )),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC001: oemit single target. Succeeded.
+  },
+  {
+    @log smoke=TC001: oemit single target. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - List of targets.
+#
+&tr.tc002 test_oemit_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [oemit(me %#,Test list of targets)]
+          )),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC002: oemit list of targets. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: oemit list of targets. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_oemit_fn=
+  @log smoke=End oemit() test cases.;
+  @notify smoke
+-
+drop test_oemit_fn
+-
+#
+# End of Test Cases
+#

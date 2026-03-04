@@ -1148,6 +1148,48 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const UTF8 
     }
 }
 
+void notify_except_N(dbref loc, dbref player, dbref aExclude[], int nExclude, const UTF8 *msg, int key)
+{
+    dbref first;
+
+    // Notify loc itself unless it's in the exclude list.
+    //
+    bool bExcludeLoc = false;
+    int i;
+    for (i = 0; i < nExclude; i++)
+    {
+        if (loc == aExclude[i])
+        {
+            bExcludeLoc = true;
+            break;
+        }
+    }
+    if (!bExcludeLoc)
+    {
+        notify_check(loc, player, msg, MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A | key);
+    }
+
+    DOLIST(first, Contents(loc))
+    {
+        if (!(isPlayer(first) && Alone(loc)))
+        {
+            bool bExclude = false;
+            for (i = 0; i < nExclude; i++)
+            {
+                if (first == aExclude[i])
+                {
+                    bExclude = true;
+                    break;
+                }
+            }
+            if (!bExclude)
+            {
+                notify_check(first, player, msg, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key);
+            }
+        }
+    }
+}
+
 /* ----------------------------------------------------------------------
  * Reporting of CPU information.
  */

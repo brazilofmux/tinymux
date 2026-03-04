@@ -273,6 +273,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
 
 void notify_except(dbref, dbref, dbref, const UTF8 *, int key);
 void notify_except2(dbref, dbref, dbref, dbref, const UTF8 *);
+void notify_except_N(dbref loc, dbref player, dbref aExclude[], int nExclude, const UTF8 *msg, int key);
 
 void notify_check(dbref target, dbref sender, const mux_string &msg, int key);
 void notify_check(dbref, dbref, const UTF8 *, int);

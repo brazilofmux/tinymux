@@ -437,6 +437,12 @@ static NAMETAB addcommand_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB oemit_sw[] =
+{
+    {T("list"),            1,  CA_PUBLIC,  PEMIT_LIST|SW_MULTIPLE},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB pemit_sw[] =
 {
     {T("contents"),        1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
@@ -730,7 +736,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@newpassword"), nullptr,    CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_newpassword},
     {T("@notify"),      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           0, do_notify},
     {T("@npemit"),      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_pemit},
-    {T("@oemit"),       nullptr,    CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {T("@oemit"),       oemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@parent"),      nullptr,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_parent},
     {T("@password"),    nullptr,    CA_NO_GUEST,                                      0,           CS_TWO_ARG,           0, do_password},
     {T("@pcreate"),     nullptr,    CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           0, do_pcreate},

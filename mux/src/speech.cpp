@@ -1359,12 +1359,52 @@ void do_pemit_list
         }
     }
 
-    for (int i = 0; i < nPlayers; i++)
+    // For PEMIT_OEMIT, emit to the room of the first valid target,
+    // excluding all listed targets.
+    //
+    if (PEMIT_OEMIT == key)
     {
-        dbref target = aPlayers[i];
-        if (NOTHING != target)
+        // Find first valid target.
+        //
+        dbref first_target = NOTHING;
+        for (int i = 0; i < nPlayers; i++)
         {
-            do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+            if (NOTHING != aPlayers[i])
+            {
+                first_target = aPlayers[i];
+                break;
+            }
+        }
+
+        if (NOTHING != first_target)
+        {
+            // Enforce locality constraints.
+            //
+            if (  nearby(player, first_target)
+               || Long_Fingers(player)
+               || Controls(player, first_target))
+            {
+                dbref loc = Location(first_target);
+                if (Good_obj(loc))
+                {
+                    notify_except_N(loc, player, aPlayers, nPlayers, message, 0);
+                }
+            }
+            else
+            {
+                notify(player, T("You are too far away to do that."));
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nPlayers; i++)
+        {
+            dbref target = aPlayers[i];
+            if (NOTHING != target)
+            {
+                do_pemit_single(player, key, bDoContents, pemit_flags, target, chPoseType, message);
+            }
         }
     }
 
