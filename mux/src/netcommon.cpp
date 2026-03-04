@@ -1360,7 +1360,7 @@ int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
 void desc_reload(dbref player)
 {
     dbref aowner;
-    FLAG aflags;
+    int aflags;
 
     const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
     for (auto it = range.first; it != range.second; ++it)

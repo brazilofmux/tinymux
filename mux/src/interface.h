@@ -13,34 +13,34 @@
 
 /* Disconnection reason codes */
 
-#define R_MIN       0
-#define R_UNKNOWN   0   /* Unknown/unexpected */
-#define R_QUIT      1   /* User quit */
-#define R_TIMEOUT   2   /* Inactivity timeout */
-#define R_BOOT      3   /* Victim of @boot, @toad, or @destroy */
-#define R_SOCKDIED  4   /* Other end of socked closed it */
-#define R_GOING_DOWN    5   /* Game is going down */
-#define R_BADLOGIN  6   /* Too many failed login attempts */
-#define R_GAMEDOWN  7   /* Not admitting users now */
-#define R_LOGOUT    8   /* Logged out w/o disconnecting */
-#define R_GAMEFULL  9   /* Too many players logged in */
-#define R_RESTART   10  /* Restarting, and this socket cannot be preserved */
-#define R_MAX       10
+constexpr int R_MIN       = 0;
+constexpr int R_UNKNOWN   = 0;   /* Unknown/unexpected */
+constexpr int R_QUIT      = 1;   /* User quit */
+constexpr int R_TIMEOUT   = 2;   /* Inactivity timeout */
+constexpr int R_BOOT      = 3;   /* Victim of @boot, @toad, or @destroy */
+constexpr int R_SOCKDIED  = 4;   /* Other end of socked closed it */
+constexpr int R_GOING_DOWN = 5;   /* Game is going down */
+constexpr int R_BADLOGIN  = 6;   /* Too many failed login attempts */
+constexpr int R_GAMEDOWN  = 7;   /* Not admitting users now */
+constexpr int R_LOGOUT    = 8;   /* Logged out w/o disconnecting */
+constexpr int R_GAMEFULL  = 9;   /* Too many players logged in */
+constexpr int R_RESTART   = 10;  /* Restarting, and this socket cannot be preserved */
+constexpr int R_MAX       = 10;
 
 /* Logged out command table definitions */
 
-#define CMD_QUIT    1
-#define CMD_WHO     2
-#define CMD_DOING   3
-#define CMD_PREFIX  5
-#define CMD_SUFFIX  6
-#define CMD_LOGOUT  7
-#define CMD_SESSION 8
-#define CMD_PUEBLOCLIENT 9
-#define CMD_INFO    10
+constexpr int CMD_QUIT    = 1;
+constexpr int CMD_WHO     = 2;
+constexpr int CMD_DOING   = 3;
+constexpr int CMD_PREFIX  = 5;
+constexpr int CMD_SUFFIX  = 6;
+constexpr int CMD_LOGOUT  = 7;
+constexpr int CMD_SESSION = 8;
+constexpr int CMD_PUEBLOCLIENT = 9;
+constexpr int CMD_INFO    = 10;
 
-#define CMD_MASK    0xff
-#define CMD_NOxFIX  0x100
+constexpr int CMD_MASK    = 0xff;
+constexpr int CMD_NOxFIX  = 0x100;
 
 extern NAMETAB logout_cmdtable[];
 extern NAMETAB default_charset_nametab[];
@@ -78,72 +78,72 @@ typedef struct program_data
 
 // Input state
 //
-#define NVT_IS_NORMAL          0
-#define NVT_IS_HAVE_IAC        1
-#define NVT_IS_HAVE_IAC_WILL   2
-#define NVT_IS_HAVE_IAC_WONT   3
-#define NVT_IS_HAVE_IAC_DO     4
-#define NVT_IS_HAVE_IAC_DONT   5
-#define NVT_IS_HAVE_IAC_SB     6
-#define NVT_IS_HAVE_IAC_SB_IAC 7
+constexpr int NVT_IS_NORMAL          = 0;
+constexpr int NVT_IS_HAVE_IAC        = 1;
+constexpr int NVT_IS_HAVE_IAC_WILL   = 2;
+constexpr int NVT_IS_HAVE_IAC_WONT   = 3;
+constexpr int NVT_IS_HAVE_IAC_DO     = 4;
+constexpr int NVT_IS_HAVE_IAC_DONT   = 5;
+constexpr int NVT_IS_HAVE_IAC_SB     = 6;
+constexpr int NVT_IS_HAVE_IAC_SB_IAC = 7;
 
 // Character Names
 //
-#define NVT_BS   ((unsigned char)'\x08')
-#define NVT_DEL  ((unsigned char)'\x7F')
-#define NVT_EOR  ((unsigned char)'\xEF')
-#define NVT_NOP  ((unsigned char)'\xF1')
-#define NVT_GA   ((unsigned char)'\xF9')
-#define NVT_WILL ((unsigned char)'\xFB')
-#define NVT_WONT ((unsigned char)'\xFC')
-#define NVT_DO   ((unsigned char)'\xFD')
-#define NVT_DONT ((unsigned char)'\xFE')
-#define NVT_IAC  ((unsigned char)'\xFF')
-#define NVT_SB   ((unsigned char)'\xFA')
-#define NVT_SE   ((unsigned char)'\xF0')
+constexpr unsigned char NVT_BS   = 0x08;
+constexpr unsigned char NVT_DEL  = 0x7F;
+constexpr unsigned char NVT_EOR  = 0xEF;
+constexpr unsigned char NVT_NOP  = 0xF1;
+constexpr unsigned char NVT_GA   = 0xF9;
+constexpr unsigned char NVT_WILL = 0xFB;
+constexpr unsigned char NVT_WONT = 0xFC;
+constexpr unsigned char NVT_DO   = 0xFD;
+constexpr unsigned char NVT_DONT = 0xFE;
+constexpr unsigned char NVT_IAC  = 0xFF;
+constexpr unsigned char NVT_SB   = 0xFA;
+constexpr unsigned char NVT_SE   = 0xF0;
 
 // Telnet Options
 //
-#define TELNET_BINARY   ((unsigned char)'\x00')
-#define TELNET_SGA      ((unsigned char)'\x03')
-#define TELNET_EOR      ((unsigned char)'\x19')
-#define TELNET_NAWS     ((unsigned char)'\x1F')
-#define TELNET_TTYPE    ((unsigned char)'\x18')
-#define TELNET_OLDENV   ((unsigned char)'\x24')
-#define TELNET_ENV      ((unsigned char)'\x27')
-#define TELNET_CHARSET  ((unsigned char)'\x2A')
+constexpr unsigned char TELNET_BINARY   = 0x00;
+constexpr unsigned char TELNET_SGA      = 0x03;
+constexpr unsigned char TELNET_EOR      = 0x19;
+constexpr unsigned char TELNET_NAWS     = 0x1F;
+constexpr unsigned char TELNET_TTYPE    = 0x18;
+constexpr unsigned char TELNET_OLDENV   = 0x24;
+constexpr unsigned char TELNET_ENV      = 0x27;
+constexpr unsigned char TELNET_CHARSET  = 0x2A;
 
 // Telnet Option Negotiation States
 //
-#define OPTION_NO               0
-#define OPTION_YES              1
-#define OPTION_WANTNO_EMPTY     2
-#define OPTION_WANTNO_OPPOSITE  3
-#define OPTION_WANTYES_EMPTY    4
-#define OPTION_WANTYES_OPPOSITE 5
+constexpr int OPTION_NO               = 0;
+constexpr int OPTION_YES              = 1;
+constexpr int OPTION_WANTNO_EMPTY     = 2;
+constexpr int OPTION_WANTNO_OPPOSITE  = 3;
+constexpr int OPTION_WANTYES_EMPTY    = 4;
+constexpr int OPTION_WANTYES_OPPOSITE = 5;
 
 // Telnet subnegotiation requests
 // Multiple meanings, depending on TELOPT
 //
-#define TELNETSB_IS             0
-#define TELNETSB_VAR            0
-#define TELNETSB_REQUEST        1
-#define TELNETSB_SEND           1
-#define TELNETSB_VALUE          1
-#define TELNETSB_FOLLOWS        1
-#define TELNETSB_INFO           2
-#define TELNETSB_ACCEPT         2
-#define TELNETSB_REPLY          2
-#define TELNETSB_ESC            2
-#define TELNETSB_REJECT         3
-#define TELNETSB_NAME           3
-#define TELNETSB_USERVAR        3
+constexpr int TELNETSB_IS             = 0;
+constexpr int TELNETSB_VAR            = 0;
+constexpr int TELNETSB_REQUEST        = 1;
+constexpr int TELNETSB_SEND           = 1;
+constexpr int TELNETSB_VALUE          = 1;
+constexpr int TELNETSB_FOLLOWS        = 1;
+constexpr int TELNETSB_INFO           = 2;
+constexpr int TELNETSB_ACCEPT         = 2;
+constexpr int TELNETSB_REPLY          = 2;
+constexpr int TELNETSB_ESC            = 2;
+constexpr int TELNETSB_REJECT         = 3;
+constexpr int TELNETSB_NAME           = 3;
+constexpr int TELNETSB_USERVAR        = 3;
 
-#define CHARSET_ASCII           0
-#define CHARSET_CP437           1
-#define CHARSET_LATIN1          2
-#define CHARSET_LATIN2          3
-#define CHARSET_UTF8            4
+constexpr int CHARSET_ASCII           = 0;
+constexpr int CHARSET_CP437           = 1;
+constexpr int CHARSET_LATIN1          = 2;
+constexpr int CHARSET_LATIN2          = 3;
+constexpr int CHARSET_UTF8            = 4;
 
 enum class SocketState {
     Initialized = 0,
@@ -217,9 +217,9 @@ void enable_us(DESC *d, unsigned char chOption);
 void disable_us(DESC *d, unsigned char chOption);
 
 /* flags in the flag field */
-#define DS_CONNECTED    0x0001      // player is connected.
-#define DS_AUTODARK     0x0002      // Wizard was auto set dark.
-#define DS_PUEBLOCLIENT 0x0004      // Client is Pueblo-enhanced.
+constexpr int DS_CONNECTED    = 0x0001;      // player is connected.
+constexpr int DS_AUTODARK     = 0x0002;      // Wizard was auto set dark.
+constexpr int DS_PUEBLOCLIENT = 0x0004;      // Client is Pueblo-enhanced.
 
 typedef struct port_info
 {
@@ -231,7 +231,7 @@ typedef struct port_info
 #endif
 } port_info;
 
-#define MAX_LISTEN_PORTS 30
+constexpr int MAX_LISTEN_PORTS = 30;
 #ifdef UNIX_SSL
 extern port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else

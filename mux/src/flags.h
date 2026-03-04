@@ -8,112 +8,112 @@
 #ifndef FLAGS_H
 #define FLAGS_H
 
-#define FLAG_WORD1    0x0 // 1st word of flags.
-#define FLAG_WORD2    0x1 // 2nd word of flags.
-#define FLAG_WORD3    0x2 // 3rd word of flags.
+constexpr int FLAG_WORD1    = 0x0; // 1st word of flags.
+constexpr int FLAG_WORD2    = 0x1; // 2nd word of flags.
+constexpr int FLAG_WORD3    = 0x2; // 3rd word of flags.
 
 /* Object types */
-#define TYPE_ROOM     0x0
-#define TYPE_THING    0x1
-#define TYPE_EXIT     0x2
-#define TYPE_PLAYER   0x3
+constexpr int TYPE_ROOM     = 0x0;
+constexpr int TYPE_THING    = 0x1;
+constexpr int TYPE_EXIT     = 0x2;
+constexpr int TYPE_PLAYER   = 0x3;
 /* Empty */
-#define TYPE_GARBAGE  0x5
+constexpr int TYPE_GARBAGE  = 0x5;
 /* Empty */
-#define NOTYPE        0x7
-#define TYPE_MASK     0x7
+constexpr int NOTYPE        = 0x7;
+constexpr int TYPE_MASK     = 0x7;
 
 /* First word of flags */
-#define SEETHRU      0x00000008  /* Can see through to the other side */
-#define WIZARD       0x00000010  /* gets automatic control */
-#define LINK_OK      0x00000020  /* anybody can link to this room */
-#define DARK         0x00000040  /* Don't show contents or presence */
-#define JUMP_OK      0x00000080  /* Others may @tel here */
-#define STICKY       0x00000100  /* Object goes home when dropped */
-#define DESTROY_OK   0x00000200  /* Others may @destroy */
-#define HAVEN        0x00000400  /* No killing here, or no pages */
-#define QUIET        0x00000800  /* Prevent 'feelgood' messages */
-#define HALT         0x00001000  /* object cannot perform actions */
-#define TRACE        0x00002000  /* Generate evaluation trace output */
-#define GOING        0x00004000  /* object is available for recycling */
-#define MONITOR      0x00008000  /* Process ^x:action listens on obj? */
-#define MYOPIC       0x00010000  /* See things as nonowner/nonwizard */
-#define PUPPET       0x00020000  /* Relays ALL messages to owner */
-#define CHOWN_OK     0x00040000  /* Object may be @chowned freely */
-#define ENTER_OK     0x00080000  /* Object may be ENTERed */
-#define VISUAL       0x00100000  /* Everyone can see properties */
-#define IMMORTAL     0x00200000  /* Object can't be killed */
-#define HAS_STARTUP  0x00400000  /* Load some attrs at startup */
-#define MUX_OPAQUE   0x00800000  /* Can't see inside */
-#define VERBOSE      0x01000000  /* Tells owner everything it does. */
-#define INHERIT      0x02000000  /* Gets owner's privs. (i.e. Wiz) */
-#define NOSPOOF      0x04000000  /* Report originator of all actions. */
-#define ROBOT        0x08000000  /* Player is a ROBOT */
-#define SAFE         0x10000000  /* Need /override to @destroy */
-#define ROYALTY      0x20000000  /* Sees like a wiz, but ca't modify */
-#define HEARTHRU     0x40000000  /* Can hear out of this obj or exit */
-#define TERSE        0x80000000  /* Only show room name on look */
+constexpr unsigned int SEETHRU      = 0x00000008;  /* Can see through to the other side */
+constexpr unsigned int WIZARD       = 0x00000010;  /* gets automatic control */
+constexpr unsigned int LINK_OK      = 0x00000020;  /* anybody can link to this room */
+constexpr unsigned int DARK         = 0x00000040;  /* Don't show contents or presence */
+constexpr unsigned int JUMP_OK      = 0x00000080;  /* Others may @tel here */
+constexpr unsigned int STICKY       = 0x00000100;  /* Object goes home when dropped */
+constexpr unsigned int DESTROY_OK   = 0x00000200;  /* Others may @destroy */
+constexpr unsigned int HAVEN        = 0x00000400;  /* No killing here, or no pages */
+constexpr unsigned int QUIET        = 0x00000800;  /* Prevent 'feelgood' messages */
+constexpr unsigned int HALT         = 0x00001000;  /* object cannot perform actions */
+constexpr unsigned int TRACE        = 0x00002000;  /* Generate evaluation trace output */
+constexpr unsigned int GOING        = 0x00004000;  /* object is available for recycling */
+constexpr unsigned int MONITOR      = 0x00008000;  /* Process ^x:action listens on obj? */
+constexpr unsigned int MYOPIC       = 0x00010000;  /* See things as nonowner/nonwizard */
+constexpr unsigned int PUPPET       = 0x00020000;  /* Relays ALL messages to owner */
+constexpr unsigned int CHOWN_OK     = 0x00040000;  /* Object may be @chowned freely */
+constexpr unsigned int ENTER_OK     = 0x00080000;  /* Object may be ENTERed */
+constexpr unsigned int VISUAL       = 0x00100000;  /* Everyone can see properties */
+constexpr unsigned int IMMORTAL     = 0x00200000;  /* Object can't be killed */
+constexpr unsigned int HAS_STARTUP  = 0x00400000;  /* Load some attrs at startup */
+constexpr unsigned int MUX_OPAQUE   = 0x00800000;  /* Can't see inside */
+constexpr unsigned int VERBOSE      = 0x01000000;  /* Tells owner everything it does. */
+constexpr unsigned int INHERIT      = 0x02000000;  /* Gets owner's privs. (i.e. Wiz) */
+constexpr unsigned int NOSPOOF      = 0x04000000;  /* Report originator of all actions. */
+constexpr unsigned int ROBOT        = 0x08000000;  /* Player is a ROBOT */
+constexpr unsigned int SAFE         = 0x10000000;  /* Need /override to @destroy */
+constexpr unsigned int ROYALTY      = 0x20000000;  /* Sees like a wiz, but ca't modify */
+constexpr unsigned int HEARTHRU     = 0x40000000;  /* Can hear out of this obj or exit */
+constexpr unsigned int TERSE        = 0x80000000;  /* Only show room name on look */
 
 /* Second word of flags */
-#define KEY          0x00000001  /* No puppets */
-#define ABODE        0x00000002  /* May @set home here */
-#define FLOATING     0x00000004  /* Inhibit Floating room.. msgs */
-#define UNFINDABLE   0x00000008  /* Cant loc() from afar */
-#define PARENT_OK    0x00000010  /* Others may @parent to me */
-#define LIGHT        0x00000020  /* Visible in dark places */
-#define HAS_LISTEN   0x00000040  /* Internal: LISTEN attr set */
-#define HAS_FWDLIST  0x00000080  /* Internal: FORWARDLIST attr set */
-#define AUDITORIUM   0x00000100  /* Should we check the SpeechLock? */
-#define ANSI         0x00000200
-#define HEAD_FLAG    0x00000400
-#define FIXED        0x00000800
-#define UNINSPECTED  0x00001000
-#define NO_COMMAND   0x00002000
-#define CKEEPALIVE   0x00004000  /* User receives keepalives from the MUX */
-#define NOBLEED      0x00008000
-#define STAFF        0x00010000
-#define HAS_DAILY    0x00020000
-#define GAGGED       0x00040000
-#define OPEN_OK      0x00080000  // You can open exits from here if you pass the openlock.
-#define COLOR256     0x00100000  // Enable XTERM 256-color codes.
-#define VACATION     0x01000000
-#define PLAYER_MAILS 0x02000000
-#define HTML         0x04000000  /* Player supports HTML */
-#define BLIND        0x08000000  // Suppress has arrived / left messages.
-#define SUSPECT      0x10000000  /* Report some activities to wizards */
-#define ASCII        0x20000000  // Strip characters down to 7-bit ASCII.
-#define CONNECTED    0x40000000  /* Player is connected */
-#define SLAVE        0x80000000  /* Disallow most commands */
+constexpr unsigned int KEY          = 0x00000001;  /* No puppets */
+constexpr unsigned int ABODE        = 0x00000002;  /* May @set home here */
+constexpr unsigned int FLOATING     = 0x00000004;  /* Inhibit Floating room.. msgs */
+constexpr unsigned int UNFINDABLE   = 0x00000008;  /* Cant loc() from afar */
+constexpr unsigned int PARENT_OK    = 0x00000010;  /* Others may @parent to me */
+constexpr unsigned int LIGHT        = 0x00000020;  /* Visible in dark places */
+constexpr unsigned int HAS_LISTEN   = 0x00000040;  /* Internal: LISTEN attr set */
+constexpr unsigned int HAS_FWDLIST  = 0x00000080;  /* Internal: FORWARDLIST attr set */
+constexpr unsigned int AUDITORIUM   = 0x00000100;  /* Should we check the SpeechLock? */
+constexpr unsigned int ANSI         = 0x00000200;
+constexpr unsigned int HEAD_FLAG    = 0x00000400;
+constexpr unsigned int FIXED        = 0x00000800;
+constexpr unsigned int UNINSPECTED  = 0x00001000;
+constexpr unsigned int NO_COMMAND   = 0x00002000;
+constexpr unsigned int CKEEPALIVE   = 0x00004000;  /* User receives keepalives from the MUX */
+constexpr unsigned int NOBLEED      = 0x00008000;
+constexpr unsigned int STAFF        = 0x00010000;
+constexpr unsigned int HAS_DAILY    = 0x00020000;
+constexpr unsigned int GAGGED       = 0x00040000;
+constexpr unsigned int OPEN_OK      = 0x00080000;  // You can open exits from here if you pass the openlock.
+constexpr unsigned int COLOR256     = 0x00100000;  // Enable XTERM 256-color codes.
+constexpr unsigned int VACATION     = 0x01000000;
+constexpr unsigned int PLAYER_MAILS = 0x02000000;
+constexpr unsigned int HTML         = 0x04000000;  /* Player supports HTML */
+constexpr unsigned int BLIND        = 0x08000000;  // Suppress has arrived / left messages.
+constexpr unsigned int SUSPECT      = 0x10000000;  /* Report some activities to wizards */
+constexpr unsigned int ASCII        = 0x20000000;  // Strip characters down to 7-bit ASCII.
+constexpr unsigned int CONNECTED    = 0x40000000;  /* Player is connected */
+constexpr unsigned int SLAVE        = 0x80000000;  /* Disallow most commands */
 
 // Third word of flags
 //
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
-#define OBF          0x00000001      // Obfuscate Flag
-#define HSS          0x00000002      // Auspex/Heightened Senses Flag
-#define UMBRA        0x00000004      // Umbra, UMBRADESC
-#define SHROUD       0x00000008      // Shroud, WRAITHDESC
-#define MATRIX       0x00000010      // Matrix, MATRIXDESC
-#define MEDIUM       0x00000020
-#define DEAD         0x00000040
-#define FAE          0x00000080      // Fae, FAEDESC
-#define CHIMERA      0x00000100      // Fae, FAEDESC
-#define PEERING      0x00000200      // Means the a looker is seeing a
+constexpr unsigned int OBF          = 0x00000001;      // Obfuscate Flag
+constexpr unsigned int HSS          = 0x00000002;      // Auspex/Heightened Senses Flag
+constexpr unsigned int UMBRA        = 0x00000004;      // Umbra, UMBRADESC
+constexpr unsigned int SHROUD       = 0x00000008;      // Shroud, WRAITHDESC
+constexpr unsigned int MATRIX       = 0x00000010;      // Matrix, MATRIXDESC
+constexpr unsigned int MEDIUM       = 0x00000020;
+constexpr unsigned int DEAD         = 0x00000040;
+constexpr unsigned int FAE          = 0x00000080;      // Fae, FAEDESC
+constexpr unsigned int CHIMERA      = 0x00000100;      // Fae, FAEDESC
+constexpr unsigned int PEERING      = 0x00000200;      // Means the a looker is seeing a
                                      // different realm than they are in.
 #endif // WOD_REALMS
 
-#define SITEMON      0x00000400      // Sitemonitor Flag
-#define CMDCHECK     0x00000800      // Has @icmd set
-#define MUX_UNICODE  0x00001000      // UTF-8 override flag
-#define MARK_0       0x00400000      // User-defined flags.
-#define MARK_1       0x00800000
-#define MARK_2       0x01000000
-#define MARK_3       0x02000000
-#define MARK_4       0x04000000
-#define MARK_5       0x08000000
-#define MARK_6       0x10000000
-#define MARK_7       0x20000000
-#define MARK_8       0x40000000
-#define MARK_9       0x80000000
+constexpr unsigned int SITEMON      = 0x00000400;      // Sitemonitor Flag
+constexpr unsigned int CMDCHECK     = 0x00000800;      // Has @icmd set
+constexpr unsigned int MUX_UNICODE  = 0x00001000;      // UTF-8 override flag
+constexpr unsigned int MARK_0       = 0x00400000;      // User-defined flags.
+constexpr unsigned int MARK_1       = 0x00800000;
+constexpr unsigned int MARK_2       = 0x01000000;
+constexpr unsigned int MARK_3       = 0x02000000;
+constexpr unsigned int MARK_4       = 0x04000000;
+constexpr unsigned int MARK_5       = 0x08000000;
+constexpr unsigned int MARK_6       = 0x10000000;
+constexpr unsigned int MARK_7       = 0x20000000;
+constexpr unsigned int MARK_8       = 0x40000000;
+constexpr unsigned int MARK_9       = 0x80000000;
 
 /* ---------------------------------------------------------------------------
  * FLAGENT: Information about object flags.
@@ -151,13 +151,13 @@ typedef struct object_entry
 } OBJENT;
 extern OBJENT object_types[8];
 
-#define OF_CONTENTS 0x0001      /* Object has contents: Contents() */
-#define OF_LOCATION 0x0002      /* Object has a location: Location() */
-#define OF_EXITS    0x0004      /* Object has exits: Exits() */
-#define OF_HOME     0x0008      /* Object has a home: Home() */
-#define OF_DROPTO   0x0010      /* Object has a dropto: Dropto() */
-#define OF_OWNER    0x0020      /* Object can own other objects */
-#define OF_SIBLINGS 0x0040      /* Object has siblings: Next() */
+constexpr int OF_CONTENTS = 0x0001;      /* Object has contents: Contents() */
+constexpr int OF_LOCATION = 0x0002;      /* Object has a location: Location() */
+constexpr int OF_EXITS    = 0x0004;      /* Object has exits: Exits() */
+constexpr int OF_HOME     = 0x0008;      /* Object has a home: Home() */
+constexpr int OF_DROPTO   = 0x0010;      /* Object has a dropto: Dropto() */
+constexpr int OF_OWNER    = 0x0020;      /* Object can own other objects */
+constexpr int OF_SIBLINGS = 0x0040;      /* Object has siblings: Next() */
 
 typedef struct flagset
 {

@@ -225,7 +225,7 @@ extern int    select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
 
 typedef int   dbref;
-typedef int   FLAG;
+typedef unsigned int FLAG;
 typedef int   POWER;
 #ifdef REALITY_LVLS
 typedef unsigned int RLEVEL;

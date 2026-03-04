@@ -6,23 +6,23 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
-#define POOL_LBUF    0
-#define POOL_SBUF    1
-#define POOL_MBUF    2
-#define POOL_BOOL    3
-#define POOL_DESC    4
-#define POOL_QENTRY  5
-#define POOL_PCACHE  6
-#define POOL_LBUFREF 7
-#define POOL_REGREF  8
-#define POOL_STRING  9
-#define NUM_POOLS    10
+constexpr int POOL_LBUF    = 0;
+constexpr int POOL_SBUF    = 1;
+constexpr int POOL_MBUF    = 2;
+constexpr int POOL_BOOL    = 3;
+constexpr int POOL_DESC    = 4;
+constexpr int POOL_QENTRY  = 5;
+constexpr int POOL_PCACHE  = 6;
+constexpr int POOL_LBUFREF = 7;
+constexpr int POOL_REGREF  = 8;
+constexpr int POOL_STRING  = 9;
+constexpr int NUM_POOLS    = 10;
 
-#define LBUF_SIZE   8000    // Large
-#define GBUF_SIZE   1024    // Generic
-#define MBUF_SIZE   400     // Medium
-#define PBUF_SIZE   128     // Pathname
-#define SBUF_SIZE   64      // Small
+#define LBUF_SIZE   8000    // Large (must remain #define for preprocessor conditionals)
+constexpr int GBUF_SIZE   = 1024;    // Generic
+constexpr int MBUF_SIZE   = 400;     // Medium
+constexpr int PBUF_SIZE   = 128;     // Pathname
+constexpr int SBUF_SIZE   = 64;      // Small
 
 void pool_init(int, int);
 UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line);

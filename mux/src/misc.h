@@ -15,7 +15,7 @@ struct search_type {
     int s_wizard;
     dbref   s_owner;
     dbref   s_rst_owner;
-    int s_rst_type;
+    FLAG s_rst_type;
     FLAGSET s_fset;
     POWERSET s_pset;
     dbref   s_parent;
