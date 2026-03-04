@@ -2084,6 +2084,7 @@ NAMETAB logout_cmdtable[] =
     {T("SESSION"),       7,  CA_PUBLIC,  CMD_SESSION},
     {T("WHO"),           3,  CA_PUBLIC,  CMD_WHO},
     {T("PUEBLOCLIENT"), 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
+    {T("HELP"),          4,  CA_PUBLIC,  CMD_HELP},
     {T("INFO"),          4,  CA_PUBLIC,  CMD_INFO},
     {nullptr,            0,          0,         0}
 };
@@ -2523,6 +2524,11 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
     case CMD_SUFFIX:
 
         set_userstring(&d->output_suffix, arg);
+        break;
+
+    case CMD_HELP:
+
+        fcache_dump(d, FC_CONN_HELP);
         break;
 
     case CMD_INFO:

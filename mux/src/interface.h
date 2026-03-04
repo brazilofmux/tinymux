@@ -38,6 +38,7 @@ constexpr int CMD_LOGOUT  = 7;
 constexpr int CMD_SESSION = 8;
 constexpr int CMD_PUEBLOCLIENT = 9;
 constexpr int CMD_INFO    = 10;
+constexpr int CMD_HELP    = 11;
 
 constexpr int CMD_MASK    = 0xff;
 constexpr int CMD_NOxFIX  = 0x100;

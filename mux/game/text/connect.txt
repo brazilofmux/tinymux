@@ -6,6 +6,7 @@ Welcome to TinyMUX
 
   "WHO" tells you who is logged in to the game (case sensitive).
   "QUIT" exits the game and saves your character.
+  "HELP" gives a summary of connect screen commands.
 
   Once logged on, "help" gives help on specific commands, functions, and
   special topics.  Other 'help' commands include "+help" and "news".

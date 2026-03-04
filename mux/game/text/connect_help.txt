@@ -1,0 +1,12 @@
+
+Available commands from the connect screen:
+------------------------------------------------------------------------------
+  connect <name> <password>   Connect to an existing character.
+  connect guest               Connect as a guest.
+  create <name> <password>    Create a new character.
+
+  HELP                        Display this help text.
+  WHO                         List players currently online.
+  INFO                        Display information about this server.
+  QUIT                        Disconnect from the server.
+------------------------------------------------------------------------------

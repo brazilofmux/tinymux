@@ -47,6 +47,7 @@ static FCACHE fcache[] =
     { &mudconf.motd_file,    nullptr,   T("Motd") },
     { &mudconf.wizmotd_file, nullptr,   T("Wizmotd") },
     { &mudconf.quit_file,    nullptr,   T("Quit") },
+    { &mudconf.conn_help_file, nullptr, T("Conn/Help") },
     { nullptr,               nullptr,   nullptr }
 };
 
@@ -54,6 +55,7 @@ static NAMETAB list_files[] =
 {
     {T("badsite_connect"),  1,  CA_WIZARD,  FC_CONN_SITE},
     {T("connect"),          2,  CA_WIZARD,  FC_CONN},
+    {T("connect_help"),     2,  CA_WIZARD,  FC_CONN_HELP},
     {T("create_register"),  2,  CA_WIZARD,  FC_CREA_REG},
     {T("down"),             1,  CA_WIZARD,  FC_CONN_DOWN},
     {T("full"),             1,  CA_WIZARD,  FC_CONN_FULL},

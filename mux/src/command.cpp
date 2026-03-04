@@ -622,6 +622,7 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {T("@startslave"), nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_startslave},
     {T("@timecheck"),  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
     {T("clearcom"),    nullptr,    CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
+    {T("help"),        nullptr,    CA_PUBLIC,   CMD_HELP,   CS_NO_ARGS, 0, logged_out0},
     {T("info"),        nullptr,    CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
     {T("inventory"),   nullptr,    CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
     {T("leave"),       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, 0, do_leave},

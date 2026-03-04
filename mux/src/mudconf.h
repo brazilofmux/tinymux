@@ -241,6 +241,7 @@ struct confdata
     UTF8    *comsys_db;         /* name of the comsys db */
     UTF8    *config_file;       /* name of config file, used by @restart */
     UTF8    *conn_file;         /* display on connect if no registration */
+    UTF8    *conn_help_file;    /* display on HELP at connect screen */
     UTF8    *crashdb;           /* write database here on crash */
     UTF8    *crea_file;         /* display this on login for new users */
     UTF8    *creg_file;         /* display on connect if registration */

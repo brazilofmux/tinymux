@@ -20,7 +20,8 @@
 #define FC_MOTD     8
 #define FC_WIZMOTD  9
 #define FC_QUIT     10
-#define FC_LAST     10
+#define FC_CONN_HELP 11
+#define FC_LAST     11
 
 /* File cache routines */
 

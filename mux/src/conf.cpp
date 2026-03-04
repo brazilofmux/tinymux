@@ -84,6 +84,7 @@ void cf_init(void)
     mux_strncpy(mudconf.guest_prefix, T("Guest"), sizeof(mudconf.guest_prefix)-1);
     mudconf.guest_file     = StringClone(T("text/guest.txt"));
     mudconf.conn_file      = StringClone(T("text/connect.txt"));
+    mudconf.conn_help_file = StringClone(T("text/connect_help.txt"));
     mudconf.creg_file      = StringClone(T("text/register.txt"));
     mudconf.regf_file      = StringClone(T("text/create_reg.txt"));
     mudconf.motd_file      = StringClone(T("text/motd.txt"));
@@ -1776,6 +1777,7 @@ static CONFPARM conftable[] =
     {T("config_access"),             cf_cf_access,   CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
     {T("conn_timeout"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           nullptr,            0},
     {T("connect_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.conn_file),       nullptr, SIZEOF_PATHNAME},
+    {T("connect_help_file"),         cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.conn_help_file),  nullptr, SIZEOF_PATHNAME},
     {T("connect_reg_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.creg_file),       nullptr, SIZEOF_PATHNAME},
     {T("lag_limit"),                 cf_seconds,     CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.max_cmdsecs),     nullptr,            0},
     {T("crash_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.crashdb),         nullptr, SIZEOF_PATHNAME},
