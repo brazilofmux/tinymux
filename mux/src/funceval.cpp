@@ -674,7 +674,7 @@ FUNCTION(fun_set)
     thing = match_controlled_quiet(executor, fargs[0]);
     if (!Good_obj(thing))
     {
-        safe_nothing(buff, bufc);
+        safe_match_result(thing, buff, bufc);
         return;
     }
 
