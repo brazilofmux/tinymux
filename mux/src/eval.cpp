@@ -1420,12 +1420,19 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     nFun = LBUF_SIZE - 1;
                 }
 
-                // _strlwr();
+                // Uppercase the function name (Unicode-aware).
                 //
-                for (size_t iFun = 0; iFun < nFun; iFun++)
+                UTF8 TempFun[LBUF_SIZE];
+                memcpy(TempFun, oldp, nFun);
+                TempFun[nFun] = '\0';
+                size_t nUpper;
+                UTF8 *pUpper = mux_strupr(TempFun, nUpper);
+                if (nUpper >= LBUF_SIZE)
                 {
-                    mux_scratch[iFun] = mux_toupper_ascii(oldp[iFun]);
+                    nUpper = LBUF_SIZE - 1;
                 }
+                memcpy(mux_scratch, pUpper, nUpper);
+                nFun = nUpper;
             }
             mux_scratch[nFun] = '\0';
 
@@ -1892,6 +1899,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         iStr++;
                         if (mux_isazAZ(pStr[iStr]))
                         {
+                            // ASCII-only: mux_isazAZ() guard ensures pStr[iStr] is A-Z/a-z.
+                            //
                             i = A_VA + mux_toupper_ascii(pStr[iStr]) - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(mux_scratch, executor, i,
@@ -2219,11 +2228,12 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
                 // For some escape letters, if the escape letter
                 // was upper-case, then upper-case the first
-                // letter of the value.
+                // letter of the value (Unicode-aware).
                 //
                 if (cType_L2 & 0x80)
                 {
-                    *TempPtr = mux_toupper_ascii(*TempPtr);
+                    mux_toupper_first(TempPtr, bufc, LBUF_SIZE);
+                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 }
             }
         }

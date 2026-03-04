@@ -3544,13 +3544,11 @@ int string_compare(const UTF8 *s1, const UTF8 *s2)
             s2++;
         }
 
-        while (  *s1 && *s2
-              && (  (mux_tolower_ascii(*s1) == mux_tolower_ascii(*s2))
-                 || (mux_isspace(*s1) && mux_isspace(*s2))))
+        while (*s1 && *s2)
         {
             if (mux_isspace(*s1) && mux_isspace(*s2))
             {
-                // skip all other spaces.
+                // Both are spaces — skip all contiguous spaces.
                 //
                 do
                 {
@@ -3561,12 +3559,78 @@ int string_compare(const UTF8 *s1, const UTF8 *s2)
                 {
                     s2++;
                 } while (mux_isspace(*s2));
+                continue;
+            }
+
+            // Compare code points case-insensitively (Unicode-aware).
+            //
+            UTF8 la[4], lb[4];
+            size_t na, nb;
+
+            bool bXorA;
+            const string_desc *qA = mux_tolower(s1, bXorA);
+            if (nullptr == qA)
+            {
+                na = utf8_FirstByte[static_cast<unsigned char>(*s1)];
+                if (na >= UTF8_CONTINUE) na = 1;
+                for (size_t j = 0; j < na; j++) la[j] = s1[j];
             }
             else
             {
-                s1++;
-                s2++;
+                na = qA->n_bytes;
+                if (bXorA)
+                {
+                    for (size_t j = 0; j < na; j++) la[j] = s1[j] ^ qA->p[j];
+                }
+                else
+                {
+                    for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+                }
             }
+
+            bool bXorB;
+            const string_desc *qB = mux_tolower(s2, bXorB);
+            if (nullptr == qB)
+            {
+                nb = utf8_FirstByte[static_cast<unsigned char>(*s2)];
+                if (nb >= UTF8_CONTINUE) nb = 1;
+                for (size_t j = 0; j < nb; j++) lb[j] = s2[j];
+            }
+            else
+            {
+                nb = qB->n_bytes;
+                if (bXorB)
+                {
+                    for (size_t j = 0; j < nb; j++) lb[j] = s2[j] ^ qB->p[j];
+                }
+                else
+                {
+                    for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+                }
+            }
+
+            // If lowercased code points differ, we're done.
+            //
+            if (na != nb)
+            {
+                break;
+            }
+            bool bEqual = true;
+            for (size_t j = 0; j < na; j++)
+            {
+                if (la[j] != lb[j])
+                {
+                    bEqual = false;
+                    break;
+                }
+            }
+            if (!bEqual)
+            {
+                break;
+            }
+
+            s1 = utf8_NextCodePoint(s1);
+            s2 = utf8_NextCodePoint(s2);
         }
         if (  *s1
            && *s2)
@@ -3607,10 +3671,70 @@ int string_prefix(const UTF8 *string, const UTF8 *prefix)
 {
     int count = 0;
 
-    while (*string && *prefix
-          && (mux_tolower_ascii(*string) == mux_tolower_ascii(*prefix)))
+    // Code-point-at-a-time case-insensitive comparison (Unicode-aware).
+    //
+    while (*string && *prefix)
     {
-        string++, prefix++, count++;
+        UTF8 la[4], lb[4];
+        size_t na, nb;
+
+        bool bXorA;
+        const string_desc *qA = mux_tolower(string, bXorA);
+        if (nullptr == qA)
+        {
+            na = utf8_FirstByte[static_cast<unsigned char>(*string)];
+            if (na >= UTF8_CONTINUE) na = 1;
+            for (size_t j = 0; j < na; j++) la[j] = string[j];
+        }
+        else
+        {
+            na = qA->n_bytes;
+            if (bXorA)
+            {
+                for (size_t j = 0; j < na; j++) la[j] = string[j] ^ qA->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+            }
+        }
+
+        bool bXorB;
+        const string_desc *qB = mux_tolower(prefix, bXorB);
+        if (nullptr == qB)
+        {
+            nb = utf8_FirstByte[static_cast<unsigned char>(*prefix)];
+            if (nb >= UTF8_CONTINUE) nb = 1;
+            for (size_t j = 0; j < nb; j++) lb[j] = prefix[j];
+        }
+        else
+        {
+            nb = qB->n_bytes;
+            if (bXorB)
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = prefix[j] ^ qB->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+            }
+        }
+
+        if (na != nb)
+        {
+            return 0;
+        }
+        for (size_t j = 0; j < na; j++)
+        {
+            if (la[j] != lb[j])
+            {
+                return 0;
+            }
+        }
+
+        string = utf8_NextCodePoint(string);
+        prefix = utf8_NextCodePoint(prefix);
+        count += static_cast<int>(na);
     }
     if (*prefix == '\0')
     {
@@ -3794,12 +3918,71 @@ UTF8 *replace_tokens
 
 bool minmatch(const UTF8 *str, const UTF8 *target, int min)
 {
-    while (*str && *target
-          && (mux_tolower_ascii(*str) == mux_tolower_ascii(*target)))
+    // Code-point-at-a-time case-insensitive comparison (Unicode-aware).
+    // min tracks bytes matched (callers pass byte-based minlen).
+    //
+    while (*str && *target)
     {
-        str++;
-        target++;
-        min--;
+        UTF8 la[4], lb[4];
+        size_t na, nb;
+
+        bool bXorA;
+        const string_desc *qA = mux_tolower(str, bXorA);
+        if (nullptr == qA)
+        {
+            na = utf8_FirstByte[static_cast<unsigned char>(*str)];
+            if (na >= UTF8_CONTINUE) na = 1;
+            for (size_t j = 0; j < na; j++) la[j] = str[j];
+        }
+        else
+        {
+            na = qA->n_bytes;
+            if (bXorA)
+            {
+                for (size_t j = 0; j < na; j++) la[j] = str[j] ^ qA->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+            }
+        }
+
+        bool bXorB;
+        const string_desc *qB = mux_tolower(target, bXorB);
+        if (nullptr == qB)
+        {
+            nb = utf8_FirstByte[static_cast<unsigned char>(*target)];
+            if (nb >= UTF8_CONTINUE) nb = 1;
+            for (size_t j = 0; j < nb; j++) lb[j] = target[j];
+        }
+        else
+        {
+            nb = qB->n_bytes;
+            if (bXorB)
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = target[j] ^ qB->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+            }
+        }
+
+        if (na != nb)
+        {
+            return false;
+        }
+        for (size_t j = 0; j < na; j++)
+        {
+            if (la[j] != lb[j])
+            {
+                return false;
+            }
+        }
+
+        str = utf8_NextCodePoint(str);
+        target = utf8_NextCodePoint(target);
+        min -= static_cast<int>(na);
     }
     if (*str)
     {
@@ -4270,12 +4453,80 @@ bool matches_exit_from_list(const UTF8 *str, const UTF8 *pattern)
 
     while (*pattern)
     {
-        for (s = str;   // check out this one
-             ( *s
-             && (mux_tolower_ascii(*s) == mux_tolower_ascii(*pattern))
-             && *pattern
-             && (*pattern != EXIT_DELIMITER));
-             s++, pattern++) ;
+        // Compare str against this exit name, code-point-at-a-time
+        // (Unicode-aware).
+        //
+        s = str;
+        while (  *s
+              && *pattern
+              && *pattern != EXIT_DELIMITER)
+        {
+            UTF8 la[4], lb[4];
+            size_t na, nb;
+
+            bool bXorA;
+            const string_desc *qA = mux_tolower(s, bXorA);
+            if (nullptr == qA)
+            {
+                na = utf8_FirstByte[static_cast<unsigned char>(*s)];
+                if (na >= UTF8_CONTINUE) na = 1;
+                for (size_t j = 0; j < na; j++) la[j] = s[j];
+            }
+            else
+            {
+                na = qA->n_bytes;
+                if (bXorA)
+                {
+                    for (size_t j = 0; j < na; j++) la[j] = s[j] ^ qA->p[j];
+                }
+                else
+                {
+                    for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+                }
+            }
+
+            bool bXorB;
+            const string_desc *qB = mux_tolower(pattern, bXorB);
+            if (nullptr == qB)
+            {
+                nb = utf8_FirstByte[static_cast<unsigned char>(*pattern)];
+                if (nb >= UTF8_CONTINUE) nb = 1;
+                for (size_t j = 0; j < nb; j++) lb[j] = pattern[j];
+            }
+            else
+            {
+                nb = qB->n_bytes;
+                if (bXorB)
+                {
+                    for (size_t j = 0; j < nb; j++) lb[j] = pattern[j] ^ qB->p[j];
+                }
+                else
+                {
+                    for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+                }
+            }
+
+            if (na != nb)
+            {
+                break;
+            }
+            bool bEqual = true;
+            for (size_t j = 0; j < na; j++)
+            {
+                if (la[j] != lb[j])
+                {
+                    bEqual = false;
+                    break;
+                }
+            }
+            if (!bEqual)
+            {
+                break;
+            }
+
+            s = utf8_NextCodePoint(s);
+            pattern = utf8_NextCodePoint(pattern);
+        }
 
         // Did we match it all?
         //
@@ -4830,56 +5081,152 @@ void ItemToList_Final(ITL *pContext)
 //
 int mux_stricmp(const UTF8 *a, const UTF8 *b)
 {
-    while (  *a
-          && *b
-          && mux_tolower_ascii(*a) == mux_tolower_ascii(*b))
+    for (;;)
     {
-        a++;
-        b++;
-    }
+        if ('\0' == *a || '\0' == *b)
+        {
+            // Compare terminating bytes.
+            //
+            if (*a < *b) return -1;
+            if (*a > *b) return 1;
+            return 0;
+        }
 
-    int c1 = mux_tolower_ascii(*a);
-    int c2 = mux_tolower_ascii(*b);
-    if (c1 < c2)
-    {
-        return -1;
-    }
-    else if (c1 > c2)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
+        // Get lowercased bytes for each code point.
+        //
+        UTF8 la[4], lb[4];
+        size_t na, nb;
+
+        bool bXorA;
+        const string_desc *qA = mux_tolower(a, bXorA);
+        if (nullptr == qA)
+        {
+            na = utf8_FirstByte[static_cast<unsigned char>(*a)];
+            if (na >= UTF8_CONTINUE) na = 1;
+            for (size_t j = 0; j < na; j++) la[j] = a[j];
+        }
+        else
+        {
+            na = qA->n_bytes;
+            if (bXorA)
+            {
+                for (size_t j = 0; j < na; j++) la[j] = a[j] ^ qA->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+            }
+        }
+
+        bool bXorB;
+        const string_desc *qB = mux_tolower(b, bXorB);
+        if (nullptr == qB)
+        {
+            nb = utf8_FirstByte[static_cast<unsigned char>(*b)];
+            if (nb >= UTF8_CONTINUE) nb = 1;
+            for (size_t j = 0; j < nb; j++) lb[j] = b[j];
+        }
+        else
+        {
+            nb = qB->n_bytes;
+            if (bXorB)
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = b[j] ^ qB->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+            }
+        }
+
+        // Compare the lowercased code-point bytes.
+        //
+        size_t nMin = (na < nb) ? na : nb;
+        for (size_t j = 0; j < nMin; j++)
+        {
+            if (la[j] < lb[j]) return -1;
+            if (la[j] > lb[j]) return 1;
+        }
+        if (na < nb) return -1;
+        if (na > nb) return 1;
+
+        a = utf8_NextCodePoint(a);
+        b = utf8_NextCodePoint(b);
     }
 }
 
-// mux_memicmp - Compare two buffers ignoring case.
+// mux_memicmp - Compare two buffers ignoring case (Unicode-aware).
+// Bounded by byte count n from each buffer.
 //
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 {
     const UTF8 *p1 = reinterpret_cast<const UTF8 *>(p1_arg);
     const UTF8 *p2 = reinterpret_cast<const UTF8 *>(p2_arg);
-    while (  n
-          && mux_tolower_ascii(*p1) == mux_tolower_ascii(*p2))
+    const UTF8 *p1End = p1 + n;
+    const UTF8 *p2End = p2 + n;
+
+    while (p1 < p1End && p2 < p2End)
     {
-        n--;
-        p1++;
-        p2++;
-    }
-    if (n)
-    {
-        int c1 = mux_tolower_ascii(*p1);
-        int c2 = mux_tolower_ascii(*p2);
-        if (c1 < c2)
+        UTF8 la[4], lb[4];
+        size_t na, nb;
+
+        bool bXorA;
+        const string_desc *qA = mux_tolower(p1, bXorA);
+        if (nullptr == qA)
         {
-            return -1;
+            na = utf8_FirstByte[static_cast<unsigned char>(*p1)];
+            if (na >= UTF8_CONTINUE) na = 1;
+            for (size_t j = 0; j < na; j++) la[j] = p1[j];
         }
-        else if (c1 > c2)
+        else
         {
-            return 1;
+            na = qA->n_bytes;
+            if (bXorA)
+            {
+                for (size_t j = 0; j < na; j++) la[j] = p1[j] ^ qA->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < na; j++) la[j] = qA->p[j];
+            }
         }
+
+        bool bXorB;
+        const string_desc *qB = mux_tolower(p2, bXorB);
+        if (nullptr == qB)
+        {
+            nb = utf8_FirstByte[static_cast<unsigned char>(*p2)];
+            if (nb >= UTF8_CONTINUE) nb = 1;
+            for (size_t j = 0; j < nb; j++) lb[j] = p2[j];
+        }
+        else
+        {
+            nb = qB->n_bytes;
+            if (bXorB)
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = p2[j] ^ qB->p[j];
+            }
+            else
+            {
+                for (size_t j = 0; j < nb; j++) lb[j] = qB->p[j];
+            }
+        }
+
+        size_t nMin = (na < nb) ? na : nb;
+        for (size_t j = 0; j < nMin; j++)
+        {
+            if (la[j] < lb[j]) return -1;
+            if (la[j] > lb[j]) return 1;
+        }
+        if (na < nb) return -1;
+        if (na > nb) return 1;
+
+        p1 = utf8_NextCodePoint(p1);
+        p2 = utf8_NextCodePoint(p2);
     }
+
+    if (p1 < p1End) return 1;
+    if (p2 < p2End) return -1;
     return 0;
 }
 
@@ -4994,6 +5341,89 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
     }
     Buffer[n] = '\0';
     return Buffer;
+}
+
+// mux_toupper_first - Uppercase the first UTF-8 code point in-place in a
+// buffer.  buff points to the first byte to transform, bufc points to the
+// current end-of-data pointer, nBufferTotal is the total buffer size.
+//
+// For XOR transforms (same byte length), overwrites in place.
+// For literal transforms (may change byte length), shifts the remaining
+// buffer contents via memmove and adjusts *bufc.
+//
+void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal)
+{
+    if (buff >= *bufc || '\0' == *buff)
+    {
+        return;
+    }
+
+    size_t nOld = utf8_FirstByte[static_cast<unsigned char>(*buff)];
+    if (nOld >= UTF8_CONTINUE)
+    {
+        return;
+    }
+
+    // Validate that we have enough bytes.
+    //
+    size_t nUsed = *bufc - buff;
+    if (nOld > nUsed)
+    {
+        return;
+    }
+
+    bool bXor;
+    const string_desc *qDesc = mux_toupper(buff, bXor);
+    if (nullptr == qDesc)
+    {
+        // No transform for this code point — already uppercase or not a letter.
+        //
+        return;
+    }
+
+    size_t nNew = qDesc->n_bytes;
+
+    if (bXor)
+    {
+        // XOR transform: same byte length, overwrite in place.
+        //
+        for (size_t j = 0; j < nNew; j++)
+        {
+            buff[j] ^= qDesc->p[j];
+        }
+    }
+    else
+    {
+        // Literal transform: byte length may differ.
+        //
+        size_t nTail = nUsed - nOld;
+
+        // Check that the result fits in the buffer.
+        //
+        size_t nBufferEnd = nBufferTotal - 1;
+        size_t nBuffStart = buff - (*bufc - nUsed);  // offset of buff from buffer start
+        if (nBuffStart + nNew + nTail > nBufferEnd)
+        {
+            // Would overflow — truncate by not transforming.
+            //
+            return;
+        }
+
+        // Shift the tail to make room (or shrink).
+        //
+        if (nNew != nOld)
+        {
+            memmove(buff + nNew, buff + nOld, nTail + 1); // +1 for NUL
+            *bufc += (nNew - nOld);
+        }
+
+        // Write the transformed bytes.
+        //
+        for (size_t j = 0; j < nNew; j++)
+        {
+            buff[j] = qDesc->p[j];
+        }
+    }
 }
 
 // mux_foldmatch - alias for matching.
@@ -5581,71 +6011,74 @@ bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t n
     return BMH_Execute(&bmhs, pnMatched, nPat, pPat, nSrc, pSrc);
 }
 
+// BMH_PrepareI - Pre-lowercase the pattern with mux_strlwr() (Unicode-aware)
+// and prepare the case-sensitive BMH state on the lowered pattern.
+//
+// Note: For XOR transforms (the vast majority), byte length is preserved so
+// offsets map directly.  For the ~24 rare literal transforms that change byte
+// count, the offset in the lowered source may differ from the original.
+// Callers (grepi) use the offset to extract from the original text, so the
+// result is correct when byte length is preserved.
+//
 void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat)
 {
-    if (nPat <= 0)
-    {
-        return;
-    }
-    size_t k;
-    for (k = 0; k < 256; k++)
-    {
-        bmhs->m_d[k] = nPat;
-    }
+    size_t nLower;
+    UTF8 *pLower = mux_strlwr(pPat, nLower);
 
-    UTF8 chLastPat = pPat[nPat-1];
-    bmhs->m_skip2 = nPat;
-    for (k = 0; k < nPat - 1; k++)
+    // Use a persistent buffer since BMH_Execute needs the pattern later.
+    //
+    static UTF8 LoweredPattern[LBUF_SIZE];
+    if (nLower >= LBUF_SIZE)
     {
-        bmhs->m_d[mux_toupper_ascii(pPat[k])] = nPat - k - 1;
-        bmhs->m_d[mux_tolower_ascii(pPat[k])] = nPat - k - 1;
-        if (mux_toupper_ascii(pPat[k]) == mux_toupper_ascii(chLastPat))
-        {
-            bmhs->m_skip2 = nPat - k - 1;
-        }
+        nLower = LBUF_SIZE - 1;
     }
-    bmhs->m_d[mux_toupper_ascii(chLastPat)] = BMH_LARGE;
-    bmhs->m_d[mux_tolower_ascii(chLastPat)] = BMH_LARGE;
+    memcpy(LoweredPattern, pLower, nLower);
+    LoweredPattern[nLower] = '\0';
+
+    BMH_Prepare(bmhs, nLower, LoweredPattern);
 }
 
 bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
-    if (nPat <= 0)
-    {
-        return false;
-    }
-    for (size_t i = nPat-1; i < nSrc; i += bmhs->m_skip2)
-    {
-        while ((i += bmhs->m_d[static_cast<unsigned char>(pSrc[i])]) < nSrc)
-        {
-            ; // Nothing.
-        }
-        if (i < BMH_LARGE)
-        {
-            break;
-        }
-        i -= BMH_LARGE;
-        int j = static_cast<int>(nPat - 1);
-        const UTF8 *s = pSrc + (i - j);
-        while (  --j >= 0
-              && mux_toupper_ascii(s[j]) == mux_toupper_ascii(pPat[j]))
-        {
-            ; // Nothing.
-        }
-        if (j < 0)
-        {
-            *pnMatched = s-pSrc;
-            return true;
-        }
-    }
-    return false;
+    // Lowercase both pattern and source, then delegate to case-sensitive.
+    //
+    size_t nLowerPat;
+    UTF8 *pLowerPat = mux_strlwr(pPat, nLowerPat);
+
+    // mux_strlwr uses a static buffer, so copy the lowered pattern first.
+    //
+    UTF8 LowPat[LBUF_SIZE];
+    if (nLowerPat >= LBUF_SIZE) nLowerPat = LBUF_SIZE - 1;
+    memcpy(LowPat, pLowerPat, nLowerPat);
+    LowPat[nLowerPat] = '\0';
+
+    size_t nLowerSrc;
+    UTF8 *pLowerSrc = mux_strlwr(pSrc, nLowerSrc);
+
+    // Re-prepare BMH state with lowered pattern since the state from
+    // BMH_PrepareI may have been invalidated.
+    //
+    BMH_State bmhsLocal;
+    BMH_Prepare(&bmhsLocal, nLowerPat, LowPat);
+    return BMH_Execute(&bmhsLocal, pnMatched, nLowerPat, LowPat, nLowerSrc, pLowerSrc);
 }
 
 bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
-    BMH_State bmhs;
-    BMH_PrepareI(&bmhs, nPat, pPat);
-    return BMH_ExecuteI(&bmhs, pnMatched, nPat, pPat, nSrc, pSrc);
+    // Lowercase pattern and source, then use case-sensitive search.
+    //
+    size_t nLowerPat;
+    UTF8 *pLowerPat = mux_strlwr(pPat, nLowerPat);
+
+    UTF8 LowPat[LBUF_SIZE];
+    if (nLowerPat >= LBUF_SIZE) nLowerPat = LBUF_SIZE - 1;
+    memcpy(LowPat, pLowerPat, nLowerPat);
+    LowPat[nLowerPat] = '\0';
+
+    size_t nLowerSrc;
+    UTF8 *pLowerSrc = mux_strlwr(pSrc, nLowerSrc);
+
+    return BMH_StringSearch(pnMatched, nLowerPat, LowPat, nLowerSrc, pLowerSrc);
 }
 
 // ---------------------------------------------------------------------------

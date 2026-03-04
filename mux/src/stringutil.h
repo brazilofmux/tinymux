@@ -28,6 +28,11 @@ extern const bool mux_isspace[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
+// mux_toupper_ascii[] and mux_tolower_ascii[] handle ASCII A-Z/a-z only.
+// Use mux_toupper()/mux_tolower() (state-machine transforms) for Unicode.
+// These ASCII tables are appropriate only when the input is known to be ASCII
+// (e.g., format modifiers, month abbreviations, %VA-%VZ attribute indices).
+//
 extern const unsigned char mux_toupper_ascii[256];
 extern const unsigned char mux_tolower_ascii[256];
 extern const UTF8 TableATOI[16][10];
@@ -1638,6 +1643,7 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
 UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
 UTF8 *mux_strupr(const UTF8 *a, size_t &n);
+void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal);
 UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged);
 
 typedef struct tag_itl

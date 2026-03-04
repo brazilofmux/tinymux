@@ -1245,7 +1245,8 @@ static FUNCTION(fun_etimefmt)
             }
         }
 
-        // Handle modifiers
+        // Handle modifiers.
+        // ASCII-only: format modifier characters are always ASCII.
         //
         bool bDoSuffix = false;
         bool bZeroIsBlank = false;
@@ -11620,12 +11621,33 @@ CF_HAND(cf_func_access)
 {
     UNUSED_PARAMETER(vp);
 
+    // Find end of function name (first space or NUL).
+    //
     UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        *ap = mux_toupper_ascii(*ap);
+        ; // Nothing.
     }
-    size_t nstr = ap - str;
+    size_t nOrigName = ap - str;
+
+    // Uppercase the function name (Unicode-aware).
+    //
+    UTF8 TempName[LBUF_SIZE];
+    memcpy(TempName, str, nOrigName);
+    TempName[nOrigName] = '\0';
+    size_t nUpper;
+    UTF8 *pUpper = mux_strupr(TempName, nUpper);
+
+    // Copy uppercased name back, shifting the rest of str if length changed.
+    //
+    if (nUpper != nOrigName)
+    {
+        size_t nTail = mux_strlen(ap);
+        memmove(str + nUpper, ap, nTail + 1);
+    }
+    memcpy(str, pUpper, nUpper);
+    ap = str + nUpper;
+    size_t nstr = nUpper;
 
     if (*ap)
     {

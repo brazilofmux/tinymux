@@ -17,8 +17,15 @@
 #include "config.h"
 #include "externs.h"
 
-#define EQUAL(a,b) (mux_tolower_ascii(a) == mux_tolower_ascii(b))
-#define NOTEQUAL(a,b) (mux_tolower_ascii(a) != mux_tolower_ascii(b))
+// Pattern (b) is pre-lowered by the caller; only lowercase the data side (a).
+// This provides Unicode case-insensitive matching for patterns via
+// mux_strlwr() at the entry points.  Non-ASCII case-insensitivity in data
+// still uses mux_tolower_ascii (identity for non-ASCII bytes), which is
+// correct for XOR transforms and documented as a limitation for the ~24 rare
+// literal transforms that change byte count.
+//
+#define EQUAL(a,b) (mux_tolower_ascii(a) == (b))
+#define NOTEQUAL(a,b) (mux_tolower_ascii(a) != (b))
 
 // Argument return space and size.
 //
@@ -27,11 +34,12 @@ static int numargs;
 
 //
 // ---------------------------------------------------------------------------
-// quick_wild: do a wildcard match, without remembering the wild data.
+// quick_wild_impl: INTERNAL: do a wildcard match, without remembering the
+// wild data.  The pattern (tstr) must already be lowercased by the caller.
 //
 // This routine will cause crashes if fed nullptrs instead of strings.
 //
-bool quick_wild(const UTF8 *tstr, const UTF8 *dstr)
+static bool quick_wild_impl(const UTF8 *tstr, const UTF8 *dstr)
 {
     if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
     {
@@ -126,7 +134,7 @@ bool quick_wild(const UTF8 *tstr, const UTF8 *dstr)
     while (*dstr)
     {
         if (  EQUAL(*dstr, *tstr)
-           && quick_wild(tstr + 1, dstr + 1))
+           && quick_wild_impl(tstr + 1, dstr + 1))
         {
             return true;
         }
@@ -187,7 +195,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
             //
             if (arg >= numargs)
             {
-                return quick_wild(tstr + 1, dstr + t);
+                return quick_wild_impl(tstr + 1, dstr + t);
             }
             dstr += t;
             break;
@@ -249,7 +257,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
             //
             if (argpos >= numargs)
             {
-                return quick_wild(tstr, dstr);
+                return quick_wild_impl(tstr, dstr);
             }
 
             // Fill in any intervening '?'s
@@ -265,7 +273,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
                 //
                 if (argpos >= numargs)
                 {
-                    return quick_wild(tstr, dstr);
+                    return quick_wild_impl(tstr, dstr);
                 }
             }
         }
@@ -329,7 +337,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
         //
         if (  !*dstr
            || ((arg < numargs) ? wild1(tstr + 1, dstr + 1, arg)
-                               : quick_wild(tstr + 1, dstr + 1)))
+                               : quick_wild_impl(tstr + 1, dstr + 1)))
         {
             // Found a match!  Fill in all remaining arguments. First do the
             // '*'...
@@ -376,6 +384,16 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
 {
     mudstate.wild_invk_ctr = 0;
 
+    // Pre-lowercase the pattern for case-insensitive matching (Unicode-aware).
+    //
+    size_t nLower;
+    UTF8 *pLower = mux_strlwr(tstr, nLower);
+    UTF8 LoweredPattern[LBUF_SIZE];
+    if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
+    memcpy(LoweredPattern, pLower, nLower);
+    LoweredPattern[nLower] = '\0';
+    UTF8 *lt = LoweredPattern;
+
     int i;
     UTF8 *scan;
 
@@ -388,14 +406,14 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
 
     // Do fast match.
     //
-    while (  *tstr != '*'
-          && *tstr != '?')
+    while (  *lt != '*'
+          && *lt != '?')
     {
-        if (*tstr == '\\')
+        if (*lt == '\\')
         {
-            tstr++;
+            lt++;
         }
-        if (NOTEQUAL(*dstr, *tstr))
+        if (NOTEQUAL(*dstr, *lt))
         {
             return false;
         }
@@ -403,14 +421,14 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
         {
             return true;
         }
-        tstr++;
+        lt++;
         dstr++;
     }
 
     // Allocate space for the return args.
     //
     i = 0;
-    scan = tstr;
+    scan = lt;
     while (  *scan
           && i < nargs)
     {
@@ -437,7 +455,7 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
 
     // Do the match.
     //
-    bool value = nargs ? wild1(tstr, dstr, 0) : quick_wild(tstr, dstr);
+    bool value = nargs ? wild1(lt, dstr, 0) : quick_wild_impl(lt, dstr);
 
     // Clean out any fake match data left by wild1.
     //
@@ -491,6 +509,32 @@ bool wild_match(UTF8 *tstr, const UTF8 *dstr)
             return (strcmp(reinterpret_cast<const char *>(dstr), reinterpret_cast<const char *>(tstr)) > 0);
         }
     }
+
+    // Pre-lowercase the pattern for case-insensitive matching (Unicode-aware).
+    //
+    size_t nLower;
+    UTF8 *pLower = mux_strlwr(tstr, nLower);
+    UTF8 LoweredPattern[LBUF_SIZE];
+    if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
+    memcpy(LoweredPattern, pLower, nLower);
+    LoweredPattern[nLower] = '\0';
+
     mudstate.wild_invk_ctr = 0;
-    return quick_wild(tstr, dstr);
+    return quick_wild_impl(LoweredPattern, dstr);
+}
+
+// ---------------------------------------------------------------------------
+// quick_wild: Public entry point.  Pre-lowercases the pattern for
+// Unicode-aware case-insensitive matching, then delegates to quick_wild_impl.
+//
+bool quick_wild(const UTF8 *tstr, const UTF8 *dstr)
+{
+    size_t nLower;
+    UTF8 *pLower = mux_strlwr(tstr, nLower);
+    UTF8 LoweredPattern[LBUF_SIZE];
+    if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
+    memcpy(LoweredPattern, pLower, nLower);
+    LoweredPattern[nLower] = '\0';
+
+    return quick_wild_impl(LoweredPattern, dstr);
 }

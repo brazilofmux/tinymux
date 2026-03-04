@@ -611,12 +611,55 @@ UTF8 *MakeCanonicalFlagName
     UTF8 *p = buff;
     int nName = 0;
 
-    while (*pName && nName < SBUF_SIZE)
+    // Uppercase flag name one code point at a time (Unicode-aware).
+    //
+    while ('\0' != *pName)
     {
-        *p = mux_toupper_ascii(*pName);
-        p++;
-        pName++;
-        nName++;
+        size_t n = utf8_FirstByte[static_cast<unsigned char>(*pName)];
+        if (n >= UTF8_CONTINUE)
+        {
+            break;
+        }
+
+        bool bXor;
+        const string_desc *qDesc = mux_toupper(pName, bXor);
+        size_t m;
+        if (nullptr == qDesc)
+        {
+            m = n;
+            if (nName + static_cast<int>(m) >= SBUF_SIZE)
+            {
+                break;
+            }
+            for (size_t j = 0; j < m; j++)
+            {
+                *p++ = pName[j];
+            }
+        }
+        else
+        {
+            m = qDesc->n_bytes;
+            if (nName + static_cast<int>(m) >= SBUF_SIZE)
+            {
+                break;
+            }
+            if (bXor)
+            {
+                for (size_t j = 0; j < m; j++)
+                {
+                    *p++ = pName[j] ^ qDesc->p[j];
+                }
+            }
+            else
+            {
+                for (size_t j = 0; j < m; j++)
+                {
+                    *p++ = qDesc->p[j];
+                }
+            }
+        }
+        nName += static_cast<int>(m);
+        pName = utf8_NextCodePoint(pName);
     }
     *p = '\0';
     if (  0 < nName

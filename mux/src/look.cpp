@@ -1676,7 +1676,6 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
 
     dbref content, exit, aowner, loc;
-    UTF8 savec;
     UTF8 *temp, *buf, *buf2;
     BOOLEXP *pBoolExp;
     int aflags;
@@ -1818,16 +1817,27 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     {
         // Print owner, key, and value.
         //
-        savec = mudconf.many_coins[0];
-        mudconf.many_coins[0] = mux_toupper_ascii(mudconf.many_coins[0]);
+        // Build a capitalized copy of many_coins (Unicode-aware)
+        // instead of modifying the global in-place.
+        //
+        size_t nCoinsUpper;
+        UTF8 *pCoinsUpper = mux_strupr(mudconf.many_coins, nCoinsUpper);
+        UTF8 capCoins[SBUF_SIZE];
+        size_t nCoins = mux_strlen(mudconf.many_coins);
+        if (nCoins >= SBUF_SIZE) nCoins = SBUF_SIZE - 1;
+        memcpy(capCoins, mudconf.many_coins, nCoins);
+        capCoins[nCoins] = '\0';
+        UTF8 *pCapEnd = capCoins + nCoins;
+        mux_toupper_first(capCoins, &pCapEnd, SBUF_SIZE);
+        *pCapEnd = '\0';
+
         buf2 = atr_get("do_examine.1803", thing, A_LOCK, &aowner, &aflags);
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
         mux_strncpy(buf2, Moniker(Owner(thing)), LBUF_SIZE-1);
-        notify(executor, tprintf(T("Owner: %s  Key: %s %s: %d"), buf2, buf, mudconf.many_coins, Pennies(thing)));
+        notify(executor, tprintf(T("Owner: %s  Key: %s %s: %d"), buf2, buf, capCoins, Pennies(thing)));
         free_lbuf(buf2);
-        mudconf.many_coins[0] = savec;
 
         // Print the zone
         //

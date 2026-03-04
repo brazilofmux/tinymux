@@ -869,6 +869,8 @@ static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
         {
             return false;
         }
+        // ASCII-only: month abbreviations are always ASCII.
+        //
         iHash = (iHash << 8) | mux_toupper_ascii(*q);
         q++;
     }

@@ -2198,17 +2198,29 @@ UTF8 *process_command
     // the lower-cased command.
     //
 
-    // Make lowercase command
+    // Make lowercase command (Unicode-aware).
     //
-    size_t nLowerCaseCommand = 0, iPos = 0;
+    size_t iPos = 0;
     while (  pCommand[iPos]
-          && !mux_isspace(pCommand[iPos])
-          && nLowerCaseCommand < LBUF_SIZE - 1)
+          && !mux_isspace(pCommand[iPos]))
     {
-        LowerCaseCommand[nLowerCaseCommand] = mux_tolower_ascii(pCommand[iPos]);
         iPos++;
-        nLowerCaseCommand++;
     }
+    UTF8 TempCmd[LBUF_SIZE];
+    size_t nCopy = iPos;
+    if (nCopy >= LBUF_SIZE)
+    {
+        nCopy = LBUF_SIZE - 1;
+    }
+    memcpy(TempCmd, pCommand, nCopy);
+    TempCmd[nCopy] = '\0';
+    size_t nLowerCaseCommand;
+    UTF8 *pLower = mux_strlwr(TempCmd, nLowerCaseCommand);
+    if (nLowerCaseCommand >= LBUF_SIZE)
+    {
+        nLowerCaseCommand = LBUF_SIZE - 1;
+    }
+    memcpy(LowerCaseCommand, pLower, nLowerCaseCommand);
     LowerCaseCommand[nLowerCaseCommand] = '\0';
 
     // Skip spaces before arg
@@ -4403,14 +4415,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
     UTF8* buff1 = alloc_lbuf("do_icmd");
     for (int x = 0; x < nargs; x++)
     {
-        UTF8* pt1 = args[x];
-        UTF8* pt2 = buff1;
-        while (  *pt1
-              && pt2 < buff1 + LBUF_SIZE)
+        // Lowercase the argument (Unicode-aware).
+        //
+        size_t nLower;
+        UTF8 *pLower = mux_strlwr(args[x], nLower);
+        if (nLower >= LBUF_SIZE)
         {
-            *pt2++ = mux_tolower_ascii(*pt1++);
+            nLower = LBUF_SIZE - 1;
         }
-        *pt2 = '\0';
+        memcpy(buff1, pLower, nLower);
+        buff1[nLower] = '\0';
+        UTF8* pt1;
+        UTF8* pt2;
         if (  buff1[0] == '!'
            && buff1[1] != '\0')
         {
@@ -4923,9 +4939,36 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
 
                 p = cbuff;
                 safe_sb_chr('@', cbuff, &p);
-                for (q = ap->name; *q; q++)
+
+                // Lowercase attr name code-point-at-a-time (Unicode-aware).
+                //
+                for (q = ap->name; '\0' != *q; q = utf8_NextCodePoint(q))
                 {
-                    safe_sb_chr(mux_tolower_ascii(*q), cbuff, &p);
+                    bool bXor;
+                    const string_desc *qDesc = mux_tolower(q, bXor);
+                    if (nullptr == qDesc)
+                    {
+                        size_t n = utf8_FirstByte[static_cast<unsigned char>(*q)];
+                        if (n >= UTF8_CONTINUE) break;
+                        for (size_t j = 0; j < n; j++)
+                        {
+                            safe_sb_chr(q[j], cbuff, &p);
+                        }
+                    }
+                    else if (bXor)
+                    {
+                        for (size_t j = 0; j < qDesc->n_bytes; j++)
+                        {
+                            safe_sb_chr(q[j] ^ qDesc->p[j], cbuff, &p);
+                        }
+                    }
+                    else
+                    {
+                        for (size_t j = 0; j < qDesc->n_bytes; j++)
+                        {
+                            safe_sb_chr(qDesc->p[j], cbuff, &p);
+                        }
+                    }
                 }
                 *p = '\0';
                 const size_t ncbuff = p - cbuff;
