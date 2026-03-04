@@ -1,0 +1,169 @@
+#
+# citer_fn.mux - Test Cases for citer().
+#
+@create test_citer_fn
+-
+@set test_citer_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_citer_fn=
+  @log smoke=Beginning citer() test cases.
+-
+#
+# Test Case #1 - Basic character iteration.
+# citer(abc,##) => "a b c"
+#
+&tr.tc001 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(abc,##)]
+          )
+        ),
+        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+      )=
+  {
+    @log smoke=TC001: citer basic iteration. Succeeded.;
+    @trig me/tr.tc002
+  },
+  {
+    @log smoke=TC001: citer basic iteration. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Position substitution with ##-#@.
+# citer(boo!,##-#@) => "b-1 o-2 o-3 !-4"
+#
+&tr.tc002 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(boo!,##-#@)]
+          )
+        ),
+        3A1884F71FEAC0FF4A5F2F2369F76DBFAA089AF6
+      )=
+  {
+    @log smoke=TC002: citer position. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: citer position. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - Custom output delimiter.
+# citer(abc,##,|) => "a|b|c"
+#
+&tr.tc003 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(abc,##,|)]
+          )
+        ),
+        C74A3276C7E3CBBF386B6332E627989DFC851C00
+      )=
+  {
+    @log smoke=TC003: citer output delimiter. Succeeded.;
+    @trig me/tr.tc004
+  },
+  {
+    @log smoke=TC003: citer output delimiter. Failed (%q0).;
+    @trig me/tr.tc004
+  }
+-
+#
+# Test Case #4 - Function evaluation in body.
+# citer(abc,strlen(##)) => "1 1 1"
+#
+&tr.tc004 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(abc,strlen(##))]
+          )
+        ),
+        E6F1BEC448F5B1CF8BD57DAACE593E9970ECD32D
+      )=
+  {
+    @log smoke=TC004: citer function eval. Succeeded.;
+    @trig me/tr.tc005
+  },
+  {
+    @log smoke=TC004: citer function eval. Failed (%q0).;
+    @trig me/tr.tc005
+  }
+-
+#
+# Test Case #5 - Empty string returns empty.
+#
+&tr.tc005 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(,##)]
+          )
+        ),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC005: citer empty string. Succeeded.;
+    @trig me/tr.tc006
+  },
+  {
+    @log smoke=TC005: citer empty string. Failed (%q0).;
+    @trig me/tr.tc006
+  }
+-
+#
+# Test Case #6 - Single character.
+# citer(X,##-#@) => "X-1"
+#
+&tr.tc006 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(X,##-#@)]
+          )
+        ),
+        123003CB6DB59335F241F5589CF1F41B8AC61162
+      )=
+  {
+    @log smoke=TC006: citer single character. Succeeded.;
+    @trig me/tr.tc007
+  },
+  {
+    @log smoke=TC006: citer single character. Failed (%q0).;
+    @trig me/tr.tc007
+  }
+-
+#
+# Test Case #7 - itext()/inum() support.
+# citer(ab,[itext(0)]-[inum(0)]) => "a-1 b-2"
+#
+&tr.tc007 test_citer_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [citer(ab,[itext(0)]-[inum(0)])]
+          )
+        ),
+        2BD2A31551350353443E03D2CD4B9C32BB386300
+      )=
+  {
+    @log smoke=TC007: citer itext/inum. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: citer itext/inum. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_citer_fn=
+  @log smoke=End citer() test cases.;
+  @notify smoke
+-
+drop test_citer_fn
+-
+#
+# End of Test Cases
+#
+

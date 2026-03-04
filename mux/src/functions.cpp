@@ -6435,6 +6435,87 @@ static FUNCTION(fun_iter)
     free_lbuf(curr);
 }
 
+// citer() - Character iterator.  Like iter(), but processes each character
+// individually rather than splitting on a delimiter.
+//
+// citer(<string>, <eval>[, <osep>])
+//
+static FUNCTION(fun_citer)
+{
+    // Optional Output Delimiter.
+    //
+    SEP osep;
+    if (!OPTIONAL_DELIM(3, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
+
+    UTF8 *curr = alloc_lbuf("fun_citer");
+    UTF8 *dp = curr;
+    mux_exec(fargs[0], LBUF_SIZE-1, curr, &dp, executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *dp = '\0';
+
+    if ('\0' == curr[0])
+    {
+        free_lbuf(curr);
+        return;
+    }
+
+    bool first = true;
+    int number = 0;
+    bool bLoopInBounds = (  0 <= mudstate.in_loop
+                         && mudstate.in_loop < MAX_ITEXT);
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = nullptr;
+        mudstate.inum[mudstate.in_loop] = number;
+    }
+    mudstate.in_loop++;
+
+    UTF8 *cp = curr;
+    while (  '\0' != *cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !alarm_clock.alarmed)
+    {
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        number++;
+
+        // Extract one UTF-8 code point into a small buffer.
+        //
+        UTF8 *pNext = utf8_NextCodePoint(cp);
+        UTF8 chbuf[5];
+        size_t nLen = pNext - cp;
+        memcpy(chbuf, cp, nLen);
+        chbuf[nLen] = '\0';
+
+        if (bLoopInBounds)
+        {
+            mudstate.itext[mudstate.in_loop-1] = chbuf;
+            mudstate.inum[mudstate.in_loop-1]  = number;
+        }
+
+        UTF8 *buff2 = replace_tokens(fargs[1], chbuf,
+            mux_ltoa_t(number), nullptr);
+        mux_exec(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        free_lbuf(buff2);
+        cp = pNext;
+    }
+
+    mudstate.in_loop--;
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = nullptr;
+        mudstate.inum[mudstate.in_loop] = 0;
+    }
+    free_lbuf(curr);
+}
+
 static void iter_value(UTF8 *buff, UTF8 **bufc, UTF8 *fargs[], int nfargs, bool bWhich)
 {
     int number = 0;
@@ -10843,6 +10924,7 @@ static FUN builtin_function_list[] =
     {T("CHILDREN"),    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CHOOSE"),      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CHR"),         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("CITER"),       fun_citer,      MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
     {T("CMDS"),        fun_cmds,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("COLORDEPTH"),  fun_colordepth, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("COLUMNS"),     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
