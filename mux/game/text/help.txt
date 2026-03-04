@@ -5303,11 +5303,14 @@ CHANNEL OBJECT
 & CHANNELS()
 CHANNELS()
 
-  FUNCTION: channels([player])
+  FUNCTION: channels([<player>][, <delim>])
 
   This function lists channels that you can see, much like @clist. If the
-  argument is omitted or is 'all', then all are returned, otherwise only
-  those owned by the named player are returned.
+  first argument is omitted or is 'all', then all are returned, otherwise
+  only those owned by the named player are returned.
+
+  <delim> is an optional output delimiter. If not specified, a space is
+  used. Multi-character delimiters are supported.
 
   Example:
     > say channels()
@@ -5316,6 +5319,8 @@ CHANNELS()
     You say, "Wizard Staff Guest Public"
     > say channels(me)
     You say, "Code"
+    > say channels(all, |)
+    You say, "Wizard|Staff|Guest|Public|Code"
 
   Related Topics: comalias(), comtitle(), cwho()
 

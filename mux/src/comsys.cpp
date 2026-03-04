@@ -3850,13 +3850,16 @@ FUNCTION(fun_channels)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {
         safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
+        return;
+    }
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
         return;
     }
 
@@ -3872,20 +3875,23 @@ FUNCTION(fun_channels)
         }
     }
 
-    ITL itl;
-    ItemToList_Init(&itl, buff, bufc);
+    bool bFirst = true;
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
         const auto ch = it->second;
 
-        if ((Comm_All(executor)
+        if (  (Comm_All(executor)
                 || (ch->type & CHANNEL_PUBLIC)
                 || Controls(executor, ch->charge_who))
             && (who == NOTHING
-                || Controls(who, ch->charge_who))
-            && !ItemToList_AddString(&itl, ch->name))
+                || Controls(who, ch->charge_who)))
         {
-            break;
+            if (!bFirst)
+            {
+                print_sep(sep, buff, bufc);
+            }
+            safe_str(ch->name, buff, bufc);
+            bFirst = false;
         }
     }
 }
