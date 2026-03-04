@@ -8151,9 +8151,15 @@ IFELSE()
   nothing or contains text.  if() does the same thing, but the third,
   <false string> argument is optional.
 
-  Example:
+  Within <true string> and <false string>, the token #$ is replaced with
+  the evaluated result of <expression>. This is useful when you want to
+  test an expression and use its value without evaluating it twice.
+
+  Examples:
     > think ifelse(v(test),Test exists!,Test doesn't exist.)
     Test doesn't exist.
+    > think if(lattr(me/test*),Matched: #$,No match.)
+    Matched: test1 test2
 
   Related Topics: BOOLEAN VALUES, switch().
 

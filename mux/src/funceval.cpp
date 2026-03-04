@@ -1722,14 +1722,18 @@ FUNCTION(fun_ifelse)
     {
         if (nfargs == 3)
         {
-            mux_exec(fargs[2], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            UTF8 *tbuff = replace_tokens(fargs[2], nullptr, nullptr, lbuff);
+            mux_exec(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+            free_lbuf(tbuff);
         }
     }
     else
     {
-        mux_exec(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        UTF8 *tbuff = replace_tokens(fargs[1], nullptr, nullptr, lbuff);
+        mux_exec(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        free_lbuf(tbuff);
     }
     free_lbuf(lbuff);
 }
