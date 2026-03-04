@@ -6259,8 +6259,8 @@ static FUNCTION(fun_splice)
 
     // Loop through the two lists.
     //
-    UTF8 *p1 = fargs[0];
-    UTF8 *q1 = fargs[1];
+    UTF8 *p1 = trim_space_sep(fargs[0], sep);
+    UTF8 *q1 = trim_space_sep(fargs[1], sep);
     UTF8 *p2, *q2;
     bool first = true;
     int i;
