@@ -307,6 +307,10 @@ static int atr_match1
             continue;
         }
         *s++ = '\0';
+        if (AMATCH_LISTEN == type)
+        {
+            strip_fancy_quotes(buff + 1);
+        }
 
         UTF8 *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
@@ -453,6 +457,7 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
         AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
         nullptr, 0);
     *dp = '\0';
+    strip_fancy_quotes(nbuf);
     dp = nbuf;
     free_lbuf(buf);
 
@@ -803,6 +808,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         //
         UTF8 *msgPlain = alloc_lbuf("notify_check.plain");
         msg.export_TextPlain(msgPlain);
+        strip_fancy_quotes(msgPlain);
         bool pass_listen = false;
         UTF8 *args[NUM_ENV_VARS];
         nargs = 0;
@@ -811,6 +817,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
            && H_Listen(target))
         {
             tp = atr_get("notify_check.790", target, A_LISTEN, &aowner, &aflags);
+            strip_fancy_quotes(tp);
             if (*tp && wild(tp, msgPlain, args, NUM_ENV_VARS))
             {
                 for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
@@ -3014,7 +3021,7 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
             //
             return (fopen_s(pFile, reinterpret_cast<const char *>(filename), reinterpret_cast<const char *>(mode)) == 0);
 #else
-            *pFile = fopen(reinterpret_cast<char *>(filename), reinterpret_cast<char *>(mode));
+            *pFile = fopen(reinterpret_cast<const char *>(filename), reinterpret_cast<const char *>(mode));
             if (nullptr != *pFile)
             {
                 return true;
@@ -3037,10 +3044,10 @@ bool mux_open(int *pfh, const UTF8 *filename, int oflag)
             //
             return (_sopen_s(pfh, reinterpret_cast<const char *>(filename), oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
 #elif defined(WINDOWS_FILES)
-            *pfh = _open(reinterpret_cast<char *>(filename), oflag, _S_IREAD|_S_IWRITE);
+            *pfh = _open(reinterpret_cast<const char *>(filename), oflag, _S_IREAD|_S_IWRITE);
             return (0 <= *pfh);
 #else
-            *pfh = open(reinterpret_cast<char *>(filename), oflag, 0600);
+            *pfh = open(reinterpret_cast<const char *>(filename), oflag, 0600);
             return (0 <= *pfh);
 #endif
         }

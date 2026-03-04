@@ -8350,3 +8350,37 @@ mux_cursor mux_words::wordEnd(LBUF_OFFSET n) const
 
     return m_aiWordEnds[n];
 }
+
+// strip_fancy_quotes - Replace Unicode smart/curly quotes with ASCII equivalents
+// in-place.  The string can only shrink (3-byte UTF-8 sequences become 1 byte),
+// so no additional buffer is needed.
+//
+//   U+201C / U+201D  (left/right double quotation mark) -> "
+//   U+2018 / U+2019  (left/right single quotation mark) -> '
+//
+void strip_fancy_quotes(UTF8 *str)
+{
+    UTF8 *r = str;
+    UTF8 *w = str;
+    while (*r)
+    {
+        if (  0xE2 == r[0]
+           && 0x80 == r[1])
+        {
+            if (0x9C == r[2] || 0x9D == r[2])
+            {
+                *w++ = '"';
+                r += 3;
+                continue;
+            }
+            else if (0x98 == r[2] || 0x99 == r[2])
+            {
+                *w++ = '\'';
+                r += 3;
+                continue;
+            }
+        }
+        *w++ = *r++;
+    }
+    *w = '\0';
+}

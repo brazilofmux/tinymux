@@ -2308,4 +2308,6 @@ inline int mux_min(int x, int y)
     else return y;
 }
 
+void strip_fancy_quotes(UTF8 *str);
+
 #endif // STRINGUTIL_H

@@ -2197,6 +2197,10 @@ Related Topics: @name.
   Example: @listen camera = * has arrived.
            @ahear camera = @va me = %va %0
 
+  Note: Unicode smart quotes (\u201C \u201D \u2018 \u2019) in speech are normalized to
+  ASCII " and ' before pattern matching, so patterns using plain ASCII quotes
+  will match speech containing typographic quotes.
+
   Related Topics: @aahear, @ahear, @amhear, @sweep, @inprefix, @infilter.
 
 & @LISTMOTD
