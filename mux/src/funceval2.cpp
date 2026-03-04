@@ -2528,6 +2528,310 @@ FUNCTION(fun_regraballi)
 
 
 /* ---------------------------------------------------------------------------
+ * regedit(), regediti(), regeditall(), regeditalli(). Regex-based
+ * find-and-replace on strings, borrowing Penn's concept. Supports $0-$99
+ * for numbered capture groups and $<name> for named capture groups in the
+ * replacement string.
+ */
+
+// regedit_substitute: Expand $N and $<name> references in a replacement
+// string using match data from a PCRE2 match.
+//
+static void regedit_substitute(const UTF8 *replacement,
+    pcre2_match_data *match_data, UTF8 *buff, UTF8 **bufc)
+{
+    const UTF8 *p = replacement;
+    while (*p)
+    {
+        if ('$' == *p)
+        {
+            p++;
+            if ('<' == *p)
+            {
+                // Named capture group: $<name>
+                //
+                p++;
+                const UTF8 *namestart = p;
+                while (  *p
+                      && '>' != *p)
+                {
+                    p++;
+                }
+                if ('>' == *p)
+                {
+                    size_t namelen = p - namestart;
+                    p++;
+
+                    // Build null-terminated name.
+                    //
+                    UTF8 namebuf[128];
+                    if (namelen < sizeof(namebuf))
+                    {
+                        memcpy(namebuf, namestart, namelen);
+                        namebuf[namelen] = '\0';
+
+                        UTF8 groupbuf[LBUF_SIZE];
+                        PCRE2_SIZE outlen = sizeof(groupbuf) - 1;
+                        int ret = pcre2_substring_copy_byname(
+                            match_data,
+                            namebuf,
+                            groupbuf,
+                            &outlen
+                        );
+                        if (ret >= 0)
+                        {
+                            safe_copy_buf(groupbuf, outlen, buff, bufc);
+                        }
+                    }
+                }
+                else
+                {
+                    // Unterminated $<...>, output literally.
+                    //
+                    safe_chr('$', buff, bufc);
+                    safe_chr('<', buff, bufc);
+                    safe_str(namestart, buff, bufc);
+                }
+            }
+            else if (mux_isdigit(*p))
+            {
+                // Numbered capture group: $0 through $99
+                //
+                int groupnum = *p - '0';
+                p++;
+                if (mux_isdigit(*p))
+                {
+                    groupnum = groupnum * 10 + (*p - '0');
+                    p++;
+                }
+
+                UTF8 groupbuf[LBUF_SIZE];
+                PCRE2_SIZE outlen = sizeof(groupbuf) - 1;
+                int ret = pcre2_substring_copy_bynumber(
+                    match_data,
+                    groupnum,
+                    groupbuf,
+                    &outlen
+                );
+                if (ret >= 0)
+                {
+                    safe_copy_buf(groupbuf, outlen, buff, bufc);
+                }
+            }
+            else
+            {
+                // Lone $ not followed by digit or <, output literally.
+                //
+                safe_chr('$', buff, bufc);
+            }
+        }
+        else
+        {
+            safe_chr(*p, buff, bufc);
+            p++;
+        }
+    }
+}
+
+static void real_regedit(UTF8 *fargs[], int nfargs, UTF8 *buff,
+    UTF8 **bufc, bool cis, bool all)
+{
+    if (alarm_clock.alarmed)
+    {
+        return;
+    }
+
+    // Use two lbufs as ping-pong buffers for multi-pair processing.
+    //
+    UTF8 *inbuf = alloc_lbuf("regedit.in");
+    UTF8 *outbuf = alloc_lbuf("regedit.out");
+
+    mux_strncpy(inbuf, fargs[0], LBUF_SIZE - 1);
+
+    for (int i = 1; i + 1 < nfargs; i += 2)
+    {
+        if (alarm_clock.alarmed)
+        {
+            break;
+        }
+
+        PCRE2_SIZE erroffset;
+        int errcode;
+
+        pcre2_code *re = pcre2_compile_8(
+            fargs[i],
+            PCRE2_ZERO_TERMINATED,
+            PCRE2_UTF | (cis ? PCRE2_CASELESS : 0),
+            &errcode,
+            &erroffset,
+            nullptr
+        );
+
+        if (!re)
+        {
+            PCRE2_UCHAR errbuf[256];
+            pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+
+            free_lbuf(inbuf);
+            free_lbuf(outbuf);
+            safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+            safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
+            return;
+        }
+
+        pcre2_match_data *match_data =
+            pcre2_match_data_create_from_pattern(re, nullptr);
+        if (!match_data)
+        {
+            pcre2_code_free(re);
+            free_lbuf(inbuf);
+            free_lbuf(outbuf);
+            safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+            return;
+        }
+
+        if (all)
+        {
+            pcre2_jit_compile(re, PCRE2_JIT_COMPLETE);
+        }
+
+        UTF8 *outp = outbuf;
+        PCRE2_SIZE pos = 0;
+        PCRE2_SIZE inlen = strlen(reinterpret_cast<char *>(inbuf));
+        bool matched = false;
+
+        while (pos <= inlen)
+        {
+            if (alarm_clock.alarmed)
+            {
+                break;
+            }
+
+            int rc = pcre2_match(
+                re,
+                inbuf,
+                inlen,
+                pos,
+                0,
+                match_data,
+                nullptr
+            );
+
+            if (rc < 0)
+            {
+                // No more matches. Copy rest of input.
+                //
+                safe_copy_buf(inbuf + pos, inlen - pos, outbuf, &outp);
+                break;
+            }
+
+            matched = true;
+            PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
+
+            // Copy text before this match.
+            //
+            if (ovector[0] > pos)
+            {
+                safe_copy_buf(inbuf + pos, ovector[0] - pos, outbuf, &outp);
+            }
+
+            // Expand replacement string with capture group substitution.
+            //
+            regedit_substitute(fargs[i + 1], match_data, outbuf, &outp);
+
+            if (!all)
+            {
+                // Copy remaining text after the first match.
+                //
+                safe_copy_buf(inbuf + ovector[1], inlen - ovector[1],
+                    outbuf, &outp);
+                break;
+            }
+
+            // Advance past this match. Handle zero-length matches by
+            // advancing one byte to avoid infinite loops.
+            //
+            if (ovector[1] == pos)
+            {
+                if (pos < inlen)
+                {
+                    safe_chr(inbuf[pos], outbuf, &outp);
+                }
+                pos++;
+            }
+            else
+            {
+                pos = ovector[1];
+            }
+        }
+
+        *outp = '\0';
+
+        pcre2_match_data_free(match_data);
+        pcre2_code_free(re);
+
+        // Swap buffers for next pair.
+        //
+        UTF8 *tmp = inbuf;
+        inbuf = outbuf;
+        outbuf = tmp;
+    }
+
+    safe_str(inbuf, buff, bufc);
+    free_lbuf(inbuf);
+    free_lbuf(outbuf);
+}
+
+FUNCTION(fun_regedit)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    real_regedit(fargs, nfargs, buff, bufc, false, false);
+}
+
+FUNCTION(fun_regediti)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    real_regedit(fargs, nfargs, buff, bufc, true, false);
+}
+
+FUNCTION(fun_regeditall)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    real_regedit(fargs, nfargs, buff, bufc, false, true);
+}
+
+FUNCTION(fun_regeditalli)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    real_regedit(fargs, nfargs, buff, bufc, true, true);
+}
+
+
+/* ---------------------------------------------------------------------------
  * fun_translate: Takes a string and a second argument. If the second argument
  * is 0 or s, control characters are converted to spaces. If it's 1 or p,
  * they're converted to percent substitutions.

@@ -7463,7 +7463,8 @@ FUNCTION CLASSES (continued)
                              CAT CENTER CHR COMP CPAD DECRYPT DELETE EDIT
                              ENCRYPT ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST
                              LPAD LPOS MERGE MID ORD POS REGMATCH REGMATCHI
-                             REGRAB REGRABALL REGRABALLI REGRABI REPEAT REPLACE
+                             REGRAB REGRABALL REGRABALLI REGRABI REGEDIT
+                             REGEDITI REGEDITALL REGEDITALLI REPEAT REPLACE
                              REVERSE RIGHT RJUST ROMAN RPAD SCRAMBLE SECURE
                              SPACE SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
@@ -7539,7 +7540,8 @@ FUNCTION LIST (continued)
     PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
     POLL()      PORTS()     POS()       POSS()      POWER()     POWERS()
     R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL()
-    REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()
+    REGRABALLI()REGRABI()   REGEDIT()   REGEDITI()  REGEDITALL()
+    REGEDITALLI()           REMAINDER() REMIT()     REMOVE()    REPEAT()
     REPLACE()   REST()      RESTARTS()  RESTARTSECS()           RESTARTTIME()
     REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
     ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
@@ -11706,6 +11708,82 @@ REGRABALL()
   for a full description.
 
   Related Topics: regrab(), regrabi(), regraballi(), regexp syntax.
+
+& REGEDIT()
+REGEDIT()
+
+  FUNCTION: regedit(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+  FUNCTION: regediti(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+  FUNCTION: regeditall(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+  FUNCTION: regeditalli(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+
+  These functions perform regex-based find-and-replace on <string>. They
+  are similar to edit() but use regular expressions instead of literal
+  string matching.
+
+  regedit() replaces the first match, case-sensitive.
+  regediti() replaces the first match, case-insensitive.
+  regeditall() replaces all matches, case-sensitive.
+  regeditalli() replaces all matches, case-insensitive.
+
+  Multiple regexp/replacement pairs can be given. Each pair is applied
+  in sequence to the result of the previous pair.
+
+  In the replacement string, $0 through $99 refer to numbered capture
+  groups, and $<name> refers to named capture groups from the regexp.
+
+  Examples:
+    > say regedit(This is a test, (.)est, $1rash)
+    You say, "This is a trash"
+    > say regeditall(This test is the best, (.)est, $1rash)
+    You say, "This trash is the brash"
+    > say regediti(Hello WORLD, hello, goodbye)
+    You say, "goodbye WORLD"
+    > say regeditall(aaa, a, bb)
+    You say, "bbbbbb"
+    > say regedit(foo bar baz, foo, FOO, bar, BAR)
+    You say, "FOO BAR baz"
+    > say regedit(The quick brown fox, (?P<first>\w+)\s+(?P<second>\w+), $<second> $<first>)
+    You say, "quick The brown fox"
+
+  Related Topics: edit(), regmatch(), regexp syntax.
+
+& REGEDITI()
+REGEDITI()
+
+  FUNCTION: regediti(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+
+  This function is part of the REGEDIT family of functions. See regedit()
+  for a full description.
+
+  Related Topics: regedit(), regeditall(), regeditalli(), regexp syntax.
+
+& REGEDITALL()
+REGEDITALL()
+
+  FUNCTION: regeditall(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+
+  This function is part of the REGEDIT family of functions. See regedit()
+  for a full description.
+
+  Related Topics: regedit(), regediti(), regeditalli(), regexp syntax.
+
+& REGEDITALLI()
+REGEDITALLI()
+
+  FUNCTION: regeditalli(<string>, <regexp>, <replacement>[, ..., <regexpN>,
+            <replacementN>])
+
+  This function is part of the REGEDIT family of functions. See regedit()
+  for a full description.
+
+  Related Topics: regedit(), regediti(), regeditall(), regexp syntax.
 
 & REMAINDER()
 REMAINDER()
