@@ -1973,12 +1973,24 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
 //
 struct channel* select_channel(UTF8* channel_name)
 {
+    // Try exact match first.
+    //
     const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
     const vector<UTF8> channel_vector(channel_name, channel_name + channel_name_length);
     const auto it = mudstate.channel_names.find(channel_vector);
     if (it != mudstate.channel_names.end())
     {
         return it->second;
+    }
+
+    // Fall back to case-insensitive search.
+    //
+    for (const auto& entry : mudstate.channel_names)
+    {
+        if (0 == mux_stricmp(channel_name, entry.second->name))
+        {
+            return entry.second;
+        }
     }
     return nullptr;
 }
