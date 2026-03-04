@@ -478,8 +478,8 @@ ALONE
 
   If no arguments are given, or if the /list switch is given, the command
   displays a list of the currently-defined global functions. /privileged
-  functions are indicated with a 'W' and /preserve functions are indicated
-  with a 'p'.
+  functions are indicated with a 'W', /preserve functions are indicated
+  with a 'p', and /restrict functions are indicated with an 'R'.
 
   If the /privileged switch is given, then the new global function is
   evaluated as if the evaluation were being performed by the object on
@@ -490,6 +490,14 @@ ALONE
   The /preserve switch causes r-registers to be preserved across the
   defined function, so you can feel free to use registers in the code
   without worrying about them overwriting previous definitions.
+
+  The /restrict switch makes the function callable only by wizard code.
+  This includes code running on objects that have inherited wizard
+  privileges (INHERIT flag on a wizard-owned object).  Mortals who call
+  a restricted function directly will receive #-1 PERMISSION DENIED.
+  This is useful for library functions that should be available to
+  privileged softcode but not exposed to players.  /restrict may be
+  combined with /privileged and /preserve.
 
   The /delete switch removes an existing user-defined function.
 

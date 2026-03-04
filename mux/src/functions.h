@@ -33,6 +33,7 @@ typedef struct ufun {
 #define FN_NOEVAL   2   // Don't evaluate args to function.
 #define FN_PRIV     4   // Perform user-def function as holding obj.
 #define FN_PRES     8   // Preseve r-regs before user-def functions.
+#define FN_RESTRICT 32  // Only callable by wizard code (including inherited).
 
 #define FN_LIST     1   // Corresponds to /list switch. -not- used in
                         // UFUN structure.

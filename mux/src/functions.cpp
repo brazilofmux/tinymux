@@ -11401,9 +11401,9 @@ void do_function
     {
         notify(executor, tprintf(T("%-28s   %-8s  %-30s Flgs"),
             "Function Name", "DBref#", "Attribute"));
-        notify(executor, tprintf(T("%28s   %8s  %30s %4s"),
+        notify(executor, tprintf(T("%28s   %8s  %30s %5s"),
             "----------------------------", "--------",
-            "------------------------------", " -- "));
+            "------------------------------", "--- "));
 
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
@@ -11414,15 +11414,16 @@ void do_function
             {
                 pName = ap->name;
             }
-            notify(executor, tprintf(T("%-28.28s   #%-7d  %-30.30s  %c%c"),
+            notify(executor, tprintf(T("%-28.28s   #%-7d  %-30.30s  %c%c%c"),
                 ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
-                ((ufp2->flags & FN_PRES) ? 'p' : '-')));
+                ((ufp2->flags & FN_PRES) ? 'p' : '-'),
+                ((ufp2->flags & FN_RESTRICT) ? 'R' : '-')));
             count++;
         }
 
-        notify(executor, tprintf(T("%28s   %8s  %30s %4s"),
+        notify(executor, tprintf(T("%28s   %8s  %30s %5s"),
             "----------------------------", "--------",
-            "------------------------------", " -- "));
+            "------------------------------", "--- "));
 
         notify(executor, tprintf(T("Total User-Defined Functions: %d"), count));
         return;
@@ -11512,9 +11513,9 @@ void do_function
         return;
     }
 
-    // Privileged functions require you control the obj.
+    // Privileged and restricted functions require you control the obj.
     //
-    if ((key & FN_PRIV) && !Controls(executor, obj))
+    if ((key & (FN_PRIV | FN_RESTRICT)) && !Controls(executor, obj))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         return;

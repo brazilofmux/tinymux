@@ -1535,6 +1535,10 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     {
                         safe_noperm(buff, &oldp);
                     }
+                    else if (ufp && (ufp->flags & FN_RESTRICT) && !Wizard(executor))
+                    {
+                        safe_noperm(buff, &oldp);
+                    }
                     else if (alarm_clock.alarmed)
                     {
                         safe_str(T("#-1 CPU LIMITED"), buff, &oldp);

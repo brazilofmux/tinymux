@@ -234,6 +234,7 @@ static NAMETAB function_sw[] =
     {T("list"),            1,  CA_WIZARD,  FN_LIST},
     {T("preserve"),        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
     {T("privileged"),      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
+    {T("restrict"),        1,  CA_WIZARD,  FN_RESTRICT|SW_MULTIPLE},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
