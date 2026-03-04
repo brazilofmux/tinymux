@@ -256,15 +256,27 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
             }
             else
             {
-                // Invoke the power handler, and print feedback.
+                // Check if the power is already in the desired state.
                 //
-                if (!fp->handler(target, player, fp->powervalue, fp->powerpower, bNegate))
+                POWER fv = (fp->powerpower & POWER_EXT) ? Powers2(target) : Powers(target);
+                bool bCurrentlySet = (fv & fp->powervalue) != 0;
+                if (bNegate == bCurrentlySet)
                 {
-                    notify(player, NOPERM_MESSAGE);
+                    // State needs to change. Invoke the power handler,
+                    // and print feedback.
+                    //
+                    if (!fp->handler(target, player, fp->powervalue, fp->powerpower, bNegate))
+                    {
+                        notify(player, NOPERM_MESSAGE);
+                    }
+                    else if (!(key & SET_QUIET) && !Quiet(player))
+                    {
+                        notify(player, (bNegate ? T("Cleared.") : T("Set.")));
+                    }
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bNegate ? T("Cleared.") : T("Set.")));
+                    notify(player, (bNegate ? T("Already cleared.") : T("Already set.")));
                 }
             }
         }

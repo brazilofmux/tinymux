@@ -1228,6 +1228,27 @@ void do_set
                 return;
             }
 
+            // Check if the attribute flag is already in the desired
+            // state.
+            //
+            if (clear ? ((aflags & flagvalue) == 0) : ((aflags & flagvalue) == flagvalue))
+            {
+                if (  !(key & SET_QUIET)
+                   && !Quiet(executor)
+                   && !Quiet(thing))
+                {
+                    if (clear)
+                    {
+                        notify_quiet(executor, T("Already cleared."));
+                    }
+                    else
+                    {
+                        notify_quiet(executor, T("Already set."));
+                    }
+                }
+                return;
+            }
+
             // Go do it.
             //
             if (clear)

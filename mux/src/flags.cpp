@@ -717,15 +717,26 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
                     bNegate = !bNegate;
                 }
 
-                // Invoke the flag handler, and print feedback.
+                // Check if the flag is already in the desired state.
                 //
-                if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, bNegate))
+                bool bCurrentlySet = (db[target].fs.word[fbe->flagflag] & fbe->flagvalue) != 0;
+                if (bNegate == bCurrentlySet)
                 {
-                    notify(player, NOPERM_MESSAGE);
+                    // State needs to change. Invoke the flag handler,
+                    // and print feedback.
+                    //
+                    if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, bNegate))
+                    {
+                        notify(player, NOPERM_MESSAGE);
+                    }
+                    else if (!(key & SET_QUIET) && !Quiet(player))
+                    {
+                        notify(player, (bClearSet ? T("Cleared.") : T("Set.")));
+                    }
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bClearSet ? T("Cleared.") : T("Set.")));
+                    notify(player, (bClearSet ? T("Already cleared.") : T("Already set.")));
                 }
             }
         }
