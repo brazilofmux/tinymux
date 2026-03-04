@@ -2427,6 +2427,13 @@ bool exit_visible(dbref exit, dbref player, int key)
         return false;
     }
 
+    // VisibleLock
+    //
+    if (!could_doit(player, exit, A_LVISIBLE))
+    {
+        return false;
+    }
+
     // Default
     //
     return true;
@@ -2436,10 +2443,6 @@ bool exit_visible(dbref exit, dbref player, int key)
 //
 bool exit_displayable(dbref exit, dbref player, int key)
 {
-#if !defined(WOD_REALMS) && !defined(REALITY_LVLS)
-    UNUSED_PARAMETER(player);
-#endif // WOD_REALMS
-
     // Dark exit
     //
     if (Dark(exit))
@@ -2479,6 +2482,13 @@ bool exit_displayable(dbref exit, dbref player, int key)
     // Dark location or base.
     //
     if (key & (VE_LOC_DARK | VE_BASE_DARK))
+    {
+        return false;
+    }
+
+    // VisibleLock
+    //
+    if (!could_doit(player, exit, A_LVISIBLE))
     {
         return false;
     }
