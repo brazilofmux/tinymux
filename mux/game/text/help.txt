@@ -7348,7 +7348,8 @@ FUNCTION CLASSES
 
   Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILJ MAILFROM
                              MAILSIZE MAILSUBJ NEARBY NEXT NUM RLOC ROOM
-                             SEARCH STATS VALID WHERE ZFUN ZONE ZWHO
+                             SEARCH STATS VALID WHERE ZCHILDREN ZEXITS ZFUN
+                             ZONE ZROOMS ZTHINGS ZWHO
 
   Floating Point Conversion: FLOOR ROUND TRUNC
 
@@ -7511,7 +7512,8 @@ FUNCTION LIST (continued)
     V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
     VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
     WHERE()     WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    WRITETIME() XGET()      XOR()       ZCHILDREN() ZEXITS()    ZFUN()
+    ZONE()      ZROOMS()    ZTHINGS()   ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -8381,7 +8383,7 @@ INZONE()
   the executor to either own/control the <object> or possess wizard/royalty
   permissions.
 
-  Related Topics: zwho(), ZONES.
+  Related Topics: zchildren(), zexits(), zrooms(), zthings(), zwho(), ZONES.
 
 & ISDBREF()
 ISDBREF()
@@ -14603,12 +14605,41 @@ XOR()
 
   Related Topics: BOOLEAN VALUES, and(), not(), or(), t().
 
+& ZCHILDREN()
+ZCHILDREN()
+
+  FUNCTION: zchildren(<object>)
+
+  Returns a list of all objects (players, rooms, things, and exits) that are
+  members of the zone defined by <object>. This is the zone equivalent of
+  children(). Zchildren requires the executor to either own/control the
+  <object> or possess wizard/royalty permissions.
+
+  Related Topics: children(), inzone(), zexits(), zrooms(), zthings(),
+  zwho(), ZONES.
+
+& ZEXITS()
+ZEXITS()
+
+  FUNCTION: zexits(<object>)
+
+  Returns a list of exits that are members of the zone defined by <object>.
+  Zexits requires the executor to either own/control the <object> or possess
+  wizard/royalty permissions.
+
+  Related Topics: inzone(), zchildren(), zrooms(), zthings(), zwho(), ZONES.
+
 & ZFUN()
 ZFUN()
 
   FUNCTION: zfun(<attrib>, <arg0>[, <arg1>[, ...]])
+            zfun(<obj>/<attrib>, <arg0>[, <arg1>[, ...]])
 
-  Evaluates <attrib> on the enactor's zone object with parameters.
+  Evaluates <attrib> on the executor's zone object with parameters.
+
+  If <obj>/<attrib> is given, evaluates <attrib> on the zone object of
+  <obj> instead of the executor's zone object. This is similar to how
+  u() accepts an obj/attr argument.
 
   Related Topics: ZONES, zone().
 
@@ -14697,16 +14728,38 @@ ZONES (continued)
        you can define that area to be part of a zone, and place the desired
        $commands upon the ZMO.
 
+& ZROOMS()
+ZROOMS()
+
+  FUNCTION: zrooms(<object>)
+
+  Returns a list of rooms that are members of the zone defined by <object>.
+  This is equivalent to inzone(). Zrooms requires the executor to either
+  own/control the <object> or possess wizard/royalty permissions.
+
+  Related Topics: inzone(), zchildren(), zexits(), zthings(), zwho(), ZONES.
+
+& ZTHINGS()
+ZTHINGS()
+
+  FUNCTION: zthings(<object>)
+
+  Returns a list of things that are members of the zone defined by <object>.
+  Zthings requires the executor to either own/control the <object> or possess
+  wizard/royalty permissions.
+
+  Related Topics: inzone(), zchildren(), zexits(), zrooms(), zwho(), ZONES.
+
 & ZWHO()
 ZWHO()
 
   FUNCTION: zwho(<object>)
 
-  Returns a list of players who are a member of the zone defined by <object>.
-  Inzone requires the executor to either own/control the <object> or possess
+  Returns a list of players who are members of the zone defined by <object>.
+  Zwho requires the executor to either own/control the <object> or possess
   wizard/royalty permissions.
 
-  Related Topics: inzone(), ZONES.
+  Related Topics: inzone(), zchildren(), zexits(), zrooms(), zthings(), ZONES.
 
 & \
 \

@@ -940,6 +940,84 @@ FUNCTION(fun_inzone)
     scan_zone(executor, fargs[0], TYPE_ROOM, buff, bufc);
 }
 
+FUNCTION(fun_zexits)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    scan_zone(executor, fargs[0], TYPE_EXIT, buff, bufc);
+}
+
+FUNCTION(fun_zthings)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    scan_zone(executor, fargs[0], TYPE_THING, buff, bufc);
+}
+
+FUNCTION(fun_zrooms)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    scan_zone(executor, fargs[0], TYPE_ROOM, buff, bufc);
+}
+
+FUNCTION(fun_zchildren)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!mudconf.have_zones)
+    {
+        safe_str(T("#-1 ZONES DISABLED"), buff, bufc);
+        return;
+    }
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(executor)
+              || Controls(executor, it)))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    dbref i;
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
+    DO_WHOLE_DB(i)
+    {
+        if (  Zone(i) == it
+           && !ItemToList_AddInteger(&pContext, i))
+        {
+            break;
+        }
+    }
+    ItemToList_Final(&pContext);
+}
+
 // Borrowed from DarkZone
 //
 FUNCTION(fun_children)
@@ -1102,7 +1180,21 @@ FUNCTION(fun_zfun)
         return;
     }
 
-    dbref zone = Zone(executor);
+    // Support obj/attr syntax: zfun(obj/attr, args...)
+    //
+    const UTF8 *pAttrName;
+    dbref thing;
+    dbref zone;
+    if (parse_thing_slash(executor, fargs[0], &pAttrName, &thing))
+    {
+        zone = Zone(thing);
+    }
+    else
+    {
+        zone = Zone(executor);
+        pAttrName = fargs[0];
+    }
+
     if (!Good_obj(zone))
     {
         safe_str(T("#-1 INVALID ZONE"), buff, bufc);
@@ -1111,7 +1203,7 @@ FUNCTION(fun_zfun)
 
     // Find the user function attribute.
     //
-    int attrib = get_atr(fargs[0]);
+    int attrib = get_atr(pAttrName);
     if (!attrib)
     {
         safe_str(T("#-1 NO SUCH USER FUNCTION"), buff, bufc);

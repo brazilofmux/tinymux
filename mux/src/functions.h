@@ -191,8 +191,12 @@ XFUNCTION(fun_udefault);
 XFUNCTION(fun_unpack);
 XFUNCTION(fun_valid);
 XFUNCTION(fun_visible);
+XFUNCTION(fun_zchildren);
+XFUNCTION(fun_zexits);
 XFUNCTION(fun_zfun);
 XFUNCTION(fun_zone);
+XFUNCTION(fun_zrooms);
+XFUNCTION(fun_zthings);
 XFUNCTION(fun_zwho);
 
 #ifdef DEPRECATED

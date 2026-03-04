@@ -11287,8 +11287,12 @@ static FUN builtin_function_list[] =
     {T("WRITETIME"),   fun_writetime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("XGET"),        fun_xget,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("XOR"),         fun_xor,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {T("ZCHILDREN"),   fun_zchildren,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ZEXITS"),      fun_zexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ZROOMS"),      fun_zrooms,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ZTHINGS"),     fun_zthings,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZWHO"),        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {nullptr,   nullptr,       MAX_ARG, 0,       0,         0, 0}
 };
