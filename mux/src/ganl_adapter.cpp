@@ -2719,6 +2719,8 @@ void GanlAdapter::email_advance_state_locked(const std::string& responseLine) {
             payload += "X-Mailer: TinyMUX ";
             payload += reinterpret_cast<const char*>(mudstate.short_ver);
             payload += "\r\n";
+            payload += "MIME-Version: 1.0\r\n";
+            payload += "Content-Type: text/plain; charset=utf-8\r\n";
             payload += "Subject: " + email_channel_->subject + "\r\n\r\n";
             payload += email_channel_->encodedBody;
             email_queue_write_locked(payload);

@@ -31,12 +31,11 @@
 //
 // <CR> and <LF> are only allowed to occur as the <CR><LF> pair -- never alone.
 //
-// Code 0 - Any byte.
+// Code 0 - Any byte (including non-ASCII / UTF-8 continuation bytes).
 // Code 1 - NUL  (0x00)
 // Code 2 - LF   (0x0A)
 // Code 3 - CR   (0x0D)
 // Code 4 - '.'  (0x2E)
-// Code 5 - non-ASCII
 //
 static const UTF8 BodyClasses[256] =
 {
@@ -50,14 +49,14 @@ static const UTF8 BodyClasses[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 5
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 6
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 8
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 9
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // A
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // B
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // C
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // D
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // E
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5  // F
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // F
 };
 
 #define STATE_NOTHING          0
@@ -89,17 +88,17 @@ static const UTF8 BodyClasses[256] =
 // Action 17 - Emit .. and move to STATE_HAVE_CRLF.
 //
 
-static const int BodyActions[8][6] =
+static const int BodyActions[8][5] =
 {
-//    Any  '\0' LF   CR   '.'  Non
-    {  1,   3,   0,   4,   1,   0}, // STATE_NOTHING
-    {  2,   3,   0,   4,   5,   0}, // STATE_BOM
-    {  2,   3,   6,   0,   5,   0}, // STATE_HAVE_CR
-    {  7,   3,   0,   8,   9,   0}, // STATE_HAVE_CRLF
-    { 10,  11,   0,  12,  10,   0}, // STATE_HAVE_CRLF_DOT
-    { 10,  11,  13,   0,  10,   0}, // STATE_HAVE_CRLF_DOT_CR
-    { 14,  15,   0,  16,  14,   0}, // STATE_HAVE_DOT
-    { 14,  15,  17,   0,  14,   0}  // STATE_HAVE_DOT_CR
+//    Any  '\0' LF   CR   '.'
+    {  1,   3,   0,   4,   1}, // STATE_NOTHING
+    {  2,   3,   0,   4,   5}, // STATE_BOM
+    {  2,   3,   6,   0,   5}, // STATE_HAVE_CR
+    {  7,   3,   0,   8,   9}, // STATE_HAVE_CRLF
+    { 10,  11,   0,  12,  10}, // STATE_HAVE_CRLF_DOT
+    { 10,  11,  13,   0,  10}, // STATE_HAVE_CRLF_DOT_CR
+    { 14,  15,   0,  16,  14}, // STATE_HAVE_DOT
+    { 14,  15,  17,   0,  14}  // STATE_HAVE_DOT_CR
 };
 
 UTF8 *EncodeBody(UTF8 *pBody)
@@ -275,11 +274,10 @@ UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
     static UTF8 buf[LBUF_SIZE];
     UTF8 *bp = buf;
 
-    // Skip any leading CRLF as well as non-ASCII.
+    // Skip any leading CRLF.
     //
     while (  '\r' == *pString
-          || '\n' == *pString
-          || (0x80 & *pString) == 0x80)
+          || '\n' == *pString)
     {
         pString++;
     }
@@ -298,8 +296,7 @@ UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
 
         while (  *pString
               && '\r' != *pString
-              && '\n' != *pString
-              && (0x80 & *pString) == 0x00)
+              && '\n' != *pString)
         {
             safe_chr(*pString, buf, &bp);
             pString++;
@@ -308,8 +305,7 @@ UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
         // Skip any CRLF.
         //
         while (  '\r' == *pString
-              || '\n' == *pString
-              || 0x80 == (0x80 & *pString))
+              || '\n' == *pString)
         {
             pString++;
         }
