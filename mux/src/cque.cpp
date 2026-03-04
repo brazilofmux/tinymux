@@ -125,7 +125,7 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                 mux_assert(!mudstate.poutnew);
                 mux_assert(!mudstate.poutbufc);
 
-                UTF8 *cp = parse_to(&command, ';', 0);
+                UTF8 *cp = parse_to(&command, ';', EV_STRIP_AROUND);
 
                 if (  cp
                    && *cp)
