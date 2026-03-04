@@ -425,6 +425,7 @@ static NAMETAB open_sw[] =
 
 static NAMETAB page_sw[] =
 {
+    {T("blind"),           1,  CA_PUBLIC,  PAGE_BLIND|SW_MULTIPLE},
     {T("noeval"),          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };

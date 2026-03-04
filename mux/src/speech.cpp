@@ -576,9 +576,10 @@ void do_page
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    bool bBlind = (key & PAGE_BLIND) != 0;
 
     int   nPlayers = 0;
     dbref aPlayers[(LBUF_SIZE+1)/2];
@@ -864,7 +865,7 @@ void do_page
     case 1:
         // 'page A=' form.
         //
-        if (nValid == 1)
+        if (bBlind || nValid == 1)
         {
             safe_tprintf_str(omessage, &omp, T("From afar, %s pages you."),
                 Moniker(executor));
@@ -879,7 +880,7 @@ void do_page
 
     case 2:
         safe_str(T("From afar, "), omessage, &omp);
-        if (nValid > 1)
+        if (!bBlind && nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly);
         }
@@ -890,7 +891,7 @@ void do_page
 
     case 3:
         safe_str(T("From afar, "), omessage, &omp);
-        if (nValid > 1)
+        if (!bBlind && nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly);
         }
@@ -900,7 +901,7 @@ void do_page
         break;
 
     default:
-        if (nValid > 1)
+        if (!bBlind && nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, T("To %s, "), aFriendly);
         }

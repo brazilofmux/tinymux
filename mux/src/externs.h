@@ -796,6 +796,8 @@ extern int anum_alc_top;
 #define PEMIT_ROOM      32  /* Send to containing rm (@femit, additive) */
 #define PEMIT_LIST      64  /* Send to a list */
 #define PEMIT_HTML      128 /* HTML escape, and no newline */
+
+#define PAGE_BLIND  1   /* Don't show recipients who else was paged */
 #define PS_BRIEF        0   /* Short PS report */
 #define PS_LONG         1   /* Long PS report */
 #define PS_SUMM         2   /* Queue counts only */
