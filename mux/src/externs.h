@@ -703,6 +703,7 @@ extern int anum_alc_top;
 #define GLOB_DISABLE    2   /* key to disable */
 //#define GLOB_LIST       3   /* key to list */
 #define HALT_ALL        1   /* halt everything */
+#define HALT_PID        2   /* halt by PID */
 
 #define CEF_HOOK_BEFORE    0x00000001UL  /* BEFORE hook */
 #define CEF_HOOK_AFTER     0x00000002UL  /* AFTER hook */

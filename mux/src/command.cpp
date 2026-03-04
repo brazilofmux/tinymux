@@ -267,6 +267,7 @@ static NAMETAB goto_sw[] =
 static NAMETAB halt_sw[] =
 {
     {T("all"),             1,  CA_PUBLIC,  HALT_ALL},
+    {T("pid"),             1,  CA_PUBLIC,  HALT_PID},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 

@@ -377,6 +377,91 @@ int halt_que(const dbref executor, const dbref object)
     return Halt_Entries;
 }
 
+static int  Halt_Pid_Target;
+static dbref Halt_Pid_Executor;
+static int   Halt_Pid_Entries;
+static dbref Halt_Pid_Player_Run;
+static int   Halt_Pid_Entries_Run;
+
+static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
+{
+    if (  p->fpTask == Task_RunQueueEntry
+       || p->fpTask == Task_SQLTimeout
+       || p->fpTask == Task_SemaphoreTimeout)
+    {
+        if (p->m_Ticket == Halt_Pid_Target)
+        {
+            const auto point = static_cast<BQUE*>(p->arg_voidptr);
+
+            // Ownership check: non-wizards can only halt their own entries.
+            //
+            if (  !Can_Halt(Halt_Pid_Executor)
+               && Owner(point->executor) != Owner(Halt_Pid_Executor))
+            {
+                return IU_NEXT_TASK;
+            }
+
+            // Accounting for pennies and queue quota.
+            //
+            dbref dbOwner = point->executor;
+            if (!isPlayer(dbOwner))
+            {
+                dbOwner = Owner(dbOwner);
+            }
+            if (dbOwner != Halt_Pid_Player_Run)
+            {
+                if (Halt_Pid_Player_Run != NOTHING)
+                {
+                    giveto(Halt_Pid_Player_Run, mudconf.waitcost * Halt_Pid_Entries_Run);
+                    a_Queue(Halt_Pid_Player_Run, -Halt_Pid_Entries_Run);
+                }
+                Halt_Pid_Player_Run = dbOwner;
+                Halt_Pid_Entries_Run = 0;
+            }
+            Halt_Pid_Entries++;
+            Halt_Pid_Entries_Run++;
+            if (p->fpTask == Task_SemaphoreTimeout)
+            {
+                add_to(point->u.s.sem, -1, point->u.s.attr);
+            }
+
+            for (auto& i : point->scr)
+            {
+                if (i)
+                {
+                    RegRelease(i);
+                    i = nullptr;
+                }
+            }
+
+            MEMFREE(point->text);
+            point->text = nullptr;
+            free_qentry(point);
+            return IU_REMOVE_TASK;
+        }
+    }
+    return IU_NEXT_TASK;
+}
+
+static int halt_que_pid(const dbref executor, const int pid)
+{
+    Halt_Pid_Target      = pid;
+    Halt_Pid_Executor    = executor;
+    Halt_Pid_Entries     = 0;
+    Halt_Pid_Player_Run  = NOTHING;
+    Halt_Pid_Entries_Run = 0;
+
+    scheduler.TraverseUnordered(CallBack_HaltQueueByPid);
+
+    if (Halt_Pid_Player_Run != NOTHING)
+    {
+        giveto(Halt_Pid_Player_Run, mudconf.waitcost * Halt_Pid_Entries_Run);
+        a_Queue(Halt_Pid_Player_Run, -Halt_Pid_Entries_Run);
+        Halt_Pid_Player_Run = NOTHING;
+    }
+    return Halt_Pid_Entries;
+}
+
 // ---------------------------------------------------------------------------
 // do_halt: Command interface to halt_que.
 //
@@ -393,6 +478,36 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
     if ((key & HALT_ALL) && !Can_Halt(executor))
     {
         notify(executor, NOPERM_MESSAGE);
+        return;
+    }
+
+    // Halt by PID.
+    //
+    if (key & HALT_PID)
+    {
+        if (key & HALT_ALL)
+        {
+            notify(executor, T("Can\xE2\x80\x99t specify /pid and /all"));
+            return;
+        }
+        if (!target || !*target)
+        {
+            notify(executor, T("You must specify a PID."));
+            return;
+        }
+        const int pid = mux_atol(target);
+        const int numhalted = halt_que_pid(executor, pid);
+        if (!Quiet(executor))
+        {
+            if (0 == numhalted)
+            {
+                notify(Owner(executor), T("No queue entry with that PID was found."));
+            }
+            else
+            {
+                notify(Owner(executor), tprintf(T("%d queue entr%s removed."), numhalted, numhalted == 1 ? "y" : "ies"));
+            }
+        }
         return;
     }
 
@@ -1282,26 +1397,26 @@ static int CallBack_ShowDispatches(const PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-static void ShowPsLine(const BQUE *tmp)
+static void ShowPsLine(const BQUE *tmp, const int pid)
 {
     UTF8 *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[#%d/%d]%s:%s"), tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %d][#%d/%d]%s:%s"), pid, tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (tmp->IsTimed)
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[%d]%s:%s"), ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %d][%d]%s:%s"), pid, ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (Good_obj(tmp->u.s.sem))
     {
-        notify(Show_Player, tprintf(T("[#%d]%s:%s"), tmp->u.s.sem, bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %d][#%d]%s:%s"), pid, tmp->u.s.sem, bufp, tmp->comm));
     }
     else
     {
-        notify(Show_Player, tprintf(T("%s:%s"), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %d]%s:%s"), pid, bufp, tmp->comm));
     }
     UTF8 *bp = bufp;
     if (Show_Key == PS_LONG)
@@ -1346,7 +1461,7 @@ static int CallBack_ShowWait(PTASK_RECORD p)
             notify(Show_Player, T("----- Wait Queue -----"));
             Show_bFirstLine = false;
         }
-        ShowPsLine(tmp);
+        ShowPsLine(tmp, p->m_Ticket);
     }
     return IU_NEXT_TASK;
 }
@@ -1372,7 +1487,7 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
             notify(Show_Player, T("----- Semaphore Queue -----"));
             Show_bFirstLine = false;
         }
-        ShowPsLine(tmp);
+        ShowPsLine(tmp, p->m_Ticket);
     }
     return IU_NEXT_TASK;
 }
@@ -1398,7 +1513,7 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
             notify(Show_Player, T("----- SQL Queries -----"));
             Show_bFirstLine = false;
         }
-        ShowPsLine(tmp);
+        ShowPsLine(tmp, p->m_Ticket);
     }
     return IU_NEXT_TASK;
 }

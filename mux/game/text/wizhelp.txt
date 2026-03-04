@@ -563,6 +563,7 @@ INDESTRUCTIBLE
 @HALT
 
   COMMAND: @halt[/<switches>] [<object>]
+           @halt/pid <pid>
 
   This command can be used to halt commands being run by a specific object,
   all commands being run by objects owned by a specific player, or all
@@ -574,7 +575,11 @@ INDESTRUCTIBLE
 
   The /all switch may be used to halt all commands globally.
 
-  Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
+  The /pid switch halts a single queue entry by its PID number, as shown
+  by @ps.  Wizards may halt any PID; mortals may only halt PIDs they own.
+  The /pid switch cannot be combined with /all.
+
+  Related Topics: @drain, @notify, @ps, kill, HALTED, SEMAPHORES.
 
 & @HOOK
 @HOOK
@@ -1318,7 +1323,11 @@ INDESTRUCTIBLE
 
   Wizards may also use the /all switch to view the entire queue.
 
-  Related Topics: @ps (player version).
+  Each queue entry is displayed with a PID (process ID) that uniquely
+  identifies it.  The PID can be used with @halt/pid to remove a specific
+  entry from the queue.
+
+  Related Topics: @halt, @ps (player version).
 
 & @QUOTA
 @QUOTA

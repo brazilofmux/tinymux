@@ -3405,16 +3405,20 @@ Related Topics: @name.
   total number of commands in the queues is also displayed.  This command is
   useful for identifying infinite loops in programs.
 
+  Each queue entry is displayed with a PID (process ID) that uniquely
+  identifies it.  The PID can be used with @halt/pid to remove a specific
+  entry from the queue.
+
   The following switches are available:
-     /brief   - (default) Display a brief summary that shows the semaphore
-                number, time-to-wait, object running the command, and the
-                command to be run.
+     /brief   - (default) Display a brief summary that shows the PID,
+                semaphore number, time-to-wait, object running the command,
+                and the command to be run.
      /long    - In addition to the information in the /brief report, display
                 the name and number of the object that caused the command
                 to be run (the enactor) and the arguments to the command.
      /summary - Display just the queue counts.
 
-  Related Topics: @notify, @wait.
+  Related Topics: @halt, @notify, @wait.
 
 & @QUEUEMAX
 @QUEQUEMAX
