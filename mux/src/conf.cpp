@@ -248,7 +248,7 @@ void cf_init(void)
     mudconf.robot_flags.word[FLAG_WORD1] |= ROBOT;
     mudconf.stripped_flags.word[FLAG_WORD1] = IMMORTAL | INHERIT | ROYALTY | WIZARD;
     mudconf.stripped_flags.word[FLAG_WORD2] = BLIND | CONNECTED | GAGGED
-         | HEAD_FLAG | SLAVE | STAFF | SUSPECT | UNINSPECTED;
+         | HEAD_FLAG | SLAVE | STAFF | SUSPECT;
 
     mudconf.vattr_flags = AF_ODARK;
     mux_strncpy(mudconf.mud_name, T("MUX"), sizeof(mudconf.mud_name)-1);
