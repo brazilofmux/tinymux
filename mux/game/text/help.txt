@@ -5561,6 +5561,8 @@ COMMAND EVALUATION (continued)
     the command.  All that match are performed.  The player may or may not be
     checked, depending on how the MUX is configured.
   - The commands defined in the zone tree you or your location is in.
+  - If still no match, the objects in the Master Room and the Master Room
+    itself are checked for matching $-commands.
 
   Note: Commands that can cause other commands to be executed (such as @wait,
   @switch, @trigger, etc) never perform substitution on their arguments, they
