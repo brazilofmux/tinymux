@@ -3611,6 +3611,28 @@ Related Topics: @name.
 
   Related Topics: say, ", @speechmod.
 
+& @SCAN
+@SCAN
+
+  COMMAND: @scan[/<switch>] <command>
+
+  Scans for objects with $-commands that match <command>.  Without
+  switches, all scopes are checked: you and your inventory, your
+  location and its contents, zones, and the master room.
+
+  @scan does not execute any matching commands; it only reports which
+  objects and attributes would match.  Objects that you do not control
+  and that are not set VISUAL are not scanned.
+
+  The following switches restrict which scopes are searched:
+
+    /self    - Scan yourself and your inventory.
+    /room    - Scan your location and objects in it.
+    /zone    - Scan zones of your location and your personal zone.
+    /globals - Scan objects in the master room.
+
+  Related Topics: $-commands, @sweep, VISUAL.
+
 & @SEARCH
 @SEARCH
 

@@ -866,6 +866,10 @@ extern int anum_alc_top;
 #define SWEEP_EXITS     64  /* Search the exits for audible flags */
 #define SWEEP_SCAN      128 /* Scan for pattern matching */
 #define SWEEP_VERBOSE   256 /* Display what pattern matches */
+#define SCAN_SELF       1   /* Scan self and inventory */
+#define SCAN_ROOM       2   /* Scan location and contents */
+#define SCAN_ZONE       4   /* Scan zones */
+#define SCAN_GLOBALS    8   /* Scan master room */
 #define TELEPORT_DEFAULT 1  /* Emit all messages */
 #define TELEPORT_QUIET  2   /* Teleport in quietly */
 #define TELEPORT_LIST   4   /* Teleport a list of items */

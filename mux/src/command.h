@@ -121,6 +121,7 @@ CMD_TWO_ARG(do_setvattr);       /* Set variable attribute */
 CMD_ONE_ARG(do_shout);          /* Messages to all */
 CMD_ONE_ARG(do_shutdown);       /* Stop the game */
 CMD_ONE_ARG(do_stats);          /* Display object type breakdown */
+CMD_ONE_ARG(do_scan);           /* Scan for $-command matches */
 CMD_ONE_ARG(do_sweep);          /* Check for listeners */
 CMD_TWO_ARG_ARGV(do_switch);    /* Execute cmd based on match */
 CMD_TWO_ARG(do_teleport);       /* Teleport elsewhere */

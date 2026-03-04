@@ -509,6 +509,15 @@ static NAMETAB stats_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB scan_sw[] =
+{
+    {T("globals"),         1,  CA_PUBLIC,  SCAN_GLOBALS|SW_MULTIPLE},
+    {T("room"),            1,  CA_PUBLIC,  SCAN_ROOM|SW_MULTIPLE},
+    {T("self"),            1,  CA_PUBLIC,  SCAN_SELF|SW_MULTIPLE},
+    {T("zone"),            1,  CA_PUBLIC,  SCAN_ZONE|SW_MULTIPLE},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB sweep_sw[] =
 {
     {T("commands"),        3,  CA_PUBLIC,  SWEEP_COMMANDS|SW_MULTIPLE},
@@ -655,6 +664,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("@poor"),         nullptr,    CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_poor},
     {T("@ps"),           ps_sw,      CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_ps},
     {T("@quitprogram"),  nullptr,    CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_quitprog},
+    {T("@scan"),         scan_sw,    CA_PUBLIC,                  0,  CS_ONE_ARG|CS_NOINTERP, 0, do_scan},
     {T("@search"),       nullptr,    CA_PUBLIC,        SRCH_SEARCH,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
     {T("@shutdown"),     nullptr,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG,           0, do_shutdown},
     {T("@stats"),        stats_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_stats},

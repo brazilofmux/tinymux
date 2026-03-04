@@ -8,6 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define NORMAL_REALM  0
 #define UMBRA_REALM   1
@@ -2539,6 +2542,242 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         }
     }
     notify(executor, T("Sweep complete."));
+}
+
+// scan_check: For a single object, find all $-command attrs whose pattern
+// matches the given command string and report them to the executor.
+//
+static void scan_check
+(
+    dbref executor,
+    dbref thing,
+    UTF8  *lcmd,
+    UTF8  *cmd
+)
+{
+    if (  !Good_obj(thing)
+       || isExit(thing)
+       || No_Command(thing))
+    {
+        return;
+    }
+
+    if (  !Controls(executor, thing)
+       && !Examinable(executor, thing))
+    {
+        return;
+    }
+
+    UTF8 *attrlist = alloc_lbuf("scan_check.list");
+    UTF8 *ap2 = attrlist;
+    int count = 0;
+
+    atr_push();
+    unsigned char *as;
+    UTF8 buff[LBUF_SIZE];
+    for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+    {
+        ATTR *ap = atr_num(atr);
+        if (  !ap
+           || (ap->flags & AF_NOPROG))
+        {
+            continue;
+        }
+
+        dbref aowner;
+        int   aflags;
+        atr_get_str(buff, thing, atr, &aowner, &aflags);
+
+        if (aflags & AF_NOPROG)
+        {
+            continue;
+        }
+
+        if (AMATCH_CMD != buff[0])
+        {
+            continue;
+        }
+
+        UTF8 *s = find_pattern_delimiter(buff + 1);
+        if (!s)
+        {
+            continue;
+        }
+        *s = '\0';
+        unescape_pattern_colons(buff + 1);
+
+        bool matched = false;
+        if (aflags & AF_REGEXP)
+        {
+            matched = regexp_match(buff + 1, cmd,
+                (aflags & AF_CASE) ? PCRE2_CASELESS : 0,
+                nullptr, 0);
+        }
+        else
+        {
+            matched = quick_wild(buff + 1, lcmd);
+        }
+
+        if (matched)
+        {
+            if (count > 0)
+            {
+                safe_chr(' ', attrlist, &ap2);
+            }
+            safe_str(ap->name, attrlist, &ap2);
+            count++;
+        }
+    }
+    atr_pop();
+
+    if (count > 0)
+    {
+        *ap2 = '\0';
+        notify(executor, tprintf(T("  %s  [%d: %s]"),
+            unparse_object(executor, thing, false), count, attrlist));
+    }
+    free_lbuf(attrlist);
+}
+
+void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *command, const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!command || !*command)
+    {
+        notify(executor, T("What command do you want to scan for?"));
+        return;
+    }
+
+    // Lowercase the command for case-insensitive wildcard matching.
+    //
+    size_t nLower;
+    UTF8 *pLower = mux_strlwr(command, nLower);
+    UTF8 lcmd[LBUF_SIZE];
+    if (nLower >= LBUF_SIZE)
+    {
+        nLower = LBUF_SIZE - 1;
+    }
+    memcpy(lcmd, pLower, nLower);
+    lcmd[nLower] = '\0';
+
+    // If no switches given, scan everything.
+    //
+    if (0 == key)
+    {
+        key = SCAN_SELF | SCAN_ROOM | SCAN_ZONE | SCAN_GLOBALS;
+    }
+
+    dbref obj;
+
+    // Check executor and inventory.
+    //
+    if (key & SCAN_SELF)
+    {
+        notify(executor, T("Check yourself and your inventory:"));
+        scan_check(executor, executor, lcmd, command);
+        if (Has_contents(executor))
+        {
+            for (obj = Contents(executor); obj != NOTHING; obj = Next(obj))
+            {
+                scan_check(executor, obj, lcmd, command);
+            }
+        }
+    }
+
+    // Check location and its contents.
+    //
+    if (key & SCAN_ROOM)
+    {
+        notify(executor, T("Check your location and its contents:"));
+        if (Has_location(executor))
+        {
+            dbref loc = Location(executor);
+            if (Good_obj(loc))
+            {
+                scan_check(executor, loc, lcmd, command);
+                for (obj = Contents(loc); obj != NOTHING; obj = Next(obj))
+                {
+                    if (obj != executor)
+                    {
+                        scan_check(executor, obj, lcmd, command);
+                    }
+                }
+            }
+        }
+    }
+
+    // Check zones.
+    //
+    if (  (key & SCAN_ZONE)
+       && mudconf.have_zones)
+    {
+        notify(executor, T("Checking zone:"));
+        if (Has_location(executor))
+        {
+            dbref loc = Location(executor);
+            if (Good_obj(loc))
+            {
+                dbref zone_loc = Zone(loc);
+                if (Good_obj(zone_loc))
+                {
+                    if (isRoom(zone_loc))
+                    {
+                        for (obj = Contents(zone_loc); obj != NOTHING; obj = Next(obj))
+                        {
+                            scan_check(executor, obj, lcmd, command);
+                        }
+                    }
+                    else
+                    {
+                        scan_check(executor, zone_loc, lcmd, command);
+                    }
+                }
+            }
+        }
+
+        // Personal zone.
+        //
+        dbref zone = Zone(executor);
+        if (Good_obj(zone))
+        {
+            dbref loc = Location(executor);
+            dbref zone_loc = NOTHING;
+            if (Good_obj(loc))
+            {
+                zone_loc = Zone(loc);
+            }
+            if (zone != zone_loc)
+            {
+                scan_check(executor, zone, lcmd, command);
+            }
+        }
+    }
+
+    // Check master room.
+    //
+    if (key & SCAN_GLOBALS)
+    {
+        notify(executor, T("Checking master room:"));
+        if (  Good_obj(mudconf.master_room)
+           && Has_contents(mudconf.master_room))
+        {
+            for (obj = Contents(mudconf.master_room); obj != NOTHING; obj = Next(obj))
+            {
+                scan_check(executor, obj, lcmd, command);
+            }
+            if (!No_Command(mudconf.master_room))
+            {
+                scan_check(executor, mudconf.master_room, lcmd, command);
+            }
+        }
+    }
+
+    notify(executor, T("Scan complete."));
 }
 
 /* Output the sequence of commands needed to duplicate the specified
