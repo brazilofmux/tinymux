@@ -7404,6 +7404,91 @@ static FUNCTION(fun_case)
     );
 }
 
+static void switchall_handler
+(
+    UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int   eval,
+    UTF8 *fargs[], int nfargs,
+    const UTF8 *cargs[], int ncargs,
+    bool bSwitch
+)
+{
+    // Evaluate the target in fargs[0].
+    //
+    UTF8 *mbuff = alloc_lbuf("fun_switchall");
+    UTF8 *bp = mbuff;
+    mux_exec(fargs[0], LBUF_SIZE-1, mbuff, &bp, executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *bp = '\0';
+
+    UTF8 *tbuff = alloc_lbuf("fun_switchall.2");
+
+    // Loop through all patterns, evaluating every match.
+    //
+    bool bMatched = false;
+    int i;
+    for (i = 1;  i < nfargs-1
+              && fargs[i]
+              && fargs[i+1]
+              && !alarm_clock.alarmed; i += 2)
+    {
+        bp = tbuff;
+        mux_exec(fargs[i], LBUF_SIZE-1, tbuff, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(reinterpret_cast<char *>(tbuff), reinterpret_cast<char *>(mbuff)) == 0)
+        {
+            bMatched = true;
+            UTF8 *rbuff = replace_tokens(fargs[i+1], nullptr, nullptr, mbuff);
+            mux_exec(rbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+            free_lbuf(rbuff);
+        }
+    }
+    free_lbuf(tbuff);
+
+    // If nothing matched, return the default if there is one.
+    //
+    if (  !bMatched
+       && i < nfargs
+       && fargs[i])
+    {
+        tbuff = replace_tokens(fargs[i], nullptr, nullptr, mbuff);
+        mux_exec(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        free_lbuf(tbuff);
+    }
+    free_lbuf(mbuff);
+}
+
+static FUNCTION(fun_switchall)
+{
+    switchall_handler
+    (
+        buff, bufc,
+        executor, caller, enactor,
+        eval,
+        fargs, nfargs,
+        cargs, ncargs,
+        true
+    );
+}
+
+static FUNCTION(fun_caseall)
+{
+    switchall_handler
+    (
+        buff, bufc,
+        executor, caller, enactor,
+        eval,
+        fargs, nfargs,
+        cargs, ncargs,
+        false
+    );
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_space: Make spaces.
@@ -10748,6 +10833,7 @@ static FUN builtin_function_list[] =
 #endif
     {T("CAPSTR"),      fun_capstr,           1, 1,       1,         0, CA_PUBLIC},
     {T("CASE"),        fun_case,       MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {T("CASEALL"),     fun_caseall,    MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("CAT"),         fun_cat,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {T("CEIL"),        fun_ceil,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CEMIT"),       fun_cemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -11068,6 +11154,7 @@ static FUN builtin_function_list[] =
     {T("SUBJ"),        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SUCCESSES"),   fun_successes,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("SWITCH"),      fun_switch,     MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {T("SWITCHALL"),   fun_switchall,  MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("T"),           fun_t,                1, 0,       1,         0, CA_PUBLIC},
     {T("TABLE"),       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {T("TAN"),         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},

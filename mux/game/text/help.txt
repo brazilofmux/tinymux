@@ -5210,7 +5210,22 @@ CASE()
   of <str>.  In this way, <resI> has a short-hand way of getting at the
   <str> that matched its corresponding pattern.
 
-  Related Topics: @switch, match(), ifelse(), switch().
+  Related Topics: @switch, match(), ifelse(), switch(), caseall().
+
+& CASEALL()
+CASEALL()
+
+  FUNCTION: caseall(<str>[,<pat1>,<res1>]...[,<dflt>])
+
+  caseall() is to case() what switchall() is to switch().  It compares
+  <str> against all patterns without wildcard matching, and returns the
+  concatenated results of ALL matching branches.  If none match, the
+  default result <dflt> is returned.
+
+  Before <resI> is evaluated for return, #$ is substituted with the value
+  of <str>.
+
+  Related Topics: case(), switch(), switchall().
 
 & CAT()
 CAT()
@@ -13289,7 +13304,30 @@ SWITCH()
     > say switch(f,*a*,A,*b*,B,*c*,C,*d*,D)
     You say, ""
 
-  Related Topics: @switch, match(), ifelse(), case().
+  Related Topics: @switch, match(), ifelse(), case(), switchall().
+
+& SWITCHALL()
+SWITCHALL()
+
+  FUNCTION: switchall(<str>[,<pat1>,<res1>]...[,<dflt>])
+
+  The switchall function is like switch() but evaluates ALL matching
+  branches instead of stopping at the first match.  The results of all
+  matching branches are concatenated together.  If no patterns match,
+  the default result <dflt> is returned.
+
+  Before <resI> is evaluated for return, #$ is substituted with the value
+  of <str>.
+
+  Example:
+    > say switchall(cab,*a*,A,*b*,B,*c*,C,*d*,D,E)
+    You say "ABC"
+    > say switchall(f,*a*,A,*b*,B,*c*,C,*d*,D,E)
+    You say "E"
+    > say switchall(f,*a*,A,*b*,B,*c*,C,*d*,D)
+    You say ""
+
+  Related Topics: @switch, switch(), case(), caseall().
 
 & SWITCHES
 SWITCHES
