@@ -508,6 +508,165 @@ FUNCTION(fun_lmin)
     fval(buff, bufc, minimum);
 }
 
+FUNCTION(fun_lmath)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    // lmath(<operation>, <list>[, <delim>])
+    //
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int n = 0;
+    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    while (  cp
+          && n < MAX_WORDS)
+    {
+        UTF8 *curr = split_token(&cp, sep);
+        g_aDoubles[n++] = mux_atof(curr);
+    }
+
+    if (n == 0)
+    {
+        safe_chr('0', buff, bufc);
+        return;
+    }
+
+    UTF8 *op = fargs[0];
+
+    if (  mux_stricmp(op, T("add")) == 0
+       || mux_stricmp(op, T("sum")) == 0)
+    {
+        fval(buff, bufc, AddDoubles(n, g_aDoubles));
+    }
+    else if (mux_stricmp(op, T("mul")) == 0)
+    {
+        double prod = 1.0;
+        for (int i = 0; i < n; i++)
+        {
+            prod *= g_aDoubles[i];
+        }
+        fval(buff, bufc, NearestPretty(prod));
+    }
+    else if (mux_stricmp(op, T("sub")) == 0)
+    {
+        double result = g_aDoubles[0];
+        for (int i = 1; i < n; i++)
+        {
+            result -= g_aDoubles[i];
+        }
+        fval(buff, bufc, NearestPretty(result));
+    }
+    else if (mux_stricmp(op, T("div")) == 0)
+    {
+        double result = g_aDoubles[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (g_aDoubles[i] == 0.0)
+            {
+                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                return;
+            }
+            result /= g_aDoubles[i];
+        }
+        fval(buff, bufc, NearestPretty(result));
+    }
+    else if (mux_stricmp(op, T("mod")) == 0)
+    {
+        int64_t result = static_cast<int64_t>(g_aDoubles[0]);
+        for (int i = 1; i < n; i++)
+        {
+            int64_t divisor = static_cast<int64_t>(g_aDoubles[i]);
+            if (divisor == 0)
+            {
+                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                return;
+            }
+            result = i64Mod(result, divisor);
+        }
+        safe_i64toa(result, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("min")) == 0)
+    {
+        double minimum = g_aDoubles[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (g_aDoubles[i] < minimum)
+            {
+                minimum = g_aDoubles[i];
+            }
+        }
+        fval(buff, bufc, minimum);
+    }
+    else if (mux_stricmp(op, T("max")) == 0)
+    {
+        double maximum = g_aDoubles[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (g_aDoubles[i] > maximum)
+            {
+                maximum = g_aDoubles[i];
+            }
+        }
+        fval(buff, bufc, maximum);
+    }
+    else if (  mux_stricmp(op, T("mean")) == 0
+            || mux_stricmp(op, T("avg")) == 0)
+    {
+        fval(buff, bufc, AddDoubles(n, g_aDoubles) / n);
+    }
+    else if (mux_stricmp(op, T("median")) == 0)
+    {
+        // Insertion sort -- MAX_WORDS is small.
+        //
+        for (int i = 1; i < n; i++)
+        {
+            double key = g_aDoubles[i];
+            int j = i - 1;
+            while (  j >= 0
+                  && g_aDoubles[j] > key)
+            {
+                g_aDoubles[j + 1] = g_aDoubles[j];
+                j--;
+            }
+            g_aDoubles[j + 1] = key;
+        }
+        if (n % 2 == 1)
+        {
+            fval(buff, bufc, g_aDoubles[n / 2]);
+        }
+        else
+        {
+            g_aDoubles[0] = g_aDoubles[n / 2 - 1];
+            g_aDoubles[1] = g_aDoubles[n / 2];
+            fval(buff, bufc, AddDoubles(2, g_aDoubles) / 2.0);
+        }
+    }
+    else if (mux_stricmp(op, T("stddev")) == 0)
+    {
+        double mean = AddDoubles(n, g_aDoubles) / n;
+        double sumSqDiff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double diff = g_aDoubles[i] - mean;
+            sumSqDiff += diff * diff;
+        }
+        fval(buff, bufc, sqrt(sumSqDiff / n));
+    }
+    else
+    {
+        safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * fun_sign: Returns -1, 0, or 1 based on the the sign of its argument.
  */

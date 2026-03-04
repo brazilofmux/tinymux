@@ -24,6 +24,7 @@ XFUNCTION(fun_neq);
 XFUNCTION(fun_max);
 XFUNCTION(fun_lmax);
 XFUNCTION(fun_lmin);
+XFUNCTION(fun_lmath);
 XFUNCTION(fun_min);
 XFUNCTION(fun_sign);
 XFUNCTION(fun_isign);

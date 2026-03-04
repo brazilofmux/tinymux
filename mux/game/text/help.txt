@@ -9095,7 +9095,43 @@ LMIN()
     > say lmin(1@10@2@4@6,@)
     You say "1"
 
-  Related Topics: lmax(), max(), min()
+  Related Topics: lmath(), lmax(), max(), min()
+
+& LMATH()
+LMATH()
+
+  FUNCTION: lmath(<operation>, <list of numbers>[, <delim>])
+
+  Applies <operation> across the optionally-delimited <list of numbers>.
+  This is a generic list-math function that subsumes ladd(), lmin(),
+  lmax(), and adds operations not available as separate functions.
+
+  Supported operations:
+
+    add (sum)  - Sum of all values.
+    sub        - First value minus the rest.
+    mul        - Product of all values.
+    div        - First value divided by the rest.
+    mod        - First value modulo the rest (integer).
+    min        - Minimum value.
+    max        - Maximum value.
+    mean (avg) - Arithmetic mean.
+    median     - Median value.
+    stddev     - Population standard deviation.
+
+  Examples:
+    > say lmath(add, 1 2 3 4 5)
+    You say "15"
+    > say lmath(mul, 2 3 4)
+    You say "24"
+    > say lmath(mean, 10 20 30)
+    You say "20"
+    > say lmath(median, 1 3 5 7)
+    You say "4"
+    > say lmath(sub, 100|25|10, |)
+    You say "65"
+
+  Related Topics: ladd(), lmax(), lmin()
 
 & LN()
 LN()
