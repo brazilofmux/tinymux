@@ -2769,6 +2769,24 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 }
 
                 d->input_size -= cmd.size();
+
+                // IDLE command: keep connection alive without resetting idle timer (#590).
+                //
+                const char *pCmd = cmd.data();
+                while (mux_isspace(static_cast<unsigned char>(*pCmd)))
+                {
+                    pCmd++;
+                }
+                if (mux_stricmp(reinterpret_cast<const UTF8 *>(pCmd),
+                                reinterpret_cast<const UTF8 *>("IDLE")) == 0)
+                {
+                    if (!d->input_queue.empty())
+                    {
+                        scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                    }
+                    return;
+                }
+
                 d->last_time.GetUTC();
                 if (d->program_data != nullptr)
                 {
