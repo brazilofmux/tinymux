@@ -17,7 +17,7 @@
   fdiv_fn first_fn floor_fn floordiv_fn fmod_fn 
   grab_fn graball_fn gt_fn gte_fn 
   iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn 
-  isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn 
+  isdbref_fn isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn
   ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn 
   ln_fn lnum_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn 
   match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn 

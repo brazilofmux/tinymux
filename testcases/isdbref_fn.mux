@@ -1,0 +1,49 @@
+#
+# isdbref_fn.mux - Test Cases for isdbref().
+#
+@create test_isdbref_fn
+-
+@set test_isdbref_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isdbref_fn=
+  @log smoke=Beginning isdbref() test cases.
+-
+#
+# Test Case #1 - Basic isdbref() cases and leading/trailing spaces.
+#
+&tr.tc001 test_isdbref_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(#0)]
+            [isdbref(#-1)]
+            [isdbref(foo)]
+            [isdbref()]
+            [isdbref(%b#0)]
+            [isdbref(#0%b)]
+            [isdbref(%b#0%b)]
+            [isdbref(%b%b#0%b%b)]
+          )
+        ),
+        87E3FEC025670077009FFA87753205D77E1C3823
+      )=
+  {
+    @log smoke=TC001: isdbref basic and whitespace. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: isdbref basic and whitespace. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isdbref_fn=
+  @log smoke=End isdbref() test cases.;
+  @notify smoke
+-
+drop test_isdbref_fn
+-
+#
+# End of Test Cases
+#

@@ -9260,6 +9260,10 @@ static FUNCTION(fun_isdbref)
     if (nfargs >= 1)
     {
         UTF8 *p = fargs[0];
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
         if (NUMBER_TOKEN == p[0])
         {
             p++;
