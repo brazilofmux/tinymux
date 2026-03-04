@@ -76,6 +76,7 @@ struct confdata
     bool    space_compress;     /* Convert multiple spaces into one space */
     bool    sweep_dark;         /* Can you sweep dark places? */
     bool    switch_df_all;      /* Should @switch match all by default? */
+    bool    talk_mode_default;  // New players get TALKMODE flag.
     bool    terse_contents;     /* Does TERSE look show exits */
     bool    terse_exits;        /* Does TERSE look show obvious exits */
     bool    terse_look;         /* Does manual look obey TERSE */

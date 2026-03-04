@@ -838,6 +838,10 @@ dbref create_player
     ChangePassword(player, pbuf);
     s_Home(player, start_home());
     free_lbuf(pbuf);
+    if (mudconf.talk_mode_default)
+    {
+        s_Flags(player, FLAG_WORD2, Flags2(player) | TALKMODE);
+    }
     local_data_create(player);
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
     while (nullptr != p)

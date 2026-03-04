@@ -1986,6 +1986,41 @@ UTF8 *process_command
         }
     }
 
+    // Talk mode: if the player has TALKMODE set and this is interactive
+    // input, treat unprefix'd input as 'say'.  A leading '.' escapes
+    // to normal command processing.
+    //
+    if (  interactive
+       && isPlayer(executor)
+       && TalkMode(executor))
+    {
+        if ('.' == pCommand[0])
+        {
+            // Strip the dot and fall through to normal command
+            // processing.
+            //
+            pCommand++;
+
+            // If the dot was the only character, ignore the empty
+            // command.
+            //
+            if ('\0' == *pCommand)
+            {
+                mudstate.debug_cmd = cmdsave;
+                return preserve_cmd;
+            }
+        }
+        else
+        {
+            // Route to say.
+            //
+            do_say(executor, caller, enactor, eval, SAY_SAY, pCommand,
+                args, nargs);
+            mudstate.debug_cmd = cmdsave;
+            return preserve_cmd;
+        }
+    }
+
     if (  mudconf.have_comsys
        && !Slave(executor)
        && !do_comsystem(executor, pCommand))

@@ -219,6 +219,7 @@ void cf_init(void)
     mudconf.see_own_dark    = true;
     mudconf.sweep_dark      = false;
     mudconf.switch_df_all   = true;
+    mudconf.talk_mode_default = false;
     mudconf.terse_contents  = true;
     mudconf.terse_exits     = true;
     mudconf.terse_look      = true;
@@ -1958,6 +1959,7 @@ static CONFPARM conftable[] =
     {T("suspect_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_SUSPECT},
     {T("sweep_dark"),                cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.sweep_dark),      nullptr,            0},
     {T("switch_default_all"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.switch_df_all),   nullptr,            0},
+    {T("talk_mode_default"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.talk_mode_default), nullptr,          0},
     {T("terse_shows_contents"),      cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_contents),  nullptr,            0},
     {T("terse_shows_exits"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_exits),     nullptr,            0},
     {T("terse_shows_move_messages"), cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_movemsg),   nullptr,            0},

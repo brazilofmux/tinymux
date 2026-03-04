@@ -384,6 +384,7 @@ static FLAGBITENT fbeSlave          = { SLAVE,        'x',    FLAG_WORD2, CA_WIZ
 static FLAGBITENT fbeStaff          = { STAFF,        'w',    FLAG_WORD2, 0,                    fh_wiz};
 static FLAGBITENT fbeSticky         = { STICKY,       'S',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeSuspect        = { SUSPECT,      'u',    FLAG_WORD2, CA_WIZARD,            fh_wiz};
+static FLAGBITENT fbeTalkMode       = { TALKMODE,     ' ',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeTerse          = { TERSE,        'q',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeTrace          = { TRACE,        'T',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeTransparent    = { SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any};
@@ -495,6 +496,7 @@ FLAGNAMEENT gen_flag_names[] =
     {T("STAFF"),           true, &fbeStaff          },
     {T("STICKY"),          true, &fbeSticky         },
     {T("SUSPECT"),         true, &fbeSuspect        },
+    {T("TALKMODE"),        true, &fbeTalkMode       },
     {T("TERSE"),           true, &fbeTerse          },
     {T("TRACE"),           true, &fbeTrace          },
     {T("TRANSPARENT"),     true, &fbeTransparent    },

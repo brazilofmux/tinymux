@@ -76,6 +76,7 @@ constexpr unsigned int HAS_DAILY    = 0x00020000;
 constexpr unsigned int GAGGED       = 0x00040000;
 constexpr unsigned int OPEN_OK      = 0x00080000;  // You can open exits from here if you pass the openlock.
 constexpr unsigned int COLOR256     = 0x00100000;  // Enable XTERM 256-color codes.
+constexpr unsigned int TALKMODE     = 0x00200000;  // Talk mode: unprefix'd input becomes say.
 constexpr unsigned int VACATION     = 0x01000000;
 constexpr unsigned int PLAYER_MAILS = 0x02000000;
 constexpr unsigned int HTML         = 0x04000000;  /* Player supports HTML */
@@ -307,6 +308,7 @@ UTF8 *MakeCanonicalFlagName
                             (mudconf.safe_unowned && (Owner(x) != Owner(p))))
 #define Audible(x)          ((Flags(x) & HEARTHRU) != 0)
 #define Terse(x)            ((Flags(x) & TERSE) != 0)
+#define TalkMode(x)         ((Flags2(x) & TALKMODE) != 0)
 
 #define Gagged(x)           ((Flags2(x) & GAGGED) != 0)
 #define Vacation(x)         ((Flags2(x) & VACATION) != 0)
