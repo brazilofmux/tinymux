@@ -1,0 +1,77 @@
+#
+# lock_fn.mux - Test Cases for lock().
+#
+@create test_lock_fn
+-
+@set test_lock_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lock_fn=
+  @log smoke=Beginning lock() test cases.
+-
+#
+# Test Case #1 - Read default lock (one-argument form).
+#
+&tr.tc001 test_lock_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lock(me)]
+          )),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC001: lock read default. Succeeded.
+  },
+  {
+    @log smoke=TC001: lock read default. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Set a lock via lock() and verify it reads back.
+#
+&tr.tc002 test_lock_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lock(me,me)]
+            [lock(me)]
+          )),
+        4AE1F15948FB7E205CA86E9AD3B08D3CAB90154D
+      )=
+  {
+    @log smoke=TC002: lock set. Succeeded.
+  },
+  {
+    @log smoke=TC002: lock set. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Clear a lock via lock() with empty second arg.
+#
+&tr.tc003 test_lock_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lock(me,)]
+            [lock(me)]
+          )),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC003: lock clear. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: lock clear. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lock_fn=
+  @log smoke=End lock() test cases.;
+  @notify smoke
+-
+drop test_lock_fn
+-
+#
+# End of Test Cases
+#

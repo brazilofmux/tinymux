@@ -9418,12 +9418,25 @@ LOCATE() (continued)
 & LOCK()
 LOCK()
 
-  FUNCTION: lock(<object>[/<whichlock>])
+  FUNCTION: lock(<object>[/<whichlock>][, <key>])
 
-  Returns the named lock on <object>.  If you don't specify the lock to get,
-  the default lock is returned.  You must control <object>.
+  With one argument, returns the named lock on <object>.  If you don't
+  specify the lock to get, the default lock is returned.
 
-  Related Topics:
+  With two arguments, this is a side-effect function that sets or clears
+  the lock.  If <key> is non-empty, the lock is set to <key>.  If <key>
+  is empty, the lock is cleared.  In both cases, the resulting lock value
+  is returned.  You must control <object>.
+
+  Examples:
+    > say lock(myobj)
+    You say, "playername"
+    > say lock(myobj, me&!guest)
+    You say, "playername&!guest"
+    > say lock(myobj,)
+    You say, ""
+
+  Related Topics: @lock, @unlock, elock()
 
 & LOG()
 LOG()

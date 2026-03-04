@@ -5144,7 +5144,6 @@ static FUNCTION(fun_lock)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5158,6 +5157,47 @@ static FUNCTION(fun_lock)
     if (!get_obj_and_lock(executor, fargs[0], &it, &pattr, buff, bufc))
     {
         return;
+    }
+
+    // Side-effect: set or clear the lock when a second argument is given.
+    //
+    if (1 < nfargs)
+    {
+        if (check_command(executor, T("@lock"), buff, bufc))
+        {
+            return;
+        }
+        if (!Controls(executor, it))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+        if (NoModify(it) && !WizRoy(executor))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+        if ('\0' == fargs[1][0])
+        {
+            // Empty second arg: clear the lock.
+            //
+            atr_clr(it, pattr->number);
+            set_modified(it);
+        }
+        else
+        {
+            // Non-empty second arg: set the lock.
+            //
+            struct boolexp *okey = parse_boolexp(executor, fargs[1], false);
+            if (okey == TRUE_BOOLEXP)
+            {
+                safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+                return;
+            }
+            atr_add_raw(it, pattr->number,
+                unparse_boolexp_quiet(executor, okey));
+            free_boolexp(okey);
+        }
     }
 
     // Get the attribute and decode it if we can read it
@@ -11162,7 +11202,7 @@ static FUN builtin_function_list[] =
     {T("LOC"),         fun_loc,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LOCALIZE"),    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("LOCATE"),      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {T("LOCK"),        fun_lock,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("LOCK"),        fun_lock,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LOG"),         fun_log,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LOR"),         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LPAD"),        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
