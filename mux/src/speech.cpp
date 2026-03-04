@@ -1121,7 +1121,15 @@ void do_pemit_single
             {
             case ':':
                 message++;
-                whisper_pose(player, target, message, true);
+                if (' ' == *message)
+                {
+                    message++;
+                    whisper_pose(player, target, message, false);
+                }
+                else
+                {
+                    whisper_pose(player, target, message, true);
+                }
                 break;
 
             case ';':
@@ -1614,9 +1622,16 @@ void do_pemit_whisper
     key &= ~mask;
 
     int chPoseType = *message;
+    bool bPoseSpace = true;
     if (':' == chPoseType)
     {
         message[0] = ' ';
+        if (' ' == message[1])
+        {
+            // ": test" → skip the extra space, no space between name and text.
+            //
+            bPoseSpace = false;
+        }
     }
 
     if (  1 == nPlayers
@@ -1630,8 +1645,16 @@ void do_pemit_whisper
             break;
 
         case ':':
-            notify(executor, tprintf(T("%s senses \xE2\x80\x9C%s %s\xE2\x80\x9D"),
-                Moniker(aPlayers[0]), Moniker(executor), &message[1]));
+            if (bPoseSpace)
+            {
+                notify(executor, tprintf(T("%s senses \xE2\x80\x9C%s %s\xE2\x80\x9D"),
+                    Moniker(aPlayers[0]), Moniker(executor), &message[1]));
+            }
+            else
+            {
+                notify(executor, tprintf(T("%s senses \xE2\x80\x9C%s%s\xE2\x80\x9D"),
+                    Moniker(aPlayers[0]), Moniker(executor), &message[1]));
+            }
             break;
 
         default:
@@ -1683,8 +1706,16 @@ void do_pemit_whisper
             break;
 
         case ':':
-            notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s %s\xE2\x80\x9D"),
-                aFriendly, Moniker(executor), &message[1]));
+            if (bPoseSpace)
+            {
+                notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s %s\xE2\x80\x9D"),
+                    aFriendly, Moniker(executor), &message[1]));
+            }
+            else
+            {
+                notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s%s\xE2\x80\x9D"),
+                    aFriendly, Moniker(executor), &message[1]));
+            }
             break;
 
         default:
