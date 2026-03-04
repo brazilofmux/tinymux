@@ -2560,66 +2560,72 @@ static void room_list
     dbref player,
     dbref enactor,
     dbref room,
-    int   level,
     int   maxlevels,
     bool  showall
 )
 {
-    // Make sure the player can really see this room from their location.
+    // BFS level-by-level traversal.  'current' holds rooms at depth d,
+    // 'next' collects rooms at depth d+1.
     //
-    if (  (  level == maxlevels
-          || showall)
-       && (  Examinable(player, room)
-          || Location(player) == room
-          || room == enactor))
-    {
-        mudstate.bfReport.Set(room);
-    }
+    std::vector<dbref> current;
+    std::vector<dbref> next;
 
-    // If the Nth level has been reach, stop this branch in the recursion
-    //
-    if (level >= maxlevels)
-    {
-        return;
-    }
+    current.push_back(room);
 
-    // Return info for all parent levels.
-    //
-    int lev;
-    dbref parent;
-    ITER_PARENTS(room, parent, lev)
+    for (int d = 0; d < maxlevels; d++)
     {
-        // Look for exits at each level.
-        //
-        if (!Has_exits(parent))
+        for (size_t ci = 0; ci < current.size(); ci++)
         {
-            continue;
-        }
-        int key = 0;
-        if (Examinable(player, parent))
-        {
-            key |= VE_LOC_XAM;
-        }
-        if (Dark(parent))
-        {
-            key |= VE_LOC_DARK;
-        }
-        if (Dark(room))
-        {
-            key |= VE_BASE_DARK;
-        }
+            dbref r = current[ci];
 
-        dbref thing;
-        DOLIST(thing, Exits(parent))
-        {
-            dbref loc = Location(thing);
-            if (  exit_visible(thing, player, key)
-               && !mudstate.bfTraverse.IsSet(loc))
+            int lev;
+            dbref parent;
+            ITER_PARENTS(r, parent, lev)
             {
-                mudstate.bfTraverse.Set(loc);
-                room_list(player, enactor, loc, (level + 1), maxlevels, showall);
+                if (!Has_exits(parent))
+                {
+                    continue;
+                }
+                int key = 0;
+                if (Examinable(player, parent))
+                {
+                    key |= VE_LOC_XAM;
+                }
+                if (Dark(parent))
+                {
+                    key |= VE_LOC_DARK;
+                }
+                if (Dark(r))
+                {
+                    key |= VE_BASE_DARK;
+                }
+
+                dbref thing;
+                DOLIST(thing, Exits(parent))
+                {
+                    dbref loc = Location(thing);
+                    if (  exit_visible(thing, player, key)
+                       && !mudstate.bfTraverse.IsSet(loc))
+                    {
+                        mudstate.bfTraverse.Set(loc);
+
+                        if (  (  showall
+                              || d + 1 == maxlevels)
+                           && (  Examinable(player, loc)
+                              || Location(player) == loc
+                              || loc == enactor))
+                        {
+                            mudstate.bfReport.Set(loc);
+                        }
+
+                        next.push_back(loc);
+                    }
+                }
             }
         }
+
+        current.swap(next);
+        next.clear();
     }
 }
 
@@ -2674,7 +2680,7 @@ FUNCTION(fun_lrooms)
     mudstate.bfTraverse.ClearAll();
 
     mudstate.bfTraverse.Set(room);
-    room_list(executor, enactor, room, 0, N, B);
+    room_list(executor, enactor, room, N, B);
     mudstate.bfReport.Clear(room);
 
     ITL pContext;
