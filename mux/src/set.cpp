@@ -1459,29 +1459,96 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         return;
     }
 
-    attr_info src(executor, oldpair, false, true);
-    if (src.m_bValid)
+    // Check if source has wildcard in attribute portion.
+    //
+    bool bWild = false;
+    const UTF8 *p = oldpair;
+    while (*p && *p != '/')
     {
-        for (int i = 0; i < nargs; i++)
+        p++;
+    }
+    if (*p == '/')
+    {
+        p++;
+        while (*p)
         {
-            attr_info dest(executor, newpair[i], true, false);
-            if (!dest.m_bValid)
+            if (*p == '*' || *p == '?')
             {
-                if (Good_obj(dest.m_object))
+                bWild = true;
+                break;
+            }
+            p++;
+        }
+    }
+
+    if (bWild)
+    {
+        // Wildcard path: iterate all matching attributes on source object.
+        //
+        dbref thing;
+        olist_push();
+        if (!parse_attrib_wild(executor, oldpair, &thing, false, false, false))
+        {
+            olist_pop();
+            notify_quiet(executor, T("No match."));
+            return;
+        }
+
+        int atr;
+        for (atr = olist_first(); atr != NOTHING; atr = olist_next())
+        {
+            ATTR *ap = atr_num(atr);
+            if (ap)
+            {
+                attr_info src(thing, ap);
+                for (int i = 0; i < nargs; i++)
                 {
-                    dest.m_attr = src.m_attr;
-                    dest.m_bValid = true;
+                    attr_info dest(executor, newpair[i], true, false);
+                    if (!dest.m_bValid)
+                    {
+                        if (Good_obj(dest.m_object))
+                        {
+                            dest.m_attr = src.m_attr;
+                            dest.m_bValid = true;
+                        }
+                    }
+                    if (dest.m_bValid)
+                    {
+                        copy_attr(executor, src, dest, key);
+                    }
                 }
             }
-            if (dest.m_bValid)
-            {
-                copy_attr(executor, src, dest, key);
-            }
         }
+        olist_pop();
     }
     else
     {
-        notify_quiet(executor, T("No match."));
+        // Single-attribute path.
+        //
+        attr_info src(executor, oldpair, false, true);
+        if (src.m_bValid)
+        {
+            for (int i = 0; i < nargs; i++)
+            {
+                attr_info dest(executor, newpair[i], true, false);
+                if (!dest.m_bValid)
+                {
+                    if (Good_obj(dest.m_object))
+                    {
+                        dest.m_attr = src.m_attr;
+                        dest.m_bValid = true;
+                    }
+                }
+                if (dest.m_bValid)
+                {
+                    copy_attr(executor, src, dest, key);
+                }
+            }
+        }
+        else
+        {
+            notify_quiet(executor, T("No match."));
+        }
     }
 }
 

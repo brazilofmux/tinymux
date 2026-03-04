@@ -1117,6 +1117,7 @@ Related Topics: @name.
   @cpattr <obj>/<attr> = <obj1> [,<obj2>,<obj3>,...]
   @cpattr <attr> = <obj1>/<attr1> [,<obj2>/<attr2>,<obj3>/<attr3>,...]
   @cpattr <attr> = <obj1> [,<obj2>,<obj3>,...]
+  @cpattr <obj>/<wild> = <obj1> [,<obj2>,<obj3>,...]
 
   The first form of this command is used to copy <attr> on <obj> to the
   object-attribute pairs in a comma-separated list. For example:
@@ -1132,6 +1133,11 @@ Related Topics: @name.
   @cpattr, to the object-attribute pairs in the list. Finally, the fourth
   form copies <attr> from the object that executes the @cpattr to the
   objects in the list, with the name <attr>.
+
+  Wildcards (* and ?) may be used in the source attribute name to copy
+  multiple attributes at once. For example, @cpattr thing1/*=thing2,thing3
+  copies all visible attributes from thing1 to thing2 and thing3, keeping
+  the same attribute names on each destination.
 
 & @CPFLAGS
 @CPFLAGS
