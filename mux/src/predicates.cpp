@@ -2301,7 +2301,7 @@ bool locatable(dbref player, dbref it, dbref enactor)
     dbref loc_it = where_is(it);
 
     // Succeed if we can examine the target, if we are the target, if we can
-    // examine the location, if a wizard caused the lookup, or if the target
+    // examine the location, if the player is a wizard, or if the target
     // caused the lookup.
     //
     if (  Examinable(player, it)
@@ -2312,7 +2312,7 @@ bool locatable(dbref player, dbref it, dbref enactor)
              || loc_it == where_is(player))
           && (  !Hidden(it)
              || See_Hidden(player)))
-       || Wizard(enactor)
+       || Wizard(player)
        || it == enactor)
     {
         return true;
