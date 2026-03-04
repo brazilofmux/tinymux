@@ -3550,12 +3550,22 @@ void do_cheader(const dbref player, UTF8* channel, const UTF8* header)
         return;
     }
 
-    // Optimize/terminate any ANSI in the string.
-    //
-    UTF8 NewHeader_ANSI[MAX_HEADER_LEN + 1];
-    const mux_field nLen = StripTabsAndTruncate(header, NewHeader_ANSI,
-                                                MAX_HEADER_LEN, MAX_HEADER_LEN);
-    memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
+    if ('\0' == header[0])
+    {
+        // Empty value resets to the default bold [ChannelName] header.
+        //
+        mux_sprintf(ch->header, sizeof(ch->header),
+                    T("%s[%s]%s"), COLOR_INTENSE, ch->name, COLOR_RESET);
+    }
+    else
+    {
+        // Optimize/terminate any ANSI in the string.
+        //
+        UTF8 NewHeader_ANSI[MAX_HEADER_LEN + 1];
+        const mux_field nLen = StripTabsAndTruncate(header, NewHeader_ANSI,
+                                                    MAX_HEADER_LEN, MAX_HEADER_LEN);
+        memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
+    }
 }
 
 struct chanlist_node

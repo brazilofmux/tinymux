@@ -1185,7 +1185,8 @@ Related Topics: @name.
     anon    - same as spoof.
     nospoof - channel will append the player's name to the comtitle.
     header  - Changes the prefix text used to announce a channel emit to
-              <value>. <value> may contain color.
+              <value>. <value> may contain color. If <value> is empty,
+              the header resets to the default bold [ChannelName].
     object  - Sets the channel object to <value>. You must create an object
               before associating a channel with it.
     log     - Sets the maximum number of channel messages to log.
