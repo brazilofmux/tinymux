@@ -6904,6 +6904,16 @@ FUNCTION(fun_sql)
     MYSQL_RES *result = mysql_store_result(mush_database);
     if (!result)
     {
+        // Drain any remaining result sets from stored procedures.
+        //
+        while (mysql_next_result(mush_database) == 0)
+        {
+            MYSQL_RES *extra = mysql_store_result(mush_database);
+            if (extra)
+            {
+                mysql_free_result(extra);
+            }
+        }
         free_lbuf(curr);
         return;
     }
@@ -6931,6 +6941,17 @@ FUNCTION(fun_sql)
 
     free_lbuf(curr);
     mysql_free_result(result);
+
+    // Drain any remaining result sets from stored procedures.
+    //
+    while (mysql_next_result(mush_database) == 0)
+    {
+        MYSQL_RES *extra = mysql_store_result(mush_database);
+        if (extra)
+        {
+            mysql_free_result(extra);
+        }
+    }
 }
 
 #endif // INLINESQL

@@ -781,6 +781,17 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
             mysql_free_result(result);
             Pipe_AppendBytes(&qiResultsSet, sizeof(nRows), &nRows);
         }
+
+        // Drain any remaining result sets from stored procedures.
+        //
+        while (mysql_next_result(m_database) == 0)
+        {
+            MYSQL_RES *extra = mysql_store_result(m_database);
+            if (extra)
+            {
+                mysql_free_result(extra);
+            }
+        }
     }
 #else // HAVE_MYSQL
     iError = QS_NO_SESSION;
