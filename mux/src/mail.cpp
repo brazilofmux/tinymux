@@ -4632,6 +4632,52 @@ static void do_malias_status(dbref player)
     }
 }
 
+XFUNCTION(fun_malias)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref target;
+    if (nfargs == 0)
+    {
+        target = executor;
+    }
+    else
+    {
+        target = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(target))
+        {
+            safe_match_result(target, buff, bufc);
+            return;
+        }
+    }
+
+    if (  target != executor
+       && !ExpMail(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc);
+    for (int i = 0; i < ma_top; i++)
+    {
+        if (malias[i]->owner == target)
+        {
+            if (!ItemToList_AddString(&pContext, malias[i]->name))
+            {
+                break;
+            }
+        }
+    }
+    ItemToList_Final(&pContext);
+}
+
 static void malias_cleanup1(malias_t *m, dbref target)
 {
     int count = 0;
@@ -4654,9 +4700,32 @@ static void malias_cleanup1(malias_t *m, dbref target)
 
 void malias_cleanup(dbref player)
 {
+    // Remove destroyed player from alias membership lists.
+    //
     for (int i = 0; i < ma_top; i++)
     {
         malias_cleanup1(malias[i], player);
+    }
+
+    // Delete aliases owned by the destroyed player.  Iterate backwards
+    // to avoid index-shift issues when removing multiple entries.
+    //
+    for (int i = ma_top - 1; i >= 0; i--)
+    {
+        if (malias[i]->owner == player)
+        {
+            MEMFREE(malias[i]->name);
+            MEMFREE(malias[i]->desc);
+            delete malias[i];
+
+            // Shift remaining entries down.
+            //
+            for (int j = i; j < ma_top - 1; j++)
+            {
+                malias[j] = malias[j + 1];
+            }
+            ma_top--;
+        }
     }
 }
 

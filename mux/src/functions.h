@@ -158,6 +158,7 @@ XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
 XFUNCTION(fun_mailsize);
 XFUNCTION(fun_mailsubj);
+XFUNCTION(fun_malias);
 XFUNCTION(fun_matchall);
 XFUNCTION(fun_mix);
 XFUNCTION(fun_munge);

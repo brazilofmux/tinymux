@@ -2599,6 +2599,12 @@ Related Topics: @name.
                                        list all mailing aliases currently
                                        defined by their number.
 
+  When a player is destroyed (@destroy or @toad), any mail aliases they
+  own are automatically deleted and they are removed from all alias
+  membership lists.
+
+  Related Topics: MALIAS(), @mail.
+
 & @MFAIL
 @MFAIL
 
@@ -9785,6 +9791,24 @@ MAILSUBJ()
   Second form returns the subject line from the <player>'s <num>'th mail item.
 
   Related Topics: mail(), mailj(), mailsize().
+
+& MALIAS()
+MALIAS()
+
+  FUNCTION: malias([<object>])
+
+  Returns a space-separated list of mail alias names (prefixed with *)
+  owned by <object>. If <object> is omitted, returns aliases owned by
+  the caller.
+
+  Players can query their own aliases. Wizards can query any player's
+  aliases.
+
+  Example:
+    > think malias()
+    *friends *coworkers
+
+  Related Topics: @malias, valid().
 
 & MAP()
 MAP()
