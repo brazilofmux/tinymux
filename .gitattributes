@@ -1,0 +1,6 @@
+# Shell scripts must have LF endings to work in Git Bash and Cygwin.
+*.sh text eol=lf
+
+# TOC files are read by shell scripts and must also have LF endings.
+win32/TOC.* text eol=lf
+unix/TOC.* text eol=lf
