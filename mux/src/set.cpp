@@ -2137,7 +2137,59 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, nullptr, 0, nullptr, pattr->number, 0, (const UTF8 **)argv, nargs);
+
+    if (key & TRIG_NOW)
+    {
+        // Execute the attribute inline instead of enqueuing.
+        //
+        dbref aowner;
+        int aflags;
+        UTF8 *act = atr_pget(thing, pattr->number, &aowner, &aflags);
+        if (*act)
+        {
+            bool bRun = true;
+            dbref aowner2;
+            int aflags2;
+            UTF8 *charges = atr_pget(thing, A_CHARGES, &aowner2, &aflags2);
+            if (*charges)
+            {
+                int num = mux_atol(charges);
+                if (num > 0)
+                {
+                    UTF8 *buff = alloc_sbuf("trigger.now.charges");
+                    mux_ltoa(num - 1, buff);
+                    atr_add_raw(thing, A_CHARGES, buff);
+                    free_sbuf(buff);
+                }
+                else
+                {
+                    UTF8 *buff = atr_pget(thing, A_RUNOUT, &aowner2, &aflags2);
+                    if (*buff)
+                    {
+                        free_lbuf(act);
+                        act = buff;
+                    }
+                    else
+                    {
+                        free_lbuf(buff);
+                        bRun = false;
+                    }
+                }
+            }
+            free_lbuf(charges);
+            if (bRun)
+            {
+                process_command(thing, executor, executor,
+                    AttrTrace(aflags, 0), false, act,
+                    (const UTF8 **)argv, nargs);
+            }
+        }
+        free_lbuf(act);
+    }
+    else
+    {
+        did_it(executor, thing, 0, nullptr, 0, nullptr, pattr->number, 0, (const UTF8 **)argv, nargs);
+    }
 
     if (key & TRIG_NOTIFY)
     {

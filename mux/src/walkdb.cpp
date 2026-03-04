@@ -27,6 +27,18 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
     free_lbuf(command);
 }
 
+static void bind_and_process(dbref executor, dbref caller, dbref enactor,
+                             int eval, UTF8 *action, UTF8 *argstr,
+                             const UTF8 *cargs[], int ncargs, int number)
+{
+    UTF8 *command = replace_tokens(action,
+        mudconf.safer_iter ? nullptr : argstr,
+        mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
+        nullptr);
+    process_command(executor, caller, enactor, eval, false, command, cargs, ncargs);
+    free_lbuf(command);
+}
+
 // New @dolist.  i.e.:
 // @dolist #12 #34 #45 #123 #34644=@emit [name(##)]
 //
@@ -67,8 +79,16 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
         {
             number++;
             objstring = parse_to(&curr, delimiter, EV_STRIP_CURLY);
-            bind_and_queue(executor, caller, enactor, eval, command, objstring,
-                cargs, ncargs, number);
+            if (key & DOLIST_NOW)
+            {
+                bind_and_process(executor, caller, enactor, eval, command,
+                    objstring, cargs, ncargs, number);
+            }
+            else
+            {
+                bind_and_queue(executor, caller, enactor, eval, command,
+                    objstring, cargs, ncargs, number);
+            }
         }
     }
 

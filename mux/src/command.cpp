@@ -143,6 +143,7 @@ static NAMETAB dolist_sw[] =
 {
     {T("delimit"),         1,  CA_PUBLIC,  DOLIST_DELIMIT},
     {T("notify"),          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
+    {T("now"),             1,  CA_WIZARD,  DOLIST_NOW|SW_MULTIPLE},
     {T("space"),           1,  CA_PUBLIC,  DOLIST_SPACE},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
@@ -221,6 +222,11 @@ static NAMETAB folder_sw[] =
     {T("list"),            1,    CA_PUBLIC, FOLDER_LIST},
     {T("read"),            1,    CA_PUBLIC, FOLDER_READ},
     {T("set"),             1,    CA_PUBLIC, FOLDER_SET},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+static NAMETAB force_sw[] =
+{
+    {T("now"),             1,  CA_WIZARD,  FORCE_NOW},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 static NAMETAB fpose_sw[] =
@@ -536,6 +542,7 @@ static NAMETAB switch_sw[] =
     {T("default"),         1,  CA_PUBLIC,  SWITCH_DEFAULT},
     {T("first"),           1,  CA_PUBLIC,  SWITCH_ONE},
     {T("notify"),          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
+    {T("now"),             1,  CA_WIZARD,  SWITCH_NOW|SW_MULTIPLE},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
@@ -565,6 +572,7 @@ static NAMETAB trig_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  TRIG_QUIET},
     {T("notify"),          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
+    {T("now"),             1,  CA_WIZARD,  TRIG_NOW|SW_MULTIPLE},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
@@ -734,7 +742,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@fixdb"),       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_fixdb},
     {T("@flag"),        flag_sw,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_flag},
     {T("@folder"),      folder_sw,  CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_folder},
-    {T("@force"),       nullptr,    CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,            0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
+    {T("@force"),       force_sw,   CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,            0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
     {T("@forwardlist"), nullptr,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_forwardlist},
     {T("@fpose"),       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@fsay"),        nullptr,    CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, 0, do_pemit},

@@ -318,7 +318,6 @@ void do_force
 )
 {
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
     dbref victim = match_controlled(executor, arg1);
@@ -326,11 +325,18 @@ void do_force
     {
         // Force victim to do command.
         //
-        CLinearTimeAbsolute lta;
-        wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0,
-            arg2,
-            ncargs, cargs,
-            mudstate.global_regs);
+        if (key & FORCE_NOW)
+        {
+            process_command(victim, caller, executor, eval, false, arg2, cargs, ncargs);
+        }
+        else
+        {
+            CLinearTimeAbsolute lta;
+            wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0,
+                arg2,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
     }
 }
 

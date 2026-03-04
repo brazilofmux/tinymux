@@ -658,6 +658,7 @@ extern int anum_alc_top;
 #define DOLIST_SPACE    0   /* expect spaces as delimiter */
 #define DOLIST_DELIMIT  1   /* expect custom delimiter */
 #define DOLIST_NOTIFY   2   /* Send an @notify after the @dolist is completed */
+#define DOLIST_NOW      4   /* Execute iterations inline instead of enqueuing */
 #define DOING_MESSAGE   0   /* Set my DOING message */
 #define DOING_HEADER    1   /* Set the DOING header */
 #define DOING_POLL      2   /* List DOING header */
@@ -679,6 +680,7 @@ extern int anum_alc_top;
 #define EXAM_PARENT     8   /* Get attr from parent when exam obj/attr */
 //#define EXAM_PRETTY     16  /* Pretty-format output */
 //#define EXAM_PAIRS      32  /* Print paren matches in color */
+#define FORCE_NOW       1   /* Execute forced command inline instead of enqueuing */
 #define FIXDB_OWNER     1   /* Fix OWNER field */
 #define FIXDB_LOC       2   /* Fix LOCATION field */
 #define FIXDB_CON       4   /* Fix CONTENTS field */
@@ -859,6 +861,7 @@ extern int anum_alc_top;
 #define SWITCH_ONE      2   /* Execute only first case that matches */
 #define SWITCH_MASK     3   /* Includes lower 2 bits */
 #define SWITCH_NOTIFY   4   /* Send a @notify after the @switch is completed */
+#define SWITCH_NOW      8   /* Execute matched cases inline instead of enqueuing */
 #define SWEEP_ME        1   /* Check my inventory */
 #define SWEEP_HERE      2   /* Check my location */
 #define SWEEP_COMMANDS  4   /* Check for $-commands */
@@ -881,6 +884,7 @@ extern int anum_alc_top;
 #define TOAD_NO_CHOWN   1   /* Don't change ownership */
 #define TRIG_QUIET      1   /* Don't display 'Triggered.' message. */
 #define TRIG_NOTIFY     2   /* Send a @notify after the @trigger is completed. */
+#define TRIG_NOW        4   /* Execute triggered attribute inline instead of enqueuing */
 #define TWARP_QUEUE     1   /* Warp the wait and sem queues */
 #define TWARP_DUMP      2   /* Warp the dump interval */
 #define TWARP_CLEAN     4   /* Warp the cleaning interval */

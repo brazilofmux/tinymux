@@ -757,10 +757,17 @@ void do_switch
         if (wild_match(buff, expr))
         {
             UTF8 *tbuf = replace_tokens(args[a+1], nullptr, nullptr, expr);
-            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                tbuf,
-                ncargs, cargs,
-                mudstate.global_regs);
+            if (key & SWITCH_NOW)
+            {
+                process_command(executor, caller, enactor, eval, false, tbuf, cargs, ncargs);
+            }
+            else
+            {
+                wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                    tbuf,
+                    ncargs, cargs,
+                    mudstate.global_regs);
+            }
             free_lbuf(tbuf);
             bAny = true;
         }
@@ -772,10 +779,17 @@ void do_switch
        && args[a])
     {
         UTF8 *tbuf = replace_tokens(args[a], nullptr, nullptr, expr);
-        wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-            tbuf,
-            ncargs, cargs,
-            mudstate.global_regs);
+        if (key & SWITCH_NOW)
+        {
+            process_command(executor, caller, enactor, eval, false, tbuf, cargs, ncargs);
+        }
+        else
+        {
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                tbuf,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
         free_lbuf(tbuf);
     }
 

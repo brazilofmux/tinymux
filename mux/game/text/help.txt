@@ -1404,6 +1404,9 @@ Related Topics: @name.
     /space   - (Default) List elements are separated by spaces.
     /delimit - List elements are separated by <delimiter>.
     /notify  - Queues a '@notify' after all commands in the list.
+    /now     - (Wizard-only) Execute each iteration inline instead of
+               enqueuing it. Guarantees all iterations complete before
+               the next command in the action list. See also: @break.
 
   This command is particularly handy with lcon() and lexits(). A few examples:
 
@@ -1785,6 +1788,10 @@ Related Topics: @name.
   objects that do not have their INHERIT flag set may not force objects that
   do.  If the victim is specified by number, you may use an alternate form
   of the command, '#<number> <command>'.
+
+  The following switch is available:
+    /now    - (Wizard-only) Execute the forced command inline instead of
+              enqueuing it. See also: @break.
 
   Related Topics: puppets.
 
@@ -3869,6 +3876,9 @@ Related Topics: @name.
     /first  - Perform only the action list associated with the first target
               that matches <string>.
     /notify - Queues an '@notify' after all commands in the list.
+    /now    - (Wizard-only) Execute matched commands inline instead of
+              enqueuing them. Guarantees commands run before the next
+              command in the action list. See also: @break.
 
   Related Topics: switch(), ifelse().
 
@@ -3967,9 +3977,11 @@ Related Topics: @name.
   object becomes the enactor and the positional parameters %0 through %9
   are set to the supplied parameters.
 
-  The @trigger command supports the following switch:
+  The @trigger command supports the following switches:
     /quiet   - Inhibits 'Triggered.' acknowledgement messages.
     /notify  - Queues a '@notify' after all commands in the list.
+    /now     - (Wizard-only) Execute the triggered attribute inline
+               instead of enqueuing it. See also: @break.
 
   Related Topics: LOOPING.
 
