@@ -48,7 +48,6 @@ struct confdata
     bool    autozone;           // New objects are automatically zoned.
     bool    cache_names;        /* Should object names be cached separately */
     bool    clone_copy_cost;    /* Does @clone copy value? */
-    bool    compress_db;        // should we use compress.
     bool    dark_sleepers;      /* Are sleeping players 'dark'? */
     bool    destroy_going_now;  // Does GOING act like DESTROY_OK?
     bool    eval_comtitle;      /* Should Comtitles Evaluate? */
@@ -246,7 +245,6 @@ struct confdata
     UTF8    motd_msg[GBUF_SIZE];    /* Wizard-settable login message */
     UTF8    pueblo_msg[GBUF_SIZE];  /* Message displayed to Pueblo clients */
     UTF8    wizmotd_msg[GBUF_SIZE]; /* Login message for wizards only */
-    UTF8    *compress;          /* program to run to compress */
     UTF8    *comsys_db;         /* name of the comsys db */
     UTF8    *config_file;       /* name of config file, used by @restart */
     UTF8    *conn_file;         /* display on connect if no registration */
@@ -268,7 +266,6 @@ struct confdata
     UTF8    *regf_file;         /* display on (failed) create if reg is on */
     UTF8    *site_file;         /* display if conn from bad site */
     UTF8    *status_file;       /* Where to write arg to @shutdown */
-    UTF8    *uncompress;        /* program to run to uncompress */
     UTF8    *wizmotd_file;      /* display this file on login to wizards */
     UTF8    *ip_address;        /* MUX IP Address */
     const UTF8 *pid_file;       // file for communicating process id back to ./Startmux

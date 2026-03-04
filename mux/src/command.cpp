@@ -3714,8 +3714,8 @@ static void list_options(dbref player)
         mudconf.cmd_quota_incr);
     raw_notify(player, buff);
 
-    mux_sprintf(buff, MBUF_SIZE, T("Spaces...%s  Savefiles...%s"),
-        ed[mudconf.space_compress], ed[mudconf.compress_db]);
+    mux_sprintf(buff, MBUF_SIZE, T("Spaces...%s"),
+        ed[mudconf.space_compress]);
     raw_notify(player, buff);
 
     mux_sprintf(buff, MBUF_SIZE, T("New characters: Room...#%d  Home...#%d  DefaultHome...#%d  Quota...%d"),

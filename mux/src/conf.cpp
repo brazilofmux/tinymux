@@ -50,9 +50,6 @@ void cf_init(void)
     mudconf.mail_db   = StringClone(T("mail.db"));
     mudconf.comsys_db = StringClone(T("comsys.db"));
 
-    mudconf.compress_db = false;
-    mudconf.compress = StringClone(T("gzip"));
-    mudconf.uncompress = StringClone(T("gzip -d"));
     mudconf.status_file = StringClone(T("shutdown.status"));
     mudconf.max_cache_size = 1*1024*1024;
 
@@ -1855,8 +1852,6 @@ static CONFPARM conftable[] =
     {T("clone_copies_cost"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.clone_copy_cost), nullptr,            0},
     {T("command_quota_increment"),   cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_incr,         nullptr,            0},
     {T("command_quota_max"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_max,          nullptr,            0},
-    {T("compress_program"),          cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.compress),        nullptr, SIZEOF_PATHNAME},
-    {T("compression"),               cf_bool,        CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.compress_db),     nullptr,            0},
     {T("comsys_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.comsys_db),       nullptr, SIZEOF_PATHNAME},
     {T("config_access"),             cf_cf_access,   CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
     {T("conn_timeout"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           nullptr,            0},
@@ -2065,7 +2060,6 @@ static CONFPARM conftable[] =
     {T("trace_output_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            nullptr,            0},
     {T("trace_topdown"),             cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.trace_topdown),   nullptr,            0},
     {T("trust_site"),                cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,     HC_TRUST},
-    {T("uncompress_program"),        cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.uncompress),      nullptr, SIZEOF_PATHNAME},
     {T("unowned_safe"),              cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safe_unowned),    nullptr,            0},
     {T("user_attr_access"),          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
     {T("user_attr_per_hour"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         nullptr,            0},

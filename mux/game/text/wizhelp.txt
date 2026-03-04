@@ -852,8 +852,7 @@ INDESTRUCTIBLE
 
   COMMAND: @list db_stats
 
-  Lists statistics for the database cache. If compression is enabled,
-  displays compression statistics as well.
+  Lists statistics for the database cache.
 
 & @LIST DEFAULT_FLAGS
 @LIST DEFAULT_FLAGS
@@ -1900,33 +1899,6 @@ COMMAND_QUOTA_MAX
 
   Related Topics: command_quota_increment, timeslice.
 
-& COMPRESSION
-COMPRESSION
-
-  CONFIG PARAMETER: compress <yes/no>
-  DEFAULT: no
-
-  Indicates whether or not the database is to be compressed using the
-  compress_program when it is written, and whether or not to check for a
-  compressed database to uncompress at startup.
-
-  Related Topics: compress_program, uncompress_program.
-
-& COMPRESS_PROGRAM
-COMPRESS_PROGRAM
-
-  CONFIG PARAMETER: compress_program <path>
-  DEFAULT: gzip
-
-  Specifies the program to be run to compress the database file when it is
-  written.  If database file compression is enabled, database dumps are piped
-  through this program on their way out to disk.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: compression, uncompress_program.
-
 & COMSYS_DATABASE
 COMSYS_DATABASE
 
@@ -1951,7 +1923,7 @@ CONFIG PARAMETERS
   access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
   attr_name_charset  autozone  bad_name  badsite_file  cache_names  cache_pages
   cache_tick_period  check_interval  check_offset  clone_copies_cost
-  command_quota_increment  command_quota_max  compress_program  compression
+  command_quota_increment  command_quota_max
   comsys_database  config_access  conn_timeout  connect_file  connect_reg_file
   crash_database  crash_message  create_max_cost  create_min_cost
   dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx  def_player_tx
@@ -2012,7 +1984,7 @@ CONFIG PARAMETERS (continued)
   terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_name_charset  thing_parent
   thing_quota  timeslice  toad_recipient  trace_output_limit  trace_topdown
-  trust_site  uncompress_program  unowned_safe  user_attr_access
+  trust_site  unowned_safe  user_attr_access
   user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
   zone_recursion_limit
 
@@ -5441,20 +5413,6 @@ TRUST_SITE
   be considered suspect.
 
   Related Topics: suspect_site, SITE LIST, SITE NOTATION.
-
-& UNCOMPRESS_PROGRAM
-UNCOMPRESS_PROGRAM
-
-  CONFIG PARAMETER: uncompress_program <path>.
-  DEFAULT: gunzip
-
-  Specifies the program to be run to uncompress compressed database files when
-  reading them in at startup.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: compress_program, compression.
 
 & UNOWNED_SAFE
 UNOWNED_SAFE

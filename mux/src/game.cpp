@@ -1445,14 +1445,6 @@ static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
     { &mudconf.indb,   T(".SIG"),  false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening signalled flatfile")}  // 4
 };
 
-#if defined(WINDOWS_FILES)
-#define POPEN_READ_OP "rb"
-#define POPEN_WRITE_OP "wb"
-#elif defined(UNIX_FILES)
-#define POPEN_READ_OP "r"
-#define POPEN_WRITE_OP "w"
-#endif // UNIX_FILES
-
 void dump_database_internal(int dump_type)
 {
     UTF8 tmpfile[SIZEOF_PATHNAME+32];
@@ -1554,61 +1546,29 @@ void dump_database_internal(int dump_type)
 
     // Nuke our predecessor
     //
-    if (mudconf.compress_db)
-    {
-        mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev.gz"), mudconf.outdb);
-        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#.gz"), mudconf.outdb, mudstate.epoch - 1);
-        RemoveFile(tmpfile);
-        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#.gz"), mudconf.outdb, mudstate.epoch);
-        mux_sprintf(outfn, sizeof(outfn), T("%s.gz"), mudconf.outdb);
+    mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev"), mudconf.outdb);
+    mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch - 1);
+    RemoveFile(tmpfile);
+    mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
 
-        f = popen(reinterpret_cast<char *>(tprintf(T("%s > %s"), mudconf.compress, tmpfile)), POPEN_WRITE_OP);
-        if (f)
+    if (mux_fopen(&f, tmpfile, T("wb")))
+    {
+        DebugTotalFiles++;
+        setvbuf(f, nullptr, _IOFBF, 16384);
+        db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
+        if (fclose(f) == 0)
         {
-            DebugTotalFiles++;
-            setvbuf(f, nullptr, _IOFBF, 16384);
-            db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
-            if (pclose(f) != -1)
-            {
-                DebugTotalFiles--;
-            }
-            ReplaceFile(outfn, prevfile);
-            if (ReplaceFile(tmpfile, outfn) < 0)
-            {
-                log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
-            }
+            DebugTotalFiles--;
         }
-        else
+        ReplaceFile(mudconf.outdb, prevfile);
+        if (ReplaceFile(tmpfile, mudconf.outdb) < 0)
         {
-            log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
+            log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
         }
     }
     else
     {
-        mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev"), mudconf.outdb);
-        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch - 1);
-        RemoveFile(tmpfile);
-        mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
-
-        if (mux_fopen(&f, tmpfile, T("wb")))
-        {
-            DebugTotalFiles++;
-            setvbuf(f, nullptr, _IOFBF, 16384);
-            db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
-            if (fclose(f) == 0)
-            {
-                DebugTotalFiles--;
-            }
-            ReplaceFile(mudconf.outdb, prevfile);
-            if (ReplaceFile(tmpfile, mudconf.outdb) < 0)
-            {
-                log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
-            }
-        }
-        else
-        {
-            log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
-        }
+        log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
     }
 
     if (mudconf.have_mailer)
@@ -1901,40 +1861,21 @@ static int load_game(int ccPageFile)
     struct stat statbuf;
     int db_format, db_version, db_flags;
 
-    bool compressed = false;
-
-    if (mudconf.compress_db)
+    mux_strncpy(infile, mudconf.indb, sizeof(infile)-1);
+    if (stat(reinterpret_cast<char *>(infile), &statbuf) != 0)
     {
-        mux_sprintf(infile, sizeof(infile), T("%s.gz"), mudconf.indb);
-        if (stat(reinterpret_cast<char *>(infile), &statbuf) == 0)
-        {
-            f = popen(reinterpret_cast<char *>(tprintf(T(" %s < %s"), mudconf.uncompress, infile)), POPEN_READ_OP);
-            if (f != nullptr)
-            {
-                DebugTotalFiles++;
-                compressed = true;
-            }
-        }
+        // Indicate that we couldn't load because the input db didn't
+        // exist.
+        //
+        return LOAD_GAME_NO_INPUT_DB;
     }
 
-    if (!compressed)
+    if (!mux_fopen(&f, infile, T("rb")))
     {
-        mux_strncpy(infile, mudconf.indb, sizeof(infile)-1);
-        if (stat(reinterpret_cast<char *>(infile), &statbuf) != 0)
-        {
-            // Indicate that we couldn't load because the input db didn't
-            // exist.
-            //
-            return LOAD_GAME_NO_INPUT_DB;
-        }
-
-        if (!mux_fopen(&f, infile, T("rb")))
-        {
-            return LOAD_GAME_CANNOT_OPEN;
-        }
-        DebugTotalFiles++;
-        setvbuf(f, nullptr, _IOFBF, 16384);
+        return LOAD_GAME_CANNOT_OPEN;
     }
+    DebugTotalFiles++;
+    setvbuf(f, nullptr, _IOFBF, 16384);
 
     // Ok, read it in.
     //
@@ -1946,19 +1887,9 @@ static int load_game(int ccPageFile)
     {
         // Everything is not ok.
         //
-        if (compressed)
+        if (fclose(f) == 0)
         {
-            if (pclose(f) != -1)
-            {
-                DebugTotalFiles--;
-            }
-        }
-        else
-        {
-            if (fclose(f) == 0)
-            {
-                DebugTotalFiles--;
-            }
+            DebugTotalFiles--;
         }
         f = 0;
 
@@ -1971,19 +1902,9 @@ static int load_game(int ccPageFile)
 
     // Everything is ok.
     //
-    if (compressed)
+    if (fclose(f) == 0)
     {
-        if (pclose(f) != -1)
-        {
-            DebugTotalFiles--;
-        }
-    }
-    else
-    {
-        if (fclose(f) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        DebugTotalFiles--;
     }
     f = 0;
 
