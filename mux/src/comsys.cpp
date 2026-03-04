@@ -1296,16 +1296,26 @@ static void BuildChannelMessage
     {
     case ':':
         pPose++;
+        if (' ' == *pPose)
+        {
+            pPose++;
+        }
+        else
+        {
+            safe_chr(' ', *messNormal, &mnptr);
+            if (!bSpoof)
+            {
+                safe_chr(' ', *messNoComtitle, &mncptr);
+            }
+        }
         newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true, T("channel/pose"));
         if (newPose)
         {
             pPose = newPose;
         }
-        safe_chr(' ', *messNormal, &mnptr);
         safe_str(pPose, *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_chr(' ', *messNoComtitle, &mncptr);
             safe_str(pPose, *messNoComtitle, &mncptr);
         }
         break;
