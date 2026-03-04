@@ -350,6 +350,7 @@ static NAMETAB mail_sw[] =
     {T("fstats"),          2,  CA_PUBLIC,  MAIL_FSTATS},
     {T("fwd"),             2,  CA_PUBLIC,  MAIL_FORWARD},
     {T("list"),            1,  CA_PUBLIC,  MAIL_LIST},
+    {T("next"),            3,  CA_PUBLIC,  MAIL_NEXT},
     {T("nuke"),            1,  CA_PUBLIC,  MAIL_NUKE},
     {T("proof"),           2,  CA_PUBLIC,  MAIL_PROOF},
     {T("purge"),           2,  CA_PUBLIC,  MAIL_PURGE},

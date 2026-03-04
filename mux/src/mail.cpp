@@ -1577,6 +1577,65 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
     }
 }
 
+static void do_mail_next(dbref player)
+{
+    int folder = player_folder(player);
+    int i = 0;
+
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+    {
+        if (Folder(mp) == folder)
+        {
+            i++;
+            if (Unread(mp))
+            {
+                // Display the message using the same format as do_mail_read.
+                //
+                UTF8 *buff = alloc_lbuf("do_mail_next.1");
+                UTF8 *bp = buff;
+                safe_str(MessageFetch(mp->number), buff, &bp);
+                *bp = '\0';
+
+                raw_notify(player, DASH_LINE);
+                UTF8 *status = status_string(mp);
+                UTF8 *names = make_namelist(player, mp->tolist);
+
+                UTF8 szFromName[MBUF_SIZE];
+                trimmed_name(mp->from, szFromName, 16, 16, 0);
+
+                UTF8 szSubjectBuffer[MBUF_SIZE];
+                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+
+                raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s"),
+                               i, szFromName,
+                               mp->time,
+                               (Connected(mp->from) &&
+                               (!Hidden(mp->from) || See_Hidden(player))) ?
+                               " (Conn)" : "      ", folder,
+                               status,
+                               names,
+                               szSubjectBuffer));
+                free_lbuf(names);
+                free_lbuf(status);
+                raw_notify(player, DASH_LINE);
+                raw_notify(player, buff);
+                raw_notify(player, DASH_LINE);
+                free_lbuf(buff);
+
+                // Mark message as read.
+                //
+                mp->read |= M_ISREAD;
+                return;
+            }
+        }
+    }
+
+    raw_notify(player,
+        T("MAIL: You have no unread messages in that folder."));
+}
+
 static UTF8 *status_chars(struct mail *mp)
 {
     // Return a short description of message flags.
@@ -5047,6 +5106,9 @@ void do_mail
         break;
     case MAIL_BCC:
         do_mail_cc(executor, arg1, true);
+        break;
+    case MAIL_NEXT:
+        do_mail_next(executor);
         break;
     }
 }

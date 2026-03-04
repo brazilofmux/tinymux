@@ -9776,6 +9776,10 @@ MAIL-READING
         your current folder. If <folder> is specified, mail is read from
         that folder without changing the current folder.
 
+  @mail/next
+        Reads and displays the first unread message in the current
+        folder, and marks it as read.
+
   @mail
   @mail <msg-list, but not a single msg #>
         This gives a brief list of all mail in the current folder,
