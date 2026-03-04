@@ -2972,6 +2972,20 @@ UTF8 *convert_to_html(const UTF8 *pString)
             i += utf8_FirstByte[pString[i]];
             iCode = mux_color(pString + i);
         }
+
+        // When CS_INTENSE is active and the foreground is a basic ANSI
+        // color (0-7), substitute the bright palette entry (8-15) so
+        // that HTML <COLOR> tags carry the correct RGB value.
+        //
+        if (  (csNext & CS_INTENSE)
+           && (CS_FG_INDEXED & csNext))
+        {
+            unsigned int idx = static_cast<unsigned int>(CS_FG_FIELD(csNext));
+            if (idx < 8)
+            {
+                csNext = (csNext & ~CS_FOREGROUND) | CS_FG(idx + 8);
+            }
+        }
     }
 
     static UTF8 aBuffer[2*LBUF_SIZE];
@@ -6779,6 +6793,21 @@ void mux_string::export_TextHtml
             ENDLOG;
         }
         mux_assert((csNext & ~CS_ALLBITS) == 0);
+
+        // When CS_INTENSE is active and the foreground is a basic ANSI
+        // color (0-7), substitute the bright palette entry (8-15) so
+        // that HTML <COLOR> tags carry the correct RGB value.
+        //
+        if (  (csNext & CS_INTENSE)
+           && (CS_FG_INDEXED & csNext))
+        {
+            unsigned int idx = static_cast<unsigned int>(CS_FG_FIELD(csNext));
+            if (idx < 8)
+            {
+                csNext = (csNext & ~CS_FOREGROUND) | CS_FG(idx + 8);
+            }
+        }
+
         while (csNext != csPrev)
         {
             for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG + 1; iAttr++)
