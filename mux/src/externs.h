@@ -799,6 +799,8 @@ extern int anum_alc_top;
 #define PEMIT_HTML      128 /* HTML escape, and no newline */
 
 #define PAGE_BLIND  1   /* Don't show recipients who else was paged */
+
+#define ADDCMD_NOEVAL   1   /* Don't evaluate arguments for added command */
 #define PS_BRIEF        0   /* Short PS report */
 #define PS_LONG         1   /* Long PS report */
 #define PS_SUMM         2   /* Queue counts only */

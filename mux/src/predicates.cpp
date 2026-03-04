@@ -848,9 +848,10 @@ void do_addcommand
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    bool bNoEval = (key & ADDCMD_NOEVAL) != 0;
 
     // Validate command name.
     //
@@ -919,6 +920,10 @@ void do_addcommand
         add->name = StringClone(pName);
         add->next = old->addent;
         old->addent = add;
+        if (bNoEval)
+        {
+            old->callseq |= CS_NOINTERP;
+        }
     }
     else
     {
@@ -952,6 +957,10 @@ void do_addcommand
         else
         {
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
+        }
+        if (bNoEval)
+        {
+            cmd->callseq |= CS_NOINTERP;
         }
         cmd->flags = CEF_ALLOC;
         add = static_cast<ADDENT *>(MEMALLOC(sizeof(ADDENT)));

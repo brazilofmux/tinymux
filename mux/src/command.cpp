@@ -431,6 +431,12 @@ static NAMETAB page_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB addcommand_sw[] =
+{
+    {T("noeval"),          1,  CA_GOD,  ADDCMD_NOEVAL|SW_MULTIPLE},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB pemit_sw[] =
 {
     {T("contents"),        1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
@@ -681,7 +687,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
 
 static CMDENT_TWO_ARG command_table_two_arg[] =
 {
-    {T("@addcommand"),  nullptr,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
+    {T("@addcommand"),  addcommand_sw, CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
     {T("@admin"),       nullptr,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
     {T("@alias"),       nullptr,    CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
     {T("@assert"),      break_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
