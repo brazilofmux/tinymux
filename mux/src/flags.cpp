@@ -1274,7 +1274,16 @@ static bool flag_rename(UTF8 *existing_flag_name, UTF8 *new_flag_name)
             {
                 vector<UTF8> new_name(canonical_new_flag_name, canonical_new_flag_name + new_flag_name_length);
                 const auto it_new = mudstate.flag_names_map.find(new_name);
-                if (it_new == mudstate.flag_names_map.end())
+                if (  it_new != mudstate.flag_names_map.end()
+                   && it_new->second == it_existing->second)
+                {
+                    // New name is an alias for the same flag.
+                    // Remove the alias so the rename can proceed.
+                    //
+                    mudstate.flag_names_map.erase(it_new);
+                }
+
+                if (mudstate.flag_names_map.find(new_name) == mudstate.flag_names_map.end())
                 {
                     FLAGNAMEENT* flag_name_entity = it_existing->second;
                     mudstate.flag_names_map.insert(make_pair(new_name, flag_name_entity));
