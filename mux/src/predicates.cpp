@@ -1696,6 +1696,7 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     if (mudstate.dumping)
     {
         notify(executor, T("Dumping. Please try again later."));
+        return;
     }
 #endif // HAVE_WORKING_FORK
 
