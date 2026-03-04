@@ -910,7 +910,7 @@ static void look_atrs1
             if (  AMATCH_CMD    == buf[0]
                || AMATCH_LISTEN == buf[0])
             {
-                UTF8 *s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buf)+1, ':'));
+                UTF8 *s = find_pattern_delimiter(buf + 1);
                 if (s)
                 {
                     if (AMATCH_CMD == buf[0])
@@ -2237,7 +2237,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
+                    s = find_pattern_delimiter(buff + 1);
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])

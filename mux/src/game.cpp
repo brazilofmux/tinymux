@@ -253,7 +253,7 @@ static int atr_match1
            &&  (  AMATCH_CMD    == buff[0]
                || AMATCH_LISTEN == buff[0]))
         {
-            s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
+            s = find_pattern_delimiter(buff + 1);
             if (s)
             {
                 if (AMATCH_CMD == buff[0])
@@ -307,6 +307,7 @@ static int atr_match1
             continue;
         }
         *s++ = '\0';
+        unescape_pattern_colons(buff + 1);
         if (AMATCH_LISTEN == type)
         {
             strip_fancy_quotes(buff + 1);
@@ -2086,7 +2087,7 @@ bool Hearer(dbref thing)
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
+                    s = find_pattern_delimiter(buff + 1);
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])

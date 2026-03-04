@@ -1661,7 +1661,7 @@ bool Commer(dbref thing)
 
         // Search for unescaped ':'
         //
-        UTF8 *s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
+        UTF8 *s = find_pattern_delimiter(buff + 1);
         if (!s)
         {
             continue;

@@ -8351,6 +8351,51 @@ mux_cursor mux_words::wordEnd(LBUF_OFFSET n) const
     return m_aiWordEnds[n];
 }
 
+// find_pattern_delimiter - Find the first ':' in a $-command or ^-listen
+// pattern that is not part of a '::' escape.  A '::' pair represents a literal
+// ':' in the pattern (useful for regexp non-capturing groups, etc.).  Returns
+// a pointer to the delimiter ':', or nullptr if none is found.
+//
+UTF8 *find_pattern_delimiter(UTF8 *str)
+{
+    UTF8 *p = str;
+    while (*p)
+    {
+        if (':' == *p)
+        {
+            if (':' == p[1])
+            {
+                p += 2;
+                continue;
+            }
+            return p;
+        }
+        p++;
+    }
+    return nullptr;
+}
+
+// unescape_pattern_colons - Collapse '::' sequences to ':' in-place.
+// Called on the pattern portion of a $-command or ^-listen after the
+// delimiter has been found and the string split.
+//
+void unescape_pattern_colons(UTF8 *str)
+{
+    UTF8 *r = str;
+    UTF8 *w = str;
+    while (*r)
+    {
+        if (':' == r[0] && ':' == r[1])
+        {
+            *w++ = ':';
+            r += 2;
+            continue;
+        }
+        *w++ = *r++;
+    }
+    *w = '\0';
+}
+
 // strip_fancy_quotes - Replace Unicode smart/curly quotes with ASCII equivalents
 // in-place.  The string can only shrink (3-byte UTF-8 sequences become 1 byte),
 // so no additional buffer is needed.

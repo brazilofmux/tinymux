@@ -4620,6 +4620,18 @@ ARBITRARY COMMANDS (continued)
   You can also match a regular expression rather than wildcards. See
   'help regexp syntax' for details.
 
+  Because the first ':' separates the pattern from the action, patterns that
+  need a literal ':' (such as regexp non-capturing groups '(?:...)') must
+  escape it by doubling: '::'.  The first single ':' that is not part of a
+  '::' pair is the delimiter; after splitting, every '::' in the pattern is
+  collapsed to ':'.
+
+  Examples:
+    &CMD obj=$(?::red|blue) ball:@pemit %#=You see a colorful ball.
+    &CMD obj=$+test:::@pemit %#=Test colon.
+
+  This escaping convention also applies to ^-listen patterns.
+
   The following attributes are never checked for $-commands: ALIAS CHARGES
   DESC DROP FAIL IDESC ODESC ODROP OFAIL OSUCC SEX SUCC.
 

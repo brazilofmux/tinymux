@@ -2309,5 +2309,7 @@ inline int mux_min(int x, int y)
 }
 
 void strip_fancy_quotes(UTF8 *str);
+UTF8 *find_pattern_delimiter(UTF8 *str);
+void unescape_pattern_colons(UTF8 *str);
 
 #endif // STRINGUTIL_H
