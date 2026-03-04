@@ -232,7 +232,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 
     UTF8 *p;
     POOLFTR *pf;
-    auto ph = (POOLHDR *)pools[poolnum].free_head;
+    auto ph = reinterpret_cast<POOLHDR *>(pools[poolnum].free_head);
     if (  ph
        && ph->magicnum == pools[poolnum].poolmagic)
     {
@@ -331,7 +331,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
 
     UTF8 *p;
     POOLFTR *pf;
-    auto ph = (POOLHDR *)pools[POOL_LBUF].free_head;
+    auto ph = reinterpret_cast<POOLHDR *>(pools[POOL_LBUF].free_head);
     if (  ph
        && ph->magicnum == pools[POOL_LBUF].poolmagic)
     {

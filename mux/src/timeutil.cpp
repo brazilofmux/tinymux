@@ -960,7 +960,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Day of month.
     //
-    ft->iDayOfMonth = (unsigned short)mux_atol(p);
+    ft->iDayOfMonth = static_cast<unsigned short>(mux_atol(p));
     if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
         return false;
@@ -970,7 +970,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Hours
     //
-    ft->iHour = (unsigned short)mux_atol(p);
+    ft->iHour = static_cast<unsigned short>(mux_atol(p));
     if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
         return false;
@@ -981,7 +981,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Minutes
     //
-    ft->iMinute = (unsigned short)mux_atol(p);
+    ft->iMinute = static_cast<unsigned short>(mux_atol(p));
     if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
         return false;
@@ -992,7 +992,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Seconds
     //
-    ft->iSecond = (unsigned short)mux_atol(p);
+    ft->iSecond = static_cast<unsigned short>(mux_atol(p));
     if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
         return false;
@@ -1008,14 +1008,14 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
     {
         p++;
         size_t n;
-        const UTF8 *q = (UTF8 *)strchr((char *)p, ' ');
+        const UTF8 *q = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(p), ' '));
         if (q)
         {
             n = q - p;
         }
         else
         {
-            n = strlen((char *)p);
+            n = strlen(reinterpret_cast<const char *>(p));
         }
 
         ParseDecimalSeconds(n, p, &ft->iMillisecond, &ft->iMicrosecond,
@@ -1026,7 +1026,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Year
     //
-    ft->iYear = (short)mux_atol(p);
+    ft->iYear = static_cast<short>(mux_atol(p));
     while (mux_isdigit(*p))
     {
         p++;
@@ -1051,7 +1051,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
 void GetUTCLinearTime(int64_t *plt)
 {
-    GetSystemTimeAsFileTime((struct _FILETIME *)plt);
+    GetSystemTimeAsFileTime(reinterpret_cast<struct _FILETIME *>(plt));
 }
 
 #elif defined(UNIX_TIME)
@@ -1066,7 +1066,7 @@ void GetUTCLinearTime(int64_t *plt)
 
     gettimeofday(&tv, &tz);
 
-    *plt = (((int64_t)tv.tv_sec) * FACTOR_100NS_PER_SECOND)
+    *plt = ((static_cast<int64_t>(tv.tv_sec)) * FACTOR_100NS_PER_SECOND)
          + (tv.tv_usec * FACTOR_100NS_PER_MICROSECOND)
          + EPOCH_OFFSET;
 #else

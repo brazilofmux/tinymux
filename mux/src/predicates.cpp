@@ -29,7 +29,7 @@ void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const UTF8 *fmt,...)
     va_list ap;
     va_start(ap, fmt);
     size_t nAvailable = LBUF_SIZE - (*bp - str);
-    size_t len = mux_vsnprintf(*bp, (int)nAvailable, fmt, ap);
+    size_t len = mux_vsnprintf(*bp, static_cast<int>(nAvailable), fmt, ap);
     va_end(ap);
     *bp += len;
 }
@@ -382,7 +382,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  (UTF8 *)strchr((char *)"*!#", pStripped[0])
+    if (  reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>("*!#"), pStripped[0]))
        || mux_isspace(pStripped[0])
        || mux_isspace(pStripped[nStripped-1]))
     {
@@ -515,7 +515,7 @@ bool ValidatePlayerName(const UTF8 *pName)
     {
         return false;
     }
-    size_t nName = strlen((char *)pName);
+    size_t nName = strlen(reinterpret_cast<const char *>(pName));
 
     // Verify that name is not empty, but not too long, either.
     //
@@ -528,7 +528,7 @@ bool ValidatePlayerName(const UTF8 *pName)
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  (UTF8 *)strchr((char *)"*!#", pName[0])
+    if (  reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>("*!#"), pName[0]))
        || mux_isspace(pName[0])
        || mux_isspace(pName[nName-1]))
     {
@@ -879,7 +879,7 @@ void do_addcommand
         return;
     }
 
-    size_t nName = strlen((char *)pName);
+    size_t nName = strlen(reinterpret_cast<char *>(pName));
     auto it_old = mudstate.command_htab.find(std::vector<UTF8>(pName, pName + nName));
     CMDENT *old = (it_old != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_old->second) : nullptr;
 
@@ -903,7 +903,7 @@ void do_addcommand
 
         // Otherwise, add another (thing,atr) to the list.
         //
-        add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
+        add = static_cast<ADDENT *>(MEMALLOC(sizeof(ADDENT)));
         ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = pattr->number;
@@ -945,7 +945,7 @@ void do_addcommand
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
         cmd->flags = CEF_ALLOC;
-        add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
+        add = static_cast<ADDENT *>(MEMALLOC(sizeof(ADDENT)));
         ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = pattr->number;
@@ -956,14 +956,14 @@ void do_addcommand
         mudstate.command_htab.emplace(std::vector<UTF8>(pName, pName + nName), cmd);
 
         if (  old
-           && strcmp((char *)pName, (char *)old->cmdname) == 0)
+           && strcmp(reinterpret_cast<char *>(pName), reinterpret_cast<char *>(old->cmdname)) == 0)
         {
             // We are @addcommand'ing over a built-in command by its
             // unaliased name, therefore, we want to re-target all the
             // aliases.
             //
             UTF8 *p = tprintf(T("__%s"), pName);
-            size_t nP = strlen((char *)p);
+            size_t nP = strlen(reinterpret_cast<char *>(p));
             mudstate.command_htab.erase(std::vector<UTF8>(p, p + nP));
             for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
             mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nP), old);
@@ -1010,7 +1010,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             //
             for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
             {
-                ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                ATTR *ap = reinterpret_cast<ATTR *>(atr_num(nextp->atr));
                 const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
                 if (ap)
                 {
@@ -1036,12 +1036,12 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
                 int nKeyName = static_cast<int>(key.size());
                 for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
                 {
-                    if (  static_cast<size_t>(nKeyName) != strlen((char *)nextp->name)
+                    if (  static_cast<size_t>(nKeyName) != strlen(reinterpret_cast<char *>(nextp->name))
                        || memcmp(pKeyName, nextp->name, nKeyName) != 0)
                     {
                         continue;
                     }
-                    ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                    ATTR *ap = reinterpret_cast<ATTR *>(atr_num(nextp->atr));
                     const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
                     if (ap)
                     {
@@ -1124,7 +1124,7 @@ void do_delcommand
        && (old->callseq & CS_ADDED))
     {
         UTF8 *p__Name = tprintf(T("__%s"), pCased);
-        size_t n__Name = strlen((char *)p__Name);
+        size_t n__Name = strlen(reinterpret_cast<char *>(p__Name));
 
         if (command[0] == '\0')
         {
@@ -1145,9 +1145,9 @@ void do_delcommand
             }
             if (cmd)
             {
-                size_t nCmdName = strlen((char *)cmd->cmdname);
+                size_t nCmdName = strlen(reinterpret_cast<char *>(cmd->cmdname));
                 mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName), cmd);
-                if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
+                if (strcmp(reinterpret_cast<char *>(pCased), reinterpret_cast<char *>(cmd->cmdname)) != 0)
                 {
                     mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased), cmd);
                 }
@@ -1190,10 +1190,10 @@ void do_delcommand
                             }
                             if (cmd)
                             {
-                                size_t nCmdName = strlen((char *)cmd->cmdname);
+                                size_t nCmdName = strlen(reinterpret_cast<char *>(cmd->cmdname));
                                 mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName),
                                     cmd);
-                                if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
+                                if (strcmp(reinterpret_cast<char *>(pCased), reinterpret_cast<char *>(cmd->cmdname)) != 0)
                                 {
                                     mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased),
                                         cmd);
@@ -1656,10 +1656,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
+        mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
 #else
     execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
+        mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
 #endif // GAME_DOOFERMUX
     mux_assert(false);
 #endif // UNIX_PROCESSES
@@ -1710,13 +1710,13 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     // to use it as the flatfile.
     //
     dump_database_internal(DUMP_I_FLAT);
-    system((char *)tprintf(T("./_backupflat.sh %s.FLAT 1>&2"), mudconf.indb));
+    system(reinterpret_cast<char *>(tprintf(T("./_backupflat.sh %s.FLAT 1>&2"), mudconf.indb)));
 #else // MEMORY_BASED
     // Invoking _backupflat.sh without an argument prompts the backup script
     // to use dbconvert itself.
     //
     dump_database_internal(DUMP_I_NORMAL);
-    system((char *)tprintf(T("./_backupflat.sh 1>&2")));
+    system(reinterpret_cast<char *>(tprintf(T("./_backupflat.sh 1>&2"))));
 #endif // MEMORY_BASED
     raw_broadcast(0, T("GAME: Backup finished."));
 }
@@ -1781,7 +1781,7 @@ dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool 
         // Fail if no ' characters.
         //
         place = target;
-        target = (UTF8 *)strchr((char *)place, '\'');
+        target = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(place), '\''));
         if (  target == nullptr
            || !*target)
         {
@@ -3145,7 +3145,7 @@ void do_reference
     {
         try
         {
-            result = (reference_entry *)MEMALLOC(sizeof(reference_entry));
+            result = static_cast<reference_entry *>(MEMALLOC(sizeof(reference_entry)));
         }
         catch(...)
         {

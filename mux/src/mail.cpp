@@ -94,7 +94,7 @@ static void mail_db_grow(int newtop)
             newsize = newtop;
         }
 
-        MAILBODY *newdb = (MAILBODY *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MAILBODY));
+        MAILBODY *newdb = static_cast<MAILBODY *>(MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MAILBODY)));
         ISOUTOFMEMORY(newdb);
         if (mail_list)
         {
@@ -217,7 +217,7 @@ static int MessageAdd(UTF8 *pMessage)
     }
 
     pm = &mail_list[i];
-    pm->m_nMessage = strlen((char *)pMessage);
+    pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
     pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
     MessageReferenceInc(i);
     return i;
@@ -267,7 +267,7 @@ static bool MessageAddWithNumber(int i, UTF8 *pMessage)
     mail_db_grow(i+1);
 
     MAILBODY *pm = &mail_list[i];
-    pm->m_nMessage = strlen((char *)pMessage);
+    pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
     pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
     return true;
 }
@@ -281,7 +281,7 @@ static bool MessageAddWithNumber(int i, UTF8 *pMessage)
 static void new_mail_message(UTF8 *message, int number)
 {
     bool bTruncated = false;
-    if (strlen((char *)message) > LBUF_SIZE-1)
+    if (strlen(reinterpret_cast<char *>(message)) > LBUF_SIZE-1)
     {
         bTruncated = true;
         message[LBUF_SIZE-1] = '\0';
@@ -345,17 +345,17 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     // the provided folder name.
     //
     mux_string *sRecord = new mux_string;
-    sRecord->append((long)fld);
+    sRecord->append(static_cast<long>(fld));
     sRecord->append(T(":"));
     sRecord->append(name);
     sRecord->append(T(":"));
-    sRecord->append((long)fld);
+    sRecord->append(static_cast<long>(fld));
     sRecord->UpperCase();
 
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
     sRecord->export_TextPlain(aNew);
     delete sRecord;
-    size_t nNew = strlen((char *)aNew);
+    size_t nNew = strlen(reinterpret_cast<char *>(aNew));
 
     UTF8 *p, *q;
     if (0 != nFolders)
@@ -444,7 +444,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     free_lbuf(aNew);
 }
 
-static UTF8 *get_folder_name(dbref player, int fld)
+static const UTF8 *get_folder_name(dbref player, int fld)
 {
     // Get the name of the folder, or return "unnamed".
     //
@@ -454,11 +454,10 @@ static UTF8 *get_folder_name(dbref player, int fld)
     static UTF8 aFolders[LBUF_SIZE];
     atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner, &aflags,
         &nFolders);
-    UTF8 *p;
     if (nFolders != 0)
     {
         UTF8 *aPattern = alloc_lbuf("get_folder_name");
-        p = aPattern;
+        UTF8 *p = aPattern;
         p += mux_ltoa(fld, p);
         *p++ = ':';
         *p = '\0';
@@ -470,19 +469,18 @@ static UTF8 *get_folder_name(dbref player, int fld)
 
         if (bSucceeded)
         {
-            p = aFolders + i + nPattern;
-            UTF8 *q = p;
+            UTF8 *pFolder = aFolders + i + nPattern;
+            UTF8 *q = pFolder;
             while (  *q
                   && *q != ':')
             {
                 q++;
             }
             *q = '\0';
-            return p;
+            return pFolder;
         }
     }
-    p = (UTF8 *)"unnamed";
-    return p;
+    return T("unnamed");
 }
 
 static int get_folder_number(dbref player, UTF8 *name)
@@ -508,7 +506,7 @@ static int get_folder_number(dbref player, UTF8 *name)
         UTF8 *aPattern = alloc_lbuf("add_folder_num_pat");
         sRecord->export_TextPlain(aPattern);
         delete sRecord;
-        size_t nPattern = strlen((char *)aPattern);
+        size_t nPattern = strlen(reinterpret_cast<char *>(aPattern));
 
         size_t i;
         bool bSucceeded = BMH_StringSearch(&i, nPattern, aPattern, nFolders, aFolders);
@@ -631,7 +629,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
     {
         // Message or range.
         //
-        UTF8 *q = (UTF8 *)strchr((char *)p, '-');
+        UTF8 *q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '-'));
         if (q)
         {
             // We have a subrange, split it up and test to see if it is valid.
@@ -1011,7 +1009,7 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
     {
         // We're changing a folder name here
         //
-        if (strlen((char *)newname) > FOLDER_NAME_LEN)
+        if (strlen(reinterpret_cast<char *>(newname)) > FOLDER_NAME_LEN)
         {
             raw_notify(player, T("MAIL: Folder name too long"));
             return;
@@ -1335,7 +1333,7 @@ static malias_t *get_malias(dbref player, UTF8 *alias, int *pnResult)
                    || m->owner == GOD
                    || ExpMail(player))
                 {
-                    if (!strcmp((char *)pValidMailAlias, (char *)m->name))
+                    if (!strcmp(reinterpret_cast<char *>(pValidMailAlias), reinterpret_cast<char *>(m->name)))
                     {
                         // Found it!
                         //
@@ -1512,7 +1510,7 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                 safe_str(MessageFetch(mp->number), buff, &bp);
                 *bp = '\0';
 
-                raw_notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
 
@@ -1533,9 +1531,9 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                                szSubjectBuffer));
                 free_lbuf(names);
                 free_lbuf(status);
-                raw_notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, DASH_LINE);
                 raw_notify(player, buff);
-                raw_notify(player, (UTF8 *)DASH_LINE);
+                raw_notify(player, DASH_LINE);
                 if (Unread(mp))
                 {
                     // Mark message as read.
@@ -1619,7 +1617,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                                szSubjectBuffer));
             }
         }
-        raw_notify(player, (UTF8 *)DASH_LINE);
+        raw_notify(player, DASH_LINE);
     }
     else
     {
@@ -1643,7 +1641,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                     StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
-                    raw_notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, DASH_LINE);
                     raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s"),
                                    i, szFromName,
                                    mp->time,
@@ -1652,9 +1650,9 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                                    " (Conn)" : "      ", 0,
                                    status, szSubjectBuffer));
                     free_lbuf(status);
-                    raw_notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, DASH_LINE);
                     raw_notify(player, str);
-                    raw_notify(player, (UTF8 *)DASH_LINE);
+                    raw_notify(player, DASH_LINE);
                 }
             }
         }
@@ -1789,7 +1787,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
             }
         }
     }
-    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, DASH_LINE);
 
     if (folder != original_folder)
     {
@@ -2092,7 +2090,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     const UTF8 *pSubject = mp->subject;
     const UTF8 *pMessage = MessageFetch(mp->number);
     const UTF8 *pTime = mp->time;
-    if (strncmp((char *)pSubject, "Re:", 3))
+    if (strncmp(reinterpret_cast<const char *>(pSubject), "Re:", 3))
     {
         do_expmail_start(player, tolist, tprintf(T("Re: %s"), pSubject));
     }
@@ -2919,7 +2917,7 @@ static void do_mail_stub(dbref player, UTF8 *arg1, UTF8 *arg2)
         // Must be reading or listing mail - no arg2
         //
         if (  mux_isdigit(*arg1)
-           && !strchr((char *)arg1, '-'))
+           && !strchr(reinterpret_cast<char *>(arg1), '-'))
         {
             do_mail_read(player, arg1, nullptr);
         }
@@ -3013,9 +3011,9 @@ static void load_mail_V6(FILE *fp)
     size_t nBuffer;
     UTF8  *pBuffer;
     UTF8 nbuf1[200];
-    UTF8 *p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+    UTF8 *p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     while (  nullptr != p
-          && strncmp((char *)nbuf1, "***", 3) != 0)
+          && strncmp(reinterpret_cast<char *>(nbuf1), "***", 3) != 0)
     {
         struct mail *mp = nullptr;
         try
@@ -3041,33 +3039,33 @@ static void load_mail_V6(FILE *fp)
         mp->number  = getref(fp);
         MessageReferenceInc(mp->number);
 
-        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         mp->tolist  = StringCloneLen(pBuffer, nBuffer);
-        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         mp->time    = StringCloneLen(pBuffer, nBuffer);
-        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         mp->subject = StringCloneLen(pBuffer, nBuffer);
         mp->read    = getref(fp);
 
         MailList ml(mp->to);
         ml.AppendItem(mp);
 
-        p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+        p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     }
 
-    p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+    p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     while (  nullptr != p
-          && strncmp((char *)nbuf1, "+++", 3) != 0)
+          && strncmp(reinterpret_cast<char *>(nbuf1), "+++", 3) != 0)
     {
         int number = mux_atol(nbuf1);
-        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         new_mail_message(pBuffer, number);
-        p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+        p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     }
 
-    p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+    p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     if (  nullptr != p
-       && strcmp((char *)nbuf1, "*** Begin MALIAS ***\n") == 0)
+       && strcmp(reinterpret_cast<char *>(nbuf1), "*** Begin MALIAS ***\n") == 0)
     {
         malias_read(fp, false);
     }
@@ -3110,7 +3108,7 @@ static void load_mail_V5(FILE *fp)
             return;
         }
 
-        pBufferUnicode = (UTF8 *)nbuf1;
+        pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
 
         mp->to      = mux_atol(pBufferUnicode);
         mp->from    = getref(fp);
@@ -3118,15 +3116,15 @@ static void load_mail_V5(FILE *fp)
         mp->number  = getref(fp);
         MessageReferenceInc(mp->number);
 
-        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         mp->tolist  = StringCloneLen(pBufferUnicode, nBufferUnicode);
 
-        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         mp->time    = StringCloneLen(pBufferUnicode, nBufferUnicode);
 
-        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         mp->subject = StringCloneLen(pBufferUnicode, nBufferUnicode);
 
@@ -3142,9 +3140,9 @@ static void load_mail_V5(FILE *fp)
     while (  nullptr != p
           && strncmp(nbuf1, "+++", 3) != 0)
     {
-        pBufferUnicode = (UTF8 *)nbuf1;
+        pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
         int number = mux_atol(pBufferUnicode);
-        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         new_mail_message(pBufferUnicode, number);
         p = fgets(nbuf1, sizeof(nbuf1), fp);
@@ -3234,7 +3232,7 @@ static void malias_read(FILE *fp, bool bConvert)
     {
         // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
         //
-        if (!fgets((char *)buffer, sizeof(buffer), fp))
+        if (!fgets(reinterpret_cast<char *>(buffer), sizeof(buffer), fp))
         {
             // We've hit the end of the file. Set the last recognized
             // @malias, and give up.
@@ -3269,7 +3267,7 @@ static void malias_read(FILE *fp, bool bConvert)
 
         malias[i] = m;
 
-        UTF8 *p = (UTF8 *)strchr((char *)buffer, ' ');
+        UTF8 *p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buffer), ' '));
         m->owner = m->numrecep = 0;
         if (p)
         {
@@ -3286,7 +3284,7 @@ static void malias_read(FILE *fp, bool bConvert)
         if (bConvert)
         {
             size_t nBufferUnicode;
-            pBufferUnicode = ConvertToUTF8((char *)buffer, &nBufferUnicode);
+            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer), &nBufferUnicode);
         }
         else
         {
@@ -3313,7 +3311,7 @@ static void malias_read(FILE *fp, bool bConvert)
         if (bConvert)
         {
             size_t nBufferUnicode;
-            pBufferUnicode = ConvertToUTF8((char *)buffer, &nBufferUnicode);
+            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer), &nBufferUnicode);
         }
         else
         {
@@ -3361,8 +3359,8 @@ static void load_malias(FILE *fp, bool bConvert)
     UTF8 buffer[200];
 
     getref(fp);
-    if (  fgets((char *)buffer, sizeof(buffer), fp)
-       && strcmp((char *)buffer, "*** Begin MALIAS ***\n") == 0)
+    if (  fgets(reinterpret_cast<char *>(buffer), sizeof(buffer), fp)
+       && strcmp(reinterpret_cast<char *>(buffer), "*** Begin MALIAS ***\n") == 0)
     {
         malias_read(fp, bConvert);
     }
@@ -3379,18 +3377,18 @@ void load_mail(FILE *fp)
 
     // Read the version number.
     //
-    if (!fgets((char *)nbuf1, sizeof(nbuf1), fp))
+    if (!fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp))
     {
         return;
     }
 
-    if (strncmp((char *)nbuf1, "+V6", 3) == 0)
+    if (strncmp(reinterpret_cast<char *>(nbuf1), "+V6", 3) == 0)
     {
         // Started v6 on 2007-MAR-13.
         //
         load_mail_V6(fp);
     }
-    else if (strncmp((char *)nbuf1, "+V5", 3) == 0)
+    else if (strncmp(reinterpret_cast<char *>(nbuf1), "+V5", 3) == 0)
     {
         load_mail_V5(fp);
     }
@@ -3751,7 +3749,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     for (int i = m->numrecep - 1; i > -1; i--)
     {
         const UTF8 *p = Moniker(m->list[i]);
-        if (strchr((char *)p, ' '))
+        if (strchr(reinterpret_cast<const char *>(p), ' '))
         {
             safe_chr('"', buff, &bp);
             safe_str(p, buff, &bp);
@@ -3797,7 +3795,7 @@ static void do_malias_list_all(dbref player)
     malias_t* alias_array = nullptr;
     try
     {
-        alias_array = (malias_t*)MEMALLOC(sizeof(malias_t)*ma_top);
+        alias_array = static_cast<malias_t *>(MEMALLOC(sizeof(malias_t)*ma_top));
     }
     catch (...)
     {
@@ -4296,12 +4294,12 @@ static void do_mail_proof(dbref player)
     UTF8 szFromName[MBUF_SIZE];
     trimmed_name(player, szFromName, 16, 16, 0);
 
-    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, DASH_LINE);
     raw_notify(player, tprintf(T("From:  %s  Subject: %s\nTo: %s"),
             szFromName, szSubjectBuffer, names));
-    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, DASH_LINE);
     raw_notify(player, pMailMsg);
-    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, DASH_LINE);
     free_lbuf(pMailMsg);
     free_lbuf(names);
     free_lbuf(mailto);
@@ -5175,7 +5173,7 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
             }
         }
     }
-    raw_notify(player, (UTF8 *)DASH_LINE);
+    raw_notify(player, DASH_LINE);
 
     set_player_folder(player, original_folder);
 

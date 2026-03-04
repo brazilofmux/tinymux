@@ -273,9 +273,9 @@ void build_signal_names_table(void)
 #ifdef SysSigNames
                 if (  tsn->pLongName == nullptr
                    && SysSigNames[sig]
-                   && strcmp((char *)tsn->pShortName, (char *)SysSigNames[sig]) != 0)
+                   && strcmp(reinterpret_cast<char *>(tsn->pShortName), reinterpret_cast<char *>(SysSigNames[sig])) != 0)
                 {
-                    tsn->pLongName = (UTF8 *)SysSigNames[sig];
+                    tsn->pLongName = reinterpret_cast<UTF8 *>(SysSigNames[sig]);
                 }
 #endif // SysSigNames
             }
@@ -290,7 +290,7 @@ void build_signal_names_table(void)
 #ifdef SysSigNames
             if (SysSigNames[i])
             {
-                tsn->pLongName = (UTF8 *)SysSigNames[i];
+                tsn->pLongName = reinterpret_cast<UTF8 *>(SysSigNames[i]);
             }
 #endif // SysSigNames
 
@@ -617,9 +617,9 @@ static void DCL_CDECL sighandler(int sig)
 #endif // HAVE_WORKING_FORK
 
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, (char *)nullptr);
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
 #endif // GAME_DOOFERMUX
             mux_assert(false);
             break;

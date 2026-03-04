@@ -118,7 +118,7 @@ double NearestPretty(double R)
     size_t nDigits = 10000;
     for (int i = -4; i <= 4; i++)
     {
-        double testR = R + ulpR * (double)i;
+        double testR = R + ulpR * static_cast<double>(i);
         UTF8* p = mux_dtoa(testR, mode, 50, &decpt, &bNegative, &rve);
         size_t nDigitsR0 = rve - p;
         if (nDigitsR0 < nDigits)
@@ -134,8 +134,8 @@ double NearestPretty(double R)
 //
 static int DCL_CDECL f_comp_abs(const void *s1, const void *s2)
 {
-    double a = fabs(*(double *)s1);
-    double b = fabs(*(double *)s2);
+    double a = fabs(*reinterpret_cast<const double *>(s1));
+    double b = fabs(*reinterpret_cast<const double *>(s2));
 
     if (a > b)
     {
@@ -192,7 +192,7 @@ void fval(UTF8 *buff, UTF8 **bufc, double result)
            && LONG_MIN <= rIntegerPart
            && rIntegerPart <= LONG_MAX)
         {
-            long i = (long)rIntegerPart;
+            long i = static_cast<long>(rIntegerPart);
             safe_ltoa(i, buff, bufc);
         }
         else
@@ -434,14 +434,14 @@ double mux_atof(const UTF8 *szString, bool bStrict)
             {
                 // This 'floating-point' number is just an integer.
                 //
-                ret = (double)mux_atol(pfr.pDigitsA);
+                ret = static_cast<double>(mux_atol(pfr.pDigitsA));
             }
             else
             {
                 // This 'floating-point' number is fixed-point.
                 //
-                double rA = (double)mux_atol(pfr.pDigitsA);
-                double rB = (double)mux_atol(pfr.pDigitsB);
+                double rA = static_cast<double>(mux_atol(pfr.pDigitsA));
+                double rB = static_cast<double>(mux_atol(pfr.pDigitsB));
                 double rScale = powerstab[pfr.nDigitsB];
                 ret = rA + rB/rScale;
 
@@ -734,11 +734,11 @@ size_t mux_ltoa(long val, UTF8 *buf)
     if (is_negative)
     {
         *p++ = '-';
-        uval = (val == LONG_MIN) ? ((unsigned long)LONG_MAX + 1) : (unsigned long)(-val);
+        uval = (val == LONG_MIN) ? (static_cast<unsigned long>(LONG_MAX) + 1) : static_cast<unsigned long>(-val);
     }
     else
     {
-        uval = (unsigned long)val;
+        uval = static_cast<unsigned long>(val);
     }
     p += mux_utoa(uval, p);
     return p - buf;
@@ -789,10 +789,10 @@ size_t mux_i64toa(int64_t val, UTF8* buf) {
 
     if (is_negative) {
         *p++ = '-';
-        uval = (val == INT64_MIN) ? ((uint64_t)INT64_MAX + 1) : (uint64_t)(-val);
+        uval = (val == INT64_MIN) ? (static_cast<uint64_t>(INT64_MAX) + 1) : static_cast<uint64_t>(-val);
     }
     else {
-        uval = (uint64_t)val;
+        uval = static_cast<uint64_t>(val);
     }
     p += mux_ui64toa(uval, p);
     return p - buf;

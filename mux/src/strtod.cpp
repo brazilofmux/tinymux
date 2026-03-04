@@ -210,7 +210,7 @@ void FLOAT_Initialize(void)
 
 double mux_strtod(const UTF8* s00, UTF8** se)
 {
-    return dtoa_strtod((const char*)s00, (char**)se);
+    return dtoa_strtod(reinterpret_cast<const char *>(s00), reinterpret_cast<char **>(se));
 }
 
 double mux_ulp(double d)
@@ -222,5 +222,5 @@ double mux_ulp(double d)
 
 UTF8* mux_dtoa(double d, int mode, int ndigits, int* decpt, int* sign, UTF8** rve)
 {
-    return (UTF8 *)dtoa(d, mode, ndigits, decpt, sign, (char **)rve);
+    return reinterpret_cast<UTF8 *>(dtoa(d, mode, ndigits, decpt, sign, reinterpret_cast<char **>(rve)));
 }

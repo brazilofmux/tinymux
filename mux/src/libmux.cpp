@@ -29,7 +29,7 @@ typedef HINSTANCE MODULE_HANDLE;
 #define MOD_CLOSE(h) FreeLibrary(h)
 #elif defined(UNIX_DYNALIB)
 typedef void     *MODULE_HANDLE;
-#define MOD_OPEN(m)  dlopen((char *)m, RTLD_LAZY)
+#define MOD_OPEN(m)  dlopen(reinterpret_cast<char *>(m), RTLD_LAZY)
 #define MOD_SYM(h,s) dlsym(h,s)
 #define MOD_CLOSE(h) dlclose(h)
 #elif defined(PRETEND_DYNALIB)
@@ -62,7 +62,7 @@ struct ltstr
 {
     bool operator()(const UTF8 *s1, const UTF8 *s2) const
     {
-        return strcmp((const char *)s1, (const char *)s2) < 0;
+        return strcmp(reinterpret_cast<const char *>(s1), reinterpret_cast<const char *>(s2)) < 0;
     }
 };
 
@@ -123,7 +123,7 @@ static process_context g_ProcessContext = IsUninitialized;
 
 static UTF8 *CopyUTF8(const UTF8 *pString)
 {
-    size_t n = strlen((const char *)pString);
+    size_t n = strlen(reinterpret_cast<const char *>(pString));
     UTF8 *p = nullptr;
 
     try
@@ -311,10 +311,10 @@ static void ModuleLoad(Module *pModule)
     pModule->hInst = MOD_OPEN(pModule->pFileName);
     if (nullptr != pModule->hInst)
     {
-        pModule->fpGetClassObject = (FPGETCLASSOBJECT *)MOD_SYM(pModule->hInst, "mux_GetClassObject");
-        pModule->fpCanUnloadNow   = (FPCANUNLOADNOW *)MOD_SYM(pModule->hInst, "mux_CanUnloadNow");
-        pModule->fpRegister       = (FPREGISTER *)MOD_SYM(pModule->hInst, "mux_Register");
-        pModule->fpUnregister     = (FPUNREGISTER *)MOD_SYM(pModule->hInst, "mux_Unregister");
+        pModule->fpGetClassObject = reinterpret_cast<FPGETCLASSOBJECT *>(MOD_SYM(pModule->hInst, "mux_GetClassObject"));
+        pModule->fpCanUnloadNow   = reinterpret_cast<FPCANUNLOADNOW *>(MOD_SYM(pModule->hInst, "mux_CanUnloadNow"));
+        pModule->fpRegister       = reinterpret_cast<FPREGISTER *>(MOD_SYM(pModule->hInst, "mux_Register"));
+        pModule->fpUnregister     = reinterpret_cast<FPUNREGISTER *>(MOD_SYM(pModule->hInst, "mux_Unregister"));
 
         if (  nullptr != pModule->fpGetClassObject
            && nullptr != pModule->fpCanUnloadNow
@@ -429,8 +429,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         QUEUE_INFO qiFrame;
 
         Pipe_InitializeQueueInfo(&qiFrame);
-        Pipe_AppendBytes(&qiFrame, sizeof(cid), (uint8_t*)(&cid));
-        Pipe_AppendBytes(&qiFrame, sizeof(iid), (uint8_t*)(&iid));
+        Pipe_AppendBytes(&qiFrame, sizeof(cid), reinterpret_cast<uint8_t *>(&cid));
+        Pipe_AppendBytes(&qiFrame, sizeof(iid), reinterpret_cast<uint8_t *>(&iid));
 
         mr = Pipe_SendCallPacketAndWait(0, &qiFrame);
 
@@ -1365,7 +1365,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_GetByte(QUEUE_INFO *pqi, uint8_t ach[1])
 
 extern "C" bool DCL_EXPORT DCL_API Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, void *pv)
 {
-    uint8_t *pch = (uint8_t *)pv;
+    uint8_t *pch = reinterpret_cast<uint8_t *>(pv);
 
     size_t nCopied = 0;
     QUEUE_BLOCK *pBlock;
@@ -1649,7 +1649,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
 
                                     // Send Queue_Frame back to sender.
                                     //
-                                    uint32_t nReturn = (uint32_t)(sizeof(g_nChannel) + Pipe_QueueLength(pqiFrame));
+                                    uint32_t nReturn = static_cast<uint32_t>(sizeof(g_nChannel) + Pipe_QueueLength(pqiFrame));
 
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
                                     Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
@@ -1711,7 +1711,7 @@ static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(CallMagic), CallMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1722,7 +1722,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t iRe
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(MsgMagic), MsgMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1733,7 +1733,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t iReturnChan
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    uint32_t nLength = (uint32_t)(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
+    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
     Pipe_AppendBytes(g_pQueue_Out, sizeof(DiscMagic), DiscMagic);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
     Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
@@ -1848,7 +1848,7 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
                         pChannel->pInterface = pIRpcStubBuffer;
 
                         Pipe_AppendBytes(pqi, sizeof(riid), &riid);
-                        Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                        Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), reinterpret_cast<UTF8 *>(&pChannel->nChannel));
                     }
                     else
                     {

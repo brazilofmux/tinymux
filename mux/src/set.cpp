@@ -1736,7 +1736,7 @@ void edit_string(UTF8 *src, UTF8 **dst, UTF8 *from, UTF8 *to)
 
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    if (!strcmp((char *)from, "^"))
+    if (!strcmp(reinterpret_cast<char *>(from), "^"))
     {
         // Prepend 'to' to string.
         //
@@ -1746,7 +1746,7 @@ void edit_string(UTF8 *src, UTF8 **dst, UTF8 *from, UTF8 *to)
         safe_str(src, *dst, &cp);
         *cp = '\0';
     }
-    else if (!strcmp((char *)from, "$"))
+    else if (!strcmp(reinterpret_cast<char *>(from), "$"))
     {
         // Append 'to' to string.
         //
@@ -1779,7 +1779,7 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
 
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM
     //
-    if (!strcmp((char *)from, "^"))
+    if (!strcmp(reinterpret_cast<char *>(from), "^"))
     {
         // Prepend 'to' to string.
         //
@@ -1793,14 +1793,14 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
         //
         *returnstr = alloc_lbuf("edit_string_ansi.^");
         rp = *returnstr;
-        safe_str((UTF8 *)COLOR_INTENSE, *returnstr, &rp);
+        safe_str(reinterpret_cast<UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str((UTF8 *)COLOR_RESET, *returnstr, &rp);
+        safe_str(reinterpret_cast<UTF8 *>(COLOR_RESET), *returnstr, &rp);
         safe_str(src, *returnstr, &rp);
         *rp = '\0';
 
     }
-    else if (!strcmp((char *)from, "$"))
+    else if (!strcmp(reinterpret_cast<char *>(from), "$"))
     {
         // Append 'to' to string
         //
@@ -1815,9 +1815,9 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
         *returnstr = alloc_lbuf("edit_string_ansi.$");
         rp = *returnstr;
         safe_str(src, *returnstr, &rp);
-        safe_str((UTF8 *)COLOR_INTENSE, *returnstr, &rp);
+        safe_str(reinterpret_cast<UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str((UTF8 *)COLOR_RESET, *returnstr, &rp);
+        safe_str(reinterpret_cast<UTF8 *>(COLOR_RESET), *returnstr, &rp);
         *rp = '\0';
 
     }
@@ -1864,7 +1864,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
         return;
     }
     from = args[0];
-    to = (nargs >= 2) ? args[1] : (UTF8 *)"";
+    to = (nargs >= 2) ? args[1] : const_cast<UTF8 *>(T(""));
 
     // Look for the object and get the attribute (possibly wildcarded)
     //
@@ -2158,7 +2158,7 @@ void do_setvattr
 
     // Get or make attribute
     //
-    anum = mkattr(executor, (UTF8 *)arg1);
+    anum = mkattr(executor, reinterpret_cast<UTF8 *>(arg1));
 
     if (anum <= 0)
     {

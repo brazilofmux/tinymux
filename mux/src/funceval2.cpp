@@ -1032,8 +1032,8 @@ FUNCTION(fun_munge)
 
             while (  0 != htab[nHashSlot].nKeyOffset
                   && (  nHash != htab[nHashSlot].nHash
-                     || 0 != strcmp((char *)result,
-                                    (char *)(fargs[1] +
+                     || 0 != strcmp(reinterpret_cast<char *>(result),
+                                    reinterpret_cast<char *>(fargs[1] +
                                      htab[nHashSlot].nKeyOffset - 1))))
             {
                 nHashSlot = htab[nHashSlot].iNext;
@@ -1276,13 +1276,13 @@ static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool
     memset(MatchTable, 0, sizeof(MatchTable));
     for (int i = 0; i < iRadixFrom; i++)
     {
-        MatchTable[(unsigned char)symbols[i]] = static_cast<UTF8>(i + 1);
+        MatchTable[static_cast<unsigned char>(symbols[i])] = static_cast<UTF8>(i + 1);
     }
 
     if (fPlusSlash)
     {
-        MatchTable[(unsigned char)'+'] = static_cast<UTF8>(62 + 1);
-        MatchTable[(unsigned char)'/'] = static_cast<UTF8>(63 + 1);
+        MatchTable[static_cast<unsigned char>('+')] = static_cast<UTF8>(62 + 1);
+        MatchTable[static_cast<unsigned char>('/')] = static_cast<UTF8>(63 + 1);
     }
 
     // Leading whitespace
@@ -1313,7 +1313,7 @@ static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool
           && !mux_isspace(*q))
     {
         c = *q;
-        if (0 == MatchTable[(unsigned int)c])
+        if (0 == MatchTable[static_cast<unsigned int>(c)])
         {
             return false;
         }
@@ -1336,9 +1336,9 @@ static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool
     //
     val = 0;
     c = *p++;
-    for (int iValue = MatchTable[(unsigned int)c];
+    for (int iValue = MatchTable[static_cast<unsigned int>(c)];
          iValue;
-         iValue = MatchTable[(unsigned int)c])
+         iValue = MatchTable[static_cast<unsigned int>(c)])
     {
         val = iRadixFrom * val + iValue - 1;
         c = *p++;
@@ -1613,7 +1613,7 @@ static void grep_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
         safe_str(T("#-1 INVALID GREP PATTERN"), buff, bufc);
         return;
     }
-    UTF8 *tp = grep_util(executor, it, fargs[1], fargs[2], strlen((char *)fargs[2]), bCaseInsens);
+    UTF8 *tp = grep_util(executor, it, fargs[1], fargs[2], strlen(reinterpret_cast<char *>(fargs[2])), bCaseInsens);
     safe_str(tp, buff, bufc);
     free_lbuf(tp);
 }
@@ -1656,7 +1656,7 @@ FUNCTION(fun_alphamax)
     UTF8 *amax = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp((char *)amax, (char *)fargs[i]) < 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(amax), reinterpret_cast<char *>(fargs[i])) < 0)
         {
             amax = fargs[i];
         }
@@ -1678,7 +1678,7 @@ FUNCTION(fun_alphamin)
     UTF8 *amin = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp((char *)amin, (char *)fargs[i]) > 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(amin), reinterpret_cast<char *>(fargs[i])) > 0)
         {
             amin = fargs[i];
         }
@@ -2170,7 +2170,7 @@ FUNCTION(fun_push)
         safe_str(T("#-1 STACK SIZE EXCEEDED"), buff, bufc);
         return;
     }
-    MUX_STACK *sp = (MUX_STACK *)MEMALLOC(sizeof(MUX_STACK));
+    MUX_STACK *sp = static_cast<MUX_STACK *>(MEMALLOC(sizeof(MUX_STACK)));
     ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
@@ -2221,7 +2221,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
 
         safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
-        safe_str((UTF8 *)errbuf, buff, bufc);
+        safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
         return;
     }
 
@@ -2272,7 +2272,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         int curq;
         if (  qregs[i]
            && *qregs[i]
-           && (curq = mux_RegisterSet[(unsigned char)qregs[i][0]]) != -1
+           && (curq = mux_RegisterSet[static_cast<unsigned char>(qregs[i][0])]) != -1
            && qregs[i][1] == '\0'
            && curq < MAX_GLOBAL_REGS)
         {
@@ -2372,7 +2372,7 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
         pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
 
         safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
-        safe_str((UTF8 *)errbuf, buff, bufc);
+        safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
         return;
     }
 

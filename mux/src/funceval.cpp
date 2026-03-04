@@ -224,7 +224,7 @@ FUNCTION(fun_zone)
 
 bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc)
 {
-    size_t nName = strlen((const char *)name);
+    size_t nName = strlen(reinterpret_cast<const char *>(name));
     auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(name, name + nName));
     CMDENT *cmdp = (it_cmd != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd->second) : nullptr;
     if (cmdp)
@@ -773,12 +773,12 @@ static size_t GenCode(UTF8 *pCode, size_t nCode, const UTF8 *pCodeASCII)
     return j;
 }
 
-static UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
+static const UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
 {
     if (  !text
        || text[0] == '\0')
     {
-        return (UTF8 *)"";
+        return T("");
     }
     if (  !code
        || code[0] == '\0')
@@ -1215,7 +1215,7 @@ FUNCTION(fun_columns)
         }
 
         iStart = iWordStart;
-        sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart.m_point + nLen));
+        sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iWordStart.m_point + nLen));
         nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
         *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nBufferAvailable);
 
@@ -1264,7 +1264,7 @@ FUNCTION(fun_table)
     if (nfargs == 6 && *fargs[5])
     {
         pPaddingStart = strip_color(fargs[5]);
-        pPaddingEnd = (UTF8 *)strchr((char *)pPaddingStart, '\0');
+        pPaddingEnd = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(pPaddingStart), '\0'));
     }
 
     // Get single-character separator.
@@ -1436,7 +1436,7 @@ FUNCTION(fun_table)
 //
 static size_t mem_usage(dbref thing)
 {
-    size_t k = sizeof(struct object) + strlen((char *)Name(thing)) + 1;
+    size_t k = sizeof(struct object) + strlen(reinterpret_cast<const char *>(Name(thing))) + 1;
 
     unsigned char *as;
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
@@ -1451,7 +1451,7 @@ static size_t mem_usage(dbref thing)
             if (  str
                && *str)
             {
-                k += strlen((char *)str)+1;
+                k += strlen(reinterpret_cast<const char *>(str))+1;
             }
         }
     }
@@ -1696,7 +1696,7 @@ FUNCTION(fun_strtrunc)
     if (nLeft < nLen.m_point)
     {
         mux_cursor iEnd;
-        sStr->cursor_from_point(iEnd, (LBUF_OFFSET)nLeft);
+        sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(nLeft));
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
     }

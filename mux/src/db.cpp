@@ -598,7 +598,7 @@ const UTF8 *PureName(dbref thing)
             }
             else
             {
-                nName = strlen((char *)db[thing].name);
+                nName = strlen(reinterpret_cast<char *>(db[thing].name));
             }
             pName = db[thing].name;
             pPureName = strip_color(pName, &nPureName);
@@ -634,7 +634,7 @@ const UTF8 *Moniker(dbref thing)
     // Compare accent-stripped, ansi-stripped version of @moniker against
     // accent-stripped, ansi-stripped version of @name.
     //
-    const UTF8 *pPureName = (UTF8 *)ConvertToAscii(PureName(thing));
+    const UTF8 *pPureName = ConvertToAscii(PureName(thing));
     UTF8 *pPureNameCopy = StringClone(pPureName);
 
     size_t nMoniker;
@@ -642,11 +642,11 @@ const UTF8 *Moniker(dbref thing)
     int    aflags;
     UTF8 *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
         &nMoniker);
-    const UTF8 *pPureMoniker = (UTF8 *)ConvertToAscii(strip_color(pMoniker));
+    const UTF8 *pPureMoniker = ConvertToAscii(strip_color(pMoniker));
 
     const UTF8 *pReturn = nullptr;
     static UTF8 tbuff[LBUF_SIZE];
-    if (strcmp((char *)pPureNameCopy, (char *)pPureMoniker) == 0)
+    if (strcmp(reinterpret_cast<const char *>(pPureNameCopy), reinterpret_cast<const char *>(pPureMoniker)) == 0)
     {
         // The stripped version of @moniker is the same as the stripped
         // version of @name, so (possibly cache and) use the unstripped
@@ -657,7 +657,7 @@ const UTF8 *Moniker(dbref thing)
 #ifdef MEMORY_BASED
             db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
 #else // MEMORY_BASED
-            if (strcmp((char *)pMoniker, (char *)Name(thing)) == 0)
+            if (strcmp(reinterpret_cast<const char *>(pMoniker), reinterpret_cast<const char *>(Name(thing))) == 0)
             {
                 db[thing].moniker = db[thing].name;
             }
@@ -818,7 +818,7 @@ void do_attribute
     UTF8 *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
     if (bValid)
     {
-        va = (ATTR *)vattr_find_LEN(pName, nName);
+        va = reinterpret_cast<ATTR *>(vattr_find_LEN(pName, nName));
     }
 
     if (nullptr == va)
@@ -1102,7 +1102,7 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
     UTF8 *p = Buffer;
     size_t n;
     while (  '\0' != *pName
-          && (n = utf8_FirstByte[(unsigned char)*pName]) < UTF8_CONTINUE
+          && (n = utf8_FirstByte[static_cast<unsigned char>(*pName)]) < UTF8_CONTINUE
           && n <= nLeft)
     {
         if (!mux_isattrname(pName))
@@ -1151,7 +1151,7 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
     //
     while ('\0' != *pName)
     {
-        if (  UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)*pName]
+        if (  UTF8_CONTINUE <= utf8_FirstByte[static_cast<unsigned char>(*pName)]
            || !mux_isattrname(pName))
         {
             *pnName = 0;
@@ -1193,7 +1193,7 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
 
     *p++ = '@';
     while (  '\0' != *pName
-          && (n = utf8_FirstByte[(unsigned char)*pName]) < UTF8_CONTINUE
+          && (n = utf8_FirstByte[static_cast<unsigned char>(*pName)]) < UTF8_CONTINUE
           && n <= nLeft)
     {
         nLeft -= n;
@@ -1373,7 +1373,7 @@ void anum_extend(int newtop)
     }
 
     int i;
-    ATTR **anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
+    ATTR **anum_table2 = static_cast<ATTR **>(MEMALLOC((newtop + 1) * sizeof(ATTR *)));
     if (nullptr != anum_table2)
     {
         for (i = anum_alc_top + 1; i <= newtop; i++)
@@ -1599,11 +1599,11 @@ static unsigned char *al_code(unsigned char *ap, unsigned int atrnum)
         bits = atrnum & 0x7F;
         if (atrnum <= 0x7F)
         {
-            ap[i] = (unsigned char)bits;
+            ap[i] = static_cast<unsigned char>(bits);
             break;
         }
         atrnum >>= 7;
-        ap[i] = (unsigned char)(bits | 0x80);
+        ap[i] = static_cast<unsigned char>(bits | 0x80);
     }
     return ap + i + 1;
 }
@@ -1661,7 +1661,7 @@ bool Commer(dbref thing)
 
         // Search for unescaped ':'
         //
-        UTF8 *s = (UTF8 *)strchr((char *)buff+1, ':');
+        UTF8 *s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
         if (!s)
         {
             continue;
@@ -1715,7 +1715,7 @@ static void al_extend(unsigned char **buffer, size_t *bufsiz, size_t len, bool c
     if (len > *bufsiz)
     {
         size_t newsize = len + ATR_BUF_CHUNK;
-        unsigned char *tbuff = (unsigned char *)MEMALLOC(newsize);
+        unsigned char *tbuff = reinterpret_cast<unsigned char *>(MEMALLOC(newsize));
         ISOUTOFMEMORY(tbuff);
         if (*buffer)
         {
@@ -2117,7 +2117,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     if (!list)
     {
         db[thing].nALAlloc = INITIAL_ATRLIST_SIZE;
-        list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc*sizeof(ATRLIST));
+        list = static_cast<ATRLIST *>(MEMALLOC(db[thing].nALAlloc*sizeof(ATRLIST)));
         ISOUTOFMEMORY(list);
         db[thing].pALHead  = list;
         db[thing].nALUsed  = 1;
@@ -2184,8 +2184,8 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
             //
             db[thing].nALAlloc = GrowFiftyPercent(db[thing].nALAlloc,
                 INITIAL_ATRLIST_SIZE, INT_MAX);
-            list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc
-                 * sizeof(ATRLIST));
+            list = static_cast<ATRLIST *>(MEMALLOC(db[thing].nALAlloc
+                 * sizeof(ATRLIST)));
             ISOUTOFMEMORY(list);
 
             // Copy bottom part.
@@ -2275,7 +2275,7 @@ FoundAttribute:
 
 void atr_add_raw(dbref thing, int atr, const UTF8 *szValue)
 {
-    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen((char *)szValue) : 0);
+    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(reinterpret_cast<const char *>(szValue)) : 0);
 }
 
 void atr_add(dbref thing, int atr, const UTF8 *buff, dbref owner, int flags)
@@ -2665,7 +2665,7 @@ int atr_next(UTF8 **attrp)
     }
     else
     {
-        atr = (ATRCOUNT *) * attrp;
+        atr = reinterpret_cast<ATRCOUNT *>(* attrp);
         if (atr->count >= db[atr->thing].nALUsed)
         {
             MEMFREE(atr);
@@ -2695,7 +2695,7 @@ int atr_next(UTF8 **attrp)
 void atr_push(void)
 {
 #ifndef MEMORY_BASED
-    ALIST *new_alist = (ALIST *) alloc_sbuf("atr_push");
+    ALIST *new_alist = reinterpret_cast<ALIST *>(alloc_sbuf("atr_push"));
     new_alist->data = mudstate.iter_alist.data;
     new_alist->len = mudstate.iter_alist.len;
     new_alist->next = mudstate.iter_alist.next;
@@ -2721,7 +2721,7 @@ void atr_pop(void)
         mudstate.iter_alist.data = old_alist->data;
         mudstate.iter_alist.len = old_alist->len;
         mudstate.iter_alist.next = old_alist->next;
-        unsigned char *cp = (unsigned char *)old_alist;
+        unsigned char *cp = reinterpret_cast<unsigned char *>(old_alist);
         free_sbuf(cp);
     }
     else
@@ -2742,11 +2742,11 @@ int atr_head(dbref thing, unsigned char **attrp)
 #ifdef MEMORY_BASED
     if (db[thing].nALUsed)
     {
-        ATRCOUNT *atr = (ATRCOUNT *) MEMALLOC(sizeof(ATRCOUNT));
+        ATRCOUNT *atr = static_cast<ATRCOUNT *>(MEMALLOC(sizeof(ATRCOUNT)));
         ISOUTOFMEMORY(atr);
         atr->thing = thing;
         atr->count = 1;
-        *attrp = (unsigned char *)atr;
+        *attrp = reinterpret_cast<unsigned char *>(atr);
         return db[thing].pALHead[0].number;
     }
     return 0;
@@ -2971,7 +2971,7 @@ void db_grow(dbref newtop)
     // just before the process terminates. We rely (quite safely) on the OS
     // to reclaim the memory.
     //
-    OBJ *newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
+    OBJ *newdb = static_cast<OBJ *>(MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ)));
     ISOUTOFMEMORY(newdb);
     if (db)
     {
@@ -2999,7 +2999,7 @@ void db_grow(dbref newtop)
     // Grow the db mark buffer.
     //
     int marksize = (newsize + 7) >> 3;
-    MARKBUF *newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
+    MARKBUF *newmarkbuf = static_cast<MARKBUF *>(MEMALLOC(marksize));
     ISOUTOFMEMORY(newmarkbuf);
     memset(newmarkbuf, 0, marksize);
     if (mudstate.markbits)
@@ -3024,7 +3024,7 @@ void db_free(void)
     if (db != nullptr)
     {
         db -= SIZE_HACK;
-        char *cp = (char *)db;
+        char *cp = reinterpret_cast<char *>(db);
         MEMFREE(cp);
         cp = nullptr;
         db = nullptr;
@@ -3186,7 +3186,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
             // Fetch up to and including the next LF.
             //
             UTF8 *pInput = pOutput + 6;
-            if (fgets((char *)pInput, static_cast<int>(nBufferLeft), f) == nullptr)
+            if (fgets(reinterpret_cast<char *>(pInput), static_cast<int>(nBufferLeft), f) == nullptr)
             {
                 // EOF or ERROR.
                 //
@@ -3208,7 +3208,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                 UTF8 ch = *pInput++;
                 if (iState == STATE_START)
                 {
-                    if (decode_table[(unsigned char)ch] == 0)
+                    if (decode_table[static_cast<unsigned char>(ch)] == 0)
                     {
                         // As long as decode_table[*p] is 0, just keep copying the characters.
                         //
@@ -3217,11 +3217,11 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                         {
                             *pOutput++ = ch;
                             ch = *pInput++;
-                        } while (decode_table[(unsigned char)ch] == 0);
+                        } while (decode_table[static_cast<unsigned char>(ch)] == 0);
                         nOutput = pOutput - p;
                     }
                 }
-                int iAction = action_table[iState][decode_table[(unsigned char)ch]];
+                int iAction = action_table[iState][decode_table[static_cast<unsigned char>(ch)]];
                 if (iAction <= 2)
                 {
                     if (1 == iAction)
@@ -3308,7 +3308,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
         {
             // Fetch up to and including the next LF.
             //
-            if (fgets((char *)p, LBUF_SIZE, f) == nullptr)
+            if (fgets(reinterpret_cast<char *>(p), LBUF_SIZE, f) == nullptr)
             {
                 // EOF or ERROR.
                 //
@@ -3318,7 +3318,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
             {
                 // How much data did we fetch?
                 //
-                size_t nLine = strlen((char *)p);
+                size_t nLine = strlen(reinterpret_cast<char *>(p));
                 if (nLine >= 2)
                 {
                     if (p[nLine-2] == '\r')
@@ -3389,7 +3389,7 @@ void putstring(FILE *f, const UTF8 *pRaw)
         for (;;)
         {
             UTF8 ch;
-            while ((ch = encode_table[(unsigned char)*pRaw]) == 0)
+            while ((ch = encode_table[static_cast<unsigned char>(*pRaw)]) == 0)
             {
                 *pBuffer++ = *pRaw++;
             }
@@ -3425,7 +3425,7 @@ void putstring(FILE *f, const UTF8 *pRaw)
 int getref(FILE *f)
 {
     static UTF8 buf[SBUF_SIZE];
-    if (nullptr != fgets((char *)buf, sizeof(buf), f))
+    if (nullptr != fgets(reinterpret_cast<char *>(buf), sizeof(buf), f))
     {
         return mux_atol(buf);
     }
@@ -3491,7 +3491,7 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
     case BOOLEXP_EVAL:
     case BOOLEXP_ATR:
         r->thing = b->thing;
-        r->sub1 = (BOOLEXP *)StringClone((UTF8 *)b->sub1);
+        r->sub1 = reinterpret_cast<BOOLEXP *>(StringClone(reinterpret_cast<UTF8 *>(b->sub1)));
         break;
     default:
         Log.WriteString(T("Bad bool type!" ENDLINE));
@@ -3702,12 +3702,12 @@ void load_restart_db(void)
     mudstate.start_time.SetSeconds(getref(f));
 
     size_t nBuffer;
-    UTF8 *pBuffer = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
+    UTF8 *pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
     if (version < 3)
     {
         // Convert Latin1 and ANSI to UTF-8 code points.
         //
-        pBuffer = ConvertToUTF8((char *)pBuffer, &nBuffer);
+        pBuffer = ConvertToUTF8(reinterpret_cast<char *>(pBuffer), &nBuffer);
     }
     memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
 
@@ -3762,10 +3762,10 @@ void load_restart_db(void)
             d->width = getref(f);
 
             size_t nBuffer;
-            char *temp = (char *)getstring_noalloc(f, true, &nBuffer);
+            char *temp = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBuffer));
             if ('\0' != temp[0])
             {
-                d->ttype = (UTF8 *)MEMALLOC(nBuffer+1);
+                d->ttype = reinterpret_cast<UTF8 *>(MEMALLOC(nBuffer+1));
                 ISOUTOFMEMORY(d->ttype);
                 memcpy(d->ttype, temp, nBuffer + 1);
             }
@@ -3798,7 +3798,7 @@ void load_restart_db(void)
             // Output Prefix.
             //
             size_t nBufferUnicode;
-            UTF8 *pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            UTF8 *pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             if ('\0' != pBufferUnicode[0])
             {
                 d->output_prefix = alloc_lbuf("set_userstring");
@@ -3811,7 +3811,7 @@ void load_restart_db(void)
 
             // Output Suffix
             //
-            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             if ('\0' != pBufferUnicode[0])
             {
                 d->output_suffix = alloc_lbuf("set_userstring");
@@ -3824,17 +3824,17 @@ void load_restart_db(void)
 
             // Host address.
             //
-            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
 
             // Doing.
             //
-            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
 
             // User name.
             //
-            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
         }
         else
@@ -3844,7 +3844,7 @@ void load_restart_db(void)
             size_t nBufferUnicode;
             UTF8  *pBufferUnicode;
             size_t nBufferLatin1;
-            char  *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            char  *pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
@@ -3858,7 +3858,7 @@ void load_restart_db(void)
 
             // Output Suffix
             //
-            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
@@ -3872,19 +3872,19 @@ void load_restart_db(void)
 
             // Host address.
             //
-            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
             memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
 
             // Doing.
             //
-            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
             memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
 
             // User name.
             //
-            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
             memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
         }

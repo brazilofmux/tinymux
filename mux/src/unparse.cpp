@@ -196,7 +196,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
         {
             safe_chr(':', boolexp_buf, &buftop);
         }
-        safe_str((UTF8 *)b->sub1, boolexp_buf, &buftop);
+        safe_str(reinterpret_cast<UTF8 *>(b->sub1), boolexp_buf, &buftop);
         break;
 
     default:

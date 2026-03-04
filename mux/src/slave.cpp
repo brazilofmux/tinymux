@@ -103,7 +103,7 @@ int query(char *ip)
     }
 
 #if defined(HAVE_GETHOSTBYADDR)
-    struct hostent *hp = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
+    struct hostent *hp = gethostbyaddr( reinterpret_cast<char *>(&addr), sizeof(addr), AF_INET);
     if (  nullptr != hp
        && strlen(hp->h_name) < MAX_STRING)
     {
@@ -122,7 +122,7 @@ int query(char *ip)
     size_t len = strlen(buf);
     ssize_t written = write(1, buf, len);
     if (  written < 0
-       || len != (size_t)written)
+       || len != static_cast<size_t>(written))
     {
         return (-1);
     }

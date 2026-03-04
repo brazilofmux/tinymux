@@ -303,7 +303,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     int quota = 0, value = 0;
     size_t nValidName;
     FLAGSET f;
-    const UTF8 *buff;
+    UTF8 *buff;
     const UTF8 *pValidName;
     const UTF8 *tname;
     bool okname = false, self_owned = false, require_inherit = false;
@@ -509,13 +509,13 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    buff = ltaNow.ReturnDateString(7);
-    atr_add_raw(obj, A_CREATED, buff);
-    atr_add_raw(obj, A_MODIFIED, buff);
+    const UTF8 *datestr = ltaNow.ReturnDateString(7);
+    atr_add_raw(obj, A_CREATED, datestr);
+    atr_add_raw(obj, A_MODIFIED, datestr);
 
     if (objtype == TYPE_PLAYER)
     {
-        atr_add_raw(obj, A_LAST, buff);
+        atr_add_raw(obj, A_LAST, datestr);
 
         UTF8 *buff2 = alloc_sbuf("create_obj.quota");
         mux_ltoa(quota, buff2);
@@ -880,7 +880,7 @@ static void purge_going(void)
             }
             else
             {
-                dbref player = (dbref) mux_atol(p);
+                dbref player =  static_cast<dbref>(mux_atol(p));
                 destroy_player(player, i);
             }
             break;

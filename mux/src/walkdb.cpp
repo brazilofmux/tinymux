@@ -47,7 +47,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (key & DOLIST_DELIMIT)
     {
         UTF8 *tempstr = parse_to(&curr, ' ', EV_STRIP_CURLY);
-        if (1 < strlen((char *)tempstr))
+        if (1 < strlen(reinterpret_cast<char *>(tempstr)))
         {
             notify(executor, T("The delimiter must be a single character!"));
             return;
@@ -428,7 +428,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     UTF8 *pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
     {
-        pname = (UTF8 *)"me";
+        pname = const_cast<UTF8 *>(T("me"));
     }
     else
     {
@@ -439,7 +439,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     UTF8 *searchtype;
     if (searchfor && *searchfor)
     {
-        searchtype = (UTF8 *)strrchr((char *)pname, ' ');
+        searchtype = reinterpret_cast<UTF8 *>(strrchr(reinterpret_cast<char *>(pname), ' '));
         if (searchtype)
         {
             *searchtype++ = '\0';
@@ -447,19 +447,19 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
         else
         {
             searchtype = pname;
-            pname = (UTF8 *)"";
+            pname = const_cast<UTF8 *>(T(""));
         }
     }
     else
     {
-        searchtype = (UTF8 *)"";
+        searchtype = const_cast<UTF8 *>(T(""));
     }
 
     // If the player name is quoted, strip the quotes.
     //
     if (*pname == '"')
     {
-        size_t k = strlen((char *)pname) - 1;
+        size_t k = strlen(reinterpret_cast<char *>(pname)) - 1;
         if (pname[k] == '"')
         {
             pname[k] = '\0';
@@ -494,7 +494,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
         }
 
     }
-    else if (strcmp((char *)pname, "me") == 0)
+    else if (strcmp(reinterpret_cast<char *>(pname), "me") == 0)
     {
         parm->s_rst_owner = player;
     }
@@ -1244,14 +1244,14 @@ void olist_add(dbref item)
 
     if (!mudstate.olist->head)
     {
-        op = (OBLOCK *) alloc_lbuf("olist_add.first");
+        op = reinterpret_cast<OBLOCK *>(alloc_lbuf("olist_add.first"));
         mudstate.olist->head = mudstate.olist->tail = op;
         mudstate.olist->count = 0;
         op->next = nullptr;
     }
     else if (mudstate.olist->count >= OBLOCK_SIZE)
     {
-        op = (OBLOCK *) alloc_lbuf("olist_add.next");
+        op = reinterpret_cast<OBLOCK *>(alloc_lbuf("olist_add.next"));
         mudstate.olist->tail->next = op;
         mudstate.olist->tail = op;
         mudstate.olist->count = 0;

@@ -47,7 +47,7 @@ static FCACHE fcache[] =
     { &mudconf.motd_file,    nullptr,   T("Motd") },
     { &mudconf.wizmotd_file, nullptr,   T("Wizmotd") },
     { &mudconf.quit_file,    nullptr,   T("Quit") },
-    { nullptr,               nullptr,   (UTF8 *)nullptr }
+    { nullptr,               nullptr,   reinterpret_cast<UTF8 *>(nullptr) }
 };
 
 static NAMETAB list_files[] =
@@ -63,7 +63,7 @@ static NAMETAB list_files[] =
     {T("quit"),             1,  CA_WIZARD,  FC_QUIT},
     {T("register_connect"), 1,  CA_WIZARD,  FC_CONN_REG},
     {T("wizard_motd"),      1,  CA_WIZARD,  FC_WIZMOTD},
-    {(UTF8 *) nullptr,      0,  0,          0}
+    { reinterpret_cast<UTF8 *>(nullptr),      0,  0,          0}
 };
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
@@ -91,7 +91,7 @@ static FBLOCK *fcache_fill(FBLOCK *fp, UTF8 ch)
         // We filled the current buffer.  Go get a new one.
         //
         FBLOCK *tfp = fp;
-        fp = (FBLOCK *) alloc_mbuf("fcache_fill");
+        fp = reinterpret_cast<FBLOCK *>(alloc_mbuf("fcache_fill"));
         fp->hdr.nxt = nullptr;
         fp->hdr.nchars = 0;
         tfp->hdr.nxt = fp;
@@ -134,7 +134,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
 
     // Set up the initial cache buffer to make things easier.
     //
-    fp = (FBLOCK *) alloc_mbuf("fcache_read.first");
+    fp = reinterpret_cast<FBLOCK *>(alloc_mbuf("fcache_read.first"));
     fp->hdr.nxt = nullptr;
     fp->hdr.nchars = 0;
     *cp = fp;
@@ -196,7 +196,7 @@ void fcache_rawdump(SOCKET fd, int num)
         remaining = fp->hdr.nchars;
         while (remaining > 0)
         {
-            cnt = SOCKET_WRITE(fd, (char *)start, remaining, 0);
+            cnt = SOCKET_WRITE(fd, reinterpret_cast<char *>(start), remaining, 0);
             if (cnt < 0)
             {
                 return;

@@ -6,7 +6,7 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-#define mux_strlen(x)   strlen((const char *)x)
+#define mux_strlen(x)   strlen(reinterpret_cast<const char *>(x))
 
 inline bool isEmpty(const UTF8 *p)
 {
@@ -40,11 +40,11 @@ extern const UTF8 TableATOI[16][10];
 #define UTF8_ILLEGAL   6
 extern const unsigned char utf8_FirstByte[256];
 extern const UTF8 *cp437_utf8[256];
-#define cp437_utf8(x) ((const UTF8 *)cp437_utf8[(unsigned char)x])
+#define cp437_utf8(x) (reinterpret_cast<const UTF8 *>(cp437_utf8[static_cast<unsigned char>(x)]))
 extern const UTF8 *latin1_utf8[256];
-#define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
+#define latin1_utf8(x) (reinterpret_cast<const UTF8 *>(latin1_utf8[static_cast<unsigned char>(x)]))
 extern const UTF8 *latin2_utf8[256];
-#define latin2_utf8(x) ((const UTF8 *)latin2_utf8[(unsigned char)x])
+#define latin2_utf8(x) (reinterpret_cast<const UTF8 *>(latin2_utf8[static_cast<unsigned char>(x)]))
 
 // This function trims the string back to the first valid UTF-8 sequence it
 // finds, but it does not validate the entire string.
@@ -70,25 +70,25 @@ inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
     return 0;
 }
 
-#define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
-#define mux_isprint_cp437(x) (mux_isprint_cp437[(unsigned char)(x)])
-#define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
-#define mux_isprint_latin2(x) (mux_isprint_latin2[(unsigned char)(x)])
-#define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
-#define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
-#define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
-#define mux_isalpha(x) (mux_isazAZ[(unsigned char)(x)])
-#define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
-#define mux_islower_ascii(x) (mux_islower_ascii[(unsigned char)(x)])
-#define mux_isupper_ascii(x) (mux_isupper_ascii[(unsigned char)(x)])
-#define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
-#define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
-#define mux_toupper_ascii(x) (mux_toupper_ascii[(unsigned char)(x)])
-#define mux_tolower_ascii(x) (mux_tolower_ascii[(unsigned char)(x)])
-#define TableATOI(x,y) (TableATOI[(unsigned char)(x)][(unsigned char)(y)])
+#define mux_isprint_ascii(x) (mux_isprint_ascii[static_cast<unsigned char>(x)])
+#define mux_isprint_cp437(x) (mux_isprint_cp437[static_cast<unsigned char>(x)])
+#define mux_isprint_latin1(x) (mux_isprint_latin1[static_cast<unsigned char>(x)])
+#define mux_isprint_latin2(x) (mux_isprint_latin2[static_cast<unsigned char>(x)])
+#define mux_isdigit(x) (mux_isdigit[static_cast<unsigned char>(x)])
+#define mux_isxdigit(x)(mux_isxdigit[static_cast<unsigned char>(x)])
+#define mux_isazAZ(x)  (mux_isazAZ[static_cast<unsigned char>(x)])
+#define mux_isalpha(x) (mux_isazAZ[static_cast<unsigned char>(x)])
+#define mux_isalnum(x) (mux_isalnum[static_cast<unsigned char>(x)])
+#define mux_islower_ascii(x) (mux_islower_ascii[static_cast<unsigned char>(x)])
+#define mux_isupper_ascii(x) (mux_isupper_ascii[static_cast<unsigned char>(x)])
+#define mux_isspace(x) (mux_isspace[static_cast<unsigned char>(x)])
+#define mux_hex2dec(x) (mux_hex2dec[static_cast<unsigned char>(x)])
+#define mux_toupper_ascii(x) (mux_toupper_ascii[static_cast<unsigned char>(x)])
+#define mux_tolower_ascii(x) (mux_tolower_ascii[static_cast<unsigned char>(x)])
+#define TableATOI(x,y) (TableATOI[static_cast<unsigned char>(x)][static_cast<unsigned char>(y)])
 
-#define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
-#define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
+#define mux_issecure(x)           (mux_issecure[static_cast<unsigned char>(x)])
+#define mux_isescape(x)           (mux_isescape[static_cast<unsigned char>(x)])
 
 #define UNI_EOF ((UTF32)-1)
 
@@ -108,7 +108,7 @@ inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 #define UNI_PU3_START        ((UTF32)0x00100000UL)
 #define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
 
-#define utf8_NextCodePoint(x)      (x + utf8_FirstByte[(unsigned char)*x])
+#define utf8_NextCodePoint(x)      (x + utf8_FirstByte[static_cast<unsigned char>(*x)])
 
 // utf/cl_Printable.txt
 //
@@ -118,7 +118,7 @@ inline bool mux_isprint(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_print_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_print_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = cl_print_sot[iState];
         for (;;)
         {
@@ -167,7 +167,7 @@ inline bool mux_isattrnameinitial(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_attrnameinitial_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_attrnameinitial_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_attrnameinitial_sot[iState];
         for (;;)
         {
@@ -216,7 +216,7 @@ inline bool mux_isattrname(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_attrname_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_attrname_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_attrname_sot[iState];
         for (;;)
         {
@@ -265,7 +265,7 @@ inline bool mux_isobjectname(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_objectname_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_objectname_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = cl_objectname_sot[iState];
         for (;;)
         {
@@ -314,7 +314,7 @@ inline bool mux_isplayername(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_playername_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_playername_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = cl_playername_sot[iState];
         for (;;)
         {
@@ -363,7 +363,7 @@ inline bool mux_is8859_1(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_8859_1_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_8859_1_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_8859_1_sot[iState];
         for (;;)
         {
@@ -412,7 +412,7 @@ inline bool mux_is8859_2(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_8859_2_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_8859_2_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_8859_2_sot[iState];
         for (;;)
         {
@@ -461,7 +461,7 @@ inline bool mux_ishangul(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_hangul_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_hangul_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_hangul_sot[iState];
         for (;;)
         {
@@ -510,7 +510,7 @@ inline bool mux_ishiragana(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_hiragana_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_hiragana_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_hiragana_sot[iState];
         for (;;)
         {
@@ -559,7 +559,7 @@ inline bool mux_iskanji(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_kanji_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_kanji_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_kanji_sot[iState];
         for (;;)
         {
@@ -608,7 +608,7 @@ inline bool mux_iskatakana(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = cl_katakana_itt[(unsigned char)ch];
+        unsigned char iColumn = cl_katakana_itt[static_cast<unsigned char>(ch)];
         unsigned char iOffset = cl_katakana_sot[iState];
         for (;;)
         {
@@ -677,7 +677,7 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_tolower_itt[(unsigned char)ch];
+        unsigned char iColumn = tr_tolower_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = tr_tolower_sot[iState];
         for (;;)
         {
@@ -736,7 +736,7 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_toupper_itt[(unsigned char)ch];
+        unsigned char iColumn = tr_toupper_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = tr_toupper_sot[iState];
         for (;;)
         {
@@ -795,7 +795,7 @@ inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_totitle_itt[(unsigned char)ch];
+        unsigned char iColumn = tr_totitle_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = tr_totitle_sot[iState];
         for (;;)
         {
@@ -854,7 +854,7 @@ inline const string_desc *mux_foldmatch(const unsigned char *p, bool &bXor)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_foldmatch_itt[(unsigned char)ch];
+        unsigned char iColumn = tr_foldmatch_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = tr_foldmatch_sot[iState];
         for (;;)
         {
@@ -913,7 +913,7 @@ inline int mux_color(const unsigned char *p)
     do
     {
         unsigned char ch = *p++;
-        unsigned char iColumn = tr_color_itt[(unsigned char)ch];
+        unsigned char iColumn = tr_color_itt[static_cast<unsigned char>(ch)];
         unsigned short iOffset = tr_color_sot[iState];
         for (;;)
         {
@@ -2140,7 +2140,7 @@ public:
             }
             mux_assert(0 <= c.m_point && c.m_point < m_ncp);
 #else
-            c.m_byte = (LBUF_OFFSET)(c.m_byte + utf8_FirstByte[m_autf[c.m_byte]]);
+            c.m_byte = static_cast<LBUF_OFFSET>(c.m_byte + utf8_FirstByte[m_autf[c.m_byte]]);
 #endif // NEW_MUX_STRING_PARANOID
             c.m_point++;
             return true;

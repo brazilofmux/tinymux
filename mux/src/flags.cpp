@@ -346,7 +346,7 @@ static FLAGBITENT fbeConnected      = { CONNECTED,    'c',    FLAG_WORD2, CA_NO_
 static FLAGBITENT fbeDark           = { DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit};
 static FLAGBITENT fbeDestroyOk      = { DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeEnterOk        = { ENTER_OK,     'e',    FLAG_WORD1, 0,                    fh_any};
-static FLAGBITENT fbeFixed          = { FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player};
+static FLAGBITENT fbeFixed          = { FIXED_FLAG,   'f',    FLAG_WORD2, 0,                    fh_restrict_player};
 static FLAGBITENT fbeFloating       = { FLOATING,     'F',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeGagged         = { GAGGED,       'j',    FLAG_WORD2, 0,                    fh_wiz};
 static FLAGBITENT fbeGoing          = { GOING,        'G',    FLAG_WORD1, CA_NO_DECOMP,         fh_going_bit};
@@ -431,93 +431,93 @@ static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,    
 
 FLAGNAMEENT gen_flag_names[] =
 {
-    {(UTF8 *)"ABODE",           true, &fbeAbode          },
-    {(UTF8 *)"ACCENTS",        false, &fbeAscii          },
-    {(UTF8 *)"ANSI",            true, &fbeAnsi           },
-    {(UTF8 *)"ASCII",           true, &fbeAscii          },
-    {(UTF8 *)"AUDIBLE",         true, &fbeAudible        },
-    {(UTF8 *)"AUDITORIUM",      true, &fbeAuditorium     },
-    {(UTF8 *)"BLEED",          false, &fbeNoBleed        },
-    {(UTF8 *)"BLIND",           true, &fbeBlind          },
-    {(UTF8 *)"COMMANDS",       false, &fbeNoCommand      },
-    {(UTF8 *)"CHOWN_OK",        true, &fbeChownOk        },
-    {(UTF8 *)"COLOR256",        true, &fbeColor256       },
-    {(UTF8 *)"CONNECTED",       true, &fbeConnected      },
-    {(UTF8 *)"DARK",            true, &fbeDark           },
-    {(UTF8 *)"DESTROY_OK",      true, &fbeDestroyOk      },
-    {(UTF8 *)"ENTER_OK",        true, &fbeEnterOk        },
-    {(UTF8 *)"FIXED",           true, &fbeFixed          },
-    {(UTF8 *)"FLOATING",        true, &fbeFloating       },
-    {(UTF8 *)"GAGGED",          true, &fbeGagged         },
-    {(UTF8 *)"GOING",           true, &fbeGoing          },
-    {(UTF8 *)"HALTED",          true, &fbeHalted         },
-    {(UTF8 *)"HAS_DAILY",       true, &fbeHasDaily       },
-    {(UTF8 *)"HAS_FORWARDLIST", true, &fbeHasForwardList },
-    {(UTF8 *)"HAS_LISTEN",      true, &fbeHasListen      },
-    {(UTF8 *)"HAS_STARTUP",     true, &fbeHasStartup     },
-    {(UTF8 *)"HAVEN",           true, &fbeHaven          },
-    {(UTF8 *)"HEAD",            true, &fbeHead           },
-    {(UTF8 *)"HTML",            true, &fbeHtml           },
-    {(UTF8 *)"IMMORTAL",        true, &fbeImmortal       },
-    {(UTF8 *)"INHERIT",         true, &fbeInherit        },
-    {(UTF8 *)"JUMP_OK",         true, &fbeJumpOk         },
-    {(UTF8 *)"KEEPALIVE",       true, &fbeKeepAlive      },
-    {(UTF8 *)"KEY",             true, &fbeKey            },
-    {(UTF8 *)"LIGHT",           true, &fbeLight          },
-    {(UTF8 *)"LINK_OK",         true, &fbeLinkOk         },
-    {(UTF8 *)"MARKER0",         true, &fbeMarker0        },
-    {(UTF8 *)"MARKER1",         true, &fbeMarker1        },
-    {(UTF8 *)"MARKER2",         true, &fbeMarker2        },
-    {(UTF8 *)"MARKER3",         true, &fbeMarker3        },
-    {(UTF8 *)"MARKER4",         true, &fbeMarker4        },
-    {(UTF8 *)"MARKER5",         true, &fbeMarker5        },
-    {(UTF8 *)"MARKER6",         true, &fbeMarker6        },
-    {(UTF8 *)"MARKER7",         true, &fbeMarker7        },
-    {(UTF8 *)"MARKER8",         true, &fbeMarker8        },
-    {(UTF8 *)"MARKER9",         true, &fbeMarker9        },
-    {(UTF8 *)"MONITOR",         true, &fbeMonitor        },
-    {(UTF8 *)"MYOPIC",          true, &fbeMyopic         },
-    {(UTF8 *)"NO_COMMAND",      true, &fbeNoCommand      },
-    {(UTF8 *)"NOBLEED",         true, &fbeNoBleed        },
-    {(UTF8 *)"NOSPOOF",         true, &fbeNoSpoof        },
-    {(UTF8 *)"OPAQUE",          true, &fbeOpaque         },
-    {(UTF8 *)"OPEN_OK",         true, &fbeOpenOk         },
-    {(UTF8 *)"PARENT_OK",       true, &fbeParentOk       },
-    {(UTF8 *)"PLAYER_MAILS",    true, &fbePlayerMails    },
-    {(UTF8 *)"PUPPET",          true, &fbePuppet         },
-    {(UTF8 *)"QUIET",           true, &fbeQuiet          },
-    {(UTF8 *)"ROBOT",           true, &fbeRobot          },
-    {(UTF8 *)"ROYALTY",         true, &fbeRoyalty        },
-    {(UTF8 *)"SAFE",            true, &fbeSafe           },
-    {(UTF8 *)"SITEMON",         true, &fbeSitemon        },
-    {(UTF8 *)"SLAVE",           true, &fbeSlave          },
-    {(UTF8 *)"SPOOF",          false, &fbeNoSpoof        },
-    {(UTF8 *)"STAFF",           true, &fbeStaff          },
-    {(UTF8 *)"STICKY",          true, &fbeSticky         },
-    {(UTF8 *)"SUSPECT",         true, &fbeSuspect        },
-    {(UTF8 *)"TERSE",           true, &fbeTerse          },
-    {(UTF8 *)"TRACE",           true, &fbeTrace          },
-    {(UTF8 *)"TRANSPARENT",     true, &fbeTransparent    },
-    {(UTF8 *)"UNFINDABLE",      true, &fbeUnfindable     },
-    {(UTF8 *)"UNICODE",         true, &fbeUnicode        },
-    {(UTF8 *)"UNINSPECTED",     true, &fbeUninspected    },
-    {(UTF8 *)"VACATION",        true, &fbeVacation       },
-    {(UTF8 *)"VERBOSE",         true, &fbeVerbose        },
-    {(UTF8 *)"VISUAL",          true, &fbeVisual         },
-    {(UTF8 *)"WIZARD",          true, &fbeWizard         },
+    {T("ABODE"),           true, &fbeAbode          },
+    {T("ACCENTS"),        false, &fbeAscii          },
+    {T("ANSI"),            true, &fbeAnsi           },
+    {T("ASCII"),           true, &fbeAscii          },
+    {T("AUDIBLE"),         true, &fbeAudible        },
+    {T("AUDITORIUM"),      true, &fbeAuditorium     },
+    {T("BLEED"),          false, &fbeNoBleed        },
+    {T("BLIND"),           true, &fbeBlind          },
+    {T("COMMANDS"),       false, &fbeNoCommand      },
+    {T("CHOWN_OK"),        true, &fbeChownOk        },
+    {T("COLOR256"),        true, &fbeColor256       },
+    {T("CONNECTED"),       true, &fbeConnected      },
+    {T("DARK"),            true, &fbeDark           },
+    {T("DESTROY_OK"),      true, &fbeDestroyOk      },
+    {T("ENTER_OK"),        true, &fbeEnterOk        },
+    {T("FIXED"),           true, &fbeFixed          },
+    {T("FLOATING"),        true, &fbeFloating       },
+    {T("GAGGED"),          true, &fbeGagged         },
+    {T("GOING"),           true, &fbeGoing          },
+    {T("HALTED"),          true, &fbeHalted         },
+    {T("HAS_DAILY"),       true, &fbeHasDaily       },
+    {T("HAS_FORWARDLIST"), true, &fbeHasForwardList },
+    {T("HAS_LISTEN"),      true, &fbeHasListen      },
+    {T("HAS_STARTUP"),     true, &fbeHasStartup     },
+    {T("HAVEN"),           true, &fbeHaven          },
+    {T("HEAD"),            true, &fbeHead           },
+    {T("HTML"),            true, &fbeHtml           },
+    {T("IMMORTAL"),        true, &fbeImmortal       },
+    {T("INHERIT"),         true, &fbeInherit        },
+    {T("JUMP_OK"),         true, &fbeJumpOk         },
+    {T("KEEPALIVE"),       true, &fbeKeepAlive      },
+    {T("KEY"),             true, &fbeKey            },
+    {T("LIGHT"),           true, &fbeLight          },
+    {T("LINK_OK"),         true, &fbeLinkOk         },
+    {T("MARKER0"),         true, &fbeMarker0        },
+    {T("MARKER1"),         true, &fbeMarker1        },
+    {T("MARKER2"),         true, &fbeMarker2        },
+    {T("MARKER3"),         true, &fbeMarker3        },
+    {T("MARKER4"),         true, &fbeMarker4        },
+    {T("MARKER5"),         true, &fbeMarker5        },
+    {T("MARKER6"),         true, &fbeMarker6        },
+    {T("MARKER7"),         true, &fbeMarker7        },
+    {T("MARKER8"),         true, &fbeMarker8        },
+    {T("MARKER9"),         true, &fbeMarker9        },
+    {T("MONITOR"),         true, &fbeMonitor        },
+    {T("MYOPIC"),          true, &fbeMyopic         },
+    {T("NO_COMMAND"),      true, &fbeNoCommand      },
+    {T("NOBLEED"),         true, &fbeNoBleed        },
+    {T("NOSPOOF"),         true, &fbeNoSpoof        },
+    {T("OPAQUE"),          true, &fbeOpaque         },
+    {T("OPEN_OK"),         true, &fbeOpenOk         },
+    {T("PARENT_OK"),       true, &fbeParentOk       },
+    {T("PLAYER_MAILS"),    true, &fbePlayerMails    },
+    {T("PUPPET"),          true, &fbePuppet         },
+    {T("QUIET"),           true, &fbeQuiet          },
+    {T("ROBOT"),           true, &fbeRobot          },
+    {T("ROYALTY"),         true, &fbeRoyalty        },
+    {T("SAFE"),            true, &fbeSafe           },
+    {T("SITEMON"),         true, &fbeSitemon        },
+    {T("SLAVE"),           true, &fbeSlave          },
+    {T("SPOOF"),          false, &fbeNoSpoof        },
+    {T("STAFF"),           true, &fbeStaff          },
+    {T("STICKY"),          true, &fbeSticky         },
+    {T("SUSPECT"),         true, &fbeSuspect        },
+    {T("TERSE"),           true, &fbeTerse          },
+    {T("TRACE"),           true, &fbeTrace          },
+    {T("TRANSPARENT"),     true, &fbeTransparent    },
+    {T("UNFINDABLE"),      true, &fbeUnfindable     },
+    {T("UNICODE"),         true, &fbeUnicode        },
+    {T("UNINSPECTED"),     true, &fbeUninspected    },
+    {T("VACATION"),        true, &fbeVacation       },
+    {T("VERBOSE"),         true, &fbeVerbose        },
+    {T("VISUAL"),          true, &fbeVisual         },
+    {T("WIZARD"),          true, &fbeWizard         },
 #ifdef WOD_REALMS
-    {(UTF8 *)"FAE",             true, &fbeFae            },
-    {(UTF8 *)"CHIMERA",         true, &fbeChimera        },
-    {(UTF8 *)"PEERING",         true, &fbePeering        },
-    {(UTF8 *)"UMBRA",           true, &fbeUmbra          },
-    {(UTF8 *)"SHROUD",          true, &fbeShroud         },
-    {(UTF8 *)"MATRIX",          true, &fbeMatrix         },
-    {(UTF8 *)"OBF",             true, &fbeObf            },
-    {(UTF8 *)"HSS",             true, &fbeHss            },
-    {(UTF8 *)"MEDIUM",          true, &fbeMedium         },
-    {(UTF8 *)"DEAD",            true, &fbeDead           },
+    {T("FAE"),             true, &fbeFae            },
+    {T("CHIMERA"),         true, &fbeChimera        },
+    {T("PEERING"),         true, &fbePeering        },
+    {T("UMBRA"),           true, &fbeUmbra          },
+    {T("SHROUD"),          true, &fbeShroud         },
+    {T("MATRIX"),          true, &fbeMatrix         },
+    {T("OBF"),             true, &fbeObf            },
+    {T("HSS"),             true, &fbeHss            },
+    {T("MEDIUM"),          true, &fbeMedium         },
+    {T("DEAD"),            true, &fbeDead           },
 #endif // WOD_REALMS
-    {(UTF8 *)nullptr,          false, nullptr}
+    {reinterpret_cast<UTF8 *>(nullptr),          false, nullptr}
 };
 
 OBJENT object_types[8] =
@@ -1060,11 +1060,11 @@ CF_HAND(cf_flag_access)
         permstr++;
     }
 
-    if (!strcmp((char *)permstr, "any"))
+    if (!strcmp(reinterpret_cast<char *>(permstr), "any"))
     {
         fbe->handler = fh_any;
     }
-    else if (!strcmp((char *)permstr, "dark"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "dark"))
     {
         if (negate)
         {
@@ -1075,7 +1075,7 @@ CF_HAND(cf_flag_access)
             fbe->listperm |= CA_GOD;
         }
     }
-    else if (!strcmp((char *)permstr, "hidden"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "hidden"))
     {
         if (negate)
         {
@@ -1086,27 +1086,27 @@ CF_HAND(cf_flag_access)
             fbe->listperm |= CA_WIZARD;
         }
     }
-    else if (!strcmp((char *)permstr, "royalty"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "royalty"))
     {
         fbe->handler = fh_wizroy;
     }
-    else if (!strcmp((char *)permstr, "wizard"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "wizard"))
     {
         fbe->handler = fh_wiz;
     }
-    else if (!strcmp((char *)permstr, "god"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "god"))
     {
         fbe->handler = fh_god;
     }
-    else if (!strcmp((char *)permstr, "restrict_player"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "restrict_player"))
     {
         fbe->handler = fh_restrict_player;
     }
-    else if (!strcmp((char *)permstr, "privileged"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "privileged"))
     {
         fbe->handler = fh_privileged;
     }
-    else if (!strcmp((char *)permstr, "staff"))
+    else if (!strcmp(reinterpret_cast<char *>(permstr), "staff"))
     {
         fbe->handler = fh_staff;
     }

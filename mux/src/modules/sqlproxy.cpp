@@ -212,10 +212,10 @@ MUX_RESULT CQueryControlProxy::Connect(const UTF8 *pServer, const UTF8 *pDatabas
         size_t nPassword;
     } CallFrame;
 
-    CallFrame.nServer   = (strlen((char *)pServer)+1)*sizeof(UTF8);
-    CallFrame.nDatabase = (strlen((char *)pDatabase)+1)*sizeof(UTF8);
-    CallFrame.nUser     = (strlen((char *)pUser)+1)*sizeof(UTF8);
-    CallFrame.nPassword = (strlen((char *)pPassword)+1)*sizeof(UTF8);
+    CallFrame.nServer   = (strlen(reinterpret_cast<const char *>(pServer))+1)*sizeof(UTF8);
+    CallFrame.nDatabase = (strlen(reinterpret_cast<const char *>(pDatabase))+1)*sizeof(UTF8);
+    CallFrame.nUser     = (strlen(reinterpret_cast<const char *>(pUser))+1)*sizeof(UTF8);
+    CallFrame.nPassword = (strlen(reinterpret_cast<const char *>(pPassword))+1)*sizeof(UTF8);
 
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
     Pipe_AppendBytes(&qiFrame, CallFrame.nServer, pServer);
@@ -307,8 +307,8 @@ MUX_RESULT CQueryControlProxy::Query(uint32_t iQueryHandle, const UTF8 *pDatabas
     } CallFrame;
 
     CallFrame.iQueryHandle  = iQueryHandle;
-    CallFrame.nDatabaseName = (strlen((char *)pDatabaseName)+1)*sizeof(UTF8);
-    CallFrame.nQuery        = (strlen((char *)pQuery)+1)*sizeof(UTF8);
+    CallFrame.nDatabaseName = (strlen(reinterpret_cast<const char *>(pDatabaseName))+1)*sizeof(UTF8);
+    CallFrame.nQuery        = (strlen(reinterpret_cast<const char *>(pQuery))+1)*sizeof(UTF8);
 
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
     Pipe_AppendBytes(&qiFrame, CallFrame.nDatabaseName, pDatabaseName);

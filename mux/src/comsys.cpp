@@ -435,7 +435,7 @@ void sort_com_aliases(comsys_t* c)
 // Lookup player's comsys data and find the channel associated with
 // the given alias.
 //
-static UTF8* get_channel_from_alias(dbref player, UTF8* alias)
+static const UTF8* get_channel_from_alias(dbref player, UTF8* alias)
 {
     int first;
 
@@ -459,7 +459,7 @@ static UTF8* get_channel_from_alias(dbref player, UTF8* alias)
     {
         return c->channels[current];
     }
-    return (UTF8*)"";
+    return T("");
 }
 
 // Version 4 start on 2007-MAR-17
@@ -639,11 +639,11 @@ void load_comsystem_V0123(FILE* fp)
     num_channels = 0;
 
     int nc = 0;
-    if (nullptr == fgets((char*)temp, sizeof(temp), fp))
+    if (nullptr == fgets(reinterpret_cast<char *>(temp), sizeof(temp), fp))
     {
         return;
     }
-    if (!strncmp((char*)temp, "+V", 2))
+    if (!strncmp(reinterpret_cast<char *>(temp), "+V", 2))
     {
         // +V2 has colored headers.
         //
@@ -2834,7 +2834,7 @@ static void do_comdisconnectraw_notify(const dbref player, UTF8* chan)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-                            ch->chan_obj, (UTF8*)":has disconnected.", &messNormal,
+                            ch->chan_obj, T(":has disconnected."), &messNormal,
                             &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
@@ -3231,7 +3231,7 @@ bool do_comsystem(const dbref who, UTF8* cmd)
     memcpy(alias, cmd, t - cmd);
     alias[t - cmd] = '\0';
 
-    UTF8* ch = get_channel_from_alias(who, alias);
+    const UTF8* ch = get_channel_from_alias(who, alias);
     if (ch[0] == '\0')
     {
         // Not really an alias after all.
@@ -3240,7 +3240,7 @@ bool do_comsystem(const dbref who, UTF8* cmd)
     }
 
     t++;
-    do_processcom(who, ch, t);
+    do_processcom(who, const_cast<UTF8 *>(ch), t);
     return false;
 }
 
@@ -3566,8 +3566,8 @@ struct chanlist_node
 
 static int DCL_CDECL chanlist_comp(const void* a, const void* b)
 {
-    const auto ca = (chanlist_node*)a;
-    const auto cb = (chanlist_node*)b;
+    const auto ca = reinterpret_cast<const chanlist_node *>(a);
+    const auto cb = reinterpret_cast<const chanlist_node *>(b);
     return mux_stricmp(ca->name, cb->name);
 }
 

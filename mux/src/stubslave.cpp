@@ -439,7 +439,7 @@ MUX_RESULT CStubSlave_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
                && MUX_S_FALSE != ReturnFrame.mr)
             {
                 ReturnFrame.bLoaded = ModuleInfo.bLoaded;
-                ReturnFrame.nName   = strlen((const char *)ModuleInfo.pName)+1;
+                ReturnFrame.nName   = strlen(reinterpret_cast<const char *>(ModuleInfo.pName))+1;
             }
             else
             {
@@ -524,7 +524,7 @@ MUX_RESULT CStubSlave::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv,
             if (nullptr != pChannel)
             {
                 pChannel->pInterface = pISlaveControl;
-                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), reinterpret_cast<UTF8 *>(&pChannel->nChannel));
                 mr =  MUX_S_OK;
             }
             else

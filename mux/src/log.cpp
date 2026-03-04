@@ -14,7 +14,7 @@ NAMETAB logdata_nametab[] =
     {T("location"),        1,  0,  LOGOPT_LOC},
     {T("owner"),           1,  0,  LOGOPT_OWNER},
     {T("timestamp"),       1,  0,  LOGOPT_TIMESTAMP},
-    {(UTF8 *) nullptr,     0,  0,  0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
@@ -38,7 +38,7 @@ NAMETAB logoptions_nametab[] =
     {T("suspect"),         2,  0,  LOG_SUSPECTCMDS},
     {T("time_usage"),      1,  0,  LOG_TIMEUSE},
     {T("wizard"),          1,  0,  LOG_WIZARD},
-    {(UTF8 *) nullptr,     0,  0,  0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,  0,  0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ bool start_log(const UTF8 * primary, const UTF8 * secondary)
 
 void end_log(void)
 {
-    Log.WriteString((UTF8 *) ENDLINE);
+    Log.WriteString( reinterpret_cast<UTF8 *>(ENDLINE));
     Log.Flush();
     mudstate.logging--;
 }
@@ -128,7 +128,7 @@ void log_perror(const UTF8 * primary, const UTF8 * secondary,
     Log.WriteString(T(": "));
     Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
-    Log.WriteString((UTF8 *) ENDLINE);
+    Log.WriteString( reinterpret_cast<UTF8 *>(ENDLINE));
 #endif // !WIN32
     Log.Flush();
     mudstate.logging--;
@@ -278,12 +278,12 @@ void do_log
     // Restrict filename to a subdirectory to reduce the possibility
     // of a security hole.
     //
-    UTF8 *temp_ptr = (UTF8 *) strrchr((char *) pFilename, '/');
+    UTF8 *temp_ptr =  reinterpret_cast<UTF8 *>(strrchr( reinterpret_cast<char *>(pFilename), '/'));
     if (temp_ptr)
     {
         pFilename = ++temp_ptr;
     }
-    temp_ptr = (UTF8 *) strrchr((char *) pFilename, '\\');
+    temp_ptr =  reinterpret_cast<UTF8 *>(strrchr( reinterpret_cast<char *>(pFilename), '\\'));
     if (temp_ptr)
     {
         pFilename = ++temp_ptr;
@@ -292,7 +292,7 @@ void do_log
     // Check for and disallow leading periods, empty strings
     // and filenames over 30 characters.
     //
-    size_t n = strlen((char *) pFilename);
+    size_t n = strlen( reinterpret_cast<char *>(pFilename));
     if (  n == 0
        || 30 < n)
     {
@@ -410,7 +410,7 @@ void CLogFile::WriteBuffer(size_t nString, const UTF8 * pString)
 
 void CLogFile::WriteString(const UTF8 * pString)
 {
-    size_t nString = strlen((char *) pString);
+    size_t nString = strlen( reinterpret_cast<const char *>(pString));
     WriteBuffer(nString, pString);
 }
 
@@ -543,13 +543,13 @@ void CLogFile::Flush(void)
 #if defined(WINDOWS_FILES)
         unsigned long nWritten;
         bool fSuccess = true;
-        if (!WriteFile(m_hFile, m_aBuffer, (DWORD) m_nBuffer, &nWritten, nullptr))
+        if (!WriteFile(m_hFile, m_aBuffer, static_cast<DWORD>(m_nBuffer), &nWritten, nullptr))
         {
             fSuccess = false;
         }
 #elif defined(UNIX_FILES)
         ssize_t written = mux_write(m_fdFile, m_aBuffer, m_nBuffer);
-        bool fSuccess = (0 < written && m_nBuffer == (size_t) written);
+        bool fSuccess = (0 < written && m_nBuffer ==  static_cast<size_t>(written));
 #endif // UNIX_FILES
 
         if (!fSuccess)
@@ -575,7 +575,7 @@ void CLogFile::Flush(void)
 void CLogFile::SetPrefix(const UTF8 * szPrefix)
 {
     if (  !bUseStderr
-       && strcmp((char *) szPrefix, (char *) m_szPrefix) != 0)
+       && strcmp( reinterpret_cast<const char *>(szPrefix),  reinterpret_cast<const char *>(m_szPrefix)) != 0)
     {
         if (bEnabled)
         {
@@ -608,7 +608,7 @@ void CLogFile::SetBasename(const UTF8 * pBasename)
     }
 
     if (  pBasename
-       && strcmp((char *) pBasename, "-") == 0)
+       && strcmp( reinterpret_cast<const char *>(pBasename), "-") == 0)
     {
         bUseStderr = true;
     }

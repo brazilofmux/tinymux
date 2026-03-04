@@ -550,7 +550,7 @@ MUX_RESULT CQueryServer::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
             if (NULL != pChannel)
             {
                 pChannel->pInterface = pIQueryControl;
-                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), reinterpret_cast<UTF8 *>(&pChannel->nChannel));
                 mr =  MUX_S_OK;
             }
             else
@@ -653,18 +653,18 @@ void CQueryServer::ConnectionHelper()
         // As of MySQL 5.0.3, the default is no longer to reconnect.
         //
         my_bool reconnect = 1;
-        mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+        mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
 #endif
         mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
 
-        if (mysql_real_connect(m_database, (char *)m_pServer, (char *)m_pUser,
-             (char *)m_pPassword, (char *)m_pDatabase, 0, NULL, 0) != 0)
+        if (mysql_real_connect(m_database, reinterpret_cast<char *>(m_pServer), reinterpret_cast<char *>(m_pUser),
+             reinterpret_cast<char *>(m_pPassword), reinterpret_cast<char *>(m_pDatabase), 0, NULL, 0) != 0)
         {
 #ifdef MYSQL_OPT_RECONNECT
             // Before MySQL 5.0.19, mysql_real_connect sets the option
             // back to default, so we set it again.
             //
-            mysql_options(m_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+            mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
 #endif
         }
     }
@@ -732,7 +732,7 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
     }
 
     if (  QS_SUCCESS == iError
-       && mysql_real_query(m_database, (char *)pQuery, strlen((char *)pQuery)) != 0)
+       && mysql_real_query(m_database, reinterpret_cast<char *>(pQuery), strlen(reinterpret_cast<char *>(pQuery))) != 0)
     {
         iError = QS_QUERY_ERROR;
     }

@@ -245,9 +245,9 @@ int us_state(const DESC *d, const unsigned char chOption)
 
 void send_charset_request(DESC *d, bool fDefacto = false)
 {
-    if (  OPTION_YES == d->nvt_us_state[(unsigned char)TELNET_CHARSET]
+    if (  OPTION_YES == d->nvt_us_state[static_cast<unsigned char>(TELNET_CHARSET)]
        || (  fDefacto
-          && OPTION_YES == d->nvt_him_state[(unsigned char)TELNET_CHARSET]))
+          && OPTION_YES == d->nvt_him_state[static_cast<unsigned char>(TELNET_CHARSET)]))
     {
         const unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
         send_sb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);

@@ -170,18 +170,18 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         }
     }
 
-    UTF8 *command = (UTF8 *)"";
+    const UTF8 *command = T("");
     if (SAY_SAY == key)
     {
-        command = (UTF8 *)"say";
+        command = T("say");
     }
     else if (SAY_POSE == key || SAY_POSE_NOSPC == key)
     {
-        command = (UTF8 *)"pose";
+        command = T("pose");
     }
     else if (SAY_EMIT == key)
     {
-        command = (UTF8 *)"@emit";
+        command = T("@emit");
     }
 
     // Parse speechmod if present.
@@ -407,7 +407,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
     // Parse speechmod if present.
     //
-    messageNew = modSpeech(executor, message, true, (UTF8 *)"@wall");
+    messageNew = modSpeech(executor, message, true, T("@wall"));
     if (messageNew)
     {
         message = messageNew;
@@ -422,7 +422,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         *bp = '\0';
     }
     p = tprintf(T("%s%s%s%s"), prefix, bEmit ? T("") : Moniker(executor),
-        bSpace ? T(" ") : T(""), bPose ? (UTF8 *)message : (UTF8 *)buf2);
+        bSpace ? T(" ") : T(""), bPose ? reinterpret_cast<UTF8 *>(message) : reinterpret_cast<UTF8 *>(buf2));
     wall_broadcast(key, executor, p);
     if (!bPose)
     {
@@ -595,7 +595,7 @@ void do_page
         UTF8 *p = arg1;
         while (*p != '\0')
         {
-            UTF8 *q = (UTF8 *)strchr((char *)p, '"');
+            UTF8 *q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '"'));
             if (q)
             {
                 *q = '\0';
@@ -624,7 +624,7 @@ void do_page
 
                 // Handle quoted named.
                 //
-                q = (UTF8 *)strchr((char *)p, '"');
+                q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '"'));
                 if (q)
                 {
                     *q = '\0';
@@ -853,7 +853,7 @@ void do_page
         pageMode = 0;
     }
 
-    UTF8 *newMessage = modSpeech(executor, pMessage, true, (UTF8 *)"page");
+    UTF8 *newMessage = modSpeech(executor, pMessage, true, T("page"));
     if (newMessage)
     {
         pMessage = newMessage;
@@ -946,7 +946,7 @@ void do_page
 
 static void whisper_pose(dbref player, dbref target, UTF8 *message, bool bSpace)
 {
-    UTF8 *newMessage = modSpeech(player, message, true, (UTF8 *)"whisper");
+    UTF8 *newMessage = modSpeech(player, message, true, T("whisper"));
     if (newMessage)
     {
         message = newMessage;
@@ -1133,7 +1133,7 @@ void do_pemit_single
                 message++;
 
             default:
-                newMessage = modSpeech(player, message, true, (UTF8 *)"whisper");
+                newMessage = modSpeech(player, message, true, T("whisper"));
                 if (newMessage)
                 {
                     message = newMessage;
@@ -1164,7 +1164,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            newMessage = modSpeech(target, message, true, (UTF8 *)"@fsay");
+            newMessage = modSpeech(target, message, true, T("@fsay"));
             if (newMessage)
             {
                 message = newMessage;
@@ -1172,7 +1172,7 @@ void do_pemit_single
             notify(target, tprintf(T("You say, \xE2\x80\x9C%s\xE2\x80\x9D"), message));
             if (loc != NOTHING)
             {
-                saystring = modSpeech(target, message, false, (UTF8 *)"@fsay");
+                saystring = modSpeech(target, message, false, T("@fsay"));
                 if (saystring)
                 {
                     p = tprintf(T("%s %s \xE2\x80\x9C%s\xE2\x80\x9D"), Moniker(target),
@@ -1197,7 +1197,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE:
-            newMessage = modSpeech(target, message, true, (UTF8 *)"@fpose");
+            newMessage = modSpeech(target, message, true, T("@fpose"));
             if (newMessage)
             {
                 message = newMessage;
@@ -1211,7 +1211,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE_NS:
-            newMessage = modSpeech(target, message, true, (UTF8 *)"@fpose");
+            newMessage = modSpeech(target, message, true, T("@fpose"));
             if (newMessage)
             {
                 message = newMessage;
@@ -1475,7 +1475,7 @@ void do_pemit_whisper
         UTF8 *p = recipient;
         while ('\0' != *p)
         {
-            UTF8 *q = (UTF8 *)strchr((char *)p, '"');
+            UTF8 *q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '"'));
             if (q)
             {
                 *q = '\0';
@@ -1515,7 +1515,7 @@ void do_pemit_whisper
 
                 // Handle quoted named.
                 //
-                q = (UTF8 *)strchr((char *)p, '"');
+                q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '"'));
                 if (q)
                 {
                     *q = '\0';

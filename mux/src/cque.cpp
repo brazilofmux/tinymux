@@ -656,7 +656,7 @@ void do_notify
                 {
                     // Do they have permission to set this attribute?
                     //
-                    ATTR *ap = (ATTR *)anum_get(atr);
+                    ATTR *ap = static_cast<ATTR *>(anum_get(atr));
                     if (!bCanSetAttr(executor, thing, ap))
                     {
                         notify_quiet(executor, NOPERM_MESSAGE);
@@ -761,7 +761,7 @@ static BQUE *setup_que
 
     if (command)
     {
-        nCommand = strlen((char *)command) + 1;
+        nCommand = strlen(reinterpret_cast<char *>(command)) + 1;
         tlen = nCommand;
     }
 
@@ -774,7 +774,7 @@ static BQUE *setup_que
     {
         if (args[a])
         {
-            nLenEnv[a] = strlen((char *)args[a]) + 1;
+            nLenEnv[a] = strlen(reinterpret_cast<const char *>(args[a])) + 1;
             tlen += nLenEnv[a];
         }
     }
@@ -947,7 +947,7 @@ static int CallBack_QueryComplete(PTASK_RECORD p)
     {
         // This represents a query.
         //
-        BQUE *point = (BQUE *)(p->arg_voidptr);
+        BQUE *point = static_cast<BQUE *>(p->arg_voidptr);
         if (point->u.hQuery == QueryComplete_hQuery)
         {
             p->iPriority = PRIORITY_OBJECT;
@@ -1124,7 +1124,7 @@ void do_wait
             }
             else
             {
-                const UTF8 *EventAttributeName = (UTF8 *)event;
+                const UTF8 *EventAttributeName = reinterpret_cast<UTF8 *>(event);
                 ATTR *ap = atr_str(EventAttributeName);
                 if (!ap)
                 {
@@ -1311,7 +1311,7 @@ static void ShowPsLine(const BQUE *tmp)
             if (tmp->env[i] != nullptr)
             {
                 safe_str(T("; Arg"), bufp, &bp);
-                safe_chr((UTF8)(i + '0'), bufp, &bp);
+                safe_chr(static_cast<UTF8>(i + '0'), bufp, &bp);
                 safe_str(T("=\xE2\x80\x98"), bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
                 safe_str(T("\xE2\x80\x99"), bufp, &bp);

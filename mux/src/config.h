@@ -414,17 +414,17 @@ typedef uint16_t UTF16;
 #endif // WIN32
 typedef uint32_t UTF32;
 
-#define T(x)    ((const UTF8 *)(x))
+#define T(x)    (reinterpret_cast<const UTF8 *>(x))
 
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
 extern bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo);
-#define mux_assert(exp) (void)( (exp) || (AssertionFailed((UTF8 *)__FILE__, __LINE__), 0) )
+#define mux_assert(exp) (void)( (exp) || (AssertionFailed(reinterpret_cast<UTF8 *>(__FILE__), __LINE__), 0) )
 
 extern void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
-#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory((UTF8 *)__FILE__, __LINE__); }}
+#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory(reinterpret_cast<UTF8 *>(__FILE__), __LINE__); }}
 
 #define MEMALLOC(n)          malloc((n))
 #define MEMFREE(p)           free((p))

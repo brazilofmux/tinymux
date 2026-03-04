@@ -59,7 +59,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, UTF8 pTopic[TOPIC_NAME_
     while (  0 == nLine
           || '&' != Line[0])
     {
-        if (fgets((char *)Line, LBUF_SIZE-2, rfp) == nullptr)
+        if (fgets(reinterpret_cast<char *>(Line), LBUF_SIZE-2, rfp) == nullptr)
         {
             *pPos   = 0L;
             *nTopic = 0;
@@ -67,7 +67,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, UTF8 pTopic[TOPIC_NAME_
         }
         ++lineno;
 
-        nLine = strlen((char *)Line);
+        nLine = strlen(reinterpret_cast<char *>(Line));
         *pPos += nLine;
         if (  0 < nLine
            && '\n' != Line[nLine - 1])
@@ -331,7 +331,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     bool bInTopicAliases = true;
     for (;;)
     {
-        if (  fgets((char *)line, LBUF_SIZE - 2, fp) == nullptr
+        if (  fgets(reinterpret_cast<char *>(line), LBUF_SIZE - 2, fp) == nullptr
            || '\0' == line[0])
         {
             break;
@@ -352,7 +352,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
         // Transform LF into CRLF to be telnet-friendly.
         //
-        size_t len = strlen((char *)line);
+        size_t len = strlen(reinterpret_cast<char *>(line));
         if (  0 < len
            && '\n' == line[len-1]
            && (  1 == len

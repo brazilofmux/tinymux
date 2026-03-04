@@ -100,7 +100,7 @@ static POWERENT gen_powers[] =
     {T("tel_anything"),    POW_TEL_UNRST,  0, 0,   ph_wiz},
     {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
     {T("unkillable"),      POW_UNKILLABLE, 0, 0,   ph_wiz},
-    {(UTF8 *)nullptr,      0,              0, 0,   0}
+    {reinterpret_cast<UTF8 *>(nullptr),      0,              0, 0,   0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -170,7 +170,7 @@ bool decode_power(dbref player, UTF8 *powername, POWERSET *pset)
     pset->word1 = 0;
     pset->word2 = 0;
 
-    size_t nPowername = strlen((char *)powername);
+    size_t nPowername = strlen(reinterpret_cast<char *>(powername));
     auto it_powers = mudstate.powers_htab.find(std::vector<UTF8>(powername, powername + nPowername));
     POWERENT *pent = (it_powers != mudstate.powers_htab.end()) ? static_cast<POWERENT*>(it_powers->second) : nullptr;
     if (!pent)

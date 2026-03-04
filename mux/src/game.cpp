@@ -253,7 +253,7 @@ static int atr_match1
            &&  (  AMATCH_CMD    == buff[0]
                || AMATCH_LISTEN == buff[0]))
         {
-            s = (UTF8 *)strchr((char *)buff+1, ':');
+            s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
             if (s)
             {
                 if (AMATCH_CMD == buff[0])
@@ -1286,7 +1286,7 @@ void do_shutdown
     int fd;
     if (mux_open(&fd, mudconf.status_file, O_RDWR|O_CREAT|O_TRUNC|O_BINARY))
     {
-        mux_write(fd, message, static_cast<unsigned int>(strlen((char *)message)));
+        mux_write(fd, message, static_cast<unsigned int>(strlen(reinterpret_cast<char *>(message))));
         mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
         if (mux_close(fd) == 0)
@@ -1496,7 +1496,7 @@ void dump_database_internal(int dump_type)
         mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#.gz"), mudconf.outdb, mudstate.epoch);
         mux_sprintf(outfn, sizeof(outfn), T("%s.gz"), mudconf.outdb);
 
-        f = popen((char *)tprintf(T("%s > %s"), mudconf.compress, tmpfile), POPEN_WRITE_OP);
+        f = popen(reinterpret_cast<char *>(tprintf(T("%s > %s"), mudconf.compress, tmpfile)), POPEN_WRITE_OP);
         if (f)
         {
             DebugTotalFiles++;
@@ -1840,9 +1840,9 @@ static int load_game(int ccPageFile)
     if (mudconf.compress_db)
     {
         mux_sprintf(infile, sizeof(infile), T("%s.gz"), mudconf.indb);
-        if (stat((char *)infile, &statbuf) == 0)
+        if (stat(reinterpret_cast<char *>(infile), &statbuf) == 0)
         {
-            f = popen((char *)tprintf(T(" %s < %s"), mudconf.uncompress, infile), POPEN_READ_OP);
+            f = popen(reinterpret_cast<char *>(tprintf(T(" %s < %s"), mudconf.uncompress, infile)), POPEN_READ_OP);
             if (f != nullptr)
             {
                 DebugTotalFiles++;
@@ -1854,7 +1854,7 @@ static int load_game(int ccPageFile)
     if (!compressed)
     {
         mux_strncpy(infile, mudconf.indb, sizeof(infile)-1);
-        if (stat((char *)infile, &statbuf) != 0)
+        if (stat(reinterpret_cast<char *>(infile), &statbuf) != 0)
         {
             // Indicate that we couldn't load because the input db didn't
             // exist.
@@ -2079,7 +2079,7 @@ bool Hearer(dbref thing)
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = (UTF8 *)strchr((char *)buff+1, ':');
+                    s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])
@@ -2434,20 +2434,20 @@ static void init_sql(void)
             // As of MySQL 5.0.3, the default is no longer to reconnect.
             //
             my_bool reconnect = 1;
-            mysql_options(mush_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+            mysql_options(mush_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
 #endif
             mysql_options(mush_database, MYSQL_SET_CHARSET_NAME, "utf8");
 
             if (mysql_real_connect(mush_database,
-                       (char *)mudconf.sql_server, (char *)mudconf.sql_user,
-                       (char *)mudconf.sql_password,
-                       (char *)mudconf.sql_database, 0, nullptr, 0))
+                       reinterpret_cast<char *>(mudconf.sql_server), reinterpret_cast<char *>(mudconf.sql_user),
+                       reinterpret_cast<char *>(mudconf.sql_password),
+                       reinterpret_cast<char *>(mudconf.sql_database), 0, nullptr, 0))
             {
 #ifdef MYSQL_OPT_RECONNECT
                 // Before MySQL 5.0.19, mysql_real_connect sets the option
                 // back to default, so we set it again.
                 //
-                mysql_options(mush_database, MYSQL_OPT_RECONNECT, (const char *)&reconnect);
+                mysql_options(mush_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
 #endif
                 STARTLOG(LOG_STARTUP,"SQL","CONN");
                 log_text(T("Connected to MySQL"));
@@ -2522,12 +2522,12 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         {
         case CLI_DO_PID_FILE:
             bServerOption = true;
-            mudconf.pid_file = (UTF8 *)pValue;
+            mudconf.pid_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_CONFIG_FILE:
             bServerOption = true;
-            conffile = (UTF8 *)pValue;
+            conffile = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_MINIMAL:
@@ -2542,18 +2542,18 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 
         case CLI_DO_ERRORPATH:
             bServerOption = true;
-            pErrorBasename = (UTF8 *)pValue;
+            pErrorBasename = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
 #ifndef MEMORY_BASED
         case CLI_DO_INFILE:
             mudstate.bStandAlone = true;
-            standalone_infile = (UTF8 *)pValue;
+            standalone_infile = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_OUTFILE:
             mudstate.bStandAlone = true;
-            standalone_outfile = (UTF8 *)pValue;
+            standalone_outfile = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_CHECK:
@@ -2573,7 +2573,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 
         case CLI_DO_BASENAME:
             mudstate.bStandAlone = true;
-            standalone_basename = (UTF8 *)pValue;
+            standalone_basename = reinterpret_cast<const UTF8 *>(pValue);
             break;
 #endif
 
@@ -2611,13 +2611,13 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     pProg++;
     mudstate.bStandAlone = false;
-    if (  mux_stricmp((UTF8 *)pProg, DBCONVERT_NAME1) == 0
-       || mux_stricmp((UTF8 *)pProg, DBCONVERT_NAME2) == 0)
+    if (  mux_stricmp(reinterpret_cast<const UTF8 *>(pProg), DBCONVERT_NAME1) == 0
+       || mux_stricmp(reinterpret_cast<const UTF8 *>(pProg), DBCONVERT_NAME2) == 0)
     {
         mudstate.bStandAlone = true;
     }
 
-    mudconf.pid_file = (UTF8 *)"netmux.pid";
+    mudconf.pid_file = T("netmux.pid");
 
     // Parse the command line
     //
@@ -2983,7 +2983,7 @@ void init_rlimit(void)
 {
     struct rlimit *rlp;
 
-    rlp = (struct rlimit *)alloc_lbuf("rlimit");
+    rlp = reinterpret_cast<struct rlimit *>(alloc_lbuf("rlimit"));
 
     if (getrlimit(RLIMIT_NOFILE, rlp))
     {
@@ -3012,9 +3012,9 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
 #if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
-            return (fopen_s(pFile, (const char *)filename, (const char *)mode) == 0);
+            return (fopen_s(pFile, reinterpret_cast<const char *>(filename), reinterpret_cast<const char *>(mode)) == 0);
 #else
-            *pFile = fopen((char *)filename, (char *)mode);
+            *pFile = fopen(reinterpret_cast<char *>(filename), reinterpret_cast<char *>(mode));
             if (nullptr != *pFile)
             {
                 return true;
@@ -3035,12 +3035,12 @@ bool mux_open(int *pfh, const UTF8 *filename, int oflag)
 #if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
-            return (_sopen_s(pfh, (const char *)filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
+            return (_sopen_s(pfh, reinterpret_cast<const char *>(filename), oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
 #elif defined(WINDOWS_FILES)
-            *pfh = _open((char *)filename, oflag, _S_IREAD|_S_IWRITE);
+            *pfh = _open(reinterpret_cast<char *>(filename), oflag, _S_IREAD|_S_IWRITE);
             return (0 <= *pfh);
 #else
-            *pfh = open((char *)filename, oflag, 0600);
+            *pfh = open(reinterpret_cast<char *>(filename), oflag, 0600);
             return (0 <= *pfh);
 #endif
         }
@@ -3054,9 +3054,9 @@ const UTF8 *mux_strerror(int errnum)
     // 1400 is Visual C++ 2005
     //
     static UTF8 buffer[80];
-    strerror_s((char *)buffer, sizeof(buffer), errnum);
+    strerror_s(reinterpret_cast<char *>(buffer), sizeof(buffer), errnum);
     return buffer;
 #else
-    return (UTF8 *)strerror(errnum);
+    return reinterpret_cast<UTF8 *>(strerror(errnum));
 #endif
 }

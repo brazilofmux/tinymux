@@ -88,6 +88,6 @@ void init_version(void)
     ENDLOG;
     STARTLOG(LOG_ALWAYS, "INI", "START");
     log_text(T("Build date: "));
-    log_text((UTF8 *)MUX_BUILD_DATE);
+    log_text(reinterpret_cast<UTF8 *>(MUX_BUILD_DATE));
     ENDLOG;
 }

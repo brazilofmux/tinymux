@@ -110,7 +110,7 @@ UTF8 *next_token(UTF8 *str, const SEP &sep)
     }
     else
     {
-        UTF8 *p = (UTF8 *)strstr((char *)str, (char *)sep.str);
+        UTF8 *p = reinterpret_cast<UTF8 *>(const_cast<char *>(strstr(reinterpret_cast<const char *>(str), reinterpret_cast<const char *>(sep.str))));
         if (p)
         {
             str = p + sep.n;
@@ -161,7 +161,7 @@ UTF8 *split_token(UTF8 **sp, const SEP &sep)
     }
     else
     {
-        UTF8 *p = (UTF8 *)strstr((char *)str, (char *)sep.str);
+        UTF8 *p = reinterpret_cast<UTF8 *>(const_cast<char *>(strstr(reinterpret_cast<const char *>(str), reinterpret_cast<const char *>(sep.str))));
         if (p)
         {
             *p = '\0';
@@ -341,7 +341,7 @@ bool delim_check
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
         //
         UTF8 *tstr = fargs[sep_arg-1];
-        size_t tlen = strlen((char *)tstr);
+        size_t tlen = strlen(reinterpret_cast<char *>(tstr));
 
         if (tlen <= 1)
         {
@@ -551,7 +551,7 @@ static FUNCTION(fun_rand)
             int lower = mux_atol(fargs[0]);
             int higher = mux_atol(fargs[1]);
             if (  lower <= higher
-               && (unsigned int)(higher-lower) <= INT32_MAX)
+               && static_cast<unsigned int>(higher-lower) <= INT32_MAX)
             {
                 safe_ltoa(RandomINT32(lower, higher), buff, bufc);
             }
@@ -962,7 +962,7 @@ static FUNCTION(fun_timefmt)
 
     UTF8 *q;
     UTF8 *p = fargs[0];
-    while ((q = (UTF8 *)strchr((char *)p, '$')) != nullptr)
+    while ((q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '$'))) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1215,7 +1215,7 @@ static FUNCTION(fun_etimefmt)
 
     UTF8 *q;
     UTF8 *p = fargs[0];
-    while ((q = (UTF8 *)strchr((char *)p, '$')) != nullptr)
+    while ((q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '$'))) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -2304,8 +2304,8 @@ static FUNCTION(fun_mid)
     mux_string *sStr = new mux_string(fargs[0]);
 
     mux_cursor iCurStart, iCurEnd;
-    sStr->cursor_from_point(iCurStart, (LBUF_OFFSET)iStart);
-    sStr->cursor_from_point(iCurEnd, (LBUF_OFFSET)(iStart + nMid));
+    sStr->cursor_from_point(iCurStart, static_cast<LBUF_OFFSET>(iStart));
+    sStr->cursor_from_point(iCurEnd, static_cast<LBUF_OFFSET>(iStart + nMid));
 
     if (iCurStart < iCurEnd)
     {
@@ -2347,7 +2347,7 @@ static FUNCTION(fun_right)
 
     if (nRight < iEnd.m_point)
     {
-        sStr->cursor_from_point(iStart, (LBUF_OFFSET)(iEnd.m_point - nRight));
+        sStr->cursor_from_point(iStart, static_cast<LBUF_OFFSET>(iEnd.m_point - nRight));
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nMax);
     }
@@ -3201,7 +3201,7 @@ static FUNCTION(fun_index)
     start--;
     while (start && s && *s)
     {
-        if ((s = (UTF8 *)strchr((char *)s, c)) != nullptr)
+        if ((s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(s), c))) != nullptr)
         {
             s++;
         }
@@ -3224,7 +3224,7 @@ static FUNCTION(fun_index)
     p = s;
     while (end && p && *p)
     {
-        if ((p = (UTF8 *)strchr((char *)p, c)) != nullptr)
+        if ((p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), c))) != nullptr)
         {
             if (--end == 0)
             {
@@ -3311,7 +3311,7 @@ static FUNCTION(fun_strmem)
     size_t n = 0;
     if (nfargs >= 1)
     {
-        n = strlen((char *)fargs[0]);
+        n = strlen(reinterpret_cast<char *>(fargs[0]));
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -3420,7 +3420,7 @@ static FUNCTION(fun_comp)
 
     int x;
 
-    x = strcmp((char *)fargs[0], (char *)fargs[1]);
+    x = strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1]));
     if (x < 0)
     {
         safe_str(T("-1"), buff, bufc);
@@ -3513,7 +3513,7 @@ SubsetTable[] =
     { T("CONNECT"), lconConnect},
     { T("PUPPET"),  lconPuppet },
     { T("LISTEN"),  lconListen },
-    { (UTF8 *)nullptr, lconAny }
+    { reinterpret_cast<UTF8 *>(nullptr), lconAny }
 };
 
 /*
@@ -4054,11 +4054,11 @@ static FUNCTION(fun_lpos)
 
 static int DCL_CDECL i_comp(const void *s1, const void *s2)
 {
-    if (*((int *)s1) > *((int *)s2))
+    if (*(reinterpret_cast<const int *>(s1)) > *(reinterpret_cast<const int *>(s2)))
     {
         return 1;
     }
-    else if (*((int *)s1) < *((int *)s2))
+    else if (*(reinterpret_cast<const int *>(s1)) < *(reinterpret_cast<const int *>(s2)))
     {
         return -1;
     }
@@ -4527,7 +4527,7 @@ static FUNCTION(fun_member)
     do
     {
         r = split_token(&s, sep);
-        if (!strcmp((char *)fargs[1], (char *)r))
+        if (!strcmp(reinterpret_cast<char *>(fargs[1]), reinterpret_cast<char *>(r)))
         {
             safe_ltoa(wcount, buff, bufc);
             return;
@@ -4715,7 +4715,7 @@ static FUNCTION(fun_wordpos)
         int i;
         for (i = 1; xp; i++)
         {
-            if (tp < xp + strlen((char *)xp))
+            if (tp < xp + strlen(reinterpret_cast<char *>(xp)))
             {
                 break;
             }
@@ -4782,7 +4782,7 @@ static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { T("visual"),     AF_VISUAL  },
     { T("no_inherit"), AF_PRIVATE },
     { T("const"),      AF_CONST   },
-    { (UTF8 *)nullptr,      0     }
+    { reinterpret_cast<UTF8 *>(nullptr),      0     }
 };
 
 static bool atr_has_flag
@@ -5009,8 +5009,8 @@ static FUNCTION(fun_rxlevel)
         {
             if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat((char *)levelbuff, (char *)mudconf.reality_level[i].name);
-                strcat((char *)levelbuff, " ");
+                strcat(reinterpret_cast<char *>(levelbuff), reinterpret_cast<char *>(mudconf.reality_level[i].name));
+                strcat(reinterpret_cast<char *>(levelbuff), " ");
             }
         }
         safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
@@ -5042,8 +5042,8 @@ static FUNCTION(fun_txlevel)
         {
             if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat((char *)levelbuff, (char *)mudconf.reality_level[i].name);
-                strcat((char *)levelbuff, " ");
+                strcat(reinterpret_cast<char *>(levelbuff), reinterpret_cast<char *>(mudconf.reality_level[i].name));
+                strcat(reinterpret_cast<char *>(levelbuff), " ");
             }
         }
         safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
@@ -5343,7 +5343,7 @@ static FUNCTION(fun_obj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], (UTF8 *)"%o", buff, bufc);
+    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%o")), buff, bufc);
 }
 
 static FUNCTION(fun_poss)
@@ -5355,7 +5355,7 @@ static FUNCTION(fun_poss)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], (UTF8 *)"%p", buff, bufc);
+    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%p")), buff, bufc);
 }
 
 static FUNCTION(fun_subj)
@@ -5367,7 +5367,7 @@ static FUNCTION(fun_subj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], (UTF8 *)"%s", buff, bufc);
+    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%s")), buff, bufc);
 }
 
 static FUNCTION(fun_aposs)
@@ -5379,7 +5379,7 @@ static FUNCTION(fun_aposs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], (UTF8 *)"%a", buff, bufc);
+    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%a")), buff, bufc);
 }
 
 /*
@@ -6272,7 +6272,7 @@ static FUNCTION(fun_splice)
         {
             print_sep(osep, buff, bufc);
         }
-        if (strcmp((char *)p2, (char *)fargs[2]) == 0)
+        if (strcmp(reinterpret_cast<char *>(p2), reinterpret_cast<char *>(fargs[2])) == 0)
         {
             safe_str(q2, buff, bufc); // replace
         }
@@ -6313,7 +6313,7 @@ static FUNCTION(fun_repeat)
     }
     else
     {
-        size_t len = strlen((char *)fargs[0]);
+        size_t len = strlen(reinterpret_cast<char *>(fargs[0]));
         if (len == 1)
         {
             // It turns into a memset.
@@ -6894,7 +6894,7 @@ FUNCTION(fun_sql)
         return;
     }
 
-    if (mysql_real_query(mush_database, (char *)cp, strlen((char *)cp)))
+    if (mysql_real_query(mush_database, reinterpret_cast<char *>(cp), strlen(reinterpret_cast<char *>(cp))))
     {
         free_lbuf(curr);
         safe_str(T("#-1 QUERY ERROR"), buff, bufc);
@@ -6920,7 +6920,7 @@ FUNCTION(fun_sql)
             {
                 print_sep(sepColumn, buff, bufc);
             }
-            safe_str((UTF8 *)row[loop], buff, bufc);
+            safe_str(reinterpret_cast<UTF8 *>(row[loop]), buff, bufc);
         }
         row = mysql_fetch_row(result);
         if (row)
@@ -7324,7 +7324,7 @@ static void switch_handler
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
 
-        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp((char *)tbuff, (char *)mbuff) == 0)
+        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(reinterpret_cast<char *>(tbuff), reinterpret_cast<char *>(mbuff)) == 0)
         {
             free_lbuf(tbuff);
             tbuff = replace_tokens(fargs[i+1], nullptr, nullptr, mbuff);
@@ -7813,21 +7813,21 @@ typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
-    return strcmp((char *)((q_rec *)s1)->str, (char *)((q_rec *)s2)->str);
+    return strcmp(reinterpret_cast<const char *>((reinterpret_cast<const q_rec *>(s1))->str), reinterpret_cast<const char *>((reinterpret_cast<const q_rec *>(s2))->str));
 }
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
 {
-    return mux_stricmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
+    return mux_stricmp((reinterpret_cast<const q_rec *>(s1))->str, (reinterpret_cast<const q_rec *>(s2))->str);
 }
 
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
 {
-    if (((q_rec *) s1)->u.d > ((q_rec *) s2)->u.d)
+    if ((reinterpret_cast<const q_rec *>(s1))->u.d > (reinterpret_cast<const q_rec *>(s2))->u.d)
     {
         return 1;
     }
-    else if (((q_rec *) s1)->u.d < ((q_rec *) s2)->u.d)
+    else if ((reinterpret_cast<const q_rec *>(s1))->u.d < (reinterpret_cast<const q_rec *>(s2))->u.d)
     {
         return -1;
     }
@@ -7836,11 +7836,11 @@ static int DCL_CDECL f_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL l_comp(const void *s1, const void *s2)
 {
-    if (((q_rec *) s1)->u.l > ((q_rec *) s2)->u.l)
+    if ((reinterpret_cast<const q_rec *>(s1))->u.l > (reinterpret_cast<const q_rec *>(s2))->u.l)
     {
         return 1;
     }
-    else if (((q_rec *) s1)->u.l < ((q_rec *) s2)->u.l)
+    else if ((reinterpret_cast<const q_rec *>(s1))->u.l < (reinterpret_cast<const q_rec *>(s2))->u.l)
     {
         return -1;
     }
@@ -7849,11 +7849,11 @@ static int DCL_CDECL l_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 {
-    if (((q_rec *) s1)->u.i64 > ((q_rec *) s2)->u.i64)
+    if ((reinterpret_cast<const q_rec *>(s1))->u.i64 > (reinterpret_cast<const q_rec *>(s2))->u.i64)
     {
         return 1;
     }
-    else if (((q_rec *) s1)->u.i64 < ((q_rec *) s2)->u.i64)
+    else if ((reinterpret_cast<const q_rec *>(s1))->u.i64 < (reinterpret_cast<const q_rec *>(s2))->u.i64)
     {
         return -1;
     }
@@ -7889,7 +7889,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
 
     int i;
 
-    psc->m_ptrs = (q_rec *) MEMALLOC(n * sizeof(q_rec));
+    psc->m_ptrs = static_cast<q_rec *>(MEMALLOC(n * sizeof(q_rec)));
     if (nullptr != psc->m_ptrs)
     {
         switch (sort_type)
@@ -8440,7 +8440,7 @@ static void centerjustcombo
     {
         return;
     }
-    LBUF_OFFSET nWidth = (LBUF_OFFSET)mux_atol(strip_color(fargs[1]));
+    LBUF_OFFSET nWidth = static_cast<LBUF_OFFSET>(mux_atol(strip_color(fargs[1])));
     if (0 == nWidth)
     {
         return;
@@ -8563,7 +8563,7 @@ static void centerjustcombo
     //
     if (0 < nTrailing)
     {
-        LBUF_OFFSET nPadStart = (LBUF_OFFSET)(nPos % nPad);
+        LBUF_OFFSET nPadStart = static_cast<LBUF_OFFSET>(nPos % nPad);
         LBUF_OFFSET nPadPart  = nWidth - nLeading - nStr.m_point;
         if (nPad - nPadStart < nPadPart)
         {
@@ -8684,7 +8684,7 @@ static FUNCTION(fun_setq)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -8693,7 +8693,7 @@ static FUNCTION(fun_setq)
     }
     else
     {
-        size_t n = strlen((char *)fargs[1]);
+        size_t n = strlen(reinterpret_cast<char *>(fargs[1]));
         RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
     }
 }
@@ -8708,7 +8708,7 @@ static FUNCTION(fun_setr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -8717,7 +8717,7 @@ static FUNCTION(fun_setr)
     }
     else
     {
-        size_t n = strlen((char *)fargs[1]);
+        size_t n = strlen(reinterpret_cast<char *>(fargs[1]));
         RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
         safe_copy_buf(fargs[1], n, buff, bufc);
     }
@@ -8733,7 +8733,7 @@ static FUNCTION(fun_r)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -9109,7 +9109,7 @@ static FUNCTION(fun_trim)
         if (nfargs >= 3)
         {
             p = fargs[2];
-            n = strlen((char *)p);
+            n = strlen(reinterpret_cast<const char *>(p));
         }
     }
 
@@ -9389,7 +9389,7 @@ static FUNCTION(fun_wrap)
     if (  7 <= nfargs
        && '\0' != fargs[6][0])
     {
-        if (!strcmp((char *)fargs[6], "@@"))
+        if (!strcmp(reinterpret_cast<char *>(fargs[6]), "@@"))
         {
             pOSep = T("");
         }
@@ -10259,7 +10259,7 @@ static FUNCTION(fun_art)
     ArtRuleset *arRule = mudconf.art_rules;
     while (arRule != nullptr)
     {
-        pcre2_code* reRuleRegexp = (pcre2_code *) arRule->m_pRegexp;
+        pcre2_code* reRuleRegexp = reinterpret_cast<pcre2_code *>(arRule->m_pRegexp);
 
         if (!alarm_clock.alarmed)
         {
@@ -10377,7 +10377,7 @@ static FUNCTION(fun_stripaccents)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const UTF8 *p = (UTF8 *)ConvertToAscii(fargs[0]);
+    const UTF8 *p = reinterpret_cast<const UTF8 *>(ConvertToAscii(fargs[0]));
     safe_str(p, buff, bufc);
 }
 
@@ -11090,7 +11090,7 @@ static FUN builtin_function_list[] =
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZWHO"),        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {(UTF8 *)nullptr,   nullptr,       MAX_ARG, 0,       0,         0, 0}
+    {reinterpret_cast<UTF8 *>(nullptr),   nullptr,       MAX_ARG, 0,       0,         0, 0}
 };
 
 void function_add(FUN *fp)
@@ -11547,7 +11547,7 @@ static FUNCTION(fun_Functions)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    FunctionsNode *pfn = (FunctionsNode *)(fp->vp);
+    FunctionsNode *pfn = reinterpret_cast<FunctionsNode *>(fp->vp);
     if (nullptr != pfn)
     {
         mux_IFunction *pIFun = pfn->pIFun;
@@ -11589,7 +11589,7 @@ MUX_RESULT CFunctions::Add(unsigned int nKey, const UTF8 *name, mux_IFunction *p
     pfn->fun.maxArgs = maxArgs;
     pfn->fun.flags = flags;
     pfn->fun.perms = perms;
-    pfn->fun.vp = (void *)pfn;
+    pfn->fun.vp = static_cast<void *>(pfn);
 
     pfn->pIFun = pIFun;
     pfn->pIFun->AddRef();

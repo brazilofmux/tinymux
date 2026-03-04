@@ -362,7 +362,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     //
     auto b = alloc_bool("test_str");
     b->type = locktype;
-    b->thing = (dbref) anum;
+    b->thing =  static_cast<dbref>(anum);
     b->sub1 = reinterpret_cast<BOOLEXP*>(StringClone(s));
     free_lbuf(buff);
     return b;
@@ -690,7 +690,7 @@ BOOLEXP *parse_boolexp(dbref player, const UTF8 *buf, bool internal)
         return TRUE_BOOLEXP;
     }
 
-    size_t n = strlen((char *)buf);
+    size_t n = strlen(reinterpret_cast<const char *>(buf));
     if (n > sizeof(parsestore)-1)
     {
         n = sizeof(parsestore)-1;

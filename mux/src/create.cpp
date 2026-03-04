@@ -1017,7 +1017,7 @@ static bool destroyable(dbref victim)
        || (victim == mudconf.start_home)
        || (victim == mudconf.start_room)
        || (victim == mudconf.master_room)
-       || (victim == (dbref) 0)
+       || (victim ==  static_cast<dbref>(0))
        || (God(victim)))
     {
         return false;

@@ -74,7 +74,7 @@ static NAMETAB clone_sw[] =
     {T("nostrip"),         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
     {T("parent"),          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
     {T("preserve"),        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
-    {(UTF8 *) nullptr,     0,          0,  0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,          0,  0}
 };
 
 static NAMETAB clist_sw[] =
@@ -272,7 +272,7 @@ static NAMETAB hook_sw[] =
     {T("list"),            3,     CA_GOD,  CEF_HOOK_LIST},
     {T("permit"),          3,     CA_GOD,  CEF_HOOK_PERMIT},
     {T("args"),            3,     CA_GOD,  CEF_HOOK_ARGS},
-    {(UTF8 *)nullptr,      0,          0,  0}
+    {reinterpret_cast<UTF8 *>(nullptr),      0,          0,  0}
 };
 
 static NAMETAB icmd_sw[] =
@@ -288,7 +288,7 @@ static NAMETAB icmd_sw[] =
     {T("lallroom"),        2,     CA_GOD,  ICMD_LALLROOM},
     {T("off"),             2,     CA_GOD,  ICMD_OFF},
     {T("on"),              2,     CA_GOD,  ICMD_ON},
-    {(UTF8 *)nullptr,      0,          0,  0}
+    {reinterpret_cast<UTF8 *>(nullptr),      0,          0,  0}
 };
 
 static NAMETAB leave_sw[] =
@@ -969,7 +969,7 @@ void cache_prefix_cmds(void)
     do { \
         const UTF8 *_tmp = reinterpret_cast<const UTF8*>(s); \
         auto _it = mudstate.command_htab.find(std::vector<UTF8>(_tmp, _tmp + 1)); \
-        g_prefix_cmds[(unsigned char)(s)[0]] = \
+        g_prefix_cmds[static_cast<unsigned char>((s)[0])] = \
             (_it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(_it->second) : nullptr; \
     } while (0)
     SET_PREFIX_CMD("\"");
@@ -991,7 +991,7 @@ inline bool is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd
 
     if (nullptr != pCommand)
     {
-        pcmd = g_prefix_cmds[(unsigned char)pCommand[0]];
+        pcmd = g_prefix_cmds[static_cast<unsigned char>(pCommand[0])];
         if (nullptr != pcmd)
         {
             nPrefix = 1;
@@ -1003,7 +1003,7 @@ inline bool is_prefix_cmd(const UTF8 *pCommand, size_t *pnPrefix, CMDENT **ppcmd
         {
             // U+201C is a Unicode quote typically sent instead of ASCII double quote.
             //
-            pcmd = g_prefix_cmds[(unsigned char)'"'];
+            pcmd = g_prefix_cmds[static_cast<unsigned char>('"')];
             if (nullptr != pcmd)
             {
                 nPrefix = 3;
@@ -1202,7 +1202,7 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             }
             else
             {
-                inargs[0] = (UTF8*)"";
+                inargs[0] = const_cast<UTF8 *>(T(""));
             }
 
             if (arg2)
@@ -1212,16 +1212,16 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             }
             else
             {
-                inargs[1] = (UTF8*)"";
+                inargs[1] = const_cast<UTF8 *>(T(""));
             }
 
-            inargs[2] = (UTF8*)"";
+            inargs[2] = const_cast<UTF8 *>(T(""));
             inargs[4] = sw;
 
             if (arg1)
             {
                 bufc = arg1;
-                inargs[3] = (UTF8*)"0";
+                inargs[3] = const_cast<UTF8 *>(T("0"));
                 mux_exec(atext, LBUF_SIZE-1, arg1, &bufc, mudconf.hook_obj, executor,
                          executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
             }
@@ -1229,7 +1229,7 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             if (arg2)
             {
                 bufc = arg2;
-                inargs[3] = (UTF8*)"1";
+                inargs[3] = const_cast<UTF8 *>(T("1"));
                 mux_exec(atext, LBUF_SIZE-1, arg2, &bufc, mudconf.hook_obj, executor,
                          executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8**)inargs, 5);
             }
@@ -1331,7 +1331,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     {
         do
         {
-            buf1 = (UTF8 *)strchr((char *)switchp, '/');
+            buf1 = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(switchp), '/'));
             if (buf1)
             {
                 *buf1++ = '\0';
@@ -1426,7 +1426,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     switch (cmdp->callseq & CS_NARG_MASK)
     {
     case CS_NO_ARGS: // <cmd>   (no args)
-        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, caller, enactor, eval, key);
+        (*((reinterpret_cast<CMDENT_NO_ARG *>(cmdp))->handler))(executor, caller, enactor, eval, key);
         break;
 
     case CS_ONE_ARG:    // <cmd> <arg>
@@ -1445,7 +1445,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             // its argument.
             //
             if (  (cmdp->callseq & CS_LEADIN)
-               && UTF8_SIZE1 == utf8_FirstByte[(unsigned char)str[0]])
+               && UTF8_SIZE1 == utf8_FirstByte[static_cast<unsigned char>(str[0])])
             {
                 UTF8 ch = *str++;
                 *bp++ = ch;
@@ -1586,7 +1586,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             {
                 process_hook_args(executor, cmdp, buf1, nullptr, nullptr, 0, sw);
             }
-            (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
+            (*((reinterpret_cast<CMDENT_ONE_ARG *>(cmdp))->handler))(executor, caller,
                 enactor, eval, key, buf1, cargs, ncargs);
         }
 
@@ -1641,7 +1641,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             {
                 process_hook_args(executor, cmdp, buf1, nullptr, args, nargs, sw);
             }
-            (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, caller,
+            (*((reinterpret_cast<CMDENT_TWO_ARG_ARGV *>(cmdp))->handler))(executor, caller,
                 enactor, eval, key, buf1, args, nargs, cargs, ncargs);
 
             // Free the argument buffers.
@@ -1675,7 +1675,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             {
                 process_hook_args(executor, cmdp, nargs2>=1?buf1:nullptr, nargs2>=2?buf2:nullptr, nullptr, 0, sw);
             }
-            (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, caller,
+            (*((reinterpret_cast<CMDENT_TWO_ARG *>(cmdp))->handler))(executor, caller,
                 enactor, eval, key, nargs2, buf1, buf2, cargs, ncargs);
 
             // Free the buffer, if needed.
@@ -2043,7 +2043,7 @@ UTF8 *process_command
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
-            do_move(executor, caller, enactor, eval, 0, (UTF8 *)"home", nullptr, 0);
+            do_move(executor, caller, enactor, eval, 0, const_cast<UTF8 *>(T("home")), nullptr, 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -2188,7 +2188,7 @@ UTF8 *process_command
 
     // Strip off any command switches and save them.
     //
-    UTF8 *pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
+    UTF8 *pSlash = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(LowerCaseCommand), '/'));
     if (pSlash)
     {
         nLowerCaseCommand = pSlash - LowerCaseCommand;
@@ -2822,7 +2822,7 @@ NAMETAB access_nametab[] =
     {T("static"),                4, CA_GOD,    CA_STATIC},
     {T("uninspected"),           5, CA_WIZARD, CA_UNINS},
     {T("wizard"),                3, CA_WIZARD, CA_WIZARD},
-    {(UTF8 *)nullptr,            0, 0,         0}
+    {reinterpret_cast<UTF8 *>(nullptr),            0, 0,         0}
 };
 
 static void list_cmdaccess(dbref player)
@@ -3040,7 +3040,7 @@ CF_HAND(cf_access)
     {
         if (set_switch)
         {
-            return cf_ntab_access((int *)cmdp->switches, ap, pExtra, nExtra,
+            return cf_ntab_access(reinterpret_cast<int *>(cmdp->switches), ap, pExtra, nExtra,
                                   player, cmd);
         }
         else
@@ -3120,7 +3120,7 @@ CF_HAND(cf_attr_access)
         sp++;
     }
 
-    ap = atr_str((UTF8 *)str);
+    ap = atr_str(reinterpret_cast<UTF8 *>(str));
     if (ap)
     {
         // This is a straight-out built-in attribute, so we'll just modify directly.
@@ -3229,7 +3229,7 @@ CF_HAND(cf_cmd_alias)
 
         // Look up the switch
         //
-        nt = find_nametab_ent(player, (NAMETAB *) cmdp->switches, ap);
+        nt = find_nametab_ent(player, reinterpret_cast<NAMETAB *>(cmdp->switches), ap);
         if (!nt)
         {
             cf_log_notfound(player, cmd, T("Switch"), ap);
@@ -3702,7 +3702,7 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
 
 size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value)
 {
-    size_t n = strlen((char *)value);
+    size_t n = strlen(reinterpret_cast<const char *>(value));
     if (n > nWidth)
     {
         n = nWidth;
@@ -3875,7 +3875,7 @@ static void list_process(dbref player)
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
     raw_notify(player,
            tprintf(T("Max res mem: %10ld pages  %10ld bytes"),
-               usage.ru_maxrss, (usage.ru_maxrss * (long)psize)));
+               usage.ru_maxrss, (usage.ru_maxrss * static_cast<long>(psize))));
     raw_notify(player,
            tprintf(T("Page faults: %10ld hard   %10ld soft   %10ld swapouts"),
                usage.ru_majflt, usage.ru_minflt, usage.ru_nswap));

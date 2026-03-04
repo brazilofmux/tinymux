@@ -37,7 +37,7 @@ NAMETAB method_nametab[] =
     {T("md5"),             3,  CA_GOD,     CRYPT_MD5},
     {T("sha256"),          6,  CA_GOD,     CRYPT_SHA256},
     {T("sha512"),          6,  CA_GOD,     CRYPT_SHA512},
-    {(UTF8 *) nullptr,     0,       0,     0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,       0,     0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -313,7 +313,7 @@ static const UTF8 *GenerateSalt(int iType)
         UTF8 szSaltRaw[SHA1_SALT_LENGTH+1];
         for (int i = 0; i < SHA1_SALT_LENGTH; i++)
         {
-            szSaltRaw[i] = (UTF8)RandomINT32(0, 255);
+            szSaltRaw[i] = static_cast<UTF8>(RandomINT32(0, 255));
         }
         szSaltRaw[SHA1_SALT_LENGTH] = '\0';
 
@@ -415,7 +415,7 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
     SHA_CTX shac;
     UTF8 szHashRaw[SHA_DIGEST_LENGTH];
     SHA_Init(&shac);
-    SHA_Update(&shac, szPassword, strlen((const char *)szPassword));
+    SHA_Update(&shac, szPassword, strlen(reinterpret_cast<const char *>(szPassword)));
     SHA_Final(szHashRaw, &shac);
 
     //          1         2
@@ -426,15 +426,15 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
     mux_strncpy(buf, szP6HPrefix, P6H_PREFIX_LENGTH);
     buf[P6H_PREFIX_LENGTH] = '$';
 
-    unsigned int a = ((unsigned int)szHashRaw[0]) << 24
-                   | ((unsigned int)szHashRaw[1]) << 16
-                   | ((unsigned int)szHashRaw[2]) <<  8
-                   | ((unsigned int)szHashRaw[3]);
+    unsigned int a = (static_cast<unsigned int>(szHashRaw[0])) << 24
+                   | (static_cast<unsigned int>(szHashRaw[1])) << 16
+                   | (static_cast<unsigned int>(szHashRaw[2])) <<  8
+                   | (static_cast<unsigned int>(szHashRaw[3]));
 
-    unsigned int b = ((unsigned int)szHashRaw[4]) << 24
-                   | ((unsigned int)szHashRaw[5]) << 16
-                   | ((unsigned int)szHashRaw[6]) <<  8
-                   | ((unsigned int)szHashRaw[7]);
+    unsigned int b = (static_cast<unsigned int>(szHashRaw[4])) << 24
+                   | (static_cast<unsigned int>(szHashRaw[5])) << 16
+                   | (static_cast<unsigned int>(szHashRaw[6])) <<  8
+                   | (static_cast<unsigned int>(szHashRaw[7]));
 
     mux_sprintf(buf + P6H_PREFIX_LENGTH + 1, P6H_XX_HASH_LENGTH_MAX, T("XX%lu%lu"), a, b);
     return buf;
@@ -443,7 +443,7 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 
 const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
 {
-    size_t nSetting = strlen((char *)szSetting);
+    size_t nSetting = strlen(reinterpret_cast<const char *>(szSetting));
     if (  P6H_VAHT_1SHA1_PREFIX_LENGTH <= nSetting
        && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0)
     {
@@ -456,7 +456,7 @@ const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
 #endif
         unsigned int len = 0;
         const UTF8 *parts[] = { szPassword };
-        const size_t lens[] = { strlen((const char *)szPassword) };
+        const size_t lens[] = { strlen(reinterpret_cast<const char *>(szPassword)) };
         if (mux_digest_sha1(parts, lens, 1, md, &len))
         {
             //          1         2         3         4         5         6
@@ -491,7 +491,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     if (szSetting[0] == '$')
     {
-        const UTF8 *p = (UTF8 *)strchr((char *)szSetting+1, '$');
+        const UTF8 *p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(szSetting)+1, '$'));
         if (p)
         {
             p++;
@@ -502,14 +502,14 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
                 // SHA-1
                 //
                 pSaltField = p;
-                p = (UTF8 *)strchr((char *)pSaltField, '$');
+                p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(pSaltField), '$'));
                 if (p)
                 {
                     nSaltField = p - pSaltField;
                 }
                 else
                 {
-                    nSaltField = strlen((char *)pSaltField);
+                    nSaltField = strlen(reinterpret_cast<const char *>(pSaltField));
                 }
                 if (nSaltField <= SHA1_ENCODED_SALT_LENGTH)
                 {
@@ -567,7 +567,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
         // we assume a fixed salt of 'XX'.  If you have been using a different
         // salt, the following code won't work.
         //
-        size_t nSetting = strlen((char *)szSetting);
+        size_t nSetting = strlen(reinterpret_cast<const char *>(szSetting));
         if (  2 <= nSetting
            && memcmp(szSetting, "XX", 2) == 0)
         {
@@ -608,7 +608,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     case CRYPT_DES:
 #if defined(HAVE_CRYPT)
-        return (UTF8 *)crypt((char *)szPassword, (char *)szSetting);
+        return reinterpret_cast<UTF8 *>(crypt(reinterpret_cast<char *>(szPassword), reinterpret_cast<char *>(szSetting)));
 #else
         return szFail;
 #endif
@@ -623,7 +623,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 #endif
     unsigned int len = 0;
     const UTF8 *parts[] = { pSaltField, szPassword };
-    const size_t lens[] = { nSaltField, strlen((const char *)szPassword) };
+    const size_t lens[] = { nSaltField, strlen(reinterpret_cast<const char *>(szPassword)) };
     if (!mux_digest_sha1(parts, lens, 2, md, &len))
     {
         return szFail;
@@ -656,7 +656,7 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
     UTF8 *pTarget = atr_get("check_pass.466", player, A_PASS, &aowner, &aflags);
     if (*pTarget)
     {
-        if (strcmp((char *)mux_crypt(pPassword, pTarget, &iType), (char *)pTarget) == 0)
+        if (strcmp(reinterpret_cast<const char *>(mux_crypt(pPassword, pTarget, &iType)), reinterpret_cast<const char *>(pTarget)) == 0)
         {
             bValidPass = true;
             if (0 == (iType & mudconf.password_methods))
@@ -695,7 +695,7 @@ dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF
     int aflags;
     dbref aowner;
     UTF8 *player_last = atr_get("connect_player.516", player, A_LAST, &aowner, &aflags);
-    if (strncmp((char *)player_last, (char *)time_str, 10) != 0)
+    if (strncmp(reinterpret_cast<const char *>(player_last), reinterpret_cast<const char *>(time_str), 10) != 0)
     {
         UTF8 *allowance = atr_pget(player, A_ALLOWANCE, &aowner, &aflags);
         if (*allowance == '\0')
@@ -818,7 +818,7 @@ void do_password
     else if (ok_password(newpass, &pmsg))
     {
         ChangePassword(executor, newpass);
-        notify(executor,(UTF8 *) "Password changed.");
+        notify(executor,T("Password changed."));
     }
     else
     {

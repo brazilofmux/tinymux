@@ -33,28 +33,28 @@ void list_bufstats(dbref);
 void list_buftrace(dbref);
 void pool_reset(void);
 
-#define alloc_lbuf(s)    pool_alloc_lbuf((UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_lbuf(b)     pool_free_lbuf((UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_mbuf(s)    pool_alloc(POOL_MBUF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_mbuf(b)     pool_free(POOL_MBUF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_sbuf(s)    pool_alloc(POOL_SBUF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_sbuf(b)     pool_free(POOL_SBUF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_bool(s)    (struct boolexp *)pool_alloc(POOL_BOOL, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_bool(b)     pool_free(POOL_BOOL,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_qentry(s)  (BQUE *)pool_alloc(POOL_QENTRY, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_qentry(b)   pool_free(POOL_QENTRY,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_pcache(s)  (PCACHE *)pool_alloc(POOL_PCACHE, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_pcache(b)   pool_free(POOL_PCACHE,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_lbufref(s) (lbuf_ref *)pool_alloc(POOL_LBUFREF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_lbufref(b)  pool_free(POOL_LBUFREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
-#define free_regref(b)   pool_free(POOL_REGREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING, T(s), (UTF8 *)__FILE__, __LINE__)
-#define free_string(b)   pool_free(POOL_STRING,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_lbuf(s)    pool_alloc_lbuf(T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define free_lbuf(b)     pool_free_lbuf(reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_mbuf(s)    pool_alloc(POOL_MBUF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define free_mbuf(b)     pool_free(POOL_MBUF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_sbuf(s)    pool_alloc(POOL_SBUF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define free_sbuf(b)     pool_free(POOL_SBUF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_bool(s)    reinterpret_cast<struct boolexp *>(pool_alloc(POOL_BOOL, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_bool(b)     pool_free(POOL_BOOL, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_qentry(s)  reinterpret_cast<BQUE *>(pool_alloc(POOL_QENTRY, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_qentry(b)   pool_free(POOL_QENTRY, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_pcache(s)  reinterpret_cast<PCACHE *>(pool_alloc(POOL_PCACHE, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_pcache(b)   pool_free(POOL_PCACHE, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_lbufref(s) reinterpret_cast<lbuf_ref *>(pool_alloc(POOL_LBUFREF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_lbufref(b)  pool_free(POOL_LBUFREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_regref(s)  reinterpret_cast<reg_ref *>(pool_alloc(POOL_REGREF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_regref(b)   pool_free(POOL_REGREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define alloc_string(s)  reinterpret_cast<mux_string *>(pool_alloc(POOL_STRING, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
+#define free_string(b)   pool_free(POOL_STRING, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 #define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \
 { \
-    if ((size_t)(*bufp - buff) < nSizeOfBuffer) \
+    if (static_cast<size_t>(*bufp - buff) < nSizeOfBuffer) \
     { \
         **bufp = src; \
         (*bufp)++; \
@@ -66,7 +66,7 @@ void pool_reset(void);
 #define safe_sb_str(s,b,p)        safe_copy_str(s,b,p,(SBUF_SIZE-1))
 #define safe_mb_str(s,b,p)        safe_copy_str(s,b,p,(MBUF_SIZE-1))
 
-#define safe_chr_ascii(c,b,p)     safe_copy_chr_ascii((UTF8)(c),b,p,(LBUF_SIZE-1))
+#define safe_chr_ascii(c,b,p)     safe_copy_chr_ascii(static_cast<UTF8>(c),b,p,(LBUF_SIZE-1))
 #define safe_sb_chr_ascii(c,b,p)  safe_copy_chr_ascii(c,b,p,(SBUF_SIZE-1))
 #define safe_mb_chr_ascii(c,b,p)  safe_copy_chr_ascii(c,b,p,(MBUF_SIZE-1))
 

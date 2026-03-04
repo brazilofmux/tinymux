@@ -82,7 +82,7 @@ struct boolexp
   dbref thing;          /* thing refers to an object */
 };
 
-#define TRUE_BOOLEXP ((BOOLEXP *) 0)
+#define TRUE_BOOLEXP (reinterpret_cast<BOOLEXP *>(0))
 
 /* Database format information */
 

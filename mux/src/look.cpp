@@ -910,7 +910,7 @@ static void look_atrs1
             if (  AMATCH_CMD    == buf[0]
                || AMATCH_LISTEN == buf[0])
             {
-                UTF8 *s = (UTF8 *)strchr((char *)buf+1, ':');
+                UTF8 *s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buf)+1, ':'));
                 if (s)
                 {
                     if (AMATCH_CMD == buf[0])
@@ -1465,7 +1465,7 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                && (  mudconf.terse_contents
                   || !Terse(executor)))
             {
-                look_contents(executor, thing,(UTF8 *) "Carrying:", CONTENTS_NESTED);
+                look_contents(executor, thing,T("Carrying:"), CONTENTS_NESTED);
             }
             break;
 
@@ -2237,7 +2237,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = (UTF8 *)strchr((char *)buff+1, ':');
+                    s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buff)+1, ':'));
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])

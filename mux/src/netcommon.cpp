@@ -21,7 +21,7 @@ NAMETAB default_charset_nametab[] =
     {T("latin-2"),         7,       0,     CHARSET_LATIN2},
     {T("iso8859-1"),       9,       0,     CHARSET_LATIN1},
     {T("iso8859-2"),       9,       0,     CHARSET_LATIN2},
-    {(UTF8 *) nullptr,     0,       0,     0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,       0,     0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -387,7 +387,7 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
 
 void queue_write(DESC *d, const UTF8 *b)
 {
-    queue_write_LEN(d, b, strlen((const char *)b));
+    queue_write_LEN(d, b, strlen(reinterpret_cast<const char *>(b)));
 }
 
 static const UTF8 *encode_iac(const UTF8 *szString)
@@ -400,7 +400,7 @@ static const UTF8 *encode_iac(const UTF8 *szString)
     {
         while (*pString)
         {
-            const UTF8 *p = (const UTF8 *)strchr((char *)pString, NVT_IAC);
+            const UTF8 *p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(pString), NVT_IAC));
             if (!p)
             {
                 // NVT_IAC does not appear in the buffer. This is by far the most-common case.
@@ -413,7 +413,7 @@ static const UTF8 *encode_iac(const UTF8 *szString)
                 }
                 else
                 {
-                    mux_strncpy((UTF8 *)pBuffer, (UTF8 *)pString, sizeof(Buffer)-1);
+                    mux_strncpy(pBuffer, pString, sizeof(Buffer)-1);
                     return Buffer;
                 }
             }
@@ -642,7 +642,7 @@ static void set_userstring(UTF8 **userstring, const UTF8 *command)
 
 static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LBUF_SIZE], UTF8 pass[LBUF_SIZE])
 {
-    size_t nmsg = strlen((char *)msg);
+    size_t nmsg = strlen(reinterpret_cast<const char *>(msg));
     size_t i = 0;
     if (nmsg > MBUF_SIZE)
     {
@@ -1556,7 +1556,7 @@ static UTF8 *trimmed_site(UTF8 *szName)
 {
     static UTF8 buff[MBUF_SIZE];
 
-    size_t nLen = strlen((char *)szName);
+    size_t nLen = strlen(reinterpret_cast<char *>(szName));
     if (  mudconf.site_chars <= 0
        || nLen <= mudconf.site_chars)
     {
@@ -1843,7 +1843,7 @@ static const UTF8 *DumpInfoTable[] =
 #if defined(WOD_REALMS)
     T("WOD_REALMS"),
 #endif
-    (UTF8 *)nullptr
+    reinterpret_cast<UTF8 *>(nullptr)
 };
 
 static void dump_info(DESC *arg_desc)
@@ -1976,7 +1976,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
     // Make sure there can be no embedded newlines from %r
     //
-    static UTF8 *Empty = (UTF8 *)"";
+    static UTF8 Empty[] = {'\0'};
     UTF8 *szValidDoing = Empty;
     bool bValidDoing;
     size_t nValidDoing = 0;
@@ -2096,7 +2096,7 @@ void init_logout_cmdtab(void)
     //
     for (cp = logout_cmdtable; cp->flag; cp++)
     {
-        mudstate.logout_cmd_htab.emplace(std::vector<UTF8>(cp->name, cp->name + strlen((char *)cp->name)), cp);
+        mudstate.logout_cmd_htab.emplace(std::vector<UTF8>(cp->name, cp->name + strlen(reinterpret_cast<const char *>(cp->name))), cp);
     }
 }
 
@@ -2741,14 +2741,14 @@ void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(eval);
 
-    logged_out1(executor, caller, enactor, 0, key, (UTF8 *)"", nullptr, 0);
+    logged_out1(executor, caller, enactor, 0, key, const_cast<UTF8 *>(T("")), nullptr, 0);
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 {
     UNUSED_PARAMETER(arg_iInteger);
 
-    DESC *d = (DESC *)arg_voidptr;
+    DESC *d = static_cast<DESC *>(arg_voidptr);
     if (d)
     {
         if (!d->input_queue.empty())

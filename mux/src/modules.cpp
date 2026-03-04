@@ -621,11 +621,11 @@ MUX_RESULT CStubSlaveProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFile
         size_t nFileName;
     } CallFrame;
 
-    CallFrame.nModuleName = strlen((const char *)aModuleName)+1;
+    CallFrame.nModuleName = strlen(reinterpret_cast<const char *>(aModuleName))+1;
 #if defined(WINDOWS_FILES)
     CallFrame.nFileName   = (wcslen(aFileName)+1)*sizeof(UTF16);
 #elif defined(UNIX_FILES)
-    CallFrame.nFileName   = (strlen((const char *)aFileName)+1)*sizeof(UTF8);
+    CallFrame.nFileName   = (strlen(reinterpret_cast<const char *>(aFileName))+1)*sizeof(UTF8);
 #endif // UNIX_FILES
 
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
@@ -672,7 +672,7 @@ MUX_RESULT CStubSlaveProxy::RemoveModule(const UTF8 aModuleName[])
         size_t nModuleName;
     } CallFrame;
 
-    CallFrame.nModuleName = strlen((const char *)aModuleName)+1;
+    CallFrame.nModuleName = strlen(reinterpret_cast<const char *>(aModuleName))+1;
 
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
     Pipe_AppendBytes(&qiFrame, sizeof(CallFrame), &CallFrame);
@@ -1179,7 +1179,7 @@ MUX_RESULT CQueryClient::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *p
             if (nullptr != pChannel)
             {
                 pChannel->pInterface = pIQuerySink;
-                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), reinterpret_cast<UTF8 *>(&pChannel->nChannel));
                 mr =  MUX_S_OK;
             }
             else
@@ -1399,7 +1399,7 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
                             {
                                 size_t n;
                                 memcpy(&n, p, sizeof(size_t));
-                                p += sizeof(size_t) + n;
+                                p += sizeof static_cast<size_t>(+ n);
                             }
                         }
 
@@ -1463,7 +1463,7 @@ const UTF8 *CResultsSet::NextField(void)
 
         m_iCurrentField++;
         memcpy(&n, m_pCurrentField, sizeof(size_t));
-        m_pCurrentField += sizeof(size_t) + n;
+        m_pCurrentField += sizeof static_cast<size_t>(+ n);
         pField = m_pCurrentField;
     }
     return pField;

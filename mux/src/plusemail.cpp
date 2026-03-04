@@ -111,7 +111,7 @@ UTF8 *EncodeBody(UTF8 *pBody)
     for (;;)
     {
         UTF8 ch = *pBody++;
-        int iAction = BodyActions[iState][BodyClasses[(unsigned char)ch]];
+        int iAction = BodyActions[iState][BodyClasses[static_cast<unsigned char>(ch)]];
         switch (iAction)
         {
         case 0:
@@ -352,7 +352,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     safe_str(arg1, addy, &bp);
     *bp = '\0';
 
-    UTF8 *subject = (UTF8 *)strchr((char *)addy, '/');
+    UTF8 *subject = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(addy), '/'));
     if (subject)
     {
         *subject = '\0';

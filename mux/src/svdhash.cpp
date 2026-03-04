@@ -98,12 +98,12 @@ uint32_t CRC32_ProcessBuffer
     size_t         nBuffer
 )
 {
-    uint8_t *pBuffer = (uint8_t *)arg_pBuffer;
+    const uint8_t *pBuffer = reinterpret_cast<const uint8_t *>(arg_pBuffer);
 
     ulCrc = ~ulCrc;
     while (nBuffer--)
     {
-        ulCrc  = CRC32_Table[((uint8_t)*pBuffer++) ^ (uint8_t)ulCrc] ^ (ulCrc >> 8);
+        ulCrc  = CRC32_Table[(*pBuffer++) ^ static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
     }
     return ~ulCrc;
 }
@@ -112,10 +112,10 @@ uint32_t CRC32_ProcessInteger(uint32_t nInteger)
 {
     uint32_t ulCrc;
     ulCrc  = ~nInteger;
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
@@ -123,15 +123,15 @@ uint32_t CRC32_ProcessInteger2(uint32_t nInteger1, uint32_t nInteger2)
 {
     uint32_t ulCrc;
     ulCrc  = ~nInteger1;
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
     ulCrc ^= nInteger2;
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(uint8_t)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[static_cast<uint8_t>(ulCrc)] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
@@ -175,7 +175,7 @@ uint32_t HASH_ProcessBuffer
     size_t       nBuffer
 )
 {
-    uint8_t *pBuffer = (uint8_t *)arg_pBuffer;
+    const uint8_t *pBuffer = reinterpret_cast<const uint8_t *>(arg_pBuffer);
     ulHash = ~ulHash;
 
     if (nBuffer <= 16)
@@ -183,47 +183,47 @@ uint32_t HASH_ProcessBuffer
         pBuffer -= 16 - nBuffer;
         switch (nBuffer)
         {
-        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 8:  ulHash ^= *(uint32_t *)(pBuffer + 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash ^= *(uint32_t *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        case 8:  ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 12);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #endif
 
-        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 4:  ulHash ^= *(uint32_t *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        case 4:  ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 12);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #endif
 
-        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
-        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (uint8_t)ulHash] ^ (ulHash >> 8);
+        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
         case 0:  return ~ulHash;
         }
     }
@@ -245,15 +245,15 @@ uint32_t HASH_ProcessBuffer
             k--;
         }
         ulHash  = ~s1;
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
         ulHash ^= s2;
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
         ulHash = ~ulHash;
         s1 = ulHash & 0xFFFF;
         s2 = (ulHash >> 16) & 0xFFFF;
@@ -287,15 +287,15 @@ uint32_t HASH_ProcessBuffer
     }
 
     ulHash  = ~s1;
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
     ulHash ^= s2;
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(uint8_t)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
     return ~ulHash;
 }
 
@@ -304,7 +304,7 @@ uint32_t munge_hash(const UTF8 *pBuffer)
     uint32_t h = 0;
     while (*pBuffer)
     {
-        h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
+        h ^= (h << 5) + (h >> 2) + CRC32_Table[static_cast<unsigned char>(*pBuffer)++];
     }
     return h;
 }
@@ -385,7 +385,7 @@ static void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
     //
     for (iPrime = 0; iPrime < 16-1; iPrime++)
     {
-        int Pick = (int)RandomINT32(0, 15-iPrime);
+        int Pick = static_cast<int>(RandomINT32(0, 15-iPrime));
         HP_HEAPOFFSET Temp = HashPrimes[Pick];
         HashPrimes[Pick] = HashPrimes[15-iPrime];
         HashPrimes[15-iPrime] = Temp;
@@ -481,7 +481,7 @@ void CHashPage::GetStats
     if (  nExtra != 0
        || nCount != 0)
     {
-        size_t nSpaceTmp   = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
+        size_t nSpaceTmp   = (reinterpret_cast<unsigned char *>(m_pTrailer)) - (reinterpret_cast<unsigned char *>(m_pDirectory));
         mux_assert(nSpaceTmp <= UINT32_MAX);
         uint32_t nSpace      = static_cast<uint32_t>(nSpaceTmp);
         uint32_t nMinDirSize = nCount;
@@ -1142,14 +1142,14 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #ifdef HAVE_PWRITE
         int cc = pwrite(hFile, m_pPage, m_nPageSize, oWhere);
 #else
-        if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
+        if (mux_lseek(hFile, oWhere, SEEK_SET) == static_cast<off_t>(-1))
         {
             Log.tinyprintf(T("CHashPage::Write - lseek error %u." ENDLINE), errno);
             continue;
         }
         int cc = mux_write(hFile, m_pPage, m_nPageSize);
 #endif // HAVE_PWRITE
-        if ((int)m_nPageSize != cc)
+        if (static_cast<int>(m_nPageSize) != cc)
         {
             if (cc == -1)
             {
@@ -1182,14 +1182,14 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #ifdef HAVE_PREAD
         int cc = pread(hFile, m_pPage, m_nPageSize, oWhere);
 #else
-        if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
+        if (mux_lseek(hFile, oWhere, SEEK_SET) == static_cast<off_t>(-1))
         {
             Log.tinyprintf(T("CHashPage::Read - lseek error %u." ENDLINE), errno);
             continue;
         }
         int cc = mux_read(hFile, m_pPage, m_nPageSize);
 #endif // HAVE_PREAD
-        if ((int)m_nPageSize != cc)
+        if (static_cast<int>(m_nPageSize) != cc)
         {
             if (cc == -1)
             {
@@ -1274,8 +1274,8 @@ bool CHashPage::Defrag(HP_HEAPLENGTH nExtra)
 
 void CHashPage::SetVariablePointers(void)
 {
-    m_pHeapStart = (unsigned char *)(m_pDirectory + m_pHeader->m_nDirSize);
-    m_pHeapEnd = (unsigned char *)(m_pTrailer);
+    m_pHeapStart = reinterpret_cast<unsigned char *>(m_pDirectory + m_pHeader->m_nDirSize);
+    m_pHeapEnd = reinterpret_cast<unsigned char *>(m_pTrailer);
 
     // If less than 14.29% of the entries are empty, then do another Defrag.
     //

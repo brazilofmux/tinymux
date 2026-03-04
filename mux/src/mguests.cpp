@@ -93,7 +93,7 @@ void CGuests::SizeGuests(int nMin)
         return;
     }
 
-    dbref *newGuests = (dbref *)MEMALLOC(nMin * sizeof(dbref));
+    dbref *newGuests = static_cast<dbref *>(MEMALLOC(nMin * sizeof(dbref)));
     ISOUTOFMEMORY(newGuests);
     if (Guests)
     {
@@ -186,7 +186,7 @@ const UTF8 *CGuests::Create(DESC *d)
             // Wipe the attributes.
             //
             WipeAttrs(guest_player);
-            ChangePassword(guest_player, (UTF8 *)GUEST_PASSWORD);
+            ChangePassword(guest_player, reinterpret_cast<UTF8 *>(GUEST_PASSWORD));
 
             // Copy them back.
             //
@@ -303,7 +303,7 @@ dbref CGuests::MakeGuestChar(void)
     // Make the player.
     //
     const UTF8 *pmsg;
-    player = create_player(name, (UTF8 *)GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
+    player = create_player(name, reinterpret_cast<UTF8 *>(GUEST_PASSWORD), mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //
@@ -347,8 +347,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, player, player, 0, A_LOCK, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", nullptr, 0);
-    do_lock(player, player, player, 0, A_LENTER, 2, tprintf(T("#%d"), player), (UTF8 *)"=me", nullptr, 0);
+    do_lock(player, player, player, 0, A_LOCK, 2, tprintf(T("#%d"), player), const_cast<UTF8 *>(T("=me")), nullptr, 0);
+    do_lock(player, player, player, 0, A_LENTER, 2, tprintf(T("#%d"), player), const_cast<UTF8 *>(T("=me")), nullptr, 0);
 
     // return em!
     //

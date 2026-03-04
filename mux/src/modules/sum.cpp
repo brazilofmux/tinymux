@@ -266,7 +266,7 @@ MUX_RESULT CSum::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void *pv, marsh
             if (NULL != pChannel)
             {
                 pChannel->pInterface = pISum;
-                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), (UTF8*)(&pChannel->nChannel));
+                Pipe_AppendBytes(pqi, sizeof(pChannel->nChannel), reinterpret_cast<UTF8 *>(&pChannel->nChannel));
                 mr =  MUX_S_OK;
             }
             else

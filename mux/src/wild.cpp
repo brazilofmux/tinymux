@@ -484,11 +484,11 @@ bool wild_match(UTF8 *tstr, const UTF8 *dstr)
         }
         else if ('<' == ch)
         {
-            return (strcmp((char *)dstr, (char *)tstr) < 0);
+            return (strcmp(reinterpret_cast<const char *>(dstr), reinterpret_cast<const char *>(tstr)) < 0);
         }
         else // if ('>' == ch)
         {
-            return (strcmp((char *)dstr, (char *)tstr) > 0);
+            return (strcmp(reinterpret_cast<const char *>(dstr), reinterpret_cast<const char *>(tstr)) > 0);
         }
     }
     mudstate.wild_invk_ctr = 0;

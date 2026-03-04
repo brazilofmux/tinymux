@@ -75,7 +75,7 @@ static UTF8 *parse_to_cleanup( int eval, int first, UTF8 *cstr, UTF8 *rstr,
  * \param c        character being looked up.
  * \return         lvalue of table entry.
  */
-#define isSpecial(table, c) isSpecial_##table[(unsigned char)(c)]
+#define isSpecial(table, c) isSpecial_##table[static_cast<unsigned char>(c)]
 
 // During parsing, this table may be modified for a particular terminating delimeter.
 // The table is always restored it's original state.
@@ -887,10 +887,10 @@ static bool tcache_empty(void)
 
 static void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
 {
-    if (  strcmp((const char *)orig, (const char *)result)
+    if (  strcmp(reinterpret_cast<const char *>(orig), reinterpret_cast<const char *>(result))
        && (++tcache_count) <= mudconf.trace_limit)
     {
-        TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
+        TCENT *xp = reinterpret_cast<TCENT *>(alloc_sbuf("tcache_add.sbuf"));
         UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
         TruncateToBuffer(result, tp, LBUF_SIZE-1);
@@ -1080,7 +1080,7 @@ UTF8 **PushPointers(int nNeeded)
     if (  !pPtrsFrame
        || pPtrsFrame->nptrs < nNeeded)
     {
-        PtrsFrame *p = (PtrsFrame *)alloc_lbuf("PushPointers");
+        PtrsFrame *p = reinterpret_cast<PtrsFrame *>(alloc_lbuf("PushPointers"));
         p->next = pPtrsFrame;
         p->nptrs = PTRS_PER_FRAME;
         pPtrsFrame = p;
@@ -1096,7 +1096,7 @@ void PopPointers(UTF8 **p, int nNeeded)
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
         PtrsFrame *q = pPtrsFrame->next;
-        free_lbuf((UTF8 *)pPtrsFrame);
+        free_lbuf(reinterpret_cast<UTF8 *>(pPtrsFrame));
         pPtrsFrame = q;
     }
     //mux_assert(p == pPtrsFrame->ptrs + pPtrsFrame->nptrs);
@@ -1118,7 +1118,7 @@ reg_ref **PushRegisters(int nNeeded)
     if (  !pRefsFrame
        || pRefsFrame->nrefs < nNeeded)
     {
-        RefsFrame *p = (RefsFrame *)alloc_lbuf("PushRegisters");
+        RefsFrame *p = reinterpret_cast<RefsFrame *>(alloc_lbuf("PushRegisters"));
         p->next = pRefsFrame;
         p->nrefs = REFS_PER_FRAME;
         pRefsFrame = p;
@@ -1134,7 +1134,7 @@ void PopRegisters(reg_ref **p, int nNeeded)
     if (pRefsFrame->nrefs == REFS_PER_FRAME)
     {
         RefsFrame *q = pRefsFrame->next;
-        free_lbuf((UTF8 *)pRefsFrame);
+        free_lbuf(reinterpret_cast<UTF8 *>(pRefsFrame));
         pRefsFrame = q;
     }
     //mux_assert(p == pRefsFrame->refs + pRefsFrame->nrefs);
@@ -1303,7 +1303,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     {
         realbuff = buff;
         realbp = *bufc;
-        buff = (UTF8 *)MEMALLOC(LBUF_SIZE);
+        buff = reinterpret_cast<UTF8 *>(MEMALLOC(LBUF_SIZE));
         ISOUTOFMEMORY(buff);
         *bufc = buff;
     }

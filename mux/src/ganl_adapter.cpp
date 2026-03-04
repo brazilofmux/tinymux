@@ -1271,9 +1271,9 @@ bool GanlAdapter::initialize() {
     secureTransport_ = ganl::SecureTransportFactory::createTransport();
     if (secureTransport_) {
         ganl::TlsConfig tlsConfig;
-        tlsConfig.certificateFile = (const char*)mudconf.ssl_certificate_file; // Assuming UTF8 is compatible
-        tlsConfig.keyFile = (const char*)mudconf.ssl_certificate_key;
-        tlsConfig.password = (const char*)mudconf.ssl_certificate_password;
+        tlsConfig.certificateFile = reinterpret_cast<const char *>(mudconf.ssl_certificate_file); // Assuming UTF8 is compatible
+        tlsConfig.keyFile = reinterpret_cast<const char *>(mudconf.ssl_certificate_key);
+        tlsConfig.password = reinterpret_cast<const char *>(mudconf.ssl_certificate_password);
         // tlsConfig.verifyPeer = false; // Default
 
         if (!secureTransport_->initialize(tlsConfig)) {
@@ -1404,7 +1404,7 @@ bool GanlAdapter::initialize() {
         // --- Normal (fresh) start path ---
         for (int i = 0; i < mudconf.ports.n; ++i) {
             int port = mudconf.ports.pi[i];
-            std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : "";
+            std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
 
             ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
             if (handle != ganl::InvalidListenerHandle) {
@@ -1430,7 +1430,7 @@ bool GanlAdapter::initialize() {
         if (secureTransport_) {
             for (int i = 0; i < mudconf.sslPorts.n; ++i) {
                 int port = mudconf.sslPorts.pi[i];
-                std::string host = mudconf.ip_address ? (const char*)mudconf.ip_address : "";
+                std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
 
                 ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
                 if (handle != ganl::InvalidListenerHandle) {
@@ -3092,7 +3092,7 @@ void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
 std::string GanlAdapter::get_remote_address(DESC* d) {
     if (!d) return "";
     // Use the stored address in DESC for now
-    return (const char*)d->addr;
+    return reinterpret_cast<const char *>(d->addr);
     // Future:
     // ganl::ConnectionHandle handle = get_handle(d);
     // if (handle != ganl::InvalidConnectionHandle) {
@@ -3198,7 +3198,7 @@ void ganl_main_loop() {
 
 void ganl_send_data_str(DESC* d, const UTF8* data) {
     if (data) {
-        g_GanlAdapter.send_data(d, (const char*)data, strlen((const char*)data));
+        g_GanlAdapter.send_data(d, reinterpret_cast<const char *>(data), strlen(reinterpret_cast<const char *>(data)));
     }
 }
 

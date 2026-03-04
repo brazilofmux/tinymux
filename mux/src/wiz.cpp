@@ -801,7 +801,7 @@ NAMETAB enable_names[] =
     {T("logins"),          3,  CA_PUBLIC,  CF_LOGIN},
     {T("guests"),          2,  CA_PUBLIC,  CF_GUEST},
     {T("eventchecking"),   2,  CA_PUBLIC,  CF_EVENTCHECK},
-    {(UTF8 *) nullptr,     0,  0,          0}
+    { reinterpret_cast<UTF8 *>(nullptr),     0,  0,          0}
 };
 
 void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *flag, const UTF8 *cargs[], int ncargs)

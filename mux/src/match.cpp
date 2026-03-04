@@ -655,7 +655,7 @@ void init_match(dbref player, const UTF8 *name, int type)
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
-    md.string = munge_space_for_match(name, strlen((const char *)name));
+    md.string = munge_space_for_match(name, strlen(reinterpret_cast<const char *>(name)));
     md.absolute_form = absolute_name(true);
 }
 

@@ -66,7 +66,7 @@ constexpr unsigned int HAS_FWDLIST  = 0x00000080;  /* Internal: FORWARDLIST attr
 constexpr unsigned int AUDITORIUM   = 0x00000100;  /* Should we check the SpeechLock? */
 constexpr unsigned int ANSI         = 0x00000200;
 constexpr unsigned int HEAD_FLAG    = 0x00000400;
-constexpr unsigned int FIXED        = 0x00000800;
+constexpr unsigned int FIXED_FLAG    = 0x00000800;  // Named FIXED_FLAG to avoid conflict with wingdi.h FIXED typedef on Windows
 constexpr unsigned int UNINSPECTED  = 0x00001000;
 constexpr unsigned int NO_COMMAND   = 0x00002000;
 constexpr unsigned int CKEEPALIVE   = 0x00004000;  /* User receives keepalives from the MUX */
@@ -181,7 +181,7 @@ UTF8 *MakeCanonicalFlagName
     bool *pbValid
 );
 
-#define GOD ((dbref) 1)
+#define GOD ( static_cast<dbref>(1))
 
 /* ---------------------- Object Permission/Attribute Macros */
 /* Typeof(X)            - What object type is X */
@@ -260,7 +260,7 @@ UTF8 *MakeCanonicalFlagName
 #define WizRoy(x)           (Royalty(x) || Wizard(x))
 #define RealWizRoy(x)       (RealRoyalty(x) || RealWizard(x))
 #define Head(x)             ((Flags2(x) & HEAD_FLAG) != 0)
-#define Fixed(x)            ((Flags2(x) & FIXED) != 0)
+#define Fixed(x)            ((Flags2(x) & FIXED_FLAG) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
 #define Color256(x)         ((Flags2(x) & COLOR256) != 0)

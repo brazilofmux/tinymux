@@ -153,7 +153,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (mux_AttrNameInitialSet_latin1[(unsigned char)c])
+        else if (mux_AttrNameInitialSet_latin1[static_cast<unsigned char>(c)])
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 
@@ -164,7 +164,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                   && '/'  != c
                   && s < buff + LBUF_SIZE - 1)
             {
-                *s++ = (UTF8)c;
+                *s++ = static_cast<UTF8>(c);
             }
 
             if (EOF == c)
@@ -218,7 +218,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                   && AND_TOKEN != c
                   && s < buff + LBUF_SIZE - 1)
             {
-                *s++ = (UTF8)c;
+                *s++ = static_cast<UTF8>(c);
             }
 
             if (EOF == c)
@@ -227,7 +227,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             }
             *s = '\0';
 
-            b->sub1 = (BOOLEXP *)StringClone(buff);
+            b->sub1 = reinterpret_cast<BOOLEXP *>(StringClone(buff));
             free_lbuf(buff);
         }
         ungetc(c, f);
@@ -294,12 +294,12 @@ static bool get_list(FILE *f, dbref i)
                 UTF8 *pBufferUnicode;
                 if (3 <= g_version)
                 {
-                    pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+                    pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
                 }
                 else
                 {
                     size_t nBufferLatin1;
-                    char *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+                    char *pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
                     pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
                 }
                 atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
@@ -421,7 +421,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
+                tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
                 if (mux_isdigit(*tstr))
                 {
                     aflags = 0;
@@ -441,7 +441,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (g_version <= 2)
                 {
                     size_t nUnused;
-                    tstr = ConvertToUTF8((char *)tstr, &nUnused);
+                    tstr = ConvertToUTF8(reinterpret_cast<const char *>(tstr), &nUnused);
                 }
 
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
@@ -464,7 +464,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (header_gotten)
                 {
                     Log.tinyprintf(T(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE), i);
-                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
+                    tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, false, &nBuffer));
                 }
                 else
                 {
@@ -520,7 +520,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (size_gotten)
                 {
                     Log.tinyprintf(T(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE), i);
-                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
+                    tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, false, &nBuffer));
                 }
                 else
                 {
@@ -535,7 +535,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (nextattr_gotten)
                 {
                     Log.tinyprintf(T(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE), i);
-                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
+                    tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, false, &nBuffer));
                 }
                 else
                 {
@@ -546,7 +546,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             else
             {
                 Log.tinyprintf(T(ENDLINE "Unexpected character \xE2\x80\x98%c\xE2\x80\x99 in MUX header near object #%d, ignored." ENDLINE), ch, i);
-                tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
+                tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, false, &nBuffer));
             }
             break;
 
@@ -556,11 +556,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             if (read_name)
             {
-                tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
+                tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
                 if (g_version <= 2)
                 {
                     size_t nUsed;
-                    tstr = ConvertToUTF8((char *)tstr, &nUsed);
+                    tstr = ConvertToUTF8(reinterpret_cast<const char *>(tstr), &nUsed);
                 }
                 buff = alloc_mbuf("dbread.s_Name");
                 StripTabsAndTruncate(tstr, buff, MBUF_SIZE-1, MBUF_SIZE-1);
@@ -655,8 +655,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
         case '*':   // EOF marker
-            tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
-            if (strncmp((char *)tstr, "**END OF DUMP***", 16))
+            tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, false, &nBuffer));
+            if (strncmp(reinterpret_cast<const char *>(tstr), "**END OF DUMP***", 16))
             {
                 Log.tinyprintf(T(ENDLINE "Bad EOF marker at object #%d" ENDLINE), i);
                 return -1;
@@ -730,7 +730,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                             if (  0 < iAttr
                                && iAttr <= anum_alc_top)
                             {
-                                const char *pLatin1 = (char *)atr_get_raw(iObject, iAttr);
+                                const char *pLatin1 = reinterpret_cast<const char *>(atr_get_raw(iObject, iAttr));
                                 if (nullptr != pLatin1)
                                 {
                                     size_t nUnicode;
@@ -891,7 +891,7 @@ dbref db_write(FILE *f, int format, int version)
     int iAttr;
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
-        vp = (ATTR *) anum_get(iAttr);
+        vp = static_cast<ATTR *>(anum_get(iAttr));
         if (  vp != nullptr
            && !(vp->flags & AF_DELETED))
         {
@@ -903,7 +903,7 @@ dbref db_write(FILE *f, int format, int version)
             *pBuffer++ = '"';
             pBuffer += mux_ltoa(vp->flags, pBuffer);
             *pBuffer++ = ':';
-            size_t nNameLength = strlen((char *)vp->name);
+            size_t nNameLength = strlen(reinterpret_cast<const char *>(vp->name));
             memcpy(pBuffer, vp->name, nNameLength);
             pBuffer += nNameLength;
             *pBuffer++ = '"';

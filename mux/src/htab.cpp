@@ -184,7 +184,7 @@ CF_HAND(cf_ntab_access)
         ap++;
     }
 
-    for (np = (NAMETAB *) vp; np->name; np++)
+    for (np = reinterpret_cast<NAMETAB *>(vp); np->name; np++)
     {
         if (minmatch(str, np->name, np->minlen))
         {

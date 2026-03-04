@@ -155,10 +155,10 @@ void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
     for (int i = 0, j = 0; i <= 4; i++, j += sizeof(uint32_t))
     {
         uint32_t h = p->H[i];
-        md[j + 0] = (uint8_t)(h >> 24);
-        md[j + 1] = (uint8_t)(h >> 16);
-        md[j + 2] = (uint8_t)(h >>  8);
-        md[j + 3] = (uint8_t)(h      );
+        md[j + 0] = static_cast<uint8_t>(h >> 24);
+        md[j + 1] = static_cast<uint8_t>(h >> 16);
+        md[j + 2] = static_cast<uint8_t>(h >>  8);
+        md[j + 3] = static_cast<uint8_t>(h      );
     }
 }
 

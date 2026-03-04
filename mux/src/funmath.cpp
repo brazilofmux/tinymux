@@ -348,7 +348,7 @@ FUNCTION(fun_eq)
     }
     else
     {
-        if (strcmp((char *)fargs[0], (char *)fargs[1]) != 0)
+        if (strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1])) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -381,7 +381,7 @@ FUNCTION(fun_neq)
     }
     else
     {
-        if (strcmp((char *)fargs[0], (char *)fargs[1]) != 0)
+        if (strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1])) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -2802,7 +2802,7 @@ FUNCTION(fun_crc32)
     uint32_t ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        size_t n = strlen((char *)fargs[i]);
+        size_t n = strlen(reinterpret_cast<char *>(fargs[i]));
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
     safe_i64toa(ulCRC32, buff, bufc);
@@ -2884,7 +2884,7 @@ void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
     std::vector<size_t> lens(nfargs);
     for (int i = 0; i < nfargs; i++)
     {
-        lens[i] = strlen((const char *)fargs[i]);
+        lens[i] = strlen(reinterpret_cast<const char *>(fargs[i]));
     }
     if (!mux_digest_sha1(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
     {
@@ -2925,7 +2925,7 @@ FUNCTION(fun_digest)
 #error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
 #endif
 
-    const EVP_MD *mp = EVP_get_digestbyname((const char *)fargs[0]);
+    const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(fargs[0]));
     if (nullptr == mp)
     {
         safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
@@ -2937,7 +2937,7 @@ FUNCTION(fun_digest)
     int i;
     for (i = 1; i < nfargs; i++)
     {
-        EVP_DigestUpdate(ctx, fargs[i], strlen((const char *)fargs[i]));
+        EVP_DigestUpdate(ctx, fargs[i], strlen(reinterpret_cast<const char *>(fargs[i])));
     }
 
     unsigned int len = 0;

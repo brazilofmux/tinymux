@@ -863,7 +863,7 @@ static int gai_lookup(const UTF8 *nodename, const int flags, const int socktype,
 int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res)
 {
 #if defined(HAVE_GETADDRINFO)
-    return getaddrinfo((const char *)node, (const char *)service, hints, res);
+    return getaddrinfo(reinterpret_cast<const char *>(node), reinterpret_cast<const char *>(service), hints, res);
 #elif !defined(HAVE_GETADDRINFO) && defined(HAVE_IN_ADDR)
     unsigned short port;
 
