@@ -207,7 +207,7 @@ void AutoDetect::ExamineList(int nitems, UTF8 *ptrs[])
 {
     for (int i = 0; i < nitems && ASCII_LIST != m_CouldBe; i++)
     {
-        UTF8 *p = ptrs[i];
+        UTF8 *p = strip_color(ptrs[i]);
         if (p[0] != NUMBER_TOKEN)
         {
             m_CouldBe &= ~DBREF_LIST;
@@ -8009,12 +8009,18 @@ typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
-    return strcmp(reinterpret_cast<const char *>((reinterpret_cast<const q_rec *>(s1))->str), reinterpret_cast<const char *>((reinterpret_cast<const q_rec *>(s2))->str));
+    UTF8 buf1[LBUF_SIZE];
+    mux_strncpy(buf1, strip_color((reinterpret_cast<const q_rec *>(s1))->str), LBUF_SIZE-1);
+    return strcmp(
+        reinterpret_cast<const char *>(buf1),
+        reinterpret_cast<const char *>(strip_color((reinterpret_cast<const q_rec *>(s2))->str)));
 }
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
 {
-    return mux_stricmp((reinterpret_cast<const q_rec *>(s1))->str, (reinterpret_cast<const q_rec *>(s2))->str);
+    UTF8 buf1[LBUF_SIZE];
+    mux_strncpy(buf1, strip_color((reinterpret_cast<const q_rec *>(s1))->str), LBUF_SIZE-1);
+    return mux_stricmp(buf1, strip_color((reinterpret_cast<const q_rec *>(s2))->str));
 }
 
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
@@ -8102,7 +8108,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             for (i = 0; i < n; i++)
             {
                 psc->m_ptrs[i].str = s[i];
-                psc->m_ptrs[i].u.i64 = mux_atoi64(s[i]);
+                psc->m_ptrs[i].u.i64 = mux_atoi64(strip_color(s[i]));
             }
             qsort(psc->m_ptrs, n, sizeof(q_rec), i64_comp);
             break;
@@ -8111,7 +8117,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             for (i = 0; i < n; i++)
             {
                 psc->m_ptrs[i].str = s[i];
-                psc->m_ptrs[i].u.l = dbnum(s[i]);
+                psc->m_ptrs[i].u.l = dbnum(strip_color(s[i]));
             }
             qsort(psc->m_ptrs, n, sizeof(q_rec), l_comp);
             break;
@@ -8120,7 +8126,7 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             for (i = 0; i < n; i++)
             {
                 psc->m_ptrs[i].str = s[i];
-                psc->m_ptrs[i].u.d = mux_atof(s[i], false);
+                psc->m_ptrs[i].u.d = mux_atof(strip_color(s[i]), false);
             }
             qsort(psc->m_ptrs, n, sizeof(q_rec), f_comp);
             break;

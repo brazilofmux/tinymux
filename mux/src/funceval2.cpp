@@ -1703,11 +1703,14 @@ FUNCTION(fun_alphamax)
     UNUSED_PARAMETER(ncargs);
 
     UTF8 *amax = fargs[0];
+    UTF8 buf_max[LBUF_SIZE];
+    mux_strncpy(buf_max, strip_color(amax), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp(reinterpret_cast<char *>(amax), reinterpret_cast<char *>(fargs[i])) < 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_max), reinterpret_cast<char *>(strip_color(fargs[i]))) < 0)
         {
             amax = fargs[i];
+            mux_strncpy(buf_max, strip_color(amax), LBUF_SIZE-1);
         }
     }
     safe_str(amax, buff, bufc);
@@ -1725,11 +1728,14 @@ FUNCTION(fun_alphamin)
     UNUSED_PARAMETER(ncargs);
 
     UTF8 *amin = fargs[0];
+    UTF8 buf_min[LBUF_SIZE];
+    mux_strncpy(buf_min, strip_color(amin), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp(reinterpret_cast<char *>(amin), reinterpret_cast<char *>(fargs[i])) > 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_min), reinterpret_cast<char *>(strip_color(fargs[i]))) > 0)
         {
             amin = fargs[i];
+            mux_strncpy(buf_min, strip_color(amin), LBUF_SIZE-1);
         }
     }
     safe_str(amin, buff, bufc);
