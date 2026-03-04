@@ -9483,6 +9483,25 @@ LRAND()
 
   Related Topics: die(), lnum(), pickrand(), rand(), shuffle()
 
+& LREST()
+LREST()
+
+  FUNCTION: lrest(<string>[, <delim>])
+
+  Returns all but the last word of <string>, using <delim> as the word
+  separator.  This is the counterpart to rest(), which returns all but
+  the first word.
+
+  Examples:
+    > say lrest(This is a test)
+    You say "This is a"
+    > say lrest(alpha|beta|gamma, |)
+    You say "alpha|beta"
+    > say lrest(only)
+    You say ""
+
+  Related Topics: first(), last(), rest()
+
 & LROOMS()
 LROOMS()
 

@@ -149,6 +149,7 @@ XFUNCTION(fun_inzone);
 XFUNCTION(fun_isword);
 XFUNCTION(fun_last);
 XFUNCTION(fun_lastcreate);
+XFUNCTION(fun_lrest);
 XFUNCTION(fun_lit);
 XFUNCTION(fun_localize);
 XFUNCTION(fun_lparent);

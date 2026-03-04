@@ -10914,6 +10914,7 @@ static FUN builtin_function_list[] =
     {T("LPORTS"),      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},
     {T("LPOS"),        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("LRAND"),       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {T("LREST"),       fun_lrest,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LROOMS"),      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
 #ifdef DEPRECATED
     {T("LSTACK"),      fun_lstack,     MAX_ARG, 0,       1,         0, CA_PUBLIC},

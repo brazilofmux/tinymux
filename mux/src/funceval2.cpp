@@ -458,6 +458,55 @@ FUNCTION(fun_last)
     delete words;
 }
 
+/*
+ * ---------------------------------------------------------------------------
+ * fun_lrest: Returns all but the last word in a string.
+ */
+
+FUNCTION(fun_lrest)
+{
+    // If we are passed an empty arglist return a null string.
+    //
+    if (nfargs == 0)
+    {
+        return;
+    }
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    mux_string *sStr = nullptr;
+    mux_words *words = nullptr;
+    try
+    {
+        sStr = new mux_string(fargs[0]);
+        words = new mux_words(*sStr);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (  nullptr != sStr
+       && nullptr != words)
+    {
+        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        if (nWords > 1)
+        {
+            words->export_WordColor(0, buff, bufc);
+            for (LBUF_OFFSET i = 1; i < nWords - 1; i++)
+            {
+                print_sep(sep, buff, bufc);
+                words->export_WordColor(i, buff, bufc);
+            }
+        }
+    }
+    delete sStr;
+    delete words;
+}
 
 // For an named object, or the executor, find the last created object
 // (optionally qualified by type).
