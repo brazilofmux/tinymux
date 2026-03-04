@@ -7217,6 +7217,74 @@ static FUNCTION(fun_map)
 
 /*
  * ---------------------------------------------------------------------------
+ * * fun_ledit: Mass find-and-replace on a list.
+ */
+
+static FUNCTION(fun_ledit)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    // Split find and replace lists into arrays.
+    //
+    std::vector<UTF8*> findArr(LBUF_SIZE/2);
+    std::vector<UTF8*> replArr(LBUF_SIZE/2);
+    int nFind = list2arr(findArr.data(), LBUF_SIZE/2, fargs[1], sep);
+    int nRepl = list2arr(replArr.data(), LBUF_SIZE/2, fargs[2], sep);
+
+    // Iterate the original list.
+    //
+    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    bool first = true;
+    while (cp)
+    {
+        UTF8 *word = split_token(&cp, sep);
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+
+        // Search for exact match in find array.
+        //
+        bool matched = false;
+        for (int i = 0; i < nFind; i++)
+        {
+            if (strcmp((const char *)word, (const char *)findArr[i]) == 0)
+            {
+                if (i < nRepl)
+                {
+                    safe_str(replArr[i], buff, bufc);
+                }
+                matched = true;
+                break;
+            }
+        }
+        if (!matched)
+        {
+            safe_str(word, buff, bufc);
+        }
+    }
+}
+
+/*
+ * ---------------------------------------------------------------------------
  * * fun_edit: Edit text.
  */
 
@@ -11078,6 +11146,7 @@ static FUN builtin_function_list[] =
     {T("LCON"),        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LCSTR"),       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
     {T("LDELETE"),     fun_ldelete,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {T("LEDIT"),       fun_ledit,      MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {T("LEXITS"),      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LFLAGS"),      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LINK"),        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},

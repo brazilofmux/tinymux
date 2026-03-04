@@ -8940,6 +8940,33 @@ LEAVE
   Related Topics: enter, @lock, ENTER_OK, @aleave, @alfail, @leave, @lfail,
       @oleave, @olfail, @oxenter.
 
+& LEDIT()
+LEDIT()
+
+  FUNCTION: ledit(<original>, <find>, <replace>[, <delim>[, <output delim>]])
+
+  This function performs a mass find-and-replace on a list.  Each element
+  of <original> is compared to <find>; if an exact (case-sensitive) match
+  is found, it is replaced by the corresponding element from <replace>.
+  Elements that do not match any word in <find> are passed through
+  unchanged.  If <replace> is shorter than <find>, matched elements
+  beyond the end of <replace> are replaced with nothing.
+
+  <delim> is used to separate elements of all three lists and defaults to
+  a space.  <output delim> defaults to <delim>.
+
+  Examples:
+    > say ledit(apple banana lime plum, banana plum, yellow purple)
+    You say, "apple yellow lime purple"
+    > say ledit(apple|banana|lime|plum, banana|lime, yellow, |, +)
+    You say, "apple+yellow++plum"
+    > say ledit(a b c, b, x)
+    You say, "a x c"
+    > say ledit(a b c, d, x)
+    You say, "a b c"
+
+  Related Topics: edit(), iter(), ldelete(), replace().
+
 & LEXITS()
 LEXITS()
 
