@@ -124,6 +124,7 @@ void cf_init(void)
     mudconf.art_rules = nullptr;
     mudconf.indent_desc = false;
     mudconf.no_flash = false;
+    mudconf.terse_nospoof = false;
     mudconf.name_spaces = true;
 #if defined(HAVE_WORKING_FORK)
     mudconf.fork_dump = true;
@@ -1962,6 +1963,7 @@ static CONFPARM conftable[] =
     {T("sweep_dark"),                cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.sweep_dark),      nullptr,            0},
     {T("switch_default_all"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.switch_df_all),   nullptr,            0},
     {T("talk_mode_default"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.talk_mode_default), nullptr,          0},
+    {T("terse_nospoof"),             cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_nospoof),   nullptr,            0},
     {T("terse_shows_contents"),      cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_contents),  nullptr,            0},
     {T("terse_shows_exits"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_exits),     nullptr,            0},
     {T("terse_shows_move_messages"), cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_movemsg),   nullptr,            0},

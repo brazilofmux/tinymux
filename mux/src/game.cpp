@@ -693,53 +693,65 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             // caller may have.  notify(target, tprintf(...)) is quite common
             // in the code.
             //
-            msg_ns->import(T("["), 1);
-            msg_ns->append(Moniker(sender));
-            msg_ns->append_TextPlain(T("("), 1);
-            msg_ns->append(sender);
-            msg_ns->append_TextPlain(T(")"), 1);
-
-            if (sender != Owner(sender))
+            if (  mudconf.terse_nospoof
+               && (key & MSG_SAYPOSE))
             {
-                msg_ns->append_TextPlain(T("{"), 1);
-                msg_ns->append(Moniker(Owner(sender)));
-                msg_ns->append_TextPlain(T("}"), 1);
+                // Terse: just the dbref for say/pose.
+                //
+                msg_ns->import(T("["), 1);
+                msg_ns->append(sender);
+                msg_ns->append_TextPlain(T("] "), 2);
             }
-
-            if (sender != mudstate.curr_enactor)
+            else
             {
-                msg_ns->append_TextPlain(T("<-("), 3);
-                msg_ns->append(mudstate.curr_enactor);
+                msg_ns->import(T("["), 1);
+                msg_ns->append(Moniker(sender));
+                msg_ns->append_TextPlain(T("("), 1);
+                msg_ns->append(sender);
                 msg_ns->append_TextPlain(T(")"), 1);
-            }
 
-            switch (DecodeMsgSource(key))
-            {
-            case MSG_SRC_COMSYS:
-                msg_ns->append_TextPlain(T(",comsys"));
-                break;
-
-            case MSG_SRC_KILL:
-                msg_ns->append_TextPlain(T(",kill"));
-                break;
-
-            case MSG_SRC_GIVE:
-                msg_ns->append_TextPlain(T(",give"));
-                break;
-
-            case MSG_SRC_PAGE:
-                msg_ns->append_TextPlain(T(",page"));
-                break;
-
-            default:
-                if (key & MSG_SAYPOSE)
+                if (sender != Owner(sender))
                 {
-                    msg_ns->append_TextPlain(T(",saypose"));
+                    msg_ns->append_TextPlain(T("{"), 1);
+                    msg_ns->append(Moniker(Owner(sender)));
+                    msg_ns->append_TextPlain(T("}"), 1);
                 }
-                break;
-            }
 
-            msg_ns->append_TextPlain(T("] "), 2);
+                if (sender != mudstate.curr_enactor)
+                {
+                    msg_ns->append_TextPlain(T("<-("), 3);
+                    msg_ns->append(mudstate.curr_enactor);
+                    msg_ns->append_TextPlain(T(")"), 1);
+                }
+
+                switch (DecodeMsgSource(key))
+                {
+                case MSG_SRC_COMSYS:
+                    msg_ns->append_TextPlain(T(",comsys"));
+                    break;
+
+                case MSG_SRC_KILL:
+                    msg_ns->append_TextPlain(T(",kill"));
+                    break;
+
+                case MSG_SRC_GIVE:
+                    msg_ns->append_TextPlain(T(",give"));
+                    break;
+
+                case MSG_SRC_PAGE:
+                    msg_ns->append_TextPlain(T(",page"));
+                    break;
+
+                default:
+                    if (key & MSG_SAYPOSE)
+                    {
+                        msg_ns->append_TextPlain(T(",saypose"));
+                    }
+                    break;
+                }
+
+                msg_ns->append_TextPlain(T("] "), 2);
+            }
         }
     }
     msg_ns->append(msg);

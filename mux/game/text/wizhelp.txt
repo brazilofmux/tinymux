@@ -3836,6 +3836,27 @@ NO_FLASH
 
   Related Topics: ANSI, ansi(), COLOR256, NOBLEED.
 
+& TERSE_NOSPOOF
+TERSE_NOSPOOF
+
+  CONFIG PARAMETER: terse_nospoof <yes/no>
+  DEFAULT: no
+
+  When enabled, messages tagged as say or pose (which already include
+  the speaker's name in the text) use a shorter NOSPOOF prefix showing
+  only the sender's dbref:
+
+    [#123] Player says, \xe2\x80\x9chello\xe2\x80\x9d
+
+  instead of the full verbose prefix:
+
+    [Player(#123),saypose] Player says, \xe2\x80\x9chello\xe2\x80\x9d
+
+  All other message types (@emit, page, comsys, kill, give) continue
+  to show the full NOSPOOF prefix.
+
+  Related Topics: NOSPOOF.
+
 & NOGUEST_SITE
 NOGUEST_SITE
 

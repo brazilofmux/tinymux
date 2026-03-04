@@ -10581,6 +10581,11 @@ NOSPOOF
   This flag gives you mucho output when people @emit.  It can be annoying,
   but you'll know who's spoofing.
 
+  If the game has terse_nospoof enabled, say and pose messages show a
+  shorter prefix with only the sender's dbref (e.g. [#123]) instead of
+  the full verbose prefix, since the speaker's name is already visible
+  in the message text.
+
   Related Topics: @emit, @femit, @oemit, @pemit.
 
 & NOT()
