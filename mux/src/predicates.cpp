@@ -416,6 +416,15 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
         return nullptr;
     }
 
+    // Reject names that would be silently truncated.
+    //
+    size_t nOrigStripped;
+    strip_color(pName, &nOrigStripped);
+    if (nOrigStripped > nStripped)
+    {
+        return nullptr;
+    }
+
     *pnName = fldLen.m_byte;
     *pbValid = true;
     return Buf;
@@ -435,7 +444,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         return nullptr;
     }
 
-    mux_strncpy(Buf, pName, mux_strlen(pName));
+    mux_strncpy(Buf, pName, MBUF_SIZE - 1);
 
     // Sanitize the input before processing.
     //
