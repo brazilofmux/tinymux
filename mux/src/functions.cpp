@@ -3573,7 +3573,7 @@ static FUNCTION(fun_lcon)
         ItemToList_Init(&pContext, buff, bufc, '#');
         DOLIST(thing, Contents(it))
         {
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
             int iRealmAction = DoThingToThingVisibility(executor, thing,
                 ACTION_IS_STATIONARY);
             if (iRealmAction != REALM_DO_HIDDEN_FROM_YOU)
@@ -3607,7 +3607,7 @@ static FUNCTION(fun_lcon)
                 {
                     break;
                 }
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
             }
 #endif
         }

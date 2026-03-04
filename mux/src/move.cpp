@@ -532,7 +532,11 @@ void move_exit(dbref player, dbref exit, bool divest, const UTF8 *failmsg, int h
         }
     }
 #else
+#ifdef REALITY_LVLS
+    if (Good_obj(loc) && IsReal(exit, player) && could_doit(player, exit, A_LOCK))
+#else
     if (Good_obj(loc) && could_doit(player, exit, A_LOCK))
+#endif
     {
         bDoit = true;
     }

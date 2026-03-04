@@ -547,10 +547,6 @@ UTF8 *get_rlevel_desc
                 save_global_regs(preserve);
             }
 
-            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
-                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
-                nullptr, 0);
-
             if (!bFirst)
             {
                 safe_str(T("\r\n"), buff, &bp);
@@ -560,6 +556,10 @@ UTF8 *get_rlevel_desc
                 bFirst = false;
                 *piDescUsed = desclist->descs[i];
             }
+
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                nullptr, 0);
         }
         free_lbuf(d);
     }
@@ -578,7 +578,7 @@ UTF8 *get_rlevel_desc
             }
 
             mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
-                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 nullptr, 0);
             *bp = '\0';
 
