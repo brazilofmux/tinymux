@@ -9701,7 +9701,8 @@ MAIL-SENDING
         This adds <player-list> to the current list of recipients.
         Unlike the primary recipients and the carbon-copy (cc) recipients,
         these additions will be hidden from every recipient including each
-        other.
+        other.  The sender's own copy of the mail retains the full recipient
+        list, with BCC recipients shown with a '!' prefix.
 
 { 'help mail-sending2' for more }
 

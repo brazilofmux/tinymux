@@ -3478,6 +3478,7 @@ static void do_malias_send
     dbref player,
     UTF8 *tolist,
     UTF8 *listto,
+    UTF8 *senderlistto,
     UTF8 *subject,
     int   number,
     mail_flag flags,
@@ -3507,7 +3508,7 @@ static void do_malias_send
 
         if (isPlayer(vic))
         {
-            send_mail(player, m->list[k], listto, subject, number, flags, silent);
+            send_mail(player, m->list[k], (m->list[k] == player) ? senderlistto : listto, subject, number, flags, silent);
         }
         else
         {
@@ -3914,10 +3915,13 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
     }
 
     // Construct a tolist which excludes all the Blind Carbon Copy (BCC)
-    // recipients.
+    // recipients, and a senderlist which includes all recipients (so the
+    // sender's copy retains the full BCC information).
     //
     UTF8 *tolist = alloc_lbuf("mail_to_list");
     UTF8 *p = tolist;
+    UTF8 *senderlist = alloc_lbuf("mail_to_list.senderlist");
+    UTF8 *sp = senderlist;
     UTF8 *tail;
     UTF8 *head = list;
     while (*head)
@@ -3952,6 +3956,15 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
             tail++;
         }
 
+        // Append every token to senderlist (including BCC entries).
+        //
+        if (sp != senderlist)
+        {
+            safe_chr(' ', senderlist, &sp);
+        }
+        memcpy(sp, head, tail - head);
+        sp += tail - head;
+
         if (*head != '!')
         {
             if (p != tolist)
@@ -3971,6 +3984,7 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
         }
     }
     *p = '\0';
+    *sp = '\0';
 
     int number = add_mail_message(player, message);
     if (number != NOTHING)
@@ -4018,7 +4032,7 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
 
             if (*head == '*')
             {
-                do_malias_send(player, head, tolist, subject, number, flags, silent);
+                do_malias_send(player, head, tolist, senderlist, subject, number, flags, silent);
             }
             else
             {
@@ -4026,7 +4040,7 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
                 if (  Good_obj(target)
                    && isPlayer(target))
                 {
-                    send_mail(player, target, tolist, subject, number, flags, silent);
+                    send_mail(player, target, (target == player) ? senderlist : tolist, subject, number, flags, silent);
                 }
             }
 
@@ -4041,6 +4055,7 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
         }
         MessageReferenceDec(number);
     }
+    free_lbuf(senderlist);
     free_lbuf(tolist);
     free_lbuf(list);
 }
