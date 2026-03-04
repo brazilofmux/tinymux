@@ -112,6 +112,7 @@ namespace ganl {
             bool ttypeDataReceived{ false };
             bool newEnvironDataReceived{ false };
             bool charsetDataReceived{ false };
+            bool charsetRequestPending{ false }; // RFC 2066: true while our REQUEST awaits reply
             bool startTlsWillReceived{ false }; // Set when client WILLs STARTTLS
 
             std::string lastError;

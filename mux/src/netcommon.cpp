@@ -562,6 +562,7 @@ void freeqs(DESC *d)
     }
     d->height = 24;
     d->width = 78;
+    d->charset_request_pending = false;
 }
 
 /* ---------------------------------------------------------------------------

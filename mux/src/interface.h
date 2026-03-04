@@ -170,6 +170,7 @@ struct descriptor_data
   UTF8 *ttype;
   int encoding;
   int negotiated_encoding;
+  bool charset_request_pending;
   int width;
   int height;
   int quota;

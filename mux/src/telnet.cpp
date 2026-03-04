@@ -251,6 +251,7 @@ void send_charset_request(DESC *d, bool fDefacto = false)
     {
         const unsigned char aCharsets[] = ";UTF-8;ISO-8859-1;ISO-8859-2;US-ASCII;CP437";
         send_sb(d, TELNET_CHARSET, TELNETSB_REQUEST, aCharsets, sizeof(aCharsets)-1);
+        d->charset_request_pending = true;
     }
 }
 
@@ -1167,6 +1168,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                         if (TELNETSB_ACCEPT == d->aOption[1])
                         {
+                            d->charset_request_pending = false;
                             const auto pCharset = &d->aOption[2];
 
                             if (  nUTF8 == m - 2
@@ -1225,6 +1227,8 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         }
                         else if (TELNETSB_REJECT == d->aOption[1])
                         {
+                            d->charset_request_pending = false;
+
                             // The client has replied that it doesn't even support
                             // Latin1/ISO-8859-1 accented characters.  Thus, we
                             // should probably record this to strip out any
@@ -1238,6 +1242,16 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         }
                         else if (TELNETSB_REQUEST == d->aOption[1])
                         {
+                            // RFC 2066: If we have an outstanding CHARSET
+                            // REQUEST of our own, we must ignore the
+                            // client's REQUEST and wait for the client to
+                            // respond to ours.
+                            //
+                            if (d->charset_request_pending)
+                            {
+                                break;
+                            }
+
                             auto fRequestAcknowledged = false;
                             auto reqPtr = &d->aOption[2];
                             if (reqPtr < &d->aOption[m])

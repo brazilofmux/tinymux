@@ -980,6 +980,15 @@ namespace ganl {
             if (buffer[0] == 1 /* REQUEST */) {
                 GANL_TELNET_DEBUG(conn, "Received CHARSET REQUEST.");
 
+                // RFC 2066: If we have an outstanding CHARSET REQUEST of our
+                // own, ignore the client's REQUEST and wait for the client to
+                // respond to ours.
+                //
+                if (context.charsetRequestPending) {
+                    GANL_TELNET_DEBUG(conn, "Ignoring client CHARSET REQUEST (our REQUEST pending).");
+                    break;
+                }
+
                 // --- Simple Policy: Always try to accept UTF-8 if offered ---
                 // A more complex policy would parse buffer[1] (separators) and
                 // the list of charsets starting from buffer[2], checking against
@@ -1038,7 +1047,8 @@ namespace ganl {
             }
             else if (buffer[0] == 2 /* ACCEPTED */) {
                 // Client accepted a charset we offered (if we sent REQUEST)
-                // ... (handling as before) ...
+                //
+                context.charsetRequestPending = false;
                 std::string accepted(buffer.begin() + 1, buffer.end());
                 GANL_TELNET_DEBUG(conn, "Received CHARSET ACCEPTED: " << accepted);
                 EncodingType newEncoding = EncodingType::Ascii;
@@ -1050,7 +1060,8 @@ namespace ganl {
             }
             else if (buffer[0] == 3 /* REJECTED */) {
                 // Client rejected a charset we offered (if we sent REQUEST)
-                // ... (handling as before) ...
+                //
+                context.charsetRequestPending = false;
                 GANL_TELNET_DEBUG(conn, "Received CHARSET REJECTED.");
                 context.setEncoding(EncodingType::Ascii);
                 context.charsetDataReceived = true;
