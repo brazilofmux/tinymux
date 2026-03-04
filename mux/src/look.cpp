@@ -1030,10 +1030,16 @@ static bool show_a_desc(dbref player, dbref loc)
 
         UTF8 *temp = alloc_lbuf("look_description.ET");
         UTF8 *bp = temp;
+#ifdef REALITY_LVLS
+        // get_rlevel_desc() already evaluates the description.
+        //
+        mux_strncpy(temp, tbuf1, LBUF_SIZE-1);
+#else
         mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
             AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
             nullptr, 0);
         *bp = '\0';
+#endif
 
         UTF8 *attrname = alloc_lbuf("look_description.AN");
         UTF8 *cp = attrname;
