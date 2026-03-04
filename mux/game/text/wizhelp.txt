@@ -1895,8 +1895,8 @@ CONFIG PARAMETERS (continued)
   output_limit  page_cost  paranoid_allocate  parent_recursion_limit
   password_methods  paycheck  pcreate_per_hour  pemit_any_object
   pemit_far_players  permit_site  player_flags  player_parent  player_listen
-  player_match_own_commands  player_name_charset  player_name_spaces
-  player_queue_limit  player_quota  player_starting_home
+  player_channels  player_match_own_commands  player_name_charset
+  player_name_spaces  player_queue_limit  player_quota  player_starting_home
   player_starting_room  port  postdump_message  power_alias  public_channel
 
 { 'wizhelp config parameters3' for more }
@@ -1915,7 +1915,8 @@ CONFIG PARAMETERS (continued)
   search_cost  see_owned_dark  signal_action  site_chars  space_compress
   sql_database  sql_password  sql_server  sql_user  stack_limit
   starting_money  starting_quota  status_file  stripped_flags  suspect_site
-  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
+  sweep_dark  switch_default_all  talk_mode_default  terse_shows_contents
+  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_name_charset  thing_parent
   thing_quota  timeslice  toad_recipient  trace_output_limit  trace_topdown
   trust_site  uncompress_program  unowned_safe  user_attr_access
@@ -4053,6 +4054,24 @@ PLAYER_NAME_CHARSET
   Related Topics: attr_name_charset, exit_name_charset, room_name_charset,
                   thing_name_charset.
 
+& PLAYER_CHANNELS
+PLAYER_CHANNELS
+
+  CONFIG PARAMETER: player_channels <channel> <alias> [<channel> <alias>]...
+  DEFAULT: (empty)
+
+  Specifies a list of channel/alias pairs that newly created players are
+  automatically joined to.  Each pair consists of a channel name followed
+  by its alias, separated by spaces.
+
+  Example:
+    player_channels Public pub Newbie new
+
+  This would add new players to the 'Public' channel with alias 'pub' and
+  the 'Newbie' channel with alias 'new'.
+
+  Related Topics: public_channel, guests_channel.
+
 & PLAYER_NAME_SPACES
 PLAYER_NAME_SPACES
 
@@ -5044,6 +5063,19 @@ SWITCH_DEFAULT_ALL
   Indicates whether the @switch command should perform the commands for all
   targets that match or just the first one that matches if you don't specify
   either /all or /first as a command switch.
+
+& TALK_MODE_DEFAULT
+TALK_MODE_DEFAULT
+
+  CONFIG PARAMETER: talk_mode_default <yes/no>
+  DEFAULT: no
+
+  When set to yes, newly created players will have the TALKMODE flag set
+  automatically.  When TALKMODE is set, anything typed without a command
+  prefix is treated as 'say', and a leading '.' escapes to normal command
+  processing.
+
+  Related Topics: TALKMODE (in help).
 
 & TERSE_SHOWS_CONTENTS
 TERSE_SHOWS_CONTENTS

@@ -5420,6 +5420,29 @@ CHR()
 
   Related Topics: ord().
 
+& CITER()
+CITER()
+
+  FUNCTION: citer(<string>, <eval>[, <osep>])
+
+  Iterates over each character (UTF-8 code point) in <string>, evaluating
+  <eval> for each one.  Within <eval>, ## (or itext()) is replaced by the
+  current character, and #@ (or inum()) is replaced by the position (starting
+  at 1).  Results are joined by <osep> (default: space).
+
+  This is the character-level counterpart to iter(), which iterates over
+  words.
+
+  Examples:
+    > say citer(Hello, ##)
+    You say, "H e l l o"
+    > say citer(abc, [ord(##)])
+    You say, "97 98 99"
+    > say citer(Hi, ##-#@, |)
+    You say, "H-1|i-2"
+
+  Related Topics: iter(), itext(), inum().
+
 & CLEARCOM
 CLEARCOM
 
@@ -7112,7 +7135,7 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |       COLOR256   |       UNICODE    |
+                   |       COLOR256   |       TALKMODE   |       UNICODE
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
@@ -13475,6 +13498,34 @@ TERMINFO()
   Specifying connections via <descriptor> on other's connections is restricted
   to Wizards.  However, anyone can use it by <player> on anyone else as long
   as they aren't hiding.
+
+& TALKMODE
+TALKMODE
+
+  FLAG: TALKMODE  ()
+
+  When set on a player, this flag enables talk mode.  In talk mode, anything
+  the player types that does not begin with a standard command prefix
+  (", :, ;, \, etc.) is treated as a 'say' command.  To enter a normal
+  command while in talk mode, prefix it with a dot (.).  A dot by itself is
+  ignored.
+
+  This flag can be toggled on or off by any player with: @set me=TALKMODE
+
+  Example:
+    > @set me=TALKMODE
+    Set.
+    > Hello everyone!
+    You say, "Hello everyone!"
+    > .look
+    <normal look output>
+    > @set me=!TALKMODE
+    Set.
+
+  The game administrator can set 'talk_mode_default' to 'yes' in the
+  configuration file to have newly created players start with this flag set.
+
+  Related Topics: say, FLAG LIST.
 
 & TERSE
 TERSE
