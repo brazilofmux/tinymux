@@ -7563,7 +7563,8 @@ FUNCTION LIST (continued)
     TR()        TRACE()     TRIGGER()   TRIM()      TRUNC()     TXLEVEL()
     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
     V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    VERB()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()
     WHERE()     WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()
     WRITETIME() XGET()      XOR()       ZCHILDREN() ZEXITS()    ZFUN()
     ZONE()      ZROOMS()    ZTHINGS()   ZWHO()
@@ -14497,6 +14498,36 @@ VISUAL
   any changes to the object.
 
   Related Topics:
+
+& VERB()
+VERB()
+
+  FUNCTION: verb(<victim>[,<actor>,<what>,<whatd>,<owhat>,<owhatd>,<awhat>,
+            <args>])
+
+  A side effect function that has the same effect as @verb. It performs
+  a user-defined verb on <victim>, using the specified attributes for
+  messages and actions.
+
+    <victim> - Object searched for attributes and which runs <awhat>.
+    <actor>  - Object performing the verb (default: enactor).
+    <what>   - Attribute name for message to actor.
+    <whatd>  - Default message to actor if <what> not found.
+    <owhat>  - Attribute name for message to others in room.
+    <owhatd> - Default message to others if <owhat> not found.
+    <awhat>  - Attribute name to execute on victim.
+    <args>   - Comma-separated arguments for %0-%9 substitution.
+
+  You must control the actor. If you don't control the victim, you can
+  only read VISUAL attributes and the action attribute is not executed.
+
+  Examples:
+    > &xtest obj=You xtested obj.
+    > &oxtest obj=just xtested obj.
+    > think verb(obj, me, xtest, default msg, oxtest, odefault)
+    You xtested obj.
+
+  Related Topics: @verb.
 
 & VMAG()
 VMAG()

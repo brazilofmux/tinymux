@@ -227,6 +227,7 @@ XFUNCTION(fun_attrib_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
 XFUNCTION(fun_trigger);
+XFUNCTION(fun_verb);
 XFUNCTION(fun_wipe);
 
 // In netcommon.cpp

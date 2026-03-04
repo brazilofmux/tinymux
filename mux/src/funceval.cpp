@@ -393,6 +393,19 @@ FUNCTION(fun_cemit)
     do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], nullptr, 0);
 }
 
+FUNCTION(fun_verb)
+{
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@verb"), buff, bufc))
+    {
+        return;
+    }
+    do_verb(executor, caller, enactor, eval, 0,
+        fargs[0], fargs + 1, nfargs - 1, nullptr, 0);
+}
+
 // ------------------------------------------------------------------------
 // fun_create: Creates a room, thing or exit.
 //

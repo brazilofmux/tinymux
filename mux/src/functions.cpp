@@ -11398,6 +11398,7 @@ static FUN builtin_function_list[] =
     {T("VCROSS"),      fun_vcross,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("VDIM"),        fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("VDOT"),        fun_vdot,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {T("VERB"),        fun_verb,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
     {T("VERSION"),     fun_version,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("VISIBLE"),     fun_visible,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("VMAG"),        fun_vmag,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
