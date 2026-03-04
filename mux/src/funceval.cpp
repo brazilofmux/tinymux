@@ -504,6 +504,200 @@ FUNCTION(fun_create)
     safe_tprintf_str(buff, bufc, T("#%d"), thing);
 }
 
+// ------------------------------------------------------------------------
+// fun_clone: Clones an object and returns its dbref.
+//
+FUNCTION(fun_clone)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@clone"), buff, bufc))
+    {
+        return;
+    }
+
+    // Find the object to clone.
+    //
+    init_match(executor, fargs[0], NOTYPE);
+    match_everything(0);
+    dbref thing = match_result();
+    if (  NOTHING == thing
+       || AMBIGUOUS == thing)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    if (!Examinable(executor, thing))
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+    if (isPlayer(thing))
+    {
+        safe_str(T("#-1 CANNOT CLONE PLAYERS"), buff, bufc);
+        return;
+    }
+
+    // Determine location.
+    //
+    dbref loc;
+    if (!Has_location(executor))
+    {
+        loc = executor;
+    }
+    else
+    {
+        loc = Location(executor);
+    }
+    if (!Good_obj(loc))
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    // Determine cost.
+    //
+    int cost = 1;
+    switch (Typeof(thing))
+    {
+    case TYPE_THING:
+        cost = OBJECT_DEPOSIT((mudconf.clone_copy_cost) ?
+                      Pennies(thing) : 1);
+        break;
+
+    case TYPE_ROOM:
+        cost = mudconf.digcost;
+        break;
+
+    case TYPE_EXIT:
+        if (!Controls(executor, loc))
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+        cost = mudconf.digcost;
+        break;
+    }
+
+    // Validate optional new name.
+    //
+    bool bValid = false;
+    size_t nValidName;
+    const UTF8 *pValidName = nullptr;
+    UTF8 *arg2 = (nfargs >= 2) ? fargs[1] : nullptr;
+    switch (Typeof(thing))
+    {
+    case TYPE_THING:
+        pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid, mudconf.thing_name_charset);
+        break;
+
+    case TYPE_ROOM:
+        pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid, mudconf.room_name_charset);
+        break;
+
+    case TYPE_EXIT:
+        pValidName = MakeCanonicalExitName(arg2, &nValidName, &bValid);
+        break;
+    }
+    const UTF8 *clone_name;
+    if (bValid)
+    {
+        clone_name = pValidName;
+    }
+    else
+    {
+        clone_name = Name(thing);
+    }
+
+    // Create the clone.
+    //
+    const dbref new_owner = Owner(executor);
+    const dbref clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
+    if (clone == NOTHING)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    // Copy attributes.
+    //
+    atr_cpy(clone, thing, false);
+
+    // Reset name and pennies.
+    //
+    s_Name(clone, clone_name);
+    s_Pennies(clone, OBJECT_ENDOWMENT(cost));
+
+    // Strip flags.
+    //
+    FLAGSET clearflags;
+    TranslateFlags_Clone(clearflags.word, executor, 0);
+    SetClearFlags(clone, clearflags.word, nullptr);
+
+    // Type-specific setup.
+    //
+    switch (Typeof(thing))
+    {
+    case TYPE_THING:
+
+        s_Home(clone, clone_home(executor, thing));
+        move_via_generic(clone, loc, executor, 0);
+        break;
+
+    case TYPE_ROOM:
+
+        s_Dropto(clone, NOTHING);
+        if (Dropto(thing) != NOTHING)
+        {
+            link_exit(executor, clone, Dropto(thing));
+        }
+        break;
+
+    case TYPE_EXIT:
+
+        s_Exits(loc, insert_first(Exits(loc), clone));
+        s_Exits(clone, loc);
+        s_Location(clone, NOTHING);
+        if (Location(thing) != NOTHING)
+        {
+            link_exit(executor, clone, Location(thing));
+        }
+        break;
+    }
+
+    // Handle ownership, parent, and ACLONE.
+    //
+    if (new_owner == Owner(thing))
+    {
+        s_Parent(clone, Parent(thing));
+        did_it(executor, clone, 0, nullptr, 0, nullptr, A_ACLONE, 0, nullptr, 0);
+    }
+    else
+    {
+        if (Controls(executor, thing) || Parent_ok(thing))
+        {
+            s_Parent(clone, Parent(thing));
+        }
+        s_Halted(clone);
+    }
+
+    local_data_clone(clone, thing);
+
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->data_clone(clone, thing);
+        p = p->pNext;
+    }
+
+    safe_tprintf_str(buff, bufc, T("#%d"), clone);
+}
+
 FUNCTION(fun_destroy)
 {
     UNUSED_PARAMETER(eval);

@@ -10965,6 +10965,7 @@ static FUN builtin_function_list[] =
     {T("COS"),         fun_cos,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("CPAD"),        fun_cpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CRC32"),       fun_crc32,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {T("CLONE"),       fun_clone,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("CREATE"),      fun_create,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("CTIME"),       fun_ctime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("CTU"),         fun_ctu,        MAX_ARG, 3,       3,         0, CA_PUBLIC},

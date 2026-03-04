@@ -1,0 +1,87 @@
+#
+# clone_fn.mux - Test Cases for clone().
+#
+@create CloneSource=10
+-
+@set CloneSource=QUIET
+-
+&TESTATTR CloneSource=hello
+-
+@create test_clone_fn
+-
+@set test_clone_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_clone_fn=
+  @log smoke=Beginning clone() test cases.
+-
+#
+# Test Case #1 - Clone a thing, verify type, name, and attribute copy.
+#
+&tr.tc001 test_clone_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [type(setr(1,clone(CloneSource)))]
+            [name(%q1)]
+            [get(%q1/TESTATTR)]
+          )),
+        CF6E4A31C419BF65849FE26657DDA9BF6316E044
+      )=
+  {
+    @log smoke=TC001: clone basic thing. Succeeded.
+  },
+  {
+    @log smoke=TC001: clone basic thing. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Clone with a new name.
+#
+&tr.tc002 test_clone_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [type(setr(1,clone(CloneSource,NewName)))]
+            [name(%q1)]
+            [get(%q1/TESTATTR)]
+          )),
+        453AEC404795AD7CD3E75EE7AF8E90EEBACFD30E
+      )=
+  {
+    @log smoke=TC002: clone with new name. Succeeded.
+  },
+  {
+    @log smoke=TC002: clone with new name. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Clone a non-existent object returns #-1.
+#
+&tr.tc003 test_clone_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [clone(DefinitelyDoesNotExist12345)]
+          )),
+        781312E4CA2C1476A946B1D8091199D58E89F203
+      )=
+  {
+    @log smoke=TC003: clone non-existent. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: clone non-existent. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_clone_fn=
+  @log smoke=End clone() test cases.;
+  @notify smoke
+-
+drop test_clone_fn
+-
+drop CloneSource
+-
+#
+# End of Test Cases
+#

@@ -209,6 +209,7 @@ XFUNCTION(fun_pop);
 XFUNCTION(fun_push);
 #endif // DEPRECATED
 
+XFUNCTION(fun_clone);
 XFUNCTION(fun_create);
 XFUNCTION(fun_destroy);
 XFUNCTION(fun_emit);

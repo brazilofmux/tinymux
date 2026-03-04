@@ -405,6 +405,7 @@ void  divest_object(dbref);
 dbref create_obj(dbref, int, const UTF8 *, int);
 void  destroy_obj(dbref);
 void  empty_obj(dbref);
+void  link_exit(const dbref, const dbref, const dbref);
 
 /* From player.cpp */
 dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);

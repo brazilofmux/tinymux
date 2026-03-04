@@ -180,7 +180,7 @@ void do_open(const dbref executor, const dbref caller, const dbref enactor, cons
 // link_exit, do_link: Set destination(exits), dropto(rooms) or
 // home(player,thing)
 
-static void link_exit(const dbref player, const dbref exit, const dbref dest)
+void link_exit(const dbref player, const dbref exit, const dbref dest)
 {
     // Make sure we can link there
     //

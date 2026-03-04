@@ -6195,6 +6195,29 @@ CREATE()
 
   Related Topics: destroy()
 
+& CLONE()
+CLONE()
+
+  FUNCTION: clone(<object>[, <newname>])
+
+  Creates a copy of <object> and returns the dbref of the new clone.
+  Works like @clone but as a side-effect function. You may clone your
+  own objects, plus VISUAL objects owned by others. Players cannot be
+  cloned.
+
+  If <newname> is given, the clone uses that name instead of the
+  original. The clone is placed in the executor's current location
+  (or inventory if the executor has no location).
+
+  If the original was owned by you, the clone's ACLONE attribute is
+  triggered and the parent is copied. Otherwise, the clone is set
+  HALTED.
+
+  This is a side effect function, and should only be used when
+  necessary.
+
+  Related Topics: @clone, create(), destroy()
+
 & CREDITS
 
   Topic: CREDITS
