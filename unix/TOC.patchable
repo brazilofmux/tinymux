@@ -66,6 +66,7 @@ src/Makefile.am
 src/Makefile.in
 src/_build.cpp
 src/_build.h
+src/aclocal.m4
 src/alarm.cpp
 src/alloc.cpp
 src/alloc.h
@@ -85,6 +86,7 @@ src/conf.cpp
 src/config.guess
 src/config.h
 src/config.sub
+src/compile
 src/configure
 src/configure.ac
 src/copyright.h
@@ -93,6 +95,7 @@ src/create.cpp
 src/db.cpp
 src/db.h
 src/db_rw.cpp
+src/depcomp
 src/dtoa.c
 src/eval.cpp
 src/externs.h
@@ -108,6 +111,7 @@ src/funmath.cpp
 src/funmath.h
 src/game.cpp
 src/ganl/Makefile.am
+src/ganl/Makefile.in
 src/ganl/include/connection.h
 src/ganl/include/epoll_network_engine.h
 src/ganl/include/io_buffer.h
@@ -165,6 +169,7 @@ src/mathutil.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
+src/missing
 src/modules/Makefile.am
 src/modules/Makefile.in
 src/modules/autoconf.h.in
@@ -184,6 +189,7 @@ src/move.cpp
 src/mudconf.h
 src/muxcli.cpp
 src/muxcli.h
+src/netaddr.cpp
 src/netcommon.cpp
 src/object.cpp
 src/player.cpp
@@ -197,12 +203,15 @@ src/rob.cpp
 src/set.cpp
 src/sha1.cpp
 src/sha1.h
+src/signals.cpp
+src/sitemon.cpp
 src/slave.cpp
 src/speech.cpp
 src/stringutil.cpp
 src/strtod.cpp
 src/stringutil.h
 src/stubslave.cpp
+src/telnet.cpp
 src/svdhash.cpp
 src/svdhash.h
 src/svdrand.cpp
