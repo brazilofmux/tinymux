@@ -365,6 +365,139 @@ FUNCTION(fun_emit)
     do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0], nullptr, 0);
 }
 
+// ------------------------------------------------------------------------
+// fun_pose: Pure formatting function.  Returns the string that would be
+// produced by say/pose/semipose without actually emitting it.
+//
+// pose(<player>, <text>[, <prefix>])
+//
+FUNCTION(fun_pose)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref target = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(target))
+    {
+        safe_match_result(target, buff, bufc);
+        return;
+    }
+
+    UTF8 *message = fargs[1];
+    int key;
+
+    // Parse the prefix character the same way do_say handles SAY_PREFIX.
+    //
+    switch (message[0])
+    {
+    case '"':
+        message++;
+        key = SAY_SAY;
+        break;
+
+    case ':':
+        message++;
+        if (*message == ' ')
+        {
+            message++;
+            key = SAY_POSE_NOSPC;
+        }
+        else
+        {
+            key = SAY_POSE;
+        }
+        break;
+
+    case ';':
+        message++;
+        key = SAY_POSE_NOSPC;
+        break;
+
+    case 0xE2:
+        if (  0x80 == message[1]
+           && 0x9C == message[2])
+        {
+            // U+201C - Unicode opening double quote.
+            //
+            message += 3;
+            key = SAY_SAY;
+        }
+        else
+        {
+            key = SAY_SAY;
+        }
+        break;
+
+    default:
+        key = SAY_SAY;
+        break;
+    }
+
+    // Apply speechmod to the message text.
+    //
+    const UTF8 *command;
+    if (SAY_SAY == key)
+    {
+        command = T("say");
+    }
+    else
+    {
+        command = T("pose");
+    }
+
+    UTF8 *messageOrig = message;
+    UTF8 *messageNew = modSpeech(target, message, true, command);
+    if (messageNew)
+    {
+        message = messageNew;
+    }
+
+    // Write the optional prefix first.
+    //
+    if (nfargs >= 3)
+    {
+        safe_str(fargs[2], buff, bufc);
+    }
+
+    // Format the result.
+    //
+    switch (key)
+    {
+    case SAY_SAY:
+        {
+            UTF8 *saystring = modSpeech(target, messageOrig, false, command);
+            if (saystring)
+            {
+                safe_tprintf_str(buff, bufc, T("%s %s \xE2\x80\x9C%s\xE2\x80\x9D"),
+                    Moniker(target), saystring, message);
+                free_lbuf(saystring);
+            }
+            else
+            {
+                safe_tprintf_str(buff, bufc, T("%s says, \xE2\x80\x9C%s\xE2\x80\x9D"),
+                    Moniker(target), message);
+            }
+        }
+        break;
+
+    case SAY_POSE:
+        safe_tprintf_str(buff, bufc, T("%s %s"), Moniker(target), message);
+        break;
+
+    case SAY_POSE_NOSPC:
+        safe_tprintf_str(buff, bufc, T("%s%s"), Moniker(target), message);
+        break;
+    }
+
+    if (messageNew)
+    {
+        free_lbuf(messageNew);
+    }
+}
+
 FUNCTION(fun_remit)
 {
     UNUSED_PARAMETER(caller);

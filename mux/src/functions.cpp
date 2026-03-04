@@ -11273,6 +11273,7 @@ static FUN builtin_function_list[] =
 #endif // DEPRECATED
     {T("PORTS"),       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POS"),         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("POSE"),        fun_pose,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("POSS"),        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POWER"),       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("POWERS"),      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},

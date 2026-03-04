@@ -2715,11 +2715,17 @@ Related Topics: @name.
   By default, when an object is looked at, the object's name is shown.  And,
   if you can link to the object, its flag letters and dbref are also shown.
 
-  With @nameformat, you can control exactly what is shown to people who
-  use 'look' while inside.  @nameformat is not used when people outside the
-  object look at it.
+  With @nameformat, you can control exactly what is shown for the name
+  line when the object is looked at.  For rooms, it controls the name shown
+  to people who use 'look' while inside.  For things and exits, it controls
+  the name shown when looking at them from outside.
 
-  Related Topics: @conformat, @descformat, @exitformat
+  @nameformat is not used on players.  Use @moniker to customize the
+  display of player names instead.
+
+  @nameformat is inherited from parent objects.
+
+  Related Topics: @conformat, @descformat, @exitformat, @moniker
 
 & @NEMIT
 @NEMIT
@@ -11323,7 +11329,40 @@ POSE
      /nospace - Don't put a space between your name and the message
                 (ie, display '<name><message>').
 
-  Related Topics: page, say, whisper, :, ;, ".
+  Related Topics: page, pose(), say, whisper, :, ;, ".
+
+& POSE()
+POSE()
+
+  FUNCTION: pose(<player>, <text>[, <prefix>])
+
+  Returns the formatted string that would result from <player> saying or
+  posing <text>, without actually emitting it to anyone.  This is useful
+  for softcode that needs to format speech (OOC commands, language systems,
+  channel code, etc.) without reimplementing the say/pose parsing logic.
+
+  The first character of <text> determines the format:
+
+    :  - Pose.  Returns "<name> <text>".
+    ;  - Semipose.  Returns "<name><text>" (no space).
+    "  - Say.  Returns "<name> says, <text>" (or @saystring).
+    (other) - Say (same as ").
+
+  If <prefix> is given, it is prepended to the result.
+
+  The player's @saystring and @speechmod attributes are respected.
+
+  Examples:
+    > think pose(me, :waves.)
+    Player waves.
+    > think pose(me, ;'s cat meows.)
+    Player's cat meows.
+    > think pose(me, Hello!)
+    Player says, "Hello!"
+    > think pose(me, :waves., [OOC] )
+    [OOC] Player waves.
+
+  Related Topics: emit(), oemit(), pemit(), pose, remit(), say.
 
 & POSS()
 POSS()

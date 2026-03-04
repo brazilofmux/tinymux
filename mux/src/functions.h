@@ -218,6 +218,7 @@ XFUNCTION(fun_create);
 XFUNCTION(fun_destroy);
 XFUNCTION(fun_emit);
 XFUNCTION(fun_link);
+XFUNCTION(fun_pose);
 XFUNCTION(fun_oemit);
 XFUNCTION(fun_pemit);
 XFUNCTION(fun_remit);
