@@ -973,9 +973,25 @@ static int player_folder(dbref player)
 //
 static void DoListMailBrief(dbref player)
 {
-    for(int folder = 0; folder < MAX_FOLDERS; folder++)
+    for (int folder = 0; folder < MAX_FOLDERS; folder++)
     {
         check_mail(player, folder, true);
+
+        // Show named but empty folders that check_mail skips.
+        //
+        int rc, uc, cc;
+        count_mail(player, folder, &rc, &uc, &cc);
+        if (  rc + uc == 0
+           && cc == 0)
+        {
+            const UTF8 *fname = get_folder_name(player, folder);
+            if (strcmp(reinterpret_cast<const char *>(fname), "unnamed") != 0)
+            {
+                raw_notify(player, tprintf(
+                    T("MAIL: 0 messages in folder %d [%s]."),
+                    folder, fname));
+            }
+        }
     }
 
     int current_folder = player_folder(player);
