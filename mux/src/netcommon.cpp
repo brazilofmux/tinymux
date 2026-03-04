@@ -21,7 +21,7 @@ NAMETAB default_charset_nametab[] =
     {T("latin-2"),         7,       0,     CHARSET_LATIN2},
     {T("iso8859-1"),       9,       0,     CHARSET_LATIN1},
     {T("iso8859-2"),       9,       0,     CHARSET_LATIN2},
-    { reinterpret_cast<UTF8 *>(nullptr),     0,       0,     0}
+    { nullptr,     0,       0,     0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -1843,7 +1843,7 @@ static const UTF8 *DumpInfoTable[] =
 #if defined(WOD_REALMS)
     T("WOD_REALMS"),
 #endif
-    reinterpret_cast<UTF8 *>(nullptr)
+    nullptr
 };
 
 static void dump_info(DESC *arg_desc)

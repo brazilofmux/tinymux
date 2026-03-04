@@ -1793,9 +1793,9 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
         //
         *returnstr = alloc_lbuf("edit_string_ansi.^");
         rp = *returnstr;
-        safe_str(reinterpret_cast<UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
+        safe_str(reinterpret_cast<const UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(reinterpret_cast<UTF8 *>(COLOR_RESET), *returnstr, &rp);
+        safe_str(reinterpret_cast<const UTF8 *>(COLOR_RESET), *returnstr, &rp);
         safe_str(src, *returnstr, &rp);
         *rp = '\0';
 
@@ -1815,9 +1815,9 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
         *returnstr = alloc_lbuf("edit_string_ansi.$");
         rp = *returnstr;
         safe_str(src, *returnstr, &rp);
-        safe_str(reinterpret_cast<UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
+        safe_str(reinterpret_cast<const UTF8 *>(COLOR_INTENSE), *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(reinterpret_cast<UTF8 *>(COLOR_RESET), *returnstr, &rp);
+        safe_str(reinterpret_cast<const UTF8 *>(COLOR_RESET), *returnstr, &rp);
         *rp = '\0';
 
     }

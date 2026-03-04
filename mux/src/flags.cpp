@@ -517,7 +517,7 @@ FLAGNAMEENT gen_flag_names[] =
     {T("MEDIUM"),          true, &fbeMedium         },
     {T("DEAD"),            true, &fbeDead           },
 #endif // WOD_REALMS
-    {reinterpret_cast<UTF8 *>(nullptr),          false, nullptr}
+    {nullptr,          false, nullptr}
 };
 
 OBJENT object_types[8] =

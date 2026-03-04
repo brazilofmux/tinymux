@@ -186,7 +186,7 @@ const UTF8 *CGuests::Create(DESC *d)
             // Wipe the attributes.
             //
             WipeAttrs(guest_player);
-            ChangePassword(guest_player, reinterpret_cast<UTF8 *>(GUEST_PASSWORD));
+            ChangePassword(guest_player, reinterpret_cast<const UTF8 *>(GUEST_PASSWORD));
 
             // Copy them back.
             //
@@ -303,7 +303,7 @@ dbref CGuests::MakeGuestChar(void)
     // Make the player.
     //
     const UTF8 *pmsg;
-    player = create_player(name, reinterpret_cast<UTF8 *>(GUEST_PASSWORD), mudconf.guest_nuker, false, &pmsg);
+    player = create_player(name, reinterpret_cast<const UTF8 *>(GUEST_PASSWORD), mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //

@@ -3513,7 +3513,7 @@ SubsetTable[] =
     { T("CONNECT"), lconConnect},
     { T("PUPPET"),  lconPuppet },
     { T("LISTEN"),  lconListen },
-    { reinterpret_cast<UTF8 *>(nullptr), lconAny }
+    { nullptr, lconAny }
 };
 
 /*
@@ -4782,7 +4782,7 @@ static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { T("visual"),     AF_VISUAL  },
     { T("no_inherit"), AF_PRIVATE },
     { T("const"),      AF_CONST   },
-    { reinterpret_cast<UTF8 *>(nullptr),      0     }
+    { nullptr,      0     }
 };
 
 static bool atr_has_flag
@@ -11090,7 +11090,7 @@ static FUN builtin_function_list[] =
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZWHO"),        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {reinterpret_cast<UTF8 *>(nullptr),   nullptr,       MAX_ARG, 0,       0,         0, 0}
+    {nullptr,   nullptr,       MAX_ARG, 0,       0,         0, 0}
 };
 
 void function_add(FUN *fp)

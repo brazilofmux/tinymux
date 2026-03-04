@@ -47,7 +47,7 @@ static FCACHE fcache[] =
     { &mudconf.motd_file,    nullptr,   T("Motd") },
     { &mudconf.wizmotd_file, nullptr,   T("Wizmotd") },
     { &mudconf.quit_file,    nullptr,   T("Quit") },
-    { nullptr,               nullptr,   reinterpret_cast<UTF8 *>(nullptr) }
+    { nullptr,               nullptr,   nullptr }
 };
 
 static NAMETAB list_files[] =
@@ -63,7 +63,7 @@ static NAMETAB list_files[] =
     {T("quit"),             1,  CA_WIZARD,  FC_QUIT},
     {T("register_connect"), 1,  CA_WIZARD,  FC_CONN_REG},
     {T("wizard_motd"),      1,  CA_WIZARD,  FC_WIZMOTD},
-    { reinterpret_cast<UTF8 *>(nullptr),      0,  0,          0}
+    { nullptr,      0,  0,          0}
 };
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)

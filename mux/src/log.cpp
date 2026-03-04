@@ -14,7 +14,7 @@ NAMETAB logdata_nametab[] =
     {T("location"),        1,  0,  LOGOPT_LOC},
     {T("owner"),           1,  0,  LOGOPT_OWNER},
     {T("timestamp"),       1,  0,  LOGOPT_TIMESTAMP},
-    { reinterpret_cast<UTF8 *>(nullptr),     0,  0,  0}
+    { nullptr,     0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
@@ -38,7 +38,7 @@ NAMETAB logoptions_nametab[] =
     {T("suspect"),         2,  0,  LOG_SUSPECTCMDS},
     {T("time_usage"),      1,  0,  LOG_TIMEUSE},
     {T("wizard"),          1,  0,  LOG_WIZARD},
-    { reinterpret_cast<UTF8 *>(nullptr),     0,  0,  0}
+    { nullptr,     0,  0,  0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ bool start_log(const UTF8 * primary, const UTF8 * secondary)
 
 void end_log(void)
 {
-    Log.WriteString( reinterpret_cast<UTF8 *>(ENDLINE));
+    Log.WriteString( reinterpret_cast<const UTF8 *>(ENDLINE));
     Log.Flush();
     mudstate.logging--;
 }
@@ -128,7 +128,7 @@ void log_perror(const UTF8 * primary, const UTF8 * secondary,
     Log.WriteString(T(": "));
     Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
-    Log.WriteString( reinterpret_cast<UTF8 *>(ENDLINE));
+    Log.WriteString( reinterpret_cast<const UTF8 *>(ENDLINE));
 #endif // !WIN32
     Log.Flush();
     mudstate.logging--;

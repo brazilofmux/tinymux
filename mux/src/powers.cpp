@@ -100,7 +100,7 @@ static POWERENT gen_powers[] =
     {T("tel_anything"),    POW_TEL_UNRST,  0, 0,   ph_wiz},
     {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
     {T("unkillable"),      POW_UNKILLABLE, 0, 0,   ph_wiz},
-    {reinterpret_cast<UTF8 *>(nullptr),      0,              0, 0,   0}
+    {nullptr,      0,              0, 0,   0}
 };
 
 /* ---------------------------------------------------------------------------

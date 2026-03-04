@@ -74,7 +74,7 @@ static NAMETAB clone_sw[] =
     {T("nostrip"),         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
     {T("parent"),          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
     {T("preserve"),        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
-    { reinterpret_cast<UTF8 *>(nullptr),     0,          0,  0}
+    { nullptr,     0,          0,  0}
 };
 
 static NAMETAB clist_sw[] =
@@ -272,7 +272,7 @@ static NAMETAB hook_sw[] =
     {T("list"),            3,     CA_GOD,  CEF_HOOK_LIST},
     {T("permit"),          3,     CA_GOD,  CEF_HOOK_PERMIT},
     {T("args"),            3,     CA_GOD,  CEF_HOOK_ARGS},
-    {reinterpret_cast<UTF8 *>(nullptr),      0,          0,  0}
+    {nullptr,      0,          0,  0}
 };
 
 static NAMETAB icmd_sw[] =
@@ -288,7 +288,7 @@ static NAMETAB icmd_sw[] =
     {T("lallroom"),        2,     CA_GOD,  ICMD_LALLROOM},
     {T("off"),             2,     CA_GOD,  ICMD_OFF},
     {T("on"),              2,     CA_GOD,  ICMD_ON},
-    {reinterpret_cast<UTF8 *>(nullptr),      0,          0,  0}
+    {nullptr,      0,          0,  0}
 };
 
 static NAMETAB leave_sw[] =
@@ -2822,7 +2822,7 @@ NAMETAB access_nametab[] =
     {T("static"),                4, CA_GOD,    CA_STATIC},
     {T("uninspected"),           5, CA_WIZARD, CA_UNINS},
     {T("wizard"),                3, CA_WIZARD, CA_WIZARD},
-    {reinterpret_cast<UTF8 *>(nullptr),            0, 0,         0}
+    {nullptr,            0, 0,         0}
 };
 
 static void list_cmdaccess(dbref player)

@@ -617,9 +617,9 @@ static void DCL_CDECL sighandler(int sig)
 #endif // HAVE_WORKING_FORK
 
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
 #endif // GAME_DOOFERMUX
             mux_assert(false);
             break;

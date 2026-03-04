@@ -382,7 +382,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>("*!#"), pStripped[0]))
+    if (  reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>("*!#"), pStripped[0]))
        || mux_isspace(pStripped[0])
        || mux_isspace(pStripped[nStripped-1]))
     {
@@ -528,7 +528,7 @@ bool ValidatePlayerName(const UTF8 *pName)
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>("*!#"), pName[0]))
+    if (  reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>("*!#"), pName[0]))
        || mux_isspace(pName[0])
        || mux_isspace(pName[nName-1]))
     {
@@ -1656,10 +1656,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
+        mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
 #else
     execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, reinterpret_cast<char *>(nullptr));
+        mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
 #endif // GAME_DOOFERMUX
     mux_assert(false);
 #endif // UNIX_PROCESSES

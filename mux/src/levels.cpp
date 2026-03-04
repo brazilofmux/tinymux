@@ -15,7 +15,7 @@ RLEVEL RxLevel(dbref thing)
 {
     const UTF8 *buff = atr_get_raw(thing, A_RLEVEL);
     if (  nullptr == buff
-       || strlen(reinterpret_cast<char *>(buff)) != 17)
+       || strlen(reinterpret_cast<const char *>(buff)) != 17)
     {
         switch (Typeof(thing))
         {
@@ -46,7 +46,7 @@ RLEVEL TxLevel(dbref thing)
 {
     const UTF8 *buff = atr_get_raw(thing, A_RLEVEL);
     if (  nullptr == buff
-       || strlen(reinterpret_cast<char *>(buff)) != 17)
+       || strlen(reinterpret_cast<const char *>(buff)) != 17)
     {
         switch (Typeof(thing))
         {

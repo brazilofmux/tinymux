@@ -486,7 +486,7 @@ static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int fai
 
 CF_HAND(cf_rlevel)
 {
-    CONFDATA *mc = static_cast<CONFDATA *>(vp);
+    CONFDATA *mc = reinterpret_cast<CONFDATA *>(vp);
     int i;
 
     if (mc->no_levels >= 32)
@@ -1461,7 +1461,7 @@ static NAMETAB hook_names[] =
     {T("igswitch"),   3, 0, CEF_HOOK_IGSWITCH},
     {T("permit"),     3, 0, CEF_HOOK_PERMIT},
     {T("args"),       3, 0, CEF_HOOK_ARGS},
-    {reinterpret_cast<UTF8 *>(nullptr), 0, 0, 0}
+    {nullptr, 0, 0, 0}
 };
 
 static CF_HAND(cf_hook)
@@ -1868,7 +1868,7 @@ static CONFPARM conftable[] =
     {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.one_coin),         nullptr,           32},
     {T("motd_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.motd_file),       nullptr, SIZEOF_PATHNAME},
     {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(mudconf.motd_msg),         nullptr,    GBUF_SIZE},
-    {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(nullptr),                  nullptr,            0},
+    {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   nullptr,                  nullptr,            0},
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.mud_name),         nullptr,           32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.crea_file),       nullptr, SIZEOF_PATHNAME},
     {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_NOGUEST},
@@ -1997,7 +1997,7 @@ static CONFPARM conftable[] =
     {T("mail_sendaddr"),             cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.mail_sendaddr),    nullptr,          128},
     {T("mail_sendname"),             cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.mail_sendname),    nullptr,          128},
     {T("mail_subject"),              cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.mail_subject),     nullptr,          128},
-    { reinterpret_cast<UTF8 *>(nullptr),                 nullptr,           0,         0,      nullptr,                         nullptr,            0}
+    { nullptr,                 nullptr,           0,         0,      nullptr,                         nullptr,            0}
 };
 
 // ---------------------------------------------------------------------------

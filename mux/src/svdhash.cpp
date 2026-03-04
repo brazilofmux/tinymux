@@ -304,7 +304,7 @@ uint32_t munge_hash(const UTF8 *pBuffer)
     uint32_t h = 0;
     while (*pBuffer)
     {
-        h ^= (h << 5) + (h >> 2) + CRC32_Table[static_cast<unsigned char>(*pBuffer)++];
+        h ^= (h << 5) + (h >> 2) + CRC32_Table[static_cast<unsigned char>(*pBuffer++)];
     }
     return h;
 }

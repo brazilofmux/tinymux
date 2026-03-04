@@ -37,7 +37,7 @@ NAMETAB method_nametab[] =
     {T("md5"),             3,  CA_GOD,     CRYPT_MD5},
     {T("sha256"),          6,  CA_GOD,     CRYPT_SHA256},
     {T("sha512"),          6,  CA_GOD,     CRYPT_SHA512},
-    { reinterpret_cast<UTF8 *>(nullptr),     0,       0,     0}
+    { nullptr,     0,       0,     0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -608,7 +608,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
 
     case CRYPT_DES:
 #if defined(HAVE_CRYPT)
-        return reinterpret_cast<UTF8 *>(crypt(reinterpret_cast<char *>(szPassword), reinterpret_cast<char *>(szSetting)));
+        return reinterpret_cast<const UTF8 *>(crypt(reinterpret_cast<const char *>(szPassword), reinterpret_cast<const char *>(szSetting)));
 #else
         return szFail;
 #endif
