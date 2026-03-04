@@ -1008,7 +1008,8 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
 
             DOLIST(obj, Contents(target))
             {
-                if (obj != target)
+                if (  obj != target
+                   && !(isPlayer(obj) && Alone(target)))
                 {
                     notify_check(obj, sender, *msgFinal,
                         MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
@@ -1040,7 +1041,8 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             DOLIST(obj, Contents(targetloc))
             {
                 if (  obj != target
-                   && obj != targetloc)
+                   && obj != targetloc
+                   && !(isPlayer(obj) && Alone(targetloc)))
                 {
                     notify_check(obj, sender, *msgFinal,
                         MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
@@ -1106,7 +1108,8 @@ void notify_except(dbref loc, dbref player, dbref exception, const UTF8 *msg, in
     }
     DOLIST(first, Contents(loc))
     {
-        if (first != exception)
+        if (  first != exception
+           && !(isPlayer(first) && Alone(loc)))
         {
             notify_check(first, player, msg, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key);
         }
@@ -1125,7 +1128,8 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const UTF8 
     DOLIST(first, Contents(loc))
     {
         if (  first != exc1
-           && first != exc2)
+           && first != exc2
+           && !(isPlayer(first) && Alone(loc)))
         {
             notify_check(first, player, msg, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE);
         }

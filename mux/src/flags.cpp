@@ -395,6 +395,7 @@ static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
+static FLAGBITENT fbeAlone          = { ALONE,        ' ',    FLAG_WORD3, 0,                    fh_wiz};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
@@ -432,6 +433,7 @@ static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,    
 
 FLAGNAMEENT gen_flag_names[] =
 {
+    {T("ALONE"),           true, &fbeAlone          },
     {T("ABODE"),           true, &fbeAbode          },
     {T("ACCENTS"),        false, &fbeAscii          },
     {T("ANSI"),            true, &fbeAnsi           },

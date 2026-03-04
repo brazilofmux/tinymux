@@ -19,6 +19,27 @@
 
   Related Topics: help.
 
+& ALONE
+ALONE
+
+  FLAG: ALONE  (rooms)
+
+  When set on a room, players inside cannot hear each other's messages,
+  connect/disconnect notifications, arrive/leave messages, or any other
+  inter-player notifications. The room object itself still receives all
+  messages, preserving @listen and triggers.
+
+  Useful for hub rooms, OOC areas, or any room where player isolation is
+  desired.
+
+  Setting: @set <room>=ALONE  (wizard-only)
+
+  ALONE is independent of BLIND and AUDITORIUM. BLIND suppresses
+  arrive/leave messages, AUDITORIUM controls speech locks, and ALONE
+  suppresses all inter-player notification propagation.
+
+  Related Topics: BLIND, AUDITORIUM, @set.
+
 & @ADDCOMMAND
 @ADDCOMMAND
 

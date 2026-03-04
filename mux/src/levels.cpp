@@ -109,7 +109,8 @@ void notify_except_rlevel
     DOLIST(first, Contents(loc))
     {
         if (  first != exception
-           && IsReal(first, player))
+           && IsReal(first, player)
+           && !(isPlayer(first) && Alone(loc)))
         {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | xflags));
@@ -139,7 +140,8 @@ void notify_except2_rlevel
     {
         if (  first != exc1
            && first != exc2
-           && IsReal(first, player))
+           && IsReal(first, player)
+           && !(isPlayer(first) && Alone(loc)))
         {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
@@ -170,7 +172,8 @@ void notify_except2_rlevel2
         if (  first != exc1
            && first != exc2
            && IsReal(first, player)
-           && IsReal(first, exc2))
+           && IsReal(first, exc2)
+           && !(isPlayer(first) && Alone(loc)))
         {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
