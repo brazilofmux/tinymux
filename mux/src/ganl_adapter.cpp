@@ -555,14 +555,10 @@ public:
         d->output_size = 0;
         d->output_tot = 0;
         d->output_lost = 0;
-        d->output_head = nullptr;
-        d->output_tail = nullptr;
-        d->input_head = nullptr;
-        d->input_tail = nullptr;
         d->input_size = 0;
         d->input_tot = 0;
         d->input_lost = 0;
-        d->raw_input = nullptr;
+        d->raw_input_buf = nullptr;
         d->raw_input_at = nullptr;
         d->nOption = 0;
         d->raw_input_state = NVT_IS_NORMAL;
@@ -812,7 +808,8 @@ public:
         // Remove mapping FIRST
         adapter_.remove_mapping(d);
 
-        // Then free the DESC structure
+        // Free queues, then destroy non-trivial members, then free the DESC.
+        freeqs(d);
         adapter_.free_desc2(d);
 
         DebugTotalSockets--;
@@ -1931,7 +1928,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         DESC* d = *it;
-        if (d && nullptr != d->output_head)
+        if (d && !d->output_queue.empty())
         {
             process_output(d, false);
         }
@@ -3087,6 +3084,7 @@ void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
             d->flags &= ~DS_CONNECTED;
         }
         scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        destroy_desc(d);
         free_desc(d); // Free DESC if GANL doesn't know about it
     }
 }
@@ -3166,11 +3164,17 @@ ganl::ConnectionHandle GanlAdapter::get_handle(DESC* d) {
 // --- DESC Allocation ---
 DESC* GanlAdapter::allocate_desc() {
     // Use TinyMUX's pool allocator
-    return alloc_desc("ganl_connection");
+    DESC* d = alloc_desc("ganl_connection");
+    if (d)
+    {
+        init_desc(d);
+    }
+    return d;
 }
 
 void GanlAdapter::free_desc2(DESC* d) {
     // Use TinyMUX's pool allocator
+    destroy_desc(d);
     free_desc(d);
 }
 

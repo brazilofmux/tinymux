@@ -3728,6 +3728,7 @@ void load_restart_db(void)
     {
         DebugTotalSockets++;
         d = alloc_desc("restart");
+        init_desc(d);
         d->socket = val;
         d->flags = getref(f);
         d->connected_at.SetSeconds(getref(f));
@@ -3891,14 +3892,10 @@ void load_restart_db(void)
         d->output_size = 0;
         d->output_tot = 0;
         d->output_lost = 0;
-        d->output_head = nullptr;
-        d->output_tail = nullptr;
-        d->input_head = nullptr;
-        d->input_tail = nullptr;
         d->input_size = 0;
         d->input_tot = 0;
         d->input_lost = 0;
-        d->raw_input = nullptr;
+        d->raw_input_buf = nullptr;
         d->raw_input_at = nullptr;
         d->nOption = 0;
         d->quota = mudconf.cmd_quota_max;

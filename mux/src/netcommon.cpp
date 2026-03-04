@@ -309,82 +309,7 @@ void clearstrings(DESC *d)
 
 static void add_to_output_queue(DESC *d, const UTF8 *b, size_t n)
 {
-    text_block *tp;
-    size_t left;
-
-    // Allocate an output buffer if needed.
-    //
-    if (nullptr == d->output_head)
-    {
-        tp = (text_block *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-        if (nullptr != tp)
-        {
-            tp->hdr.nxt = nullptr;
-            tp->hdr.start = tp->data;
-            tp->hdr.end = tp->data;
-            tp->hdr.nchars = 0;
-
-            d->output_head = tp;
-            d->output_tail = tp;
-        }
-        else
-        {
-            ISOUTOFMEMORY(tp);
-            return;
-        }
-    }
-    else
-    {
-        tp = d->output_tail;
-    }
-
-    // Now tp points to the last buffer in the chain.
-    //
-    do
-    {
-        // See if there is enough space in the buffer to hold the
-        // string.  If so, copy it and update the pointers.
-        //
-        left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
-        if (n <= left)
-        {
-            memcpy(tp->hdr.end, b, n);
-            tp->hdr.end += n;
-            tp->hdr.nchars += n;
-            n = 0;
-        }
-        else
-        {
-            // The buffer we have will not fit into the existing block.  Copy
-            // what will fit, allocate another buffer, and retry.
-            //
-            if (0 < left)
-            {
-                memcpy(tp->hdr.end, b, left);
-                tp->hdr.end += left;
-                tp->hdr.nchars += left;
-                b += left;
-                n -= left;
-            }
-
-            tp = (text_block *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-            if (nullptr != tp)
-            {
-                tp->hdr.nxt = nullptr;
-                tp->hdr.start = tp->data;
-                tp->hdr.end = tp->data;
-                tp->hdr.nchars = 0;
-
-                d->output_tail->hdr.nxt = tp;
-                d->output_tail = tp;
-            }
-            else
-            {
-                ISOUTOFMEMORY(tp);
-                return;
-            }
-        }
-    } while (n > 0);
+    d->output_queue.emplace_back(reinterpret_cast<const char *>(b), n);
 }
 
 /*! \brief Add text to the output queue of the indicated network descriptor.
@@ -428,42 +353,28 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         process_output(d, false);
     }
 
-    if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
+    while (  static_cast<size_t>(mudconf.output_limit) < d->output_size + n
+          && !d->output_queue.empty())
     {
-        // If possible, some of the output queue needs to be thrown away in
-        // order to limit the output queue to the output_limit configuration
-        // option.
+        // Drop the oldest entry to make room.
         //
-        text_block *tp = d->output_head;
-        if (nullptr == tp)
+        const size_t nchars = d->output_queue.front().size();
+
+        STARTLOG(LOG_NET, "NET", "WRITE");
+        UTF8 *buf = alloc_lbuf("queue_write.LOG");
+        mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
+            d->socket, d->addr, nchars);
+        log_text(buf);
+        free_lbuf(buf);
+        if (d->flags & DS_CONNECTED)
         {
-            STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
-            log_text(T("Flushing when output_head is null!"));
-            ENDLOG;
+            log_name(d->player);
         }
-        else
-        {
-            STARTLOG(LOG_NET, "NET", "WRITE");
-            UTF8 *buf = alloc_lbuf("queue_write.LOG");
-            mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %d chars discarded by "),
-                d->socket, d->addr, tp->hdr.nchars);
-            log_text(buf);
-            free_lbuf(buf);
-            if (d->flags & DS_CONNECTED)
-            {
-                log_name(d->player);
-            }
-            ENDLOG;
-            d->output_size -= tp->hdr.nchars;
-            d->output_head = tp->hdr.nxt;
-            d->output_lost += tp->hdr.nchars;
-            if (d->output_head == nullptr)
-            {
-                d->output_tail = nullptr;
-            }
-            MEMFREE(tp);
-            tp = nullptr;
-        }
+        ENDLOG;
+
+        d->output_size -= nchars;
+        d->output_lost += nchars;
+        d->output_queue.pop_front();
     }
 
     // Append the request to the end of the output queue for later transmission.
@@ -607,37 +518,31 @@ void queue_string(DESC *d, const mux_string &s)
     queue_write(d, q);
 }
 
+void init_desc(DESC *d)
+{
+    new (&d->output_queue) std::deque<std::string>();
+    new (&d->input_queue) std::deque<std::string>();
+}
+
+void destroy_desc(DESC *d)
+{
+    d->output_queue.~deque();
+    d->input_queue.~deque();
+}
+
 void freeqs(DESC *d)
 {
-    text_block *tb, *tnext;
-    command_block *cb, *cnext;
+    d->output_queue.clear();
+    d->output_size = 0;
 
-    tb = d->output_head;
-    while (tb)
+    d->input_queue.clear();
+    d->input_size = 0;
+
+    if (d->raw_input_buf)
     {
-        tnext = tb->hdr.nxt;
-        MEMFREE(tb);
-        tb = tnext;
+        free_lbuf(d->raw_input_buf);
     }
-    d->output_head = nullptr;
-    d->output_tail = nullptr;
-
-    cb = d->input_head;
-    while (cb)
-    {
-        cnext = (command_block *) cb->hdr.nxt;
-        free_lbuf(cb);
-        cb = cnext;
-    }
-
-    d->input_head = nullptr;
-    d->input_tail = nullptr;
-
-    if (d->raw_input)
-    {
-        free_lbuf(d->raw_input);
-    }
-    d->raw_input = nullptr;
+    d->raw_input_buf = nullptr;
 
     d->raw_input_at = nullptr;
     d->nOption = 0;
@@ -698,22 +603,16 @@ void welcome_user(DESC *d)
     }
 }
 
-void save_command(DESC *d, command_block *command)
+void save_command(DESC *d, const UTF8 *cmd, size_t len)
 {
-    command->hdr.nxt = nullptr;
-    if (d->input_tail == nullptr)
+    bool was_empty = d->input_queue.empty();
+    d->input_queue.emplace_back(reinterpret_cast<const char *>(cmd), len);
+    if (was_empty)
     {
-        d->input_head = command;
-
-        // We have added our first command to an empty list. Go process it later.
+        // We have added our first command to an empty queue. Go process it later.
         //
         scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
     }
-    else
-    {
-        d->input_tail->hdr.nxt = command;
-    }
-    d->input_tail = command;
 }
 
 static void set_userstring(UTF8 **userstring, const UTF8 *command)
@@ -2852,34 +2751,31 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
     DESC *d = (DESC *)arg_voidptr;
     if (d)
     {
-        command_block *t = d->input_head;
-        if (t)
+        if (!d->input_queue.empty())
         {
             if (d->quota > 0)
             {
                 d->quota--;
-                d->input_head = (command_block *) t->hdr.nxt;
-                if (d->input_head)
+                std::string cmd = std::move(d->input_queue.front());
+                d->input_queue.pop_front();
+
+                if (!d->input_queue.empty())
                 {
                     // There are still commands to process, so schedule another looksee.
                     //
                     scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
                 }
-                else
-                {
-                    d->input_tail = nullptr;
-                }
-                d->input_size -= strlen((char *)t->cmd);
+
+                d->input_size -= cmd.size();
                 d->last_time.GetUTC();
                 if (d->program_data != nullptr)
                 {
-                    handle_prog(d, t->cmd);
+                    handle_prog(d, reinterpret_cast<UTF8 *>(cmd.data()));
                 }
                 else
                 {
-                    do_command(d, t->cmd);
+                    do_command(d, reinterpret_cast<UTF8 *>(cmd.data()));
                 }
-                free_lbuf(t);
             }
             else
             {

@@ -45,31 +45,6 @@ constexpr int CMD_NOxFIX  = 0x100;
 extern NAMETAB logout_cmdtable[];
 extern NAMETAB default_charset_nametab[];
 
-typedef struct command_block_header
-{
-    struct command_block *nxt;
-} command_block_header;
-
-typedef struct command_block
-{
-    command_block_header hdr;
-    UTF8    cmd[LBUF_SIZE - sizeof(command_block_header)];
-} command_block;
-
-typedef struct text_block_header
-{
-    struct text_block *nxt;
-    UTF8    *start;
-    UTF8    *end;
-    size_t   nchars;
-}   text_block_header;
-
-typedef struct text_block
-{
-    text_block_header hdr;
-    UTF8    data[OUTPUT_BLOCK_SIZE - sizeof(text_block_header)];
-} text_block;
-
 typedef struct program_data
 {
     dbref    wait_enactor;
@@ -178,14 +153,12 @@ struct descriptor_data
   size_t output_size;
   size_t output_tot;
   size_t output_lost;
-  text_block *output_head;
-  text_block *output_tail;
+  std::deque<std::string> output_queue;
   size_t input_size;
   size_t input_tot;
   size_t input_lost;
-  command_block *input_head;
-  command_block *input_tail;
-  command_block *raw_input;
+  std::deque<std::string> input_queue;
+  UTF8 *raw_input_buf;
   UTF8 *raw_input_at;
   size_t        nOption;
   unsigned char aOption[SBUF_SIZE];
@@ -272,7 +245,9 @@ extern void queue_string(DESC *, const UTF8 *);
 extern void queue_string(DESC *d, const mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
-extern void save_command(DESC *, command_block *);
+extern void save_command(DESC *, const UTF8 *, size_t);
+extern void init_desc(DESC *d);
+extern void destroy_desc(DESC *d);
 extern void announce_disconnect(dbref, DESC *, const UTF8 *);
 extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);

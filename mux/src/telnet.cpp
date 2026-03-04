@@ -533,17 +533,17 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
     constexpr size_t nCp437 = sizeof(szCp437) - 1;
     constexpr size_t nUSASCII = sizeof(szUSASCII) - 1;
 
-    if (!d->raw_input)
+    if (!d->raw_input_buf)
     {
-        d->raw_input = reinterpret_cast<command_block *>(alloc_lbuf("process_input.raw"));
-        d->raw_input_at = d->raw_input->cmd;
+        d->raw_input_buf = alloc_lbuf("process_input.raw");
+        d->raw_input_at = d->raw_input_buf;
     }
 
     size_t nInputBytes = 0;
     size_t nLostBytes  = 0;
 
     auto p    = d->raw_input_at;
-    auto pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(command_block_header) - 1);
+    auto pend = d->raw_input_buf + (LBUF_SIZE - 1);
 
     auto q    = d->aOption + d->nOption;
     const auto qend = d->aOption + SBUF_SIZE - 1;
@@ -630,9 +630,9 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     }
 
                     p -= d->raw_codepoint_length;
-                    if (p < d->raw_input->cmd)
+                    if (p < d->raw_input_buf)
                     {
-                        p = d->raw_input->cmd;
+                        p = d->raw_input_buf;
                     }
                     d->raw_codepoint_length = 0;
                     d->raw_codepoint_state = CL_PRINT_START_STATE;
@@ -745,9 +745,9 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                && 0 < d->raw_codepoint_length)
             {
                 p -= d->raw_codepoint_length;
-                if (p < d->raw_input->cmd)
+                if (p < d->raw_input_buf)
                 {
-                    p = d->raw_input->cmd;
+                    p = d->raw_input_buf;
                 }
                 d->raw_codepoint_length = 0;
                 d->raw_codepoint_state = CL_PRINT_START_STATE;
@@ -764,7 +764,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
             // Rewind until we pass the first byte of a UTF-8 sequence.
             //
-            while (d->raw_input->cmd < p)
+            while (d->raw_input_buf < p)
             {
                 nInputBytes--;
                 p--;
@@ -783,22 +783,19 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                && 0 < d->raw_codepoint_length)
             {
                 p -= d->raw_codepoint_length;
-                if (p < d->raw_input->cmd)
+                if (p < d->raw_input_buf)
                 {
-                    p = d->raw_input->cmd;
+                    p = d->raw_input_buf;
                 }
                 d->raw_codepoint_length = 0;
                 d->raw_codepoint_state = CL_PRINT_START_STATE;
             }
 
             *p = '\0';
-            if (d->raw_input->cmd < p)
+            if (d->raw_input_buf < p)
             {
-                save_command(d, d->raw_input);
-                d->raw_input = reinterpret_cast<command_block *>(alloc_lbuf("process_input.raw"));
-
-                p = d->raw_input_at = d->raw_input->cmd;
-                pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(command_block_header) - 1);
+                save_command(d, d->raw_input_buf, p - d->raw_input_buf);
+                p = d->raw_input_at = d->raw_input_buf;
             }
             break;
 
@@ -1356,15 +1353,15 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         pBytes++;
     }
 
-    if (  d->raw_input->cmd < p
+    if (  d->raw_input_buf < p
        && p <= pend)
     {
         d->raw_input_at = p;
     }
     else
     {
-        free_lbuf(d->raw_input);
-        d->raw_input = nullptr;
+        free_lbuf(d->raw_input_buf);
+        d->raw_input_buf = nullptr;
         d->raw_input_at = nullptr;
     }
 

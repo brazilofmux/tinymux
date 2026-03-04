@@ -5920,10 +5920,12 @@ void mux_string::append(int64_t iInt)
     append_TextPlain(mux_i64toa_t(iInt));
 }
 
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
 void mux_string::append(long lLong)
 {
     append_TextPlain(mux_ltoa_t(lLong));
 }
+#endif
 
 /*! \brief Extract and append a range of characters.
  *
@@ -7211,6 +7213,7 @@ void mux_string::import(int64_t iInt)
  * \return         None.
  */
 
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
 void mux_string::import(long lLong)
 {
     m_vcs.clear();
@@ -7220,6 +7223,7 @@ void mux_string::import(long lLong)
     LBUF_OFFSET n = (LBUF_OFFSET)mux_ltoa(lLong, m_autf);
     m_iLast(n, n);
 }
+#endif
 
 /*! \brief Import a portion of another mux_string.
  *
@@ -7352,12 +7356,14 @@ void mux_string::prepend(dbref num)
     append(sStore);
 }
 
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
 void mux_string::prepend(long lLong)
 {
     mux_string sStore(*this);
     import(lLong);
     append(sStore);
 }
+#endif
 
 void mux_string::prepend(int64_t iInt)
 {

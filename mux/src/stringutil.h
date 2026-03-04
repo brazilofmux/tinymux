@@ -1966,7 +1966,9 @@ public:
 
     void append(dbref num);
     void append(int64_t iInt);
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
     void append(long lLong);
+#endif
     void append
     (
         const mux_string &sStr,
@@ -2012,7 +2014,9 @@ public:
     ) const;
     void import(dbref num);
     void import(int64_t iInt);
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
     void import(long lLong);
+#endif
     void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
@@ -2034,7 +2038,9 @@ public:
 
     void prepend(dbref num);
     void prepend(int64_t iInt);
+#if SIZEOF_LONG != SIZEOF_LONG_LONG
     void prepend(long lLong);
+#endif
     void prepend(const mux_string &sStr);
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);

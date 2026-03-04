@@ -242,8 +242,6 @@ typedef char  boolexp_type;
                                 /* values beyond 1000 will cause %= substitutions to fail */
 #define MAX_GLOBAL_REGS     36  /* r() registers */
 
-#define OUTPUT_BLOCK_SIZE   16384
-
 /* ---------------------------------------------------------------------------
  * Database R/W flags.
  */

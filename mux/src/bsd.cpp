@@ -277,6 +277,7 @@ void shutdownsock(DESC *d, int reason)
         // If we don't have queued IOs, then we can free these, now.
         //
         freeqs(d);
+        destroy_desc(d);
         free_desc(d);
     }
 }
@@ -286,23 +287,15 @@ void process_output(DESC *d, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
-    text_block *tb = d->output_head;
-    while (nullptr != tb)
+    while (!d->output_queue.empty())
     {
-        if (0 < tb->hdr.nchars)
+        auto &entry = d->output_queue.front();
+        if (!entry.empty())
         {
-            g_GanlAdapter.send_data(d, (const char*)tb->hdr.start, tb->hdr.nchars);
-            d->output_size -= tb->hdr.nchars;
-            tb->hdr.nchars = 0;
+            g_GanlAdapter.send_data(d, entry.c_str(), entry.size());
+            d->output_size -= entry.size();
         }
-        text_block *save = tb;
-        tb = tb->hdr.nxt;
-        MEMFREE(save);
-        d->output_head = tb;
-        if (tb == nullptr)
-        {
-            d->output_tail = nullptr;
-        }
+        d->output_queue.pop_front();
     }
 }
 
