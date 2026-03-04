@@ -1979,7 +1979,8 @@ CONFIG PARAMETERS (continued)
   kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
   look_obey_terse  machine_command_cost  mail_database  mail_ehlo
-  mail_expiration  mail_per_hour  mail_sendaddr  mail_sendname  mail_server
+  mail_expiration  mail_per_hour  email_per_hour  mail_sendaddr  mail_sendname
+  mail_server
   mail_subject  master_room  match_own_commands  max_cache_size  max_players
   min_guests  module  money_name_plural  money_name_singular  motd_file
   motd_message  mud_name  newuser_file  noguest_site  nositemon_site
@@ -3580,7 +3581,21 @@ MAIL_PER_HOUR
   reached are denied.  Any existing @mail-in-progress is still
   permitted.
 
-  Related Topics: pcreate_per_hour, references_per_hour, user_attr_per_hour
+  Related Topics: email_per_hour, pcreate_per_hour, references_per_hour,
+  user_attr_per_hour
+
+& EMAIL_PER_HOUR
+EMAIL_PER_HOUR
+
+  CONFIG PARAMETER: email_per_hour <maximum>
+  DEFAULT: 50
+
+  Specifies the maximum number of @email messages per hour that a mortal
+  may send.  Attempts to send @email after this limit has been reached
+  are denied.  Wizards are exempt from this limit.
+
+  Related Topics: mail_per_hour, pcreate_per_hour, references_per_hour,
+  user_attr_per_hour
 
 & MAIL_SENDADDR
 MAIL_SENDADDR

@@ -131,6 +131,7 @@ struct confdata
     int     machinecost;        /* One in mc+1 cmds costs 1 penny (POW2-1) */
     int     mail_expiration;    /* Number of days to wait to delete mail */
     int     mail_per_hour;      // Maximum sent @mail per hour per object.
+    int     email_per_hour;     // Maximum sent @email per hour per object.
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.

@@ -329,6 +329,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (  !Wizard(executor)
+       && ThrottleEmail(executor))
+    {
+        notify(executor, T("@email: Too many emails sent recently."));
+        return;
+    }
+
     if ('\0' == mudconf.mail_server[0])
     {
         notify(executor, T("@email: Not configured"));

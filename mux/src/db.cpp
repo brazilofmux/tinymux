@@ -1424,6 +1424,7 @@ static void SetupThrottle(dbref executor)
     s_ThAttrib(executor, mudconf.vattr_per_hour);
     s_ThMail(executor, mudconf.mail_per_hour);
     s_ThRefs(executor, mudconf.references_per_hour);
+    s_ThEmail(executor, mudconf.email_per_hour);
 }
 
 static void SetupGlobalThrottle(void)
@@ -1477,6 +1478,23 @@ bool ThrottleMail(dbref executor)
     if (0 < ThMail(executor))
     {
         s_ThMail(executor, ThMail(executor)-1);
+        return false;
+    }
+    CLinearTimeAbsolute tNow;
+    tNow.GetUTC();
+    if (db[executor].tThrottleExpired <= tNow)
+    {
+        SetupThrottle(executor);
+        return false;
+    }
+    return true;
+}
+
+bool ThrottleEmail(dbref executor)
+{
+    if (0 < ThEmail(executor))
+    {
+        s_ThEmail(executor, ThEmail(executor)-1);
         return false;
     }
     CLinearTimeAbsolute tNow;
