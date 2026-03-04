@@ -672,6 +672,46 @@ void CLogFile::StopLogging(void)
     }
 }
 
+void CLogFile::Rotate(void)
+{
+#if defined(WINDOWS_THREADS)
+    EnterCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
+
+    Flush();
+    if (!bUseStderr)
+    {
+        CloseLogFile();
+
+        m_ltaStarted.GetLocal();
+        MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename,
+            sizeof(m_szFilename));
+
+        CreateLogFile();
+        m_nSize = 0;
+    }
+
+#if defined(WINDOWS_THREADS)
+    LeaveCriticalSection(&csLog);
+#endif // WINDOWS_THREADS
+}
+
+void do_logrotate(dbref executor, dbref caller, dbref enactor, int eval, int key)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
+
+    STARTLOG(LOG_ALWAYS, "WIZ", "LOGROTATE");
+    log_name(executor);
+    log_text(T(" rotates the log file."));
+    ENDLOG;
+
+    Log.Rotate();
+    notify(executor, T("Log file rotated."));
+}
+
 CLogFile::~CLogFile(void)
 {
     StopLogging();

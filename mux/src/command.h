@@ -83,6 +83,7 @@ CMD_ONE_ARG(do_quitprog);       /* Quits @prog */
 CMD_TWO_ARG(do_kill);           /* Kill something */
 CMD_ONE_ARG(do_last);           /* Get recent login info */
 CMD_NO_ARG(do_leave);           /* Leave the current object */
+CMD_NO_ARG(do_logrotate);       /* Rotate the log file */
 CMD_TWO_ARG(do_link);           /* Set home, dropto, or dest */
 CMD_ONE_ARG(do_list);           /* List contents of internal tables */
 CMD_ONE_ARG(do_list_file);      /* List contents of message files */

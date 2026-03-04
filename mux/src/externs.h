@@ -376,6 +376,7 @@ public:
     void SetBasename(const UTF8 *pBasename);
     void StartLogging(void);
     void StopLogging(void);
+    void Rotate(void);
 };
 
 extern CLogFile Log;

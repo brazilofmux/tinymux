@@ -1341,6 +1341,18 @@ INDESTRUCTIBLE
 
   Related Topics: QUOTAS.
 
+& @LOGROTATE
+@LOGROTATE
+
+  COMMAND: @logrotate
+
+  Manually rotates the log file. The current log is flushed and closed,
+  and a new timestamped log file is opened. The old log file is preserved.
+  This is useful for archiving logs on demand or from a cron script without
+  waiting for the automatic size-based rotation.
+
+  This command is wizard-only.
+
 & @READCACHE
 @READCACHE
 
@@ -1855,7 +1867,7 @@ COMMANDS
   @dump          @enable        @fixdb         @flag          @function
   @halt          @hook          @icmd          @kick          @list
   @listcommands  @list_file     @listmotd      @lock          @log
-  @mark          @mark_all      @motd          @newpassword   @pcreate
+  @logrotate     @mark          @mark_all      @motd          @newpassword   @pcreate
   @poor          @ps            @quota         @readcache     @restart
   @shutdown      @startslave    @timecheck     @timeout       @timewarp
   @toad          @wall

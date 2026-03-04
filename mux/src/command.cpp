@@ -598,6 +598,7 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {T("@dbck"),       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dbck},
     {T("@dbclean"),    nullptr,    CA_GOD,      0,          CS_NO_ARGS, 0, do_dbclean},
     {T("@dump"),       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
+    {T("@logrotate"),  nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_logrotate},
     {T("@mark_all"),   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
     {T("@readcache"),  nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
     {T("@restart"),    nullptr,    CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
