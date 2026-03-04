@@ -105,7 +105,8 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
     {
         // Make sure the player passes the link lock
         //
-        if (!could_doit(player, loc, A_LLINK))
+        if (  !Link_Anywhere(player)
+           && !could_doit(player, loc, A_LLINK))
         {
             notify_quiet(player, T("You can\xE2\x80\x99t link to there."));
             return;
@@ -184,6 +185,7 @@ static void link_exit(const dbref player, const dbref exit, const dbref dest)
     // Make sure we can link there
     //
     if (  dest != HOME
+       && !Link_Anywhere(player)
        && (  (  !Controls(player, dest)
              && !Link_ok(dest))
           || !could_doit(player, dest, A_LLINK)))
@@ -365,6 +367,7 @@ void do_link
             notify_quiet(executor, T("That is not a room!"));
         }
         else if (  room != HOME
+                && !Link_Anywhere(executor)
                 && (  (  !Controls(executor, room)
                       && !Link_ok(room))
                    || !could_doit(executor, room, A_LLINK)))

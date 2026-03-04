@@ -383,7 +383,8 @@ UTF8 *MakeCanonicalFlagName
 #define Link_exit(p,x)      ((Typeof(x) == TYPE_EXIT) && \
                             ((Location(x) == NOTHING) || Controls(p,x)))
 #define Linkable(p,x)       (Good_obj(x) && Has_contents(x) && \
-                            (((Flags(x) & LINK_OK) != 0) || Controls(p,x)))
+                            (((Flags(x) & LINK_OK) != 0) || Controls(p,x) || \
+                            Link_Anywhere(p)))
 #define See_attr(p,x,a)     (!((a)->flags & AF_IS_LOCK) && bCanReadAttr(p,x,a,false))
 #define See_attr_explicit(p,x,a,o,f) (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK)) && \
                             (((f) & AF_VISUAL) || (Owner(p) == (o)) && \

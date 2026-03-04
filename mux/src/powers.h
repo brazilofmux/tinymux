@@ -29,7 +29,8 @@
 #define POW_PROG        0x00008000  /* Can use the @prog command */
 #define POW_SITEADMIN   0x00010000  // Can @shutdown and @restart.
 
-/* FREE: 0x00020000 - 0x00040000 */
+#define POW_LINK_ANYWHR 0x00020000  /* Can @link exits anywhere */
+/* FREE: 0x00040000 */
 
 #define POW_COMM_ALL    0x00080000  /* Channel wiz */
 #define POW_SEE_QUEUE   0x00100000  /* Player can see the entire queue */
@@ -91,6 +92,7 @@ extern bool decode_power(dbref player, UTF8 *powername, POWERSET *pset);
 #define Can_Hide(c)         (((Powers(c) & POW_HIDE) != 0) || Wizard(c))
 #define Can_Idle(c)         (((Powers(c) & POW_IDLE) != 0) || Wizard(c))
 #define Search(c)           (((Powers(c) & POW_SEARCH) != 0) || WizRoy(c))
+#define Link_Anywhere(c)    (((Powers(c) & POW_LINK_ANYWHR) != 0) || WizRoy(c))
 #define Long_Fingers(c)     (((Powers(c) & POW_LONGFINGERS) != 0) || Wizard(c))
 #define Comm_All(c)         (((Powers(c) & POW_COMM_ALL) != 0) || Wizard(c))
 #define See_Queue(c)        (((Powers(c) & POW_SEE_QUEUE) != 0) || WizRoy(c))

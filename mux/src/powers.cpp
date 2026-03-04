@@ -83,6 +83,7 @@ static POWERENT gen_powers[] =
     {T("halt"),            POW_HALT,       0, 0,   ph_wiz},
     {T("hide"),            POW_HIDE,       0, 0,   ph_wiz},
     {T("idle"),            POW_IDLE,       0, 0,   ph_wiz},
+    {T("link_anywhere"),   POW_LINK_ANYWHR,0, 0,   ph_wiz},
     {T("long_fingers"),    POW_LONGFINGERS,0, 0,   ph_wiz},
     {T("monitor"),         POW_MONITOR,    0, 0,   ph_wiz},
     {T("no_destroy"),      POW_NO_DESTROY, 0, 0,   ph_wiz},

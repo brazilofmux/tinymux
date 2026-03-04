@@ -11201,6 +11201,7 @@ POWERS LIST
   halt              Can @halt anything, and @halt/all.
   hide              DARK flag is effective for hiding.
   idle              No idle timeout.
+  link_anywhere     Can @link an exit to any destination.
   long_fingers      Can get, look, whisper, etc from a distance.
   monitor           Can set or reset monitor flag.
 
