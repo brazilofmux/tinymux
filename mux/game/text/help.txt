@@ -12745,10 +12745,11 @@ SQRT()
 & SQUISH()
 SQUISH()
 
-  FUNCTION: squish(<text>[,<character>])
+  FUNCTION: squish(<text>[,<separator>])
 
-  This function replaces multiple occurrences of <character> in <text> with a
-  single occurrence.  If <character> is not specified, it defaults to a space.
+  This function replaces consecutive occurrences of <separator> in <text> with
+  a single occurrence.  If <separator> is not specified, it defaults to a
+  space.  <separator> may be a multi-character string such as %r (CRLF).
 
   Examples:
     > @wait 0=@va me=Foo[space(5)]Bar
@@ -12759,6 +12760,9 @@ SQUISH()
     Test Test
     > think squish(....Foo....Bar....,.)
     .Foo.Bar.
+    > think squish(%r%rFoo%r%rBar%r%r,%r)
+    Foo
+    Bar
 
   Related Topics: strip(), trim()
 
@@ -13621,12 +13625,13 @@ TRIGGER()
 & TRIM()
 TRIM()
 
-  FUNCTION: trim(<string> [,<trim style> [,<trim character>]])
+  FUNCTION: trim(<string> [,<trim style> [,<trim chars>]])
 
-  This function will trim trailing and/or lead characters on the string
-  that you specify.  <trim character> specifies the character to trim (default
-  is space), and <trim style> tells the kind of trimming to perform (default
-  is trim both sides of the string).
+  This function will trim trailing and/or leading characters on the string
+  that you specify.  <trim chars> specifies the character or multi-character
+  pattern to trim (default is space), and <trim style> tells the kind of
+  trimming to perform (default is trim both sides of the string).
+  Multi-character patterns such as %r (CRLF) are supported.
 
   The following values for <trim style> are recognized:
       'b' :   Trim both ends of the string (default)
