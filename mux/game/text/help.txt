@@ -2348,13 +2348,19 @@ Related Topics: @name.
   INDIRECT LOCKS:
 
   Key: @<object>
+       @<object>/<lockname>
 
   You may reference the lock on another object and use the result of
-  evaluating that other object's lock.    You pass an indirect lock if you
-  pass the default lock on <object>.  This is especially useful if you
-  have a large number of objects or exits that want to have the same lock,
-  and you want to be able to update one object and have all the other
-  locks change at the same time.
+  evaluating that other object's lock.  You pass an indirect lock if you
+  pass the referenced lock on <object>.
+
+  If no /<lockname> is given, the default lock is used.  You may specify
+  any named lock type (enterlock, uselock, etc.) to reference that lock
+  instead.  Type 'help @lock locks' for a list of available lock types.
+
+  This is especially useful if you have a large number of objects or exits
+  that want to have the same lock, and you want to be able to update one
+  object and have all the other locks change at the same time.
 
   <object> is searched for when you enter the @lock command and its
   database number is stored in the lock, so something like
@@ -2365,10 +2371,14 @@ Related Topics: @name.
     > @lock master.lock = me
     > @lock north = @master.lock
     > @lock south = @master.lock
-    North and south all reference the lock on master.lock, so you may change
-    the lock on all three exits by changing master.lock.
+    North and south all reference the default lock on master.lock, so you
+    may change the lock on all three exits by changing master.lock.
 
-  Related Topics: @lock normal.
+    > @lock/enterlock gateway = #1234
+    > @lock north = @gateway/enterlock
+    North references the enterlock on gateway instead of its default lock.
+
+  Related Topics: @lock normal, @lock locks.
 
 & @LOCK IS
 @LOCK IS
@@ -2398,7 +2408,7 @@ Related Topics: @name.
   Is          =<object>
   Carry       +<object>
   Ownership   $<object>
-  Indirect    @<object>
+  Indirect    @<object>[/<lockname>]
   Attribute   <attribute>:<wildcard-pattern>
               +<attribute>:<wildcard-pattern>
               =<attribute>:<wildcard-pattern>

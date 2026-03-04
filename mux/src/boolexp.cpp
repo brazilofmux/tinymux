@@ -124,7 +124,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             mudstate.lock_nest_lev--;
             return false;
         }
-        key = atr_get("boolexp.130", b->sub1->thing, A_LOCK, &aowner, &aflags);
+        key = atr_get("boolexp.130", b->sub1->thing, b->thing, &aowner, &aflags);
         c = eval_boolexp_atr(player, b->sub1->thing, from, key);
         free_lbuf(key);
         mudstate.lock_nest_lev--;
@@ -530,7 +530,118 @@ static BOOLEXP *parse_boolexp_F(void)
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.indir");
         b2->type = BOOLEXP_INDIR;
-        b2->sub1 = parse_boolexp_L();
+        b2->thing = A_LOCK;
+
+        // Scan ahead for '/' (lock name separator) before any operator.
+        // We need to find it before parse_boolexp_L() consumes it.
+        //
+        {
+            const char *slash = nullptr;
+            int depth = 0;
+            for (const char *scan = parsebuf; *scan; scan++)
+            {
+                if (*scan == '(')
+                {
+                    depth++;
+                }
+                else if (*scan == ')')
+                {
+                    if (depth > 0)
+                    {
+                        depth--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else if (  depth == 0
+                        && (  *scan == AND_TOKEN
+                           || *scan == OR_TOKEN))
+                {
+                    break;
+                }
+                else if (  depth == 0
+                        && *scan == '/')
+                {
+                    slash = scan;
+                    break;
+                }
+            }
+
+            if (slash)
+            {
+                // Copy the object-ref portion into a local buffer and
+                // parse it separately, then extract and look up the lock
+                // name that follows the '/'.
+                //
+                size_t objlen = static_cast<size_t>(slash - parsebuf);
+                char objbuf[LBUF_SIZE];
+                if (objlen >= sizeof(objbuf))
+                {
+                    objlen = sizeof(objbuf) - 1;
+                }
+                memcpy(objbuf, parsebuf, objlen);
+                objbuf[objlen] = '\0';
+
+                const char *saved = parsebuf;
+                parsebuf = objbuf;
+                b2->sub1 = parse_boolexp_L();
+                parsebuf = saved;
+
+                // Advance past the object ref and the '/'.
+                //
+                const char *lockname_start = slash + 1;
+                const char *lockname_end = lockname_start;
+                while (  *lockname_end
+                      && *lockname_end != AND_TOKEN
+                      && *lockname_end != OR_TOKEN
+                      && *lockname_end != ')')
+                {
+                    lockname_end++;
+                }
+
+                // Strip trailing whitespace from the lock name.
+                //
+                const char *lockname_trim = lockname_end;
+                while (  lockname_trim > lockname_start
+                      && mux_isspace(*(lockname_trim - 1)))
+                {
+                    lockname_trim--;
+                }
+
+                char lockname[SBUF_SIZE];
+                size_t lnlen = static_cast<size_t>(lockname_trim - lockname_start);
+                if (lnlen >= sizeof(lockname))
+                {
+                    lnlen = sizeof(lockname) - 1;
+                }
+                memcpy(lockname, lockname_start, lnlen);
+                lockname[lnlen] = '\0';
+
+                parsebuf = lockname_end;
+
+                // Look up the lock name.
+                //
+                int lock_attr;
+                if (!search_nametab(parse_player, lock_sw,
+                        reinterpret_cast<const UTF8 *>(lockname), &lock_attr))
+                {
+                    if (!mudstate.bStandAlone)
+                    {
+                        notify(parse_player, T("Unknown lock type."));
+                    }
+                    free_boolexp(b2);
+                    return TRUE_BOOLEXP;
+                }
+                b2->thing = static_cast<dbref>(lock_attr);
+            }
+            else
+            {
+                b2->sub1 = parse_boolexp_L();
+            }
+        }
+
         if ((b2->sub1) == TRUE_BOOLEXP)
         {
             free_boolexp(b2);

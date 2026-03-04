@@ -79,6 +79,20 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
     case BOOLEXP_INDIR:
         safe_chr(INDIR_TOKEN, boolexp_buf, &buftop);
         unparse_boolexp1(player, b->sub1, b->type, format);
+        if (b->thing != A_LOCK)
+        {
+            // Reverse-lookup lock name from lock_sw[].
+            //
+            for (NAMETAB *nt = lock_sw; nt->name; nt++)
+            {
+                if (nt->flag == static_cast<unsigned int>(b->thing))
+                {
+                    safe_chr('/', boolexp_buf, &buftop);
+                    safe_str(nt->name, boolexp_buf, &buftop);
+                    break;
+                }
+            }
+        }
         break;
     case BOOLEXP_IS:
         safe_chr(IS_TOKEN, boolexp_buf, &buftop);
