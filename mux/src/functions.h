@@ -158,6 +158,7 @@ XFUNCTION(fun_lrand);
 XFUNCTION(fun_lrooms);
 XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
+XFUNCTION(fun_mailreview);
 XFUNCTION(fun_mailsize);
 XFUNCTION(fun_mailsubj);
 XFUNCTION(fun_malias);

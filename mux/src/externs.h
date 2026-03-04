@@ -149,6 +149,8 @@ UTF8 *MakeCanonicalMailAliasDesc
 );
 
 size_t MessageFetchSize(int number);
+const UTF8 *MessageFetch(int number);
+bool mail_from_player(dbref player, struct mail *mp);
 void finish_mail();
 
 // From netcommon.cpp.

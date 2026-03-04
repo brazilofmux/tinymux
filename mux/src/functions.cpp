@@ -11220,6 +11220,7 @@ static FUN builtin_function_list[] =
     {T("LWHO"),        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("MAIL"),        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("MAILFROM"),    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("MAILREVIEW"),  fun_mailreview, MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MAILSIZE"),    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("MAILSUBJ"),    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MALIAS"),      fun_malias,     MAX_ARG, 0,       1,         0, CA_PUBLIC},

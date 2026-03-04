@@ -7440,7 +7440,8 @@ FUNCTION CLASSES
   Comsystem Information:     CHANNELS CHANOBJ COMALIAS COMTITLE CWHO
 
   Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILJ MAILFROM
-                             MAILSIZE MAILSUBJ NEARBY NEXT NUM RLOC ROOM
+                             MAILREVIEW MAILSIZE MAILSUBJ NEARBY NEXT NUM RLOC
+                             ROOM
                              SEARCH STATS VALID WHERE ZCHILDREN ZEXITS ZFUN
                              ZONE ZROOMS ZTHINGS ZWHO
 
@@ -7566,7 +7567,8 @@ FUNCTION LIST (continued)
     LMAX()      LMIN()      LN()        LNUM()      LOC()       LOCALIZE()
     LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()
     LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()
-    LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()
+    LWHO()      MAIL()      MAILFROM()  MAILJ()     MAILREVIEW()
+    MAILSIZE()  MAILSUBJ()
     MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
     MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
     MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
@@ -10058,6 +10060,21 @@ MAILFROM()
   specify mailfrom(<player>,<msg #>).
 
   Related Topics:
+
+& MAILREVIEW()
+MAILREVIEW()
+
+  FUNCTION: mailreview(<player>)
+            mailreview(<player>, <msg #>)
+
+  The first form returns the number of @mail messages that you have
+  sent to <player>.
+
+  The second form returns the text of your <msg #>'th sent message
+  to <player>.  Message numbering starts at 1 and corresponds to the
+  order shown by @mail/review <player>.
+
+  Related Topics: @mail, mail(), mailfrom(), MAIL-READING.
 
 & MAILSIZE()
 MAILSIZE()

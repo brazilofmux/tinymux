@@ -1658,7 +1658,7 @@ static UTF8 *status_chars(struct mail *mp)
 // Guards against recycled dbref: if the mail predates the player's
 // creation, a previous player held this dbref.
 //
-static bool mail_from_player(dbref player, struct mail *mp)
+bool mail_from_player(dbref player, struct mail *mp)
 {
     if (mp->from != player)
     {

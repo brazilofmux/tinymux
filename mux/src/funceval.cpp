@@ -2508,6 +2508,85 @@ FUNCTION(fun_mailfrom)
 }
 
 // ---------------------------------------------------------------------------
+// fun_mailreview: functional equivalent of @mail/review <player>.
+//
+//  1) mailreview(<player>)       -- count of messages executor sent to <player>
+//  2) mailreview(<player>,<num>) -- text of executor's <num>-th sent message
+//
+FUNCTION(fun_mailreview)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!mudconf.have_mailer)
+    {
+        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
+        return;
+    }
+
+    dbref target = lookup_player(executor, fargs[0], true);
+    if (target == NOTHING)
+    {
+        safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+        return;
+    }
+
+    if (!isPlayer(target))
+    {
+        safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+        return;
+    }
+
+    if (nfargs == 1)
+    {
+        // Count messages the executor has sent to target.
+        //
+        int count = 0;
+        MailList ml(target);
+        struct mail *mp;
+        for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+        {
+            if (mail_from_player(executor, mp))
+            {
+                count++;
+            }
+        }
+        safe_ltoa(count, buff, bufc);
+    }
+    else // nfargs == 2
+    {
+        int num = mux_atol(fargs[1]);
+        if (num < 1)
+        {
+            safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+            return;
+        }
+
+        // Find the num-th message sent by executor to target.
+        //
+        int count = 0;
+        MailList ml(target);
+        struct mail *mp;
+        for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+        {
+            if (mail_from_player(executor, mp))
+            {
+                count++;
+                if (count == num)
+                {
+                    safe_str(MessageFetch(mp->number), buff, bufc);
+                    return;
+                }
+            }
+        }
+        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // fun_hasattr: does object X have attribute Y.
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.
