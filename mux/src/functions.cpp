@@ -5933,7 +5933,8 @@ static FUNCTION(fun_after)
     }
     mux_cursor nPat = sPat->length_cursor();
 
-    if (  1 == nPat.m_byte
+    if (  nfargs <= 1
+       && 1 == nPat.m_byte
        && ' ' == sPat->export_Char(0))
     {
         bp = trim_space_sep(bp, sepSpace);
@@ -6010,7 +6011,8 @@ static FUNCTION(fun_before)
         nPat = 1;
     }
 
-    if (  1 == nPat
+    if (  nfargs <= 1
+       && 1 == nPat
        && ' ' == sPat->export_Char(0))
     {
         bp = trim_space_sep(bp, sepSpace);
