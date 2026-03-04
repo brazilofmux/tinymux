@@ -217,7 +217,9 @@ constexpr int A_APARENT   = 229;  // @aparent attribute
 constexpr int A_ACREATE   = 230;  // @acreate attribute
 constexpr int A_LVISIBLE  = 231;  // Visibility Lock Storage Attribute
 
-// 232 - 239 unused
+constexpr int A_PRONOUN   = 232; /* Pronoun group name for %s/%o/%p/%a */
+
+// 233 - 239 unused
 
 constexpr int A_IDLETMOUT  = 240; /* Idle message timeout */
 constexpr int A_EXITFORMAT = 241;

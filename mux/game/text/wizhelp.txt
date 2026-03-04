@@ -4313,6 +4313,28 @@ POWER_ALIAS
 
   Related Topics: alias, flag_alias, function_alias.
 
+& PRONOUN_GROUP
+PRONOUN_GROUP
+
+  CONFIG PARAMETER: pronoun_group <name> <subj>,<obj>,<poss>,<aposs> [plural]
+
+  Defines a custom pronoun group that can be selected by setting the
+  @pronoun attribute on an object.  The four comma-separated values
+  define the subjective (%s), objective (%o), possessive (%p), and
+  absolute possessive (%a) forms.
+
+  The optional 'plural' keyword at the end controls verb conjugation
+  in messages like 'grows ears' vs 'grow ears'.
+
+  Examples:
+    pronoun_group fae zey,zem,zeir,zeirs
+    pronoun_group alienplural zey,zem,zeir,zeirs plural
+
+  To use a custom group, set the @pronoun attribute on an object:
+    @pronoun me = fae
+
+  Related Topics: @SEX, @PRONOUN.
+
 & PUBLIC_CHANNEL
 PUBLIC_CHANNEL
 

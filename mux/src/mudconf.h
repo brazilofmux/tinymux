@@ -6,6 +6,15 @@
 #ifndef MUDCONF_H
 #define MUDCONF_H
 
+struct PRONOUN_SET
+{
+    UTF8 subjective[64];    // %s
+    UTF8 objective[64];     // %o
+    UTF8 possessive[64];    // %p
+    UTF8 absolute[64];      // %a
+    bool plural;            // verb conjugation: "grow" vs "grows"
+};
+
 struct VectorHasher
 {
     size_t operator()(const std::vector<UTF8> &v) const
@@ -569,6 +578,7 @@ struct statedata
     DbrefPtrMap  mail_htab;     /* Mail players hashtable */
     DbrefPtrMap  parent_htab;   /* Parent $-command exclusion */
     StringPtrMap player_htab;   /* Player name->number hashtable */
+    std::unordered_map<std::vector<UTF8>, PRONOUN_SET*, VectorHasher> pronoun_groups; /* Custom pronoun sets */
     StringPtrMap powers_htab;   /* Powers hashtable */
     StringPtrMap reference_htab; /* @reference hashtable */
     StringPtrMap ufunc_htab;    /* Local functions hashtable */

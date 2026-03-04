@@ -656,15 +656,6 @@ bool ok_password(const UTF8 *password, const UTF8 **pmsg)
 
 void handle_ears(dbref thing, bool could_hear, bool can_hear)
 {
-    static const UTF8 *poss[5] =
-    {
-        T(""),
-        T("its"),
-        T("her"),
-        T("his"),
-        T("their")
-    };
-
     if (could_hear != can_hear)
     {
         mux_string *sStr = new mux_string(Moniker(thing));
@@ -676,18 +667,18 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
                 sStr->truncate(iPos);
             }
         }
-        int gender = get_gender(thing);
+        const PRONOUN_SET *pg = get_pronoun_set(thing);
 
         if (can_hear)
         {
             sStr->append_TextPlain(tprintf(T(" grow%s ears and can now hear."),
-                                 (gender == 4) ? "" : "s"));
+                                 pg->plural ? "" : "s"));
         }
         else
         {
             sStr->append_TextPlain(tprintf(T(" lose%s %s ears and become%s deaf."),
-                                 (gender == 4) ? "" : "s", poss[gender],
-                                 (gender == 4) ? "" : "s"));
+                                 pg->plural ? "" : "s", pg->possessive,
+                                 pg->plural ? "" : "s"));
         }
         notify_check(thing, thing, *sStr, MSG_ME | MSG_NBR | MSG_LOC | MSG_INV);
         delete sStr;

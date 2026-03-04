@@ -826,8 +826,33 @@ static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enact
 //-----------------------------------------------------------------------------
 // exec: Process a command line, evaluating function calls and %-substitutions.
 //
-int get_gender(dbref player)
+static PRONOUN_SET builtin_pronoun_sets[4] =
 {
+    { "it",   "it",   "its",   "its",    false },  // [0] neuter
+    { "she",  "her",  "her",   "hers",   false },  // [1] feminine
+    { "he",   "him",  "his",   "his",    false },  // [2] masculine
+    { "they", "them", "their", "theirs", true  },   // [3] plural
+};
+
+const PRONOUN_SET *get_pronoun_set(dbref player)
+{
+    // Fast path: check for @pronoun attribute (no parent chain).
+    //
+    const UTF8 *raw = atr_get_raw(player, A_PRONOUN);
+    if (raw)
+    {
+        size_t nCased;
+        const UTF8 *pCased = mux_strupr(raw, nCased);
+        std::vector<UTF8> vKey(pCased, pCased + nCased);
+        auto it = mudstate.pronoun_groups.find(vKey);
+        if (it != mudstate.pronoun_groups.end())
+        {
+            return it->second;
+        }
+    }
+
+    // Fall back to @sex first-character matching.
+    //
     dbref aowner;
     int aflags;
     UTF8 *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
@@ -837,18 +862,27 @@ int get_gender(dbref player)
     {
     case 'p':
     case 'P':
-        return 4;
+        return &builtin_pronoun_sets[3];
 
     case 'm':
     case 'M':
-        return 3;
+        return &builtin_pronoun_sets[2];
 
     case 'f':
     case 'F':
     case 'w':
     case 'W':
-        return 2;
+        return &builtin_pronoun_sets[1];
     }
+    return &builtin_pronoun_sets[0];
+}
+
+int get_gender(dbref player)
+{
+    const PRONOUN_SET *ps = get_pronoun_set(player);
+    if (ps == &builtin_pronoun_sets[3]) return 4;
+    if (ps == &builtin_pronoun_sets[2]) return 3;
+    if (ps == &builtin_pronoun_sets[1]) return 2;
     return 1;
 }
 
@@ -1252,38 +1286,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     UFUN *ufp;
     const UTF8 *tstr;
 
-    static const UTF8 *subj[5] =
-    {
-        T(""),
-        T("it"),
-        T("she"),
-        T("he"),
-        T("they")
-    };
-    static const UTF8 *poss[5] =
-    {
-        T(""),
-        T("its"),
-        T("her"),
-        T("his"),
-        T("their")
-    };
-    static const UTF8 *obj[5] =
-    {
-        T(""),
-        T("it"),
-        T("her"),
-        T("him"),
-        T("them")
-    };
-    static const UTF8 *absp[5] =
-    {
-        T(""),
-        T("its"),
-        T("hers"),
-        T("his"),
-        T("theirs")
-    };
+    // Pronoun set pointer — lazy-loaded once per eval via get_pronoun_set().
+    //
 
     // This is scratch buffer is used potentially on every invocation of
     // mux_exec. Do not assume that its contents are valid after you
@@ -1292,7 +1296,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     static UTF8 mux_scratch[LBUF_SIZE];
 
     int at_space = 1;
-    int gender = -1;
+    const PRONOUN_SET *pPronounSet = nullptr;
 
     bool is_trace = (Trace(executor) || (eval & EV_TRACE)) && !(eval & EV_NOTRACE);
     bool is_top = false;
@@ -1964,18 +1968,11 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             //
                             // Subjective pronoun.
                             //
-                            if (gender < 0)
+                            if (!pPronounSet)
                             {
-                                gender = get_gender(enactor);
+                                pPronounSet = get_pronoun_set(enactor);
                             }
-                            if (!gender)
-                            {
-                                constbuf  = Name(enactor);
-                            }
-                            else
-                            {
-                                constbuf  = subj[gender];
-                            }
+                            constbuf = pPronounSet->subjective;
                             safe_str(constbuf, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -1990,28 +1987,14 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             // 50
                             // P
                             //
-                            // Personal pronoun.
+                            // Possessive pronoun.
                             //
-                            if (gender < 0)
+                            if (!pPronounSet)
                             {
-                                gender = get_gender(enactor);
+                                pPronounSet = get_pronoun_set(enactor);
                             }
-
-                            if (!gender)
-                            {
-                                safe_str(Name(enactor), buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                if (nBufferAvailable)
-                                {
-                                    *(*bufc)++ = 's';
-                                    nBufferAvailable--;
-                                }
-                            }
-                            else
-                            {
-                                safe_str(poss[gender], buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                            }
+                            safe_str(pPronounSet->possessive, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                         else // if (iCode == 16)
                         {
@@ -2020,18 +2003,11 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             //
                             // Objective pronoun.
                             //
-                            if (gender < 0)
+                            if (!pPronounSet)
                             {
-                                gender = get_gender(enactor);
+                                pPronounSet = get_pronoun_set(enactor);
                             }
-                            if (!gender)
-                            {
-                                constbuf = Name(enactor);
-                            }
-                            else
-                            {
-                                constbuf = obj[gender];
-                            }
+                            constbuf = pPronounSet->objective;
                             safe_str(constbuf, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -2043,29 +2019,15 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             // 41
                             // A
                             //
-                            // Absolute posessive.
+                            // Absolute possessive.
                             // Idea from Empedocles.
                             //
-                            if (gender < 0)
+                            if (!pPronounSet)
                             {
-                                gender = get_gender(enactor);
+                                pPronounSet = get_pronoun_set(enactor);
                             }
-
-                            if (!gender)
-                            {
-                                safe_str(Name(enactor), buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                if (nBufferAvailable)
-                                {
-                                    *(*bufc)++ = 's';
-                                    nBufferAvailable--;
-                                }
-                            }
-                            else
-                            {
-                                safe_str(absp[gender], buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                            }
+                            safe_str(pPronounSet->absolute, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                         else // if (iCode == 18)
                         {

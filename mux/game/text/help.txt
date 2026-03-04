@@ -3739,7 +3739,29 @@ Related Topics: @name.
   Example: @sex me = female
            @sex me = No thank you (Silly, but possible.  Treated as neuter)
 
-  Related Topics: GENDER.
+  If the @pronoun attribute is set on <object> and matches a configured
+  pronoun_group, those custom pronouns are used instead.
+
+  Related Topics: @PRONOUN, GENDER.
+
+& @PRONOUN
+@PRONOUN
+
+  COMMAND:   @pronoun <object> = <group name>
+  ATTRIBUTE: Pronoun
+
+  Sets the pronoun group for <object>.  When set and the group name matches
+  a pronoun_group defined in the server configuration, the custom pronouns
+  from that group are used for %s, %o, %p, and %a substitutions instead of
+  the defaults from @sex.
+
+  If @pronoun is not set, or the group name does not match any configured
+  pronoun_group, the server falls back to @sex for pronoun selection.
+
+  Example: @pronoun me = fae
+           (uses the 'fae' pronoun group if configured, e.g. zey/zem/zeir/zeirs)
+
+  Related Topics: @SEX, GENDER.
 
 & @SIGNATURE
 @SIGNATURE
@@ -7683,9 +7705,12 @@ GENDER
   attribute controls how gender-specific pronoun substitutions are evaluated
   for the player.  If the player's Sex attribute starts with an 'M' or an 'm'
   then the player is assumed to be male,  'F', 'f', 'W', and 'w' indicate
-  female, and anything else indicates neuter.
+  female, 'P' or 'p' indicate plural, and anything else indicates neuter.
 
-  Related Topics: SUBSTITUTIONS.
+  If the @pronoun attribute is set and matches a configured pronoun_group,
+  those custom pronouns override the defaults from @sex.
+
+  Related Topics: @SEX, @PRONOUN, SUBSTITUTIONS.
 
 & GET
 GET

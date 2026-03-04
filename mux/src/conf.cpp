@@ -888,6 +888,90 @@ static CF_HAND(cf_attr_name_alias)
     return -1;
 }
 
+// cf_pronoun_group: Define a custom pronoun set.
+//
+// Syntax: pronoun_group <name> <subj>,<obj>,<poss>,<aposs> [plural]
+//
+static CF_HAND(cf_pronoun_group)
+{
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
+    string_token st(str, T(" \t"));
+    UTF8 *pName = st.parse();
+    UTF8 *pPronouns = st.parse();
+
+    if (  !pName
+       || !pPronouns)
+    {
+        cf_log_syntax(player, cmd, T("Expected: pronoun_group <name> <subj>,<obj>,<poss>,<aposs> [plural]"));
+        return -1;
+    }
+
+    // Parse comma-separated pronouns.
+    //
+    string_token st2(pPronouns, T(","));
+    UTF8 *pSubj = st2.parse();
+    UTF8 *pObj  = st2.parse();
+    UTF8 *pPoss = st2.parse();
+    UTF8 *pAposs = st2.parse();
+
+    if (  !pSubj
+       || !pObj
+       || !pPoss
+       || !pAposs)
+    {
+        cf_log_syntax(player, cmd, T("Expected four comma-separated pronouns: <subj>,<obj>,<poss>,<aposs>"));
+        return -1;
+    }
+
+    // Check for optional 'plural' keyword.
+    //
+    UTF8 *pPlural = st.parse();
+    bool bPlural = false;
+    if (  pPlural
+       && mux_stricmp(pPlural, T("plural")) == 0)
+    {
+        bPlural = true;
+    }
+
+    // Uppercase the name for lookup key.
+    //
+    size_t nCased;
+    const UTF8 *pCased = mux_strupr(pName, nCased);
+    vector<UTF8> vKey(pCased, pCased + nCased);
+
+    // Check if this group name already exists.
+    //
+    auto it = mudstate.pronoun_groups.find(vKey);
+    PRONOUN_SET *ps;
+    if (it != mudstate.pronoun_groups.end())
+    {
+        ps = it->second;
+    }
+    else
+    {
+        try
+        {
+            ps = new PRONOUN_SET;
+        }
+        catch (...)
+        {
+            return -1;
+        }
+        mudstate.pronoun_groups.insert(make_pair(vKey, ps));
+    }
+
+    mux_strncpy(ps->subjective, pSubj, sizeof(ps->subjective) - 1);
+    mux_strncpy(ps->objective, pObj, sizeof(ps->objective) - 1);
+    mux_strncpy(ps->possessive, pPoss, sizeof(ps->possessive) - 1);
+    mux_strncpy(ps->absolute, pAposs, sizeof(ps->absolute) - 1);
+    ps->plural = bPlural;
+
+    return 0;
+}
+
 static int function_name_helper(const dbref player, const UTF8* cmd, const UTF8* existing_name, const UTF8* new_name, bool delete_existing)
 {
     // Existing function name should exist.
@@ -1912,6 +1996,7 @@ static CONFPARM conftable[] =
 #endif
     {T("postdump_message"),          cf_string,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(mudconf.postdump_msg),     nullptr,          256},
     {T("power_alias"),               cf_poweralias,  CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            0},
+    {T("pronoun_group"),             cf_pronoun_group, CA_GOD,  CA_DISABLED, nullptr,                         nullptr,            0},
     {T("pcreate_per_hour"),          cf_int,         CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pcreate_per_hour),nullptr,            0},
     {T("public_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.public_channel),   nullptr,           32},
     {T("public_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.public_channel_alias), nullptr,       32},
