@@ -1910,7 +1910,8 @@ CONFIG PARAMETERS (continued)
   references_per_hour  register_create_file  register_site  reset_players
   reset_site  restrict_home  retry_limit  robot_cost  robot_flags
   robot_speech  room_flags  room_name_charset  room_parent  room_quota
-  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
+  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_iter
+  safer_passwords
   search_cost  see_owned_dark  signal_action  site_chars  space_compress
   sql_database  sql_password  sql_server  sql_user  stack_limit
   starting_money  starting_quota  status_file  stripped_flags  suspect_site
@@ -4566,6 +4567,23 @@ SACRIFICE_FACTOR
   @destroying an object.
 
   Related Topics: @create, @destroy, SACRIFICING, sacrifice_adjust.
+
+& SAFER_ITER
+SAFER_ITER
+
+  CONFIG PARAMETER: safer_iter [yes/no]
+  DEFAULT: No
+
+  When enabled, ## and #@ token substitution is disabled in iter(),
+  list(), @dolist, and @search/eval. This eliminates the most common
+  class of softcode injection vulnerabilities caused by double-evaluation
+  of ## contents.
+
+  With safer_iter enabled, use %i0/%i1 and %#0/%#1 instead of ## and #@.
+  These %-substitutions are resolved during evaluation rather than before
+  it, so they do not cause injection.
+
+  Related Topics: iter(), list(), @dolist.
 
 & SAFER_PASSWORDS
 SAFER_PASSWORDS

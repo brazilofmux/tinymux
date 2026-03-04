@@ -71,6 +71,7 @@ struct confdata
     bool    safe_unowned;       /* Are objects not owned by you safe? */
     bool    safe_wipe;          // If yes, SAFE flag must be removed to @wipe.
     bool    safer_passwords;    /* enforce reasonably good password choices? */
+    bool    safer_iter;         /* disable ## substitution in iter/list/parse? */
     bool    see_own_dark;       /* Do you see your own dark stuff? */
     bool    space_compress;     /* Convert multiple spaces into one space */
     bool    sweep_dark;         /* Can you sweep dark places? */

@@ -6420,7 +6420,9 @@ static FUNCTION(fun_iter)
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
+        UTF8 *buff2 = replace_tokens(fargs[1],
+            mudconf.safer_iter ? nullptr : objstring,
+            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
             nullptr);
         mux_exec(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -6499,8 +6501,10 @@ static FUNCTION(fun_citer)
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
 
-        UTF8 *buff2 = replace_tokens(fargs[1], chbuf,
-            mux_ltoa_t(number), nullptr);
+        UTF8 *buff2 = replace_tokens(fargs[1],
+            mudconf.safer_iter ? nullptr : chbuf,
+            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
+            nullptr);
         mux_exec(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         free_lbuf(buff2);
@@ -6611,7 +6615,9 @@ static FUNCTION(fun_list)
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
+        UTF8 *buff2 = replace_tokens(fargs[1],
+            mudconf.safer_iter ? nullptr : objstring,
+            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
             nullptr);
         dp = result = alloc_lbuf("fun_list.2");
         mux_exec(buff2, LBUF_SIZE-1, result, &dp, executor, caller, enactor,

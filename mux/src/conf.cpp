@@ -215,6 +215,7 @@ void cf_init(void)
     mudconf.robot_speak     = true;
     mudconf.safe_unowned    = false;
     mudconf.safer_passwords = false;
+    mudconf.safer_iter      = false;
     mudconf.see_own_dark    = true;
     mudconf.sweep_dark      = false;
     mudconf.switch_df_all   = true;
@@ -1936,6 +1937,7 @@ static CONFPARM conftable[] =
     {T("sacrifice_adjust"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacadjust,              nullptr,            0},
     {T("sacrifice_factor"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacfactor,              nullptr,            0},
     {T("safe_wipe"),                 cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.safe_wipe),       nullptr,            0},
+    {T("safer_iter"),                cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safer_iter),      nullptr,            0},
     {T("safer_passwords"),           cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safer_passwords), nullptr,            0},
     {T("search_cost"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.searchcost,             nullptr,            0},
     {T("see_owned_dark"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.see_own_dark),    nullptr,            0},

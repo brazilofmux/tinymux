@@ -15,7 +15,10 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
                            int eval, UTF8 *action, UTF8 *argstr,
                            const UTF8 *cargs[], int ncargs, int number)
 {
-    UTF8 *command = replace_tokens(action, argstr, mux_ltoa_t(number), nullptr);
+    UTF8 *command = replace_tokens(action,
+        mudconf.safer_iter ? nullptr : argstr,
+        mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
+        nullptr);
     CLinearTimeAbsolute lta;
     wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
         command,
@@ -866,7 +869,8 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         {
             buff[0] = '#';
             mux_ltoa(thing, buff+1);
-            UTF8 *buff2 = replace_tokens(parm->s_rst_eval, buff, nullptr, nullptr);
+            UTF8 *buff2 = replace_tokens(parm->s_rst_eval,
+                mudconf.safer_iter ? nullptr : buff, nullptr, nullptr);
             result = bp = alloc_lbuf("search_perform");
             mux_exec(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
