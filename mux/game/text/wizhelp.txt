@@ -3812,6 +3812,18 @@ NEWUSER_FILE
 
   Related Topics: @readcache, motd_file.
 
+& NO_FLASH
+NO_FLASH
+
+  CONFIG PARAMETER: no_flash <yes/no>
+  DEFAULT: no
+
+  When enabled, suppresses ANSI blink (flash) codes in all output
+  to connected players.  Players retain their ANSI flag and all other
+  ANSI features continue to work normally.
+
+  Related Topics: ANSI, ansi(), COLOR256, NOBLEED.
+
 & NOGUEST_SITE
 NOGUEST_SITE
 

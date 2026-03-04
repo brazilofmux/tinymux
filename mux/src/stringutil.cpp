@@ -2590,6 +2590,11 @@ static UTF8 *ColorTransitionANSI
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
         {
+            if (  mudconf.no_flash
+               && COLOR_INDEX_BLINK == iAttr)
+            {
+                continue;
+            }
             if (aColors[iAttr].cs == (aColors[iAttr].csMask & tmp))
             {
                 memcpy(Buffer + i, aColors[iAttr].pAnsi, aColors[iAttr].nAnsi);
