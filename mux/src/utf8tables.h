@@ -265,5 +265,56 @@ extern const unsigned char tr_color_itt[256];
 extern const unsigned short tr_color_sot[37];
 extern const unsigned short tr_color_sbt[2245];
 
+// utf/tr_ccc.txt
+//
+// 934 code points.
+// 132 states, 83 columns, 3702 bytes
+//
+#define TR_CCC_START_STATE (0)
+#define TR_CCC_ACCEPTING_STATES_START (132)
+extern const unsigned char tr_ccc_itt[256];
+extern const unsigned short tr_ccc_sot[132];
+extern const unsigned short tr_ccc_sbt[1591];
+
+// utf/tr_nfcqc.txt
+//
+// 1252 code points.
+// 60 states, 75 columns, 1090 bytes
+//
+#define TR_NFCQC_START_STATE (0)
+#define TR_NFCQC_ACCEPTING_STATES_START (60)
+extern const unsigned char tr_nfcqc_itt[256];
+extern const unsigned short tr_nfcqc_sot[60];
+extern const unsigned char tr_nfcqc_sbt[714];
+
+// utf/tr_nfd.txt
+//
+// 2081 code points.
+// 97 states, 85 columns, 6542 bytes
+//
+#define TR_NFD_START_STATE (0)
+#define TR_NFD_ACCEPTING_STATES_START (97)
+extern const unsigned char tr_nfd_itt[256];
+extern const unsigned short tr_nfd_sot[97];
+extern const unsigned short tr_nfd_sbt[3046];
+
+#define TR_NFD_DEFAULT (0)
+#define TR_NFD_LITERAL_START (1)
+#define TR_NFD_XOR_START (1332)
+extern const string_desc tr_nfd_ott[2045];
+
+// utf/tr_compose.txt
+//
+// 964 composition pairs.
+// 1010 states, 141 columns, 19004 bytes
+//
+#define TR_NFC_COMPOSE_START_STATE (0)
+#define TR_NFC_COMPOSE_ACCEPTING_STATES_START (1010)
+extern const unsigned char tr_nfc_compose_itt[256];
+extern const unsigned short tr_nfc_compose_sot[1010];
+extern const unsigned short tr_nfc_compose_sbt[8364];
+#define TR_NFC_COMPOSE_NFC_COMPOSE_RESULTS (964)
+extern const UTF32 tr_nfc_compose_nfc_compose_result[965];
+
 
 #endif // UTF8TABLES_H

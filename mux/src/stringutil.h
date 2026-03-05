@@ -674,6 +674,11 @@ const UTF8 *ConvertToLatin2(const UTF8 *pString);
 //
 int ConsoleWidth(const UTF8 *pCodePoint);
 
+// utf/utf8_normalize.cpp — NFC normalization.
+//
+bool utf8_is_nfc(const UTF8 *src, size_t nSrc);
+void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst);
+
 // utf/tr_tolower.txt
 //
 inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)

@@ -1,5 +1,6 @@
 @echo off
 call "C:\Program Files\Microsoft Visual Studio\18\Professional\VC\Auxiliary\Build\vcvars64.bat" >NUL 2>&1
+cd /d "%~dp0"
 copy /Y autoconf_win.h autoconf.h >NUL
 echo Building buildFiles.exe...
 cl /EHsc /O2 /Fe:buildFiles.exe buildFiles.cpp smutil.cpp
