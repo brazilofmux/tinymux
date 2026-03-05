@@ -1554,6 +1554,16 @@ void dump_database_internal(int dump_type)
 
         if (!bPotentialConflicts)
         {
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+            if (mudconf.have_mailer)
+            {
+                sqlite_sync_mail();
+            }
+            if (mudconf.have_comsys)
+            {
+                sqlite_sync_comsys();
+            }
+#else
             if (mudconf.have_mailer)
             {
                 if (mux_fopen(&f, mudconf.mail_db, T("wb")))
@@ -1569,15 +1579,6 @@ void dump_database_internal(int dump_type)
             if (mudconf.have_comsys)
             {
                 save_comsys(mudconf.comsys_db);
-            }
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-            if (mudconf.have_mailer)
-            {
-                sqlite_sync_mail();
-            }
-            if (mudconf.have_comsys)
-            {
-                sqlite_sync_comsys();
             }
 #endif
         }
@@ -1621,6 +1622,16 @@ void dump_database_internal(int dump_type)
     }
 #endif // SQLITE_STORAGE && !MEMORY_BASED
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    if (mudconf.have_mailer)
+    {
+        sqlite_sync_mail();
+    }
+    if (mudconf.have_comsys)
+    {
+        sqlite_sync_comsys();
+    }
+#else
     if (mudconf.have_mailer)
     {
         if (mux_fopen(&f, mudconf.mail_db, T("wb")))
@@ -1637,16 +1648,6 @@ void dump_database_internal(int dump_type)
     if (mudconf.have_comsys)
     {
         save_comsys(mudconf.comsys_db);
-    }
-
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-    if (mudconf.have_mailer)
-    {
-        sqlite_sync_mail();
-    }
-    if (mudconf.have_comsys)
-    {
-        sqlite_sync_comsys();
     }
 #endif
 }

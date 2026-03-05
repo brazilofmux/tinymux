@@ -167,6 +167,7 @@ public:
     bool DeleteMailBody(int number);
     bool SyncMailAlias(int owner, const UTF8 *name, const UTF8 *desc,
                        int desc_width, const UTF8 *members);
+    bool ClearMailAliases();
     bool ClearMailTables();
 
     typedef std::function<void(int64_t rowid, int to_player, int from_player,

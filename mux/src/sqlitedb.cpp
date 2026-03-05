@@ -1160,6 +1160,13 @@ bool CSQLiteDB::LoadAllPlayerChannels(PlayerChannelCallback cb)
 // Mail bulk operations
 // ---------------------------------------------------------------------------
 
+bool CSQLiteDB::ClearMailAliases()
+{
+    return SQLITE_OK == sqlite3_exec(m_db,
+        "DELETE FROM mail_aliases;",
+        nullptr, nullptr, nullptr);
+}
+
 bool CSQLiteDB::ClearMailTables()
 {
     return SQLITE_OK == sqlite3_exec(m_db,

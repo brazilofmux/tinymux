@@ -124,6 +124,32 @@ static void sqlite_wt_delete_mail_body(int number)
     sqldb.DeleteMailBody(number);
 }
 
+static void sqlite_wt_sync_all_aliases(void)
+{
+    if (!SQLITE_MAIL_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.ClearMailAliases();
+    for (int i = 0; i < ma_top; i++)
+    {
+        malias_t *m = malias[i];
+
+        UTF8 members_buf[LBUF_SIZE];
+        UTF8 *bp = members_buf;
+        for (int j = 0; j < m->numrecep; j++)
+        {
+            if (j > 0)
+            {
+                safe_chr(' ', members_buf, &bp);
+            }
+            safe_str(tprintf(T("%d"), m->list[j]), members_buf, &bp);
+        }
+        *bp = '\0';
+
+        sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+            static_cast<int>(m->desc_width), members_buf);
+    }
+}
+
 #else
 
 static inline void sqlite_wt_insert_mail(struct mail *) {}
@@ -132,6 +158,7 @@ static inline void sqlite_wt_delete_mail(struct mail *) {}
 static inline void sqlite_wt_delete_all_mail(int) {}
 static inline void sqlite_wt_mail_body(int, const UTF8 *) {}
 static inline void sqlite_wt_delete_mail_body(int) {}
+static inline void sqlite_wt_sync_all_aliases(void) {}
 
 #endif // SQLITE_STORAGE && !MEMORY_BASED
 
@@ -4114,6 +4141,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     malias[ma_top]->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
     malias[ma_top]->desc_width = nValidMailAliasDesc;
     ma_top++;
+    sqlite_wt_sync_all_aliases();
 
     raw_notify(player, tprintf(T("MAIL: Alias set \xE2\x80\x98%s\xE2\x80\x99 defined."), alias));
 }
@@ -4744,6 +4772,7 @@ static void do_malias_desc(dbref player, UTF8 *alias, UTF8 *desc)
             MEMFREE(m->desc);
             m->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
             m->desc_width = nVisualWidth;
+            sqlite_wt_sync_all_aliases();
             raw_notify(player, T("MAIL: Description changed."));
         }
         else
@@ -4783,6 +4812,7 @@ static void do_malias_chown(dbref player, UTF8 *alias, UTF8 *owner)
         return;
     }
     m->owner = no;
+    sqlite_wt_sync_all_aliases();
     raw_notify(player, T("MAIL: Owner changed for alias."));
 }
 
@@ -4844,6 +4874,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
 
     m->list[m->numrecep] = thing;
     m->numrecep = m->numrecep + 1;
+    sqlite_wt_sync_all_aliases();
     raw_notify(player, tprintf(T("MAIL: %s added to %s"), Moniker(thing), m->name));
 }
 
@@ -4898,6 +4929,7 @@ static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
     if (ok)
     {
         m->numrecep--;
+        sqlite_wt_sync_all_aliases();
         raw_notify(player, tprintf(T("MAIL: %s removed from alias %s."),
                    Moniker(thing), alias));
     }
@@ -4948,6 +4980,7 @@ static void do_malias_rename(dbref player, UTF8 *alias, UTF8 *newname)
     {
         MEMFREE(m->name);
         m->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
+        sqlite_wt_sync_all_aliases();
         raw_notify(player, T("MAIL: Mailing Alias renamed."));
     }
     else
@@ -4997,6 +5030,7 @@ static void do_malias_delete(dbref player, UTF8 *alias)
     else
     {
         ma_top--;
+        sqlite_wt_sync_all_aliases();
     }
 }
 
@@ -5133,6 +5167,7 @@ void malias_cleanup(dbref player)
             ma_top--;
         }
     }
+    sqlite_wt_sync_all_aliases();
 }
 
 static void do_mail_retract1(dbref player, UTF8 *name, UTF8 *msglist)
