@@ -903,6 +903,11 @@ bool CSQLiteDB::DeleteObject(dbref obj)
     return false;
 }
 
+bool CSQLiteDB::ClearObjectTable()
+{
+    return SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM objects;", nullptr, nullptr, nullptr);
+}
+
 bool CSQLiteDB::LoadObject(dbref obj, ObjectRecord &rec)
 {
     sqlite3_bind_int(m_stmtObjLoad, 1, obj);
@@ -1214,6 +1219,11 @@ bool CSQLiteDB::DelAttrName(int attrnum)
     sqlite3_reset(m_stmtAttrNameDel);
 
     return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::ClearAttrNames()
+{
+    return SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM attrnames;", nullptr, nullptr, nullptr);
 }
 
 bool CSQLiteDB::LoadAllAttrNames(AttrNameCallback cb)

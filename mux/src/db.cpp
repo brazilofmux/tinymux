@@ -3791,6 +3791,14 @@ bool sqlite_sync_objects(void)
         return false;
     }
 
+    // Authoritative refresh from db[]: remove stale rows before repopulating.
+    //
+    if (!sqldb.ClearObjectTable())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
     for (dbref i = 0; i < mudstate.db_top; i++)
     {
         CSQLiteDB::ObjectRecord rec;
@@ -3833,6 +3841,14 @@ bool sqlite_sync_attrnames(void)
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     if (!sqldb.Begin())
     {
+        return false;
+    }
+
+    // Authoritative refresh from runtime attr table: remove stale rows first.
+    //
+    if (!sqldb.ClearAttrNames())
+    {
+        sqldb.Rollback();
         return false;
     }
 

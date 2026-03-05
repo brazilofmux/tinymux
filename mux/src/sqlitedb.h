@@ -66,6 +66,7 @@ public:
 
     bool InsertObject(const ObjectRecord &obj);
     bool DeleteObject(dbref obj);
+    bool ClearObjectTable();
     bool LoadObject(dbref obj, ObjectRecord &rec);
 
     // Individual field updates (write-through from s_Location etc.)
@@ -110,6 +111,7 @@ public:
     //
     bool PutAttrName(int attrnum, const char *name, int flags);
     bool DelAttrName(int attrnum);
+    bool ClearAttrNames();
 
     typedef std::function<void(int attrnum, const char *name, int flags)> AttrNameCallback;
     bool LoadAllAttrNames(AttrNameCallback cb);
