@@ -1,2 +1,6 @@
 *.o
 test_sqlitedb
+test_backend
+*.db
+*.db-wal
+*.db-shm
