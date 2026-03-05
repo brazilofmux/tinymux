@@ -186,6 +186,7 @@ UTF8 *split_token(UTF8 **sp, const SEP &sep)
 #define FLOAT_LIST      8
 #define CI_ASCII_LIST   16
 #define UNICODE_LIST    32
+#define CI_UNICODE_LIST 64
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
 class AutoDetect
@@ -3633,14 +3634,39 @@ static FUNCTION(fun_comp)
 
     int x;
 
-    if (  3 <= nfargs
-       && (  'a' == fargs[2][0]
-          || 'A' == fargs[2][0]))
+    if (3 <= nfargs)
     {
-        // Legacy ASCII comparison.
-        //
-        x = strcmp(reinterpret_cast<char *>(fargs[0]),
-                   reinterpret_cast<char *>(fargs[1]));
+        switch (fargs[2][0])
+        {
+        case 'a':
+        case 'A':
+            // Legacy ASCII comparison.
+            //
+            x = strcmp(reinterpret_cast<char *>(fargs[0]),
+                       reinterpret_cast<char *>(fargs[1]));
+            break;
+
+        case 'c':
+        case 'C':
+            {
+                // Case-insensitive Unicode collation.
+                //
+                size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
+                size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+                x = mux_collate_cmp_ci(fargs[0], nA, fargs[1], nB);
+            }
+            break;
+
+        default:
+            {
+                // Default: Unicode collation comparison.
+                //
+                size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
+                size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+                x = mux_collate_cmp(fargs[0], nA, fargs[1], nB);
+            }
+            break;
+        }
     }
     else
     {
@@ -8515,6 +8541,20 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             }
             qsort(psc->m_ptrs, n, sizeof(q_rec), u_collate);
             break;
+
+        case CI_UNICODE_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                size_t nBytes;
+                const UTF8 *plain = strip_color(s[i], &nBytes, nullptr);
+                UTF8 *key = static_cast<UTF8 *>(MEMALLOC(LBUF_SIZE));
+                psc->m_ptrs[i].sortkeylen =
+                    mux_collate_sortkey_ci(plain, nBytes, key, LBUF_SIZE);
+                psc->m_ptrs[i].sortkey = key;
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), u_collate);
+            break;
         }
 
         for (i = 0; i < n; i++)
@@ -8530,7 +8570,8 @@ static void do_asort_finish(SortContext *psc)
 {
     if (nullptr != psc->m_ptrs)
     {
-        if (UNICODE_LIST == psc->m_iSortType)
+        if (  UNICODE_LIST == psc->m_iSortType
+           || CI_UNICODE_LIST == psc->m_iSortType)
         {
             for (int i = 0; i < psc->m_n; i++)
             {
@@ -8597,6 +8638,11 @@ static FUNCTION(fun_sort)
         case 'a':
         case 'A':
             sort_type = ASCII_LIST;
+            break;
+
+        case 'c':
+        case 'C':
+            sort_type = CI_UNICODE_LIST;
             break;
 
         case '?':
@@ -8693,6 +8739,11 @@ static void handle_sets
             sort_type = ASCII_LIST;
             break;
 
+        case 'c':
+        case 'C':
+            sort_type = CI_UNICODE_LIST;
+            break;
+
         case '?':
         case '\0':
             {
@@ -8746,6 +8797,10 @@ static void handle_sets
         break;
 
     case UNICODE_LIST:
+        cf = u_collate;
+        break;
+
+    case CI_UNICODE_LIST:
         cf = u_collate;
         break;
     }

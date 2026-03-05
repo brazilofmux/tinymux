@@ -683,6 +683,8 @@ void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax,
 //
 int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
 size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
+int mux_collate_cmp_ci(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
+size_t mux_collate_sortkey_ci(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
 
 // utf/tr_tolower.txt
 //
