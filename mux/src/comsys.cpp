@@ -4202,17 +4202,17 @@ bool sqlite_sync_comsys(void)
             struct comuser *user = ch->users[j];
             if (user->who >= 0 && user->who < mudstate.db_top)
             {
-                    if (!sqldb.SyncChannelUser(ch->name, user->who,
-                        user->bUserIsOn, user->ComTitleStatus,
-                        user->bGagJoinLeave,
-                        user->title ? user->title : T("")))
-                    {
-                        sqldb.Rollback();
-                        return false;
-                    }
+                if (!sqldb.SyncChannelUser(ch->name, user->who,
+                    user->bUserIsOn, user->ComTitleStatus,
+                    user->bGagJoinLeave,
+                    user->title ? user->title : T("")))
+                {
+                    sqldb.Rollback();
+                    return false;
                 }
             }
         }
+    }
 
     // Sync player channel aliases.
     //
