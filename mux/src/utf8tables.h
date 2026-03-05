@@ -16,14 +16,14 @@ typedef struct
 
 // utf/cl_Printable.txt
 //
-// 154200 included, 959912 excluded, 0 errors.
-// 335 states, 93 columns, 10998 bytes
+// 155134 included, 958978 excluded, 0 errors.
+// 314 states, 91 columns, 10078 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (335)
+#define CL_PRINT_ACCEPTING_STATES_START (314)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned short cl_print_sot[335];
-extern const unsigned short cl_print_sbt[5036];
+extern const unsigned short cl_print_sot[314];
+extern const unsigned short cl_print_sbt[4597];
 
 // utf/cl_AttrNameInitial.txt
 //

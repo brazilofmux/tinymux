@@ -610,7 +610,23 @@ void welcome_user(DESC *d)
 void save_command(DESC *d, const UTF8 *cmd, size_t len)
 {
     bool was_empty = d->input_queue.empty();
-    d->input_queue.emplace_back(reinterpret_cast<const char *>(cmd), len);
+
+    if (  CHARSET_UTF8 == d->encoding
+       && !utf8_is_nfc(cmd, len))
+    {
+        // Normalize to NFC before queuing.  NFC never expands the string.
+        //
+        UTF8 nfc_buf[LBUF_SIZE];
+        size_t nNfc;
+        utf8_normalize_nfc(cmd, len, nfc_buf, sizeof(nfc_buf) - 1, &nNfc);
+        nfc_buf[nNfc] = '\0';
+        d->input_queue.emplace_back(reinterpret_cast<const char *>(nfc_buf), nNfc);
+    }
+    else
+    {
+        d->input_queue.emplace_back(reinterpret_cast<const char *>(cmd), len);
+    }
+
     if (was_empty)
     {
         // We have added our first command to an empty queue. Go process it later.

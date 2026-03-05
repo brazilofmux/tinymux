@@ -1670,8 +1670,7 @@ void UniData::Prohibit(void)
         if (cp[pt].IsDefined())
         {
             bool bShouldProhibit = false;
-            if (  0 != cp[pt].GetCombiningClass()
-               || (cp[pt].GetCategory() & CATEGORY_OTHER))
+            if (cp[pt].GetCategory() & CATEGORY_OTHER)
             {
                 bShouldProhibit = true;
             }
