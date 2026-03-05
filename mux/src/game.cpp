@@ -1570,6 +1570,16 @@ void dump_database_internal(int dump_type)
             {
                 save_comsys(mudconf.comsys_db);
             }
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+            if (mudconf.have_mailer)
+            {
+                sqlite_sync_mail();
+            }
+            if (mudconf.have_comsys)
+            {
+                sqlite_sync_comsys();
+            }
+#endif
         }
         return;
     }
@@ -1628,6 +1638,17 @@ void dump_database_internal(int dump_type)
     {
         save_comsys(mudconf.comsys_db);
     }
+
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    if (mudconf.have_mailer)
+    {
+        sqlite_sync_mail();
+    }
+    if (mudconf.have_comsys)
+    {
+        sqlite_sync_comsys();
+    }
+#endif
 }
 
 static void dump_database(void)
@@ -2000,11 +2021,27 @@ static int load_game(int ccPageFile)
 
     if (mudconf.have_comsys)
     {
-        load_comsys(mudconf.comsys_db);
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+        if (sqlite_load_comsys())
+        {
+            Log.tinyprintf(T("LOADING: comsys (from SQLite)" ENDLINE));
+        }
+        else
+#endif
+        {
+            load_comsys(mudconf.comsys_db);
+        }
     }
 
     if (mudconf.have_mailer)
     {
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+        if (sqlite_load_mail())
+        {
+            Log.tinyprintf(T("LOADING: mail (from SQLite)" ENDLINE));
+        }
+        else
+#endif
         if (mux_fopen(&f, mudconf.mail_db, T("rb")))
         {
             DebugTotalFiles++;
@@ -2295,6 +2332,8 @@ static const UTF8 *standalone_basename = nullptr;
 static bool standalone_check = false;
 static bool standalone_load = false;
 static bool standalone_unload = false;
+static const UTF8 *standalone_comsys_file = nullptr;
+static const UTF8 *standalone_mail_file = nullptr;
 
 static void dbconvert(void)
 {
@@ -2446,6 +2485,63 @@ static void dbconvert(void)
         fclose(fpIn);
     }
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    // Import comsys from flatfile into SQLite.
+    //
+    if (standalone_load && standalone_comsys_file)
+    {
+        mudconf.have_comsys = true;
+        load_comsys(const_cast<UTF8 *>(standalone_comsys_file));
+        sqlite_sync_comsys();
+        Log.WriteString(T("Imported comsys into SQLite.\n"));
+    }
+
+    // Import mail from flatfile into SQLite.
+    //
+    if (standalone_load && standalone_mail_file)
+    {
+        mudconf.have_mailer = true;
+        FILE *fpMail;
+        if (mux_fopen(&fpMail, standalone_mail_file, T("rb")))
+        {
+            setvbuf(fpMail, nullptr, _IOFBF, 16384);
+            load_mail(fpMail);
+            fclose(fpMail);
+            sqlite_sync_mail();
+            Log.WriteString(T("Imported mail into SQLite.\n"));
+        }
+    }
+
+    // Export comsys from SQLite to flatfile.
+    //
+    if (standalone_unload && standalone_comsys_file)
+    {
+        mudconf.have_comsys = true;
+        if (sqlite_load_comsys())
+        {
+            save_comsys(const_cast<UTF8 *>(standalone_comsys_file));
+            Log.WriteString(T("Exported comsys from SQLite.\n"));
+        }
+    }
+
+    // Export mail from SQLite to flatfile.
+    //
+    if (standalone_unload && standalone_mail_file)
+    {
+        mudconf.have_mailer = true;
+        if (sqlite_load_mail())
+        {
+            FILE *fpMail;
+            if (mux_fopen(&fpMail, standalone_mail_file, T("wb")))
+            {
+                dump_mail(fpMail);
+                fclose(fpMail);
+                Log.WriteString(T("Exported mail from SQLite.\n"));
+            }
+        }
+    }
+#endif // SQLITE_STORAGE && !MEMORY_BASED
+
     if (do_write)
     {
         FILE *fpOut;
@@ -2573,6 +2669,8 @@ long DebugTotalSockets = 0;
 #define CLI_DO_BASENAME    CLI_USER+9
 #define CLI_DO_PID_FILE    CLI_USER+10
 #define CLI_DO_ERRORPATH   CLI_USER+11
+#define CLI_DO_COMSYS_FILE CLI_USER+12
+#define CLI_DO_MAIL_FILE   CLI_USER+13
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
@@ -2595,6 +2693,8 @@ static CLI_OptionEntry OptionTable[] =
     { "l", CLI_NONE,     CLI_DO_LOAD        },
     { "u", CLI_NONE,     CLI_DO_UNLOAD      },
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
+    { "C", CLI_REQUIRED, CLI_DO_COMSYS_FILE },
+    { "m", CLI_REQUIRED, CLI_DO_MAIL_FILE   },
 #endif // MEMORY_BASED
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
@@ -2660,6 +2760,16 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         case CLI_DO_BASENAME:
             mudstate.bStandAlone = true;
             standalone_basename = reinterpret_cast<const UTF8 *>(pValue);
+            break;
+
+        case CLI_DO_COMSYS_FILE:
+            mudstate.bStandAlone = true;
+            standalone_comsys_file = reinterpret_cast<const UTF8 *>(pValue);
+            break;
+
+        case CLI_DO_MAIL_FILE:
+            mudstate.bStandAlone = true;
+            standalone_mail_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 #endif
 

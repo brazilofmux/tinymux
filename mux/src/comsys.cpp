@@ -4182,3 +4182,245 @@ FUNCTION(fun_chanobj)
         safe_str(T("#-1"), buff, bufc);
     }
 }
+
+// ---------------------------------------------------------------------------
+// SQLite comsys bulk sync and load (Phase 1).
+// ---------------------------------------------------------------------------
+
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+
+#include "sqlite_backend.h"
+
+void sqlite_sync_comsys(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.ClearComsysTables();
+    sqldb.Begin();
+
+    // Sync channels and their users.
+    //
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
+    {
+        struct channel *ch = it->second;
+        sqldb.SyncChannel(ch->name, ch->header,
+            ch->type, ch->temp1, ch->temp2,
+            ch->charge, ch->charge_who, ch->amount_col,
+            ch->num_messages, ch->chan_obj);
+
+        for (int j = 0; j < ch->num_users; j++)
+        {
+            struct comuser *user = ch->users[j];
+            if (user->who >= 0 && user->who < mudstate.db_top)
+            {
+                sqldb.SyncChannelUser(ch->name, user->who,
+                    user->bUserIsOn, user->ComTitleStatus,
+                    user->bGagJoinLeave,
+                    user->title ? user->title : T(""));
+            }
+        }
+    }
+
+    // Sync player channel aliases.
+    //
+    for (int i = 0; i < NUM_COMSYS; i++)
+    {
+        comsys_t *c = comsys_table[i];
+        while (c)
+        {
+            for (int j = 0; j < c->numchannels; j++)
+            {
+                sqldb.SyncPlayerChannel(c->who,
+                    c->alias + j * ALIAS_SIZE,
+                    c->channels[j]);
+            }
+            c = c->next;
+        }
+    }
+
+    sqldb.Commit();
+    sqldb.PutMeta("has_comsys", 1);
+}
+
+bool sqlite_load_comsys(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return false;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+
+    int has_comsys = 0;
+    if (!sqldb.GetMeta("has_comsys", &has_comsys) || 0 == has_comsys)
+    {
+        return false;
+    }
+
+    // Initialize comsys_table.
+    //
+    for (int i = 0; i < NUM_COMSYS; i++)
+    {
+        comsys_table[i] = nullptr;
+    }
+
+    num_channels = 0;
+
+    // Load channels.
+    //
+    sqldb.LoadAllChannels([](const UTF8 *name, const UTF8 *header,
+        int type, int temp1, int temp2, int charge, int charge_who,
+        int amount_col, int num_messages, int chan_obj)
+    {
+        auto ch = static_cast<struct channel *>(MEMALLOC(sizeof(struct channel)));
+        ISOUTOFMEMORY(ch);
+
+        mux_strncpy(ch->name, name, MAX_CHANNEL_LEN);
+        mux_strncpy(ch->header, header, MAX_HEADER_LEN);
+        ch->type = type;
+        ch->temp1 = temp1;
+        ch->temp2 = temp2;
+        ch->charge = charge;
+        ch->charge_who = charge_who;
+        ch->amount_col = amount_col;
+        ch->num_messages = num_messages;
+        ch->chan_obj = chan_obj;
+        ch->num_users = 0;
+        ch->max_users = 0;
+        ch->users = nullptr;
+        ch->on_users = nullptr;
+
+        size_t nName = strlen(reinterpret_cast<const char *>(ch->name));
+        vector<UTF8> channel_name_vector(ch->name, ch->name + nName);
+        mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
+        num_channels++;
+    });
+
+    // Load channel users.
+    //
+    sqldb.LoadAllChannelUsers([](const UTF8 *channel_name, int who,
+        bool is_on, bool comtitle_status, bool gag_join_leave,
+        const UTF8 *title)
+    {
+        auto ch_name = const_cast<UTF8 *>(channel_name);
+        struct channel *ch = select_channel(ch_name);
+        if (!ch)
+        {
+            return;
+        }
+
+        if (!Good_dbref(who) || isGarbage(who))
+        {
+            return;
+        }
+
+        // Grow user array if needed.
+        //
+        if (ch->num_users >= ch->max_users)
+        {
+            int newmax = ch->max_users + 10;
+            auto newusers = static_cast<comuser **>(calloc(newmax, sizeof(struct comuser *)));
+            ISOUTOFMEMORY(newusers);
+            if (ch->users)
+            {
+                memcpy(newusers, ch->users, ch->num_users * sizeof(struct comuser *));
+                free(ch->users);
+            }
+            ch->users = newusers;
+            ch->max_users = newmax;
+        }
+
+        auto *user = static_cast<struct comuser *>(MEMALLOC(sizeof(struct comuser)));
+        ISOUTOFMEMORY(user);
+
+        user->who = who;
+        user->bUserIsOn = is_on;
+        user->ComTitleStatus = comtitle_status;
+        user->bGagJoinLeave = gag_join_leave;
+        user->title = StringClone(title);
+        user->on_next = nullptr;
+
+        ch->users[ch->num_users++] = user;
+
+        if (!(isPlayer(user->who))
+            && !(Going(user->who)
+                && (God(Owner(user->who)))))
+        {
+            do_joinchannel(user->who, ch);
+        }
+        user->on_next = ch->on_users;
+        ch->on_users = user;
+    });
+
+    // Sort users on each channel.
+    //
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
+    {
+        sort_users(it->second);
+    }
+
+    // Load player channel aliases.
+    //
+    // We need to group by player. Use a map to collect aliases per player,
+    // then create comsys_t entries.
+    //
+    struct PlayerAliasEntry
+    {
+        UTF8 alias[ALIAS_SIZE];
+        UTF8 *channel_name;
+    };
+    std::map<int, std::vector<PlayerAliasEntry>> player_aliases;
+
+    sqldb.LoadAllPlayerChannels([&player_aliases](int who, const UTF8 *alias,
+        const UTF8 *channel_name)
+    {
+        PlayerAliasEntry entry;
+        mux_strncpy(entry.alias, alias, ALIAS_SIZE - 1);
+        entry.channel_name = StringClone(channel_name);
+        player_aliases[who].push_back(entry);
+    });
+
+    for (auto &pa : player_aliases)
+    {
+        int who = pa.first;
+        auto &entries = pa.second;
+
+        if (!Good_obj(who))
+        {
+            for (auto &e : entries)
+            {
+                MEMFREE(e.channel_name);
+            }
+            continue;
+        }
+
+        comsys_t *c = create_new_comsys();
+        c->who = who;
+        c->numchannels = static_cast<int>(entries.size());
+        c->maxchannels = c->numchannels;
+
+        if (c->maxchannels > 0)
+        {
+            c->alias = static_cast<UTF8 *>(MEMALLOC(c->maxchannels * ALIAS_SIZE));
+            ISOUTOFMEMORY(c->alias);
+            c->channels = static_cast<UTF8 **>(MEMALLOC(sizeof(UTF8 *) * c->maxchannels));
+            ISOUTOFMEMORY(c->channels);
+
+            for (int j = 0; j < c->numchannels; j++)
+            {
+                mux_strncpy(c->alias + j * ALIAS_SIZE, entries[j].alias, ALIAS_SIZE - 1);
+                c->channels[j] = entries[j].channel_name;
+            }
+            sort_com_aliases(c);
+        }
+        add_comsys(c);
+    }
+
+    return true;
+}
+
+#endif // SQLITE_STORAGE && !MEMORY_BASED

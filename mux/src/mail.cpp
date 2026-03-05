@@ -5589,3 +5589,210 @@ void do_folder
         break;
     }
 }
+
+// ---------------------------------------------------------------------------
+// SQLite mail bulk sync and load (Phase 1).
+// ---------------------------------------------------------------------------
+
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+
+#include "sqlite_backend.h"
+
+void sqlite_sync_mail(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.ClearMailTables();
+    sqldb.Begin();
+
+    // Sync mail headers.
+    //
+    dbref thing;
+    DO_WHOLE_DB(thing)
+    {
+        if (isPlayer(thing))
+        {
+            MailList ml(thing);
+            struct mail *mp;
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+            {
+                sqldb.SyncMailHeader(mp->to, mp->from, mp->number,
+                    mp->tolist, mp->time, mp->subject, mp->read);
+            }
+        }
+    }
+
+    // Sync mail bodies.
+    //
+    for (int i = 0; i < mudstate.mail_db_top; i++)
+    {
+        if (0 < mail_list[i].m_nRefs)
+        {
+            sqldb.SyncMailBody(i, MessageFetch(i));
+        }
+    }
+
+    // Sync mail aliases.
+    //
+    for (int i = 0; i < ma_top; i++)
+    {
+        malias_t *m = malias[i];
+
+        // Serialize member list to space-separated string.
+        //
+        UTF8 members_buf[LBUF_SIZE];
+        UTF8 *bp = members_buf;
+        for (int j = 0; j < m->numrecep; j++)
+        {
+            if (j > 0)
+            {
+                safe_chr(' ', members_buf, &bp);
+            }
+            safe_str(tprintf(T("%d"), m->list[j]), members_buf, &bp);
+        }
+        *bp = '\0';
+
+        sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+            static_cast<int>(m->desc_width), members_buf);
+    }
+
+    sqldb.PutMeta("mail_db_top", mudstate.mail_db_top);
+    sqldb.Commit();
+}
+
+bool sqlite_load_mail(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return false;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+
+    int mail_top = 0;
+    if (!sqldb.GetMeta("mail_db_top", &mail_top))
+    {
+        return false;
+    }
+
+    mail_db_grow(mail_top + 1);
+
+    // Load mail bodies first (they must exist before headers reference them).
+    //
+    sqldb.LoadAllMailBodies([](int number, const UTF8 *message)
+    {
+        new_mail_message(const_cast<UTF8 *>(message), number);
+    });
+
+    // Load mail headers.
+    //
+    sqldb.LoadAllMailHeaders([](int to_player, int from_player,
+        int body_number, const UTF8 *tolist, const UTF8 *time_str,
+        const UTF8 *subject, int read_flags)
+    {
+        struct mail *mp = nullptr;
+        try
+        {
+            mp = new struct mail;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == mp)
+        {
+            return;
+        }
+
+        mp->to      = to_player;
+        mp->from    = from_player;
+        mp->number  = body_number;
+        MessageReferenceInc(mp->number);
+        mp->tolist  = StringClone(tolist);
+        mp->time    = StringClone(time_str);
+        mp->subject = StringClone(subject);
+        mp->read    = read_flags;
+
+        MailList ml(mp->to);
+        ml.AppendItem(mp);
+    });
+
+    // Load mail aliases.
+    //
+    int alias_count = 0;
+    std::vector<malias_t *> alias_vec;
+
+    sqldb.LoadAllMailAliases([&alias_vec](int owner, const UTF8 *name,
+        const UTF8 *desc, int desc_width, const UTF8 *members)
+    {
+        malias_t *m = nullptr;
+        try
+        {
+            m = new malias_t;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == m)
+        {
+            return;
+        }
+
+        m->owner = owner;
+        m->name = StringClone(name);
+        m->desc = StringClone(desc);
+        m->desc_width = desc_width;
+
+        // Parse space-separated member list.
+        //
+        m->numrecep = 0;
+        if (members && members[0] != '\0')
+        {
+            UTF8 buf[LBUF_SIZE];
+            mux_strncpy(buf, members, LBUF_SIZE - 1);
+            UTF8 *p = buf;
+            while (*p && m->numrecep < MAX_MALIAS_MEMBERSHIP)
+            {
+                while (*p == ' ') p++;
+                if (*p == '\0') break;
+                m->list[m->numrecep++] = mux_atol(p);
+                while (*p && *p != ' ') p++;
+            }
+        }
+
+        alias_vec.push_back(m);
+    });
+
+    if (!alias_vec.empty())
+    {
+        ma_top = ma_size = static_cast<int>(alias_vec.size());
+        malias = nullptr;
+        try
+        {
+            malias = new malias_t *[ma_size];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (malias)
+        {
+            for (int i = 0; i < ma_top; i++)
+            {
+                malias[i] = alias_vec[i];
+            }
+        }
+    }
+
+    return true;
+}
+
+#endif // SQLITE_STORAGE && !MEMORY_BASED

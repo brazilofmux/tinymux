@@ -120,6 +120,55 @@ public:
     bool Commit();
     bool Rollback();
 
+    // Comsys bulk operations (Phase 1: dump-time sync, startup load).
+    //
+    bool SyncChannel(const UTF8 *name, const UTF8 *header,
+                     int type, int temp1, int temp2,
+                     int charge, int charge_who, int amount_col,
+                     int num_messages, int chan_obj);
+    bool SyncChannelUser(const UTF8 *channel_name, int who,
+                         bool is_on, bool comtitle_status,
+                         bool gag_join_leave, const UTF8 *title);
+    bool SyncPlayerChannel(int who, const UTF8 *alias,
+                           const UTF8 *channel_name);
+    bool ClearComsysTables();
+
+    typedef std::function<void(const UTF8 *name, const UTF8 *header,
+        int type, int temp1, int temp2, int charge, int charge_who,
+        int amount_col, int num_messages, int chan_obj)> ChannelCallback;
+    bool LoadAllChannels(ChannelCallback cb);
+
+    typedef std::function<void(const UTF8 *channel_name, int who,
+        bool is_on, bool comtitle_status, bool gag_join_leave,
+        const UTF8 *title)> ChannelUserCallback;
+    bool LoadAllChannelUsers(ChannelUserCallback cb);
+
+    typedef std::function<void(int who, const UTF8 *alias,
+        const UTF8 *channel_name)> PlayerChannelCallback;
+    bool LoadAllPlayerChannels(PlayerChannelCallback cb);
+
+    // Mail bulk operations (Phase 1: dump-time sync, startup load).
+    //
+    bool SyncMailHeader(int to_player, int from_player, int body_number,
+                        const UTF8 *tolist, const UTF8 *time_str,
+                        const UTF8 *subject, int read_flags);
+    bool SyncMailBody(int number, const UTF8 *message);
+    bool SyncMailAlias(int owner, const UTF8 *name, const UTF8 *desc,
+                       int desc_width, const UTF8 *members);
+    bool ClearMailTables();
+
+    typedef std::function<void(int to_player, int from_player,
+        int body_number, const UTF8 *tolist, const UTF8 *time_str,
+        const UTF8 *subject, int read_flags)> MailHeaderCallback;
+    bool LoadAllMailHeaders(MailHeaderCallback cb);
+
+    typedef std::function<void(int number, const UTF8 *message)> MailBodyCallback;
+    bool LoadAllMailBodies(MailBodyCallback cb);
+
+    typedef std::function<void(int owner, const UTF8 *name,
+        const UTF8 *desc, int desc_width, const UTF8 *members)> MailAliasCallback;
+    bool LoadAllMailAliases(MailAliasCallback cb);
+
     // Maintenance
     //
     bool Checkpoint();
@@ -180,6 +229,24 @@ private:
     //
     sqlite3_stmt *m_stmtMetaPut;
     sqlite3_stmt *m_stmtMetaGet;
+
+    // Comsys statements.
+    //
+    sqlite3_stmt *m_stmtChannelSync;
+    sqlite3_stmt *m_stmtChannelUserSync;
+    sqlite3_stmt *m_stmtPlayerChannelSync;
+    sqlite3_stmt *m_stmtChannelLoadAll;
+    sqlite3_stmt *m_stmtChannelUserLoadAll;
+    sqlite3_stmt *m_stmtPlayerChannelLoadAll;
+
+    // Mail statements.
+    //
+    sqlite3_stmt *m_stmtMailHeaderSync;
+    sqlite3_stmt *m_stmtMailBodySync;
+    sqlite3_stmt *m_stmtMailAliasSync;
+    sqlite3_stmt *m_stmtMailHeaderLoadAll;
+    sqlite3_stmt *m_stmtMailBodyLoadAll;
+    sqlite3_stmt *m_stmtMailAliasLoadAll;
 
     Stats m_stats;
 

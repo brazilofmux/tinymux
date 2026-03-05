@@ -1293,6 +1293,10 @@ extern CSQLiteBackend *g_pSQLiteBackend;
 void sqlite_sync_objects(void);
 void sqlite_sync_attrnames(void);
 bool sqlite_load_game(void);
+void sqlite_sync_comsys(void);
+bool sqlite_load_comsys(void);
+void sqlite_sync_mail(void);
+bool sqlite_load_mail(void);
 #endif
 extern CLinearTimeAbsolute cs_ltime;
 

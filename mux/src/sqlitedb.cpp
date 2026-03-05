@@ -45,6 +45,18 @@ CSQLiteDB::CSQLiteDB()
       m_stmtAttrNameLoadAll(nullptr),
       m_stmtMetaPut(nullptr),
       m_stmtMetaGet(nullptr),
+      m_stmtChannelSync(nullptr),
+      m_stmtChannelUserSync(nullptr),
+      m_stmtPlayerChannelSync(nullptr),
+      m_stmtChannelLoadAll(nullptr),
+      m_stmtChannelUserLoadAll(nullptr),
+      m_stmtPlayerChannelLoadAll(nullptr),
+      m_stmtMailHeaderSync(nullptr),
+      m_stmtMailBodySync(nullptr),
+      m_stmtMailAliasSync(nullptr),
+      m_stmtMailHeaderLoadAll(nullptr),
+      m_stmtMailBodyLoadAll(nullptr),
+      m_stmtMailAliasLoadAll(nullptr),
       m_stats{}
 {
 }
@@ -168,7 +180,62 @@ bool CSQLiteDB::CreateSchema()
         "CREATE TABLE IF NOT EXISTS metadata ("
         "    key         TEXT PRIMARY KEY,"
         "    value       INTEGER NOT NULL"
-        ") WITHOUT ROWID;";
+        ") WITHOUT ROWID;"
+
+        "CREATE TABLE IF NOT EXISTS channels ("
+        "    name        TEXT PRIMARY KEY,"
+        "    header      TEXT NOT NULL DEFAULT '',"
+        "    type        INTEGER NOT NULL DEFAULT 127,"
+        "    temp1       INTEGER NOT NULL DEFAULT 0,"
+        "    temp2       INTEGER NOT NULL DEFAULT 0,"
+        "    charge      INTEGER NOT NULL DEFAULT 0,"
+        "    charge_who  INTEGER NOT NULL DEFAULT -1,"
+        "    amount_col  INTEGER NOT NULL DEFAULT 0,"
+        "    num_messages INTEGER NOT NULL DEFAULT 0,"
+        "    chan_obj    INTEGER NOT NULL DEFAULT -1"
+        ") WITHOUT ROWID;"
+
+        "CREATE TABLE IF NOT EXISTS channel_users ("
+        "    channel_name TEXT NOT NULL,"
+        "    who         INTEGER NOT NULL,"
+        "    is_on       INTEGER NOT NULL DEFAULT 0,"
+        "    comtitle_status INTEGER NOT NULL DEFAULT 0,"
+        "    gag_join_leave INTEGER NOT NULL DEFAULT 0,"
+        "    title       TEXT NOT NULL DEFAULT '',"
+        "    PRIMARY KEY (channel_name, who)"
+        ") WITHOUT ROWID;"
+
+        "CREATE TABLE IF NOT EXISTS player_channels ("
+        "    who         INTEGER NOT NULL,"
+        "    alias       TEXT NOT NULL,"
+        "    channel_name TEXT NOT NULL,"
+        "    PRIMARY KEY (who, alias)"
+        ") WITHOUT ROWID;"
+
+        "CREATE TABLE IF NOT EXISTS mail_headers ("
+        "    rowid       INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    to_player   INTEGER NOT NULL,"
+        "    from_player INTEGER NOT NULL,"
+        "    body_number INTEGER NOT NULL,"
+        "    tolist      TEXT NOT NULL DEFAULT '',"
+        "    time_str    TEXT NOT NULL DEFAULT '',"
+        "    subject     TEXT NOT NULL DEFAULT '',"
+        "    read_flags  INTEGER NOT NULL DEFAULT 0"
+        ");"
+
+        "CREATE TABLE IF NOT EXISTS mail_bodies ("
+        "    number      INTEGER PRIMARY KEY,"
+        "    message     TEXT NOT NULL DEFAULT ''"
+        ");"
+
+        "CREATE TABLE IF NOT EXISTS mail_aliases ("
+        "    id          INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    owner       INTEGER NOT NULL,"
+        "    name        TEXT NOT NULL,"
+        "    description TEXT NOT NULL DEFAULT '',"
+        "    desc_width  INTEGER NOT NULL DEFAULT 0,"
+        "    members     TEXT NOT NULL DEFAULT ''"
+        ");";
 
     char *errmsg = nullptr;
     int rc = sqlite3_exec(m_db, schema, nullptr, nullptr, &errmsg);
@@ -327,6 +394,106 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    // Comsys statements.
+    //
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO channels "
+        "(name, header, type, temp1, temp2, charge, charge_who, amount_col, num_messages, chan_obj) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        &m_stmtChannelSync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO channel_users "
+        "(channel_name, who, is_on, comtitle_status, gag_join_leave, title) "
+        "VALUES (?,?,?,?,?,?)",
+        &m_stmtChannelUserSync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO player_channels (who, alias, channel_name) "
+        "VALUES (?,?,?)",
+        &m_stmtPlayerChannelSync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT name, header, type, temp1, temp2, charge, charge_who, "
+        "amount_col, num_messages, chan_obj FROM channels ORDER BY name",
+        &m_stmtChannelLoadAll))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT channel_name, who, is_on, comtitle_status, gag_join_leave, title "
+        "FROM channel_users ORDER BY channel_name, who",
+        &m_stmtChannelUserLoadAll))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT who, alias, channel_name FROM player_channels ORDER BY who, alias",
+        &m_stmtPlayerChannelLoadAll))
+    {
+        return false;
+    }
+
+    // Mail statements.
+    //
+    if (!Prepare(m_db,
+        "INSERT INTO mail_headers "
+        "(to_player, from_player, body_number, tolist, time_str, subject, read_flags) "
+        "VALUES (?,?,?,?,?,?,?)",
+        &m_stmtMailHeaderSync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO mail_bodies (number, message) VALUES (?,?)",
+        &m_stmtMailBodySync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "INSERT INTO mail_aliases (owner, name, description, desc_width, members) "
+        "VALUES (?,?,?,?,?)",
+        &m_stmtMailAliasSync))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT to_player, from_player, body_number, tolist, time_str, subject, read_flags "
+        "FROM mail_headers ORDER BY rowid",
+        &m_stmtMailHeaderLoadAll))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT number, message FROM mail_bodies ORDER BY number",
+        &m_stmtMailBodyLoadAll))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT owner, name, description, desc_width, members "
+        "FROM mail_aliases ORDER BY id",
+        &m_stmtMailAliasLoadAll))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -366,6 +533,18 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtAttrNameLoadAll);
     Finalize(&m_stmtMetaPut);
     Finalize(&m_stmtMetaGet);
+    Finalize(&m_stmtChannelSync);
+    Finalize(&m_stmtChannelUserSync);
+    Finalize(&m_stmtPlayerChannelSync);
+    Finalize(&m_stmtChannelLoadAll);
+    Finalize(&m_stmtChannelUserLoadAll);
+    Finalize(&m_stmtPlayerChannelLoadAll);
+    Finalize(&m_stmtMailHeaderSync);
+    Finalize(&m_stmtMailBodySync);
+    Finalize(&m_stmtMailAliasSync);
+    Finalize(&m_stmtMailHeaderLoadAll);
+    Finalize(&m_stmtMailBodyLoadAll);
+    Finalize(&m_stmtMailAliasLoadAll);
 }
 
 // ---------------------------------------------------------------------------
@@ -763,4 +942,271 @@ bool CSQLiteDB::Checkpoint()
 bool CSQLiteDB::Optimize()
 {
     return SQLITE_OK == sqlite3_exec(m_db, "PRAGMA optimize", nullptr, nullptr, nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// Comsys bulk operations
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::ClearComsysTables()
+{
+    return SQLITE_OK == sqlite3_exec(m_db,
+        "DELETE FROM channels; DELETE FROM channel_users; DELETE FROM player_channels;",
+        nullptr, nullptr, nullptr);
+}
+
+bool CSQLiteDB::SyncChannel(const UTF8 *name, const UTF8 *header,
+    int type, int temp1, int temp2,
+    int charge, int charge_who, int amount_col,
+    int num_messages, int chan_obj)
+{
+    sqlite3_bind_text(m_stmtChannelSync, 1, reinterpret_cast<const char *>(name), -1, SQLITE_STATIC);
+    sqlite3_bind_text(m_stmtChannelSync, 2, reinterpret_cast<const char *>(header), -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtChannelSync, 3, type);
+    sqlite3_bind_int(m_stmtChannelSync, 4, temp1);
+    sqlite3_bind_int(m_stmtChannelSync, 5, temp2);
+    sqlite3_bind_int(m_stmtChannelSync, 6, charge);
+    sqlite3_bind_int(m_stmtChannelSync, 7, charge_who);
+    sqlite3_bind_int(m_stmtChannelSync, 8, amount_col);
+    sqlite3_bind_int(m_stmtChannelSync, 9, num_messages);
+    sqlite3_bind_int(m_stmtChannelSync, 10, chan_obj);
+
+    int rc = sqlite3_step(m_stmtChannelSync);
+    sqlite3_reset(m_stmtChannelSync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::SyncChannelUser(const UTF8 *channel_name, int who,
+    bool is_on, bool comtitle_status,
+    bool gag_join_leave, const UTF8 *title)
+{
+    sqlite3_bind_text(m_stmtChannelUserSync, 1, reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtChannelUserSync, 2, who);
+    sqlite3_bind_int(m_stmtChannelUserSync, 3, is_on ? 1 : 0);
+    sqlite3_bind_int(m_stmtChannelUserSync, 4, comtitle_status ? 1 : 0);
+    sqlite3_bind_int(m_stmtChannelUserSync, 5, gag_join_leave ? 1 : 0);
+    sqlite3_bind_text(m_stmtChannelUserSync, 6, reinterpret_cast<const char *>(title), -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtChannelUserSync);
+    sqlite3_reset(m_stmtChannelUserSync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::SyncPlayerChannel(int who, const UTF8 *alias,
+    const UTF8 *channel_name)
+{
+    sqlite3_bind_int(m_stmtPlayerChannelSync, 1, who);
+    sqlite3_bind_text(m_stmtPlayerChannelSync, 2, reinterpret_cast<const char *>(alias), -1, SQLITE_STATIC);
+    sqlite3_bind_text(m_stmtPlayerChannelSync, 3, reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtPlayerChannelSync);
+    sqlite3_reset(m_stmtPlayerChannelSync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::LoadAllChannels(ChannelCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtChannelLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        const UTF8 *name    = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtChannelLoadAll, 0));
+        const UTF8 *header  = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtChannelLoadAll, 1));
+        int type            = sqlite3_column_int(m_stmtChannelLoadAll, 2);
+        int temp1           = sqlite3_column_int(m_stmtChannelLoadAll, 3);
+        int temp2           = sqlite3_column_int(m_stmtChannelLoadAll, 4);
+        int charge          = sqlite3_column_int(m_stmtChannelLoadAll, 5);
+        int charge_who      = sqlite3_column_int(m_stmtChannelLoadAll, 6);
+        int amount_col      = sqlite3_column_int(m_stmtChannelLoadAll, 7);
+        int num_messages    = sqlite3_column_int(m_stmtChannelLoadAll, 8);
+        int chan_obj        = sqlite3_column_int(m_stmtChannelLoadAll, 9);
+
+        cb(name ? name : reinterpret_cast<const UTF8 *>(""),
+           header ? header : reinterpret_cast<const UTF8 *>(""),
+           type, temp1, temp2, charge, charge_who, amount_col, num_messages, chan_obj);
+    }
+
+    sqlite3_reset(m_stmtChannelLoadAll);
+    return true;
+}
+
+bool CSQLiteDB::LoadAllChannelUsers(ChannelUserCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtChannelUserLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        const UTF8 *channel_name = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtChannelUserLoadAll, 0));
+        int who             = sqlite3_column_int(m_stmtChannelUserLoadAll, 1);
+        bool is_on          = sqlite3_column_int(m_stmtChannelUserLoadAll, 2) != 0;
+        bool comtitle       = sqlite3_column_int(m_stmtChannelUserLoadAll, 3) != 0;
+        bool gag            = sqlite3_column_int(m_stmtChannelUserLoadAll, 4) != 0;
+        const UTF8 *title   = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtChannelUserLoadAll, 5));
+
+        cb(channel_name ? channel_name : reinterpret_cast<const UTF8 *>(""),
+           who, is_on, comtitle, gag,
+           title ? title : reinterpret_cast<const UTF8 *>(""));
+    }
+
+    sqlite3_reset(m_stmtChannelUserLoadAll);
+    return true;
+}
+
+bool CSQLiteDB::LoadAllPlayerChannels(PlayerChannelCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtPlayerChannelLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int who                  = sqlite3_column_int(m_stmtPlayerChannelLoadAll, 0);
+        const UTF8 *alias        = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtPlayerChannelLoadAll, 1));
+        const UTF8 *channel_name = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtPlayerChannelLoadAll, 2));
+
+        cb(who,
+           alias ? alias : reinterpret_cast<const UTF8 *>(""),
+           channel_name ? channel_name : reinterpret_cast<const UTF8 *>(""));
+    }
+
+    sqlite3_reset(m_stmtPlayerChannelLoadAll);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Mail bulk operations
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::ClearMailTables()
+{
+    return SQLITE_OK == sqlite3_exec(m_db,
+        "DELETE FROM mail_headers; DELETE FROM mail_bodies; DELETE FROM mail_aliases;",
+        nullptr, nullptr, nullptr);
+}
+
+bool CSQLiteDB::SyncMailHeader(int to_player, int from_player, int body_number,
+    const UTF8 *tolist, const UTF8 *time_str,
+    const UTF8 *subject, int read_flags)
+{
+    sqlite3_bind_int(m_stmtMailHeaderSync, 1, to_player);
+    sqlite3_bind_int(m_stmtMailHeaderSync, 2, from_player);
+    sqlite3_bind_int(m_stmtMailHeaderSync, 3, body_number);
+    sqlite3_bind_text(m_stmtMailHeaderSync, 4, reinterpret_cast<const char *>(tolist), -1, SQLITE_STATIC);
+    sqlite3_bind_text(m_stmtMailHeaderSync, 5, reinterpret_cast<const char *>(time_str), -1, SQLITE_STATIC);
+    sqlite3_bind_text(m_stmtMailHeaderSync, 6, reinterpret_cast<const char *>(subject), -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtMailHeaderSync, 7, read_flags);
+
+    int rc = sqlite3_step(m_stmtMailHeaderSync);
+    sqlite3_reset(m_stmtMailHeaderSync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::SyncMailBody(int number, const UTF8 *message)
+{
+    sqlite3_bind_int(m_stmtMailBodySync, 1, number);
+    sqlite3_bind_text(m_stmtMailBodySync, 2, reinterpret_cast<const char *>(message), -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtMailBodySync);
+    sqlite3_reset(m_stmtMailBodySync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::SyncMailAlias(int owner, const UTF8 *name, const UTF8 *desc,
+    int desc_width, const UTF8 *members)
+{
+    sqlite3_bind_int(m_stmtMailAliasSync, 1, owner);
+    sqlite3_bind_text(m_stmtMailAliasSync, 2, reinterpret_cast<const char *>(name), -1, SQLITE_STATIC);
+    sqlite3_bind_text(m_stmtMailAliasSync, 3, reinterpret_cast<const char *>(desc), -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtMailAliasSync, 4, desc_width);
+    sqlite3_bind_text(m_stmtMailAliasSync, 5, reinterpret_cast<const char *>(members), -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtMailAliasSync);
+    sqlite3_reset(m_stmtMailAliasSync);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::LoadAllMailHeaders(MailHeaderCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtMailHeaderLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int to_player   = sqlite3_column_int(m_stmtMailHeaderLoadAll, 0);
+        int from_player = sqlite3_column_int(m_stmtMailHeaderLoadAll, 1);
+        int body_number = sqlite3_column_int(m_stmtMailHeaderLoadAll, 2);
+        const UTF8 *tolist  = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailHeaderLoadAll, 3));
+        const UTF8 *time_str = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailHeaderLoadAll, 4));
+        const UTF8 *subject = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailHeaderLoadAll, 5));
+        int read_flags  = sqlite3_column_int(m_stmtMailHeaderLoadAll, 6);
+
+        cb(to_player, from_player, body_number,
+           tolist ? tolist : reinterpret_cast<const UTF8 *>(""),
+           time_str ? time_str : reinterpret_cast<const UTF8 *>(""),
+           subject ? subject : reinterpret_cast<const UTF8 *>(""),
+           read_flags);
+    }
+
+    sqlite3_reset(m_stmtMailHeaderLoadAll);
+    return true;
+}
+
+bool CSQLiteDB::LoadAllMailBodies(MailBodyCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtMailBodyLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int number          = sqlite3_column_int(m_stmtMailBodyLoadAll, 0);
+        const UTF8 *message = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailBodyLoadAll, 1));
+
+        cb(number, message ? message : reinterpret_cast<const UTF8 *>(""));
+    }
+
+    sqlite3_reset(m_stmtMailBodyLoadAll);
+    return true;
+}
+
+bool CSQLiteDB::LoadAllMailAliases(MailAliasCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtMailAliasLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int owner           = sqlite3_column_int(m_stmtMailAliasLoadAll, 0);
+        const UTF8 *name    = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailAliasLoadAll, 1));
+        const UTF8 *desc    = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailAliasLoadAll, 2));
+        int desc_width      = sqlite3_column_int(m_stmtMailAliasLoadAll, 3);
+        const UTF8 *members = reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtMailAliasLoadAll, 4));
+
+        cb(owner,
+           name ? name : reinterpret_cast<const UTF8 *>(""),
+           desc ? desc : reinterpret_cast<const UTF8 *>(""),
+           desc_width,
+           members ? members : reinterpret_cast<const UTF8 *>(""));
+    }
+
+    sqlite3_reset(m_stmtMailAliasLoadAll);
+    return true;
 }
