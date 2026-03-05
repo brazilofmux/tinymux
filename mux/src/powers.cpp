@@ -88,6 +88,7 @@ static POWERENT gen_powers[] =
     {T("long_fingers"),    POW_LONGFINGERS,0, 0,   ph_wiz},
     {T("monitor"),         POW_MONITOR,    0, 0,   ph_wiz},
     {T("no_destroy"),      POW_NO_DESTROY, 0, 0,   ph_wiz},
+    {T("no_mail_expire"), POW_NO_MAIL_EXPIRE, POWER_EXT, 0, ph_wiz},
     {T("pass_locks"),      POW_PASS_LOCKS, 0, 0,   ph_wiz},
     {T("poll"),            POW_POLL,       0, 0,   ph_wiz},
     {T("prog"),            POW_PROG,       0, 0,   ph_wiz},

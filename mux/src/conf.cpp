@@ -297,6 +297,7 @@ void cf_init(void)
     mudconf.global_error_obj = NOTHING;
     mudconf.cache_pages = 40;
     mudconf.mail_per_hour = 50;
+    mudconf.mail_max_per_player = 500;
     mudconf.email_per_hour = 50;
     mudconf.vattr_per_hour = 5000;
     mudconf.references_per_hour = 500;
@@ -1946,6 +1947,7 @@ static CONFPARM conftable[] =
     {T("mail_database"),             cf_string_dyn,  CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.mail_db),         nullptr, SIZEOF_PATHNAME},
     {T("mail_expiration"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        nullptr,            0},
     {T("mail_per_hour"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_per_hour,          nullptr,            0},
+    {T("mail_max_per_player"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_max_per_player,    nullptr,            0},
     {T("email_per_hour"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.email_per_hour,         nullptr,            0},
     {T("master_room"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            nullptr,            0},
     {T("match_own_commands"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.match_mine),      nullptr,            0},

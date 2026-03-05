@@ -47,7 +47,8 @@
 #define POW_UNKILLABLE  0x80000000  /* Can't be killed */
 
 /* Second word of powers */
-#define POW_BUILDER     0x00000001  /* Can build */
+#define POW_BUILDER         0x00000001  /* Can build */
+#define POW_NO_MAIL_EXPIRE  0x00000002  /* Immune to mail expiration and storage limits */
 
 /* ---------------------------------------------------------------------------
  * POWERENT: Information about object powers.
@@ -110,6 +111,7 @@ extern bool decode_power(dbref player, UTF8 *powername, POWERSET *pset);
 #define Prog(c)             (((Powers(c) & POW_PROG) != 0) || Wizard(c))
 #define Pass_Locks(c)       ((Powers(c) & POW_PASS_LOCKS) != 0)
 #define Builder(c)          (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
+#define No_Mail_Expire(c)   (((Powers2(c) & POW_NO_MAIL_EXPIRE) != 0) || Wizard(c))
 
 #define Can_SiteAdmin(c)    (((Powers(c) & POW_SITEADMIN) != 0) || Wizard(c))
 

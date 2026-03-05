@@ -1965,7 +1965,8 @@ CONFIG PARAMETERS (continued)
   kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
   look_obey_terse  machine_command_cost  mail_database  mail_ehlo
-  mail_expiration  mail_per_hour  email_per_hour  mail_sendaddr  mail_sendname
+  mail_expiration  mail_max_per_player  mail_per_hour  email_per_hour
+  mail_sendaddr  mail_sendname
   mail_server
   mail_subject  master_room  match_own_commands  max_cache_size  max_players
   min_guests  module  money_name_plural  money_name_singular  motd_file
@@ -3575,8 +3576,37 @@ MAIL_PER_HOUR
   reached are denied.  Any existing @mail-in-progress is still
   permitted.
 
-  Related Topics: email_per_hour, pcreate_per_hour, references_per_hour,
-  user_attr_per_hour
+  Related Topics: email_per_hour, mail_max_per_player, pcreate_per_hour,
+  references_per_hour, user_attr_per_hour
+
+& MAIL_MAX_PER_PLAYER
+MAIL_MAX_PER_PLAYER
+
+  CONFIG PARAMETER: mail_max_per_player <maximum>
+  DEFAULT: 500
+
+  Specifies the maximum number of messages that may be stored in a
+  single player's mailbox.  Attempts to send @mail to a player whose
+  mailbox has reached this limit are denied with a "mailbox is full"
+  message.  Set to 0 or a negative number to disable the limit.
+
+  Wizards and players with the no_mail_expire power are exempt from
+  this limit.
+
+  Related Topics: mail_expiration, mail_per_hour, no_mail_expire
+
+& NO_MAIL_EXPIRE
+NO_MAIL_EXPIRE
+
+  POWER: no_mail_expire     RESTRICTION: Wizard
+
+  When set on a player, their @mail is exempt from automatic
+  expiration (see mail_expiration) and their mailbox is exempt from
+  the mail_max_per_player storage limit.
+
+  Wizards inherently have this power.
+
+  Related Topics: mail_expiration, mail_max_per_player
 
 & EMAIL_PER_HOUR
 EMAIL_PER_HOUR

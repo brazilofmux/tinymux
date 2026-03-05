@@ -2620,6 +2620,33 @@ static void send_mail
     //
     newp->read = flags & M_FMASK;
 
+    // Reject if the target's mailbox is full.
+    //
+    if (  0 < mudconf.mail_max_per_player
+       && !No_Mail_Expire(target))
+    {
+        int total = 0;
+        MailList ml_count(target);
+        struct mail *mp_count;
+        for (mp_count = ml_count.FirstItem(); !ml_count.IsEnd();
+             mp_count = ml_count.NextItem())
+        {
+            total++;
+        }
+        if (total >= mudconf.mail_max_per_player)
+        {
+            raw_notify(player,
+                tprintf(T("MAIL: %s\xE2\x80\x99s mailbox is full (%d messages)."),
+                    Moniker(target), total));
+            MessageReferenceDec(newp->number);
+            MEMFREE(newp->subject);
+            MEMFREE(newp->tolist);
+            MEMFREE(newp->time);
+            delete newp;
+            return;
+        }
+    }
+
     // If this is the first message, it is the head and the tail.
     //
     MailList ml(target);
@@ -3695,6 +3722,11 @@ void check_mail_expiration(void)
     CLinearTimeAbsolute ltaMail;
     DO_WHOLE_DB(thing)
     {
+        if (No_Mail_Expire(thing))
+        {
+            continue;
+        }
+
         MailList ml(thing);
         struct mail *mp;
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
