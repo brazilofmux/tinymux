@@ -20,7 +20,7 @@ typedef struct Aname
 
 const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags);
 bool cache_put(Aname *nam, const UTF8 *obj, size_t len, dbref owner, int flags);
-int cache_init(const UTF8* game_dir_file, const UTF8* game_pag_file, int nCachePages);
+int cache_init(const UTF8 *indb);
 void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);

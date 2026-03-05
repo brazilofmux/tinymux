@@ -59,8 +59,6 @@ cat > smoke.conf <<\_EOF
 input_database	smoke.d/smoke.db
 output_database	smoke.d/smoke.db.new
 crash_database	smoke.d/smoke.db.CRASH
-game_dir_file	smoke.d/smoke.dir
-game_pag_file	smoke.d/smoke.pag
 #
 # Mail, comsystem, and macro databases.
 #

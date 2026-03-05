@@ -111,7 +111,6 @@ struct confdata
     dbref   toad_recipient;     /* Default @toad recipient. */
 
     int     active_q_chunk;     /* # cmds to run from queue when active */
-    int     cache_pages;        // Size of hash page cache (in pages).
     int     check_interval;     /* interval between db check/cleans in secs */
     int     check_offset;       /* when to perform first check and clean */
     int     cmd_quota_incr;     /* Bump #cmds allowed by this each timeslice */
@@ -257,8 +256,6 @@ struct confdata
     UTF8    *creg_file;         /* display on connect if registration */
     UTF8    *down_file;         /* display this file if no logins */
     UTF8    *full_file;         /* display when max users exceeded */
-    UTF8    *game_dir;          /* use this game CHashFile DIR file if we need one */
-    UTF8    *game_pag;          /* use this game CHashFile PAG file if we need one */
     UTF8    *guest_file;        /* display if guest connects */
     UTF8    *indb;              /* database file name */
     UTF8    *log_dir;           /* directory for logging from the cmd line */

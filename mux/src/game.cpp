@@ -2240,16 +2240,7 @@ static void dbconvert(void)
     //
     init_attrtab();
 
-    // In SQLite mode, we pass the basename with .dir suffix so that
-    // cache_init() can derive the .sqlite path from it.
-    //
-    UTF8 dirfile[SIZEOF_PATHNAME];
-    UTF8 *dirfile_c = dirfile;
-    safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str(T(".dir"), dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    *dirfile_c = '\0';
-
-    int cc = init_dbfile(dirfile, nullptr, 0);
+    int cc = init_dbfile(standalone_basename);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
         Log.tinyprintf(T("Can\xE2\x80\x99t open SQLite database.\n"));
@@ -2838,16 +2829,21 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         // Remove the SQLite database to start fresh.
         //
-        UTF8 sqlitefile[SIZEOF_PATHNAME];
-        mux_strncpy(sqlitefile, mudconf.game_dir, sizeof(sqlitefile) - 1);
-        size_t n = strlen(reinterpret_cast<char *>(sqlitefile));
-        if (n > 4 && memcmp(sqlitefile + n - 4, ".dir", 4) == 0)
+        char sqlitefile[SIZEOF_PATHNAME];
+        mux_strncpy((UTF8 *)sqlitefile, mudconf.indb, sizeof(sqlitefile) - 1);
+        sqlitefile[sizeof(sqlitefile) - 1] = '\0';
+        size_t n = strlen(sqlitefile);
+        if (n > 3 && strcmp(sqlitefile + n - 3, ".db") == 0)
         {
-            memcpy(sqlitefile + n - 4, ".sqlite", 8);
+            strcpy(sqlitefile + n - 3, ".sqlite");
         }
-        RemoveFile(sqlitefile);
+        else
+        {
+            strcat(sqlitefile, ".sqlite");
+        }
+        RemoveFile((UTF8 *)sqlitefile);
     }
-    int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, mudconf.cache_pages);
+    int ccPageFile = init_dbfile(mudconf.indb);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

@@ -45,8 +45,6 @@ void cf_init(void)
     mudconf.indb = StringClone(T("netmux.db"));
     mudconf.outdb = StringClone(T(""));
     mudconf.crashdb = StringClone(T(""));
-    mudconf.game_dir = StringClone(T(""));
-    mudconf.game_pag = StringClone(T(""));
     mudconf.mail_db   = StringClone(T("mail.db"));
     mudconf.comsys_db = StringClone(T("comsys.db"));
 
@@ -293,7 +291,6 @@ void cf_init(void)
     mudconf.hook_obj = NOTHING;
     mudconf.help_executor = NOTHING;
     mudconf.global_error_obj = NOTHING;
-    mudconf.cache_pages = 40;
     mudconf.mail_per_hour = 50;
     mudconf.mail_max_per_player = 500;
     mudconf.email_per_hour = 50;
@@ -1845,7 +1842,6 @@ static CONFPARM conftable[] =
     {T("bad_name"),                  cf_badname,     CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            0},
     {T("badsite_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.site_file),       nullptr, SIZEOF_PATHNAME},
     {T("cache_names"),               cf_bool,        CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.cache_names),     nullptr,            0},
-    {T("cache_pages"),               cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.cache_pages,            nullptr,            0},
     {T("cache_tick_period"),         cf_seconds,     CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.cache_tick_period), nullptr,          0},
     {T("check_interval"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_interval,         nullptr,            0},
     {T("check_offset"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           nullptr,            0},
@@ -1901,8 +1897,6 @@ static CONFPARM conftable[] =
     {T("function_invocation_limit"), cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_invk_lim,          nullptr,            0},
     {T("function_name"),             cf_function_name, CA_GOD,  CA_DISABLED, nullptr,                         nullptr,            0},
     {T("function_recursion_limit"),  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          nullptr,            0},
-    {T("game_dir_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.game_dir),        nullptr, SIZEOF_PATHNAME},
-    {T("game_pag_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.game_pag),        nullptr, SIZEOF_PATHNAME},
     {T("global_error_obj"),          cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       nullptr,            0},
     {T("good_name"),                 cf_badname,     CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            1},
     {T("guest_char_num"),            cf_dbref,       CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             nullptr,            0},
@@ -2291,8 +2285,6 @@ static struct
 {
     { &mudconf.outdb,    T(".out") },
     { &mudconf.crashdb,  T(".CRASH") },
-    { &mudconf.game_dir, T(".dir") },
-    { &mudconf.game_pag, T(".pag") },
     { 0, 0 }
 };
 

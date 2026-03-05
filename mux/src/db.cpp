@@ -3363,15 +3363,13 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
     return (r);
 }
 
-int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
+int init_dbfile(const UTF8 *indb)
 {
-    UNUSED_PARAMETER(game_pag_file);
-    UNUSED_PARAMETER(nCachePages);
     if (mudstate.bStandAlone)
     {
-        Log.tinyprintf(T("Opening SQLite (from %s)" ENDLINE), game_dir_file);
+        Log.tinyprintf(T("Opening SQLite (from %s)" ENDLINE), indb);
     }
-    int cc = cache_init(game_dir_file, nullptr, 0);
+    int cc = cache_init(indb);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
         if (mudstate.bStandAlone)

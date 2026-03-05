@@ -1762,31 +1762,6 @@ CACHE_NAMES
 
   Related Topics:
 
-& CACHE_PAGES
-CACHE_PAGES
-
-  CONFIG PARAMETER: cache_pages <num>
-  DEFAULT: 40
-
-  Specifies the size of the hashpage cache.  This configuration option cannot
-  be changed after the server starts.  It can only be changed via the
-  configuration file.
-
-  The most effective type of caching occurs one level higher (see
-  max_cache_size), however for larger games, it is necessary to increase
-  cache_pages as well (which caches at a lower level).
-
-  Recommendations:
-
-   -- Have at least 10 hash pages or the server itself will thrash the cache.
-
-   -- Have one cache page for every active player, or simple paging will
-      thrash the cache.
-
-  The default of 40 will perform well up to 100 players.
-
-  Related Topics: cache_pages, max_cache_size.
-
 & CACHE_TICK_PERIOD
 CACHE_TICK_PERIOD
 
@@ -1798,7 +1773,7 @@ CACHE_TICK_PERIOD
   the work is spread out more evenly.  Therefore, a short period is
   usually best for large games.
 
-  Related Topics: cache_pages, max_cache_size.
+  Related Topics: max_cache_size.
 
 & CACHE_TRIM
 CACHE_TRIM
@@ -1935,7 +1910,7 @@ CONFIG PARAMETERS
   particular parameter.
 
   access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
-  attr_name_charset  autozone  bad_name  badsite_file  cache_names  cache_pages
+  attr_name_charset  autozone  bad_name  badsite_file  cache_names
   cache_tick_period  check_interval  check_offset  clone_copies_cost
   command_quota_increment  command_quota_max
   comsys_database  config_access  conn_timeout  connect_file  connect_reg_file
@@ -1949,16 +1924,16 @@ CONFIG PARAMETERS
   find_money_chance  fixed_home_message  fixed_tel_message  flag_access
   flag_alias  flag_name  float_precision forbid_site  fork_dump  full_file
   full_motd_message  function_access  function_alias  function_name
-  function_invocation_limit  function_recursion_limit  game_dir_file
+  function_invocation_limit  function_recursion_limit
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
+  global_error_obj  good_name  guest_char_num  guest_file
   guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
-  have_comsys  have_mailer  have_zones  help_executor  helpfile  hook_cmd
+  have_zones  help_executor  helpfile  hook_cmd
   hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
   immobile_message  include  indent_desc  initial_size  input_database
   ip_address  keepalive_interval  kill_guarantee_cost  kill_max_cost
@@ -2753,48 +2728,6 @@ FUNCTION_RECURSION_LIMIT
   '#-1 FUNCTION RECURSION LIMIT EXCEEDED' is returned.  Normally this is not
   a problem, but the u() function can be used to cause infinite recursion
   (unless blocked by a recursion limit)
-
-& GAME_DIR_FILE
-GAME_DIR_FILE
-
-  CONFIG PARAMETER: game_dir_file <path>
-
-  This configuration option specifies the file name of the 'directory' portion
-  of the CHashFile attribute database. If this file is deleted, CHashFile will
-  automatically re-created it.
-
-  It is read into memory at startup and re-written during page splits in the
-  'pages' portion of the database.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: game_pag_file
-
-& GAME_PAG_FILE
-GAME_PAG_FILE
-
-  CONFIG PARAMETER: game_pag_file <path>
-
-  This configuration option specifies the file name of the 'pages' portion of
-  the CHashFile attribute database. Unlike the 'directory' portion, this
-  portion cannot be replaced. Attribute values themselves are stored in this
-  file.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: game_dir_file
-
-& GDBM_DATABASE
-GDBM_DATABASE
-
-  CONFIG PARAMETER: gdbm_database <path>
-
-  MUX 2.0 maintains a database in a different way. This configuration
-  option is obsolete.
-
-  Related Topics: game_dir_file, game_pag_file
 
 & GIVE
 GIVE
@@ -3735,7 +3668,7 @@ MAX_CACHE_SIZE
   Expressed in bytes, this is the maximum size the server will use for caching
   attribute values from the database.
 
-  Related Topics: cache_pages, cache_tick_period.
+  Related Topics: cache_tick_period.
 
 & MAX_PLAYERS
 MAX_PLAYERS

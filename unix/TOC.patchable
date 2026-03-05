@@ -60,6 +60,7 @@ game/_backupflat.sh
 game/data/db_check
 game/data/db_load
 game/data/db_unload
+game/text/connect_help.txt
 game/text/help.txt
 game/text/wizhelp.txt
 src/Makefile.am
@@ -97,6 +98,7 @@ src/db.h
 src/db_rw.cpp
 src/depcomp
 src/dtoa.c
+src/ducet_cetable.h
 src/eval.cpp
 src/externs.h
 src/file_c.cpp
@@ -207,6 +209,14 @@ src/signals.cpp
 src/sitemon.cpp
 src/slave.cpp
 src/speech.cpp
+src/sqlite/sqlite3.c
+src/sqlite/sqlite3.h
+src/sqlite/sqlite3ext.h
+src/sqlite_backend.cpp
+src/sqlite_backend.h
+src/sqlitedb.cpp
+src/sqlitedb.h
+src/storage_backend.h
 src/stringutil.cpp
 src/strtod.cpp
 src/stringutil.h
@@ -228,6 +238,9 @@ src/tools/autoconf.h.in
 src/tools/Makefile.am
 src/tools/Makefile.in
 src/unparse.cpp
+src/utf8_collate.cpp
+src/utf8_grapheme.cpp
+src/utf8_normalize.cpp
 src/utf8tables.cpp
 src/utf8tables.h
 src/vattr.cpp

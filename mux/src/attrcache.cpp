@@ -32,33 +32,25 @@ static size_t cache_size = 0;
 static uint64_t cache_hits = 0;
 static uint64_t cache_misses = 0;
 
-int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCachePages)
+int cache_init(const UTF8 *indb)
 {
     if (cache_initted)
     {
         return HF_OPEN_STATUS_ERROR;
     }
 
-    UNUSED_PARAMETER(game_pag_file);
-    UNUSED_PARAMETER(nCachePages);
-
     g_pSQLiteBackend = new CSQLiteBackend();
 
-    // Derive SQLite database path from the game dir file path.
-    // Replace .dir extension with .db, or append .db.
+    // Derive SQLite database path from the input database name.
+    // Replace .db extension with .sqlite, or append .sqlite if no .db suffix.
     //
     char szPath[LBUF_SIZE];
-    mux_strncpy((UTF8 *)szPath, game_dir_file, sizeof(szPath) - 1);
+    mux_strncpy((UTF8 *)szPath, indb, sizeof(szPath) - 1);
     szPath[sizeof(szPath) - 1] = '\0';
-
-    // Look for .dir suffix and replace with .sqlite.
-    // We use .sqlite instead of .db to avoid colliding with TinyMUX's
-    // flatfile convention where .db is the input/output database.
-    //
     size_t n = strlen(szPath);
-    if (n > 4 && strcmp(szPath + n - 4, ".dir") == 0)
+    if (n > 3 && strcmp(szPath + n - 3, ".db") == 0)
     {
-        strcpy(szPath + n - 4, ".sqlite");
+        strcpy(szPath + n - 3, ".sqlite");
     }
     else
     {

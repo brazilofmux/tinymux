@@ -575,7 +575,7 @@ void atr_push(void);
 void atr_pop(void);
 int  atr_head(dbref, unsigned char **);
 int  atr_next(UTF8 **);
-int  init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages);
+int  init_dbfile(const UTF8 *indb);
 void atr_cpy(dbref dest, dbref source, bool bInternal);
 void atr_chown(dbref);
 void atr_clr(dbref, int);
