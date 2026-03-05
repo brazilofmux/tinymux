@@ -31,6 +31,7 @@ public:
 
     bool DelAll(unsigned int object) override;
     bool GetAll(unsigned int object, AttrCallback cb) override;
+    bool GetBuiltin(unsigned int object, AttrCallback cb) override;
 
     void Sync() override;
     void Tick() override;

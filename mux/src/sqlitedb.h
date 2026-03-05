@@ -103,6 +103,7 @@ public:
     typedef std::function<void(int attrnum, const UTF8 *value, size_t len,
                                dbref owner, int flags)> AttrCallback;
     bool GetAllAttributes(dbref obj, AttrCallback cb);
+    bool GetBuiltinAttributes(dbref obj, AttrCallback cb);
 
     // Attribute name registry.
     // These correspond to vattr_define_LEN / vattr_alloc_LEN.
@@ -235,6 +236,7 @@ private:
     sqlite3_stmt *m_stmtAttrDel;
     sqlite3_stmt *m_stmtAttrDelObj;
     sqlite3_stmt *m_stmtAttrGetObj;
+    sqlite3_stmt *m_stmtAttrGetBuiltin;
 
     // Attribute name registry statements.
     //

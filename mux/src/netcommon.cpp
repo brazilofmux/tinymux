@@ -747,6 +747,18 @@ void announce_connect(const dbref player, DESC *d)
 {
     desc_addhash(d);
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    // Preload built-in attributes for the player and their location
+    // in a single bulk read each, avoiding individual cache misses.
+    //
+    cache_preload(player);
+    const dbref ploc = Location(player);
+    if (Good_obj(ploc))
+    {
+        cache_preload(ploc);
+    }
+#endif
+
     int count = 0;
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {

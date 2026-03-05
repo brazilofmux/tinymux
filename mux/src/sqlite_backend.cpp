@@ -80,6 +80,16 @@ bool CSQLiteBackend::GetAll(unsigned int object, AttrCallback cb)
         });
 }
 
+bool CSQLiteBackend::GetBuiltin(unsigned int object, AttrCallback cb)
+{
+    return m_db.GetBuiltinAttributes(static_cast<dbref>(object),
+        [&cb](int attrnum, const UTF8 *value, size_t len, dbref owner, int flags)
+        {
+            cb(static_cast<unsigned int>(attrnum), value, len,
+               static_cast<int>(owner), flags);
+        });
+}
+
 void CSQLiteBackend::Sync()
 {
     m_db.Checkpoint();

@@ -66,6 +66,7 @@ public:
                                int owner, int flags)> AttrCallback;
     virtual bool DelAll(unsigned int object) = 0;
     virtual bool GetAll(unsigned int object, AttrCallback cb) = 0;
+    virtual bool GetBuiltin(unsigned int object, AttrCallback cb) = 0;
 
     // Maintenance.
     //

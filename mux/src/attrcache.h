@@ -25,5 +25,6 @@ void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
 void cache_del(Aname *nam);
+void cache_preload(dbref obj);
 
 #endif // !ATTRCACHE_H

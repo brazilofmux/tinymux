@@ -40,6 +40,7 @@ CSQLiteDB::CSQLiteDB()
       m_stmtAttrDel(nullptr),
       m_stmtAttrDelObj(nullptr),
       m_stmtAttrGetObj(nullptr),
+      m_stmtAttrGetBuiltin(nullptr),
       m_stmtAttrNamePut(nullptr),
       m_stmtAttrNameDel(nullptr),
       m_stmtAttrNameLoadAll(nullptr),
@@ -579,6 +580,13 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    if (!Prepare(m_db,
+        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=? AND attrnum < 256",
+        &m_stmtAttrGetBuiltin))
+    {
+        return false;
+    }
+
     // Attribute name registry.
     //
     if (!Prepare(m_db,
@@ -773,6 +781,7 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtAttrDel);
     Finalize(&m_stmtAttrDelObj);
     Finalize(&m_stmtAttrGetObj);
+    Finalize(&m_stmtAttrGetBuiltin);
     Finalize(&m_stmtAttrNamePut);
     Finalize(&m_stmtAttrNameDel);
     Finalize(&m_stmtAttrNameLoadAll);
@@ -1089,6 +1098,32 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
     }
 
     sqlite3_reset(m_stmtAttrGetObj);
+    m_stats.attr_bulk_loads++;
+    return true;
+}
+
+bool CSQLiteDB::GetBuiltinAttributes(dbref obj, AttrCallback cb)
+{
+    sqlite3_bind_int(m_stmtAttrGetBuiltin, 1, obj);
+
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtAttrGetBuiltin);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int attrnum = sqlite3_column_int(m_stmtAttrGetBuiltin, 0);
+        const UTF8 *value = static_cast<const UTF8 *>(sqlite3_column_blob(m_stmtAttrGetBuiltin, 1));
+        size_t len = static_cast<size_t>(sqlite3_column_bytes(m_stmtAttrGetBuiltin, 1));
+        dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetBuiltin, 2));
+        int flags = sqlite3_column_int(m_stmtAttrGetBuiltin, 3);
+
+        cb(attrnum, value, len, owner, flags);
+    }
+
+    sqlite3_reset(m_stmtAttrGetBuiltin);
     m_stats.attr_bulk_loads++;
     return true;
 }

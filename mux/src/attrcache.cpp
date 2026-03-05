@@ -536,4 +536,53 @@ void cache_del(Aname *nam)
     }
 }
 
+// Preload built-in attributes (attrnum < 256) for an object into the LRU
+// cache in a single bulk read from SQLite.  This avoids individual cache
+// misses when the game first touches a freshly-connected player or a room
+// the player moves into.
+//
+void cache_preload(dbref obj)
+{
+#if defined(SQLITE_STORAGE)
+    if (  !cache_initted
+       || !g_pSQLiteBackend
+       || mudstate.bStandAlone)
+    {
+        return;
+    }
+
+    g_pSQLiteBackend->GetBuiltin(
+        static_cast<unsigned int>(obj),
+        [obj](unsigned int attrnum, const UTF8 *value, size_t len,
+              int db_owner, int db_flags)
+        {
+            Aname nam;
+            nam.object = static_cast<unsigned int>(obj);
+            nam.attrnum = attrnum;
+
+            // Skip if already in cache.
+            //
+            if (mudstate.attribute_lru_cache_map.find(nam)
+                != mudstate.attribute_lru_cache_map.end())
+            {
+                return;
+            }
+
+            statedata::AttrCacheEntry entry;
+            entry.data.assign(value, value + len);
+            entry.lru_it = mudstate.attribute_lru_cache_list.insert(
+                mudstate.attribute_lru_cache_list.end(), nam);
+            entry.attr_owner = static_cast<dbref>(db_owner);
+            entry.attr_flags = db_flags;
+            cache_size += entry.data.size();
+            mudstate.attribute_lru_cache_map.insert(
+                std::make_pair(nam, std::move(entry)));
+        });
+
+    trim_attribute_cache();
+#else
+    UNUSED_PARAMETER(obj);
+#endif
+}
+
 #endif // MEMORY_BASED
