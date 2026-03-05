@@ -2337,22 +2337,28 @@ static void dbconvert(void)
 
     // Go do it.
     //
+#if !defined(SQLITE_STORAGE)
     if (do_redirect)
     {
         cache_redirect();
     }
+#endif
 
     setvbuf(fpIn, nullptr, _IOFBF, 16384);
     if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
     {
+#if !defined(SQLITE_STORAGE)
         cache_cleanup();
+#endif
         exit(1);
     }
 
+#if !defined(SQLITE_STORAGE)
     if (do_redirect)
     {
         cache_pass2();
     }
+#endif
     Log.WriteString(T("Input: "));
     info(db_format, db_flags, db_ver);
 

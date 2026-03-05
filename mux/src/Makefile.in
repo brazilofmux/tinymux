@@ -94,8 +94,12 @@ host_triplet = @host@
 
 # Add reality levels if enabled
 @REALITY_ENABLED_TRUE@am__append_1 = levels.cpp
+
+# Add SQLite storage backend if enabled
+@SQLITE_ENABLED_TRUE@am__append_2 = sqlitedb.cpp sqlite_backend.cpp
+@SQLITE_ENABLED_TRUE@am__append_3 = -I$(top_srcdir)/../../db
 bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) $(am__EXEEXT_1)
-@STUBSLAVE_ENABLED_TRUE@am__append_2 = stubslave
+@STUBSLAVE_ENABLED_TRUE@am__append_4 = stubslave
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -138,9 +142,11 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp levels.cpp version.cpp
+	wiz.cpp levels.cpp sqlitedb.cpp sqlite_backend.cpp version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
-am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
+@SQLITE_ENABLED_TRUE@am__objects_2 = sqlitedb.$(OBJEXT) \
+@SQLITE_ENABLED_TRUE@	sqlite_backend.$(OBJEXT)
+am__objects_3 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
 	command.$(OBJEXT) comsys.$(OBJEXT) conf.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
@@ -160,13 +166,14 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
 	unparse.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
-	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1)
-am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
+	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
+am_netmux_OBJECTS = $(am__objects_3) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
 netmux_DEPENDENCIES = libmux.a ganl/libganl.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -211,6 +218,7 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/rob.Po ./$(DEPDIR)/set.Po ./$(DEPDIR)/sha1.Po \
 	./$(DEPDIR)/signals.Po ./$(DEPDIR)/sitemon.Po \
 	./$(DEPDIR)/slave.Po ./$(DEPDIR)/speech.Po \
+	./$(DEPDIR)/sqlite_backend.Po ./$(DEPDIR)/sqlitedb.Po \
 	./$(DEPDIR)/stringutil.Po ./$(DEPDIR)/strtod.Po \
 	./$(DEPDIR)/stubslave.Po ./$(DEPDIR)/svdhash.Po \
 	./$(DEPDIR)/svdrand.Po ./$(DEPDIR)/telnet.Po \
@@ -393,6 +401,8 @@ REALITY_LVLS = @REALITY_LVLS@
 SELFCHECK = @SELFCHECK@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SQLITE_LIBS = @SQLITE_LIBS@
+SQLITE_STORAGE = @SQLITE_STORAGE@
 SQL_INCLUDE = @SQL_INCLUDE@
 SQL_LIBPATH = @SQL_LIBPATH@
 SQL_LIBS = @SQL_LIBS@
@@ -459,9 +469,10 @@ top_srcdir = @top_srcdir@
 SUBDIRS = tools ganl . modules
 
 # Shared build flags
-AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS)
-
+AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) \
+	$(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) $(SELFCHECK) \
+	$(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) \
+	$(OPENSSL_CFLAGS) $(SQLITE_STORAGE) $(am__append_3)
 
 # Base source files for building netmux
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
@@ -477,7 +488,7 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp $(am__append_1)
+	wiz.cpp $(am__append_1) $(am__append_2)
 noinst_LIBRARIES = libmux.a
 
 # libmux library
@@ -485,7 +496,7 @@ libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS) $(SQLITE_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -676,6 +687,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sitemon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/speech.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlite_backend.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlitedb.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stringutil.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strtod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
@@ -1118,6 +1131,8 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/sitemon.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/speech.Po
+	-rm -f ./$(DEPDIR)/sqlite_backend.Po
+	-rm -f ./$(DEPDIR)/sqlitedb.Po
 	-rm -f ./$(DEPDIR)/stringutil.Po
 	-rm -f ./$(DEPDIR)/strtod.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
@@ -1237,6 +1252,8 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/sitemon.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/speech.Po
+	-rm -f ./$(DEPDIR)/sqlite_backend.Po
+	-rm -f ./$(DEPDIR)/sqlitedb.Po
 	-rm -f ./$(DEPDIR)/stringutil.Po
 	-rm -f ./$(DEPDIR)/strtod.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po

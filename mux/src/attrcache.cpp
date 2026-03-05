@@ -3,10 +3,10 @@
  *
  * The functions here manage the upper-level attribute value cache for
  * disk-based mode. It's not used in memory-based builds. The lower-level
- * cache is managed in svdhash.cpp
+ * storage is either CHashFile (.dir/.pag) or SQLite (.db).
  *
- * The upper-level cache is organized by a CHashTable and a linked list. The
- * former allows random access while the linked list helps find the
+ * The upper-level cache is organized by an unordered_map and a linked list.
+ * The former allows random access while the linked list helps find the
  * least-recently-used attribute.
  */
 
@@ -18,15 +18,26 @@ using namespace std;
 
 #if !defined(MEMORY_BASED)
 
+#if defined(SQLITE_STORAGE)
+#define TINYMUX_TYPES_DEFINED
+#include "sqlite_backend.h"
+
+static CSQLiteBackend *g_pSQLiteBackend = nullptr;
+#else
 static CHashFile hfAttributeFile;
+#endif
+
 static bool cache_initted = false;
 
+#if !defined(SQLITE_STORAGE)
 static bool cache_redirected = false;
 #define NUMBER_OF_TEMPORARY_FILES 8
 static FILE *temporary_files[NUMBER_OF_TEMPORARY_FILES];
+#endif
 
 CLinearTimeAbsolute cs_ltime;
 
+#if !defined(SQLITE_STORAGE)
 #pragma pack(1)
 struct attribute_record
 {
@@ -36,6 +47,12 @@ struct attribute_record
 #pragma pack()
 
 static attribute_record temp_record;
+#else
+// SQLite backend uses its own buffer for attribute retrieval.
+//
+static UTF8 sqlite_attr_buf[LBUF_SIZE];
+#endif
+
 static size_t cache_size = 0;
 
 int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCachePages)
@@ -45,6 +62,50 @@ int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCacheP
         return HF_OPEN_STATUS_ERROR;
     }
 
+#if defined(SQLITE_STORAGE)
+    UNUSED_PARAMETER(game_pag_file);
+    UNUSED_PARAMETER(nCachePages);
+
+    g_pSQLiteBackend = new CSQLiteBackend();
+
+    // Derive SQLite database path from the game dir file path.
+    // Replace .dir extension with .db, or append .db.
+    //
+    char szPath[LBUF_SIZE];
+    mux_strncpy((UTF8 *)szPath, game_dir_file, sizeof(szPath) - 1);
+    szPath[sizeof(szPath) - 1] = '\0';
+
+    // Look for .dir suffix and replace with .sqlite.
+    // We use .sqlite instead of .db to avoid colliding with TinyMUX's
+    // flatfile convention where .db is the input/output database.
+    //
+    size_t n = strlen(szPath);
+    if (n > 4 && strcmp(szPath + n - 4, ".dir") == 0)
+    {
+        strcpy(szPath + n - 4, ".sqlite");
+    }
+    else
+    {
+        strcat(szPath, ".sqlite");
+    }
+
+    // Check if the database file exists before opening.
+    // sqlite3_open creates the file if it doesn't exist.
+    //
+    bool bNewDatabase = (access(szPath, F_OK) != 0);
+
+    if (!g_pSQLiteBackend->Open(szPath))
+    {
+        delete g_pSQLiteBackend;
+        g_pSQLiteBackend = nullptr;
+        return HF_OPEN_STATUS_ERROR;
+    }
+
+    cache_initted = true;
+    cs_ltime.GetUTC();
+
+    return bNewDatabase ? HF_OPEN_STATUS_NEW : HF_OPEN_STATUS_OLD;
+#else
     const int cc = hfAttributeFile.Open(game_dir_file, game_pag_file, nCachePages);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
@@ -54,8 +115,10 @@ int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCacheP
         cs_ltime.GetUTC();
     }
     return cc;
+#endif
 }
 
+#if !defined(SQLITE_STORAGE)
 void cache_redirect(void)
 {
     for (int i = 0; i < NUMBER_OF_TEMPORARY_FILES; i++)
@@ -117,16 +180,33 @@ void cache_cleanup(void)
         RemoveFile(temporary_file_name);
     }
 }
+#endif // !SQLITE_STORAGE
 
 void cache_close(void)
 {
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        g_pSQLiteBackend->Close();
+        delete g_pSQLiteBackend;
+        g_pSQLiteBackend = nullptr;
+    }
+#else
     hfAttributeFile.CloseAll();
+#endif
     cache_initted = false;
 }
 
 void cache_tick(void)
 {
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        g_pSQLiteBackend->Tick();
+    }
+#else
     hfAttributeFile.Tick();
+#endif
 }
 
 static void trim_attribute_cache(void)
@@ -178,6 +258,25 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         }
     }
 
+#if defined(SQLITE_STORAGE)
+    size_t nLength = 0;
+    if (g_pSQLiteBackend->Get(nam->object, nam->attrnum,
+                              sqlite_attr_buf, sizeof(sqlite_attr_buf), &nLength))
+    {
+        *pLen = nLength;
+        if (!mudstate.bStandAlone)
+        {
+            // Add this information to the cache.
+            //
+            vector<UTF8> v(sqlite_attr_buf, sqlite_attr_buf + nLength);
+            auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
+            cache_size += v.size();
+            trim_attribute_cache();
+        }
+        return sqlite_attr_buf;
+    }
+#else
     const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
     uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
 
@@ -205,6 +304,7 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
     }
+#endif
 
     // We didn't find that one.
     //
@@ -244,6 +344,20 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     }
 #endif // HAVE_WORKING_FORK
 
+#if defined(SQLITE_STORAGE)
+    if (len > LBUF_SIZE)
+    {
+        len = LBUF_SIZE;
+    }
+
+    // Write-through: write to SQLite immediately.
+    //
+    if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len))
+    {
+        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
+            nam->object, nam->attrnum, value, len);
+    }
+#else
     if (len > sizeof(temp_record.attrText))
     {
         len = sizeof(temp_record.attrText);
@@ -291,12 +405,13 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
         Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
     }
+#endif
 
     if (!mudstate.bStandAlone)
     {
         // Update cache.
         //
-        vector<UTF8> v(temp_record.attrText, temp_record.attrText + len);
+        vector<UTF8> v(value, value + len);
         auto it2 = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
 
         const auto it = mudstate.attribute_lru_cache_map.find(*nam);
@@ -322,7 +437,14 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
 
 bool cache_sync(void)
 {
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        g_pSQLiteBackend->Sync();
+    }
+#else
     hfAttributeFile.Sync();
+#endif
     return true;
 }
 
@@ -345,6 +467,9 @@ void cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
+#if defined(SQLITE_STORAGE)
+    g_pSQLiteBackend->Del(nam->object, nam->attrnum);
+#else
     const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
     uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
 
@@ -360,6 +485,7 @@ void cache_del(Aname *nam)
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
     }
+#endif
 
     if (!mudstate.bStandAlone)
     {

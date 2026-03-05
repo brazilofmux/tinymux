@@ -87,6 +87,27 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([STUBSLAVE_ENABLED], [test "x$stubslave_enabled" = "xyes"])
 AC_SUBST(STUB_SLAVE)
 
+AC_MSG_CHECKING(whether to enable SQLite storage backend)
+AC_ARG_ENABLE(
+  [sqlite],
+  AS_HELP_STRING([--enable-sqlite],[enable SQLite storage backend (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      sqlite_enabled=no
+      AC_MSG_RESULT(no)
+    else
+      sqlite_enabled=yes
+      SQLITE_STORAGE="-DSQLITE_STORAGE"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    sqlite_enabled=no
+    AC_MSG_RESULT(no)
+  ])
+AM_CONDITIONAL([SQLITE_ENABLED], [test "x$sqlite_enabled" = "xyes"])
+AC_SUBST(SQLITE_STORAGE)
+
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
   [inlinesql],
@@ -213,6 +234,13 @@ AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
 AC_SUBST(PCRE2_LIBS)
 AC_CHECK_LIB([ssl], [main])
 AC_CHECK_LIB([crypto], [main])
+
+if test "x$sqlite_enabled" = "xyes"; then
+    AC_CHECK_LIB([sqlite3], [sqlite3_open],
+        [SQLITE_LIBS="-lsqlite3"],
+        [AC_MSG_ERROR([SQLite3 library not found. Install libsqlite3-dev.])])
+fi
+AC_SUBST(SQLITE_LIBS)
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

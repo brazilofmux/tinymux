@@ -1283,9 +1283,11 @@ void pcache_trim(void);
 
 // From attrcache.cpp
 //
+#if !defined(SQLITE_STORAGE)
 void cache_redirect(void);
 void cache_pass2(void);
 void cache_cleanup(void);
+#endif
 extern CLinearTimeAbsolute cs_ltime;
 
 // From speech.cpp

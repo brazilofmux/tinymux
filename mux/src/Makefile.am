@@ -4,7 +4,7 @@ SUBDIRS = tools ganl . modules
 
 # Shared build flags
 AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS)
+    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
 
 # Base source files for building netmux
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
@@ -25,6 +25,12 @@ if REALITY_ENABLED
 NETMUX_SRC += levels.cpp
 endif
 
+# Add SQLite storage backend if enabled
+if SQLITE_ENABLED
+NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp
+AM_CPPFLAGS += -I$(top_srcdir)/../../db
+endif
+
 # Build executables
 bin_PROGRAMS = netmux slave
 noinst_LIBRARIES = libmux.a
@@ -38,7 +44,7 @@ libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS) $(SQLITE_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
