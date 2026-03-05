@@ -40,6 +40,11 @@ CSQLiteDB::CSQLiteDB()
       m_stmtAttrDel(nullptr),
       m_stmtAttrDelObj(nullptr),
       m_stmtAttrGetObj(nullptr),
+      m_stmtAttrNamePut(nullptr),
+      m_stmtAttrNameDel(nullptr),
+      m_stmtAttrNameLoadAll(nullptr),
+      m_stmtMetaPut(nullptr),
+      m_stmtMetaGet(nullptr),
       m_stats{}
 {
 }
@@ -154,6 +159,15 @@ bool CSQLiteDB::CreateSchema()
         "    attrnum     INTEGER NOT NULL,"
         "    value       BLOB NOT NULL,"
         "    PRIMARY KEY (object, attrnum)"
+        ") WITHOUT ROWID;"
+        "CREATE TABLE IF NOT EXISTS attrnames ("
+        "    attrnum     INTEGER PRIMARY KEY,"
+        "    name        TEXT NOT NULL,"
+        "    flags       INTEGER NOT NULL DEFAULT 0"
+        ");"
+        "CREATE TABLE IF NOT EXISTS metadata ("
+        "    key         TEXT PRIMARY KEY,"
+        "    value       INTEGER NOT NULL"
         ") WITHOUT ROWID;";
 
     char *errmsg = nullptr;
@@ -274,6 +288,45 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    // Attribute name registry.
+    //
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO attrnames (attrnum, name, flags) VALUES (?,?,?)",
+        &m_stmtAttrNamePut))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "DELETE FROM attrnames WHERE attrnum=?",
+        &m_stmtAttrNameDel))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT attrnum, name, flags FROM attrnames ORDER BY attrnum",
+        &m_stmtAttrNameLoadAll))
+    {
+        return false;
+    }
+
+    // Metadata key-value store.
+    //
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES (?,?)",
+        &m_stmtMetaPut))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT value FROM metadata WHERE key=?",
+        &m_stmtMetaGet))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -308,6 +361,11 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtAttrDel);
     Finalize(&m_stmtAttrDelObj);
     Finalize(&m_stmtAttrGetObj);
+    Finalize(&m_stmtAttrNamePut);
+    Finalize(&m_stmtAttrNameDel);
+    Finalize(&m_stmtAttrNameLoadAll);
+    Finalize(&m_stmtMetaPut);
+    Finalize(&m_stmtMetaGet);
 }
 
 // ---------------------------------------------------------------------------
@@ -590,6 +648,86 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
     sqlite3_reset(m_stmtAttrGetObj);
     m_stats.attr_bulk_loads++;
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Attribute name registry
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::PutAttrName(int attrnum, const char *name, int flags)
+{
+    sqlite3_bind_int(m_stmtAttrNamePut, 1, attrnum);
+    sqlite3_bind_text(m_stmtAttrNamePut, 2, name, -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtAttrNamePut, 3, flags);
+
+    int rc = sqlite3_step(m_stmtAttrNamePut);
+    sqlite3_reset(m_stmtAttrNamePut);
+
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::DelAttrName(int attrnum)
+{
+    sqlite3_bind_int(m_stmtAttrNameDel, 1, attrnum);
+
+    int rc = sqlite3_step(m_stmtAttrNameDel);
+    sqlite3_reset(m_stmtAttrNameDel);
+
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::LoadAllAttrNames(AttrNameCallback cb)
+{
+    for (;;)
+    {
+        int rc = sqlite3_step(m_stmtAttrNameLoadAll);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+
+        int attrnum = sqlite3_column_int(m_stmtAttrNameLoadAll, 0);
+        const char *name = reinterpret_cast<const char *>(
+            sqlite3_column_text(m_stmtAttrNameLoadAll, 1));
+        int flags = sqlite3_column_int(m_stmtAttrNameLoadAll, 2);
+
+        cb(attrnum, name, flags);
+    }
+
+    sqlite3_reset(m_stmtAttrNameLoadAll);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Metadata key-value store
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::PutMeta(const char *key, int value)
+{
+    sqlite3_bind_text(m_stmtMetaPut, 1, key, -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtMetaPut, 2, value);
+
+    int rc = sqlite3_step(m_stmtMetaPut);
+    sqlite3_reset(m_stmtMetaPut);
+
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::GetMeta(const char *key, int *value)
+{
+    sqlite3_bind_text(m_stmtMetaGet, 1, key, -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtMetaGet);
+    if (SQLITE_ROW == rc)
+    {
+        *value = sqlite3_column_int(m_stmtMetaGet, 0);
+        sqlite3_reset(m_stmtMetaGet);
+        return true;
+    }
+
+    sqlite3_reset(m_stmtMetaGet);
+    *value = 0;
+    return false;
 }
 
 // ---------------------------------------------------------------------------

@@ -1960,6 +1960,7 @@ static int load_game(int ccPageFile)
     // This populates the objects table from the flatfile data.
     //
     sqlite_sync_objects();
+    sqlite_sync_attrnames();
 #endif
 #endif // !MEMORY_BASED
 
@@ -2376,6 +2377,7 @@ static void dbconvert(void)
 #if defined(SQLITE_STORAGE)
     mudstate.bSQLiteLoading = false;
     sqlite_sync_objects();
+    sqlite_sync_attrnames();
 #endif
 
 #if !defined(SQLITE_STORAGE)

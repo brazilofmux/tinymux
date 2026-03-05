@@ -8,6 +8,10 @@
 #include "config.h"
 #include "externs.h"
 
+#if defined(SQLITE_STORAGE)
+#include "sqlite_backend.h"
+#endif
+
 using namespace std;
 
 static UTF8 *store_string(const UTF8 *);
@@ -49,7 +53,16 @@ ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
 {
     int number = mudstate.attr_next++;
     anum_extend(number);
-    return vattr_define_LEN(pName, nName, number, flags);
+    ATTR *vp = vattr_define_LEN(pName, nName, number, flags);
+
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+    {
+        g_pSQLiteBackend->GetDB().PutMeta("attr_next", mudstate.attr_next);
+    }
+#endif
+
+    return vp;
 }
 
 ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
@@ -79,6 +92,16 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
 
         anum_extend(vp->number);
         anum_set(vp->number, static_cast<ATTR *>(vp));
+
+#if defined(SQLITE_STORAGE)
+        if (  g_pSQLiteBackend
+           && !mudstate.bSQLiteLoading
+           && number >= A_USER_START)
+        {
+            g_pSQLiteBackend->GetDB().PutAttrName(number,
+                reinterpret_cast<const char *>(pName), flags);
+        }
+#endif
     }
     else
     {
@@ -676,6 +699,14 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
             vp->name = store_string(pNewName);
             nHash = HASH_ProcessBuffer(0, pNewName, nNewName);
             pht->Insert(sizeof(int), nHash, &anum);
+
+#if defined(SQLITE_STORAGE)
+            if (g_pSQLiteBackend && anum >= A_USER_START)
+            {
+                g_pSQLiteBackend->GetDB().PutAttrName(anum,
+                    reinterpret_cast<const char *>(pNewName), vp->flags);
+            }
+#endif
             return static_cast<ATTR *>(anum_table[anum]);
         }
         iDir = pht->FindNextKey(iDir, nHash);

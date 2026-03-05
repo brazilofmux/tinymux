@@ -100,6 +100,20 @@ public:
     typedef std::function<void(int attrnum, const UTF8 *value, size_t len)> AttrCallback;
     bool GetAllAttributes(dbref obj, AttrCallback cb);
 
+    // Attribute name registry.
+    // These correspond to vattr_define_LEN / vattr_alloc_LEN.
+    //
+    bool PutAttrName(int attrnum, const char *name, int flags);
+    bool DelAttrName(int attrnum);
+
+    typedef std::function<void(int attrnum, const char *name, int flags)> AttrNameCallback;
+    bool LoadAllAttrNames(AttrNameCallback cb);
+
+    // Metadata key-value store (attr_next, db_top, etc.)
+    //
+    bool PutMeta(const char *key, int value);
+    bool GetMeta(const char *key, int *value);
+
     // Transaction support for batching related writes.
     //
     bool Begin();
@@ -155,6 +169,17 @@ private:
     sqlite3_stmt *m_stmtAttrDel;
     sqlite3_stmt *m_stmtAttrDelObj;
     sqlite3_stmt *m_stmtAttrGetObj;
+
+    // Attribute name registry statements.
+    //
+    sqlite3_stmt *m_stmtAttrNamePut;
+    sqlite3_stmt *m_stmtAttrNameDel;
+    sqlite3_stmt *m_stmtAttrNameLoadAll;
+
+    // Metadata statements.
+    //
+    sqlite3_stmt *m_stmtMetaPut;
+    sqlite3_stmt *m_stmtMetaGet;
 
     Stats m_stats;
 

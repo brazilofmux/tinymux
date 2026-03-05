@@ -1291,6 +1291,7 @@ void cache_cleanup(void);
 class CSQLiteBackend;
 extern CSQLiteBackend *g_pSQLiteBackend;
 void sqlite_sync_objects(void);
+void sqlite_sync_attrnames(void);
 #endif
 extern CLinearTimeAbsolute cs_ltime;
 

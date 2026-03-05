@@ -4228,5 +4228,35 @@ void sqlite_sync_objects(void)
 
     sqldb.Commit();
 }
+
+// Bulk sync: Insert all user-defined attribute names and metadata into SQLite.
+// Called after db_read to populate the attrnames and metadata tables.
+//
+void sqlite_sync_attrnames(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.Begin();
+
+    for (int iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
+    {
+        ATTR *vp = static_cast<ATTR *>(anum_get(iAttr));
+        if (  vp != nullptr
+           && !(vp->flags & AF_DELETED))
+        {
+            sqldb.PutAttrName(vp->number,
+                reinterpret_cast<const char *>(vp->name), vp->flags);
+        }
+    }
+
+    sqldb.PutMeta("attr_next", mudstate.attr_next);
+    sqldb.PutMeta("db_top", mudstate.db_top);
+
+    sqldb.Commit();
+}
 #endif // SQLITE_STORAGE
 
