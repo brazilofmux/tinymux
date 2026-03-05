@@ -6774,6 +6774,7 @@ ENACTOR
   performed in an action list to return information about the enactor:
 
     %# or [v(#)]           - Database number of the enactor
+    %:                     - Object ID of the enactor (objid(%#))
     %N/%n or [v(N)]/[v(n)] - Name of the enactor.
     %O/%o ...              - Objective pronoun for the enactor
                              (him her it them)
@@ -8616,6 +8617,26 @@ ISNUM()
      You say, "0"
 
   Related Topics: BOOLEAN VALUES, isdbref(), isint(), israt(), isword().
+
+& ISOBJID()
+ISOBJID()
+
+  FUNCTION: isobjid(<string>)
+
+  Returns 1 if <string> is a valid objid (#dbref:timestamp) whose timestamp
+  matches the object's actual creation time.  Returns 0 for plain dbrefs
+  (#1), invalid dbrefs, non-existent objects, or timestamps that do not
+  match (e.g., after a dbref is recycled).
+
+  Example:
+    > say isobjid(objid(me))
+    You say, "1"
+    > say isobjid(#0)
+    You say, "0"
+    > say isobjid(#0:9999999999)
+    You say, "0"
+
+  Related Topics: objid(), isdbref().
 
 & ISRAT()
 ISRAT()
@@ -10855,6 +10876,30 @@ OBJ()
   or be near <object>.
 
   Related Topics: aposs(), poss(), subj(), SUBSTITUTIONS.
+
+& OBJID()
+OBJID()
+
+  FUNCTION: objid(<object>)
+
+  Returns the object ID of <object> in the format #dbref:creation_epoch,
+  where creation_epoch is the UTC epoch seconds when the object was created.
+  An objid uniquely identifies an object even across dbref recycling: if the
+  object is destroyed and the dbref reused, the old objid becomes invalid.
+
+  If the object has no creation time recorded, objid() falls back to the
+  plain dbref (#dbref).
+
+  Objids are accepted anywhere a dbref is, including match_thing, u(), and
+  similar functions.  An objid with a mismatched timestamp resolves to #-1.
+
+  Example:
+    > say objid(me)
+    You say, "#3:1709568000"
+    > say name(objid(me))
+    You say, "Wizard"
+
+  Related Topics: isobjid(), isdbref(), num().
 
 & OBJECT TYPES
 OBJECT TYPES
@@ -13602,6 +13647,8 @@ SUBSTITUTIONS (continued)
 
     %#      Database number of the object that caused the message to be
             displayed or the action list to be run (Enactor).
+
+    %:      Object ID of the enactor.  Equivalent to objid(%#).
 
     %@      Database number of the object immediately calling %! (Caller).
             This number starts as the same as %#, but can be affected by

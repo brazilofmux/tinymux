@@ -3489,6 +3489,35 @@ static FUNCTION(fun_num)
     safe_tprintf_str(buff, bufc, T("#%d"), match_thing_quiet(executor, fargs[0]));
 }
 
+static FUNCTION(fun_objid)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref thing = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(thing))
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), thing);
+        return;
+    }
+
+    int64_t csecs = creation_seconds(thing);
+    if (0 != csecs)
+    {
+        UTF8 tbuf[I64BUF_SIZE];
+        mux_i64toa(csecs, tbuf);
+        safe_tprintf_str(buff, bufc, T("#%d:%s"), thing, tbuf);
+    }
+    else
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), thing);
+    }
+}
+
 static void internalPlayerFind
 (
     UTF8  *buff,
@@ -9549,6 +9578,49 @@ static FUNCTION(fun_isdbref)
     safe_bool(bResult, buff, bufc);
 }
 
+static FUNCTION(fun_isobjid)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    bool bResult = false;
+    if (nfargs >= 1)
+    {
+        UTF8 *p = fargs[0];
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
+
+        if (NUMBER_TOKEN == p[0])
+        {
+            p++;
+
+            // Must have digits:digits pattern.
+            //
+            if (mux_isdigit(*p))
+            {
+                const UTF8 *q = p + 1;
+                while (mux_isdigit(*q))
+                {
+                    q++;
+                }
+
+                if (':' == *q)
+                {
+                    dbref dbitem = parse_dbref(p);
+                    bResult = Good_obj(dbitem);
+                }
+            }
+        }
+    }
+    safe_bool(bResult, buff, bufc);
+}
+
 /* ---------------------------------------------------------------------------
  * trim: trim off unwanted white space.
  */
@@ -11324,6 +11396,7 @@ static FUN builtin_function_list[] =
     {T("ISIGN"),       fun_isign,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISINT"),       fun_isint,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISNUM"),       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ISOBJID"),     fun_isobjid,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("ISRAT"),       fun_israt,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISUB"),        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ISWORD"),      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -11410,6 +11483,7 @@ static FUN builtin_function_list[] =
     {T("NUM"),         fun_num,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("OBJ"),         fun_obj,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("OBJEVAL"),     fun_objeval,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
+    {T("OBJID"),       fun_objid,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("OBJMEM"),      fun_objmem,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("OEMIT"),       fun_oemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("OR"),          fun_or,         MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},

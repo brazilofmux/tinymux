@@ -72,9 +72,9 @@ comsys_database smoke.d/comsys.db
 port 2860
 mud_name SmokeMUX
 #
-command_quota_increment 1000
-command_quota_max 1000
-player_queue_limit 10000
+command_quota_increment 10000
+command_quota_max 10000
+player_queue_limit 100000
 #
 include alias.conf
 include compat.conf

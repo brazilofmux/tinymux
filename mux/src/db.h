@@ -236,6 +236,7 @@ dbref    getref(FILE *);
 void putref(FILE *, dbref);
 void free_boolexp(BOOLEXP *);
 dbref    parse_dbref(const UTF8 *);
+int64_t  creation_seconds(dbref obj);
 bool ThrottleMail(dbref executor);
 bool ThrottleEmail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);

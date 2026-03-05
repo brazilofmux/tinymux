@@ -3089,6 +3089,29 @@ void db_make_minimal(void)
     s_Link(obj, 0);
 }
 
+int64_t creation_seconds(dbref obj)
+{
+    if (!Good_obj(obj))
+    {
+        return 0;
+    }
+
+    const UTF8 *pCreated = atr_get_raw(obj, A_CREATED);
+    if (nullptr == pCreated)
+    {
+        return 0;
+    }
+
+    CLinearTimeAbsolute lta;
+    if (!lta.SetString(pCreated))
+    {
+        return 0;
+    }
+
+    lta.Local2UTC();
+    return lta.ReturnSeconds();
+}
+
 dbref parse_dbref(const UTF8 *s)
 {
     // Skip leading spaces.
@@ -3124,6 +3147,54 @@ dbref parse_dbref(const UTF8 *s)
                 int x = mux_atol(s);
                 return ((x >= 0) ? x : NOTHING);
             }
+        }
+        else if (':' == *p)
+        {
+            // Parse objid format: dbref:timestamp
+            //
+            int x = mux_atol(s);
+            if (x < 0)
+            {
+                return NOTHING;
+            }
+
+            p++;
+            const UTF8 *pTimestamp = p;
+            if (!mux_isdigit(*p))
+            {
+                return NOTHING;
+            }
+            p++;
+            while (mux_isdigit(*p))
+            {
+                p++;
+            }
+
+            // Parse trailing spaces.
+            //
+            while (mux_isspace(*p))
+            {
+                p++;
+            }
+
+            if ('\0' != *p)
+            {
+                return NOTHING;
+            }
+
+            dbref obj = static_cast<dbref>(x);
+            if (!Good_obj(obj))
+            {
+                return NOTHING;
+            }
+
+            int64_t csecs = creation_seconds(obj);
+            if (  0 == csecs
+               || csecs != mux_atoi64(pTimestamp))
+            {
+                return NOTHING;
+            }
+            return obj;
         }
     }
     return NOTHING;

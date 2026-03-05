@@ -3,9 +3,9 @@
 #
 @set me=QUIET
 -
-@admin command_quota_increment=1000
+@admin command_quota_increment=10000
 -
-@admin command_quota_max=1000
+@admin command_quota_max=10000
 -
 #
 # End of 0upload.mux

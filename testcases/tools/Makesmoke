@@ -97,7 +97,31 @@ export SHLIB_PATH
 
 sleep 1
 expect ./tools/upload.tcl $TMP
-$BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$GAMENAME.db.new" -o smoke.flat -u
+if [ $? -ne 0 ]; then
+    echo "Upload failed."
+    exit 1
+fi
+#
+#	Wait for MUX to finish shutdown and write the dump file.
+#
+waited=0
+while [ ! -r "$DATA/$NEW_DB" ]; do
+    sleep 1
+    waited=`expr $waited + 1`
+    if [ "$waited" -ge 10 ]; then
+        echo "$DATA/$NEW_DB not found after ${waited}s. MUX may not have started or shutdown failed."
+        exit 1
+    fi
+done
+$BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$NEW_DB" -o smoke.flat -u
+if [ $? -ne 0 ]; then
+    echo "Unflatten failed."
+    exit 1
+fi
+if [ ! -r smoke.flat ]; then
+    echo "smoke.flat was not produced."
+    exit 1
+fi
 ./tools/scrubflat.sed < smoke.flat > $TMP
 mv $TMP smoke.flat
 

@@ -1,0 +1,55 @@
+#
+# objid_fn.mux - Test Cases for objid() and isobjid().
+#
+@create test_objid_fn
+-
+@set test_objid_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_objid_fn=
+  @log smoke=Beginning objid()/isobjid() test cases.
+-
+#
+# Test Case #1 - objid format, isobjid, round-trip, invalid timestamps, isdbref
+#
+&tr.tc001 test_objid_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(objid(me),#*:*)]
+            [strmatch(objid(#0),#0:*)]
+            [isobjid(objid(me))]
+            [isobjid(objid(#0))]
+            [isobjid(#0)]
+            [isobjid(#-1)]
+            [isobjid(foo)]
+            [isobjid()]
+            [name(objid(#0))]
+            [isobjid(#0:0)]
+            [isobjid(#0:9999999999)]
+            [isobjid(#-1:1234567890)]
+            [isdbref(objid(#0))]
+            [isdbref(objid(me))]
+          )
+        ),
+        BE47D92F8790AB195AE7CBD06ECEC02C4B1804D0
+      )=
+  {
+    @log smoke=TC001: objid/isobjid comprehensive. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: objid/isobjid comprehensive. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_objid_fn=
+  @log smoke=End objid()/isobjid() test cases.;
+  @notify smoke
+-
+drop test_objid_fn
+-
+#
+# End of Test Cases
+#

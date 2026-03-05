@@ -1084,7 +1084,7 @@ static const unsigned char isSpecial_L2[256] =
      18,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x00-0x0F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0, 22,  0,  0,  0,  0, // 0x20-0x2F
-      1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0, 21,  0,  0, // 0x30-0x3F
+      1,  1,  1,  1,  1,  1,  1,  1,   1,  1, 25,  0,  0, 21,  0,  0, // 0x30-0x3F
      20,145,  7, 70,  0,  0,  0,  0,   0, 24,  0, 23,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,  70,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
       0, 17,  7,  6,  0,  0,  0,  0,   0, 24,  0, 23,  9, 19, 12, 16, // 0x60-0x6F
@@ -2161,7 +2161,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         safe_str(Moniker(enactor), buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
-                    else // (iCode == 24)
+                    else if (iCode == 24)
                     {
                         // 49 or 69
                         // i or I
@@ -2185,6 +2185,24 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             *(*bufc)++ = pStr[iStr];
                             nBufferAvailable--;
                         }
+                    }
+                    else // (iCode == 25)
+                    {
+                        // 3A
+                        // :
+                        //
+                        // Enactor objid substitution
+                        //
+                        mux_scratch[0] = '#';
+                        n = mux_ltoa(enactor, mux_scratch+1);
+                        int64_t csecs = creation_seconds(enactor);
+                        if (0 != csecs)
+                        {
+                            mux_scratch[n+1] = ':';
+                            mux_i64toa(csecs, mux_scratch+n+2);
+                        }
+                        safe_str(mux_scratch, buff, bufc);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
 
