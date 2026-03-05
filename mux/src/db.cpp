@@ -2715,6 +2715,11 @@ void db_make_minimal(void)
     load_player_names();
     const UTF8 *pmsg;
     dbref obj = create_player(T("Wizard"), T("potrzebie"), NOTHING, false, &pmsg);
+    if (obj == NOTHING)
+    {
+        Log.WriteString(T("db_make_minimal: failed to create Wizard player.\n"));
+        return;
+    }
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);

@@ -523,15 +523,8 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         mux_ltoa(quota, buff2);
         atr_add_raw(obj, A_QUOTA, buff2);
         atr_add_raw(obj, A_RQUOTA, buff2);
-        add_player_name(obj, Name(obj), false);
         free_sbuf(buff2);
         s_Zone(obj, NOTHING);
-    }
-
-    if (Good_obj(player))
-    {
-        update_newobjects(player, obj, objtype);
-        ProcessMasterRoomACreate(player, obj);
     }
 
     CSQLiteDB::ObjectRecord rec;
@@ -602,6 +595,18 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             destroy_obj(obj);
             return NOTHING;
         }
+    }
+
+    // Side effects are only applied after object durability is guaranteed.
+    //
+    if (objtype == TYPE_PLAYER)
+    {
+        add_player_name(obj, Name(obj), false);
+    }
+    if (Good_obj(player))
+    {
+        update_newobjects(player, obj, objtype);
+        ProcessMasterRoomACreate(player, obj);
     }
 
     return obj;
