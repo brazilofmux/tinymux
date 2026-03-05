@@ -552,6 +552,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     rec.powers2   = db[obj].powers2;
 
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    bool bPersisted = false;
     if (!sqldb.Begin())
     {
         STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
@@ -578,6 +579,24 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         log_text(T("Commit failed in create_obj."));
         ENDLOG;
         sqldb.Rollback();
+    }
+    else
+    {
+        bPersisted = true;
+    }
+
+    if (!bPersisted)
+    {
+        STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+        log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
+        ENDLOG;
+
+        if (!sqlite_sync_runtime())
+        {
+            STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+            log_text(T("create_obj recovery sqlite_sync_runtime() failed."));
+            ENDLOG;
+        }
     }
 
     return obj;

@@ -46,7 +46,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
 // ---------------------------------------------------------------------------
 // add_to: Adjust an object's queue or semaphore count.
 //
-static int add_to(const dbref executor, const int am, int attrnum)
+static bool add_to(const dbref executor, const int am, int attrnum, int *pnum)
 {
     int aflags;
     dbref aowner;
@@ -63,8 +63,19 @@ static int add_to(const dbref executor, const int am, int attrnum)
     {
         nlen = mux_ltoa(num, buff);
     }
-    atr_add_raw_LEN(executor, attrnum, buff, nlen);
-    return num;
+    if (!atr_add_raw_LEN(executor, attrnum, buff, nlen))
+    {
+        STARTLOG(LOG_PROBLEMS, "QUE", "SEMAPH");
+        log_printf(T("add_to(#%d/%d): failed to persist semaphore count %d."), executor, attrnum, num);
+        ENDLOG;
+        return false;
+    }
+
+    if (pnum)
+    {
+        *pnum = num;
+    }
+    return true;
 }
 
 // This Task assumes that pEntry is already unlinked from any lists it may
@@ -277,7 +288,7 @@ static void Task_SemaphoreTimeout(void *pExpired, const int iUnused)
     // A semaphore has timed out.
     //
     const auto point = static_cast<BQUE*>(pExpired);
-    add_to(point->u.s.sem, -1, point->u.s.attr);
+    (void)add_to(point->u.s.sem, -1, point->u.s.attr, nullptr);
     point->u.s.sem = NOTHING;
     Task_RunQueueEntry(point, 0);
 }
@@ -330,7 +341,7 @@ static int CallBack_HaltQueue(const PTASK_RECORD p)
             Halt_Entries_Run++;
             if (p->fpTask == Task_SemaphoreTimeout)
             {
-                add_to(point->u.s.sem, -1, point->u.s.attr);
+                (void)add_to(point->u.s.sem, -1, point->u.s.attr, nullptr);
             }
 
             for (auto& i : point->scr)
@@ -428,7 +439,7 @@ static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
             Halt_Pid_Entries_Run++;
             if (p->fpTask == Task_SemaphoreTimeout)
             {
-                add_to(point->u.s.sem, -1, point->u.s.attr);
+                (void)add_to(point->u.s.sem, -1, point->u.s.attr, nullptr);
             }
 
             for (auto& i : point->scr)
@@ -717,11 +728,16 @@ int nfy_que(dbref sem, int attr, int key, int count)
     //
     if (NFY_NFY == (key & NFY_MASK))
     {
-        add_to(sem, -count, attr);
+        (void)add_to(sem, -count, attr, nullptr);
     }
     else
     {
-        atr_clr(sem, attr);
+        if (!atr_clr(sem, attr))
+        {
+            STARTLOG(LOG_PROBLEMS, "QUE", "SEMAPH");
+            log_printf(T("nfy_que(#%d/%d): failed to clear semaphore count."), sem, attr);
+            ENDLOG;
+        }
     }
 
     return Notify_Num_Done;
@@ -1275,7 +1291,12 @@ void do_wait
             }
         }
 
-        const int num = add_to(thing, 1, atr);
+        int num = 0;
+        if (!add_to(thing, 1, atr, &num))
+        {
+            notify_quiet(executor, T("Semaphore update failed."));
+            return;
+        }
         if (num <= 0)
         {
             // Thing over-notified, run the command immediately.
