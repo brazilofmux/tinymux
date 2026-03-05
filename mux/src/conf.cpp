@@ -321,13 +321,9 @@ void cf_init(void)
     mudstate.mstat_secs[0] = 0;
     mudstate.mstat_secs[1] = 0;
     mudstate.mstat_curr = 0;
-    mudstate.iter_alist.data = nullptr;
-    mudstate.iter_alist.len = 0;
-    mudstate.iter_alist.next = nullptr;
-    mudstate.mod_alist = nullptr;
-    mudstate.mod_alist_len = 0;
-    mudstate.mod_size = 0;
-    mudstate.mod_al_id = NOTHING;
+    mudstate.attr_iter_ctx.attrs.clear();
+    mudstate.attr_iter_ctx.pos = 0;
+    mudstate.attr_iter_stack.clear();
     mudstate.olist = nullptr;
     mudstate.min_size = 0;
     mudstate.db_top = 0;

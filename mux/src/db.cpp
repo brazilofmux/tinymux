@@ -21,6 +21,7 @@
 #include "sqlite_backend.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
 using namespace std;
 
@@ -1567,32 +1568,6 @@ static int al_decode(unsigned char **app)
     }
 }
 
-// ---------------------------------------------------------------------------
-// al_code: Store an attribute number in an alist
-//
-// Because A_LIST are attributes, too. We cannot generate a '\0', otherwise
-// the size of an A_LIST cannot be determined with strlen(). Fortunately, the
-// following routine only generates a '\0' if atrnum == 0 (which is
-// never used).
-//
-static unsigned char *al_code(unsigned char *ap, unsigned int atrnum)
-{
-    int i;
-    unsigned int bits;
-    for (i = 0; i < ATR_BUF_INCR - 1; i++)
-    {
-        bits = atrnum & 0x7F;
-        if (atrnum <= 0x7F)
-        {
-            ap[i] = static_cast<unsigned char>(bits);
-            break;
-        }
-        atrnum >>= 7;
-        ap[i] = static_cast<unsigned char>(bits | 0x80);
-    }
-    return ap + i + 1;
-}
-
 /* ---------------------------------------------------------------------------
  * Commer: check if an object has any $-commands in its attributes.
  */
@@ -1683,41 +1658,11 @@ bool Commer(dbref thing)
     return false;
 }
 
-// routines to handle object attribute lists
+// Collect attribute numbers for an object from storage.
 //
-
-/* ---------------------------------------------------------------------------
- * al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
- */
-
-// al_extend: Get more space for attributes, if needed
-//
-static void al_extend(unsigned char **buffer, size_t *bufsiz, size_t len, bool copy)
+static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
 {
-    if (len > *bufsiz)
-    {
-        size_t newsize = len + ATR_BUF_CHUNK;
-        unsigned char *tbuff = reinterpret_cast<unsigned char *>(MEMALLOC(newsize));
-        ISOUTOFMEMORY(tbuff);
-        if (*buffer)
-        {
-            if (copy)
-            {
-                memcpy(tbuff, *buffer, *bufsiz);
-            }
-            MEMFREE(*buffer);
-            *buffer = nullptr;
-        }
-        *buffer = tbuff;
-        *bufsiz = newsize;
-    }
-}
-
-// Build an encoded attribute-number list for an object from backend storage.
-//
-static bool al_build_from_storage(dbref thing, unsigned char **buffer, size_t *bufsiz, size_t *pLen)
-{
-    vector<unsigned int> attrnums;
+    attrnums.clear();
 
     if (g_pSQLiteBackend)
     {
@@ -1728,167 +1673,37 @@ static bool al_build_from_storage(dbref thing, unsigned char **buffer, size_t *b
                 if (  attrnum != static_cast<unsigned int>(A_LIST)
                    && attrnum != 0U)
                 {
-                    attrnums.push_back(attrnum);
+                    attrnums.push_back(static_cast<int>(attrnum));
                 }
             });
     }
     else
     {
-        // Compatibility path: if backend is unavailable, fall back to legacy
-        // packed A_LIST data if present.
+        // Compatibility fallback when backend is unavailable.
+        // Decode any legacy packed A_LIST bytes.
         //
         size_t alen = 0;
         const unsigned char *astr = atr_get_raw_LEN(thing, A_LIST, &alen);
-        if (!astr || !alen)
+        if (astr && alen)
         {
-            al_extend(buffer, bufsiz, 1, false);
-            (*buffer)[0] = '\0';
-            *pLen = 0;
-            return true;
+            unsigned char *cp =
+                const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(astr));
+            while (*cp)
+            {
+                attrnums.push_back(al_decode(&cp));
+            }
         }
-
-        al_extend(buffer, bufsiz, alen+1, false);
-        memcpy(*buffer, astr, alen+1);
-        *pLen = alen;
-        return true;
-    }
-
-    if (attrnums.empty())
-    {
-        al_extend(buffer, bufsiz, 1, false);
-        (*buffer)[0] = '\0';
-        *pLen = 0;
-        return true;
     }
 
     sort(attrnums.begin(), attrnums.end());
     attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
-
-    const size_t need = attrnums.size() * ATR_BUF_INCR + 1;
-    al_extend(buffer, bufsiz, need, false);
-    unsigned char *cp = *buffer;
-    for (unsigned int anum : attrnums)
-    {
-        cp = al_code(cp, anum);
-    }
-    *cp = '\0';
-    *pLen = cp - *buffer;
-    return true;
 }
 
 // al_store: Write modified attribute list
 //
 void al_store(void)
 {
-    // A_LIST is deprecated; attribute membership is now derived from
-    // relational storage. Keep this API as a compatibility no-op.
-    //
-    mudstate.mod_alist_len = 0;
-    if (mudstate.mod_alist)
-    {
-        mudstate.mod_alist[0] = '\0';
-    }
-    mudstate.mod_al_id = NOTHING;
-}
-
-// al_fetch: Load attribute list
-//
-static unsigned char *al_fetch(dbref thing)
-{
-    // We only need fetch if we change things.
-    //
-    if (mudstate.mod_al_id == thing)
-    {
-        return mudstate.mod_alist;
-    }
-
-    // Save old list, then fetch and set up the attribute list.
-    //
-    al_store();
-    al_build_from_storage(thing, &mudstate.mod_alist, &mudstate.mod_size,
-        &mudstate.mod_alist_len);
-    mudstate.mod_al_id = thing;
-    return mudstate.mod_alist;
-}
-
-// al_add: Add an attribute to an attribute list
-//
-static bool al_add(dbref thing, int attrnum)
-{
-    unsigned char *abuf = al_fetch(thing);
-    unsigned char *cp = abuf;
-    int anum;
-
-    // See if attr is in the list.  If so, exit (need not do anything).
-    //
-    while (*cp)
-    {
-        anum = al_decode(&cp);
-        if (anum == attrnum)
-        {
-            return true;
-        }
-    }
-
-    // The attribute isn't there, so we need to try to add it.
-    //
-    size_t iPosition = cp - abuf;
-
-    // Extend it.
-    //
-    al_extend(&mudstate.mod_alist, &mudstate.mod_size, (iPosition + ATR_BUF_INCR), true);
-    if (mudstate.mod_alist != abuf)
-    {
-        // extend returned different buffer, re-position the end
-        //
-        cp = mudstate.mod_alist + iPosition;
-    }
-
-    // Add the new attribute on to the end.
-    //
-    cp = al_code(cp, attrnum);
-    *cp = '\0';
-    mudstate.mod_alist_len = cp - mudstate.mod_alist;
-    return true;
-}
-
-// al_delete: Remove an attribute from an attribute list
-//
-static void al_delete(dbref thing, int attrnum)
-{
-    int anum;
-    unsigned char *abuf, *cp, *dp;
-
-    // If trying to modify List attrib, return.  Otherwise, get the attribute list.
-    //
-    if (attrnum == A_LIST)
-    {
-        return;
-    }
-    abuf = al_fetch(thing);
-    if (!abuf)
-    {
-        return;
-    }
-
-    cp = abuf;
-    while (*cp)
-    {
-        dp = cp;
-        anum = al_decode(&cp);
-        if (anum == attrnum)
-        {
-            while (*cp)
-            {
-                anum = al_decode(&cp);
-                dp = al_code(dp, anum);
-            }
-            *dp = '\0';
-            mudstate.mod_alist_len = dp - mudstate.mod_alist;
-            return;
-        }
-    }
-    return;
+    // A_LIST is deprecated; keep as compatibility no-op.
 }
 
 static inline void makekey(dbref thing, int atr, Aname *abuff)
@@ -2025,7 +1840,6 @@ void atr_clr(dbref thing, int atr)
 
     makekey(thing, atr, &okey);
     cache_del(&okey);
-    al_delete(thing, atr);
 
     switch (atr)
     {
@@ -2126,10 +1940,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         clean_len = nNfc;
     }
 
-    if (!al_add(thing, atr))
-    {
-        return;
-    }
     cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
 
     switch (atr)
@@ -2419,10 +2229,6 @@ void atr_free(dbref thing)
         atr_clr(thing, atr);
     }
     atr_pop();
-    if (mudstate.mod_al_id == thing)
-    {
-        al_store(); // remove from cache
-    }
 
     mudstate.bfCommands.Clear(thing);
     mudstate.bfNoCommands.Set(thing);
@@ -2510,14 +2316,29 @@ void atr_chown(dbref obj)
 
 int atr_next(UTF8 **attrp)
 {
-    if (!*attrp || !**attrp)
+    if (  !attrp
+       || !*attrp)
     {
         return 0;
     }
+
+    if (mudstate.attr_iter_ctx.pos >= mudstate.attr_iter_ctx.attrs.size())
+    {
+        *attrp = nullptr;
+        return 0;
+    }
+
+    int atr = mudstate.attr_iter_ctx.attrs[mudstate.attr_iter_ctx.pos++];
+    if (mudstate.attr_iter_ctx.pos >= mudstate.attr_iter_ctx.attrs.size())
+    {
+        *attrp = nullptr;
+    }
     else
     {
-        return al_decode(attrp);
+        *attrp = reinterpret_cast<UTF8 *>(
+            static_cast<uintptr_t>(mudstate.attr_iter_ctx.pos + 1));
     }
+    return atr;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2526,38 +2347,22 @@ int atr_next(UTF8 **attrp)
 
 void atr_push(void)
 {
-    ALIST *new_alist = reinterpret_cast<ALIST *>(alloc_sbuf("atr_push"));
-    new_alist->data = mudstate.iter_alist.data;
-    new_alist->len = mudstate.iter_alist.len;
-    new_alist->next = mudstate.iter_alist.next;
-
-    mudstate.iter_alist.data = nullptr;
-    mudstate.iter_alist.len = 0;
-    mudstate.iter_alist.next = new_alist;
+    mudstate.attr_iter_stack.push_back(std::move(mudstate.attr_iter_ctx));
+    mudstate.attr_iter_ctx = {};
+    mudstate.attr_iter_ctx.pos = 0;
 }
 
 void atr_pop(void)
 {
-    ALIST *old_alist = mudstate.iter_alist.next;
-
-    if (mudstate.iter_alist.data)
+    if (!mudstate.attr_iter_stack.empty())
     {
-        MEMFREE(mudstate.iter_alist.data);
-        mudstate.iter_alist.data = nullptr;
-    }
-    if (old_alist)
-    {
-        mudstate.iter_alist.data = old_alist->data;
-        mudstate.iter_alist.len = old_alist->len;
-        mudstate.iter_alist.next = old_alist->next;
-        unsigned char *cp = reinterpret_cast<unsigned char *>(old_alist);
-        free_sbuf(cp);
+        mudstate.attr_iter_ctx = std::move(mudstate.attr_iter_stack.back());
+        mudstate.attr_iter_stack.pop_back();
     }
     else
     {
-        mudstate.iter_alist.data = nullptr;
-        mudstate.iter_alist.len = 0;
-        mudstate.iter_alist.next = nullptr;
+        mudstate.attr_iter_ctx.attrs.clear();
+        mudstate.attr_iter_ctx.pos = 0;
     }
 }
 
@@ -2567,26 +2372,16 @@ void atr_pop(void)
 
 int atr_head(dbref thing, unsigned char **attrp)
 {
-    // Save a read if it is in the modify atr list.
-    //
-    if (thing == mudstate.mod_al_id)
-    {
-        if (!mudstate.mod_alist_len)
-        {
-            return 0;
-        }
-        *attrp = mudstate.mod_alist;
-        return atr_next(attrp);
-    }
+    collect_attrnums_from_storage(thing, mudstate.attr_iter_ctx.attrs);
+    mudstate.attr_iter_ctx.pos = 0;
 
-    size_t alen = 0;
-    al_build_from_storage(thing, &mudstate.iter_alist.data, &mudstate.iter_alist.len, &alen);
-    if (!alen)
+    if (mudstate.attr_iter_ctx.attrs.empty())
     {
+        *attrp = nullptr;
         return 0;
     }
-    *attrp = mudstate.iter_alist.data;
-    return atr_next(attrp);
+    *attrp = reinterpret_cast<unsigned char *>(static_cast<uintptr_t>(1));
+    return atr_next(reinterpret_cast<UTF8 **>(attrp));
 }
 
 attr_info::attr_info(void)

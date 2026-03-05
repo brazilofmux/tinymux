@@ -409,12 +409,11 @@ struct markbuf
     char    chunk[5000];
 };
 
-typedef struct alist ALIST;
-struct alist
+typedef struct attr_iter_ctx ATTRITERCTX;
+struct attr_iter_ctx
 {
-    unsigned char *data;
-    size_t len;
-    struct alist *next;
+    std::vector<int> attrs;
+    size_t pos;
 };
 
 typedef struct badname_struc BADNAME;
@@ -480,7 +479,6 @@ struct statedata
     dbref   curr_enactor;       /* Who initiated the current command */
     dbref   curr_executor;      /* Who is running the current command */
     dbref   freelist;           /* Head of object freelist */
-    dbref   mod_al_id;          /* Where did mod_alist come from? */
     dbref   poutobj;            /* Object doing the piping */
     int     asserting;          // Are we in the middle of asserting?
     int     attr_next;          /* Next attr to alloc when freelist is empty */
@@ -516,8 +514,6 @@ struct statedata
     int     mstat_secs[2];      /* Time of samples */
     int     inum[MAX_ITEXT];    // Number of iter(). Equivalent to #@.
     int     *guest_free;        /* Table to keep track of free guests */
-    size_t  mod_alist_len;      /* Length of mod_alist */
-    size_t  mod_size;           /* Length of modified buffer */
     unsigned int restart_count; // Number of @restarts since initial startup
 
     UTF8    short_ver[64];      /* Short version number (for INFO) */
@@ -525,7 +521,6 @@ struct statedata
     UTF8    version[128];       /* MUX version string */
     const UTF8    *curr_cmd;    /* The current command */
     const UTF8    *debug_cmd;   // The command we are executing (if any).
-    unsigned char *mod_alist;   /* Attribute list for modifying */
     UTF8    *pout;              /* The output of the pipe used in %| */
     UTF8    *poutbufc;          /* Buffer position for poutnew */
     UTF8    *poutnew;           /* The output being build by the current command */
@@ -533,7 +528,8 @@ struct statedata
 
     reg_ref *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     NamedRegsMap *named_regs;               // Named global registers.
-    ALIST   iter_alist;         /* Attribute list for iterations */
+    ATTRITERCTX attr_iter_ctx;  /* Attribute iteration context */
+    std::vector<ATTRITERCTX> attr_iter_stack; /* Stack for nested iteration */
     BADNAME *badname_head;      /* List of disallowed names */
     HELP_DESC *aHelpDesc;       // Table of help files hashes.
     MARKBUF *markbits;          /* temp storage for marking/unmarking */
