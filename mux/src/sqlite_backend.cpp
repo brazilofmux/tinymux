@@ -37,17 +37,27 @@ bool CSQLiteBackend::IsOpen() const
 }
 
 bool CSQLiteBackend::Get(unsigned int object, unsigned int attrnum,
-                         UTF8 *buf, size_t buflen, size_t *pLen)
+                         UTF8 *buf, size_t buflen, size_t *pLen,
+                         int *owner, int *flags)
 {
-    return m_db.GetAttribute(static_cast<dbref>(object), static_cast<int>(attrnum),
-                             buf, buflen, pLen);
+    dbref db_owner;
+    int db_flags;
+    bool rc = m_db.GetAttribute(static_cast<dbref>(object), static_cast<int>(attrnum),
+                                buf, buflen, pLen, &db_owner, &db_flags);
+    if (rc)
+    {
+        *owner = static_cast<int>(db_owner);
+        *flags = db_flags;
+    }
+    return rc;
 }
 
 bool CSQLiteBackend::Put(unsigned int object, unsigned int attrnum,
-                         const UTF8 *value, size_t len)
+                         const UTF8 *value, size_t len,
+                         int owner, int flags)
 {
     return m_db.PutAttribute(static_cast<dbref>(object), static_cast<int>(attrnum),
-                             value, len);
+                             value, len, static_cast<dbref>(owner), flags);
 }
 
 bool CSQLiteBackend::Del(unsigned int object, unsigned int attrnum)
@@ -63,9 +73,10 @@ bool CSQLiteBackend::DelAll(unsigned int object)
 bool CSQLiteBackend::GetAll(unsigned int object, AttrCallback cb)
 {
     return m_db.GetAllAttributes(static_cast<dbref>(object),
-        [&cb](int attrnum, const UTF8 *value, size_t len)
+        [&cb](int attrnum, const UTF8 *value, size_t len, dbref owner, int flags)
         {
-            cb(static_cast<unsigned int>(attrnum), value, len);
+            cb(static_cast<unsigned int>(attrnum), value, len,
+               static_cast<int>(owner), flags);
         });
 }
 

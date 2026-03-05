@@ -89,15 +89,19 @@ public:
 
     // Attribute operations.
     // These correspond to cache_get / cache_put / cache_del.
+    // Owner and flags are stored as separate columns (not packed into value).
     //
-    bool GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen, size_t *pLen);
-    bool PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len);
+    bool GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
+                      size_t *pLen, dbref *owner, int *flags);
+    bool PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len,
+                      dbref owner, int flags);
     bool DelAttribute(dbref obj, int attrnum);
     bool DelAllAttributes(dbref obj);
 
     // Bulk attribute read for preloading / @search.
     //
-    typedef std::function<void(int attrnum, const UTF8 *value, size_t len)> AttrCallback;
+    typedef std::function<void(int attrnum, const UTF8 *value, size_t len,
+                               dbref owner, int flags)> AttrCallback;
     bool GetAllAttributes(dbref obj, AttrCallback cb);
 
     // Attribute name registry.

@@ -22,9 +22,11 @@ public:
     bool IsOpen() const override;
 
     bool Get(unsigned int object, unsigned int attrnum,
-             UTF8 *buf, size_t buflen, size_t *pLen) override;
+             UTF8 *buf, size_t buflen, size_t *pLen,
+             int *owner, int *flags) override;
     bool Put(unsigned int object, unsigned int attrnum,
-             const UTF8 *value, size_t len) override;
+             const UTF8 *value, size_t len,
+             int owner, int flags) override;
     bool Del(unsigned int object, unsigned int attrnum) override;
 
     bool DelAll(unsigned int object) override;

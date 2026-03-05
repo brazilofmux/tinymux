@@ -227,18 +227,20 @@ static void trim_attribute_cache(void)
         // Blow the oldest thing away.
         //
         const auto it = mudstate.attribute_lru_cache_map.find(mudstate.attribute_lru_cache_list.front());
-        cache_size -= it->second.first.size();
+        cache_size -= it->second.data.size();
         mudstate.attribute_lru_cache_map.erase(it);
         mudstate.attribute_lru_cache_list.pop_front();
     }
 }
 
-const UTF8 *cache_get(Aname *nam, size_t *pLen)
+const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
 {
     if (  nam == static_cast<Aname*>(nullptr)
        || !cache_initted)
     {
         *pLen = 0;
+        *owner = NOTHING;
+        *flags = 0;
         return nullptr;
     }
 
@@ -254,32 +256,45 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
             mudstate.attribute_lru_cache_list.splice(
                 mudstate.attribute_lru_cache_list.end(),
                 mudstate.attribute_lru_cache_list,
-                (*it).second.second
+                it->second.lru_it
             );
-        	*pLen = (*it).second.first.size();
-            return (*it).second.first.data();
+        	*pLen = it->second.data.size();
+            *owner = it->second.attr_owner;
+            *flags = it->second.attr_flags;
+            return it->second.data.data();
         }
     }
 
 #if defined(SQLITE_STORAGE)
     size_t nLength = 0;
+    int db_owner = NOTHING;
+    int db_flags = 0;
     if (g_pSQLiteBackend->Get(nam->object, nam->attrnum,
-                              sqlite_attr_buf, sizeof(sqlite_attr_buf), &nLength))
+                              sqlite_attr_buf, sizeof(sqlite_attr_buf), &nLength,
+                              &db_owner, &db_flags))
     {
         *pLen = nLength;
+        *owner = static_cast<dbref>(db_owner);
+        *flags = db_flags;
         if (!mudstate.bStandAlone)
         {
             // Add this information to the cache.
             //
-            vector<UTF8> v(sqlite_attr_buf, sqlite_attr_buf + nLength);
-            auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
-            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
-            cache_size += v.size();
+            statedata::AttrCacheEntry entry;
+            entry.data.assign(sqlite_attr_buf, sqlite_attr_buf + nLength);
+            entry.lru_it = mudstate.attribute_lru_cache_list.insert(
+                mudstate.attribute_lru_cache_list.end(), *nam);
+            entry.attr_owner = static_cast<dbref>(db_owner);
+            entry.attr_flags = db_flags;
+            cache_size += entry.data.size();
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
             trim_attribute_cache();
         }
         return sqlite_attr_buf;
     }
 #else
+    UNUSED_PARAMETER(owner);
+    UNUSED_PARAMETER(flags);
     const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
     uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
 
@@ -297,10 +312,14 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
             {
                 // Add this information to the cache.
                 //
-                vector<UTF8> v(temp_record.attrText, temp_record.attrText + nLength);
-                auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
-                mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
-                cache_size += v.size();
+                statedata::AttrCacheEntry entry;
+                entry.data.assign(temp_record.attrText, temp_record.attrText + nLength);
+                entry.lru_it = mudstate.attribute_lru_cache_list.insert(
+                    mudstate.attribute_lru_cache_list.end(), *nam);
+                entry.attr_owner = NOTHING;
+                entry.attr_flags = 0;
+                cache_size += entry.data.size();
+                mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
                 trim_attribute_cache();
             }
             return temp_record.attrText;
@@ -315,21 +334,24 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen)
     {
         // Add an empty entry in the cache.
         //
-        vector<UTF8> v;
-        auto it = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
-        mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it)));
-        cache_size += v.size();
-        trim_attribute_cache();
+        statedata::AttrCacheEntry entry;
+        entry.lru_it = mudstate.attribute_lru_cache_list.insert(
+            mudstate.attribute_lru_cache_list.end(), *nam);
+        entry.attr_owner = NOTHING;
+        entry.attr_flags = 0;
+        mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
     }
 
     *pLen = 0;
+    *owner = NOTHING;
+    *flags = 0;
     return nullptr;
 }
 
 
 // cache_put no longer frees the pointer.
 //
-bool cache_put(Aname *nam, const UTF8 *value, size_t len)
+bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags)
 {
     if (  !value
        || !nam
@@ -353,14 +375,18 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
         len = LBUF_SIZE;
     }
 
-    // Write-through: write to SQLite immediately.
+    // Write-through: write to SQLite immediately with separate owner/flags.
     //
-    if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len))
+    if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len,
+                               static_cast<int>(owner), flags))
     {
         Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
     }
 #else
+    UNUSED_PARAMETER(owner);
+    UNUSED_PARAMETER(flags);
+
     if (len > sizeof(temp_record.attrText))
     {
         len = sizeof(temp_record.attrText);
@@ -414,24 +440,28 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len)
     {
         // Update cache.
         //
-        vector<UTF8> v(value, value + len);
-        auto it2 = mudstate.attribute_lru_cache_list.insert(mudstate.attribute_lru_cache_list.end(), *nam);
+        statedata::AttrCacheEntry entry;
+        entry.data.assign(value, value + len);
+        entry.lru_it = mudstate.attribute_lru_cache_list.insert(
+            mudstate.attribute_lru_cache_list.end(), *nam);
+        entry.attr_owner = owner;
+        entry.attr_flags = flags;
 
         const auto it = mudstate.attribute_lru_cache_map.find(*nam);
         if (it != mudstate.attribute_lru_cache_map.end())
         {
-            // It was in the cache map, so replace the pair in the mapping and delete the old list entry.
+            // It was in the cache map, so replace and delete the old list entry.
             //
-            cache_size += v.size() - it->second.first.size();
-            mudstate.attribute_lru_cache_list.erase((*it).second.second);
-            it->second = make_pair(v, it2);
+            cache_size += entry.data.size() - it->second.data.size();
+            mudstate.attribute_lru_cache_list.erase(it->second.lru_it);
+            it->second = std::move(entry);
         }
         else
         {
             // It wasn't in the cache map, so create a mapping.
             //
-            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, make_pair(v, it2)));
-            cache_size += v.size();
+            cache_size += entry.data.size();
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
         }
         trim_attribute_cache();
     }
@@ -499,8 +529,8 @@ void cache_del(Aname *nam)
         {
             // It was in the cache, so delete it.
             //
-            cache_size -= it->second.first.size();
-            mudstate.attribute_lru_cache_list.erase((*it).second.second);
+            cache_size -= it->second.data.size();
+            mudstate.attribute_lru_cache_list.erase(it->second.lru_it);
             mudstate.attribute_lru_cache_map.erase(it);
         }
     }

@@ -568,8 +568,15 @@ struct statedata
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
 #if !defined(MEMORY_BASED)
+    struct AttrCacheEntry
+    {
+        std::vector<UTF8> data;
+        std::list<Aname>::iterator lru_it;
+        dbref attr_owner;
+        int   attr_flags;
+    };
     std::list<Aname> attribute_lru_cache_list;
-    std::unordered_map<Aname, std::pair<std::vector<UTF8>, std::list<Aname>::iterator>, AnameHasher> attribute_lru_cache_map;
+    std::unordered_map<Aname, AttrCacheEntry, AnameHasher> attribute_lru_cache_map;
 #endif // MEMORY_BASED
     std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */

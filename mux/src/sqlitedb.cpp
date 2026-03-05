@@ -187,6 +187,8 @@ bool CSQLiteDB::CreateSchema()
         "    object      INTEGER NOT NULL,"
         "    attrnum     INTEGER NOT NULL,"
         "    value       BLOB NOT NULL,"
+        "    owner       INTEGER NOT NULL DEFAULT -1,"
+        "    flags       INTEGER NOT NULL DEFAULT 0,"
         "    PRIMARY KEY (object, attrnum)"
         ") WITHOUT ROWID;"
         "CREATE TABLE IF NOT EXISTS attrnames ("
@@ -286,15 +288,33 @@ bool CSQLiteDB::CreateSchema()
 // Schema migration
 // ---------------------------------------------------------------------------
 
+// Helper: run a migration SQL block with FK checks disabled.
+//
+static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
+{
+    sqlite3_exec(db, "PRAGMA foreign_keys=OFF", nullptr, nullptr, nullptr);
+
+    char *errmsg = nullptr;
+    int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errmsg);
+    if (SQLITE_OK != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::MigrateSchema v%d: %s\n",
+            target_version, errmsg ? errmsg : "unknown error");
+        sqlite3_free(errmsg);
+        sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+        sqlite3_exec(db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    sqlite3_exec(db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
+    fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version %d.\n",
+        target_version);
+    return true;
+}
+
 bool CSQLiteDB::MigrateSchema()
 {
-    // Check current schema version.  Version 1 is the original schema
-    // without foreign keys or secondary indexes.  Version 2 adds both.
-    // New databases get version 2 from CreateSchema(); existing databases
-    // that predate versioning have no schema_version key and are treated
-    // as version 1.
-    //
-    static const int CURRENT_SCHEMA_VERSION = 2;
+    static const int CURRENT_SCHEMA_VERSION = 3;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -314,105 +334,121 @@ bool CSQLiteDB::MigrateSchema()
         return true;
     }
 
-    // Migrate v0/v1 -> v2: add foreign keys to channel_users,
-    // player_channels, and mail_headers.  SQLite requires table recreation
-    // to add FK constraints.  Also add secondary indexes.
+    // ---------------------------------------------------------------
+    // v0/v1 -> v2: add foreign keys and secondary indexes.
+    // ---------------------------------------------------------------
     //
-    // Temporarily disable foreign keys for the migration so existing data
-    // that might violate constraints doesn't block the table recreation.
-    // (PRAGMA foreign_keys cannot be changed inside a transaction.)
-    //
-    sqlite3_exec(m_db, "PRAGMA foreign_keys=OFF", nullptr, nullptr, nullptr);
-
-    char *errmsg = nullptr;
-    const char *migration =
-        "BEGIN;"
-
-        // Recreate channel_users with FK to channels.
-        //
-        "CREATE TABLE new_channel_users ("
-        "    channel_name TEXT NOT NULL"
-        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
-        "    who         INTEGER NOT NULL,"
-        "    is_on       INTEGER NOT NULL DEFAULT 0,"
-        "    comtitle_status INTEGER NOT NULL DEFAULT 0,"
-        "    gag_join_leave INTEGER NOT NULL DEFAULT 0,"
-        "    title       TEXT NOT NULL DEFAULT '',"
-        "    PRIMARY KEY (channel_name, who)"
-        ") WITHOUT ROWID;"
-        "INSERT INTO new_channel_users"
-        "    SELECT * FROM channel_users;"
-        "DROP TABLE channel_users;"
-        "ALTER TABLE new_channel_users RENAME TO channel_users;"
-
-        // Recreate player_channels with FK to channels.
-        //
-        "CREATE TABLE new_player_channels ("
-        "    who         INTEGER NOT NULL,"
-        "    alias       TEXT NOT NULL,"
-        "    channel_name TEXT NOT NULL"
-        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
-        "    PRIMARY KEY (who, alias)"
-        ") WITHOUT ROWID;"
-        "INSERT INTO new_player_channels"
-        "    SELECT * FROM player_channels;"
-        "DROP TABLE player_channels;"
-        "ALTER TABLE new_player_channels RENAME TO player_channels;"
-
-        // Recreate mail_headers with FK to mail_bodies.
-        //
-        "CREATE TABLE new_mail_headers ("
-        "    rowid       INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "    to_player   INTEGER NOT NULL,"
-        "    from_player INTEGER NOT NULL,"
-        "    body_number INTEGER NOT NULL REFERENCES mail_bodies(number),"
-        "    tolist      TEXT NOT NULL DEFAULT '',"
-        "    time_str    TEXT NOT NULL DEFAULT '',"
-        "    subject     TEXT NOT NULL DEFAULT '',"
-        "    read_flags  INTEGER NOT NULL DEFAULT 0"
-        ");"
-        "INSERT INTO new_mail_headers"
-        "    (rowid, to_player, from_player, body_number,"
-        "     tolist, time_str, subject, read_flags)"
-        "    SELECT rowid, to_player, from_player, body_number,"
-        "           tolist, time_str, subject, read_flags"
-        "    FROM mail_headers;"
-        "DROP TABLE mail_headers;"
-        "ALTER TABLE new_mail_headers RENAME TO mail_headers;"
-
-        // Secondary indexes (IF NOT EXISTS in case partially applied).
-        //
-        "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
-        "CREATE INDEX IF NOT EXISTS idx_objects_location ON objects(location);"
-        "CREATE INDEX IF NOT EXISTS idx_objects_zone ON objects(zone);"
-        "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
-        "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
-        "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
-        "    ON player_channels(channel_name);"
-
-        // Record the new schema version.
-        //
-        "INSERT OR REPLACE INTO metadata(key, value)"
-        "    VALUES('schema_version', 2);"
-
-        "COMMIT;";
-
-    int rc = sqlite3_exec(m_db, migration, nullptr, nullptr, &errmsg);
-    if (SQLITE_OK != rc)
+    if (version < 2)
     {
-        fprintf(stderr, "CSQLiteDB::MigrateSchema: %s\n",
-            errmsg ? errmsg : "unknown error");
-        sqlite3_free(errmsg);
-        sqlite3_exec(m_db, "ROLLBACK", nullptr, nullptr, nullptr);
-        sqlite3_exec(m_db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
-        return false;
+        const char *migration_v2 =
+            "BEGIN;"
+
+            "CREATE TABLE new_channel_users ("
+            "    channel_name TEXT NOT NULL"
+            "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
+            "    who         INTEGER NOT NULL,"
+            "    is_on       INTEGER NOT NULL DEFAULT 0,"
+            "    comtitle_status INTEGER NOT NULL DEFAULT 0,"
+            "    gag_join_leave INTEGER NOT NULL DEFAULT 0,"
+            "    title       TEXT NOT NULL DEFAULT '',"
+            "    PRIMARY KEY (channel_name, who)"
+            ") WITHOUT ROWID;"
+            "INSERT INTO new_channel_users"
+            "    SELECT * FROM channel_users;"
+            "DROP TABLE channel_users;"
+            "ALTER TABLE new_channel_users RENAME TO channel_users;"
+
+            "CREATE TABLE new_player_channels ("
+            "    who         INTEGER NOT NULL,"
+            "    alias       TEXT NOT NULL,"
+            "    channel_name TEXT NOT NULL"
+            "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
+            "    PRIMARY KEY (who, alias)"
+            ") WITHOUT ROWID;"
+            "INSERT INTO new_player_channels"
+            "    SELECT * FROM player_channels;"
+            "DROP TABLE player_channels;"
+            "ALTER TABLE new_player_channels RENAME TO player_channels;"
+
+            "CREATE TABLE new_mail_headers ("
+            "    rowid       INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "    to_player   INTEGER NOT NULL,"
+            "    from_player INTEGER NOT NULL,"
+            "    body_number INTEGER NOT NULL REFERENCES mail_bodies(number),"
+            "    tolist      TEXT NOT NULL DEFAULT '',"
+            "    time_str    TEXT NOT NULL DEFAULT '',"
+            "    subject     TEXT NOT NULL DEFAULT '',"
+            "    read_flags  INTEGER NOT NULL DEFAULT 0"
+            ");"
+            "INSERT INTO new_mail_headers"
+            "    (rowid, to_player, from_player, body_number,"
+            "     tolist, time_str, subject, read_flags)"
+            "    SELECT rowid, to_player, from_player, body_number,"
+            "           tolist, time_str, subject, read_flags"
+            "    FROM mail_headers;"
+            "DROP TABLE mail_headers;"
+            "ALTER TABLE new_mail_headers RENAME TO mail_headers;"
+
+            "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
+            "CREATE INDEX IF NOT EXISTS idx_objects_location ON objects(location);"
+            "CREATE INDEX IF NOT EXISTS idx_objects_zone ON objects(zone);"
+            "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
+            "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
+            "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
+            "    ON player_channels(channel_name);"
+
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 2);"
+
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v2, 2))
+        {
+            return false;
+        }
+        version = 2;
     }
 
-    // Re-enable foreign keys and verify integrity.
+    // ---------------------------------------------------------------
+    // v2 -> v3: add owner/flags columns to attributes table.
+    // Recreate the table with new columns.  Existing blobs may contain
+    // packed \x01owner:flags:text prefixes which we leave as-is here;
+    // the runtime atr_add_raw_LEN() decodes and re-stores them on
+    // first write.  For the cold-start path, all attributes get
+    // decoded and re-stored with proper columns automatically.
+    // ---------------------------------------------------------------
     //
-    sqlite3_exec(m_db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
+    if (version < 3)
+    {
+        const char *migration_v3 =
+            "BEGIN;"
 
-    // Log any existing FK violations (informational, not fatal).
+            "CREATE TABLE new_attributes ("
+            "    object      INTEGER NOT NULL,"
+            "    attrnum     INTEGER NOT NULL,"
+            "    value       BLOB NOT NULL,"
+            "    owner       INTEGER NOT NULL DEFAULT -1,"
+            "    flags       INTEGER NOT NULL DEFAULT 0,"
+            "    PRIMARY KEY (object, attrnum)"
+            ") WITHOUT ROWID;"
+            "INSERT INTO new_attributes (object, attrnum, value)"
+            "    SELECT object, attrnum, value FROM attributes;"
+            "DROP TABLE attributes;"
+            "ALTER TABLE new_attributes RENAME TO attributes;"
+
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 3);"
+
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v3, 3))
+        {
+            return false;
+        }
+        version = 3;
+    }
+
+    // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
         "PRAGMA foreign_key_check", -1, &stmt, nullptr))
@@ -434,8 +470,6 @@ bool CSQLiteDB::MigrateSchema()
         sqlite3_finalize(stmt);
     }
 
-    fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version %d.\n",
-        CURRENT_SCHEMA_VERSION);
     return true;
 }
 
@@ -511,14 +545,14 @@ bool CSQLiteDB::PrepareStatements()
     // Attribute operations.
     //
     if (!Prepare(m_db,
-        "SELECT value FROM attributes WHERE object=? AND attrnum=?",
+        "SELECT value, owner, flags FROM attributes WHERE object=? AND attrnum=?",
         &m_stmtAttrGet))
     {
         return false;
     }
 
     if (!Prepare(m_db,
-        "INSERT OR REPLACE INTO attributes (object, attrnum, value) VALUES (?,?,?)",
+        "INSERT OR REPLACE INTO attributes (object, attrnum, value, owner, flags) VALUES (?,?,?,?,?)",
         &m_stmtAttrPut))
     {
         return false;
@@ -539,7 +573,7 @@ bool CSQLiteDB::PrepareStatements()
     }
 
     if (!Prepare(m_db,
-        "SELECT attrnum, value FROM attributes WHERE object=?",
+        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=?",
         &m_stmtAttrGetObj))
     {
         return false;
@@ -948,7 +982,8 @@ bool CSQLiteDB::UpdatePowers(dbref obj, POWER p1, POWER p2)
 // Attribute operations
 // ---------------------------------------------------------------------------
 
-bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen, size_t *pLen)
+bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
+                             size_t *pLen, dbref *owner, int *flags)
 {
     sqlite3_bind_int(m_stmtAttrGet, 1, obj);
     sqlite3_bind_int(m_stmtAttrGet, 2, attrnum);
@@ -965,6 +1000,8 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen, s
         }
         memcpy(buf, blob, blobLen);
         *pLen = blobLen;
+        *owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGet, 1));
+        *flags = sqlite3_column_int(m_stmtAttrGet, 2);
         sqlite3_reset(m_stmtAttrGet);
         m_stats.attr_gets++;
         return true;
@@ -972,14 +1009,19 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen, s
 
     sqlite3_reset(m_stmtAttrGet);
     *pLen = 0;
+    *owner = NOTHING;
+    *flags = 0;
     return false;
 }
 
-bool CSQLiteDB::PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len)
+bool CSQLiteDB::PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len,
+                             dbref owner, int flags)
 {
     sqlite3_bind_int(m_stmtAttrPut, 1, obj);
     sqlite3_bind_int(m_stmtAttrPut, 2, attrnum);
     sqlite3_bind_blob(m_stmtAttrPut, 3, value, static_cast<int>(len), SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtAttrPut, 4, owner);
+    sqlite3_bind_int(m_stmtAttrPut, 5, flags);
 
     int rc = sqlite3_step(m_stmtAttrPut);
     sqlite3_reset(m_stmtAttrPut);
@@ -1040,8 +1082,10 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
         int attrnum = sqlite3_column_int(m_stmtAttrGetObj, 0);
         const UTF8 *value = static_cast<const UTF8 *>(sqlite3_column_blob(m_stmtAttrGetObj, 1));
         size_t len = static_cast<size_t>(sqlite3_column_bytes(m_stmtAttrGetObj, 1));
+        dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetObj, 2));
+        int flags = sqlite3_column_int(m_stmtAttrGetObj, 3);
 
-        cb(attrnum, value, len);
+        cb(attrnum, value, len, owner, flags);
     }
 
     sqlite3_reset(m_stmtAttrGetObj);

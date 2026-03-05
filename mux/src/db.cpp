@@ -2246,11 +2246,20 @@ FoundAttribute:
 
     Aname okey;
     makekey(thing, atr, &okey);
+
+#if defined(SQLITE_STORAGE)
+    // SQLite mode: decode any packed owner/flags prefix from the value
+    // before storing in separate columns.  If no prefix is present (the
+    // common case), defaults apply.
+    //
+    dbref raw_owner = Owner(thing);
+    int   raw_flags = 0;
+    const UTF8 *clean = atr_decode_flags_owner(szValue, &raw_owner, &raw_flags);
+    size_t clean_len = nValue - static_cast<size_t>(clean - szValue);
+
     if (atr == A_LIST)
     {
-        // A_LIST is never compressed and it's never listed within itself.
-        //
-        cache_put(&okey, szValue, nValue+1);
+        cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
     }
     else
     {
@@ -2258,8 +2267,24 @@ FoundAttribute:
         {
             return;
         }
-        cache_put(&okey, szValue, nValue+1);
+        cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
     }
+#else
+    if (atr == A_LIST)
+    {
+        // A_LIST is never compressed and it's never listed within itself.
+        //
+        cache_put(&okey, szValue, nValue+1, NOTHING, 0);
+    }
+    else
+    {
+        if (!al_add(thing, atr))
+        {
+            return;
+        }
+        cache_put(&okey, szValue, nValue+1, NOTHING, 0);
+    }
+#endif
 #endif // MEMORY_BASED
 
     switch (atr)
@@ -2407,13 +2432,27 @@ const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 
 #else // MEMORY_BASED
 
+#if defined(SQLITE_STORAGE)
+// In SQLite mode, the cache stores clean text with separate owner/flags.
+// These statics carry the owner/flags from cache_get back to callers.
+//
+static dbref cache_last_owner = NOTHING;
+static int   cache_last_flags = 0;
+#endif
+
 const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
     Aname okey;
 
     makekey(thing, atr, &okey);
     size_t nLen;
-    const UTF8 *a = cache_get(&okey, &nLen);
+#if defined(SQLITE_STORAGE)
+    const UTF8 *a = cache_get(&okey, &nLen, &cache_last_owner, &cache_last_flags);
+#else
+    dbref dummy_owner;
+    int   dummy_flags;
+    const UTF8 *a = cache_get(&okey, &nLen, &dummy_owner, &dummy_flags);
+#endif
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;
     return a;
@@ -2439,7 +2478,16 @@ UTF8 *atr_get_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags,
     }
     else
     {
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+        // SQLite mode: owner/flags are separate columns, already retrieved
+        // by cache_get via atr_get_raw_LEN.  Just copy the clean text.
+        //
+        *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
+        *flags = cache_last_flags;
+        memcpy(s, buff, (*pLen) + 1);
+#else
         atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
+#endif
     }
     return s;
 }
@@ -2474,7 +2522,12 @@ bool atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
         *flags = 0;
         return false;
     }
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
+    *flags = cache_last_flags;
+#else
     atr_decode_LEN(buff, nLen, nullptr, thing, owner, flags, &nLen);
+#endif
     return true;
 }
 
@@ -2490,7 +2543,13 @@ UTF8 *atr_pget_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags, 
         buff = atr_get_raw_LEN(parent, atr, pLen);
         if (buff && *buff)
         {
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+            *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
+            *flags = cache_last_flags;
+            memcpy(s, buff, (*pLen) + 1);
+#else
             atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
+#endif
             if (  lev == 0
                || !(*flags & AF_PRIVATE))
             {
@@ -2546,7 +2605,12 @@ bool atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
         const UTF8 *buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+            *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
+            *flags = cache_last_flags;
+#else
             atr_decode_LEN(buff, nLen, nullptr, thing, owner, flags, &nLen);
+#endif
             if ((lev == 0) || !(*flags & AF_PRIVATE))
             {
                 return true;
