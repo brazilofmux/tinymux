@@ -2645,6 +2645,9 @@ bool db_make_minimal(void)
     {
         if (!sqldb.Begin())
         {
+            db_free();
+            mudstate.attr_next = A_USER_START;
+            mudstate.record_players = 0;
             return;
         }
         if (  !sqldb.ClearAttributes()
@@ -2657,6 +2660,9 @@ bool db_make_minimal(void)
         {
             sqldb.Rollback();
         }
+        db_free();
+        mudstate.attr_next = A_USER_START;
+        mudstate.record_players = 0;
     };
 
     db_free();

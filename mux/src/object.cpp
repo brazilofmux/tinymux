@@ -91,6 +91,57 @@ static void force_reclaim_failed_create_slot(dbref obj)
 //
 static bool sqlite_sync_all_attributes_from_runtime(void)
 {
+    struct AttrRow
+    {
+        dbref obj;
+        int attrnum;
+        std::vector<UTF8> value;
+        dbref owner;
+        int flags;
+    };
+
+    std::vector<AttrRow> snapshot;
+    snapshot.reserve(1024);
+
+    // Snapshot attributes before mutating SQLite state. Enumeration currently
+    // comes from backend storage; clearing first would make the snapshot empty.
+    //
+    dbref iObject;
+    DO_WHOLE_DB(iObject)
+    {
+        if (!g_pSQLiteBackend->GetAll(
+            static_cast<unsigned int>(iObject),
+            [&snapshot, iObject](unsigned int attrnum, const UTF8 *value, size_t len, int owner, int flags)
+            {
+                if (  attrnum == static_cast<unsigned int>(A_LIST)
+                   || attrnum == 0U)
+                {
+                    return;
+                }
+
+                AttrRow row;
+                row.obj = iObject;
+                row.attrnum = static_cast<int>(attrnum);
+                row.owner = static_cast<dbref>(owner);
+                row.flags = flags;
+                if (  nullptr != value
+                   && 0 < len)
+                {
+                    row.value.assign(value, value + len);
+                }
+                else
+                {
+                    row.value.push_back('\0');
+                }
+                snapshot.push_back(std::move(row));
+            }))
+        {
+            Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to snapshot attrs for #%d" ENDLINE),
+                iObject);
+            return false;
+        }
+    }
+
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     if (!sqldb.Begin())
     {
@@ -102,51 +153,18 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
         return false;
     }
 
-    atr_push();
-    bool bOk = true;
-    dbref iObject;
-    DO_WHOLE_DB(iObject)
+    for (const auto& row : snapshot)
     {
-        unsigned char *as;
-        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+        if (!sqldb.PutAttribute(row.obj,
+                row.attrnum,
+                row.value.empty() ? nullptr : row.value.data(),
+                row.value.size(),
+                row.owner,
+                row.flags))
         {
-            if (iAttr == A_LIST)
-            {
-                continue;
-            }
-
-            const UTF8 *pRaw = atr_get_raw(iObject, iAttr);
-            if (nullptr == pRaw)
-            {
-                continue;
-            }
-
-            dbref owner = Owner(iObject);
-            int flags = 0;
-            if (!atr_get_info(iObject, iAttr, &owner, &flags))
-            {
-                bOk = false;
-                break;
-            }
-
-            const size_t nRaw = strlen(reinterpret_cast<const char *>(pRaw)) + 1;
-            if (!sqldb.PutAttribute(iObject, iAttr, pRaw, nRaw, owner, flags))
-            {
-                bOk = false;
-                break;
-            }
+            sqldb.Rollback();
+            return false;
         }
-        if (!bOk)
-        {
-            break;
-        }
-    }
-    atr_pop();
-
-    if (!bOk)
-    {
-        sqldb.Rollback();
-        return false;
     }
 
     if (!sqldb.Commit())
