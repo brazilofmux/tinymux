@@ -8,6 +8,10 @@
 #include "config.h"
 #include "externs.h"
 
+#if defined(SQLITE_STORAGE)
+#include "sqlite_backend.h"
+#endif
+
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
              (Location(i) == NOTHING) && \
@@ -531,6 +535,29 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         update_newobjects(player, obj, objtype);
         ProcessMasterRoomACreate(player, obj);
     }
+
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        CSQLiteDB::ObjectRecord rec;
+        rec.dbref_val = obj;
+        rec.location  = db[obj].location;
+        rec.contents  = db[obj].contents;
+        rec.exits     = db[obj].exits;
+        rec.next      = db[obj].next;
+        rec.link      = db[obj].link;
+        rec.owner     = db[obj].owner;
+        rec.parent    = db[obj].parent;
+        rec.zone      = db[obj].zone;
+        rec.pennies   = 0;
+        rec.flags1    = db[obj].fs.word[FLAG_WORD1];
+        rec.flags2    = db[obj].fs.word[FLAG_WORD2];
+        rec.flags3    = db[obj].fs.word[FLAG_WORD3];
+        rec.powers1   = db[obj].powers;
+        rec.powers2   = db[obj].powers2;
+        g_pSQLiteBackend->GetDB().InsertObject(rec);
+    }
+#endif
 
     return obj;
 }

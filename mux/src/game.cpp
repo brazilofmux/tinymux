@@ -1898,8 +1898,14 @@ static int load_game(int ccPageFile)
     log_text(T("Loading: "));
     log_text(infile);
     ENDLOG
+#if defined(SQLITE_STORAGE)
+    mudstate.bSQLiteLoading = true;
+#endif
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
     {
+#if defined(SQLITE_STORAGE)
+        mudstate.bSQLiteLoading = false;
+#endif
         // Everything is not ok.
         //
         if (fclose(f) == 0)
@@ -1914,6 +1920,9 @@ static int load_game(int ccPageFile)
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;
     }
+#if defined(SQLITE_STORAGE)
+    mudstate.bSQLiteLoading = false;
+#endif
 
     // Everything is ok.
     //
@@ -1946,6 +1955,12 @@ static int load_game(int ccPageFile)
             ENDLOG;
         }
     }
+#if defined(SQLITE_STORAGE)
+    // Bulk-sync all object metadata from db[] into SQLite.
+    // This populates the objects table from the flatfile data.
+    //
+    sqlite_sync_objects();
+#endif
 #endif // !MEMORY_BASED
 
     if (mudconf.have_comsys)
@@ -2345,13 +2360,23 @@ static void dbconvert(void)
 #endif
 
     setvbuf(fpIn, nullptr, _IOFBF, 16384);
+#if defined(SQLITE_STORAGE)
+    mudstate.bSQLiteLoading = true;
+#endif
     if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
     {
+#if defined(SQLITE_STORAGE)
+        mudstate.bSQLiteLoading = false;
+#endif
 #if !defined(SQLITE_STORAGE)
         cache_cleanup();
 #endif
         exit(1);
     }
+#if defined(SQLITE_STORAGE)
+    mudstate.bSQLiteLoading = false;
+    sqlite_sync_objects();
+#endif
 
 #if !defined(SQLITE_STORAGE)
     if (do_redirect)

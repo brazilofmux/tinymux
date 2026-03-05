@@ -1287,6 +1287,10 @@ void pcache_trim(void);
 void cache_redirect(void);
 void cache_pass2(void);
 void cache_cleanup(void);
+#else
+class CSQLiteBackend;
+extern CSQLiteBackend *g_pSQLiteBackend;
+void sqlite_sync_objects(void);
 #endif
 extern CLinearTimeAbsolute cs_ltime;
 

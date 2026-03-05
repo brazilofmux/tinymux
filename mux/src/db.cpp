@@ -18,6 +18,10 @@
 #include "config.h"
 #include "externs.h"
 
+#if defined(SQLITE_STORAGE)
+#include "sqlite_backend.h"
+#endif
+
 #include <filesystem>
 using namespace std;
 
@@ -3071,6 +3075,32 @@ void db_make_minimal(void)
     s_Pennies(0, 0);
     s_Owner(0, 1);
 
+    // Insert Limbo (#0) into SQLite before creating Wizard.
+    // create_player -> create_obj will insert #1 via its own path.
+    //
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        CSQLiteDB::ObjectRecord rec;
+        rec.dbref_val = 0;
+        rec.location  = db[0].location;
+        rec.contents  = db[0].contents;
+        rec.exits     = db[0].exits;
+        rec.next      = db[0].next;
+        rec.link      = db[0].link;
+        rec.owner     = db[0].owner;
+        rec.parent    = db[0].parent;
+        rec.zone      = db[0].zone;
+        rec.pennies   = 0;
+        rec.flags1    = db[0].fs.word[FLAG_WORD1];
+        rec.flags2    = db[0].fs.word[FLAG_WORD2];
+        rec.flags3    = db[0].fs.word[FLAG_WORD3];
+        rec.powers1   = db[0].powers;
+        rec.powers2   = db[0].powers2;
+        g_pSQLiteBackend->GetDB().InsertObject(rec);
+    }
+#endif
+
     // should be #1
     //
     load_player_names();
@@ -4044,4 +4074,159 @@ void RemoveFile(const UTF8 *name)
         std::filesystem::u8path(reinterpret_cast<const char*>(name)),
         ec);
 }
+
+#if defined(SQLITE_STORAGE)
+
+#define SQLITE_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+
+void s_Location(dbref t, dbref n)
+{
+    db[t].location = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateLocation(t, n);
+    }
+}
+
+void s_Zone(dbref t, dbref n)
+{
+    db[t].zone = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateZone(t, n);
+    }
+}
+
+void s_Contents(dbref t, dbref n)
+{
+    db[t].contents = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateContents(t, n);
+    }
+}
+
+void s_Exits(dbref t, dbref n)
+{
+    db[t].exits = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateExits(t, n);
+    }
+}
+
+void s_Next(dbref t, dbref n)
+{
+    db[t].next = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateNext(t, n);
+    }
+}
+
+void s_Link(dbref t, dbref n)
+{
+    db[t].link = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateLink(t, n);
+    }
+}
+
+void s_Owner(dbref t, dbref n)
+{
+    db[t].owner = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateOwner(t, n);
+    }
+}
+
+void s_Parent(dbref t, dbref n)
+{
+    db[t].parent = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateParent(t, n);
+    }
+}
+
+void s_Flags(dbref t, int f, FLAG n)
+{
+    db[t].fs.word[f] = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdateFlags(t,
+            db[t].fs.word[FLAG_WORD1],
+            db[t].fs.word[FLAG_WORD2],
+            db[t].fs.word[FLAG_WORD3]);
+    }
+}
+
+void s_Powers(dbref t, POWER n)
+{
+    db[t].powers = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2);
+    }
+}
+
+void s_Powers2(dbref t, POWER n)
+{
+    db[t].powers2 = n;
+    if (SQLITE_WRITABLE())
+    {
+        g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2);
+    }
+}
+
+void s_Home(dbref t, dbref n)
+{
+    s_Link(t, n);
+}
+
+void s_Dropto(dbref t, dbref n)
+{
+    s_Location(t, n);
+}
+
+// Bulk sync: Insert all objects from db[] into SQLite.
+// Called after db_read to populate the SQLite objects table from flatfile data.
+//
+void sqlite_sync_objects(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.Begin();
+
+    for (dbref i = 0; i < mudstate.db_top; i++)
+    {
+        CSQLiteDB::ObjectRecord rec;
+        rec.dbref_val = i;
+        rec.location  = db[i].location;
+        rec.contents  = db[i].contents;
+        rec.exits     = db[i].exits;
+        rec.next      = db[i].next;
+        rec.link      = db[i].link;
+        rec.owner     = db[i].owner;
+        rec.parent    = db[i].parent;
+        rec.zone      = db[i].zone;
+        rec.pennies   = 0;
+        rec.flags1    = db[i].fs.word[FLAG_WORD1];
+        rec.flags2    = db[i].fs.word[FLAG_WORD2];
+        rec.flags3    = db[i].fs.word[FLAG_WORD3];
+        rec.powers1   = db[i].powers;
+        rec.powers2   = db[i].powers2;
+
+        sqldb.InsertObject(rec);
+    }
+
+    sqldb.Commit();
+}
+#endif // SQLITE_STORAGE
 

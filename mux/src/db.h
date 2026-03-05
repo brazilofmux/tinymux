@@ -199,6 +199,21 @@ extern OBJ *db;
 #define ThRefs(t)       db[t].throttled_references
 #define ThEmail(t)      db[t].throttled_email
 
+#if defined(SQLITE_STORAGE)
+void s_Location(dbref t, dbref n);
+void s_Zone(dbref t, dbref n);
+void s_Contents(dbref t, dbref n);
+void s_Exits(dbref t, dbref n);
+void s_Next(dbref t, dbref n);
+void s_Link(dbref t, dbref n);
+void s_Owner(dbref t, dbref n);
+void s_Parent(dbref t, dbref n);
+void s_Flags(dbref t, int f, FLAG n);
+void s_Powers(dbref t, POWER n);
+void s_Powers2(dbref t, POWER n);
+void s_Home(dbref t, dbref n);
+void s_Dropto(dbref t, dbref n);
+#else
 #define s_Location(t,n)     db[t].location = (n)
 
 #define s_Zone(t,n)         db[t].zone = (n)
@@ -214,6 +229,7 @@ extern OBJ *db;
 #define s_Powers2(t,n)      db[t].powers2 = (n)
 #define s_Home(t,n)         s_Link(t,n)
 #define s_Dropto(t,n)       s_Location(t,n)
+#endif
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
 #define s_ThRefs(t,n)       db[t].throttled_references = (n);

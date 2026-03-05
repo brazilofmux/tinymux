@@ -106,6 +106,7 @@ bool CSQLiteDB::ConfigurePragmas()
     {
         "PRAGMA journal_mode=WAL",
         "PRAGMA synchronous=NORMAL",
+        "PRAGMA busy_timeout=5000",
         "PRAGMA mmap_size=268435456",
         "PRAGMA page_size=4096",
         "PRAGMA cache_size=-65536",

@@ -21,7 +21,7 @@ using namespace std;
 #if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
 
-static CSQLiteBackend *g_pSQLiteBackend = nullptr;
+CSQLiteBackend *g_pSQLiteBackend = nullptr;
 #else
 static CHashFile hfAttributeFile;
 #endif

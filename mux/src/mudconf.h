@@ -470,6 +470,9 @@ struct statedata
     bool bReadingConfiguration; // are we reading the config file at startup?
     bool bStackLimitReached;    // Was stack slammed?
     bool bStandAlone;           // Are we running in dbconvert mode.
+#if defined(SQLITE_STORAGE)
+    bool bSQLiteLoading;        // Suppress write-through during bulk load.
+#endif
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         // Should interface be shut down?
     bool inpipe;                // Are we collecting output for a pipe?
