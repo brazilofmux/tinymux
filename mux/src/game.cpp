@@ -1400,10 +1400,6 @@ void do_shutdown
 
         // Close the attribute text db and dump the header db.
         //
-        // Save cached modified attribute list
-        //
-        al_store();
-
         pcache_sync();
         SYNC;
         CLOSE;
@@ -1604,10 +1600,6 @@ static void dump_database(void)
         p = p->pNext;
     }
 
-    // Save cached modified attribute list
-    //
-    al_store();
-
     pcache_sync();
 
     dump_database_internal(DUMP_I_NORMAL);
@@ -1701,10 +1693,6 @@ void fork_and_dump(int key)
         p->pSink->presync_database();
         p = p->pNext;
     }
-
-    // Save cached modified attribute list
-    //
-    al_store();
 
     pcache_sync();
     SYNC;
@@ -2378,9 +2366,6 @@ static void dbconvert(void)
         Log.WriteString(T("Output: "));
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, nullptr, _IOFBF, 16384);
-        // Save cached modified attribute list
-        //
-        al_store();
         db_write(fpOut, F_MUX, db_ver | db_flags);
         fclose(fpOut);
     }

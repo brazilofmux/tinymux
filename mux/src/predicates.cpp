@@ -1664,7 +1664,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #endif // STUB_SLAVE
     final_modules();
 
-    al_store();
     pcache_sync();
     dump_database_internal(DUMP_I_RESTART);
     SYNC;

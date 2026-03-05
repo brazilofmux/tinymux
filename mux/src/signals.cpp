@@ -569,7 +569,6 @@ static void DCL_CDECL sighandler(int sig)
 #endif // STUB_SLAVE
         final_modules();
 
-        al_store();
         pcache_sync();
         SYNC;
 

@@ -472,9 +472,9 @@ bool CSQLiteDB::MigrateSchema()
     }
 
     // ---------------------------------------------------------------
-    // v4 -> v5: remove legacy packed A_LIST rows.
+    // v4 -> v5: remove legacy packed attr-253 rows.
     // Attribute membership is derived relationally by (object, attrnum),
-    // so A_LIST is redundant and should not be persisted.
+    // so attr 253 is redundant and should not be persisted.
     // ---------------------------------------------------------------
     //
     if (version < 5)

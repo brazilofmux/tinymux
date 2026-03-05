@@ -205,7 +205,6 @@ bool ThrottleAttributeNames(dbref executor);
 bool ThrottleReferences(dbref executor);
 bool ThrottlePlayerCreate(void);
 int  mkattr(dbref executor, const UTF8 *);
-void al_store(void);
 void db_grow(dbref);
 void db_free(void);
 void db_make_minimal(void);

@@ -288,8 +288,6 @@ static bool get_list(FILE *f, dbref i)
                     g_max_obj_atr = atr;
                 }
 
-                // Store the attr
-                //
                 size_t nBufferUnicode;
                 UTF8 *pBufferUnicode;
                 if (3 <= g_version)
@@ -302,7 +300,13 @@ static bool get_list(FILE *f, dbref i)
                     char *pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
                     pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
                 }
-                atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
+
+                // Ignore legacy packed attribute-list payload.
+                //
+                if (atr != 253)
+                {
+                    atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
+                }
             }
             else
             {
@@ -839,7 +843,6 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                     }
                     break;
 
-                case A_LIST:
                 case A_MONEY:
                     continue;
                 }

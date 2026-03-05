@@ -1664,46 +1664,26 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
 {
     attrnums.clear();
 
-    if (g_pSQLiteBackend)
+    if (!g_pSQLiteBackend)
     {
-        g_pSQLiteBackend->GetAll(
-            static_cast<unsigned int>(thing),
-            [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
-            {
-                if (  attrnum != static_cast<unsigned int>(A_LIST)
-                   && attrnum != 0U)
-                {
-                    attrnums.push_back(static_cast<int>(attrnum));
-                }
-            });
+        return;
     }
-    else
-    {
-        // Compatibility fallback when backend is unavailable.
-        // Decode any legacy packed A_LIST bytes.
-        //
-        size_t alen = 0;
-        const unsigned char *astr = atr_get_raw_LEN(thing, A_LIST, &alen);
-        if (astr && alen)
+
+    g_pSQLiteBackend->GetAll(
+        static_cast<unsigned int>(thing),
+        [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
         {
-            unsigned char *cp =
-                const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(astr));
-            while (*cp)
+            // Skip legacy internal packed attribute list.
+            //
+            if (  attrnum != 253U
+               && attrnum != 0U)
             {
-                attrnums.push_back(al_decode(&cp));
+                attrnums.push_back(static_cast<int>(attrnum));
             }
-        }
-    }
+        });
 
     sort(attrnums.begin(), attrnums.end());
     attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
-}
-
-// al_store: Write modified attribute list
-//
-void al_store(void)
-{
-    // A_LIST is deprecated; keep as compatibility no-op.
 }
 
 static inline void makekey(dbref thing, int atr, Aname *abuff)
@@ -1921,10 +1901,10 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     size_t clean_len = nValue - static_cast<size_t>(clean - szValue);
 
     // Normalize user text to NFC for consistent storage.
-    // A_LIST is deprecated and ignored (legacy import compatibility only).
+    // Legacy internal packed attribute list is deprecated and ignored.
     // NFC never expands the string, so clean_len is a safe bound.
     //
-    if (atr == A_LIST)
+    if (atr == 253)
     {
         return;
     }
