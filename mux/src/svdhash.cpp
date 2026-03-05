@@ -1,5 +1,5 @@
 /*! \file svdhash.cpp
- * \brief CRC32, hash, and cache statistics utilities.
+ * \brief CRC32 and hash utilities.
  *
  */
 
@@ -7,16 +7,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-int cs_writes   = 0;    // total writes
-int cs_reads    = 0;    // total reads
-int cs_dels     = 0;    // total deletes
-int cs_fails    = 0;    // attempts to grab nonexistent
-int cs_syncs    = 0;    // total cache syncs
-int cs_dbreads  = 0;    // total read-throughs
-int cs_dbwrites = 0;    // total write-throughs
-int cs_whits    = 0;    // writes into cached pages
-int cs_rhits    = 0;    // read from cached pages
 
 static const uint32_t CRC32_Table[256] =
 {

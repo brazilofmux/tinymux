@@ -3862,21 +3862,6 @@ static void list_hashstats(const dbref player)
     }
 }
 
-// ---------------------------------------------------------------------------
-// list_db_stats: Get useful info from the DB layer about hash stats, etc.
-//
-static void list_db_stats(dbref player)
-{
-    CLinearTimeAbsolute lsaNow;
-    lsaNow.GetUTC();
-    CLinearTimeDelta ltd = lsaNow - cs_ltime;
-    raw_notify(player, tprintf(T("DB Cache Stats   Writes       Reads  (over %d seconds)"), ltd.ReturnSeconds()));
-    raw_notify(player, tprintf(T("Calls      %12d%12d"), cs_writes, cs_reads));
-    raw_notify(player, tprintf(T("\nDeletes    %12d"), cs_dels));
-    raw_notify(player, tprintf(T("Syncs      %12d"), cs_syncs));
-    raw_notify(player, tprintf(T("I/O        %12d%12d"), cs_dbwrites, cs_dbreads));
-    raw_notify(player, tprintf(T("Cache Hits %12d%12d"), cs_whits, cs_rhits));
-}
 
 // ---------------------------------------------------------------------------
 // list_process: List local resource usage stats of the mux process.
@@ -4175,7 +4160,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
                    T("Information Logged:"), T("yes"), T("no"));
         break;
     case LIST_DB_STATS:
-        list_db_stats(executor);
+        list_cache_stats(executor);
         break;
     case LIST_PROCESS:
         list_process(executor);

@@ -1290,7 +1290,6 @@ void sqlite_sync_comsys(void);
 bool sqlite_load_comsys(void);
 void sqlite_sync_mail(void);
 bool sqlite_load_mail(void);
-extern CLinearTimeAbsolute cs_ltime;
 
 // From speech.cpp
 //

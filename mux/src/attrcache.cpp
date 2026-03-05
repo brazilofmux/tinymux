@@ -22,8 +22,6 @@ CSQLiteBackend *g_pSQLiteBackend = nullptr;
 
 static bool cache_initted = false;
 
-CLinearTimeAbsolute cs_ltime;
-
 // SQLite backend uses its own buffer for attribute retrieval.
 //
 static UTF8 sqlite_attr_buf[LBUF_SIZE];
@@ -74,7 +72,6 @@ int cache_init(const UTF8 *indb)
     }
 
     cache_initted = true;
-    cs_ltime.GetUTC();
 
     return bNewDatabase ? HF_OPEN_STATUS_NEW : HF_OPEN_STATUS_OLD;
 }
