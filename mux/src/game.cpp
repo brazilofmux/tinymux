@@ -1884,18 +1884,34 @@ static int load_game(int ccPageFile)
         return LOAD_GAME_LOADING_PROBLEM;
     }
 
-    if (sqlite_load_comsys())
+    int load_comsys_rc = sqlite_load_comsys();
+    if (load_comsys_rc > 0)
     {
         Log.tinyprintf(T("LOADING: comsys (from SQLite)" ENDLINE));
+    }
+    else if (load_comsys_rc < 0)
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("SQLite comsys load failed."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
     }
     else
     {
         load_comsys(mudconf.comsys_db);
     }
 
-    if (sqlite_load_mail())
+    int load_mail_rc = sqlite_load_mail();
+    if (load_mail_rc > 0)
     {
         Log.tinyprintf(T("LOADING: mail (from SQLite)" ENDLINE));
+    }
+    else if (load_mail_rc < 0)
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("SQLite mail load failed."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
     }
     else
     if (mux_fopen(&f, mudconf.mail_db, T("rb")))
@@ -2356,10 +2372,16 @@ static void dbconvert(void)
     //
     if (standalone_unload && standalone_comsys_file)
     {
-        if (sqlite_load_comsys())
+        int sqlite_comsys_rc = sqlite_load_comsys();
+        if (sqlite_comsys_rc > 0)
         {
             save_comsys(const_cast<UTF8 *>(standalone_comsys_file));
             Log.WriteString(T("Exported comsys from SQLite.\n"));
+        }
+        else if (sqlite_comsys_rc < 0)
+        {
+            Log.WriteString(T("Export comsys from SQLite failed.\n"));
+            exit(1);
         }
     }
 
@@ -2367,7 +2389,8 @@ static void dbconvert(void)
     //
     if (standalone_unload && standalone_mail_file)
     {
-        if (sqlite_load_mail())
+        int sqlite_mail_rc = sqlite_load_mail();
+        if (sqlite_mail_rc > 0)
         {
             FILE *fpMail;
             if (mux_fopen(&fpMail, standalone_mail_file, T("wb")))
@@ -2376,6 +2399,11 @@ static void dbconvert(void)
                 fclose(fpMail);
                 Log.WriteString(T("Exported mail from SQLite.\n"));
             }
+        }
+        else if (sqlite_mail_rc < 0)
+        {
+            Log.WriteString(T("Export mail from SQLite failed.\n"));
+            exit(1);
         }
     }
 

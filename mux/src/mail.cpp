@@ -5842,16 +5842,22 @@ bool sqlite_sync_mail(void)
     return true;
 }
 
-bool sqlite_load_mail(void)
+int sqlite_load_mail(void)
 {
     mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
     int mail_top = 0;
-    if (!sqldb.GetMeta("mail_db_top", &mail_top))
+    CSQLiteDB::MetaGetResult mail_top_meta = sqldb.GetMetaEx("mail_db_top", &mail_top);
+    if (CSQLiteDB::MetaGetResult::Error == mail_top_meta)
     {
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
+    }
+    if (CSQLiteDB::MetaGetResult::Found != mail_top_meta)
+    {
+        mudstate.bSQLiteLoading = false;
+        return 0;
     }
 
     clear_runtime_mail_data();
@@ -5866,7 +5872,7 @@ bool sqlite_load_mail(void)
     {
         clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     // Load mail headers.
@@ -5906,13 +5912,33 @@ bool sqlite_load_mail(void)
     {
         clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     // Load mail aliases.
     //
-    int alias_count = 0;
     std::vector<malias_t *> alias_vec;
+    auto free_alias_vec = [&alias_vec]()
+    {
+        for (auto *m : alias_vec)
+        {
+            if (m)
+            {
+                if (m->name)
+                {
+                    MEMFREE(m->name);
+                    m->name = nullptr;
+                }
+                if (m->desc)
+                {
+                    MEMFREE(m->desc);
+                    m->desc = nullptr;
+                }
+                delete m;
+            }
+        }
+        alias_vec.clear();
+    };
 
     if (!sqldb.LoadAllMailAliases([&alias_vec](int owner, const UTF8 *name,
         const UTF8 *desc, int desc_width, const UTF8 *members)
@@ -5957,33 +5983,40 @@ bool sqlite_load_mail(void)
         alias_vec.push_back(m);
     }))
     {
+        free_alias_vec();
         clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     if (!alias_vec.empty())
     {
-        ma_top = ma_size = static_cast<int>(alias_vec.size());
+        int alias_count = static_cast<int>(alias_vec.size());
         malias = nullptr;
         try
         {
-            malias = new malias_t *[ma_size];
+            malias = new malias_t *[alias_count];
         }
         catch (...)
         {
             ; // Nothing.
         }
 
-        if (malias)
+        if (!malias)
         {
-            for (int i = 0; i < ma_top; i++)
-            {
-                malias[i] = alias_vec[i];
-            }
+            free_alias_vec();
+            clear_runtime_mail_data();
+            mudstate.bSQLiteLoading = false;
+            return -1;
+        }
+
+        ma_top = ma_size = alias_count;
+        for (int i = 0; i < ma_top; i++)
+        {
+            malias[i] = alias_vec[i];
         }
     }
 
     mudstate.bSQLiteLoading = false;
-    return true;
+    return 1;
 }

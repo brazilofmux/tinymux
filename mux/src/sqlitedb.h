@@ -116,7 +116,14 @@ public:
 
     // Metadata key-value store (attr_next, db_top, etc.)
     //
+    enum class MetaGetResult
+    {
+        Found,
+        NotFound,
+        Error
+    };
     bool PutMeta(const char *key, int value);
+    MetaGetResult GetMetaEx(const char *key, int *value);
     bool GetMeta(const char *key, int *value);
 
     // Transaction support for batching related writes.

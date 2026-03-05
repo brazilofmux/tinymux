@@ -4309,16 +4309,22 @@ bool sqlite_sync_comsys(void)
     return true;
 }
 
-bool sqlite_load_comsys(void)
+int sqlite_load_comsys(void)
 {
     mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
     int has_comsys = 0;
-    if (!sqldb.GetMeta("has_comsys", &has_comsys) || 0 == has_comsys)
+    CSQLiteDB::MetaGetResult has_comsys_meta = sqldb.GetMetaEx("has_comsys", &has_comsys);
+    if (CSQLiteDB::MetaGetResult::Error == has_comsys_meta)
     {
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
+    }
+    if (CSQLiteDB::MetaGetResult::Found != has_comsys_meta || 0 == has_comsys)
+    {
+        mudstate.bSQLiteLoading = false;
+        return 0;
     }
 
     // Reset in-memory structures before repopulating.
@@ -4357,7 +4363,7 @@ bool sqlite_load_comsys(void)
     {
         clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     // Load channel users.
@@ -4418,7 +4424,7 @@ bool sqlite_load_comsys(void)
     {
         clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     // Sort users on each channel.
@@ -4439,6 +4445,21 @@ bool sqlite_load_comsys(void)
         UTF8 *channel_name;
     };
     std::map<int, std::vector<PlayerAliasEntry>> player_aliases;
+    auto free_player_aliases = [&player_aliases]()
+    {
+        for (auto &pa : player_aliases)
+        {
+            for (auto &e : pa.second)
+            {
+                if (e.channel_name)
+                {
+                    MEMFREE(e.channel_name);
+                    e.channel_name = nullptr;
+                }
+            }
+        }
+        player_aliases.clear();
+    };
 
     if (!sqldb.LoadAllPlayerChannels([&player_aliases](int who, const UTF8 *alias,
         const UTF8 *channel_name)
@@ -4449,9 +4470,10 @@ bool sqlite_load_comsys(void)
         player_aliases[who].push_back(entry);
     }))
     {
+        free_player_aliases();
         clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     for (auto &pa : player_aliases)
@@ -4491,5 +4513,5 @@ bool sqlite_load_comsys(void)
     }
 
     mudstate.bSQLiteLoading = false;
-    return true;
+    return 1;
 }

@@ -1259,7 +1259,7 @@ bool CSQLiteDB::PutMeta(const char *key, int value)
     return SQLITE_DONE == rc;
 }
 
-bool CSQLiteDB::GetMeta(const char *key, int *value)
+CSQLiteDB::MetaGetResult CSQLiteDB::GetMetaEx(const char *key, int *value)
 {
     sqlite3_bind_text(m_stmtMetaGet, 1, key, -1, SQLITE_STATIC);
 
@@ -1268,12 +1268,22 @@ bool CSQLiteDB::GetMeta(const char *key, int *value)
     {
         *value = sqlite3_column_int(m_stmtMetaGet, 0);
         sqlite3_reset(m_stmtMetaGet);
-        return true;
+        return MetaGetResult::Found;
     }
 
     sqlite3_reset(m_stmtMetaGet);
     *value = 0;
-    return false;
+    if (SQLITE_DONE == rc)
+    {
+        return MetaGetResult::NotFound;
+    }
+    fprintf(stderr, "CSQLiteDB::GetMeta(%s): %s\n", key, sqlite3_errmsg(m_db));
+    return MetaGetResult::Error;
+}
+
+bool CSQLiteDB::GetMeta(const char *key, int *value)
+{
+    return MetaGetResult::Found == GetMetaEx(key, value);
 }
 
 // ---------------------------------------------------------------------------

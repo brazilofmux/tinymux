@@ -1405,9 +1405,9 @@ bool sqlite_sync_objects(void);
 bool sqlite_sync_attrnames(void);
 int sqlite_load_game(void);
 bool sqlite_sync_comsys(void);
-bool sqlite_load_comsys(void);
+int sqlite_load_comsys(void);
 bool sqlite_sync_mail(void);
-bool sqlite_load_mail(void);
+int sqlite_load_mail(void);
 
 // From speech.cpp
 //
