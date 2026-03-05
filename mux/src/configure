@@ -713,13 +713,9 @@ SQL_LIBPATH
 SQL_INCLUDE
 SELFCHECK
 INLINESQL
-SQLITE_STORAGE
-SQLITE_ENABLED_FALSE
-SQLITE_ENABLED_TRUE
 STUB_SLAVE
 STUBSLAVE_ENABLED_FALSE
 STUBSLAVE_ENABLED_TRUE
-USE_GANL
 WOD_REALMS
 REALITY_LVLS
 REALITY_ENABLED_FALSE
@@ -3956,9 +3952,6 @@ fi
 
 
 
-USE_GANL="-DUSE_GANL"
-
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable Stub Slave" >&5
 printf %s "checking whether to enable Stub Slave... " >&6; }
@@ -3993,17 +3986,6 @@ else
   STUBSLAVE_ENABLED_FALSE=
 fi
 
-
-
-sqlite_enabled=yes
-SQLITE_STORAGE="-DSQLITE_STORAGE"
- if test "x$sqlite_enabled" = "xyes"; then
-  SQLITE_ENABLED_TRUE=
-  SQLITE_ENABLED_FALSE='#'
-else
-  SQLITE_ENABLED_TRUE='#'
-  SQLITE_ENABLED_FALSE=
-fi
 
 
 
@@ -11228,10 +11210,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${STUBSLAVE_ENABLED_TRUE}" && test -z "${STUBSLAVE_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"STUBSLAVE_ENABLED\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SQLITE_ENABLED_TRUE}" && test -z "${SQLITE_ENABLED_FALSE}"; then
-  as_fn_error $? "conditional \"SQLITE_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then

@@ -94,11 +94,8 @@ host_triplet = @host@
 
 # Add reality levels if enabled
 @REALITY_ENABLED_TRUE@am__append_1 = levels.cpp
-
-# Add SQLite storage backend if enabled
-@SQLITE_ENABLED_TRUE@am__append_2 = sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
 bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) $(am__EXEEXT_1)
-@STUBSLAVE_ENABLED_TRUE@am__append_3 = stubslave
+@STUBSLAVE_ENABLED_TRUE@am__append_2 = stubslave
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -146,10 +143,7 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
-@SQLITE_ENABLED_TRUE@am__objects_2 = sqlitedb.$(OBJEXT) \
-@SQLITE_ENABLED_TRUE@	sqlite_backend.$(OBJEXT) \
-@SQLITE_ENABLED_TRUE@	sqlite/sqlite3.$(OBJEXT)
-am__objects_3 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
+am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
 	command.$(OBJEXT) comsys.$(OBJEXT) conf.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
@@ -171,8 +165,9 @@ am__objects_3 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	unparse.$(OBJEXT) utf8_grapheme.$(OBJEXT) \
 	utf8_normalize.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
 	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
-am_netmux_OBJECTS = $(am__objects_3) version.$(OBJEXT)
+	sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
+	sqlite/sqlite3.$(OBJEXT)
+am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
 netmux_DEPENDENCIES = libmux.a ganl/libganl.a $(am__DEPENDENCIES_1) \
@@ -418,14 +413,12 @@ REALITY_LVLS = @REALITY_LVLS@
 SELFCHECK = @SELFCHECK@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SQLITE_STORAGE = @SQLITE_STORAGE@
 SQL_INCLUDE = @SQL_INCLUDE@
 SQL_LIBPATH = @SQL_LIBPATH@
 SQL_LIBS = @SQL_LIBS@
 SSL = @SSL@
 STRIP = @STRIP@
 STUB_SLAVE = @STUB_SLAVE@
-USE_GANL = @USE_GANL@
 VERSION = @VERSION@
 WOD_REALMS = @WOD_REALMS@
 abs_builddir = @abs_builddir@
@@ -486,10 +479,12 @@ SUBDIRS = tools ganl . modules
 
 # Shared build flags
 AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
+    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 
 # Base source files for building netmux
+
+# SQLite storage backend (always enabled)
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
 	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
@@ -504,7 +499,8 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
 	unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp \
 	utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	$(am__append_1) $(am__append_2)
+	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
+	sqlite/sqlite3.c
 noinst_LIBRARIES = libmux.a
 
 # libmux library

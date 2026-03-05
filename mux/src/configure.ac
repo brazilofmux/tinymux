@@ -46,9 +46,7 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(WOD_REALMS)
 
-USE_GANL="-DUSE_GANL"
-AC_SUBST(USE_GANL)
-
+dnl GANL networking is always enabled.
 dnl Memory-Based Database is no longer supported.
 dnl SQLite is always the storage backend.
 
@@ -74,10 +72,6 @@ AM_CONDITIONAL([STUBSLAVE_ENABLED], [test "x$stubslave_enabled" = "xyes"])
 AC_SUBST(STUB_SLAVE)
 
 dnl SQLite storage backend is always enabled.
-sqlite_enabled=yes
-SQLITE_STORAGE="-DSQLITE_STORAGE"
-AM_CONDITIONAL([SQLITE_ENABLED], [test "x$sqlite_enabled" = "xyes"])
-AC_SUBST(SQLITE_STORAGE)
 
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(

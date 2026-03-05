@@ -4,7 +4,7 @@ SUBDIRS = tools ganl . modules
 
 # Shared build flags
 AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
+    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 # Base source files for building netmux
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
@@ -25,10 +25,8 @@ if REALITY_ENABLED
 NETMUX_SRC += levels.cpp
 endif
 
-# Add SQLite storage backend if enabled
-if SQLITE_ENABLED
+# SQLite storage backend (always enabled)
 NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
-endif
 
 # Build executables
 bin_PROGRAMS = netmux slave
