@@ -105,21 +105,53 @@ static int WhichRealm(dbref what, bool bPeering)
     return realm;
 }
 
+static int GetRealmLevel(dbref executor, dbref thing, const UTF8 *attrname)
+{
+    int atr = get_atr(attrname);
+    if (atr <= 0)
+    {
+        return 0;
+    }
+
+    dbref aowner;
+    int aflags;
+    UTF8 *buff = atr_get("GetRealmLevel", thing, atr, &aowner, &aflags);
+    if (!*buff)
+    {
+        free_lbuf(buff);
+        return 0;
+    }
+
+    int result;
+    if (is_integer(buff, nullptr))
+    {
+        // Fast path: plain integer, no evaluation needed.
+        //
+        result = mux_atol(buff);
+    }
+    else
+    {
+        // Evaluate as softcode expression.
+        //
+        UTF8 *ebuf = alloc_lbuf("GetRealmLevel.eval");
+        UTF8 *ep = ebuf;
+        mux_exec(buff, LBUF_SIZE-1, ebuf, &ep, executor, thing, executor,
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+            nullptr, 0);
+        *ep = '\0';
+        result = mux_atol(ebuf);
+        free_lbuf(ebuf);
+    }
+    free_lbuf(buff);
+    return result;
+}
+
 static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
 {
     int iReturn = REALM_DO_NORMALLY_SEEN;
     if (isObfuscate(lookee))
     {
-        UTF8 *buff;
-        int iObfuscateLevel = 0;
-        dbref owner;
-        int flags;
-        buff = atr_get("HandleObfuscation.126", lookee, get_atr(T("OBF_LEVEL")), &owner, &flags);
-        if (*buff)
-        {
-            iObfuscateLevel = mux_atol(buff);
-        }
-        free_lbuf(buff);
+        int iObfuscateLevel = GetRealmLevel(looker, lookee, T("OBF_LEVEL"));
 
         // For OBF_LEVELS of 0, 1, and 2, we show the regular description.
         // 3 and above start showing a different OBFDESC.
@@ -133,12 +165,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
             int iHeightenSensesLevel = 0;
             if (isHeightenedSenses(looker))
             {
-                buff = atr_get("HandleObfuscation.145", looker, get_atr(T("HSS_LEVEL")), &owner, &flags);
-                if (*buff)
-                {
-                    iHeightenSensesLevel = mux_atol(buff);
-                }
-                free_lbuf(buff);
+                iHeightenSensesLevel = GetRealmLevel(looker, looker, T("HSS_LEVEL"));
             }
 
             if (iHeightenSensesLevel < iObfuscateLevel)
