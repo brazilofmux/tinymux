@@ -338,5 +338,29 @@ extern const unsigned char cl_extpict_itt[256];
 extern const unsigned short cl_extpict_sot[44];
 extern const unsigned char cl_extpict_sbt[510];
 
+// utf/tr_ducet.txt
+//
+// 38443 code points.
+// 702 states, 206 columns, 87942 bytes
+//
+#define TR_DUCET_START_STATE (0)
+#define TR_DUCET_ACCEPTING_STATES_START (702)
+extern const unsigned char tr_ducet_itt[256];
+extern const unsigned short tr_ducet_sot[702];
+extern const unsigned short tr_ducet_sbt[43141];
+
+// utf/tr_ducet_contract.txt
+//
+// 956 composition pairs.
+// 294 states, 77 columns, 6470 bytes
+//
+#define TR_DUCET_CONTRACT_START_STATE (0)
+#define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (294)
+extern const unsigned char tr_ducet_contract_itt[256];
+extern const unsigned short tr_ducet_contract_sot[294];
+extern const unsigned short tr_ducet_contract_sbt[2813];
+#define TR_DUCET_CONTRACT_NFC_COMPOSE_RESULTS (953)
+extern const UTF32 tr_ducet_contract_nfc_compose_result[954];
+
 #endif // UTF8TABLES_H
 

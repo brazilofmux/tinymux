@@ -32,8 +32,8 @@ typedef struct OutputStatus
     int SizeOfMachine;
 } OutputStatus;
 
-#define NUM_STATES 20000
-#define NUM_ACCEPTING_STATES 20000
+#define NUM_STATES 65536
+#define NUM_ACCEPTING_STATES 65536
 
 class StateMachine
 {

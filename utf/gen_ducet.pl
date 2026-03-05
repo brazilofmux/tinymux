@@ -127,7 +127,8 @@ printf STDERR "Wrote tr_ducet.txt: %d entries, max index %d.\n",
 
 open my $out2, '>', 'tr_ducet_contract.txt' or die "Cannot write tr_ducet_contract.txt: $!\n";
 for my $e (@contract2_entries) {
-    printf $out2 "%04X %04X;%d\n", $e->[0][0], $e->[0][1], $e->[1];
+    # CE index emitted as hex because pairs.exe parses field 1 as hex.
+    printf $out2 "%04X %04X;%04X\n", $e->[0][0], $e->[0][1], $e->[1];
 }
 close $out2;
 printf STDERR "Wrote tr_ducet_contract.txt: %d entries.\n",
