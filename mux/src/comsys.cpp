@@ -20,6 +20,75 @@ static comsys_t* comsys_table[NUM_COMSYS];
 #define DFLT_RECALL_REQUEST 10
 #define MAX_RECALL_REQUEST  200
 
+// ---------------------------------------------------------------------------
+// SQLite write-through helpers for comsys mutations.
+// ---------------------------------------------------------------------------
+
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+
+#include "sqlite_backend.h"
+
+#define SQLITE_COMSYS_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+
+static void sqlite_wt_channel(struct channel *ch)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.SyncChannel(ch->name, ch->header,
+        ch->type, ch->temp1, ch->temp2,
+        ch->charge, ch->charge_who, ch->amount_col,
+        ch->num_messages, ch->chan_obj);
+}
+
+static void sqlite_wt_delete_channel(const UTF8 *name)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeleteChannel(name);
+}
+
+static void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *user)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.SyncChannelUser(channel_name, user->who,
+        user->bUserIsOn, user->ComTitleStatus,
+        user->bGagJoinLeave,
+        user->title ? user->title : T(""));
+}
+
+static void sqlite_wt_delete_channel_user(const UTF8 *channel_name, int who)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeleteChannelUser(channel_name, who);
+}
+
+static void sqlite_wt_player_channel(int who, const UTF8 *alias, const UTF8 *channel_name)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.SyncPlayerChannel(who, alias, channel_name);
+}
+
+static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
+{
+    if (!SQLITE_COMSYS_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeletePlayerChannel(who, alias);
+}
+
+#else
+
+static inline void sqlite_wt_channel(struct channel *) {}
+static inline void sqlite_wt_delete_channel(const UTF8 *) {}
+static inline void sqlite_wt_channel_user(const UTF8 *, struct comuser *) {}
+static inline void sqlite_wt_delete_channel_user(const UTF8 *, int) {}
+static inline void sqlite_wt_player_channel(int, const UTF8 *, const UTF8 *) {}
+static inline void sqlite_wt_delete_player_channel(int, const UTF8 *) {}
+
+#endif // SQLITE_STORAGE && !MEMORY_BASED
+
 // Return value is a static buffer.
 //
 static UTF8* RestrictTitleValue(const UTF8* pTitleRequest)
@@ -38,6 +107,7 @@ static void do_setcomtitlestatus(const dbref player, struct channel* ch, const b
     if (ch && user)
     {
         user->ComTitleStatus = status;
+        sqlite_wt_channel_user(ch->name, user);
     }
 }
 
@@ -47,6 +117,7 @@ static void do_setgagjoinleavestatus(const dbref player, struct channel* ch, con
     if (ch && user)
     {
         user->bGagJoinLeave = status;
+        sqlite_wt_channel_user(ch->name, user);
     }
 }
 
@@ -62,6 +133,7 @@ static void do_setnewtitle(const dbref player, struct channel* ch, const UTF8* p
             user->title = nullptr;
         }
         user->title = StringClone(pValidatedTitle);
+        sqlite_wt_channel_user(ch->name, user);
     }
 }
 
@@ -1663,6 +1735,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
             return;
         }
         ch->amount_col += ch->charge;
+        sqlite_wt_channel(ch);
         giveto(ch->charge_who, ch->charge);
 
         // BuildChannelMessage allocates messNormal and messNoComtitle,
@@ -1697,6 +1770,7 @@ void SendChannelMessage
     //
     const bool bSpoof = ((ch->type & CHANNEL_SPOOF) != 0);
     ch->num_messages++;
+    sqlite_wt_channel(ch);
 
     for (struct comuser* user = ch->on_users; user; user = user->on_next)
     {
@@ -1874,11 +1948,13 @@ void do_joinchannel(const dbref player, struct channel* ch)
             user->on_next = ch->on_users;
             ch->on_users = user;
         }
+        sqlite_wt_channel_user(ch->name, user);
         attr = A_COMJOIN;
     }
     else if (!user->bUserIsOn)
     {
         user->bUserIsOn = true;
+        sqlite_wt_channel_user(ch->name, user);
         attr = A_COMON;
     }
     else
@@ -1917,6 +1993,7 @@ void do_leavechannel(dbref player, struct channel* ch)
         }
         ChannelMOTD(ch->chan_obj, user->who, A_COMOFF);
         user->bUserIsOn = false;
+        sqlite_wt_channel_user(ch->name, user);
     }
 }
 
@@ -2373,6 +2450,8 @@ void do_addcom
     *(c->alias + where * ALIAS_SIZE + nValidAlias) = '\0';
     c->channels[where] = StringClone(channel);
 
+    sqlite_wt_player_channel(executor, pValidAlias, channel);
+
     if (!select_user(ch, executor))
     {
         do_joinchannel(executor, ch);
@@ -2431,6 +2510,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                                              arg1, c->channels[i]));
             }
 
+            sqlite_wt_delete_player_channel(executor, arg1);
             c->channels[i] = nullptr;
             c->numchannels--;
 
@@ -2481,6 +2561,7 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
                 }
 
                 ChannelMOTD(ch->chan_obj, user->who, A_COMLEAVE);
+                sqlite_wt_delete_channel_user(ch->name, player);
 
                 if (user->title)
                 {
@@ -2601,6 +2682,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
 
     const vector<UTF8> channel_name(newchannel->name, newchannel->name + nNameNoANSI);
     mudstate.channel_names.insert(make_pair(channel_name, newchannel));
+    sqlite_wt_channel(newchannel);
 
     // Report the channel creation using non-ANSI name.
     //
@@ -2650,6 +2732,7 @@ void do_destroychannel
         return;
     }
     num_channels--;
+    sqlite_wt_delete_channel(ch->name);
 
     for (int j = 0; j < ch->num_users; j++)
     {
@@ -2889,6 +2972,7 @@ void do_channelnuke(const dbref player)
             if (player == ch->charge_who)
             {
                 num_channels--;
+                sqlite_wt_delete_channel(ch->name);
 
                 if (nullptr != ch->users)
                 {
@@ -3394,6 +3478,7 @@ void do_editchannel
         }
         break;
     }
+    sqlite_wt_channel(ch);
 }
 
 bool test_join_access(const dbref player, struct channel* chan)
@@ -3664,6 +3749,7 @@ void do_chopen
             msg = tprintf(T("@cset: Failed.  Is logging enabled for %s?"), chan);
         }
     }
+    sqlite_wt_channel(ch);
     raw_notify(executor, msg);
 }
 
@@ -3809,6 +3895,7 @@ void do_cheader(const dbref player, UTF8* channel, const UTF8* header)
                                                     MAX_HEADER_LEN, MAX_HEADER_LEN);
         memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
     }
+    sqlite_wt_channel(ch);
 }
 
 struct chanlist_node
@@ -4184,7 +4271,7 @@ FUNCTION(fun_chanobj)
 }
 
 // ---------------------------------------------------------------------------
-// SQLite comsys bulk sync and load (Phase 1).
+// SQLite comsys bulk sync and load.
 // ---------------------------------------------------------------------------
 
 #if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
@@ -4253,11 +4340,13 @@ bool sqlite_load_comsys(void)
         return false;
     }
 
+    mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
     int has_comsys = 0;
     if (!sqldb.GetMeta("has_comsys", &has_comsys) || 0 == has_comsys)
     {
+        mudstate.bSQLiteLoading = false;
         return false;
     }
 
@@ -4420,6 +4509,7 @@ bool sqlite_load_comsys(void)
         add_comsys(c);
     }
 
+    mudstate.bSQLiteLoading = false;
     return true;
 }
 

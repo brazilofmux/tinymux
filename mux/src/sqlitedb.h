@@ -120,7 +120,7 @@ public:
     bool Commit();
     bool Rollback();
 
-    // Comsys bulk operations (Phase 1: dump-time sync, startup load).
+    // Comsys operations (bulk sync + write-through).
     //
     bool SyncChannel(const UTF8 *name, const UTF8 *header,
                      int type, int temp1, int temp2,
@@ -131,6 +131,10 @@ public:
                          bool gag_join_leave, const UTF8 *title);
     bool SyncPlayerChannel(int who, const UTF8 *alias,
                            const UTF8 *channel_name);
+    bool DeleteChannel(const UTF8 *name);
+    bool DeleteChannelUser(const UTF8 *channel_name, int who);
+    bool DeletePlayerChannel(int who, const UTF8 *alias);
+    bool DeleteAllPlayerChannels(int who);
     bool ClearComsysTables();
 
     typedef std::function<void(const UTF8 *name, const UTF8 *header,
@@ -147,17 +151,25 @@ public:
         const UTF8 *channel_name)> PlayerChannelCallback;
     bool LoadAllPlayerChannels(PlayerChannelCallback cb);
 
-    // Mail bulk operations (Phase 1: dump-time sync, startup load).
+    // Mail operations (bulk sync + write-through).
     //
     bool SyncMailHeader(int to_player, int from_player, int body_number,
                         const UTF8 *tolist, const UTF8 *time_str,
                         const UTF8 *subject, int read_flags);
+    int64_t InsertMailHeaderReturningId(int to_player, int from_player,
+                        int body_number, const UTF8 *tolist,
+                        const UTF8 *time_str, const UTF8 *subject,
+                        int read_flags);
+    bool UpdateMailReadFlags(int64_t rowid, int read_flags);
+    bool DeleteMailHeader(int64_t rowid);
+    bool DeleteAllMailHeaders(int to_player);
     bool SyncMailBody(int number, const UTF8 *message);
+    bool DeleteMailBody(int number);
     bool SyncMailAlias(int owner, const UTF8 *name, const UTF8 *desc,
                        int desc_width, const UTF8 *members);
     bool ClearMailTables();
 
-    typedef std::function<void(int to_player, int from_player,
+    typedef std::function<void(int64_t rowid, int to_player, int from_player,
         int body_number, const UTF8 *tolist, const UTF8 *time_str,
         const UTF8 *subject, int read_flags)> MailHeaderCallback;
     bool LoadAllMailHeaders(MailHeaderCallback cb);
@@ -238,11 +250,20 @@ private:
     sqlite3_stmt *m_stmtChannelLoadAll;
     sqlite3_stmt *m_stmtChannelUserLoadAll;
     sqlite3_stmt *m_stmtPlayerChannelLoadAll;
+    sqlite3_stmt *m_stmtChannelDelete;
+    sqlite3_stmt *m_stmtChannelUserDelete;
+    sqlite3_stmt *m_stmtPlayerChannelDelete;
+    sqlite3_stmt *m_stmtPlayerChannelDeleteAll;
 
     // Mail statements.
     //
     sqlite3_stmt *m_stmtMailHeaderSync;
+    sqlite3_stmt *m_stmtMailHeaderInsertRet;
+    sqlite3_stmt *m_stmtMailHeaderUpdateFlags;
+    sqlite3_stmt *m_stmtMailHeaderDelete;
+    sqlite3_stmt *m_stmtMailHeaderDeleteAll;
     sqlite3_stmt *m_stmtMailBodySync;
+    sqlite3_stmt *m_stmtMailBodyDelete;
     sqlite3_stmt *m_stmtMailAliasSync;
     sqlite3_stmt *m_stmtMailHeaderLoadAll;
     sqlite3_stmt *m_stmtMailBodyLoadAll;

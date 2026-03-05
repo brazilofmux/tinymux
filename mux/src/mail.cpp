@@ -70,6 +70,71 @@ static int ma_top = 0;
 static malias_t **malias   = nullptr;
 static MAILBODY *mail_list = nullptr;
 
+// ---------------------------------------------------------------------------
+// SQLite write-through helpers for mail mutations.
+// ---------------------------------------------------------------------------
+
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+
+#include "sqlite_backend.h"
+
+#define SQLITE_MAIL_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+
+static void sqlite_wt_insert_mail(struct mail *mp)
+{
+    if (!SQLITE_MAIL_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
+        mp->to, mp->from, mp->number,
+        mp->tolist, mp->time, mp->subject, mp->read);
+}
+
+static void sqlite_wt_update_mail_flags(struct mail *mp)
+{
+    if (!SQLITE_MAIL_WRITABLE() || mp->sqlite_id < 0) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.UpdateMailReadFlags(mp->sqlite_id, mp->read);
+}
+
+static void sqlite_wt_delete_mail(struct mail *mp)
+{
+    if (!SQLITE_MAIL_WRITABLE() || mp->sqlite_id < 0) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeleteMailHeader(mp->sqlite_id);
+}
+
+static void sqlite_wt_delete_all_mail(int to_player)
+{
+    if (!SQLITE_MAIL_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeleteAllMailHeaders(to_player);
+}
+
+static void sqlite_wt_mail_body(int number, const UTF8 *message)
+{
+    if (!SQLITE_MAIL_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.SyncMailBody(number, message);
+}
+
+static void sqlite_wt_delete_mail_body(int number)
+{
+    if (!SQLITE_MAIL_WRITABLE()) return;
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.DeleteMailBody(number);
+}
+
+#else
+
+static inline void sqlite_wt_insert_mail(struct mail *) {}
+static inline void sqlite_wt_update_mail_flags(struct mail *) {}
+static inline void sqlite_wt_delete_mail(struct mail *) {}
+static inline void sqlite_wt_delete_all_mail(int) {}
+static inline void sqlite_wt_mail_body(int, const UTF8 *) {}
+static inline void sqlite_wt_delete_mail_body(int) {}
+
+#endif // SQLITE_STORAGE && !MEMORY_BASED
+
 // Handling functions for the database of mail messages.
 //
 
@@ -160,6 +225,10 @@ static void MessageReferenceCheck(int number)
 static void MessageReferenceDec(int number)
 {
     mail_list[number].m_nRefs--;
+    if (mail_list[number].m_nRefs <= 0)
+    {
+        sqlite_wt_delete_mail_body(number);
+    }
     MessageReferenceCheck(number);
 }
 
@@ -220,6 +289,7 @@ static int MessageAdd(UTF8 *pMessage)
     pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
     pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
     MessageReferenceInc(i);
+    sqlite_wt_mail_body(i, pMessage);
     return i;
 }
 
@@ -1152,6 +1222,7 @@ static void do_mail_flags(dbref player, UTF8 *msglist, mail_flag flag, bool nega
                 {
                     mp->read |= flag;
                 }
+                sqlite_wt_update_mail_flags(mp);
 
                 switch (flag)
                 {
@@ -1246,6 +1317,7 @@ static void do_mail_file(dbref player, UTF8 *msglist, UTF8 *folder)
                 //
                 mp->read &= M_FMASK;
                 mp->read |= FolderBit(foldernum);
+                sqlite_wt_update_mail_flags(mp);
                 raw_notify(player, tprintf(T("MAIL: Msg %d filed in folder %d"), i,
                             foldernum));
             }
@@ -1556,6 +1628,7 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
                     // Mark message as read.
                     //
                     mp->read |= M_ISREAD;
+                    sqlite_wt_update_mail_flags(mp);
                 }
             }
         }
@@ -1629,6 +1702,7 @@ static void do_mail_next(dbref player)
                 // Mark message as read.
                 //
                 mp->read |= M_ISREAD;
+                sqlite_wt_update_mail_flags(mp);
                 return;
             }
         }
@@ -2580,6 +2654,7 @@ static void send_mail
     }
 
     newp->to = target;
+    newp->sqlite_id = -1;
 
     // HACK: Allow @mail/quick, if player is an object, then the
     // object's owner is the sender, if the owner is a wizard, then
@@ -2651,6 +2726,7 @@ static void send_mail
     //
     MailList ml(target);
     ml.AppendItem(newp);
+    sqlite_wt_insert_mail(newp);
 
     // Notify people.
     //
@@ -3356,6 +3432,7 @@ static void load_mail_V6(FILE *fp)
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         mp->subject = StringCloneLen(pBuffer, nBuffer);
         mp->read    = getref(fp);
+        mp->sqlite_id = -1;
 
         MailList ml(mp->to);
         ml.AppendItem(mp);
@@ -3439,6 +3516,7 @@ static void load_mail_V5(FILE *fp)
         mp->subject = StringCloneLen(pBufferUnicode, nBufferUnicode);
 
         mp->read    = getref(fp);
+        mp->sqlite_id = -1;
 
         MailList ml(mp->to);
         ml.AppendItem(mp);
@@ -5395,6 +5473,7 @@ void MailList::RemoveItem(void)
 
     m_mi->next = nullptr;
     m_mi->prev = nullptr;
+    sqlite_wt_delete_mail(m_mi);
     MessageReferenceDec(m_mi->number);
     MEMFREE(m_mi->subject);
     m_mi->subject = nullptr;
@@ -5440,6 +5519,7 @@ void MailList::RemoveAll(void)
 
     if (nullptr != miHead)
     {
+        sqlite_wt_delete_all_mail(m_player);
         mudstate.mail_htab.erase(it_removeall);
     }
 
@@ -5596,8 +5676,6 @@ void do_folder
 
 #if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
 
-#include "sqlite_backend.h"
-
 void sqlite_sync_mail(void)
 {
     if (!g_pSQLiteBackend)
@@ -5620,7 +5698,8 @@ void sqlite_sync_mail(void)
             struct mail *mp;
             for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
             {
-                sqldb.SyncMailHeader(mp->to, mp->from, mp->number,
+                mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
+                    mp->to, mp->from, mp->number,
                     mp->tolist, mp->time, mp->subject, mp->read);
             }
         }
@@ -5671,11 +5750,13 @@ bool sqlite_load_mail(void)
         return false;
     }
 
+    mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
     int mail_top = 0;
     if (!sqldb.GetMeta("mail_db_top", &mail_top))
     {
+        mudstate.bSQLiteLoading = false;
         return false;
     }
 
@@ -5690,7 +5771,7 @@ bool sqlite_load_mail(void)
 
     // Load mail headers.
     //
-    sqldb.LoadAllMailHeaders([](int to_player, int from_player,
+    sqldb.LoadAllMailHeaders([](int64_t rowid, int to_player, int from_player,
         int body_number, const UTF8 *tolist, const UTF8 *time_str,
         const UTF8 *subject, int read_flags)
     {
@@ -5709,14 +5790,15 @@ bool sqlite_load_mail(void)
             return;
         }
 
-        mp->to      = to_player;
-        mp->from    = from_player;
-        mp->number  = body_number;
+        mp->to        = to_player;
+        mp->from      = from_player;
+        mp->number    = body_number;
         MessageReferenceInc(mp->number);
-        mp->tolist  = StringClone(tolist);
-        mp->time    = StringClone(time_str);
-        mp->subject = StringClone(subject);
-        mp->read    = read_flags;
+        mp->tolist    = StringClone(tolist);
+        mp->time      = StringClone(time_str);
+        mp->subject   = StringClone(subject);
+        mp->read      = read_flags;
+        mp->sqlite_id = rowid;
 
         MailList ml(mp->to);
         ml.AppendItem(mp);
@@ -5792,6 +5874,7 @@ bool sqlite_load_mail(void)
         }
     }
 
+    mudstate.bSQLiteLoading = false;
     return true;
 }
 

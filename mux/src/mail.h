@@ -58,6 +58,7 @@ struct mail
     UTF8        *subject;
     UTF8        *tolist;
     int          read;
+    int64_t      sqlite_id;   // SQLite rowid for write-through (-1 if unset)
 };
 
 struct mail_selector
