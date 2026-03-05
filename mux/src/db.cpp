@@ -3687,6 +3687,29 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
 #ifndef MEMORY_BASED
 int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
 {
+#if defined(SQLITE_STORAGE)
+    UNUSED_PARAMETER(game_pag_file);
+    UNUSED_PARAMETER(nCachePages);
+    if (mudstate.bStandAlone)
+    {
+        Log.tinyprintf(T("Opening SQLite (from %s)" ENDLINE), game_dir_file);
+    }
+    int cc = cache_init(game_dir_file, nullptr, 0);
+    if (cc != HF_OPEN_STATUS_ERROR)
+    {
+        if (mudstate.bStandAlone)
+        {
+            Log.tinyprintf(T("Done opening SQLite." ENDLINE));
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_text(T("Using SQLite storage backend."));
+            ENDLOG;
+        }
+        db_free();
+    }
+#else
     if (mudstate.bStandAlone)
     {
         Log.tinyprintf(T("Opening (%s,%s)" ENDLINE), game_dir_file, game_pag_file);
@@ -3708,6 +3731,7 @@ int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
         }
         db_free();
     }
+#endif
     return cc;
 }
 #endif // !MEMORY_BASED

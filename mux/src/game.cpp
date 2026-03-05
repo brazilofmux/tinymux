@@ -1977,6 +1977,13 @@ static int load_game(int ccPageFile)
     f = 0;
 
 #ifndef MEMORY_BASED
+#if defined(SQLITE_STORAGE)
+    // Bulk-sync all object metadata from db[] into SQLite.
+    // This populates the objects table from the flatfile data.
+    //
+    sqlite_sync_objects();
+    sqlite_sync_attrnames();
+#else
     if (db_flags & V_DATABASE)
     {
         // It loaded an output file.
@@ -1999,13 +2006,7 @@ static int load_game(int ccPageFile)
             ENDLOG;
         }
     }
-#if defined(SQLITE_STORAGE)
-    // Bulk-sync all object metadata from db[] into SQLite.
-    // This populates the objects table from the flatfile data.
-    //
-    sqlite_sync_objects();
-    sqlite_sync_attrnames();
-#endif
+#endif // SQLITE_STORAGE
 #endif // !MEMORY_BASED
 
     if (mudconf.have_comsys)
@@ -2370,6 +2371,41 @@ static void dbconvert(void)
     //
     init_attrtab();
 
+#if defined(SQLITE_STORAGE)
+    // In SQLite mode, we pass the basename with .dir suffix so that
+    // cache_init() can derive the .sqlite path from it.
+    //
+    UTF8 dirfile[SIZEOF_PATHNAME];
+    UTF8 *dirfile_c = dirfile;
+    safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str(T(".dir"), dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    *dirfile_c = '\0';
+
+    int cc = init_dbfile(dirfile, nullptr, 0);
+    if (cc == HF_OPEN_STATUS_ERROR)
+    {
+        Log.tinyprintf(T("Can\xE2\x80\x99t open SQLite database.\n"));
+        exit(1);
+    }
+    else if (cc == HF_OPEN_STATUS_OLD)
+    {
+        if (setflags == OUTPUT_FLAGS)
+        {
+            Log.tinyprintf(T("Would overwrite existing SQLite database.\n"));
+            CLOSE;
+            exit(1);
+        }
+    }
+    else if (cc == HF_OPEN_STATUS_NEW)
+    {
+        if (setflags == UNLOAD_FLAGS)
+        {
+            Log.tinyprintf(T("SQLite database is empty.\n"));
+            CLOSE;
+            exit(1);
+        }
+    }
+#else
     UTF8 dirfile[SIZEOF_PATHNAME];
     UTF8 *dirfile_c = dirfile;
     safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
@@ -2406,6 +2442,7 @@ static void dbconvert(void)
             exit(1);
         }
     }
+#endif
 
 #if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     if (  nullptr == standalone_infile
@@ -3016,16 +3053,27 @@ int DCL_CDECL main(int argc, char *argv[])
 #else // MEMORY_BASED
     if (bMinDB)
     {
+#if defined(SQLITE_STORAGE)
+        // Remove the SQLite database to start fresh.
+        //
+        UTF8 sqlitefile[SIZEOF_PATHNAME];
+        mux_strncpy(sqlitefile, mudconf.game_dir, sizeof(sqlitefile) - 1);
+        size_t n = strlen(reinterpret_cast<char *>(sqlitefile));
+        if (n > 4 && memcmp(sqlitefile + n - 4, ".dir", 4) == 0)
+        {
+            memcpy(sqlitefile + n - 4, ".sqlite", 8);
+        }
+        RemoveFile(sqlitefile);
+#else
         RemoveFile(mudconf.game_dir);
         RemoveFile(mudconf.game_pag);
+#endif
     }
     int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, mudconf.cache_pages);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text(T("Couldn\xE2\x80\x99t load text database: "));
-        log_text(mudconf.game_dir);
-        log_text(mudconf.game_pag);
+        log_text(T("Couldn\xE2\x80\x99t open storage backend."));
         ENDLOG;
         return 2;
     }

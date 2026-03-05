@@ -111,10 +111,10 @@ typedef struct tagHPHeapNode
 
 #define HP_MIN_HEAP_ALLOC HP_SIZEOF_HEAPNODE
 
-#if !defined(MEMORY_BASED)
+#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
 typedef unsigned long HF_FILEOFFSET, *HF_PFILEOFFSET;
 #define HF_SIZEOF_FILEOFFSET sizeof(HF_FILEOFFSET)
-#endif // MEMORY_BASED
+#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
 class CHashPage
 {
@@ -165,10 +165,10 @@ public:
     void HeapFree(uint32_t iDir);
     void HeapUpdate(uint32_t iDir, HP_HEAPLENGTH nRecord, void *pRecord);
 
-#if !defined(MEMORY_BASED)
+#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
     bool WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
     bool ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
-#endif // MEMORY_BASED
+#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
     uint32_t GetDepth(void);
     bool Split(CHashPage &hp0, CHashPage &hp1);
@@ -180,7 +180,13 @@ public:
 #define HF_FIND_FIRST  HP_DIR_EMPTY
 #define HF_FIND_END    HP_DIR_EMPTY
 
-#if !defined(MEMORY_BASED)
+// Status codes returned by cache_init() for both CHashFile and SQLite backends.
+//
+#define HF_OPEN_STATUS_ERROR -1
+#define HF_OPEN_STATUS_NEW    0
+#define HF_OPEN_STATUS_OLD    1
+
+#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
 
 #define HF_CACHE_EMPTY       0
 #define HF_CACHE_CLEAN       1
@@ -231,9 +237,6 @@ private:
 
 public:
     CHashFile(void);
-#define HF_OPEN_STATUS_ERROR -1
-#define HF_OPEN_STATUS_NEW    0
-#define HF_OPEN_STATUS_OLD    1
     int Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePages);
     bool Insert(HP_HEAPLENGTH nRecord, uint32_t nHash, void *pRecord);
     uint32_t FindFirstKey(uint32_t nHash);
@@ -246,7 +249,7 @@ public:
     ~CHashFile(void);
 };
 
-#endif // MEMORY_BASED
+#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
 typedef CHashPage *pCHashPage;
 
