@@ -936,9 +936,10 @@ bool CSQLiteDB::LoadObject(dbref obj, ObjectRecord &rec)
 
 bool CSQLiteDB::LoadAllObjects(ObjectCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtObjLoadAll);
+        rc = sqlite3_step(m_stmtObjLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -966,6 +967,11 @@ bool CSQLiteDB::LoadAllObjects(ObjectCallback cb)
     }
 
     sqlite3_reset(m_stmtObjLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllObjects: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
@@ -1200,9 +1206,10 @@ bool CSQLiteDB::DelAttrName(int attrnum)
 
 bool CSQLiteDB::LoadAllAttrNames(AttrNameCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtAttrNameLoadAll);
+        rc = sqlite3_step(m_stmtAttrNameLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1217,6 +1224,11 @@ bool CSQLiteDB::LoadAllAttrNames(AttrNameCallback cb)
     }
 
     sqlite3_reset(m_stmtAttrNameLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllAttrNames: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 

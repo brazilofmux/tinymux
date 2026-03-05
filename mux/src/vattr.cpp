@@ -50,6 +50,11 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
     {
         string key(reinterpret_cast<const char *>(pName), nName);
         auto [it, inserted] = mudstate.vattr_name_map.emplace(move(key), number);
+        if (!inserted)
+        {
+            MEMFREE(vp);
+            return static_cast<ATTR *>(anum_table[it->second]);
+        }
 
         // ATTR::name points directly into the map key.  unordered_map
         // guarantees pointer stability for existing elements across
@@ -59,6 +64,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
         vp->name = reinterpret_cast<const UTF8 *>(it->first.c_str());
         vp->flags = flags;
         vp->number = number;
+        mudstate.vattr_numbers.insert(number);
 
         anum_extend(vp->number);
         anum_set(vp->number, static_cast<ATTR *>(vp));
@@ -99,6 +105,7 @@ void vattr_delete_LEN(UTF8 *pName, size_t nName)
         ATTR *vp = static_cast<ATTR *>(anum_table[anum]);
         anum_set(anum, nullptr);
         mudstate.vattr_name_map.erase(it);
+        mudstate.vattr_numbers.erase(anum);
         if (  !mudstate.bSQLiteLoading
            && anum >= A_USER_START)
         {
@@ -154,15 +161,11 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
 
 ATTR *vattr_first(void)
 {
-    int best = INT_MAX;
-    for (const auto& entry : mudstate.vattr_name_map)
+    if (mudstate.vattr_numbers.empty())
     {
-        if (entry.second > 0 && entry.second < best)
-        {
-            best = entry.second;
-        }
+        return nullptr;
     }
-    return (best == INT_MAX) ? nullptr : static_cast<ATTR *>(anum_table[best]);
+    return static_cast<ATTR *>(anum_table[*mudstate.vattr_numbers.begin()]);
 }
 
 ATTR *vattr_next(ATTR *vp)
@@ -172,14 +175,10 @@ ATTR *vattr_next(ATTR *vp)
         return vattr_first();
     }
 
-    int best = INT_MAX;
-    for (const auto& entry : mudstate.vattr_name_map)
+    auto it = mudstate.vattr_numbers.upper_bound(vp->number);
+    if (it == mudstate.vattr_numbers.end())
     {
-        if (  entry.second > vp->number
-           && entry.second < best)
-        {
-            best = entry.second;
-        }
+        return nullptr;
     }
-    return (best == INT_MAX) ? nullptr : static_cast<ATTR *>(anum_table[best]);
+    return static_cast<ATTR *>(anum_table[*it]);
 }

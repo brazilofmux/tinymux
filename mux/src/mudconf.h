@@ -6,6 +6,8 @@
 #ifndef MUDCONF_H
 #define MUDCONF_H
 
+#include <set>
+
 struct PRONOUN_SET
 {
     UTF8 subjective[64];    // %s
@@ -582,6 +584,7 @@ struct statedata
     StringPtrMap reference_htab; /* @reference hashtable */
     StringPtrMap ufunc_htab;    /* Local functions hashtable */
     std::unordered_map<std::string, int> vattr_name_map; /* User attribute names */
+    std::set<int> vattr_numbers; /* Ordered user attribute numbers */
 
     CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.
     CBitField bfNoCommands;     // Cache knowledge that there are no $-Commands.

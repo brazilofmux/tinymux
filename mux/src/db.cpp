@@ -3820,15 +3820,29 @@ bool sqlite_load_game(void)
     // Load attribute names first (before objects, since objects
     // reference attribute names for Name, etc.)
     //
-    sqldb.LoadAllAttrNames(
-        [](int attrnum, const char *name, int flags)
+    int max_attrnum_loaded = A_USER_START - 1;
+    if (!sqldb.LoadAllAttrNames(
+        [&max_attrnum_loaded](int attrnum, const char *name, int flags)
         {
             anum_extend(attrnum);
             vattr_define_LEN(
                 reinterpret_cast<const UTF8 *>(name),
                 strlen(name), attrnum, flags);
-        });
+            if (attrnum > max_attrnum_loaded)
+            {
+                max_attrnum_loaded = attrnum;
+            }
+        }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
+    if (attr_next_val <= max_attrnum_loaded)
+    {
+        attr_next_val = max_attrnum_loaded + 1;
+        sqldb.PutMeta("attr_next", attr_next_val);
+    }
     mudstate.attr_next = attr_next_val;
 
     // Grow db[] to the right size.
@@ -3837,7 +3851,7 @@ bool sqlite_load_game(void)
 
     // Load all objects from the objects table.
     //
-    sqldb.LoadAllObjects(
+    if (!sqldb.LoadAllObjects(
         [](const CSQLiteDB::ObjectRecord &rec)
         {
             dbref i = rec.dbref_val;
@@ -3861,7 +3875,11 @@ bool sqlite_load_game(void)
             {
                 db[i].fs.word[FLAG_WORD2] &= ~CONNECTED;
             }
-        });
+        }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
     mudstate.bSQLiteLoading = false;
 
     // Load player names.
