@@ -97,8 +97,25 @@ static void reconcile_failed_create_backend(dbref obj)
 
     if (sqldb.Begin())
     {
+        CSQLiteDB::ObjectRecord rec;
+        rec.dbref_val = obj;
+        rec.location  = db[obj].location;
+        rec.contents  = db[obj].contents;
+        rec.exits     = db[obj].exits;
+        rec.next      = db[obj].next;
+        rec.link      = db[obj].link;
+        rec.owner     = db[obj].owner;
+        rec.parent    = db[obj].parent;
+        rec.zone      = db[obj].zone;
+        rec.pennies   = Pennies(obj);
+        rec.flags1    = db[obj].fs.word[FLAG_WORD1];
+        rec.flags2    = db[obj].fs.word[FLAG_WORD2];
+        rec.flags3    = db[obj].fs.word[FLAG_WORD3];
+        rec.powers1   = db[obj].powers;
+        rec.powers2   = db[obj].powers2;
+
         if (  sqldb.DelAllAttributes(obj)
-           && sqldb.DeleteObject(obj)
+           && sqldb.InsertObject(rec)
            && sqldb.PutMeta("db_top", mudstate.db_top)
            && sqldb.Commit())
         {
@@ -112,8 +129,28 @@ static void reconcile_failed_create_backend(dbref obj)
 
     if (!bCleaned)
     {
+        bool bAttrsCleared = false;
+        if (sqldb.Begin())
+        {
+            if (sqldb.DelAllAttributes(obj) && sqldb.Commit())
+            {
+                bAttrsCleared = true;
+            }
+            else
+            {
+                sqldb.Rollback();
+            }
+        }
+
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-        log_text(T("create_obj failed-cleanup fallback: attempting sqlite_sync_runtime."));
+        if (!bAttrsCleared)
+        {
+            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting sqlite_sync_runtime."));
+        }
+        else
+        {
+            log_text(T("create_obj failed-cleanup fallback: attempting sqlite_sync_runtime."));
+        }
         ENDLOG;
         if (!sqlite_sync_runtime())
         {

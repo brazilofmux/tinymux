@@ -2968,6 +2968,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 
     mudstate.record_players = 0;
+    bool bLoadedGameFromSQLite = false;
 
     if (bMinDB)
     {
@@ -2991,6 +2992,7 @@ int DCL_CDECL main(int argc, char *argv[])
                 // No flatfile needed.
                 //
                 bDoFlatfileLoad = false;
+                bLoadedGameFromSQLite = true;
             }
             else if (sqlite_load_rc < 0)
             {
@@ -3034,6 +3036,51 @@ int DCL_CDECL main(int argc, char *argv[])
             return 2;
         }
     }
+
+    // Warm-start path skips load_game(); explicitly load aux SQLite/flatfile
+    // subsystems here.
+    //
+    if (bLoadedGameFromSQLite)
+    {
+        int load_comsys_rc = sqlite_load_comsys();
+        if (load_comsys_rc < 0)
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("SQLite comsys load failed."));
+            ENDLOG
+            return 2;
+        }
+        if (0 == load_comsys_rc)
+        {
+            load_comsys(mudconf.comsys_db);
+        }
+
+        int load_mail_rc = sqlite_load_mail();
+        if (load_mail_rc < 0)
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("SQLite mail load failed."));
+            ENDLOG
+            return 2;
+        }
+        if (0 == load_mail_rc)
+        {
+            FILE *f;
+            if (mux_fopen(&f, mudconf.mail_db, T("rb")))
+            {
+                DebugTotalFiles++;
+                setvbuf(f, nullptr, _IOFBF, 16384);
+                Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
+                load_mail(f);
+                Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
+                if (fclose(f) == 0)
+                {
+                    DebugTotalFiles--;
+                }
+            }
+        }
+    }
+
     set_signals();
     Guest.StartUp();
 
