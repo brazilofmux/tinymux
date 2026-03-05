@@ -2066,8 +2066,18 @@ static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[], 
     if (  key == GET_EVAL
        || key == GET_GEVAL)
     {
-        mux_exec(atr_gotten, nLen, buff, bufc, thing, executor, executor,
-            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), nullptr, 0);
+        if ((aflags & AF_NOEVAL) || NoEval(thing))
+        {
+            if (nLen)
+            {
+                safe_copy_buf(atr_gotten, nLen, buff, bufc);
+            }
+        }
+        else
+        {
+            mux_exec(atr_gotten, nLen, buff, bufc, thing, executor, executor,
+                AttrTrace(aflags, EV_FIGNORE|EV_EVAL), nullptr, 0);
+        }
     }
     else
     {
@@ -2186,9 +2196,17 @@ static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
 
     // Evaluate it using the rest of the passed function args.
     //
-    mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL),
-        (const UTF8 **)&(fargs[1]), nfargs - 1);
+    if ((aflags & AF_NOEVAL) || NoEval(thing))
+    {
+        size_t nLen = strlen((const char *)atext);
+        safe_copy_buf(atext, nLen, buff, bufc);
+    }
+    else
+    {
+        mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL),
+            (const UTF8 **)&(fargs[1]), nfargs - 1);
+    }
     free_lbuf(atext);
 
     // If we're evaluating locally, restore the preserved registers.
@@ -4965,6 +4983,7 @@ static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { T("html"),       AF_HTML    },
     { T("locked"),     AF_LOCK    },
     { T("no_command"), AF_NOPROG  },
+    { T("no_eval"),    AF_NOEVAL  },
     { T("no_name"),    AF_NONAME  },
     { T("no_parse"),   AF_NOPARSE },
     { T("regexp"),     AF_REGEXP  },

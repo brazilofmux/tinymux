@@ -187,20 +187,27 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         if (bCheck)
         {
-	        reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
-            save_global_regs(preserve);
+            if ((aflags & AF_NOEVAL) || NoEval(source))
+            {
+                bCheck = !string_compare(buff, reinterpret_cast<UTF8*>(b->sub1));
+            }
+            else
+            {
+	            reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
 
-            buff2 = bp = alloc_lbuf("eval_boolexp");
-            mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
-                AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
-                nullptr, 0);
-            *bp = '\0';
+                buff2 = bp = alloc_lbuf("eval_boolexp");
+                mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
+                    AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
+                    nullptr, 0);
+                *bp = '\0';
 
-            restore_global_regs(preserve);
-            PopRegisters(preserve, MAX_GLOBAL_REGS);
+                restore_global_regs(preserve);
+                PopRegisters(preserve, MAX_GLOBAL_REGS);
 
-            bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
-            free_lbuf(buff2);
+                bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
+                free_lbuf(buff2);
+            }
         }
         free_lbuf(buff);
         return bCheck;

@@ -1193,24 +1193,31 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
                               hk_attr->number, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
-            reg_ref **preserve = nullptr;
-            if (save_flg)
+            if ((aflags & AF_NOEVAL) || NoEval(mudconf.hook_obj))
             {
-                preserve = PushRegisters(MAX_GLOBAL_REGS);
-                save_global_regs(preserve);
+                // NOEVAL hook content is data, not code -- treat as true.
             }
-            UTF8 *buff, *bufc;
-            bufc = buff = alloc_lbuf("process_hook");
-            mux_exec(atext, LBUF_SIZE-1, buff, &bufc, mudconf.hook_obj, executor,
-                     executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), nullptr, 0);
-            *bufc = '\0';
-            if (save_flg)
+            else
             {
-                restore_global_regs(preserve);
-                PopRegisters(preserve, MAX_GLOBAL_REGS);
+                reg_ref **preserve = nullptr;
+                if (save_flg)
+                {
+                    preserve = PushRegisters(MAX_GLOBAL_REGS);
+                    save_global_regs(preserve);
+                }
+                UTF8 *buff, *bufc;
+                bufc = buff = alloc_lbuf("process_hook");
+                mux_exec(atext, LBUF_SIZE-1, buff, &bufc, mudconf.hook_obj, executor,
+                         executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), nullptr, 0);
+                *bufc = '\0';
+                if (save_flg)
+                {
+                    restore_global_regs(preserve);
+                    PopRegisters(preserve, MAX_GLOBAL_REGS);
+                }
+                retval = xlate(buff);
+                free_lbuf(buff);
             }
-            retval = xlate(buff);
-            free_lbuf(buff);
         }
         free_lbuf(atext);
     }
@@ -3066,6 +3073,7 @@ NAMETAB indiv_attraccess_nametab[] =
     {T("html"),                2,  CA_PUBLIC,  AF_HTML},
     {T("no_command"),          4,  CA_PUBLIC,  AF_NOPROG},
     {T("no_inherit"),          4,  CA_PUBLIC,  AF_PRIVATE},
+    {T("no_eval"),             4,  CA_PUBLIC,  AF_NOEVAL},
     {T("no_name"),             4,  CA_PUBLIC,  AF_NONAME},
     {T("no_parse"),            4,  CA_PUBLIC,  AF_NOPARSE},
     {T("regexp"),              1,  CA_PUBLIC,  AF_REGEXP},

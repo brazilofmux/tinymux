@@ -1566,6 +1566,13 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             i = executor;
                         }
 
+                        if ((aflags & AF_NOEVAL) || NoEval(ufp->obj))
+                        {
+                            size_t nLen = strlen((const char *)tbuf);
+                            safe_copy_buf(tbuf, nLen, buff, &oldp);
+                        }
+                        else
+                        {
                         reg_ref **preserve = nullptr;
 
                         if (ufp->flags & FN_PRES)
@@ -1582,6 +1589,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             restore_global_regs(preserve);
                             PopRegisters(preserve, MAX_GLOBAL_REGS);
                             preserve = nullptr;
+                        }
                         }
                         free_lbuf(tbuf);
                     }

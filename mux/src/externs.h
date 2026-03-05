@@ -389,7 +389,7 @@ extern CLogFile Log;
 /* From look.cpp */
 void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
-#define NUM_ATTRIBUTE_CODES 12
+#define NUM_ATTRIBUTE_CODES 13
 size_t decode_attr_flags(int aflags, UTF8 buff[NUM_ATTRIBUTE_CODES+1]);
 void   decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc);
 

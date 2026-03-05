@@ -2179,9 +2179,16 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
             free_lbuf(charges);
             if (bRun)
             {
-                process_command(thing, executor, executor,
-                    AttrTrace(aflags, 0), false, act,
-                    (const UTF8 **)argv, nargs);
+                if ((aflags & AF_NOEVAL) || NoEval(thing))
+                {
+                    // NOEVAL content is data, not code -- skip execution.
+                }
+                else
+                {
+                    process_command(thing, executor, executor,
+                        AttrTrace(aflags, 0), false, act,
+                        (const UTF8 **)argv, nargs);
+                }
             }
         }
         free_lbuf(act);

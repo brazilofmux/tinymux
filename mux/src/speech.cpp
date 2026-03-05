@@ -24,11 +24,19 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
 
     UTF8 *new_message = alloc_lbuf("modspeech");
     UTF8 *t_ptr = new_message;
-    const UTF8 *args[2];
-    args[0] = message;
-    args[1] = command;
-    mux_exec(mod, LBUF_SIZE-1, new_message, &t_ptr, player, player, player,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
+    if ((aflags & AF_NOEVAL) || NoEval(player))
+    {
+        mux_strncpy(new_message, mod, LBUF_SIZE-1);
+        t_ptr = new_message + strlen((const char *)new_message);
+    }
+    else
+    {
+        const UTF8 *args[2];
+        args[0] = message;
+        args[1] = command;
+        mux_exec(mod, LBUF_SIZE-1, new_message, &t_ptr, player, player, player,
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
+    }
     *t_ptr = '\0';
     free_lbuf(mod);
     return new_message;

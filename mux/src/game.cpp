@@ -454,9 +454,17 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
 
     UTF8 *nbuf = alloc_lbuf("check_filter");
     UTF8 *dp = nbuf;
-    mux_exec(buf, LBUF_SIZE-1, nbuf, &dp, object, player, player,
-        AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
-        nullptr, 0);
+    if ((aflags & AF_NOEVAL) || NoEval(object))
+    {
+        mux_strncpy(nbuf, buf, LBUF_SIZE-1);
+        dp = nbuf + strlen((const char *)nbuf);
+    }
+    else
+    {
+        mux_exec(buf, LBUF_SIZE-1, nbuf, &dp, object, player, player,
+            AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
+            nullptr, 0);
+    }
     *dp = '\0';
     strip_fancy_quotes(nbuf);
     dp = nbuf;
@@ -550,20 +558,27 @@ static UTF8 *make_prefix(dbref object, dbref player, int prefix, const UTF8 *dfl
     }
     else
     {
-        reg_ref **preserve = nullptr;
-        preserve = PushRegisters(MAX_GLOBAL_REGS);
-        save_global_regs(preserve);
+        if ((aflags & AF_NOEVAL) || NoEval(object))
+        {
+            cp = buf + strlen((const char *)buf);
+        }
+        else
+        {
+            reg_ref **preserve = nullptr;
+            preserve = PushRegisters(MAX_GLOBAL_REGS);
+            save_global_regs(preserve);
 
-        nbuf = cp = alloc_lbuf("add_prefix");
-        mux_exec(buf, LBUF_SIZE-1, nbuf, &cp, object, player, player,
-            AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
-            nullptr, 0);
-        free_lbuf(buf);
+            nbuf = cp = alloc_lbuf("add_prefix");
+            mux_exec(buf, LBUF_SIZE-1, nbuf, &cp, object, player, player,
+                AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
+                nullptr, 0);
+            free_lbuf(buf);
 
-        restore_global_regs(preserve);
-        PopRegisters(preserve, MAX_GLOBAL_REGS);
+            restore_global_regs(preserve);
+            PopRegisters(preserve, MAX_GLOBAL_REGS);
 
-        buf = nbuf;
+            buf = nbuf;
+        }
     }
     if (cp != buf)
     {

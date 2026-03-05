@@ -2568,27 +2568,36 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
         d = atr_pget(thing, what, &aowner, &aflags);
         if (*d)
         {
-            need_pres = true;
-            preserve = PushRegisters(MAX_GLOBAL_REGS);
-            save_global_regs(preserve);
-
-            buff = bp = alloc_lbuf("did_it.1");
-            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
-                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
-                args, nargs);
-            *bp = '\0';
-            if (  (aflags & AF_HTML)
-               && Html(player))
+            if ((aflags & AF_NOEVAL) || NoEval(thing))
             {
-                safe_str(T("\r\n"), buff, &bp);
-                *bp = '\0';
-                notify_html(player, buff);
+                // Output raw text with no substitutions.
+                //
+                notify(player, d);
             }
             else
             {
-                notify(player, buff);
+                need_pres = true;
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
+
+                buff = bp = alloc_lbuf("did_it.1");
+                mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
+                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
+                    args, nargs);
+                *bp = '\0';
+                if (  (aflags & AF_HTML)
+                   && Html(player))
+                {
+                    safe_str(T("\r\n"), buff, &bp);
+                    *bp = '\0';
+                    notify_html(player, buff);
+                }
+                else
+                {
+                    notify(player, buff);
+                }
+                free_lbuf(buff);
             }
-            free_lbuf(buff);
         }
         else if (def)
         {
@@ -2610,6 +2619,34 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
         d = atr_pget(thing, owhat, &aowner, &aflags);
         if (*d)
         {
+            if ((aflags & AF_NOEVAL) || NoEval(thing))
+            {
+                // Output raw text with no substitutions.
+                //
+#ifdef REALITY_LVLS
+                if (aflags & AF_NONAME)
+                {
+                    notify_except2_rlevel(loc, player, player, thing, d);
+                }
+                else
+                {
+                    notify_except2_rlevel(loc, player, player, thing,
+                        tprintf(T("%s %s"), Moniker(player), d));
+                }
+#else
+                if (aflags & AF_NONAME)
+                {
+                    notify_except2(loc, player, player, thing, d);
+                }
+                else
+                {
+                    notify_except2(loc, player, player, thing,
+                        tprintf(T("%s %s"), Moniker(player), d));
+                }
+#endif // REALITY_LVLS
+            }
+            else
+            {
             if (!need_pres)
             {
                 need_pres = true;
@@ -2646,6 +2683,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
 #endif // REALITY_LVLS
             }
             free_lbuf(buff);
+            } // else (not NOEVAL)
         }
         else if (odef)
         {
@@ -2744,12 +2782,15 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 }
             }
             free_lbuf(charges);
-            CLinearTimeAbsolute lta;
-            wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
-                NOTHING, 0,
-                act,
-                nargs, args,
-                mudstate.global_regs);
+            if (!((aflags & AF_NOEVAL) || NoEval(thing)))
+            {
+                CLinearTimeAbsolute lta;
+                wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
+                    NOTHING, 0,
+                    act,
+                    nargs, args,
+                    mudstate.global_regs);
+            }
         }
         free_lbuf(act);
     }

@@ -4921,6 +4921,13 @@ ATTRIBUTE FLAGS (continued)
 & ATTRIBUTE FLAGS3
 ATTRIBUTE FLAGS (continued)
 
+    no_eval (E)    - The attribute contents are not evaluated when
+                     retrieved via u(), ulocal(), get_eval(), @trigger,
+                     or other evaluation callsites.  The raw text is
+                     returned with no function calls, no %-substitutions,
+                     and no escape processing.  Useful for storing
+                     player-submitted text safely.
+
     visual (V)     - The attribute is visible to anyone who examines
                      you.  Note that the predefined attributes DESC,
                      SEX, and LAST are always VISUAL
@@ -7272,7 +7279,8 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |       COLOR256   |       TALKMODE   |       UNICODE
+                   |       COLOR256   |       NOEVAL     |       TALKMODE
+                   |       UNICODE   |                  |
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
@@ -10785,6 +10793,31 @@ NOBLEED
   the text display for the MUX.
 
   Related Topics:
+
+& NOEVAL
+NOEVAL
+
+  FLAG: NOEVAL  ()
+
+  When set on an object, all attributes on that object are treated as
+  literal data: u(), ulocal(), get_eval(), @trigger, did_it() messages,
+  and other evaluation callsites return the raw attribute text without
+  performing function calls, %-substitutions, or escape processing.
+
+  This is useful for objects that store player-submitted text (such as
+  job trackers, bulletin boards, or mail systems) where evaluating the
+  content would be a security risk.
+
+  The same effect can be applied to individual attributes using the
+  no_eval attribute flag (see 'help attribute flags3').
+
+  Example:
+    @set myobj=NOEVAL
+    &DATA myobj=[delete(me)]
+    say u(myobj/DATA)
+    You say "[delete(me)]"
+
+  Related Topics: ATTRIBUTE FLAGS, hasflag().
 
 & NOSPOOF
 NOSPOOF

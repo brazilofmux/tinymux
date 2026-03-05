@@ -1,0 +1,73 @@
+#
+# noeval_fn.mux - Test Cases for NOEVAL flag and AF_NOEVAL attribute flag.
+#
+@create test_noeval_fn
+-
+@set test_noeval_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_noeval_fn=
+  @log smoke=Beginning noeval test cases.
+-
+#
+# Test Case #1 - NOEVAL attribute flag and object flag behavior.
+#
+# Tests:
+#   - AF_NOEVAL attr + u() returns literal text
+#   - NOEVAL object flag + u() returns literal text
+#   - get_eval() respects AF_NOEVAL
+#   - get() still returns raw (it always does)
+#   - hasflag() detects both flags
+#   - Without NOEVAL, u() evaluates normally
+#
+&tr.tc001 test_noeval_fn=
+  @pemit me=TC001: Creating test objects.;
+  @create test_noeval_tgt;
+  @set test_noeval_tgt=INHERIT QUIET;
+  &TESTATTR test_noeval_tgt=[add(1,2)];
+  @set test_noeval_tgt/TESTATTR=no_eval;
+  @create test_noeval_tgt2;
+  @set test_noeval_tgt2=INHERIT QUIET NOEVAL;
+  &TESTATTR test_noeval_tgt2=[add(1,2)];
+  @create test_noeval_tgt3;
+  @set test_noeval_tgt3=INHERIT QUIET;
+  &TESTATTR test_noeval_tgt3=[add(1,2)];
+  @wait 0=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [u(test_noeval_tgt/TESTATTR)]
+              [u(test_noeval_tgt2/TESTATTR)]
+              [get_eval(test_noeval_tgt/TESTATTR)]
+              [get(test_noeval_tgt/TESTATTR)]
+              [hasflag(test_noeval_tgt/TESTATTR,no_eval)]
+              [hasflag(test_noeval_tgt2,NOEVAL)]
+              [u(test_noeval_tgt3/TESTATTR)]
+            )
+          ),
+          EDBF1A113545E1AB8AE20F6574BE7157DA8EA52D
+        )=
+    {
+      @log smoke=TC001: noeval flag and attr flag. Succeeded.
+    },
+    {
+      @log smoke=TC001: noeval flag and attr flag. Failed (%q0).
+    };
+    @destroy/override test_noeval_tgt;
+    @destroy/override test_noeval_tgt2;
+    @destroy/override test_noeval_tgt3;
+    @trig me/tr.done
+  }
+-
+&tr.done test_noeval_fn=
+  @log smoke=End noeval test cases.;
+  @notify smoke
+-
+drop test_noeval_fn
+-
+#
+# End of Test Cases
+#
+

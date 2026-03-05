@@ -470,9 +470,17 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
-            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            (const UTF8 **)&VisibleObjectList, 1);
+        if ((aflags & AF_NOEVAL) || NoEval(loc))
+        {
+            mux_strncpy(FormatOutput, ExitFormat, LBUF_SIZE-1);
+            tPtr = FormatOutput + strlen((const char *)FormatOutput);
+        }
+        else
+        {
+            mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                (const UTF8 **)&VisibleObjectList, 1);
+        }
         *tPtr = '\0';
 
         restore_global_regs(preserve);
@@ -647,9 +655,17 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
-            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            ParameterList, 2);
+        if ((aflags & AF_NOEVAL) || NoEval(loc))
+        {
+            mux_strncpy(FormatOutput, ContentsFormat, LBUF_SIZE-1);
+            tPtr = FormatOutput + strlen((const char *)FormatOutput);
+        }
+        else
+        {
+            mux_exec(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                ParameterList, 2);
+        }
         *tPtr = '\0';
 
         restore_global_regs(preserve);
@@ -755,6 +771,7 @@ static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
     { AF_CASE,    'C', T("CASE")       },
     { AF_HTML,    'H', T("HTML")       },
     { AF_PRIVATE, 'I', T("NO_INHERIT") },
+    { AF_NOEVAL,  'E', T("NO_EVAL")    },
     { AF_NONAME,  'N', T("NO_NAME")    },
     { AF_NOPARSE, 'P', T("NO_PARSE")   },
     { AF_REGEXP,  'R', T("REGEXP")     },
@@ -1054,9 +1071,16 @@ static bool show_a_desc(dbref player, dbref loc)
         //
         mux_strncpy(temp, tbuf1, LBUF_SIZE-1);
 #else
-        mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
-            AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
-            nullptr, 0);
+        if ((aflags2 & AF_NOEVAL) || NoEval(loc))
+        {
+            mux_strncpy(temp, tbuf1, LBUF_SIZE-1);
+        }
+        else
+        {
+            mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
+                AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
+                nullptr, 0);
+        }
         *bp = '\0';
 #endif
 
@@ -1068,9 +1092,17 @@ static bool show_a_desc(dbref player, dbref loc)
         const UTF8 *ParameterList[] =
             { temp, attrname };
 
-        mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
-            AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
-            ParameterList, 2);
+        if ((aflags1 & AF_NOEVAL) || NoEval(loc))
+        {
+            mux_strncpy(FormatOutput, DescFormat, LBUF_SIZE-1);
+            tPtr = FormatOutput + strlen((const char *)FormatOutput);
+        }
+        else
+        {
+            mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+                AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
+                ParameterList, 2);
+        }
         *tPtr = '\0';
 
         notify(player, FormatOutput);
@@ -1205,10 +1237,18 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
             preserve = PushRegisters(MAX_GLOBAL_REGS);
             save_and_clear_global_regs(preserve);
 
-            mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, thing,
-                player, player,
-                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-                0, 0);
+            if ((aflags & AF_NOEVAL) || NoEval(thing))
+            {
+                mux_strncpy(FormatOutput, NameFormat, LBUF_SIZE-1);
+                tPtr = FormatOutput + strlen((const char *)FormatOutput);
+            }
+            else
+            {
+                mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, thing,
+                    player, player,
+                    AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                    0, 0);
+            }
             *tPtr = '\0';
 
             restore_global_regs(preserve);
@@ -1327,9 +1367,17 @@ void look_in(dbref player, dbref loc, int key)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
-            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            0, 0);
+        if ((aflags & AF_NOEVAL) || NoEval(loc))
+        {
+            mux_strncpy(FormatOutput, NameFormat, LBUF_SIZE-1);
+            tPtr = FormatOutput + strlen((const char *)FormatOutput);
+        }
+        else
+        {
+            mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                0, 0);
+        }
         *tPtr = '\0';
 
         restore_global_regs(preserve);

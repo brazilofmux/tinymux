@@ -314,6 +314,11 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
         return 0;
     }
 
+    if ((pctx->aflags & AF_NOEVAL) || NoEval(pctx->executor))
+    {
+        return 0;
+    }
+
     const UTF8 *elems[2] = { T(s1), T(s2) };
 
     UTF8 *tbuf = alloc_lbuf("u_comp");
