@@ -97,9 +97,8 @@ host_triplet = @host@
 
 # Add SQLite storage backend if enabled
 @SQLITE_ENABLED_TRUE@am__append_2 = sqlitedb.cpp sqlite_backend.cpp
-@SQLITE_ENABLED_TRUE@am__append_3 = -I$(top_srcdir)/../../db
 bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) $(am__EXEEXT_1)
-@STUBSLAVE_ENABLED_TRUE@am__append_4 = stubslave
+@STUBSLAVE_ENABLED_TRUE@am__append_3 = stubslave
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -469,10 +468,9 @@ top_srcdir = @top_srcdir@
 SUBDIRS = tools ganl . modules
 
 # Shared build flags
-AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) \
-	$(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) $(SELFCHECK) \
-	$(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) \
-	$(OPENSSL_CFLAGS) $(SQLITE_STORAGE) $(am__append_3)
+AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
+    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
+
 
 # Base source files for building netmux
 NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \

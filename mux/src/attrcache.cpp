@@ -19,7 +19,6 @@ using namespace std;
 #if !defined(MEMORY_BASED)
 
 #if defined(SQLITE_STORAGE)
-#define TINYMUX_TYPES_DEFINED
 #include "sqlite_backend.h"
 
 static CSQLiteBackend *g_pSQLiteBackend = nullptr;

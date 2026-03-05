@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <functional>
 
-#ifndef TINYMUX_TYPES_DEFINED
+#if defined(TINYMUX_TYPES_DEFINED)
 typedef int           dbref;
 typedef unsigned char UTF8;
 #endif

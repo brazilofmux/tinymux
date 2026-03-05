@@ -16,13 +16,14 @@
 #include <cstdint>
 #include <functional>
 
-// When building inside TinyMUX, these come from config.h.
-// When building the standalone test harness, we define them here.
+// When building the standalone test harness, define TINYMUX_TYPES_DEFINED
+// via compiler flags and provide these types. When building inside TinyMUX,
+// these come from config.h which is included before this header.
 //
-#ifndef TINYMUX_TYPES_DEFINED
-typedef int         dbref;
-typedef unsigned int FLAG;
-typedef int         POWER;
+#if defined(TINYMUX_TYPES_DEFINED)
+typedef int           dbref;
+typedef unsigned int  FLAG;
+typedef int           POWER;
 typedef unsigned char UTF8;
 constexpr dbref NOTHING = -1;
 #endif

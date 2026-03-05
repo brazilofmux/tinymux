@@ -28,7 +28,6 @@ endif
 # Add SQLite storage backend if enabled
 if SQLITE_ENABLED
 NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp
-AM_CPPFLAGS += -I$(top_srcdir)/../../db
 endif
 
 # Build executables
