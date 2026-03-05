@@ -280,7 +280,6 @@ void cf_init(void)
     mudconf.lock_nest_lim = 20;
     mudconf.parent_nest_lim = 10;
     mudconf.zone_nest_lim = 20;
-    mudconf.stack_limit = 50;
     mudconf.cache_names = true;
     mudconf.toad_recipient = -1;
     mudconf.eval_comtitle = true;
@@ -2031,7 +2030,6 @@ static CONFPARM conftable[] =
     {T("ssl_certificate_key"),       cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.ssl_certificate_key), nullptr,       128},
     {T("ssl_certificate_password"),  cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.ssl_certificate_password), nullptr,  128},
 #endif
-    {T("stack_limit"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.stack_limit,            nullptr,            0},
     {T("starting_money"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               nullptr,            0},
     {T("starting_quota"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            nullptr,            0},
     {T("status_file"),               cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.status_file),     nullptr, SIZEOF_PATHNAME},

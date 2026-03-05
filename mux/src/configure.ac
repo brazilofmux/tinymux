@@ -157,22 +157,6 @@ SSL="-DSSL_ENABLED"
 AC_SUBST(SSL)
 
 AC_MSG_CHECKING(whether to enable deprecated features)
-AC_ARG_ENABLE(
-  [deprecated],
-  AS_HELP_STRING([--enable-deprecated],[enable deprecated features (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      DEPRECATED="-DDEPRECATED"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
-AC_SUBST(DEPRECATED)
-
 # Checks for programs.
 #
 AC_PROG_CXX

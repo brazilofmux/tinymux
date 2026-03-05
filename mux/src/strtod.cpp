@@ -134,7 +134,7 @@ void mux_FPSet(void)
 
 void mux_FPRestore(void)
 {
-    _controlfp_s(&cw, _CW_DEFAULT, MCW_PC);
+    _controlfp_s(&cw, _CW_DEFAULT, _MCW_PC);
 }
 #else // _MSC_VER
 static unsigned origcw;

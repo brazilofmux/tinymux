@@ -2665,9 +2665,6 @@ static void initialize_objects(dbref first, dbref last)
         s_Next(thing, NOTHING);
         s_Zone(thing, NOTHING);
         s_Parent(thing, NOTHING);
-#ifdef DEPRECATED
-        s_Stack(thing, nullptr);
-#endif // DEPRECATED
         db[thing].cpu_time_used.Set100ns(0);
         db[thing].tThrottleExpired.Set100ns(0);
         s_ThAttrib(thing, 0);

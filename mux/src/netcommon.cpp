@@ -1845,9 +1845,6 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
 
 static const UTF8 *DumpInfoTable[] =
 {
-#if defined(DEPRECATED)
-    T("DEPRECATED"),
-#endif
 #if defined(REALITY_LVLS)
     T("REALITY_LVLS"),
 #endif

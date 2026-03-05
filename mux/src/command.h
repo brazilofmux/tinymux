@@ -28,7 +28,6 @@ CMD_TWO_ARG(do_addcom);         /* adds a comalias */
 CMD_ONE_ARG(do_allcom);         /* on, off, who, all aliases */
 CMD_ONE_ARG(do_comlist);        /* channel who by alias */
 CMD_TWO_ARG(do_comtitle);       /* sets a title on a channel */
-//CMD_NO_ARG(do_clearcom);      /* clears all comaliases */
 CMD_ONE_ARG(do_delcom);         /* deletes a comalias */
 
 /* from mail.cpp */
@@ -268,7 +267,6 @@ extern NAMETAB allow_charset_nametab[];
 #define CA_IMMORTAL   0x00000008  /* Immortals only */
 #define CA_STAFF      0x00000010  /* Must have STAFF flag */
 #define CA_HEAD       0x00000020  /* Must have HEAD flag */
-//#define CA_SQL_OK     0x00000040  /* Must have SQL_OK power */
 #define CA_ADMIN      0x00000080  /* Wizard or royal */
 #define CA_ROBOT      0x00000100  /* Robots only */
 #define CA_ANNOUNCE   0x00000200  /* Announce Power */

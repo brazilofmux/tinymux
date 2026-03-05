@@ -11630,9 +11630,6 @@ static FUN builtin_function_list[] =
     {T("ELEMENTS"),    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("ELOCK"),       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("EMIT"),        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("EMPTY"),       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("ENCRYPT"),     fun_encrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ENTRANCES"),   fun_entrances,  MAX_ARG, 0,       4,         0, CA_PUBLIC},
     {T("EQ"),          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -11701,9 +11698,6 @@ static FUN builtin_function_list[] =
     {T("ISUB"),        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ISWORD"),      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ITEMIZE"),     fun_itemize,    MAX_ARG, 1,       4,         0, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("ITEMS"),       fun_items,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("ITER"),        fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
     {T("ITEXT"),       fun_itext,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("LADD"),        fun_ladd,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
@@ -11745,9 +11739,6 @@ static FUN builtin_function_list[] =
     {T("LRAND"),       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("LREST"),       fun_lrest,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LROOMS"),      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("LSTACK"),      fun_lstack,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("LT"),          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("LTE"),         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("LWHO"),        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
@@ -11794,9 +11785,6 @@ static FUN builtin_function_list[] =
     {T("PACK"),        fun_pack,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("PARENT"),      fun_parent,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("PARENMATCH"), fun_parenmatch,       1, 1,       1, FN_NOEVAL, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("PEEK"),        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("PEMIT"),       fun_pemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("PFIND"),       fun_pfind,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("PI"),          fun_pi,         MAX_ARG, 0,       0,         0, CA_PUBLIC},
@@ -11804,18 +11792,12 @@ static FUN builtin_function_list[] =
     {T("PLAYMEM"),     fun_playmem,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("PMATCH"),      fun_pmatch,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POLL"),        fun_poll,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("POP"),         fun_pop,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("PORTS"),       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POS"),         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("POSE"),        fun_pose,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("POSS"),        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POWER"),       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("POWERS"),      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-#ifdef DEPRECATED
-    {T("PUSH"),        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-#endif // DEPRECATED
     {T("R"),           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("RAND"),        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("REGMATCH"),    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},

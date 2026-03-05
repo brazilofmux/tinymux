@@ -569,9 +569,6 @@ static void destroy_bad_obj(dbref obj)
         halt_que(NOTHING, obj);
         nfy_que(obj, 0, NFY_DRAIN, 0);
         fwdlist_clr(obj);
-#ifdef DEPRECATED
-        stack_clr(obj);
-#endif // DEPRECATED
         ReleaseAllResources(obj);
     }
     atr_free(obj);
@@ -622,12 +619,9 @@ void destroy_obj(dbref obj)
         }
         nfy_que(obj, 0, NFY_DRAIN, 0);
 
-        // Remove forwardlists and stacks.
+        // Remove forwardlists.
         //
         fwdlist_clr(obj);
-#ifdef DEPRECATED
-        stack_clr(obj);
-#endif // DEPRECATED
     }
 
     // Compensate the owner for the object.

@@ -191,7 +191,6 @@ struct confdata
     int     sacfactor;          /* ... */
     int     searchcost;         /* cost of commands that search the whole DB */
     int     sig_action;         // What to do with fatal signals.
-    int     stack_limit;        /* How big can stacks get? */
     int     start_quota;        /* Quota for new players */
     int     thing_quota;        /* quota needed to make a thing */
     int     trace_limit;        /* Max lines of trace output if top-down */

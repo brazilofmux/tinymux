@@ -1968,7 +1968,7 @@ CONFIG PARAMETERS (continued)
   run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_iter
   safer_passwords
   search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  sql_database  sql_password  sql_server  sql_user  stack_limit
+  sql_database  sql_password  sql_server  sql_user
   starting_money  starting_quota  status_file  stripped_flags  suspect_site
   sweep_dark  switch_default_all  talk_mode_default  terse_shows_contents
   terse_shows_exits
@@ -5063,16 +5063,6 @@ SQL_USER
   This option is only available with --enable-inlinsql or --enable-stubslave.
 
   Related Topics: sql_server, sql_password, and sql_database.
-
-& STACK_LIMIT
-STACK_LIMIT
-
-  CONFIG PARAMETER: stack_limit <number>
-  DEFAULT: 50
-
-  The number of items that are allowed on an object's stack. You should be
-  sparse with this parameter, as stack items are retained until they are
-  removed.
 
 & STARTING_MONEY
 STARTING_MONEY

@@ -28,13 +28,6 @@ struct attr
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid);
 
-typedef struct stack MUX_STACK;
-struct stack
-{
-    UTF8      *data;
-    MUX_STACK *next;
-};
-
 extern ATTR *atr_num(int anum);
 extern ATTR *atr_str(const UTF8 *s);
 
@@ -133,10 +126,6 @@ struct object
     POWER   powers;     /* ALL: Powers on object */
     POWER   powers2;    /* ALL: even more powers */
 
-#ifdef DEPRECATED
-    MUX_STACK   *stackhead; /* Every object has a stack. */
-#endif // DEPRECATED
-
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
     // ALL: When to refurbish throttled counters.
@@ -196,11 +185,6 @@ void s_Dropto(dbref t, dbref n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
 #define s_ThRefs(t,n)       db[t].throttled_references = (n);
 #define s_ThEmail(t,n)      db[t].throttled_email = (n);
-
-#ifdef DEPRECATED
-#define Stack(t)            db[t].stackhead
-#define s_Stack(t,n)        db[t].stackhead = (n)
-#endif // DEPRECATED
 
 int  Pennies(dbref obj);
 void s_Pennies(dbref obj, int howfew);
