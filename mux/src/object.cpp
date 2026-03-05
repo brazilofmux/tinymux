@@ -550,8 +550,18 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     rec.flags3    = db[obj].fs.word[FLAG_WORD3];
     rec.powers1   = db[obj].powers;
     rec.powers2   = db[obj].powers2;
-    g_pSQLiteBackend->GetDB().InsertObject(rec);
-    g_pSQLiteBackend->GetDB().PutMeta("db_top", mudstate.db_top);
+    if (!g_pSQLiteBackend->GetDB().InsertObject(rec))
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
+        log_text(T("InsertObject failed in create_obj."));
+        ENDLOG;
+    }
+    if (!g_pSQLiteBackend->GetDB().PutMeta("db_top", mudstate.db_top))
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
+        log_text(T("PutMeta(db_top) failed in create_obj."));
+        ENDLOG;
+    }
 
     return obj;
 }

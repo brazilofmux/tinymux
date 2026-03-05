@@ -1875,8 +1875,14 @@ static int load_game(int ccPageFile)
     // Bulk-sync all object metadata from db[] into SQLite.
     // This populates the objects table from the flatfile data.
     //
-    sqlite_sync_objects();
-    sqlite_sync_attrnames();
+    if (  !sqlite_sync_objects()
+       || !sqlite_sync_attrnames())
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("SQLite sync failed after flatfile load."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
+    }
 
     if (sqlite_load_comsys())
     {
@@ -2283,8 +2289,12 @@ static void dbconvert(void)
             exit(1);
         }
         mudstate.bSQLiteLoading = false;
-        sqlite_sync_objects();
-        sqlite_sync_attrnames();
+        if (  !sqlite_sync_objects()
+           || !sqlite_sync_attrnames())
+        {
+            Log.WriteString(T("SQLite sync failed.\n"));
+            exit(1);
+        }
         Log.WriteString(T("Input: "));
         info(db_format, db_flags, db_ver);
 

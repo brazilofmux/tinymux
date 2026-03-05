@@ -3734,10 +3734,13 @@ void s_Dropto(dbref t, dbref n)
 // Bulk sync: Insert all objects from db[] into SQLite.
 // Called after db_read to populate the SQLite objects table from flatfile data.
 //
-void sqlite_sync_objects(void)
+bool sqlite_sync_objects(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.Begin();
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
 
     for (dbref i = 0; i < mudstate.db_top; i++)
     {
@@ -3751,26 +3754,38 @@ void sqlite_sync_objects(void)
         rec.owner     = db[i].owner;
         rec.parent    = db[i].parent;
         rec.zone      = db[i].zone;
-        rec.pennies   = 0;
+        rec.pennies   = Pennies(i);
         rec.flags1    = db[i].fs.word[FLAG_WORD1];
         rec.flags2    = db[i].fs.word[FLAG_WORD2];
         rec.flags3    = db[i].fs.word[FLAG_WORD3];
         rec.powers1   = db[i].powers;
         rec.powers2   = db[i].powers2;
 
-        sqldb.InsertObject(rec);
+        if (!sqldb.InsertObject(rec))
+        {
+            sqldb.Rollback();
+            return false;
+        }
     }
 
-    sqldb.Commit();
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
 }
 
 // Bulk sync: Insert all user-defined attribute names and metadata into SQLite.
 // Called after db_read to populate the attrnames and metadata tables.
 //
-void sqlite_sync_attrnames(void)
+bool sqlite_sync_attrnames(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.Begin();
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
 
     for (int iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
@@ -3778,16 +3793,29 @@ void sqlite_sync_attrnames(void)
         if (  vp != nullptr
            && !(vp->flags & AF_DELETED))
         {
-            sqldb.PutAttrName(vp->number,
-                reinterpret_cast<const char *>(vp->name), vp->flags);
+            if (!sqldb.PutAttrName(vp->number,
+                    reinterpret_cast<const char *>(vp->name), vp->flags))
+            {
+                sqldb.Rollback();
+                return false;
+            }
         }
     }
 
-    sqldb.PutMeta("attr_next", mudstate.attr_next);
-    sqldb.PutMeta("db_top", mudstate.db_top);
-    sqldb.PutMeta("record_players", mudstate.record_players);
+    if (!sqldb.PutMeta("attr_next", mudstate.attr_next)
+     || !sqldb.PutMeta("db_top", mudstate.db_top)
+     || !sqldb.PutMeta("record_players", mudstate.record_players))
+    {
+        sqldb.Rollback();
+        return false;
+    }
 
-    sqldb.Commit();
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
 }
 
 // Load game state from SQLite (warm start).
@@ -3845,40 +3873,73 @@ bool sqlite_load_game(void)
     }
     mudstate.attr_next = attr_next_val;
 
-    // Grow db[] to the right size.
+    // Load all objects from the objects table first, then size db[]
+    // from the actual max dbref to avoid stale metadata overruns.
     //
-    db_grow(db_top_val);
-
-    // Load all objects from the objects table.
-    //
+    vector<CSQLiteDB::ObjectRecord> objects;
     if (!sqldb.LoadAllObjects(
-        [](const CSQLiteDB::ObjectRecord &rec)
+        [&objects](const CSQLiteDB::ObjectRecord &rec)
         {
-            dbref i = rec.dbref_val;
-            db[i].location = rec.location;
-            db[i].contents = rec.contents;
-            db[i].exits    = rec.exits;
-            db[i].next     = rec.next;
-            db[i].link     = rec.link;
-            db[i].owner    = rec.owner;
-            db[i].parent   = rec.parent;
-            db[i].zone     = rec.zone;
-            db[i].fs.word[FLAG_WORD1] = rec.flags1;
-            db[i].fs.word[FLAG_WORD2] = rec.flags2;
-            db[i].fs.word[FLAG_WORD3] = rec.flags3;
-            db[i].powers   = rec.powers1;
-            db[i].powers2  = rec.powers2;
-
-            // Clear CONNECTED flag — nobody is connected at startup.
-            //
-            if (isPlayer(i))
-            {
-                db[i].fs.word[FLAG_WORD2] &= ~CONNECTED;
-            }
+            objects.push_back(rec);
         }))
     {
         mudstate.bSQLiteLoading = false;
         return false;
+    }
+
+    dbref max_dbref = -1;
+    for (const auto& rec : objects)
+    {
+        if (rec.dbref_val > max_dbref)
+        {
+            max_dbref = rec.dbref_val;
+        }
+    }
+
+    dbref grow_top = db_top_val;
+    if (max_dbref >= 0)
+    {
+        dbref needed = max_dbref + 1;
+        if (needed > grow_top)
+        {
+            grow_top = needed;
+        }
+    }
+
+    // Grow db[] to the right size.
+    //
+    db_grow(grow_top);
+
+    for (const auto& rec : objects)
+    {
+        dbref i = rec.dbref_val;
+        if (  i < 0
+           || i >= mudstate.db_top)
+        {
+            mudstate.bSQLiteLoading = false;
+            return false;
+        }
+
+        db[i].location = rec.location;
+        db[i].contents = rec.contents;
+        db[i].exits    = rec.exits;
+        db[i].next     = rec.next;
+        db[i].link     = rec.link;
+        db[i].owner    = rec.owner;
+        db[i].parent   = rec.parent;
+        db[i].zone     = rec.zone;
+        db[i].fs.word[FLAG_WORD1] = rec.flags1;
+        db[i].fs.word[FLAG_WORD2] = rec.flags2;
+        db[i].fs.word[FLAG_WORD3] = rec.flags3;
+        db[i].powers   = rec.powers1;
+        db[i].powers2  = rec.powers2;
+
+        // Clear CONNECTED flag — nobody is connected at startup.
+        //
+        if (isPlayer(i))
+        {
+            db[i].fs.word[FLAG_WORD2] &= ~CONNECTED;
+        }
     }
     mudstate.bSQLiteLoading = false;
 

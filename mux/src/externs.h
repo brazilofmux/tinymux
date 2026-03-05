@@ -1401,8 +1401,8 @@ void pcache_trim(void);
 //
 class CSQLiteBackend;
 extern CSQLiteBackend *g_pSQLiteBackend;
-void sqlite_sync_objects(void);
-void sqlite_sync_attrnames(void);
+bool sqlite_sync_objects(void);
+bool sqlite_sync_attrnames(void);
 bool sqlite_load_game(void);
 void sqlite_sync_comsys(void);
 bool sqlite_load_comsys(void);
