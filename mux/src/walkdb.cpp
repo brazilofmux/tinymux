@@ -830,54 +830,64 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         //
         if (has_owner && !has_flags && !has_zone && !has_parent)
         {
-            sqldb.SearchByOwner(parm->s_rst_owner,
+            if (sqldb.SearchByOwner(parm->s_rst_owner,
                 has_type ? static_cast<int>(parm->s_rst_type) : -1,
                 parm->low_bound, parm->high_bound,
-                [](dbref thing) { olist_add(thing); });
-            used_sql = true;
+                [](dbref thing) { olist_add(thing); }))
+            {
+                used_sql = true;
+            }
         }
 
         // Case 2: Type-only search (no owner, no other filters).
         //
         else if (!has_owner && has_type && !has_flags && !has_zone && !has_parent)
         {
-            sqldb.SearchByType(static_cast<int>(parm->s_rst_type),
+            if (sqldb.SearchByType(static_cast<int>(parm->s_rst_type),
                 parm->low_bound, parm->high_bound,
-                [](dbref thing) { olist_add(thing); });
-            used_sql = true;
+                [](dbref thing) { olist_add(thing); }))
+            {
+                used_sql = true;
+            }
         }
 
         // Case 3: Zone search (no other filters).
         //
         else if (has_zone && !has_owner && !has_type && !has_flags && !has_parent)
         {
-            sqldb.SearchByZone(parm->s_zone,
+            if (sqldb.SearchByZone(parm->s_zone,
                 parm->low_bound, parm->high_bound,
-                [](dbref thing) { olist_add(thing); });
-            used_sql = true;
+                [](dbref thing) { olist_add(thing); }))
+            {
+                used_sql = true;
+            }
         }
 
         // Case 4: Parent search (no other filters).
         //
         else if (has_parent && !has_owner && !has_type && !has_flags && !has_zone)
         {
-            sqldb.SearchByParent(parm->s_parent,
+            if (sqldb.SearchByParent(parm->s_parent,
                 parm->low_bound, parm->high_bound,
-                [](dbref thing) { olist_add(thing); });
-            used_sql = true;
+                [](dbref thing) { olist_add(thing); }))
+            {
+                used_sql = true;
+            }
         }
 
         // Case 5: Flags-only search (no name, eval, power, zone, parent, owner).
         //
         else if (has_flags && !has_owner && !has_type && !has_zone && !has_parent)
         {
-            sqldb.SearchByFlags(
+            if (sqldb.SearchByFlags(
                 parm->s_fset.word[FLAG_WORD1],
                 parm->s_fset.word[FLAG_WORD2],
                 parm->s_fset.word[FLAG_WORD3],
                 parm->low_bound, parm->high_bound,
-                [](dbref thing) { olist_add(thing); });
-            used_sql = true;
+                [](dbref thing) { olist_add(thing); }))
+            {
+                used_sql = true;
+            }
         }
 
         if (used_sql)

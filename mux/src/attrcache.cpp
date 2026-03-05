@@ -323,7 +323,7 @@ void cache_preload(dbref obj)
         return;
     }
 
-    g_pSQLiteBackend->GetBuiltin(
+    if (!g_pSQLiteBackend->GetBuiltin(
         static_cast<unsigned int>(obj),
         [obj](unsigned int attrnum, const UTF8 *value, size_t len,
               int db_owner, int db_flags)
@@ -349,7 +349,10 @@ void cache_preload(dbref obj)
             cache_size += entry.data.size();
             mudstate.attribute_lru_cache_map.insert(
                 std::make_pair(nam, std::move(entry)));
-        });
+        }))
+    {
+        Log.tinyprintf(T("cache_preload: failed bulk preload for #%d" ENDLINE), obj);
+    }
 
     trim_attribute_cache();
 }

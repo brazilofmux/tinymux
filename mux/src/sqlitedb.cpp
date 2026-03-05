@@ -1130,9 +1130,10 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
 {
     sqlite3_bind_int(m_stmtAttrGetObj, 1, obj);
 
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtAttrGetObj);
+        rc = sqlite3_step(m_stmtAttrGetObj);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1148,6 +1149,11 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
     }
 
     sqlite3_reset(m_stmtAttrGetObj);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::GetAllAttributes(#%d): %s\n", obj, sqlite3_errmsg(m_db));
+        return false;
+    }
     m_stats.attr_bulk_loads++;
     return true;
 }
@@ -1156,9 +1162,10 @@ bool CSQLiteDB::GetBuiltinAttributes(dbref obj, AttrCallback cb)
 {
     sqlite3_bind_int(m_stmtAttrGetBuiltin, 1, obj);
 
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtAttrGetBuiltin);
+        rc = sqlite3_step(m_stmtAttrGetBuiltin);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1174,6 +1181,11 @@ bool CSQLiteDB::GetBuiltinAttributes(dbref obj, AttrCallback cb)
     }
 
     sqlite3_reset(m_stmtAttrGetBuiltin);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::GetBuiltinAttributes(#%d): %s\n", obj, sqlite3_errmsg(m_db));
+        return false;
+    }
     m_stats.attr_bulk_loads++;
     return true;
 }
@@ -1304,9 +1316,10 @@ static bool RunSearch(sqlite3 *db, const char *sql,
 
     bind(stmt);
 
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(stmt);
+        rc = sqlite3_step(stmt);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1315,7 +1328,7 @@ static bool RunSearch(sqlite3 *db, const char *sql,
     }
 
     sqlite3_finalize(stmt);
-    return true;
+    return SQLITE_DONE == rc;
 }
 
 bool CSQLiteDB::SearchByOwner(dbref owner, int type, dbref low, dbref high,

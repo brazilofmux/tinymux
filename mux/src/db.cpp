@@ -1676,7 +1676,7 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
         return;
     }
 
-    g_pSQLiteBackend->GetAll(
+    if (!g_pSQLiteBackend->GetAll(
         static_cast<unsigned int>(thing),
         [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
         {
@@ -1687,7 +1687,13 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
             {
                 attrnums.push_back(static_cast<int>(attrnum));
             }
-        });
+        }))
+    {
+        Log.tinyprintf(T("collect_attrnums_from_storage: failed to enumerate attrs for #%d" ENDLINE),
+            thing);
+        attrnums.clear();
+        return;
+    }
 
     sort(attrnums.begin(), attrnums.end());
     attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
