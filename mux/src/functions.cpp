@@ -9206,21 +9206,37 @@ static FUNCTION(fun_setq)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
-    if (  regnum < 0
-       || regnum >= MAX_GLOBAL_REGS
-       || fargs[0][1] != '\0')
+    if (nfargs < 2 || (nfargs % 2) != 0)
     {
-        safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+        safe_str(T("#-1 FUNCTION (SETQ) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
+        return;
     }
-    else
+
+    for (int i = 0; i < nfargs; i += 2)
     {
-        size_t n = strlen(reinterpret_cast<char *>(fargs[1]));
-        RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
+        int regnum;
+        if (IsSingleCharReg(fargs[i], regnum))
+        {
+            size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+            RegAssign(&mudstate.global_regs[regnum], n, fargs[i + 1]);
+        }
+        else
+        {
+            size_t nName = strlen(reinterpret_cast<char *>(fargs[i]));
+            if (IsValidNamedReg(fargs[i], nName))
+            {
+                size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+                NamedRegAssign(mudstate.named_regs, fargs[i], nName, n, fargs[i + 1]);
+            }
+            else
+            {
+                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                return;
+            }
+        }
     }
 }
 
@@ -9230,22 +9246,45 @@ static FUNCTION(fun_setr)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
-    if (  regnum < 0
-       || regnum >= MAX_GLOBAL_REGS
-       || fargs[0][1] != '\0')
+    if (nfargs < 2 || (nfargs % 2) != 0)
     {
-        safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+        safe_str(T("#-1 FUNCTION (SETR) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
+        return;
     }
-    else
+
+    for (int i = 0; i < nfargs; i += 2)
     {
-        size_t n = strlen(reinterpret_cast<char *>(fargs[1]));
-        RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
-        safe_copy_buf(fargs[1], n, buff, bufc);
+        int regnum;
+        if (IsSingleCharReg(fargs[i], regnum))
+        {
+            size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+            RegAssign(&mudstate.global_regs[regnum], n, fargs[i + 1]);
+            if (i + 2 >= nfargs)
+            {
+                safe_copy_buf(fargs[i + 1], n, buff, bufc);
+            }
+        }
+        else
+        {
+            size_t nName = strlen(reinterpret_cast<char *>(fargs[i]));
+            if (IsValidNamedReg(fargs[i], nName))
+            {
+                size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+                NamedRegAssign(mudstate.named_regs, fargs[i], nName, n, fargs[i + 1]);
+                if (i + 2 >= nfargs)
+                {
+                    safe_copy_buf(fargs[i + 1], n, buff, bufc);
+                }
+            }
+            else
+            {
+                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                return;
+            }
+        }
     }
 }
 
@@ -9259,17 +9298,30 @@ static FUNCTION(fun_r)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int regnum = mux_RegisterSet[static_cast<unsigned char>(fargs[0][0])];
-    if (  regnum < 0
-       || regnum >= MAX_GLOBAL_REGS
-       || fargs[0][1] != '\0')
+    int regnum;
+    if (IsSingleCharReg(fargs[0], regnum))
     {
-        safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+        if (mudstate.global_regs[regnum])
+        {
+            safe_copy_buf(mudstate.global_regs[regnum]->reg_ptr,
+                mudstate.global_regs[regnum]->reg_len, buff, bufc);
+        }
     }
-    else if (mudstate.global_regs[regnum])
+    else
     {
-        safe_copy_buf(mudstate.global_regs[regnum]->reg_ptr,
-            mudstate.global_regs[regnum]->reg_len, buff, bufc);
+        size_t nName = strlen(reinterpret_cast<char *>(fargs[0]));
+        if (IsValidNamedReg(fargs[0], nName))
+        {
+            reg_ref *rr = NamedRegRead(mudstate.named_regs, fargs[0], nName);
+            if (rr && rr->reg_len > 0)
+            {
+                safe_copy_buf(rr->reg_ptr, rr->reg_len, buff, bufc);
+            }
+        }
+        else
+        {
+            safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+        }
     }
 }
 
@@ -11594,8 +11646,8 @@ static FUN builtin_function_list[] =
     {T("SET"),         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SETDIFF"),     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SETINTER"),    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
-    {T("SETQ"),        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {T("SETR"),        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("SETQ"),        fun_setq,       MAX_ARG, 2,       MAX_ARG,   0, CA_PUBLIC},
+    {T("SETR"),        fun_setr,       MAX_ARG, 2,       MAX_ARG,   0, CA_PUBLIC},
     {T("SETUNION"),    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SHA1"),        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {T("SHL"),         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},

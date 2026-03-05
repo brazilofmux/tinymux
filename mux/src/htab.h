@@ -10,6 +10,8 @@
 
 #include <vector>
 
+struct NamedRegsMap;
+
 typedef struct name_table NAMETAB;
 struct name_table
 {
@@ -43,6 +45,7 @@ struct bque
     UTF8    *comm;                  // command
     UTF8    *env[NUM_ENV_VARS];     // environment vars
     reg_ref *scr[MAX_GLOBAL_REGS];  // temp vars
+    NamedRegsMap *named_scr;                // Named temp vars.
 #if defined(STUB_SLAVE)
     CResultsSet *pResultsSet;       // Results Set
     int     iRow;                   // Current Row

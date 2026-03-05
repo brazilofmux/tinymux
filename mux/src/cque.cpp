@@ -99,6 +99,9 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                 mudstate.global_regs[i] = point->scr[i];
                 point->scr[i] = nullptr;
             }
+            NamedRegsClear(mudstate.named_regs);
+            mudstate.named_regs = point->named_scr;
+            point->named_scr = nullptr;
 
 #if defined(STUB_SLAVE)
             if (nullptr != mudstate.pResultsSet)
@@ -227,6 +230,7 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
             i = nullptr;
         }
     }
+    NamedRegsClear(point->named_scr);
 
     for (auto& global_reg : mudstate.global_regs)
     {
@@ -236,6 +240,7 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
             global_reg = nullptr;
         }
     }
+    NamedRegsClear(mudstate.named_regs);
 
 #if defined(STUB_SLAVE)
     mudstate.iRow = RS_TOP;
@@ -336,6 +341,7 @@ static int CallBack_HaltQueue(const PTASK_RECORD p)
                     i = nullptr;
                 }
             }
+            NamedRegsClear(point->named_scr);
 
             MEMFREE(point->text);
             point->text = nullptr;
@@ -433,6 +439,7 @@ static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
                     i = nullptr;
                 }
             }
+            NamedRegsClear(point->named_scr);
 
             MEMFREE(point->text);
             point->text = nullptr;
@@ -602,6 +609,7 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                         i = nullptr;
                     }
                 }
+                NamedRegsClear(point->named_scr);
 
                 MEMFREE(point->text);
                 point->text = nullptr;
@@ -824,7 +832,8 @@ static BQUE *setup_que
     UTF8    *command,
     int      nargs,
     const UTF8 *args[],
-    reg_ref *sargs[]
+    reg_ref *sargs[],
+    NamedRegsMap *named_sargs = nullptr
 )
 {
     // Can we run commands at all?
@@ -938,6 +947,7 @@ static BQUE *setup_que
                 RegAddRef(sargs[a]);
             }
         }
+        tmp->named_scr = NamedRegsCopy(named_sargs ? named_sargs : mudstate.named_regs);
     }
     else
     {
@@ -945,6 +955,7 @@ static BQUE *setup_que
         {
             tmp->scr[a] = nullptr;
         }
+        tmp->named_scr = nullptr;
     }
 
 #if defined(STUB_SLAVE)
@@ -985,7 +996,8 @@ void wait_que
     UTF8    *command,
     const int      nargs,
     const UTF8 *args[],
-    reg_ref *sargs[]
+    reg_ref *sargs[],
+    NamedRegsMap *named_sargs
 )
 {
     if (!(mudconf.control_flags & CF_INTERP))
@@ -996,7 +1008,7 @@ void wait_que
     BQUE *tmp = setup_que(executor, caller, enactor, eval,
         command,
         nargs, args,
-        sargs);
+        sargs, named_sargs);
 
     if (!tmp)
     {

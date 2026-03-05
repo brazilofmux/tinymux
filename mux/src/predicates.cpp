@@ -1304,7 +1304,8 @@ void handle_prog(DESC *d, UTF8 *message)
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
         cmd,
         1, const_cast<const UTF8**>(&message),
-        d->program_data->wait_regs);
+        d->program_data->wait_regs,
+        d->program_data->named_wait_regs);
 
     // First, set 'all' to a descriptor we find for this player.
     //
@@ -1326,6 +1327,7 @@ void handle_prog(DESC *d, UTF8 *message)
                         wait_reg = nullptr;
                     }
                 }
+                NamedRegsClear(program->named_wait_regs);
             }
         }
         else
@@ -1416,6 +1418,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
                         wait_reg = nullptr;
                     }
                 }
+                NamedRegsClear(program->named_wait_regs);
             }
         }
         else
@@ -1568,6 +1571,7 @@ void do_prog
             RegAddRef(mudstate.global_regs[i]);
         }
     }
+    program->named_wait_regs = NamedRegsCopy(mudstate.named_regs);
 
     // Now, start waiting.
     //

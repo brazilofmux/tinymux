@@ -421,6 +421,7 @@ namespace
                         wait_reg = nullptr;
                     }
                 }
+                NamedRegsClear(d->program_data->named_wait_regs);
                 MEMFREE(d->program_data);
                 atr_clr(d->player, A_PROGCMD);
             }
@@ -777,6 +778,7 @@ public:
                         wait_reg = nullptr;
                     }
                 }
+                NamedRegsClear(d->program_data->named_wait_regs);
                 MEMFREE(d->program_data);
                 atr_clr(d->player, A_PROGCMD);
             }

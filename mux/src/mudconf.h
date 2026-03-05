@@ -33,6 +33,10 @@ struct dbrefHasher
 
 using StringPtrMap = std::unordered_map<std::vector<UTF8>, void*, VectorHasher>;
 using DbrefPtrMap  = std::unordered_map<dbref, void*, dbrefHasher>;
+struct NamedRegsMap : std::unordered_map<std::vector<UTF8>, reg_ref*, VectorHasher>
+{
+    using std::unordered_map<std::vector<UTF8>, reg_ref*, VectorHasher>::unordered_map;
+};
 
 typedef struct
 {
@@ -533,6 +537,7 @@ struct statedata
     UTF8    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
 
     reg_ref *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
+    NamedRegsMap *named_regs;               // Named global registers.
     ALIST   iter_alist;         /* Attribute list for iterations */
     BADNAME *badname_head;      /* List of disallowed names */
     HELP_DESC *aHelpDesc;       // Table of help files hashes.

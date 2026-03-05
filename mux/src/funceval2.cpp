@@ -2329,24 +2329,23 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
     // Process each requested register
     for (int i = 0; i < nqregs; i++)
     {
-        int curq;
-        if (  qregs[i]
-           && *qregs[i]
-           && (curq = mux_RegisterSet[static_cast<unsigned char>(qregs[i][0])]) != -1
-           && qregs[i][1] == '\0'
-           && curq < MAX_GLOBAL_REGS)
+        if (  !qregs[i]
+           || !*qregs[i])
         {
-            // Only try to extract the substring if it exists in the match results
+            continue;
+        }
+
+        int curq;
+        if (IsSingleCharReg(qregs[i], curq))
+        {
+            // Single-char register (0-9, a-z).
+            //
             if (i < matches)
             {
                 UTF8 *p = alloc_lbuf("fun_regmatch");
                 PCRE2_SIZE outlen = 0;
                 int ret = pcre2_substring_copy_bynumber(
-                    match_data,    // match data block
-                    i,             // capture group number
-                    p,             // output buffer
-                    &outlen        // output length
-                );
+                    match_data, i, p, &outlen);
 
                 if (ret >= 0)
                 {
@@ -2355,15 +2354,44 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                 }
                 else
                 {
-                    // No match for this capture, clear register
                     RegAssign(&mudstate.global_regs[curq], 0, nullptr);
                 }
                 free_lbuf(p);
             }
             else
             {
-                // No match for this capture, clear register
                 RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+            }
+        }
+        else
+        {
+            // Named register.
+            //
+            size_t nName = strlen(reinterpret_cast<char *>(qregs[i]));
+            if (IsValidNamedReg(qregs[i], nName))
+            {
+                if (i < matches)
+                {
+                    UTF8 *p = alloc_lbuf("fun_regmatch");
+                    PCRE2_SIZE outlen = 0;
+                    int ret = pcre2_substring_copy_bynumber(
+                        match_data, i, p, &outlen);
+
+                    if (ret >= 0)
+                    {
+                        size_t n = static_cast<size_t>(outlen);
+                        NamedRegAssign(mudstate.named_regs, qregs[i], nName, n, p);
+                    }
+                    else
+                    {
+                        NamedRegAssign(mudstate.named_regs, qregs[i], nName, 0, T(""));
+                    }
+                    free_lbuf(p);
+                }
+                else
+                {
+                    NamedRegAssign(mudstate.named_regs, qregs[i], nName, 0, T(""));
+                }
             }
         }
     }

@@ -11687,15 +11687,23 @@ QUIT
 & R()
 R()
 
-  FUNCTION: r(<number>)
+  FUNCTION: r(<register>)
 
   The r() function is used to access "local registers", and returns
-  the contents of the specified register. There are thirty-six such
-  registers, numbered 0 through 9 and A through Z.  The local
-  registers are normally cleared at the start of each command, but are
-  preserved across the commands that compose an action list, as well as
-  commands that directly trigger action lists, such as @switch,
-  @trigger, and @dolist.
+  the contents of the specified register. Registers may be single-
+  character (0-9, A-Z) or named (alphanumeric and underscore, up to
+  32 characters, case-insensitive). The local registers are normally
+  cleared at the start of each command, but are preserved across the
+  commands that compose an action list, as well as commands that
+  directly trigger action lists, such as @switch, @trigger, and
+  @dolist.
+
+  Examples:
+    > say [setq(0,Hello)]r(0) is [r(0)]
+    You say, "r(0) is Hello"
+
+    > say [setq(myvar,World)]r(myvar) is [r(myvar)]
+    You say, "r(myvar) is World"
 
   Related Topics: setq(), setr().
 
@@ -12912,36 +12920,46 @@ SETINTER()
 & SETQ()
 SETQ()
 
-  FUNCTION: setq(<number>,<string>)
+  FUNCTION: setq(<register>,<string>[,<register2>,<string2>,...])
 
   The setq() function is used to copy strings into local registers.
   It returns a null string; it is a purely "side effect" function.
 
-  There are thirty-six local registers, numbered 0 through 9 and A
-  through Z. They are cleared at the start of each interactive
-  command, but are preserved across the command queue. They are most
-  useful for storing complex function evaluations which are used
-  repeatedly within a single command.  The local registers may be read
-  via the r() function, and a common use of setq()/r() is to
-  temporarily store the result of a complex evaluation whose result is
-  needed more than once.
+  There are thirty-six single-character local registers, numbered 0
+  through 9 and A through Z. In addition, you may use named registers
+  of up to 32 characters (alphanumeric and underscore, case-insensitive).
+  Registers are cleared at the start of each interactive command, but are
+  preserved across the command queue. They are most useful for storing
+  complex function evaluations which are used repeatedly within a single
+  command. The local registers may be read via the r() function or the
+  %q<name> substitution syntax.
+
+  Multiple register/value pairs can be set in a single call. The number
+  of arguments must be even.
 
   setq() can be used to improve the readability of MUX code, as well as to
   cut down the amount of time needed to do complex evaluations.
 
-  Example:
+  Examples:
     > &TEST me=Test on [mudname()] at [time()].
     > say [setq(0,u(TEST))]'[r(0)]' has length [strlen(r(0))].
     You say, "'Test on TestMUX at Tue Feb 23 17:00:51 1993.' has length 45."
+
+    > say [setq(myvar,Hello World)]%q<myvar>
+    You say, "Hello World"
+
+    > say [setq(a,first,b,second)]%qa and %qb
+    You say, "first and second"
 
   Related Topics: r(), setr().
 
 & SETR()
 SETR()
 
-  FUNCTION: setr(<number>,<string>)
+  FUNCTION: setr(<register>,<string>[,<register2>,<string2>,...])
 
-  This function is identical to setq(), but returns <string>.
+  This function is identical to setq(), but returns the last <string>
+  assigned. Multiple register/value pairs can be set in a single call.
 
   Related Topics: setq(), r().
 
@@ -13672,8 +13690,9 @@ SUBSTITUTIONS (continued)
     %m       Text of the last command executed.
     %0-%9    Value of positional parameter/stack location 0 through 9.
     %i0-%i9  Equivalent to itext(0) through itext(9).
-    %q0-%q9  Value of temporary (setq) register 0 through 9.
-    %qa-%qz  Value of temporary (setq) register A through Z.
+    %q0-%q9      Value of temporary (setq) register 0 through 9.
+    %qa-%qz      Value of temporary (setq) register A through Z.
+    %q<name>     Value of a named register (e.g. %q<myvar>).
 
 { 'help substitutions3' for more }
 

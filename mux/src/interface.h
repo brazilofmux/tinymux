@@ -9,6 +9,8 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+struct NamedRegsMap;
+
 /* these symbols must be defined by the interface */
 
 /* Disconnection reason codes */
@@ -50,6 +52,7 @@ typedef struct program_data
 {
     dbref    wait_enactor;
     reg_ref *wait_regs[MAX_GLOBAL_REGS];
+    NamedRegsMap *named_wait_regs;
 } program_data;
 
 // Input state

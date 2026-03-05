@@ -1697,21 +1697,73 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     // Q
                     //
                     iStr++;
-                    i = mux_RegisterSet[pStr[iStr]];
-                    if (  0 <= i
-                       && i < MAX_GLOBAL_REGS)
+                    if (pStr[iStr] == '<')
                     {
-                        if (  mudstate.global_regs[i]
-                           && mudstate.global_regs[i]->reg_len > 0)
+                        // %q<name> — named register substitution.
+                        //
+                        size_t nStart = iStr + 1;
+                        size_t nEnd = nStart;
+                        while (  nEnd < nStr
+                              && '\0' != pStr[nEnd]
+                              && '>' != pStr[nEnd])
                         {
-                            safe_copy_buf(mudstate.global_regs[i]->reg_ptr,
-                                mudstate.global_regs[i]->reg_len, buff, bufc);
-                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            nEnd++;
+                        }
+                        if ('>' == pStr[nEnd])
+                        {
+                            size_t nName = nEnd - nStart;
+                            const UTF8 *pName = pStr + nStart;
+                            int regnum = -1;
+                            if (  1 == nName
+                               && (regnum = mux_RegisterSet[pName[0]]) >= 0
+                               && regnum < MAX_GLOBAL_REGS)
+                            {
+                                if (  mudstate.global_regs[regnum]
+                                   && mudstate.global_regs[regnum]->reg_len > 0)
+                                {
+                                    safe_copy_buf(mudstate.global_regs[regnum]->reg_ptr,
+                                        mudstate.global_regs[regnum]->reg_len, buff, bufc);
+                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                }
+                            }
+                            else if (IsValidNamedReg(pName, nName))
+                            {
+                                reg_ref *rr = NamedRegRead(mudstate.named_regs, pName, nName);
+                                if (rr && rr->reg_len > 0)
+                                {
+                                    safe_copy_buf(rr->reg_ptr, rr->reg_len, buff, bufc);
+                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                }
+                            }
+                            iStr = nEnd;
+                        }
+                        else
+                        {
+                            // No closing '>'; leave iStr pointing at '<'.
+                            //
+                            iStr--;
                         }
                     }
-                    else if (pStr[iStr] == '\0')
+                    else
                     {
-                        iStr--;
+                        // Traditional single-char %q0/%qa path.
+                        //
+                        i = mux_RegisterSet[pStr[iStr]];
+                        if (  0 <= i
+                           && i < MAX_GLOBAL_REGS)
+                        {
+                            if (  mudstate.global_regs[i]
+                               && mudstate.global_regs[i]->reg_len > 0)
+                            {
+                                safe_copy_buf(mudstate.global_regs[i]->reg_ptr,
+                                    mudstate.global_regs[i]->reg_len, buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            }
+                        }
+                        else if (pStr[iStr] == '\0')
+                        {
+                            iStr--;
+                        }
                     }
                 }
                 else if (iCode <= 4)
@@ -2450,6 +2502,8 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
  * registers to protect them from various sorts of munging.
  */
 
+static std::vector<NamedRegsMap*> named_regs_stack;
+
 void save_global_regs
 (
     reg_ref *preserve[]
@@ -2463,6 +2517,7 @@ void save_global_regs
         }
         preserve[i] = mudstate.global_regs[i];
     }
+    named_regs_stack.push_back(NamedRegsCopy(mudstate.named_regs));
 }
 
 void save_and_clear_global_regs
@@ -2475,6 +2530,8 @@ void save_and_clear_global_regs
         preserve[i] = mudstate.global_regs[i];
         mudstate.global_regs[i] = nullptr;
     }
+    named_regs_stack.push_back(mudstate.named_regs);
+    mudstate.named_regs = nullptr;
 }
 
 void restore_global_regs
@@ -2495,6 +2552,12 @@ void restore_global_regs
             mudstate.global_regs[i] = preserve[i];
             preserve[i] = nullptr;
         }
+    }
+    NamedRegsClear(mudstate.named_regs);
+    if (!named_regs_stack.empty())
+    {
+        mudstate.named_regs = named_regs_stack.back();
+        named_regs_stack.pop_back();
     }
 }
 
@@ -2563,3 +2626,136 @@ void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
 
     BufAddRef(last_lbufref);
 }
+
+// ---------------------------------------------------------------------------
+// Named global register helpers.
+//
+
+constexpr size_t MAX_NAMED_REG_LEN = 32;
+
+static std::vector<UTF8> MakeRegKey(const UTF8 *name, size_t len)
+{
+    std::vector<UTF8> key(len);
+    for (size_t i = 0; i < len; i++)
+    {
+        key[i] = mux_tolower_ascii(name[i]);
+    }
+    return key;
+}
+
+bool IsSingleCharReg(const UTF8 *name, int &regnum)
+{
+    if (  nullptr != name
+       && name[0] != '\0'
+       && name[1] == '\0')
+    {
+        int r = mux_RegisterSet[static_cast<unsigned char>(name[0])];
+        if (  0 <= r
+           && r < MAX_GLOBAL_REGS)
+        {
+            regnum = r;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsValidNamedReg(const UTF8 *name, size_t len)
+{
+    if (  nullptr == name
+       || 0 == len
+       || MAX_NAMED_REG_LEN < len)
+    {
+        return false;
+    }
+    for (size_t i = 0; i < len; i++)
+    {
+        UTF8 ch = name[i];
+        if (  !mux_isalnum(ch)
+           && ch != '_')
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void NamedRegAssign(NamedRegsMap *&map, const UTF8 *name, size_t nNameLen, size_t nValueLen, const UTF8 *value)
+{
+    if (  nullptr == name
+       || 0 == nNameLen
+       || !IsValidNamedReg(name, nNameLen))
+    {
+        return;
+    }
+
+    if (nullptr == map)
+    {
+        map = new NamedRegsMap;
+    }
+
+    std::vector<UTF8> key = MakeRegKey(name, nNameLen);
+    auto it = map->find(key);
+    if (it != map->end())
+    {
+        RegRelease(it->second);
+        it->second = nullptr;
+        map->erase(it);
+    }
+
+    if (  nullptr != value
+       && nValueLen < LBUF_SIZE)
+    {
+        reg_ref *rr = nullptr;
+        RegAssign(&rr, nValueLen, value);
+        (*map)[key] = rr;
+    }
+}
+
+reg_ref *NamedRegRead(const NamedRegsMap *map, const UTF8 *name, size_t nNameLen)
+{
+    if (  nullptr == map
+       || nullptr == name
+       || 0 == nNameLen)
+    {
+        return nullptr;
+    }
+
+    std::vector<UTF8> key = MakeRegKey(name, nNameLen);
+    auto it = map->find(key);
+    if (it != map->end())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
+void NamedRegsClear(NamedRegsMap *&map)
+{
+    if (nullptr == map)
+    {
+        return;
+    }
+    for (auto &kv : *map)
+    {
+        RegRelease(kv.second);
+    }
+    delete map;
+    map = nullptr;
+}
+
+NamedRegsMap *NamedRegsCopy(const NamedRegsMap *src)
+{
+    if (nullptr == src || src->empty())
+    {
+        return nullptr;
+    }
+    NamedRegsMap *dst = new NamedRegsMap;
+    for (const auto &kv : *src)
+    {
+        RegAddRef(kv.second);
+        (*dst)[kv.first] = kv.second;
+    }
+    return dst;
+}
+

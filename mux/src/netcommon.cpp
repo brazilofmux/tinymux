@@ -2583,6 +2583,7 @@ void do_command(DESC *d, UTF8 *command)
                 mudstate.global_regs[i] = nullptr;
             }
         }
+        NamedRegsClear(mudstate.named_regs);
 
 #if defined(STUB_SLAVE)
         mudstate.iRow = RS_TOP;

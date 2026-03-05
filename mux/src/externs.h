@@ -170,7 +170,8 @@ LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, 
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-              const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
+              const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[],
+              NamedRegsMap *named_sargs = nullptr);
 void query_complete(uint32_t hQuery, uint32_t iError, CResultsSet *prs);
 
 #if defined(UNIX_CRYPT)
@@ -234,6 +235,13 @@ inline void RegRelease(reg_ref *regref)
     }
 }
 void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr);
+
+void NamedRegsClear(NamedRegsMap *&map);
+NamedRegsMap *NamedRegsCopy(const NamedRegsMap *src);
+void NamedRegAssign(NamedRegsMap *&map, const UTF8 *name, size_t nNameLen, size_t nValueLen, const UTF8 *value);
+reg_ref *NamedRegRead(const NamedRegsMap *map, const UTF8 *name, size_t nNameLen);
+bool IsSingleCharReg(const UTF8 *name, int &regnum);
+bool IsValidNamedReg(const UTF8 *name, size_t len);
 
 void save_global_regs(reg_ref *preserve[]);
 void save_and_clear_global_regs(reg_ref *preserve[]);

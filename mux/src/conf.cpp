@@ -369,6 +369,7 @@ void cf_init(void)
     {
         mudstate.global_regs[i] = nullptr;
     }
+    mudstate.named_regs = nullptr;
 #if defined(STUB_SLAVE)
     mudstate.pResultsSet = nullptr;
     mudstate.iRow = RS_TOP;
