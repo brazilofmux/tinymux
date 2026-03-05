@@ -329,7 +329,6 @@ void cache_del(Aname *nam)
 void cache_preload(dbref obj)
 {
     if (  !cache_initted
-       || !g_pSQLiteBackend
        || mudstate.bStandAlone)
     {
         return;
@@ -382,19 +381,16 @@ void list_cache_stats(dbref player)
         static_cast<unsigned long long>(cache_misses),
         hit_pct));
 
-    if (g_pSQLiteBackend)
-    {
-        CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
+    CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
 
-        notify(player, T("--- SQLite Storage ---"));
-        notify(player, tprintf(T("Attr gets: %llu   puts: %llu   dels: %llu   bulk loads: %llu"),
-            static_cast<unsigned long long>(st.attr_gets),
-            static_cast<unsigned long long>(st.attr_puts),
-            static_cast<unsigned long long>(st.attr_dels),
-            static_cast<unsigned long long>(st.attr_bulk_loads)));
-        notify(player, tprintf(T("Obj inserts: %llu   updates: %llu   loads: %llu"),
-            static_cast<unsigned long long>(st.obj_inserts),
-            static_cast<unsigned long long>(st.obj_updates),
-            static_cast<unsigned long long>(st.obj_loads)));
-    }
+    notify(player, T("--- SQLite Storage ---"));
+    notify(player, tprintf(T("Attr gets: %llu   puts: %llu   dels: %llu   bulk loads: %llu"),
+        static_cast<unsigned long long>(st.attr_gets),
+        static_cast<unsigned long long>(st.attr_puts),
+        static_cast<unsigned long long>(st.attr_dels),
+        static_cast<unsigned long long>(st.attr_bulk_loads)));
+    notify(player, tprintf(T("Obj inserts: %llu   updates: %llu   loads: %llu"),
+        static_cast<unsigned long long>(st.obj_inserts),
+        static_cast<unsigned long long>(st.obj_updates),
+        static_cast<unsigned long long>(st.obj_loads)));
 }

@@ -76,7 +76,7 @@ static MAILBODY *mail_list = nullptr;
 
 #include "sqlite_backend.h"
 
-#define SQLITE_MAIL_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+#define SQLITE_MAIL_WRITABLE() (!mudstate.bSQLiteLoading)
 
 static void sqlite_wt_insert_mail(struct mail *mp)
 {
@@ -5677,11 +5677,6 @@ void do_folder
 
 void sqlite_sync_mail(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return;
-    }
-
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     sqldb.ClearMailTables();
     sqldb.Begin();
@@ -5745,11 +5740,6 @@ void sqlite_sync_mail(void)
 
 bool sqlite_load_mail(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return false;
-    }
-
     mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 

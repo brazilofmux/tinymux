@@ -53,7 +53,7 @@ ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
     anum_extend(number);
     ATTR *vp = vattr_define_LEN(pName, nName, number, flags);
 
-    if (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+    if (!mudstate.bSQLiteLoading)
     {
         g_pSQLiteBackend->GetDB().PutMeta("attr_next", mudstate.attr_next);
     }
@@ -89,8 +89,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
         anum_extend(vp->number);
         anum_set(vp->number, static_cast<ATTR *>(vp));
 
-        if (  g_pSQLiteBackend
-           && !mudstate.bSQLiteLoading
+        if (  !mudstate.bSQLiteLoading
            && number >= A_USER_START)
         {
             g_pSQLiteBackend->GetDB().PutAttrName(number,
@@ -673,7 +672,7 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
             nHash = HASH_ProcessBuffer(0, pNewName, nNewName);
             pht->Insert(sizeof(int), nHash, &anum);
 
-            if (g_pSQLiteBackend && anum >= A_USER_START)
+            if (anum >= A_USER_START)
             {
                 g_pSQLiteBackend->GetDB().PutAttrName(anum,
                     reinterpret_cast<const char *>(pNewName), vp->flags);

@@ -2826,26 +2826,23 @@ void db_make_minimal(void)
     // Insert Limbo (#0) into SQLite before creating Wizard.
     // create_player -> create_obj will insert #1 via its own path.
     //
-    if (g_pSQLiteBackend)
-    {
-        CSQLiteDB::ObjectRecord rec;
-        rec.dbref_val = 0;
-        rec.location  = db[0].location;
-        rec.contents  = db[0].contents;
-        rec.exits     = db[0].exits;
-        rec.next      = db[0].next;
-        rec.link      = db[0].link;
-        rec.owner     = db[0].owner;
-        rec.parent    = db[0].parent;
-        rec.zone      = db[0].zone;
-        rec.pennies   = 0;
-        rec.flags1    = db[0].fs.word[FLAG_WORD1];
-        rec.flags2    = db[0].fs.word[FLAG_WORD2];
-        rec.flags3    = db[0].fs.word[FLAG_WORD3];
-        rec.powers1   = db[0].powers;
-        rec.powers2   = db[0].powers2;
-        g_pSQLiteBackend->GetDB().InsertObject(rec);
-    }
+    CSQLiteDB::ObjectRecord rec;
+    rec.dbref_val = 0;
+    rec.location  = db[0].location;
+    rec.contents  = db[0].contents;
+    rec.exits     = db[0].exits;
+    rec.next      = db[0].next;
+    rec.link      = db[0].link;
+    rec.owner     = db[0].owner;
+    rec.parent    = db[0].parent;
+    rec.zone      = db[0].zone;
+    rec.pennies   = 0;
+    rec.flags1    = db[0].fs.word[FLAG_WORD1];
+    rec.flags2    = db[0].fs.word[FLAG_WORD2];
+    rec.flags3    = db[0].fs.word[FLAG_WORD3];
+    rec.powers1   = db[0].powers;
+    rec.powers2   = db[0].powers2;
+    g_pSQLiteBackend->GetDB().InsertObject(rec);
 
     // should be #1
     //
@@ -3813,7 +3810,7 @@ void RemoveFile(const UTF8 *name)
         ec);
 }
 
-#define SQLITE_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+#define SQLITE_WRITABLE() (!mudstate.bSQLiteLoading)
 
 void s_Location(dbref t, dbref n)
 {
@@ -3932,11 +3929,6 @@ void s_Dropto(dbref t, dbref n)
 //
 void sqlite_sync_objects(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return;
-    }
-
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     sqldb.Begin();
 
@@ -3970,11 +3962,6 @@ void sqlite_sync_objects(void)
 //
 void sqlite_sync_attrnames(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return;
-    }
-
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     sqldb.Begin();
 
@@ -4002,11 +3989,6 @@ void sqlite_sync_attrnames(void)
 //
 bool sqlite_load_game(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return false;
-    }
-
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
     // Check if SQLite has data by reading db_top.

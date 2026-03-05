@@ -810,8 +810,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
     // expressed purely in terms of object metadata columns.  The SQL query
     // uses indexes on owner, zone, or parent and avoids a full db[] scan.
     //
-    if (  g_pSQLiteBackend
-       && nullptr == parm->s_rst_name
+    if (  nullptr == parm->s_rst_name
        && nullptr == parm->s_rst_eval
        && 0 == parm->s_pset.word1
        && 0 == parm->s_pset.word2)

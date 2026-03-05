@@ -26,7 +26,7 @@ static comsys_t* comsys_table[NUM_COMSYS];
 
 #include "sqlite_backend.h"
 
-#define SQLITE_COMSYS_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
+#define SQLITE_COMSYS_WRITABLE() (!mudstate.bSQLiteLoading)
 
 static void sqlite_wt_channel(struct channel *ch)
 {
@@ -4173,11 +4173,6 @@ FUNCTION(fun_chanobj)
 
 void sqlite_sync_comsys(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return;
-    }
-
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     sqldb.ClearComsysTables();
     sqldb.Begin();
@@ -4228,11 +4223,6 @@ void sqlite_sync_comsys(void)
 
 bool sqlite_load_comsys(void)
 {
-    if (!g_pSQLiteBackend)
-    {
-        return false;
-    }
-
     mudstate.bSQLiteLoading = true;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 

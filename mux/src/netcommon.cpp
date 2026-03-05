@@ -784,10 +784,7 @@ void announce_connect(const dbref player, DESC *d)
     if (mudstate.record_players < count)
     {
         mudstate.record_players = count;
-        if (g_pSQLiteBackend)
-        {
-            g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players);
-        }
+        g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players);
     }
 
     UTF8 *buf = alloc_lbuf("announce_connect");
