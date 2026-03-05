@@ -626,6 +626,12 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    notify(executor, T("@dbclean is not needed with SQLite storage."));
+    notify(executor, T("Attribute numbers are indexed keys; gaps cost nothing."));
+    return;
+#else
+
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
@@ -650,6 +656,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     notify(executor, T("Checking Integrity of the attribute data structures..."));
     dbclean_IntegrityChecking(executor);
     notify(executor, T("@dbclean completed.."));
+#endif // SQLITE_STORAGE
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)
