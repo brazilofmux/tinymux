@@ -596,6 +596,11 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
             log_text(T("create_obj recovery sqlite_sync_runtime() failed."));
             ENDLOG;
+
+            // Fail closed: don't hand out an object we couldn't make durable.
+            //
+            destroy_obj(obj);
+            return NOTHING;
         }
     }
 

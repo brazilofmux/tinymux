@@ -2675,9 +2675,39 @@ void db_make_minimal(void)
     rec.flags3    = db[0].fs.word[FLAG_WORD3];
     rec.powers1   = db[0].powers;
     rec.powers2   = db[0].powers2;
-    if (!g_pSQLiteBackend->GetDB().InsertObject(rec))
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    bool bPersisted = false;
+    if (!sqldb.Begin())
+    {
+        Log.WriteString(T("db_make_minimal: failed to begin SQLite transaction for Limbo (#0).\n"));
+    }
+    else if (!sqldb.InsertObject(rec))
     {
         Log.WriteString(T("db_make_minimal: failed to insert Limbo (#0) into SQLite.\n"));
+        sqldb.Rollback();
+    }
+    else if (!sqldb.PutMeta("db_top", mudstate.db_top))
+    {
+        Log.WriteString(T("db_make_minimal: failed to persist db_top after Limbo insert.\n"));
+        sqldb.Rollback();
+    }
+    else if (!sqldb.Commit())
+    {
+        Log.WriteString(T("db_make_minimal: failed to commit Limbo insert.\n"));
+        sqldb.Rollback();
+    }
+    else
+    {
+        bPersisted = true;
+    }
+
+    if (!bPersisted)
+    {
+        Log.WriteString(T("db_make_minimal: attempting full SQLite runtime resync.\n"));
+        if (!sqlite_sync_runtime())
+        {
+            Log.WriteString(T("db_make_minimal: SQLite runtime resync failed.\n"));
+        }
     }
 
     // should be #1
@@ -3957,19 +3987,63 @@ int sqlite_load_game(void)
         }
     }
 
-    dbref grow_top = db_top_val;
+    dbref expected_top = db_top_val;
     if (max_dbref >= 0)
     {
         dbref needed = max_dbref + 1;
-        if (needed > grow_top)
+        if (needed > expected_top)
         {
-            grow_top = needed;
+            expected_top = needed;
         }
+    }
+
+    if (expected_top <= 0)
+    {
+        mudstate.bSQLiteLoading = false;
+        return -1;
+    }
+
+    vector<bool> seen(static_cast<size_t>(expected_top), false);
+    for (const auto& rec : objects)
+    {
+        dbref i = rec.dbref_val;
+        if (  i < 0
+           || i >= expected_top)
+        {
+            mudstate.bSQLiteLoading = false;
+            return -1;
+        }
+        if (seen[static_cast<size_t>(i)])
+        {
+            mudstate.bSQLiteLoading = false;
+            return -1;
+        }
+        seen[static_cast<size_t>(i)] = true;
+    }
+    for (dbref i = 0; i < expected_top; i++)
+    {
+        if (!seen[static_cast<size_t>(i)])
+        {
+            Log.tinyprintf(T("sqlite_load_game: missing object row #%d (db_top=%d)." ENDLINE),
+                i, db_top_val);
+            mudstate.bSQLiteLoading = false;
+            return -1;
+        }
+    }
+
+    if (expected_top != db_top_val)
+    {
+        if (!sqldb.PutMeta("db_top", expected_top))
+        {
+            Log.tinyprintf(T("sqlite_load_game: failed to persist corrected db_top=%d" ENDLINE),
+                expected_top);
+        }
+        db_top_val = expected_top;
     }
 
     // Grow db[] to the right size.
     //
-    db_grow(grow_top);
+    db_grow(expected_top);
 
     for (const auto& rec : objects)
     {
