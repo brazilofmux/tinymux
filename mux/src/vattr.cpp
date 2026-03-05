@@ -103,6 +103,11 @@ void vattr_delete_LEN(UTF8 *pName, size_t nName)
         ATTR *vp = static_cast<ATTR *>(anum_table[anum]);
         anum_set(anum, nullptr);
         mudstate.vattr_name_map.erase(it);
+        if (  !mudstate.bSQLiteLoading
+           && anum >= A_USER_START)
+        {
+            g_pSQLiteBackend->GetDB().DelAttrName(anum);
+        }
         MEMFREE(vp);
     }
 }
@@ -119,13 +124,31 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
     int anum = it->second;
     ATTR *vp = static_cast<ATTR *>(anum_table[anum]);
 
+    string newkey(reinterpret_cast<const char *>(pNewName), nNewName);
+    auto existing = mudstate.vattr_name_map.find(newkey);
+    if (  existing != mudstate.vattr_name_map.end()
+       && existing->second != anum)
+    {
+        return nullptr;
+    }
+
+    if (newkey == oldkey)
+    {
+        return vp;
+    }
+
     mudstate.vattr_name_map.erase(it);
 
-    string newkey(reinterpret_cast<const char *>(pNewName), nNewName);
     auto [newit, inserted] = mudstate.vattr_name_map.emplace(move(newkey), anum);
+    if (!inserted)
+    {
+        mudstate.vattr_name_map.emplace(oldkey, anum);
+        return nullptr;
+    }
     vp->name = reinterpret_cast<const UTF8 *>(newit->first.c_str());
 
-    if (anum >= A_USER_START)
+    if (  !mudstate.bSQLiteLoading
+       && anum >= A_USER_START)
     {
         g_pSQLiteBackend->GetDB().PutAttrName(anum,
             reinterpret_cast<const char *>(pNewName), vp->flags);

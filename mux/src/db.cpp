@@ -867,18 +867,25 @@ void do_attribute
             *pOldName = '\0';
             size_t nOldName = pOldName - OldName;
 
-            // Make sure the new name doesn't already exist. This checks
-            // the built-in and user-defined data structures.
+            pName = MakeCanonicalAttributeName(value, &nName, &bValid);
+            if (!bValid)
+            {
+                notify(executor, T("Attribute rename failed."));
+                return;
+            }
+
+            // Make sure the canonical target name doesn't already exist,
+            // unless it resolves to the same attribute.
             //
-            va2 = atr_str(value);
-            if (va2)
+            va2 = atr_str(pName);
+            if (  va2
+               && va2 != va)
             {
                 notify(executor, T("An attribute with that name already exists."));
                 return;
             }
-            pName = MakeCanonicalAttributeName(value, &nName, &bValid);
-            if (  !bValid
-               || vattr_rename_LEN(OldName, nOldName, pName, nName) == nullptr)
+
+            if (vattr_rename_LEN(OldName, nOldName, pName, nName) == nullptr)
             {
                 notify(executor, T("Attribute rename failed."));
             }
