@@ -4255,6 +4255,7 @@ void sqlite_sync_attrnames(void)
 
     sqldb.PutMeta("attr_next", mudstate.attr_next);
     sqldb.PutMeta("db_top", mudstate.db_top);
+    sqldb.PutMeta("record_players", mudstate.record_players);
 
     sqldb.Commit();
 }
@@ -4282,6 +4283,10 @@ bool sqlite_load_game(void)
 
     int attr_next_val = A_USER_START;
     sqldb.GetMeta("attr_next", &attr_next_val);
+
+    int record_players_val = 0;
+    sqldb.GetMeta("record_players", &record_players_val);
+    mudstate.record_players = record_players_val;
 
     // Suppress write-through for the entire load.
     //
