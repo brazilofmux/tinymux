@@ -107,6 +107,12 @@ bool CSQLiteDB::Open(const char *path)
         return false;
     }
 
+    if (!MigrateSchema())
+    {
+        Close();
+        return false;
+    }
+
     if (!PrepareStatements())
     {
         Close();
@@ -136,7 +142,7 @@ bool CSQLiteDB::ConfigurePragmas()
         "PRAGMA mmap_size=268435456",
         "PRAGMA page_size=4096",
         "PRAGMA cache_size=-65536",
-        "PRAGMA foreign_keys=OFF",
+        "PRAGMA foreign_keys=ON",
         nullptr
     };
 
@@ -158,6 +164,8 @@ bool CSQLiteDB::ConfigurePragmas()
 bool CSQLiteDB::CreateSchema()
 {
     const char *schema =
+        // Core tables (no foreign key dependencies).
+        //
         "CREATE TABLE IF NOT EXISTS objects ("
         "    dbref       INTEGER PRIMARY KEY,"
         "    location    INTEGER NOT NULL DEFAULT -1,"
@@ -191,6 +199,8 @@ bool CSQLiteDB::CreateSchema()
         "    value       INTEGER NOT NULL"
         ") WITHOUT ROWID;"
 
+        // Comsys: channels first (referenced), then dependents with FKs.
+        //
         "CREATE TABLE IF NOT EXISTS channels ("
         "    name        TEXT PRIMARY KEY,"
         "    header      TEXT NOT NULL DEFAULT '',"
@@ -205,7 +215,8 @@ bool CSQLiteDB::CreateSchema()
         ") WITHOUT ROWID;"
 
         "CREATE TABLE IF NOT EXISTS channel_users ("
-        "    channel_name TEXT NOT NULL,"
+        "    channel_name TEXT NOT NULL"
+        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
         "    who         INTEGER NOT NULL,"
         "    is_on       INTEGER NOT NULL DEFAULT 0,"
         "    comtitle_status INTEGER NOT NULL DEFAULT 0,"
@@ -217,24 +228,27 @@ bool CSQLiteDB::CreateSchema()
         "CREATE TABLE IF NOT EXISTS player_channels ("
         "    who         INTEGER NOT NULL,"
         "    alias       TEXT NOT NULL,"
-        "    channel_name TEXT NOT NULL,"
+        "    channel_name TEXT NOT NULL"
+        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
         "    PRIMARY KEY (who, alias)"
         ") WITHOUT ROWID;"
+
+        // Mail: bodies first (referenced), then headers with FK.
+        //
+        "CREATE TABLE IF NOT EXISTS mail_bodies ("
+        "    number      INTEGER PRIMARY KEY,"
+        "    message     TEXT NOT NULL DEFAULT ''"
+        ");"
 
         "CREATE TABLE IF NOT EXISTS mail_headers ("
         "    rowid       INTEGER PRIMARY KEY AUTOINCREMENT,"
         "    to_player   INTEGER NOT NULL,"
         "    from_player INTEGER NOT NULL,"
-        "    body_number INTEGER NOT NULL,"
+        "    body_number INTEGER NOT NULL REFERENCES mail_bodies(number),"
         "    tolist      TEXT NOT NULL DEFAULT '',"
         "    time_str    TEXT NOT NULL DEFAULT '',"
         "    subject     TEXT NOT NULL DEFAULT '',"
         "    read_flags  INTEGER NOT NULL DEFAULT 0"
-        ");"
-
-        "CREATE TABLE IF NOT EXISTS mail_bodies ("
-        "    number      INTEGER PRIMARY KEY,"
-        "    message     TEXT NOT NULL DEFAULT ''"
         ");"
 
         "CREATE TABLE IF NOT EXISTS mail_aliases ("
@@ -244,7 +258,17 @@ bool CSQLiteDB::CreateSchema()
         "    description TEXT NOT NULL DEFAULT '',"
         "    desc_width  INTEGER NOT NULL DEFAULT 0,"
         "    members     TEXT NOT NULL DEFAULT ''"
-        ");";
+        ");"
+
+        // Secondary indexes for common query patterns.
+        //
+        "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
+        "CREATE INDEX IF NOT EXISTS idx_objects_location ON objects(location);"
+        "CREATE INDEX IF NOT EXISTS idx_objects_zone ON objects(zone);"
+        "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
+        "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
+        "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
+        "    ON player_channels(channel_name);";
 
     char *errmsg = nullptr;
     int rc = sqlite3_exec(m_db, schema, nullptr, nullptr, &errmsg);
@@ -255,6 +279,163 @@ bool CSQLiteDB::CreateSchema()
         sqlite3_free(errmsg);
         return false;
     }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Schema migration
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::MigrateSchema()
+{
+    // Check current schema version.  Version 1 is the original schema
+    // without foreign keys or secondary indexes.  Version 2 adds both.
+    // New databases get version 2 from CreateSchema(); existing databases
+    // that predate versioning have no schema_version key and are treated
+    // as version 1.
+    //
+    static const int CURRENT_SCHEMA_VERSION = 2;
+
+    int version = 0;
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK == sqlite3_prepare_v2(m_db,
+        "SELECT value FROM metadata WHERE key='schema_version'",
+        -1, &stmt, nullptr))
+    {
+        if (SQLITE_ROW == sqlite3_step(stmt))
+        {
+            version = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    if (version >= CURRENT_SCHEMA_VERSION)
+    {
+        return true;
+    }
+
+    // Migrate v0/v1 -> v2: add foreign keys to channel_users,
+    // player_channels, and mail_headers.  SQLite requires table recreation
+    // to add FK constraints.  Also add secondary indexes.
+    //
+    // Temporarily disable foreign keys for the migration so existing data
+    // that might violate constraints doesn't block the table recreation.
+    // (PRAGMA foreign_keys cannot be changed inside a transaction.)
+    //
+    sqlite3_exec(m_db, "PRAGMA foreign_keys=OFF", nullptr, nullptr, nullptr);
+
+    char *errmsg = nullptr;
+    const char *migration =
+        "BEGIN;"
+
+        // Recreate channel_users with FK to channels.
+        //
+        "CREATE TABLE new_channel_users ("
+        "    channel_name TEXT NOT NULL"
+        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
+        "    who         INTEGER NOT NULL,"
+        "    is_on       INTEGER NOT NULL DEFAULT 0,"
+        "    comtitle_status INTEGER NOT NULL DEFAULT 0,"
+        "    gag_join_leave INTEGER NOT NULL DEFAULT 0,"
+        "    title       TEXT NOT NULL DEFAULT '',"
+        "    PRIMARY KEY (channel_name, who)"
+        ") WITHOUT ROWID;"
+        "INSERT INTO new_channel_users"
+        "    SELECT * FROM channel_users;"
+        "DROP TABLE channel_users;"
+        "ALTER TABLE new_channel_users RENAME TO channel_users;"
+
+        // Recreate player_channels with FK to channels.
+        //
+        "CREATE TABLE new_player_channels ("
+        "    who         INTEGER NOT NULL,"
+        "    alias       TEXT NOT NULL,"
+        "    channel_name TEXT NOT NULL"
+        "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
+        "    PRIMARY KEY (who, alias)"
+        ") WITHOUT ROWID;"
+        "INSERT INTO new_player_channels"
+        "    SELECT * FROM player_channels;"
+        "DROP TABLE player_channels;"
+        "ALTER TABLE new_player_channels RENAME TO player_channels;"
+
+        // Recreate mail_headers with FK to mail_bodies.
+        //
+        "CREATE TABLE new_mail_headers ("
+        "    rowid       INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    to_player   INTEGER NOT NULL,"
+        "    from_player INTEGER NOT NULL,"
+        "    body_number INTEGER NOT NULL REFERENCES mail_bodies(number),"
+        "    tolist      TEXT NOT NULL DEFAULT '',"
+        "    time_str    TEXT NOT NULL DEFAULT '',"
+        "    subject     TEXT NOT NULL DEFAULT '',"
+        "    read_flags  INTEGER NOT NULL DEFAULT 0"
+        ");"
+        "INSERT INTO new_mail_headers"
+        "    (rowid, to_player, from_player, body_number,"
+        "     tolist, time_str, subject, read_flags)"
+        "    SELECT rowid, to_player, from_player, body_number,"
+        "           tolist, time_str, subject, read_flags"
+        "    FROM mail_headers;"
+        "DROP TABLE mail_headers;"
+        "ALTER TABLE new_mail_headers RENAME TO mail_headers;"
+
+        // Secondary indexes (IF NOT EXISTS in case partially applied).
+        //
+        "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
+        "CREATE INDEX IF NOT EXISTS idx_objects_location ON objects(location);"
+        "CREATE INDEX IF NOT EXISTS idx_objects_zone ON objects(zone);"
+        "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
+        "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
+        "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
+        "    ON player_channels(channel_name);"
+
+        // Record the new schema version.
+        //
+        "INSERT OR REPLACE INTO metadata(key, value)"
+        "    VALUES('schema_version', 2);"
+
+        "COMMIT;";
+
+    int rc = sqlite3_exec(m_db, migration, nullptr, nullptr, &errmsg);
+    if (SQLITE_OK != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::MigrateSchema: %s\n",
+            errmsg ? errmsg : "unknown error");
+        sqlite3_free(errmsg);
+        sqlite3_exec(m_db, "ROLLBACK", nullptr, nullptr, nullptr);
+        sqlite3_exec(m_db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    // Re-enable foreign keys and verify integrity.
+    //
+    sqlite3_exec(m_db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
+
+    // Log any existing FK violations (informational, not fatal).
+    //
+    if (SQLITE_OK == sqlite3_prepare_v2(m_db,
+        "PRAGMA foreign_key_check", -1, &stmt, nullptr))
+    {
+        bool first = true;
+        while (SQLITE_ROW == sqlite3_step(stmt))
+        {
+            if (first)
+            {
+                fprintf(stderr, "CSQLiteDB::MigrateSchema: foreign key violations detected:\n");
+                first = false;
+            }
+            fprintf(stderr, "  table=%s rowid=%lld parent=%s fkid=%d\n",
+                sqlite3_column_text(stmt, 0),
+                sqlite3_column_int64(stmt, 1),
+                sqlite3_column_text(stmt, 2),
+                sqlite3_column_int(stmt, 3));
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version %d.\n",
+        CURRENT_SCHEMA_VERSION);
     return true;
 }
 

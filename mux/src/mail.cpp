@@ -5722,6 +5722,17 @@ void sqlite_sync_mail(void)
     sqldb.ClearMailTables();
     sqldb.Begin();
 
+    // Sync mail bodies first (mail_headers.body_number references
+    // mail_bodies.number via foreign key).
+    //
+    for (int i = 0; i < mudstate.mail_db_top; i++)
+    {
+        if (0 < mail_list[i].m_nRefs)
+        {
+            sqldb.SyncMailBody(i, MessageFetch(i));
+        }
+    }
+
     // Sync mail headers.
     //
     dbref thing;
@@ -5737,16 +5748,6 @@ void sqlite_sync_mail(void)
                     mp->to, mp->from, mp->number,
                     mp->tolist, mp->time, mp->subject, mp->read);
             }
-        }
-    }
-
-    // Sync mail bodies.
-    //
-    for (int i = 0; i < mudstate.mail_db_top; i++)
-    {
-        if (0 < mail_list[i].m_nRefs)
-        {
-            sqldb.SyncMailBody(i, MessageFetch(i));
         }
     }
 

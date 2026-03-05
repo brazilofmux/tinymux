@@ -273,6 +273,7 @@ private:
     Stats m_stats;
 
     bool CreateSchema();
+    bool MigrateSchema();
     bool PrepareStatements();
     void FinalizeStatements();
     bool ConfigurePragmas();
