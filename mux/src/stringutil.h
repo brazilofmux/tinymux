@@ -679,6 +679,11 @@ int ConsoleWidth(const UTF8 *pCodePoint);
 bool utf8_is_nfc(const UTF8 *src, size_t nSrc);
 void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst);
 
+// utf8_collate.cpp — Unicode Collation Algorithm (UCA).
+//
+int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
+size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
+
 // utf/tr_tolower.txt
 //
 inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)

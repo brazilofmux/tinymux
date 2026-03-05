@@ -17,7 +17,7 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
     quota.cpp rob.cpp set.cpp sha1.cpp signals.cpp sitemon.cpp \
     speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
     telnet.cpp timer.cpp timeabsolute.cpp timedelta.cpp timeparser.cpp \
-    timeutil.cpp timezone.cpp unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp vattr.cpp \
+    timeutil.cpp timezone.cpp unparse.cpp utf8_collate.cpp utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp vattr.cpp \
     walkdb.cpp wild.cpp wiz.cpp
 
 # Add reality levels if enabled
