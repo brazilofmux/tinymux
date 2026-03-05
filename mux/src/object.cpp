@@ -309,6 +309,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     const UTF8 *pValidName;
     const UTF8 *tname;
     bool okname = false, self_owned = false, require_inherit = false;
+    bool bRequiredAttrWritesOk = true;
 
     switch (objtype)
     {
@@ -501,6 +502,10 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     Unmark(obj);
     buff = munge_space(pValidName);
     s_Name(obj, buff);
+    if (nullptr == db[obj].name)
+    {
+        bRequiredAttrWritesOk = false;
+    }
     free_lbuf(buff); buff = nullptr;
     db[obj].cpu_time_used.Set100ns(0);
 
@@ -512,17 +517,17 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     const UTF8 *datestr = ltaNow.ReturnDateString(7);
-    atr_add_raw(obj, A_CREATED, datestr);
-    atr_add_raw(obj, A_MODIFIED, datestr);
+    bRequiredAttrWritesOk = bRequiredAttrWritesOk && atr_add_raw(obj, A_CREATED, datestr);
+    bRequiredAttrWritesOk = bRequiredAttrWritesOk && atr_add_raw(obj, A_MODIFIED, datestr);
 
     if (objtype == TYPE_PLAYER)
     {
-        atr_add_raw(obj, A_LAST, datestr);
+        bRequiredAttrWritesOk = bRequiredAttrWritesOk && atr_add_raw(obj, A_LAST, datestr);
 
         UTF8 *buff2 = alloc_sbuf("create_obj.quota");
         mux_ltoa(quota, buff2);
-        atr_add_raw(obj, A_QUOTA, buff2);
-        atr_add_raw(obj, A_RQUOTA, buff2);
+        bRequiredAttrWritesOk = bRequiredAttrWritesOk && atr_add_raw(obj, A_QUOTA, buff2);
+        bRequiredAttrWritesOk = bRequiredAttrWritesOk && atr_add_raw(obj, A_RQUOTA, buff2);
         free_sbuf(buff2);
         s_Zone(obj, NOTHING);
     }
@@ -578,10 +583,18 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         bPersisted = true;
     }
 
-    if (!bPersisted)
+    if (  !bPersisted
+       || !bRequiredAttrWritesOk)
     {
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-        log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
+        if (!bRequiredAttrWritesOk)
+        {
+            log_text(T("create_obj required attribute persistence failed; attempting full SQLite runtime resync."));
+        }
+        else
+        {
+            log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
+        }
         ENDLOG;
 
         if (!sqlite_sync_runtime())
@@ -593,6 +606,11 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             // Fail closed: don't hand out an object we couldn't make durable.
             //
             destroy_obj(obj);
+            if (IS_CLEAN(obj))
+            {
+                s_Link(obj, mudstate.freelist);
+                mudstate.freelist = obj;
+            }
             return NOTHING;
         }
     }

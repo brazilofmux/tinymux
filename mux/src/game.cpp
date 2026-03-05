@@ -2971,7 +2971,13 @@ int DCL_CDECL main(int argc, char *argv[])
 
     if (bMinDB)
     {
-        db_make_minimal();
+        if (!db_make_minimal())
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("Failed to build minimal database."));
+            ENDLOG
+            return 2;
+        }
     }
     else
     {
@@ -3009,8 +3015,14 @@ int DCL_CDECL main(int argc, char *argv[])
                 // Since the .db file didn't exist, and the .pag/.dir files
                 // were newly created, just create a minimal DB.
                 //
-                db_make_minimal();
-                ccInFile = LOAD_GAME_SUCCESS;
+                if (!db_make_minimal())
+                {
+                    ccInFile = LOAD_GAME_LOADING_PROBLEM;
+                }
+                else
+                {
+                    ccInFile = LOAD_GAME_SUCCESS;
+                }
             }
         }
         if (ccInFile != LOAD_GAME_SUCCESS)

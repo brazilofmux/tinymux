@@ -2638,7 +2638,7 @@ void db_free(void)
     mudstate.freelist = NOTHING;
 }
 
-void db_make_minimal(void)
+bool db_make_minimal(void)
 {
     db_free();
     db_grow(1);
@@ -2707,6 +2707,7 @@ void db_make_minimal(void)
         if (!sqlite_sync_runtime())
         {
             Log.WriteString(T("db_make_minimal: SQLite runtime resync failed.\n"));
+            return false;
         }
     }
 
@@ -2718,7 +2719,7 @@ void db_make_minimal(void)
     if (obj == NOTHING)
     {
         Log.WriteString(T("db_make_minimal: failed to create Wizard player.\n"));
-        return;
+        return false;
     }
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
@@ -2731,6 +2732,7 @@ void db_make_minimal(void)
     s_Next(obj, NOTHING);
     s_Contents(0, obj);
     s_Link(obj, 0);
+    return true;
 }
 
 int64_t creation_seconds(dbref obj)

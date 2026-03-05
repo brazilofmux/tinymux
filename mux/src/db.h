@@ -207,7 +207,7 @@ bool ThrottlePlayerCreate(void);
 int  mkattr(dbref executor, const UTF8 *);
 void db_grow(dbref);
 void db_free(void);
-void db_make_minimal(void);
+bool db_make_minimal(void);
 dbref    db_read(FILE *, int *, int *, int *);
 dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
