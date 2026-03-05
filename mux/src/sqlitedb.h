@@ -98,6 +98,7 @@ public:
                       dbref owner, int flags);
     bool DelAttribute(dbref obj, int attrnum);
     bool DelAllAttributes(dbref obj);
+    bool ClearAttributes();
 
     // Bulk attribute read for preloading / @search.
     //

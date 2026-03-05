@@ -1131,6 +1131,11 @@ bool CSQLiteDB::DelAllAttributes(dbref obj)
     return false;
 }
 
+bool CSQLiteDB::ClearAttributes()
+{
+    return SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM attributes;", nullptr, nullptr, nullptr);
+}
+
 bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
 {
     sqlite3_bind_int(m_stmtAttrGetObj, 1, obj);

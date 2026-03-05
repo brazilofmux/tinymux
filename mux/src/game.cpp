@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "sqlite_backend.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -1844,6 +1845,23 @@ static int load_game(int ccPageFile)
     log_text(T("Loading: "));
     log_text(infile);
     ENDLOG
+
+    // Flatfile import is authoritative for attribute values.
+    // Clear previous rows so deleted attrs do not survive import.
+    //
+    if (!g_pSQLiteBackend->GetDB().ClearAttributes())
+    {
+        if (fclose(f) == 0)
+        {
+            DebugTotalFiles--;
+        }
+        f = 0;
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("Error clearing SQLite attributes before flatfile load."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
+    }
+
     mudstate.bSQLiteLoading = true;
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
     {
@@ -2313,6 +2331,12 @@ static void dbconvert(void)
         // Go do it.
         //
         setvbuf(fpIn, nullptr, _IOFBF, 16384);
+        if (!g_pSQLiteBackend->GetDB().ClearAttributes())
+        {
+            Log.WriteString(T("SQLite attribute clear failed before flatfile import.\n"));
+            fclose(fpIn);
+            exit(1);
+        }
         mudstate.bSQLiteLoading = true;
         if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
         {
