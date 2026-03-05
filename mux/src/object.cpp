@@ -556,6 +556,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         rec.powers1   = db[obj].powers;
         rec.powers2   = db[obj].powers2;
         g_pSQLiteBackend->GetDB().InsertObject(rec);
+        g_pSQLiteBackend->GetDB().PutMeta("db_top", mudstate.db_top);
     }
 #endif
 

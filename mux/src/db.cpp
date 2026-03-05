@@ -4258,5 +4258,91 @@ void sqlite_sync_attrnames(void)
 
     sqldb.Commit();
 }
+
+// Load game state from SQLite (warm start).
+// Returns true if SQLite had data and we loaded successfully.
+// Returns false if SQLite is empty (cold start needed).
+//
+bool sqlite_load_game(void)
+{
+    if (!g_pSQLiteBackend)
+    {
+        return false;
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+
+    // Check if SQLite has data by reading db_top.
+    //
+    int db_top_val = 0;
+    if (!sqldb.GetMeta("db_top", &db_top_val) || db_top_val <= 0)
+    {
+        return false;
+    }
+
+    int attr_next_val = A_USER_START;
+    sqldb.GetMeta("attr_next", &attr_next_val);
+
+    // Suppress write-through for the entire load.
+    //
+    mudstate.bSQLiteLoading = true;
+
+    // Load attribute names first (before objects, since objects
+    // reference attribute names for Name, etc.)
+    //
+    sqldb.LoadAllAttrNames(
+        [](int attrnum, const char *name, int flags)
+        {
+            anum_extend(attrnum);
+            vattr_define_LEN(
+                reinterpret_cast<const UTF8 *>(name),
+                strlen(name), attrnum, flags);
+        });
+
+    mudstate.attr_next = attr_next_val;
+
+    // Grow db[] to the right size.
+    //
+    db_grow(db_top_val);
+
+    // Load all objects from the objects table.
+    //
+    sqldb.LoadAllObjects(
+        [](const CSQLiteDB::ObjectRecord &rec)
+        {
+            dbref i = rec.dbref_val;
+            db[i].location = rec.location;
+            db[i].contents = rec.contents;
+            db[i].exits    = rec.exits;
+            db[i].next     = rec.next;
+            db[i].link     = rec.link;
+            db[i].owner    = rec.owner;
+            db[i].parent   = rec.parent;
+            db[i].zone     = rec.zone;
+            db[i].fs.word[FLAG_WORD1] = rec.flags1;
+            db[i].fs.word[FLAG_WORD2] = rec.flags2;
+            db[i].fs.word[FLAG_WORD3] = rec.flags3;
+            db[i].powers   = rec.powers1;
+            db[i].powers2  = rec.powers2;
+
+            // Clear CONNECTED flag — nobody is connected at startup.
+            //
+            if (isPlayer(i))
+            {
+                db[i].fs.word[FLAG_WORD2] &= ~CONNECTED;
+            }
+        });
+    mudstate.bSQLiteLoading = false;
+
+    // Load player names.
+    //
+    load_player_names();
+
+    STARTLOG(LOG_STARTUP, "INI", "LOAD");
+    log_printf(T("Loaded %d objects from SQLite."), db_top_val);
+    ENDLOG;
+
+    return true;
+}
 #endif // SQLITE_STORAGE
 

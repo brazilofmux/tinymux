@@ -2883,6 +2883,14 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         db_make_minimal();
     }
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    else if (HF_OPEN_STATUS_OLD == ccPageFile && sqlite_load_game())
+    {
+        // Warm start: loaded everything from SQLite.
+        // No flatfile needed.
+        //
+    }
+#endif
     else
     {
 #ifdef MEMORY_BASED
