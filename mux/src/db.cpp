@@ -2741,6 +2741,15 @@ bool db_make_minimal(void)
     s_Next(obj, NOTHING);
     s_Contents(0, obj);
     s_Link(obj, 0);
+
+    // Authoritative post-bootstrap refresh ensures Wizard setup and db_top
+    // are durably reflected in SQLite before declaring minimal boot success.
+    //
+    if (!sqlite_sync_runtime())
+    {
+        Log.WriteString(T("db_make_minimal: post-bootstrap sqlite_sync_runtime failed.\n"));
+        return false;
+    }
     return true;
 }
 

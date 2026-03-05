@@ -87,6 +87,43 @@ static void force_reclaim_failed_create_slot(dbref obj)
     mudstate.freelist = obj;
 }
 
+// Best-effort backend cleanup for objects that failed creation and were
+// reclaimed locally.
+//
+static void reconcile_failed_create_backend(dbref obj)
+{
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    bool bCleaned = false;
+
+    if (sqldb.Begin())
+    {
+        if (  sqldb.DelAllAttributes(obj)
+           && sqldb.DeleteObject(obj)
+           && sqldb.PutMeta("db_top", mudstate.db_top)
+           && sqldb.Commit())
+        {
+            bCleaned = true;
+        }
+        else
+        {
+            sqldb.Rollback();
+        }
+    }
+
+    if (!bCleaned)
+    {
+        STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+        log_text(T("create_obj failed-cleanup fallback: attempting sqlite_sync_runtime."));
+        ENDLOG;
+        if (!sqlite_sync_runtime())
+        {
+            STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+            log_text(T("create_obj failed-cleanup fallback sqlite_sync_runtime() failed."));
+            ENDLOG;
+        }
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * Log_pointer_err, Log_header_err, Log_simple_damage: Write errors to the
@@ -621,6 +658,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             s_Link(obj, mudstate.freelist);
             mudstate.freelist = obj;
         }
+        reconcile_failed_create_backend(obj);
         return NOTHING;
     }
 
@@ -699,6 +737,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
                 s_Link(obj, mudstate.freelist);
                 mudstate.freelist = obj;
             }
+            reconcile_failed_create_backend(obj);
             return NOTHING;
         }
     }
