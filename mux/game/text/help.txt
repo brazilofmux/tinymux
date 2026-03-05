@@ -9486,6 +9486,7 @@ LOCATE()
     m    - Look for 'me', which matches <looker>.
     n    - Look for <looker>'s neighbors (other objects in the same location).
     p    - Look for player names prefixed by a '*'
+    s    - Check possessives (e.g. "bob's sword" searches bob's inventory).
     *    - Look for everything in the above list.
 
 { 'help locate2' for more }
@@ -9532,6 +9533,9 @@ LOCATE() (continued)
     You say, "#378"                         You say, "#252"
     > say locate(me,test1,in)              > say locate(me,here,*)
     You say, "#382"                         You say, "#250"
+
+    > say locate(me,bob's sword,ins)
+    You say, "#456"
 
   Related Topics: num(), PARENT OBJECTS.
 

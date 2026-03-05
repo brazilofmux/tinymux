@@ -7599,12 +7599,12 @@ static FUNCTION(fun_locate)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    bool check_locks, verbose, multiple;
+    bool check_locks, verbose, multiple, check_possessed;
     dbref thing, what;
     UTF8 *cp;
 
     int pref_type = NOTYPE;
-    check_locks = verbose = multiple = false;
+    check_locks = verbose = multiple = check_possessed = false;
 
     // Find the thing to do the looking, make sure we control it.
     //
@@ -7693,6 +7693,9 @@ static FUNCTION(fun_locate)
         case 'p':
             match_player();
             break;
+        case 's':
+            check_possessed = true;
+            break;
         case '*':
             match_everything(MAT_EXIT_PARENTS);
             break;
@@ -7708,6 +7711,11 @@ static FUNCTION(fun_locate)
     else
     {
         what = match_result();
+    }
+
+    if (check_possessed && !Good_obj(what))
+    {
+        what = match_possessed(executor, thing, fargs[1], what, check_locks);
     }
 
     if (verbose)

@@ -37,7 +37,7 @@
             [lock(me,me)]
             [lock(me)]
           )),
-        4AE1F15948FB7E205CA86E9AD3B08D3CAB90154D
+        32FEA2DA4C196E2BFEB79FF2707D46E742E8C614
       )=
   {
     @log smoke=TC002: lock set. Succeeded.

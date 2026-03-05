@@ -1,0 +1,57 @@
+#
+# locate_poss.mux - Test Cases for locate() possessive ('s') flag.
+#
+@create test_locate_poss
+-
+@set test_locate_poss=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_locate_poss=
+  @log smoke=Beginning locate() possessive test cases.
+-
+#
+# Test Case #1 - Possessive matching with 's' flag.
+#
+# Create a container and an item inside it, then verify:
+# - locate(me,container's item,ins) finds the item
+# - locate(me,container's item,in) without 's' returns #-1
+# - locate(me,item,i) directly returns #-1 (item is nested)
+#
+&tr.tc001 test_locate_poss=
+  @create test_lp_box;
+  @create test_lp_gem;
+  @tel test_lp_gem=test_lp_box;
+  @if strmatch(
+        setr(0,sha1(
+            [locate(me,test_lp_box's test_lp_gem,ins)]
+            [locate(me,test_lp_box's test_lp_gem,in)]
+            [locate(me,test_lp_gem,i)]
+          )
+        ),
+        8C38CB0118A4B1289A72693A04BD04EEB914734E
+      )=
+  {
+    @log smoke=TC001: locate possessive. Succeeded.;
+    @destroy/override test_lp_gem;
+    @destroy/override test_lp_box;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: locate possessive. Failed (%q0).;
+    @destroy/override test_lp_gem;
+    @destroy/override test_lp_box;
+    @trig me/tr.done
+  }
+-
+&tr.done test_locate_poss=
+  @log smoke=End locate() possessive test cases.;
+  @notify smoke
+-
+drop test_locate_poss
+-
+#
+# End of Test Cases
+#
+
