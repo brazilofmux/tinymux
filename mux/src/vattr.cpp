@@ -12,10 +12,6 @@
 
 using namespace std;
 
-// Static iterator for vattr_first/vattr_next traversal.
-//
-static unordered_map<string, int>::iterator vattr_iter;
-
 ATTR *vattr_find_LEN(const UTF8 *pAttrName, size_t nAttrName)
 {
     string key(reinterpret_cast<const char *>(pAttrName), nAttrName);
@@ -158,23 +154,32 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
 
 ATTR *vattr_first(void)
 {
-    vattr_iter = mudstate.vattr_name_map.begin();
-    if (vattr_iter != mudstate.vattr_name_map.end())
+    int best = INT_MAX;
+    for (const auto& entry : mudstate.vattr_name_map)
     {
-        return static_cast<ATTR *>(anum_table[vattr_iter->second]);
+        if (entry.second > 0 && entry.second < best)
+        {
+            best = entry.second;
+        }
     }
-    return nullptr;
+    return (best == INT_MAX) ? nullptr : static_cast<ATTR *>(anum_table[best]);
 }
 
 ATTR *vattr_next(ATTR *vp)
 {
     if (vp == nullptr)
-        return vattr_first();
-
-    ++vattr_iter;
-    if (vattr_iter != mudstate.vattr_name_map.end())
     {
-        return static_cast<ATTR *>(anum_table[vattr_iter->second]);
+        return vattr_first();
     }
-    return nullptr;
+
+    int best = INT_MAX;
+    for (const auto& entry : mudstate.vattr_name_map)
+    {
+        if (  entry.second > vp->number
+           && entry.second < best)
+        {
+            best = entry.second;
+        }
+    }
+    return (best == INT_MAX) ? nullptr : static_cast<ATTR *>(anum_table[best]);
 }
