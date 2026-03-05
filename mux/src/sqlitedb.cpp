@@ -596,14 +596,14 @@ bool CSQLiteDB::PrepareStatements()
     }
 
     if (!Prepare(m_db,
-        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=?",
+        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=? ORDER BY attrnum",
         &m_stmtAttrGetObj))
     {
         return false;
     }
 
     if (!Prepare(m_db,
-        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=? AND attrnum < 256",
+        "SELECT attrnum, value, owner, flags FROM attributes WHERE object=? AND attrnum < 256 ORDER BY attrnum",
         &m_stmtAttrGetBuiltin))
     {
         return false;

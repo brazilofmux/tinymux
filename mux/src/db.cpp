@@ -20,6 +20,7 @@
 
 #include "sqlite_backend.h"
 
+#include <algorithm>
 #include <filesystem>
 using namespace std;
 
@@ -1712,20 +1713,80 @@ static void al_extend(unsigned char **buffer, size_t *bufsiz, size_t len, bool c
     }
 }
 
+// Build an encoded attribute-number list for an object from backend storage.
+//
+static bool al_build_from_storage(dbref thing, unsigned char **buffer, size_t *bufsiz, size_t *pLen)
+{
+    vector<unsigned int> attrnums;
+
+    if (g_pSQLiteBackend)
+    {
+        g_pSQLiteBackend->GetAll(
+            static_cast<unsigned int>(thing),
+            [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
+            {
+                if (  attrnum != static_cast<unsigned int>(A_LIST)
+                   && attrnum != 0U)
+                {
+                    attrnums.push_back(attrnum);
+                }
+            });
+    }
+    else
+    {
+        // Compatibility path: if backend is unavailable, fall back to legacy
+        // packed A_LIST data if present.
+        //
+        size_t alen = 0;
+        const unsigned char *astr = atr_get_raw_LEN(thing, A_LIST, &alen);
+        if (!astr || !alen)
+        {
+            al_extend(buffer, bufsiz, 1, false);
+            (*buffer)[0] = '\0';
+            *pLen = 0;
+            return true;
+        }
+
+        al_extend(buffer, bufsiz, alen+1, false);
+        memcpy(*buffer, astr, alen+1);
+        *pLen = alen;
+        return true;
+    }
+
+    if (attrnums.empty())
+    {
+        al_extend(buffer, bufsiz, 1, false);
+        (*buffer)[0] = '\0';
+        *pLen = 0;
+        return true;
+    }
+
+    sort(attrnums.begin(), attrnums.end());
+    attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
+
+    const size_t need = attrnums.size() * ATR_BUF_INCR + 1;
+    al_extend(buffer, bufsiz, need, false);
+    unsigned char *cp = *buffer;
+    for (unsigned int anum : attrnums)
+    {
+        cp = al_code(cp, anum);
+    }
+    *cp = '\0';
+    *pLen = cp - *buffer;
+    return true;
+}
+
 // al_store: Write modified attribute list
 //
 void al_store(void)
 {
-    if (mudstate.mod_al_id != NOTHING)
+    // A_LIST is deprecated; attribute membership is now derived from
+    // relational storage. Keep this API as a compatibility no-op.
+    //
+    mudstate.mod_alist_len = 0;
+    if (mudstate.mod_alist)
     {
-        if (mudstate.mod_alist_len)
-        {
-            atr_add_raw_LEN(mudstate.mod_al_id, A_LIST, mudstate.mod_alist, mudstate.mod_alist_len);
-        }
-        else
-        {
-            atr_clr(mudstate.mod_al_id, A_LIST);
-        }
+        mudstate.mod_alist[0] = '\0';
     }
     mudstate.mod_al_id = NOTHING;
 }
@@ -1744,20 +1805,8 @@ static unsigned char *al_fetch(dbref thing)
     // Save old list, then fetch and set up the attribute list.
     //
     al_store();
-    size_t len;
-    const unsigned char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
-    if (astr)
-    {
-        al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, false);
-        memcpy(mudstate.mod_alist, astr, len+1);
-        mudstate.mod_alist_len = len;
-    }
-    else
-    {
-        al_extend(&mudstate.mod_alist, &mudstate.mod_size, 1, false);
-        *mudstate.mod_alist = '\0';
-        mudstate.mod_alist_len = 0;
-    }
+    al_build_from_storage(thing, &mudstate.mod_alist, &mudstate.mod_size,
+        &mudstate.mod_alist_len);
     mudstate.mod_al_id = thing;
     return mudstate.mod_alist;
 }
@@ -1784,13 +1833,6 @@ static bool al_add(dbref thing, int attrnum)
     // The attribute isn't there, so we need to try to add it.
     //
     size_t iPosition = cp - abuf;
-
-    // If we are too large for an attribute
-    //
-    if (iPosition + ATR_BUF_INCR >= LBUF_SIZE)
-    {
-        return false;
-    }
 
     // Extend it.
     //
@@ -2065,12 +2107,16 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     size_t clean_len = nValue - static_cast<size_t>(clean - szValue);
 
     // Normalize user text to NFC for consistent storage.
-    // Skip A_LIST (internal attribute-number data, not user text).
+    // A_LIST is deprecated and ignored (legacy import compatibility only).
     // NFC never expands the string, so clean_len is a safe bound.
     //
+    if (atr == A_LIST)
+    {
+        return;
+    }
+
     UTF8 nfc_buf[LBUF_SIZE];
-    if (  atr != A_LIST
-       && clean_len > 0
+    if (  clean_len > 0
        && !utf8_is_nfc(clean, clean_len))
     {
         size_t nNfc;
@@ -2080,18 +2126,11 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         clean_len = nNfc;
     }
 
-    if (atr == A_LIST)
+    if (!al_add(thing, atr))
     {
-        cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
+        return;
     }
-    else
-    {
-        if (!al_add(thing, atr))
-        {
-            return;
-        }
-        cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
-    }
+    cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
 
     switch (atr)
     {
@@ -2384,7 +2423,6 @@ void atr_free(dbref thing)
     {
         al_store(); // remove from cache
     }
-    atr_clr(thing, A_LIST);
 
     mudstate.bfCommands.Clear(thing);
     mudstate.bfNoCommands.Set(thing);
@@ -2529,32 +2567,24 @@ void atr_pop(void)
 
 int atr_head(dbref thing, unsigned char **attrp)
 {
-    const unsigned char *astr;
-    size_t alen;
-
-    // Get attribute list.  Save a read if it is in the modify atr list
+    // Save a read if it is in the modify atr list.
     //
     if (thing == mudstate.mod_al_id)
     {
-        astr = mudstate.mod_alist;
-        alen = mudstate.mod_alist_len;
-    }
-    else
-    {
-        astr = atr_get_raw_LEN(thing, A_LIST, &alen);
+        if (!mudstate.mod_alist_len)
+        {
+            return 0;
+        }
+        *attrp = mudstate.mod_alist;
+        return atr_next(attrp);
     }
 
-    // If no list, return nothing.
-    //
+    size_t alen = 0;
+    al_build_from_storage(thing, &mudstate.iter_alist.data, &mudstate.iter_alist.len, &alen);
     if (!alen)
     {
         return 0;
     }
-
-    // Set up the list and return the first entry.
-    //
-    al_extend(&mudstate.iter_alist.data, &mudstate.iter_alist.len, alen+1, false);
-    memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
 }
@@ -4062,4 +4092,3 @@ bool sqlite_load_game(void)
 
     return true;
 }
-
