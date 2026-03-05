@@ -2645,6 +2645,17 @@ bool db_make_minimal(void)
     {
         if (!sqldb.Begin())
         {
+            // Best effort cleanup even without an explicit transaction.
+            //
+            if (  !sqldb.ClearAttributes()
+               || !sqldb.ClearObjectTable()
+               || !sqldb.ClearAttrNames()
+               || !sqldb.PutMeta("attr_next", A_USER_START)
+               || !sqldb.PutMeta("db_top", 0)
+               || !sqldb.PutMeta("record_players", 0))
+            {
+                Log.WriteString(T("db_make_minimal: SQLite cleanup without transaction failed.\n"));
+            }
             db_free();
             mudstate.attr_next = A_USER_START;
             mudstate.record_players = 0;

@@ -103,44 +103,51 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
     std::vector<AttrRow> snapshot;
     snapshot.reserve(1024);
 
-    // Snapshot attributes before mutating SQLite state. Enumeration currently
-    // comes from backend storage; clearing first would make the snapshot empty.
+    // Snapshot attributes from runtime before mutating SQLite state.
     //
+    atr_push();
     dbref iObject;
     DO_WHOLE_DB(iObject)
     {
-        if (!g_pSQLiteBackend->GetAll(
-            static_cast<unsigned int>(iObject),
-            [&snapshot, iObject](unsigned int attrnum, const UTF8 *value, size_t len, int owner, int flags)
-            {
-                if (  attrnum == static_cast<unsigned int>(A_LIST)
-                   || attrnum == 0U)
-                {
-                    return;
-                }
-
-                AttrRow row;
-                row.obj = iObject;
-                row.attrnum = static_cast<int>(attrnum);
-                row.owner = static_cast<dbref>(owner);
-                row.flags = flags;
-                if (  nullptr != value
-                   && 0 < len)
-                {
-                    row.value.assign(value, value + len);
-                }
-                else
-                {
-                    row.value.push_back('\0');
-                }
-                snapshot.push_back(std::move(row));
-            }))
+        if (isGarbage(iObject))
         {
-            Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to snapshot attrs for #%d" ENDLINE),
-                iObject);
-            return false;
+            continue;
+        }
+
+        unsigned char *as;
+        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+        {
+            if (  iAttr == A_LIST
+               || iAttr == 0)
+            {
+                continue;
+            }
+
+            dbref owner = Owner(iObject);
+            int flags = 0;
+            if (!atr_get_info(iObject, iAttr, &owner, &flags))
+            {
+                owner = Owner(iObject);
+                flags = 0;
+            }
+
+            size_t nLen = 0;
+            const UTF8 *pValue = atr_get_raw_LEN(iObject, iAttr, &nLen);
+            if (nullptr == pValue)
+            {
+                continue;
+            }
+
+            AttrRow row;
+            row.obj = iObject;
+            row.attrnum = iAttr;
+            row.owner = owner;
+            row.flags = flags;
+            row.value.assign(pValue, pValue + nLen + 1);
+            snapshot.push_back(std::move(row));
         }
     }
+    atr_pop();
 
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     if (!sqldb.Begin())
