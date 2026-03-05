@@ -8693,6 +8693,66 @@ void mux_string::FoldForMatching()
     }
 }
 
+// ---------------------------------------------------------------------------
+// cursor_from_cluster: Position cursor at the start of the Nth grapheme
+// cluster (0-based).  Returns true if the cluster index is within range.
+// ---------------------------------------------------------------------------
+
+bool mux_string::cursor_from_cluster(mux_cursor &c, LBUF_OFFSET iCluster) const
+{
+    if (0 == m_iLast.m_point)
+    {
+        c = CursorMin;
+        return (0 == iCluster);
+    }
+
+    // ASCII fast path: each byte is one code point and one cluster.
+    //
+    if (m_iLast.m_point == m_iLast.m_byte)
+    {
+        if (iCluster <= m_iLast.m_point)
+        {
+            c.m_byte  = iCluster;
+            c.m_point = iCluster;
+            return true;
+        }
+        cursor_end(c);
+        return false;
+    }
+
+    // Walk from the beginning, counting grapheme clusters.
+    //
+    cursor_start(c);
+    LBUF_OFFSET nCluster = 0;
+
+    if (0 == iCluster)
+    {
+        return true;
+    }
+
+    while (c.m_byte < m_iLast.m_byte)
+    {
+        size_t nRemaining = m_iLast.m_byte - c.m_byte;
+        mux_cursor advance = utf8_next_grapheme(m_autf + c.m_byte, nRemaining);
+        if (0 == advance.m_byte)
+        {
+            break;
+        }
+
+        c.m_byte  = static_cast<LBUF_OFFSET>(c.m_byte + advance.m_byte);
+        c.m_point = static_cast<LBUF_OFFSET>(c.m_point + advance.m_point);
+        nCluster++;
+
+        if (nCluster == iCluster)
+        {
+            return true;
+        }
+    }
+
+    cursor_end(c);
+    return false;
+}
+
 mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
 {
     m_aiWordBegins[0] = CursorMin;

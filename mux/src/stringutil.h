@@ -2286,6 +2286,8 @@ public:
         return mux_isescape(m_autf[c.m_byte]);
     }
 
+    bool cursor_from_cluster(mux_cursor &c, LBUF_OFFSET iCluster) const;
+
     friend class mux_words;
 };
 

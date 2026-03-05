@@ -2483,8 +2483,8 @@ static FUNCTION(fun_mid)
     mux_string *sStr = new mux_string(fargs[0]);
 
     mux_cursor iCurStart, iCurEnd;
-    sStr->cursor_from_point(iCurStart, static_cast<LBUF_OFFSET>(iStart));
-    sStr->cursor_from_point(iCurEnd, static_cast<LBUF_OFFSET>(iStart + nMid));
+    sStr->cursor_from_cluster(iCurStart, static_cast<LBUF_OFFSET>(iStart));
+    sStr->cursor_from_cluster(iCurEnd, static_cast<LBUF_OFFSET>(iStart + nMid));
 
     if (iCurStart < iCurEnd)
     {
@@ -2524,9 +2524,12 @@ static FUNCTION(fun_right)
     mux_cursor iStart, iEnd;
     sStr->cursor_end(iEnd);
 
-    if (nRight < iEnd.m_point)
+    size_t nBytes = 0;
+    UTF8 *pPlain = strip_color(fargs[0], &nBytes, nullptr);
+    size_t nClusters = utf8_cluster_count(pPlain, nBytes);
+    if (static_cast<size_t>(nRight) < nClusters)
     {
-        sStr->cursor_from_point(iStart, static_cast<LBUF_OFFSET>(iEnd.m_point - nRight));
+        sStr->cursor_from_cluster(iStart, static_cast<LBUF_OFFSET>(nClusters - nRight));
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nMax);
     }
@@ -3473,7 +3476,9 @@ static FUNCTION(fun_strlen)
     size_t n = 0;
     if (nfargs >= 1)
     {
-        strip_color(fargs[0], 0, &n);
+        size_t nBytes = 0;
+        UTF8 *pStripped = strip_color(fargs[0], &nBytes, nullptr);
+        n = utf8_cluster_count(pStripped, nBytes);
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -5338,8 +5343,8 @@ static FUNCTION(fun_delete)
     mux_string *sStr = new mux_string(fargs[0]);
 
     mux_cursor iStartCur, iEnd;
-    sStr->cursor_from_point(iStartCur, static_cast<LBUF_OFFSET>(iStart));
-    sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iStartCur.m_point + nDelete));
+    sStr->cursor_from_cluster(iStartCur, static_cast<LBUF_OFFSET>(iStart));
+    sStr->cursor_from_cluster(iEnd, static_cast<LBUF_OFFSET>(iStart + nDelete));
     sStr->delete_Chars(iStartCur, iEnd);
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
