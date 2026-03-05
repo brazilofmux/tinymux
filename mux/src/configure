@@ -707,7 +707,6 @@ CPPFLAGS
 LDFLAGS
 CXXFLAGS
 CXX
-DEPRECATED
 SSL
 SQL_LIBPATH
 SQL_INCLUDE
@@ -801,7 +800,6 @@ enable_inlinesql
 enable_selfcheck
 with_mysql_include
 with_mysql_libs
-enable_deprecated
 enable_dependency_tracking
 '
       ac_precious_vars='build_alias
@@ -1457,7 +1455,6 @@ Optional Features:
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
-  --enable-deprecated     enable deprecated features (default is NO)
   --enable-dependency-tracking
                           do not reject slow dependency extractors
   --disable-dependency-tracking
@@ -4106,28 +4103,6 @@ SSL="-DSSL_ENABLED"
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable deprecated features" >&5
 printf %s "checking whether to enable deprecated features... " >&6; }
-# Check whether --enable-deprecated was given.
-if test ${enable_deprecated+y}
-then :
-  enableval=$enable_deprecated;
-    if test "x$enableval" = "xno"; then
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-    else
-      DEPRECATED="-DDEPRECATED"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-
-else $as_nop
-
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-fi
-
-
-
 # Checks for programs.
 #
 
