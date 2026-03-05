@@ -17,7 +17,7 @@
 #include "ducet_cetable.h"
 
 // ---------------------------------------------------------------------------
-// CE weight unpacking from UINT32.
+// CE weight unpacking from uint32_t.
 //
 // Packed format:
 //   Bit  31:    variable flag
@@ -290,11 +290,11 @@ static void ImplicitWeight(UTF32 cp, unsigned short &aaaa, unsigned short &bbbb)
 // Walks the string code-point by code-point, checks for contractions
 // (peeking ahead), then single-CP DUCET lookup, then implicit weights.
 //
-// Stores packed UINT32 CEs into the provided array.
+// Stores packed uint32_t CEs into the provided array.
 // Returns the number of CEs collected.
 // ---------------------------------------------------------------------------
 
-static int CollectCEs(const UTF8 *src, size_t nSrc, UINT32 *ces, int maxCEs)
+static int CollectCEs(const UTF8 *src, size_t nSrc, uint32_t *ces, int maxCEs)
 {
     const UTF8 *p = src;
     const UTF8 *pEnd = src + nSrc;
@@ -351,8 +351,8 @@ static int CollectCEs(const UTF8 *src, size_t nSrc, UINT32 *ces, int maxCEs)
                 //
                 if (nCEs < maxCEs)
                 {
-                    ces[nCEs++] = (static_cast<UINT32>(aaaa) << 16)
-                                | (static_cast<UINT32>(0x0020) << 5)
+                    ces[nCEs++] = (static_cast<uint32_t>(aaaa) << 16)
+                                | (static_cast<uint32_t>(0x0020) << 5)
                                 | 0x0002;
                 }
 
@@ -360,7 +360,7 @@ static int CollectCEs(const UTF8 *src, size_t nSrc, UINT32 *ces, int maxCEs)
                 //
                 if (nCEs < maxCEs)
                 {
-                    ces[nCEs++] = static_cast<UINT32>(bbbb) << 16;
+                    ces[nCEs++] = static_cast<uint32_t>(bbbb) << 16;
                 }
             }
         }
@@ -387,8 +387,8 @@ int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB)
 {
     // Collect CEs for both strings.
     //
-    UINT32 cesA[MAX_SORT_CES];
-    UINT32 cesB[MAX_SORT_CES];
+    uint32_t cesA[MAX_SORT_CES];
+    uint32_t cesB[MAX_SORT_CES];
     int nCEsA = CollectCEs(a, nA, cesA, MAX_SORT_CES);
     int nCEsB = CollectCEs(b, nB, cesB, MAX_SORT_CES);
 
@@ -530,7 +530,7 @@ int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB)
 size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc,
                            UTF8 *key, size_t nKeyMax)
 {
-    UINT32 ces[MAX_SORT_CES];
+    uint32_t ces[MAX_SORT_CES];
     int nCEs = CollectCEs(src, nSrc, ces, MAX_SORT_CES);
 
     size_t pos = 0;
