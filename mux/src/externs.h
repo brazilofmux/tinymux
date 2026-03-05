@@ -1404,9 +1404,9 @@ extern CSQLiteBackend *g_pSQLiteBackend;
 bool sqlite_sync_objects(void);
 bool sqlite_sync_attrnames(void);
 bool sqlite_load_game(void);
-void sqlite_sync_comsys(void);
+bool sqlite_sync_comsys(void);
 bool sqlite_load_comsys(void);
-void sqlite_sync_mail(void);
+bool sqlite_sync_mail(void);
 bool sqlite_load_mail(void);
 
 // From speech.cpp

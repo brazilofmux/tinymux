@@ -2310,7 +2310,11 @@ static void dbconvert(void)
     if (standalone_load && standalone_comsys_file)
     {
         load_comsys(const_cast<UTF8 *>(standalone_comsys_file));
-        sqlite_sync_comsys();
+        if (!sqlite_sync_comsys())
+        {
+            Log.WriteString(T("Import comsys into SQLite failed.\n"));
+            exit(1);
+        }
         Log.WriteString(T("Imported comsys into SQLite.\n"));
     }
 
@@ -2324,7 +2328,11 @@ static void dbconvert(void)
             setvbuf(fpMail, nullptr, _IOFBF, 16384);
             load_mail(fpMail);
             fclose(fpMail);
-            sqlite_sync_mail();
+            if (!sqlite_sync_mail())
+            {
+                Log.WriteString(T("Import mail into SQLite failed.\n"));
+                exit(1);
+            }
             Log.WriteString(T("Imported mail into SQLite.\n"));
         }
     }

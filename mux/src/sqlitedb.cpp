@@ -1555,9 +1555,10 @@ bool CSQLiteDB::DeleteAllPlayerChannels(int who)
 
 bool CSQLiteDB::LoadAllChannels(ChannelCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtChannelLoadAll);
+        rc = sqlite3_step(m_stmtChannelLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1580,14 +1581,20 @@ bool CSQLiteDB::LoadAllChannels(ChannelCallback cb)
     }
 
     sqlite3_reset(m_stmtChannelLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllChannels: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
 bool CSQLiteDB::LoadAllChannelUsers(ChannelUserCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtChannelUserLoadAll);
+        rc = sqlite3_step(m_stmtChannelUserLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1606,14 +1613,20 @@ bool CSQLiteDB::LoadAllChannelUsers(ChannelUserCallback cb)
     }
 
     sqlite3_reset(m_stmtChannelUserLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllChannelUsers: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
 bool CSQLiteDB::LoadAllPlayerChannels(PlayerChannelCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtPlayerChannelLoadAll);
+        rc = sqlite3_step(m_stmtPlayerChannelLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1629,6 +1642,11 @@ bool CSQLiteDB::LoadAllPlayerChannels(PlayerChannelCallback cb)
     }
 
     sqlite3_reset(m_stmtPlayerChannelLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllPlayerChannels: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
@@ -1748,9 +1766,10 @@ bool CSQLiteDB::SyncMailAlias(int owner, const UTF8 *name, const UTF8 *desc,
 
 bool CSQLiteDB::LoadAllMailHeaders(MailHeaderCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtMailHeaderLoadAll);
+        rc = sqlite3_step(m_stmtMailHeaderLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1773,14 +1792,20 @@ bool CSQLiteDB::LoadAllMailHeaders(MailHeaderCallback cb)
     }
 
     sqlite3_reset(m_stmtMailHeaderLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllMailHeaders: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
 bool CSQLiteDB::LoadAllMailBodies(MailBodyCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtMailBodyLoadAll);
+        rc = sqlite3_step(m_stmtMailBodyLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1793,14 +1818,20 @@ bool CSQLiteDB::LoadAllMailBodies(MailBodyCallback cb)
     }
 
     sqlite3_reset(m_stmtMailBodyLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllMailBodies: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }
 
 bool CSQLiteDB::LoadAllMailAliases(MailAliasCallback cb)
 {
+    int rc = SQLITE_DONE;
     for (;;)
     {
-        int rc = sqlite3_step(m_stmtMailAliasLoadAll);
+        rc = sqlite3_step(m_stmtMailAliasLoadAll);
         if (SQLITE_ROW != rc)
         {
             break;
@@ -1820,5 +1851,10 @@ bool CSQLiteDB::LoadAllMailAliases(MailAliasCallback cb)
     }
 
     sqlite3_reset(m_stmtMailAliasLoadAll);
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::LoadAllMailAliases: %s\n", sqlite3_errmsg(m_db));
+        return false;
+    }
     return true;
 }

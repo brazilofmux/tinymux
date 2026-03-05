@@ -4171,34 +4171,48 @@ FUNCTION(fun_chanobj)
 
 #include "sqlite_backend.h"
 
-void sqlite_sync_comsys(void)
+bool sqlite_sync_comsys(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.ClearComsysTables();
-    sqldb.Begin();
+    if (!sqldb.ClearComsysTables())
+    {
+        return false;
+    }
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
 
     // Sync channels and their users.
     //
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
         struct channel *ch = it->second;
-        sqldb.SyncChannel(ch->name, ch->header,
+        if (!sqldb.SyncChannel(ch->name, ch->header,
             ch->type, ch->temp1, ch->temp2,
             ch->charge, ch->charge_who, ch->amount_col,
-            ch->num_messages, ch->chan_obj);
+            ch->num_messages, ch->chan_obj))
+        {
+            sqldb.Rollback();
+            return false;
+        }
 
         for (int j = 0; j < ch->num_users; j++)
         {
             struct comuser *user = ch->users[j];
             if (user->who >= 0 && user->who < mudstate.db_top)
             {
-                sqldb.SyncChannelUser(ch->name, user->who,
-                    user->bUserIsOn, user->ComTitleStatus,
-                    user->bGagJoinLeave,
-                    user->title ? user->title : T(""));
+                    if (!sqldb.SyncChannelUser(ch->name, user->who,
+                        user->bUserIsOn, user->ComTitleStatus,
+                        user->bGagJoinLeave,
+                        user->title ? user->title : T("")))
+                    {
+                        sqldb.Rollback();
+                        return false;
+                    }
+                }
             }
         }
-    }
 
     // Sync player channel aliases.
     //
@@ -4209,16 +4223,23 @@ void sqlite_sync_comsys(void)
         {
             for (int j = 0; j < c->numchannels; j++)
             {
-                sqldb.SyncPlayerChannel(c->who,
+                if (!sqldb.SyncPlayerChannel(c->who,
                     c->alias + j * ALIAS_SIZE,
-                    c->channels[j]);
+                    c->channels[j]))
+                {
+                    sqldb.Rollback();
+                    return false;
+                }
             }
             c = c->next;
         }
     }
 
-    sqldb.Commit();
-    sqldb.PutMeta("has_comsys", 1);
+    if (!sqldb.Commit() || !sqldb.PutMeta("has_comsys", 1))
+    {
+        return false;
+    }
+    return true;
 }
 
 bool sqlite_load_comsys(void)
@@ -4244,7 +4265,7 @@ bool sqlite_load_comsys(void)
 
     // Load channels.
     //
-    sqldb.LoadAllChannels([](const UTF8 *name, const UTF8 *header,
+    if (!sqldb.LoadAllChannels([](const UTF8 *name, const UTF8 *header,
         int type, int temp1, int temp2, int charge, int charge_who,
         int amount_col, int num_messages, int chan_obj)
     {
@@ -4270,11 +4291,15 @@ bool sqlite_load_comsys(void)
         vector<UTF8> channel_name_vector(ch->name, ch->name + nName);
         mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
         num_channels++;
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     // Load channel users.
     //
-    sqldb.LoadAllChannelUsers([](const UTF8 *channel_name, int who,
+    if (!sqldb.LoadAllChannelUsers([](const UTF8 *channel_name, int who,
         bool is_on, bool comtitle_status, bool gag_join_leave,
         const UTF8 *title)
     {
@@ -4326,7 +4351,11 @@ bool sqlite_load_comsys(void)
         }
         user->on_next = ch->on_users;
         ch->on_users = user;
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     // Sort users on each channel.
     //
@@ -4347,14 +4376,18 @@ bool sqlite_load_comsys(void)
     };
     std::map<int, std::vector<PlayerAliasEntry>> player_aliases;
 
-    sqldb.LoadAllPlayerChannels([&player_aliases](int who, const UTF8 *alias,
+    if (!sqldb.LoadAllPlayerChannels([&player_aliases](int who, const UTF8 *alias,
         const UTF8 *channel_name)
     {
         PlayerAliasEntry entry;
         mux_strncpy(entry.alias, alias, ALIAS_SIZE - 1);
         entry.channel_name = StringClone(channel_name);
         player_aliases[who].push_back(entry);
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     for (auto &pa : player_aliases)
     {

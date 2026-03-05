@@ -5675,11 +5675,17 @@ void do_folder
 // SQLite mail bulk sync and load (Phase 1).
 // ---------------------------------------------------------------------------
 
-void sqlite_sync_mail(void)
+bool sqlite_sync_mail(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.ClearMailTables();
-    sqldb.Begin();
+    if (!sqldb.ClearMailTables())
+    {
+        return false;
+    }
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
 
     // Sync mail bodies first (mail_headers.body_number references
     // mail_bodies.number via foreign key).
@@ -5688,7 +5694,11 @@ void sqlite_sync_mail(void)
     {
         if (0 < mail_list[i].m_nRefs)
         {
-            sqldb.SyncMailBody(i, MessageFetch(i));
+            if (!sqldb.SyncMailBody(i, MessageFetch(i)))
+            {
+                sqldb.Rollback();
+                return false;
+            }
         }
     }
 
@@ -5706,6 +5716,11 @@ void sqlite_sync_mail(void)
                 mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
                     mp->to, mp->from, mp->number,
                     mp->tolist, mp->time, mp->subject, mp->read);
+                if (mp->sqlite_id < 0)
+                {
+                    sqldb.Rollback();
+                    return false;
+                }
             }
         }
     }
@@ -5730,12 +5745,19 @@ void sqlite_sync_mail(void)
         }
         *bp = '\0';
 
-        sqldb.SyncMailAlias(m->owner, m->name, m->desc,
-            static_cast<int>(m->desc_width), members_buf);
+        if (!sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+            static_cast<int>(m->desc_width), members_buf))
+        {
+            sqldb.Rollback();
+            return false;
+        }
     }
 
-    sqldb.PutMeta("mail_db_top", mudstate.mail_db_top);
-    sqldb.Commit();
+    if (!sqldb.PutMeta("mail_db_top", mudstate.mail_db_top) || !sqldb.Commit())
+    {
+        return false;
+    }
+    return true;
 }
 
 bool sqlite_load_mail(void)
@@ -5754,14 +5776,18 @@ bool sqlite_load_mail(void)
 
     // Load mail bodies first (they must exist before headers reference them).
     //
-    sqldb.LoadAllMailBodies([](int number, const UTF8 *message)
+    if (!sqldb.LoadAllMailBodies([](int number, const UTF8 *message)
     {
         new_mail_message(const_cast<UTF8 *>(message), number);
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     // Load mail headers.
     //
-    sqldb.LoadAllMailHeaders([](int64_t rowid, int to_player, int from_player,
+    if (!sqldb.LoadAllMailHeaders([](int64_t rowid, int to_player, int from_player,
         int body_number, const UTF8 *tolist, const UTF8 *time_str,
         const UTF8 *subject, int read_flags)
     {
@@ -5792,14 +5818,18 @@ bool sqlite_load_mail(void)
 
         MailList ml(mp->to);
         ml.AppendItem(mp);
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     // Load mail aliases.
     //
     int alias_count = 0;
     std::vector<malias_t *> alias_vec;
 
-    sqldb.LoadAllMailAliases([&alias_vec](int owner, const UTF8 *name,
+    if (!sqldb.LoadAllMailAliases([&alias_vec](int owner, const UTF8 *name,
         const UTF8 *desc, int desc_width, const UTF8 *members)
     {
         malias_t *m = nullptr;
@@ -5840,7 +5870,11 @@ bool sqlite_load_mail(void)
         }
 
         alias_vec.push_back(m);
-    });
+    }))
+    {
+        mudstate.bSQLiteLoading = false;
+        return false;
+    }
 
     if (!alias_vec.empty())
     {
