@@ -53,6 +53,8 @@ static UTF8 sqlite_attr_buf[LBUF_SIZE];
 #endif
 
 static size_t cache_size = 0;
+static uint64_t cache_hits = 0;
+static uint64_t cache_misses = 0;
 
 int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCachePages)
 {
@@ -253,6 +255,7 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         {
             // It was in the cache, so indicate this entry as the newest and return it.
             //
+            cache_hits++;
             mudstate.attribute_lru_cache_list.splice(
                 mudstate.attribute_lru_cache_list.end(),
                 mudstate.attribute_lru_cache_list,
@@ -263,6 +266,7 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
             *flags = it->second.attr_flags;
             return it->second.data.data();
         }
+        cache_misses++;
     }
 
 #if defined(SQLITE_STORAGE)
@@ -582,6 +586,41 @@ void cache_preload(dbref obj)
     trim_attribute_cache();
 #else
     UNUSED_PARAMETER(obj);
+#endif
+}
+
+void list_cache_stats(dbref player)
+{
+    size_t nEntries = mudstate.attribute_lru_cache_map.size();
+    uint64_t total = cache_hits + cache_misses;
+    double hit_pct = (total > 0) ? (100.0 * cache_hits / total) : 0.0;
+
+    notify(player, T("--- Attribute Cache ---"));
+    notify(player, tprintf(T("Entries: %lu   Size: %lu bytes   Max: %d bytes"),
+        static_cast<unsigned long>(nEntries),
+        static_cast<unsigned long>(cache_size),
+        mudconf.max_cache_size));
+    notify(player, tprintf(T("Hits: %llu   Misses: %llu   Hit rate: %.1f%%"),
+        static_cast<unsigned long long>(cache_hits),
+        static_cast<unsigned long long>(cache_misses),
+        hit_pct));
+
+#if defined(SQLITE_STORAGE)
+    if (g_pSQLiteBackend)
+    {
+        CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
+
+        notify(player, T("--- SQLite Storage ---"));
+        notify(player, tprintf(T("Attr gets: %llu   puts: %llu   dels: %llu   bulk loads: %llu"),
+            static_cast<unsigned long long>(st.attr_gets),
+            static_cast<unsigned long long>(st.attr_puts),
+            static_cast<unsigned long long>(st.attr_dels),
+            static_cast<unsigned long long>(st.attr_bulk_loads)));
+        notify(player, tprintf(T("Obj inserts: %llu   updates: %llu   loads: %llu"),
+            static_cast<unsigned long long>(st.obj_inserts),
+            static_cast<unsigned long long>(st.obj_updates),
+            static_cast<unsigned long long>(st.obj_loads)));
+    }
 #endif
 }
 

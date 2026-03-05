@@ -4073,8 +4073,11 @@ static void list_rlevels(dbref player)
 #define LIST_RESOURCES  23
 #define LIST_GUESTS     24
 #define LIST_MODULES    25
+#ifndef MEMORY_BASED
+#define LIST_CACHE      26
+#endif
 #ifdef REALITY_LVLS
-#define LIST_RLEVELS    26
+#define LIST_RLEVELS    27
 #endif
 
 NAMETAB list_names[] =
@@ -4084,6 +4087,9 @@ NAMETAB list_names[] =
     {T("attributes"),         2,  CA_PUBLIC,  LIST_ATTRIBUTES},
     {T("bad_names"),          2,  CA_WIZARD,  LIST_BADNAMES},
     {T("buffers"),            2,  CA_WIZARD,  LIST_BUFTRACE},
+#ifndef MEMORY_BASED
+    {T("cache"),              2,  CA_WIZARD,  LIST_CACHE},
+#endif
     {T("commands"),           3,  CA_PUBLIC,  LIST_COMMANDS},
     {T("config_permissions"), 3,  CA_GOD,     LIST_CONF_PERMS},
     {T("costs"),              3,  CA_PUBLIC,  LIST_COSTS},
@@ -4219,6 +4225,11 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
     case LIST_MODULES:
         list_modules(executor);
         break;
+#ifndef MEMORY_BASED
+    case LIST_CACHE:
+        list_cache_stats(executor);
+        break;
+#endif
 #ifdef REALITY_LVLS
     case LIST_RLEVELS:
         list_rlevels(executor);
