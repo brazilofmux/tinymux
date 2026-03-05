@@ -71,6 +71,15 @@ static void force_reclaim_failed_create_slot(dbref obj)
     db[obj].owner = GOD;
     db[obj].parent = NOTHING;
     db[obj].zone = NOTHING;
+    db[obj].cpu_time_used.Set100ns(0);
+    db[obj].tThrottleExpired.Set100ns(0);
+    s_ThAttrib(obj, 0);
+    s_ThMail(obj, 0);
+    s_ThRefs(obj, 0);
+    mudstate.bfListens.Clear(obj);
+    mudstate.bfCommands.Clear(obj);
+    mudstate.bfNoListens.Clear(obj);
+    mudstate.bfNoCommands.Clear(obj);
 
     // Link into freelist directly without write-through.
     //
@@ -596,6 +605,25 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         s_Zone(obj, NOTHING);
     }
 
+    if (!bRequiredAttrWritesOk)
+    {
+        STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+        log_text(T("create_obj required attribute persistence failed; refusing object creation."));
+        ENDLOG;
+
+        destroy_obj(obj);
+        if (!IS_CLEAN(obj))
+        {
+            force_reclaim_failed_create_slot(obj);
+        }
+        else
+        {
+            s_Link(obj, mudstate.freelist);
+            mudstate.freelist = obj;
+        }
+        return NOTHING;
+    }
+
     CSQLiteDB::ObjectRecord rec;
     rec.dbref_val = obj;
     rec.location  = db[obj].location;
@@ -645,25 +673,6 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     else
     {
         bPersisted = true;
-    }
-
-    if (!bRequiredAttrWritesOk)
-    {
-        STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-        log_text(T("create_obj required attribute persistence failed; refusing object creation."));
-        ENDLOG;
-
-        destroy_obj(obj);
-        if (!IS_CLEAN(obj))
-        {
-            force_reclaim_failed_create_slot(obj);
-        }
-        else
-        {
-            s_Link(obj, mudstate.freelist);
-            mudstate.freelist = obj;
-        }
-        return NOTHING;
     }
 
     if (!bPersisted)

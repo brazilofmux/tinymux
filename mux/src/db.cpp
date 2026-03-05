@@ -2643,6 +2643,11 @@ bool db_make_minimal(void)
     db_free();
     db_grow(1);
     s_Name(0, T("Limbo"));
+    if (nullptr == db[0].name)
+    {
+        Log.WriteString(T("db_make_minimal: failed to persist Limbo name.\n"));
+        return false;
+    }
     s_Flags(0, FLAG_WORD1, TYPE_ROOM);
     s_Flags(0, FLAG_WORD2, 0);
     s_Flags(0, FLAG_WORD3, 0);
@@ -2653,7 +2658,11 @@ bool db_make_minimal(void)
     s_Link(0, NOTHING);
     s_Parent(0, NOTHING);
     s_Zone(0, NOTHING);
-    s_Pennies(0, 0);
+    if (!atr_add_raw(0, A_MONEY, T("0")))
+    {
+        Log.WriteString(T("db_make_minimal: failed to persist Limbo pennies.\n"));
+        return false;
+    }
     s_Owner(0, 1);
 
     // Insert Limbo (#0) into SQLite before creating Wizard.
