@@ -621,7 +621,9 @@ public:
     void LoadUnicodeHanFile(void);
     void LoadEastAsianWidth(void);
 
+#ifdef HAVE_ICONV_H
     void LoadMappings(void);
+#endif
 
     void Prohibit(void);
 
@@ -630,7 +632,9 @@ public:
     void SaveTranslateToLower(void);
     void SaveTranslateToTitle(void);
     void SaveTranslateDecimalValue(void);
+#ifdef HAVE_ICONV_H
     void SaveMappings();
+#endif
     void SaveClassifyPrivateUse(void);
     void SaveDecompositions(void);
     void SaveClassifyPrintable(void);
@@ -687,7 +691,9 @@ int main(int argc, char *argv[])
     g_UniData->LoadUnicodeHanFile();
     g_UniData->LoadEastAsianWidth();
 
+#ifdef HAVE_ICONV_H
     g_UniData->LoadMappings();
+#endif
 
     g_UniData->Prohibit();
 
@@ -696,7 +702,9 @@ int main(int argc, char *argv[])
     g_UniData->SaveTranslateToLower();
     g_UniData->SaveTranslateToTitle();
     g_UniData->SaveTranslateDecimalValue();
+#ifdef HAVE_ICONV_H
     g_UniData->SaveMappings();
+#endif
     g_UniData->SaveClassifyPrivateUse();
     g_UniData->SaveDecompositions();
     g_UniData->SaveClassifyPrintable();
@@ -1145,6 +1153,7 @@ void UniData::LoadEastAsianWidth(void)
     }
 }
 
+#ifdef HAVE_ICONV_H
 void UniData::LoadMappings(void)
 {
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
@@ -1183,6 +1192,7 @@ void UniData::LoadMappings(void)
         iconv_close(iconvd);
     }
 }
+#endif // HAVE_ICONV_H
 
 void UniData::SaveDecompositions()
 {
@@ -1339,6 +1349,7 @@ void UniData::SaveWidths()
     fclose(fp);
 }
 
+#ifdef HAVE_ICONV_H
 void UniData::SaveMappings()
 {
     for (int iMapping = 0; iMapping < NUM_MAPPINGS; iMapping++)
@@ -1402,6 +1413,7 @@ void UniData::SaveMappings()
         fclose(fp);
     }
 }
+#endif // HAVE_ICONV_H
 
 void UniData::SaveTranslateToUpper(void)
 {
