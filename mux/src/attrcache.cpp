@@ -177,20 +177,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         return sqlite_attr_buf;
     }
 
-    // We didn't find that one.
-    //
-    if (!mudstate.bStandAlone)
-    {
-        // Add an empty entry in the cache.
-        //
-        statedata::AttrCacheEntry entry;
-        entry.lru_it = mudstate.attribute_lru_cache_list.insert(
-            mudstate.attribute_lru_cache_list.end(), *nam);
-        entry.attr_owner = NOTHING;
-        entry.attr_flags = 0;
-        mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
-    }
-
     *pLen = 0;
     *owner = NOTHING;
     *flags = 0;
@@ -230,6 +216,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
     {
         Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
+        return false;
     }
 
     if (!mudstate.bStandAlone)
@@ -292,7 +279,12 @@ void cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
-    g_pSQLiteBackend->Del(nam->object, nam->attrnum);
+    if (!g_pSQLiteBackend->Del(nam->object, nam->attrnum))
+    {
+        Log.tinyprintf(T("cache_del((%d,%d)) failed" ENDLINE),
+            nam->object, nam->attrnum);
+        return;
+    }
 
     if (!mudstate.bStandAlone)
     {
