@@ -49,22 +49,8 @@ AC_SUBST(WOD_REALMS)
 USE_GANL="-DUSE_GANL"
 AC_SUBST(USE_GANL)
 
-AC_MSG_CHECKING(whether to enable Memory-Based Database)
-AC_ARG_ENABLE(
-  [memorybased],
-  AS_HELP_STRING([--enable-memorybased],[enable Memory-Based Database (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      MEMORY_BASED="-DMEMORY_BASED"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
-AC_SUBST(MEMORY_BASED)
+dnl Memory-Based Database is no longer supported.
+dnl SQLite is always the storage backend.
 
 AC_MSG_CHECKING(whether to enable Stub Slave)
 AC_ARG_ENABLE(
@@ -87,24 +73,9 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([STUBSLAVE_ENABLED], [test "x$stubslave_enabled" = "xyes"])
 AC_SUBST(STUB_SLAVE)
 
-AC_MSG_CHECKING(whether to enable SQLite storage backend)
-AC_ARG_ENABLE(
-  [sqlite],
-  AS_HELP_STRING([--enable-sqlite],[enable SQLite storage backend (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      sqlite_enabled=no
-      AC_MSG_RESULT(no)
-    else
-      sqlite_enabled=yes
-      SQLITE_STORAGE="-DSQLITE_STORAGE"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    sqlite_enabled=no
-    AC_MSG_RESULT(no)
-  ])
+dnl SQLite storage backend is always enabled.
+sqlite_enabled=yes
+SQLITE_STORAGE="-DSQLITE_STORAGE"
 AM_CONDITIONAL([SQLITE_ENABLED], [test "x$sqlite_enabled" = "xyes"])
 AC_SUBST(SQLITE_STORAGE)
 

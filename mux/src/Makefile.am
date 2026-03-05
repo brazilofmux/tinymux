@@ -3,7 +3,7 @@
 SUBDIRS = tools ganl . modules
 
 # Shared build flags
-AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
+AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
 
 # Base source files for building netmux

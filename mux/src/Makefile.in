@@ -96,7 +96,7 @@ host_triplet = @host@
 @REALITY_ENABLED_TRUE@am__append_1 = levels.cpp
 
 # Add SQLite storage backend if enabled
-@SQLITE_ENABLED_TRUE@am__append_2 = sqlitedb.cpp sqlite_backend.cpp
+@SQLITE_ENABLED_TRUE@am__append_2 = sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
 bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) $(am__EXEEXT_1)
 @STUBSLAVE_ENABLED_TRUE@am__append_3 = stubslave
 subdir = .
@@ -140,11 +140,15 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp levels.cpp sqlitedb.cpp sqlite_backend.cpp version.cpp
+	unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp \
+	utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
+	levels.cpp sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c \
+	version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
+am__dirstamp = $(am__leading_dot)dirstamp
 @SQLITE_ENABLED_TRUE@am__objects_2 = sqlitedb.$(OBJEXT) \
-@SQLITE_ENABLED_TRUE@	sqlite_backend.$(OBJEXT)
+@SQLITE_ENABLED_TRUE@	sqlite_backend.$(OBJEXT) \
+@SQLITE_ENABLED_TRUE@	sqlite/sqlite3.$(OBJEXT)
 am__objects_3 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
 	command.$(OBJEXT) comsys.$(OBJEXT) conf.$(OBJEXT) \
@@ -164,7 +168,8 @@ am__objects_3 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	svdrand.$(OBJEXT) svdhash.$(OBJEXT) telnet.$(OBJEXT) \
 	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
-	unparse.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
+	unparse.$(OBJEXT) utf8_grapheme.$(OBJEXT) \
+	utf8_normalize.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
 	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2)
 am_netmux_OBJECTS = $(am__objects_3) version.$(OBJEXT)
@@ -172,7 +177,7 @@ netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
 netmux_DEPENDENCIES = libmux.a ganl/libganl.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -224,10 +229,24 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/timeabsolute.Po ./$(DEPDIR)/timedelta.Po \
 	./$(DEPDIR)/timeparser.Po ./$(DEPDIR)/timer.Po \
 	./$(DEPDIR)/timeutil.Po ./$(DEPDIR)/timezone.Po \
-	./$(DEPDIR)/unparse.Po ./$(DEPDIR)/utf8tables.Po \
+	./$(DEPDIR)/unparse.Po ./$(DEPDIR)/utf8_grapheme.Po \
+	./$(DEPDIR)/utf8_normalize.Po ./$(DEPDIR)/utf8tables.Po \
 	./$(DEPDIR)/vattr.Po ./$(DEPDIR)/version.Po \
-	./$(DEPDIR)/walkdb.Po ./$(DEPDIR)/wild.Po ./$(DEPDIR)/wiz.Po
+	./$(DEPDIR)/walkdb.Po ./$(DEPDIR)/wild.Po ./$(DEPDIR)/wiz.Po \
+	sqlite/$(DEPDIR)/sqlite3.Po
 am__mv = mv -f
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_@AM_V@)
@@ -377,7 +396,6 @@ LIBS = @LIBS@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
-MEMORY_BASED = @MEMORY_BASED@
 MKDIR_P = @MKDIR_P@
 MUX_LIBS = @MUX_LIBS@
 OBJEXT = @OBJEXT@
@@ -400,7 +418,6 @@ REALITY_LVLS = @REALITY_LVLS@
 SELFCHECK = @SELFCHECK@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SQLITE_LIBS = @SQLITE_LIBS@
 SQLITE_STORAGE = @SQLITE_STORAGE@
 SQL_INCLUDE = @SQL_INCLUDE@
 SQL_LIBPATH = @SQL_LIBPATH@
@@ -468,7 +485,7 @@ top_srcdir = @top_srcdir@
 SUBDIRS = tools ganl . modules
 
 # Shared build flags
-AM_CPPFLAGS = -I$(srcdir)/ganl/include $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
+AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(DEPRECATED) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(USE_GANL) $(OPENSSL_CFLAGS) $(SQLITE_STORAGE)
 
 
@@ -485,8 +502,9 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-	unparse.cpp utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp $(am__append_1) $(am__append_2)
+	unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp \
+	utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
+	$(am__append_1) $(am__append_2)
 noinst_LIBRARIES = libmux.a
 
 # libmux library
@@ -494,7 +512,7 @@ libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS) $(SQLITE_LIBS)
+netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -515,7 +533,7 @@ all: autoconf.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -614,6 +632,14 @@ libmux.a: $(libmux_a_OBJECTS) $(libmux_a_DEPENDENCIES) $(EXTRA_libmux_a_DEPENDEN
 	$(AM_V_at)-rm -f libmux.a
 	$(AM_V_AR)$(libmux_a_AR) libmux.a $(libmux_a_OBJECTS) $(libmux_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libmux.a
+sqlite/$(am__dirstamp):
+	@$(MKDIR_P) sqlite
+	@: > sqlite/$(am__dirstamp)
+sqlite/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) sqlite/$(DEPDIR)
+	@: > sqlite/$(DEPDIR)/$(am__dirstamp)
+sqlite/sqlite3.$(OBJEXT): sqlite/$(am__dirstamp) \
+	sqlite/$(DEPDIR)/$(am__dirstamp)
 
 netmux$(EXEEXT): $(netmux_OBJECTS) $(netmux_DEPENDENCIES) $(EXTRA_netmux_DEPENDENCIES) 
 	@rm -f netmux$(EXEEXT)
@@ -629,6 +655,7 @@ stubslave$(EXEEXT): $(stubslave_OBJECTS) $(stubslave_DEPENDENCIES) $(EXTRA_stubs
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f sqlite/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -700,18 +727,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeutil.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timezone.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unparse.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8_grapheme.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8_normalize.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8tables.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vattr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/walkdb.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wild.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wiz.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@sqlite/$(DEPDIR)/sqlite3.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
 	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade)
+
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1066,6 +1112,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f sqlite/$(DEPDIR)/$(am__dirstamp)
+	-rm -f sqlite/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1144,12 +1192,15 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/timeutil.Po
 	-rm -f ./$(DEPDIR)/timezone.Po
 	-rm -f ./$(DEPDIR)/unparse.Po
+	-rm -f ./$(DEPDIR)/utf8_grapheme.Po
+	-rm -f ./$(DEPDIR)/utf8_normalize.Po
 	-rm -f ./$(DEPDIR)/utf8tables.Po
 	-rm -f ./$(DEPDIR)/vattr.Po
 	-rm -f ./$(DEPDIR)/version.Po
 	-rm -f ./$(DEPDIR)/walkdb.Po
 	-rm -f ./$(DEPDIR)/wild.Po
 	-rm -f ./$(DEPDIR)/wiz.Po
+	-rm -f sqlite/$(DEPDIR)/sqlite3.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1265,12 +1316,15 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/timeutil.Po
 	-rm -f ./$(DEPDIR)/timezone.Po
 	-rm -f ./$(DEPDIR)/unparse.Po
+	-rm -f ./$(DEPDIR)/utf8_grapheme.Po
+	-rm -f ./$(DEPDIR)/utf8_normalize.Po
 	-rm -f ./$(DEPDIR)/utf8tables.Po
 	-rm -f ./$(DEPDIR)/vattr.Po
 	-rm -f ./$(DEPDIR)/version.Po
 	-rm -f ./$(DEPDIR)/walkdb.Po
 	-rm -f ./$(DEPDIR)/wild.Po
 	-rm -f ./$(DEPDIR)/wiz.Po
+	-rm -f sqlite/$(DEPDIR)/sqlite3.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

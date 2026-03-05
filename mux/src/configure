@@ -671,7 +671,6 @@ MUX_LIBS
 DYNAMICLIB_TARGET
 DYNAMICLIB_CXXFLAGS
 DYNAMICLIB_EXT
-SQLITE_LIBS
 PCRE2_LIBS
 HAVE_CXX17
 host_os
@@ -720,7 +719,6 @@ SQLITE_ENABLED_TRUE
 STUB_SLAVE
 STUBSLAVE_ENABLED_FALSE
 STUBSLAVE_ENABLED_TRUE
-MEMORY_BASED
 USE_GANL
 WOD_REALMS
 REALITY_LVLS
@@ -802,9 +800,7 @@ enable_option_checking
 enable_silent_rules
 enable_realitylvls
 enable_wodrealms
-enable_memorybased
 enable_stubslave
-enable_sqlite
 enable_inlinesql
 enable_selfcheck
 with_mysql_include
@@ -1461,9 +1457,7 @@ Optional Features:
   --disable-silent-rules  verbose build output (undo: "make V=0")
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
-  --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
-  --enable-sqlite         enable SQLite storage backend (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
@@ -3965,29 +3959,6 @@ fi
 USE_GANL="-DUSE_GANL"
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable Memory-Based Database" >&5
-printf %s "checking whether to enable Memory-Based Database... " >&6; }
-# Check whether --enable-memorybased was given.
-if test ${enable_memorybased+y}
-then :
-  enableval=$enable_memorybased;
-    if test "x$enableval" = "xno"; then
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-    else
-      MEMORY_BASED="-DMEMORY_BASED"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-
-else $as_nop
-
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-fi
-
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable Stub Slave" >&5
 printf %s "checking whether to enable Stub Slave... " >&6; }
@@ -4024,31 +3995,8 @@ fi
 
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable SQLite storage backend" >&5
-printf %s "checking whether to enable SQLite storage backend... " >&6; }
-# Check whether --enable-sqlite was given.
-if test ${enable_sqlite+y}
-then :
-  enableval=$enable_sqlite;
-    if test "x$enableval" = "xno"; then
-      sqlite_enabled=no
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-    else
-      sqlite_enabled=yes
-      SQLITE_STORAGE="-DSQLITE_STORAGE"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-
-else $as_nop
-
-    sqlite_enabled=no
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-fi
-
+sqlite_enabled=yes
+SQLITE_STORAGE="-DSQLITE_STORAGE"
  if test "x$sqlite_enabled" = "xyes"; then
   SQLITE_ENABLED_TRUE=
   SQLITE_ENABLED_FALSE='#'
@@ -7935,51 +7883,6 @@ then :
 
 fi
 
-
-if test "x$sqlite_enabled" = "xyes"; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open in -lsqlite3" >&5
-printf %s "checking for sqlite3_open in -lsqlite3... " >&6; }
-if test ${ac_cv_lib_sqlite3_sqlite3_open+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsqlite3  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char sqlite3_open ();
-int
-main (void)
-{
-return sqlite3_open ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_sqlite3_sqlite3_open=yes
-else $as_nop
-  ac_cv_lib_sqlite3_sqlite3_open=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_open" >&5
-printf "%s\n" "$ac_cv_lib_sqlite3_sqlite3_open" >&6; }
-if test "x$ac_cv_lib_sqlite3_sqlite3_open" = xyes
-then :
-  SQLITE_LIBS="-lsqlite3"
-else $as_nop
-  as_fn_error $? "SQLite3 library not found. Install libsqlite3-dev." "$LINENO" 5
-fi
-
-fi
 
 
 save_LDFLAGS="$LDFLAGS"
