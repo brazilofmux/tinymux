@@ -63,12 +63,6 @@ private:
 #include "funmath.h"
 #include "help.h"
 
-typedef struct tag_int_array
-{
-    int n;
-    int* pi;
-} IntArray;
-
 #include "interface.h"
 #include "file_c.h"
 #ifdef REALITY_LVLS

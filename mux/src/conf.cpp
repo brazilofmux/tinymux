@@ -52,20 +52,10 @@ void cf_init(void)
     mudconf.max_cache_size = 1*1024*1024;
 
     mudconf.ip_address = nullptr;
-    mudconf.ports.n = 1;
-    mudconf.ports.pi = new int[1];
-    if (nullptr != mudconf.ports.pi)
-    {
-        mudconf.ports.pi[0] = 2860;
-    }
-    else
-    {
-        ISOUTOFMEMORY(mudconf.ports.pi);
-    }
+    mudconf.ports.push_back(2860);
 
 #if defined(UNIX_SSL) || defined(_WIN32)
-    mudconf.sslPorts.n = 0;
-    mudconf.sslPorts.pi = nullptr;
+    mudconf.sslPorts.clear();
     mudconf.ssl_certificate_file[0] = '\0';
     mudconf.ssl_certificate_key[0] = '\0';
     mudconf.ssl_certificate_password[0] = '\0';
@@ -566,37 +556,10 @@ static CF_HAND(cf_int_array)
         }
     }
 
-    const auto pia = reinterpret_cast<IntArray*>(vp);
+    auto *pvec = reinterpret_cast<std::vector<int>*>(vp);
     if (nPorts)
     {
-        int *q = nullptr;
-        try
-        {
-            q = new int[nPorts];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == q)
-        {
-            cf_log_syntax(player, cmd, T("Out of memory."));
-            return -1;
-        }
-
-        if (pia->pi)
-        {
-            delete [] pia->pi;
-            pia->pi = nullptr;
-        }
-
-        pia->pi = q;
-        pia->n = nPorts;
-        for (unsigned int i = 0; i < nPorts; i++)
-        {
-            pia->pi[i] = aPorts[i];
-        }
+        pvec->assign(aPorts, aPorts + nPorts);
     }
     delete [] aPorts;
     return 0;
@@ -2375,12 +2338,12 @@ void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
                 }
                 else if (tp->interpreter == cf_int_array)
                 {
-                    IntArray *pia = reinterpret_cast<IntArray *>(tp->loc);
+                    auto *pvec = reinterpret_cast<std::vector<int> *>(tp->loc);
                     ITL itl;
                     ItemToList_Init(&itl, buff, bufc);
-                    for (int i = 0; i < pia->n; i++)
+                    for (size_t i = 0; i < pvec->size(); i++)
                     {
-                        if (!ItemToList_AddInteger(&itl, pia->pi[i]))
+                        if (!ItemToList_AddInteger(&itl, (*pvec)[i]))
                         {
                             break;
                         }

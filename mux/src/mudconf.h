@@ -206,9 +206,9 @@ struct confdata
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.
 
-    IntArray    ports;          // user ports.
+    std::vector<int> ports;     // user ports.
 #if defined(UNIX_SSL) || defined(_WIN32)
-    IntArray    sslPorts;       // SSL ports
+    std::vector<int> sslPorts;  // SSL ports
 
     UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem or .p12)
     UTF8    ssl_certificate_key[128];       // SSL certificate private key file (.pem)

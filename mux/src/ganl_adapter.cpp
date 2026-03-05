@@ -1404,8 +1404,8 @@ bool GanlAdapter::initialize() {
 #endif // HAVE_WORKING_FORK
     {
         // --- Normal (fresh) start path ---
-        for (int i = 0; i < mudconf.ports.n; ++i) {
-            int port = mudconf.ports.pi[i];
+        for (size_t i = 0; i < mudconf.ports.size(); ++i) {
+            int port = mudconf.ports[i];
             std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
 
             ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
@@ -1430,8 +1430,8 @@ bool GanlAdapter::initialize() {
 
         // Create SSL Listeners
         if (secureTransport_) {
-            for (int i = 0; i < mudconf.sslPorts.n; ++i) {
-                int port = mudconf.sslPorts.pi[i];
+            for (size_t i = 0; i < mudconf.sslPorts.size(); ++i) {
+                int port = mudconf.sslPorts[i];
                 std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
 
                 ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
