@@ -316,5 +316,27 @@ extern const unsigned short tr_nfc_compose_sbt[8364];
 #define TR_NFC_COMPOSE_NFC_COMPOSE_RESULTS (964)
 extern const UTF32 tr_nfc_compose_nfc_compose_result[965];
 
+// utf/tr_gcb.txt
+//
+// 17602 code points.
+// 208 states, 92 columns, 3594 bytes
+//
+#define TR_GCB_START_STATE (0)
+#define TR_GCB_ACCEPTING_STATES_START (208)
+extern const unsigned char tr_gcb_itt[256];
+extern const unsigned short tr_gcb_sot[208];
+extern const unsigned char tr_gcb_sbt[2922];
+
+// utf/cl_ExtPict.txt
+//
+// 3537 included, 1110575 excluded, 0 errors.
+// 44 states, 66 columns, 854 bytes
+//
+#define CL_EXTPICT_START_STATE (0)
+#define CL_EXTPICT_ACCEPTING_STATES_START (44)
+extern const unsigned char cl_extpict_itt[256];
+extern const unsigned short cl_extpict_sot[44];
+extern const unsigned char cl_extpict_sbt[510];
 
 #endif // UTF8TABLES_H
+

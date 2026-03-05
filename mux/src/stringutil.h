@@ -1889,6 +1889,12 @@ static const mux_field fldAscii(1, 1);
 static const mux_field fldMin(0, 0);
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
+
+// utf8_grapheme.cpp — Extended Grapheme Cluster segmentation (UAX #29).
+//
+mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc);
+size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
+
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
     size_t nLength, size_t nWidth);
 mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
