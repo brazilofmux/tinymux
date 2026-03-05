@@ -438,6 +438,280 @@ static void bench_write_through()
 }
 
 // ---------------------------------------------------------------------------
+// Disk-based benchmarks
+// ---------------------------------------------------------------------------
+
+static void bench_disk_realistic()
+{
+    printf("\n--- Disk-Based Realistic Workload ---\n");
+
+    // Clean up any previous run.
+    //
+    remove("bench_test.db");
+    remove("bench_test.db-wal");
+    remove("bench_test.db-shm");
+
+    CSQLiteDB db;
+    if (!db.Open("bench_test.db"))
+    {
+        fprintf(stderr, "  Failed to open bench_test.db\n");
+        return;
+    }
+
+    // Phase 1: Populate — 10,000 objects with 20 attributes each.
+    // This simulates loading a medium-sized game database.
+    //
+    const int NUM_OBJECTS = 10000;
+    const int ATTRS_PER_OBJ = 20;
+
+    printf("  Populating %d objects x %d attrs = %d total attrs...\n",
+        NUM_OBJECTS, ATTRS_PER_OBJ, NUM_OBJECTS * ATTRS_PER_OBJ);
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    db.Begin();
+    for (int i = 0; i < NUM_OBJECTS; i++)
+    {
+        CSQLiteDB::ObjectRecord obj = {};
+        obj.dbref_val = i;
+        obj.location  = (i > 0) ? (i % 500) : -1;  // 500 rooms
+        obj.contents  = -1;
+        obj.exits     = -1;
+        obj.next      = -1;
+        obj.link      = 0;
+        obj.owner     = i % 100;
+        obj.parent    = -1;
+        obj.zone      = i % 10;
+        obj.pennies   = 100;
+        obj.flags1    = 0x06;  // TYPE_THING
+        db.InsertObject(obj);
+
+        for (int a = 1; a <= ATTRS_PER_OBJ; a++)
+        {
+            char val[256];
+            int len = snprintf(val, sizeof(val),
+                "Attribute value for object #%d attr %d. "
+                "This is a realistic-length attribute string.", i, a);
+            db.PutAttribute(i, a, (const UTF8 *)val, len + 1);
+        }
+    }
+    db.Commit();
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    printf("  Population:                 %.0f ms (%.1f us/attr)\n",
+        ms, (ms * 1000.0) / (NUM_OBJECTS * ATTRS_PER_OBJ));
+
+    // Checkpoint to flush WAL so steady-state starts clean.
+    //
+    db.Checkpoint();
+
+    // Phase 2: Steady-state gameplay simulation.
+    //
+    // A realistic command mix for one "second" of a busy game:
+    //   - 500 attribute reads   (look, examine, $commands, locks)
+    //   - 50 attribute writes   (@set, counters, +sheet)
+    //   - 30 location updates   (movement — contents/next/location)
+    //   - 5 bulk object loads   (entering a room — preload contents)
+    //   - 1 object creation     (occasional @create)
+    //
+    // We run 10 "seconds" to get stable numbers.
+    //
+    printf("\n  Steady-state simulation (10 rounds of mixed operations):\n");
+
+    const int ROUNDS = 10;
+    const int READS_PER_ROUND = 500;
+    const int WRITES_PER_ROUND = 50;
+    const int MOVES_PER_ROUND = 30;
+    const int PRELOADS_PER_ROUND = 5;
+
+    UTF8 buf[8192];
+    size_t rlen;
+    uint32_t lcg = 12345;  // Simple LCG for deterministic "random" access
+
+    // Track worst-case latencies.
+    //
+    double worst_write_us = 0.0;
+    double worst_read_us = 0.0;
+    double worst_move_us = 0.0;
+    double worst_preload_us = 0.0;
+
+    std::vector<double> round_times;
+
+    for (int round = 0; round < ROUNDS; round++)
+    {
+        auto round_start = std::chrono::high_resolution_clock::now();
+
+        // Attribute reads.
+        //
+        for (int i = 0; i < READS_PER_ROUND; i++)
+        {
+            lcg = lcg * 1664525 + 1013904223;
+            int obj = lcg % NUM_OBJECTS;
+            int attr = (lcg >> 16) % ATTRS_PER_OBJ + 1;
+
+            auto wt0 = std::chrono::high_resolution_clock::now();
+            db.GetAttribute(obj, attr, buf, sizeof(buf), &rlen);
+            auto wt1 = std::chrono::high_resolution_clock::now();
+
+            double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
+            if (us > worst_read_us) worst_read_us = us;
+        }
+
+        // Attribute writes (write-through, no explicit transaction).
+        //
+        for (int i = 0; i < WRITES_PER_ROUND; i++)
+        {
+            lcg = lcg * 1664525 + 1013904223;
+            int obj = lcg % NUM_OBJECTS;
+            int attr = (lcg >> 16) % ATTRS_PER_OBJ + 1;
+
+            char val[256];
+            int len = snprintf(val, sizeof(val),
+                "Updated value round %d write %d on #%d/%d", round, i, obj, attr);
+
+            auto wt0 = std::chrono::high_resolution_clock::now();
+            db.PutAttribute(obj, attr, (const UTF8 *)val, len + 1);
+            auto wt1 = std::chrono::high_resolution_clock::now();
+
+            double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
+            if (us > worst_write_us) worst_write_us = us;
+        }
+
+        // Location updates (simulating player movement).
+        // Each move touches location + contents + next on 2-3 objects.
+        //
+        for (int i = 0; i < MOVES_PER_ROUND; i++)
+        {
+            lcg = lcg * 1664525 + 1013904223;
+            int obj = 500 + (lcg % (NUM_OBJECTS - 500));  // non-room object
+            int dest = lcg % 500;  // move to a room
+
+            auto wt0 = std::chrono::high_resolution_clock::now();
+            db.Begin();
+            db.UpdateLocation(obj, dest);
+            db.UpdateContents(dest, obj);
+            db.UpdateNext(obj, -1);
+            db.Commit();
+            auto wt1 = std::chrono::high_resolution_clock::now();
+
+            double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
+            if (us > worst_move_us) worst_move_us = us;
+        }
+
+        // Bulk object preloads (entering a room).
+        //
+        for (int i = 0; i < PRELOADS_PER_ROUND; i++)
+        {
+            lcg = lcg * 1664525 + 1013904223;
+            int obj = lcg % NUM_OBJECTS;
+
+            auto wt0 = std::chrono::high_resolution_clock::now();
+            db.GetAllAttributes(obj, [](int, const UTF8 *, size_t) {});
+            auto wt1 = std::chrono::high_resolution_clock::now();
+
+            double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
+            if (us > worst_preload_us) worst_preload_us = us;
+        }
+
+        // Occasional object creation.
+        //
+        {
+            CSQLiteDB::ObjectRecord obj = {};
+            obj.dbref_val = NUM_OBJECTS + round;
+            obj.location  = 0;
+            obj.owner     = 1;
+            obj.flags1    = 0x06;
+            db.Begin();
+            db.InsertObject(obj);
+            for (int a = 1; a <= ATTRS_PER_OBJ; a++)
+            {
+                char val[128];
+                int len = snprintf(val, sizeof(val), "New object attr %d", a);
+                db.PutAttribute(obj.dbref_val, a, (const UTF8 *)val, len + 1);
+            }
+            db.Commit();
+        }
+
+        auto round_end = std::chrono::high_resolution_clock::now();
+        double round_ms = std::chrono::duration<double, std::milli>(round_end - round_start).count();
+        round_times.push_back(round_ms);
+    }
+
+    // Report results.
+    //
+    double total_ms = 0;
+    for (double t : round_times) total_ms += t;
+    double avg_ms = total_ms / ROUNDS;
+    double max_ms = *std::max_element(round_times.begin(), round_times.end());
+
+    printf("    Round time (avg):         %.1f ms\n", avg_ms);
+    printf("    Round time (worst):       %.1f ms\n", max_ms);
+    printf("    Worst single write:       %.1f us\n", worst_write_us);
+    printf("    Worst single read:        %.1f us\n", worst_read_us);
+    printf("    Worst move (3 updates):   %.1f us\n", worst_move_us);
+    printf("    Worst preload (20 attrs): %.1f us\n", worst_preload_us);
+
+    int ops_per_round = READS_PER_ROUND + WRITES_PER_ROUND
+        + MOVES_PER_ROUND * 3 + PRELOADS_PER_ROUND + ATTRS_PER_OBJ + 1;
+    printf("    Ops per round:            %d\n", ops_per_round);
+    printf("    Avg us/op:                %.1f\n", (avg_ms * 1000.0) / ops_per_round);
+
+    // Phase 3: Checkpoint under load.
+    //
+    printf("\n  Checkpoint (after steady-state):\n");
+    t0 = std::chrono::high_resolution_clock::now();
+    db.Checkpoint();
+    t1 = std::chrono::high_resolution_clock::now();
+    ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    printf("    Checkpoint time:          %.1f ms\n", ms);
+
+    // Phase 4: Full database load (simulating startup/restart).
+    //
+    printf("\n  Full database load (startup simulation):\n");
+    int obj_count = 0;
+    t0 = std::chrono::high_resolution_clock::now();
+    db.LoadAllObjects([&](const CSQLiteDB::ObjectRecord &)
+    {
+        obj_count++;
+    });
+    t1 = std::chrono::high_resolution_clock::now();
+    ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    printf("    Load %d objects:         %.1f ms\n", obj_count, ms);
+
+    // Report final statistics.
+    //
+    CSQLiteDB::Stats s = db.GetStats();
+    printf("\n  Cumulative statistics:\n");
+    printf("    obj_inserts:  %lu\n", (unsigned long)s.obj_inserts);
+    printf("    obj_updates:  %lu\n", (unsigned long)s.obj_updates);
+    printf("    obj_loads:    %lu\n", (unsigned long)s.obj_loads);
+    printf("    attr_gets:    %lu\n", (unsigned long)s.attr_gets);
+    printf("    attr_puts:    %lu\n", (unsigned long)s.attr_puts);
+    printf("    attr_dels:    %lu\n", (unsigned long)s.attr_dels);
+    printf("    attr_bulk:    %lu\n", (unsigned long)s.attr_bulk_loads);
+
+    db.Close();
+
+    // Report file sizes.
+    //
+    FILE *f = fopen("bench_test.db", "rb");
+    if (f)
+    {
+        fseek(f, 0, SEEK_END);
+        long sz = ftell(f);
+        fclose(f);
+        printf("\n  Database file size:         %.1f MB\n", sz / (1024.0 * 1024.0));
+    }
+
+    // Clean up.
+    //
+    remove("bench_test.db");
+    remove("bench_test.db-wal");
+    remove("bench_test.db-shm");
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -450,6 +724,7 @@ int main()
     // Now run benchmarks.
     //
     bench_write_through();
+    bench_disk_realistic();
 
     printf("\n====================\n");
     printf("Results: %d passed, %d failed\n", g_tests_passed, g_tests_failed);
