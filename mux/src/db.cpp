@@ -3912,7 +3912,11 @@ bool sqlite_load_game(void)
     if (attr_next_val <= max_attrnum_loaded)
     {
         attr_next_val = max_attrnum_loaded + 1;
-        sqldb.PutMeta("attr_next", attr_next_val);
+        if (!sqldb.PutMeta("attr_next", attr_next_val))
+        {
+            Log.tinyprintf(T("sqlite_load_game: failed to persist corrected attr_next=%d" ENDLINE),
+                attr_next_val);
+        }
     }
     mudstate.attr_next = attr_next_val;
 

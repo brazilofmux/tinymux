@@ -5836,6 +5836,7 @@ bool sqlite_sync_mail(void)
     }
     if (!sqldb.Commit())
     {
+        sqldb.Rollback();
         return false;
     }
     return true;

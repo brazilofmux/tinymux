@@ -4303,6 +4303,7 @@ bool sqlite_sync_comsys(void)
     }
     if (!sqldb.Commit())
     {
+        sqldb.Rollback();
         return false;
     }
     return true;
