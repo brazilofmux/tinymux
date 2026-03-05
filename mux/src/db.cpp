@@ -1675,7 +1675,7 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
         {
             // Skip legacy internal packed attribute list.
             //
-            if (  attrnum != 253U
+            if (  attrnum != static_cast<unsigned int>(A_LIST)
                && attrnum != 0U)
             {
                 attrnums.push_back(static_cast<int>(attrnum));
@@ -1904,7 +1904,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     // Legacy internal packed attribute list is deprecated and ignored.
     // NFC never expands the string, so clean_len is a safe bound.
     //
-    if (atr == 253)
+    if (atr == A_LIST)
     {
         return;
     }

@@ -236,7 +236,7 @@ constexpr int A_RLEVEL      = 250;
 
 // 251 unused
 constexpr int A_VLIST     = 252;
-// 253 reserved for legacy packed attribute-list payload (unused).
+constexpr int A_LIST      = 253; // Legacy packed attribute-list (deprecated).
 constexpr int A_STRUCT    = 254;
 constexpr int A_TEMP      = 255;
 

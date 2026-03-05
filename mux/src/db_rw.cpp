@@ -303,7 +303,7 @@ static bool get_list(FILE *f, dbref i)
 
                 // Ignore legacy packed attribute-list payload.
                 //
-                if (atr != 253)
+                if (atr != A_LIST)
                 {
                     atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
                 }
