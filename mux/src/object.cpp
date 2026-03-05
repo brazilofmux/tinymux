@@ -87,6 +87,76 @@ static void force_reclaim_failed_create_slot(dbref obj)
     mudstate.freelist = obj;
 }
 
+// Authoritative rebuild of SQLite attributes from runtime state.
+//
+static bool sqlite_sync_all_attributes_from_runtime(void)
+{
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
+    if (!sqldb.ClearAttributes())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    atr_push();
+    bool bOk = true;
+    dbref iObject;
+    DO_WHOLE_DB(iObject)
+    {
+        unsigned char *as;
+        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+        {
+            if (iAttr == A_LIST)
+            {
+                continue;
+            }
+
+            const UTF8 *pRaw = atr_get_raw(iObject, iAttr);
+            if (nullptr == pRaw)
+            {
+                continue;
+            }
+
+            dbref owner = Owner(iObject);
+            int flags = 0;
+            if (!atr_get_info(iObject, iAttr, &owner, &flags))
+            {
+                bOk = false;
+                break;
+            }
+
+            const size_t nRaw = strlen(reinterpret_cast<const char *>(pRaw)) + 1;
+            if (!sqldb.PutAttribute(iObject, iAttr, pRaw, nRaw, owner, flags))
+            {
+                bOk = false;
+                break;
+            }
+        }
+        if (!bOk)
+        {
+            break;
+        }
+    }
+    atr_pop();
+
+    if (!bOk)
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
+}
+
 // Best-effort backend cleanup for objects that failed creation and were
 // reclaimed locally.
 //
@@ -140,6 +210,10 @@ static void reconcile_failed_create_backend(dbref obj)
             {
                 sqldb.Rollback();
             }
+        }
+        if (!bAttrsCleared)
+        {
+            bAttrsCleared = sqlite_sync_all_attributes_from_runtime();
         }
 
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
