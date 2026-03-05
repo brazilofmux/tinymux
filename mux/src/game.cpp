@@ -1554,16 +1554,10 @@ void dump_database_internal(int dump_type)
 
         if (!bPotentialConflicts)
         {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-            if (mudconf.have_mailer)
-            {
-                sqlite_sync_mail();
-            }
-            if (mudconf.have_comsys)
-            {
-                sqlite_sync_comsys();
-            }
-#else
+#if !defined(SQLITE_STORAGE) || defined(MEMORY_BASED)
+            // Non-SQLite: write comsys/mail flatfiles.
+            // SQLite: write-through keeps these tables current; nothing to do.
+            //
             if (mudconf.have_mailer)
             {
                 if (mux_fopen(&f, mudconf.mail_db, T("wb")))
@@ -1622,16 +1616,10 @@ void dump_database_internal(int dump_type)
     }
 #endif // SQLITE_STORAGE && !MEMORY_BASED
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-    if (mudconf.have_mailer)
-    {
-        sqlite_sync_mail();
-    }
-    if (mudconf.have_comsys)
-    {
-        sqlite_sync_comsys();
-    }
-#else
+#if !defined(SQLITE_STORAGE) || defined(MEMORY_BASED)
+    // Non-SQLite: write comsys/mail flatfiles.
+    // SQLite: write-through keeps these tables current; nothing to do.
+    //
     if (mudconf.have_mailer)
     {
         if (mux_fopen(&f, mudconf.mail_db, T("wb")))
