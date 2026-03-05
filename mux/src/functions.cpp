@@ -185,6 +185,7 @@ UTF8 *split_token(UTF8 **sp, const SEP &sep)
 #define DBREF_LIST      4
 #define FLOAT_LIST      8
 #define CI_ASCII_LIST   16
+#define UNICODE_LIST    32
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
 class AutoDetect
@@ -246,7 +247,7 @@ void AutoDetect::ExamineList(int nitems, UTF8 *ptrs[])
     }
     else
     {
-        m_CouldBe = ASCII_LIST;
+        m_CouldBe = UNICODE_LIST;
     }
 }
 
@@ -3627,13 +3628,29 @@ static FUNCTION(fun_comp)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
     int x;
 
-    x = strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1]));
+    if (  3 <= nfargs
+       && (  'a' == fargs[2][0]
+          || 'A' == fargs[2][0]))
+    {
+        // Legacy ASCII comparison.
+        //
+        x = strcmp(reinterpret_cast<char *>(fargs[0]),
+                   reinterpret_cast<char *>(fargs[1]));
+    }
+    else
+    {
+        // Default: Unicode collation comparison.
+        //
+        size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
+        size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+        x = mux_collate_cmp(fargs[0], nA, fargs[1], nB);
+    }
+
     if (x < 0)
     {
         safe_str(T("-1"), buff, bufc);
@@ -8332,6 +8349,8 @@ typedef struct qsort_record
         int64_t  i64;
     } u;
     UTF8 *str;
+    UTF8 *sortkey;      // Pre-computed UCA sort key (UNICODE_LIST only).
+    size_t sortkeylen;
 } q_rec;
 
 typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
@@ -8388,6 +8407,21 @@ static int DCL_CDECL i64_comp(const void *s1, const void *s2)
     {
         return -1;
     }
+    return 0;
+}
+
+static int DCL_CDECL u_collate(const void *s1, const void *s2)
+{
+    const q_rec *r1 = reinterpret_cast<const q_rec *>(s1);
+    const q_rec *r2 = reinterpret_cast<const q_rec *>(s2);
+    size_t nMin = (r1->sortkeylen < r2->sortkeylen) ? r1->sortkeylen : r2->sortkeylen;
+    int cmp = memcmp(r1->sortkey, r2->sortkey, nMin);
+    if (0 != cmp)
+    {
+        return cmp;
+    }
+    if (r1->sortkeylen < r2->sortkeylen) return -1;
+    if (r1->sortkeylen > r2->sortkeylen) return 1;
     return 0;
 }
 
@@ -8467,6 +8501,20 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             }
             qsort(psc->m_ptrs, n, sizeof(q_rec), a_casecomp);
             break;
+
+        case UNICODE_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                size_t nBytes;
+                const UTF8 *plain = strip_color(s[i], &nBytes, nullptr);
+                UTF8 *key = static_cast<UTF8 *>(MEMALLOC(LBUF_SIZE));
+                psc->m_ptrs[i].sortkeylen =
+                    mux_collate_sortkey(plain, nBytes, key, LBUF_SIZE);
+                psc->m_ptrs[i].sortkey = key;
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), u_collate);
+            break;
         }
 
         for (i = 0; i < n; i++)
@@ -8482,6 +8530,13 @@ static void do_asort_finish(SortContext *psc)
 {
     if (nullptr != psc->m_ptrs)
     {
+        if (UNICODE_LIST == psc->m_iSortType)
+        {
+            for (int i = 0; i < psc->m_n; i++)
+            {
+                MEMFREE(psc->m_ptrs[i].sortkey);
+            }
+        }
         MEMFREE(psc->m_ptrs);
         psc->m_ptrs = nullptr;
     }
@@ -8532,6 +8587,16 @@ static FUNCTION(fun_sort)
         case 'i':
         case 'I':
             sort_type = CI_ASCII_LIST;
+            break;
+
+        case 'u':
+        case 'U':
+            sort_type = UNICODE_LIST;
+            break;
+
+        case 'a':
+        case 'A':
+            sort_type = ASCII_LIST;
             break;
 
         case '?':
@@ -8618,6 +8683,16 @@ static void handle_sets
             sort_type = CI_ASCII_LIST;
             break;
 
+        case 'u':
+        case 'U':
+            sort_type = UNICODE_LIST;
+            break;
+
+        case 'a':
+        case 'A':
+            sort_type = ASCII_LIST;
+            break;
+
         case '?':
         case '\0':
             {
@@ -8668,6 +8743,10 @@ static void handle_sets
 
     case CI_ASCII_LIST:
         cf = a_casecomp;
+        break;
+
+    case UNICODE_LIST:
+        cf = u_collate;
         break;
     }
 
@@ -11453,7 +11532,7 @@ static FUN builtin_function_list[] =
     {T("COLORDEPTH"),  fun_colordepth, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("COLUMNS"),     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("COMALIAS"),    fun_comalias,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {T("COMP"),        fun_comp,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("COMP"),        fun_comp,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("COMTITLE"),    fun_comtitle,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("CON"),         fun_con,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CONFIG"),      fun_config,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
