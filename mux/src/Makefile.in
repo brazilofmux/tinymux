@@ -137,10 +137,10 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-	unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp \
-	utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	levels.cpp sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c \
-	version.cpp
+	unparse.cpp utf8_collate.cpp utf8_grapheme.cpp \
+	utf8_normalize.cpp utf8tables.cpp vattr.cpp walkdb.cpp \
+	wild.cpp wiz.cpp levels.cpp sqlitedb.cpp sqlite_backend.cpp \
+	sqlite/sqlite3.c version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
@@ -162,9 +162,10 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 	svdrand.$(OBJEXT) svdhash.$(OBJEXT) telnet.$(OBJEXT) \
 	timer.$(OBJEXT) timeabsolute.$(OBJEXT) timedelta.$(OBJEXT) \
 	timeparser.$(OBJEXT) timeutil.$(OBJEXT) timezone.$(OBJEXT) \
-	unparse.$(OBJEXT) utf8_grapheme.$(OBJEXT) \
-	utf8_normalize.$(OBJEXT) utf8tables.$(OBJEXT) vattr.$(OBJEXT) \
-	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
+	unparse.$(OBJEXT) utf8_collate.$(OBJEXT) \
+	utf8_grapheme.$(OBJEXT) utf8_normalize.$(OBJEXT) \
+	utf8tables.$(OBJEXT) vattr.$(OBJEXT) walkdb.$(OBJEXT) \
+	wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
 	sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
 	sqlite/sqlite3.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
@@ -224,10 +225,11 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/timeabsolute.Po ./$(DEPDIR)/timedelta.Po \
 	./$(DEPDIR)/timeparser.Po ./$(DEPDIR)/timer.Po \
 	./$(DEPDIR)/timeutil.Po ./$(DEPDIR)/timezone.Po \
-	./$(DEPDIR)/unparse.Po ./$(DEPDIR)/utf8_grapheme.Po \
-	./$(DEPDIR)/utf8_normalize.Po ./$(DEPDIR)/utf8tables.Po \
-	./$(DEPDIR)/vattr.Po ./$(DEPDIR)/version.Po \
-	./$(DEPDIR)/walkdb.Po ./$(DEPDIR)/wild.Po ./$(DEPDIR)/wiz.Po \
+	./$(DEPDIR)/unparse.Po ./$(DEPDIR)/utf8_collate.Po \
+	./$(DEPDIR)/utf8_grapheme.Po ./$(DEPDIR)/utf8_normalize.Po \
+	./$(DEPDIR)/utf8tables.Po ./$(DEPDIR)/vattr.Po \
+	./$(DEPDIR)/version.Po ./$(DEPDIR)/walkdb.Po \
+	./$(DEPDIR)/wild.Po ./$(DEPDIR)/wiz.Po \
 	sqlite/$(DEPDIR)/sqlite3.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -497,10 +499,10 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
 	sitemon.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp \
 	svdhash.cpp telnet.cpp timer.cpp timeabsolute.cpp \
 	timedelta.cpp timeparser.cpp timeutil.cpp timezone.cpp \
-	unparse.cpp utf8_grapheme.cpp utf8_normalize.cpp \
-	utf8tables.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
-	sqlite/sqlite3.c
+	unparse.cpp utf8_collate.cpp utf8_grapheme.cpp \
+	utf8_normalize.cpp utf8tables.cpp vattr.cpp walkdb.cpp \
+	wild.cpp wiz.cpp $(am__append_1) sqlitedb.cpp \
+	sqlite_backend.cpp sqlite/sqlite3.c
 noinst_LIBRARIES = libmux.a
 
 # libmux library
@@ -723,6 +725,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeutil.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timezone.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unparse.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8_collate.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8_grapheme.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8_normalize.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8tables.Po@am__quote@ # am--include-marker
@@ -1188,6 +1191,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/timeutil.Po
 	-rm -f ./$(DEPDIR)/timezone.Po
 	-rm -f ./$(DEPDIR)/unparse.Po
+	-rm -f ./$(DEPDIR)/utf8_collate.Po
 	-rm -f ./$(DEPDIR)/utf8_grapheme.Po
 	-rm -f ./$(DEPDIR)/utf8_normalize.Po
 	-rm -f ./$(DEPDIR)/utf8tables.Po
@@ -1312,6 +1316,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/timeutil.Po
 	-rm -f ./$(DEPDIR)/timezone.Po
 	-rm -f ./$(DEPDIR)/unparse.Po
+	-rm -f ./$(DEPDIR)/utf8_collate.Po
 	-rm -f ./$(DEPDIR)/utf8_grapheme.Po
 	-rm -f ./$(DEPDIR)/utf8_normalize.Po
 	-rm -f ./$(DEPDIR)/utf8tables.Po

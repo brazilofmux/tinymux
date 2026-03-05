@@ -2238,7 +2238,7 @@ static const unsigned short ducet_ce_offset[35507] =
     41415,41417,41418
 };
 
-// Packed CE weights.  Each UINT32 encodes one CE:
+// Packed CE weights.  Each uint32_t encodes one CE:
 //   Bits 31:    variable flag (1 = variable/shifted)
 //   Bits 30-16: primary weight (0..0x72B6)
 //   Bits 15-5:  secondary weight (0..0x0126)
@@ -2252,7 +2252,7 @@ static const unsigned short ducet_ce_offset[35507] =
 //
 #define DUCET_CE_TOTAL 41418
 
-static const UINT32 ducet_ce_weights[41418] =
+static const uint32_t ducet_ce_weights[41418] =
 {
     0x00000000,0x82010402,0x82020402,0x82030402,0x82040402,0x82050402,0x82090402,0x82690402,
     0x833A0402,0x83C90402,0x83CA0402,0x83C60402,0x83370402,0x833D0402,0x833E0402,0x83BE0402,
@@ -7440,7 +7440,7 @@ static const UINT32 ducet_ce_weights[41418] =
 #define DUCET_CONTRACT3_COUNT 8
 
 static const struct {
-    UINT32 cp1, cp2, cp3;
+    uint32_t cp1, cp2, cp3;
     unsigned short ce_index;
 } ducet_contract3[8] =
 {

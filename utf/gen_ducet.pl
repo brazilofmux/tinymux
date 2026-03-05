@@ -154,7 +154,7 @@ print $out3 <<'HEADER';
 HEADER
 
 # Build flat CE weight array and offset table.
-my @flat_weights;   # Flat array of packed UINT32 values.
+my @flat_weights;   # Flat array of packed uint32_t values.
 my @offsets;        # offsets[i] = start index in flat_weights for CE seq i.
                     # Index 0 is the sentinel (empty).
 
@@ -188,7 +188,7 @@ for my $i (0 .. $#ce_seq_list) {
         # in 16.  But (294 << 5) | 31 = 9439 + 31 = 9470 < 65536.  OK.
         #
         # Actually let's just use a simple struct-based approach.
-        # Store as UINT32: (primary << 16) | (secondary << 8) | tertiary
+        # Store as uint32_t: (primary << 16) | (secondary << 8) | tertiary
         # This only works if secondary fits in 8 bits.  It doesn't (max 294).
         #
         # OK, use two UINT16 values per CE:
@@ -206,7 +206,7 @@ for my $i (0 .. $#ce_seq_list) {
         my $w0 = $ce->[0] | ($ce->[3] << 15);  # primary | (variable << 15)
         my $w1 = ($ce->[1] << 5) | $ce->[2];   # (secondary << 5) | tertiary
 
-        # Pack into a single UINT32 for compact storage.
+        # Pack into a single uint32_t for compact storage.
         my $packed = ($w0 << 16) | $w1;
         push @flat_weights, $packed;
     }
@@ -246,7 +246,7 @@ print $out3 "\n};\n\n";
 
 # Emit flat weight array.
 my $n_weights = scalar @flat_weights;
-printf $out3 "// Packed CE weights.  Each UINT32 encodes one CE:\n";
+printf $out3 "// Packed CE weights.  Each uint32_t encodes one CE:\n";
 printf $out3 "//   Bits 31:    variable flag (1 = variable/shifted)\n";
 printf $out3 "//   Bits 30-16: primary weight (0..0x72B6)\n";
 printf $out3 "//   Bits 15-5:  secondary weight (0..0x0126)\n";
@@ -259,7 +259,7 @@ printf $out3 "//   unsigned short secondary = (w >> 5) & 0x07FF;\n";
 printf $out3 "//   unsigned char tertiary = w & 0x1F;\n";
 printf $out3 "//\n";
 printf $out3 "#define DUCET_CE_TOTAL %d\n\n", $n_weights;
-printf $out3 "static const UINT32 ducet_ce_weights[%d] =\n{\n", $n_weights;
+printf $out3 "static const uint32_t ducet_ce_weights[%d] =\n{\n", $n_weights;
 for (my $i = 0; $i < $n_weights; $i++) {
     if ($i % 8 == 0) {
         print $out3 "    ";
@@ -282,7 +282,7 @@ if (@contract3_entries) {
     printf $out3 "//\n";
     printf $out3 "#define DUCET_CONTRACT3_COUNT %d\n\n", scalar @contract3_entries;
     printf $out3 "static const struct {\n";
-    printf $out3 "    UINT32 cp1, cp2, cp3;\n";
+    printf $out3 "    uint32_t cp1, cp2, cp3;\n";
     printf $out3 "    unsigned short ce_index;\n";
     printf $out3 "} ducet_contract3[%d] =\n{\n", scalar @contract3_entries;
     for my $e (@contract3_entries) {
