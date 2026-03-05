@@ -1907,12 +1907,21 @@ static int load_game(int ccPageFile)
     }
     f = 0;
 
-    // Bulk-sync all object metadata from db[] into SQLite.
-    // This populates the objects table from the flatfile data.
+    // Bulk-sync object and attribute metadata from db[] into SQLite.
+    // This keeps runtime metadata tables in lockstep.
     //
-    if (  !sqlite_sync_objects()
-       || !sqlite_sync_attrnames())
+    if (!sqlite_sync_runtime())
     {
+        if (sqldb.Begin())
+        {
+            if (  !sqldb.ClearAttributes()
+               || !sqldb.ClearObjectTable()
+               || !sqldb.ClearAttrNames()
+               || !sqldb.Commit())
+            {
+                sqldb.Rollback();
+            }
+        }
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("SQLite sync failed after flatfile load."));
         ENDLOG
@@ -2371,9 +2380,18 @@ static void dbconvert(void)
             fclose(fpIn);
             exit(1);
         }
-        if (  !sqlite_sync_objects()
-           || !sqlite_sync_attrnames())
+        if (!sqlite_sync_runtime())
         {
+            if (sqldb.Begin())
+            {
+                if (  !sqldb.ClearAttributes()
+                   || !sqldb.ClearObjectTable()
+                   || !sqldb.ClearAttrNames()
+                   || !sqldb.Commit())
+                {
+                    sqldb.Rollback();
+                }
+            }
             Log.WriteString(T("SQLite sync failed.\n"));
             exit(1);
         }

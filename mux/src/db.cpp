@@ -1827,7 +1827,7 @@ static void atr_decode_LEN(const UTF8 *iattr, size_t nLen, UTF8 *oattr,
  * atr_clr: clear an attribute in the list.
  */
 
-void atr_clr(dbref thing, int atr)
+bool atr_clr(dbref thing, int atr)
 {
     Aname okey;
 
@@ -1836,7 +1836,7 @@ void atr_clr(dbref thing, int atr)
     {
         Log.tinyprintf(T("atr_clr(#%d/%d): SQLite delete failed, not applying side effects." ENDLINE),
             thing, atr);
-        return;
+        return false;
     }
 
     switch (atr)
@@ -1886,19 +1886,19 @@ void atr_clr(dbref thing, int atr)
         mudstate.bfCommands.Clear(thing);
         break;
     }
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
  * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
-void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
+bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
 {
     if (  !szValue
        || '\0' == szValue[0])
     {
-        atr_clr(thing, atr);
-        return;
+        return atr_clr(thing, atr);
     }
 
     if (nValue > LBUF_SIZE-1)
@@ -1924,7 +1924,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     //
     if (atr == A_LIST)
     {
-        return;
+        return true;
     }
 
     UTF8 nfc_buf[LBUF_SIZE];
@@ -1942,7 +1942,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     {
         Log.tinyprintf(T("atr_add_raw_LEN(#%d/%d): SQLite write failed, not applying side effects." ENDLINE),
             thing, atr);
-        return;
+        return false;
     }
 
     switch (atr)
@@ -1977,11 +1977,12 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         pcache_reload(thing);
         break;
     }
+    return true;
 }
 
-void atr_add_raw(dbref thing, int atr, const UTF8 *szValue)
+bool atr_add_raw(dbref thing, int atr, const UTF8 *szValue)
 {
-    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(reinterpret_cast<const char *>(szValue)) : 0);
+    return atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(reinterpret_cast<const char *>(szValue)) : 0);
 }
 
 void atr_add(dbref thing, int atr, const UTF8 *buff, dbref owner, int flags)
@@ -2020,7 +2021,7 @@ void atr_add(dbref thing, int atr, const UTF8 *buff, dbref owner, int flags)
         mudstate.bfCommands.Clear(thing);
 
         const UTF8 *tbuff = atr_encode(buff, thing, owner, flags, atr);
-        atr_add_raw(thing, atr, tbuff);
+        (void)atr_add_raw(thing, atr, tbuff);
     }
 }
 
@@ -3880,6 +3881,81 @@ bool sqlite_sync_attrnames(void)
     if (!sqldb.PutMeta("attr_next", mudstate.attr_next)
      || !sqldb.PutMeta("db_top", mudstate.db_top)
      || !sqldb.PutMeta("record_players", mudstate.record_players))
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
+}
+
+// Bulk sync objects, attrnames, and related metadata in one transaction.
+// Called after db_read to keep runtime metadata tables in lockstep.
+//
+bool sqlite_sync_runtime(void)
+{
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
+
+    if (  !sqldb.ClearObjectTable()
+       || !sqldb.ClearAttrNames())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    for (dbref i = 0; i < mudstate.db_top; i++)
+    {
+        CSQLiteDB::ObjectRecord rec;
+        rec.dbref_val = i;
+        rec.location  = db[i].location;
+        rec.contents  = db[i].contents;
+        rec.exits     = db[i].exits;
+        rec.next      = db[i].next;
+        rec.link      = db[i].link;
+        rec.owner     = db[i].owner;
+        rec.parent    = db[i].parent;
+        rec.zone      = db[i].zone;
+        rec.pennies   = Pennies(i);
+        rec.flags1    = db[i].fs.word[FLAG_WORD1];
+        rec.flags2    = db[i].fs.word[FLAG_WORD2];
+        rec.flags3    = db[i].fs.word[FLAG_WORD3];
+        rec.powers1   = db[i].powers;
+        rec.powers2   = db[i].powers2;
+
+        if (!sqldb.InsertObject(rec))
+        {
+            sqldb.Rollback();
+            return false;
+        }
+    }
+
+    for (int iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
+    {
+        ATTR *vp = static_cast<ATTR *>(anum_get(iAttr));
+        if (  vp != nullptr
+           && !(vp->flags & AF_DELETED))
+        {
+            if (!sqldb.PutAttrName(vp->number,
+                    reinterpret_cast<const char *>(vp->name), vp->flags))
+            {
+                sqldb.Rollback();
+                return false;
+            }
+        }
+    }
+
+    if (  !sqldb.PutMeta("attr_next", mudstate.attr_next)
+       || !sqldb.PutMeta("db_top", mudstate.db_top)
+       || !sqldb.PutMeta("record_players", mudstate.record_players))
     {
         sqldb.Rollback();
         return false;

@@ -305,7 +305,12 @@ static bool get_list(FILE *f, dbref i)
                 //
                 if (atr != A_LIST)
                 {
-                    atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
+                    if (!atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode))
+                    {
+                        Log.tinyprintf(T("Failed writing attribute %d on object #%d during flatfile import." ENDLINE), atr, i);
+                        free_lbuf(buff);
+                        return false;
+                    }
                 }
             }
             else
@@ -609,7 +614,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // Only used when reading v2 format.
                 //
                 tempbool = getboolexp(f);
-                atr_add_raw(i, A_LOCK, unparse_boolexp_quiet(1, tempbool));
+                if (!atr_add_raw(i, A_LOCK, unparse_boolexp_quiet(1, tempbool)))
+                {
+                    free_boolexp(tempbool);
+                    Log.tinyprintf(T(ENDLINE "Error writing lock for object #%d" ENDLINE), i);
+                    return -1;
+                }
                 free_boolexp(tempbool);
             }
 
@@ -739,7 +749,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                                 {
                                     size_t nUnicode;
                                     const UTF8 *pUnicode = ConvertToUTF8(pLatin1, &nUnicode);
-                                    atr_add_raw_LEN(iObject, iAttr, pUnicode, nUnicode);
+                                    if (!atr_add_raw_LEN(iObject, iAttr, pUnicode, nUnicode))
+                                    {
+                                        Log.tinyprintf(T("Failed writing converted attribute %d on object #%d." ENDLINE), iAttr, iObject);
+                                        atr_pop();
+                                        return -1;
+                                    }
                                 }
                             }
                         }
