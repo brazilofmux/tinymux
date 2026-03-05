@@ -4308,18 +4308,6 @@ static FUNCTION(fun_lpos)
     delete sPat;
 }
 
-static int DCL_CDECL i_comp(const void *s1, const void *s2)
-{
-    if (*(reinterpret_cast<const int *>(s1)) > *(reinterpret_cast<const int *>(s2)))
-    {
-        return 1;
-    }
-    else if (*(reinterpret_cast<const int *>(s1)) < *(reinterpret_cast<const int *>(s2)))
-    {
-        return -1;
-    }
-    return 0;
-}
 
 /*
  * ---------------------------------------------------------------------------
@@ -4437,7 +4425,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
 
     // Sort remaining positions.
     //
-    qsort(aPositions, nPositions, sizeof(int), i_comp);
+    std::sort(aPositions, aPositions + nPositions);
 
     bool fFirst = true;
     LBUF_OFFSET i = 0;
@@ -8379,75 +8367,55 @@ typedef struct qsort_record
     size_t sortkeylen;
 } q_rec;
 
-typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
+typedef int (*CompareFunction)(const q_rec &, const q_rec &);
 
-static int DCL_CDECL a_comp(const void *s1, const void *s2)
+static int a_comp(const q_rec &r1, const q_rec &r2)
 {
     UTF8 buf1[LBUF_SIZE];
-    mux_strncpy(buf1, strip_color((reinterpret_cast<const q_rec *>(s1))->str), LBUF_SIZE-1);
+    mux_strncpy(buf1, strip_color(r1.str), LBUF_SIZE-1);
     return strcmp(
         reinterpret_cast<const char *>(buf1),
-        reinterpret_cast<const char *>(strip_color((reinterpret_cast<const q_rec *>(s2))->str)));
+        reinterpret_cast<const char *>(strip_color(r2.str)));
 }
 
-static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
+static int a_casecomp(const q_rec &r1, const q_rec &r2)
 {
     UTF8 buf1[LBUF_SIZE];
-    mux_strncpy(buf1, strip_color((reinterpret_cast<const q_rec *>(s1))->str), LBUF_SIZE-1);
-    return mux_stricmp(buf1, strip_color((reinterpret_cast<const q_rec *>(s2))->str));
+    mux_strncpy(buf1, strip_color(r1.str), LBUF_SIZE-1);
+    return mux_stricmp(buf1, strip_color(r2.str));
 }
 
-static int DCL_CDECL f_comp(const void *s1, const void *s2)
+static int f_comp(const q_rec &r1, const q_rec &r2)
 {
-    if ((reinterpret_cast<const q_rec *>(s1))->u.d > (reinterpret_cast<const q_rec *>(s2))->u.d)
-    {
-        return 1;
-    }
-    else if ((reinterpret_cast<const q_rec *>(s1))->u.d < (reinterpret_cast<const q_rec *>(s2))->u.d)
-    {
-        return -1;
-    }
+    if (r1.u.d > r2.u.d) return 1;
+    if (r1.u.d < r2.u.d) return -1;
     return 0;
 }
 
-static int DCL_CDECL l_comp(const void *s1, const void *s2)
+static int l_comp(const q_rec &r1, const q_rec &r2)
 {
-    if ((reinterpret_cast<const q_rec *>(s1))->u.l > (reinterpret_cast<const q_rec *>(s2))->u.l)
-    {
-        return 1;
-    }
-    else if ((reinterpret_cast<const q_rec *>(s1))->u.l < (reinterpret_cast<const q_rec *>(s2))->u.l)
-    {
-        return -1;
-    }
+    if (r1.u.l > r2.u.l) return 1;
+    if (r1.u.l < r2.u.l) return -1;
     return 0;
 }
 
-static int DCL_CDECL i64_comp(const void *s1, const void *s2)
+static int i64_comp(const q_rec &r1, const q_rec &r2)
 {
-    if ((reinterpret_cast<const q_rec *>(s1))->u.i64 > (reinterpret_cast<const q_rec *>(s2))->u.i64)
-    {
-        return 1;
-    }
-    else if ((reinterpret_cast<const q_rec *>(s1))->u.i64 < (reinterpret_cast<const q_rec *>(s2))->u.i64)
-    {
-        return -1;
-    }
+    if (r1.u.i64 > r2.u.i64) return 1;
+    if (r1.u.i64 < r2.u.i64) return -1;
     return 0;
 }
 
-static int DCL_CDECL u_collate(const void *s1, const void *s2)
+static int u_collate(const q_rec &r1, const q_rec &r2)
 {
-    const q_rec *r1 = reinterpret_cast<const q_rec *>(s1);
-    const q_rec *r2 = reinterpret_cast<const q_rec *>(s2);
-    size_t nMin = (r1->sortkeylen < r2->sortkeylen) ? r1->sortkeylen : r2->sortkeylen;
-    int cmp = memcmp(r1->sortkey, r2->sortkey, nMin);
+    size_t nMin = (r1.sortkeylen < r2.sortkeylen) ? r1.sortkeylen : r2.sortkeylen;
+    int cmp = memcmp(r1.sortkey, r2.sortkey, nMin);
     if (0 != cmp)
     {
         return cmp;
     }
-    if (r1->sortkeylen < r2->sortkeylen) return -1;
-    if (r1->sortkeylen > r2->sortkeylen) return 1;
+    if (r1.sortkeylen < r2.sortkeylen) return -1;
+    if (r1.sortkeylen > r2.sortkeylen) return 1;
     return 0;
 }
 
@@ -8490,7 +8458,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             {
                 psc->m_ptrs[i].str = s[i];
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), a_comp);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return a_comp(a, b) < 0; });
             break;
 
         case NUMERIC_LIST:
@@ -8499,7 +8468,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                 psc->m_ptrs[i].str = s[i];
                 psc->m_ptrs[i].u.i64 = mux_atoi64(strip_color(s[i]));
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), i64_comp);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return a.u.i64 < b.u.i64; });
             break;
 
         case DBREF_LIST:
@@ -8508,7 +8478,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                 psc->m_ptrs[i].str = s[i];
                 psc->m_ptrs[i].u.l = dbnum(strip_color(s[i]));
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), l_comp);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return a.u.l < b.u.l; });
             break;
 
         case FLOAT_LIST:
@@ -8517,7 +8488,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                 psc->m_ptrs[i].str = s[i];
                 psc->m_ptrs[i].u.d = mux_atof(strip_color(s[i]), false);
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), f_comp);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return a.u.d < b.u.d; });
             break;
 
         case CI_ASCII_LIST:
@@ -8525,7 +8497,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
             {
                 psc->m_ptrs[i].str = s[i];
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), a_casecomp);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return a_casecomp(a, b) < 0; });
             break;
 
         case UNICODE_LIST:
@@ -8539,7 +8512,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                     mux_collate_sortkey(plain, nBytes, key, LBUF_SIZE);
                 psc->m_ptrs[i].sortkey = key;
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), u_collate);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return u_collate(a, b) < 0; });
             break;
 
         case CI_UNICODE_LIST:
@@ -8553,7 +8527,8 @@ static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
                     mux_collate_sortkey_ci(plain, nBytes, key, LBUF_SIZE);
                 psc->m_ptrs[i].sortkey = key;
             }
-            qsort(psc->m_ptrs, n, sizeof(q_rec), u_collate);
+            std::sort(psc->m_ptrs, psc->m_ptrs + n,
+                [](const q_rec &a, const q_rec &b) { return u_collate(a, b) < 0; });
             break;
         }
 
@@ -8773,7 +8748,7 @@ static void handle_sets
         return;
     }
 
-    CompareFunction *cf = nullptr;
+    CompareFunction cf = nullptr;
     switch (sort_type)
     {
     case ASCII_LIST:
@@ -8820,7 +8795,7 @@ static void handle_sets
         //
         if (  n1 == 1
            && n2 == 1
-           && cf(&sc1.m_ptrs[0], &sc2.m_ptrs[0]) == 0)
+           && cf(sc1.m_ptrs[0], sc2.m_ptrs[0]) == 0)
         {
             safe_str(sc1.m_ptrs[0].str, buff, bufc);
             break;
@@ -8838,14 +8813,14 @@ static void handle_sets
             {
                 while (  i1 < n1
                       && oldp
-                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
+                      && cf(sc1.m_ptrs[i1], *oldp) == 0)
                 {
                     i1++;
                 }
 
                 while (  i2 < n2
                       && oldp
-                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
+                      && cf(sc2.m_ptrs[i2], *oldp) == 0)
                 {
                     i2++;
                 }
@@ -8862,7 +8837,7 @@ static void handle_sets
                 }
 
                 bFirst = false;
-                if (cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]) < 0)
+                if (cf(sc1.m_ptrs[i1], sc2.m_ptrs[i2]) < 0)
                 {
                     oldp = &sc1.m_ptrs[i1];
                     safe_str(sc1.m_ptrs[i1].str, buff, bufc);
@@ -8882,7 +8857,7 @@ static void handle_sets
         for (; i1 < n1; i1++)
         {
             if (  !oldp
-               || cf(oldp, &sc1.m_ptrs[i1]) != 0)
+               || cf(*oldp, sc1.m_ptrs[i1]) != 0)
             {
                 if (!bFirst)
                 {
@@ -8897,7 +8872,7 @@ static void handle_sets
         for (; i2 < n2; i2++)
         {
             if (  !oldp
-               || cf(oldp, &sc2.m_ptrs[i2]) != 0)
+               || cf(*oldp, sc2.m_ptrs[i2]) != 0)
             {
                 if (!bFirst)
                 {
@@ -8917,7 +8892,7 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
+            val = cf(sc1.m_ptrs[i1], sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, copy it.
@@ -8932,12 +8907,12 @@ static void handle_sets
                 i1++;
                 i2++;
                 while (  i1 < n1
-                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
+                      && cf(sc1.m_ptrs[i1], *oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
+                      && cf(sc2.m_ptrs[i2], *oldp) == 0)
                 {
                     i2++;
                 }
@@ -8960,19 +8935,19 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
+            val = cf(sc1.m_ptrs[i1], sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, increment pointers.
                 //
                 oldp = &sc1.m_ptrs[i1];
                 while (  i1 < n1
-                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
+                      && cf(sc1.m_ptrs[i1], *oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
+                      && cf(sc2.m_ptrs[i2], *oldp) == 0)
                 {
                     i2++;
                 }
@@ -8990,7 +8965,7 @@ static void handle_sets
                 oldp = &sc1.m_ptrs[i1];
                 i1++;
                 while (  i1 < n1
-                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
+                      && cf(sc1.m_ptrs[i1], *oldp) == 0)
                 {
                     i1++;
                 }
@@ -9002,7 +8977,7 @@ static void handle_sets
                 oldp = &sc2.m_ptrs[i2];
                 i2++;
                 while (  i2 < n2
-                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
+                      && cf(sc2.m_ptrs[i2], *oldp) == 0)
                 {
                     i2++;
                 }
@@ -9022,7 +8997,7 @@ static void handle_sets
             oldp = &sc1.m_ptrs[i1];
             i1++;
             while (  i1 < n1
-                  && cf(&sc1.m_ptrs[i1], oldp) == 0)
+                  && cf(sc1.m_ptrs[i1], *oldp) == 0)
             {
                 i1++;
             }
