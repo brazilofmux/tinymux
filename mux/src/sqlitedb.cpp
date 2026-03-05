@@ -317,7 +317,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 4;
+    static const int CURRENT_SCHEMA_VERSION = 5;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -469,6 +469,28 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 4;
+    }
+
+    // ---------------------------------------------------------------
+    // v4 -> v5: remove legacy packed A_LIST rows.
+    // Attribute membership is derived relationally by (object, attrnum),
+    // so A_LIST is redundant and should not be persisted.
+    // ---------------------------------------------------------------
+    //
+    if (version < 5)
+    {
+        const char *migration_v5 =
+            "BEGIN;"
+            "DELETE FROM attributes WHERE attrnum=253;"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 5);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v5, 5))
+        {
+            return false;
+        }
+        version = 5;
     }
 
     // Log any FK violations (informational, not fatal).
