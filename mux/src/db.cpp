@@ -720,8 +720,15 @@ void free_Names(OBJ *p)
 
 void s_Name(dbref thing, const UTF8 *s)
 {
+    if (!atr_add_raw(thing, A_NAME, s))
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "ATTRSYNC");
+        log_printf(T("s_Name(#%d): failed to persist A_NAME; leaving in-memory name unchanged."), thing);
+        ENDLOG;
+        return;
+    }
+
     free_Names(&db[thing]);
-    atr_add_raw(thing, A_NAME, s);
     if (nullptr != s)
     {
         db[thing].name = StringClone(s);

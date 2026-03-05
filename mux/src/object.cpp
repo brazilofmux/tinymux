@@ -544,23 +544,40 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     rec.owner     = db[obj].owner;
     rec.parent    = db[obj].parent;
     rec.zone      = db[obj].zone;
-    rec.pennies   = 0;
+    rec.pennies   = Pennies(obj);
     rec.flags1    = db[obj].fs.word[FLAG_WORD1];
     rec.flags2    = db[obj].fs.word[FLAG_WORD2];
     rec.flags3    = db[obj].fs.word[FLAG_WORD3];
     rec.powers1   = db[obj].powers;
     rec.powers2   = db[obj].powers2;
-    if (!g_pSQLiteBackend->GetDB().InsertObject(rec))
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    if (!sqldb.Begin())
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
+        log_text(T("Begin transaction failed in create_obj."));
+        ENDLOG;
+    }
+    else if (!sqldb.InsertObject(rec))
     {
         STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
         log_text(T("InsertObject failed in create_obj."));
         ENDLOG;
+        sqldb.Rollback();
     }
-    if (!g_pSQLiteBackend->GetDB().PutMeta("db_top", mudstate.db_top))
+    else if (!sqldb.PutMeta("db_top", mudstate.db_top))
     {
         STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
         log_text(T("PutMeta(db_top) failed in create_obj."));
         ENDLOG;
+        sqldb.Rollback();
+    }
+    else if (!sqldb.Commit())
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "OBJSYNC");
+        log_text(T("Commit failed in create_obj."));
+        ENDLOG;
+        sqldb.Rollback();
     }
 
     return obj;
