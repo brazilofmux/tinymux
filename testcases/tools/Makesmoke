@@ -102,21 +102,40 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 #
-#	Wait for MUX to finish shutdown and write the dump file.
+#	Wait for MUX to finish shutdown.
 #
 waited=0
-while [ ! -r "$DATA/$NEW_DB" ]; do
+while [ -r "$PIDFILE" ] && kill -0 `cat $PIDFILE 2>/dev/null` 2>/dev/null; do
     sleep 1
     waited=`expr $waited + 1`
     if [ "$waited" -ge 10 ]; then
-        echo "$DATA/$NEW_DB not found after ${waited}s. MUX may not have started or shutdown failed."
+        echo "MUX process still running after ${waited}s."
         exit 1
     fi
 done
-$BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$NEW_DB" -o smoke.flat -u
-if [ $? -ne 0 ]; then
-    echo "Unflatten failed."
-    exit 1
+sleep 1
+
+#
+#	Convert the dump to a flatfile for the Smoke test.
+#	With SQLite storage, there may be no smoke.db.new (the dump is
+#	a WAL checkpoint, not a flatfile).  In that case, we use dbconvert
+#	to load from the .pag/.dir (or .sqlite) and write a flatfile.
+#
+if [ -r "$DATA/$NEW_DB" ]; then
+    $BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$NEW_DB" -o smoke.flat -u
+    if [ $? -ne 0 ]; then
+        echo "Unflatten failed."
+        exit 1
+    fi
+else
+    # SQLite backend: no flatfile was produced.  Use dbconvert to
+    # load from the existing database and write a flatfile.
+    #
+    $BIN/netmux -d "$DATA/$GAMENAME" -o smoke.flat -u
+    if [ $? -ne 0 ]; then
+        echo "Export from database failed."
+        exit 1
+    fi
 fi
 if [ ! -r smoke.flat ]; then
     echo "smoke.flat was not produced."

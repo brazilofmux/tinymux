@@ -695,7 +695,7 @@ public:
                 DESC* d1 = it->second;
                 d1->flags &= ~DS_AUTODARK;
             }
-            db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+            s_Flags(d->player, FLAG_WORD1, db[d->player].fs.word[FLAG_WORD1] & ~DARK);
         }
 
         // Feed raw bytes through TinyMUX's existing NVT parser.

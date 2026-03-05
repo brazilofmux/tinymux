@@ -2075,17 +2075,17 @@ void atr_clr(dbref thing, int atr)
     {
     case A_STARTUP:
 
-        db[thing].fs.word[FLAG_WORD1] &= ~HAS_STARTUP;
+        s_Flags(thing, FLAG_WORD1, db[thing].fs.word[FLAG_WORD1] & ~HAS_STARTUP);
         break;
 
     case A_DAILY:
 
-        db[thing].fs.word[FLAG_WORD2] &= ~HAS_DAILY;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] & ~HAS_DAILY);
         break;
 
     case A_FORWARDLIST:
 
-        db[thing].fs.word[FLAG_WORD2] &= ~HAS_FWDLIST;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] & ~HAS_FWDLIST);
         if (!mudstate.bStandAlone)
         {
             // We should clear the hashtable, too.
@@ -2096,7 +2096,7 @@ void atr_clr(dbref thing, int atr)
 
     case A_LISTEN:
 
-        db[thing].fs.word[FLAG_WORD2] &= ~HAS_LISTEN;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] & ~HAS_LISTEN);
         break;
 
     case A_TIMEOUT:
@@ -2266,22 +2266,22 @@ FoundAttribute:
     {
     case A_STARTUP:
 
-        db[thing].fs.word[FLAG_WORD1] |= HAS_STARTUP;
+        s_Flags(thing, FLAG_WORD1, db[thing].fs.word[FLAG_WORD1] | HAS_STARTUP);
         break;
 
     case A_DAILY:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_DAILY;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] | HAS_DAILY);
         break;
 
     case A_FORWARDLIST:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_FWDLIST;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] | HAS_FWDLIST);
         break;
 
     case A_LISTEN:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_LISTEN;
+        s_Flags(thing, FLAG_WORD2, db[thing].fs.word[FLAG_WORD2] | HAS_LISTEN);
         break;
 
     case A_TIMEOUT:

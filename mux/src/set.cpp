@@ -151,7 +151,7 @@ void do_chzone
 
     // Everything is okay, do the change.
     //
-    db[thing].zone = zone;
+    s_Zone(thing, zone);
     if (!isPlayer(thing))
     {
         // If the object is a player, resetting these flags is rather
@@ -821,15 +821,17 @@ void SetClearFlags
     int j;
     for (j = FLAG_WORD1; j <= FLAG_WORD3; j++)
     {
+        FLAG newval = db[thing].fs.word[j];
         if (nullptr != aClearFlags)
         {
-            db[thing].fs.word[j] &= ~aClearFlags[j];
+            newval &= ~aClearFlags[j];
         }
 
         if (nullptr != aSetFlags)
         {
-            db[thing].fs.word[j] |= aSetFlags[j];
+            newval |= aSetFlags[j];
         }
+        s_Flags(thing, j, newval);
     }
 }
 

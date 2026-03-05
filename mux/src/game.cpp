@@ -1501,40 +1501,55 @@ void dump_database_internal(int dump_type)
 
     if (0 < dump_type)
     {
-        DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
-        bool bOpen;
-
-        mux_sprintf(outfn, sizeof(outfn), T("%s%s"), *(dp->ppszOutputBase), dp->szOutputSuffix);
-        if (dp->bUseTemporary)
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+        // With SQLite write-through, the database is always durable.
+        // Only write a flatfile for DUMP_I_FLAT (explicit export).
+        //
+        if (  dump_type != DUMP_I_FLAT
+           && dump_type != DUMP_I_SIGNAL)
         {
-            mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), outfn, mudstate.epoch);
-            RemoveFile(tmpfile);
-            bOpen = mux_fopen(&f, tmpfile, T("wb"));
+            STARTLOG(LOG_DBSAVES, "DMP", "SQLT");
+            log_text(T("SQLite write-through is authoritative; skipping flatfile write."));
+            ENDLOG;
         }
         else
+#endif // SQLITE_STORAGE && !MEMORY_BASED
         {
-            RemoveFile(outfn);
-            bOpen = mux_fopen(&f, outfn, T("wb"));
-        }
+            DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
+            bool bOpen;
 
-        if (bOpen)
-        {
-            DebugTotalFiles++;
-            setvbuf(f, nullptr, _IOFBF, 16384);
-            db_write(f, F_MUX, dp->fType);
-            if (fclose(f) == 0)
-            {
-                DebugTotalFiles--;
-            }
-
+            mux_sprintf(outfn, sizeof(outfn), T("%s%s"), *(dp->ppszOutputBase), dp->szOutputSuffix);
             if (dp->bUseTemporary)
             {
-                ReplaceFile(tmpfile, outfn);
+                mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), outfn, mudstate.epoch);
+                RemoveFile(tmpfile);
+                bOpen = mux_fopen(&f, tmpfile, T("wb"));
             }
-        }
-        else
-        {
-            log_perror(T("DMP"), T("FAIL"), dp->pszErrorMessage, outfn);
+            else
+            {
+                RemoveFile(outfn);
+                bOpen = mux_fopen(&f, outfn, T("wb"));
+            }
+
+            if (bOpen)
+            {
+                DebugTotalFiles++;
+                setvbuf(f, nullptr, _IOFBF, 16384);
+                db_write(f, F_MUX, dp->fType);
+                if (fclose(f) == 0)
+                {
+                    DebugTotalFiles--;
+                }
+
+                if (dp->bUseTemporary)
+                {
+                    ReplaceFile(tmpfile, outfn);
+                }
+            }
+            else
+            {
+                log_perror(T("DMP"), T("FAIL"), dp->pszErrorMessage, outfn);
+            }
         }
 
         if (!bPotentialConflicts)
@@ -1559,6 +1574,15 @@ void dump_database_internal(int dump_type)
         return;
     }
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    // With SQLite write-through, periodic and shutdown dumps don't need
+    // to write a flatfile.  The WAL checkpoint (via SYNC/cache_sync)
+    // is handled by the caller.
+    //
+    STARTLOG(LOG_DBSAVES, "DMP", "SQLT");
+    log_text(T("SQLite checkpoint (no flatfile)."));
+    ENDLOG;
+#else
     // Nuke our predecessor
     //
     mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev"), mudconf.outdb);
@@ -1585,6 +1609,7 @@ void dump_database_internal(int dump_type)
     {
         log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
     }
+#endif // SQLITE_STORAGE && !MEMORY_BASED
 
     if (mudconf.have_mailer)
     {
@@ -1761,6 +1786,15 @@ void fork_and_dump(int key)
     mudstate.dumping = true;
     mudstate.dumped  = 0;
     bool bAttemptFork = mudconf.fork_dump;
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    if (!(key & DUMP_FLATFILE))
+    {
+        // With SQLite write-through, periodic dumps are just a WAL
+        // checkpoint — fast enough that forking is unnecessary.
+        //
+        bAttemptFork = false;
+    }
+#endif // SQLITE_STORAGE && !MEMORY_BASED
 #if !defined(HAVE_PREAD) \
  || !defined(HAVE_PWRITE)
     if (key & DUMP_FLATFILE)
@@ -2345,55 +2379,72 @@ static void dbconvert(void)
         }
     }
 
-    FILE *fpIn;
-    if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    if (  nullptr == standalone_infile
+       && HF_OPEN_STATUS_OLD == cc
+       && sqlite_load_game())
     {
-        exit(1);
+        // No input flatfile given, but SQLite database exists.
+        // Load from SQLite for export.
+        //
+        Log.WriteString(T("Input: SQLite database\n"));
+        db_format = F_MUX;
+        db_ver = OUTPUT_VERSION;
+        db_flags = OUTPUT_FLAGS;
     }
+    else
+#endif // SQLITE_STORAGE && !MEMORY_BASED
+    {
+        FILE *fpIn;
+        if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
+        {
+            exit(1);
+        }
 
-    // Go do it.
-    //
+        // Go do it.
+        //
 #if !defined(SQLITE_STORAGE)
-    if (do_redirect)
-    {
-        cache_redirect();
-    }
+        if (do_redirect)
+        {
+            cache_redirect();
+        }
 #endif
 
-    setvbuf(fpIn, nullptr, _IOFBF, 16384);
+        setvbuf(fpIn, nullptr, _IOFBF, 16384);
 #if defined(SQLITE_STORAGE)
-    mudstate.bSQLiteLoading = true;
+        mudstate.bSQLiteLoading = true;
 #endif
-    if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
-    {
+        if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
+        {
+#if defined(SQLITE_STORAGE)
+            mudstate.bSQLiteLoading = false;
+#endif
+#if !defined(SQLITE_STORAGE)
+            cache_cleanup();
+#endif
+            exit(1);
+        }
 #if defined(SQLITE_STORAGE)
         mudstate.bSQLiteLoading = false;
-#endif
-#if !defined(SQLITE_STORAGE)
-        cache_cleanup();
-#endif
-        exit(1);
-    }
-#if defined(SQLITE_STORAGE)
-    mudstate.bSQLiteLoading = false;
-    sqlite_sync_objects();
-    sqlite_sync_attrnames();
+        sqlite_sync_objects();
+        sqlite_sync_attrnames();
 #endif
 
 #if !defined(SQLITE_STORAGE)
-    if (do_redirect)
-    {
-        cache_pass2();
-    }
+        if (do_redirect)
+        {
+            cache_pass2();
+        }
 #endif
-    Log.WriteString(T("Input: "));
-    info(db_format, db_flags, db_ver);
+        Log.WriteString(T("Input: "));
+        info(db_format, db_flags, db_ver);
 
-    if (standalone_check)
-    {
-        do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
+        if (standalone_check)
+        {
+            do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
+        }
+        fclose(fpIn);
     }
-    fclose(fpIn);
 
     if (do_write)
     {
@@ -2675,7 +2726,11 @@ int DCL_CDECL main(int argc, char *argv[])
             n++;
         }
         if (  !standalone_basename
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+           || (!standalone_infile && !standalone_unload)
+#else
            || !standalone_infile
+#endif
            || !standalone_outfile
            || n != 1
            || bServerOption)

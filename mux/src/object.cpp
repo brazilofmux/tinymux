@@ -896,7 +896,7 @@ static void purge_going(void)
 
         if (Indestructible(i))
         {
-            db[i].fs.word[FLAG_WORD1] &= ~GOING;
+            s_Flags(i, FLAG_WORD1, db[i].fs.word[FLAG_WORD1] & ~GOING);
             continue;
         }
 
@@ -917,7 +917,7 @@ static void purge_going(void)
                 }
                 log_text(T("GOING object doesn\xE2\x80\x99t remember its destroyer. GOING reset."));
                 ENDLOG;
-                db[i].fs.word[FLAG_WORD1] &= ~GOING;
+                s_Flags(i, FLAG_WORD1, db[i].fs.word[FLAG_WORD1] & ~GOING);
             }
             else
             {

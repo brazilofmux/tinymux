@@ -230,8 +230,7 @@ void link_exit(const dbref player, const dbref exit, const dbref dest)
         giveto(Owner(exit), mudconf.opencost);
         add_quota(Owner(exit), quot);
         s_Owner(exit, Owner(player));
-        db[exit].fs.word[FLAG_WORD1] &= ~(INHERIT | WIZARD);
-        db[exit].fs.word[FLAG_WORD1] |= HALT;
+        s_Flags(exit, FLAG_WORD1, (db[exit].fs.word[FLAG_WORD1] & ~(INHERIT | WIZARD)) | HALT);
     }
 
     // Link has been validated and paid for, do it and tell the player

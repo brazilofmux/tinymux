@@ -30,11 +30,11 @@ static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset
     //
     if (reset)
     {
-        db[target].fs.word[fflags] &= ~flag;
+        s_Flags(target, fflags, db[target].fs.word[fflags] & ~flag);
     }
     else
     {
-        db[target].fs.word[fflags] |= flag;
+        s_Flags(target, fflags, db[target].fs.word[fflags] | flag);
     }
     return true;
 }

@@ -847,7 +847,7 @@ void announce_connect(const dbref player, DESC *d)
     s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
     if (Guest(player))
     {
-        db[player].fs.word[FLAG_WORD1] &= ~DARK;
+        s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] & ~DARK);
     }
 
     const UTF8 *pRoomAnnounceFmt;
@@ -1152,12 +1152,12 @@ void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
         if (d->flags & DS_AUTODARK)
         {
             d->flags &= ~DS_AUTODARK;
-            db[player].fs.word[FLAG_WORD1] &= ~DARK;
+            s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] & ~DARK);
         }
 
         if (Guest(player))
         {
-            db[player].fs.word[FLAG_WORD1] |= DARK;
+            s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] | DARK);
             halt_que(NOTHING, player);
         }
     }
@@ -1460,7 +1460,7 @@ void check_idle(void)
                     }
                     if (!found)
                     {
-                        db[d->player].fs.word[FLAG_WORD1] |= DARK;
+                        s_Flags(d->player, FLAG_WORD1, db[d->player].fs.word[FLAG_WORD1] | DARK);
                         auto range2 = mudstate.dbref_to_descriptors_map.equal_range(d->player);
                         for (auto it = range2.first; it != range2.second; ++it)
                         {
@@ -2270,7 +2270,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                && (  RealWizard(player)
                   || God(player)))
             {
-                db[player].fs.word[FLAG_WORD1] |= DARK;
+                s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] | DARK);
             }
 
             // Make sure we don't have a guest from an unwanted host.
