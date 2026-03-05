@@ -59,8 +59,6 @@ struct confdata
     bool    exam_public;        /* Does EXAM show public attrs by default? */
     bool    fascist_tport;      /* Src of teleport must be owned/JUMP_OK */
     bool    fork_dump;          // perform dump in a forked process.
-    bool    have_comsys;        // Should the comsystem be active?
-    bool    have_mailer;        // Should @mail be active?
     bool    have_zones;         // Should zones be active?
     bool    idle_wiz_dark;      /* Do idling wizards get set dark? */
     bool    indent_desc;        // Newlines before and after descs?

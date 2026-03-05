@@ -2066,8 +2066,7 @@ UTF8 *process_command
         }
     }
 
-    if (  mudconf.have_comsys
-       && !Slave(executor)
+    if (  !Slave(executor)
        && !do_comsystem(executor, pCommand))
     {
         mudstate.debug_cmd = cmdsave;

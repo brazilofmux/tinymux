@@ -4557,11 +4557,6 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_mailer)
-    {
-        return;
-    }
-
     if (Flags2(executor) & PLAYER_MAILS)
     {
         if (  !text
@@ -4616,10 +4611,6 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_mailer)
-    {
-        return;
-    }
     if (  text[1] == '-'
        && text[2] == '\0')
     {
@@ -5248,11 +5239,6 @@ void do_malias
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_mailer)
-    {
-        raw_notify(executor, T("Mailer is disabled."));
-        return;
-    }
     switch (key)
     {
     case 0:
@@ -5307,12 +5293,6 @@ void do_mail
     UNUSED_PARAMETER(nargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
-
-    if (!mudconf.have_mailer)
-    {
-        raw_notify(executor, T("Mailer is disabled."));
-        return;
-    }
 
     // HACK: Fix to allow @mail/quick from objects.
     //

@@ -1890,38 +1890,32 @@ static int load_game(int ccPageFile)
     sqlite_sync_objects();
     sqlite_sync_attrnames();
 
-    if (mudconf.have_comsys)
+    if (sqlite_load_comsys())
     {
-        if (sqlite_load_comsys())
-        {
-            Log.tinyprintf(T("LOADING: comsys (from SQLite)" ENDLINE));
-        }
-        else
-        {
-            load_comsys(mudconf.comsys_db);
-        }
+        Log.tinyprintf(T("LOADING: comsys (from SQLite)" ENDLINE));
+    }
+    else
+    {
+        load_comsys(mudconf.comsys_db);
     }
 
-    if (mudconf.have_mailer)
+    if (sqlite_load_mail())
     {
-        if (sqlite_load_mail())
+        Log.tinyprintf(T("LOADING: mail (from SQLite)" ENDLINE));
+    }
+    else
+    if (mux_fopen(&f, mudconf.mail_db, T("rb")))
+    {
+        DebugTotalFiles++;
+        setvbuf(f, nullptr, _IOFBF, 16384);
+        Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
+        load_mail(f);
+        Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
+        if (fclose(f) == 0)
         {
-            Log.tinyprintf(T("LOADING: mail (from SQLite)" ENDLINE));
+            DebugTotalFiles--;
         }
-        else
-        if (mux_fopen(&f, mudconf.mail_db, T("rb")))
-        {
-            DebugTotalFiles++;
-            setvbuf(f, nullptr, _IOFBF, 16384);
-            Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
-            load_mail(f);
-            Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
-            if (fclose(f) == 0)
-            {
-                DebugTotalFiles--;
-            }
-            f = 0;
-        }
+        f = 0;
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
     log_text(T("Load complete."));
@@ -2326,7 +2320,6 @@ static void dbconvert(void)
     //
     if (standalone_load && standalone_comsys_file)
     {
-        mudconf.have_comsys = true;
         load_comsys(const_cast<UTF8 *>(standalone_comsys_file));
         sqlite_sync_comsys();
         Log.WriteString(T("Imported comsys into SQLite.\n"));
@@ -2336,7 +2329,6 @@ static void dbconvert(void)
     //
     if (standalone_load && standalone_mail_file)
     {
-        mudconf.have_mailer = true;
         FILE *fpMail;
         if (mux_fopen(&fpMail, standalone_mail_file, T("rb")))
         {
@@ -2352,7 +2344,6 @@ static void dbconvert(void)
     //
     if (standalone_unload && standalone_comsys_file)
     {
-        mudconf.have_comsys = true;
         if (sqlite_load_comsys())
         {
             save_comsys(const_cast<UTF8 *>(standalone_comsys_file));
@@ -2364,7 +2355,6 @@ static void dbconvert(void)
     //
     if (standalone_unload && standalone_mail_file)
     {
-        mudconf.have_mailer = true;
         if (sqlite_load_mail())
         {
             FILE *fpMail;

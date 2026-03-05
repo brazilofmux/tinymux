@@ -89,9 +89,8 @@ FUNCTION(fun_cwho)
         safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
-    if (  !mudconf.have_comsys
-       || (  !Comm_All(executor)
-          && !Controls(executor, ch->charge_who)))
+    if (  !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
     {
         safe_noperm(buff, bufc);
         return;
@@ -2251,12 +2250,6 @@ FUNCTION(fun_mail)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_mailer)
-    {
-        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
-        return;
-    }
-
     dbref playerask;
     int num, rc, uc, cc;
 
@@ -2351,12 +2344,6 @@ FUNCTION(fun_mailsize)
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(caller);
 
-    if (!mudconf.have_mailer)
-    {
-        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
-        return;
-    }
-
     dbref playerask = lookup_player(executor, fargs[0], 1);
     if (!Good_obj(playerask))
     {
@@ -2387,12 +2374,6 @@ FUNCTION(fun_mailsubj)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(caller);
-
-    if (!mudconf.have_mailer)
-    {
-        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
-        return;
-    }
 
     dbref playerask;
     int num;
@@ -2456,12 +2437,6 @@ FUNCTION(fun_mailfrom)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_mailer)
-    {
-        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
-        return;
-    }
-
     // Make sure we have the right number of arguments.
     //
     int num;
@@ -2523,12 +2498,6 @@ FUNCTION(fun_mailreview)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
-
-    if (!mudconf.have_mailer)
-    {
-        safe_str(T("#-1 MAILER DISABLED."), buff, bufc);
-        return;
-    }
 
     dbref target = lookup_player(executor, fargs[0], true);
     if (target == NOTHING)

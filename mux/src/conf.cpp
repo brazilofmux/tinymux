@@ -132,8 +132,6 @@ void cf_init(void)
     mudstate.write_protect = false;
 #endif // HAVE_WORKING_FORK
     mudconf.restrict_home = false;
-    mudconf.have_comsys = true;
-    mudconf.have_mailer = true;
     mudconf.have_zones = true;
     mudconf.paranoid_alloc = false;
     mudconf.sig_action = SA_DFLT;
@@ -1914,8 +1912,6 @@ static CONFPARM conftable[] =
     {T("guest_site"),                cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,     HC_GUEST},
     {T("guests_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.guests_channel),   nullptr,           32},
     {T("guests_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.guests_channel_alias), nullptr,       32},
-    {T("have_comsys"),               cf_bool,        CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.have_comsys),     nullptr,            0},
-    {T("have_mailer"),               cf_bool,        CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.have_mailer),     nullptr,            0},
     {T("have_zones"),                cf_bool,        CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.have_zones),      nullptr,            0},
     {T("help_executor"),             cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.help_executor,          nullptr,            0},
     {T("helpfile"),                  cf_helpfile,    CA_STATIC, CA_DISABLED, nullptr,                         nullptr,            0},

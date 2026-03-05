@@ -870,10 +870,7 @@ void destroy_player(dbref player, dbref victim)
 
     // Purge mailbox and orphan sent mail before the dbref is recycled.
     //
-    if (mudconf.have_mailer)
-    {
-        mail_destroy_player(victim);
-    }
+    mail_destroy_player(victim);
 
     move_via_generic(victim, NOTHING, player, 0);
     destroy_obj(victim);

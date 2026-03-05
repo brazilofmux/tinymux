@@ -2348,11 +2348,6 @@ void do_addcom
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     bool bValidAlias;
     size_t nValidAlias;
     UTF8* pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
@@ -2457,11 +2452,6 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     if (!arg1)
     {
         raw_notify(executor, T("Need an alias to delete."));
@@ -2695,11 +2685,6 @@ void do_destroychannel
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
     const vector<UTF8> channel_name_vector(channel_name, channel_name + channel_name_length);
     const auto it = mudstate.channel_names.find(channel_name_vector);
@@ -2811,11 +2796,6 @@ void do_comtitle
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     if (!*arg1)
     {
         raw_notify(executor, T("Need an alias to do comtitle."));
@@ -2895,12 +2875,6 @@ void do_comlist
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
-
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
 
     bool bWild;
     if (nullptr != pattern
@@ -2989,11 +2963,6 @@ void do_clearcom(const dbref executor, const dbref caller, const dbref enactor, 
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     const comsys_t* c = get_comsys(executor);
 
     for (int i = (c->numchannels) - 1; i > -1; --i)
@@ -3012,11 +2981,6 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     if (strcmp(reinterpret_cast<char*>(arg1), "who") != 0
         && strcmp(reinterpret_cast<char*>(arg1), "on") != 0
         && strcmp(reinterpret_cast<char*>(arg1), "off") != 0)
@@ -3066,12 +3030,6 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
-
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
 
     UTF8 channel[MAX_CHANNEL_LEN + 1];
     size_t i = 0;
@@ -3330,12 +3288,6 @@ void do_editchannel
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
-
     struct channel* ch = select_channel(arg1);
     if (!ch)
     {
@@ -3580,11 +3532,6 @@ void do_cemit
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     struct channel* ch = select_channel(chan);
     if (!ch)
     {
@@ -3628,11 +3575,6 @@ void do_chopen
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     if (key == CSET_LIST)
     {
         do_chanlist(executor, caller, enactor, 0, 1, nullptr, nullptr, 0);
@@ -3763,11 +3705,6 @@ void do_chboot
 
     // I sure hope it's not going to be that long.
     //
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     struct channel* ch = select_channel(channel);
     if (!ch)
     {
@@ -3916,11 +3853,6 @@ void do_chanlist
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        raw_notify(executor, T("Comsys disabled."));
-        return;
-    }
     if (key & CLIST_FULL)
     {
         do_listchannels(executor, pattern);
@@ -4044,12 +3976,6 @@ FUNCTION(fun_comtitle)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
-        return;
-    }
-
     dbref victim = lookup_player(executor, fargs[0], true);
     if (!Good_obj(victim))
     {
@@ -4121,12 +4047,6 @@ FUNCTION(fun_comalias)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!mudconf.have_comsys)
-    {
-        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
-        return;
-    }
-
     dbref victim = lookup_player(executor, fargs[0], true);
     if (!Good_obj(victim))
     {
@@ -4178,12 +4098,6 @@ FUNCTION(fun_channels)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    if (!mudconf.have_comsys)
-    {
-        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
-        return;
-    }
-
     SEP sep;
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
@@ -4232,12 +4146,6 @@ FUNCTION(fun_chanobj)
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
-
-    if (!mudconf.have_comsys)
-    {
-        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
-        return;
-    }
 
     struct channel* ch = select_channel(fargs[0]);
     if (nullptr == ch)

@@ -886,10 +886,7 @@ void announce_connect(const dbref player, DESC *d)
     if (num < 2)
     {
         pRoomAnnounceFmt = T("%s has connected.");
-        if (mudconf.have_comsys)
-        {
-            do_comconnect(player);
-        }
+        do_comconnect(player);
         if (  Hidden(player)
            && Can_Hide(player))
         {
@@ -1030,10 +1027,7 @@ void announce_connect(const dbref player, DESC *d)
     UTF8 host_address[MBUF_SIZE];
     d->address.ntop(host_address, sizeof(host_address));
     record_login(player, true, time_str, d->addr, d->username, host_address);
-    if (mudconf.have_mailer)
-    {
-        check_mail(player, 0, false);
-    }
+    check_mail(player, 0, false);
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
 }
@@ -1081,19 +1075,13 @@ void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
         notify_check(player, player, buf, key);
 #endif // REALITY_LVLS
 
-        if (mudconf.have_mailer)
-        {
-            do_mail_purge(player);
-        }
+        do_mail_purge(player);
 
         raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"), Moniker(player), reason);
 
         c_Connected(player);
 
-        if (mudconf.have_comsys)
-        {
-            do_comdisconnect(player);
-        }
+        do_comdisconnect(player);
 
         dbref aowner, zone, obj;
         int aflags;

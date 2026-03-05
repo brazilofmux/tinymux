@@ -3429,19 +3429,13 @@ bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck)
 //
 void ReleaseAllResources(dbref obj)
 {
-    if (mudconf.have_comsys)
-    {
-        do_comdisconnect(obj);
-        do_clearcom(obj, obj, obj, 0, 0);
-        do_channelnuke(obj);
-        del_comsys(obj);
-    }
-    if (mudconf.have_mailer)
-    {
-        do_mail_clear(obj, nullptr);
-        do_mail_purge(obj);
-        malias_cleanup(obj);
-    }
+    do_comdisconnect(obj);
+    do_clearcom(obj, obj, obj, 0, 0);
+    do_channelnuke(obj);
+    del_comsys(obj);
+    do_mail_clear(obj, nullptr);
+    do_mail_purge(obj);
+    malias_cleanup(obj);
 }
 
 #if defined(HAVE_WORKING_FORK)
