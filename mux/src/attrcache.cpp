@@ -91,7 +91,11 @@ int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCacheP
     // Check if the database file exists before opening.
     // sqlite3_open creates the file if it doesn't exist.
     //
+#if defined(WINDOWS_FILES)
+    bool bNewDatabase = (_access(szPath, 0) != 0);
+#else
     bool bNewDatabase = (access(szPath, F_OK) != 0);
+#endif
 
     if (!g_pSQLiteBackend->Open(szPath))
     {

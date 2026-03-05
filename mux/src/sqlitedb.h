@@ -11,7 +11,7 @@
 #ifndef SQLITEDB_H
 #define SQLITEDB_H
 
-#include <sqlite3.h>
+#include "sqlite/sqlite3.h"
 #include <cstddef>
 #include <cstdint>
 #include <functional>

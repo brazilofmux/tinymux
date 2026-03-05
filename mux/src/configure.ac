@@ -235,12 +235,8 @@ AC_SUBST(PCRE2_LIBS)
 AC_CHECK_LIB([ssl], [main])
 AC_CHECK_LIB([crypto], [main])
 
-if test "x$sqlite_enabled" = "xyes"; then
-    AC_CHECK_LIB([sqlite3], [sqlite3_open],
-        [SQLITE_LIBS="-lsqlite3"],
-        [AC_MSG_ERROR([SQLite3 library not found. Install libsqlite3-dev.])])
-fi
-AC_SUBST(SQLITE_LIBS)
+dnl SQLite3 is bundled as the amalgamation in sqlite/sqlite3.c.
+dnl No system library check needed.
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"

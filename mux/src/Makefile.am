@@ -27,7 +27,7 @@ endif
 
 # Add SQLite storage backend if enabled
 if SQLITE_ENABLED
-NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp
+NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
 endif
 
 # Build executables
@@ -43,7 +43,7 @@ libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS) $(SQLITE_LIBS)
+netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
