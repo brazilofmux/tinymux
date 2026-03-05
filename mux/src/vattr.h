@@ -13,6 +13,5 @@ extern ATTR *vattr_define_LEN(const UTF8 *pAttrName, size_t nAttrName, int numbe
 extern void  vattr_delete_LEN(UTF8 *pName, size_t nName);
 extern ATTR *vattr_first(void);
 extern ATTR *vattr_next(ATTR *);
-extern void  list_vhashstats(dbref);
 
 #endif // !VATTR_H

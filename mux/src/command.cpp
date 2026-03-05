@@ -3828,28 +3828,6 @@ size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill
 
 // list_hashstats: List information from hash tables
 //
-static void list_hashstat(const dbref player, const UTF8* tab_name, CHashTable* htab)
-{
-    unsigned int hashsize;
-    int          entries, max_scan;
-    int64_t        deletes, scans, hits, checks;
-
-    htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks, &max_scan);
-
-    UTF8 buff[MBUF_SIZE];
-    UTF8* p = buff;
-
-    p += LeftJustifyString(p, 13, tab_name); *p++ = ' ';
-    p += RightJustifyNumber(p, 4, hashsize, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 6, entries, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 7, deletes, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, scans, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, hits, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 13, checks, ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 4, max_scan, ' '); *p = '\0';
-    raw_notify(player, buff);
-}
-
 static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, const int entries)
 {
     UTF8 buff[MBUF_SIZE];
@@ -3869,7 +3847,7 @@ static void list_hashstats(const dbref player)
     list_hashstat_abbreviated(player, T("Flags"), static_cast<int>(mudstate.flag_names_map.size()));;
     list_hashstat_abbreviated(player, T("Powers"), static_cast<int>(mudstate.powers_htab.size()));
     list_hashstat_abbreviated(player, T("Attr Names"), static_cast<int>(mudstate.builtin_attribute_names.size()));
-    list_hashstat(player, T("Vattr Names"), &mudstate.vattr_name_htab);
+    list_hashstat_abbreviated(player, T("Vattr Names"), static_cast<int>(mudstate.vattr_name_map.size()));
     list_hashstat_abbreviated(player, T("Player Names"), static_cast<int>(mudstate.player_htab.size()));
     list_hashstat_abbreviated(player, T("Net Descr."), static_cast<int>(mudstate.dbref_to_descriptors_map.size()));;
     list_hashstat_abbreviated(player, T("Fwd. lists"), static_cast<int>(mudstate.forward_lists.size()));

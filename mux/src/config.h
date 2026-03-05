@@ -71,6 +71,7 @@
 #include <deque>
 #include <list>
 #include <map>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>

@@ -586,7 +586,7 @@ struct statedata
     StringPtrMap powers_htab;   /* Powers hashtable */
     StringPtrMap reference_htab; /* @reference hashtable */
     StringPtrMap ufunc_htab;    /* Local functions hashtable */
-    CHashTable vattr_name_htab; /* User attribute names hashtable */
+    std::unordered_map<std::string, int> vattr_name_map; /* User attribute names */
 
     CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.
     CBitField bfNoCommands;     // Cache knowledge that there are no $-Commands.
