@@ -13,4 +13,7 @@ if errorlevel 1 exit /b 1
 echo Building strings.exe...
 cl /EHsc /O2 /Fe:strings.exe strings.cpp ConvertUTF.cpp smutil.cpp
 if errorlevel 1 exit /b 1
+echo Building pairs.exe...
+cl /EHsc /O2 /Fe:pairs.exe pairs.cpp ConvertUTF.cpp smutil.cpp
+if errorlevel 1 exit /b 1
 echo All tools built successfully.
