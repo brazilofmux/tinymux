@@ -1513,7 +1513,8 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == folder)
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
         {
             i++;
             if (mail_match(mp, ms, i))
@@ -1586,7 +1587,8 @@ static void do_mail_next(dbref player)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == folder)
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
         {
             i++;
             if (Unread(mp))
@@ -1661,6 +1663,30 @@ static UTF8 *status_chars(struct mail *mp)
 bool mail_from_player(dbref player, struct mail *mp)
 {
     if (mp->from != player)
+    {
+        return false;
+    }
+    const UTF8 *pCreated = atr_get_raw(player, A_CREATED);
+    if (nullptr == pCreated)
+    {
+        return false;
+    }
+    CLinearTimeAbsolute ltaCreated, ltaMail;
+    if (  ltaCreated.SetString(pCreated)
+       && ltaMail.SetString(mp->time))
+    {
+        return ltaCreated <= ltaMail;
+    }
+    return false;
+}
+
+// Returns true if mp was received by the current incarnation of player.
+// Guards against recycled dbref: if the mail predates the player's
+// creation, a previous player held this dbref.
+//
+bool mail_to_player(dbref player, struct mail *mp)
+{
+    if (mp->to != player)
     {
         return false;
     }
@@ -1974,7 +2000,8 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == folder)
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
         {
             i++;
             if (mail_match(mp, ms, i))
@@ -2360,7 +2387,8 @@ struct mail *mail_fetch(dbref player, int num)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == player_folder(player))
+        if (  Folder(mp) == player_folder(player)
+           && mail_to_player(player, mp))
         {
             i++;
             if (i == num)
@@ -2404,7 +2432,8 @@ void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == folder)
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
         {
             if (Read(mp))
             {
@@ -2434,7 +2463,8 @@ static void urgent_mail(dbref player, int folder, int *ucount)
     struct mail *mp;
     for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
-        if (Folder(mp) == folder)
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
         {
             if (Unread(mp) && Urgent(mp))
             {
@@ -2629,6 +2659,39 @@ static void do_mail_nuke(dbref player)
     }
     log_printf(T("** MAIL PURGE ** done by %s(#%d)." ENDLINE), PureName(player), player);
     raw_notify(player, T("You annihilate the post office. All messages cleared."));
+}
+
+// Purge a destroyed player's mail presence.  Called from destroy_player().
+//
+// 1. Remove all received mail.
+// 2. Orphan sent mail so a recycled dbref cannot reply to the old player.
+// 3. Clean up mail aliases.
+//
+void mail_destroy_player(dbref victim)
+{
+    // Step 1: Purge received mail.
+    //
+    MailList ml(victim);
+    ml.RemoveAll();
+
+    // Step 2: Orphan sent mail in every other player's mailbox.
+    //
+    for (auto &kv : mudstate.mail_htab)
+    {
+        MailList ml2(kv.first);
+        struct mail *mp;
+        for (mp = ml2.FirstItem(); !ml2.IsEnd(); mp = ml2.NextItem())
+        {
+            if (mp->from == victim)
+            {
+                mp->from = NOTHING;
+            }
+        }
+    }
+
+    // Step 3: Clean up mail aliases.
+    //
+    malias_cleanup(victim);
 }
 
 #ifdef SELFCHECK

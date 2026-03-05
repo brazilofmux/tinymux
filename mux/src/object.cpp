@@ -844,6 +844,13 @@ void destroy_player(dbref player, dbref victim)
     delete_player_name(victim, buf, true);
     free_lbuf(buf);
 
+    // Purge mailbox and orphan sent mail before the dbref is recycled.
+    //
+    if (mudconf.have_mailer)
+    {
+        mail_destroy_player(victim);
+    }
+
     move_via_generic(victim, NOTHING, player, 0);
     destroy_obj(victim);
     notify_quiet(player, tprintf(T("(%d objects @chowned to you)"), count));

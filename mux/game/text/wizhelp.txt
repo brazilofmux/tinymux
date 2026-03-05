@@ -381,6 +381,11 @@ INDESTRUCTIBLE
   Players are always considered SAFE.  Objects owned by other players are
   not otherwise treated specially.
 
+  When a player is destroyed, their mailbox is purged and any mail they
+  sent to other players is orphaned (the sender is set to NOTHING) so
+  that a new player at the recycled dbref cannot access the old player's
+  private correspondence.
+
 & @DISABLE
 @DISABLE
 
