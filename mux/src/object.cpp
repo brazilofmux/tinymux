@@ -18,6 +18,66 @@
 
 static int check_type;
 
+// Force a newly-created object slot back to a reusable clean shape even
+// if backend attr deletes fail during teardown.
+//
+static void force_reclaim_failed_create_slot(dbref obj)
+{
+    if (  obj < 0
+       || obj >= mudstate.db_top)
+    {
+        return;
+    }
+
+    if (db[obj].name)
+    {
+        if (mudconf.cache_names)
+        {
+            if (db[obj].name == db[obj].purename)
+            {
+                db[obj].purename = nullptr;
+            }
+            if (db[obj].name == db[obj].moniker)
+            {
+                db[obj].moniker = nullptr;
+            }
+        }
+        MEMFREE(db[obj].name);
+        db[obj].name = nullptr;
+    }
+    if (mudconf.cache_names)
+    {
+        if (db[obj].purename)
+        {
+            MEMFREE(db[obj].purename);
+            db[obj].purename = nullptr;
+        }
+        if (db[obj].moniker)
+        {
+            MEMFREE(db[obj].moniker);
+            db[obj].moniker = nullptr;
+        }
+    }
+
+    db[obj].fs.word[FLAG_WORD1] = TYPE_GARBAGE | GOING;
+    db[obj].fs.word[FLAG_WORD2] = 0;
+    db[obj].fs.word[FLAG_WORD3] = 0;
+    db[obj].powers = 0;
+    db[obj].powers2 = 0;
+    db[obj].location = NOTHING;
+    db[obj].contents = NOTHING;
+    db[obj].exits = NOTHING;
+    db[obj].next = NOTHING;
+    db[obj].owner = GOD;
+    db[obj].parent = NOTHING;
+    db[obj].zone = NOTHING;
+
+    // Link into freelist directly without write-through.
+    //
+    db[obj].link = mudstate.freelist;
+    mudstate.freelist = obj;
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * Log_pointer_err, Log_header_err, Log_simple_damage: Write errors to the
@@ -499,6 +559,10 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     db[obj].fs = f;
     s_Owner(obj, (self_owned ? obj : owner));
     s_Pennies(obj, value);
+    if (Pennies(obj) != value)
+    {
+        bRequiredAttrWritesOk = false;
+    }
     Unmark(obj);
     buff = munge_space(pValidName);
     s_Name(obj, buff);
@@ -583,18 +647,29 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         bPersisted = true;
     }
 
-    if (  !bPersisted
-       || !bRequiredAttrWritesOk)
+    if (!bRequiredAttrWritesOk)
     {
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-        if (!bRequiredAttrWritesOk)
+        log_text(T("create_obj required attribute persistence failed; refusing object creation."));
+        ENDLOG;
+
+        destroy_obj(obj);
+        if (!IS_CLEAN(obj))
         {
-            log_text(T("create_obj required attribute persistence failed; attempting full SQLite runtime resync."));
+            force_reclaim_failed_create_slot(obj);
         }
         else
         {
-            log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
+            s_Link(obj, mudstate.freelist);
+            mudstate.freelist = obj;
         }
+        return NOTHING;
+    }
+
+    if (!bPersisted)
+    {
+        STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+        log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
         ENDLOG;
 
         if (!sqlite_sync_runtime())
@@ -606,7 +681,11 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             // Fail closed: don't hand out an object we couldn't make durable.
             //
             destroy_obj(obj);
-            if (IS_CLEAN(obj))
+            if (!IS_CLEAN(obj))
+            {
+                force_reclaim_failed_create_slot(obj);
+            }
+            else
             {
                 s_Link(obj, mudstate.freelist);
                 mudstate.freelist = obj;
