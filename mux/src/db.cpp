@@ -3868,10 +3868,12 @@ bool sqlite_sync_attrnames(void)
 }
 
 // Load game state from SQLite (warm start).
-// Returns true if SQLite had data and we loaded successfully.
-// Returns false if SQLite is empty (cold start needed).
+// Returns:
+//   1  if SQLite had data and we loaded successfully,
+//   0  if SQLite has no game data (cold start needed),
+//  -1  if SQLite had data but load failed.
 //
-bool sqlite_load_game(void)
+int sqlite_load_game(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
@@ -3880,7 +3882,7 @@ bool sqlite_load_game(void)
     int db_top_val = 0;
     if (!sqldb.GetMeta("db_top", &db_top_val) || db_top_val <= 0)
     {
-        return false;
+        return 0;
     }
 
     int attr_next_val = A_USER_START;
@@ -3912,7 +3914,7 @@ bool sqlite_load_game(void)
         }))
     {
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     if (attr_next_val <= max_attrnum_loaded)
@@ -3937,7 +3939,7 @@ bool sqlite_load_game(void)
         }))
     {
         mudstate.bSQLiteLoading = false;
-        return false;
+        return -1;
     }
 
     dbref max_dbref = -1;
@@ -3970,7 +3972,7 @@ bool sqlite_load_game(void)
            || i >= mudstate.db_top)
         {
             mudstate.bSQLiteLoading = false;
-            return false;
+            return -1;
         }
 
         db[i].location = rec.location;
@@ -4004,5 +4006,5 @@ bool sqlite_load_game(void)
     log_printf(T("Loaded %d objects from SQLite."), db_top_val);
     ENDLOG;
 
-    return true;
+    return 1;
 }

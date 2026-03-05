@@ -2259,9 +2259,19 @@ static void dbconvert(void)
         }
     }
 
-    if (  nullptr == standalone_infile
-       && HF_OPEN_STATUS_OLD == cc
-       && sqlite_load_game())
+    bool bLoadedFromSQLite = false;
+    if (nullptr == standalone_infile && HF_OPEN_STATUS_OLD == cc)
+    {
+        int sqlite_load_rc = sqlite_load_game();
+        if (sqlite_load_rc < 0)
+        {
+            Log.WriteString(T("Input: SQLite database load failed.\n"));
+            exit(1);
+        }
+        bLoadedFromSQLite = (sqlite_load_rc > 0);
+    }
+
+    if (bLoadedFromSQLite)
     {
         // No input flatfile given, but SQLite database exists.
         // Load from SQLite for export.
@@ -2273,6 +2283,11 @@ static void dbconvert(void)
     }
     else
     {
+        if (nullptr == standalone_infile)
+        {
+            Log.WriteString(T("No input flatfile provided and SQLite has no loadable game data.\n"));
+            exit(1);
+        }
         FILE *fpIn;
         if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
         {
@@ -2861,15 +2876,33 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         db_make_minimal();
     }
-    else if (HF_OPEN_STATUS_OLD == ccPageFile && sqlite_load_game())
-    {
-        // Warm start: loaded everything from SQLite.
-        // No flatfile needed.
-        //
-    }
     else
     {
-        int ccInFile = load_game(ccPageFile);
+        bool bDoFlatfileLoad = true;
+        if (HF_OPEN_STATUS_OLD == ccPageFile)
+        {
+            int sqlite_load_rc = sqlite_load_game();
+            if (sqlite_load_rc > 0)
+            {
+                // Warm start: loaded everything from SQLite.
+                // No flatfile needed.
+                //
+                bDoFlatfileLoad = false;
+            }
+            else if (sqlite_load_rc < 0)
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+                log_text(T("SQLite warm-load failed."));
+                ENDLOG
+                return 2;
+            }
+        }
+
+        int ccInFile = LOAD_GAME_SUCCESS;
+        if (bDoFlatfileLoad)
+        {
+            ccInFile = load_game(ccPageFile);
+        }
         if (LOAD_GAME_NO_INPUT_DB == ccInFile)
         {
             // The input file didn't exist.
