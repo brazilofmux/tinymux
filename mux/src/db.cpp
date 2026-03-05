@@ -3619,12 +3619,21 @@ void RemoveFile(const UTF8 *name)
 
 #define SQLITE_WRITABLE() (!mudstate.bSQLiteLoading)
 
+static void sqlite_log_object_update_failure(const UTF8 *field, dbref obj, int val)
+{
+    Log.tinyprintf(T("SQLite object update failed: field=%s obj=#%d val=%d" ENDLINE),
+        field, obj, val);
+}
+
 void s_Location(dbref t, dbref n)
 {
     db[t].location = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateLocation(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateLocation(t, n))
+        {
+            sqlite_log_object_update_failure(T("location"), t, n);
+        }
     }
 }
 
@@ -3633,7 +3642,10 @@ void s_Zone(dbref t, dbref n)
     db[t].zone = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateZone(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateZone(t, n))
+        {
+            sqlite_log_object_update_failure(T("zone"), t, n);
+        }
     }
 }
 
@@ -3642,7 +3654,10 @@ void s_Contents(dbref t, dbref n)
     db[t].contents = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateContents(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateContents(t, n))
+        {
+            sqlite_log_object_update_failure(T("contents"), t, n);
+        }
     }
 }
 
@@ -3651,7 +3666,10 @@ void s_Exits(dbref t, dbref n)
     db[t].exits = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateExits(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateExits(t, n))
+        {
+            sqlite_log_object_update_failure(T("exits"), t, n);
+        }
     }
 }
 
@@ -3660,7 +3678,10 @@ void s_Next(dbref t, dbref n)
     db[t].next = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateNext(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateNext(t, n))
+        {
+            sqlite_log_object_update_failure(T("next"), t, n);
+        }
     }
 }
 
@@ -3669,7 +3690,10 @@ void s_Link(dbref t, dbref n)
     db[t].link = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateLink(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateLink(t, n))
+        {
+            sqlite_log_object_update_failure(T("link"), t, n);
+        }
     }
 }
 
@@ -3678,7 +3702,10 @@ void s_Owner(dbref t, dbref n)
     db[t].owner = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateOwner(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateOwner(t, n))
+        {
+            sqlite_log_object_update_failure(T("owner"), t, n);
+        }
     }
 }
 
@@ -3687,7 +3714,10 @@ void s_Parent(dbref t, dbref n)
     db[t].parent = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateParent(t, n);
+        if (!g_pSQLiteBackend->GetDB().UpdateParent(t, n))
+        {
+            sqlite_log_object_update_failure(T("parent"), t, n);
+        }
     }
 }
 
@@ -3696,10 +3726,14 @@ void s_Flags(dbref t, int f, FLAG n)
     db[t].fs.word[f] = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdateFlags(t,
+        if (!g_pSQLiteBackend->GetDB().UpdateFlags(t,
             db[t].fs.word[FLAG_WORD1],
             db[t].fs.word[FLAG_WORD2],
-            db[t].fs.word[FLAG_WORD3]);
+            db[t].fs.word[FLAG_WORD3]))
+        {
+            sqlite_log_object_update_failure(T("flags"), t,
+                static_cast<int>(db[t].fs.word[f]));
+        }
     }
 }
 
@@ -3708,7 +3742,10 @@ void s_Powers(dbref t, POWER n)
     db[t].powers = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2);
+        if (!g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2))
+        {
+            sqlite_log_object_update_failure(T("powers"), t, db[t].powers);
+        }
     }
 }
 
@@ -3717,7 +3754,10 @@ void s_Powers2(dbref t, POWER n)
     db[t].powers2 = n;
     if (SQLITE_WRITABLE())
     {
-        g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2);
+        if (!g_pSQLiteBackend->GetDB().UpdatePowers(t, db[t].powers, db[t].powers2))
+        {
+            sqlite_log_object_update_failure(T("powers2"), t, db[t].powers2);
+        }
     }
 }
 
