@@ -1894,6 +1894,7 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 //
 mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc);
 size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
+size_t utf8_clusters_before(const UTF8 *src, size_t nSrc, size_t nBefore);
 
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
     size_t nLength, size_t nWidth);
@@ -2287,6 +2288,7 @@ public:
     }
 
     bool cursor_from_cluster(mux_cursor &c, LBUF_OFFSET iCluster) const;
+    size_t cluster_position(const mux_cursor &c) const;
 
     friend class mux_words;
 };

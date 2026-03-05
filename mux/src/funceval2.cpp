@@ -111,9 +111,11 @@ FUNCTION(fun_scramble)
         return;
     }
 
-    LBUF_OFFSET nPoints = sStr->length_cursor().m_point;
+    UTF8 plainBuf[LBUF_SIZE];
+    sStr->export_TextPlain(plainBuf);
+    size_t nClusters = utf8_cluster_count(plainBuf, sStr->length_byte());
 
-    if (2 <= nPoints)
+    if (2 <= nClusters)
     {
         mux_string *sOut = nullptr;
         try
@@ -131,16 +133,16 @@ FUNCTION(fun_scramble)
             return;
         }
 
-        LBUF_OFFSET iPoint;
+        LBUF_OFFSET iCluster;
         mux_cursor iStart, iEnd;
-        while (0 < nPoints)
+        while (0 < nClusters)
         {
-            iPoint = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(nPoints-1)));
-            sStr->cursor_from_point(iStart, iPoint);
-            sStr->cursor_from_point(iEnd, iPoint + 1);
+            iCluster = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(nClusters-1)));
+            sStr->cursor_from_cluster(iStart, iCluster);
+            sStr->cursor_from_cluster(iEnd, iCluster + 1);
             sOut->append(*sStr, iStart, iEnd);
             sStr->delete_Chars(iStart, iEnd);
-            nPoints--;
+            nClusters--;
         }
         *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, buff + (LBUF_SIZE-1) - *bufc);
         delete sOut;

@@ -352,6 +352,38 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
 }
 
 // ---------------------------------------------------------------------------
+// utf8_clusters_before: Count grapheme clusters in src[0..nBefore-1].
+// ---------------------------------------------------------------------------
+
+size_t utf8_clusters_before(const UTF8 *src, size_t nSrc, size_t nBefore)
+{
+    size_t nClusters = 0;
+    size_t nConsumed = 0;
+
+    if (nBefore > nSrc)
+    {
+        nBefore = nSrc;
+    }
+
+    while (nConsumed < nBefore)
+    {
+        mux_cursor c = utf8_next_grapheme(src + nConsumed, nSrc - nConsumed);
+        if (0 == c.m_byte)
+        {
+            break;
+        }
+        if (nConsumed + c.m_byte > nBefore)
+        {
+            // The cluster straddles the boundary — it starts before nBefore.
+            break;
+        }
+        nConsumed += c.m_byte;
+        nClusters++;
+    }
+    return nClusters;
+}
+
+// ---------------------------------------------------------------------------
 // utf8_cluster_count: Count grapheme clusters in a UTF-8 string.
 // ---------------------------------------------------------------------------
 

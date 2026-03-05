@@ -4176,7 +4176,7 @@ static FUNCTION(fun_pos)
        && nullptr != sPat
        && sStr->search(*sPat, &nPat))
     {
-        safe_ltoa(static_cast<long>(nPat.m_point + 1), buff, bufc);
+        safe_ltoa(static_cast<long>(sStr->cluster_position(nPat) + 1), buff, bufc);
     }
     else
     {
@@ -4255,7 +4255,7 @@ static FUNCTION(fun_lpos)
             safe_chr(' ', buff, bufc);
         }
         nStart = nPat;
-        safe_ltoa(static_cast<long>(nStart.m_point), buff, bufc);
+        safe_ltoa(static_cast<long>(sStr->cluster_position(nStart)), buff, bufc);
         sStr->cursor_next(nStart);
 
         bSucceeded = sStr->search(*sPat, &nPat, nStart);
@@ -10940,23 +10940,50 @@ static FUNCTION(fun_ord)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t n;
-    UTF8 *p  = strip_color(fargs[0]);
-    if (utf8_strlen(p, n))
+    size_t nBytes = 0;
+    UTF8 *p = strip_color(fargs[0], &nBytes, nullptr);
+    if (0 == nBytes)
     {
-        if (1 == n)
-        {
-            UTF32 ch = ConvertFromUTF8(p);
-            safe_ltoa(ch, buff, bufc);
-        }
-        else
-        {
-            safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
-        }
+        safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
+        return;
     }
-    else
+
+    // Get the first grapheme cluster.
+    //
+    mux_cursor cluster = utf8_next_grapheme(p, nBytes);
+    if (0 == cluster.m_byte)
     {
         safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+        return;
+    }
+
+    // Verify there's exactly one cluster.
+    //
+    if (cluster.m_byte < nBytes)
+    {
+        mux_cursor second = utf8_next_grapheme(p + cluster.m_byte, nBytes - cluster.m_byte);
+        if (0 < second.m_byte)
+        {
+            safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
+            return;
+        }
+    }
+
+    // Output space-separated code point values for the cluster.
+    //
+    const UTF8 *q = p;
+    const UTF8 *qEnd = p + cluster.m_byte;
+    bool bFirst = true;
+    while (q < qEnd)
+    {
+        UTF32 ch = ConvertFromUTF8(q);
+        if (!bFirst)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+        safe_ltoa(static_cast<long>(ch), buff, bufc);
+        bFirst = false;
+        q = utf8_NextCodePoint(q);
     }
 }
 
@@ -10976,22 +11003,77 @@ static FUNCTION(fun_chr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!is_integer(fargs[0], nullptr))
+    // Build UTF-8 from space-separated code point integers.
+    //
+    UTF8 raw[LBUF_SIZE];
+    UTF8 *pRaw = raw;
+    const UTF8 *pEnd = raw + sizeof(raw) - 5;
+
+    UTF8 *pArg = fargs[0];
+    bool bAny = false;
+    while ('\0' != *pArg)
+    {
+        while (mux_isspace(*pArg))
+        {
+            pArg++;
+        }
+        if ('\0' == *pArg)
+        {
+            break;
+        }
+
+        if (!is_integer(pArg, nullptr))
+        {
+            safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+            return;
+        }
+
+        int ch = mux_atol(pArg);
+
+        // Skip past this number.
+        //
+        if ('-' == *pArg || '+' == *pArg)
+        {
+            pArg++;
+        }
+        while (mux_isdigit(*pArg))
+        {
+            pArg++;
+        }
+
+        UTF8 *p = ConvertToUTF8(ch);
+        if (!mux_isprint(p))
+        {
+            safe_str(T("#-1 UNPRINTABLE CHARACTER"), buff, bufc);
+            return;
+        }
+
+        if (pRaw < pEnd)
+        {
+            while ('\0' != *p && pRaw < pEnd)
+            {
+                *pRaw++ = *p++;
+            }
+        }
+        bAny = true;
+    }
+    *pRaw = '\0';
+
+    if (!bAny)
     {
         safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
         return;
     }
 
-    int ch = mux_atol(fargs[0]);
-    UTF8 *p = ConvertToUTF8(ch);
-    if (mux_isprint(p))
-    {
-        utf8_safe_chr(p, buff, bufc);
-    }
-    else
-    {
-        safe_str(T("#-1 UNPRINTABLE CHARACTER"), buff, bufc);
-    }
+    // NFC normalize the result.
+    //
+    size_t nRaw = pRaw - raw;
+    UTF8 nfc[LBUF_SIZE];
+    size_t nNfc;
+    utf8_normalize_nfc(raw, nRaw, nfc, sizeof(nfc) - 1, &nNfc);
+    nfc[nNfc] = '\0';
+
+    safe_str(nfc, buff, bufc);
 }
 
 // ---------------------------------------------------------------------------

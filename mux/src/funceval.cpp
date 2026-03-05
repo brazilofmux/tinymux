@@ -2186,10 +2186,13 @@ FUNCTION(fun_strtrunc)
 
     mux_cursor nLen = sStr->length_cursor();
 
-    if (nLeft < nLen.m_point)
+    UTF8 plainBuf[LBUF_SIZE];
+    sStr->export_TextPlain(plainBuf);
+    size_t nClusters = utf8_cluster_count(plainBuf, nLen.m_byte);
+    if (static_cast<size_t>(nLeft) < nClusters)
     {
         mux_cursor iEnd;
-        sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(nLeft));
+        sStr->cursor_from_cluster(iEnd, static_cast<LBUF_OFFSET>(nLeft));
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
     }

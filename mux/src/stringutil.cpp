@@ -8753,6 +8753,27 @@ bool mux_string::cursor_from_cluster(mux_cursor &c, LBUF_OFFSET iCluster) const
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// cluster_position: Convert a cursor to a 0-based grapheme cluster position.
+// ---------------------------------------------------------------------------
+
+size_t mux_string::cluster_position(const mux_cursor &c) const
+{
+    if (0 == c.m_byte)
+    {
+        return 0;
+    }
+
+    // ASCII fast path.
+    //
+    if (m_iLast.m_point == m_iLast.m_byte)
+    {
+        return c.m_byte;
+    }
+
+    return utf8_clusters_before(m_autf, m_iLast.m_byte, c.m_byte);
+}
+
 mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
 {
     m_aiWordBegins[0] = CursorMin;
