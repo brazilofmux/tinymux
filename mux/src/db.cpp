@@ -2257,6 +2257,22 @@ FoundAttribute:
     const UTF8 *clean = atr_decode_flags_owner(szValue, &raw_owner, &raw_flags);
     size_t clean_len = nValue - static_cast<size_t>(clean - szValue);
 
+    // Normalize user text to NFC for consistent storage.
+    // Skip A_LIST (internal attribute-number data, not user text).
+    // NFC never expands the string, so clean_len is a safe bound.
+    //
+    UTF8 nfc_buf[LBUF_SIZE];
+    if (  atr != A_LIST
+       && clean_len > 0
+       && !utf8_is_nfc(clean, clean_len))
+    {
+        size_t nNfc;
+        utf8_normalize_nfc(clean, clean_len, nfc_buf, sizeof(nfc_buf) - 1, &nNfc);
+        nfc_buf[nNfc] = '\0';
+        clean = nfc_buf;
+        clean_len = nNfc;
+    }
+
     if (atr == A_LIST)
     {
         cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
