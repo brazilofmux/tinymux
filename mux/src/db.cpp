@@ -1832,7 +1832,12 @@ void atr_clr(dbref thing, int atr)
     Aname okey;
 
     makekey(thing, atr, &okey);
-    cache_del(&okey);
+    if (!cache_del(&okey))
+    {
+        Log.tinyprintf(T("atr_clr(#%d/%d): SQLite delete failed, not applying side effects." ENDLINE),
+            thing, atr);
+        return;
+    }
 
     switch (atr)
     {
@@ -1933,7 +1938,12 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         clean_len = nNfc;
     }
 
-    cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
+    if (!cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags))
+    {
+        Log.tinyprintf(T("atr_add_raw_LEN(#%d/%d): SQLite write failed, not applying side effects." ENDLINE),
+            thing, atr);
+        return;
+    }
 
     switch (atr)
     {

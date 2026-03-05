@@ -262,12 +262,12 @@ bool cache_sync(void)
 
 // Delete this attribute from the database.
 //
-void cache_del(Aname *nam)
+bool cache_del(Aname *nam)
 {
     if (  !nam
        || !cache_initted)
     {
-        return;
+        return false;
     }
 
 #if defined(HAVE_WORKING_FORK)
@@ -275,7 +275,7 @@ void cache_del(Aname *nam)
     {
         Log.tinyprintf(T("cache_del((%d,%d)) while database is write-protected" ENDLINE),
             nam->object, nam->attrnum);
-        return;
+        return false;
     }
 #endif // HAVE_WORKING_FORK
 
@@ -283,7 +283,7 @@ void cache_del(Aname *nam)
     {
         Log.tinyprintf(T("cache_del((%d,%d)) failed" ENDLINE),
             nam->object, nam->attrnum);
-        return;
+        return false;
     }
 
     if (!mudstate.bStandAlone)
@@ -300,6 +300,7 @@ void cache_del(Aname *nam)
             mudstate.attribute_lru_cache_map.erase(it);
         }
     }
+    return true;
 }
 
 // Preload built-in attributes (attrnum < 256) for an object into the LRU

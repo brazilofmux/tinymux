@@ -1846,11 +1846,14 @@ static int load_game(int ccPageFile)
     log_text(infile);
     ENDLOG
 
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+
     // Flatfile import is authoritative for attribute values.
-    // Clear previous rows so deleted attrs do not survive import.
+    // Perform clear + import in one transaction so failures rollback.
     //
-    if (!g_pSQLiteBackend->GetDB().ClearAttributes())
+    if (!sqldb.Begin() || !sqldb.ClearAttributes())
     {
+        sqldb.Rollback();
         if (fclose(f) == 0)
         {
             DebugTotalFiles--;
@@ -1866,6 +1869,7 @@ static int load_game(int ccPageFile)
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
     {
         mudstate.bSQLiteLoading = false;
+        sqldb.Rollback();
         // Everything is not ok.
         //
         if (fclose(f) == 0)
@@ -1881,6 +1885,19 @@ static int load_game(int ccPageFile)
         return LOAD_GAME_LOADING_PROBLEM;
     }
     mudstate.bSQLiteLoading = false;
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        if (fclose(f) == 0)
+        {
+            DebugTotalFiles--;
+        }
+        f = 0;
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("Error committing SQLite attributes after flatfile load."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
+    }
 
     // Everything is ok.
     //
@@ -2331,8 +2348,10 @@ static void dbconvert(void)
         // Go do it.
         //
         setvbuf(fpIn, nullptr, _IOFBF, 16384);
-        if (!g_pSQLiteBackend->GetDB().ClearAttributes())
+        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+        if (!sqldb.Begin() || !sqldb.ClearAttributes())
         {
+            sqldb.Rollback();
             Log.WriteString(T("SQLite attribute clear failed before flatfile import.\n"));
             fclose(fpIn);
             exit(1);
@@ -2341,9 +2360,17 @@ static void dbconvert(void)
         if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
         {
             mudstate.bSQLiteLoading = false;
+            sqldb.Rollback();
             exit(1);
         }
         mudstate.bSQLiteLoading = false;
+        if (!sqldb.Commit())
+        {
+            sqldb.Rollback();
+            Log.WriteString(T("SQLite attribute import commit failed.\n"));
+            fclose(fpIn);
+            exit(1);
+        }
         if (  !sqlite_sync_objects()
            || !sqlite_sync_attrnames())
         {
