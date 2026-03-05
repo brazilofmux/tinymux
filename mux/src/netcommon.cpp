@@ -784,7 +784,11 @@ void announce_connect(const dbref player, DESC *d)
     if (mudstate.record_players < count)
     {
         mudstate.record_players = count;
-        g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players);
+        if (!g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players))
+        {
+            Log.tinyprintf(T("announce_connect: failed to persist record_players=%d" ENDLINE),
+                mudstate.record_players);
+        }
     }
 
     UTF8 *buf = alloc_lbuf("announce_connect");

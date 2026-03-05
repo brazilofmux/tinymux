@@ -2651,7 +2651,10 @@ void db_make_minimal(void)
     rec.flags3    = db[0].fs.word[FLAG_WORD3];
     rec.powers1   = db[0].powers;
     rec.powers2   = db[0].powers2;
-    g_pSQLiteBackend->GetDB().InsertObject(rec);
+    if (!g_pSQLiteBackend->GetDB().InsertObject(rec))
+    {
+        Log.WriteString(T("db_make_minimal: failed to insert Limbo (#0) into SQLite.\n"));
+    }
 
     // should be #1
     //
