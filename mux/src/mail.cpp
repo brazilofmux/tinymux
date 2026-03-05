@@ -85,48 +85,75 @@ static void sqlite_wt_insert_mail(struct mail *mp)
     mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
         mp->to, mp->from, mp->number,
         mp->tolist, mp->time, mp->subject, mp->read);
+    if (mp->sqlite_id < 0)
+    {
+        Log.tinyprintf(T("mail sqlite_wt_insert_mail failed for to=#%d from=#%d body=%d" ENDLINE),
+            mp->to, mp->from, mp->number);
+    }
 }
 
 static void sqlite_wt_update_mail_flags(struct mail *mp)
 {
     if (!SQLITE_MAIL_WRITABLE() || mp->sqlite_id < 0) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.UpdateMailReadFlags(mp->sqlite_id, mp->read);
+    if (!sqldb.UpdateMailReadFlags(mp->sqlite_id, mp->read))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_update_mail_flags failed for rowid=%lld" ENDLINE),
+            static_cast<long long>(mp->sqlite_id));
+    }
 }
 
 static void sqlite_wt_delete_mail(struct mail *mp)
 {
     if (!SQLITE_MAIL_WRITABLE() || mp->sqlite_id < 0) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeleteMailHeader(mp->sqlite_id);
+    if (!sqldb.DeleteMailHeader(mp->sqlite_id))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_delete_mail failed for rowid=%lld" ENDLINE),
+            static_cast<long long>(mp->sqlite_id));
+    }
 }
 
 static void sqlite_wt_delete_all_mail(int to_player)
 {
     if (!SQLITE_MAIL_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeleteAllMailHeaders(to_player);
+    if (!sqldb.DeleteAllMailHeaders(to_player))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_delete_all_mail failed for to=#%d" ENDLINE),
+            to_player);
+    }
 }
 
 static void sqlite_wt_mail_body(int number, const UTF8 *message)
 {
     if (!SQLITE_MAIL_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.SyncMailBody(number, message);
+    if (!sqldb.SyncMailBody(number, message))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_mail_body failed for body=%d" ENDLINE), number);
+    }
 }
 
 static void sqlite_wt_delete_mail_body(int number)
 {
     if (!SQLITE_MAIL_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeleteMailBody(number);
+    if (!sqldb.DeleteMailBody(number))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_delete_mail_body failed for body=%d" ENDLINE), number);
+    }
 }
 
 static void sqlite_wt_sync_all_aliases(void)
 {
     if (!SQLITE_MAIL_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.ClearMailAliases();
+    if (!sqldb.ClearMailAliases())
+    {
+        Log.WriteString(T("mail sqlite_wt_sync_all_aliases failed to clear aliases." ENDLINE));
+        return;
+    }
     for (int i = 0; i < ma_top; i++)
     {
         malias_t *m = malias[i];
@@ -143,8 +170,12 @@ static void sqlite_wt_sync_all_aliases(void)
         }
         *bp = '\0';
 
-        sqldb.SyncMailAlias(m->owner, m->name, m->desc,
-            static_cast<int>(m->desc_width), members_buf);
+        if (!sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+            static_cast<int>(m->desc_width), members_buf))
+        {
+            Log.tinyprintf(T("mail sqlite_wt_sync_all_aliases failed for owner=#%d alias=%s" ENDLINE),
+                m->owner, m->name);
+        }
     }
 }
 
@@ -5675,15 +5706,60 @@ void do_folder
 // SQLite mail bulk sync and load (Phase 1).
 // ---------------------------------------------------------------------------
 
+static void clear_runtime_mail_data(void)
+{
+    while (!mudstate.mail_htab.empty())
+    {
+        MailList ml(mudstate.mail_htab.begin()->first);
+        ml.RemoveAll();
+    }
+
+    if (nullptr != mail_list)
+    {
+        mail_list -= MAIL_FUDGE;
+        MEMFREE(mail_list);
+        mail_list = nullptr;
+    }
+    mudstate.mail_db_top = 0;
+    mudstate.mail_db_size = 0;
+
+    if (nullptr != malias)
+    {
+        for (int i = 0; i < ma_top; i++)
+        {
+            if (malias[i])
+            {
+                if (malias[i]->name)
+                {
+                    MEMFREE(malias[i]->name);
+                    malias[i]->name = nullptr;
+                }
+                if (malias[i]->desc)
+                {
+                    MEMFREE(malias[i]->desc);
+                    malias[i]->desc = nullptr;
+                }
+                delete malias[i];
+                malias[i] = nullptr;
+            }
+        }
+        delete [] malias;
+        malias = nullptr;
+    }
+    ma_top = 0;
+    ma_size = 0;
+}
+
 bool sqlite_sync_mail(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    if (!sqldb.ClearMailTables())
+    if (!sqldb.Begin())
     {
         return false;
     }
-    if (!sqldb.Begin())
+    if (!sqldb.ClearMailTables())
     {
+        sqldb.Rollback();
         return false;
     }
 
@@ -5753,7 +5829,12 @@ bool sqlite_sync_mail(void)
         }
     }
 
-    if (!sqldb.PutMeta("mail_db_top", mudstate.mail_db_top) || !sqldb.Commit())
+    if (!sqldb.PutMeta("mail_db_top", mudstate.mail_db_top))
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    if (!sqldb.Commit())
     {
         return false;
     }
@@ -5772,6 +5853,7 @@ bool sqlite_load_mail(void)
         return false;
     }
 
+    clear_runtime_mail_data();
     mail_db_grow(mail_top + 1);
 
     // Load mail bodies first (they must exist before headers reference them).
@@ -5781,6 +5863,7 @@ bool sqlite_load_mail(void)
         new_mail_message(const_cast<UTF8 *>(message), number);
     }))
     {
+        clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }
@@ -5820,6 +5903,7 @@ bool sqlite_load_mail(void)
         ml.AppendItem(mp);
     }))
     {
+        clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }
@@ -5872,6 +5956,7 @@ bool sqlite_load_mail(void)
         alias_vec.push_back(m);
     }))
     {
+        clear_runtime_mail_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }

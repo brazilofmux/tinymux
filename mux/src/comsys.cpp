@@ -32,48 +32,70 @@ static void sqlite_wt_channel(struct channel *ch)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.SyncChannel(ch->name, ch->header,
+    if (!sqldb.SyncChannel(ch->name, ch->header,
         ch->type, ch->temp1, ch->temp2,
         ch->charge, ch->charge_who, ch->amount_col,
-        ch->num_messages, ch->chan_obj);
+        ch->num_messages, ch->chan_obj))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_channel failed for %s" ENDLINE), ch->name);
+    }
 }
 
 static void sqlite_wt_delete_channel(const UTF8 *name)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeleteChannel(name);
+    if (!sqldb.DeleteChannel(name))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_delete_channel failed for %s" ENDLINE), name);
+    }
 }
 
 static void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *user)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.SyncChannelUser(channel_name, user->who,
+    if (!sqldb.SyncChannelUser(channel_name, user->who,
         user->bUserIsOn, user->ComTitleStatus,
         user->bGagJoinLeave,
-        user->title ? user->title : T(""));
+        user->title ? user->title : T("")))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_channel_user failed for %s/#%d" ENDLINE),
+            channel_name, user->who);
+    }
 }
 
 static void sqlite_wt_delete_channel_user(const UTF8 *channel_name, int who)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeleteChannelUser(channel_name, who);
+    if (!sqldb.DeleteChannelUser(channel_name, who))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_delete_channel_user failed for %s/#%d" ENDLINE),
+            channel_name, who);
+    }
 }
 
 static void sqlite_wt_player_channel(int who, const UTF8 *alias, const UTF8 *channel_name)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.SyncPlayerChannel(who, alias, channel_name);
+    if (!sqldb.SyncPlayerChannel(who, alias, channel_name))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_player_channel failed for #%d/%s" ENDLINE),
+            who, alias);
+    }
 }
 
 static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    sqldb.DeletePlayerChannel(who, alias);
+    if (!sqldb.DeletePlayerChannel(who, alias))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_delete_player_channel failed for #%d/%s" ENDLINE),
+            who, alias);
+    }
 }
 
 // Return value is a static buffer.
@@ -4171,15 +4193,54 @@ FUNCTION(fun_chanobj)
 
 #include "sqlite_backend.h"
 
+static void clear_runtime_comsys_data(void)
+{
+    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
+    {
+        channel *ch = it->second;
+        if (nullptr != ch->users)
+        {
+            for (int j = 0; j < ch->num_users; j++)
+            {
+                if (ch->users[j] && ch->users[j]->title)
+                {
+                    MEMFREE(ch->users[j]->title);
+                    ch->users[j]->title = nullptr;
+                }
+                MEMFREE(ch->users[j]);
+                ch->users[j] = nullptr;
+            }
+            MEMFREE(ch->users);
+            ch->users = nullptr;
+        }
+        MEMFREE(ch);
+    }
+    mudstate.channel_names.clear();
+
+    for (int i = 0; i < NUM_COMSYS; i++)
+    {
+        comsys_t *c = comsys_table[i];
+        while (c)
+        {
+            comsys_t *next = c->next;
+            destroy_comsys(c);
+            c = next;
+        }
+        comsys_table[i] = nullptr;
+    }
+    num_channels = 0;
+}
+
 bool sqlite_sync_comsys(void)
 {
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    if (!sqldb.ClearComsysTables())
+    if (!sqldb.Begin())
     {
         return false;
     }
-    if (!sqldb.Begin())
+    if (!sqldb.ClearComsysTables())
     {
+        sqldb.Rollback();
         return false;
     }
 
@@ -4235,7 +4296,12 @@ bool sqlite_sync_comsys(void)
         }
     }
 
-    if (!sqldb.Commit() || !sqldb.PutMeta("has_comsys", 1))
+    if (!sqldb.PutMeta("has_comsys", 1))
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    if (!sqldb.Commit())
     {
         return false;
     }
@@ -4254,14 +4320,9 @@ bool sqlite_load_comsys(void)
         return false;
     }
 
-    // Initialize comsys_table.
+    // Reset in-memory structures before repopulating.
     //
-    for (int i = 0; i < NUM_COMSYS; i++)
-    {
-        comsys_table[i] = nullptr;
-    }
-
-    num_channels = 0;
+    clear_runtime_comsys_data();
 
     // Load channels.
     //
@@ -4293,6 +4354,7 @@ bool sqlite_load_comsys(void)
         num_channels++;
     }))
     {
+        clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }
@@ -4353,6 +4415,7 @@ bool sqlite_load_comsys(void)
         ch->on_users = user;
     }))
     {
+        clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }
@@ -4385,6 +4448,7 @@ bool sqlite_load_comsys(void)
         player_aliases[who].push_back(entry);
     }))
     {
+        clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
         return false;
     }

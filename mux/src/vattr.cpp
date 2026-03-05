@@ -31,7 +31,11 @@ ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
 
     if (!mudstate.bSQLiteLoading)
     {
-        g_pSQLiteBackend->GetDB().PutMeta("attr_next", mudstate.attr_next);
+        if (!g_pSQLiteBackend->GetDB().PutMeta("attr_next", mudstate.attr_next))
+        {
+            Log.tinyprintf(T("vattr_alloc_LEN: failed to persist attr_next=%d" ENDLINE),
+                mudstate.attr_next);
+        }
     }
 
     return vp;
@@ -72,8 +76,12 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
         if (  !mudstate.bSQLiteLoading
            && number >= A_USER_START)
         {
-            g_pSQLiteBackend->GetDB().PutAttrName(number,
-                reinterpret_cast<const char *>(pName), flags);
+            if (!g_pSQLiteBackend->GetDB().PutAttrName(number,
+                reinterpret_cast<const char *>(pName), flags))
+            {
+                Log.tinyprintf(T("vattr_define_LEN: failed to persist attrname #%d" ENDLINE),
+                    number);
+            }
         }
     }
     else
@@ -109,7 +117,11 @@ void vattr_delete_LEN(UTF8 *pName, size_t nName)
         if (  !mudstate.bSQLiteLoading
            && anum >= A_USER_START)
         {
-            g_pSQLiteBackend->GetDB().DelAttrName(anum);
+            if (!g_pSQLiteBackend->GetDB().DelAttrName(anum))
+            {
+                Log.tinyprintf(T("vattr_delete_LEN: failed to delete attrname #%d" ENDLINE),
+                    anum);
+            }
         }
         MEMFREE(vp);
     }
@@ -153,8 +165,12 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
     if (  !mudstate.bSQLiteLoading
        && anum >= A_USER_START)
     {
-        g_pSQLiteBackend->GetDB().PutAttrName(anum,
-            reinterpret_cast<const char *>(pNewName), vp->flags);
+        if (!g_pSQLiteBackend->GetDB().PutAttrName(anum,
+            reinterpret_cast<const char *>(pNewName), vp->flags))
+        {
+            Log.tinyprintf(T("vattr_rename_LEN: failed to rename attrname #%d" ENDLINE),
+                anum);
+        }
     }
     return vp;
 }
