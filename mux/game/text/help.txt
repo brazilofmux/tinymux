@@ -5786,13 +5786,34 @@ COMMANDS (continued)
 & COMP()
 COMP()
 
-  FUNCTION: comp(<string1>, <string2>)
+  FUNCTION: comp(<string1>, <string2>[, <type>])
 
-  Comp compares two strings.  It returns 0 if they are the same, 1 if
-  string2 is less than/precedes alphabetically string1, and -1
-  otherwise.
+  Compares two strings and returns 0 if they are equal, -1 if <string1>
+  precedes <string2>, and 1 if <string1> follows <string2>.
 
-  Related Topics:
+  By default, comp() uses Unicode collation (UCA) which provides
+  linguistically correct ordering for all scripts and languages.
+
+  The optional <type> argument selects the comparison mode:
+
+    u - Unicode collation (default).  Full case-sensitive comparison
+        using the Unicode Collation Algorithm with primary, secondary,
+        and tertiary weight levels.
+    c - Case-insensitive Unicode collation.  Uses only primary and
+        secondary weights, so 'Hello' and 'hello' compare as equal.
+    a - Legacy ASCII comparison (byte-order strcmp).
+
+  Examples:
+    > say comp(abc, abd)
+    You say, "-1"
+    > say comp(Hello, hello)
+    You say, "-1"
+    > say comp(Hello, hello, c)
+    You say, "0"
+    > say comp(café, cafe)
+    You say, "1"
+
+  Related Topics: sort(), setunion(), setinter(), setdiff().
 
 & COMSYS
 COMSYS
@@ -12880,12 +12901,12 @@ SETDIFF()
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
 
-  <sort type> may be used to specify the type of sort to perform (use 'd' for
-  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
-  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
-  for automatic typing).  If omitted, setdiff() sorts using case-sensitive
-  alphanumeric.  If '?' or left blank, setdiff() will try to determine the
-  type of sort to perform automatically.
+  <sort type> may be used to specify the type of sort to perform:
+  'd' for dbref, 'n' for integer numeric, 'f' for floating numeric,
+  'a' for case-sensitive ASCII, 'i' for case-insensitive ASCII,
+  'u' for Unicode collation (UCA), 'c' for case-insensitive Unicode
+  collation, and '?' for automatic typing.  If omitted, '?' or left
+  blank, setdiff() will try to determine the type automatically.
 
   Example:
     > say setdiff(foo baz gleep bar, bar moof gleep)
@@ -12904,12 +12925,12 @@ SETINTER()
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
 
-  <sort type> may be used to specify the type of sort to perform (use 'd' for
-  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
-  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
-  for automatic typing).  If omitted, setinter() sorts using case-sensitive
-  alphanumeric.  If '?' or left blank, setinter() will try to determine the
-  type of sort to perform automatically.
+  <sort type> may be used to specify the type of sort to perform:
+  'd' for dbref, 'n' for integer numeric, 'f' for floating numeric,
+  'a' for case-sensitive ASCII, 'i' for case-insensitive ASCII,
+  'u' for Unicode collation (UCA), 'c' for case-insensitive Unicode
+  collation, and '?' for automatic typing.  If omitted, '?' or left
+  blank, setinter() will try to determine the type automatically.
 
   Example:
     > say setinter(foo baz gleep bar, bar moof gleep)
@@ -12975,12 +12996,12 @@ SETUNION()
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
 
-  <sort type> may be used to specify the type of sort to perform (use 'd' for
-  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
-  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
-  for automatic typing).  If omitted, setunion() sorts using case-sensitive
-  alphanumeric.  If '?' or left blank, setunion() will try to determine the
-  type of sort to perform automatically.
+  <sort type> may be used to specify the type of sort to perform:
+  'd' for dbref, 'n' for integer numeric, 'f' for floating numeric,
+  'a' for case-sensitive ASCII, 'i' for case-insensitive ASCII,
+  'u' for Unicode collation (UCA), 'c' for case-insensitive Unicode
+  collation, and '?' for automatic typing.  If omitted, '?' or left
+  blank, setunion() will try to determine the type automatically.
 
 
   Example:
@@ -13163,28 +13184,40 @@ SORT()
   FUNCTION: sort(<list>[, <sort type>[, <idelim>[, <odelim>]]])
 
   Takes a list of words, numbers or dbrefs, and sorts them into ascending
-  order.  By default, lexicographic order is used for words, and numeric
+  order.  By default, Unicode collation is used for words, and numeric
   order is used for numbers and dbrefs.
 
-  <sort type> may be used to specify the type of sort to perform (use 'd' for
-  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
-  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
-  for automatic typing).  If omitted, '?', or left blank, the sort() function
-  will try to determine the type of sort to perform automatically.
+  <sort type> may be used to specify the type of sort to perform:
 
-  By default, the output delimiter, <odelim>, defaults to the input delimiter,
-  <idelim>, which itself defaults to a space. Delimiters here, like most other
-  functions, are used to separate items in a list.
+    d - Dbref sort.
+    n - Integer numeric sort.
+    f - Floating-point numeric sort.
+    a - Case-sensitive ASCII sort (legacy byte-order strcmp).
+    i - Case-insensitive ASCII sort (legacy mux_stricmp).
+    u - Unicode collation sort (UCA).  Provides linguistically correct
+        ordering for all scripts and languages, case-sensitive.
+    c - Case-insensitive Unicode collation sort.  Same as 'u' but
+        treats upper and lower case as equal.
+    ? - Automatic type detection (default).
+
+  If omitted, '?', or left blank, the sort() function will try to
+  determine the type of sort to perform automatically.  For non-numeric
+  lists, automatic detection defaults to Unicode collation ('u').
+
+  By default, the output delimiter, <odelim>, defaults to the input
+  delimiter, <idelim>, which itself defaults to a space.
 
   Examples:
     > say sort(This is a test)
-    You say, "This a is test"
+    You say, "a is test This"
     > say sort(98 100 99 101,n)
     You say, "98 99 100 101"
     > say sort(foo-bar-bletch,,-,|)
     You say, "bar|bletch|foo"
+    > say sort(Banana apple Cherry,c)
+    You say, "apple Banana Cherry"
 
-  Related Topics: munge(), sortby()
+  Related Topics: comp(), munge(), sortby()
 
 & SORTBY()
 SORTBY()

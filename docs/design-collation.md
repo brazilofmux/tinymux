@@ -218,19 +218,18 @@ state machines from Phase 1 output.
   UNICODE_LIST instead of ASCII_LIST
 - Add `'u'`/`'U'` to sort type dispatch in `fun_sort()`
 
-### Phase 5: Case-Insensitive Collation
+### Phase 5: Case-Insensitive Collation ✓
 
 **Goal**: Add a case-insensitive collation sort type.
 
 UCA Level 1+2 comparison (ignoring tertiary/case) gives natural
-case-insensitive collation.  This replaces the current `mux_stricmp`
-path for sorting.
+case-insensitive collation.
 
-**Deliverables**:
-- New sort type `CI_UNICODE_LIST` (value 64), triggered by something
-  TBD (possibly `'c'`/`'C'`)
-- Sort key generation that omits Level 3 weights
-- This becomes the new default for case-insensitive operations
+**Delivered**:
+- `mux_collate_cmp_ci()` — Level 1+2 only, returns 0 for case-only differences
+- `mux_collate_sortkey_ci()` — sort key omitting Level 3 weights
+- New sort type `CI_UNICODE_LIST` (value 64), triggered by `'c'`/`'C'`
+- `comp(a, b, c)` for case-insensitive Unicode comparison
 
 ### Phase 6: Polish and Documentation
 
