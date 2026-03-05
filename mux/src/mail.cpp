@@ -74,8 +74,6 @@ static MAILBODY *mail_list = nullptr;
 // SQLite write-through helpers for mail mutations.
 // ---------------------------------------------------------------------------
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-
 #include "sqlite_backend.h"
 
 #define SQLITE_MAIL_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
@@ -149,18 +147,6 @@ static void sqlite_wt_sync_all_aliases(void)
             static_cast<int>(m->desc_width), members_buf);
     }
 }
-
-#else
-
-static inline void sqlite_wt_insert_mail(struct mail *) {}
-static inline void sqlite_wt_update_mail_flags(struct mail *) {}
-static inline void sqlite_wt_delete_mail(struct mail *) {}
-static inline void sqlite_wt_delete_all_mail(int) {}
-static inline void sqlite_wt_mail_body(int, const UTF8 *) {}
-static inline void sqlite_wt_delete_mail_body(int) {}
-static inline void sqlite_wt_sync_all_aliases(void) {}
-
-#endif // SQLITE_STORAGE && !MEMORY_BASED
 
 // Handling functions for the database of mail messages.
 //
@@ -5709,8 +5695,6 @@ void do_folder
 // SQLite mail bulk sync and load (Phase 1).
 // ---------------------------------------------------------------------------
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-
 void sqlite_sync_mail(void)
 {
     if (!g_pSQLiteBackend)
@@ -5913,5 +5897,3 @@ bool sqlite_load_mail(void)
     mudstate.bSQLiteLoading = false;
     return true;
 }
-
-#endif // SQLITE_STORAGE && !MEMORY_BASED

@@ -17,8 +17,10 @@ if { 1 != $argc } {
     spawn telnet $remote_server $remote_port
     send "connect $username $password\r"
 
-    send "$file_data\r"
+    set send_slow {100 .001}
+    send -s "$file_data\r"
 
+    set timeout 300
     expect "Uploaded."
     send "@shutdown\r"
     expect eof

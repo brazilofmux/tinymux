@@ -1123,9 +1123,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
 void dispatch_IdleCheck(void *pUnused, int iUnused);
 void dispatch_CheckEvents(void *pUnused, int iUnused);
 void dispatch_KeepAlive(void *pUnused, int iUnused);
-#ifndef MEMORY_BASED
 void dispatch_CacheTick(void *pUnused, int iUnused);
-#endif
 
 // Using a heap as the data structure for representing this priority
 // has some attributes which we depend on:
@@ -1283,11 +1281,6 @@ void pcache_trim(void);
 
 // From attrcache.cpp
 //
-#if !defined(SQLITE_STORAGE)
-void cache_redirect(void);
-void cache_pass2(void);
-void cache_cleanup(void);
-#else
 class CSQLiteBackend;
 extern CSQLiteBackend *g_pSQLiteBackend;
 void sqlite_sync_objects(void);
@@ -1297,7 +1290,6 @@ void sqlite_sync_comsys(void);
 bool sqlite_load_comsys(void);
 void sqlite_sync_mail(void);
 bool sqlite_load_mail(void);
-#endif
 extern CLinearTimeAbsolute cs_ltime;
 
 // From speech.cpp

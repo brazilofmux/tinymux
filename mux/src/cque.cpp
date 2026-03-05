@@ -1392,12 +1392,10 @@ static int CallBack_ShowDispatches(const PTASK_RECORD p)
     {
         notify(Show_Player, tprintf(T("[%d]Keep Alive"), ltd.ReturnSeconds()));
     }
-#ifndef MEMORY_BASED
     else if (p->fpTask == dispatch_CacheTick)
     {
         notify(Show_Player, tprintf(T("[%d]Database cache tick"), ltd.ReturnSeconds()));
     }
-#endif
     else if (p->fpTask == Task_ProcessCommand)
     {
         notify(Show_Player, tprintf(T("[%d]Further command quota"), ltd.ReturnSeconds()));

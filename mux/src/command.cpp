@@ -3877,9 +3877,7 @@ static void list_hashstats(const dbref player)
     list_hashstat_abbreviated(player, T("Excl. $-cmds"), static_cast<int>(mudstate.parent_htab.size()));
     list_hashstat_abbreviated(player, T("Mail Messages"), static_cast<int>(mudstate.mail_htab.size()));
     list_hashstat_abbreviated(player, T("Channel Names"), static_cast<int>(mudstate.channel_names.size()));;
-#if !defined(MEMORY_BASED)
     list_hashstat_abbreviated(player, T("Attr. Cache"), static_cast<int>(mudstate.attribute_lru_cache_list.size()));
-#endif // MEMORY_BASED
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
         list_hashstat_abbreviated(player, mudstate.aHelpDesc[i].pBaseFilename,
@@ -3892,9 +3890,6 @@ static void list_hashstats(const dbref player)
 //
 static void list_db_stats(dbref player)
 {
-#ifdef MEMORY_BASED
-    raw_notify(player, T("Database is memory based."));
-#else // MEMORY_BASED
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
     CLinearTimeDelta ltd = lsaNow - cs_ltime;
@@ -3904,7 +3899,6 @@ static void list_db_stats(dbref player)
     raw_notify(player, tprintf(T("Syncs      %12d"), cs_syncs));
     raw_notify(player, tprintf(T("I/O        %12d%12d"), cs_dbwrites, cs_dbreads));
     raw_notify(player, tprintf(T("Cache Hits %12d%12d"), cs_whits, cs_rhits));
-#endif // MEMORY_BASED
 }
 
 // ---------------------------------------------------------------------------
@@ -4073,9 +4067,7 @@ static void list_rlevels(dbref player)
 #define LIST_RESOURCES  23
 #define LIST_GUESTS     24
 #define LIST_MODULES    25
-#ifndef MEMORY_BASED
 #define LIST_CACHE      26
-#endif
 #ifdef REALITY_LVLS
 #define LIST_RLEVELS    27
 #endif
@@ -4087,9 +4079,7 @@ NAMETAB list_names[] =
     {T("attributes"),         2,  CA_PUBLIC,  LIST_ATTRIBUTES},
     {T("bad_names"),          2,  CA_WIZARD,  LIST_BADNAMES},
     {T("buffers"),            2,  CA_WIZARD,  LIST_BUFTRACE},
-#ifndef MEMORY_BASED
     {T("cache"),              2,  CA_WIZARD,  LIST_CACHE},
-#endif
     {T("commands"),           3,  CA_PUBLIC,  LIST_COMMANDS},
     {T("config_permissions"), 3,  CA_GOD,     LIST_CONF_PERMS},
     {T("costs"),              3,  CA_PUBLIC,  LIST_COSTS},
@@ -4225,11 +4215,9 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
     case LIST_MODULES:
         list_modules(executor);
         break;
-#ifndef MEMORY_BASED
     case LIST_CACHE:
         list_cache_stats(executor);
         break;
-#endif
 #ifdef REALITY_LVLS
     case LIST_RLEVELS:
         list_rlevels(executor);

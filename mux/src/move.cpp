@@ -197,7 +197,6 @@ void move_object(dbref thing, dbref dest)
     }
     s_Location(thing, dest);
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     // Preload built-in attributes for the destination room before
     // look_in touches them individually.
     //
@@ -205,7 +204,6 @@ void move_object(dbref thing, dbref dest)
     {
         cache_preload(dest);
     }
-#endif
 
     // Look around and do the penny check
     //

@@ -256,11 +256,7 @@ typedef char  boolexp_type;
 #define OFLAGS_V4     (V_DATABASE|V_ATRNAME|V_ATRMONEY)
 
 #define OUTPUT_VERSION  4
-#ifdef MEMORY_BASED
-#define OUTPUT_FLAGS    (MANDFLAGS_V4)
-#else // MEMORY_BASED
 #define OUTPUT_FLAGS    (MANDFLAGS_V4|OFLAGS_V4)
-#endif // MEMORY_BASED
 
 #define UNLOAD_VERSION  4
 #define UNLOAD_FLAGS    (MANDFLAGS_V4)

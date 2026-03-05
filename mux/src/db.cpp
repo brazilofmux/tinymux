@@ -18,9 +18,7 @@
 #include "config.h"
 #include "externs.h"
 
-#if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
-#endif
 
 #include <filesystem>
 using namespace std;
@@ -556,11 +554,6 @@ const UTF8 *Name(dbref thing)
 
     dbref aowner;
     int aflags;
-#ifdef MEMORY_BASED
-    static UTF8 tbuff[LBUF_SIZE];
-    atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
-    return tbuff;
-#else // MEMORY_BASED
     if (!db[thing].name)
     {
         size_t len;
@@ -569,7 +562,6 @@ const UTF8 *Name(dbref thing)
         free_lbuf(pName);
     }
     return db[thing].name;
-#endif // MEMORY_BASED
 }
 
 const UTF8 *PureName(dbref thing)
@@ -589,12 +581,6 @@ const UTF8 *PureName(dbref thing)
         {
             size_t nName;
             size_t nPureName;
-#ifdef MEMORY_BASED
-            pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
-            pPureName = strip_color(pName, &nPureName);
-            free_lbuf(pName);
-            db[thing].purename = StringCloneLen(pPureName, nPureName);
-#else // MEMORY_BASED
             if (!db[thing].name)
             {
                 pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
@@ -615,7 +601,6 @@ const UTF8 *PureName(dbref thing)
             {
                 db[thing].purename = StringCloneLen(pPureName, nPureName);
             }
-#endif // MEMORY_BASED
         }
         return db[thing].purename;
     }
@@ -659,9 +644,6 @@ const UTF8 *Moniker(dbref thing)
         //
         if (mudconf.cache_names)
         {
-#ifdef MEMORY_BASED
-            db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
-#else // MEMORY_BASED
             if (strcmp(reinterpret_cast<const char *>(pMoniker), reinterpret_cast<const char *>(Name(thing))) == 0)
             {
                 db[thing].moniker = db[thing].name;
@@ -670,7 +652,6 @@ const UTF8 *Moniker(dbref thing)
             {
                 db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
             }
-#endif // MEMORY_BASED
             pReturn = db[thing].moniker;
         }
         else
@@ -684,17 +665,6 @@ const UTF8 *Moniker(dbref thing)
         // @moniker can't be used, so instead reflect @name (whether it
         // contains ANSI color and accents or not).
         //
-#ifdef MEMORY_BASED
-        if (mudconf.cache_names)
-        {
-            db[thing].moniker = StringClone(Name(thing));
-            pReturn = db[thing].moniker;
-        }
-        else
-        {
-            pReturn = Name(thing);
-        }
-#else // MEMORY_BASED
         if (mudconf.cache_names)
         {
             db[thing].moniker = db[thing].name;
@@ -704,7 +674,6 @@ const UTF8 *Moniker(dbref thing)
         {
             pReturn = Name(thing);
         }
-#endif // MEMORY_BASED
     }
     free_lbuf(pMoniker);
     MEMFREE(pPureNameCopy);
@@ -714,7 +683,6 @@ const UTF8 *Moniker(dbref thing)
 
 void free_Names(OBJ *p)
 {
-#ifndef MEMORY_BASED
     if (p->name)
     {
         if (mudconf.cache_names)
@@ -731,7 +699,6 @@ void free_Names(OBJ *p)
         MEMFREE(p->name);
         p->name = nullptr;
     }
-#endif // !MEMORY_BASED
 
     if (mudconf.cache_names)
     {
@@ -753,24 +720,20 @@ void s_Name(dbref thing, const UTF8 *s)
 {
     free_Names(&db[thing]);
     atr_add_raw(thing, A_NAME, s);
-#ifndef MEMORY_BASED
     if (nullptr != s)
     {
         db[thing].name = StringClone(s);
     }
-#endif // !MEMORY_BASED
 }
 
 void free_Moniker(OBJ *p)
 {
     if (mudconf.cache_names)
     {
-#ifndef MEMORY_BASED
         if (p->name == p->moniker)
         {
             p->moniker = nullptr;
         }
-#endif // !MEMORY_BASED
         if (p->moniker)
         {
             MEMFREE(p->moniker);
@@ -1575,8 +1538,6 @@ int mkattr(dbref executor, const UTF8 *buff)
     return -1;
 }
 
-#ifndef MEMORY_BASED
-
 /* ---------------------------------------------------------------------------
  * al_decode: Fetch an attribute number from an alist.
  */
@@ -1630,8 +1591,6 @@ static unsigned char *al_code(unsigned char *ap, unsigned int atrnum)
     }
     return ap + i + 1;
 }
-
-#endif // MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
  * Commer: check if an object has any $-commands in its attributes.
@@ -1726,7 +1685,6 @@ bool Commer(dbref thing)
 // routines to handle object attribute lists
 //
 
-#ifndef MEMORY_BASED
 /* ---------------------------------------------------------------------------
  * al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
  */
@@ -1897,7 +1855,6 @@ static inline void makekey(dbref thing, int atr, Aname *abuff)
     abuff->attrnum = atr;
     return;
 }
-#endif // !MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
  * atr_encode: Encode an attribute string.
@@ -2022,54 +1979,11 @@ static void atr_decode_LEN(const UTF8 *iattr, size_t nLen, UTF8 *oattr,
 
 void atr_clr(dbref thing, int atr)
 {
-#ifdef MEMORY_BASED
-
-    if (  !db[thing].nALUsed
-       || !db[thing].pALHead)
-    {
-        return;
-    }
-
-    mux_assert(0 <= db[thing].nALUsed);
-
-    // Binary search for the attribute.
-    //
-    int lo = 0;
-    int mid;
-    int hi = db[thing].nALUsed - 1;
-    ATRLIST *list = db[thing].pALHead;
-    while (lo <= hi)
-    {
-        mid = ((hi - lo) >> 1) + lo;
-        if (list[mid].number > atr)
-        {
-            hi = mid - 1;
-        }
-        else if (list[mid].number < atr)
-        {
-            lo = mid + 1;
-        }
-        else // (list[mid].number == atr)
-        {
-            MEMFREE(list[mid].data);
-            list[mid].data = nullptr;
-            db[thing].nALUsed--;
-            if (mid != db[thing].nALUsed)
-            {
-                memmove( list + mid,
-                         list + mid + 1,
-                         (db[thing].nALUsed - mid) * sizeof(ATRLIST));
-            }
-            break;
-        }
-    }
-#else // MEMORY_BASED
     Aname okey;
 
     makekey(thing, atr, &okey);
     cache_del(&okey);
     al_delete(thing, atr);
-#endif // MEMORY_BASED
 
     switch (atr)
     {
@@ -2133,112 +2047,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         return;
     }
 
-#ifdef MEMORY_BASED
-    ATRLIST *list = db[thing].pALHead;
-    UTF8 *text = StringCloneLen(szValue, nValue);
-
-    if (!list)
-    {
-        db[thing].nALAlloc = INITIAL_ATRLIST_SIZE;
-        list = static_cast<ATRLIST *>(MEMALLOC(db[thing].nALAlloc*sizeof(ATRLIST)));
-        ISOUTOFMEMORY(list);
-        db[thing].pALHead  = list;
-        db[thing].nALUsed  = 1;
-        list[0].number = atr;
-        list[0].data = text;
-        list[0].size = nValue + 1;
-    }
-    else
-    {
-        // If this atr is newly allocated, or it comes from the flatfile, it
-        // will experience worst-case performance with a binary search, so we
-        // perform a quick check to see if it goes on the end.
-        //
-        int lo;
-        int hi = db[thing].nALUsed - 1;
-        if (list[hi].number < atr)
-        {
-            // Attribute should be appended to the end of the list.
-            //
-            lo = hi + 1;
-        }
-        else
-        {
-            // Binary search for the attribute
-            //
-            lo = 0;
-            while (lo <= hi)
-            {
-                int mid = ((hi - lo) >> 1) + lo;
-                if (list[mid].number > atr)
-                {
-                    hi = mid - 1;
-                }
-                else if (list[mid].number < atr)
-                {
-                    lo = mid + 1;
-                }
-                else // if (list[mid].number == atr)
-                {
-                    MEMFREE(list[mid].data);
-                    list[mid].data = text;
-                    list[mid].size = nValue + 1;
-                    goto FoundAttribute;
-                }
-            }
-        }
-
-        // We didn't find it, and lo == hi + 1.  The attribute should be
-        // inserted between (0,hi) and (lo,nALUsed-1) where hi may be -1
-        // and lo may be nALUsed.
-        //
-        if (db[thing].nALUsed < db[thing].nALAlloc)
-        {
-            if (lo < db[thing].nALUsed)
-            {
-                memmove( list + lo + 1,
-                         list + lo,
-                         (db[thing].nALUsed - lo) * sizeof(ATRLIST));
-            }
-        }
-        else
-        {
-            // Double the size of the list.
-            //
-            db[thing].nALAlloc = GrowFiftyPercent(db[thing].nALAlloc,
-                INITIAL_ATRLIST_SIZE, INT_MAX);
-            list = static_cast<ATRLIST *>(MEMALLOC(db[thing].nALAlloc
-                 * sizeof(ATRLIST)));
-            ISOUTOFMEMORY(list);
-
-            // Copy bottom part.
-            //
-            if (lo > 0)
-            {
-                memcpy(list, db[thing].pALHead, lo * sizeof(ATRLIST));
-            }
-
-            // Copy top part.
-            //
-            if (lo < db[thing].nALUsed)
-            {
-                memcpy( list + lo + 1,
-                        db[thing].pALHead + lo,
-                        (db[thing].nALUsed - lo) * sizeof(ATRLIST));
-            }
-            MEMFREE(db[thing].pALHead);
-            db[thing].pALHead = list;
-        }
-        db[thing].nALUsed++;
-        list[lo].data = text;
-        list[lo].number = atr;
-        list[lo].size = nValue + 1;
-    }
-
-FoundAttribute:
-
-#else // MEMORY_BASED
-
     if (nValue > LBUF_SIZE-1)
     {
         nValue = LBUF_SIZE-1;
@@ -2247,7 +2055,6 @@ FoundAttribute:
     Aname okey;
     makekey(thing, atr, &okey);
 
-#if defined(SQLITE_STORAGE)
     // SQLite mode: decode any packed owner/flags prefix from the value
     // before storing in separate columns.  If no prefix is present (the
     // common case), defaults apply.
@@ -2285,23 +2092,6 @@ FoundAttribute:
         }
         cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags);
     }
-#else
-    if (atr == A_LIST)
-    {
-        // A_LIST is never compressed and it's never listed within itself.
-        //
-        cache_put(&okey, szValue, nValue+1, NOTHING, 0);
-    }
-    else
-    {
-        if (!al_add(thing, atr))
-        {
-            return;
-        }
-        cache_put(&okey, szValue, nValue+1, NOTHING, 0);
-    }
-#endif
-#endif // MEMORY_BASED
 
     switch (atr)
     {
@@ -2406,55 +2196,11 @@ int get_atr(const UTF8 *name)
     return ap->number;
 }
 
-#ifdef MEMORY_BASED
-const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
-{
-    if (!Good_obj(thing))
-    {
-        return nullptr;
-    }
-
-    // Binary search for the attribute.
-    //
-    ATRLIST *list = db[thing].pALHead;
-    if (!list)
-    {
-        return nullptr;
-    }
-
-    int lo = 0;
-    int hi = db[thing].nALUsed - 1;
-    int mid;
-    while (lo <= hi)
-    {
-        mid = ((hi - lo) >> 1) + lo;
-        if (list[mid].number > atr)
-        {
-            hi = mid - 1;
-        }
-        else if (list[mid].number < atr)
-        {
-            lo = mid + 1;
-        }
-        else // if (list[mid].number == atr)
-        {
-            *pLen = list[mid].size - 1;
-            return list[mid].data;
-        }
-    }
-    *pLen = 0;
-    return nullptr;
-}
-
-#else // MEMORY_BASED
-
-#if defined(SQLITE_STORAGE)
 // In SQLite mode, the cache stores clean text with separate owner/flags.
 // These statics carry the owner/flags from cache_get back to callers.
 //
 static dbref cache_last_owner = NOTHING;
 static int   cache_last_flags = 0;
-#endif
 
 const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
@@ -2462,18 +2208,11 @@ const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 
     makekey(thing, atr, &okey);
     size_t nLen;
-#if defined(SQLITE_STORAGE)
     const UTF8 *a = cache_get(&okey, &nLen, &cache_last_owner, &cache_last_flags);
-#else
-    dbref dummy_owner;
-    int   dummy_flags;
-    const UTF8 *a = cache_get(&okey, &nLen, &dummy_owner, &dummy_flags);
-#endif
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;
     return a;
 }
-#endif // MEMORY_BASED
 
 const UTF8 *atr_get_raw(dbref thing, int atr)
 {
@@ -2494,16 +2233,12 @@ UTF8 *atr_get_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags,
     }
     else
     {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
         // SQLite mode: owner/flags are separate columns, already retrieved
         // by cache_get via atr_get_raw_LEN.  Just copy the clean text.
         //
         *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
         *flags = cache_last_flags;
         memcpy(s, buff, (*pLen) + 1);
-#else
-        atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
-#endif
     }
     return s;
 }
@@ -2538,12 +2273,8 @@ bool atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
         *flags = 0;
         return false;
     }
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
     *flags = cache_last_flags;
-#else
-    atr_decode_LEN(buff, nLen, nullptr, thing, owner, flags, &nLen);
-#endif
     return true;
 }
 
@@ -2559,13 +2290,9 @@ UTF8 *atr_pget_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags, 
         buff = atr_get_raw_LEN(parent, atr, pLen);
         if (buff && *buff)
         {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
             *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
             *flags = cache_last_flags;
             memcpy(s, buff, (*pLen) + 1);
-#else
-            atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
-#endif
             if (  lev == 0
                || !(*flags & AF_PRIVATE))
             {
@@ -2621,12 +2348,8 @@ bool atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
         const UTF8 *buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
             *owner = (cache_last_owner == NOTHING) ? Owner(thing) : cache_last_owner;
             *flags = cache_last_flags;
-#else
-            atr_decode_LEN(buff, nLen, nullptr, thing, owner, flags, &nLen);
-#endif
             if ((lev == 0) || !(*flags & AF_PRIVATE))
             {
                 return true;
@@ -2650,15 +2373,6 @@ bool atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 
 void atr_free(dbref thing)
 {
-#ifdef MEMORY_BASED
-    if (db[thing].pALHead)
-    {
-        MEMFREE(db[thing].pALHead);
-    }
-    db[thing].pALHead  = nullptr;
-    db[thing].nALAlloc = 0;
-    db[thing].nALUsed  = 0;
-#else // MEMORY_BASED
     atr_push();
     unsigned char *as;
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
@@ -2671,7 +2385,6 @@ void atr_free(dbref thing)
         al_store(); // remove from cache
     }
     atr_clr(thing, A_LIST);
-#endif // MEMORY_BASED
 
     mudstate.bfCommands.Clear(thing);
     mudstate.bfNoCommands.Set(thing);
@@ -2759,27 +2472,6 @@ void atr_chown(dbref obj)
 
 int atr_next(UTF8 **attrp)
 {
-#ifdef MEMORY_BASED
-    ATRCOUNT *atr;
-
-    if (!attrp || !*attrp)
-    {
-        return 0;
-    }
-    else
-    {
-        atr = reinterpret_cast<ATRCOUNT *>(* attrp);
-        if (atr->count >= db[atr->thing].nALUsed)
-        {
-            MEMFREE(atr);
-            atr = nullptr;
-            return 0;
-        }
-        atr->count++;
-        return db[atr->thing].pALHead[atr->count - 1].number;
-    }
-
-#else // MEMORY_BASED
     if (!*attrp || !**attrp)
     {
         return 0;
@@ -2788,7 +2480,6 @@ int atr_next(UTF8 **attrp)
     {
         return al_decode(attrp);
     }
-#endif // MEMORY_BASED
 }
 
 /* ---------------------------------------------------------------------------
@@ -2797,7 +2488,6 @@ int atr_next(UTF8 **attrp)
 
 void atr_push(void)
 {
-#ifndef MEMORY_BASED
     ALIST *new_alist = reinterpret_cast<ALIST *>(alloc_sbuf("atr_push"));
     new_alist->data = mudstate.iter_alist.data;
     new_alist->len = mudstate.iter_alist.len;
@@ -2806,12 +2496,10 @@ void atr_push(void)
     mudstate.iter_alist.data = nullptr;
     mudstate.iter_alist.len = 0;
     mudstate.iter_alist.next = new_alist;
-#endif // !MEMORY_BASED
 }
 
 void atr_pop(void)
 {
-#ifndef MEMORY_BASED
     ALIST *old_alist = mudstate.iter_alist.next;
 
     if (mudstate.iter_alist.data)
@@ -2833,7 +2521,6 @@ void atr_pop(void)
         mudstate.iter_alist.len = 0;
         mudstate.iter_alist.next = nullptr;
     }
-#endif // !MEMORY_BASED
 }
 
 /* ---------------------------------------------------------------------------
@@ -2842,18 +2529,6 @@ void atr_pop(void)
 
 int atr_head(dbref thing, unsigned char **attrp)
 {
-#ifdef MEMORY_BASED
-    if (db[thing].nALUsed)
-    {
-        ATRCOUNT *atr = static_cast<ATRCOUNT *>(MEMALLOC(sizeof(ATRCOUNT)));
-        ISOUTOFMEMORY(atr);
-        atr->thing = thing;
-        atr->count = 1;
-        *attrp = reinterpret_cast<unsigned char *>(atr);
-        return db[thing].pALHead[0].number;
-    }
-    return 0;
-#else // MEMORY_BASED
     const unsigned char *astr;
     size_t alen;
 
@@ -2882,7 +2557,6 @@ int atr_head(dbref thing, unsigned char **attrp)
     memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
-#endif // MEMORY_BASED
 }
 
 attr_info::attr_info(void)
@@ -3000,13 +2674,7 @@ static void initialize_objects(dbref first, dbref last)
         s_ThMail(thing, 0);
         s_ThRefs(thing, 0);
 
-#ifdef MEMORY_BASED
-        db[thing].pALHead  = nullptr;
-        db[thing].nALAlloc = 0;
-        db[thing].nALUsed  = 0;
-#else
         db[thing].name = nullptr;
-#endif // MEMORY_BASED
         db[thing].purename = nullptr;
         db[thing].moniker = nullptr;
     }
@@ -3158,7 +2826,6 @@ void db_make_minimal(void)
     // Insert Limbo (#0) into SQLite before creating Wizard.
     // create_player -> create_obj will insert #1 via its own path.
     //
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         CSQLiteDB::ObjectRecord rec;
@@ -3179,7 +2846,6 @@ void db_make_minimal(void)
         rec.powers2   = db[0].powers2;
         g_pSQLiteBackend->GetDB().InsertObject(rec);
     }
-#endif
 
     // should be #1
     //
@@ -3700,10 +3366,8 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
     return (r);
 }
 
-#ifndef MEMORY_BASED
 int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
 {
-#if defined(SQLITE_STORAGE)
     UNUSED_PARAMETER(game_pag_file);
     UNUSED_PARAMETER(nCachePages);
     if (mudstate.bStandAlone)
@@ -3725,32 +3389,8 @@ int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
         }
         db_free();
     }
-#else
-    if (mudstate.bStandAlone)
-    {
-        Log.tinyprintf(T("Opening (%s,%s)" ENDLINE), game_dir_file, game_pag_file);
-    }
-    int cc = cache_init(game_dir_file, game_pag_file, nCachePages);
-    if (cc != HF_OPEN_STATUS_ERROR)
-    {
-        if (mudstate.bStandAlone)
-        {
-            Log.tinyprintf(T("Done opening (%s,%s)." ENDLINE), game_dir_file,
-                game_pag_file);
-        }
-        else
-        {
-            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            Log.tinyprintf(T("Using game db files: (%s,%s)."), game_dir_file,
-                game_pag_file);
-            ENDLOG;
-        }
-        db_free();
-    }
-#endif
     return cc;
 }
-#endif // !MEMORY_BASED
 
 // check_zone - checks back through a zone tree for control.
 //
@@ -4179,8 +3819,6 @@ void RemoveFile(const UTF8 *name)
         ec);
 }
 
-#if defined(SQLITE_STORAGE)
-
 #define SQLITE_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
 
 void s_Location(dbref t, dbref n)
@@ -4453,5 +4091,4 @@ bool sqlite_load_game(void)
 
     return true;
 }
-#endif // SQLITE_STORAGE
 

@@ -470,9 +470,7 @@ struct statedata
     bool bReadingConfiguration; // are we reading the config file at startup?
     bool bStackLimitReached;    // Was stack slammed?
     bool bStandAlone;           // Are we running in dbconvert mode.
-#if defined(SQLITE_STORAGE)
     bool bSQLiteLoading;        // Suppress write-through during bulk load.
-#endif
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         // Should interface be shut down?
     bool inpipe;                // Are we collecting output for a pipe?
@@ -567,7 +565,6 @@ struct statedata
     CLinearTimeAbsolute restart_time;   /* When was MUX restarted */
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
-#if !defined(MEMORY_BASED)
     struct AttrCacheEntry
     {
         std::vector<UTF8> data;
@@ -577,7 +574,6 @@ struct statedata
     };
     std::list<Aname> attribute_lru_cache_list;
     std::unordered_map<Aname, AttrCacheEntry, AnameHasher> attribute_lru_cache_map;
-#endif // MEMORY_BASED
     std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     StringPtrMap command_htab;  /* Commands hashtable */

@@ -16,41 +16,17 @@
 #include "externs.h"
 using namespace std;
 
-#if !defined(MEMORY_BASED)
-
-#if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
 
 CSQLiteBackend *g_pSQLiteBackend = nullptr;
-#else
-static CHashFile hfAttributeFile;
-#endif
 
 static bool cache_initted = false;
 
-#if !defined(SQLITE_STORAGE)
-static bool cache_redirected = false;
-#define NUMBER_OF_TEMPORARY_FILES 8
-static FILE *temporary_files[NUMBER_OF_TEMPORARY_FILES];
-#endif
-
 CLinearTimeAbsolute cs_ltime;
 
-#if !defined(SQLITE_STORAGE)
-#pragma pack(1)
-struct attribute_record
-{
-    Aname attrKey;
-    UTF8 attrText[LBUF_SIZE];
-};
-#pragma pack()
-
-static attribute_record temp_record;
-#else
 // SQLite backend uses its own buffer for attribute retrieval.
 //
 static UTF8 sqlite_attr_buf[LBUF_SIZE];
-#endif
 
 static size_t cache_size = 0;
 static uint64_t cache_hits = 0;
@@ -63,7 +39,6 @@ int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCacheP
         return HF_OPEN_STATUS_ERROR;
     }
 
-#if defined(SQLITE_STORAGE)
     UNUSED_PARAMETER(game_pag_file);
     UNUSED_PARAMETER(nCachePages);
 
@@ -110,108 +85,25 @@ int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file, int nCacheP
     cs_ltime.GetUTC();
 
     return bNewDatabase ? HF_OPEN_STATUS_NEW : HF_OPEN_STATUS_OLD;
-#else
-    const int cc = hfAttributeFile.Open(game_dir_file, game_pag_file, nCachePages);
-    if (cc != HF_OPEN_STATUS_ERROR)
-    {
-        // Mark caching system live
-        //
-        cache_initted = true;
-        cs_ltime.GetUTC();
-    }
-    return cc;
-#endif
 }
-
-#if !defined(SQLITE_STORAGE)
-void cache_redirect(void)
-{
-    for (int i = 0; i < NUMBER_OF_TEMPORARY_FILES; i++)
-    {
-        UTF8 temporary_file_name[20];
-        mux_sprintf(temporary_file_name, sizeof(temporary_file_name), T("convtemp.%d"), i);
-        mux_assert(mux_fopen(&temporary_files[i], temporary_file_name, T("wb+")));
-        mux_assert(temporary_files[i]);
-        setvbuf(temporary_files[i], nullptr, _IOFBF, 16384);
-    }
-    cache_redirected = true;
-}
-
-void cache_pass2(void)
-{
-    attribute_record record{};
-    cache_redirected = false;
-    mux_fprintf(stderr, T("2nd Pass:\n"));
-    for (int i = 0; i < NUMBER_OF_TEMPORARY_FILES; i++)
-    {
-        mux_fprintf(stderr, T("File %d: "), i);
-        const long int li = fseek(temporary_files[i], 0, SEEK_SET);
-        mux_assert(0L == li);
-
-        int cnt = 1000;
-        size_t nSize;
-        for (;;)
-        {
-            size_t cc = fread(&nSize, 1, sizeof(nSize), temporary_files[i]);
-            if (cc != sizeof(nSize))
-            {
-                break;
-            }
-            cc = fread(&record, 1, nSize, temporary_files[i]);
-            mux_assert(cc == nSize);
-            cache_put(&record.attrKey, record.attrText, nSize - sizeof(Aname));
-            if (cnt-- == 0)
-            {
-                fputc('.', stderr);
-                fflush(stderr);
-                cnt = 1000;
-            }
-        }
-        fclose(temporary_files[i]);
-        UTF8 temporary_file_name[20];
-        mux_sprintf(temporary_file_name, sizeof(temporary_file_name), T("convtemp.%d"), i);
-        RemoveFile(temporary_file_name);
-        mux_fprintf(stderr, T(ENDLINE));
-    }
-}
-
-void cache_cleanup(void)
-{
-    for (int i = 0; i < NUMBER_OF_TEMPORARY_FILES; i++)
-    {
-        fclose(temporary_files[i]);
-        UTF8 temporary_file_name[20];
-        mux_sprintf(temporary_file_name, sizeof(temporary_file_name), T("convtemp.%d"), i);
-        RemoveFile(temporary_file_name);
-    }
-}
-#endif // !SQLITE_STORAGE
 
 void cache_close(void)
 {
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Close();
         delete g_pSQLiteBackend;
         g_pSQLiteBackend = nullptr;
     }
-#else
-    hfAttributeFile.CloseAll();
-#endif
     cache_initted = false;
 }
 
 void cache_tick(void)
 {
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Tick();
     }
-#else
-    hfAttributeFile.Tick();
-#endif
 }
 
 static void trim_attribute_cache(void)
@@ -269,7 +161,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         cache_misses++;
     }
 
-#if defined(SQLITE_STORAGE)
     size_t nLength = 0;
     int db_owner = NOTHING;
     int db_flags = 0;
@@ -296,41 +187,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         }
         return sqlite_attr_buf;
     }
-#else
-    UNUSED_PARAMETER(owner);
-    UNUSED_PARAMETER(flags);
-    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
-    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
-
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        hfAttributeFile.Copy(iDir, &nRecord, &temp_record);
-
-        if (  temp_record.attrKey.attrnum == nam->attrnum
-           && temp_record.attrKey.object == nam->object)
-        {
-	        const int nLength = static_cast<int>(nRecord - sizeof(Aname));
-            *pLen = nLength;
-            if (!mudstate.bStandAlone)
-            {
-                // Add this information to the cache.
-                //
-                statedata::AttrCacheEntry entry;
-                entry.data.assign(temp_record.attrText, temp_record.attrText + nLength);
-                entry.lru_it = mudstate.attribute_lru_cache_list.insert(
-                    mudstate.attribute_lru_cache_list.end(), *nam);
-                entry.attr_owner = NOTHING;
-                entry.attr_flags = 0;
-                cache_size += entry.data.size();
-                mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
-                trim_attribute_cache();
-            }
-            return temp_record.attrText;
-        }
-        iDir = hfAttributeFile.FindNextKey(iDir, nHash);
-    }
-#endif
 
     // We didn't find that one.
     //
@@ -373,7 +229,6 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
     }
 #endif // HAVE_WORKING_FORK
 
-#if defined(SQLITE_STORAGE)
     if (len > LBUF_SIZE)
     {
         len = LBUF_SIZE;
@@ -387,58 +242,6 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
     }
-#else
-    UNUSED_PARAMETER(owner);
-    UNUSED_PARAMETER(flags);
-
-    if (len > sizeof(temp_record.attrText))
-    {
-        len = sizeof(temp_record.attrText);
-    }
-
-    // Removal from DB.
-    //
-    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
-
-    if (cache_redirected)
-    {
-        temp_record.attrKey = *nam;
-        memcpy(temp_record.attrText, value, len);
-        temp_record.attrText[len-1] = '\0';
-
-        const int iFile = (NUMBER_OF_TEMPORARY_FILES-1) & (nHash >> 29);
-        const size_t nSize = len + sizeof(Aname);
-        fwrite(&nSize, 1, sizeof(nSize), temporary_files[iFile]);
-        fwrite(&temp_record, 1, nSize, temporary_files[iFile]);
-        return true;
-    }
-
-    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        hfAttributeFile.Copy(iDir, &nRecord, &temp_record);
-
-        if (  temp_record.attrKey.attrnum == nam->attrnum
-           && temp_record.attrKey.object  == nam->object)
-        {
-            hfAttributeFile.Remove(iDir);
-        }
-        iDir = hfAttributeFile.FindNextKey(iDir, nHash);
-    }
-
-    temp_record.attrKey = *nam;
-    memcpy(temp_record.attrText, value, len);
-    temp_record.attrText[len-1] = '\0';
-
-    // Insertion into DB.
-    //
-    if (!hfAttributeFile.Insert(static_cast<HP_HEAPLENGTH>(len + sizeof(Aname)), nHash, &temp_record))
-    {
-        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
-            nam->object, nam->attrnum, value, len);
-    }
-#endif
 
     if (!mudstate.bStandAlone)
     {
@@ -474,14 +277,10 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
 
 bool cache_sync(void)
 {
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Sync();
     }
-#else
-    hfAttributeFile.Sync();
-#endif
     return true;
 }
 
@@ -504,25 +303,7 @@ void cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
-#if defined(SQLITE_STORAGE)
     g_pSQLiteBackend->Del(nam->object, nam->attrnum);
-#else
-    const uint32_t nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
-    uint32_t iDir = hfAttributeFile.FindFirstKey(nHash);
-
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        hfAttributeFile.Copy(iDir, &nRecord, &temp_record);
-
-        if (  temp_record.attrKey.attrnum == nam->attrnum
-           && temp_record.attrKey.object == nam->object)
-        {
-            hfAttributeFile.Remove(iDir);
-        }
-        iDir = hfAttributeFile.FindNextKey(iDir, nHash);
-    }
-#endif
 
     if (!mudstate.bStandAlone)
     {
@@ -547,7 +328,6 @@ void cache_del(Aname *nam)
 //
 void cache_preload(dbref obj)
 {
-#if defined(SQLITE_STORAGE)
     if (  !cache_initted
        || !g_pSQLiteBackend
        || mudstate.bStandAlone)
@@ -584,9 +364,6 @@ void cache_preload(dbref obj)
         });
 
     trim_attribute_cache();
-#else
-    UNUSED_PARAMETER(obj);
-#endif
 }
 
 void list_cache_stats(dbref player)
@@ -605,7 +382,6 @@ void list_cache_stats(dbref player)
         static_cast<unsigned long long>(cache_misses),
         hit_pct));
 
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
@@ -621,7 +397,4 @@ void list_cache_stats(dbref player)
             static_cast<unsigned long long>(st.obj_updates),
             static_cast<unsigned long long>(st.obj_loads)));
     }
-#endif
 }
-
-#endif // MEMORY_BASED

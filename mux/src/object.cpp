@@ -8,9 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
-#endif
 
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
@@ -536,7 +534,6 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         ProcessMasterRoomACreate(player, obj);
     }
 
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend)
     {
         CSQLiteDB::ObjectRecord rec;
@@ -558,7 +555,6 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         g_pSQLiteBackend->GetDB().InsertObject(rec);
         g_pSQLiteBackend->GetDB().PutMeta("db_top", mudstate.db_top);
     }
-#endif
 
     return obj;
 }

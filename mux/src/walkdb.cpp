@@ -8,9 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
 #include "sqlite_backend.h"
-#endif
 
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
@@ -805,7 +803,6 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
     UTF8 *buff = alloc_sbuf("search_perform.num");
     int save_invk_ctr = mudstate.func_invk_ctr;
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     // SQLite fast path for simple searches.
     //
     // A search qualifies for the fast path when there is no name match,
@@ -891,7 +888,6 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             return;
         }
     }
-#endif // SQLITE_STORAGE
 
     // Full linear scan fallback for complex/combined searches.
     //

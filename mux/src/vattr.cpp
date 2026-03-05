@@ -8,9 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
-#endif
 
 using namespace std;
 
@@ -55,12 +53,10 @@ ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
     anum_extend(number);
     ATTR *vp = vattr_define_LEN(pName, nName, number, flags);
 
-#if defined(SQLITE_STORAGE)
     if (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
     {
         g_pSQLiteBackend->GetDB().PutMeta("attr_next", mudstate.attr_next);
     }
-#endif
 
     return vp;
 }
@@ -93,7 +89,6 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
         anum_extend(vp->number);
         anum_set(vp->number, static_cast<ATTR *>(vp));
 
-#if defined(SQLITE_STORAGE)
         if (  g_pSQLiteBackend
            && !mudstate.bSQLiteLoading
            && number >= A_USER_START)
@@ -101,7 +96,6 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
             g_pSQLiteBackend->GetDB().PutAttrName(number,
                 reinterpret_cast<const char *>(pName), flags);
         }
-#endif
     }
     else
     {
@@ -626,37 +620,9 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     notify(executor, T("@dbclean is not needed with SQLite storage."));
     notify(executor, T("Attribute numbers are indexed keys; gaps cost nothing."));
     return;
-#else
-
-#if defined(HAVE_WORKING_FORK)
-    if (mudstate.dumping)
-    {
-        notify(executor, T("Dumping in progress. Try again later."));
-        return;
-    }
-#endif // HAVE_WORKING_FORK
-#ifndef MEMORY_BASED
-    // Save cached modified attribute list
-    //
-    al_store();
-#endif // MEMORY_BASED
-    pcache_sync();
-
-    notify(executor, T("Checking Integrity of the attribute data structures..."));
-    dbclean_IntegrityChecking(executor);
-    notify(executor, T("Removing stale attributes names..."));
-    int cVAttributes = dbclean_RemoveStaleAttributeNames();
-    notify(executor, T("Renumbering and compacting attribute numbers..."));
-    dbclean_RenumberAttributes(cVAttributes);
-    notify(executor, tprintf(T("Next Attribute number to allocate: %d"), mudstate.attr_next));
-    notify(executor, T("Checking Integrity of the attribute data structures..."));
-    dbclean_IntegrityChecking(executor);
-    notify(executor, T("@dbclean completed.."));
-#endif // SQLITE_STORAGE
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)
@@ -707,13 +673,11 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
             nHash = HASH_ProcessBuffer(0, pNewName, nNewName);
             pht->Insert(sizeof(int), nHash, &anum);
 
-#if defined(SQLITE_STORAGE)
             if (g_pSQLiteBackend && anum >= A_USER_START)
             {
                 g_pSQLiteBackend->GetDB().PutAttrName(anum,
                     reinterpret_cast<const char *>(pNewName), vp->flags);
             }
-#endif
             return static_cast<ATTR *>(anum_table[anum]);
         }
         iDir = pht->FindNextKey(iDir, nHash);

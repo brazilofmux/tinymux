@@ -1664,9 +1664,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #endif // STUB_SLAVE
     final_modules();
 
-#ifndef MEMORY_BASED
     al_store();
-#endif
     pcache_sync();
     dump_database_internal(DUMP_I_RESTART);
     SYNC;
@@ -1733,19 +1731,11 @@ void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
     log_name(executor);
     ENDLOG;
 
-#ifdef MEMORY_BASED
-    // Invoking _backupflat.sh with an argument prompts the backup script
-    // to use it as the flatfile.
-    //
-    dump_database_internal(DUMP_I_FLAT);
-    system(reinterpret_cast<char *>(tprintf(T("./_backupflat.sh %s.FLAT 1>&2"), mudconf.indb)));
-#else // MEMORY_BASED
     // Invoking _backupflat.sh without an argument prompts the backup script
     // to use dbconvert itself.
     //
     dump_database_internal(DUMP_I_NORMAL);
     system(reinterpret_cast<char *>(tprintf(T("./_backupflat.sh 1>&2"))));
-#endif // MEMORY_BASED
     raw_broadcast(0, T("GAME: Backup finished."));
 }
 #endif // UNIX_PROCESSES

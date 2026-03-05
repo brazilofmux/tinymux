@@ -10,9 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#if defined(SQLITE_STORAGE)
 #include "sqlite_backend.h"
-#endif
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -763,7 +761,6 @@ void announce_connect(const dbref player, DESC *d)
 {
     desc_addhash(d);
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     // Preload built-in attributes for the player and their location
     // in a single bulk read each, avoiding individual cache misses.
     //
@@ -773,7 +770,6 @@ void announce_connect(const dbref player, DESC *d)
     {
         cache_preload(ploc);
     }
-#endif
 
     int count = 0;
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
@@ -788,12 +784,10 @@ void announce_connect(const dbref player, DESC *d)
     if (mudstate.record_players < count)
     {
         mudstate.record_players = count;
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
         if (g_pSQLiteBackend)
         {
             g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players);
         }
-#endif
     }
 
     UTF8 *buf = alloc_lbuf("announce_connect");
@@ -1868,9 +1862,6 @@ static const UTF8 *DumpInfoTable[] =
 {
 #if defined(DEPRECATED)
     T("DEPRECATED"),
-#endif
-#if defined(MEMORY_BASED)
-    T("MEMORY_BASED"),
 #endif
 #if defined(REALITY_LVLS)
     T("REALITY_LVLS"),

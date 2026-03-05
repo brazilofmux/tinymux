@@ -24,8 +24,6 @@ static comsys_t* comsys_table[NUM_COMSYS];
 // SQLite write-through helpers for comsys mutations.
 // ---------------------------------------------------------------------------
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-
 #include "sqlite_backend.h"
 
 #define SQLITE_COMSYS_WRITABLE() (g_pSQLiteBackend && !mudstate.bSQLiteLoading)
@@ -77,17 +75,6 @@ static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     sqldb.DeletePlayerChannel(who, alias);
 }
-
-#else
-
-static inline void sqlite_wt_channel(struct channel *) {}
-static inline void sqlite_wt_delete_channel(const UTF8 *) {}
-static inline void sqlite_wt_channel_user(const UTF8 *, struct comuser *) {}
-static inline void sqlite_wt_delete_channel_user(const UTF8 *, int) {}
-static inline void sqlite_wt_player_channel(int, const UTF8 *, const UTF8 *) {}
-static inline void sqlite_wt_delete_player_channel(int, const UTF8 *) {}
-
-#endif // SQLITE_STORAGE && !MEMORY_BASED
 
 // Return value is a static buffer.
 //
@@ -4274,8 +4261,6 @@ FUNCTION(fun_chanobj)
 // SQLite comsys bulk sync and load.
 // ---------------------------------------------------------------------------
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
-
 #include "sqlite_backend.h"
 
 void sqlite_sync_comsys(void)
@@ -4512,5 +4497,3 @@ bool sqlite_load_comsys(void)
     mudstate.bSQLiteLoading = false;
     return true;
 }
-
-#endif // SQLITE_STORAGE && !MEMORY_BASED

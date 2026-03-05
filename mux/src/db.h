@@ -6,13 +6,8 @@
 #ifndef DB_H
 #define DB_H
 
-#ifndef MEMORY_BASED
 #define SYNC                    cache_sync()
 #define CLOSE                   cache_close()
-#else // !MEMORY_BASED
-#define SYNC
-#define CLOSE
-#endif // !MEMORY_BASED
 
 #define ITER_PARENTS(t,p,l) for ((l)=0, (p)=(t); \
                      (Good_obj(p) && \
@@ -29,15 +24,6 @@ struct attr
     int flags;
 };
 
-#ifdef MEMORY_BASED
-typedef struct atrlist ATRLIST;
-struct atrlist
-{
-    UTF8 *data;     /* Attribute text. */
-    int size;       /* Length of attribute */
-    int number;     /* Attribute number. */
-};
-#endif // MEMORY_BASED
 
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid);
@@ -164,13 +150,7 @@ struct object
     UTF8    *purename;
     UTF8    *moniker;
 
-#ifdef MEMORY_BASED
-    ATRLIST *pALHead;   /* The head of the attribute list.       */
-    int      nALAlloc;  /* Size of the allocated attribute list. */
-    int      nALUsed;   /* Used portion of the attribute list.   */
-#else
     UTF8    *name;
-#endif // MEMORY_BASED
 };
 
 const int INITIAL_ATRLIST_SIZE = 10;
@@ -199,7 +179,6 @@ extern OBJ *db;
 #define ThRefs(t)       db[t].throttled_references
 #define ThEmail(t)      db[t].throttled_email
 
-#if defined(SQLITE_STORAGE)
 void s_Location(dbref t, dbref n);
 void s_Zone(dbref t, dbref n);
 void s_Contents(dbref t, dbref n);
@@ -213,23 +192,6 @@ void s_Powers(dbref t, POWER n);
 void s_Powers2(dbref t, POWER n);
 void s_Home(dbref t, dbref n);
 void s_Dropto(dbref t, dbref n);
-#else
-#define s_Location(t,n)     db[t].location = (n)
-
-#define s_Zone(t,n)         db[t].zone = (n)
-
-#define s_Contents(t,n)     db[t].contents = (n)
-#define s_Exits(t,n)        db[t].exits = (n)
-#define s_Next(t,n)         db[t].next = (n)
-#define s_Link(t,n)         db[t].link = (n)
-#define s_Owner(t,n)        db[t].owner = (n)
-#define s_Parent(t,n)       db[t].parent = (n)
-#define s_Flags(t,f,n)      db[t].fs.word[f] = (n)
-#define s_Powers(t,n)       db[t].powers = (n)
-#define s_Powers2(t,n)      db[t].powers2 = (n)
-#define s_Home(t,n)         s_Link(t,n)
-#define s_Dropto(t,n)       s_Location(t,n)
-#endif
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
 #define s_ThRefs(t,n)       db[t].throttled_references = (n);

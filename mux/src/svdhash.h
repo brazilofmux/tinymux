@@ -6,7 +6,6 @@
 #ifndef SVDHASH_H
 #define SVDHASH_H
 
-#ifndef MEMORY_BASED
 //
 // These are from 'svdhash.cpp'.
 //
@@ -19,7 +18,6 @@ extern int cs_dbreads;      // total read-throughs
 extern int cs_dbwrites;     // total write-throughs
 extern int cs_rhits;        // total reads filled from cache
 extern int cs_whits;        // total writes to dirty cache
-#endif // !MEMORY_BASED
 
 //#define HP_PROTECTION
 
@@ -111,10 +109,6 @@ typedef struct tagHPHeapNode
 
 #define HP_MIN_HEAP_ALLOC HP_SIZEOF_HEAPNODE
 
-#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
-typedef unsigned long HF_FILEOFFSET, *HF_PFILEOFFSET;
-#define HF_SIZEOF_FILEOFFSET sizeof(HF_FILEOFFSET)
-#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
 class CHashPage
 {
@@ -165,10 +159,6 @@ public:
     void HeapFree(uint32_t iDir);
     void HeapUpdate(uint32_t iDir, HP_HEAPLENGTH nRecord, void *pRecord);
 
-#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
-    bool WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
-    bool ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
-#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
     uint32_t GetDepth(void);
     bool Split(CHashPage &hp0, CHashPage &hp1);
@@ -185,71 +175,6 @@ public:
 #define HF_OPEN_STATUS_ERROR -1
 #define HF_OPEN_STATUS_NEW    0
 #define HF_OPEN_STATUS_OLD    1
-
-#if !defined(MEMORY_BASED) && !defined(SQLITE_STORAGE)
-
-#define HF_CACHE_EMPTY       0
-#define HF_CACHE_CLEAN       1
-#define HF_CACHE_UNPROTECTED 2
-#define HF_CACHE_UNWRITTEN   3
-#define HF_CACHE_NUM_STATES  4
-
-typedef struct tagHashFileCache
-{
-    CHashPage     m_hp;
-    HF_FILEOFFSET m_o;
-    int           m_iState;
-    int           m_iYounger;
-    int           m_iOlder;
-} HF_CACHE;
-
-class CHashFile
-{
-private:
-    HANDLE          m_hDirFile;
-    HANDLE          m_hPageFile;
-    int             iCache;
-    int             m_iOldest;
-    int             m_iLastFlushed;
-    int             *m_hpCacheLookup;
-    HF_FILEOFFSET   oEndOfFile;
-    unsigned int    m_nDir;
-    unsigned int    m_nDirDepth;
-    HF_CACHE        *m_Cache;
-    int             m_nCache;
-    HF_PFILEOFFSET  m_pDir;
-    bool DoubleDirectory(void);
-
-    int AllocateEmptyPage(int nSafe, int Safe[]);
-    int ReadCache(uint32_t iFileDir, int *pHits);
-    bool FlushCache(int iCache);
-    void WriteDirectory(void);
-    bool InitializeDirectory(unsigned int nSize);
-    void ResetAge(int iEntry);
-
-    void Init(void);
-    void InitCache(int nCachePages);
-    void FinalCache(void);
-
-    bool CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile);
-    bool RebuildDirectory(void);
-    bool ReadDirectory(void);
-
-public:
-    CHashFile(void);
-    int Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePages);
-    bool Insert(HP_HEAPLENGTH nRecord, uint32_t nHash, void *pRecord);
-    uint32_t FindFirstKey(uint32_t nHash);
-    uint32_t FindNextKey(uint32_t iDir, uint32_t nHash);
-    void Copy(uint32_t iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void Remove(uint32_t iDir);
-    void CloseAll(void);
-    void Sync(void);
-    void Tick(void);
-    ~CHashFile(void);
-};
-
-#endif // !MEMORY_BASED && !SQLITE_STORAGE
 
 typedef CHashPage *pCHashPage;
 

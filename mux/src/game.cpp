@@ -1400,11 +1400,9 @@ void do_shutdown
 
         // Close the attribute text db and dump the header db.
         //
-#ifndef MEMORY_BASED
         // Save cached modified attribute list
         //
         al_store();
-#endif // MEMORY_BASED
 
         pcache_sync();
         SYNC;
@@ -1501,7 +1499,6 @@ void dump_database_internal(int dump_type)
 
     if (0 < dump_type)
     {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
         // With SQLite write-through, the database is always durable.
         // Only write a flatfile for DUMP_I_FLAT (explicit export).
         //
@@ -1513,7 +1510,6 @@ void dump_database_internal(int dump_type)
             ENDLOG;
         }
         else
-#endif // SQLITE_STORAGE && !MEMORY_BASED
         {
             DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
             bool bOpen;
@@ -1554,32 +1550,10 @@ void dump_database_internal(int dump_type)
 
         if (!bPotentialConflicts)
         {
-#if !defined(SQLITE_STORAGE) || defined(MEMORY_BASED)
-            // Non-SQLite: write comsys/mail flatfiles.
-            // SQLite: write-through keeps these tables current; nothing to do.
-            //
-            if (mudconf.have_mailer)
-            {
-                if (mux_fopen(&f, mudconf.mail_db, T("wb")))
-                {
-                    DebugTotalFiles++;
-                    dump_mail(f);
-                    if (fclose(f) == 0)
-                    {
-                        DebugTotalFiles--;
-                    }
-                }
-            }
-            if (mudconf.have_comsys)
-            {
-                save_comsys(mudconf.comsys_db);
-            }
-#endif
         }
         return;
     }
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     // With SQLite write-through, periodic and shutdown dumps don't need
     // to write a flatfile.  The WAL checkpoint (via SYNC/cache_sync)
     // is handled by the caller.
@@ -1587,57 +1561,7 @@ void dump_database_internal(int dump_type)
     STARTLOG(LOG_DBSAVES, "DMP", "SQLT");
     log_text(T("SQLite checkpoint (no flatfile)."));
     ENDLOG;
-#else
-    // Nuke our predecessor
-    //
-    mux_sprintf(prevfile, sizeof(prevfile), T("%s.prev"), mudconf.outdb);
-    mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch - 1);
-    RemoveFile(tmpfile);
-    mux_sprintf(tmpfile, sizeof(tmpfile), T("%s.#%d#"), mudconf.outdb, mudstate.epoch);
 
-    if (mux_fopen(&f, tmpfile, T("wb")))
-    {
-        DebugTotalFiles++;
-        setvbuf(f, nullptr, _IOFBF, 16384);
-        db_write(f, F_MUX, OUTPUT_VERSION | OUTPUT_FLAGS);
-        if (fclose(f) == 0)
-        {
-            DebugTotalFiles--;
-        }
-        ReplaceFile(mudconf.outdb, prevfile);
-        if (ReplaceFile(tmpfile, mudconf.outdb) < 0)
-        {
-            log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
-        }
-    }
-    else
-    {
-        log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
-    }
-#endif // SQLITE_STORAGE && !MEMORY_BASED
-
-#if !defined(SQLITE_STORAGE) || defined(MEMORY_BASED)
-    // Non-SQLite: write comsys/mail flatfiles.
-    // SQLite: write-through keeps these tables current; nothing to do.
-    //
-    if (mudconf.have_mailer)
-    {
-        if (mux_fopen(&f, mudconf.mail_db, T("wb")))
-        {
-            DebugTotalFiles++;
-            dump_mail(f);
-            if (fclose(f) == 0)
-            {
-                DebugTotalFiles--;
-            }
-        }
-    }
-
-    if (mudconf.have_comsys)
-    {
-        save_comsys(mudconf.comsys_db);
-    }
-#endif
 }
 
 static void dump_database(void)
@@ -1680,11 +1604,9 @@ static void dump_database(void)
         p = p->pNext;
     }
 
-#ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
     al_store();
-#endif // MEMORY_BASED
 
     pcache_sync();
 
@@ -1780,11 +1702,9 @@ void fork_and_dump(int key)
         p = p->pNext;
     }
 
-#ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
     al_store();
-#endif // MEMORY_BASED
 
     pcache_sync();
     SYNC;
@@ -1796,7 +1716,6 @@ void fork_and_dump(int key)
     mudstate.dumping = true;
     mudstate.dumped  = 0;
     bool bAttemptFork = mudconf.fork_dump;
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     if (!(key & DUMP_FLATFILE))
     {
         // With SQLite write-through, periodic dumps are just a WAL
@@ -1804,7 +1723,6 @@ void fork_and_dump(int key)
         //
         bAttemptFork = false;
     }
-#endif // SQLITE_STORAGE && !MEMORY_BASED
 #if !defined(HAVE_PREAD) \
  || !defined(HAVE_PWRITE)
     if (key & DUMP_FLATFILE)
@@ -1909,11 +1827,7 @@ void fork_and_dump(int key)
 #define LOAD_GAME_CANNOT_OPEN     (-2)
 #define LOAD_GAME_LOADING_PROBLEM (-3)
 
-#ifdef MEMORY_BASED
-static int load_game(void)
-#else // MEMORY_BASED
 static int load_game(int ccPageFile)
-#endif // MEMORY_BASED
 {
     FILE *f = nullptr;
     UTF8 infile[SIZEOF_PATHNAME+8];
@@ -1942,14 +1856,10 @@ static int load_game(int ccPageFile)
     log_text(T("Loading: "));
     log_text(infile);
     ENDLOG
-#if defined(SQLITE_STORAGE)
     mudstate.bSQLiteLoading = true;
-#endif
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
     {
-#if defined(SQLITE_STORAGE)
         mudstate.bSQLiteLoading = false;
-#endif
         // Everything is not ok.
         //
         if (fclose(f) == 0)
@@ -1964,9 +1874,7 @@ static int load_game(int ccPageFile)
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;
     }
-#if defined(SQLITE_STORAGE)
     mudstate.bSQLiteLoading = false;
-#endif
 
     // Everything is ok.
     //
@@ -1976,48 +1884,19 @@ static int load_game(int ccPageFile)
     }
     f = 0;
 
-#ifndef MEMORY_BASED
-#if defined(SQLITE_STORAGE)
     // Bulk-sync all object metadata from db[] into SQLite.
     // This populates the objects table from the flatfile data.
     //
     sqlite_sync_objects();
     sqlite_sync_attrnames();
-#else
-    if (db_flags & V_DATABASE)
-    {
-        // It loaded an output file.
-        //
-        if (ccPageFile == HF_OPEN_STATUS_NEW)
-        {
-            STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text(T("Attributes are not present in either the input file or the attribute database."));
-            ENDLOG;
-        }
-    }
-    else
-    {
-        // It loaded a flatfile.
-        //
-        if (ccPageFile == HF_OPEN_STATUS_OLD)
-        {
-            STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text(T("Attributes present in both the input file and the attribute database."));
-            ENDLOG;
-        }
-    }
-#endif // SQLITE_STORAGE
-#endif // !MEMORY_BASED
 
     if (mudconf.have_comsys)
     {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
         if (sqlite_load_comsys())
         {
             Log.tinyprintf(T("LOADING: comsys (from SQLite)" ENDLINE));
         }
         else
-#endif
         {
             load_comsys(mudconf.comsys_db);
         }
@@ -2025,13 +1904,11 @@ static int load_game(int ccPageFile)
 
     if (mudconf.have_mailer)
     {
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
         if (sqlite_load_mail())
         {
             Log.tinyprintf(T("LOADING: mail (from SQLite)" ENDLINE));
         }
         else
-#endif
         if (mux_fopen(&f, mudconf.mail_db, T("rb")))
         {
             DebugTotalFiles++;
@@ -2268,8 +2145,6 @@ static void process_preload(void)
     free_lbuf(tstr);
 }
 
-#ifndef MEMORY_BASED
-
 /*
  * ---------------------------------------------------------------------------
  * * info: display info about the file being read or written.
@@ -2371,7 +2246,6 @@ static void dbconvert(void)
     //
     init_attrtab();
 
-#if defined(SQLITE_STORAGE)
     // In SQLite mode, we pass the basename with .dir suffix so that
     // cache_init() can derive the .sqlite path from it.
     //
@@ -2405,46 +2279,7 @@ static void dbconvert(void)
             exit(1);
         }
     }
-#else
-    UTF8 dirfile[SIZEOF_PATHNAME];
-    UTF8 *dirfile_c = dirfile;
-    safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str(T(".dir"), dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    *dirfile_c = '\0';
 
-    UTF8 pagfile[SIZEOF_PATHNAME];
-    UTF8 *pagfile_c = pagfile;
-    safe_copy_str(standalone_basename, pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str(T(".pag"), pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
-    *pagfile_c = '\0';
-
-    int cc = init_dbfile(dirfile, pagfile, 650);
-    if (cc == HF_OPEN_STATUS_ERROR)
-    {
-        Log.tinyprintf(T("Can\xE2\x80\x99t open database in (%s, %s) files\n"), dirfile, pagfile);
-        exit(1);
-    }
-    else if (cc == HF_OPEN_STATUS_OLD)
-    {
-        if (setflags == OUTPUT_FLAGS)
-        {
-            Log.tinyprintf(T("Would overwrite existing database (%s, %s)\n"), dirfile, pagfile);
-            CLOSE;
-            exit(1);
-        }
-    }
-    else if (cc == HF_OPEN_STATUS_NEW)
-    {
-        if (setflags == UNLOAD_FLAGS)
-        {
-            Log.tinyprintf(T("Database (%s, %s) is empty.\n"), dirfile, pagfile);
-            CLOSE;
-            exit(1);
-        }
-    }
-#endif
-
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     if (  nullptr == standalone_infile
        && HF_OPEN_STATUS_OLD == cc
        && sqlite_load_game())
@@ -2458,7 +2293,6 @@ static void dbconvert(void)
         db_flags = OUTPUT_FLAGS;
     }
     else
-#endif // SQLITE_STORAGE && !MEMORY_BASED
     {
         FILE *fpIn;
         if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
@@ -2468,39 +2302,16 @@ static void dbconvert(void)
 
         // Go do it.
         //
-#if !defined(SQLITE_STORAGE)
-        if (do_redirect)
-        {
-            cache_redirect();
-        }
-#endif
-
         setvbuf(fpIn, nullptr, _IOFBF, 16384);
-#if defined(SQLITE_STORAGE)
         mudstate.bSQLiteLoading = true;
-#endif
         if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
         {
-#if defined(SQLITE_STORAGE)
             mudstate.bSQLiteLoading = false;
-#endif
-#if !defined(SQLITE_STORAGE)
-            cache_cleanup();
-#endif
             exit(1);
         }
-#if defined(SQLITE_STORAGE)
         mudstate.bSQLiteLoading = false;
         sqlite_sync_objects();
         sqlite_sync_attrnames();
-#endif
-
-#if !defined(SQLITE_STORAGE)
-        if (do_redirect)
-        {
-            cache_pass2();
-        }
-#endif
         Log.WriteString(T("Input: "));
         info(db_format, db_flags, db_ver);
 
@@ -2511,7 +2322,6 @@ static void dbconvert(void)
         fclose(fpIn);
     }
 
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     // Import comsys from flatfile into SQLite.
     //
     if (standalone_load && standalone_comsys_file)
@@ -2566,7 +2376,6 @@ static void dbconvert(void)
             }
         }
     }
-#endif // SQLITE_STORAGE && !MEMORY_BASED
 
     if (do_write)
     {
@@ -2588,11 +2397,9 @@ static void dbconvert(void)
         Log.WriteString(T("Output: "));
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, nullptr, _IOFBF, 16384);
-#ifndef MEMORY_BASED
         // Save cached modified attribute list
         //
         al_store();
-#endif // MEMORY_BASED
         db_write(fpOut, F_MUX, db_ver | db_flags);
         fclose(fpOut);
     }
@@ -2602,7 +2409,6 @@ static void dbconvert(void)
 #endif
     exit(0);
 }
-#endif // MEMORY_BASED
 
 static void write_pidfile(const UTF8 *pFilename)
 {
@@ -2712,7 +2518,6 @@ static CLI_OptionEntry OptionTable[] =
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
     { "v", CLI_NONE,     CLI_DO_VERSION     },
     { "h", CLI_NONE,     CLI_DO_USAGE       },
-#ifndef MEMORY_BASED
     { "i", CLI_REQUIRED, CLI_DO_INFILE      },
     { "o", CLI_REQUIRED, CLI_DO_OUTFILE     },
     { "k", CLI_NONE,     CLI_DO_CHECK       },
@@ -2721,7 +2526,6 @@ static CLI_OptionEntry OptionTable[] =
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
     { "C", CLI_REQUIRED, CLI_DO_COMSYS_FILE },
     { "m", CLI_REQUIRED, CLI_DO_MAIL_FILE   },
-#endif // MEMORY_BASED
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
@@ -2757,7 +2561,6 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
             pErrorBasename = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
-#ifndef MEMORY_BASED
         case CLI_DO_INFILE:
             mudstate.bStandAlone = true;
             standalone_infile = reinterpret_cast<const UTF8 *>(pValue);
@@ -2797,7 +2600,6 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
             mudstate.bStandAlone = true;
             standalone_mail_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
-#endif
 
         case CLI_DO_USAGE:
         default:
@@ -2845,7 +2647,6 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     CLI_Process(argc, argv, OptionTable, NUM_CLI_OPTIONS, CLI_CallBack);
 
-#ifndef MEMORY_BASED
     if (mudstate.bStandAlone)
     {
         int n = 0;
@@ -2862,11 +2663,7 @@ int DCL_CDECL main(int argc, char *argv[])
             n++;
         }
         if (  !standalone_basename
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
            || (!standalone_infile && !standalone_unload)
-#else
-           || !standalone_infile
-#endif
            || !standalone_outfile
            || n != 1
            || bServerOption)
@@ -2880,7 +2677,6 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
     else
-#endif // MEMORY_BASED
 
     if (bVersion)
     {
@@ -3048,12 +2844,8 @@ int DCL_CDECL main(int argc, char *argv[])
     fcache_init();
     helpindex_init();
 
-#ifdef MEMORY_BASED
-    db_free();
-#else // MEMORY_BASED
     if (bMinDB)
     {
-#if defined(SQLITE_STORAGE)
         // Remove the SQLite database to start fresh.
         //
         UTF8 sqlitefile[SIZEOF_PATHNAME];
@@ -3064,10 +2856,6 @@ int DCL_CDECL main(int argc, char *argv[])
             memcpy(sqlitefile + n - 4, ".sqlite", 8);
         }
         RemoveFile(sqlitefile);
-#else
-        RemoveFile(mudconf.game_dir);
-        RemoveFile(mudconf.game_pag);
-#endif
     }
     int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, mudconf.cache_pages);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
@@ -3077,7 +2865,6 @@ int DCL_CDECL main(int argc, char *argv[])
         ENDLOG;
         return 2;
     }
-#endif // MEMORY_BASED
 
     mudstate.record_players = 0;
 
@@ -3085,37 +2872,27 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         db_make_minimal();
     }
-#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
     else if (HF_OPEN_STATUS_OLD == ccPageFile && sqlite_load_game())
     {
         // Warm start: loaded everything from SQLite.
         // No flatfile needed.
         //
     }
-#endif
     else
     {
-#ifdef MEMORY_BASED
-        int ccInFile = load_game();
-#else // MEMORY_BASED
         int ccInFile = load_game(ccPageFile);
-#endif // MEMORY_BASED
         if (LOAD_GAME_NO_INPUT_DB == ccInFile)
         {
             // The input file didn't exist.
             //
-#ifndef MEMORY_BASED
             if (HF_OPEN_STATUS_NEW == ccPageFile)
             {
                 // Since the .db file didn't exist, and the .pag/.dir files
                 // were newly created, just create a minimal DB.
                 //
-#endif // !MEMORY_BASED
                 db_make_minimal();
                 ccInFile = LOAD_GAME_SUCCESS;
-#ifndef MEMORY_BASED
             }
-#endif // !MEMORY_BASED
         }
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
