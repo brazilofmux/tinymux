@@ -1159,49 +1159,173 @@ typedef struct
 #define PRIORITY_CF_DEQUEUE_ENABLED  PRIORITY_OBJECT
 #define PRIORITY_CF_DEQUEUE_DISABLED (PRIORITY_PLAYER-1)
 
-typedef int SCHCMP(PTASK_RECORD, PTASK_RECORD);
 typedef int SCHLOOK(PTASK_RECORD);
-
-class CTaskHeap
-{
-private:
-    int m_nAllocated;
-    int m_nCurrent;
-    PTASK_RECORD *m_pHeap;
-
-    int m_iVisitedMark;
-
-    bool Grow(void);
-    void SiftDown(int, SCHCMP *);
-    void SiftUp(int, SCHCMP *);
-    PTASK_RECORD Remove(int, SCHCMP *);
-    void Update(int iNode, SCHCMP *pfCompare);
-    void Sort(SCHCMP *pfCompare);
-    void Remake(SCHCMP *pfCompare);
-
-public:
-    CTaskHeap();
-    ~CTaskHeap();
-
-    void Shrink(void);
-    bool Insert(PTASK_RECORD, SCHCMP *);
-    PTASK_RECORD PeekAtTopmost(void);
-    PTASK_RECORD RemoveTopmost(SCHCMP *);
-    void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer);
 
 #define IU_DONE        0
 #define IU_NEXT_TASK   1
 #define IU_REMOVE_TASK 2
 #define IU_UPDATE_TASK 3
-    int TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare);
-    int TraverseOrdered(SCHLOOK *pfLook, SCHCMP *pfCompare);
+
+// Comparator functors for the two scheduler heaps.  std:: heap algorithms
+// implement a max-heap, so "greater" gives us min-heap behaviour.
+//
+struct CompareWhenGreater
+{
+    bool operator()(PTASK_RECORD a, PTASK_RECORD b) const
+    {
+        if (a->ltaWhen > b->ltaWhen) return true;
+        if (a->ltaWhen < b->ltaWhen) return false;
+        return (a->m_Ticket - b->m_Ticket) > 0;
+    }
+};
+
+struct ComparePriorityGreater
+{
+    bool operator()(PTASK_RECORD a, PTASK_RECORD b) const
+    {
+        int i = a->iPriority - b->iPriority;
+        if (i != 0) return i > 0;
+        return (a->m_Ticket - b->m_Ticket) > 0;
+    }
+};
+
+template <typename Compare>
+class CTaskHeap
+{
+private:
+    std::vector<PTASK_RECORD> m_Heap;
+    int m_iVisitedMark;
+    Compare m_Compare;
+
+public:
+    CTaskHeap() : m_iVisitedMark(0) {}
+
+    ~CTaskHeap()
+    {
+        for (auto p : m_Heap)
+        {
+            delete p;
+        }
+    }
+
+    void Shrink(void)
+    {
+        m_Heap.shrink_to_fit();
+    }
+
+    bool Insert(PTASK_RECORD pTask)
+    {
+        pTask->m_iVisitedMark = m_iVisitedMark - 1;
+        m_Heap.push_back(pTask);
+        std::push_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+        return true;
+    }
+
+    PTASK_RECORD PeekAtTopmost(void)
+    {
+        if (m_Heap.empty())
+        {
+            return nullptr;
+        }
+        return m_Heap.front();
+    }
+
+    PTASK_RECORD RemoveTopmost(void)
+    {
+        if (m_Heap.empty())
+        {
+            return nullptr;
+        }
+        std::pop_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+        PTASK_RECORD p = m_Heap.back();
+        m_Heap.pop_back();
+        return p;
+    }
+
+    void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
+    {
+        for (auto p : m_Heap)
+        {
+            if (  p->fpTask == fpTask
+               && p->arg_voidptr == arg_voidptr
+               && p->arg_Integer == arg_Integer)
+            {
+                p->fpTask = nullptr;
+            }
+        }
+    }
+
+    int TraverseUnordered(SCHLOOK *pfLook)
+    {
+        m_iVisitedMark++;
+        if (m_iVisitedMark == 0)
+        {
+            for (auto p : m_Heap)
+            {
+                p->m_iVisitedMark = m_iVisitedMark;
+            }
+            m_iVisitedMark++;
+        }
+
+        bool bUnvisitedRecords;
+        do
+        {
+            bUnvisitedRecords = false;
+            for (size_t i = 0; i < m_Heap.size(); i++)
+            {
+                PTASK_RECORD p = m_Heap[i];
+                if (p->m_iVisitedMark == m_iVisitedMark)
+                {
+                    continue;
+                }
+                bUnvisitedRecords = true;
+                p->m_iVisitedMark = m_iVisitedMark;
+
+                int cmd = pfLook(p);
+                switch (cmd)
+                {
+                case IU_REMOVE_TASK:
+                    m_Heap[i] = m_Heap.back();
+                    m_Heap.pop_back();
+                    std::make_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+                    break;
+
+                case IU_DONE:
+                    return false;
+
+                case IU_UPDATE_TASK:
+                    std::make_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+                    break;
+                }
+            }
+        } while (bUnvisitedRecords);
+        return true;
+    }
+
+    int TraverseOrdered(SCHLOOK *pfLook)
+    {
+        std::sort_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+
+        for (int i = static_cast<int>(m_Heap.size()) - 1; i >= 0; i--)
+        {
+            PTASK_RECORD p = m_Heap[i];
+            int cmd = pfLook(p);
+            if (IU_DONE == cmd)
+            {
+                break;
+            }
+        }
+
+        std::make_heap(m_Heap.begin(), m_Heap.end(), m_Compare);
+        return true;
+    }
 };
 
 class CScheduler
 {
 private:
-    CTaskHeap m_WhenHeap;
-    CTaskHeap m_PriorityHeap;
+    CTaskHeap<CompareWhenGreater>     m_WhenHeap;
+    CTaskHeap<ComparePriorityGreater> m_PriorityHeap;
     int       m_Ticket;
     int       m_minPriority;
 
