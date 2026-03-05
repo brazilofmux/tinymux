@@ -13,6 +13,7 @@
 #include "sqlitedb.h"
 #include <cstring>
 #include <cstdio>
+#include <string>
 
 // ---------------------------------------------------------------------------
 // Construction / Destruction
@@ -268,6 +269,7 @@ bool CSQLiteDB::CreateSchema()
         "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
         "CREATE INDEX IF NOT EXISTS idx_objects_location ON objects(location);"
         "CREATE INDEX IF NOT EXISTS idx_objects_zone ON objects(zone);"
+        "CREATE INDEX IF NOT EXISTS idx_objects_parent ON objects(parent);"
         "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
         "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
         "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
@@ -315,7 +317,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 3;
+    static const int CURRENT_SCHEMA_VERSION = 4;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -447,6 +449,26 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 3;
+    }
+
+    // ---------------------------------------------------------------
+    // v3 -> v4: add parent index for @search optimization.
+    // ---------------------------------------------------------------
+    //
+    if (version < 4)
+    {
+        const char *migration_v4 =
+            "BEGIN;"
+            "CREATE INDEX IF NOT EXISTS idx_objects_parent ON objects(parent);"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 4);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v4, 4))
+        {
+            return false;
+        }
+        version = 4;
     }
 
     // Log any FK violations (informational, not fatal).
@@ -1225,6 +1247,166 @@ bool CSQLiteDB::Commit()
 bool CSQLiteDB::Rollback()
 {
     return SQLITE_OK == sqlite3_exec(m_db, "ROLLBACK", nullptr, nullptr, nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// Search queries
+// ---------------------------------------------------------------------------
+
+// Helper: prepare an ad-hoc search query, bind params, iterate results,
+// call back with each matching dbref, then finalize.  Search queries are
+// infrequent (once per @search command), so the prepare/finalize overhead
+// is negligible.
+//
+static bool RunSearch(sqlite3 *db, const char *sql,
+                      const std::function<void(sqlite3_stmt *)> &bind,
+                      CSQLiteDB::SearchCallback cb)
+{
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr))
+    {
+        return false;
+    }
+
+    bind(stmt);
+
+    for (;;)
+    {
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ROW != rc)
+        {
+            break;
+        }
+        cb(static_cast<dbref>(sqlite3_column_int(stmt, 0)));
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
+}
+
+bool CSQLiteDB::SearchByOwner(dbref owner, int type, dbref low, dbref high,
+                              SearchCallback cb)
+{
+    if (type != -1)
+    {
+        // Owner + type filter.
+        //
+        return RunSearch(m_db,
+            "SELECT dbref FROM objects"
+            " WHERE owner=? AND (flags1 & 7)=? AND (flags1 & 16384)=0"
+            " AND dbref BETWEEN ? AND ?"
+            " ORDER BY dbref",
+            [owner, type, low, high](sqlite3_stmt *s)
+            {
+                sqlite3_bind_int(s, 1, owner);
+                sqlite3_bind_int(s, 2, type);
+                sqlite3_bind_int(s, 3, low);
+                sqlite3_bind_int(s, 4, high);
+            }, cb);
+    }
+
+    return RunSearch(m_db,
+        "SELECT dbref FROM objects"
+        " WHERE owner=? AND (flags1 & 16384)=0"
+        " AND dbref BETWEEN ? AND ?"
+        " ORDER BY dbref",
+        [owner, low, high](sqlite3_stmt *s)
+        {
+            sqlite3_bind_int(s, 1, owner);
+            sqlite3_bind_int(s, 2, low);
+            sqlite3_bind_int(s, 3, high);
+        }, cb);
+}
+
+bool CSQLiteDB::SearchByType(int type, dbref low, dbref high, SearchCallback cb)
+{
+    return RunSearch(m_db,
+        "SELECT dbref FROM objects"
+        " WHERE (flags1 & 7)=? AND (flags1 & 16384)=0"
+        " AND dbref BETWEEN ? AND ?"
+        " ORDER BY dbref",
+        [type, low, high](sqlite3_stmt *s)
+        {
+            sqlite3_bind_int(s, 1, type);
+            sqlite3_bind_int(s, 2, low);
+            sqlite3_bind_int(s, 3, high);
+        }, cb);
+}
+
+bool CSQLiteDB::SearchByZone(dbref zone, dbref low, dbref high, SearchCallback cb)
+{
+    return RunSearch(m_db,
+        "SELECT dbref FROM objects"
+        " WHERE zone=? AND (flags1 & 16384)=0"
+        " AND dbref BETWEEN ? AND ?"
+        " ORDER BY dbref",
+        [zone, low, high](sqlite3_stmt *s)
+        {
+            sqlite3_bind_int(s, 1, zone);
+            sqlite3_bind_int(s, 2, low);
+            sqlite3_bind_int(s, 3, high);
+        }, cb);
+}
+
+bool CSQLiteDB::SearchByParent(dbref parent, dbref low, dbref high, SearchCallback cb)
+{
+    return RunSearch(m_db,
+        "SELECT dbref FROM objects"
+        " WHERE parent=? AND (flags1 & 16384)=0"
+        " AND dbref BETWEEN ? AND ?"
+        " ORDER BY dbref",
+        [parent, low, high](sqlite3_stmt *s)
+        {
+            sqlite3_bind_int(s, 1, parent);
+            sqlite3_bind_int(s, 2, low);
+            sqlite3_bind_int(s, 3, high);
+        }, cb);
+}
+
+bool CSQLiteDB::SearchByFlags(FLAG f1, FLAG f2, FLAG f3,
+                              dbref low, dbref high, SearchCallback cb)
+{
+    // Build the query dynamically based on which flag words are non-zero.
+    // Always exclude GOING.  The flags check is (flags & mask) == mask.
+    //
+    std::string sql = "SELECT dbref FROM objects WHERE (flags1 & 16384)=0";
+
+    if (f1)
+    {
+        sql += " AND (flags1 & ?) = ?";
+    }
+    if (f2)
+    {
+        sql += " AND (flags2 & ?) = ?";
+    }
+    if (f3)
+    {
+        sql += " AND (flags3 & ?) = ?";
+    }
+    sql += " AND dbref BETWEEN ? AND ? ORDER BY dbref";
+
+    return RunSearch(m_db, sql.c_str(),
+        [f1, f2, f3, low, high](sqlite3_stmt *s)
+        {
+            int p = 1;
+            if (f1)
+            {
+                sqlite3_bind_int(s, p++, static_cast<int>(f1));
+                sqlite3_bind_int(s, p++, static_cast<int>(f1));
+            }
+            if (f2)
+            {
+                sqlite3_bind_int(s, p++, static_cast<int>(f2));
+                sqlite3_bind_int(s, p++, static_cast<int>(f2));
+            }
+            if (f3)
+            {
+                sqlite3_bind_int(s, p++, static_cast<int>(f3));
+                sqlite3_bind_int(s, p++, static_cast<int>(f3));
+            }
+            sqlite3_bind_int(s, p++, low);
+            sqlite3_bind_int(s, p++, high);
+        }, cb);
 }
 
 // ---------------------------------------------------------------------------

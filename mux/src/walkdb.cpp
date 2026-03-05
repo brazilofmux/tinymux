@@ -8,6 +8,10 @@
 #include "config.h"
 #include "externs.h"
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+#include "sqlite_backend.h"
+#endif
+
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
@@ -801,6 +805,96 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
     UTF8 *buff = alloc_sbuf("search_perform.num");
     int save_invk_ctr = mudstate.func_invk_ctr;
 
+#if defined(SQLITE_STORAGE) && !defined(MEMORY_BASED)
+    // SQLite fast path for simple searches.
+    //
+    // A search qualifies for the fast path when there is no name match,
+    // no eval expression, and no power filter — i.e., the criteria can be
+    // expressed purely in terms of object metadata columns.  The SQL query
+    // uses indexes on owner, zone, or parent and avoids a full db[] scan.
+    //
+    if (  g_pSQLiteBackend
+       && nullptr == parm->s_rst_name
+       && nullptr == parm->s_rst_eval
+       && 0 == parm->s_pset.word1
+       && 0 == parm->s_pset.word2)
+    {
+        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+        bool used_sql = false;
+
+        const bool has_flags = parm->s_fset.word[FLAG_WORD1] != 0
+                            || parm->s_fset.word[FLAG_WORD2] != 0
+                            || parm->s_fset.word[FLAG_WORD3] != 0;
+        const bool has_owner = parm->s_rst_owner != ANY_OWNER;
+        const bool has_type  = parm->s_rst_type != NOTYPE;
+        const bool has_zone  = parm->s_zone != NOTHING;
+        const bool has_parent = parm->s_parent != NOTHING;
+
+        // Case 1: Owner search (with optional type, no other filters).
+        //
+        if (has_owner && !has_flags && !has_zone && !has_parent)
+        {
+            sqldb.SearchByOwner(parm->s_rst_owner,
+                has_type ? static_cast<int>(parm->s_rst_type) : -1,
+                parm->low_bound, parm->high_bound,
+                [](dbref thing) { olist_add(thing); });
+            used_sql = true;
+        }
+
+        // Case 2: Type-only search (no owner, no other filters).
+        //
+        else if (!has_owner && has_type && !has_flags && !has_zone && !has_parent)
+        {
+            sqldb.SearchByType(static_cast<int>(parm->s_rst_type),
+                parm->low_bound, parm->high_bound,
+                [](dbref thing) { olist_add(thing); });
+            used_sql = true;
+        }
+
+        // Case 3: Zone search (no other filters).
+        //
+        else if (has_zone && !has_owner && !has_type && !has_flags && !has_parent)
+        {
+            sqldb.SearchByZone(parm->s_zone,
+                parm->low_bound, parm->high_bound,
+                [](dbref thing) { olist_add(thing); });
+            used_sql = true;
+        }
+
+        // Case 4: Parent search (no other filters).
+        //
+        else if (has_parent && !has_owner && !has_type && !has_flags && !has_zone)
+        {
+            sqldb.SearchByParent(parm->s_parent,
+                parm->low_bound, parm->high_bound,
+                [](dbref thing) { olist_add(thing); });
+            used_sql = true;
+        }
+
+        // Case 5: Flags-only search (no name, eval, power, zone, parent, owner).
+        //
+        else if (has_flags && !has_owner && !has_type && !has_zone && !has_parent)
+        {
+            sqldb.SearchByFlags(
+                parm->s_fset.word[FLAG_WORD1],
+                parm->s_fset.word[FLAG_WORD2],
+                parm->s_fset.word[FLAG_WORD3],
+                parm->low_bound, parm->high_bound,
+                [](dbref thing) { olist_add(thing); });
+            used_sql = true;
+        }
+
+        if (used_sql)
+        {
+            free_sbuf(buff);
+            mudstate.func_invk_ctr = save_invk_ctr;
+            return;
+        }
+    }
+#endif // SQLITE_STORAGE
+
+    // Full linear scan fallback for complex/combined searches.
+    //
     dbref thing;
     for (thing = parm->low_bound; thing <= parm->high_bound; thing++)
     {

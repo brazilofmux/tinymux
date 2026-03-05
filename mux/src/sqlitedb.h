@@ -187,6 +187,17 @@ public:
         const UTF8 *desc, int desc_width, const UTF8 *members)> MailAliasCallback;
     bool LoadAllMailAliases(MailAliasCallback cb);
 
+    // Search queries.
+    // These return non-GOING dbrefs matching the criteria, ordered by dbref.
+    // The callback receives each matching dbref.
+    //
+    typedef std::function<void(dbref)> SearchCallback;
+    bool SearchByOwner(dbref owner, int type, dbref low, dbref high, SearchCallback cb);
+    bool SearchByType(int type, dbref low, dbref high, SearchCallback cb);
+    bool SearchByZone(dbref zone, dbref low, dbref high, SearchCallback cb);
+    bool SearchByParent(dbref parent, dbref low, dbref high, SearchCallback cb);
+    bool SearchByFlags(FLAG f1, FLAG f2, FLAG f3, dbref low, dbref high, SearchCallback cb);
+
     // Maintenance
     //
     bool Checkpoint();
