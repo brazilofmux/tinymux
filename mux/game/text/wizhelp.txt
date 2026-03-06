@@ -1868,9 +1868,9 @@ CONFIG PARAMETERS
   access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
   attr_name_charset  autozone  bad_name  badsite_file  cache_names
   cache_tick_period  check_interval  check_offset  clone_copies_cost
-  command_quota_increment  command_quota_max
+  command_quota_increment  command_quota_max  comsys_database
   config_access  conn_timeout  connect_file  connect_reg_file
-  crash_message  create_max_cost  create_min_cost
+  crash_database  crash_message  create_max_cost  create_min_cost
   dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx  def_player_tx
   def_room_rx  def_room_tx  def_thing_rx  def_thing_tx  default_charset
   default_home  destroy_going_now  dig_cost  down_file  down_motd_message
@@ -1878,7 +1878,7 @@ CONFIG PARAMETERS
   events_daily_hour  examine_flags  examine_public_attrs  exit_flags
   exit_name_charset  exit_parent  exit_quota  fascist_teleport
   find_money_chance  fixed_home_message  fixed_tel_message  flag_access
-  flag_alias  flag_name  float_precision forbid_site  full_file
+  flag_alias  flag_name  float_precision  forbid_site  fork_dump  full_file
   full_motd_message  function_access  function_alias  function_name
   function_invocation_limit  function_recursion_limit
 
@@ -1891,11 +1891,11 @@ CONFIG PARAMETERS (continued)
   guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
   have_zones  help_executor  helpfile  hook_cmd
   hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
-  immobile_message  include  indent_desc  initial_size
+  immobile_message  include  indent_desc  initial_size  input_database
   ip_address  keepalive_interval  kill_guarantee_cost  kill_max_cost
   kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_ehlo
+  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
   mail_expiration  mail_max_per_player  mail_per_hour  email_per_hour
   mail_sendaddr  mail_sendname
   mail_server
@@ -1903,7 +1903,8 @@ CONFIG PARAMETERS (continued)
   min_guests  module  money_name_plural  money_name_singular  motd_file
   motd_message  mud_name  newuser_file  noguest_site  nositemon_site
   notify_recursion_limit  number_guests  open_cost
-  output_limit  page_cost  paranoid_allocate  parent_recursion_limit
+  output_database  output_limit  page_cost  paranoid_allocate
+  parent_recursion_limit
   password_methods  paycheck  pcreate_per_hour  pemit_any_object
   pemit_far_players  permit_site  player_flags  player_parent  player_listen
   player_channels  player_match_own_commands  player_name_charset
@@ -1933,6 +1934,18 @@ CONFIG PARAMETERS (continued)
   trust_site  unowned_safe  user_attr_access
   user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
   zone_recursion_limit
+
+& COMSYS_DATABASE
+COMSYS_DATABASE
+
+  CONFIG PARAMETER: comsys_database <path>
+  DEFAULT: data/comsys.db
+
+  Specifies the path for the channel system flatfile.  This file is used
+  during dbconvert import/export and as a fallback when loading channel
+  data.  In normal operation, channel data is stored in the SQLite database.
+
+  Related Topics: mail_database, input_database.
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -2015,6 +2028,21 @@ CRASH_MESSAGE
   encounters an unexpected error.  The message is sent even if the server can
   reasonably recover from the error just in case the situation is
   non-recoverable.  The message is prefixed with 'GAME:'.
+
+& CRASH_DATABASE
+CRASH_DATABASE
+
+  CONFIG PARAMETER: crash_database <path>
+  DEFAULT: data/netmux.CRASH
+
+  Specifies the path for panic dump output.  If the server encounters a
+  fatal signal, it writes the database to this file before exiting.  The
+  default is derived from the base name set by input_database.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: input_database, output_database, crash_message.
 
 & CREATE_MAX_COST
 CREATE_MAX_COST
@@ -2576,6 +2604,19 @@ FORBID_SITE
                   permit_site, register_site, reset_site, suspect_site,
                   trust_site, SITE LIST, SITE NOTATION,
 
+& FORK_DUMP
+FORK_DUMP
+
+  CONFIG PARAMETER: fork_dump <yes/no>
+  DEFAULT: yes
+
+  Controls whether a @dump/flatfile export forks a child process to write
+  the flatfile.  Forking avoids blocking the game during the write, but
+  uses more memory.  Periodic WAL checkpoints (the normal @dump behavior)
+  never fork regardless of this setting.
+
+  Related Topics: @dump, dump_interval.
+
 & FULL_FILE
 FULL_FILE
 
@@ -3084,6 +3125,25 @@ INITIAL_SIZE
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
+& INPUT_DATABASE
+INPUT_DATABASE
+
+  CONFIG PARAMETER: input_database <path>
+  DEFAULT: data/netmux.db
+
+  Specifies the base database name.  The SQLite database filename is derived
+  from this setting by replacing the extension with .sqlite (e.g.,
+  netmux.db becomes netmux.sqlite).  The flatfile paths for output_database
+  and crash_database are also derived from this base name.
+
+  Games commonly customize this to rebrand the database (e.g.,
+  mylittleponymux.db).
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: output_database, crash_database.
+
 & IP_ADDRESS
 IP_ADDRESS
 
@@ -3350,6 +3410,18 @@ MACHINE_COMMAND_COST
   Sets the cost for running a command from a machine, as opposed to running
   it interactively.  Each command run has a one in <number> chance of being
   charged one coin for machine overhead.
+
+& MAIL_DATABASE
+MAIL_DATABASE
+
+  CONFIG PARAMETER: mail_database <path>
+  DEFAULT: data/mail.db
+
+  Specifies the path for the @mail flatfile.  This file is used during
+  dbconvert import/export and as a fallback when loading @mail data.
+  In normal operation, @mail data is stored in the SQLite database.
+
+  Related Topics: comsys_database, input_database.
 
 & MAIL_EHLO
 MAIL_EHLO
@@ -3772,6 +3844,18 @@ OUTPUT_LIMIT
 
   Specifies how many bytes should be output before the output is flushed
   and characters are lost.
+
+& OUTPUT_DATABASE
+OUTPUT_DATABASE
+
+  CONFIG PARAMETER: output_database <path>
+  DEFAULT: data/netmux.flat
+
+  Specifies the path for flatfile database exports.  When @dump/flatfile is
+  used, the database is written to this file.  The default is derived from
+  the base name set by input_database.
+
+  Related Topics: input_database, crash_database, @dump.
 
 & PAGE_COST
 PAGE_COST
