@@ -461,13 +461,14 @@ static size_t utf8_advance_nul(const UTF8 *p)
     {
         n = UTF8_SIZE1;
     }
-
-    size_t nAvail = 0;
-    while (nAvail < n && '\0' != p[nAvail])
+    for (size_t i = 1; i < n; i++)
     {
-        nAvail++;
+        if ('\0' == p[i] || UTF8_CONTINUE != utf8_FirstByte[p[i]])
+        {
+            return UTF8_SIZE1;
+        }
     }
-    return (0 < nAvail) ? nAvail : UTF8_SIZE1;
+    return n;
 }
 
 // The following table maps cp437 characters to their corresponding
