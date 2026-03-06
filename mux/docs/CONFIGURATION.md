@@ -1,0 +1,149 @@
+---
+author: Brazil
+date: March 2026
+title: CONFIGURATION
+---
+
+TinyMUX 2.13 gets the information it needs to operate the game (aside from
+the database itself) from a configuration file that is read in at startup.
+The configuration file contains various parameters, such as what port to
+listen for connects, and many other things.
+
+# Modifying `mux.config`
+
+- This file can be left as is.  However, customizing the `GAMENAME` helps
+  identify backups and database files, which is handy if you run more
+  than one game.
+
+  - Open `mux.config` in your editor and look for the line `GAMENAME`.
+
+  - Change `netmux` to something short that you will recognize easily.
+
+  - Save your changes and leave the editor.
+
+# Making a New Configuration File
+
+- In your game directory, the file that you will need to modify is the one
+  called either `netmux.conf` or `GAMENAME.conf`.  `netmux` is the default
+  GAMENAME and can be changed by editing `mux.config` (see above).
+
+- If you choose to change GAMENAME in `mux.config`, then you will need to
+  rename or copy the default `netmux.conf` to `GAMENAME.conf`.
+
+- Change `port` to the port number your game will be using.
+
+- Change `mud_name` to what you like.  This can be the formal name of your
+  game.
+
+- Make any other configuration changes you want to make at this time.  They
+  are added individually, one per line to the file.  Common additions to
+  this file would be:
+
+  | Parameter                      | Description                                                                            |
+  |--------------------------------|----------------------------------------------------------------------------------------|
+  | `money_name_singular <text>`   | The name of one coin (penny)                                                           |
+  | `money_name_plural <text>`     | The name of several coins (pennies)                                                    |
+  | `paycheck <amount>`            | Players get this much money each day they connect.                                     |
+  | `starting_pay <amount>`        | Players start out with this much money.                                                |
+  | `find_money_chance <chance>`   | Each time a player moves, he has a 1 in `<chance>` chance of finding a penny.          |
+  | `player_starting_room <room>`  | The room that new players are created in.                                              |
+  | `mail_expiration <number>`     | Sets the timeout for `@mail`. (14 days)                                                |
+  | `master_room <dbref>`          | The number of the room you keep your globals in.                                       |
+  | `quotas <yes/no>`              | Enables quotas. (no)                                                                   |
+  | `starting_quota <number>`      | How much quota players get. (20) Meaningless without quotas enabled.                   |
+  | `guests_channel <channel>`     | Channel for guests. See `GUESTS.md` for information on the guest system.               |
+  | `public_channel <channel>`     | Name for the public channel on your game.                                              |
+  | `dump_message`                 | Message shown at the beginning of a DB save to disk.                                   |
+  | `postdump_message`             | Message shown at the end of a DB save to disk.                                         |
+  | `idle_wiz_dark yes`            | Sets wizards dark after they have been idle more than the specified timeout.            |
+
+- `WIZHELP` is a wealth of information regarding the more esoteric aspects of
+  configuration parameters.  There are many more configuration directives
+  available.  Information on individual directives can be obtained with the
+  `WIZHELP <directive>` command within the MUSH.
+
+# Example Configuration File
+
+The following is an example configuration file to give you an idea of how
+yours should look.
+
+Note that not all of these configurations are appropriate for all games at
+all times.  Please read `wizhelp` for more information.  Lines preceded with
+`#` are ones "commented out" and are not read by the server when it is
+running.
+
+```
+port 4190
+mud_name AuroraMUSH
+#
+include alias.conf
+include compat.conf
+#
+# Define local aliases/parameters/whatnot here.
+# log all_commands
+alias ? help
+clone_copies_cost YES
+money_name_singular cosmic ray
+money_name_plural cosmic rays
+mail_expiration 60
+paycheck 25
+page_cost 0
+master_room 5
+quotas yes
+starting_quota 10
+idle_timeout 3600
+access @attribute/access wizard
+access @attribute/delete wizard
+guest_char_num 3
+number_guests 5
+guest_prefix Guest
+guests_channel Guests
+public_channel Public
+dump_interval 3600
+dump_message Saving database - Please stand by.
+postdump_message Save completed.
+player_starting_room 83
+player_starting_home 83
+player_listen yes
+idle_wiz_dark yes
+access wiznews immortal
+access @robot god
+access @decompile no_guest
+access examine no_guest
+access @desc !no_guest
+access kill disabled
+access @emit no_suspect
+access comtitle no_suspect
+access @doing no_guest
+access @set !no_guest
+access @sex !no_guest
+access @admin god
+access @dig no_guest no_slave global_build
+access @dig/teleport no_guest no_slave global_build
+access @malias wizard
+access @mail no_guest
+access @qmail no_guest
+access @mail/send no_guest
+access @mail/cc no_guest
+access @mail/proof no_guest
+access @mail/edit no_guest
+access @mail/abort no_guest
+access @mail/fwd no_guest
+access @mail/quick no_guest
+access @wait no_guest
+function_access set no_slave no_guest
+function_access create no_slave no_guest
+function_access lwho immortal wizard builder
+access @oemit !need_location
+player_flags ansi uninspected
+#
+# Sitebans
+forbid_site 194.205.0.0 255.255.0.0
+#
+# Existing users may connect, newbies cannot.
+register_site 137.120.19.0 255.255.255.0
+register_site 152.0.0.0 255.0.0.0
+register_site 62.136.0.0 255.255.0.0
+register_site 195.92.0.0 255.255.0.0
+register_site 195.166.0.0 255.255.0.0
+```

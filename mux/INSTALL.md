@@ -55,9 +55,9 @@ library or tool is missing.
 
       |                        |                                                     |
       |------------------------|-----------------------------------------------------|
-      | `--enable-realitylvls` | See REALITY and REALITY.SETUP.                      |
-      | `--enable-stubslave`   | See MODULES.                                        |
-      | `--enable-wodrealms`   | See docs/REALMS.                                    |
+      | `--enable-realitylvls` | See `REALITY.md` and `REALITY.SETUP.md`.            |
+      | `--enable-stubslave`   | See `MODULES.md`.                                   |
+      | `--enable-wodrealms`   | See `docs/REALMS.md`.                               |
       | `--enable-inlinesql`   | Enables in-line MySQL support.                      |
       | `--enable-deprecated`  | Enables deprecated features.                        |
 
@@ -70,7 +70,7 @@ library or tool is missing.
 4. When starting from a TinyMUX from scratch, do the following:
 
       - cd to the game directory. `cd ../game`
-      - Make your configuration file, as described in `docs/CONFIGURATION`
+      - Make your configuration file, as described in `docs/CONFIGURATION.md`
       - Type `./Startmux`. TinyMUX 2.13 automatically creates a minimal DB
         if one does not exist in the `game/data` directory.
       - Log into the game as player wizard `connect wizard potrzebie` and

@@ -1,6 +1,8 @@
-TinyMUX 2.13: CREDITS
-Last Update: July 2012
-~~~~~~~~~~~~~~~~~~~~~~
+---
+author: Brazil
+date: March 2026
+title: CREDITS
+---
 
 TinyMUX 2.13 is maintained by Stephen Dennis (Brazil@BrazilMUX) and would not
 exist without the generous contributions of many individuals.  Ideas for
@@ -21,7 +23,7 @@ We would like to thank the following people:
 
 - Soruk from AuroraMUSH for his long time contributions toward making
   and keeping TinyMUX Linux compatible, as well as the sample config file
-  found in CONFIGURATION.
+  found in `CONFIGURATION.md`.
 
 - T. Alexander Popiel for help with conceptual issues in general and
   specifically with the parser.
@@ -52,22 +54,22 @@ We would like to thank the following people:
 - The large body of people who reported bugs or made useful suggestions
   along the way:
 
-     Aranor, Asia, Audumla, Barbarella@Pacifica, BEM, Carmilla@Pacifica,
-     Chimera@Umbral Shards, Corum, Dark City@Pacifica, D'ceit@Santo Domini,
-     Dreamscape@Pacifica, Dune@Pacifica, Emma@Pacifica, Evan@Pacifica,
-     Farscape@Pacifica, Father Jethis@Pacifica, Geoffrey Gerrietts,
-     Godzilla@Pacifica, Hackers@Pacifica, Highlander@Pacifica,
-     Hitchhiker's Guide@Pacifica, Ian@everywhere, Idoru@Pacifica,
-     Incubus@Santo Domini, Jake, Jarod@Pacifica,
-     Johnny Mnemonic@Pacfica, Judge Dredd@Pacifica, Lucifer, Lydia Leong,
-     Macross@Pacifica, McGuyver@Pacifica, Meglos@Myrka,
-     Mephistopheles@Santo Domini, Michael@Pacifica, Morgan, Myrddin,
-     Neuromancer@Pacifica, Orpheus@Pacifica, Rimnal@Myrka, Robert G. Fisher,
-     Robin@Pacifica, Sailor Moon@Pacifica, Seraphim@Tokyo By Night,
-     Sesha@Granite, Six@Pacifica, Sixth Sense@Pacifica, Snow Crash@Pacifica,
-     Soylent Green@Pacifica, Squeeky-Bobo, Trek@Pacifica,
-     Twelve Monkeys@Pacifica, Valkryn@Pacifica, Vass@Pacifica, Vurt@Pacifica,
-     Xandar.
+  Aranor, Asia, Audumla, Barbarella@Pacifica, BEM, Carmilla@Pacifica,
+  Chimera@Umbral Shards, Corum, Dark City@Pacifica, D'ceit@Santo Domini,
+  Dreamscape@Pacifica, Dune@Pacifica, Emma@Pacifica, Evan@Pacifica,
+  Farscape@Pacifica, Father Jethis@Pacifica, Geoffrey Gerrietts,
+  Godzilla@Pacifica, Hackers@Pacifica, Highlander@Pacifica,
+  Hitchhiker's Guide@Pacifica, Ian@everywhere, Idoru@Pacifica,
+  Incubus@Santo Domini, Jake, Jarod@Pacifica,
+  Johnny Mnemonic@Pacfica, Judge Dredd@Pacifica, Lucifer, Lydia Leong,
+  Macross@Pacifica, McGuyver@Pacifica, Meglos@Myrka,
+  Mephistopheles@Santo Domini, Michael@Pacifica, Morgan, Myrddin,
+  Neuromancer@Pacifica, Orpheus@Pacifica, Rimnal@Myrka, Robert G. Fisher,
+  Robin@Pacifica, Sailor Moon@Pacifica, Seraphim@Tokyo By Night,
+  Sesha@Granite, Six@Pacifica, Sixth Sense@Pacifica, Snow Crash@Pacifica,
+  Soylent Green@Pacifica, Squeeky-Bobo, Trek@Pacifica,
+  Twelve Monkeys@Pacifica, Valkryn@Pacifica, Vass@Pacifica, Vurt@Pacifica,
+  Xandar.
 
 - Many other people who may go unnamed.  Dozens of people have contributed to
   development of the TinyMUX family of servers, and we would like to thank

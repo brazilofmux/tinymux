@@ -1,0 +1,88 @@
+---
+author: Brazil
+date: March 2026
+title: PATCHES
+---
+
+# A Word About Patches for TinyMUX 2.13
+
+Changes are distributed in the form of patches, and these occur
+most-frequently during the Alpha and Beta periods of the server's
+development.  These "patch" files are applied to your server's source code
+using the `patch` utility.
+
+Keep yourself informed about changes to the server and pay particular
+attention to any serious bugs that may have been corrected by a patch.  The
+TinyMUX mailing list is the best way to do this.
+
+It is in the best interests of your game to make sure all patches are applied.
+Patches distributed after a server has reached released status typically
+contain important fixes for crashing, corrupting, unexpected, or potentially
+dangerous behaviors.  The likelihood of encountering these unwanted behaviors
+may be generally unlikely or perhaps only remotely possible for your specific
+game.  However, if a patch has been released, a determination has been made
+that it warrants the hassle of all games applying it, and once a behavior has
+been described, the unscrupulous may choose to exploit it on your game.  Also,
+patches must be applied in order, so even if a specific fix may not apply
+directly to your game, another fix in the same patch or in the next patch
+probably will.
+
+Let us state that while patching a vanilla server with a patch released by the
+development team is generally considered to be pretty easy, unless you have
+done it before and/or taken time to familiarize yourself with how the `patch`
+utility works (type `man patch` inside your shell account or read the
+documentation for `dopatch.exe` provided with Win32 versions), then we
+strongly advise having someone either walk you through the process or do the
+work for you.  Improper use of `patch` can cause all kinds of grief that you
+don't want to deal with.
+
+# Applying a Patch
+
+Before doing anything else, you should assure yourself that you have a recent
+and usable backup of the database.  Shut down the game and use the provided
+`Backup` script.  See `BACKUPS.md`.  In most cases, this is totally unneeded,
+but if something goes wrong and you didn't, you won't be real happy.
+
+1. Download the patch file to your local shell account somewhere.  The
+   location is not critical.
+
+   The patch file `mux-2.13.0.1-2.13.0.2.unix.patch.gz` will patch from
+   version 2.13.0.1 to version 2.13.0.2.  This patch file is compressed
+   using gzip.
+
+2. Optionally, you can decompress the patch files with `gzip -d` like so:
+
+       gzip -d mux-2.13.0.1-2.13.0.2.unix.patch.gz
+
+   This will change the filename to `mux-2.13.0.1-2.13.0.2.unix.patch`.
+
+3. Change to your game's top-most directory.  For example:
+
+       cd mux2.13
+
+4. Apply the patch as follows:
+
+       zcat < ../mux-2.13.0.1-2.13.0.2.unix.patch.gz | patch -p0
+
+   Or, if you optionally decompressed the patch as described in step 2,
+   apply the patch as follows:
+
+       patch -p0 < ../mux-2.13.0.1-2.13.0.2.unix.patch
+
+From here, you will usually get to watch a lot of output fly by as the
+`patch` utility modifies the files to be updated.  You might occasionally
+get a prompt, asking you for either information or confirmation that you
+really do want something applied.  For the inexperienced, this is where
+having an experienced person at hand to help you is invaluable.  If, at
+any point in the process, you feel that you are in over your head, stop
+and get help before continuing!
+
+After you have successfully patched the source code, then you recompile the
+server as usual.
+
+# If You Have Problems
+
+If the patch fails and you were applying it to a standard beta or release
+version of TinyMUX 2.13, then collect the error messages and report it to
+`brazilofmux@gmail.com` following the bug reporting procedures in
+`README.md`.
