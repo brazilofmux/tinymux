@@ -16,23 +16,27 @@ libraries. Install them before running `./configure`.
 
 **Debian / Ubuntu:**
 ```
-sudo apt install build-essential libssl-dev libpcre2-dev pkg-config
+sudo apt install build-essential libssl-dev libpcre2-dev pkg-config sqlite3
 ```
 
 **Fedora / RHEL / Rocky:**
 ```
-sudo dnf install gcc-c++ openssl-devel pcre2-devel pkgconf-pkg-config make
+sudo dnf install gcc-c++ openssl-devel pcre2-devel pkgconf-pkg-config make sqlite
 ```
 
 **FreeBSD:**
 ```
-pkg install gmake pcre2 openssl pkgconf
+pkg install gmake pcre2 openssl pkgconf sqlite3
 ```
 
 **macOS (Homebrew):**
 ```
-brew install openssl pcre2 pkg-config
+brew install openssl pcre2 pkg-config sqlite3
 ```
+
+The `sqlite3` CLI is used by the `Backup` script and is useful for
+inspecting the database. The SQLite library itself is bundled with
+TinyMUX and does not need to be installed separately.
 
 If `./configure` fails, the error message will usually indicate which
 library or tool is missing.
@@ -51,7 +55,6 @@ library or tool is missing.
 
       |                        |                                                     |
       |------------------------|-----------------------------------------------------|
-      | `--enable-memorybased` | See docs/MEMORY.                                    |
       | `--enable-realitylvls` | See REALITY and REALITY.SETUP.                      |
       | `--enable-stubslave`   | See MODULES.                                        |
       | `--enable-wodrealms`   | See docs/REALMS.                                    |
@@ -83,37 +86,29 @@ library or tool is missing.
     joined to `Public` with alias `pub`, guests will automatically join
     `Guests` with alias `g`.
 
-# Changes to dbconvert:
+# Database Tools:
 
- - `dbconvert` is the means by which the binary game data is converted to
-   flatfile format and back again. The `db_load` and `db_unload` scripts
-   simplify the process for the user.
+ - `dbconvert` imports flatfiles into the SQLite database and exports
+   them back out. The `db_load` and `db_unload` scripts in `game/data`
+   simplify the process.
 
- - The syntax of the `db_load` script is:
-
-```
-       ./db_load netmux netmux.flat netmux.db
-```
-
- - This converts a flatfile database to binary for use by the server
-   and would be done with `dbconvert` thus:
+ - To import a flatfile into SQLite:
 
 ```
-       ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
+       ./db_load netmux netmux.flat
+       ./db_load netmux netmux.flat -C comsys.db -m mail.db
 ```
 
- - The syntax of the `db_unload` script is:
+ - To export a flatfile from SQLite:
 
 ```
-       ./db_unload netmux netmux.db.new netmux.flat
+       ./db_unload netmux netmux.flat
+       ./db_unload netmux netmux.flat -C comsys.db -m mail.db
 ```
 
- - This converts binary data to flatfile for would be done with
-   `dbconvert` thus:
-
-```
-       ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
-```
+ - The `-C` and `-m` flags are optional and handle comsys and mail
+   flatfiles respectively. If omitted, comsys and mail data remain
+   in SQLite only.
 
 # Instructions for Existing Games:
 
@@ -127,11 +122,7 @@ upgrade.
 1. `cd src/` to the source directory. Run `./configure`.
 
     This will customize `autoconf.h` and `Makefile` for your system.
-    Add `--enable-wodrealms` to enable WOD Realms (See docs/REALMS).
-    Add `--enable-memorybased` to enable Memory-Based database handling
-    (as opposed to the default disk-based database handling. See
-    `docs/MEMORY`). See the new installation instructions above for the
-    full list of configure options.
+    See the new installation instructions above for configure options.
 
 2. Run `make`. This will produce `netmux`, `slave`, and other executables.
 
@@ -140,12 +131,13 @@ upgrade.
 
 4. Place/change your files.
 
-    - Put databases in `game/data`.
-
     - Put text files in `game/text`.
 
-    - The scripts `db_load`, `db_unload`, and `db_check` may be found in the
-      `game/data` directory.
+    - If upgrading from a flatfile-based version, use `db_load` in the
+      `game/data` directory to import your flatfile into SQLite:
+
+          cd game/data
+          ./db_load netmux netmux.flat -C comsys.db -m mail.db
 
     - If you changed the `GAMENAME` in `mux.config`, be sure to change the
       filenames in `GAMENAME.conf` as well.
