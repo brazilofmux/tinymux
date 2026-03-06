@@ -249,14 +249,6 @@ const unsigned char utf8_FirstByte[256] =
     4, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6 // F
 };
 
-const int g_trimoffset[4][4] =
-{
-    {0, 1, 1, 1},
-    {1, 0, 2, 2},
-    {2, 1, 0, 3},
-    {3, 2, 1, 0}
-};
-
 #define UTF8_CONTINUE  5
 
 static inline unsigned int utf8_decode_raw_local(const UTF8 *p, size_t n)

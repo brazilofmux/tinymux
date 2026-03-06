@@ -794,14 +794,6 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString)
     return true;
 }
 
-const int g_trimoffset[4][4] =
-{
-    { 0, 1, 1, 1 },
-    { 1, 0, 2, 2 },
-    { 2, 1, 0, 3 },
-    { 3, 2, 1, 0 }
-};
-
 /*! \brief Convert UTF8 to ASCII with '?' for all unsupported characters.
  *
  * \param pString   UTF8 string.

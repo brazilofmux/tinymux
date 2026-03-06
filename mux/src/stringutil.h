@@ -113,7 +113,6 @@ inline bool utf8_is_valid_scalar(UTF32 cp, size_t n)
 // This function trims the string back to the first valid UTF-8 sequence it
 // finds, but it does not validate the entire string.
 //
-extern const int g_trimoffset[4][4];
 inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 {
     while (0 < n)
