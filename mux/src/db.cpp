@@ -1156,7 +1156,7 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
             }
             else
             {
-                while (m--)
+                for (size_t j = 0; j < m; j++)
                 {
                     *p++ = *q++;
                 }
@@ -1274,7 +1274,7 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
             }
             else
             {
-                while (m--)
+                for (size_t j = 0; j < m; j++)
                 {
                     *p++ = *q++;
                 }
