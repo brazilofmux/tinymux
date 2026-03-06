@@ -4951,7 +4951,12 @@ size_t TruncateToBuffer
               && COLOR_NOTCOLOR != (iCode = mux_color(p)))
         {
             csCurrent = UpdateColorState(csCurrent, iCode);
-            p += utf8_FirstByte[p[0]];
+            size_t nAdvance = utf8_advance_nul(p);
+            if (0 == nAdvance)
+            {
+                break;
+            }
+            p += nAdvance;
         }
 
         // Parse a run of text.  A run of text is always ended by '\0' and
@@ -5012,7 +5017,12 @@ size_t TruncateToBuffer
             const UTF8 *pTransition = ColorTransitionBinary(csLast, csCurrent, &nTransition);
             pNormal = ColorBinaryNormal(csCurrent, &nNormal);
 
-            if (nOutput + nTransition + utf8_FirstByte[pTextRun[0]] + nNormal <= nBuffer)
+            size_t nMinChar = utf8_advance_nul(pTextRun);
+            if (0 == nMinChar)
+            {
+                nMinChar = 1;
+            }
+            if (nOutput + nTransition + nMinChar + nNormal <= nBuffer)
             {
                 // Lay down the initial color transition.
                 //
