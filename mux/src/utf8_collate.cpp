@@ -239,6 +239,14 @@ static UTF32 utf8_decode_collate(const UTF8 *p, const UTF8 *pEnd)
            | ((p[2] & 0x3F) << 6)
            |  (p[3] & 0x3F);
     }
+    if (  (2 == n && cp < 0x80)
+       || (3 == n && cp < 0x800)
+       || (4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        return UNI_EOF;
+    }
     return cp;
 }
 

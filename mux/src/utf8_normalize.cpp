@@ -88,6 +88,15 @@ static UTF32 utf8_Decode(const UTF8 **pp, const UTF8 *pEnd)
         cp = UNI_EOF;
         break;
     }
+    if (  (2 == n && cp < 0x80)
+       || (3 == n && cp < 0x800)
+       || (4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        (*pp)++;
+        return UNI_EOF;
+    }
     *pp = p + n;
     return cp;
 }

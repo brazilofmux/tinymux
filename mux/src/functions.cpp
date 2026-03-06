@@ -2617,7 +2617,26 @@ static FUNCTION(fun_v)
     UTF8 *tbuf = fargs[0];
     if (mux_isattrnameinitial(tbuf))
     {
-        if ('\0' != *utf8_NextCodePoint(tbuf))
+        size_t nAdvance = utf8_FirstByte[static_cast<unsigned char>(*tbuf)];
+        if (nAdvance >= UTF8_CONTINUE)
+        {
+            nAdvance = UTF8_SIZE1;
+        }
+        bool bValid = true;
+        for (size_t i = 1; i < nAdvance; i++)
+        {
+            if ('\0' == tbuf[i] || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(tbuf[i])])
+            {
+                bValid = false;
+                break;
+            }
+        }
+        if (!bValid)
+        {
+            nAdvance = UTF8_SIZE1;
+        }
+
+        if ('\0' != tbuf[nAdvance])
         {
             // Fetch an attribute from me. First see if it exists,
             // returning a null string if it does not.

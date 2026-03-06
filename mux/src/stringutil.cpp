@@ -4227,16 +4227,23 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     }
     else if (2 == t)
     {
-        if (UTF8_CONTINUE != utf8_FirstByte[pString[1]])
+        if (  '\0' == pString[1]
+           || UTF8_CONTINUE != utf8_FirstByte[pString[1]])
         {
             return UNI_EOF;
         }
         ch =  ((UTF32)(pString[0] & 0x1F) <<  6)
            |  ((UTF32)(pString[1] & 0x3F)      );
+        if (ch < 0x80)
+        {
+            return UNI_EOF;
+        }
     }
     else if (3 == t)
     {
-        if (  UTF8_CONTINUE != utf8_FirstByte[pString[1]]
+        if (  '\0' == pString[1]
+           || '\0' == pString[2]
+           || UTF8_CONTINUE != utf8_FirstByte[pString[1]]
            || UTF8_CONTINUE != utf8_FirstByte[pString[2]])
         {
             return UNI_EOF;
@@ -4244,10 +4251,17 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         ch = ((UTF32)(pString[0] & 0x1F) << 12)
            | ((UTF32)(pString[1] & 0x3F) <<  6)
            | ((UTF32)(pString[2] & 0x3F)      );
+        if (ch < 0x800)
+        {
+            return UNI_EOF;
+        }
     }
     else if (4 == t)
     {
-        if (  UTF8_CONTINUE != utf8_FirstByte[pString[1]]
+        if (  '\0' == pString[1]
+           || '\0' == pString[2]
+           || '\0' == pString[3]
+           || UTF8_CONTINUE != utf8_FirstByte[pString[1]]
            || UTF8_CONTINUE != utf8_FirstByte[pString[2]]
            || UTF8_CONTINUE != utf8_FirstByte[pString[3]])
         {
@@ -4257,6 +4271,10 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
            | ((UTF32)(pString[1] & 0x3F) << 12)
            | ((UTF32)(pString[2] & 0x3F) <<  6)
            | ((UTF32)(pString[3] & 0x3F)      );
+        if (ch < 0x10000)
+        {
+            return UNI_EOF;
+        }
     }
     else
     {
