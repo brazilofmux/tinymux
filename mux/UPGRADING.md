@@ -141,8 +141,8 @@ The following parameters still work but have changed behavior:
 | `output_database` | Used only for `@dump/flatfile` exports |
 | `crash_database` | Used only for panic dumps |
 | `fork_dump` | Affects `@dump/flatfile` only; periodic saves (WAL checkpoints) never fork |
-| `comsys_database` | Used during dbconvert import/export; normal operation stores data in SQLite |
-| `mail_database` | Used during dbconvert import/export; normal operation stores data in SQLite |
+| `comsys_database` | Flatfile fallback path; server reads this on first start if SQLite has no channel data |
+| `mail_database` | Flatfile fallback path; server reads this on first start if SQLite has no @mail data |
 
 If your old conf set `input_database` to a custom name, the same name will
 carry over -- SQLite simply derives `GAMENAME.sqlite` from it.
@@ -154,7 +154,14 @@ review.  No parameters have been removed from this file.
 
 ## Step 5 -- Import into SQLite
 
-Place the three old files in the new `game/data` directory, then import:
+There are two ways to get your data into SQLite.  The recommended approach
+uses `db_load` before starting the game.  An alternative lets the server
+do it automatically on first start.
+
+### Option A -- Explicit Import (Recommended)
+
+Place the three old files in the new `game/data` directory, then import
+everything in one shot:
 
 ```
 cd game/data
@@ -162,18 +169,33 @@ cd game/data
 ```
 
 This creates `netmux.sqlite` containing all game objects, attributes,
-channels, and @mail.
+channels, and @mail.  Fewer moving parts, and you can verify the result
+before the game ever starts.
 
-The `-C` and `-m` flags handle comsys and mail respectively.  If you only
-have the main flatfile, you can omit them:
+After a successful import, move the old files out of the way so the server
+does not re-read them:
 
 ```
-./db_load netmux netmux.db.flat
+mkdir -p migrated
+mv netmux.db.flat comsys.db mail.db migrated/
 ```
 
-Channel and mail data will then need to be loaded from the running game's
-flatfiles on first startup (the server falls back to reading `comsys.db`
-and `mail.db` if they exist in `data/`).
+### Option B -- Drop and Start
+
+If you prefer, just copy `netmux.db`, `comsys.db`, and `mail.db` into the
+new `game/data` directory and start the game.  On first startup, the server
+will:
+
+1. Find no `netmux.sqlite` (or an empty one) and load `netmux.db` into it.
+2. Find no channel data in SQLite and fall back to reading `comsys.db`.
+3. Find no @mail data in SQLite and fall back to reading `mail.db`.
+
+From that point on, all data lives in SQLite and the old flatfiles are
+ignored.  You should still move them out of the way afterward to avoid
+confusion.
+
+Note that `netmux.db` here is the binary flatfile (not `netmux.db.flat`).
+If you only have an exported `.flat` file, use Option A.
 
 ## Step 6 -- Verify the Import
 
@@ -232,9 +254,9 @@ a few changes:
     file imports zero objects silently.
 
 **Channels or mail missing after startup**
-:   If you omitted `-C` or `-m` during import, ensure `comsys.db` and
-    `mail.db` are present in `data/` -- the server will load them as a
-    fallback on first startup.
+:   If you used Option A without `-C` or `-m`, the server will look for
+    `comsys.db` and `mail.db` in `data/` as a fallback on first startup.
+    Make sure those files are present if they weren't part of the import.
 
 **"make install" was skipped**
 :   The game will fail to start because `game/bin/netmux` won't exist.
