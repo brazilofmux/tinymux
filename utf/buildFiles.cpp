@@ -1327,24 +1327,50 @@ void UniData::SaveWidths()
         return;
     }
 
+    static const int eaw_table[] =
+    {
+        0, // WIDTH_TYPE_NONE
+        1, // WIDTH_TYPE_NEUTRAL
+        1, // WIDTH_TYPE_AMBIGUOUS
+        1, // WIDTH_TYPE_HALFWIDTH
+        2, // WIDTH_TYPE_WIDE
+        2, // WIDTH_TYPE_FULLWIDTH
+        1, // WIDTH_TYPE_NARROW
+    };
+
     for (UTF32 pt = 0; pt <= codepoints; pt++)
     {
-        static const int table[] =
-        {
-            0, // WIDTH_TYPE_NONE
-            1, // WIDTH_TYPE_NEUTRAL
-            1, // WIDTH_TYPE_AMBIGUOUS
-            1, // WIDTH_TYPE_HALFWIDTH
-            2, // WIDTH_TYPE_WIDE
-            2, // WIDTH_TYPE_FULLWIDTH
-            1, // WIDTH_TYPE_NARROW
-        };
-
         int wt;
-        if (cp[pt].GetWidthType(&wt))
+        if (!cp[pt].GetWidthType(&wt))
         {
-            fprintf(fp, "%04X;%u;%s\n", static_cast<unsigned int>(pt), table[wt], cp[pt].GetDescription());
+            continue;
         }
+
+        int width;
+        int cat = cp[pt].GetCategory();
+
+        // Nonspacing marks (Mn) and enclosing marks (Me) do not advance
+        // the cursor and have zero display width.
+        //
+        if (  (cat == (CATEGORY_MARK | SUBCATEGORY_NONSPACING))
+           || (cat == (CATEGORY_MARK | SUBCATEGORY_SPACING_ENCLOSING)))
+        {
+            width = 0;
+        }
+
+        // Format characters (Cf) are invisible: zero-width joiners,
+        // directional marks, word joiners, etc.
+        //
+        else if (cat == (CATEGORY_OTHER | SUBCATEGORY_FORMAT))
+        {
+            width = 0;
+        }
+        else
+        {
+            width = eaw_table[wt];
+        }
+
+        fprintf(fp, "%04X;%u;%s\n", static_cast<unsigned int>(pt), width, cp[pt].GetDescription());
     }
     fclose(fp);
 }

@@ -47,6 +47,13 @@ private:
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
 
+typedef struct
+{
+    size_t n_bytes;
+    size_t n_points;
+    const UTF8 *p;
+} string_desc;
+
 #include "utf8tables.h"
 #include "stringutil.h"
 

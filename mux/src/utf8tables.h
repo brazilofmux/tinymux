@@ -6,14 +6,6 @@
 #ifndef UTF8TABLES_H
 #define UTF8TABLES_H
 
-typedef struct
-{
-    size_t n_bytes;
-    size_t n_points;
-    const UTF8 *p;
-} string_desc;
-
-
 // utf/cl_Printable.txt
 //
 // 155134 included, 958978 excluded, 0 errors.
@@ -182,13 +174,13 @@ extern const unsigned short tr_latin2_sbt[3460];
 // utf/tr_widths.txt
 //
 // 355061 code points.
-// 340 states, 89 columns, 10934 bytes
+// 373 states, 94 columns, 12416 bytes
 //
 #define TR_WIDTHS_START_STATE (0)
-#define TR_WIDTHS_ACCEPTING_STATES_START (340)
+#define TR_WIDTHS_ACCEPTING_STATES_START (373)
 extern const unsigned char tr_widths_itt[256];
-extern const unsigned short tr_widths_sot[340];
-extern const unsigned short tr_widths_sbt[4999];
+extern const unsigned short tr_widths_sot[373];
+extern const unsigned short tr_widths_sbt[5707];
 
 // utf/tr_tolower.txt
 //
@@ -208,35 +200,35 @@ extern const string_desc tr_tolower_ott[144];
 
 // utf/tr_toupper.txt
 //
-// 1476 code points.
-// 67 states, 90 columns, 2206 bytes
+// 1477 code points.
+// 67 states, 90 columns, 2210 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
 #define TR_TOUPPER_ACCEPTING_STATES_START (67)
 extern const unsigned char tr_toupper_itt[256];
 extern const unsigned short tr_toupper_sot[67];
-extern const unsigned char tr_toupper_sbt[1816];
+extern const unsigned char tr_toupper_sbt[1820];
 
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
 #define TR_TOUPPER_XOR_START (33)
-extern const string_desc tr_toupper_ott[157];
+extern const string_desc tr_toupper_ott[158];
 
 // utf/tr_totitle.txt
 //
-// 1480 code points.
-// 67 states, 90 columns, 2207 bytes
+// 1481 code points.
+// 67 states, 90 columns, 2211 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
 #define TR_TOTITLE_ACCEPTING_STATES_START (67)
 extern const unsigned char tr_totitle_itt[256];
 extern const unsigned short tr_totitle_sot[67];
-extern const unsigned char tr_totitle_sbt[1817];
+extern const unsigned char tr_totitle_sbt[1821];
 
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
 #define TR_TOTITLE_XOR_START (33)
-extern const string_desc tr_totitle_ott[155];
+extern const string_desc tr_totitle_ott[156];
 
 // utf/tr_foldmatch.txt
 //
@@ -306,13 +298,13 @@ extern const string_desc tr_nfd_ott[2045];
 // utf/tr_compose.txt
 //
 // 964 composition pairs.
-// 1010 states, 141 columns, 19004 bytes
+// 129 states, 112 columns, 7592 bytes
 //
 #define TR_NFC_COMPOSE_START_STATE (0)
-#define TR_NFC_COMPOSE_ACCEPTING_STATES_START (1010)
+#define TR_NFC_COMPOSE_ACCEPTING_STATES_START (129)
 extern const unsigned char tr_nfc_compose_itt[256];
-extern const unsigned short tr_nfc_compose_sot[1010];
-extern const unsigned short tr_nfc_compose_sbt[8364];
+extern const unsigned short tr_nfc_compose_sot[129];
+extern const unsigned short tr_nfc_compose_sbt[3539];
 #define TR_NFC_COMPOSE_NFC_COMPOSE_RESULTS (964)
 extern const UTF32 tr_nfc_compose_nfc_compose_result[965];
 
@@ -352,15 +344,15 @@ extern const unsigned short tr_ducet_sbt[43141];
 // utf/tr_ducet_contract.txt
 //
 // 956 composition pairs.
-// 294 states, 77 columns, 6470 bytes
+// 27 states, 64 columns, 3238 bytes
 //
 #define TR_DUCET_CONTRACT_START_STATE (0)
-#define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (294)
+#define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (27)
 extern const unsigned char tr_ducet_contract_itt[256];
-extern const unsigned short tr_ducet_contract_sot[294];
-extern const unsigned short tr_ducet_contract_sbt[2813];
+extern const unsigned short tr_ducet_contract_sot[27];
+extern const unsigned short tr_ducet_contract_sbt[1464];
 #define TR_DUCET_CONTRACT_NFC_COMPOSE_RESULTS (953)
 extern const UTF32 tr_ducet_contract_nfc_compose_result[954];
 
-#endif // UTF8TABLES_H
 
+#endif // UTF8TABLES_H
