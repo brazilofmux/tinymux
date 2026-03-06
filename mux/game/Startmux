@@ -9,9 +9,9 @@ PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
 #	Make sure there isn't already a MUX running.
 #
 if [ -r "$PIDFILE" ]; then
-    oldpid=`cat $PIDFILE`
+    oldpid=$(cat $PIDFILE)
     if [ "$oldpid" -gt 1 ]; then
-        nmux=`ps | grep $oldpid | grep netmux | wc -l`
+        nmux=$(ps | grep $oldpid | grep netmux | wc -l)
         if [ "$nmux" -gt 0 ]; then
             echo "The MUX already seems to be running."
             exit 0
@@ -19,41 +19,16 @@ if [ -r "$PIDFILE" ]; then
     fi
 fi
 #
-#	Save a copy of the previous input database.
-#
-if [ -r $DATA/$INPUT_DB ]; then
-	mv -f $DATA/$INPUT_DB $DATA/$SAVE_DB
-fi
-#
-#	If we have a good checkpoint database, make it the input database.
-#	If not, use the backup of the input database.
-#
-if [ -r $DATA/$NEW_DB ]; then
-	mv $DATA/$NEW_DB $DATA/$INPUT_DB
-elif [ -r $DATA/$SAVE_DB ]; then
-	cp $DATA/$SAVE_DB $DATA/$INPUT_DB
-fi
-#
 #	Remove the restart db if there is one.
 #
 if [ -r restart.db ]; then
 	rm restart.db
 fi
-
-#
-#	Refuse to start if CRASH databases are present.
-#
-if [ -r $DATA/$INPUT_DB.CRASH ]; then
-	echo "There is a CRASH database present." 
-	echo "You should salvage what you can before continuing."
-	exit 1
-fi
-
 #
 #       Check if the log directory is defined and is valid. If not, use
 #       the current directory.
 #
-if [ -z "$LOGDIR" -o ! -d "$LOGDIR" -o ! -x "$LOGDIR" ]; then 
+if [ -z "$LOGDIR" -o ! -d "$LOGDIR" -o ! -x "$LOGDIR" ]; then
     if [ ! -z "$LOGDIR" ]; then
 	echo "Log directory '$LOGDIR' is invalid, using game directory."
     fi
@@ -71,13 +46,4 @@ export LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$BIN
 export DYLD_LIBRARY_PATH
 
-# AIX
-LIBPATH=$BIN
-export LIBPATH
-
-# HP-UX
-SHLIB_PATH=$BIN
-export SHLIB_PATH
-
 (nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
-

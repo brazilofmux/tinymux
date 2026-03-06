@@ -1,34 +1,28 @@
 #!/bin/sh
 #
+#   Export a MUX flatfile from the SQLite database.
+#
+#   Usage: db_unload <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]
+#
+#   Example: db_unload netmux netmux.flat
+#            db_unload netmux netmux.flat -C comsys.db -m mail.db
+#
+#   Note: The server should not be running during export.
+#
 
 BIN=../bin
 
-# Linux/Solaris
-LD_LIBRARY_PATH=$BIN
-export LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
 
-# Mac OS X / NeXTStep / Mach
-DYLD_LIBRARY_PATH=$BIN
-export DYLD_LIBRARY_PATH
-
-# AIX
-LIBPATH=$BIN
-export LIBPATH
-
-# HP-UX
-SHLIB_PATH=$BIN
-export SHLIB_PATH
-
-PATH=/bin:/usr/bin:
-#
-#	Unload a MUX V3 flatfile from MUX V3 database.
-#
-echo NOTE: Make sure the MUX is NOT running before you make a flatfile. 
 case $# in
-	3)	../bin/netmux -d$1 -u -i$2 -o$3 ;;
-	*)	echo Usage: $0 'basename structfile flatfile';
-                echo i.e., $0 netmux netmux.db.new netmux.flat;
-                exit 1 ;;
+    2)  $BIN/netmux -d$1 -u -o$2 ;;
+    4)  $BIN/netmux -d$1 -u -o$2 $3 $4 ;;
+    6)  $BIN/netmux -d$1 -u -o$2 $3 $4 $5 $6 ;;
+    *)  echo "Usage: $0 <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]"
+        echo "  e.g. $0 netmux netmux.flat"
+        echo "       $0 netmux netmux.flat -C comsys.db -m mail.db"
+        exit 1 ;;
 esac
 
 exit 0

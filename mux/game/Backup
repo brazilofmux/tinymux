@@ -1,65 +1,31 @@
 #!/bin/sh
 #
-# Standard MUSH backup script modified by bem@erisian.net to work with MUX
+#   Backup - Create a timestamped backup of the SQLite database.
+#
+#   Safe to run while the server is live. Uses SQLite's .backup
+#   command which handles WAL correctly.
 #
 PATH=/bin:/usr/bin:/usr/local/bin:.; export PATH
 #
 . mux.config
 #
-# You'll want to use gzip if you have it. If you want really good
-# compression, try 'gzip --best'. If you don't have gzip, use 'compress'.
-ZIP=gzip
-#
-DBDATE=`date +%m%d-%H%M`
-#
-# files to tar up
-TEXT_FILES="$TEXT/badsite.txt $TEXT/connect.txt $TEXT/create_reg.txt $TEXT/down.txt $TEXT/full.txt $TEXT/guest.txt $TEXT/motd.txt $TEXT/news.txt $TEXT/newuser.txt $TEXT/plushelp.txt $TEXT/quit.txt $TEXT/register.txt $TEXT/wizmotd.txt $TEXT/wiznews.txt $TEXT/staffhelp.txt"
+DBDATE=$(date +%m%d-%H%M)
+SQLITE_DB=$DATA/$GAMENAME.sqlite
+BACKUP_DB=$DATA/$GAMENAME.$DBDATE.sqlite
 
-CONFIG_FILES="mux.config $GAMENAME.conf"
-
-GAME_DB=$DATA/$GAMENAME.FLAT
-
-if [ -r $DATA/comsys.db ]; then
-    COMM_DB=$DATA/comsys.db
+if [ ! -r "$SQLITE_DB" ]; then
+    echo "No database found at $SQLITE_DB"
+    exit 1
 fi
 
-if [ -r $DATA/mail.db ]; then
-    MAIL_DB=$DATA/mail.db
-fi
+echo "Backing up $SQLITE_DB to $BACKUP_DB..."
+sqlite3 "$SQLITE_DB" ".backup '$BACKUP_DB'"
 
-if [ -r $DATA/$NEW_DB ]; then
-    RECENT_DB=$DATA/$NEW_DB
+if [ -r "$BACKUP_DB" ]; then
+    # Optionally compress the backup
+    gzip -9 "$BACKUP_DB"
+    echo "Backup complete: ${BACKUP_DB}.gz"
 else
-    if [ -r $DATA/$INPUT_DB ]; then
-        echo "No recent checkpoint db. Using older db."
-        RECENT_DB=$DATA/$INPUT_DB
-    else
-        if [ -r $DATA/$SAVE_DB ]; then
-            echo "No input db. Using backup db."
-            RECENT_DB=$DATA/$SAVE_DB
-        else
-            echo "No dbs. Backup attempt failed."
-	    exit
-        fi
-    fi
+    echo "Backup failed."
+    exit 1
 fi
-
-VERSION_LINE=`head -n 1 $RECENT_DB`
-if [ $VERSION_LINE = "+X996100" ]; then
-    cp $RECENT_DB $GAME_DB
-else
-    if [ $VERSION_LINE = "+X1031940" ]; then
-        LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
-        DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
-        LIBPATH=$BIN; export LIBPATH
-        SHLIB_PATH=$BIN; export SHLIB_PATH
-
-        $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$RECENT_DB -o$GAME_DB
-    else
-        echo "Unrecognized header in $RECENT_DB."
-        exit
-    fi
-fi
-
-tar cf - $GAME_DB $COMM_DB $MAIL_DB $CONFIG_FILES $TEXT_FILES | $ZIP -c > $GAMENAME.$DBDATE.tar.gz
-rm $GAME_DB

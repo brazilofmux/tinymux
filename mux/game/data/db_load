@@ -1,33 +1,26 @@
 #!/bin/sh
 #
+#   Load a MUX flatfile into the SQLite database.
+#
+#   Usage: db_load <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]
+#
+#   Example: db_load netmux netmux.flat
+#            db_load netmux netmux.flat -C comsys.db -m mail.db
+#
 
 BIN=../bin
 
-# Linux/Solaris
-LD_LIBRARY_PATH=$BIN
-export LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
 
-# Mac OS X / NeXTStep / Mach
-DYLD_LIBRARY_PATH=$BIN
-export DYLD_LIBRARY_PATH
-
-# AIX
-LIBPATH=$BIN
-export LIBPATH
-
-# HP-UX
-SHLIB_PATH=$BIN
-export SHLIB_PATH
-
-PATH=/bin:/usr/bin:
-#
-#	Load MUX V2 or V3 flatfile into MUX V3 database.
-#
 case $# in
-	3)	../bin/netmux -d$1 -l -i$2 -o$3 ;;
-	*)	echo Usage: $0 'basename flatfile structfile';
-                echo i.e., $0 netmux netmux.flat netmux.db;
-                exit 1 ;;
+    2)  $BIN/netmux -d$1 -l -i$2 ;;
+    4)  $BIN/netmux -d$1 -l -i$2 $3 $4 ;;
+    6)  $BIN/netmux -d$1 -l -i$2 $3 $4 $5 $6 ;;
+    *)  echo "Usage: $0 <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]"
+        echo "  e.g. $0 netmux netmux.flat"
+        echo "       $0 netmux netmux.flat -C comsys.db -m mail.db"
+        exit 1 ;;
 esac
 
 exit 0

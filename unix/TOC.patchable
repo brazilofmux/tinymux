@@ -56,7 +56,6 @@ game/Backup
 game/Startmux
 game/alias.conf
 game/compat.conf
-game/_backupflat.sh
 game/data/db_check
 game/data/db_load
 game/data/db_unload
