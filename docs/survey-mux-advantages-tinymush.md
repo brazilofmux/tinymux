@@ -44,9 +44,11 @@ performance degradation. select() is O(n) in file descriptors.
 ### 4. @restart — Connection Preservation
 
 Both TinyMUSH and MUX preserve player connections across restart.
-TinyMUSH uses `dump_restart_db()` / `load_restart_db()` to serialize
-and restore descriptor state. MUX's GANL approach detaches fds from
-the I/O multiplexer and adopts them in the new process.
+The mechanism is the same: serialize descriptor state to a restart
+file (`restart.db`), `exec()` the new binary, reload descriptors on
+startup. MUX has an extra step — GANL deregisters fds from
+epoll/kqueue before the exec — but this is an implementation detail,
+not a different approach.
 
 **Impact:** Parity — both servers handle this well.
 

@@ -48,13 +48,12 @@ every iteration.
 
 ### 3. @restart / @reboot — Connection Preservation
 
-Both Rhost and MUX preserve player connections across reboot. Rhost
-dumps descriptor state to `reboot.db` and exec()s the new binary,
-reloading on startup. MUX's GANL approach detaches fds from the I/O
-multiplexer and adopts them in the new process.
-
-The mechanisms differ but the user-visible result is the same: no
-disconnect on reboot.
+Both Rhost and MUX preserve player connections across reboot. The
+mechanism is the same: serialize descriptor state to a restart file
+(`restart.db` / `reboot.db`), `exec()` the new binary, reload
+descriptors on startup. MUX has an extra step — GANL deregisters fds
+from epoll/kqueue before the exec — but this is an implementation
+detail, not a different approach.
 
 **Impact:** Parity — both servers handle this well.
 

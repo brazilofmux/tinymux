@@ -40,14 +40,12 @@ using the optimal engine on each platform.
 
 ### 3. @restart / @shutdown/reboot — Connection Preservation
 
-Both Penn and MUX preserve player connections across reboot. Penn dumps
-descriptor state to `reboot.db` and exec()s the new binary, reloading
-on startup. MUX's GANL approach detaches fds from the I/O multiplexer
-and adopts them in the new process.
-
-The mechanisms differ (Penn: file-based descriptor serialization; MUX:
-fd inheritance via cleared FD_CLOEXEC + GANL adoptConnection) but the
-user-visible result is the same: no disconnect on reboot.
+Both Penn and MUX preserve player connections across reboot. The
+mechanism is the same: serialize descriptor state to a restart file
+(`restart.db` / `reboot.db`), `exec()` the new binary, reload
+descriptors on startup. MUX has an extra step — GANL deregisters fds
+from epoll/kqueue before the exec — but this is an implementation
+detail, not a different approach.
 
 **Impact:** Parity — both servers handle this well.
 
