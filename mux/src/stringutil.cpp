@@ -447,6 +447,29 @@ const unsigned char utf8_FirstByte[256] =
     4,  4,  4,  4,  4,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6   // F
 };
 
+// Advance within a NUL-terminated UTF-8 string without stepping past '\0'.
+// Invalid lead bytes are treated as single-byte units.
+static size_t utf8_advance_nul(const UTF8 *p)
+{
+    if (nullptr == p || '\0' == *p)
+    {
+        return 0;
+    }
+
+    size_t n = utf8_FirstByte[static_cast<unsigned char>(*p)];
+    if (n >= UTF8_CONTINUE)
+    {
+        n = UTF8_SIZE1;
+    }
+
+    size_t nAvail = 0;
+    while (nAvail < n && '\0' != p[nAvail])
+    {
+        nAvail++;
+    }
+    return (0 < nAvail) ? nAvail : UTF8_SIZE1;
+}
+
 // The following table maps cp437 characters to their corresponding
 // UTF8 sequences.
 //
@@ -789,7 +812,7 @@ const UTF8 *ConvertToAscii(const UTF8 *pString)
             }
         } while (iState < TR_ASCII_ACCEPTING_STATES_START);
         *q++ = static_cast<char>(iState - TR_ASCII_ACCEPTING_STATES_START);
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *q = '\0';
     return buffer;
@@ -853,7 +876,7 @@ const UTF8 *ConvertToCp437(const UTF8 *pString)
             }
         } while (iState < TR_CP437_ACCEPTING_STATES_START);
         *q++ = static_cast<char>(iState - TR_CP437_ACCEPTING_STATES_START);
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *q = '\0';
     return buffer;
@@ -917,7 +940,7 @@ const UTF8 *ConvertToLatin1(const UTF8 *pString)
             }
         } while (iState < TR_LATIN1_ACCEPTING_STATES_START);
         *q++ = static_cast<char>(iState - TR_LATIN1_ACCEPTING_STATES_START);
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *q = '\0';
     return buffer;
@@ -981,7 +1004,7 @@ const UTF8 *ConvertToLatin2(const UTF8 *pString)
             }
         } while (iState < TR_LATIN2_ACCEPTING_STATES_START);
         *q++ = static_cast<char>(iState - TR_LATIN2_ACCEPTING_STATES_START);
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *q = '\0';
     return buffer;
@@ -3225,7 +3248,7 @@ UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
             utf8_safe_chr(pString, aBuffer, &pBuffer);
             nPoints++;
         }
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *pBuffer = '\0';
     if (nullptr != pnBytes)

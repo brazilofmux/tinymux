@@ -6774,9 +6774,18 @@ static FUNCTION(fun_citer)
 
         // Extract one UTF-8 code point into a small buffer.
         //
-        UTF8 *pNext = utf8_NextCodePoint(cp);
+        size_t nAdvance = utf8_FirstByte[static_cast<unsigned char>(*cp)];
+        if (nAdvance >= UTF8_CONTINUE)
+        {
+            nAdvance = UTF8_SIZE1;
+        }
+        size_t nLen = 0;
+        while (nLen < nAdvance && '\0' != cp[nLen])
+        {
+            nLen++;
+        }
+        UTF8 *pNext = cp + ((0 < nLen) ? nLen : 1);
         UTF8 chbuf[5];
-        size_t nLen = pNext - cp;
         memcpy(chbuf, cp, nLen);
         chbuf[nLen] = '\0';
 
