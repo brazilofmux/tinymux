@@ -11086,13 +11086,23 @@ static FUNCTION(fun_ord)
     while (q < qEnd)
     {
         UTF32 ch = ConvertFromUTF8(q);
+        if (UNI_EOF == ch)
+        {
+            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            return;
+        }
         if (!bFirst)
         {
             safe_chr(' ', buff, bufc);
         }
         safe_ltoa(static_cast<long>(ch), buff, bufc);
         bFirst = false;
-        q = utf8_NextCodePoint(q);
+        size_t nAdvance = utf8_FirstByte[static_cast<unsigned char>(*q)];
+        if (nAdvance < 1 || nAdvance >= UTF8_CONTINUE)
+        {
+            nAdvance = 1;
+        }
+        q += nAdvance;
     }
 }
 

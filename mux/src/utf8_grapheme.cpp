@@ -314,7 +314,6 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
         if (  GCB_Regional_Indicator == curGCB
            && 1 == (nRI % 2))
         {
-            nRI++;
             goto extend;
         }
 
