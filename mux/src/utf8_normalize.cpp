@@ -435,10 +435,44 @@ bool utf8_is_nfc(const UTF8 *src, size_t nSrc)
         int n = utf8_FirstByte[*p];
         if (n <= 0 || n >= UTF8_CONTINUE)
         {
-            p++;
-            continue;
+            return false;
         }
         if (p + n > pEnd)
+        {
+            return false;
+        }
+        for (int i = 1; i < n; i++)
+        {
+            if (UTF8_CONTINUE != utf8_FirstByte[p[i]])
+            {
+                return false;
+            }
+        }
+
+        UTF32 cp = p[0];
+        if (2 == n)
+        {
+            cp = ((p[0] & 0x1F) << 6)
+               |  (p[1] & 0x3F);
+        }
+        else if (3 == n)
+        {
+            cp = ((p[0] & 0x0F) << 12)
+               | ((p[1] & 0x3F) << 6)
+               |  (p[2] & 0x3F);
+        }
+        else if (4 == n)
+        {
+            cp = ((p[0] & 0x07) << 18)
+               | ((p[1] & 0x3F) << 12)
+               | ((p[2] & 0x3F) << 6)
+               |  (p[3] & 0x3F);
+        }
+        if (  (2 == n && cp < 0x80)
+           || (3 == n && cp < 0x800)
+           || (4 == n && cp < 0x10000)
+           || cp > UNI_MAX_LEGAL_UTF32
+           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
         {
             return false;
         }
