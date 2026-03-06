@@ -4117,8 +4117,22 @@ void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
     size_t nLen;
     size_t nLeft;
     if (  nullptr == src
-       || UTF8_CONTINUE <= (nLen = utf8_FirstByte[*src])
-       || (nLeft = LBUF_SIZE - (*bufc - buff) - 1) < nLen)
+       || UTF8_CONTINUE <= (nLen = utf8_FirstByte[*src]))
+    {
+        return;
+    }
+
+    for (size_t i = 1; i < nLen; i++)
+    {
+        if (  '\0' == src[i]
+           || UTF8_CONTINUE != utf8_FirstByte[src[i]])
+        {
+            return;
+        }
+    }
+
+    nLeft = LBUF_SIZE - (*bufc - buff) - 1;
+    if (nLeft < nLen)
     {
         return;
     }
