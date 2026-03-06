@@ -1643,20 +1643,27 @@ static CF_HAND(cf_module)
     else
     {
         UTF8 *buffer = alloc_lbuf("cf_module");
+        bool bHaveFilename = true;
 #if defined(WINDOWS_FILES)
         size_t n;
         mux_sprintf(buffer, LBUF_SIZE, T(".\\bin\\%s.dll"), str);
         const UTF16 *filename = ConvertFromUTF8ToUTF16(buffer, n);
+        if (nullptr == filename)
+        {
+            bHaveFilename = false;
+            mr = MUX_E_FAIL;
+        }
 #elif defined(UNIX_FILES)
         mux_sprintf(buffer, LBUF_SIZE, T("./bin/%s.so"), str);
         UTF8 *filename = buffer;
 #endif
-        if (eInProc == eType)
+        if (  bHaveFilename
+           && eInProc == eType)
         {
             mr = mux_AddModule(str, filename);
         }
 #if defined(STUB_SLAVE)
-        else
+        else if (bHaveFilename)
         {
             mr = mudstate.pISlaveControl->AddModule(str, filename);
         }

@@ -1107,25 +1107,51 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
             return Buffer;
         }
 
-        nLeft -= n;
+        for (size_t j = 1; j < n; j++)
+        {
+            if (  '\0' == pName[j]
+               || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(pName[j])])
+            {
+                *pnName = 0;
+                *pbValid = false;
+                return Buffer;
+            }
+        }
+
         bool bXor;
         const string_desc *qDesc = mux_toupper(pName, bXor);
+        size_t m = n;
         if (nullptr == qDesc)
         {
-            while (n--)
+            if (m > nLeft)
             {
-                *p++ = *pName++;
+                break;
+            }
+            for (size_t j = 0; j < m; j++)
+            {
+                *p++ = pName[j];
             }
         }
         else
         {
-            size_t m = qDesc->n_bytes;
+            m = qDesc->n_bytes;
             const UTF8 *q = qDesc->p;
+            if (  bXor
+               && m != n)
+            {
+                *pnName = 0;
+                *pbValid = false;
+                return Buffer;
+            }
+            if (m > nLeft)
+            {
+                break;
+            }
             if (bXor)
             {
-                while (m--)
+                for (size_t j = 0; j < m; j++)
                 {
-                    *p++ = *pName++ ^ *q++;
+                    *p++ = pName[j] ^ *q++;
                 }
             }
             else
@@ -1136,6 +1162,8 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
                 }
             }
         }
+        nLeft -= m;
+        pName += n;
     }
     *p = '\0';
 
@@ -1188,28 +1216,60 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
 
     *p++ = '@';
     while (  '\0' != *pName
-          && (n = utf8_FirstByte[static_cast<unsigned char>(*pName)]) < UTF8_CONTINUE
-          && n <= nLeft)
+          && (n = utf8_FirstByte[static_cast<unsigned char>(*pName)]) < UTF8_CONTINUE)
     {
-        nLeft -= n;
+        if (n > nLeft)
+        {
+            break;
+        }
+
+        for (size_t j = 1; j < n; j++)
+        {
+            if (  '\0' == pName[j]
+               || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(pName[j])])
+            {
+                *pnName = 0;
+                *pbValid = false;
+                *p = '\0';
+                return Buffer;
+            }
+        }
+
         bool bXor;
         const string_desc *qDesc = mux_tolower(pName, bXor);
+        size_t m = n;
         if (nullptr == qDesc)
         {
-            while (n--)
+            if (m > nLeft)
             {
-                *p++ = *pName++;
+                break;
+            }
+            for (size_t j = 0; j < m; j++)
+            {
+                *p++ = pName[j];
             }
         }
         else
         {
-            size_t m = qDesc->n_bytes;
+            m = qDesc->n_bytes;
             const UTF8 *q = qDesc->p;
+            if (  bXor
+               && m != n)
+            {
+                *pnName = 0;
+                *pbValid = false;
+                *p = '\0';
+                return Buffer;
+            }
+            if (m > nLeft)
+            {
+                break;
+            }
             if (bXor)
             {
-                while (m--)
+                for (size_t j = 0; j < m; j++)
                 {
-                    *p++ = *pName++ ^ *q++;
+                    *p++ = pName[j] ^ *q++;
                 }
             }
             else
@@ -1220,8 +1280,18 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
                 }
             }
         }
+        nLeft -= m;
+        pName += n;
     }
     *p = '\0';
+
+    if (  '\0' != *pName
+       && UTF8_CONTINUE <= utf8_FirstByte[static_cast<unsigned char>(*pName)])
+    {
+        *pnName = 0;
+        *pbValid = false;
+        return Buffer;
+    }
 
     // Length of result.
     //
