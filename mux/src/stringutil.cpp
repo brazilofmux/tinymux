@@ -8855,8 +8855,14 @@ void mux_string::UpperCase()
         const string_desc *qDesc = mux_toupper(p, bXor);
         if (nullptr != qDesc)
         {
+            size_t src = utf8_advance_nul(p);
+            if (0 == src)
+            {
+                src = UTF8_SIZE1;
+            }
             size_t m = qDesc->n_bytes;
-            if (bXor)
+            if (  bXor
+               && m == src)
             {
                 // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
                 // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
@@ -8874,11 +8880,7 @@ void mux_string::UpperCase()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
-                if (len.m_byte >= UTF8_CONTINUE)
-                {
-                    len.m_byte = UTF8_SIZE1;
-                }
+                len.m_byte = src;
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
@@ -8898,8 +8900,14 @@ void mux_string::LowerCase()
         const string_desc *qDesc = mux_tolower(p, bXor);
         if (nullptr != qDesc)
         {
+            size_t src = utf8_advance_nul(p);
+            if (0 == src)
+            {
+                src = UTF8_SIZE1;
+            }
             size_t m = qDesc->n_bytes;
-            if (bXor)
+            if (  bXor
+               && m == src)
             {
                 // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
                 // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
@@ -8917,11 +8925,7 @@ void mux_string::LowerCase()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
-                if (len.m_byte >= UTF8_CONTINUE)
-                {
-                    len.m_byte = UTF8_SIZE1;
-                }
+                len.m_byte = src;
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
@@ -8942,8 +8946,14 @@ void mux_string::UpperCaseFirst()
         const string_desc *qDesc = mux_totitle(p, bXor);
         if (nullptr != qDesc)
         {
+            size_t src = utf8_advance_nul(p);
+            if (0 == src)
+            {
+                src = UTF8_SIZE1;
+            }
             size_t m = qDesc->n_bytes;
-            if (bXor)
+            if (  bXor
+               && m == src)
             {
                 // An XOR-type string_desc requires and enforces that the bytes be equal. Currently, none of the cases increase
                 // the number points in the string to 2 or more points, but it is possible for some future version of Unicode --
@@ -8961,11 +8971,7 @@ void mux_string::UpperCaseFirst()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
-                if (len.m_byte >= UTF8_CONTINUE)
-                {
-                    len.m_byte = UTF8_SIZE1;
-                }
+                len.m_byte = src;
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
@@ -8976,6 +8982,7 @@ void mux_string::UpperCaseFirst()
 
 void mux_string::FoldForMatching()
 {
+    mux_string sTo;
     for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
     {
         UTF8 *p = m_autf + i.m_byte;
@@ -8984,11 +8991,15 @@ void mux_string::FoldForMatching()
         const string_desc *qDesc = mux_foldmatch(p, bXor);
         if (nullptr != qDesc)
         {
-            size_t m = qDesc->n_bytes;
-            if (bXor)
+            size_t src = utf8_advance_nul(p);
+            if (0 == src)
             {
-                // TODO: In future, the string may need to be expanded or contracted in terms of points.
-                //
+                src = UTF8_SIZE1;
+            }
+            size_t m = qDesc->n_bytes;
+            if (  bXor
+               && m == src)
+            {
                 size_t j;
                 for (j = 0; j < m; j++)
                 {
@@ -8997,8 +9008,9 @@ void mux_string::FoldForMatching()
             }
             else
             {
-                // TODO: The string must be expanded or contracted in terms of points and bytes.
-                //
+                mux_cursor len(src, 1);
+                sTo.import(qDesc->p);
+                replace_Chars(sTo, i, len);
             }
         }
     }
