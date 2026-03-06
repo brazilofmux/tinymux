@@ -11118,7 +11118,7 @@ static FUNCTION(fun_chr)
     UTF8 *pRaw = raw;
     const UTF8 *pEnd = raw + sizeof(raw) - 5;
 
-    UTF8 *pArg = fargs[0];
+    const UTF8 *pArg = fargs[0];
     bool bAny = false;
     while ('\0' != *pArg)
     {
@@ -11131,25 +11131,69 @@ static FUNCTION(fun_chr)
             break;
         }
 
-        if (!is_integer(pArg, nullptr))
+        bool bNegative = false;
+        if ('-' == *pArg || '+' == *pArg)
+        {
+            bNegative = ('-' == *pArg);
+            pArg++;
+        }
+        if (!mux_isdigit(*pArg))
         {
             safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
             return;
         }
 
-        int ch = mux_atol(pArg);
-
-        // Skip past this number.
-        //
-        if ('-' == *pArg || '+' == *pArg)
-        {
-            pArg++;
-        }
+        uint64_t uValue = 0;
         while (mux_isdigit(*pArg))
         {
+            const uint64_t digit = static_cast<uint64_t>(*pArg - '0');
+            if (uValue > (UINT64_MAX - digit) / 10ULL)
+            {
+                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                return;
+            }
+            uValue = 10ULL * uValue + digit;
             pArg++;
         }
 
+        // Token separator must be whitespace or end of string.
+        //
+        if ('\0' != *pArg && !mux_isspace(*pArg))
+        {
+            safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+            return;
+        }
+
+        int64_t iValue = 0;
+        if (bNegative)
+        {
+            if (uValue > (static_cast<uint64_t>(INT64_MAX) + 1ULL))
+            {
+                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                return;
+            }
+            iValue = -static_cast<int64_t>(uValue);
+        }
+        else
+        {
+            if (uValue > static_cast<uint64_t>(INT64_MAX))
+            {
+                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                return;
+            }
+            iValue = static_cast<int64_t>(uValue);
+        }
+
+        if (  iValue < 0
+           || iValue > static_cast<int64_t>(UNI_MAX_LEGAL_UTF32)
+           || (  static_cast<UTF32>(iValue) >= UNI_SUR_HIGH_START
+              && static_cast<UTF32>(iValue) <= UNI_SUR_LOW_END))
+        {
+            safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+            return;
+        }
+
+        UTF32 ch = static_cast<UTF32>(iValue);
         UTF8 *p = ConvertToUTF8(ch);
         if (!mux_isprint(p))
         {

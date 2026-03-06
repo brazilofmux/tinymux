@@ -8002,28 +8002,32 @@ bool mux_string::replace_Point(const UTF8 *p, const mux_cursor &i)
 
     if (n != m)
     {
-        if (  m < n
-           && sizeof(m_autf) <= m_iLast.m_byte + m - n)
+        if (n < m)
         {
+            const size_t nGrow = m - n;
+
             // We need to truncate the trailing point to make room for an expansion.
             //
-            do
+            while (sizeof(m_autf) <= m_iLast.m_byte + nGrow)
             {
-                cursor_prev(m_iLast);
-            } while (sizeof(m_autf) <= m_iLast.m_byte + m - n);
+                if (!cursor_prev(m_iLast))
+                {
+                    break;
+                }
+            }
             m_autf[m_iLast.m_byte] = '\0';
         }
 
+        ptrdiff_t nDelta = static_cast<ptrdiff_t>(m) - static_cast<ptrdiff_t>(n);
         if (i.m_byte + n  < m_iLast.m_byte)
         {
             size_t nBytesMove = m_iLast.m_byte - (i.m_byte + n);
             UTF8 *pFrom = m_autf + i.m_byte + n;
             UTF8 *pTo   = m_autf + i.m_byte + m;
             memmove(pTo, pFrom, nBytesMove);
-
-            m_iLast.m_byte = static_cast<LBUF_OFFSET>(m_iLast.m_byte + m - n);
-            m_autf[m_iLast.m_byte] = '\0';
         }
+        m_iLast.m_byte = static_cast<LBUF_OFFSET>(m_iLast.m_byte + nDelta);
+        m_autf[m_iLast.m_byte] = '\0';
     }
 
     for (size_t j = 0; j < m; j++)
