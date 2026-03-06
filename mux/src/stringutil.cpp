@@ -4344,7 +4344,7 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         {
             return UNI_EOF;
         }
-        ch = ((UTF32)(pString[0] & 0x1F) << 12)
+        ch = ((UTF32)(pString[0] & 0x0F) << 12)
            | ((UTF32)(pString[1] & 0x3F) <<  6)
            | ((UTF32)(pString[2] & 0x3F)      );
         if (ch < 0x800)
