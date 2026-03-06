@@ -498,6 +498,58 @@ static size_t utf8_advance_nul(const UTF8 *p)
     return n;
 }
 
+// Advance within a UTF-8 byte span with explicit remaining length.
+// Invalid/truncated/illegal scalars are treated as single-byte units.
+static size_t utf8_advance_bounded(const UTF8 *p, size_t nAvail)
+{
+    if (nullptr == p || 0 == nAvail)
+    {
+        return 0;
+    }
+
+    size_t n = utf8_FirstByte[static_cast<unsigned char>(*p)];
+    if (n < 1 || n >= UTF8_CONTINUE || n > nAvail)
+    {
+        return UTF8_SIZE1;
+    }
+    for (size_t i = 1; i < n; i++)
+    {
+        if (UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(p[i])])
+        {
+            return UTF8_SIZE1;
+        }
+    }
+
+    UTF32 cp = p[0];
+    if (UTF8_SIZE2 == n)
+    {
+        cp = ((p[0] & 0x1F) << 6)
+           |  (p[1] & 0x3F);
+    }
+    else if (UTF8_SIZE3 == n)
+    {
+        cp = ((p[0] & 0x0F) << 12)
+           | ((p[1] & 0x3F) << 6)
+           |  (p[2] & 0x3F);
+    }
+    else if (UTF8_SIZE4 == n)
+    {
+        cp = ((p[0] & 0x07) << 18)
+           | ((p[1] & 0x3F) << 12)
+           | ((p[2] & 0x3F) << 6)
+           |  (p[3] & 0x3F);
+    }
+    if (  (UTF8_SIZE2 == n && cp < 0x80)
+       || (UTF8_SIZE3 == n && cp < 0x800)
+       || (UTF8_SIZE4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        return UTF8_SIZE1;
+    }
+    return n;
+}
+
 // The following table maps cp437 characters to their corresponding
 // UTF8 sequences.
 //
@@ -8136,10 +8188,20 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     UTF8 *pch = m_autf;
     while (iStr < nLen)
     {
-        unsigned int iCode = mux_color(pStr + iStr);
+        size_t nAdvance = utf8_advance_bounded(pStr + iStr, nLen - iStr);
+        if (0 == nAdvance)
+        {
+            break;
+        }
+
+        UTF8 cp[5];
+        memcpy(cp, pStr + iStr, nAdvance);
+        cp[nAdvance] = '\0';
+
+        unsigned int iCode = mux_color(cp);
         if (COLOR_NOTCOLOR == iCode)
         {
-            safe_chr_utf8(pStr + iStr, m_autf, &pch);
+            safe_chr_utf8(cp, m_autf, &pch);
             acsTemp[iPoint++] = cs;
             if (CS_NORMAL != cs)
             {
@@ -8150,7 +8212,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         {
             cs = UpdateColorState(cs, iCode);
         }
-        iStr += utf8_FirstByte[static_cast<unsigned char>(pStr[iStr])];
+        iStr += nAdvance;
     }
 
     m_iLast(static_cast<LBUF_OFFSET>(pch - m_autf), iPoint);
