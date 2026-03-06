@@ -61,11 +61,31 @@ cd game/data
 
 Verify the flatfile is complete:
 
-- The first line should begin with `+X` followed by a version number.
+- The first line should begin with `+X` followed by a decimal number encoding
+  the format version and flags.  For example, `+X996099`.
 - The last line should be `***END OF DUMP***`.
 
 If the end marker is missing, the file was truncated and should not be used.
 Go back and re-export.
+
+### Understanding the `+X` Header
+
+The number after `+X` is a bitmask.  The important bit to check is
+`V_DATABASE` (`0x400`, decimal 1024).  If that bit is **set**, attribute
+values are stored in a separate database (the old `.dir`/`.pag` files) and
+the file is only a "structure file" -- it cannot be imported on its own.
+If the bit is **clear**, all attribute values are inline and the file is a
+complete flatfile suitable for import.
+
+A quick test:
+
+```
+head -1 netmux.db.flat | awk -F X '{print and($2, 1024)}'
+```
+
+If the result is `0`, the file is a complete flatfile.  If it is `1024`,
+you have a structure file and need to re-export with `db_unload` (or
+`@dump/flatfile` from the running game) to get a full flatfile.
 
 Keep `comsys.db` and `mail.db` from the old `game/data` directory as-is.
 
