@@ -2,7 +2,7 @@
 #
 UNICODE=~/unicode
 
-all: classify integers strings utf8tables.cpp.txt utf8tables.h.txt Decompositions.txt buildFiles
+all: classify integers strings pairs utf8tables.cpp.txt utf8tables.h.txt Decompositions.txt buildFiles
 
 UnicodeData.txt:
 	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
@@ -22,10 +22,36 @@ integers: integers.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o strings strings.cpp ConvertUTF.cpp smutil.cpp
 
+pairs: pairs.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
+	g++ -O3 -g -o pairs pairs.cpp ConvertUTF.cpp smutil.cpp
+
 buildFiles: buildFiles.cpp smutil.cpp smutil.h
 	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp
 
-utf8tables.cpp.txt utf8tables.h.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_ascii.txt tr_utf8_cp437.txt tr_utf8_latin1.txt tr_utf8_latin2.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt
+# Perl-generated intermediate data files from Unicode source data.
+#
+tr_ccc.txt: gen_ccc.pl UnicodeData.txt
+	perl gen_ccc.pl > tr_ccc.txt
+
+tr_nfcqc.txt: gen_nfcqc.pl DerivedNormalizationProps.txt
+	perl gen_nfcqc.pl > tr_nfcqc.txt
+
+tr_nfd.txt: gen_nfd.pl Decompositions.txt
+	perl gen_nfd.pl > tr_nfd.txt
+
+tr_compose.txt: gen_compose.pl UnicodeData.txt CompositionExclusions.txt
+	perl gen_compose.pl > tr_compose.txt
+
+tr_gcb.txt: gen_gcb.pl GraphemeBreakProperty.txt
+	perl gen_gcb.pl > tr_gcb.txt
+
+cl_ExtPict.txt: gen_extpict.pl emoji-data.txt
+	perl gen_extpict.pl > cl_ExtPict.txt
+
+tr_ducet.txt tr_ducet_contract.txt ../mux/src/ducet_cetable.h: gen_ducet.pl allkeys.txt
+	perl gen_ducet.pl
+
+utf8tables.cpp.txt utf8tables.h.txt: classify integers strings pairs cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_ascii.txt tr_utf8_cp437.txt tr_utf8_latin1.txt tr_utf8_latin2.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt tr_ccc.txt tr_nfcqc.txt tr_nfd.txt tr_compose.txt tr_gcb.txt cl_ExtPict.txt tr_ducet.txt tr_ducet_contract.txt
 	-rm utf8tables.cpp.txt utf8tables.h.txt
 	./classify cl_print cl_Printable.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt
@@ -48,4 +74,11 @@ utf8tables.cpp.txt utf8tables.h.txt: classify integers strings cl_Printable.txt 
 	./strings -d tr_totitle tr_totitle.txt
 	./strings -d tr_foldmatch tr_foldmatch.txt
 	./integers -d 0 tr_color tr_Color.txt
-	#./integers -d 0 tr_class tr_class.txt
+	./integers -d 0 tr_ccc tr_ccc.txt
+	./integers -d 0 tr_nfcqc tr_nfcqc.txt
+	./strings -d tr_nfd tr_nfd.txt
+	./pairs tr_nfc_compose tr_compose.txt
+	./integers -d 0 tr_gcb tr_gcb.txt
+	./classify cl_extpict cl_ExtPict.txt
+	./integers -d 0 tr_ducet tr_ducet.txt
+	./pairs tr_ducet_contract tr_ducet_contract.txt
