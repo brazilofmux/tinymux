@@ -11443,8 +11443,44 @@ static FUNCTION(fun_accent)
             utf8_safe_chr(p, buff, bufc);
         }
 
-        p = utf8_NextCodePoint(p);
-        q = utf8_NextCodePoint(q);
+        size_t nAdvanceP = utf8_FirstByte[static_cast<unsigned char>(*p)];
+        if (nAdvanceP < 1 || nAdvanceP >= UTF8_CONTINUE)
+        {
+            nAdvanceP = 1;
+        }
+        else
+        {
+            for (size_t i = 1; i < nAdvanceP; i++)
+            {
+                if (  '\0' == p[i]
+                   || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(p[i])])
+                {
+                    nAdvanceP = 1;
+                    break;
+                }
+            }
+        }
+
+        size_t nAdvanceQ = utf8_FirstByte[static_cast<unsigned char>(*q)];
+        if (nAdvanceQ < 1 || nAdvanceQ >= UTF8_CONTINUE)
+        {
+            nAdvanceQ = 1;
+        }
+        else
+        {
+            for (size_t i = 1; i < nAdvanceQ; i++)
+            {
+                if (  '\0' == q[i]
+                   || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(q[i])])
+                {
+                    nAdvanceQ = 1;
+                    break;
+                }
+            }
+        }
+
+        p += nAdvanceP;
+        q += nAdvanceQ;
     }
 }
 
