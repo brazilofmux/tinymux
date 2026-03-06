@@ -31,10 +31,9 @@ please refer to the following files:
   `CHANGES.md`         New features, commands, and bug fixes.
   `INSTALL.md`         How to compile your game, step-by-step.
   `NOTES.md`           All kinds of tidbits made much easier to find. Known compiling issues and known fixes are found here. Known OSes that TinyMUX 2.13 will run on and compiling issues. Has basic conversion information.
-  `UPGRADING.md`       Step-by-step guide for upgrading from TinyMUX 2.12 or earlier, including the flatfile-to-SQLite migration.
+  `UPGRADING.md`       Step-by-step guide for upgrading from earlier TinyMUX versions, including the flatfile-to-SQLite migration.
   `docs/BACKUPS.md`        A file about the TinyMUX 2.13 Backup script.
   `docs/CONFIGURATION.md` How to set up your TinyMUX, including an explanation of the common configuration items and how to customize your `GAMENAME`.
-  `docs/CONVERSION.md`    How to convert a game from another type of server to TinyMUX.
   `docs/CREDITS.md`       The people who helped make this server possible.
   `docs/GUESTS.md`        How the current guest implementation works and how to set it up.
   `docs/PATCHES.md`       A basic introduction to applying patches to the server.

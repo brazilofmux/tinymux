@@ -8,8 +8,16 @@ title: UPGRADING
 
 TinyMUX 2.13 replaces the flatfile and CHashFile (`.dir`/`.pag`) storage
 with a single SQLite database.  This guide walks through upgrading from
-TinyMUX 2.12 or earlier.  For conversions from other server families
-(PennMUSH, RhostMUSH, TinyMUSH), see `docs/CONVERSION.md`.
+earlier TinyMUX versions.
+
+## Compatible Flatfile Formats
+
+TinyMUX 2.13 can read flatfiles from:
+
+> TinyMUX 2.0, 2.1, 2.2, 2.3, 2.4, 2.6, 2.7, 2.9, 2.10, 2.12
+
+For conversions from other server families (PennMUSH, RhostMUSH, TinyMUSH),
+see the `omega` converter in the `convert/` directory.
 
 ## Before You Start
 
@@ -92,6 +100,12 @@ cp /old/game/mux.config  game/
 ```
 
 ### Update `netmux.conf` (or `GAMENAME.conf`)
+
+**Important:** If you are converting from a version prior to TinyMUX 2.0,
+your old `GAMENAME.conf` will not work.  Start from the new `netmux.conf`
+and add your config parameters into it.  You can save time by appending
+the old file (`cat oldconf >> netmux.conf`) and then editing out the
+unneeded lines.
 
 Review your configuration file against the new `game/netmux.conf`.  The
 following parameters have been removed and should be deleted if present:
@@ -211,5 +225,5 @@ a few changes:
 - `INSTALL.md` -- Building from source
 - `NOTES.md` -- Database tools and backup procedures
 - `docs/CONFIGURATION.md` -- Configuration parameter reference
-- `docs/CONVERSION.md` -- Converting from other server families
 - `docs/BACKUPS.md` -- Backup procedures
+- `convert/README` -- The omega cross-server flatfile converter
