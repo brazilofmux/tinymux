@@ -41,15 +41,14 @@ TinyMUSH uses `select()`. MUX's GANL layer provides:
 **Impact:** Scales to thousands of concurrent connections without
 performance degradation. select() is O(n) in file descriptors.
 
-### 4. @restart with Connection Preservation
+### 4. @restart — Connection Preservation
 
-TinyMUSH's @restart disconnects all players. MUX's @restart:
-- Detaches sockets from I/O multiplexer without closing
-- Removes FD_CLOEXEC so fds survive exec()
-- New process adopts existing fds via adoptConnection()
-- Players never see a disconnect
+Both TinyMUSH and MUX preserve player connections across restart.
+TinyMUSH uses `dump_restart_db()` / `load_restart_db()` to serialize
+and restore descriptor state. MUX's GANL approach detaches fds from
+the I/O multiplexer and adopts them in the new process.
 
-**Impact:** Seamless server upgrades during live gameplay.
+**Impact:** Parity — both servers handle this well.
 
 ---
 

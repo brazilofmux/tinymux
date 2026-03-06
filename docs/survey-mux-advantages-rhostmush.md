@@ -46,20 +46,17 @@ works but doesn't address the fundamental scalability issue.
 **Impact:** Better performance under load. select() scans all fds
 every iteration.
 
-### 3. @restart with Connection Preservation
+### 3. @restart / @reboot — Connection Preservation
 
-Rhost's @reboot disconnects players. MUX's @restart:
-1. Detaches sockets from epoll/kqueue (don't close)
-2. Removes FD_CLOEXEC (survive exec)
-3. Writes fd list to environment
-4. exec() new binary
-5. New process adopts fds via adoptConnection()
+Both Rhost and MUX preserve player connections across reboot. Rhost
+dumps descriptor state to `reboot.db` and exec()s the new binary,
+reloading on startup. MUX's GANL approach detaches fds from the I/O
+multiplexer and adopts them in the new process.
 
-Players never see a disconnect. In-progress commands complete normally
-after restart.
+The mechanisms differ but the user-visible result is the same: no
+disconnect on reboot.
 
-**Impact:** Server upgrades without disrupting gameplay. Critical for
-competitive and RP-heavy games.
+**Impact:** Parity — both servers handle this well.
 
 ---
 
@@ -229,7 +226,7 @@ support. These are additive features.
 
 MUX's advantages over Rhost are in engineering depth: SQLite
 write-through (crash durability), GANL networking (scalability),
-connection-preserving @restart (operational reliability), full
+full
 UTF-8/NFC (correctness), indexed @search (performance), cursor-based
 SQL API (capability), regex functions (text processing), and Omega
 converter (portability).

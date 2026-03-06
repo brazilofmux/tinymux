@@ -38,14 +38,18 @@ using the optimal engine on each platform.
 
 **Impact:** Better scalability under high connection counts.
 
-### 3. @restart with Connection Preservation
+### 3. @restart / @shutdown/reboot — Connection Preservation
 
-Penn's @shutdown/reboot disconnects everyone. MUX preserves active
-connections across @restart by detaching fds from the I/O multiplexer
-without closing them, removing FD_CLOEXEC, and adopting fds in the
-new process.
+Both Penn and MUX preserve player connections across reboot. Penn dumps
+descriptor state to `reboot.db` and exec()s the new binary, reloading
+on startup. MUX's GANL approach detaches fds from the I/O multiplexer
+and adopts them in the new process.
 
-**Impact:** Zero-downtime server upgrades.
+The mechanisms differ (Penn: file-based descriptor serialization; MUX:
+fd inheritance via cleared FD_CLOEXEC + GANL adoptConnection) but the
+user-visible result is the same: no disconnect on reboot.
+
+**Impact:** Parity — both servers handle this well.
 
 ### 4. Comsys/Mail in SQLite
 
@@ -184,9 +188,9 @@ is a single command.
 
 Penn's advantages over MUX (JSON, WebSocket, HTTP server, connection
 logging) are feature additions. MUX's advantages over Penn (SQLite
-write-through, GANL networking, @restart preservation, full UTF-8/NFC,
-cursor-based SQL) are architectural foundations that are much harder
-to retrofit.
+write-through, GANL networking, full UTF-8/NFC, cursor-based SQL) are
+architectural foundations that are much harder to retrofit. Both servers
+handle connection-preserving reboot.
 
 The ideal MU* server would combine MUX's storage/networking/Unicode
 architecture with Penn's web-facing features.
