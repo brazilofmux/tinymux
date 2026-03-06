@@ -18,10 +18,11 @@ The biggest bottleneck is **writing dirty pages back to disk**. The `Tick()`
 method dribbles pages via `FlushCache()` on a timer, but under heavy write
 load the cache fills with dirty pages faster than they can be flushed. When
 `AllocateEmptyPage()` needs a free slot, it must synchronously flush the
-oldest page — blocking the game loop. The `Sync()` call during `@dump` flushes
-*all* dirty pages at once, causing a visible pause.
+oldest page — blocking the game loop. The `Sync()` call during `@dump`
+flushes *all* dirty pages at once, causing a visible pause.
 
 Additional CHashFile limitations:
+
 - No indexing beyond hash buckets — `@search` is a full scan
 - No crash recovery — interrupted writes can corrupt `.dir`/`.pag`
 - Page splitting and directory doubling are complex and fragile
@@ -49,6 +50,7 @@ or to object metadata — is written through to SQLite immediately. The LRU
 cache is a **read-only acceleration layer** that is never dirty.
 
 This eliminates:
+
 - Dirty tracking
 - Flush dribbling (`Tick()`)
 - Cache coherency problems
@@ -56,13 +58,14 @@ This eliminates:
 
 **Why this works:** CHashFile's `WritePage()` was slow because it seeked to a
 specific offset and wrote a full page of mixed data. SQLite WAL writes are
-sequential appends — fundamentally different I/O. A single prepared
-`INSERT OR REPLACE` with WAL mode and `PRAGMA synchronous=NORMAL` is typically
-under 50 microseconds.
+sequential appends — fundamentally different I/O. A single prepared `INSERT
+OR REPLACE` with WAL mode and `PRAGMA synchronous=NORMAL` is typically under
+50 microseconds.
 
 ### One Database for Everything
 
 Every piece of game state has its rightful place in SQLite:
+
 - Object metadata (what `db[]` holds today)
 - Attribute values (what CHashFile holds today)
 - The `db[]` array remains in memory as a read cache for object metadata,
@@ -71,15 +74,15 @@ Every piece of game state has its rightful place in SQLite:
 ### Cache Is Never Authoritative
 
 The LRU cache and `db[]` array are populated from SQLite on startup and on
-cache miss. They are invalidated on writes. They can be dropped and rebuilt
-at any time without data loss. A crash loses nothing — SQLite has it all.
+cache miss. They are invalidated on writes. They can be dropped and rebuilt at
+any time without data loss. A crash loses nothing — SQLite has it all.
 
 ### @search Hits SQLite Directly
 
-Because writes are write-through, SQLite is always up to date. Bulk
-operations like `@search` query SQLite directly without worrying about
-stale data or dirty cache entries. No coherency problem exists because
-there is no dirty cache.
+Because writes are write-through, SQLite is always up to date. Bulk operations
+like `@search` query SQLite directly without worrying about stale data or
+dirty cache entries. No coherency problem exists because there is no dirty
+cache.
 
 ## Architecture
 
@@ -149,6 +152,7 @@ single integer — SQLite optimizes this case automatically.
 The `db[]` array remains as an in-memory read cache. It is loaded from the
 `objects` table at startup. The `s_Location()`, `s_Flags()`, etc. macros are
 replaced with functions that:
+
 1. Update `db[]` in memory (for fast subsequent reads)
 2. Write through to SQLite (for durability)
 
@@ -159,12 +163,13 @@ unchanged — this is the hot path and it stays zero-cost.
 
 The attribute LRU cache (`attribute_lru_cache_map`) remains as a read cache.
 On `cache_put()`, the entry goes to SQLite and the cache is updated (or
-invalidated). On `cache_get()`, the cache is checked first; on miss, SQLite
-is queried and the result is cached.
+invalidated). On `cache_get()`, the cache is checked first; on miss, SQLite is
+queried and the result is cached.
 
 ### Transient state that does NOT go in SQLite
 
 Some fields in `db[]` are runtime-only and don't belong in SQLite:
+
 - `cpu_time_used` — accumulated CPU time, reset on restart
 - `tThrottleExpired` / `throttled_*` — rate limiting state
 - `purename` / `moniker` — derived from attributes, cached for speed
@@ -185,13 +190,12 @@ sqlite3_exec(db, "PRAGMA cache_size=-65536", ...);     // 64MB SQLite page cache
 
 ### Object Metadata Writes
 
-Today's macros:
 ```cpp
 #define s_Location(t,n)     db[t].location = (n)
 #define s_Flags(t,f,n)      db[t].fs.word[f] = (n)
 ```
+Today's macros:
 
-Become functions:
 ```cpp
 void s_Location(dbref t, dbref n)
 {
@@ -203,9 +207,8 @@ void s_Location(dbref t, dbref n)
     sqlite3_reset(stmtUpdateLocation);
 }
 ```
+Become functions:
 
-For fields that change together (e.g., during object creation or movement),
-batch into a single transaction:
 ```cpp
 void move_object(dbref thing, dbref dest)
 {
@@ -216,6 +219,8 @@ void move_object(dbref thing, dbref dest)
     sqlite3_exec(db, "COMMIT", ...);
 }
 ```
+For fields that change together (e.g., during object creation or movement),
+batch into a single transaction:
 
 The transaction groups the I/O into a single WAL append. Individual
 `s_Location()` calls outside a transaction auto-commit, which is fine for
@@ -299,12 +304,12 @@ WHERE attrnum=? AND value LIKE ?;
 SELECT dbref FROM objects WHERE owner=? AND zone=?;
 ```
 
-Optional indexes for common search patterns:
 ```sql
 CREATE INDEX idx_objects_owner ON objects(owner);
 CREATE INDEX idx_objects_zone ON objects(zone);
 CREATE INDEX idx_objects_location ON objects(location);
 ```
+Optional indexes for common search patterns:
 
 ## @dump and Tick()
 
@@ -326,8 +331,9 @@ This is fast (sub-second for typical games) and non-blocking for readers.
 
 ### Tick()
 
-`Tick()` is no longer needed for dirty page flushing. It can be repurposed
-for optional maintenance:
+`Tick()` is no longer needed for dirty page flushing. It can be repurposed for
+optional maintenance:
+
 - LRU cache trimming
 - SQLite `PRAGMA optimize` (periodic query planner tuning)
 - Statistics gathering
@@ -335,8 +341,9 @@ for optional maintenance:
 ### Flatfile export
 
 The flatfile format (`db_write()`) remains as an **export/migration format**
-only. It reads from SQLite (or from `db[]` + cache, same thing) and writes
-the traditional flatfile. This is used for:
+only. It reads from SQLite (or from `db[]` + cache, same thing) and writes the
+traditional flatfile. This is used for:
+
 - Migration to/from other MU* servers
 - Human-readable backups
 - Compatibility with existing tools
@@ -371,6 +378,7 @@ the traditional flatfile. This is used for:
 ### Startup Preload
 
 Load all attributes for:
+
 - `#0` (master room)
 - Global config objects
 - Connected player objects (from descriptor list surviving `@restart`)
@@ -378,6 +386,7 @@ Load all attributes for:
 ### Player Connect Preload
 
 Load all attributes for:
+
 - The player object
 - The player's location
 - Objects in the player's inventory and location
@@ -385,6 +394,7 @@ Load all attributes for:
 ### Player Move Preload
 
 Load all attributes for:
+
 - The destination room
 - Objects in the destination room
 
@@ -445,6 +455,7 @@ sqlite3_backup_finish(backup);
 ### CHashFile to SQLite (existing disk-based games)
 
 Standalone tool or `@admin` command:
+
 1. Open `.dir`/`.pag` via CHashFile
 2. Open/create SQLite database
 3. Iterate all CHashFile entries, insert into `attributes` table
@@ -466,18 +477,19 @@ preload_max_objects 200
 
 ### Stage 1: Instrumentation and Baseline
 
-Add counters to CHashFile and attrcache. Expose via `@list cache`.
-Establish performance baseline. **Lands in mainline.**
+Add counters to CHashFile and attrcache. Expose via `@list cache`. Establish
+performance baseline. **Lands in mainline.**
 
 ### Stage 2: Storage Backend Interface
 
-Abstract `cache_*` functions behind an `IStorageBackend` interface.
-Wrap CHashFile as the first implementation. Validate interface
-without changing behavior. **Lands in mainline.**
+Abstract `cache_*` functions behind an `IStorageBackend` interface. Wrap
+CHashFile as the first implementation. Validate interface without changing
+behavior. **Lands in mainline.**
 
 ### Stage 3: SQLite Backend (side project)
 
 Implement SQLite backend with write-through:
+
 - Schema creation
 - Prepared statements
 - `cache_get` / `cache_put` / `cache_del` backed by SQLite
@@ -486,6 +498,7 @@ Implement SQLite backend with write-through:
 ### Stage 4: Unified Object Store (side project)
 
 Move `db[]` persistence from flatfile to SQLite:
+
 - `objects` table
 - Replace `s_Location()` etc. macros with write-through functions
 - Startup loads `db[]` from SQLite instead of flatfile

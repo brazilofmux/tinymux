@@ -1,7 +1,7 @@
 # What TinyMUX Has That TinyMUSH Could Use
 
-Reverse survey: TinyMUX advantages relevant to TinyMUSH 4.
-Companion to docs/survey-tinymush.md.
+Reverse survey: TinyMUX advantages relevant to TinyMUSH 4. Companion to
+docs/survey-tinymush.md.
 
 ---
 
@@ -9,46 +9,45 @@ Companion to docs/survey-tinymush.md.
 
 ### 1. SQLite Write-Through Storage
 
-TinyMUSH uses GDBM (deprecated) or LMDB. Both are key-value stores
-requiring periodic flatfile dumps for durability. A crash between dumps
-loses data.
+TinyMUSH uses GDBM (deprecated) or LMDB. Both are key-value stores requiring
+periodic flatfile dumps for durability. A crash between dumps loses data.
 
 MUX's SQLite write-through means every @set, @link, @dig is immediately
-durable. `@dump` is a WAL checkpoint — no re-serialization. Separate
-INTEGER columns for attr owner/flags enable efficient SQL queries
-without unpacking binary blobs.
+durable. `@dump` is a WAL checkpoint — no re-serialization. Separate INTEGER
+columns for attr owner/flags enable efficient SQL queries without unpacking
+binary blobs.
 
 **Impact:** Zero data loss on crash. Simpler backup (copy one file).
 Eliminates the dump-cycle reliability gap.
 
 ### 2. @search via Indexed SQL Queries
 
-TinyMUSH's @search scans every object linearly. MUX routes simple
-@search cases (owner, type, zone, parent, flags) to indexed SQL queries.
-O(log n + k) vs O(n).
+TinyMUSH's @search scans every object linearly. MUX routes simple @search
+cases (owner, type, zone, parent, flags) to indexed SQL queries. O(log n + k)
+vs O(n).
 
-**Impact:** On a 100k-object game, MUX's @search is ~100x faster for
-common cases.
+**Impact:** On a 100k-object game, MUX's @search is ~100x faster for common
+cases.
 
 ### 3. GANL Networking (epoll/kqueue)
 
 TinyMUSH uses `select()`. MUX's GANL layer provides:
+
 - `epoll` on Linux (O(1) event delivery)
 - `kqueue` on BSD/macOS
 - `select` fallback
 - Factory pattern — same binary, platform-specific engine
 
-**Impact:** Scales to thousands of concurrent connections without
-performance degradation. select() is O(n) in file descriptors.
+**Impact:** Scales to thousands of concurrent connections without performance
+degradation. select() is O(n) in file descriptors.
 
 ### 4. @restart — Connection Preservation
 
-Both TinyMUSH and MUX preserve player connections across restart.
-The mechanism is the same: serialize descriptor state to a restart
-file (`restart.db`), `exec()` the new binary, reload descriptors on
-startup. MUX has an extra step — GANL deregisters fds from
-epoll/kqueue before the exec — but this is an implementation detail,
-not a different approach.
+Both TinyMUSH and MUX preserve player connections across restart. The
+mechanism is the same: serialize descriptor state to a restart file
+(`restart.db`), `exec()` the new binary, reload descriptors on startup. MUX
+has an extra step — GANL deregisters fds from epoll/kqueue before the exec
+— but this is an implementation detail, not a different approach.
 
 **Impact:** Parity — both servers handle this well.
 
@@ -59,6 +58,7 @@ not a different approach.
 ### 5. Full UTF-8 with NFC Normalization
 
 TinyMUSH has no meaningful Unicode support. MUX has:
+
 - DFA-based Unicode classification tables (314-state printable check)
 - Automatic NFC normalization at attribute storage time
 - Canonical Combining Class tracking (132 states, 934 code points)
@@ -106,6 +106,7 @@ e+combining-acute normalize to the same form. No mojibake.
 ### Comsys / Channel Functions
 
 TinyMUSH's comsys is a module with minimal softcode access. MUX has:
+
 - `channels()` — list channels
 - `cemit()` — emit to channel
 - `cwho()` — who's on channel
@@ -139,15 +140,15 @@ Already discussed above. TinyMUSH's is disruptive; MUX's is seamless.
 
 ### Omega Converter
 
-MUX ships Omega, a cross-format flatfile converter supporting T5X, T6H,
-P6H, and R7H formats with full color fidelity. TinyMUSH has no
-equivalent offline conversion tool.
+MUX ships Omega, a cross-format flatfile converter supporting T5X, T6H, P6H,
+and R7H formats with full color fidelity. TinyMUSH has no equivalent offline
+conversion tool.
 
 ---
 
 ## Summary
 
-TinyMUSH would benefit most from: SQLite storage (eliminates dump-cycle
-risk), GANL networking (scalability), UTF-8/NFC (internationalization),
-and connection-preserving @restart (operational reliability). These are
-deep architectural advantages, not simple function additions.
+TinyMUSH would benefit most from: SQLite storage (eliminates dump-cycle risk),
+GANL networking (scalability), UTF-8/NFC (internationalization), and
+connection-preserving @restart (operational reliability). These are deep
+architectural advantages, not simple function additions.

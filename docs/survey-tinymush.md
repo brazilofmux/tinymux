@@ -5,10 +5,10 @@ Purpose: Identify features, patterns, or ideas worth borrowing for TinyMUX.
 
 ## Verdict
 
-Slim pickings. TinyMUSH 4 is a modernization of TinyMUSH 3 (CMake, C11,
-LMDB backend, module system) but the feature set is largely a subset of what
-MUX already has, plus some questionable additions (structures, grid system).
-A few items are worth noting.
+Slim pickings. TinyMUSH 4 is a modernization of TinyMUSH 3 (CMake, C11, LMDB
+backend, module system) but the feature set is largely a subset of what MUX
+already has, plus some questionable additions (structures, grid system). A few
+items are worth noting.
 
 ---
 
@@ -29,9 +29,9 @@ priority since MUX games generally author for their target depth.
 
 ### 2. LMDB as Storage Backend (db_backend_lmdb.c)
 
-TinyMUSH supports LMDB (Lightning Memory-Mapped Database) alongside GDBM.
-LMDB offers memory-mapped zero-copy reads, MVCC concurrency, and automatic
-page coalescing. Starts at 1 GB map, grows to 16 GB.
+TinyMUSH supports LMDB (Lightning Memory-Mapped Database) alongside GDBM. LMDB
+offers memory-mapped zero-copy reads, MVCC concurrency, and automatic page
+coalescing. Starts at 1 GB map, grows to 16 GB.
 
 **Worth borrowing?** No. MUX already moved to SQLite which provides the same
 benefits plus SQL query capability, WAL mode, and broader ecosystem. LMDB
@@ -40,8 +40,8 @@ would be a lateral move.
 ### 3. @cron / @crontab / @crondel
 
 Unix-style cron scheduling for timed attribute triggers. Full cron syntax
-(minute, hour, DOM, month, DOW, ranges, steps). Tasks stored as attributes
-on objects, checked every server pulse. Bitmap-based storage.
+(minute, hour, DOM, month, DOW, ranges, steps). Tasks stored as attributes on
+objects, checked every server pulse. Bitmap-based storage.
 
 **Worth borrowing?** Interesting for game builders who want scheduled events
 without softcode timer loops. MUX has @wait and @daily but no cron-style
@@ -62,8 +62,8 @@ interception, object lifecycle hooks, connection events, and database export.
 Comsys and mail are implemented as modules.
 
 **Worth borrowing?** MUX already has a module system. TinyMUSH's approach of
-making comsys and mail into modules is interesting architecturally but MUX
-has already integrated these tightly. No action needed.
+making comsys and mail into modules is interesting architecturally but MUX has
+already integrated these tightly. No action needed.
 
 ---
 
@@ -73,18 +73,18 @@ has already integrated these tightly. No action needed.
 
 TinyMUSH has a "structures" feature — named record types with typed fields
 that can be instantiated on objects. Functions: CONSTRUCT, DESTRUCT,
-STRUCTURE, UNSTRUCTURE, LSTRUCTURES, LINSTANCES, MODIFY, LOAD, UNLOAD,
-READ, WRITE.
+STRUCTURE, UNSTRUCTURE, LSTRUCTURES, LINSTANCES, MODIFY, LOAD, UNLOAD, READ,
+WRITE.
 
 This is the "records or some nonsense" — it's a complex system that adds
-structured data types to softcode. In practice, MUSH builders use
-delimited strings and lists for structured data. The structures system adds
-complexity without enough payoff. Nobody asked for this.
+structured data types to softcode. In practice, MUSH builders use delimited
+strings and lists for structured data. The structures system adds complexity
+without enough payoff. Nobody asked for this.
 
 ### Grid System (grid/gridmake/gridset/gridsize)
 
-2D grid manipulation functions. Niche use case (board games, maps).
-Trivially implementable in softcode.
+2D grid manipulation functions. Niche use case (board games, maps). Trivially
+implementable in softcode.
 
 ### Stack Functions (push/pop/peek/swap/dup/toss/empty/lstack)
 
@@ -94,7 +94,7 @@ the same purpose more flexibly. Stacks are a TinyMUSH 3 holdover.
 ### Named Variables (xvars/clearvars/lvars/store/x/z/qvars/qsub)
 
 Extended variable system beyond basic q-registers. MUX already has setq/setr
-with named registers (setq(0,val) or setq(name,val)), making most of this
+with named registers (setq(0, val) or setq(name, val)), making most of this
 redundant.
 
 ### Speak() Function
@@ -108,13 +108,13 @@ and munge() covers this.
 
 ### Boolean Variants (andbool/orbool/candbool/corbool/notbool/xorbool/etc.)
 
-Boolean-specific versions of logical operators. MUX's existing and/or/not
-with t() already handle this.
+Boolean-specific versions of logical operators. MUX's existing and/or/not with
+t() already handle this.
 
 ### Deprecated/Legacy Functions
 
-IFZERO, IFTRUE, IFFALSE, ISFALSE, ISTRUE, NONZERO — all trivially
-expressed with if/ifelse/t/not in MUX.
+IFZERO, IFTRUE, IFFALSE, ISFALSE, ISTRUE, NONZERO — all trivially expressed
+with if/ifelse/t/not in MUX.
 
 ---
 
@@ -166,26 +166,26 @@ Most of these MUX already has or doesn't need.
 
 ## Architecture Notes
 
-- **Build system**: CMake (vs MUX's autoconf). Neither is clearly better.
-- **Networking**: select()-based event loop. MUX's GANL (epoll/kqueue) is
+- **Build system:** CMake (vs MUX's autoconf). Neither is clearly better.
+- **Networking:** select()-based event loop. MUX's GANL (epoll/kqueue) is
   more modern and performant.
-- **DNS**: Background thread with SysV message queues. MUX uses a slave
+- **DNS:** Background thread with SysV message queues. MUX uses a slave
   process. Both work; MUX's approach is more portable.
-- **Eval**: Similar token-based parser. Has a separate `parse_to_cleanup()`
+- **Eval:** Similar token-based parser. Has a separate `parse_to_cleanup()`
   pass. Uses configurable stack limit. No fundamental differences.
-- **Queue**: Split across 7 files (cque*.c). Has explicit PID allocation
+- **Queue:** Split across 7 files (cque*.c). Has explicit PID allocation
   per queue entry and economy-tied queue costs. MUX's queue is comparable.
-- **Flags**: 3-word (96 flags max) vs MUX's 4-word design.
+- **Flags:** 3-word (96 flags max) vs MUX's 4-word design.
 
 ---
 
 ## Bottom Line
 
-TinyMUSH 4 is a competent modernization of TinyMUSH 3 but hasn't
-meaningfully expanded the feature set. The codebase is clean and
-well-organized (good file splitting, modern C practices) but there's almost
-nothing here that MUX doesn't already do as well or better. The CIEDE2000
-color matching is the one genuinely clever implementation detail.
+TinyMUSH 4 is a competent modernization of TinyMUSH 3 but hasn't meaningfully
+expanded the feature set. The codebase is clean and well-organized (good file
+splitting, modern C practices) but there's almost nothing here that MUX
+doesn't already do as well or better. The CIEDE2000 color matching is the one
+genuinely clever implementation detail.
 
 The structures/grid/stack features represent a design philosophy of adding
 engine-level primitives for things that softcode handles adequately. MUX's
