@@ -18,10 +18,11 @@
 
 static int check_type;
 
-// Rebuild all SQLite attributes from runtime using the in-memory attribute
-// cache as the source of truth.
+// Best-effort refresh of SQLite attributes from the in-memory attribute cache.
+// This intentionally avoids clearing the entire attribute table because the
+// cache can be incomplete.
 //
-static bool sqlite_rebuild_all_attributes_from_runtime(void)
+static bool sqlite_refresh_cached_attributes_in_sqlite(void)
 {
     struct AttrRow
     {
@@ -32,12 +33,11 @@ static bool sqlite_rebuild_all_attributes_from_runtime(void)
         int flags;
     };
 
-    std::vector<AttrRow> snapshot;
-    snapshot.reserve(1024);
-
     // Use only in-memory cache entries as source of truth here. This avoids
     // pulling values from SQLite while we are trying to repair SQLite state.
     //
+    std::vector<AttrRow> snapshot;
+    snapshot.reserve(mudstate.attribute_lru_cache_map.size());
     for (const auto& kv : mudstate.attribute_lru_cache_map)
     {
         const Aname& key = kv.first;
@@ -61,7 +61,7 @@ static bool sqlite_rebuild_all_attributes_from_runtime(void)
 
         if (entry.data.empty())
         {
-            Log.tinyprintf(T("sqlite_rebuild_all_attributes_from_runtime: invalid empty cache entry #%d/%d" ENDLINE),
+            Log.tinyprintf(T("sqlite_refresh_cached_attributes_in_sqlite: invalid empty cache entry #%d/%d" ENDLINE),
                 key.object, key.attrnum);
             return false;
         }
@@ -80,11 +80,6 @@ static bool sqlite_rebuild_all_attributes_from_runtime(void)
     {
         return false;
     }
-    if (!sqldb.ClearAttributes())
-    {
-        sqldb.Rollback();
-        return false;
-    }
 
     for (const auto& row : snapshot)
     {
@@ -101,6 +96,33 @@ static bool sqlite_rebuild_all_attributes_from_runtime(void)
     }
 
     if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
+}
+
+// Clear SQLite tables/meta after failed create-object reconcile attempts.
+//
+static bool sqlite_clear_after_reconcile_failure(CSQLiteDB &sqldb)
+{
+    if (!sqldb.Begin())
+    {
+        sqldb.Rollback();
+        if (!sqldb.Begin())
+        {
+            return false;
+        }
+    }
+
+    if (  !sqldb.ClearAttributes()
+       || !sqldb.ClearObjectTable()
+       || !sqldb.ClearAttrNames()
+       || !sqldb.PutMeta("attr_next", A_USER_START)
+       || !sqldb.PutMeta("db_top", 0)
+       || !sqldb.PutMeta("record_players", 0)
+       || !sqldb.Commit())
     {
         sqldb.Rollback();
         return false;
@@ -235,32 +257,25 @@ static void reconcile_failed_create_backend(dbref obj)
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
         if (!bAttrsCleared)
         {
-            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting authoritative attr rebuild + sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting cached attribute refresh + sqlite_sync_runtime."));
         }
         else
         {
-            log_text(T("create_obj failed-cleanup fallback: attempting authoritative attr rebuild + sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attempting cached attribute refresh + sqlite_sync_runtime."));
         }
         ENDLOG;
-        bool bRecovered = sqlite_rebuild_all_attributes_from_runtime();
+        bool bRecovered = sqlite_refresh_cached_attributes_in_sqlite();
         bRecovered = bRecovered && sqlite_sync_runtime();
         if (!bRecovered)
         {
-            if (sqldb.Begin())
+            if (!sqlite_clear_after_reconcile_failure(sqldb))
             {
-                if (  !sqldb.ClearAttributes()
-                   || !sqldb.ClearObjectTable()
-                   || !sqldb.ClearAttrNames()
-                   || !sqldb.PutMeta("attr_next", A_USER_START)
-                   || !sqldb.PutMeta("db_top", 0)
-                   || !sqldb.PutMeta("record_players", 0)
-                   || !sqldb.Commit())
-                {
-                    sqldb.Rollback();
-                }
+                STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
+                log_text(T("create_obj failed-cleanup fallback SQLite clear failed."));
+                ENDLOG;
             }
             STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-            log_text(T("create_obj failed-cleanup fallback sqlite rebuild/sync failed."));
+            log_text(T("create_obj failed-cleanup fallback cached refresh/sync failed."));
             ENDLOG;
         }
     }
