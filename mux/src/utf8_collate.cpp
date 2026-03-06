@@ -197,6 +197,33 @@ static const UTF8 *utf8_advance_collate(const UTF8 *p, const UTF8 *pEnd)
             return p + 1;
         }
     }
+    UTF32 cp = p[0];
+    if (2 == n)
+    {
+        cp = ((p[0] & 0x1F) << 6)
+           |  (p[1] & 0x3F);
+    }
+    else if (3 == n)
+    {
+        cp = ((p[0] & 0x0F) << 12)
+           | ((p[1] & 0x3F) << 6)
+           |  (p[2] & 0x3F);
+    }
+    else if (4 == n)
+    {
+        cp = ((p[0] & 0x07) << 18)
+           | ((p[1] & 0x3F) << 12)
+           | ((p[2] & 0x3F) << 6)
+           |  (p[3] & 0x3F);
+    }
+    if (  (2 == n && cp < 0x80)
+       || (3 == n && cp < 0x800)
+       || (4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        return p + 1;
+    }
     const UTF8 *pNext = p + n;
     return (pNext <= pEnd) ? pNext : pEnd;
 }

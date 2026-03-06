@@ -1181,7 +1181,24 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
             *pbValid = false;
             return Buffer;
         }
-        pName = utf8_NextCodePoint(pName);
+        size_t n = utf8_FirstByte[static_cast<unsigned char>(*pName)];
+        if (n < 1 || n >= UTF8_CONTINUE)
+        {
+            *pnName = 0;
+            *pbValid = false;
+            return Buffer;
+        }
+        for (size_t i = 1; i < n; i++)
+        {
+            if (  '\0' == pName[i]
+               || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(pName[i])])
+            {
+                *pnName = 0;
+                *pbValid = false;
+                return Buffer;
+            }
+        }
+        pName += n;
     }
 
     if (IsRestricted(pName_arg, mudconf.attr_name_charset))
