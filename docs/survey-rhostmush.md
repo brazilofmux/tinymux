@@ -365,7 +365,7 @@ Both Rhost and MUX have these. No delta.
 | Power words | 3 (48 powers) | 2 (32 powers) |
 | Depower words | 3 | 0 |
 | Config options | 549 | ~200 |
-| Storage | GDBM/flat | SQLite |
+| Storage | GDBM index + LRU cache + flat | SQLite |
 | Networking | BSD sockets | GANL (epoll/kqueue) |
 | Unicode | Partial UTF-8 | Full UTF-8, NFC, DFA |
 | Color | 16/256/24-bit | 16/256/24-bit (PUA) |

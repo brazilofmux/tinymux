@@ -13,20 +13,39 @@ networking, Unicode, and several function areas.
 
 ### 1. SQLite Write-Through vs Chunk Allocator + Flatfile Dumps
 
-Penn uses its chunk allocator (64KB regions, deref-based migration) with
-periodic flatfile dumps. This is clever engineering from an era of bad system
-allocators, but it doesn't provide:
+Penn doesn't use GDBM at all. It has a custom chunk allocator that's
+genuinely sophisticated:
 
-- **Crash durability** — Penn loses changes since last dump
-- **Indexed queries** — @search is linear scan
-- **Standard tooling** — SQLite is inspectable with standard tools
+- **64KB regions** with per-chunk dereference tracking (1-byte counter per
+  chunk, 0-255).
+- **LRU disk paging:** Regions page in/out of memory via a swap file.
+  Configurable cache size. Hot regions stay resident; cold ones go to disk.
+- **Locality-driven migration:** Frequently-accessed chunks migrate together
+  within regions. Migration runs incrementally — slides, away-moves, and
+  fill-moves to consolidate free space and improve cache locality.
+- **Per-attribute granularity:** Each attribute value is its own chunk, not
+  packed into an object blob. No blob-relocation pathology.
+- **Fork-based dumps:** Child process serializes to flatfile while parent
+  continues serving. Swap file is cloned for the child.
+
+This is the most sophisticated memory management of any MU* server. The
+dereference-weighted migration is clever — it's essentially a user-space
+generational collector for attribute data.
+
+What it doesn't provide:
+
+- **Crash durability** — changes since last dump are lost. No WAL, no
+  journal. Fork+dump is the only persistence mechanism.
+- **Indexed queries** — @search is linear scan over the in-memory db[] array.
+- **Standard tooling** — the swap file and in-memory format are proprietary.
 
 MUX's SQLite write-through gives immediate durability, indexed @search,
-WAL-mode checkpoints, and standard SQL tooling. Every s_*() accessor writes
-through to SQLite synchronously.
+WAL-mode checkpoints, and standard SQL tooling.
 
-**Impact:** MUX never loses data on crash. @search on indexed fields (owner,
-type, zone, parent) is O(log n) vs Penn's O(n).
+**Impact:** Penn's chunk allocator solves the blob-relocation problem that
+plagues GDBM-based servers (each attribute is its own chunk). But it doesn't
+solve crash durability or query performance. MUX's @search on indexed fields
+is O(log n) vs Penn's O(n), and MUX never loses data on crash.
 
 ### 2. GANL Networking vs select()
 

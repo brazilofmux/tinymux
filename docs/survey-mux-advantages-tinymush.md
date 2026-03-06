@@ -9,16 +9,31 @@ docs/survey-tinymush.md.
 
 ### 1. SQLite Write-Through Storage
 
-TinyMUSH uses GDBM (deprecated) or LMDB. Both are key-value stores requiring
-periodic flatfile dumps for durability. A crash between dumps loses data.
+TinyMUSH has an abstract storage backend with two implementations:
 
-MUX's SQLite write-through means every @set, @link, @dig is immediately
-durable. `@dump` is a WAL checkpoint — no re-serialization. Separate INTEGER
-columns for attr owner/flags enable efficient SQL queries without unpacking
-binary blobs.
+- **GDBM (legacy):** Objects bundled with all attributes as single serialized
+  blobs. Adding an attribute rewrites the entire blob, triggering GDBM record
+  relocation. Uses GDBM's built-in cache (400 entries), file locking via
+  fcntl, and `gdbm_sync()` for durability. A `dbrecover` tool can scan raw
+  files for salvageable records after corruption.
+- **LMDB (modern default):** Copy-on-write B+ tree with ACID transactions.
+  No corruption from partial writes, automatic recovery on restart. Memory-
+  mapped I/O means no separate cache layer needed. Map grows dynamically from
+  1 GB to 16 GB. This is a genuine improvement over GDBM.
 
-**Impact:** Zero data loss on crash. Simpler backup (copy one file).
-Eliminates the dump-cycle reliability gap.
+Both backends store objects as bundled blobs (object header + all attributes
+in one record). Neither provides indexed queries — @search is always linear.
+
+MUX's SQLite write-through stores each attribute as a separate row with typed
+columns (owner INTEGER, flags INTEGER). @dump is a WAL checkpoint — no
+re-serialization. @search routes to indexed SQL queries on owner, type, zone,
+parent.
+
+**Impact:** TinyMUSH's LMDB backend solves the crash-durability problem that
+GDBM has. But MUX's per-attribute rows eliminate the blob-relocation
+pathology, and SQL indexes make @search O(log n) instead of O(n). LMDB
+narrows the gap significantly — the remaining difference is query capability
+and storage granularity.
 
 ### 2. @search via Indexed SQL Queries
 

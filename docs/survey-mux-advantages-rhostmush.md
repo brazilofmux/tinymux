@@ -11,27 +11,48 @@ require rethinking foundations, not adding functions.
 
 ## Architecture
 
-### 1. SQLite Write-Through vs GDBM + Flatfile Dumps
+### 1. SQLite Write-Through vs GDBM + Cache + Flatfile Dumps
 
-Rhost uses GDBM with periodic flatfile dumps. This is the same storage model
-from TinyMUSH 2.2.5 circa 1995. Problems:
+Rhost's storage is more sophisticated than "just GDBM." It has a two-level
+architecture:
 
-- **Crash vulnerability** — changes since last dump are lost
-- **Dump lag** — large games stall during dump (fork() + serialize)
-- **No indexed queries** — @search scans every object
-- **No standard tooling** — GDBM files are opaque binary
+- **GDBM index layer:** Maps object ID to (file-offset, size) in a separate
+  `.db` data file. GDBM stores the index, not the objects themselves.
+- **LRU object cache:** 1024-bucket hash table with four chains per bucket
+  (active, modified-active, old, modified-old). Objects are promoted on access
+  and dirty-tracked separately.
+- **LRU attribute cache:** Similar structure, 4096-wide hash table, caches
+  individual attributes independently of their parent objects.
+- **Attributes packed in object blobs:** Each object is serialized with all
+  its attributes as one unit. Adding an attribute means rewriting the blob.
+
+This is real engineering — the cache hit rates are good and the
+active/modified split means dirty objects get priority treatment. But the
+fundamental constraints remain:
+
+- **Crash vulnerability** — changes since last fork+dump are lost. No WAL,
+  no journal, no transaction log.
+- **Blob relocation** — adding an attribute to an object rewrites the entire
+  serialized blob. If the new blob is larger, it relocates to the end of the
+  data file. Under concurrent mutations, abandoned holes get claimed by other
+  objects and the file grows monotonically until a flatfile dump/reload
+  compacts it.
+- **No indexed queries** — @search scans every object linearly.
+- **No standard tooling** — the `.db`/`.dir`/`.pag` files are opaque binary.
 
 MUX's SQLite write-through:
 
 - Every mutation (s_Location, s_Owner, atr_add) writes through immediately
+- Individual attributes are separate rows — no blob relocation
 - @dump is a WAL checkpoint only — sub-millisecond, no fork
 - @search routes to indexed SQL queries
 - Database inspectable with `sqlite3` CLI, standard backup tools
 - Comsys and mail in the same database — unified backup
 
-**Impact:** Eliminates the fundamental reliability weakness of all dump-cycle
-servers. On a 100k-object game, MUX's indexed @search is orders of magnitude
-faster.
+**Impact:** MUX eliminates both the crash-durability gap and the
+blob-relocation pathology. On a 100k-object game, indexed @search is orders
+of magnitude faster. But credit where due — Rhost's cache layer means most
+operations never touch GDBM at all during normal play.
 
 ### 2. GANL Networking vs BSD select()
 
