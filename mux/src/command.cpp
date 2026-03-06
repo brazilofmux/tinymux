@@ -4948,14 +4948,32 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
 
                 // Lowercase attr name code-point-at-a-time (Unicode-aware).
                 //
-                for (q = ap->name; '\0' != *q; q = utf8_NextCodePoint(q))
+                for (q = ap->name; '\0' != *q; )
                 {
+                    size_t n = utf8_FirstByte[static_cast<unsigned char>(*q)];
+                    if (n >= UTF8_CONTINUE)
+                    {
+                        break;
+                    }
+                    bool bValid = true;
+                    for (size_t j = 1; j < n; j++)
+                    {
+                        if (  '\0' == q[j]
+                           || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(q[j])])
+                        {
+                            bValid = false;
+                            break;
+                        }
+                    }
+                    if (!bValid)
+                    {
+                        break;
+                    }
+
                     bool bXor;
                     const string_desc *qDesc = mux_tolower(q, bXor);
                     if (nullptr == qDesc)
                     {
-                        size_t n = utf8_FirstByte[static_cast<unsigned char>(*q)];
-                        if (n >= UTF8_CONTINUE) break;
                         for (size_t j = 0; j < n; j++)
                         {
                             safe_sb_chr(q[j], cbuff, &p);
@@ -4963,7 +4981,14 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                     }
                     else if (bXor)
                     {
-                        for (size_t j = 0; j < qDesc->n_bytes; j++)
+                        if (qDesc->n_bytes != n)
+                        {
+                            for (size_t j = 0; j < n; j++)
+                            {
+                                safe_sb_chr(q[j], cbuff, &p);
+                            }
+                        }
+                        else for (size_t j = 0; j < qDesc->n_bytes; j++)
                         {
                             safe_sb_chr(q[j] ^ qDesc->p[j], cbuff, &p);
                         }
@@ -4975,6 +5000,7 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                             safe_sb_chr(qDesc->p[j], cbuff, &p);
                         }
                     }
+                    q += n;
                 }
                 *p = '\0';
                 const size_t ncbuff = p - cbuff;

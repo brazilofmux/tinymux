@@ -5404,51 +5404,78 @@ UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
     while ('\0' != *a)
     {
         size_t j;
-        size_t m;
+        size_t src = utf8_FirstByte[static_cast<unsigned char>(*a)];
+        if (src >= UTF8_CONTINUE)
+        {
+            src = UTF8_SIZE1;
+        }
+        else
+        {
+            for (j = 1; j < src; j++)
+            {
+                if (  '\0' == a[j]
+                   || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(a[j])])
+                {
+                    src = UTF8_SIZE1;
+                    break;
+                }
+            }
+        }
+
+        size_t out = src;
         bool bXor;
         const string_desc *qDesc = mux_tolower(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
-            if (m >= UTF8_CONTINUE)
-            {
-                m = UTF8_SIZE1;
-            }
-            if (LBUF_SIZE-1 < n + m)
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            for (j = 0; j < m; j++)
+            for (j = 0; j < out; j++)
             {
                 Buffer[n+j] = a[j];
             }
         }
         else
         {
-            m = qDesc->n_bytes;
-            if (LBUF_SIZE-1 < n + m)
+            out = qDesc->n_bytes;
+            if (  bXor
+               && out != src)
+            {
+                out = src;
+                qDesc = nullptr;
+                bXor = false;
+            }
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            if (bXor)
+            if (nullptr == qDesc)
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
+                {
+                    Buffer[n+j] = a[j];
+                }
+            }
+            else if (bXor)
+            {
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = a[j] ^ qDesc->p[j];
                 }
             }
             else
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = qDesc->p[j];
                 }
             }
         }
-        n += m;
-        a += m;
+        n += out;
+        a += src;
     }
     Buffer[n] = '\0';
     return Buffer;
@@ -5464,51 +5491,78 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
     while ('\0' != *a)
     {
         size_t j;
-        size_t m;
+        size_t src = utf8_FirstByte[static_cast<unsigned char>(*a)];
+        if (src >= UTF8_CONTINUE)
+        {
+            src = UTF8_SIZE1;
+        }
+        else
+        {
+            for (j = 1; j < src; j++)
+            {
+                if (  '\0' == a[j]
+                   || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(a[j])])
+                {
+                    src = UTF8_SIZE1;
+                    break;
+                }
+            }
+        }
+
+        size_t out = src;
         bool bXor;
         const string_desc *qDesc = mux_toupper(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
-            if (m >= UTF8_CONTINUE)
-            {
-                m = UTF8_SIZE1;
-            }
-            if (LBUF_SIZE-1 < n + m)
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            for (j = 0; j < m; j++)
+            for (j = 0; j < out; j++)
             {
                 Buffer[n+j] = a[j];
             }
         }
         else
         {
-            m = qDesc->n_bytes;
-            if (LBUF_SIZE-1 < n + m)
+            out = qDesc->n_bytes;
+            if (  bXor
+               && out != src)
+            {
+                out = src;
+                qDesc = nullptr;
+                bXor = false;
+            }
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            if (bXor)
+            if (nullptr == qDesc)
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
+                {
+                    Buffer[n+j] = a[j];
+                }
+            }
+            else if (bXor)
+            {
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = a[j] ^ qDesc->p[j];
                 }
             }
             else
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = qDesc->p[j];
                 }
             }
         }
-        n += m;
-        a += m;
+        n += out;
+        a += src;
     }
     Buffer[n] = '\0';
     return Buffer;
@@ -5608,52 +5662,79 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
     while ('\0' != *a)
     {
         size_t j;
-        size_t m;
+        size_t src = utf8_FirstByte[static_cast<unsigned char>(*a)];
+        if (src >= UTF8_CONTINUE)
+        {
+            src = UTF8_SIZE1;
+        }
+        else
+        {
+            for (j = 1; j < src; j++)
+            {
+                if (  '\0' == a[j]
+                   || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(a[j])])
+                {
+                    src = UTF8_SIZE1;
+                    break;
+                }
+            }
+        }
+
+        size_t out = src;
         bool bXor;
         const string_desc *qDesc = mux_foldmatch(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
-            if (m >= UTF8_CONTINUE)
-            {
-                m = UTF8_SIZE1;
-            }
-            if (LBUF_SIZE-1 < n + m)
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            for (j = 0; j < m; j++)
+            for (j = 0; j < out; j++)
             {
                 Buffer[n+j] = a[j];
             }
         }
         else
         {
-            fChanged = true;
-            m = qDesc->n_bytes;
-            if (LBUF_SIZE-1 < n + m)
+            out = qDesc->n_bytes;
+            if (  bXor
+               && out != src)
+            {
+                out = src;
+                qDesc = nullptr;
+                bXor = false;
+            }
+            if (LBUF_SIZE-1 < n + out)
             {
                 break;
             }
 
-            if (bXor)
+            if (nullptr == qDesc)
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
+                {
+                    Buffer[n+j] = a[j];
+                }
+            }
+            else if (bXor)
+            {
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = a[j] ^ qDesc->p[j];
                 }
             }
             else
             {
-                for (j = 0; j < m; j++)
+                for (j = 0; j < out; j++)
                 {
                     Buffer[n+j] = qDesc->p[j];
                 }
             }
+            fChanged = true;
         }
-        n += m;
-        a += m;
+        n += out;
+        a += src;
     }
     Buffer[n] = '\0';
     return Buffer;
