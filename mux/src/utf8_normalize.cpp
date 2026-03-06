@@ -32,15 +32,35 @@
 // Decode a single UTF-32 code point from a UTF-8 byte sequence.
 // Advances *pp past the code point.  Returns UNI_EOF on error.
 //
-static UTF32 utf8_Decode(const UTF8 **pp)
+static UTF32 utf8_Decode(const UTF8 **pp, const UTF8 *pEnd)
 {
     const UTF8 *p = *pp;
+    if (p >= pEnd)
+    {
+        return UNI_EOF;
+    }
+
     int n = utf8_FirstByte[*p];
     if (n <= 0 || n >= UTF8_CONTINUE)
     {
         // Continuation byte or invalid — skip one byte.
         (*pp)++;
         return UNI_EOF;
+    }
+    if (p + n > pEnd)
+    {
+        // Truncated sequence at end of buffer.
+        *pp = pEnd;
+        return UNI_EOF;
+    }
+    for (int i = 1; i < n; i++)
+    {
+        if (UTF8_CONTINUE != utf8_FirstByte[p[i]])
+        {
+            // Invalid continuation byte — skip one byte.
+            (*pp)++;
+            return UNI_EOF;
+        }
     }
 
     UTF32 cp;
@@ -552,7 +572,7 @@ static void DecomposeOne(UTF32 cp, NFCCodePoint *buf, int &n, int maxN)
     while (dp < dpEnd && n < maxN)
     {
         const UTF8 *dpStart = dp;
-        UTF32 dcp = utf8_Decode(&dp);
+        UTF32 dcp = utf8_Decode(&dp, dpEnd);
         if (UNI_EOF == dcp)
         {
             break;
@@ -691,7 +711,7 @@ void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax,
     const UTF8 *pEnd = src + nSrc;
     while (p < pEnd && nCps < NFC_MAX_CODEPOINTS)
     {
-        UTF32 cp = utf8_Decode(&p);
+        UTF32 cp = utf8_Decode(&p, pEnd);
         if (UNI_EOF == cp)
         {
             continue;

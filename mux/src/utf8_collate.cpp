@@ -194,6 +194,55 @@ static const UTF8 *utf8_advance_collate(const UTF8 *p, const UTF8 *pEnd)
 }
 
 // ---------------------------------------------------------------------------
+// Decode one UTF-8 code point from [p, pEnd). Returns UNI_EOF on error.
+// ---------------------------------------------------------------------------
+static UTF32 utf8_decode_collate(const UTF8 *p, const UTF8 *pEnd)
+{
+    if (p >= pEnd)
+    {
+        return UNI_EOF;
+    }
+
+    int n = utf8_FirstByte[*p];
+    if (n < 1 || n >= UTF8_CONTINUE)
+    {
+        return UNI_EOF;
+    }
+    if (p + n > pEnd)
+    {
+        return UNI_EOF;
+    }
+    for (int i = 1; i < n; i++)
+    {
+        if (UTF8_CONTINUE != utf8_FirstByte[p[i]])
+        {
+            return UNI_EOF;
+        }
+    }
+
+    UTF32 cp = p[0];
+    if (2 == n)
+    {
+        cp = ((p[0] & 0x1F) << 6)
+           |  (p[1] & 0x3F);
+    }
+    else if (3 == n)
+    {
+        cp = ((p[0] & 0x0F) << 12)
+           | ((p[1] & 0x3F) << 6)
+           |  (p[2] & 0x3F);
+    }
+    else if (4 == n)
+    {
+        cp = ((p[0] & 0x07) << 18)
+           | ((p[1] & 0x3F) << 12)
+           | ((p[2] & 0x3F) << 6)
+           |  (p[3] & 0x3F);
+    }
+    return cp;
+}
+
+// ---------------------------------------------------------------------------
 // Implicit weight computation (UCA Section 10.1).
 //
 // Code points not in DUCET get synthetic collation elements derived
@@ -341,7 +390,7 @@ static int CollectCEs(const UTF8 *src, size_t nSrc, uint32_t *ces, int maxCEs)
         {
             // Not in DUCET.  Compute implicit weight.
             //
-            UTF32 cp = ConvertFromUTF8(p);
+            UTF32 cp = utf8_decode_collate(p, pNext);
             if (UNI_EOF != cp)
             {
                 unsigned short aaaa, bbbb;

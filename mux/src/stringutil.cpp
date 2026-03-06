@@ -5264,7 +5264,11 @@ UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
         const string_desc *qDesc = mux_tolower(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[*a];
+            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
+            if (m >= UTF8_CONTINUE)
+            {
+                m = UTF8_SIZE1;
+            }
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
@@ -5299,7 +5303,7 @@ UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
             }
         }
         n += m;
-        a = utf8_NextCodePoint(a);
+        a += m;
     }
     Buffer[n] = '\0';
     return Buffer;
@@ -5320,7 +5324,11 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
         const string_desc *qDesc = mux_toupper(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[*a];
+            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
+            if (m >= UTF8_CONTINUE)
+            {
+                m = UTF8_SIZE1;
+            }
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
@@ -5355,7 +5363,7 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
             }
         }
         n += m;
-        a = utf8_NextCodePoint(a);
+        a += m;
     }
     Buffer[n] = '\0';
     return Buffer;
@@ -5460,7 +5468,11 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
         const string_desc *qDesc = mux_foldmatch(a, bXor);
         if (nullptr == qDesc)
         {
-            m = utf8_FirstByte[*a];
+            m = utf8_FirstByte[static_cast<unsigned char>(*a)];
+            if (m >= UTF8_CONTINUE)
+            {
+                m = UTF8_SIZE1;
+            }
             if (LBUF_SIZE-1 < n + m)
             {
                 break;
@@ -5496,7 +5508,7 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
             }
         }
         n += m;
-        a = utf8_NextCodePoint(a);
+        a += m;
     }
     Buffer[n] = '\0';
     return Buffer;
