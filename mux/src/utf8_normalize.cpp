@@ -63,36 +63,8 @@ static UTF32 utf8_Decode(const UTF8 **pp, const UTF8 *pEnd)
         }
     }
 
-    UTF32 cp;
-    switch (n)
-    {
-    case 1:
-        cp = p[0];
-        break;
-    case 2:
-        cp = ((p[0] & 0x1F) << 6)
-           |  (p[1] & 0x3F);
-        break;
-    case 3:
-        cp = ((p[0] & 0x0F) << 12)
-           | ((p[1] & 0x3F) << 6)
-           |  (p[2] & 0x3F);
-        break;
-    case 4:
-        cp = ((p[0] & 0x07) << 18)
-           | ((p[1] & 0x3F) << 12)
-           | ((p[2] & 0x3F) << 6)
-           |  (p[3] & 0x3F);
-        break;
-    default:
-        cp = UNI_EOF;
-        break;
-    }
-    if (  (2 == n && cp < 0x80)
-       || (3 == n && cp < 0x800)
-       || (4 == n && cp < 0x10000)
-       || cp > UNI_MAX_LEGAL_UTF32
-       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    UTF32 cp = utf8_decode_raw(p, n);
+    if (!utf8_is_valid_scalar(cp, n))
     {
         (*pp)++;
         return UNI_EOF;
@@ -449,30 +421,8 @@ bool utf8_is_nfc(const UTF8 *src, size_t nSrc)
             }
         }
 
-        UTF32 cp = p[0];
-        if (2 == n)
-        {
-            cp = ((p[0] & 0x1F) << 6)
-               |  (p[1] & 0x3F);
-        }
-        else if (3 == n)
-        {
-            cp = ((p[0] & 0x0F) << 12)
-               | ((p[1] & 0x3F) << 6)
-               |  (p[2] & 0x3F);
-        }
-        else if (4 == n)
-        {
-            cp = ((p[0] & 0x07) << 18)
-               | ((p[1] & 0x3F) << 12)
-               | ((p[2] & 0x3F) << 6)
-               |  (p[3] & 0x3F);
-        }
-        if (  (2 == n && cp < 0x80)
-           || (3 == n && cp < 0x800)
-           || (4 == n && cp < 0x10000)
-           || cp > UNI_MAX_LEGAL_UTF32
-           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        UTF32 cp = utf8_decode_raw(p, n);
+        if (!utf8_is_valid_scalar(cp, n))
         {
             return false;
         }

@@ -51,6 +51,65 @@ extern const UTF8 *latin1_utf8[256];
 extern const UTF8 *latin2_utf8[256];
 #define latin2_utf8(x) (reinterpret_cast<const UTF8 *>(latin2_utf8[static_cast<unsigned char>(x)]))
 
+#define UNI_EOF ((UTF32)-1)
+
+#define UNI_REPLACEMENT_CHAR ((UTF32)0x0000FFFDUL)
+#define UNI_MAX_BMP          ((UTF32)0x0000FFFFUL)
+#define UNI_MAX_UTF16        ((UTF32)0x0010FFFFUL)
+#define UNI_MAX_UTF32        ((UTF32)0x7FFFFFFFUL)
+#define UNI_MAX_LEGAL_UTF32  ((UTF32)0x0010FFFFUL)
+#define UNI_SUR_HIGH_START   ((UTF32)0x0000D800UL)
+#define UNI_SUR_HIGH_END     ((UTF32)0x0000DBFFUL)
+#define UNI_SUR_LOW_START    ((UTF32)0x0000DC00UL)
+#define UNI_SUR_LOW_END      ((UTF32)0x0000DFFFUL)
+#define UNI_PU1_START        ((UTF32)0x0000E000UL)
+#define UNI_PU1_END          ((UTF32)0x0000F8FFUL)
+#define UNI_PU2_START        ((UTF32)0x000F0000UL)
+#define UNI_PU2_END          ((UTF32)0x000FFFFDUL)
+#define UNI_PU3_START        ((UTF32)0x00100000UL)
+#define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
+
+// Decode a validated UTF-8 sequence of n bytes into a Unicode scalar value.
+// The caller must have already verified that p[0] is a valid lead byte and
+// p[1..n-1] are valid continuation bytes.
+//
+inline UTF32 utf8_decode_raw(const UTF8 *p, size_t n)
+{
+    if (1 == n) return p[0];
+    if (2 == n)
+    {
+        return ((UTF32)(p[0] & 0x1F) << 6)
+             |  (UTF32)(p[1] & 0x3F);
+    }
+    if (3 == n)
+    {
+        return ((UTF32)(p[0] & 0x0F) << 12)
+             | ((UTF32)(p[1] & 0x3F) << 6)
+             |  (UTF32)(p[2] & 0x3F);
+    }
+    return ((UTF32)(p[0] & 0x07) << 18)
+         | ((UTF32)(p[1] & 0x3F) << 12)
+         | ((UTF32)(p[2] & 0x3F) << 6)
+         |  (UTF32)(p[3] & 0x3F);
+}
+
+// Check whether a decoded scalar value is valid for its encoding length.
+// Rejects overlong encodings, surrogates (U+D800..U+DFFF), and values
+// beyond U+10FFFF.
+//
+inline bool utf8_is_valid_scalar(UTF32 cp, size_t n)
+{
+    if (  (2 == n && cp < 0x80)
+       || (3 == n && cp < 0x800)
+       || (4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        return false;
+    }
+    return true;
+}
+
 // This function trims the string back to the first valid UTF-8 sequence it
 // finds, but it does not validate the entire string.
 //
@@ -92,30 +151,8 @@ inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
             continue;
         }
 
-        UTF32 cp = p[iStart];
-        if (2 == nBytes)
-        {
-            cp = ((p[iStart] & 0x1F) << 6)
-               |  (p[iStart + 1] & 0x3F);
-        }
-        else if (3 == nBytes)
-        {
-            cp = ((p[iStart] & 0x0F) << 12)
-               | ((p[iStart + 1] & 0x3F) << 6)
-               |  (p[iStart + 2] & 0x3F);
-        }
-        else if (4 == nBytes)
-        {
-            cp = ((p[iStart] & 0x07) << 18)
-               | ((p[iStart + 1] & 0x3F) << 12)
-               | ((p[iStart + 2] & 0x3F) << 6)
-               |  (p[iStart + 3] & 0x3F);
-        }
-        if (  (2 == nBytes && cp < 0x80)
-           || (3 == nBytes && cp < 0x800)
-           || (4 == nBytes && cp < 0x10000)
-           || cp > UNI_MAX_LEGAL_UTF32
-           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        UTF32 cp = utf8_decode_raw(p + iStart, static_cast<size_t>(nBytes));
+        if (!utf8_is_valid_scalar(cp, static_cast<size_t>(nBytes)))
         {
             n = iStart;
             continue;
@@ -145,24 +182,6 @@ inline size_t TrimPartialSequence(size_t n, const UTF8 *p)
 
 #define mux_issecure(x)           (mux_issecure[static_cast<unsigned char>(x)])
 #define mux_isescape(x)           (mux_isescape[static_cast<unsigned char>(x)])
-
-#define UNI_EOF ((UTF32)-1)
-
-#define UNI_REPLACEMENT_CHAR ((UTF32)0x0000FFFDUL)
-#define UNI_MAX_BMP          ((UTF32)0x0000FFFFUL)
-#define UNI_MAX_UTF16        ((UTF32)0x0010FFFFUL)
-#define UNI_MAX_UTF32        ((UTF32)0x7FFFFFFFUL)
-#define UNI_MAX_LEGAL_UTF32  ((UTF32)0x0010FFFFUL)
-#define UNI_SUR_HIGH_START   ((UTF32)0x0000D800UL)
-#define UNI_SUR_HIGH_END     ((UTF32)0x0000DBFFUL)
-#define UNI_SUR_LOW_START    ((UTF32)0x0000DC00UL)
-#define UNI_SUR_LOW_END      ((UTF32)0x0000DFFFUL)
-#define UNI_PU1_START        ((UTF32)0x0000E000UL)
-#define UNI_PU1_END          ((UTF32)0x0000F8FFUL)
-#define UNI_PU2_START        ((UTF32)0x000F0000UL)
-#define UNI_PU2_END          ((UTF32)0x000FFFFDUL)
-#define UNI_PU3_START        ((UTF32)0x00100000UL)
-#define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
 
 #define utf8_NextCodePoint(x)      (x + utf8_FirstByte[static_cast<unsigned char>(*x)])
 

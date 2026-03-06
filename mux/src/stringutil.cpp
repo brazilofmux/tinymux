@@ -468,30 +468,8 @@ static size_t utf8_advance_nul(const UTF8 *p)
             return UTF8_SIZE1;
         }
     }
-    UTF32 cp = p[0];
-    if (UTF8_SIZE2 == n)
-    {
-        cp = ((p[0] & 0x1F) << 6)
-           |  (p[1] & 0x3F);
-    }
-    else if (UTF8_SIZE3 == n)
-    {
-        cp = ((p[0] & 0x0F) << 12)
-           | ((p[1] & 0x3F) << 6)
-           |  (p[2] & 0x3F);
-    }
-    else if (UTF8_SIZE4 == n)
-    {
-        cp = ((p[0] & 0x07) << 18)
-           | ((p[1] & 0x3F) << 12)
-           | ((p[2] & 0x3F) << 6)
-           |  (p[3] & 0x3F);
-    }
-    if (  (UTF8_SIZE2 == n && cp < 0x80)
-       || (UTF8_SIZE3 == n && cp < 0x800)
-       || (UTF8_SIZE4 == n && cp < 0x10000)
-       || cp > UNI_MAX_LEGAL_UTF32
-       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    UTF32 cp = utf8_decode_raw(p, n);
+    if (!utf8_is_valid_scalar(cp, n))
     {
         return UTF8_SIZE1;
     }
@@ -520,30 +498,8 @@ static size_t utf8_advance_bounded(const UTF8 *p, size_t nAvail)
         }
     }
 
-    UTF32 cp = p[0];
-    if (UTF8_SIZE2 == n)
-    {
-        cp = ((p[0] & 0x1F) << 6)
-           |  (p[1] & 0x3F);
-    }
-    else if (UTF8_SIZE3 == n)
-    {
-        cp = ((p[0] & 0x0F) << 12)
-           | ((p[1] & 0x3F) << 6)
-           |  (p[2] & 0x3F);
-    }
-    else if (UTF8_SIZE4 == n)
-    {
-        cp = ((p[0] & 0x07) << 18)
-           | ((p[1] & 0x3F) << 12)
-           | ((p[2] & 0x3F) << 6)
-           |  (p[3] & 0x3F);
-    }
-    if (  (UTF8_SIZE2 == n && cp < 0x80)
-       || (UTF8_SIZE3 == n && cp < 0x800)
-       || (UTF8_SIZE4 == n && cp < 0x10000)
-       || cp > UNI_MAX_LEGAL_UTF32
-       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    UTF32 cp = utf8_decode_raw(p, n);
+    if (!utf8_is_valid_scalar(cp, n))
     {
         return UTF8_SIZE1;
     }
@@ -791,30 +747,8 @@ bool utf8_strlen(const UTF8 *pString, size_t &nString)
                 return false;
             }
         }
-        UTF32 cp = pString[i];
-        if (UTF8_SIZE2 == t)
-        {
-            cp = ((pString[i] & 0x1F) << 6)
-               |  (pString[i+1] & 0x3F);
-        }
-        else if (UTF8_SIZE3 == t)
-        {
-            cp = ((pString[i] & 0x0F) << 12)
-               | ((pString[i+1] & 0x3F) << 6)
-               |  (pString[i+2] & 0x3F);
-        }
-        else if (UTF8_SIZE4 == t)
-        {
-            cp = ((pString[i] & 0x07) << 18)
-               | ((pString[i+1] & 0x3F) << 12)
-               | ((pString[i+2] & 0x3F) << 6)
-               |  (pString[i+3] & 0x3F);
-        }
-        if (  (UTF8_SIZE2 == t && cp < 0x80)
-           || (UTF8_SIZE3 == t && cp < 0x800)
-           || (UTF8_SIZE4 == t && cp < 0x10000)
-           || cp > UNI_MAX_LEGAL_UTF32
-           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        UTF32 cp = utf8_decode_raw(pString + i, t);
+        if (!utf8_is_valid_scalar(cp, t))
         {
             return false;
         }
@@ -847,30 +781,8 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString)
                 return false;
             }
         }
-        UTF32 cp = pString[nBytes];
-        if (UTF8_SIZE2 == t)
-        {
-            cp = ((pString[nBytes] & 0x1F) << 6)
-               |  (pString[nBytes+1] & 0x3F);
-        }
-        else if (UTF8_SIZE3 == t)
-        {
-            cp = ((pString[nBytes] & 0x0F) << 12)
-               | ((pString[nBytes+1] & 0x3F) << 6)
-               |  (pString[nBytes+2] & 0x3F);
-        }
-        else if (UTF8_SIZE4 == t)
-        {
-            cp = ((pString[nBytes] & 0x07) << 18)
-               | ((pString[nBytes+1] & 0x3F) << 12)
-               | ((pString[nBytes+2] & 0x3F) << 6)
-               |  (pString[nBytes+3] & 0x3F);
-        }
-        if (  (UTF8_SIZE2 == t && cp < 0x80)
-           || (UTF8_SIZE3 == t && cp < 0x800)
-           || (UTF8_SIZE4 == t && cp < 0x10000)
-           || cp > UNI_MAX_LEGAL_UTF32
-           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        UTF32 cp = utf8_decode_raw(pString + nBytes, t);
+        if (!utf8_is_valid_scalar(cp, t))
         {
             nString(nBytes, nPoints);
             return false;
@@ -4380,9 +4292,8 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         {
             return UNI_EOF;
         }
-        ch =  ((UTF32)(pString[0] & 0x1F) <<  6)
-           |  ((UTF32)(pString[1] & 0x3F)      );
-        if (ch < 0x80)
+        ch = utf8_decode_raw(pString, 2);
+        if (!utf8_is_valid_scalar(ch, 2))
         {
             return UNI_EOF;
         }
@@ -4396,10 +4307,8 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         {
             return UNI_EOF;
         }
-        ch = ((UTF32)(pString[0] & 0x0F) << 12)
-           | ((UTF32)(pString[1] & 0x3F) <<  6)
-           | ((UTF32)(pString[2] & 0x3F)      );
-        if (ch < 0x800)
+        ch = utf8_decode_raw(pString, 3);
+        if (!utf8_is_valid_scalar(ch, 3))
         {
             return UNI_EOF;
         }
@@ -4415,11 +4324,8 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         {
             return UNI_EOF;
         }
-        ch = ((UTF32)(pString[0] & 0x07) << 18)
-           | ((UTF32)(pString[1] & 0x3F) << 12)
-           | ((UTF32)(pString[2] & 0x3F) <<  6)
-           | ((UTF32)(pString[3] & 0x3F)      );
-        if (ch < 0x10000)
+        ch = utf8_decode_raw(pString, 4);
+        if (!utf8_is_valid_scalar(ch, 4))
         {
             return UNI_EOF;
         }
@@ -4429,9 +4335,7 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         return UNI_EOF;
     }
 
-    if (  ch < UNI_SUR_HIGH_START
-       || (  UNI_SUR_LOW_END < ch
-          && ch <= UNI_MAX_LEGAL_UTF32))
+    if (utf8_is_valid_scalar(ch, t))
     {
         return ch;
     }
