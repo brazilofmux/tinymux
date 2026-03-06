@@ -5230,30 +5230,56 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
         UTF8 la[4], lb[4];
         size_t na, nb;
 
+        size_t remA = static_cast<size_t>(p1End - p1);
+        size_t srcA = utf8_FirstByte[static_cast<unsigned char>(*p1)];
+        if (srcA >= UTF8_CONTINUE)
+        {
+            srcA = UTF8_SIZE1;
+        }
+        bool bValidA = (srcA <= remA);
+        if (bValidA)
+        {
+            for (size_t i = 1; i < srcA; i++)
+            {
+                if (UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(p1[i])])
+                {
+                    bValidA = false;
+                    break;
+                }
+            }
+        }
+        if (!bValidA)
+        {
+            srcA = UTF8_SIZE1;
+        }
+        UTF8 cpA[5];
+        for (size_t j = 0; j < srcA; j++)
+        {
+            cpA[j] = p1[j];
+        }
+        cpA[srcA] = '\0';
+
         bool bXorA;
-        const string_desc *qA = mux_tolower(p1, bXorA);
+        const string_desc *qA = bValidA ? mux_tolower(cpA, bXorA) : nullptr;
         if (nullptr == qA)
         {
-            na = utf8_FirstByte[static_cast<unsigned char>(*p1)];
-            if (na >= UTF8_CONTINUE) na = 1;
-            size_t remA = static_cast<size_t>(p1End - p1);
-            if (na > remA)
-            {
-                na = remA;
-            }
-            for (size_t j = 0; j < na; j++) la[j] = p1[j];
+            na = srcA;
+            for (size_t j = 0; j < na; j++) la[j] = cpA[j];
         }
         else
         {
             na = qA->n_bytes;
-            size_t remA = static_cast<size_t>(p1End - p1);
+            if (bXorA && na > srcA)
+            {
+                na = srcA;
+            }
             if (na > remA)
             {
                 na = remA;
             }
             if (bXorA)
             {
-                for (size_t j = 0; j < na; j++) la[j] = p1[j] ^ qA->p[j];
+                for (size_t j = 0; j < na; j++) la[j] = cpA[j] ^ qA->p[j];
             }
             else
             {
@@ -5261,30 +5287,56 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
             }
         }
 
+        size_t remB = static_cast<size_t>(p2End - p2);
+        size_t srcB = utf8_FirstByte[static_cast<unsigned char>(*p2)];
+        if (srcB >= UTF8_CONTINUE)
+        {
+            srcB = UTF8_SIZE1;
+        }
+        bool bValidB = (srcB <= remB);
+        if (bValidB)
+        {
+            for (size_t i = 1; i < srcB; i++)
+            {
+                if (UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(p2[i])])
+                {
+                    bValidB = false;
+                    break;
+                }
+            }
+        }
+        if (!bValidB)
+        {
+            srcB = UTF8_SIZE1;
+        }
+        UTF8 cpB[5];
+        for (size_t j = 0; j < srcB; j++)
+        {
+            cpB[j] = p2[j];
+        }
+        cpB[srcB] = '\0';
+
         bool bXorB;
-        const string_desc *qB = mux_tolower(p2, bXorB);
+        const string_desc *qB = bValidB ? mux_tolower(cpB, bXorB) : nullptr;
         if (nullptr == qB)
         {
-            nb = utf8_FirstByte[static_cast<unsigned char>(*p2)];
-            if (nb >= UTF8_CONTINUE) nb = 1;
-            size_t remB = static_cast<size_t>(p2End - p2);
-            if (nb > remB)
-            {
-                nb = remB;
-            }
-            for (size_t j = 0; j < nb; j++) lb[j] = p2[j];
+            nb = srcB;
+            for (size_t j = 0; j < nb; j++) lb[j] = cpB[j];
         }
         else
         {
             nb = qB->n_bytes;
-            size_t remB = static_cast<size_t>(p2End - p2);
+            if (bXorB && nb > srcB)
+            {
+                nb = srcB;
+            }
             if (nb > remB)
             {
                 nb = remB;
             }
             if (bXorB)
             {
-                for (size_t j = 0; j < nb; j++) lb[j] = p2[j] ^ qB->p[j];
+                for (size_t j = 0; j < nb; j++) lb[j] = cpB[j] ^ qB->p[j];
             }
             else
             {
