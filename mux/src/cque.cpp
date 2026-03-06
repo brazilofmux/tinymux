@@ -1219,7 +1219,7 @@ void sql_que
     const MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
     if (MUX_FAILED(mr))
     {
-        scheduler.CancelTask(Task_SQLTimeout, tmp, next_handle);
+        scheduler.CancelTask(Task_SQLTimeout, tmp, 0);
     }
 }
 

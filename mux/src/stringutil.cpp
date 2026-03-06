@@ -4821,7 +4821,8 @@ mux_field StripTabsAndTruncate
         }
         else if (nullptr == strchr("\r\n\t", pString[curPos.m_byte]))
         {
-            mux_field  fldPoint(static_cast<LBUF_OFFSET>(nPointBytes), 1);
+            int nPointWidth = ConsoleWidth(pString + curPos.m_byte);
+            mux_field  fldPoint(static_cast<LBUF_OFFSET>(nPointBytes), static_cast<LBUF_OFFSET>(nPointWidth));
             if (csCurrent != csNext)
             {
                 pTransition = ColorTransitionBinary(csCurrent, csNext, &nTransition);
