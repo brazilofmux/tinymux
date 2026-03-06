@@ -2364,7 +2364,10 @@ public:
     }
 
     bool cursor_from_cluster(mux_cursor &c, LBUF_OFFSET iCluster) const;
+    bool cursor_from_column(mux_cursor &c, LBUF_OFFSET iColumn, mux_cursor iStart = CursorMin) const;
     size_t cluster_position(const mux_cursor &c) const;
+    [[nodiscard]] LBUF_OFFSET visual_width() const;
+    [[nodiscard]] LBUF_OFFSET visual_width(mux_cursor iStart, mux_cursor iEnd) const;
 
     friend class mux_words;
 };

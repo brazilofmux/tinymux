@@ -9165,6 +9165,50 @@ size_t mux_string::cluster_position(const mux_cursor &c) const
     return utf8_clusters_before(m_autf, m_iLast.m_byte, c.m_byte);
 }
 
+// ---------------------------------------------------------------------------
+
+LBUF_OFFSET mux_string::visual_width() const
+{
+    return visual_width(CursorMin, m_iLast);
+}
+
+// ---------------------------------------------------------------------------
+
+LBUF_OFFSET mux_string::visual_width(mux_cursor iStart, mux_cursor iEnd) const
+{
+    LBUF_OFFSET nColumns = 0;
+    mux_cursor c = iStart;
+    while (c.m_point < iEnd.m_point && c.m_point < m_iLast.m_point)
+    {
+        nColumns += static_cast<LBUF_OFFSET>(ConsoleWidth(m_autf + c.m_byte));
+        cursor_next(c);
+    }
+    return nColumns;
+}
+
+// ---------------------------------------------------------------------------
+
+bool mux_string::cursor_from_column(mux_cursor &c, LBUF_OFFSET iColumn, mux_cursor iStart) const
+{
+    c = iStart;
+    LBUF_OFFSET nColumns = 0;
+    while (nColumns < iColumn && c.m_point < m_iLast.m_point)
+    {
+        int w = ConsoleWidth(m_autf + c.m_byte);
+        if (nColumns + static_cast<LBUF_OFFSET>(w) > iColumn)
+        {
+            // Wide character would exceed target column.
+            //
+            break;
+        }
+        nColumns += static_cast<LBUF_OFFSET>(w);
+        cursor_next(c);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+
 mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
 {
     m_aiWordBegins[0] = CursorMin;

@@ -9144,15 +9144,16 @@ static void centerjustcombo
     }
 
     mux_cursor nStr = sStr->length_cursor();
+    LBUF_OFFSET nStrWidth = sStr->visual_width();
 
     // If there's no need to pad, then we are done.
     //
-    if (nWidth <= nStr.m_point)
+    if (nWidth <= nStrWidth)
     {
         mux_cursor iEnd = nStr;
         if (bTrunc)
         {
-            sStr->cursor_from_point(iEnd, nWidth);
+            sStr->cursor_from_column(iEnd, nWidth);
         }
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
@@ -9183,7 +9184,7 @@ static void centerjustcombo
         sPad->import(fargs[2]);
         sPad->strip(T("\r\n\t"));
     }
-    LBUF_OFFSET nPad = sPad->length_cursor().m_point;
+    LBUF_OFFSET nPad = sPad->visual_width();
     if (0 == nPad)
     {
         sPad->import(T(" "), 1);
@@ -9193,13 +9194,13 @@ static void centerjustcombo
     LBUF_OFFSET nLeading = 0;
     if (iType == CJC_CENTER)
     {
-        nLeading = (nWidth - nStr.m_point)/2;
+        nLeading = (nWidth - nStrWidth)/2;
     }
     else if (iType == CJC_RJUST)
     {
-        nLeading = nWidth - nStr.m_point;
+        nLeading = nWidth - nStrWidth;
     }
-    LBUF_OFFSET nTrailing = nWidth - nLeading - nStr.m_point;
+    LBUF_OFFSET nTrailing = nWidth - nLeading - nStrWidth;
     LBUF_OFFSET nPos = 0;
 
     mux_string *s = nullptr;
@@ -9224,7 +9225,7 @@ static void centerjustcombo
     while (nPos < nLeading)
     {
         mux_cursor iEnd;
-        sPad->cursor_from_point(iEnd, nLeading - nPos);
+        sPad->cursor_from_column(iEnd, nLeading - nPos);
         nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
         s->append(*sPad, CursorMin, iEnd);
     }
@@ -9233,14 +9234,14 @@ static void centerjustcombo
     // Output string.
     //
     s->append(*sStr, CursorMin, nStr);
-    nPos = static_cast<LBUF_OFFSET>(nPos + nStr.m_point);
+    nPos = static_cast<LBUF_OFFSET>(nPos + nStrWidth);
 
     // Output first part of trailing padding.
     //
     if (0 < nTrailing)
     {
         LBUF_OFFSET nPadStart = static_cast<LBUF_OFFSET>(nPos % nPad);
-        LBUF_OFFSET nPadPart  = nWidth - nLeading - nStr.m_point;
+        LBUF_OFFSET nPadPart  = nWidth - nLeading - nStrWidth;
         if (nPad - nPadStart < nPadPart)
         {
             nPadPart = nPad - nPadStart;
@@ -9249,8 +9250,8 @@ static void centerjustcombo
         if (0 < nPadPart)
         {
             mux_cursor iStart, iEnd;
-            sPad->cursor_from_point(iStart, nPadStart);
-            sPad->cursor_from_point(iEnd, nPadStart+nPadPart);
+            sPad->cursor_from_column(iStart, nPadStart);
+            sPad->cursor_from_column(iEnd, nPadStart+nPadPart);
             nPos = static_cast<LBUF_OFFSET>(nPos + nPadPart);
             s->append(*sPad, iStart, iEnd);
         }
@@ -9261,7 +9262,7 @@ static void centerjustcombo
     while (nPos < nWidth)
     {
         mux_cursor iEnd;
-        sPad->cursor_from_point(iEnd, nWidth-nPos);
+        sPad->cursor_from_column(iEnd, nWidth-nPos);
         nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
         s->append(*sPad, CursorMin, iEnd);
     }

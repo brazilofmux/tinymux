@@ -1700,14 +1700,14 @@ FUNCTION(fun_columns)
         iWordStart = words->wordBegin(i);
         iWordEnd = words->wordEnd(i);
 
-        nLen = iWordEnd.m_point - iWordStart.m_point;
+        nLen = sStr->visual_width(iWordStart, iWordEnd);
         if (nWidth < nLen)
         {
             nLen = nWidth;
         }
 
         iStart = iWordStart;
-        sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iWordStart.m_point + nLen));
+        sStr->cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nLen), iWordStart);
         nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
         *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nBufferAvailable);
 
