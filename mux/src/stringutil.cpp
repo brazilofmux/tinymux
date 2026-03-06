@@ -4700,14 +4700,27 @@ mux_field StripTabsAndTruncate
     while ('\0' != pString[curPos.m_byte])
     {
         int iCode = mux_color(pString + curPos.m_byte);
-        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+        size_t nPointBytes = utf8_FirstByte[static_cast<unsigned char>(pString[curPos.m_byte])];
+        if (nPointBytes >= UTF8_CONTINUE)
+        {
+            nPointBytes = UTF8_SIZE1;
+        }
+        if (nPointBytes > nLength - curPos.m_byte)
+        {
+            nPointBytes = nLength - curPos.m_byte;
+        }
+        if (0 == nPointBytes)
+        {
+            break;
+        }
+        mux_cursor curPoint(static_cast<LBUF_OFFSET>(nPointBytes), 1);
         if (COLOR_NOTCOLOR != iCode)
         {
             csNext = UpdateColorState(csNext, iCode);
         }
         else if (nullptr == strchr("\r\n\t", pString[curPos.m_byte]))
         {
-            mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+            mux_field  fldPoint(static_cast<LBUF_OFFSET>(nPointBytes), 1);
             if (csCurrent != csNext)
             {
                 pTransition = ColorTransitionBinary(csCurrent, csNext, &nTransition);
@@ -8359,9 +8372,31 @@ void mux_string::transform
         do
         {
             const UTF8* from_sequence = &from_set.m_autf[from_cursor.m_byte];
-            size_t from_sequence_length = utf8_FirstByte[from_sequence[0]];
+            size_t from_sequence_length = utf8_FirstByte[static_cast<unsigned char>(from_sequence[0])];
+            if (from_sequence_length >= UTF8_CONTINUE)
+            {
+                from_sequence_length = UTF8_SIZE1;
+            }
+            size_t from_remaining = from_set.m_iLast.m_byte - from_cursor.m_byte;
+            if (from_sequence_length > from_remaining)
+            {
+                from_sequence_length = from_remaining;
+            }
             const UTF8* to_sequence = &to_set.m_autf[to_cursor.m_byte];
-            size_t to_sequence_length = utf8_FirstByte[to_sequence[0]];
+            size_t to_sequence_length = utf8_FirstByte[static_cast<unsigned char>(to_sequence[0])];
+            if (to_sequence_length >= UTF8_CONTINUE)
+            {
+                to_sequence_length = UTF8_SIZE1;
+            }
+            size_t to_remaining = to_set.m_iLast.m_byte - to_cursor.m_byte;
+            if (to_sequence_length > to_remaining)
+            {
+                to_sequence_length = to_remaining;
+            }
+            if (0 == from_sequence_length || 0 == to_sequence_length)
+            {
+                break;
+            }
             vector<UTF8> from_vector(from_sequence, from_sequence + from_sequence_length);
             vector<UTF8> to_vector(to_sequence, to_sequence + to_sequence_length);
             auto it = to_from_map.find(from_vector);
@@ -8377,7 +8412,20 @@ void mux_string::transform
             do
             {
                 const UTF8* this_sequence = &m_autf[cursor.m_byte];
-                size_t this_sequence_length = utf8_FirstByte[this_sequence[0]];
+                size_t this_sequence_length = utf8_FirstByte[static_cast<unsigned char>(this_sequence[0])];
+                if (this_sequence_length >= UTF8_CONTINUE)
+                {
+                    this_sequence_length = UTF8_SIZE1;
+                }
+                size_t this_remaining = m_iLast.m_byte - cursor.m_byte;
+                if (this_sequence_length > this_remaining)
+                {
+                    this_sequence_length = this_remaining;
+                }
+                if (0 == this_sequence_length)
+                {
+                    break;
+                }
                 vector<UTF8> this_vector(this_sequence, this_sequence + this_sequence_length);
                 auto it = to_from_map.find(this_vector);
                 if (it != to_from_map.end())
@@ -8588,7 +8636,11 @@ void mux_string::UpperCase()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[*p];
+                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
+                if (len.m_byte >= UTF8_CONTINUE)
+                {
+                    len.m_byte = UTF8_SIZE1;
+                }
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
@@ -8627,7 +8679,11 @@ void mux_string::LowerCase()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[*p];
+                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
+                if (len.m_byte >= UTF8_CONTINUE)
+                {
+                    len.m_byte = UTF8_SIZE1;
+                }
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
@@ -8667,7 +8723,11 @@ void mux_string::UpperCaseFirst()
                 // have an unequal number of bytes. It can also increase points in the string to 2 or more.
                 //
                 mux_cursor len;
-                len.m_byte = utf8_FirstByte[*p];
+                len.m_byte = utf8_FirstByte[static_cast<unsigned char>(*p)];
+                if (len.m_byte >= UTF8_CONTINUE)
+                {
+                    len.m_byte = UTF8_SIZE1;
+                }
                 len.m_point = 1;
                 sTo.import(qDesc->p);
                 replace_Chars(sTo, i, len);
