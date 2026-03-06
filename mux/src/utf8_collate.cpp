@@ -189,6 +189,14 @@ static const UTF8 *utf8_advance_collate(const UTF8 *p, const UTF8 *pEnd)
     {
         return p + 1;
     }
+    for (int i = 1; i < n; i++)
+    {
+        if (  p + i >= pEnd
+           || UTF8_CONTINUE != utf8_FirstByte[p[i]])
+        {
+            return p + 1;
+        }
+    }
     const UTF8 *pNext = p + n;
     return (pNext <= pEnd) ? pNext : pEnd;
 }

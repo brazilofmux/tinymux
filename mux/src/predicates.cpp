@@ -12,6 +12,29 @@
 #include "config.h"
 #include "externs.h"
 
+static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
+{
+    if (nullptr == p || '\0' == *p)
+    {
+        return p;
+    }
+
+    size_t n = utf8_FirstByte[static_cast<unsigned char>(*p)];
+    if (n < 1 || n >= UTF8_CONTINUE)
+    {
+        return p + 1;
+    }
+    for (size_t i = 1; i < n; i++)
+    {
+        if (  '\0' == p[i]
+           || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(p[i])])
+        {
+            return p + 1;
+        }
+    }
+    return p + n;
+}
+
 #include "ganl_adapter.h"
 
 UTF8 *DCL_CDECL tprintf(const UTF8 *fmt,...)
@@ -340,7 +363,7 @@ bool IsRestricted(const UTF8 *pName, int charset)
         {
             return true;
         }
-        pName = utf8_NextCodePoint(pName);
+        pName = utf8_advance_predicate(pName);
     }
     return false;
 }
@@ -399,7 +422,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
         {
             return nullptr;
         }
-        p = utf8_NextCodePoint(p);
+        p = utf8_advance_predicate(p);
     }
 
     // Special names are specifically dis-allowed.
@@ -558,7 +581,7 @@ bool ValidatePlayerName(const UTF8 *pName)
             {
                 return false;
             }
-            p = utf8_NextCodePoint(p);
+            p = utf8_advance_predicate(p);
         }
     }
     else
@@ -570,7 +593,7 @@ bool ValidatePlayerName(const UTF8 *pName)
             {
                 return false;
             }
-            p = utf8_NextCodePoint(p);
+            p = utf8_advance_predicate(p);
         }
     }
 
@@ -605,7 +628,7 @@ bool ok_password(const UTF8 *password, const UTF8 **pmsg)
     int num_lower = 0;
 
     const UTF8 *scan = password;
-    for ( ; *scan; scan = utf8_NextCodePoint(scan))
+    for ( ; *scan; scan = utf8_advance_predicate(scan))
     {
         if (  !mux_isprint(scan)
            || mux_isspace(*scan))
