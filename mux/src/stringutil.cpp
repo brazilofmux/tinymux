@@ -2777,7 +2777,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
         while (  '\0' != pString[i]
               && COLOR_NOTCOLOR == iCode)
         {
-            i += utf8_FirstByte[pString[i]];
+            i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
 
@@ -2998,7 +2998,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
               && COLOR_NOTCOLOR != iCode)
         {
             csNext = UpdateColorState(csNext, iCode);
-            i += utf8_FirstByte[pString[i]];
+            i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
 
@@ -3109,7 +3109,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
             while (  '\0' != pString[i]
                   && COLOR_NOTCOLOR == iCode)
             {
-                i += utf8_FirstByte[pString[i]];
+                i += utf8_advance_nul(pString + i);
                 iCode = mux_color(pString + i);
             }
             size_t n = i - iCopy;
@@ -3172,7 +3172,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
         while (  '\0' != pString[i]
               && COLOR_NOTCOLOR == iCode)
         {
-            i += utf8_FirstByte[pString[i]];
+            i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
 
@@ -3209,7 +3209,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
               && COLOR_NOTCOLOR != iCode)
         {
             csNext = UpdateColorState(csNext, iCode);
-            i += utf8_FirstByte[pString[i]];
+            i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
     }
