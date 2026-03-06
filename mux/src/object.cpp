@@ -18,8 +18,8 @@
 
 static int check_type;
 
-// Rebuild all SQLite attributes from runtime by probing defined attribute
-// numbers on each live object.
+// Rebuild all SQLite attributes from runtime using the in-memory attribute
+// cache as the source of truth.
 //
 static bool sqlite_rebuild_all_attributes_from_runtime(void)
 {
@@ -32,56 +32,47 @@ static bool sqlite_rebuild_all_attributes_from_runtime(void)
         int flags;
     };
 
-    std::vector<int> attrnums;
-    attrnums.reserve(anum_alc_top);
-    for (int iAttr = 1; iAttr <= anum_alc_top; ++iAttr)
-    {
-        ATTR *pAttr = atr_num(iAttr);
-        if (  nullptr != pAttr
-           && !(pAttr->flags & AF_DELETED)
-           && iAttr != A_LIST)
-        {
-            attrnums.push_back(iAttr);
-        }
-    }
-
     std::vector<AttrRow> snapshot;
     snapshot.reserve(1024);
 
-    dbref iObject;
-    DO_WHOLE_DB(iObject)
+    // Use only in-memory cache entries as source of truth here. This avoids
+    // pulling values from SQLite while we are trying to repair SQLite state.
+    //
+    for (const auto& kv : mudstate.attribute_lru_cache_map)
     {
-        if (isGarbage(iObject))
+        const Aname& key = kv.first;
+        const auto& entry = kv.second;
+
+        if (  key.attrnum <= 0
+           || key.attrnum == A_LIST
+           || key.object < 0
+           || key.object >= mudstate.db_top
+           || isGarbage(key.object))
         {
             continue;
         }
 
-        for (int iAttr : attrnums)
+        ATTR *pAttr = atr_num(key.attrnum);
+        if (  nullptr == pAttr
+           || (pAttr->flags & AF_DELETED))
         {
-            size_t nLen = 0;
-            const UTF8 *pValue = atr_get_raw_LEN(iObject, iAttr, &nLen);
-            if (nullptr == pValue)
-            {
-                continue;
-            }
-
-            dbref owner = Owner(iObject);
-            int flags = 0;
-            if (!atr_get_info(iObject, iAttr, &owner, &flags))
-            {
-                Log.tinyprintf(T("sqlite_rebuild_all_attributes_from_runtime: failed to read attr metadata #%d/%d" ENDLINE),
-                    iObject, iAttr);
-                return false;
-            }
-
-            AttrRow row;
-            row.obj = iObject;
-            row.attrnum = iAttr;
-            row.owner = owner;
-            row.flags = flags;
-            row.value.assign(pValue, pValue + nLen + 1);
-            snapshot.push_back(std::move(row));
+            continue;
         }
+
+        if (entry.data.empty())
+        {
+            Log.tinyprintf(T("sqlite_rebuild_all_attributes_from_runtime: invalid empty cache entry #%d/%d" ENDLINE),
+                key.object, key.attrnum);
+            return false;
+        }
+
+        AttrRow row;
+        row.obj = key.object;
+        row.attrnum = key.attrnum;
+        row.owner = entry.attr_owner;
+        row.flags = entry.attr_flags;
+        row.value = entry.data;
+        snapshot.push_back(std::move(row));
     }
 
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
@@ -251,9 +242,23 @@ static void reconcile_failed_create_backend(dbref obj)
             log_text(T("create_obj failed-cleanup fallback: attempting authoritative attr rebuild + sqlite_sync_runtime."));
         }
         ENDLOG;
-        if (  !sqlite_rebuild_all_attributes_from_runtime()
-           || !sqlite_sync_runtime())
+        bool bRecovered = sqlite_rebuild_all_attributes_from_runtime();
+        bRecovered = bRecovered && sqlite_sync_runtime();
+        if (!bRecovered)
         {
+            if (sqldb.Begin())
+            {
+                if (  !sqldb.ClearAttributes()
+                   || !sqldb.ClearObjectTable()
+                   || !sqldb.ClearAttrNames()
+                   || !sqldb.PutMeta("attr_next", A_USER_START)
+                   || !sqldb.PutMeta("db_top", 0)
+                   || !sqldb.PutMeta("record_players", 0)
+                   || !sqldb.Commit())
+                {
+                    sqldb.Rollback();
+                }
+            }
             STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
             log_text(T("create_obj failed-cleanup fallback sqlite rebuild/sync failed."));
             ENDLOG;
@@ -853,7 +858,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     if (!bPersisted)
     {
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-        log_text(T("create_obj persistence failed; attempting full SQLite runtime resync."));
+        log_text(T("create_obj persistence failed; attempting SQLite metadata resync."));
         ENDLOG;
 
         if (!sqlite_sync_runtime())
