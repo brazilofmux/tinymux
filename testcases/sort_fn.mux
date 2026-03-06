@@ -32,17 +32,17 @@
 -
 #
 # Test Case #2 - Sort accented variants of 'e'.
-# Under DUCET: grave < acute < circumflex at secondary weight.
+# Under DUCET: acute < grave < circumflex at secondary weight (0024 < 0025 < 0027).
 # chr(234)=e-circumflex, chr(232)=e-grave, chr(233)=e-acute.
-# Expected order: chr(232) chr(233) chr(234) (e-grave e-acute e-circumflex).
+# Expected order: chr(233) chr(232) chr(234) (e-acute e-grave e-circumflex).
 #
 &tr.tc002 test_sort_fn=
   @if strmatch(
         setr(0,sha1(
-            [sort(chr(234) chr(232) chr(233))]
+            [sort([chr(234)] [chr(232)] [chr(233)])]
           )
         ),
-        25AA1E04EAD7DA962FB6384606428262CFA1D0F1
+        B619597A2BA548F50575C8B19865961A1741D8E1
       )=
   {
     @log smoke=TC002: sort accented variants. Succeeded.;
@@ -59,10 +59,10 @@
 &tr.tc003 test_sort_fn=
   @if strmatch(
         setr(0,sha1(
-            [sort(f chr(233) a d chr(232) b)]
+            [sort(f [chr(233)] a d [chr(232)] b)]
           )
         ),
-        84D5671DBD41675908D2AB5C527B4858F78530C8
+        9F207825A8D1AC79FE86F43772C4B70952CC53D0
       )=
   {
     @log smoke=TC003: sort ASCII and accented mix. Succeeded.;
@@ -78,10 +78,10 @@
 &tr.tc004 test_sort_fn=
   @if strmatch(
         setr(0,sha1(
-            [sort(chr(65298) chr(65296) chr(65300) chr(65297) chr(65299))]
+            [sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])]
           )
         ),
-        FDD89819F2674D3F77439B85218A7A906FAB5C68
+        73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3
       )=
   {
     @log smoke=TC004: sort fullwidth digits. Succeeded.;
