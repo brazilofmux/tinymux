@@ -5578,7 +5578,12 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n)
 //
 void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal)
 {
-    if (buff >= *bufc || '\0' == *buff)
+    if (  nullptr == buff
+       || nullptr == bufc
+       || nullptr == *bufc
+       || nBufferTotal < 1
+       || buff >= *bufc
+       || '\0' == *buff)
     {
         return;
     }
@@ -5596,6 +5601,14 @@ void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal)
     {
         return;
     }
+    for (size_t j = 1; j < nOld; j++)
+    {
+        if (  j >= nUsed
+           || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(buff[j])])
+        {
+            return;
+        }
+    }
 
     bool bXor;
     const string_desc *qDesc = mux_toupper(buff, bXor);
@@ -5612,6 +5625,11 @@ void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal)
     {
         // XOR transform: same byte length, overwrite in place.
         //
+        if (  nNew != nOld
+           || nNew > nUsed)
+        {
+            return;
+        }
         for (size_t j = 0; j < nNew; j++)
         {
             buff[j] ^= qDesc->p[j];
