@@ -2186,8 +2186,8 @@ FUNCTION(fun_strtrunc)
     mux_cursor nLen = sStr->length_cursor();
 
     UTF8 plainBuf[LBUF_SIZE];
-    sStr->export_TextPlain(plainBuf);
-    size_t nClusters = utf8_cluster_count(plainBuf, nLen.m_byte);
+    size_t nPlainBytes = sStr->export_TextPlain(plainBuf);
+    size_t nClusters = utf8_cluster_count(plainBuf, nPlainBytes);
     if (static_cast<size_t>(nLeft) < nClusters)
     {
         mux_cursor iEnd;

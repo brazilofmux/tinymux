@@ -112,8 +112,8 @@ FUNCTION(fun_scramble)
     }
 
     UTF8 plainBuf[LBUF_SIZE];
-    sStr->export_TextPlain(plainBuf);
-    size_t nClusters = utf8_cluster_count(plainBuf, sStr->length_byte());
+    size_t nPlainBytes = sStr->export_TextPlain(plainBuf);
+    size_t nClusters = utf8_cluster_count(plainBuf, nPlainBytes);
 
     if (2 <= nClusters)
     {
