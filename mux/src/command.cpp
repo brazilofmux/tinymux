@@ -620,7 +620,6 @@ static NAMETAB warp_sw[] =
 static CMDENT_NO_ARG command_table_no_arg[] =
 {
     {T("@@"),          nullptr,    CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_comment},
-    {T("@backup"),     nullptr,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_backup},
     {T("@dbck"),       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dbck},
     {T("@dbclean"),    nullptr,    CA_GOD,      0,          CS_NO_ARGS, 0, do_dbclean},
     {T("@dump"),       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},

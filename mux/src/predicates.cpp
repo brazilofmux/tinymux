@@ -1713,56 +1713,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 }
 
 /* ---------------------------------------------------------------------------
- * do_backup: Backs up and restarts the game
- * By Wadhah Al-Tailji (7-21-97), altailji@nmt.edu
- * Ported to MUX2 by Patrick Hill (7-5-2001), hellspawn@anomux.org
- */
-
-#if defined(WINDOWS_PROCESSES)
-
-void do_backup(dbref player, dbref caller, dbref enactor, int eval, int key)
-{
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
-
-    notify(player, T("This feature is not yet available on Windows-hosted MUX."));
-}
-
-#elif defined(UNIX_PROCESSES)
-
-void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
-{
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
-
-#if defined(HAVE_WORKING_FORK)
-    if (mudstate.dumping)
-    {
-        notify(executor, T("Dumping. Please try again later."));
-        return;
-    }
-#endif // HAVE_WORKING_FORK
-
-    raw_broadcast(0, T("GAME: Backing up database. Please wait."));
-    STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
-    log_text(T("Backup by "));
-    log_name(executor);
-    ENDLOG;
-
-    // Invoking _backupflat.sh without an argument prompts the backup script
-    // to use dbconvert itself.
-    //
-    dump_database_internal(DUMP_I_NORMAL);
-    system(reinterpret_cast<char *>(tprintf(T("./_backupflat.sh 1>&2"))));
-    raw_broadcast(0, T("GAME: Backup finished."));
-}
-#endif // UNIX_PROCESSES
-
-/* ---------------------------------------------------------------------------
  * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
  */
 

@@ -236,22 +236,6 @@ INDESTRUCTIBLE
 
   Related Topics: attribute permissions, attr_access
 
-& @BACKUP
-@BACKUP
-
-  COMMAND: @backup
-
-  This command will dump a flatfile of the database to the data directory.
-  The flatfile will be named dump.<date>.tgz. IE, dump.0219-1613.tgz where
-  0219-1613 stands for February 19, 4:13pm.
-
-  This file is tarred and gziped. It includes the game flatfile, and the
-  mail and comsys databases. It does not include any of the text files, the
-  .conf files or the mux.config file. Those would need to be backed up
-  separately.
-
-  Related Topics:
-
 & @BOOT
 @BOOT
 
@@ -422,29 +406,15 @@ INDESTRUCTIBLE
 & @DUMP
 @DUMP
 
-  COMMAND: @dump[/<switches>]
+  COMMAND: @dump[/flatfile]
 
-  Writes a checkpoint dump of the database to disk.  Checkpoint dumps are
-  automatically performed periodically, so there is usually no need to use
-  this command.  Switches may be used to either dump just the structure
-  or text portions of the database to disk.  The default is to write out
-  both the text and structure portions.
+  Performs a WAL checkpoint of the SQLite database, ensuring all recent
+  changes are flushed to the main database file.  Checkpoint dumps are
+  automatically performed periodically, so there is usually no need to
+  use this command.
 
-  All of the following switches may by used individually or together:
-
-     flatfile   - Dump an internally consistent flatfile which together
-                  with the mail and comsystem databases represent the
-                  entire database of game -- useful in a variety of ways
-                  including for a backup and for moving from one host to
-                  another.
-     structure  - Dump the structure portion of the database to a linear
-                  human-readable file.
-     text       - Ensure that all changes to the text portion of the
-                  database are written out to disk.
-
-  Note that the above structure and text options will cause your database and
-  certain caches to be out of sync. They should NOT be used in the course
-  of normal operation.
+  The /flatfile switch exports a portable flatfile of the database,
+  useful for moving to another host or for archival purposes.
 
   Related Topics: @admin, @disable, @enable, @list, @shutdown.
 
@@ -1849,7 +1819,7 @@ COMMANDS
   WHO            wizhelp
 
   @addcommand    @acreate       @adestroy      @admin         @allowance
-  @apply_marked  @attribute     @backup        @boot          @chown
+  @apply_marked  @attribute     @boot          @chown
   @chownall      @clone         @comment       @cut           @dbck
   @dbclean       @delcommand    @destroy       @disable       @doing
   @dump          @enable        @fixdb         @flag          @function
@@ -1888,20 +1858,6 @@ COMMAND_QUOTA_MAX
 
   Related Topics: command_quota_increment, timeslice.
 
-& COMSYS_DATABASE
-COMSYS_DATABASE
-
-  CONFIG PARAMETER: comsys_database <path>
-  DEFAULT: comsys.db
-
-  Specifies the file that comsystem and macro information is stored in.
-  This database is loaded at startup if have_comsys is on.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: have_comsys.
-
 & CONFIG PARAMETERS
 CONFIG PARAMETERS
 
@@ -1913,8 +1869,8 @@ CONFIG PARAMETERS
   attr_name_charset  autozone  bad_name  badsite_file  cache_names
   cache_tick_period  check_interval  check_offset  clone_copies_cost
   command_quota_increment  command_quota_max
-  comsys_database  config_access  conn_timeout  connect_file  connect_reg_file
-  crash_database  crash_message  create_max_cost  create_min_cost
+  config_access  conn_timeout  connect_file  connect_reg_file
+  crash_message  create_max_cost  create_min_cost
   dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx  def_player_tx
   def_room_rx  def_room_tx  def_thing_rx  def_thing_tx  default_charset
   default_home  destroy_going_now  dig_cost  down_file  down_motd_message
@@ -1922,7 +1878,7 @@ CONFIG PARAMETERS
   events_daily_hour  examine_flags  examine_public_attrs  exit_flags
   exit_name_charset  exit_parent  exit_quota  fascist_teleport
   find_money_chance  fixed_home_message  fixed_tel_message  flag_access
-  flag_alias  flag_name  float_precision forbid_site  fork_dump  full_file
+  flag_alias  flag_name  float_precision forbid_site  full_file
   full_motd_message  function_access  function_alias  function_name
   function_invocation_limit  function_recursion_limit
 
@@ -1935,18 +1891,18 @@ CONFIG PARAMETERS (continued)
   guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
   have_zones  help_executor  helpfile  hook_cmd
   hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
-  immobile_message  include  indent_desc  initial_size  input_database
+  immobile_message  include  indent_desc  initial_size
   ip_address  keepalive_interval  kill_guarantee_cost  kill_max_cost
   kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
+  look_obey_terse  machine_command_cost  mail_ehlo
   mail_expiration  mail_max_per_player  mail_per_hour  email_per_hour
   mail_sendaddr  mail_sendname
   mail_server
   mail_subject  master_room  match_own_commands  max_cache_size  max_players
   min_guests  module  money_name_plural  money_name_singular  motd_file
   motd_message  mud_name  newuser_file  noguest_site  nositemon_site
-  notify_recursion_limit  number_guests  open_cost  output_database
+  notify_recursion_limit  number_guests  open_cost
   output_limit  page_cost  paranoid_allocate  parent_recursion_limit
   password_methods  paycheck  pcreate_per_hour  pemit_any_object
   pemit_far_players  permit_site  player_flags  player_parent  player_listen
@@ -2048,19 +2004,6 @@ CONTACT INFO
 
   Put information about how to contact the wizards and game maintainer
   in here so they can contact one another when the game is down.
-
-& CRASH_DATABASE
-CRASH_DATABASE
-
-  CONFIG PARAMETER: crash_database <path>
-  DEFAULT: <input db>.CRASH
-
-  Specifies the name of the database file that should be written when MUX
-  detects an internal error and is about to crash. The file is generated
-  in flatfile format with attribute values included.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
 
 & CRASH_MESSAGE
 CRASH_MESSAGE
@@ -2304,7 +2247,7 @@ DUMP_INTERVAL
 
   Specifies the time in seconds between automatic database dumps.
 
-  Related Topics: dump_offset, output_database.
+  Related Topics: dump_offset.
 
 & DUMP_MESSAGE
 DUMP_MESSAGE
@@ -2633,19 +2576,6 @@ FORBID_SITE
                   permit_site, register_site, reset_site, suspect_site,
                   trust_site, SITE LIST, SITE NOTATION,
 
-& FORK_DUMP
-FORK_DUMP
-
-  CONFIG PARAMETER: fork_dump <yes/no>
-  DEFAULT: yes
-
-  Indicates whether or not database dumps are to be done by fork()ing off a
-  separate process to perform the dump.  While enabling this parameter reduces
-  the amount of time needed to perform the dump, it requires that the system
-  have enough free swap space to hold a second copy of the running game.
-
-  Related Topics:
-
 & FULL_FILE
 FULL_FILE
 
@@ -2822,9 +2752,8 @@ GUEST_CHAR_NUM
   no_guest permission.
 
   This configuration parameter is the main on/off switch for the MUX guest
-  system, so in that respect it corresponds to the have_comsys and have_mailer
-  configuration options.  The guest system in MUX is effectively disabled
-  until this configuration parameter is set.
+  system.  The guest system in MUX is effectively disabled until this
+  configuration parameter is set.
 
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
@@ -2884,32 +2813,6 @@ GUEST_SITE
   Related Topics: allow_guest_from_registered_site, badsite_file, forbid_site,
                   noguest_site, permit_site, register_site, reset_site,
                   SITE LIST, SITE NOTATION.
-
-& HAVE_COMSYS
-HAVE_COMSYS
-
-  CONFIG PARAMETER: have_comsys <yes/no>
-  DEFAULT: yes
-
-  Specifies whether or not the comsystem should be active.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: comsys_database.
-
-& HAVE_MAILER
-HAVE_MAILER
-
-  CONFIG PARAMETER: have_mailer <yes/no>
-  DEFAULT: yes
-
-  Specifies whether @mail and mail aliases should be active.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: mail_database
 
 & HAVE_ZONES
 HAVE_ZONES
@@ -3181,21 +3084,6 @@ INITIAL_SIZE
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-& INPUT_DATABASE
-INPUT_DATABASE
-
-  CONFIG PARAMETER: input_database
-  DEFAULT: netmux.db
-
-  Specifies the name of the database file that is read in at startup.
-  This file is used only as an input file, the parameter output_database
-  controls where updated copies of the database are written.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: crash_database, output_database
-
 & IP_ADDRESS
 IP_ADDRESS
 
@@ -3462,17 +3350,6 @@ MACHINE_COMMAND_COST
   Sets the cost for running a command from a machine, as opposed to running
   it interactively.  Each command run has a one in <number> chance of being
   charged one coin for machine overhead.
-
-& MAIL_DATABASE
-MAIL_DATABASE
-
-  CONFIG PARAMETER: mail_database <path>
-  DEFAULT: mail.db
-
-  Sets the file that @mail information is to be stored in. The database
-  is only loaded or saved if have_mailer is set to yes.
-
-  Related Topics: have_mailer.
 
 & MAIL_EHLO
 MAIL_EHLO
@@ -3886,21 +3763,6 @@ OPEN_COST
   then the link_cost is also charged.
 
   Related Topics: @open, link_cost.
-
-& OUTPUT_DATABASE
-OUTPUT_DATABASE
-
-  CONFIG PARAMETER: output_database <pathname>
-  DEFAULT: none
-
-  Specifies the file to which the database is to be written when writing
-  checkpoint dumps or writing the final dump after receiving a @shutdown
-  command.
-
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
-
-  Related Topics: @dump, @shutdown, checkpoint_database, input_database.
 
 & OUTPUT_LIMIT
 OUTPUT_LIMIT
@@ -4828,7 +4690,7 @@ SIGNALS
   From a shell, the following signals can be sent to the server:
 
     SIGUSR1  - Server will restart (see @restart).
-    SIGUSR2  - Server will drop a flatfile (see @dump/flat).
+    SIGUSR2  - Server will export a flatfile (see @dump/flatfile).
     SIGHUP   - Server will perform a normal dump (see @dump).
     SIGTERM  - Server will shutdown (see @shutdown).
 
