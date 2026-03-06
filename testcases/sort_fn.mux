@@ -25,10 +25,76 @@
       )=
   {
     @log smoke=TC001: sort basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: sort basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Sort accented variants of 'e'.
+# Under DUCET: grave < acute < circumflex at secondary weight.
+# chr(234)=e-circumflex, chr(232)=e-grave, chr(233)=e-acute.
+# Expected order: chr(232) chr(233) chr(234) (e-grave e-acute e-circumflex).
+#
+&tr.tc002 test_sort_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(chr(234) chr(232) chr(233))]
+          )
+        ),
+        8056D4F72BADB939A9E38189AB769840E92D7EA1
+      )=
+  {
+    @log smoke=TC002: sort accented variants. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: sort accented variants. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - Sort mix of ASCII and accented characters.
+# Under DUCET, accented 'e' variants sort with primary weight of 'e',
+# so they should sort between 'd' and 'f'.
+#
+&tr.tc003 test_sort_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(f chr(233) a d chr(232) b)]
+          )
+        ),
+        E5983A9607C0EE9796A39F929664C8F5FFB95153
+      )=
+  {
+    @log smoke=TC003: sort ASCII and accented mix. Succeeded.;
+    @trig me/tr.tc004
+  },
+  {
+    @log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;
+    @trig me/tr.tc004
+  }
+-
+#
+# Test Case #4 - Sort fullwidth digits (U+FF10..U+FF14).
+# These should sort by their Unicode collation weights.
+#
+&tr.tc004 test_sort_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(chr(65298) chr(65296) chr(65300) chr(65297) chr(65299))]
+          )
+        ),
+        18961D598EB9299F34C71CF659AE8E1968A26259
+      )=
+  {
+    @log smoke=TC004: sort fullwidth digits. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: sort fullwidth digits. Failed (%q0).;
     @trig me/tr.done
   }
 -
