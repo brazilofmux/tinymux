@@ -7,6 +7,26 @@ author:
 
 # Major changes that may affect performance and require softcode tweaks:
 
+ - SQLite is now the always-on storage backend. All object metadata,
+   attributes, comsys channels, and @mail are stored in a single SQLite
+   database with write-through on every mutation. `@dump` performs a
+   WAL checkpoint only — no flatfile serialization, no fork. Crash
+   durability is immediate; no data is lost between dump cycles.
+ - `@search` for simple cases (owner, type, zone, parent, flags) routes
+   to indexed SQL queries — O(log n) instead of linear scan.
+ - Unicode updated from 10.0 to 16.0. All attribute values are
+   NFC-normalized at storage time. String functions use grapheme cluster
+   indexing (UAX #29) instead of codepoint counting.
+ - Unicode collation (UCA/DUCET) is the default sort order. `sort()`
+   and set functions (`setunion`, `setinter`, `setdiff`) use
+   locale-correct Unicode comparison. A case-insensitive collation sort
+   type is also available.
+ - CJK width-aware string operations: `center()`, `ljust()`, `rjust()`,
+   `columns()` respect double-width characters.
+ - The `have_comsys` and `have_mailer` config options have been removed;
+   comsys and @mail are always present.
+ - The MEMORY_BASED build option has been removed; SQLite is the only
+   storage backend.
  - Reworked networking to support non-blocking SSL sockets.
  - Require PCRE to be installed instead of using a static, private
    version.
@@ -25,7 +45,8 @@ author:
 
 # Feature Additions:
 
- - Update to Unicode 10.0.
+ - Update to Unicode 16.0.
+ - `chr()` and `ord()` support the full Unicode range.
  - `zchildren()`, `zexits()`, `zrooms()`, `zthings()` zone listing
    functions (#624).
  - `zfun()` now accepts `obj/attr` syntax like `u()` (#624).
@@ -92,7 +113,16 @@ author:
 
 # Performance Enhancements:
 
- - None.
+ - Indexed @search via SQLite for owner, type, zone, parent, and flag
+   queries.
+ - Attribute cache preloading: built-in attributes (attrnum < 256) are
+   bulk-loaded from SQLite on player connect and object move.
+ - Replaced CHashTable with std::unordered_map throughout (vattr
+   registry, function table, etc.).
+ - Replaced qsort() with std::sort() in sort and set functions.
+ - Replaced CTaskHeap with std::vector + STL heap algorithms.
+ - Eliminated A_LIST attribute enumeration; replaced with direct SQLite
+   queries and STL iteration context.
 
 # Cosmetic Changes:
 
@@ -176,7 +206,7 @@ author:
  - Returned to autoconf/automake build system.
  - Hardened Schannel TLS: EKU-aware cert selection, PEM support.
  - Added 141 new smoke tests expanding coverage from 32 to 173
-   functions.
+   functions (2.13.0.7).
  - Help entries for TALKMODE, citer(), player_channels, and
    talk_mode_default.
  - Document Master Room in COMMAND EVALUATION help topic.
@@ -184,3 +214,26 @@ author:
    help.
  - Added help alias so 'help left()' displays strtrunc() topic.
  - Added prerequisites section and fixed step numbering in INSTALL.md.
+ - SQLite 3.49.1 amalgamation bundled for both Unix and Windows builds.
+ - SQLite schema versioning with automatic migration (currently v5).
+ - Comprehensive UTF-8 validation hardening across all string
+   processing paths (decode, advance, truncate, collate, normalize).
+ - NFC normalization pipeline: DFA-based Unicode property lookups,
+   Canonical Combining Class tracking, Hangul algorithmic composition.
+ - Grapheme cluster segmentation per UAX #29 for correct string
+   indexing.
+ - Unicode collation: DUCET tables generated via reproducible pipeline
+   from allkeys.txt. DFA-based contraction lookup, sort key generation.
+ - Omega converter freshened for all four server formats (T5X, T6H,
+   P6H, R7H). Direct T5X-to-R7H path preserves full 24-bit color.
+ - Removed CHashTable, CHashPage, CHashFile, IntArray, and legacy
+   A_LIST machinery.
+ - Replaced IntArray with std::vector<int>.
+ - Removed dead MEMORY_BASED, SQLITE_STORAGE, USE_GANL preprocessor
+   conditionals.
+ - Removed deprecated stack subsystem.
+ - Removed dead cache statistics counters.
+ - Removed database compression feature.
+ - Added 175 new smoke test cases expanding coverage to 348 total.
+ - `dbconvert` supports `-C` and `-m` flags for comsys and mail
+   flatfile import/export.
