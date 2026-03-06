@@ -394,7 +394,7 @@ int halt_que(const dbref executor, const dbref object)
     return Halt_Entries;
 }
 
-static int  Halt_Pid_Target;
+static uint64_t  Halt_Pid_Target;
 static dbref Halt_Pid_Executor;
 static int   Halt_Pid_Entries;
 static dbref Halt_Pid_Player_Run;
@@ -461,7 +461,7 @@ static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-static int halt_que_pid(const dbref executor, const int pid)
+static int halt_que_pid(const dbref executor, const uint64_t pid)
 {
     Halt_Pid_Target      = pid;
     Halt_Pid_Executor    = executor;
@@ -513,7 +513,45 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
             notify(executor, T("You must specify a PID."));
             return;
         }
-        const int pid = mux_atol(target);
+        const UTF8 *p = target;
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
+        if ('\0' == *p || '-' == *p)
+        {
+            notify(executor, T("PID must be a non-negative integer."));
+            return;
+        }
+        if ('+' == *p)
+        {
+            p++;
+        }
+
+        uint64_t pid = 0;
+        bool bHaveDigits = false;
+        while (mux_isdigit(*p))
+        {
+            bHaveDigits = true;
+            const uint64_t digit = static_cast<uint64_t>(*p - '0');
+            if (pid > (UINT64_MAX - digit) / 10U)
+            {
+                notify(executor, T("PID is out of range."));
+                return;
+            }
+            pid = 10U * pid + digit;
+            p++;
+        }
+        while (mux_isspace(*p))
+        {
+            p++;
+        }
+        if (  !bHaveDigits
+           || '\0' != *p)
+        {
+            notify(executor, T("PID must be a non-negative integer."));
+            return;
+        }
         const int numhalted = halt_que_pid(executor, pid);
         if (!Quiet(executor))
         {
@@ -1428,26 +1466,33 @@ static int CallBack_ShowDispatches(const PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-static void ShowPsLine(const BQUE *tmp, const int pid)
+static void ShowPsLine(const BQUE *tmp, const uint64_t pid)
 {
     UTF8 *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[PID %d][#%d/%d]%s:%s"), pid, tmp->u.s.sem, ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %llu][#%d/%d]%s:%s"),
+            static_cast<unsigned long long>(pid), tmp->u.s.sem,
+            ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (tmp->IsTimed)
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[PID %d][%d]%s:%s"), pid, ltd.ReturnSeconds(), bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %llu][%d]%s:%s"),
+            static_cast<unsigned long long>(pid), ltd.ReturnSeconds(), bufp,
+            tmp->comm));
     }
     else if (Good_obj(tmp->u.s.sem))
     {
-        notify(Show_Player, tprintf(T("[PID %d][#%d]%s:%s"), pid, tmp->u.s.sem, bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %llu][#%d]%s:%s"),
+            static_cast<unsigned long long>(pid), tmp->u.s.sem, bufp,
+            tmp->comm));
     }
     else
     {
-        notify(Show_Player, tprintf(T("[PID %d]%s:%s"), pid, bufp, tmp->comm));
+        notify(Show_Player, tprintf(T("[PID %llu]%s:%s"),
+            static_cast<unsigned long long>(pid), bufp, tmp->comm));
     }
     UTF8 *bp = bufp;
     if (Show_Key == PS_LONG)

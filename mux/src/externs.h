@@ -1136,7 +1136,7 @@ typedef struct
     CLinearTimeAbsolute ltaWhen;
 
     int        iPriority;
-    unsigned int m_Ticket;      // This is the order in which the task was scheduled.
+    uint64_t   m_Ticket;      // This is the order in which the task was scheduled.
     FTASK      *fpTask;
     void       *arg_voidptr;
     int        arg_Integer;
@@ -1319,7 +1319,7 @@ class CScheduler
 private:
     CTaskHeap<CompareWhenGreater>     m_WhenHeap;
     CTaskHeap<ComparePriorityGreater> m_PriorityHeap;
-    unsigned int m_Ticket;
+    uint64_t m_Ticket;
     int       m_minPriority;
 
 public:
