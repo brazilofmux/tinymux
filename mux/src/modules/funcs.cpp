@@ -261,17 +261,71 @@ const int g_trimoffset[4][4] =
 
 size_t trim_partial_sequence(size_t n, const UTF8* p)
 {
-    for (size_t i = 0; i < n; i++)
+    while (0 < n)
     {
-        const int j = utf8_FirstByte[p[n - i - 1]];
-        if (j < UTF8_CONTINUE)
+        size_t iStart = n - 1;
+        while (0 < iStart && UTF8_CONTINUE == utf8_FirstByte[p[iStart]])
         {
-            if (i < 4)
-            {
-                return n - g_trimoffset[i][j - 1];
-            }
-            return n - i + j - 1;
+            iStart--;
         }
+
+        int nBytes = utf8_FirstByte[p[iStart]];
+        if (nBytes < 1 || nBytes >= UTF8_CONTINUE)
+        {
+            n = iStart;
+            continue;
+        }
+        if (iStart + static_cast<size_t>(nBytes) != n)
+        {
+            n = iStart;
+            continue;
+        }
+
+        bool bValid = true;
+        for (int i = 1; i < nBytes; i++)
+        {
+            if (UTF8_CONTINUE != utf8_FirstByte[p[iStart + i]])
+            {
+                bValid = false;
+                break;
+            }
+        }
+        if (!bValid)
+        {
+            n = iStart;
+            continue;
+        }
+
+        unsigned int cp = p[iStart];
+        if (2 == nBytes)
+        {
+            cp = ((p[iStart] & 0x1F) << 6)
+               |  (p[iStart + 1] & 0x3F);
+        }
+        else if (3 == nBytes)
+        {
+            cp = ((p[iStart] & 0x0F) << 12)
+               | ((p[iStart + 1] & 0x3F) << 6)
+               |  (p[iStart + 2] & 0x3F);
+        }
+        else if (4 == nBytes)
+        {
+            cp = ((p[iStart] & 0x07) << 18)
+               | ((p[iStart + 1] & 0x3F) << 12)
+               | ((p[iStart + 2] & 0x3F) << 6)
+               |  (p[iStart + 3] & 0x3F);
+        }
+        if (  (2 == nBytes && cp < 0x80)
+           || (3 == nBytes && cp < 0x800)
+           || (4 == nBytes && cp < 0x10000)
+           || cp > 0x10FFFF
+           || (cp >= 0xD800 && cp <= 0xDFFF))
+        {
+            n = iStart;
+            continue;
+        }
+
+        return n;
     }
     return 0;
 }
