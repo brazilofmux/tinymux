@@ -11,6 +11,7 @@ REALITY.SETUP.md
 SGP.md
 SQL.md
 SSL.md
+UPGRADING.md
 convert/autoconf.h.in
 convert/configure
 convert/configure.ac
