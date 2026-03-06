@@ -11076,6 +11076,8 @@ static FUNCTION(fun_ord)
             safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
             return;
         }
+        safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+        return;
     }
 
     // Output space-separated code point values for the cluster.
@@ -11182,7 +11184,14 @@ static FUNCTION(fun_chr)
                 safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
                 return;
             }
-            iValue = -static_cast<int64_t>(uValue);
+            if (uValue == (static_cast<uint64_t>(INT64_MAX) + 1ULL))
+            {
+                iValue = INT64_MIN;
+            }
+            else
+            {
+                iValue = -static_cast<int64_t>(uValue);
+            }
         }
         else
         {
@@ -11213,9 +11222,11 @@ static FUNCTION(fun_chr)
 
         if (pRaw < pEnd)
         {
-            while ('\0' != *p && pRaw < pEnd)
+            size_t nCharBytes = strlen(reinterpret_cast<const char *>(p));
+            if (pRaw + nCharBytes <= pEnd)
             {
-                *pRaw++ = *p++;
+                memcpy(pRaw, p, nCharBytes);
+                pRaw += nCharBytes;
             }
         }
         bAny = true;

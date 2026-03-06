@@ -7997,8 +7997,17 @@ void mux_string::replace_Chars
 
 bool mux_string::replace_Point(const UTF8 *p, const mux_cursor &i)
 {
-    size_t n = utf8_FirstByte[m_autf[i.m_byte]];
-    size_t m = utf8_FirstByte[p[0]];
+    size_t n = utf8_FirstByte[static_cast<unsigned char>(m_autf[i.m_byte])];
+    if (n >= UTF8_CONTINUE)
+    {
+        n = UTF8_SIZE1;
+    }
+
+    size_t m = utf8_FirstByte[static_cast<unsigned char>(p[0])];
+    if (m >= UTF8_CONTINUE)
+    {
+        m = UTF8_SIZE1;
+    }
 
     if (n != m)
     {
