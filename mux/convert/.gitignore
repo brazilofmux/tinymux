@@ -1,0 +1,16 @@
+# Autoconf generated
+autoconf.h
+config.log
+config.status
+Makefile
+
+# Flex generated
+lex.*.cpp
+
+# Bison generated
+*.tab.cpp
+*.tab.hpp
+
+# Object files and binary
+*.o
+omega
