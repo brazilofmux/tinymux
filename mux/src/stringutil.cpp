@@ -3388,7 +3388,7 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
         {
             csCurrent = UpdateColorState(csCurrent, iCode);
         }
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     *pTranslatedString = '\0';
     return szTranslatedString;
@@ -3443,7 +3443,7 @@ bool IsDecompFriendly(const UTF8 *pString)
             fFriendly = false;
             break;
         }
-        pString = utf8_NextCodePoint(pString);
+        pString += utf8_advance_nul(pString);
     }
     return fFriendly;
 }
