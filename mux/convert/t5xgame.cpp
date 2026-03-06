@@ -7178,6 +7178,8 @@ static NameMask t5x_flags2[] =
     { "STAFF",       T5X_STAFF        },
     { "GAGGED",      T5X_GAGGED       },
     { "OPEN_OK",     T5X_OPEN_OK      },
+    { "COLOR256",    T5X_COLOR256     },
+    { "TALKMODE",    T5X_TALKMODE     },
     { "VACATION",    T5X_VACATION     },
     { "HTML",        T5X_HTML         },
     { "BLIND",       T5X_BLIND        },
@@ -7188,9 +7190,15 @@ static NameMask t5x_flags2[] =
 
 static NameMask t5x_flags3[] =
 {
-    { "SITEMON", T5X_SITEMON          },
-    { "UNICODE", T5X_UNICODE          },
-    { "MARKER0", T5X_MARK_0           },
+    { "SITEMON",       T5X_SITEMON          },
+    { "CMDCHECK",      T5X_CMDCHECK         },
+    { "UNICODE",       T5X_UNICODE          },
+    { "ALONE",         T5X_ALONE            },
+    { "NOEXAMINE",     T5X_NOEXAMINE        },
+    { "NOMODIFY",      T5X_NOMODIFY         },
+    { "INDESTRUCTIBLE", T5X_INDESTRUCTIBLE  },
+    { "NOEVAL",        T5X_NOEVAL           },
+    { "MARKER0",       T5X_MARK_0           },
     { "MARKER1", T5X_MARK_1           },
     { "MARKER2", T5X_MARK_2           },
     { "MARKER3", T5X_MARK_3           },
@@ -7221,6 +7229,8 @@ static NameMask t5x_powers1[] =
     { "long_fingers",     T5X_POW_LONGFINGERS   },
     { "prog",             T5X_POW_PROG          },
     { "siteadmin",        T5X_POW_SITEADMIN     },
+    { "link_anywhere",    T5X_POW_LINK_ANYWHR   },
+    { "dark",             T5X_POW_DARK          },
     { "comm_all",         T5X_POW_COMM_ALL      },
     { "see_queue",        T5X_POW_SEE_QUEUE     },
     { "see_hidden",       T5X_POW_SEE_HIDDEN    },
@@ -7239,6 +7249,7 @@ static NameMask t5x_powers1[] =
 static NameMask t5x_powers2[] =
 {
     { "builder",          T5X_POW_BUILDER       },
+    { "no_mail_expire",   T5X_POW_NO_MAIL_EXPIRE },
 };
 
 void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
@@ -7609,6 +7620,8 @@ static NameMask t5x_attr_flags[] =
     { "html",        T5X_AF_HTML        },
     { "no_clone",    T5X_AF_NOCLONE     },
     { "no_command",  T5X_AF_NOPROG      },
+    { "no_decomp",   T5X_AF_NODECOMP    },
+    { "no_eval",     T5X_AF_NOEVAL      },
     { "no_inherit",  T5X_AF_PRIVATE     },
     { "no_name",     T5X_AF_NONAME      },
     { "no_parse",    T5X_AF_NOPARSE     },

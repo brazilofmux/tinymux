@@ -1729,6 +1729,9 @@ NameMask upgrade_attr_flags[] =
     { "nearby",         0x01000000UL },
     { "noname",         0x08000000UL },
     { "nospace",        0x10000000UL },
+    { "mhear",          0x20000000UL },
+    { "ahear",          0x40000000UL },
+    { "nodebug",        0x80000000UL },
 };
 
 void P6H_ATTRINFO::Upgrade()
@@ -1913,6 +1916,9 @@ static struct
     { "ORPHAN",             "i",   "PLAYER ROOM EXIT THING",  "",                     ""                },
     { "HEAVY",              "",    "PLAYER ROOM EXIT THING",  "royalty",              ""                },
     { "CHAN_USEFIRSTMATCH", "",    "PLAYER ROOM EXIT THING",  "trusted",              "trusted"         },
+    { "KEEPALIVE",          "k",   "PLAYER",                  "",                     ""                },
+    { "NO_LOG",             "",    "PLAYER ROOM EXIT THING",  "wizard mdark log",     "wizard mdark"    },
+    { "OPEN_OK",            "",    "ROOM",                    "",                     ""                },
 };
 
 static struct
@@ -1938,6 +1944,7 @@ static struct
     { "DEBUG",               "TRACE"           },
     { "MONITOR",             "WATCHER"         },
     { "SHARED",              "ZONE"            },
+    { "NO_LOG",              "NOLOG"           },
 };
 
 static struct
@@ -1978,8 +1985,6 @@ static struct
     { "Tport_Anywhere",  "",  "PLAYER ROOM EXIT THING",  "wizard log",  "wizard" },
     { "Unkillable",      "",  "PLAYER ROOM EXIT THING",  "wizard log",  "wizard" },
     { "Can_nspemit",     "",  "PLAYER ROOM EXIT THING",  "wizard log",  "wizard" },
-    { "SQL_OK",          "",  "PLAYER ROOM EXIT THING",  "wizard log",  "" },
-    { "DEBIT",           "",  "PLAYER ROOM EXIT THING",  "wizard log",  "" },
 };
 
 static struct
@@ -1988,9 +1993,9 @@ static struct
    const char *pAlias;
 } upgrade_poweraliases[] =
 {
-    { "Cemit",     "@cemit" },
     { "Announce",  "@wall" },
     { "Announce",  "wall" },
+    { "Can_nspemit", "Can_spoof" },
 };
 
 void P6H_GAME::Upgrade()
@@ -2395,7 +2400,8 @@ static struct
     { "Receive",     87 },
     { "Mail",       225 },
     { "Take",       127 },
-    { "Open",       225 },
+    { "Open",       226 },
+    { "Chown",      217 },
 };
 
 void P6H_GAME::ConvertFromT5X()

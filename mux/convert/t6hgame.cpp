@@ -3038,11 +3038,14 @@ static NameMask t6h_flags2[] =
 
 static NameMask t6h_flags3[] =
 {
-    { "REDIR_OK", T6H_ORPHAN     },
-    { "ORPHAN",   T6H_ORPHAN     },
-    { "FREE",     T6H_NODEFAULT  },
-    { "PRESENCE", T6H_PRESENCE   },
-    { "MARKER0",  T6H_MARK_0     },
+    { "REDIR_OK",   T6H_REDIR_OK     },
+    { "ORPHAN",     T6H_ORPHAN       },
+    { "FREE",       T6H_NODEFAULT    },
+    { "PRESENCE",   T6H_PRESENCE     },
+    { "COLOR256",   T6H_COLOR256     },
+    { "COLOR24BIT", T6H_COLOR24BIT   },
+    { "OPEN_OK",    T6H_OPEN_OK      },
+    { "MARKER0",    T6H_MARK_0       },
     { "MARKER1",  T6H_MARK_1     },
     { "MARKER2",  T6H_MARK_2     },
     { "MARKER3",  T6H_MARK_3     },
@@ -3085,6 +3088,7 @@ static NameMask t6h_powers1[] =
     { "tel_anything",     T6H_POW_TEL_UNRST     },
     { "unkillable",       T6H_POW_UNKILLABLE    },
     { "attr_read",        T6H_POW_MDARK_ATTR    },
+    { "free_attr",        T6H_POW_FREE_ATTR     },
     { "attr_write",       T6H_POW_WIZ_ATTR      },
     { "watch_logins",     T6H_POW_WATCH         },
 };
@@ -3096,6 +3100,7 @@ static NameMask t6h_powers2[] =
     { "link_to_anything", T6H_POW_LINKTOANY     },
     { "open_anywhere",    T6H_POW_OPENANYLOC    },
     { "use_sql",          T6H_POW_USE_SQL       },
+    { "use_module",       T6H_POW_USE_SQL       },
     { "link_any_home",    T6H_POW_LINKHOME      },
     { "cloak",            T6H_POW_CLOAK         },
 };

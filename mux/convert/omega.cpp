@@ -406,7 +406,8 @@ int main(int argc, char *argv[])
     }
 
     if (  eRhostMUSH == eOutputType
-       && eOutputVersion != eLatest)
+       && eOutputVersion != eLatest
+       && eOutputVersion != eSame)
     {
         fprintf(stderr, "There is only one known RhostMUSH flatfile version.\n");
         Usage();
@@ -522,6 +523,95 @@ int main(int argc, char *argv[])
         {
             // It's easier to convert from 2.6.
             //
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+            g_t6hgame.ConvertFromT5X();
+            g_t6hgame.Pass2();
+            g_t6hgame.Validate();
+        }
+        else if (  eTinyMUX  == eInputType
+                && eRhostMUSH == eOutputType)
+        {
+            // T5X -> P6H -> R7H
+            //
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+            g_p6hgame.ConvertFromT5X();
+            g_p6hgame.Validate();
+            g_r7hgame.ConvertFromP6H();
+            g_r7hgame.Pass2();
+            g_r7hgame.Validate();
+        }
+        else if (  eTinyMUSH == eInputType
+                && ePennMUSH == eOutputType)
+        {
+            // T6H -> T5X -> P6H
+            //
+            g_t5xgame.ConvertFromT6H();
+            g_t5xgame.Pass2();
+            g_t5xgame.Validate();
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+            g_p6hgame.ConvertFromT5X();
+            g_p6hgame.Validate();
+        }
+        else if (  eTinyMUSH == eInputType
+                && eRhostMUSH == eOutputType)
+        {
+            // T6H -> T5X -> P6H -> R7H
+            //
+            g_t5xgame.ConvertFromT6H();
+            g_t5xgame.Pass2();
+            g_t5xgame.Validate();
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+            g_p6hgame.ConvertFromT5X();
+            g_p6hgame.Validate();
+            g_r7hgame.ConvertFromP6H();
+            g_r7hgame.Pass2();
+            g_r7hgame.Validate();
+        }
+        else if (  eRhostMUSH == eInputType
+                && ePennMUSH  == eOutputType)
+        {
+            // R7H -> T5X -> P6H
+            //
+            g_t5xgame.ConvertFromR7H();
+            g_t5xgame.Pass2();
+            g_t5xgame.Validate();
+            if (  g_t5xgame.Downgrade2()
+               || g_t5xgame.Upgrade2())
+            {
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+            g_p6hgame.ConvertFromT5X();
+            g_p6hgame.Validate();
+        }
+        else if (  eRhostMUSH == eInputType
+                && eTinyMUSH  == eOutputType)
+        {
+            // R7H -> T5X -> T6H
+            //
+            g_t5xgame.ConvertFromR7H();
+            g_t5xgame.Pass2();
+            g_t5xgame.Validate();
             if (  g_t5xgame.Downgrade2()
                || g_t5xgame.Upgrade2())
             {

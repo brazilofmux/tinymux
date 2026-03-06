@@ -164,6 +164,7 @@
 #define R7H_A_VA            100
 #define R7H_A_CHANNEL       126
 #define R7H_A_GUILD         127
+#define R7H_A_FLAGLEVEL     128
 #define R7H_A_ZA            129
 #define R7H_A_BCCMAIL       155
 #define R7H_A_EMAIL         156
@@ -259,6 +260,9 @@
 #define R7H_A_LASTIP        246
 #define R7H_A_SPAMPROTECT   247
 #define R7H_A_EXITTO        248
+#define R7H_A_PROTECTNAME   249
+#define R7H_A_TITLE         250
+#define R7H_A_OBJECTTAG     251
 #define R7H_A_VLIST         252
 #define R7H_A_LIST          253
 #define R7H_A_STRUCT        254
@@ -390,6 +394,11 @@
 #define R7H_SPAMMONITOR     0x00080000UL
 #define R7H_BLIND           0x00100000UL
 #define R7H_NOCODE          0x00200000UL
+#define R7H_HAS_PROTECT     0x00400000UL
+#define R7H_XTERMCOLOR      0x00800000UL
+#define R7H_HAS_ATTRPIPE    0x01000000UL
+#define R7H_HAS_OBJECTTAG   0x02000000UL
+#define R7H_COLORMAIL       0x04000000UL
 
 // Object Toggleword 1
 //
@@ -408,6 +417,7 @@
 #define R7H_TOG_MONITOR_AREG        0x00001000UL
 #define R7H_TOG_MONITOR_TIME        0x00002000UL
 #define R7H_TOG_CLUSTER             0x00004000UL
+#define R7H_TOG_SNUFFDARK           0x00008000UL
 #define R7H_TOG_NOANSI_PLAYER       0x00010000UL
 #define R7H_TOG_NOANSI_THING        0x00020000UL
 #define R7H_TOG_NOANSI_ROOM         0x00040000UL
@@ -452,8 +462,10 @@
 #define R7H_TOG_ACCENTS             0x00400000UL
 #define R7H_TOG_PREMAILVALIDATE     0x00800000UL
 #define R7H_TOG_SAFELOG             0x01000000UL
+#define R7H_TOG_UTF8                0x02000000UL
 #define R7H_TOG_NODEFAULT           0x08000000UL
 #define R7H_TOG_EXFULLWIZATTR       0x10000000UL
+#define R7H_TOG_LOGROOMENH          0x20000000UL
 #define R7H_TOG_LOGROOM             0x40000000UL
 #define R7H_TOG_NOGLOBPARENT        0x80000000UL
 
@@ -503,6 +515,11 @@
 #define R7H_POWER_NOWHO                4
 #define R7H_POWER_FULLTEL_ANYWHERE     6
 #define R7H_POWER_EX_FULL              8
+#define R7H_POWER_API                 10
+#define R7H_POWER_MONITORAPI          12
+#define R7H_POWER_WIZ_IDLE            14
+#define R7H_POWER_WIZ_SPOOF           16
+#define R7H_POWER_USE_FREELIST        18
 
 // Object toggleword 6 (depowerword 1)
 // Two bits per depower at given position.
@@ -550,6 +567,7 @@
 #define R7H_DP_PASSWORD                0
 #define R7H_DP_MORTAL_EXAMINE          2
 #define R7H_DP_PERSONAL_COMMANDS       4
+#define R7H_DP_DARK                    8
 
 #define ATR_INFO_CHAR 0x01
 #define R7H_NOTHING   (-1)
