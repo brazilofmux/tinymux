@@ -14,9 +14,6 @@ need it.
  - For new games, change the password for `#1` first thing and *write it down*
    in a safe place offline.
 
- - It is worth noting that keeping a record of changes in the `#1` character
-   password might save you some flatfile hacking for forgotten passwords.
-
  - The default port has been changed to `2860`. Change this in the
    `netmux.conf` or `GAMENAME.conf` file.
 
@@ -37,60 +34,46 @@ need it.
    `mail_expiration` accordingly, or else all `@mail` older than the default
    value of 14 days will be deleted.
 
- - `./Backup` has superceeded the traditional use of `db_unload` for making
-   flatfiles. The script makes a flatfile of the DB and also creates a `tar.gz`
-   file containing the `mail.db`, `comsys.db`, configuration files, and the
-   customized files in `game/text`. When porting, all you have to do is place
-   the backup in the game directory, extract the archive and `db_load` before
-   restarting the game.
+# Database Tools:
 
-# Changes to `dbconvert`:
+`dbconvert` imports flatfiles into the SQLite database and exports them
+back out. The `db_load` and `db_unload` scripts in `game/data` simplify
+the process.
 
-`./dbconvert` is the means by which the binary game data is converted to
-flatfile format and back again. The `db_load` and `db_unload` scripts
-simplify the process for the user.
+To import a flatfile into SQLite:
+```
+    ./db_load netmux netmux.flat
+    ./db_load netmux netmux.flat -C comsys.db -m mail.db
+```
 
-The syntax of `db_load` is:
+To export a flatfile from SQLite:
 ```
-    ./db_load netmux netmux.flat netmux.db
+    ./db_unload netmux netmux.flat
+    ./db_unload netmux netmux.flat -C comsys.db -m mail.db
 ```
-This converts flatfiled database to binary for use by the server and would be
-done with `dbconvert` thus:
-```
-    ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
-```
-The syntax of `db_unload` is:
-```
-    ./db_unload netmux netmux.db.new netmux.flat
-```
-This converts binary data to flatfile for would be done with `dbconvert` thus:
-```
-    ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
-```
+
+The `-C` and `-m` flags are optional and handle comsys and mail flatfiles
+respectively. If omitted, comsys and mail data remain in SQLite only.
 
 # On Flatfiles:
 
- - You MUST unload to flatfile if you are using a disk-based database when
-   you move to a new machine, no matter what platform; only the flatfile is
-   portable!
+Flatfiles are a portable text format for moving game data between servers
+or versions. When migrating to a new machine or upgrading, use `db_unload`
+to export a flatfile and `db_load` to import it on the other end.
 
- - When you unload the database to flatfile format it is important to
-   use your original `db_unload` or `dbconvert`. *We cannot stress this enough.*
-   Data loss is possible, especially since `db_unload` or `dbconvert` sometimes
-   changes between releases.
+ - Always use your original `db_unload` or `dbconvert` to export. *We cannot
+   stress this enough.* Data loss is possible, especially since `dbconvert`
+   sometimes changes between releases.
 
- - Flatfiles are the most stable format to store and move your data in. Yes,
-   the occasional miracle happens to let someone bring a game back up from
-   binary data moved from the nether regions of the net. However, this isn't
-   the place for beginners or the faint of heart. As always, store backups
-   offline.
+ - You can verify a flatfile by checking for `***END OF DUMP***` at the end
+   and attribute values throughout. If the end marker is missing, the file
+   was truncated.
 
 # On Making Backups:
 
-TinyMUX 2.13 includes a backup script. It produces a flatfile with the
-name `GAMENAME.DATE.tar.gz` that contains both the `mail.db` and
-`comsys.db` which will appear in the `game` directory. To make use of the
-`Backup` script:
+TinyMUX 2.13 includes a `Backup` script in the `game` directory. It uses
+the SQLite `.backup` command to create a timestamped, compressed copy of
+the database:
 
  - `@shutdown` the game.
 

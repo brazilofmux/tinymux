@@ -32,11 +32,10 @@ please refer to the following files:
   `INSTALL.md`         How to compile your game, step-by-step.
   `NOTES.md`           All kinds of tidbits made much easier to find. Known compiling issues and known fixes are found here. Known OSes that TinyMUX 2.13 will run on and compiling issues. Has basic conversion information.
   `docs/BACKUP`        A file about the TinyMUX 2.13 Backup script.
-  `docs/CONFIGURATION` How to set up your TinyMUX, including an explanation of the common configuration items, as well as how to set up your game so that your database files so that they are customized for your `GAMENAME`.
+  `docs/CONFIGURATION` How to set up your TinyMUX, including an explanation of the common configuration items and how to customize your `GAMENAME`.
   `docs/CONVERSION`    How to convert a game from another type of server to TinyMUX.
   `docs/CREDITS`       The people who helped make this server possible.
   `docs/GUESTS`        How the current guest implementation works and how to set it up.
-  `docs/MEMORY`        Explanations about how to set up disk and memory-based operation plus tips on saving memory.
   `docs/PATCHES`       A basic introduction to applying patches to the server.
   -------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -50,8 +49,8 @@ The latest version of this code is found `brazilmux.tinymux.org 2860`.
 
 Refer to the file `CHANGES.md` for information about new features,
 commands, and bug fixes. `NOTES.md` now has a lot of small bits of info
-related to running the server, as well as reminders about how to
-flatfile the database for conversions and moving from site to site.
+related to running the server, as well as reminders about backups
+and conversions.
 
 # Reporting Bugs:
 

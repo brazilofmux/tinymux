@@ -39,11 +39,11 @@ Currently, the following types are available:
 
 |                  |                                                     |
 |------------------|-----------------------------------------------------|
-| `DUMP_I_NORMAL`  | perform a normal dump                               |
-| `DUMP_I_PANIC`   | write a panic database (game output to crashdb)     |
-| `DUMP_I_RESTART` | game writes database to the inputdb                 |
-| `DUMP_I_FLAT`    | game is unloading the db to a flatfile              |
-| `DUMP_I_SIGNAL`  | game is unloading the db to a flatfile via a signal |
+| `DUMP_I_NORMAL`  | perform a normal dump (WAL checkpoint)              |
+| `DUMP_I_PANIC`   | write a panic dump                                  |
+| `DUMP_I_RESTART` | game saves database before restart                  |
+| `DUMP_I_FLAT`    | game is exporting the db to a flatfile              |
+| `DUMP_I_SIGNAL`  | game is exporting the db to a flatfile via a signal |
 
 Function: `local_shutdown()`
 

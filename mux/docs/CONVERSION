@@ -1,5 +1,5 @@
 TinyMUX 2.13: CONVERSION
-Last Update: July 2012
+Last Update: March 2026
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Conversions from Other Database Formats:
@@ -9,14 +9,13 @@ TinyMUX 2.13 has been proven to read the following database formats:
 
 Upgrading An Existing TinyMUX:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- - @shutdown the game. Make a flatfile of your DB and move it to a safe
-   location.
+ - @shutdown the game.
+
+ - If upgrading from a flatfile-based version, export a flatfile using your
+   old version's db_unload and move it to a safe location.
 
  - Compile TinyMUX 2.13 per INSTALL.  Note that TinyMUX 2.13 untars into a
    separate directory.
-
- - Copy the flatfile to game/data in the TinyMUX 2.13 directory and use
-   db_load to convert the database to binary.
 
  - Copy .txt files to text/
 
@@ -31,35 +30,31 @@ Upgrading An Existing TinyMUX:
  - You can save a little time by 'cat oldfile >> newfile' and using
    the editor to remove unneeded lines.
 
- - Copy any existing comsys.db and mail.db files to game/data.  If your
-   game comes up and the mail and/or comsys are not working, make sure
-   that you put the files in the right directory and restart the TinyMUX.
+ - If upgrading from a flatfile-based version, use db_load in the game/data
+   directory to import your flatfile into SQLite:
+
+       cd game/data
+       ./db_load netmux netmux.flat -C comsys.db -m mail.db
+
+   The -C and -m flags are optional and handle comsys and mail flatfiles.
 
  - Restart the game.
 
-
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
- - One of the major and important changes since TinyMUX 2.0 is the use of
-   CHash in the place of GDBM.  You will notice the changes primarily in the
-   way dbconvert and the db_unload and db_load scripts work.
-
- - dbconvert is the means by which the binary game data is converted to
-   flatfile format and back again.  The db_load and db_unload scripts
-   simplify the process for the user.
+ - TinyMUX 2.13 uses SQLite for all game data storage.  The dbconvert tool
+   imports flatfiles into the SQLite database and exports them back out.
+   The db_load and db_unload scripts simplify the process.
 
  - The syntax of the scripts is:
 
-   - './db_load netmux netmux.flat netmux.db'
+   - './db_load netmux netmux.flat'
 
-     This converts a flatfile database to binary for use by the server and
-     would be done with dbconvert thus:
+     This imports a flatfile into the SQLite database.
 
-     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+   - './db_unload netmux netmux.flat'
 
-   - './db_unload netmux netmux.db.new netmux.flat'
+     This exports the SQLite database to a flatfile.
 
-     This converts binary data to flatfile for would be done with dbconvert
-     thus:
-
-     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+   - Both scripts accept optional '-C comsys.db' and '-m mail.db' flags
+     to handle comsys and mail flatfiles respectively.
