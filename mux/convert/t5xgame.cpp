@@ -6087,6 +6087,47 @@ bool T5X_GAME::Downgrade2()
     return true;
 }
 
+bool T5X_GAME::DowngradeToRhost()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (ver <= 2)
+    {
+        return false;
+    }
+    m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
+
+    // Additional flatfile flags.
+    //
+    m_flags |= 2;
+
+    // Downgrade attribute names (Unicode to ASCII).
+    //
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
+    {
+        m_mAttrNums.erase(it->second->m_pNameUnencoded);
+        it->second->ConvertToRhost();
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        if (itNum != m_mAttrNums.end())
+        {
+            fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        }
+        else
+        {
+            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+        }
+    }
+
+    // Downgrade objects: color to Rhost softcode, Unicode to ASCII, lock format.
+    //
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->ConvertToRhost();
+        it->second->DowngradeDefaultLock();
+    }
+    return true;
+}
+
 bool T5X_GAME::Downgrade1()
 {
     Downgrade2();
@@ -6106,6 +6147,12 @@ bool T5X_GAME::Downgrade1()
 void T5X_ATTRNAMEINFO::ConvertToLatin1()
 {
     char *p = (char *)::ConvertToLatin1((UTF8 *)m_pNameUnencoded);
+    SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
+}
+
+void T5X_ATTRNAMEINFO::ConvertToRhost()
+{
+    char *p = (char *)ConvertToAscii((UTF8 *)m_pNameUnencoded);
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
@@ -6642,6 +6689,182 @@ ColorState UpdateColorState(ColorState cs, int iColorCode)
     return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
 }
 
+// Convert MUX private-use color code points to Rhost-compatible ASCII-clean
+// softcode.  Basic 16 colors use %c/%C substitutions.  256-color uses
+// %c0xHH/%c0XHH.  24-bit colors use %c<#RRGGBB>/%C<#RRGGBB>.
+//
+// This function replaces RestrictToColor16() + ConvertColorToANSI() for the
+// T5X-to-R7H conversion path, preserving full color fidelity.
+//
+static const char *rhost_fg_basic[] =
+{
+    "%cx", "%cr", "%cg", "%cy", "%cb", "%cm", "%cc", "%cw"
+};
+
+static const char *rhost_bg_basic[] =
+{
+    "%cX", "%cR", "%cG", "%cY", "%cB", "%cM", "%cC", "%cW"
+};
+
+const UTF8 *ConvertColorToRhostSoftcode(const UTF8 *pString)
+{
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    ColorState csCurrent = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
+
+    while (  '\0' != *pString
+          && pBuffer < aBuffer + sizeof(aBuffer) - 64)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (COLOR_NOTCOLOR == iCode)
+        {
+            // Emit pending color transition before visible character.
+            //
+            if (csCurrent != csNext)
+            {
+                // Need to reset?
+                //
+                if (  ((csCurrent & ~csNext) & CS_ATTRS)
+                   || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
+                      && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+                   || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
+                      && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
+                {
+                    memcpy(pBuffer, "%cn", 3);
+                    pBuffer += 3;
+                    csCurrent = CS_NORMAL;
+                }
+
+                ColorState tmp = csCurrent ^ csNext;
+
+                // Attributes
+                //
+                if (CS_ATTRS & tmp)
+                {
+                    if (CS_INTENSE & tmp & csNext)
+                    {
+                        memcpy(pBuffer, "%ch", 3);
+                        pBuffer += 3;
+                    }
+                    if (CS_UNDERLINE & tmp & csNext)
+                    {
+                        memcpy(pBuffer, "%cu", 3);
+                        pBuffer += 3;
+                    }
+                    if (CS_BLINK & tmp & csNext)
+                    {
+                        memcpy(pBuffer, "%cf", 3);
+                        pBuffer += 3;
+                    }
+                    if (CS_INVERSE & tmp & csNext)
+                    {
+                        memcpy(pBuffer, "%ci", 3);
+                        pBuffer += 3;
+                    }
+                }
+
+                // Foreground
+                //
+                if (CS_FOREGROUND & tmp)
+                {
+                    if ((csNext & CS_FOREGROUND) != CS_FG_DEFAULT)
+                    {
+                        if (CS_FG_INDEXED & csNext)
+                        {
+                            unsigned int idx = static_cast<unsigned int>(CS_FG_FIELD(csNext)) & 0xFF;
+                            if (idx < 8)
+                            {
+                                memcpy(pBuffer, rhost_fg_basic[idx], 3);
+                                pBuffer += 3;
+                            }
+                            else if (idx < 16)
+                            {
+                                // Bright FG: hilite + basic color
+                                //
+                                memcpy(pBuffer, "%ch", 3);
+                                pBuffer += 3;
+                                memcpy(pBuffer, rhost_fg_basic[idx - 8], 3);
+                                pBuffer += 3;
+                            }
+                            else
+                            {
+                                // 256-color FG: %c0xHH
+                                //
+                                pBuffer += sprintf((char *)pBuffer, "%%c0x%02x", idx);
+                            }
+                        }
+                        else
+                        {
+                            // 24-bit FG: %c<#RRGGBB>
+                            //
+                            RGB rgb;
+                            cs2rgb(CS_FG_FIELD(csNext), &rgb);
+                            pBuffer += sprintf((char *)pBuffer, "%%c<#%02X%02X%02X>", rgb.r, rgb.g, rgb.b);
+                        }
+                    }
+                }
+
+                // Background
+                //
+                if (CS_BACKGROUND & tmp)
+                {
+                    if ((csNext & CS_BACKGROUND) != CS_BG_DEFAULT)
+                    {
+                        if (CS_BG_INDEXED & csNext)
+                        {
+                            unsigned int idx = static_cast<unsigned int>(CS_BG_FIELD(csNext)) & 0xFF;
+                            if (idx < 8)
+                            {
+                                memcpy(pBuffer, rhost_bg_basic[idx], 3);
+                                pBuffer += 3;
+                            }
+                            else if (idx < 16)
+                            {
+                                // Bright BG: use 256-color code
+                                //
+                                pBuffer += sprintf((char *)pBuffer, "%%c0X%02x", idx);
+                            }
+                            else
+                            {
+                                // 256-color BG: %c0XHH
+                                //
+                                pBuffer += sprintf((char *)pBuffer, "%%c0X%02x", idx);
+                            }
+                        }
+                        else
+                        {
+                            // 24-bit BG: %C<#RRGGBB>
+                            //
+                            RGB rgb;
+                            cs2rgb(CS_BG_FIELD(csNext), &rgb);
+                            pBuffer += sprintf((char *)pBuffer, "%%C<#%02X%02X%02X>", rgb.r, rgb.g, rgb.b);
+                        }
+                    }
+                }
+
+                csCurrent = csNext;
+            }
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        else
+        {
+            csNext = UpdateColorState(csNext, iCode);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+
+    // Reset at end if we're not in normal state.
+    //
+    if (csNext != CS_NORMAL)
+    {
+        memcpy(pBuffer, "%cn", 3);
+        pBuffer += 3;
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
 // Maximum binary transition length is:
 //
 //   COLOR_RESET      "\xEF\x94\x80"
@@ -6910,6 +7133,32 @@ void T5X_ATTRINFO::ConvertToLatin1()
 void T5X_ATTRINFO::RestrictToColor16()
 {
     SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)::RestrictToColor16((UTF8 *)m_pValueUnencoded)));
+}
+
+void T5X_OBJECTINFO::ConvertToRhost()
+{
+    // Convert name: color to Rhost softcode, then Unicode to ASCII.
+    //
+    char *p = (char *)ConvertColorToRhostSoftcode((UTF8 *)m_pName);
+    p = (char *)ConvertToAscii((UTF8 *)p);
+    free(m_pName);
+    m_pName = StringClone(p);
+
+    // Convert attribute values.
+    //
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->ConvertToRhost();
+        }
+    }
+}
+
+void T5X_ATTRINFO::ConvertToRhost()
+{
+    char *p = (char *)ConvertColorToRhostSoftcode((UTF8 *)m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)ConvertToAscii((UTF8 *)p)));
 }
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const

@@ -4343,11 +4343,11 @@
 >258
 "@log smoke=End sort() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([sort(chr(234) chr(232) chr(233))])),8056D4F72BADB939A9E38189AB769840E92D7EA1)={@log smoke=TC002: sort accented variants. Succeeded.;},{@log smoke=TC002: sort accented variants. Failed (%q0).;}"
+"@if strmatch(setr(0,sha1([sort([chr(234)] [chr(232)] [chr(233)])])),B619597A2BA548F50575C8B19865961A1741D8E1)={@log smoke=TC002: sort accented variants. Succeeded.;},{@log smoke=TC002: sort accented variants. Failed (%q0).;}"
 >260
-"@if strmatch(setr(0,sha1([sort(f chr(233) a d chr(232) b)])),E5983A9607C0EE9796A39F929664C8F5FFB95153)={@log smoke=TC003: sort ASCII and accented mix. Succeeded.;},{@log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;}"
+"@if strmatch(setr(0,sha1([sort(f [chr(233)] a d [chr(232)] b)])),9F207825A8D1AC79FE86F43772C4B70952CC53D0)={@log smoke=TC003: sort ASCII and accented mix. Succeeded.;},{@log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;}"
 >261
-"@if strmatch(setr(0,sha1([sort(chr(65298) chr(65296) chr(65300) chr(65297) chr(65299))])),18961D598EB9299F34C71CF659AE8E1968A26259)={@log smoke=TC004: sort fullwidth digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])])),73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3)={@log smoke=TC004: sort fullwidth digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).;@trig me/tr.done}"
 <
 !147
 "test_space_fn"

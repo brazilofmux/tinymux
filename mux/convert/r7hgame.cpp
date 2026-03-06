@@ -1,5 +1,6 @@
 #include "omega.h"
 #include "p6hgame.h"
+#include "t5xgame.h"
 #include "r7hgame.h"
 
 typedef struct _r7h_gameflaginfo
@@ -1660,7 +1661,9 @@ void R7H_GAME::ConvertFromP6H()
         }
         if (it->second->m_fZone)
         {
-            poi->SetZone(it->second->m_dbZone);
+            vector<int> *pvz = new vector<int>;
+            pvz->push_back(it->second->m_dbZone);
+            poi->SetZones(pvz);
         }
         if (it->second->m_fPennies)
         {
@@ -2048,6 +2051,709 @@ void R7H_GAME::ConvertFromP6H()
 
     SetSizeHint(dbRefMax+1);
     SetRecordPlayers(0);
+}
+
+// ---------------------------------------------------------------------------
+// Direct T5X -> R7H conversion.
+// ---------------------------------------------------------------------------
+
+bool R7H_LOCKEXP::ConvertFromT5X(T5X_LOCKEXP *p)
+{
+    switch (p->m_op)
+    {
+    case T5X_LOCKEXP::le_is:
+        m_op = R7H_LOCKEXP::le_is;
+        m_le[0] = new R7H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_carry:
+        m_op = R7H_LOCKEXP::le_carry;
+        m_le[0] = new R7H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_indirect:
+        m_op = R7H_LOCKEXP::le_indirect;
+        m_le[0] = new R7H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_owner:
+        m_op = R7H_LOCKEXP::le_owner;
+        m_le[0] = new R7H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_or:
+        m_op = R7H_LOCKEXP::le_or;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_not:
+        m_op = R7H_LOCKEXP::le_not;
+        m_le[0] = new R7H_LOCKEXP;
+        if (!m_le[0]->ConvertFromT5X(p->m_le[0]))
+        {
+            delete m_le[0];
+            m_le[0] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_attr:
+        m_op = R7H_LOCKEXP::le_attr;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_eval:
+        m_op = R7H_LOCKEXP::le_eval;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_and:
+        m_op = R7H_LOCKEXP::le_and;
+        m_le[0] = new R7H_LOCKEXP;
+        m_le[1] = new R7H_LOCKEXP;
+        if (  !m_le[0]->ConvertFromT5X(p->m_le[0])
+           || !m_le[1]->ConvertFromT5X(p->m_le[1]))
+        {
+            delete m_le[0];
+            delete m_le[1];
+            m_le[0] = m_le[1] = NULL;
+            return false;
+        }
+        break;
+
+    case T5X_LOCKEXP::le_ref:
+        m_op = R7H_LOCKEXP::le_ref;
+        m_dbRef = p->m_dbRef;
+        break;
+
+    case T5X_LOCKEXP::le_text:
+        m_op = R7H_LOCKEXP::le_text;
+        m_p[0] = StringClone(p->m_p[0]);
+        break;
+
+    default:
+        fprintf(stderr, "%d not recognized.\n", p->m_op);
+        break;
+    }
+    return true;
+}
+
+// T5X flags1 -> R7H flags1.  Most bits are the same.
+//
+static int convert_t5x_flags1(int f)
+{
+    f &= R7H_SEETHRU
+       | R7H_WIZARD
+       | R7H_LINK_OK
+       | R7H_DARK
+       | R7H_JUMP_OK
+       | R7H_STICKY
+       | R7H_DESTROY_OK
+       | R7H_HAVEN
+       | R7H_QUIET
+       | R7H_HALT
+       | R7H_TRACE
+       | R7H_GOING
+       | R7H_MONITOR
+       | R7H_MYOPIC
+       | R7H_PUPPET
+       | R7H_CHOWN_OK
+       | R7H_ENTER_OK
+       | R7H_VISUAL
+       | R7H_IMMORTAL
+       | R7H_HAS_STARTUP
+       | R7H_OPAQUE
+       | R7H_VERBOSE
+       | R7H_INHERIT
+       | R7H_NOSPOOF
+       | R7H_ROBOT
+       | R7H_SAFE
+       | R7H_HEARTHRU
+       | R7H_TERSE;
+    return f;
+}
+
+// T5X flags2 -> R7H flags2.
+//
+static int convert_t5x_flags2(int f2)
+{
+    int g = f2;
+    g &= R7H_KEY
+       | R7H_ABODE
+       | R7H_FLOATING
+       | R7H_UNFINDABLE
+       | R7H_PARENT_OK
+       | R7H_LIGHT
+       | R7H_HAS_LISTEN
+       | R7H_HAS_FWDLIST
+       | R7H_SUSPECT
+       | R7H_CONNECTED
+       | R7H_SLAVE;
+
+    if (f2 & T5X_STAFF)
+    {
+        g |= R7H_ADMIN;
+    }
+    if (f2 & T5X_ANSI)
+    {
+        g |= R7H_ANSI | R7H_ANSICOLOR;
+    }
+    if (f2 & T5X_NO_COMMAND)
+    {
+        // Goes to flags3 in R7H; handled separately.
+    }
+    if (f2 & T5X_BLIND)
+    {
+        // Goes to flags4 in R7H; handled separately.
+    }
+    return g;
+}
+
+// T5X flags2/flags3 -> R7H flags3.
+//
+static int convert_t5x_flags3(int f2, int f3)
+{
+    int g = 0;
+    if (f2 & T5X_NO_COMMAND)
+    {
+        g |= R7H_NOCOMMAND;
+    }
+    if (f3 & T5X_MARK_0)
+    {
+        g |= R7H_MARKER0;
+    }
+    if (f3 & T5X_MARK_1)
+    {
+        g |= R7H_MARKER1;
+    }
+    if (f3 & T5X_MARK_2)
+    {
+        g |= R7H_MARKER2;
+    }
+    if (f3 & T5X_MARK_3)
+    {
+        g |= R7H_MARKER3;
+    }
+    if (f3 & T5X_MARK_4)
+    {
+        g |= R7H_MARKER4;
+    }
+    if (f3 & T5X_MARK_5)
+    {
+        g |= R7H_MARKER5;
+    }
+    if (f3 & T5X_MARK_6)
+    {
+        g |= R7H_MARKER6;
+    }
+    if (f3 & T5X_MARK_7)
+    {
+        g |= R7H_MARKER7;
+    }
+    if (f3 & T5X_MARK_8)
+    {
+        g |= R7H_MARKER8;
+    }
+    if (f3 & T5X_MARK_9)
+    {
+        g |= R7H_MARKER9;
+    }
+    return g;
+}
+
+// T5X flags2 -> R7H flags4.
+//
+static int convert_t5x_flags4(int f2)
+{
+    int g = 0;
+    if (f2 & T5X_BLIND)
+    {
+        g |= R7H_BLIND;
+    }
+    return g;
+}
+
+// T5X attr flags -> R7H attr flags.
+//
+static int convert_t5x_attr_flags(int f)
+{
+    int g = f;
+    g &= R7H_AF_ODARK
+       | R7H_AF_DARK
+       | R7H_AF_WIZARD
+       | R7H_AF_MDARK
+       | R7H_AF_INTERNAL
+       | R7H_AF_NOCMD
+       | R7H_AF_LOCK
+       | R7H_AF_DELETED
+       | R7H_AF_NOPROG
+       | R7H_AF_GOD;
+
+    if (f & T5X_AF_IS_LOCK)
+    {
+        g |= R7H_AF_IS_LOCK;
+    }
+    if (f & T5X_AF_PRIVATE)
+    {
+        g |= R7H_AF_PRIVATE;
+    }
+    if (f & T5X_AF_VISUAL)
+    {
+        g |= R7H_AF_VISUAL;
+    }
+    if (f & T5X_AF_NOCLONE)
+    {
+        g |= R7H_AF_NOCLONE;
+    }
+    if (f & T5X_AF_NOPARSE)
+    {
+        g |= R7H_AF_NOPARSE;
+    }
+    return g;
+}
+
+// T5X attr num -> R7H attr num.  Returns false if the attribute has no
+// corresponding R7H attribute.
+//
+static bool convert_t5x_attr_num(int iNum, int *piNum)
+{
+    if (A_USER_START <= iNum)
+    {
+        *piNum = iNum;
+        return true;
+    }
+
+    // T5X attributes with no corresponding R7H attribute.
+    //
+    if (  T5X_A_MFAIL == iNum
+       || T5X_A_COMJOIN == iNum
+       || T5X_A_COMLEAVE == iNum
+       || T5X_A_COMON == iNum
+       || T5X_A_COMOFF == iNum
+       || T5X_A_CMDCHECK == iNum
+       || T5X_A_MONIKER == iNum
+       || T5X_A_CONNINFO == iNum
+       || T5X_A_IDLETMOUT == iNum
+       || T5X_A_ADESTROY == iNum
+       || T5X_A_APARENT == iNum
+       || T5X_A_ACREATE == iNum
+       || T5X_A_LASTWHISPER == iNum
+       || T5X_A_LVISIBLE == iNum
+       || T5X_A_LASTPAGE == iNum
+       || T5X_A_MAIL == iNum
+       || T5X_A_AMAIL == iNum
+       || T5X_A_DAILY == iNum
+       || T5X_A_MAILTO == iNum
+       || T5X_A_MAILMSG == iNum
+       || T5X_A_MAILSUB == iNum
+       || T5X_A_MAILCURF == iNum
+       || T5X_A_PROGCMD == iNum
+       || T5X_A_MAILFLAGS == iNum
+       || T5X_A_DESTROYER == iNum
+       || T5X_A_NEWOBJS == iNum
+       || T5X_A_SPEECHMOD == iNum
+       || T5X_A_VRML_URL == iNum
+       || T5X_A_HTDESC == iNum
+       || T5X_A_REASON == iNum
+       || T5X_A_REGINFO == iNum
+       || T5X_A_DESCFORMAT == iNum
+       || T5X_A_PRONOUN == iNum)
+    {
+        return false;
+    }
+
+    // Remapped attributes.
+    //
+    if (T5X_A_NAMEFORMAT == iNum)
+    {
+        *piNum = R7H_A_NAME_FMT;
+    }
+    else if (T5X_A_LASTIP == iNum)
+    {
+        *piNum = R7H_A_LASTIP;
+    }
+    else if (T5X_A_CONFORMAT == iNum)
+    {
+        *piNum = R7H_A_LCON_FMT;
+    }
+    else if (T5X_A_EXITVARDEST == iNum)
+    {
+        *piNum = R7H_A_EXITTO;
+    }
+    else if (T5X_A_LCONTROL == iNum)
+    {
+        *piNum = R7H_A_LCONTROL;
+    }
+    else if (T5X_A_LMAIL == iNum)
+    {
+        *piNum = R7H_A_LMAIL;
+    }
+    else if (T5X_A_LGET == iNum)
+    {
+        *piNum = R7H_A_LGETFROM;
+    }
+    else if (T5X_A_GFAIL == iNum)
+    {
+        *piNum = R7H_A_GFAIL;
+    }
+    else if (T5X_A_OGFAIL == iNum)
+    {
+        *piNum = R7H_A_OGFAIL;
+    }
+    else if (T5X_A_AGFAIL == iNum)
+    {
+        *piNum = R7H_A_AGFAIL;
+    }
+    else if (T5X_A_RFAIL == iNum)
+    {
+        *piNum = R7H_A_RFAIL;
+    }
+    else if (T5X_A_ORFAIL == iNum)
+    {
+        *piNum = R7H_A_ORFAIL;
+    }
+    else if (T5X_A_ARFAIL == iNum)
+    {
+        *piNum = R7H_A_ARFAIL;
+    }
+    else if (T5X_A_DFAIL == iNum)
+    {
+        *piNum = R7H_A_DFAIL;
+    }
+    else if (T5X_A_ODFAIL == iNum)
+    {
+        *piNum = R7H_A_ODFAIL;
+    }
+    else if (T5X_A_ADFAIL == iNum)
+    {
+        *piNum = R7H_A_ADFAIL;
+    }
+    else if (T5X_A_TFAIL == iNum)
+    {
+        *piNum = R7H_A_TFAIL;
+    }
+    else if (T5X_A_OTFAIL == iNum)
+    {
+        *piNum = R7H_A_OTFAIL;
+    }
+    else if (T5X_A_ATFAIL == iNum)
+    {
+        *piNum = R7H_A_ATFAIL;
+    }
+    else if (T5X_A_TOFAIL == iNum)
+    {
+        *piNum = R7H_A_TOFAIL;
+    }
+    else if (T5X_A_OTOFAIL == iNum)
+    {
+        *piNum = R7H_A_OTOFAIL;
+    }
+    else if (T5X_A_ATOFAIL == iNum)
+    {
+        *piNum = R7H_A_ATOFAIL;
+    }
+    else if (T5X_A_SIGNATURE == iNum)
+    {
+        *piNum = R7H_A_MAILSIG;
+    }
+    else if (T5X_A_LSPEECH == iNum)
+    {
+        *piNum = R7H_A_LSPEECH;
+    }
+    else if (T5X_A_LOPEN == iNum)
+    {
+        *piNum = R7H_A_LOPEN;
+    }
+    else if (T5X_A_LCHOWN == iNum)
+    {
+        *piNum = R7H_A_LCHOWN;
+    }
+    else if (T5X_A_EXITFORMAT == iNum)
+    {
+        *piNum = R7H_A_LEXIT_FMT;
+    }
+    else if (T5X_A_MODIFIED == iNum)
+    {
+        *piNum = R7H_A_MODIFY_TIME;
+    }
+    else if (T5X_A_CREATED == iNum)
+    {
+        *piNum = R7H_A_CREATED_TIME;
+    }
+    else if (T5X_A_SAYSTRING == iNum)
+    {
+        *piNum = R7H_A_SAYSTRING;
+    }
+    else
+    {
+        // Same number in both systems.
+        //
+        *piNum = iNum;
+    }
+    return true;
+}
+
+void R7H_GAME::ConvertFromT5X()
+{
+    SetFlags(R7H_MANDFLAGS | 7);
+
+    // Attribute names
+    //
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it =  g_t5xgame.m_mAttrNames.begin(); it != g_t5xgame.m_mAttrNames.end(); ++it)
+    {
+        AddNumAndName(it->second->m_iNum, StringClone(it->second->m_pNameEncoded));
+    }
+    if (!m_fNextAttr)
+    {
+        SetNextAttr(g_t5xgame.m_nNextAttr);
+    }
+
+    int dbRefMax = 0;
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = g_t5xgame.m_mObjects.begin(); it != g_t5xgame.m_mObjects.end(); ++it)
+    {
+        if (!it->second->m_fFlags1)
+        {
+            continue;
+        }
+
+        // ROOM, THING, EXIT, and PLAYER types are the same between T5X and
+        // R7H.  No mapping is required.
+        //
+        int iType = (it->second->m_iFlags1) & T5X_TYPE_MASK;
+        if (  T5X_TYPE_ROOM != iType
+           && T5X_TYPE_THING != iType
+           && T5X_TYPE_EXIT != iType
+           && T5X_TYPE_PLAYER != iType)
+        {
+            continue;
+        }
+
+        R7H_OBJECTINFO *poi = new R7H_OBJECTINFO;
+
+        poi->SetRef(it->first);
+        poi->SetName(StringClone(it->second->m_pName));
+        if (it->second->m_fLocation)
+        {
+            int iLocation = it->second->m_dbLocation;
+            if (  T5X_TYPE_EXIT == iType
+               && T5X_NOTHING == iLocation)
+            {
+                poi->SetLocation(-2);
+            }
+            else
+            {
+                poi->SetLocation(iLocation);
+            }
+        }
+        if (it->second->m_fContents)
+        {
+            poi->SetContents(it->second->m_dbContents);
+        }
+        if (it->second->m_fExits)
+        {
+            poi->SetExits(it->second->m_dbExits);
+        }
+        if (it->second->m_fLink)
+        {
+            poi->SetLink(it->second->m_dbLink);
+        }
+        else
+        {
+            poi->SetLink(-1);
+        }
+        if (it->second->m_fNext)
+        {
+            poi->SetNext(it->second->m_dbNext);
+        }
+        if (it->second->m_fParent)
+        {
+            poi->SetParent(it->second->m_dbParent);
+        }
+        if (it->second->m_fOwner)
+        {
+            poi->SetOwner(it->second->m_dbOwner);
+        }
+        if (it->second->m_fZone)
+        {
+            vector<int> *pvz = new vector<int>;
+            pvz->push_back(it->second->m_dbZone);
+            poi->SetZones(pvz);
+        }
+        if (it->second->m_fPennies)
+        {
+            poi->SetPennies(it->second->m_iPennies);
+        }
+
+        // Flagwords
+        //
+        int flags1 = iType;
+        int flags2 = 0;
+        int flags3 = 0;
+        int flags4 = 0;
+        int toggles1 = 0;
+        int toggles2 = 0;
+        int toggles3 = 0;
+        int toggles4 = 0;
+        int toggles5 = 0;
+        int toggles6 = 0;
+        int toggles7 = 0;
+        int toggles8 = 0;
+
+        if (it->second->m_fFlags1)
+        {
+            flags1 |= convert_t5x_flags1(it->second->m_iFlags1);
+        }
+        if (it->second->m_fFlags2)
+        {
+            flags2 = convert_t5x_flags2(it->second->m_iFlags2);
+        }
+        if (it->second->m_fFlags2 || it->second->m_fFlags3)
+        {
+            flags3 = convert_t5x_flags3(
+                it->second->m_fFlags2 ? it->second->m_iFlags2 : 0,
+                it->second->m_fFlags3 ? it->second->m_iFlags3 : 0);
+        }
+        if (it->second->m_fFlags2)
+        {
+            flags4 = convert_t5x_flags4(it->second->m_iFlags2);
+        }
+
+        poi->SetFlags1(flags1);
+        poi->SetFlags2(flags2);
+        poi->SetFlags3(flags3);
+        poi->SetFlags4(flags4);
+        poi->SetToggles1(toggles1);
+        poi->SetToggles2(toggles2);
+        poi->SetToggles3(toggles3);
+        poi->SetToggles4(toggles4);
+        poi->SetToggles5(toggles5);
+        poi->SetToggles6(toggles6);
+        poi->SetToggles7(toggles7);
+        poi->SetToggles8(toggles8);
+
+        // Attributes
+        //
+        if (NULL != it->second->m_pvai)
+        {
+            vector<R7H_ATTRINFO *> *pvai = new vector<R7H_ATTRINFO *>;
+            for (vector<T5X_ATTRINFO *>::iterator itAttr = it->second->m_pvai->begin(); itAttr != it->second->m_pvai->end(); ++itAttr)
+            {
+                int iNum;
+                if (  (*itAttr)->m_fNumAndValue
+                   && convert_t5x_attr_num((*itAttr)->m_iNum, &iNum))
+                {
+                    int iAttrFlags = convert_t5x_attr_flags((*itAttr)->m_iFlags);
+                    char *pEncodedAttrValue = EncodeAttrValue(
+                        it->second->m_fOwner ? it->second->m_dbOwner : -1,
+                        (*itAttr)->m_dbOwner, iAttrFlags,
+                        (*itAttr)->m_pValueUnencoded);
+
+                    // Handle password attribute.
+                    //
+                    if (T5X_A_PASS == (*itAttr)->m_iNum)
+                    {
+                        char buffer[200];
+                        sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValueUnencoded);
+                        pEncodedAttrValue = EncodeAttrValue(
+                            it->second->m_fOwner ? it->second->m_dbOwner : -1,
+                            (*itAttr)->m_dbOwner, iAttrFlags, buffer);
+                    }
+
+                    R7H_ATTRINFO *pai = new R7H_ATTRINFO;
+                    pai->SetNumAndValue(iNum, StringClone(pEncodedAttrValue));
+                    pvai->push_back(pai);
+                }
+            }
+            if (0 < pvai->size())
+            {
+                poi->SetAttrs(pvai->size(), pvai);
+                pvai = NULL;
+            }
+            delete pvai;
+        }
+
+        // Default lock
+        //
+        if (it->second->m_ple)
+        {
+            R7H_LOCKEXP *ple = new R7H_LOCKEXP;
+            if (ple->ConvertFromT5X(it->second->m_ple))
+            {
+                poi->SetDefaultLock(ple);
+            }
+            else
+            {
+                delete ple;
+            }
+        }
+
+        AddObject(poi);
+
+        if (dbRefMax < it->first)
+        {
+            dbRefMax = it->first;
+        }
+    }
+    SetSizeHint(dbRefMax+1);
+    if (g_t5xgame.m_fRecordPlayers)
+    {
+        SetRecordPlayers(g_t5xgame.m_nRecordPlayers);
+    }
+    else
+    {
+        SetRecordPlayers(0);
+    }
 }
 
 void R7H_GAME::ResetPassword()

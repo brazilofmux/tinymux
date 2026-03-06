@@ -573,6 +573,7 @@
 #define R7H_NOTHING   (-1)
 
 class P6H_LOCKEXP;
+class T5X_LOCKEXP;
 
 class R7H_LOCKEXP
 {
@@ -663,6 +664,7 @@ public:
     char *Write(char *p);
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
+    bool ConvertFromT5X(T5X_LOCKEXP *p);
 
     R7H_LOCKEXP()
     {
@@ -956,6 +958,7 @@ public:
     void Extract(FILE *fp, int dbExtract);
 
     void ConvertFromP6H();
+    void ConvertFromT5X();
 
     void ResetPassword();
 

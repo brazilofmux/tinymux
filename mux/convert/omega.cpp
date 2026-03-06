@@ -536,17 +536,15 @@ int main(int argc, char *argv[])
         else if (  eTinyMUX  == eInputType
                 && eRhostMUSH == eOutputType)
         {
-            // T5X -> P6H -> R7H
+            // Direct T5X -> R7H with full color fidelity.
             //
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToRhost()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
             }
-            g_p6hgame.ConvertFromT5X();
-            g_p6hgame.Validate();
-            g_r7hgame.ConvertFromP6H();
+            g_r7hgame.ConvertFromT5X();
             g_r7hgame.Pass2();
             g_r7hgame.Validate();
         }
@@ -570,20 +568,18 @@ int main(int argc, char *argv[])
         else if (  eTinyMUSH == eInputType
                 && eRhostMUSH == eOutputType)
         {
-            // T6H -> T5X -> P6H -> R7H
+            // T6H -> T5X -> R7H (direct, with full color fidelity).
             //
             g_t5xgame.ConvertFromT6H();
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToRhost()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();
                 g_t5xgame.Validate();
             }
-            g_p6hgame.ConvertFromT5X();
-            g_p6hgame.Validate();
-            g_r7hgame.ConvertFromP6H();
+            g_r7hgame.ConvertFromT5X();
             g_r7hgame.Pass2();
             g_r7hgame.Validate();
         }
