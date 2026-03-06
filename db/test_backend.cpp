@@ -66,11 +66,11 @@ static void test_backend_put_get()
 
     const UTF8 *val = (const UTF8 *)"test value";
     size_t vlen = strlen((const char *)val) + 1;
-    ASSERT_TRUE(be->Put(0, 1, val, vlen));
+    ASSERT_TRUE(be->Put(0, 1, val, vlen, 1, 0));
 
     UTF8 buf[256];
     size_t rlen = 0;
-    ASSERT_TRUE(be->Get(0, 1, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(be->Get(0, 1, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, vlen);
     ASSERT_TRUE(0 == memcmp(buf, val, vlen));
 
@@ -82,12 +82,12 @@ static void test_backend_put_replace()
 {
     auto be = CreateBackend();
 
-    ASSERT_TRUE(be->Put(5, 10, (const UTF8 *)"first", 6));
-    ASSERT_TRUE(be->Put(5, 10, (const UTF8 *)"second", 7));
+    ASSERT_TRUE(be->Put(5, 10, (const UTF8 *)"first", 6, 1, 0));
+    ASSERT_TRUE(be->Put(5, 10, (const UTF8 *)"second", 7, 1, 0));
 
     UTF8 buf[256];
     size_t rlen;
-    ASSERT_TRUE(be->Get(5, 10, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(be->Get(5, 10, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, (size_t)7);
     ASSERT_TRUE(0 == memcmp(buf, "second", 7));
 
@@ -101,7 +101,7 @@ static void test_backend_get_missing()
 
     UTF8 buf[256];
     size_t rlen = 99;
-    ASSERT_TRUE(!be->Get(999, 999, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(!be->Get(999, 999, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, (size_t)0);
 
     be->Close();
@@ -112,12 +112,12 @@ static void test_backend_del()
 {
     auto be = CreateBackend();
 
-    ASSERT_TRUE(be->Put(1, 1, (const UTF8 *)"x", 2));
+    ASSERT_TRUE(be->Put(1, 1, (const UTF8 *)"x", 2, 1, 0));
     ASSERT_TRUE(be->Del(1, 1));
 
     UTF8 buf[64];
     size_t rlen;
-    ASSERT_TRUE(!be->Get(1, 1, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(!be->Get(1, 1, buf, sizeof(buf), &rlen, nullptr, nullptr));
 
     // Deleting non-existent should succeed.
     //
@@ -135,25 +135,25 @@ static void test_backend_del_all()
     {
         char val[32];
         int len = snprintf(val, sizeof(val), "val_%u", a);
-        ASSERT_TRUE(be->Put(7, a, (const UTF8 *)val, len + 1));
+        ASSERT_TRUE(be->Put(7, a, (const UTF8 *)val, len + 1, 1, 0));
     }
     // Different object — should not be affected.
     //
-    ASSERT_TRUE(be->Put(8, 1, (const UTF8 *)"keep", 5));
+    ASSERT_TRUE(be->Put(8, 1, (const UTF8 *)"keep", 5, 1, 0));
 
     ASSERT_TRUE(be->DelAll(7));
 
     // All attrs on object 7 should be gone.
     //
     int count = 0;
-    be->GetAll(7, [&](unsigned int, const UTF8 *, size_t) { count++; });
+    be->GetAll(7, [&](unsigned int, const UTF8 *, size_t, int, int) { count++; });
     ASSERT_EQ(count, 0);
 
     // Object 8 should be untouched.
     //
     UTF8 buf[64];
     size_t rlen;
-    ASSERT_TRUE(be->Get(8, 1, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(be->Get(8, 1, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, (size_t)5);
 
     be->Close();
@@ -168,16 +168,16 @@ static void test_backend_get_all()
     {
         char val[64];
         int len = snprintf(val, sizeof(val), "attr_%u", a);
-        ASSERT_TRUE(be->Put(12, a, (const UTF8 *)val, len + 1));
+        ASSERT_TRUE(be->Put(12, a, (const UTF8 *)val, len + 1, 1, 0));
     }
 
     // Also put attrs on another object.
     //
-    ASSERT_TRUE(be->Put(13, 1, (const UTF8 *)"other", 6));
+    ASSERT_TRUE(be->Put(13, 1, (const UTF8 *)"other", 6, 1, 0));
 
     int count = 0;
     unsigned int last_attrnum = 0;
-    be->GetAll(12, [&](unsigned int attrnum, const UTF8 *value, size_t len)
+    be->GetAll(12, [&](unsigned int attrnum, const UTF8 *value, size_t len, int, int)
     {
         count++;
         // WITHOUT ROWID with PRIMARY KEY (object, attrnum) returns
@@ -205,7 +205,7 @@ static void test_backend_sync_tick()
 
     // After writing data, sync should persist it.
     //
-    ASSERT_TRUE(be->Put(0, 1, (const UTF8 *)"data", 5));
+    ASSERT_TRUE(be->Put(0, 1, (const UTF8 *)"data", 5, 1, 0));
     be->Sync();
     be->Tick();
 
@@ -226,7 +226,7 @@ static void test_backend_many_objects()
         {
             char val[128];
             int len = snprintf(val, sizeof(val), "obj%u_attr%u", obj, a);
-            ASSERT_TRUE(be->Put(obj, a, (const UTF8 *)val, len + 1));
+            ASSERT_TRUE(be->Put(obj, a, (const UTF8 *)val, len + 1, 1, 0));
         }
     }
 
@@ -234,16 +234,16 @@ static void test_backend_many_objects()
     //
     UTF8 buf[128];
     size_t rlen;
-    ASSERT_TRUE(be->Get(500, 3, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(be->Get(500, 3, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_TRUE(0 == memcmp(buf, "obj500_attr3", 12));
 
-    ASSERT_TRUE(be->Get(999, 5, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(be->Get(999, 5, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_TRUE(0 == memcmp(buf, "obj999_attr5", 12));
 
     // Bulk load a specific object.
     //
     int count = 0;
-    be->GetAll(750, [&](unsigned int, const UTF8 *, size_t) { count++; });
+    be->GetAll(750, [&](unsigned int, const UTF8 *, size_t, int, int) { count++; });
     ASSERT_EQ(count, 5);
 
     be->Close();
@@ -260,11 +260,11 @@ static void test_backend_large_value()
     std::vector<UTF8> big(LARGE, 'X');
     big[LARGE - 1] = '\0';
 
-    ASSERT_TRUE(be->Put(0, 1, big.data(), LARGE));
+    ASSERT_TRUE(be->Put(0, 1, big.data(), LARGE, 1, 0));
 
     std::vector<UTF8> buf(LARGE + 100);
     size_t rlen;
-    ASSERT_TRUE(be->Get(0, 1, buf.data(), buf.size(), &rlen));
+    ASSERT_TRUE(be->Get(0, 1, buf.data(), buf.size(), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, LARGE);
     ASSERT_TRUE(0 == memcmp(buf.data(), big.data(), LARGE));
 
@@ -292,7 +292,7 @@ static void bench_backend_interface()
     auto t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < N; i++)
     {
-        be->Put(i % 100, (i / 100) + 1, value, 256);
+        be->Put(i % 100, (i / 100) + 1, value, 256, 1, 0);
     }
     auto t1 = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
@@ -305,7 +305,7 @@ static void bench_backend_interface()
     t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < N; i++)
     {
-        be->Get(i % 100, (i / 100) + 1, buf, sizeof(buf), &rlen);
+        be->Get(i % 100, (i / 100) + 1, buf, sizeof(buf), &rlen, nullptr, nullptr);
     }
     t1 = std::chrono::high_resolution_clock::now();
     ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
@@ -316,7 +316,7 @@ static void bench_backend_interface()
     t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 1000; i++)
     {
-        be->GetAll(i % 100, [](unsigned int, const UTF8 *, size_t) {});
+        be->GetAll(i % 100, [](unsigned int, const UTF8 *, size_t, int, int) {});
     }
     t1 = std::chrono::high_resolution_clock::now();
     ms = std::chrono::duration<double, std::milli>(t1 - t0).count();

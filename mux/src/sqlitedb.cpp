@@ -1064,8 +1064,8 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
         }
         memcpy(buf, blob, blobLen);
         *pLen = blobLen;
-        *owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGet, 1));
-        *flags = sqlite3_column_int(m_stmtAttrGet, 2);
+        if (owner) *owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGet, 1));
+        if (flags) *flags = sqlite3_column_int(m_stmtAttrGet, 2);
         sqlite3_reset(m_stmtAttrGet);
         m_stats.attr_gets++;
         return true;
@@ -1073,8 +1073,8 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
 
     sqlite3_reset(m_stmtAttrGet);
     *pLen = 0;
-    *owner = NOTHING;
-    *flags = 0;
+    if (owner) *owner = NOTHING;
+    if (flags) *flags = 0;
     return false;
 }
 

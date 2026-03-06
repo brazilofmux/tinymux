@@ -46,8 +46,8 @@ bool CSQLiteBackend::Get(unsigned int object, unsigned int attrnum,
                                 buf, buflen, pLen, &db_owner, &db_flags);
     if (rc)
     {
-        *owner = static_cast<int>(db_owner);
-        *flags = db_flags;
+        if (owner) *owner = static_cast<int>(db_owner);
+        if (flags) *flags = db_flags;
     }
     return rc;
 }

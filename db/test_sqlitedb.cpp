@@ -179,25 +179,25 @@ TEST(attribute_crud)
 
     const UTF8 *value = (const UTF8 *)"Hello, World!";
     size_t vlen = strlen((const char *)value) + 1;
-    ASSERT_TRUE(db.PutAttribute(0, 42, value, vlen));
+    ASSERT_TRUE(db.PutAttribute(0, 42, value, vlen, 1, 0));
 
     UTF8 buf[256];
     size_t rlen = 0;
-    ASSERT_TRUE(db.GetAttribute(0, 42, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(db.GetAttribute(0, 42, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, vlen);
     ASSERT_TRUE(0 == memcmp(buf, value, vlen));
 
     // Update
     const UTF8 *value2 = (const UTF8 *)"Updated";
     size_t vlen2 = strlen((const char *)value2) + 1;
-    ASSERT_TRUE(db.PutAttribute(0, 42, value2, vlen2));
-    ASSERT_TRUE(db.GetAttribute(0, 42, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(db.PutAttribute(0, 42, value2, vlen2, 1, 0));
+    ASSERT_TRUE(db.GetAttribute(0, 42, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, vlen2);
     ASSERT_TRUE(0 == memcmp(buf, value2, vlen2));
 
     // Delete
     ASSERT_TRUE(db.DelAttribute(0, 42));
-    ASSERT_TRUE(!db.GetAttribute(0, 42, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(!db.GetAttribute(0, 42, buf, sizeof(buf), &rlen, nullptr, nullptr));
     ASSERT_EQ(rlen, (size_t)0);
 
     db.Close();
@@ -216,15 +216,15 @@ TEST(attribute_get_all)
         char val[64];
         snprintf(val, sizeof(val), "attr_value_%d", i);
         ASSERT_TRUE(db.PutAttribute(7, i,
-            (const UTF8 *)val, strlen(val) + 1));
+            (const UTF8 *)val, strlen(val) + 1, 1, 0));
     }
 
     // Also set some on a different object to make sure they're not returned.
     //
-    ASSERT_TRUE(db.PutAttribute(8, 1, (const UTF8 *)"other", 6));
+    ASSERT_TRUE(db.PutAttribute(8, 1, (const UTF8 *)"other", 6, 1, 0));
 
     int count = 0;
-    db.GetAllAttributes(7, [&](int attrnum, const UTF8 *value, size_t len)
+    db.GetAllAttributes(7, [&](int attrnum, const UTF8 *value, size_t len, int, int)
     {
         count++;
         (void)attrnum;
@@ -244,23 +244,23 @@ TEST(del_all_attributes)
 
     for (int i = 1; i <= 10; i++)
     {
-        ASSERT_TRUE(db.PutAttribute(3, i, (const UTF8 *)"x", 2));
+        ASSERT_TRUE(db.PutAttribute(3, i, (const UTF8 *)"x", 2, 1, 0));
     }
-    ASSERT_TRUE(db.PutAttribute(4, 1, (const UTF8 *)"keep", 5));
+    ASSERT_TRUE(db.PutAttribute(4, 1, (const UTF8 *)"keep", 5, 1, 0));
 
     ASSERT_TRUE(db.DelAllAttributes(3));
 
     // All attrs on #3 should be gone.
     //
     int count = 0;
-    db.GetAllAttributes(3, [&](int, const UTF8 *, size_t) { count++; });
+    db.GetAllAttributes(3, [&](int, const UTF8 *, size_t, int, int) { count++; });
     ASSERT_EQ(count, 0);
 
     // Attr on #4 should still exist.
     //
     UTF8 buf[64];
     size_t rlen;
-    ASSERT_TRUE(db.GetAttribute(4, 1, buf, sizeof(buf), &rlen));
+    ASSERT_TRUE(db.GetAttribute(4, 1, buf, sizeof(buf), &rlen, nullptr, nullptr));
 
     db.Close();
     PASS();
@@ -313,11 +313,11 @@ TEST(statistics)
     db.InsertObject(obj);
     db.InsertObject(obj);  // replace
     db.UpdateLocation(0, 5);
-    db.PutAttribute(0, 1, (const UTF8 *)"x", 2);
+    db.PutAttribute(0, 1, (const UTF8 *)"x", 2, 1, 0);
 
     UTF8 buf[64];
     size_t rlen;
-    db.GetAttribute(0, 1, buf, sizeof(buf), &rlen);
+    db.GetAttribute(0, 1, buf, sizeof(buf), &rlen, nullptr, nullptr);
     db.DelAttribute(0, 1);
 
     CSQLiteDB::Stats s = db.GetStats();
@@ -353,7 +353,7 @@ static void bench_write_through()
     auto t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < N; i++)
     {
-        db.PutAttribute(i % 100, (i / 100) + 1, value, 256);
+        db.PutAttribute(i % 100, (i / 100) + 1, value, 256, 1, 0);
     }
     auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -368,7 +368,7 @@ static void bench_write_through()
     db.Begin();
     for (int i = 0; i < N; i++)
     {
-        db.PutAttribute(i % 100, (i / 100) + 200, value, 256);
+        db.PutAttribute(i % 100, (i / 100) + 200, value, 256, 1, 0);
     }
     db.Commit();
     t1 = std::chrono::high_resolution_clock::now();
@@ -384,7 +384,7 @@ static void bench_write_through()
     t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < N; i++)
     {
-        db.GetAttribute(i % 100, (i / 100) + 1, buf, sizeof(buf), &rlen);
+        db.GetAttribute(i % 100, (i / 100) + 1, buf, sizeof(buf), &rlen, nullptr, nullptr);
     }
     t1 = std::chrono::high_resolution_clock::now();
 
@@ -417,7 +417,7 @@ static void bench_write_through()
     t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 1000; i++)
     {
-        db.GetAllAttributes(i % 100, [](int, const UTF8 *, size_t) {});
+        db.GetAllAttributes(i % 100, [](int, const UTF8 *, size_t, int, int) {});
     }
     t1 = std::chrono::high_resolution_clock::now();
 
@@ -492,7 +492,7 @@ static void bench_disk_realistic()
             int len = snprintf(val, sizeof(val),
                 "Attribute value for object #%d attr %d. "
                 "This is a realistic-length attribute string.", i, a);
-            db.PutAttribute(i, a, (const UTF8 *)val, len + 1);
+            db.PutAttribute(i, a, (const UTF8 *)val, len + 1, 1, 0);
         }
     }
     db.Commit();
@@ -551,7 +551,7 @@ static void bench_disk_realistic()
             int attr = (lcg >> 16) % ATTRS_PER_OBJ + 1;
 
             auto wt0 = std::chrono::high_resolution_clock::now();
-            db.GetAttribute(obj, attr, buf, sizeof(buf), &rlen);
+            db.GetAttribute(obj, attr, buf, sizeof(buf), &rlen, nullptr, nullptr);
             auto wt1 = std::chrono::high_resolution_clock::now();
 
             double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
@@ -571,7 +571,7 @@ static void bench_disk_realistic()
                 "Updated value round %d write %d on #%d/%d", round, i, obj, attr);
 
             auto wt0 = std::chrono::high_resolution_clock::now();
-            db.PutAttribute(obj, attr, (const UTF8 *)val, len + 1);
+            db.PutAttribute(obj, attr, (const UTF8 *)val, len + 1, 1, 0);
             auto wt1 = std::chrono::high_resolution_clock::now();
 
             double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
@@ -607,7 +607,7 @@ static void bench_disk_realistic()
             int obj = lcg % NUM_OBJECTS;
 
             auto wt0 = std::chrono::high_resolution_clock::now();
-            db.GetAllAttributes(obj, [](int, const UTF8 *, size_t) {});
+            db.GetAllAttributes(obj, [](int, const UTF8 *, size_t, int, int) {});
             auto wt1 = std::chrono::high_resolution_clock::now();
 
             double us = std::chrono::duration<double, std::micro>(wt1 - wt0).count();
@@ -628,7 +628,7 @@ static void bench_disk_realistic()
             {
                 char val[128];
                 int len = snprintf(val, sizeof(val), "New object attr %d", a);
-                db.PutAttribute(obj.dbref_val, a, (const UTF8 *)val, len + 1);
+                db.PutAttribute(obj.dbref_val, a, (const UTF8 *)val, len + 1, 1, 0);
             }
             db.Commit();
         }
