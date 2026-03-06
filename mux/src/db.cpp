@@ -1156,7 +1156,7 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
         pName = utf8_NextCodePoint(pName);
     }
 
-    if (IsRestricted(pName, mudconf.attr_name_charset))
+    if (IsRestricted(pName_arg, mudconf.attr_name_charset))
     {
         *pnName = 0;
         *pbValid = false;

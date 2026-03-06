@@ -4340,6 +4340,7 @@ UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length)
 {
     static UTF16 buffer[2*LBUF_SIZE];
     UTF16 *p = buffer;
+    UTF16 *const pEnd = buffer + sizeof(buffer) / sizeof(buffer[0]);
 
     length = 0;
     while ('\0' != *pString)
@@ -4353,9 +4354,23 @@ UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length)
         UTF16 *q = ConvertToUTF16(ch);
         while (0x0000 != *q)
         {
+            if (p + 1 >= pEnd)
+            {
+                return nullptr;
+            }
             *p++ = *q++;
         }
-        pString = utf8_NextCodePoint(pString);
+        size_t nAdvance = utf8_FirstByte[static_cast<unsigned char>(*pString)];
+        if (nAdvance < 1 || nAdvance >= UTF8_CONTINUE)
+        {
+            return nullptr;
+        }
+        pString += nAdvance;
+    }
+
+    if (p >= pEnd)
+    {
+        return nullptr;
     }
     *p = '\0';
     length = p - buffer;

@@ -622,7 +622,20 @@ UTF8 *MakeCanonicalFlagName
         size_t n = utf8_FirstByte[static_cast<unsigned char>(*pName)];
         if (n >= UTF8_CONTINUE)
         {
-            break;
+            *pnName = 0;
+            *pbValid = false;
+            return nullptr;
+        }
+
+        for (size_t j = 1; j < n; j++)
+        {
+            if (  '\0' == pName[j]
+               || UTF8_CONTINUE != utf8_FirstByte[static_cast<unsigned char>(pName[j])])
+            {
+                *pnName = 0;
+                *pbValid = false;
+                return nullptr;
+            }
         }
 
         bool bXor;
@@ -643,6 +656,13 @@ UTF8 *MakeCanonicalFlagName
         else
         {
             m = qDesc->n_bytes;
+            if (  bXor
+               && m != n)
+            {
+                *pnName = 0;
+                *pbValid = false;
+                return nullptr;
+            }
             if (nName + static_cast<int>(m) >= SBUF_SIZE)
             {
                 break;
@@ -663,7 +683,7 @@ UTF8 *MakeCanonicalFlagName
             }
         }
         nName += static_cast<int>(m);
-        pName = utf8_NextCodePoint(pName);
+        pName += n;
     }
     *p = '\0';
     if (  0 < nName
