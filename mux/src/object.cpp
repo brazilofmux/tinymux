@@ -18,6 +18,105 @@
 
 static int check_type;
 
+// Rebuild all SQLite attributes from runtime by probing defined attribute
+// numbers on each live object.
+//
+static bool sqlite_rebuild_all_attributes_from_runtime(void)
+{
+    struct AttrRow
+    {
+        dbref obj;
+        int attrnum;
+        std::vector<UTF8> value;
+        dbref owner;
+        int flags;
+    };
+
+    std::vector<int> attrnums;
+    attrnums.reserve(anum_alc_top);
+    for (int iAttr = 1; iAttr <= anum_alc_top; ++iAttr)
+    {
+        ATTR *pAttr = atr_num(iAttr);
+        if (  nullptr != pAttr
+           && !(pAttr->flags & AF_DELETED)
+           && iAttr != A_LIST)
+        {
+            attrnums.push_back(iAttr);
+        }
+    }
+
+    std::vector<AttrRow> snapshot;
+    snapshot.reserve(1024);
+
+    dbref iObject;
+    DO_WHOLE_DB(iObject)
+    {
+        if (isGarbage(iObject))
+        {
+            continue;
+        }
+
+        for (int iAttr : attrnums)
+        {
+            size_t nLen = 0;
+            const UTF8 *pValue = atr_get_raw_LEN(iObject, iAttr, &nLen);
+            if (nullptr == pValue)
+            {
+                continue;
+            }
+
+            dbref owner = Owner(iObject);
+            int flags = 0;
+            if (!atr_get_info(iObject, iAttr, &owner, &flags))
+            {
+                Log.tinyprintf(T("sqlite_rebuild_all_attributes_from_runtime: failed to read attr metadata #%d/%d" ENDLINE),
+                    iObject, iAttr);
+                return false;
+            }
+
+            AttrRow row;
+            row.obj = iObject;
+            row.attrnum = iAttr;
+            row.owner = owner;
+            row.flags = flags;
+            row.value.assign(pValue, pValue + nLen + 1);
+            snapshot.push_back(std::move(row));
+        }
+    }
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    if (!sqldb.Begin())
+    {
+        return false;
+    }
+    if (!sqldb.ClearAttributes())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    for (const auto& row : snapshot)
+    {
+        if (!sqldb.PutAttribute(row.obj,
+                row.attrnum,
+                row.value.empty() ? nullptr : row.value.data(),
+                row.value.size(),
+                row.owner,
+                row.flags))
+        {
+            sqldb.Rollback();
+            return false;
+        }
+    }
+
+    if (!sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+    return true;
+}
+
 // Force a newly-created object slot back to a reusable clean shape even
 // if backend attr deletes fail during teardown.
 //
@@ -145,17 +244,18 @@ static void reconcile_failed_create_backend(dbref obj)
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
         if (!bAttrsCleared)
         {
-            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting full sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting authoritative attr rebuild + sqlite_sync_runtime."));
         }
         else
         {
-            log_text(T("create_obj failed-cleanup fallback: attempting full sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attempting authoritative attr rebuild + sqlite_sync_runtime."));
         }
         ENDLOG;
-        if (!sqlite_sync_runtime())
+        if (  !sqlite_rebuild_all_attributes_from_runtime()
+           || !sqlite_sync_runtime())
         {
             STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-            log_text(T("create_obj failed-cleanup fallback sqlite_sync_runtime() failed."));
+            log_text(T("create_obj failed-cleanup fallback sqlite rebuild/sync failed."));
             ENDLOG;
         }
     }

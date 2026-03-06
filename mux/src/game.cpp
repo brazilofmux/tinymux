@@ -1933,8 +1933,8 @@ static int load_game(int ccPageFile)
     }
     f = 0;
 
-    // Bulk-sync object and attribute metadata from db[] into SQLite.
-    // This keeps runtime metadata tables in lockstep.
+    // Bulk-sync object and attribute-name metadata from db[] into SQLite.
+    // Attribute values are already authoritative from the import transaction.
     //
     if (!sqlite_sync_runtime())
     {
@@ -2411,7 +2411,7 @@ static void dbconvert(void)
             {
                 Log.WriteString(T("SQLite cleanup failed after sync failure.\n"));
             }
-            Log.WriteString(T("SQLite sync failed.\n"));
+            Log.WriteString(T("SQLite metadata sync failed.\n"));
             exit(1);
         }
         Log.WriteString(T("Input: "));
