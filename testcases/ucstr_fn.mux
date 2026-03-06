@@ -25,10 +25,34 @@
       )=
   {
     @log smoke=TC001: ucstr basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: ucstr basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Uppercase Unicode characters.
+# chr(233) = e-acute -> should become E-acute (chr(201)).
+# chr(252) = u-umlaut -> should become U-umlaut (chr(220)).
+#
+&tr.tc002 test_ucstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(ucstr(chr(233)))]
+            [ord(ucstr(chr(252)))]
+            [ucstr(a[chr(233)]b[chr(252)]c)]
+          )
+        ),
+        8E612C464984F26EE01756199F8D0EB28D719A04
+      )=
+  {
+    @log smoke=TC002: ucstr Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: ucstr Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

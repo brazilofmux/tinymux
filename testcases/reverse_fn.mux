@@ -25,10 +25,33 @@
       )=
   {
     @log smoke=TC001: reverse basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: reverse basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Reverse with multi-byte Unicode characters.
+# String: A + e-acute + B (3 graphemes).
+# Reversed should be: B + e-acute + A.
+#
+&tr.tc002 test_reverse_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [reverse(A[chr(233)]B)]
+            [reverse([chr(65296)]A[chr(233)])]
+          )
+        ),
+        1FF3172E970414A58FB715B257FE1B395150C264
+      )=
+  {
+    @log smoke=TC002: reverse multi-byte Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: reverse multi-byte Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

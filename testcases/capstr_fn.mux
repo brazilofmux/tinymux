@@ -25,10 +25,32 @@
       )=
   {
     @log smoke=TC001: capstr basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: capstr basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Capitalize Unicode first character.
+# chr(233) = e-acute -> capitalized should be E-acute (chr(201)) + rest.
+#
+&tr.tc002 test_capstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [capstr(chr(233)abc)]
+            [capstr(chr(252)test)]
+          )
+        ),
+        42D60718D4A780C434AC1449F0CB790593819F12
+      )=
+  {
+    @log smoke=TC002: capstr Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: capstr Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

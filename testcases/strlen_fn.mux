@@ -25,10 +25,56 @@
       )=
   {
     @log smoke=TC001: strlen basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: strlen basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Multi-byte Unicode characters.
+# chr(233) = e-acute (2 bytes), chr(65296) = fullwidth 0 (3 bytes).
+# strlen should count grapheme clusters, not bytes.
+#
+&tr.tc002 test_strlen_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strlen(chr(233))]
+            [strlen(chr(65296))]
+            [strlen(A[chr(233)]B[chr(65296)]C)]
+          )
+        ),
+        EFA6E44DFA0145249BE273ECD84A97F534B04920
+      )=
+  {
+    @log smoke=TC002: strlen multi-byte Unicode. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - Combining character cluster.
+# chr(101 769) normalizes to single precomposed char via NFC.
+#
+&tr.tc003 test_strlen_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strlen(chr(101 769))]
+            [strlen(A[chr(101 769)]B)]
+          )
+        ),
+        BD307A3EC329E10A2CFF8FB87480823DA114F8F4
+      )=
+  {
+    @log smoke=TC003: strlen combining cluster. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: strlen combining cluster. Failed (%q0).;
     @trig me/tr.done
   }
 -

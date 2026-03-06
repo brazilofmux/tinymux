@@ -28,10 +28,57 @@
       )=
   {
     @log smoke=TC001: mid examples. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: mid examples. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Extract Unicode characters by grapheme position.
+# String is: A + e-acute + B + fullwidth-0 + C (5 graphemes).
+#
+&tr.tc002 test_mid_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(mid(A[chr(233)]B[chr(65296)]C,1,1))]
+            [mid(A[chr(233)]B[chr(65296)]C,2,1)]
+            [ord(mid(A[chr(233)]B[chr(65296)]C,3,1))]
+            [mid(A[chr(233)]B[chr(65296)]C,0,2)]
+          )
+        ),
+        2908CBCA501FE7FBEE76719E4BF7E52D26458E97
+      )=
+  {
+    @log smoke=TC002: mid Unicode graphemes. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: mid Unicode graphemes. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - mid with combining character cluster.
+# chr(101 769) normalizes to chr(233) via NFC.
+#
+&tr.tc003 test_mid_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(mid(A[chr(101 769)]B,1,1))]
+            [mid(A[chr(101 769)]B,0,1)]
+            [mid(A[chr(101 769)]B,2,1)]
+          )
+        ),
+        6A9BF7F9AF24CC04F236A9851A6D3764D5E23603
+      )=
+  {
+    @log smoke=TC003: mid combining cluster. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: mid combining cluster. Failed (%q0).;
     @trig me/tr.done
   }
 -

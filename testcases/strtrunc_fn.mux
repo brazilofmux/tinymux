@@ -26,10 +26,34 @@
       )=
   {
     @log smoke=TC001: strtrunc basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: strtrunc basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Truncate string with multi-byte Unicode characters.
+# String: A + e-acute + B + fullwidth-0 + C (5 graphemes).
+# strtrunc counts visual width (bytes), not grapheme clusters.
+#
+&tr.tc002 test_strtrunc_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strtrunc(A[chr(233)]B[chr(65296)]C,3)]
+            [strtrunc(A[chr(233)]B[chr(65296)]C,6)]
+            [strtrunc(A[chr(233)]B[chr(65296)]C,20)]
+          )
+        ),
+        304AB80FCDD5A44BDD7F3233FFE566A2A8A1CF09
+      )=
+  {
+    @log smoke=TC002: strtrunc multi-byte Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: strtrunc multi-byte Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

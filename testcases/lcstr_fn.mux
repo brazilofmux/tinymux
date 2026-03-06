@@ -26,10 +26,34 @@
       )=
   {
     @log smoke=TC001: lcstr basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: lcstr basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Lowercase Unicode characters.
+# chr(201) = E-acute -> should become e-acute (chr(233)).
+# chr(220) = U-umlaut -> should become u-umlaut (chr(252)).
+#
+&tr.tc002 test_lcstr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(lcstr(chr(201)))]
+            [ord(lcstr(chr(220)))]
+            [lcstr(A[chr(201)]B[chr(220)]C)]
+          )
+        ),
+        463CCF775A6B270FACA5F166263A8E2DAD6581CD
+      )=
+  {
+    @log smoke=TC002: lcstr Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lcstr Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

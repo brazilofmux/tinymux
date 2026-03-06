@@ -26,10 +26,34 @@
       )=
   {
     @log smoke=TC001: comp basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: comp basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Compare Unicode strings.
+# Precomposed e-acute vs combining (both normalize to same via NFC).
+# Also compare different Unicode characters.
+#
+&tr.tc002 test_comp_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [comp(chr(233),chr(101 769))]
+            [comp(chr(233),chr(252))]
+            [comp(chr(65296),chr(65296))]
+          )
+        ),
+        FB1D36F760525763E048979F5DEDBE0D6F280FF3
+      )=
+  {
+    @log smoke=TC002: comp Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: comp Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -

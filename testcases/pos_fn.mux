@@ -25,10 +25,34 @@
       )=
   {
     @log smoke=TC001: pos basic operations. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: pos basic operations. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Position with multi-byte Unicode characters.
+# String: A + e-acute + B + fullwidth-0 + C.
+# pos(B,...) should be 3 (grapheme position, not byte position).
+#
+&tr.tc002 test_pos_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [pos(B,A[chr(233)]B[chr(65296)]C)]
+            [pos(C,A[chr(233)]B[chr(65296)]C)]
+            [pos(chr(233),A[chr(233)]B)]
+          )
+        ),
+        EFBC0848B836A9DE4B0C18C93EC052D87647FB06
+      )=
+  {
+    @log smoke=TC002: pos Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: pos Unicode. Failed (%q0).;
     @trig me/tr.done
   }
 -
