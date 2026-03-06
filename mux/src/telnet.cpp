@@ -650,7 +650,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     auto pUTF = latin1_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
-                    if (p + nUTF < pend)
+                    if (p + nUTF <= pend)
                     {
                         nInputBytes += nUTF;
                         while (nUTF--)
@@ -675,7 +675,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     auto pUTF = latin2_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
-                    if (p + nUTF < pend)
+                    if (p + nUTF <= pend)
                     {
                         nInputBytes += nUTF;
                         while (nUTF--)
@@ -700,7 +700,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     auto pUTF = cp437_utf8(ch);
                     UTF8 nUTF = utf8_FirstByte[pUTF[0]];
 
-                    if (p + nUTF < pend)
+                    if (p + nUTF <= pend)
                     {
                         nInputBytes += nUTF;
                         while (nUTF--)

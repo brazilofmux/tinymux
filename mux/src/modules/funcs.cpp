@@ -251,27 +251,27 @@ const unsigned char utf8_FirstByte[256] =
 
 #define UTF8_CONTINUE  5
 
-static inline unsigned int utf8_decode_raw_local(const UTF8 *p, size_t n)
+static inline UTF32 utf8_decode_raw(const UTF8 *p, size_t n)
 {
     if (1 == n) return p[0];
     if (2 == n)
     {
-        return ((unsigned int)(p[0] & 0x1F) << 6)
-             |  (unsigned int)(p[1] & 0x3F);
+        return ((UTF32)(p[0] & 0x1F) << 6)
+             |  (UTF32)(p[1] & 0x3F);
     }
     if (3 == n)
     {
-        return ((unsigned int)(p[0] & 0x0F) << 12)
-             | ((unsigned int)(p[1] & 0x3F) << 6)
-             |  (unsigned int)(p[2] & 0x3F);
+        return ((UTF32)(p[0] & 0x0F) << 12)
+             | ((UTF32)(p[1] & 0x3F) << 6)
+             |  (UTF32)(p[2] & 0x3F);
     }
-    return ((unsigned int)(p[0] & 0x07) << 18)
-         | ((unsigned int)(p[1] & 0x3F) << 12)
-         | ((unsigned int)(p[2] & 0x3F) << 6)
-         |  (unsigned int)(p[3] & 0x3F);
+    return ((UTF32)(p[0] & 0x07) << 18)
+         | ((UTF32)(p[1] & 0x3F) << 12)
+         | ((UTF32)(p[2] & 0x3F) << 6)
+         |  (UTF32)(p[3] & 0x3F);
 }
 
-static inline bool utf8_is_valid_scalar_local(unsigned int cp, size_t n)
+static inline bool utf8_is_valid_scalar(UTF32 cp, size_t n)
 {
     if (  (2 == n && cp < 0x80)
        || (3 == n && cp < 0x800)
@@ -321,8 +321,8 @@ size_t trim_partial_sequence(size_t n, const UTF8* p)
             continue;
         }
 
-        unsigned int cp = utf8_decode_raw_local(p + iStart, static_cast<size_t>(nBytes));
-        if (!utf8_is_valid_scalar_local(cp, static_cast<size_t>(nBytes)))
+        UTF32 cp = utf8_decode_raw(p + iStart, static_cast<size_t>(nBytes));
+        if (!utf8_is_valid_scalar(cp, static_cast<size_t>(nBytes)))
         {
             n = iStart;
             continue;
