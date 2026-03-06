@@ -150,7 +150,7 @@ carry over -- SQLite simply derives `GAMENAME.sqlite` from it.
 ### Update `mux.config` (optional)
 
 If you customized `mux.config` (e.g., changed `GAMENAME`), copy it over and
-review.  No parameters have been removed from this file.
+review.
 
 ## Step 5 -- Import into SQLite
 

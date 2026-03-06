@@ -9,22 +9,55 @@ PATH=/bin:/usr/bin:/usr/local/bin:.; export PATH
 #
 . mux.config
 #
-DBDATE=$(date +%m%d-%H%M)
+DBDATE=$(date +%m%d-%H%M%S)
 SQLITE_DB=$DATA/$GAMENAME.sqlite
 BACKUP_DB=$DATA/$GAMENAME.$DBDATE.sqlite
+BACKUP_TMP=$BACKUP_DB.tmp.$$
+
+if ! command -v sqlite3 >/dev/null 2>&1; then
+    echo "sqlite3 not found in PATH."
+    exit 1
+fi
+
+if ! command -v gzip >/dev/null 2>&1; then
+    echo "gzip not found in PATH."
+    exit 1
+fi
 
 if [ ! -r "$SQLITE_DB" ]; then
     echo "No database found at $SQLITE_DB"
     exit 1
 fi
 
+if [ -e "$BACKUP_DB" ] || [ -e "${BACKUP_DB}.gz" ]; then
+    echo "Backup target already exists: $BACKUP_DB(.gz)"
+    exit 1
+fi
+
 echo "Backing up $SQLITE_DB to $BACKUP_DB..."
-sqlite3 "$SQLITE_DB" ".backup '$BACKUP_DB'"
+if ! sqlite3 "$SQLITE_DB" ".backup '$BACKUP_TMP'"; then
+    echo "Backup failed during sqlite3 .backup."
+    rm -f "$BACKUP_TMP"
+    exit 1
+fi
+
+if ! mv -f "$BACKUP_TMP" "$BACKUP_DB"; then
+    echo "Backup failed while finalizing backup file."
+    rm -f "$BACKUP_TMP"
+    exit 1
+fi
 
 if [ -r "$BACKUP_DB" ]; then
-    # Optionally compress the backup
-    gzip -9 "$BACKUP_DB"
-    echo "Backup complete: ${BACKUP_DB}.gz"
+    if ! gzip -9 "$BACKUP_DB"; then
+        echo "Backup created but compression failed: $BACKUP_DB"
+        exit 1
+    fi
+    if [ -r "${BACKUP_DB}.gz" ]; then
+        echo "Backup complete: ${BACKUP_DB}.gz"
+    else
+        echo "Backup compression did not produce expected output file."
+        exit 1
+    fi
 else
     echo "Backup failed."
     exit 1
