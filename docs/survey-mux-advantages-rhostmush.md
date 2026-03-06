@@ -11,18 +11,23 @@ require rethinking foundations, not adding functions.
 
 ## Architecture
 
-### 1. SQLite Write-Through vs GDBM + Cache + Flatfile Dumps
+### 1. SQLite Write-Through vs QDBM + Cache + Flatfile Dumps
 
-Rhost's storage is more sophisticated than "just GDBM." It has a two-level
-architecture:
+Rhost uses QDBM (not GDBM) — a reimplementation of the DBM interface with
+better space efficiency and performance. On top of QDBM, Rhost has a
+two-level cache architecture:
 
-- **GDBM index layer:** Maps object ID to (file-offset, size) in a separate
-  `.db` data file. GDBM stores the index, not the objects themselves.
+- **QDBM index layer:** Maps object ID to (file-offset, size) in a separate
+  `.db` data file. QDBM stores the index, not the objects themselves.
 - **LRU object cache:** 1024-bucket hash table with four chains per bucket
   (active, modified-active, old, modified-old). Objects are promoted on access
   and dirty-tracked separately.
 - **LRU attribute cache:** Similar structure, 4096-wide hash table, caches
   individual attributes independently of their parent objects.
+- **A_LIST management:** In GDBM compatibility mode, Rhost keeps A_LIST
+  (the attribute name directory) under 4000 characters. QDBM mode supports
+  up to 10,000 attributes per object, hard-limited and configurable via
+  VLIMIT.
 - **Attributes packed in object blobs:** Each object is serialized with all
   its attributes as one unit. Adding an attribute means rewriting the blob.
 
@@ -52,7 +57,7 @@ MUX's SQLite write-through:
 **Impact:** MUX eliminates both the crash-durability gap and the
 blob-relocation pathology. On a 100k-object game, indexed @search is orders
 of magnitude faster. But credit where due — Rhost's cache layer means most
-operations never touch GDBM at all during normal play.
+operations never touch QDBM at all during normal play.
 
 ### 2. GANL Networking vs BSD select()
 
