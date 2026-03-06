@@ -753,13 +753,24 @@ void free_Moniker(OBJ *p)
 
 void s_Moniker(dbref thing, const UTF8 *s)
 {
+    if (!atr_add_raw(thing, A_MONIKER, s))
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "ATTRSYNC");
+        log_printf(T("s_Moniker(#%d): failed to persist A_MONIKER."), thing);
+        ENDLOG;
+        return;
+    }
     free_Moniker(&db[thing]);
-    atr_add_raw(thing, A_MONIKER, s);
 }
 
 void s_Pass(dbref thing, const UTF8 *s)
 {
-    atr_add_raw(thing, A_PASS, s);
+    if (!atr_add_raw(thing, A_PASS, s))
+    {
+        STARTLOG(LOG_PROBLEMS, "DB", "ATTRSYNC");
+        log_printf(T("s_Pass(#%d): failed to persist A_PASS."), thing);
+        ENDLOG;
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -2028,7 +2039,12 @@ void atr_add(dbref thing, int atr, const UTF8 *buff, dbref owner, int flags)
         mudstate.bfCommands.Clear(thing);
 
         const UTF8 *tbuff = atr_encode(buff, thing, owner, flags, atr);
-        (void)atr_add_raw(thing, atr, tbuff);
+        if (!atr_add_raw(thing, atr, tbuff))
+        {
+            STARTLOG(LOG_PROBLEMS, "DB", "ATTRSYNC");
+            log_printf(T("atr_add(#%d, %d): failed to persist attribute."), thing, atr);
+            ENDLOG;
+        }
     }
 }
 
@@ -2069,7 +2085,23 @@ const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
     makekey(thing, atr, &okey);
     size_t nLen;
     const UTF8 *a = cache_get(&okey, &nLen, &cache_last_owner, &cache_last_flags);
-    nLen = a ? (nLen-1) : 0;
+    if (a)
+    {
+        if (0 == nLen)
+        {
+            Log.tinyprintf(T("atr_get_raw_LEN: invalid zero-length value for #%d/%d" ENDLINE),
+                thing, atr);
+            nLen = 0;
+        }
+        else
+        {
+            nLen--;
+        }
+    }
+    else
+    {
+        nLen = 0;
+    }
     *pLen = nLen;
     return a;
 }
@@ -2645,21 +2677,18 @@ bool db_make_minimal(void)
     {
         if (!sqldb.Begin())
         {
-            // Best effort cleanup even without an explicit transaction.
+            // If a previous transaction is still open, rollback and retry so
+            // cleanup remains atomic.
             //
-            if (  !sqldb.ClearAttributes()
-               || !sqldb.ClearObjectTable()
-               || !sqldb.ClearAttrNames()
-               || !sqldb.PutMeta("attr_next", A_USER_START)
-               || !sqldb.PutMeta("db_top", 0)
-               || !sqldb.PutMeta("record_players", 0))
+            sqldb.Rollback();
+            if (!sqldb.Begin())
             {
-                Log.WriteString(T("db_make_minimal: SQLite cleanup without transaction failed.\n"));
+                Log.WriteString(T("db_make_minimal: SQLite cleanup transaction begin failed.\n"));
+                db_free();
+                mudstate.attr_next = A_USER_START;
+                mudstate.record_players = 0;
+                return;
             }
-            db_free();
-            mudstate.attr_next = A_USER_START;
-            mudstate.record_players = 0;
-            return;
         }
         if (  !sqldb.ClearAttributes()
            || !sqldb.ClearObjectTable()

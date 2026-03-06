@@ -105,7 +105,6 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
 
     // Snapshot attributes from runtime before mutating SQLite state.
     //
-    atr_push();
     dbref iObject;
     DO_WHOLE_DB(iObject)
     {
@@ -114,8 +113,27 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
             continue;
         }
 
-        unsigned char *as;
-        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+        std::vector<int> attrnums;
+        if (!g_pSQLiteBackend->GetAll(
+            static_cast<unsigned int>(iObject),
+            [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
+            {
+                if (  attrnum != static_cast<unsigned int>(A_LIST)
+                   && attrnum != 0U)
+                {
+                    attrnums.push_back(static_cast<int>(attrnum));
+                }
+            }))
+        {
+            Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to enumerate attrs for #%d" ENDLINE),
+                iObject);
+            return false;
+        }
+
+        sort(attrnums.begin(), attrnums.end());
+        attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
+
+        for (int iAttr : attrnums)
         {
             if (  iAttr == A_LIST
                || iAttr == 0)
@@ -127,15 +145,18 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
             int flags = 0;
             if (!atr_get_info(iObject, iAttr, &owner, &flags))
             {
-                owner = Owner(iObject);
-                flags = 0;
+                Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to read attr metadata #%d/%d" ENDLINE),
+                    iObject, iAttr);
+                return false;
             }
 
             size_t nLen = 0;
             const UTF8 *pValue = atr_get_raw_LEN(iObject, iAttr, &nLen);
             if (nullptr == pValue)
             {
-                continue;
+                Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to read attr value #%d/%d" ENDLINE),
+                    iObject, iAttr);
+                return false;
             }
 
             AttrRow row;
@@ -147,7 +168,6 @@ static bool sqlite_sync_all_attributes_from_runtime(void)
             snapshot.push_back(std::move(row));
         }
     }
-    atr_pop();
 
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     if (!sqldb.Begin())
@@ -209,7 +229,8 @@ static void reconcile_failed_create_backend(dbref obj)
         rec.powers1   = db[obj].powers;
         rec.powers2   = db[obj].powers2;
 
-        if (  sqldb.DelAllAttributes(obj)
+        if (  sqldb.DeleteObject(obj)
+           && sqldb.DelAllAttributes(obj)
            && sqldb.InsertObject(rec)
            && sqldb.PutMeta("db_top", mudstate.db_top)
            && sqldb.Commit())

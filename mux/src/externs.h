@@ -1136,7 +1136,7 @@ typedef struct
     CLinearTimeAbsolute ltaWhen;
 
     int        iPriority;
-    int        m_Ticket;        // This is the order in which the task was scheduled.
+    unsigned int m_Ticket;      // This is the order in which the task was scheduled.
     FTASK      *fpTask;
     void       *arg_voidptr;
     int        arg_Integer;
@@ -1169,7 +1169,7 @@ struct CompareWhenGreater
     {
         if (a->ltaWhen > b->ltaWhen) return true;
         if (a->ltaWhen < b->ltaWhen) return false;
-        return (a->m_Ticket - b->m_Ticket) > 0;
+        return a->m_Ticket > b->m_Ticket;
     }
 };
 
@@ -1177,9 +1177,8 @@ struct ComparePriorityGreater
 {
     bool operator()(PTASK_RECORD a, PTASK_RECORD b) const
     {
-        int i = a->iPriority - b->iPriority;
-        if (i != 0) return i > 0;
-        return (a->m_Ticket - b->m_Ticket) > 0;
+        if (a->iPriority != b->iPriority) return a->iPriority > b->iPriority;
+        return a->m_Ticket > b->m_Ticket;
     }
 };
 
@@ -1320,7 +1319,7 @@ class CScheduler
 private:
     CTaskHeap<CompareWhenGreater>     m_WhenHeap;
     CTaskHeap<ComparePriorityGreater> m_PriorityHeap;
-    int       m_Ticket;
+    unsigned int m_Ticket;
     int       m_minPriority;
 
 public:

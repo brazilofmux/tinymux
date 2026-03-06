@@ -1965,10 +1965,13 @@ static int load_game(int ccPageFile)
         Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
         load_mail(f);
         Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
-        if (fclose(f) == 0)
+        if (fclose(f) != 0)
         {
-            DebugTotalFiles--;
+            STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
+            log_printf(T("fclose failed for %s"), mudconf.mail_db);
+            ENDLOG;
         }
+        DebugTotalFiles--;
         f = 0;
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
@@ -3073,10 +3076,13 @@ int DCL_CDECL main(int argc, char *argv[])
                 Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
                 load_mail(f);
                 Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
-                if (fclose(f) == 0)
+                if (fclose(f) != 0)
                 {
-                    DebugTotalFiles--;
+                    STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
+                    log_printf(T("fclose failed for %s"), mudconf.mail_db);
+                    ENDLOG;
                 }
+                DebugTotalFiles--;
             }
         }
     }

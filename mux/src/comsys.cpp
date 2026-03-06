@@ -1403,10 +1403,13 @@ void load_comsys(UTF8* filename)
             }
         }
 
-        if (fclose(fp) == 0)
+        if (fclose(fp) != 0)
         {
-            DebugTotalFiles--;
+            STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
+            log_printf(T("fclose failed for %s"), filename);
+            ENDLOG;
         }
+        DebugTotalFiles--;
 
         Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), filename);
     }

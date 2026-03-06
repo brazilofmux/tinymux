@@ -11936,7 +11936,10 @@ void function_remove(FUN *fp)
     UTF8 *pCased = mux_strupr(fp->name, nCased);
     vector<UTF8> name(pCased, pCased + nCased);
     const auto it = mudstate.builtin_functions.find(name);
-    mudstate.builtin_functions.erase(it);
+    if (it != mudstate.builtin_functions.end())
+    {
+        mudstate.builtin_functions.erase(it);
+    }
 }
 
 void functions_add(FUN funlist[])
