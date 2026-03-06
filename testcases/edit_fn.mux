@@ -111,7 +111,6 @@
   @if strmatch(translate(edit(%xra,b,b),p),a)=
   {
       @log smoke=TC005: Multiple Changes. edit() strips color. Okay.;
-      @trig me/tr.tc006
   },
   {
     @if strmatch(
@@ -126,11 +125,9 @@
         )=
     {
       @log smoke=TC005: Multiple Changes. Succeeded.;
-      @trig me/tr.tc006
     },
     {
       @log smoke=TC005: Multiple Changes. Failed (%q0).;
-      @trig me/tr.tc006
     }
   }
 -

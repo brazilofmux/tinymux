@@ -30,7 +30,7 @@
             [locate(me,test_lp_gem,i)]
           )
         ),
-        8C38CB0118A4B1289A72693A04BD04EEB914734E
+        534DBE7D6E48BD76FAB4B68B9F6E40B35DBDA7E9
       )=
   {
     @log smoke=TC001: locate possessive. Succeeded.;

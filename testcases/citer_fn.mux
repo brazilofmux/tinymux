@@ -25,11 +25,9 @@
       )=
   {
     @log smoke=TC001: citer basic iteration. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: citer basic iteration. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -46,11 +44,9 @@
       )=
   {
     @log smoke=TC002: citer position. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: citer position. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #
@@ -67,11 +63,9 @@
       )=
   {
     @log smoke=TC003: citer output delimiter. Succeeded.;
-    @trig me/tr.tc004
   },
   {
     @log smoke=TC003: citer output delimiter. Failed (%q0).;
-    @trig me/tr.tc004
   }
 -
 #
@@ -88,11 +82,9 @@
       )=
   {
     @log smoke=TC004: citer function eval. Succeeded.;
-    @trig me/tr.tc005
   },
   {
     @log smoke=TC004: citer function eval. Failed (%q0).;
-    @trig me/tr.tc005
   }
 -
 #
@@ -108,11 +100,9 @@
       )=
   {
     @log smoke=TC005: citer empty string. Succeeded.;
-    @trig me/tr.tc006
   },
   {
     @log smoke=TC005: citer empty string. Failed (%q0).;
-    @trig me/tr.tc006
   }
 -
 #
@@ -129,11 +119,9 @@
       )=
   {
     @log smoke=TC006: citer single character. Succeeded.;
-    @trig me/tr.tc007
   },
   {
     @log smoke=TC006: citer single character. Failed (%q0).;
-    @trig me/tr.tc007
   }
 -
 #

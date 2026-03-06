@@ -25,11 +25,9 @@
       )=
   {
     @log smoke=TC001: sort basic operations. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: sort basic operations. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -48,11 +46,9 @@
       )=
   {
     @log smoke=TC002: sort accented variants. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: sort accented variants. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #
@@ -70,11 +66,9 @@
       )=
   {
     @log smoke=TC003: sort ASCII and accented mix. Succeeded.;
-    @trig me/tr.tc004
   },
   {
     @log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;
-    @trig me/tr.tc004
   }
 -
 #

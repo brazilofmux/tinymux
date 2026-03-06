@@ -32,7 +32,7 @@
   strmatch_fn strmem_fn strtrunc_fn sub_fn switch_fn 
   t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn 
   vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn 
-  wordpos_fn words_fn wrap_fn xor_fn shutdown
+  visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown
 -
 @startup smoke=
   @log smoke=Starting SmokeMUX;

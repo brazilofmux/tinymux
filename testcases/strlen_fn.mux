@@ -25,11 +25,9 @@
       )=
   {
     @log smoke=TC001: strlen basic operations. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: strlen basic operations. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -49,11 +47,9 @@
       )=
   {
     @log smoke=TC002: strlen multi-byte Unicode. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #

@@ -27,11 +27,9 @@
       )=
   {
     @log smoke=TC001: delete basic operations. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: delete basic operations. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #

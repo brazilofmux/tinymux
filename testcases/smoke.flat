@@ -1,5 +1,5 @@
 +X996100
-+S180
++S181
 +N275
 -R1
 +A256
@@ -44,7 +44,7 @@
 "Limbo"
 -1
 -1
-179
+180
 -1
 -1
 -1
@@ -88,7 +88,7 @@
 >144
 "127.0.0.1"
 >213
-"-1 179 -1 -1 179"
+"-1 180 -1 -1 180"
 >218
 "Fri Jan 01 00:00:00 2010"
 >219
@@ -694,7 +694,7 @@
 >256
 "@log smoke=Beginning capstr() test cases."
 >257
-"@if strmatch(setr(0,sha1([capstr(hello world)][capstr(HELLO)])),DF3AF98FE50A1D6B1AE69F48B7B3C6FDAC2D2B28)={@log smoke=TC001: capstr basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: capstr basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([capstr(hello world)][capstr(HELLO)])),DF3AF98FE50A1D6B1AE69F48B7B3C6FDAC2D2B28)={@log smoke=TC001: capstr basic operations. Succeeded.;},{@log smoke=TC001: capstr basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End capstr() test cases.;@notify smoke"
 >259
@@ -866,21 +866,21 @@
 >256
 "@log smoke=Beginning chr() test cases."
 >257
-"@if strmatch(setr(0,sha1([chr(65)][chr(48)][chr(97)])),1D1A20E2CB932B590BF3718DD9FFA455C38A8910)={@log smoke=TC001: chr basic ASCII. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: chr basic ASCII. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([chr(65)][chr(48)][chr(97)])),1D1A20E2CB932B590BF3718DD9FFA455C38A8910)={@log smoke=TC001: chr basic ASCII. Succeeded.;},{@log smoke=TC001: chr basic ASCII. Failed (%q0).;}"
 >258
 "@log smoke=End chr() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([chr(101 769)])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC002: chr combining character. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: chr combining character. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([chr(101 769)])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC002: chr combining character. Succeeded.;},{@log smoke=TC002: chr combining character. Failed (%q0).;}"
 >260
-"@if strmatch(setr(0,sha1([chr(233)])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC003: chr precomposed character. Succeeded.;@trig me/tr.tc004},{@log smoke=TC003: chr precomposed character. Failed (%q0).;@trig me/tr.tc004}"
+"@if strmatch(setr(0,sha1([chr(233)])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC003: chr precomposed character. Succeeded.;},{@log smoke=TC003: chr precomposed character. Failed (%q0).;}"
 >261
-"@if strmatch(setr(0,sha1([chr(-1)]|[chr(55296)]|[chr(1114112)])),909DA794FC8C095573D0CB8FD9FFDBDFB99C3EF4)={@log smoke=TC004: chr error cases. Succeeded.;@trig me/tr.tc005},{@log smoke=TC004: chr error cases. Failed (%q0).;@trig me/tr.tc005}"
+"@if strmatch(setr(0,sha1([chr(-1)]|[chr(55296)]|[chr(1114112)])),909DA794FC8C095573D0CB8FD9FFDBDFB99C3EF4)={@log smoke=TC004: chr error cases. Succeeded.;},{@log smoke=TC004: chr error cases. Failed (%q0).;}"
 >262
-"@if strmatch(setr(0,sha1([chr(72 101 108 108 111)])),F7FF9E8B7BB2E09B70935A5D785E0CC5D9D0ABF0)={@log smoke=TC005: chr multi-codepoint string. Succeeded.;@trig me/tr.tc006},{@log smoke=TC005: chr multi-codepoint string. Failed (%q0).;@trig me/tr.tc006}"
+"@if strmatch(setr(0,sha1([chr(72 101 108 108 111)])),F7FF9E8B7BB2E09B70935A5D785E0CC5D9D0ABF0)={@log smoke=TC005: chr multi-codepoint string. Succeeded.;},{@log smoke=TC005: chr multi-codepoint string. Failed (%q0).;}"
 >263
-"@if strmatch(setr(0,sha1([ord(chr(101 769))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC006: chr/ord round-trip combining. Succeeded.;@trig me/tr.tc007},{@log smoke=TC006: chr/ord round-trip combining. Failed (%q0).;@trig me/tr.tc007}"
+"@if strmatch(setr(0,sha1([ord(chr(101 769))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC006: chr/ord round-trip combining. Succeeded.;},{@log smoke=TC006: chr/ord round-trip combining. Failed (%q0).;}"
 >264
-"@if strmatch(setr(0,sha1([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)])),F0D27E1C908E4B0BF0662FA76DAD22B96840F526)={@log smoke=TC007: chr fullwidth characters. Succeeded.;@trig me/tr.tc008},{@log smoke=TC007: chr fullwidth characters. Failed (%q0).;@trig me/tr.tc008}"
+"@if strmatch(setr(0,sha1([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)])),F0D27E1C908E4B0BF0662FA76DAD22B96840F526)={@log smoke=TC007: chr fullwidth characters. Succeeded.;},{@log smoke=TC007: chr fullwidth characters. Failed (%q0).;}"
 >265
 "@if strmatch(setr(0,sha1([chr(0)]|[chr(1114111)])),93DCEDE1FDDD6E5F5F25C005C88A530110F070DA)={@log smoke=TC008: chr boundary values. Succeeded.;@trig me/tr.done},{@log smoke=TC008: chr boundary values. Failed (%q0).;@trig me/tr.done}"
 <
@@ -907,19 +907,19 @@
 >256
 "@log smoke=Beginning citer() test cases."
 >257
-"@if strmatch(setr(0,sha1([citer(abc,##)])),6B3F339C67BB03D57A7195CF43ED86B12BFDD347)={@log smoke=TC001: citer basic iteration. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: citer basic iteration. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([citer(abc,##)])),6B3F339C67BB03D57A7195CF43ED86B12BFDD347)={@log smoke=TC001: citer basic iteration. Succeeded.;},{@log smoke=TC001: citer basic iteration. Failed (%q0).;}"
 >258
 "@log smoke=End citer() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([citer(boo!,##-#@)])),3A1884F71FEAC0FF4A5F2F2369F76DBFAA089AF6)={@log smoke=TC002: citer position. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: citer position. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([citer(boo!,##-#@)])),3A1884F71FEAC0FF4A5F2F2369F76DBFAA089AF6)={@log smoke=TC002: citer position. Succeeded.;},{@log smoke=TC002: citer position. Failed (%q0).;}"
 >260
-"@if strmatch(setr(0,sha1([citer(abc,##,|)])),C74A3276C7E3CBBF386B6332E627989DFC851C00)={@log smoke=TC003: citer output delimiter. Succeeded.;@trig me/tr.tc004},{@log smoke=TC003: citer output delimiter. Failed (%q0).;@trig me/tr.tc004}"
+"@if strmatch(setr(0,sha1([citer(abc,##,|)])),C74A3276C7E3CBBF386B6332E627989DFC851C00)={@log smoke=TC003: citer output delimiter. Succeeded.;},{@log smoke=TC003: citer output delimiter. Failed (%q0).;}"
 >261
-"@if strmatch(setr(0,sha1([citer(abc,strlen(##))])),E6F1BEC448F5B1CF8BD57DAACE593E9970ECD32D)={@log smoke=TC004: citer function eval. Succeeded.;@trig me/tr.tc005},{@log smoke=TC004: citer function eval. Failed (%q0).;@trig me/tr.tc005}"
+"@if strmatch(setr(0,sha1([citer(abc,strlen(##))])),E6F1BEC448F5B1CF8BD57DAACE593E9970ECD32D)={@log smoke=TC004: citer function eval. Succeeded.;},{@log smoke=TC004: citer function eval. Failed (%q0).;}"
 >262
-"@if strmatch(setr(0,sha1([citer(,##)])),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC005: citer empty string. Succeeded.;@trig me/tr.tc006},{@log smoke=TC005: citer empty string. Failed (%q0).;@trig me/tr.tc006}"
+"@if strmatch(setr(0,sha1([citer(,##)])),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC005: citer empty string. Succeeded.;},{@log smoke=TC005: citer empty string. Failed (%q0).;}"
 >263
-"@if strmatch(setr(0,sha1([citer(X,##-#@)])),123003CB6DB59335F241F5589CF1F41B8AC61162)={@log smoke=TC006: citer single character. Succeeded.;@trig me/tr.tc007},{@log smoke=TC006: citer single character. Failed (%q0).;@trig me/tr.tc007}"
+"@if strmatch(setr(0,sha1([citer(X,##-#@)])),123003CB6DB59335F241F5589CF1F41B8AC61162)={@log smoke=TC006: citer single character. Succeeded.;},{@log smoke=TC006: citer single character. Failed (%q0).;}"
 >264
 "@if strmatch(setr(0,sha1([citer(ab,[itext(0)]-[inum(0)])])),2BD2A31551350353443E03D2CD4B9C32BB386300)={@log smoke=TC007: citer itext/inum. Succeeded.;@trig me/tr.done},{@log smoke=TC007: citer itext/inum. Failed (%q0).;@trig me/tr.done}"
 <
@@ -1068,7 +1068,7 @@
 >256
 "@log smoke=Beginning comp() test cases."
 >257
-"@if strmatch(setr(0,sha1([comp(a,b)][comp(a,a)][comp(b,a)])),671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08)={@log smoke=TC001: comp basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: comp basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([comp(a,b)][comp(a,a)][comp(b,a)])),671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08)={@log smoke=TC001: comp basic operations. Succeeded.;},{@log smoke=TC001: comp basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End comp() test cases.;@notify smoke"
 >259
@@ -1333,7 +1333,7 @@
 >256
 "@log smoke=Beginning delete() test cases."
 >257
-"@if strmatch(setr(0,sha1([delete(abcdef,2,2)][delete(abcdef,0,1)][delete(abcdef,5,1)][delete(abcdef,0,0)])),F9C18D40DC9E5C216EF39B23E6283B70D52DB7A6)={@log smoke=TC001: delete basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: delete basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([delete(abcdef,2,2)][delete(abcdef,0,1)][delete(abcdef,5,1)][delete(abcdef,0,0)])),F9C18D40DC9E5C216EF39B23E6283B70D52DB7A6)={@log smoke=TC001: delete basic operations. Succeeded.;},{@log smoke=TC001: delete basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End delete() test cases.;@notify smoke"
 >259
@@ -1511,7 +1511,7 @@
 >260
 "@if strmatch(translate(edit(%xra,b,b),p),a)={@log smoke=TC003: Regressions. edit() strips color. Okay.},{@if strmatch(setr(0,sha1([translate(edit(|%xr||,|,%r),p)][translate(edit(CONNECTEDCONNECTEDabcdefCONNECTEDCONNECTED,CONNECTED,%xr-),p)])),529C98FE0F4AEC3A37243A14BDC0C8511EF92EAB)={@log smoke=TC003: Regressions. Succeeded.},{@log smoke=TC003: Regressions. Failed (%q0).}}--&tr.tc004 test_edit_fn=@if strmatch(translate(edit(%xra,b,b),p),a)={@log smoke=TC004: Single Change. edit() strips color. Okay.},{@if strmatch(setr(0,sha1([translate(edit(repeat(a,500),repeat(a,500),%xra),p)][translate(edit(a,a,repeat(%xra,500)),p)][translate(edit(repeat(%xba,500),repeat(a,500),a),p)][translate(edit(%xba,a,repeat(a,500)),p)])),CE1B02A3551DCB285F627943FE292C877C2C9955)={@log smoke=TC004: Single Change. Succeeded.},{@log smoke=TC004: Single Change. Failed (%q0).}}"
 >262
-"@if strmatch(translate(edit(%xra,b,b),p),a)={@log smoke=TC005: Multiple Changes. edit() strips color. Okay.;@trig me/tr.tc006},{@if strmatch(setr(0,sha1([translate(edit(repeat(a,500),a,%xrab),p)][translate(edit(repeat(ab,500),ab,%xra),p)][translate(edit(repeat(%xba,500),a,a),p)][translate(edit(repeat(%xbab,500),ab,a),p)])),FE10E9EEDA8A5A742255BE48EC27E19E2881E007)={@log smoke=TC005: Multiple Changes. Succeeded.;@trig me/tr.tc006},{@log smoke=TC005: Multiple Changes. Failed (%q0).;@trig me/tr.tc006}}"
+"@if strmatch(translate(edit(%xra,b,b),p),a)={@log smoke=TC005: Multiple Changes. edit() strips color. Okay.;},{@if strmatch(setr(0,sha1([translate(edit(repeat(a,500),a,%xrab),p)][translate(edit(repeat(ab,500),ab,%xra),p)][translate(edit(repeat(%xba,500),a,a),p)][translate(edit(repeat(%xbab,500),ab,a),p)])),FE10E9EEDA8A5A742255BE48EC27E19E2881E007)={@log smoke=TC005: Multiple Changes. Succeeded.;},{@log smoke=TC005: Multiple Changes. Failed (%q0).;}}"
 >263
 "@if strmatch(setr(0,sha1([edit(A[chr(233)]B[chr(233)]C,chr(233),chr(252))][edit(A[chr(65296)]B,chr(65296),X)])),5D5FC0A93F69A2421B5E6E2B6082480D7090B225)={@log smoke=TC006: edit Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC006: edit Unicode. Failed (%q0).;@trig me/tr.done}"
 <
@@ -2499,7 +2499,7 @@
 >256
 "@log smoke=Beginning lcstr() test cases."
 >257
-"@if strmatch(setr(0,sha1([lcstr(FOO)][lcstr(FoO)][lcstr(123)])),E7E82E298B9C50EB2B368584370BE0FCFEA1CC03)={@log smoke=TC001: lcstr basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: lcstr basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([lcstr(FOO)][lcstr(FoO)][lcstr(123)])),E7E82E298B9C50EB2B368584370BE0FCFEA1CC03)={@log smoke=TC001: lcstr basic operations. Succeeded.;},{@log smoke=TC001: lcstr basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End lcstr() test cases.;@notify smoke"
 >259
@@ -2712,7 +2712,7 @@
 >256
 "@log smoke=Beginning locate() possessive test cases."
 >257
-"@create test_lp_box;@create test_lp_gem;@tel test_lp_gem=test_lp_box;@if strmatch(setr(0,sha1([locate(me,test_lp_box's test_lp_gem,ins)][locate(me,test_lp_box's test_lp_gem,in)][locate(me,test_lp_gem,i)])),8C38CB0118A4B1289A72693A04BD04EEB914734E)={@log smoke=TC001: locate possessive. Succeeded.;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done},{@log smoke=TC001: locate possessive. Failed (%q0).;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done}"
+"@create test_lp_box;@create test_lp_gem;@tel test_lp_gem=test_lp_box;@if strmatch(setr(0,sha1([locate(me,test_lp_box's test_lp_gem,ins)][locate(me,test_lp_box's test_lp_gem,in)][locate(me,test_lp_gem,i)])),534DBE7D6E48BD76FAB4B68B9F6E40B35DBDA7E9)={@log smoke=TC001: locate possessive. Succeeded.;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done},{@log smoke=TC001: locate possessive. Failed (%q0).;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done}"
 >258
 "@log smoke=End locate() possessive test cases.;@notify smoke"
 <
@@ -3099,11 +3099,11 @@
 >256
 "@log smoke=Beginning mid() test cases."
 >257
-"@if strmatch(setr(0,sha1([mid(foobar,2,2)][mid(foobar,2,-2)])),973A0ABA88E038ED295728D49D24759890274404)={@log smoke=TC001: mid examples. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: mid examples. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([mid(foobar,2,2)][mid(foobar,2,-2)])),973A0ABA88E038ED295728D49D24759890274404)={@log smoke=TC001: mid examples. Succeeded.;},{@log smoke=TC001: mid examples. Failed (%q0).;}"
 >258
 "@log smoke=End mid() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([ord(mid(A[chr(233)]B[chr(65296)]C,1,1))][mid(A[chr(233)]B[chr(65296)]C,2,1)][ord(mid(A[chr(233)]B[chr(65296)]C,3,1))][mid(A[chr(233)]B[chr(65296)]C,0,2)])),2908CBCA501FE7FBEE76719E4BF7E52D26458E97)={@log smoke=TC002: mid Unicode graphemes. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: mid Unicode graphemes. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([ord(mid(A[chr(233)]B[chr(65296)]C,1,1))][mid(A[chr(233)]B[chr(65296)]C,2,1)][ord(mid(A[chr(233)]B[chr(65296)]C,3,1))][mid(A[chr(233)]B[chr(65296)]C,0,2)])),2908CBCA501FE7FBEE76719E4BF7E52D26458E97)={@log smoke=TC002: mid Unicode graphemes. Succeeded.;},{@log smoke=TC002: mid Unicode graphemes. Failed (%q0).;}"
 >260
 "@if strmatch(setr(0,sha1([ord(mid(A[chr(101 769)]B,1,1))][mid(A[chr(101 769)]B,0,1)][mid(A[chr(101 769)]B,2,1)])),6A9BF7F9AF24CC04F236A9851A6D3764D5E23603)={@log smoke=TC003: mid combining cluster. Succeeded.;@trig me/tr.done},{@log smoke=TC003: mid combining cluster. Failed (%q0).;@trig me/tr.done}"
 <
@@ -3402,17 +3402,17 @@
 >256
 "@log smoke=Beginning ord() test cases."
 >257
-"@if strmatch(setr(0,sha1([ord(A)][ord(a)][ord(0)])),C69C11D49DED684EF34A88AF439794CEDB5EA87C)={@log smoke=TC001: ord basic ASCII. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: ord basic ASCII. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([ord(A)][ord(a)][ord(0)])),C69C11D49DED684EF34A88AF439794CEDB5EA87C)={@log smoke=TC001: ord basic ASCII. Succeeded.;},{@log smoke=TC001: ord basic ASCII. Failed (%q0).;}"
 >258
 "@log smoke=End ord() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([ord(chr(233))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC002: ord precomposed character. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: ord precomposed character. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([ord(chr(233))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC002: ord precomposed character. Succeeded.;},{@log smoke=TC002: ord precomposed character. Failed (%q0).;}"
 >260
-"@if strmatch(setr(0,sha1([ord(chr(101 769))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC003: ord combining character cluster. Succeeded.;@trig me/tr.tc004},{@log smoke=TC003: ord combining character cluster. Failed (%q0).;@trig me/tr.tc004}"
+"@if strmatch(setr(0,sha1([ord(chr(101 769))])),52FDB9F68C503E11D168FE52035901864C0A4861)={@log smoke=TC003: ord combining character cluster. Succeeded.;},{@log smoke=TC003: ord combining character cluster. Failed (%q0).;}"
 >261
-"@if strmatch(setr(0,sha1([ord()]|[ord(AB)])),56EC694DF4FCFD4F734086B070ED290DBD5302D2)={@log smoke=TC004: ord error cases. Succeeded.;@trig me/tr.tc005},{@log smoke=TC004: ord error cases. Failed (%q0).;@trig me/tr.tc005}"
+"@if strmatch(setr(0,sha1([ord()]|[ord(AB)])),56EC694DF4FCFD4F734086B070ED290DBD5302D2)={@log smoke=TC004: ord error cases. Succeeded.;},{@log smoke=TC004: ord error cases. Failed (%q0).;}"
 >262
-"@if strmatch(setr(0,sha1([chr(ord(chr(233)))])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC005: ord/chr round-trip precomposed. Succeeded.;@trig me/tr.tc006},{@log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).;@trig me/tr.tc006}"
+"@if strmatch(setr(0,sha1([chr(ord(chr(233)))])),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC005: ord/chr round-trip precomposed. Succeeded.;},{@log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).;}"
 >263
 "@if strmatch(setr(0,sha1([ord(chr(65296))])),E26852524C054E7591746F8E15D9578C950B5D3F)={@log smoke=TC006: ord fullwidth character. Succeeded.;@trig me/tr.done},{@log smoke=TC006: ord fullwidth character. Failed (%q0).;@trig me/tr.done}"
 <
@@ -3540,7 +3540,7 @@
 >256
 "@log smoke=Beginning pos() test cases."
 >257
-"@if strmatch(setr(0,sha1([pos(cd,abcdef)][pos(xy,abcdef)])),C24F6B8389BC8FB2D6943DED3EE5497E7AE09DD0)={@log smoke=TC001: pos basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: pos basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([pos(cd,abcdef)][pos(xy,abcdef)])),C24F6B8389BC8FB2D6943DED3EE5497E7AE09DD0)={@log smoke=TC001: pos basic operations. Succeeded.;},{@log smoke=TC001: pos basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End pos() test cases.;@notify smoke"
 >259
@@ -3753,7 +3753,7 @@
 >256
 "@log smoke=Beginning reverse() test cases."
 >257
-"@if strmatch(setr(0,sha1([reverse(abcdef)][reverse(12345)])),BE76EC6E1C94467F992F131EBA9F091423C4BCD4)={@log smoke=TC001: reverse basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: reverse basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([reverse(abcdef)][reverse(12345)])),BE76EC6E1C94467F992F131EBA9F091423C4BCD4)={@log smoke=TC001: reverse basic operations. Succeeded.;},{@log smoke=TC001: reverse basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End reverse() test cases.;@notify smoke"
 >259
@@ -4312,7 +4312,7 @@
 >272
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn e_fn edit_fn elements_fn eq_fn escape_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isdbref_fn isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn"
 >273
-"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
+"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
 >274
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
@@ -4339,13 +4339,13 @@
 >256
 "@log smoke=Beginning sort() test cases."
 >257
-"@if strmatch(setr(0,sha1([sort(3 1 4 1 5)][sort(c a b d)])),D88F262663DF5362C32EA420B09EB4B0DF3D165D)={@log smoke=TC001: sort basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: sort basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([sort(3 1 4 1 5)][sort(c a b d)])),D88F262663DF5362C32EA420B09EB4B0DF3D165D)={@log smoke=TC001: sort basic operations. Succeeded.;},{@log smoke=TC001: sort basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End sort() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([sort(chr(234) chr(232) chr(233))])),8056D4F72BADB939A9E38189AB769840E92D7EA1)={@log smoke=TC002: sort accented variants. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: sort accented variants. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([sort(chr(234) chr(232) chr(233))])),8056D4F72BADB939A9E38189AB769840E92D7EA1)={@log smoke=TC002: sort accented variants. Succeeded.;},{@log smoke=TC002: sort accented variants. Failed (%q0).;}"
 >260
-"@if strmatch(setr(0,sha1([sort(f chr(233) a d chr(232) b)])),E5983A9607C0EE9796A39F929664C8F5FFB95153)={@log smoke=TC003: sort ASCII and accented mix. Succeeded.;@trig me/tr.tc004},{@log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;@trig me/tr.tc004}"
+"@if strmatch(setr(0,sha1([sort(f chr(233) a d chr(232) b)])),E5983A9607C0EE9796A39F929664C8F5FFB95153)={@log smoke=TC003: sort ASCII and accented mix. Succeeded.;},{@log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;}"
 >261
 "@if strmatch(setr(0,sha1([sort(chr(65298) chr(65296) chr(65300) chr(65297) chr(65299))])),18961D598EB9299F34C71CF659AE8E1968A26259)={@log smoke=TC004: sort fullwidth digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).;@trig me/tr.done}"
 <
@@ -4590,11 +4590,11 @@
 >256
 "@log smoke=Beginning strlen() test cases."
 >257
-"@if strmatch(setr(0,sha1([strlen(hello)][strlen()])),E1822DB470E60D090AFFD0956D743CB0E7CDF113)={@log smoke=TC001: strlen basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: strlen basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([strlen(hello)][strlen()])),E1822DB470E60D090AFFD0956D743CB0E7CDF113)={@log smoke=TC001: strlen basic operations. Succeeded.;},{@log smoke=TC001: strlen basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End strlen() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([strlen(chr(233))][strlen(chr(65296))][strlen(A[chr(233)]B[chr(65296)]C)])),EFA6E44DFA0145249BE273ECD84A97F534B04920)={@log smoke=TC002: strlen multi-byte Unicode. Succeeded.;@trig me/tr.tc003},{@log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).;@trig me/tr.tc003}"
+"@if strmatch(setr(0,sha1([strlen(chr(233))][strlen(chr(65296))][strlen(A[chr(233)]B[chr(65296)]C)])),EFA6E44DFA0145249BE273ECD84A97F534B04920)={@log smoke=TC002: strlen multi-byte Unicode. Succeeded.;},{@log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).;}"
 >260
 "@if strmatch(setr(0,sha1([strlen(chr(101 769))][strlen(A[chr(101 769)]B)])),BD307A3EC329E10A2CFF8FB87480823DA114F8F4)={@log smoke=TC003: strlen combining cluster. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strlen combining cluster. Failed (%q0).;@trig me/tr.done}"
 <
@@ -4675,7 +4675,7 @@
 >256
 "@log smoke=Beginning strtrunc() test cases."
 >257
-"@if strmatch(setr(0,sha1([strtrunc(abcdefgh,5)][strtrunc(abcdefgh,0)][strtrunc(abcdefgh,20)])),C98A908EA9E37A0CD40837648883D2E30FC963C0)={@log smoke=TC001: strtrunc basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: strtrunc basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([strtrunc(abcdefgh,5)][strtrunc(abcdefgh,0)][strtrunc(abcdefgh,20)])),C98A908EA9E37A0CD40837648883D2E30FC963C0)={@log smoke=TC001: strtrunc basic operations. Succeeded.;},{@log smoke=TC001: strtrunc basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End strtrunc() test cases.;@notify smoke"
 >259
@@ -4947,7 +4947,7 @@
 >256
 "@log smoke=Beginning ucstr() test cases."
 >257
-"@if strmatch(setr(0,sha1([ucstr(hello)][ucstr(hElLo)])),FF7AAB7D326C086155B2FC188713A5E1DAECF28C)={@log smoke=TC001: ucstr basic operations. Succeeded.;@trig me/tr.tc002},{@log smoke=TC001: ucstr basic operations. Failed (%q0).;@trig me/tr.tc002}"
+"@if strmatch(setr(0,sha1([ucstr(hello)][ucstr(hElLo)])),FF7AAB7D326C086155B2FC188713A5E1DAECF28C)={@log smoke=TC001: ucstr basic operations. Succeeded.;},{@log smoke=TC001: ucstr basic operations. Failed (%q0).;}"
 >258
 "@log smoke=End ucstr() test cases.;@notify smoke"
 >259
@@ -5035,7 +5035,7 @@
 "@log smoke=End vdot() test cases.;@notify smoke"
 <
 !172
-"test_vmag_fn"
+"test_visual_width_fn"
 0
 -1
 -1
@@ -5055,14 +5055,20 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning vmag() test cases."
+"@log smoke=Beginning visual_width() test cases."
 >257
-"@if strmatch(setr(0,sha1([vmag(3 4)][vmag(1 2 2)])),C5B76DA3E608D34EDB07244CD9B875EE86906328)={@log smoke=TC001: vmag basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmag basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(strlen(chr(20013)),1),eq(strlen([chr(20013)][chr(19990)][chr(30028)]),3))={@log smoke=TC001: strlen grapheme clusters CJK. Succeeded.},{@log smoke=TC001: strlen grapheme clusters CJK. Failed.}"
 >258
-"@log smoke=End vmag() test cases.;@notify smoke"
+"@log smoke=End visual_width() test cases.;@notify smoke"
+>259
+"@if cand(eq(strlen(center(chr(20013),6,-)),5),eq(strlen(center([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC002: center CJK visual width. Succeeded.},{@log smoke=TC002: center CJK visual width. Failed.}"
+>260
+"@if cand(eq(strlen(ljust(chr(20013),6,-)),5),eq(strlen(ljust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC003: ljust CJK visual width. Succeeded.},{@log smoke=TC003: ljust CJK visual width. Failed.}"
+>261
+"@if cand(eq(strlen(rjust(chr(20013),6,-)),5),eq(strlen(rjust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC004: rjust CJK visual width. Succeeded.;@trig me/tr.done},{@log smoke=TC004: rjust CJK visual width. Failed.;@trig me/tr.done}"
 <
 !173
-"test_vmul_fn"
+"test_vmag_fn"
 0
 -1
 -1
@@ -5082,14 +5088,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning vmul() test cases."
+"@log smoke=Beginning vmag() test cases."
 >257
-"@if strmatch(setr(0,sha1([vmul(1 2 3,2)][vmul(0 0 0,5)])),571022336F2590A6ADE42BEA63153951F705C1BA)={@log smoke=TC001: vmul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmul basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([vmag(3 4)][vmag(1 2 2)])),C5B76DA3E608D34EDB07244CD9B875EE86906328)={@log smoke=TC001: vmag basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmag basic operations. Failed (%q0).;@trig me/tr.done}"
 >258
-"@log smoke=End vmul() test cases.;@notify smoke"
+"@log smoke=End vmag() test cases.;@notify smoke"
 <
 !174
-"test_vsub_fn"
+"test_vmul_fn"
 0
 -1
 -1
@@ -5109,14 +5115,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning vsub() test cases."
+"@log smoke=Beginning vmul() test cases."
 >257
-"@if strmatch(setr(0,sha1([vsub(4 5 6,1 2 3)])),30B2CD7FACF5A44EBCF05B245BEECC5D1B24FCEC)={@log smoke=TC001: vsub basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vsub basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([vmul(1 2 3,2)][vmul(0 0 0,5)])),571022336F2590A6ADE42BEA63153951F705C1BA)={@log smoke=TC001: vmul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmul basic operations. Failed (%q0).;@trig me/tr.done}"
 >258
-"@log smoke=End vsub() test cases.;@notify smoke"
+"@log smoke=End vmul() test cases.;@notify smoke"
 <
 !175
-"test_vunit_fn"
+"test_vsub_fn"
 0
 -1
 -1
@@ -5136,14 +5142,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning vunit() test cases."
+"@log smoke=Beginning vsub() test cases."
 >257
-"@if strmatch(setr(0,sha1([vunit(3 4)][vunit(0 0 1)])),7CDE719B301CDA72179AF33267D600C25A063EF1)={@log smoke=TC001: vunit basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vunit basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([vsub(4 5 6,1 2 3)])),30B2CD7FACF5A44EBCF05B245BEECC5D1B24FCEC)={@log smoke=TC001: vsub basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vsub basic operations. Failed (%q0).;@trig me/tr.done}"
 >258
-"@log smoke=End vunit() test cases.;@notify smoke"
+"@log smoke=End vsub() test cases.;@notify smoke"
 <
 !176
-"test_wordpos_fn"
+"test_vunit_fn"
 0
 -1
 -1
@@ -5163,14 +5169,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning wordpos() test cases."
+"@log smoke=Beginning vunit() test cases."
 >257
-"@if strmatch(setr(0,sha1([wordpos(This is a test,is)][wordpos(This is a test,missing)])),BC48E0536C4B69953C8272D54CF4A62C65AD28B1)={@log smoke=TC001: wordpos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wordpos basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([vunit(3 4)][vunit(0 0 1)])),7CDE719B301CDA72179AF33267D600C25A063EF1)={@log smoke=TC001: vunit basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vunit basic operations. Failed (%q0).;@trig me/tr.done}"
 >258
-"@log smoke=End wordpos() test cases.;@notify smoke"
+"@log smoke=End vunit() test cases.;@notify smoke"
 <
 !177
-"test_words_fn"
+"test_wordpos_fn"
 0
 -1
 -1
@@ -5190,20 +5196,47 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning words() test cases."
+"@log smoke=Beginning wordpos() test cases."
 >257
-"@if strmatch(setr(0,sha1([words(a b c d)][words(a|b|c,|)])),0286DD552C9BEA9A69ECB3759E7B94777635514B)={@log smoke=TC001: words basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: words basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([wordpos(This is a test,is)][wordpos(This is a test,missing)])),BC48E0536C4B69953C8272D54CF4A62C65AD28B1)={@log smoke=TC001: wordpos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wordpos basic operations. Failed (%q0).;@trig me/tr.done}"
 >258
-"@log smoke=End words() test cases.;@notify smoke"
+"@log smoke=End wordpos() test cases.;@notify smoke"
 <
 !178
-"test_wrap_fn"
+"test_words_fn"
 0
 -1
 -1
 -1
 0
 177
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning words() test cases."
+>257
+"@if strmatch(setr(0,sha1([words(a b c d)][words(a|b|c,|)])),0286DD552C9BEA9A69ECB3759E7B94777635514B)={@log smoke=TC001: words basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: words basic operations. Failed (%q0).;@trig me/tr.done}"
+>258
+"@log smoke=End words() test cases.;@notify smoke"
+<
+!179
+"test_wrap_fn"
+0
+-1
+-1
+-1
+0
+178
 1
 -1
 1
@@ -5225,14 +5258,14 @@
 >259
 "@if strmatch(setr(0,sha1([wrap(Test%rTest,10,c,>,<)][wrap(Test1%r%rTest2,11,c)][wrap(This is some test text to demonstrate the leading space issue that is occurring,69)][wrap(%rth,10,left,|,|,2)])),859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
 <
-!179
+!180
 "test_xor_fn"
 0
 -1
 -1
 -1
 0
-178
+179
 1
 -1
 1

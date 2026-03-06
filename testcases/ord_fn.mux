@@ -26,11 +26,9 @@
       )=
   {
     @log smoke=TC001: ord basic ASCII. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: ord basic ASCII. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -46,11 +44,9 @@
       )=
   {
     @log smoke=TC002: ord precomposed character. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: ord precomposed character. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #
@@ -67,11 +63,9 @@
       )=
   {
     @log smoke=TC003: ord combining character cluster. Succeeded.;
-    @trig me/tr.tc004
   },
   {
     @log smoke=TC003: ord combining character cluster. Failed (%q0).;
-    @trig me/tr.tc004
   }
 -
 #
@@ -87,11 +81,9 @@
       )=
   {
     @log smoke=TC004: ord error cases. Succeeded.;
-    @trig me/tr.tc005
   },
   {
     @log smoke=TC004: ord error cases. Failed (%q0).;
-    @trig me/tr.tc005
   }
 -
 #
@@ -107,11 +99,9 @@
       )=
   {
     @log smoke=TC005: ord/chr round-trip precomposed. Succeeded.;
-    @trig me/tr.tc006
   },
   {
     @log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).;
-    @trig me/tr.tc006
   }
 -
 #

@@ -28,11 +28,9 @@
       )=
   {
     @log smoke=TC001: mid examples. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: mid examples. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -52,11 +50,9 @@
       )=
   {
     @log smoke=TC002: mid Unicode graphemes. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: mid Unicode graphemes. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #

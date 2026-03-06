@@ -1,0 +1,111 @@
+#
+# visual_width_fn.mux - Test Cases for visual width handling.
+#
+# Strategy: Verify that center/ljust/rjust use visual display width
+# (East Asian Width) rather than codepoint count for CJK characters.
+#
+# chr(20013) = U+4E2D 中 (CJK, width 2)
+# chr(19990) = U+4E16 世 (CJK, width 2)
+# chr(30028) = U+754C 界 (CJK, width 2)
+#
+@create test_visual_width_fn
+-
+@set test_visual_width_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_visual_width_fn=
+  @log smoke=Beginning visual_width() test cases.
+-
+#
+# Test Case #1 - strlen() returns grapheme clusters for CJK.
+#
+# strlen(中) = 1 cluster (even though visual width 2)
+# strlen(中世界) = 3 clusters
+#
+&tr.tc001 test_visual_width_fn=
+  @if cand(
+        eq(strlen(chr(20013)),1),
+        eq(strlen(
+            [chr(20013)][chr(19990)][chr(30028)]
+          ),3)
+      )=
+  {
+    @log smoke=TC001: strlen grapheme clusters CJK. Succeeded.
+  },
+  {
+    @log smoke=TC001: strlen grapheme clusters CJK. Failed.
+  }
+-
+#
+# Test Case #2 - center() uses visual width for CJK.
+#
+# center(中,6,-) should produce --中-- (2+2+2=6 columns, 5 clusters)
+# center(中世界,10,-) should produce --中世界-- (2+6+2=10 columns, 7 clusters)
+#
+&tr.tc002 test_visual_width_fn=
+  @if cand(
+        eq(strlen(center(chr(20013),6,-)),5),
+        eq(strlen(center(
+            [chr(20013)][chr(19990)][chr(30028)]
+          ,10,-)),7)
+      )=
+  {
+    @log smoke=TC002: center CJK visual width. Succeeded.
+  },
+  {
+    @log smoke=TC002: center CJK visual width. Failed.
+  }
+-
+#
+# Test Case #3 - ljust() uses visual width for CJK.
+#
+# ljust(中,6,-) should produce 中---- (2+4=6 columns, 5 clusters)
+# ljust(中世界,10,-) should produce 中世界---- (6+4=10 columns, 7 clusters)
+#
+&tr.tc003 test_visual_width_fn=
+  @if cand(
+        eq(strlen(ljust(chr(20013),6,-)),5),
+        eq(strlen(ljust(
+            [chr(20013)][chr(19990)][chr(30028)]
+          ,10,-)),7)
+      )=
+  {
+    @log smoke=TC003: ljust CJK visual width. Succeeded.
+  },
+  {
+    @log smoke=TC003: ljust CJK visual width. Failed.
+  }
+-
+#
+# Test Case #4 - rjust() uses visual width for CJK.
+#
+# rjust(中,6,-) should produce ----中 (4+2=6 columns, 5 clusters)
+# rjust(中世界,10,-) should produce ----中世界 (4+6=10 columns, 7 clusters)
+#
+&tr.tc004 test_visual_width_fn=
+  @if cand(
+        eq(strlen(rjust(chr(20013),6,-)),5),
+        eq(strlen(rjust(
+            [chr(20013)][chr(19990)][chr(30028)]
+          ,10,-)),7)
+      )=
+  {
+    @log smoke=TC004: rjust CJK visual width. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: rjust CJK visual width. Failed.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_visual_width_fn=
+  @log smoke=End visual_width() test cases.;
+  @notify smoke
+-
+drop test_visual_width_fn
+-
+#
+# End of Test Cases
+#

@@ -26,11 +26,9 @@
       )=
   {
     @log smoke=TC001: chr basic ASCII. Succeeded.;
-    @trig me/tr.tc002
   },
   {
     @log smoke=TC001: chr basic ASCII. Failed (%q0).;
-    @trig me/tr.tc002
   }
 -
 #
@@ -46,11 +44,9 @@
       )=
   {
     @log smoke=TC002: chr combining character. Succeeded.;
-    @trig me/tr.tc003
   },
   {
     @log smoke=TC002: chr combining character. Failed (%q0).;
-    @trig me/tr.tc003
   }
 -
 #
@@ -66,11 +62,9 @@
       )=
   {
     @log smoke=TC003: chr precomposed character. Succeeded.;
-    @trig me/tr.tc004
   },
   {
     @log smoke=TC003: chr precomposed character. Failed (%q0).;
-    @trig me/tr.tc004
   }
 -
 #
@@ -86,11 +80,9 @@
       )=
   {
     @log smoke=TC004: chr error cases. Succeeded.;
-    @trig me/tr.tc005
   },
   {
     @log smoke=TC004: chr error cases. Failed (%q0).;
-    @trig me/tr.tc005
   }
 -
 #
@@ -106,11 +98,9 @@
       )=
   {
     @log smoke=TC005: chr multi-codepoint string. Succeeded.;
-    @trig me/tr.tc006
   },
   {
     @log smoke=TC005: chr multi-codepoint string. Failed (%q0).;
-    @trig me/tr.tc006
   }
 -
 #
@@ -126,11 +116,9 @@
       )=
   {
     @log smoke=TC006: chr/ord round-trip combining. Succeeded.;
-    @trig me/tr.tc007
   },
   {
     @log smoke=TC006: chr/ord round-trip combining. Failed (%q0).;
-    @trig me/tr.tc007
   }
 -
 #
@@ -146,11 +134,9 @@
       )=
   {
     @log smoke=TC007: chr fullwidth characters. Succeeded.;
-    @trig me/tr.tc008
   },
   {
     @log smoke=TC007: chr fullwidth characters. Failed (%q0).;
-    @trig me/tr.tc008
   }
 -
 #
