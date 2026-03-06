@@ -87,121 +87,6 @@ static void force_reclaim_failed_create_slot(dbref obj)
     mudstate.freelist = obj;
 }
 
-// Authoritative rebuild of SQLite attributes from runtime state.
-//
-static bool sqlite_sync_all_attributes_from_runtime(void)
-{
-    struct AttrRow
-    {
-        dbref obj;
-        int attrnum;
-        std::vector<UTF8> value;
-        dbref owner;
-        int flags;
-    };
-
-    std::vector<AttrRow> snapshot;
-    snapshot.reserve(1024);
-
-    // Snapshot attributes from runtime before mutating SQLite state.
-    //
-    dbref iObject;
-    DO_WHOLE_DB(iObject)
-    {
-        if (isGarbage(iObject))
-        {
-            continue;
-        }
-
-        std::vector<int> attrnums;
-        if (!g_pSQLiteBackend->GetAll(
-            static_cast<unsigned int>(iObject),
-            [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
-            {
-                if (  attrnum != static_cast<unsigned int>(A_LIST)
-                   && attrnum != 0U)
-                {
-                    attrnums.push_back(static_cast<int>(attrnum));
-                }
-            }))
-        {
-            Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to enumerate attrs for #%d" ENDLINE),
-                iObject);
-            return false;
-        }
-
-        sort(attrnums.begin(), attrnums.end());
-        attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
-
-        for (int iAttr : attrnums)
-        {
-            if (  iAttr == A_LIST
-               || iAttr == 0)
-            {
-                continue;
-            }
-
-            dbref owner = Owner(iObject);
-            int flags = 0;
-            if (!atr_get_info(iObject, iAttr, &owner, &flags))
-            {
-                Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to read attr metadata #%d/%d" ENDLINE),
-                    iObject, iAttr);
-                return false;
-            }
-
-            size_t nLen = 0;
-            const UTF8 *pValue = atr_get_raw_LEN(iObject, iAttr, &nLen);
-            if (nullptr == pValue)
-            {
-                Log.tinyprintf(T("sqlite_sync_all_attributes_from_runtime: failed to read attr value #%d/%d" ENDLINE),
-                    iObject, iAttr);
-                return false;
-            }
-
-            AttrRow row;
-            row.obj = iObject;
-            row.attrnum = iAttr;
-            row.owner = owner;
-            row.flags = flags;
-            row.value.assign(pValue, pValue + nLen + 1);
-            snapshot.push_back(std::move(row));
-        }
-    }
-
-    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-    if (!sqldb.Begin())
-    {
-        return false;
-    }
-    if (!sqldb.ClearAttributes())
-    {
-        sqldb.Rollback();
-        return false;
-    }
-
-    for (const auto& row : snapshot)
-    {
-        if (!sqldb.PutAttribute(row.obj,
-                row.attrnum,
-                row.value.empty() ? nullptr : row.value.data(),
-                row.value.size(),
-                row.owner,
-                row.flags))
-        {
-            sqldb.Rollback();
-            return false;
-        }
-    }
-
-    if (!sqldb.Commit())
-    {
-        sqldb.Rollback();
-        return false;
-    }
-    return true;
-}
-
 // Best-effort backend cleanup for objects that failed creation and were
 // reclaimed locally.
 //
@@ -257,19 +142,14 @@ static void reconcile_failed_create_backend(dbref obj)
                 sqldb.Rollback();
             }
         }
-        if (!bAttrsCleared)
-        {
-            bAttrsCleared = sqlite_sync_all_attributes_from_runtime();
-        }
-
         STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
         if (!bAttrsCleared)
         {
-            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attribute cleanup incomplete; attempting full sqlite_sync_runtime."));
         }
         else
         {
-            log_text(T("create_obj failed-cleanup fallback: attempting sqlite_sync_runtime."));
+            log_text(T("create_obj failed-cleanup fallback: attempting full sqlite_sync_runtime."));
         }
         ENDLOG;
         if (!sqlite_sync_runtime())

@@ -1816,6 +1816,32 @@ void fork_and_dump(int key)
 #define LOAD_GAME_CANNOT_OPEN     (-2)
 #define LOAD_GAME_LOADING_PROBLEM (-3)
 
+static bool clear_sqlite_after_sync_failure(CSQLiteDB &sqldb)
+{
+    if (!sqldb.Begin())
+    {
+        sqldb.Rollback();
+        if (!sqldb.Begin())
+        {
+            return false;
+        }
+    }
+
+    if (  !sqldb.ClearAttributes()
+       || !sqldb.ClearObjectTable()
+       || !sqldb.ClearAttrNames()
+       || !sqldb.PutMeta("attr_next", A_USER_START)
+       || !sqldb.PutMeta("db_top", 0)
+       || !sqldb.PutMeta("record_players", 0)
+       || !sqldb.Commit())
+    {
+        sqldb.Rollback();
+        return false;
+    }
+
+    return true;
+}
+
 static int load_game(int ccPageFile)
 {
     FILE *f = nullptr;
@@ -1912,15 +1938,11 @@ static int load_game(int ccPageFile)
     //
     if (!sqlite_sync_runtime())
     {
-        if (sqldb.Begin())
+        if (!clear_sqlite_after_sync_failure(sqldb))
         {
-            if (  !sqldb.ClearAttributes()
-               || !sqldb.ClearObjectTable()
-               || !sqldb.ClearAttrNames()
-               || !sqldb.Commit())
-            {
-                sqldb.Rollback();
-            }
+            STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+            log_text(T("SQLite cleanup failed after runtime sync failure."));
+            ENDLOG
         }
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("SQLite sync failed after flatfile load."));
@@ -2385,15 +2407,9 @@ static void dbconvert(void)
         }
         if (!sqlite_sync_runtime())
         {
-            if (sqldb.Begin())
+            if (!clear_sqlite_after_sync_failure(sqldb))
             {
-                if (  !sqldb.ClearAttributes()
-                   || !sqldb.ClearObjectTable()
-                   || !sqldb.ClearAttrNames()
-                   || !sqldb.Commit())
-                {
-                    sqldb.Rollback();
-                }
+                Log.WriteString(T("SQLite cleanup failed after sync failure.\n"));
             }
             Log.WriteString(T("SQLite sync failed.\n"));
             exit(1);

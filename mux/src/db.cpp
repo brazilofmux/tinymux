@@ -3930,18 +3930,73 @@ void s_Dropto(dbref t, dbref n)
     s_Location(t, n);
 }
 
-// Bulk sync objects, attrnames, and related metadata in one transaction.
-// Called after db_read to keep runtime metadata tables in lockstep.
+// Bulk sync attributes, objects, attrnames, and related metadata in one
+// transaction. Called after db_read and failover paths to keep SQLite fully
+// in lockstep with runtime.
 //
 bool sqlite_sync_runtime(void)
 {
+    struct AttrRow
+    {
+        dbref obj;
+        int attrnum;
+        std::vector<UTF8> value;
+        dbref owner;
+        int flags;
+    };
+
+    std::vector<AttrRow> attrSnapshot;
+    attrSnapshot.reserve(1024);
+
+    dbref iObject;
+    DO_WHOLE_DB(iObject)
+    {
+        if (isGarbage(iObject))
+        {
+            continue;
+        }
+
+        if (!g_pSQLiteBackend->GetAll(
+            static_cast<unsigned int>(iObject),
+            [&attrSnapshot, iObject](unsigned int attrnum, const UTF8 *value, size_t len, int owner, int flags)
+            {
+                if (  attrnum == static_cast<unsigned int>(A_LIST)
+                   || attrnum == 0U)
+                {
+                    return;
+                }
+
+                AttrRow row;
+                row.obj = iObject;
+                row.attrnum = static_cast<int>(attrnum);
+                row.owner = static_cast<dbref>(owner);
+                row.flags = flags;
+                if (  nullptr != value
+                   && 0 < len)
+                {
+                    row.value.assign(value, value + len);
+                }
+                else
+                {
+                    row.value.push_back('\0');
+                }
+                attrSnapshot.push_back(std::move(row));
+            }))
+        {
+            Log.tinyprintf(T("sqlite_sync_runtime: failed to enumerate attrs for #%d" ENDLINE),
+                iObject);
+            return false;
+        }
+    }
+
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     if (!sqldb.Begin())
     {
         return false;
     }
 
-    if (  !sqldb.ClearObjectTable()
+    if (  !sqldb.ClearAttributes()
+       || !sqldb.ClearObjectTable()
        || !sqldb.ClearAttrNames())
     {
         sqldb.Rollback();
@@ -3968,6 +4023,20 @@ bool sqlite_sync_runtime(void)
         rec.powers2   = db[i].powers2;
 
         if (!sqldb.InsertObject(rec))
+        {
+            sqldb.Rollback();
+            return false;
+        }
+    }
+
+    for (const auto& row : attrSnapshot)
+    {
+        if (!sqldb.PutAttribute(row.obj,
+                row.attrnum,
+                row.value.empty() ? nullptr : row.value.data(),
+                row.value.size(),
+                row.owner,
+                row.flags))
         {
             sqldb.Rollback();
             return false;
