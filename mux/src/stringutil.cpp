@@ -4267,7 +4267,7 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
         {
             return UNI_EOF;
         }
-        ch = ((UTF32)(pString[0] & 0x1F) << 18)
+        ch = ((UTF32)(pString[0] & 0x07) << 18)
            | ((UTF32)(pString[1] & 0x3F) << 12)
            | ((UTF32)(pString[2] & 0x3F) <<  6)
            | ((UTF32)(pString[3] & 0x3F)      );
@@ -4289,7 +4289,7 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     }
     else
     {
-        return UNI_REPLACEMENT_CHAR;
+        return UNI_EOF;
     }
 }
 
