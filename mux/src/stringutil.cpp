@@ -468,6 +468,33 @@ static size_t utf8_advance_nul(const UTF8 *p)
             return UTF8_SIZE1;
         }
     }
+    UTF32 cp = p[0];
+    if (UTF8_SIZE2 == n)
+    {
+        cp = ((p[0] & 0x1F) << 6)
+           |  (p[1] & 0x3F);
+    }
+    else if (UTF8_SIZE3 == n)
+    {
+        cp = ((p[0] & 0x0F) << 12)
+           | ((p[1] & 0x3F) << 6)
+           |  (p[2] & 0x3F);
+    }
+    else if (UTF8_SIZE4 == n)
+    {
+        cp = ((p[0] & 0x07) << 18)
+           | ((p[1] & 0x3F) << 12)
+           | ((p[2] & 0x3F) << 6)
+           |  (p[3] & 0x3F);
+    }
+    if (  (UTF8_SIZE2 == n && cp < 0x80)
+       || (UTF8_SIZE3 == n && cp < 0x800)
+       || (UTF8_SIZE4 == n && cp < 0x10000)
+       || cp > UNI_MAX_LEGAL_UTF32
+       || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+    {
+        return UTF8_SIZE1;
+    }
     return n;
 }
 
@@ -712,6 +739,33 @@ bool utf8_strlen(const UTF8 *pString, size_t &nString)
                 return false;
             }
         }
+        UTF32 cp = pString[i];
+        if (UTF8_SIZE2 == t)
+        {
+            cp = ((pString[i] & 0x1F) << 6)
+               |  (pString[i+1] & 0x3F);
+        }
+        else if (UTF8_SIZE3 == t)
+        {
+            cp = ((pString[i] & 0x0F) << 12)
+               | ((pString[i+1] & 0x3F) << 6)
+               |  (pString[i+2] & 0x3F);
+        }
+        else if (UTF8_SIZE4 == t)
+        {
+            cp = ((pString[i] & 0x07) << 18)
+               | ((pString[i+1] & 0x3F) << 12)
+               | ((pString[i+2] & 0x3F) << 6)
+               |  (pString[i+3] & 0x3F);
+        }
+        if (  (UTF8_SIZE2 == t && cp < 0x80)
+           || (UTF8_SIZE3 == t && cp < 0x800)
+           || (UTF8_SIZE4 == t && cp < 0x10000)
+           || cp > UNI_MAX_LEGAL_UTF32
+           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        {
+            return false;
+        }
         nString++;
         i = i + t;
     }
@@ -740,6 +794,34 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString)
                 nString(nBytes, nPoints);
                 return false;
             }
+        }
+        UTF32 cp = pString[nBytes];
+        if (UTF8_SIZE2 == t)
+        {
+            cp = ((pString[nBytes] & 0x1F) << 6)
+               |  (pString[nBytes+1] & 0x3F);
+        }
+        else if (UTF8_SIZE3 == t)
+        {
+            cp = ((pString[nBytes] & 0x0F) << 12)
+               | ((pString[nBytes+1] & 0x3F) << 6)
+               |  (pString[nBytes+2] & 0x3F);
+        }
+        else if (UTF8_SIZE4 == t)
+        {
+            cp = ((pString[nBytes] & 0x07) << 18)
+               | ((pString[nBytes+1] & 0x3F) << 12)
+               | ((pString[nBytes+2] & 0x3F) << 6)
+               |  (pString[nBytes+3] & 0x3F);
+        }
+        if (  (UTF8_SIZE2 == t && cp < 0x80)
+           || (UTF8_SIZE3 == t && cp < 0x800)
+           || (UTF8_SIZE4 == t && cp < 0x10000)
+           || cp > UNI_MAX_LEGAL_UTF32
+           || (cp >= UNI_SUR_HIGH_START && cp <= UNI_SUR_LOW_END))
+        {
+            nString(nBytes, nPoints);
+            return false;
         }
         nPoints++;
         nBytes = nBytes + t;
