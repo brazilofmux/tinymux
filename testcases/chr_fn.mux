@@ -12,7 +12,7 @@
   @log smoke=Beginning chr() test cases.
 -
 #
-# Test Case #1 - Basic character operations.
+# Test Case #1 - Basic ASCII character operations.
 #
 &tr.tc001 test_chr_fn=
   @if strmatch(
@@ -25,11 +25,151 @@
         1D1A20E2CB932B590BF3718DD9FFA455C38A8910
       )=
   {
-    @log smoke=TC001: chr basic operations. Succeeded.;
+    @log smoke=TC001: chr basic ASCII. Succeeded.;
+    @trig me/tr.tc002
+  },
+  {
+    @log smoke=TC001: chr basic ASCII. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Multi-codepoint grapheme cluster (e + combining acute).
+#
+&tr.tc002 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(101 769)]
+          )
+        ),
+        BF15BE717AC1B080B4F1C456692825891FF5073D
+      )=
+  {
+    @log smoke=TC002: chr combining character. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: chr combining character. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - Precomposed character (e-acute U+00E9).
+#
+&tr.tc003 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(233)]
+          )
+        ),
+        BF15BE717AC1B080B4F1C456692825891FF5073D
+      )=
+  {
+    @log smoke=TC003: chr precomposed character. Succeeded.;
+    @trig me/tr.tc004
+  },
+  {
+    @log smoke=TC003: chr precomposed character. Failed (%q0).;
+    @trig me/tr.tc004
+  }
+-
+#
+# Test Case #4 - Error cases: negative, surrogate, too large.
+#
+&tr.tc004 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(-1)]|[chr(55296)]|[chr(1114112)]
+          )
+        ),
+        909DA794FC8C095573D0CB8FD9FFDBDFB99C3EF4
+      )=
+  {
+    @log smoke=TC004: chr error cases. Succeeded.;
+    @trig me/tr.tc005
+  },
+  {
+    @log smoke=TC004: chr error cases. Failed (%q0).;
+    @trig me/tr.tc005
+  }
+-
+#
+# Test Case #5 - Multiple space-separated codepoints producing one string.
+#
+&tr.tc005 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(72 101 108 108 111)]
+          )
+        ),
+        F7FF9E8B7BB2E09B70935A5D785E0CC5D9D0ABF0
+      )=
+  {
+    @log smoke=TC005: chr multi-codepoint string. Succeeded.;
+    @trig me/tr.tc006
+  },
+  {
+    @log smoke=TC005: chr multi-codepoint string. Failed (%q0).;
+    @trig me/tr.tc006
+  }
+-
+#
+# Test Case #6 - chr/ord round-trip with combining character.
+#
+&tr.tc006 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(chr(101 769))]
+          )
+        ),
+        52FDB9F68C503E11D168FE52035901864C0A4861
+      )=
+  {
+    @log smoke=TC006: chr/ord round-trip combining. Succeeded.;
+    @trig me/tr.tc007
+  },
+  {
+    @log smoke=TC006: chr/ord round-trip combining. Failed (%q0).;
+    @trig me/tr.tc007
+  }
+-
+#
+# Test Case #7 - Fullwidth characters (U+FF10..U+FF14).
+#
+&tr.tc007 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)]
+          )
+        ),
+        F0D27E1C908E4B0BF0662FA76DAD22B96840F526
+      )=
+  {
+    @log smoke=TC007: chr fullwidth characters. Succeeded.;
+    @trig me/tr.tc008
+  },
+  {
+    @log smoke=TC007: chr fullwidth characters. Failed (%q0).;
+    @trig me/tr.tc008
+  }
+-
+#
+# Test Case #8 - Boundary values: U+0000 (null/unprintable), U+10FFFF (max).
+#
+&tr.tc008 test_chr_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(0)]|[chr(1114111)]
+          )
+        ),
+        93DCEDE1FDDD6E5F5F25C005C88A530110F070DA
+      )=
+  {
+    @log smoke=TC008: chr boundary values. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: chr basic operations. Failed (%q0).;
+    @log smoke=TC008: chr boundary values. Failed (%q0).;
     @trig me/tr.done
   }
 -

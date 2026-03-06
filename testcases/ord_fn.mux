@@ -12,7 +12,7 @@
   @log smoke=Beginning ord() test cases.
 -
 #
-# Test Case #1 - Basic ordinal operations.
+# Test Case #1 - Basic ASCII ordinal operations.
 #
 &tr.tc001 test_ord_fn=
   @if strmatch(
@@ -25,11 +25,112 @@
         C69C11D49DED684EF34A88AF439794CEDB5EA87C
       )=
   {
-    @log smoke=TC001: ord basic operations. Succeeded.;
+    @log smoke=TC001: ord basic ASCII. Succeeded.;
+    @trig me/tr.tc002
+  },
+  {
+    @log smoke=TC001: ord basic ASCII. Failed (%q0).;
+    @trig me/tr.tc002
+  }
+-
+#
+# Test Case #2 - Precomposed character (e-acute U+00E9 = 233).
+#
+&tr.tc002 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(chr(233))]
+          )
+        ),
+        52FDB9F68C503E11D168FE52035901864C0A4861
+      )=
+  {
+    @log smoke=TC002: ord precomposed character. Succeeded.;
+    @trig me/tr.tc003
+  },
+  {
+    @log smoke=TC002: ord precomposed character. Failed (%q0).;
+    @trig me/tr.tc003
+  }
+-
+#
+# Test Case #3 - Combining character cluster (e + combining acute).
+# ord() should return space-separated codepoints: 101 769
+#
+&tr.tc003 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(chr(101 769))]
+          )
+        ),
+        52FDB9F68C503E11D168FE52035901864C0A4861
+      )=
+  {
+    @log smoke=TC003: ord combining character cluster. Succeeded.;
+    @trig me/tr.tc004
+  },
+  {
+    @log smoke=TC003: ord combining character cluster. Failed (%q0).;
+    @trig me/tr.tc004
+  }
+-
+#
+# Test Case #4 - Error cases: empty string, multi-character string.
+#
+&tr.tc004 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord()]|[ord(AB)]
+          )
+        ),
+        56EC694DF4FCFD4F734086B070ED290DBD5302D2
+      )=
+  {
+    @log smoke=TC004: ord error cases. Succeeded.;
+    @trig me/tr.tc005
+  },
+  {
+    @log smoke=TC004: ord error cases. Failed (%q0).;
+    @trig me/tr.tc005
+  }
+-
+#
+# Test Case #5 - ord/chr round-trip with precomposed character.
+#
+&tr.tc005 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chr(ord(chr(233)))]
+          )
+        ),
+        BF15BE717AC1B080B4F1C456692825891FF5073D
+      )=
+  {
+    @log smoke=TC005: ord/chr round-trip precomposed. Succeeded.;
+    @trig me/tr.tc006
+  },
+  {
+    @log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).;
+    @trig me/tr.tc006
+  }
+-
+#
+# Test Case #6 - Fullwidth character ordinal (U+FF10 = 65296).
+#
+&tr.tc006 test_ord_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [ord(chr(65296))]
+          )
+        ),
+        E26852524C054E7591746F8E15D9578C950B5D3F
+      )=
+  {
+    @log smoke=TC006: ord fullwidth character. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ord basic operations. Failed (%q0).;
+    @log smoke=TC006: ord fullwidth character. Failed (%q0).;
     @trig me/tr.done
   }
 -
