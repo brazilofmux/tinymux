@@ -3634,8 +3634,8 @@ int string_compare(const UTF8 *s1, const UTF8 *s2)
                 break;
             }
 
-            s1 = utf8_NextCodePoint(s1);
-            s2 = utf8_NextCodePoint(s2);
+            s1 += na;
+            s2 += nb;
         }
         if (  *s1
            && *s2)
@@ -3737,8 +3737,8 @@ int string_prefix(const UTF8 *string, const UTF8 *prefix)
             }
         }
 
-        string = utf8_NextCodePoint(string);
-        prefix = utf8_NextCodePoint(prefix);
+        string += na;
+        prefix += nb;
         count += static_cast<int>(na);
     }
     if (*prefix == '\0')
@@ -3985,8 +3985,8 @@ bool minmatch(const UTF8 *str, const UTF8 *target, int min)
             }
         }
 
-        str = utf8_NextCodePoint(str);
-        target = utf8_NextCodePoint(target);
+        str += na;
+        target += nb;
         min -= static_cast<int>(na);
     }
     if (*str)
@@ -4529,8 +4529,8 @@ bool matches_exit_from_list(const UTF8 *str, const UTF8 *pattern)
                 break;
             }
 
-            s = utf8_NextCodePoint(s);
-            pattern = utf8_NextCodePoint(pattern);
+            s += na;
+            pattern += nb;
         }
 
         // Did we match it all?
@@ -5168,8 +5168,8 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b)
         if (na < nb) return -1;
         if (na > nb) return 1;
 
-        a = utf8_NextCodePoint(a);
-        b = utf8_NextCodePoint(b);
+        a += na;
+        b += nb;
     }
 }
 
@@ -5194,11 +5194,21 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
         {
             na = utf8_FirstByte[static_cast<unsigned char>(*p1)];
             if (na >= UTF8_CONTINUE) na = 1;
+            size_t remA = static_cast<size_t>(p1End - p1);
+            if (na > remA)
+            {
+                na = remA;
+            }
             for (size_t j = 0; j < na; j++) la[j] = p1[j];
         }
         else
         {
             na = qA->n_bytes;
+            size_t remA = static_cast<size_t>(p1End - p1);
+            if (na > remA)
+            {
+                na = remA;
+            }
             if (bXorA)
             {
                 for (size_t j = 0; j < na; j++) la[j] = p1[j] ^ qA->p[j];
@@ -5215,11 +5225,21 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
         {
             nb = utf8_FirstByte[static_cast<unsigned char>(*p2)];
             if (nb >= UTF8_CONTINUE) nb = 1;
+            size_t remB = static_cast<size_t>(p2End - p2);
+            if (nb > remB)
+            {
+                nb = remB;
+            }
             for (size_t j = 0; j < nb; j++) lb[j] = p2[j];
         }
         else
         {
             nb = qB->n_bytes;
+            size_t remB = static_cast<size_t>(p2End - p2);
+            if (nb > remB)
+            {
+                nb = remB;
+            }
             if (bXorB)
             {
                 for (size_t j = 0; j < nb; j++) lb[j] = p2[j] ^ qB->p[j];
@@ -5239,8 +5259,8 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
         if (na < nb) return -1;
         if (na > nb) return 1;
 
-        p1 = utf8_NextCodePoint(p1);
-        p2 = utf8_NextCodePoint(p2);
+        p1 += na;
+        p2 += nb;
     }
 
     if (p1 < p1End) return 1;

@@ -431,7 +431,7 @@ bool utf8_is_nfc(const UTF8 *src, size_t nSrc)
         }
         if (p + n > pEnd)
         {
-            break;
+            return false;
         }
 
         // Check NFC_QC property.
