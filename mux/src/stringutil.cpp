@@ -4904,8 +4904,9 @@ size_t TruncateToBuffer
                 {
                     break;
                 }
-                nTextRun += UTF8_SIZE3;
-                p += UTF8_SIZE3;
+                size_t nAdvance = utf8_advance_nul(p);
+                nTextRun += nAdvance;
+                p += nAdvance;
             }
             else if (nullptr != (pF3 = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(p), '\xF3'))))
             {
@@ -4915,8 +4916,9 @@ size_t TruncateToBuffer
                 {
                     break;
                 }
-                nTextRun += UTF8_SIZE4;
-                p += UTF8_SIZE4;
+                size_t nAdvance = utf8_advance_nul(p);
+                nTextRun += nAdvance;
+                p += nAdvance;
             }
             else
             {
