@@ -753,10 +753,228 @@
       )=
   {
     @log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;
-    @trig me/tr.done
   },
   {
     @log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #33 - Edge probe: malformed %q angle with semicolon.
+#
+&tr.tc033 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%q<bad;next})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%q<bad;next})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC033: edge malformed pct-q + semicolon parity. Succeeded.
+  },
+  {
+    @log smoke=TC033: edge malformed pct-q + semicolon parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #34 - Edge probe: malformed %x angle with semicolon.
+#
+&tr.tc034 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%x<bad;next})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%x<bad;next})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC034: edge malformed pct-x + semicolon parity. Succeeded.
+  },
+  {
+    @log smoke=TC034: edge malformed pct-x + semicolon parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #35 - Edge probe: malformed %= angle with semicolon.
+#
+&tr.tc035 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%=<bad;next})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%=<bad;next})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC035: edge malformed pct-equals + semicolon parity. Succeeded.
+  },
+  {
+    @log smoke=TC035: edge malformed pct-equals + semicolon parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #36 - Edge probe: malformed %q angle with open paren.
+#
+&tr.tc036 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%q<bad(foo})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%q<bad(foo})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC036: edge malformed pct-q + open paren parity. Succeeded.
+  },
+  {
+    @log smoke=TC036: edge malformed pct-q + open paren parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #37 - Edge probe: malformed %q angle with backslash escape.
+#
+&tr.tc037 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%q<bad\escape})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%q<bad\escape})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC037: edge malformed pct-q + backslash parity. Succeeded.
+  },
+  {
+    @log smoke=TC037: edge malformed pct-q + backslash parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #38 - Edge probe: malformed %q angle with nested percent.
+#
+&tr.tc038 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setr(4,NEST)]
+            [eval2({A%q<bad%q4})]
+          )
+        ),
+        setr(1,sha1(
+            [setr(4,NEST)]
+            [eval({A%q<bad%q4})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC038: edge malformed pct-q + nested percent parity. Succeeded.
+  },
+  {
+    @log smoke=TC038: edge malformed pct-q + nested percent parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #39 - Edge probe: malformed %q angle with ] and } trailing.
+#
+&tr.tc039 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%q<bad]tail})]
+            [eval2({A%q<bad}tail})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%q<bad]tail})]
+            [eval({A%q<bad}tail})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC039: edge malformed pct-q + close delimiters parity. Succeeded.
+  },
+  {
+    @log smoke=TC039: edge malformed pct-q + close delimiters parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #40 - Edge probe: malformed angle plus bracket expression.
+#
+&tr.tc040 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%q<bad;B[add(1,2)]C})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%q<bad;B[add(1,2)]C})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC040: edge malformed angle + bracket expression parity. Succeeded.
+  },
+  {
+    @log smoke=TC040: edge malformed angle + bracket expression parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #41 - Edge probe: malformed %= forms with semicolon/paren.
+#
+&tr.tc041 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%=<bad;name>})]
+            [eval2({A%=<bad(name>})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({A%=<bad;name>})]
+            [eval({A%=<bad(name>})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Succeeded.
+  },
+  {
+    @log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #42 - Edge probe: malformed angle followed by valid function call.
+#
+&tr.tc042 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({%q<bad;[add(1,2)]})]
+            [eval2({%x<bad;[mul(2,3)]})]
+          )
+        ),
+        setr(1,sha1(
+            [eval({%q<bad;[add(1,2)]})]
+            [eval({%x<bad;[mul(2,3)]})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).
     @trig me/tr.done
   }
 -
