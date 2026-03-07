@@ -1748,7 +1748,7 @@ void fork_and_dump(int key)
                 dump_database_internal(DUMP_I_FLAT);
             }
 #if defined(HAVE_WORKING_FORK)
-            if (mudconf.fork_dump)
+            if (bAttemptFork)
             {
                 _exit(0);
             }
