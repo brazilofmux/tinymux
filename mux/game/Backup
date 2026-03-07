@@ -1,9 +1,10 @@
 #!/bin/sh
 #
-#   Backup - Create a timestamped backup of the SQLite database.
+#   Backup - Create a timestamped backup of the game.
 #
+#   Includes the SQLite database, configuration, and text files.
 #   Safe to run while the server is live. Uses SQLite's .backup
-#   command which handles WAL correctly.
+#   command which handles WAL correctly for the database snapshot.
 #
 PATH=/bin:/usr/bin:/usr/local/bin:.; export PATH
 #
@@ -13,6 +14,7 @@ DBDATE=$(date +%m%d-%H%M%S)
 SQLITE_DB=$DATA/$GAMENAME.sqlite
 BACKUP_DB=$DATA/$GAMENAME.$DBDATE.sqlite
 BACKUP_TMP=$BACKUP_DB.tmp.$$
+BACKUP_TAR=$GAMENAME.$DBDATE.tar.gz
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
     echo "sqlite3 not found in PATH."
@@ -29,12 +31,14 @@ if [ ! -r "$SQLITE_DB" ]; then
     exit 1
 fi
 
-if [ -e "$BACKUP_DB" ] || [ -e "${BACKUP_DB}.gz" ]; then
-    echo "Backup target already exists: $BACKUP_DB(.gz)"
+if [ -e "$BACKUP_TAR" ]; then
+    echo "Backup target already exists: $BACKUP_TAR"
     exit 1
 fi
 
-echo "Backing up $SQLITE_DB to $BACKUP_DB..."
+# Phase 1: Rigorous SQLite database backup via .backup API.
+#
+echo "Backing up $SQLITE_DB..."
 if ! sqlite3 "$SQLITE_DB" ".backup '$BACKUP_TMP'"; then
     echo "Backup failed during sqlite3 .backup."
     rm -f "$BACKUP_TMP"
@@ -42,23 +46,32 @@ if ! sqlite3 "$SQLITE_DB" ".backup '$BACKUP_TMP'"; then
 fi
 
 if ! mv -f "$BACKUP_TMP" "$BACKUP_DB"; then
-    echo "Backup failed while finalizing backup file."
+    echo "Backup failed while finalizing database snapshot."
     rm -f "$BACKUP_TMP"
     exit 1
 fi
 
-if [ -r "$BACKUP_DB" ]; then
-    if ! gzip -9 "$BACKUP_DB"; then
-        echo "Backup created but compression failed: $BACKUP_DB"
-        exit 1
-    fi
-    if [ -r "${BACKUP_DB}.gz" ]; then
-        echo "Backup complete: ${BACKUP_DB}.gz"
-    else
-        echo "Backup compression did not produce expected output file."
-        exit 1
-    fi
-else
+if [ ! -r "$BACKUP_DB" ]; then
     echo "Backup failed."
+    exit 1
+fi
+
+# Phase 2: Bundle database snapshot with configuration and text files.
+#
+CONFIG_FILES="mux.config $GAMENAME.conf"
+TEXT_FILES=""
+for f in $TEXT/*.txt; do
+    if [ -r "$f" ]; then
+        TEXT_FILES="$TEXT_FILES $f"
+    fi
+done
+
+tar cf - $BACKUP_DB $CONFIG_FILES $TEXT_FILES 2>/dev/null | gzip -9 > "$BACKUP_TAR"
+rm -f "$BACKUP_DB"
+
+if [ -r "$BACKUP_TAR" ]; then
+    echo "Backup complete: $BACKUP_TAR"
+else
+    echo "Backup failed during archive creation."
     exit 1
 fi
