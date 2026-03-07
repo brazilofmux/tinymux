@@ -30,8 +30,22 @@ echo '[setq(0,hello)]%q0 world' | ./parse
    dynamic/computed calls (DynCall), eval brackets, brace groups,
    and nested argument lists.
 
-3. **Interpreter** — (future) Walk the AST and evaluate it, producing
-   identical output to mux_exec.
+3. **Evaluator** — Tree-walking evaluator for pure expressions.
+   Supports ~50 builtin functions (arithmetic, string, list, logic,
+   comparison, registers). Demonstrates that pure-expression MUX
+   softcode CAN be evaluated from an AST.
+
+   ```
+   echo '[add(1,mul(2,3))]' | ./eval
+   echo '[if(eq(%0,hello),yes,no)]' | ./eval
+   echo '[sort(3 1 4 1 5)]' | ./eval
+   ./eval --ast  # show AST alongside output
+   ```
+
+   **Key finding:** FN_NOEVAL functions (iter, switch, case, if) need
+   deferred argument evaluation. The evaluator must pass unevaluated
+   AST subtrees to these handlers rather than pre-evaluated strings.
+   This is solvable but requires a different dispatch mechanism.
 
 ## Purpose
 

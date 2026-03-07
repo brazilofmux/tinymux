@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -g -O2
 
-all: tokenize parse
+all: tokenize parse eval
 
 tokenize: tokenize.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -9,7 +9,10 @@ tokenize: tokenize.cpp
 parse: parse.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+eval: eval.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 clean:
-	rm -f tokenize parse
+	rm -f tokenize parse eval
 
 .PHONY: all clean
