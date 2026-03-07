@@ -553,6 +553,387 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs);
 
+// ---------------------------------------------------------------
+// Native %-substitution handler
+// ---------------------------------------------------------------
+//
+// Handles all L2 dispatch table substitutions natively instead of
+// delegating to mux_exec. The node->text is the full %-sequence
+// as gathered by gather_pct (e.g. "%0", "%qa", "%q<name>", "%xn",
+// "%c<rgb>", "%va", "%i0", "%=<attr>", "%%", "%r", "%b", etc.)
+//
+static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    const std::string &txt = node->text;
+    if (txt.size() < 2)
+    {
+        // Bare '%' at end of string — output literally.
+        //
+        safe_chr('%', buff, bufc);
+        return;
+    }
+
+    unsigned char ch = static_cast<unsigned char>(txt[1]);
+    unsigned char upper = static_cast<unsigned char>(mux_toupper_ascii(ch));
+
+    // The L2 table sets flag 0x80 on uppercase A, M, N, O, P, Q, S, V
+    // to trigger mux_toupper_first on the substituted value.
+    //
+    bool bUpperCase = false;
+    if ('A' <= ch && ch <= 'Z')
+    {
+        switch (ch)
+        {
+        case 'A': case 'M': case 'N': case 'O':
+        case 'P': case 'Q': case 'S': case 'V':
+            bUpperCase = true;
+            break;
+        }
+    }
+
+    UTF8 scratch[LBUF_SIZE];
+    UTF8 *TempPtr = *bufc;
+
+    // %0-%9 — command argument substitution.
+    //
+    if (ch >= '0' && ch <= '9')
+    {
+        int i = ch - '0';
+        if (i < ncargs && cargs[i])
+        {
+            safe_str(cargs[i], buff, bufc);
+        }
+        return;
+    }
+
+    switch (upper)
+    {
+    case 'Q':
+        // %q0-%q9, %qa-%qz, %q<name> — register substitution.
+        //
+        if (txt.size() >= 3)
+        {
+            if (txt[2] == '<')
+            {
+                // Named register: %q<name>
+                //
+                size_t close = txt.find('>', 3);
+                if (close != std::string::npos)
+                {
+                    size_t nName = close - 3;
+                    const UTF8 *pName = reinterpret_cast<const UTF8 *>(txt.c_str() + 3);
+                    int regnum = -1;
+                    if (  1 == nName
+                       && (regnum = mux_RegisterSet[pName[0]]) >= 0
+                       && regnum < MAX_GLOBAL_REGS)
+                    {
+                        if (  mudstate.global_regs[regnum]
+                           && mudstate.global_regs[regnum]->reg_len > 0)
+                        {
+                            safe_copy_buf(mudstate.global_regs[regnum]->reg_ptr,
+                                mudstate.global_regs[regnum]->reg_len, buff, bufc);
+                        }
+                    }
+                    else if (IsValidNamedReg(pName, nName))
+                    {
+                        reg_ref *rr = NamedRegRead(mudstate.named_regs, pName, nName);
+                        if (rr && rr->reg_len > 0)
+                        {
+                            safe_copy_buf(rr->reg_ptr, rr->reg_len, buff, bufc);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Traditional single-char: %q0-%q9, %qa-%qz
+                //
+                int i = mux_RegisterSet[static_cast<unsigned char>(txt[2])];
+                if (  0 <= i
+                   && i < MAX_GLOBAL_REGS)
+                {
+                    if (  mudstate.global_regs[i]
+                       && mudstate.global_regs[i]->reg_len > 0)
+                    {
+                        safe_copy_buf(mudstate.global_regs[i]->reg_ptr,
+                            mudstate.global_regs[i]->reg_len, buff, bufc);
+                    }
+                }
+            }
+        }
+        break;
+
+    case '#':
+        // %# — enactor dbref.
+        //
+        {
+            scratch[0] = '#';
+            size_t n = mux_ltoa(enactor, scratch + 1);
+            safe_copy_buf(scratch, n + 1, buff, bufc);
+        }
+        break;
+
+    case '!':
+        // %! — executor dbref.
+        //
+        {
+            scratch[0] = '#';
+            size_t n = mux_ltoa(executor, scratch + 1);
+            safe_copy_buf(scratch, n + 1, buff, bufc);
+        }
+        break;
+
+    case '@':
+        // %@ — caller dbref.
+        //
+        {
+            scratch[0] = '#';
+            size_t n = mux_ltoa(caller, scratch + 1);
+            safe_copy_buf(scratch, n + 1, buff, bufc);
+        }
+        break;
+
+    case '%':
+        // %% — literal percent.
+        //
+        safe_chr('%', buff, bufc);
+        break;
+
+    case 'R':
+        // %r — carriage return.
+        //
+        safe_copy_buf(T("\r\n"), 2, buff, bufc);
+        break;
+
+    case 'B':
+        // %b — blank (space).
+        //
+        safe_chr(' ', buff, bufc);
+        break;
+
+    case 'T':
+        // %t — tab.
+        //
+        safe_chr('\t', buff, bufc);
+        break;
+
+    case 'N':
+        // %n/%N — enactor name.
+        //
+        safe_str(Name(enactor), buff, bufc);
+        break;
+
+    case 'L':
+        // %l — enactor location dbref.
+        //
+        if (!(eval & EV_NO_LOCATION))
+        {
+            scratch[0] = '#';
+            size_t n = mux_ltoa(where_is(enactor), scratch + 1);
+            safe_copy_buf(scratch, n + 1, buff, bufc);
+        }
+        break;
+
+    case 'S':
+        // %s/%S — subjective pronoun.
+        //
+        {
+            const PRONOUN_SET *ps = get_pronoun_set(enactor);
+            safe_str(ps->subjective, buff, bufc);
+        }
+        break;
+
+    case 'P':
+        // %p/%P — possessive pronoun.
+        //
+        {
+            const PRONOUN_SET *ps = get_pronoun_set(enactor);
+            safe_str(ps->possessive, buff, bufc);
+        }
+        break;
+
+    case 'O':
+        // %o/%O — objective pronoun.
+        //
+        {
+            const PRONOUN_SET *ps = get_pronoun_set(enactor);
+            safe_str(ps->objective, buff, bufc);
+        }
+        break;
+
+    case 'A':
+        // %a/%A — absolute possessive pronoun.
+        //
+        {
+            const PRONOUN_SET *ps = get_pronoun_set(enactor);
+            safe_str(ps->absolute, buff, bufc);
+        }
+        break;
+
+    case 'M':
+        // %m — last command.
+        //
+        safe_str(mudstate.curr_cmd, buff, bufc);
+        break;
+
+    case 'K':
+        // %k — moniker.
+        //
+        safe_str(Moniker(enactor), buff, bufc);
+        break;
+
+    case '|':
+        // %| — piped command output.
+        //
+        safe_str(mudstate.pout, buff, bufc);
+        break;
+
+    case '+':
+        // %+ — number of command args.
+        //
+        safe_i64toa(ncargs, buff, bufc);
+        break;
+
+    case ':':
+        // %: — enactor objid (#dbref:creation_seconds).
+        //
+        {
+            scratch[0] = '#';
+            size_t n = mux_ltoa(enactor, scratch + 1);
+            int64_t csecs = creation_seconds(enactor);
+            if (0 != csecs)
+            {
+                scratch[n + 1] = ':';
+                mux_i64toa(csecs, scratch + n + 2);
+            }
+            safe_str(scratch, buff, bufc);
+        }
+        break;
+
+    case 'V':
+        // %va-%vz — variable attribute.
+        //
+        if (txt.size() >= 3 && mux_isazAZ(txt[2]))
+        {
+            int i = A_VA + mux_toupper_ascii(txt[2]) - 'A';
+            dbref aowner;
+            int aflags;
+            size_t nAttrGotten;
+            atr_pget_str_LEN(scratch, executor, i, &aowner, &aflags, &nAttrGotten);
+            if (0 < nAttrGotten)
+            {
+                safe_copy_buf(scratch, nAttrGotten, buff, bufc);
+            }
+        }
+        break;
+
+    case 'I':
+        // %i0-%i9 — itext() substitution.
+        //
+        if (txt.size() >= 3 && mux_isdigit(txt[2]))
+        {
+            int depth = txt[2] - '0';
+            int i = mudstate.in_loop - depth - 1;
+            if (0 <= i && i < MAX_ITEXT)
+            {
+                safe_str(mudstate.itext[i], buff, bufc);
+            }
+        }
+        else if (txt.size() >= 3)
+        {
+            // %i followed by non-digit — output the char after %i literally.
+            //
+            safe_chr(txt[2], buff, bufc);
+        }
+        break;
+
+    case '=':
+        // %= — plain equals sign.
+        // %=<name> — attribute or numbered arg substitution.
+        //
+        if (txt.size() >= 4 && txt[2] == '<')
+        {
+            size_t close = txt.find('>', 3);
+            if (close != std::string::npos)
+            {
+                size_t nName = close - 3;
+                memcpy(scratch, txt.c_str() + 3, nName);
+                scratch[nName] = '\0';
+
+                if (mux_isdigit(scratch[0]))
+                {
+                    // Numeric arg reference: %=<0> through %=<999>
+                    //
+                    int i;
+                    if (!mux_isdigit(scratch[1]))
+                    {
+                        i = scratch[0] - '0';
+                    }
+                    else if (!mux_isdigit(scratch[2]))
+                    {
+                        i = TableATOI(scratch[0] - '0', scratch[1] - '0');
+                    }
+                    else if (!mux_isdigit(scratch[3]))
+                    {
+                        i = 10 * TableATOI(scratch[0] - '0', scratch[1] - '0')
+                          + scratch[2] - '0';
+                    }
+                    else
+                    {
+                        i = MAX_ARG;
+                    }
+                    if (i < ncargs && nullptr != cargs[i])
+                    {
+                        safe_str(cargs[i], buff, bufc);
+                    }
+                }
+                else if (mux_isattrnameinitial(scratch))
+                {
+                    ATTR *ap = atr_str(scratch);
+                    if (ap && See_attr(executor, executor, ap))
+                    {
+                        dbref aowner;
+                        int aflags;
+                        size_t nLen;
+                        atr_pget_str_LEN(scratch, executor, ap->number,
+                            &aowner, &aflags, &nLen);
+                        safe_copy_buf(scratch, nLen, buff, bufc);
+                    }
+                }
+            }
+        }
+        break;
+
+    case 'C':
+    case 'X':
+        // %c/%x — color codes. Delegate to mux_exec for these
+        // due to complex RGB parsing and 24-bit color support.
+        //
+        mux_exec(reinterpret_cast<const UTF8 *>(txt.c_str()),
+            txt.size(), buff, bufc,
+            executor, caller, enactor,
+            eval, cargs, ncargs);
+        return;  // Skip the uppercase-first logic below.
+
+    default:
+        // Unknown substitution — output the character literally
+        // (matches iCode == 0 in mux_exec).
+        //
+        safe_chr(ch, buff, bufc);
+        break;
+    }
+
+    // For uppercase escape letters (%S, %N, %P, %O, %A, %K),
+    // uppercase the first character of the substituted value.
+    //
+    if (bUpperCase)
+    {
+        mux_toupper_first(TempPtr, bufc, LBUF_SIZE);
+    }
+}
+
 // Evaluate a function call node (AST_FUNCCALL).
 //
 static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
@@ -845,14 +1226,8 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     case AST_SUBST:
         if (eval & EV_EVAL)
         {
-            // Delegate to mux_exec for the substitution text.
-            // The text is short (2-6 bytes) and contains only the
-            // %-sequence, so mux_exec returns quickly.
-            //
-            mux_exec(reinterpret_cast<const UTF8 *>(node->text.c_str()),
-                node->text.size(), buff, bufc,
-                executor, caller, enactor,
-                eval, cargs, ncargs);
+            ast_eval_subst(node, buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs);
         }
         else
         {
