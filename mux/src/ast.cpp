@@ -15,6 +15,8 @@
 #include <cctype>
 #include <cstring>
 #include <algorithm>
+#include <list>
+#include <unordered_map>
 
 // ---------------------------------------------------------------
 // Tokenizer
@@ -1010,14 +1012,67 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // to text and re-parsing through mux_exec.
 //
 
-// Helper: serialize an AST subtree, apply replace_tokens for
-// #$/#@/## substitution, then evaluate via mux_exec2.
+// Check whether an AST subtree contains ##, #@, or #$ tokens
+// in its literal text. These require replace_tokens before
+// evaluation.
+//
+static bool ast_has_hash_tokens(const ASTNode *node)
+{
+    if (!node)
+    {
+        return false;
+    }
+
+    if (  node->type == AST_LITERAL
+       || node->type == AST_SPACE)
+    {
+        const std::string &t = node->text;
+        for (size_t i = 0; i + 1 < t.size(); i++)
+        {
+            if (  t[i] == '#'
+               && (  t[i + 1] == '#'
+                  || t[i + 1] == '@'
+                  || t[i + 1] == '$'))
+            {
+                return true;
+            }
+        }
+    }
+
+    for (const auto &c : node->children)
+    {
+        if (ast_has_hash_tokens(c.get()))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Helper: evaluate an AST subtree, applying replace_tokens for
+// ##/#@/#$ substitution only when needed.
+//
+// When the subtree contains no hash tokens (the common case for
+// if/switch/iter with %i0), evaluates the subtree directly without
+// serialization or re-parsing.
 //
 static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs,
     const UTF8 *pBound, const UTF8 *pListPlace, const UTF8 *pSwitch)
 {
+    // Fast path: no hash tokens → evaluate the subtree directly.
+    //
+    if (!ast_has_hash_tokens(child))
+    {
+        ast_eval_node(child, buff, bufc,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        return;
+    }
+
+    // Slow path: serialize, replace ##/#@/#$, re-parse and evaluate.
+    //
     std::string raw = ast_raw_text(child);
     UTF8 *tbuff = replace_tokens(
         reinterpret_cast<const UTF8 *>(raw.c_str()),
@@ -1903,13 +1958,30 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 }
 
 // ---------------------------------------------------------------
+// AST parse cache
+// ---------------------------------------------------------------
+//
+// LRU cache of parsed AST trees, keyed by expression text.
+// Parsing is pure (no side effects), so cached ASTs are safe
+// to share across evaluations with different contexts.
+//
+
+struct ASTCacheEntry
+{
+    std::shared_ptr<ASTNode> ast;
+    std::list<std::string>::iterator lru_it;
+};
+
+static std::unordered_map<std::string, ASTCacheEntry> s_astCache;
+static std::list<std::string> s_astLru;
+static const size_t AST_CACHE_MAX = 1024;
+static const size_t AST_CACHE_MIN_LEN = 16;
+
+// ---------------------------------------------------------------
 // mux_exec2 — drop-in replacement for mux_exec
 // ---------------------------------------------------------------
 //
-// Phase 2: Parse into AST, then evaluate via ast_eval_node.
-// The AST evaluator delegates %-substitutions to mux_exec for
-// exact compatibility, and dispatches function calls through
-// the existing FUN handler table.
+// Parse into AST (with caching), then evaluate via ast_eval_node.
 //
 void mux_exec2(const UTF8 *pStr, size_t nStr,
                UTF8 *buff, UTF8 **bufc,
@@ -1931,12 +2003,54 @@ void mux_exec2(const UTF8 *pStr, size_t nStr,
         return;
     }
 
-    // Parse the input into an AST.
+    // Look up in the parse cache.
     //
-    auto ast = ast_parse_string(pStr, nStr);
+    const ASTNode *ast_ptr;
+    std::shared_ptr<ASTNode> cache_holder;
+    std::unique_ptr<ASTNode> parse_holder;
+
+    if (nStr >= AST_CACHE_MIN_LEN)
+    {
+        std::string key(reinterpret_cast<const char *>(pStr), nStr);
+        auto it = s_astCache.find(key);
+        if (it != s_astCache.end())
+        {
+            // Cache hit — move to front of LRU.
+            //
+            cache_holder = it->second.ast;
+            s_astLru.splice(s_astLru.begin(), s_astLru, it->second.lru_it);
+            ast_ptr = cache_holder.get();
+        }
+        else
+        {
+            // Cache miss — parse and insert.
+            //
+            cache_holder = std::shared_ptr<ASTNode>(
+                ast_parse_string(pStr, nStr).release());
+            ast_ptr = cache_holder.get();
+
+            // Evict LRU entries if cache is full.
+            //
+            while (s_astCache.size() >= AST_CACHE_MAX)
+            {
+                s_astCache.erase(s_astLru.back());
+                s_astLru.pop_back();
+            }
+
+            s_astLru.push_front(key);
+            s_astCache[key] = {cache_holder, s_astLru.begin()};
+        }
+    }
+    else
+    {
+        // Short expressions — parse without caching.
+        //
+        parse_holder = ast_parse_string(pStr, nStr);
+        ast_ptr = parse_holder.get();
+    }
 
     // Evaluate the AST.
     //
-    ast_eval_node(ast.get(), buff, bufc,
+    ast_eval_node(ast_ptr, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
