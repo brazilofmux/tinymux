@@ -25,10 +25,10 @@ SEP sepSpace = { 1, " " };
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
 //
-UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *sep, size_t *nTrim)
+UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, const SEP &sep, size_t *nTrim)
 {
-    if (  sep->n != 1
-       || sep->str[0] != ' ')
+    if (  sep.n != 1
+       || sep.str[0] != ' ')
     {
         *nTrim = nStr;
         return str;
@@ -4972,7 +4972,7 @@ static FUNCTION(fun_wordpos)
     {
         size_t ncp_trimmed;
         UTF8 *tp = &(cp[charpos - 1]);
-        cp = trim_space_sep_LEN(cp, ncp, &sep, &ncp_trimmed);
+        cp = trim_space_sep_LEN(cp, ncp, sep, &ncp_trimmed);
         UTF8 *xp = split_token(&cp, sep);
 
         int i;
@@ -6692,7 +6692,7 @@ static FUNCTION(fun_iter)
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *dp = '\0';
     size_t ncp;
-    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
+    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6910,7 +6910,7 @@ static FUNCTION(fun_list)
     *dp = '\0';
 
     size_t ncp;
-    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
+    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
