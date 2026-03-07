@@ -592,10 +592,200 @@
       )=
   {
     @log smoke=TC024: edge malformed mixed context parity. Succeeded (possibly fixed).;
-    @trig me/tr.done
   },
   {
     @log smoke=TC024: edge malformed mixed context divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #25 - Edge probe: unterminated outer call with inner bracket eval.
+#
+&tr.tc025 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({notafunc([add(1,2)]})]
+          )
+        ),
+        setr(1,sha1(
+            notafunc([add(1,2)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC025: edge unterminated call + bracket eval divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #26 - Edge probe: nested function text under unterminated outer call.
+#
+&tr.tc026 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({notafunc(foo(bar(1)})]
+          )
+        ),
+        setr(1,sha1(
+            notafunc(foo(bar(1)
+          )
+        )
+      )=
+  {
+    @log smoke=TC026: edge unterminated call + nested parens parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC026: edge unterminated call + nested parens divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #27 - Edge probe: comma handling under unterminated outer call.
+#
+&tr.tc027 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({notafunc(a,b,c})]
+          )
+        ),
+        setr(1,sha1(
+            notafunc(a,b,c
+          )
+        )
+      )=
+  {
+    @log smoke=TC027: edge unterminated call comma handling parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC027: edge unterminated call comma handling divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #28 - Edge probe: malformed %q angle forms.
+#
+&tr.tc028 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({%q<>})]
+            [eval2({%q<0>})]
+            [eval2({%q<name})]
+            [eval2({%q<name>>})]
+          )
+        ),
+        setr(1,sha1(
+            %q<>
+            %q<0>
+            %q<name
+            %q<name>>
+          )
+        )
+      )=
+  {
+    @log smoke=TC028: edge malformed %q angle forms parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC028: edge malformed %q angle forms divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #29 - Edge probe: malformed color escapes.
+#
+&tr.tc029 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%xB})]
+            [eval2({A%x<})]
+            [eval2({A%x<noend})]
+            [eval2({A%c?B})]
+          )
+        ),
+        setr(1,sha1(
+            A%xB
+            A%x<>
+            A%x<noend
+            A%c?B
+          )
+        )
+      )=
+  {
+    @log smoke=TC029: edge malformed color escapes parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC029: edge malformed color escapes divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #30 - Edge probe: malformed %= forms.
+#
+&tr.tc030 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({%=})]
+            [eval2({%=<})]
+            [eval2({%=<0})]
+            [eval2({%=<9999>})]
+            [eval2({%=<bad attr>})]
+          )
+        ),
+        setr(1,sha1(
+            %=
+            %=<>
+            %=<0
+            %=<9999>
+            %=<bad attr>
+          )
+        )
+      )=
+  {
+    @log smoke=TC030: edge malformed %= forms parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC030: edge malformed %= forms divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #31 - Edge probe: mixed malformed sequence ordering.
+#
+&tr.tc031 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setr(3,MIX)]
+            [eval2({%q<bad notafunc(%q3 [add(2,2)]})]
+          )
+        ),
+        setr(1,sha1(
+            [setr(3,MIX)]
+            %q<bad notafunc(%q3 [add(2,2)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC031: edge mixed malformed sequence parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC031: edge mixed malformed sequence divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #32 - Edge probe: deep brace/paren mismatch.
+#
+&tr.tc032 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({{foo(bar},baz)})]
+          )
+        ),
+        setr(1,sha1(
+            {foo(bar},baz)
+          )
+        )
+      )=
+  {
+    @log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;
     @trig me/tr.done
   }
 -
