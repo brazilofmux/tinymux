@@ -1,0 +1,338 @@
+#
+# eval2_fn.mux - Test Cases for eval2() (AST evaluator).
+#
+# Each test verifies that eval2() produces the same result as
+# direct evaluation for various expression patterns.
+#
+# Note: commas inside nested function calls do NOT need escaping
+# because parse_to_lite tracks paren nesting (sp > 0 suppresses
+# comma splitting).
+#
+@create test_eval2_fn
+-
+@set test_eval2_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_eval2_fn=
+  @log smoke=Beginning eval2() test cases.
+-
+#
+# Test Case #1 - Arithmetic functions via AST evaluator.
+#
+&tr.tc001 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(add(1,2))]
+            [eval2(sub(10,3))]
+            [eval2(mul(4,5))]
+            [eval2(div(10,3))]
+            [eval2(mod(10,3))]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,2)]
+            [sub(10,3)]
+            [mul(4,5)]
+            [div(10,3)]
+            [mod(10,3)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC001: eval2 arithmetic. Succeeded.
+  },
+  {
+    @log smoke=TC001: eval2 arithmetic. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #2 - String functions via AST evaluator.
+#
+&tr.tc002 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(strlen(hello))]
+            [eval2(ucstr(hello))]
+            [eval2(lcstr(HELLO))]
+            [eval2(mid(hello world,6,5))]
+          )
+        ),
+        setr(1,sha1(
+            [strlen(hello)]
+            [ucstr(hello)]
+            [lcstr(HELLO)]
+            [mid(hello world,6,5)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC002: eval2 string functions. Succeeded.
+  },
+  {
+    @log smoke=TC002: eval2 string functions. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #3 - Nested function calls via AST evaluator.
+#
+&tr.tc003 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(add(1,mul(2,3)))]
+            [eval2(add(1,add(2,add(3,4))))]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,mul(2,3))]
+            [add(1,add(2,add(3,4)))]
+          )
+        )
+      )=
+  {
+    @log smoke=TC003: eval2 nested functions. Succeeded.
+  },
+  {
+    @log smoke=TC003: eval2 nested functions. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #4 - NOEVAL functions (if, switch) via AST evaluator.
+#
+&tr.tc004 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(if(eq(1,1),yes,no))]
+            [eval2(if(eq(1,2),yes,no))]
+            [eval2(switch(b,a,alpha,b,beta,*,other))]
+          )
+        ),
+        setr(1,sha1(
+            [if(eq(1,1),yes,no)]
+            [if(eq(1,2),yes,no)]
+            [switch(b,a,alpha,b,beta,*,other)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC004: eval2 NOEVAL functions. Succeeded.
+  },
+  {
+    @log smoke=TC004: eval2 NOEVAL functions. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #5 - iter() via AST evaluator.
+#
+&tr.tc005 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(iter(a b c,%i0))]
+            [eval2(iter(10 20 30,[add(%i0,1)]))]
+          )
+        ),
+        setr(1,sha1(
+            [iter(a b c,%i0)]
+            [iter(10 20 30,[add(%i0,1)])]
+          )
+        )
+      )=
+  {
+    @log smoke=TC005: eval2 iter. Succeeded.
+  },
+  {
+    @log smoke=TC005: eval2 iter. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #6 - Registers via AST evaluator.
+#
+&tr.tc006 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(setr(0,hello))]
+            [eval2(r(0))]
+          )
+        ),
+        setr(1,sha1(
+            [setr(0,hello)]
+            [r(0)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC006: eval2 registers. Succeeded.
+  },
+  {
+    @log smoke=TC006: eval2 registers. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #7 - List functions via AST evaluator.
+#
+&tr.tc007 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(words(a b c d e))]
+            [eval2(first(a b c))]
+            [eval2(rest(a b c))]
+            [eval2(last(a b c))]
+            [eval2(sort(3 1 4 1 5))]
+          )
+        ),
+        setr(1,sha1(
+            [words(a b c d e)]
+            [first(a b c)]
+            [rest(a b c)]
+            [last(a b c)]
+            [sort(3 1 4 1 5)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC007: eval2 list functions. Succeeded.
+  },
+  {
+    @log smoke=TC007: eval2 list functions. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #8 - Boolean and comparison via AST evaluator.
+#
+&tr.tc008 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(and(1,1,1))]
+            [eval2(or(0,0,1))]
+            [eval2(not(0))]
+            [eval2(eq(5,5))]
+            [eval2(gt(5,3))]
+          )
+        ),
+        setr(1,sha1(
+            [and(1,1,1)]
+            [or(0,0,1)]
+            [not(0)]
+            [eq(5,5)]
+            [gt(5,3)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC008: eval2 boolean/comparison. Succeeded.
+  },
+  {
+    @log smoke=TC008: eval2 boolean/comparison. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #9 - Literal text and escapes via AST evaluator.
+#
+&tr.tc009 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(hello world)]
+          )
+        ),
+        setr(1,sha1(
+            hello world
+          )
+        )
+      )=
+  {
+    @log smoke=TC009: eval2 literals. Succeeded.
+  },
+  {
+    @log smoke=TC009: eval2 literals. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #10 - cat/strcat via AST evaluator.
+#
+&tr.tc010 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(cat(hello,world))]
+            [eval2(strcat(hello,world))]
+            [eval2(repeat(*,5))]
+          )
+        ),
+        setr(1,sha1(
+            [cat(hello,world)]
+            [strcat(hello,world)]
+            [repeat(*,5)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC010: eval2 cat/strcat/repeat. Succeeded.
+  },
+  {
+    @log smoke=TC010: eval2 cat/strcat/repeat. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #11 - Short-circuit boolean (NOEVAL) via AST evaluator.
+#
+&tr.tc011 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(cand(1,1,1))]
+            [eval2(cand(1,0,1))]
+            [eval2(cor(0,0,1))]
+            [eval2(cor(0,0,0))]
+          )
+        ),
+        setr(1,sha1(
+            [cand(1,1,1)]
+            [cand(1,0,1)]
+            [cor(0,0,1)]
+            [cor(0,0,0)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC011: eval2 short-circuit boolean. Succeeded.
+  },
+  {
+    @log smoke=TC011: eval2 short-circuit boolean. Failed (got %q0 expected %q1).
+  }
+-
+#
+# Test Case #12 - lit() and @@() via AST evaluator.
+#
+# Note: eval2(lit(x)) re-evaluates lit(x)'s output, so we can only
+# test lit() with content that survives double evaluation.
+#
+&tr.tc012 test_eval2_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(lit(hello world))]
+            [eval2(@@(this is a comment))]
+          )
+        ),
+        setr(1,sha1(
+            [lit(hello world)]
+            [@@(this is a comment)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC012: eval2 lit/@@. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: eval2 lit/@@. Failed (got %q0 expected %q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_eval2_fn=
+  @log smoke=End eval2() test cases.;
+  @notify smoke
+-
+drop test_eval2_fn
+-
+#
+# End of Test Cases
+#
