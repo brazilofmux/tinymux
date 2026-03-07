@@ -1001,6 +1001,484 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 }
 
+// ---------------------------------------------------------------
+// Native NOEVAL handlers
+// ---------------------------------------------------------------
+//
+// These functions handle specific NOEVAL built-in functions by
+// evaluating AST subtrees directly instead of serializing back
+// to text and re-parsing through mux_exec.
+//
+
+// Helper: serialize an AST subtree, apply replace_tokens for
+// #$/#@/## substitution, then evaluate via mux_exec2.
+//
+static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs,
+    const UTF8 *pBound, const UTF8 *pListPlace, const UTF8 *pSwitch)
+{
+    std::string raw = ast_raw_text(child);
+    UTF8 *tbuff = replace_tokens(
+        reinterpret_cast<const UTF8 *>(raw.c_str()),
+        pBound, pListPlace, pSwitch);
+    mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc,
+        executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    free_lbuf(tbuff);
+}
+
+// Native cand/candbool: short-circuit AND.
+//
+static void ast_noeval_cand(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs,
+    bool bBool)
+{
+    int nfargs = static_cast<int>(node->children.size());
+    bool val = true;
+    UTF8 *temp = alloc_lbuf("ast_noeval_cand");
+    for (int i = 0; i < nfargs && val && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        ast_eval_node(node->children[i].get(), temp, &bp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+    }
+    free_lbuf(temp);
+    safe_bool(val, buff, bufc);
+}
+
+// Native cor/corbool: short-circuit OR.
+//
+static void ast_noeval_cor(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs,
+    bool bBool)
+{
+    int nfargs = static_cast<int>(node->children.size());
+    bool val = false;
+    UTF8 *temp = alloc_lbuf("ast_noeval_cor");
+    for (int i = 0; i < nfargs && !val && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        ast_eval_node(node->children[i].get(), temp, &bp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+    }
+    free_lbuf(temp);
+    safe_bool(val, buff, bufc);
+}
+
+// Native if/ifelse: conditional branch selection.
+//
+static void ast_noeval_ifelse(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    int nfargs = static_cast<int>(node->children.size());
+
+    // Evaluate the condition.
+    //
+    UTF8 *lbuff = alloc_lbuf("ast_noeval_if");
+    UTF8 *bp = lbuff;
+    ast_eval_node(node->children[0].get(), lbuff, &bp,
+        executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *bp = '\0';
+
+    if (xlate(lbuff))
+    {
+        // True branch — serialize, replace #$ with condition, evaluate.
+        //
+        ast_eval_branch(node->children[1].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs,
+            nullptr, nullptr, lbuff);
+    }
+    else if (nfargs >= 3)
+    {
+        // False branch.
+        //
+        ast_eval_branch(node->children[2].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs,
+            nullptr, nullptr, lbuff);
+    }
+    free_lbuf(lbuff);
+}
+
+// Native switch/case: first-match pattern dispatch.
+//
+static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs,
+    bool bWild)
+{
+    int nfargs = static_cast<int>(node->children.size());
+
+    // Evaluate the target in child[0].
+    //
+    UTF8 *mbuff = alloc_lbuf("ast_noeval_switch");
+    UTF8 *bp = mbuff;
+    ast_eval_node(node->children[0].get(), mbuff, &bp,
+        executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *bp = '\0';
+
+    UTF8 *tbuff = alloc_lbuf("ast_noeval_switch.2");
+
+    // Loop through patterns looking for a match.
+    //
+    int i;
+    for (i = 1; i < nfargs - 1 && !alarm_clock.alarmed; i += 2)
+    {
+        bp = tbuff;
+        ast_eval_node(node->children[i].get(), tbuff, &bp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if (  bWild
+            ? wild_match(tbuff, mbuff)
+            : strcmp(reinterpret_cast<char *>(tbuff),
+                     reinterpret_cast<char *>(mbuff)) == 0)
+        {
+            free_lbuf(tbuff);
+            ast_eval_branch(node->children[i + 1].get(), buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs,
+                nullptr, nullptr, mbuff);
+            free_lbuf(mbuff);
+            return;
+        }
+    }
+    free_lbuf(tbuff);
+
+    // No match — evaluate default if present.
+    //
+    if (i < nfargs)
+    {
+        ast_eval_branch(node->children[i].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs,
+            nullptr, nullptr, mbuff);
+    }
+    free_lbuf(mbuff);
+}
+
+// Native switchall/caseall: all-match pattern dispatch.
+//
+static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs,
+    bool bWild)
+{
+    int nfargs = static_cast<int>(node->children.size());
+
+    // Evaluate the target in child[0].
+    //
+    UTF8 *mbuff = alloc_lbuf("ast_noeval_switchall");
+    UTF8 *bp = mbuff;
+    ast_eval_node(node->children[0].get(), mbuff, &bp,
+        executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *bp = '\0';
+
+    UTF8 *tbuff = alloc_lbuf("ast_noeval_switchall.2");
+
+    // Loop through all patterns, evaluating every match.
+    //
+    bool bMatched = false;
+    int i;
+    for (i = 1; i < nfargs - 1 && !alarm_clock.alarmed; i += 2)
+    {
+        bp = tbuff;
+        ast_eval_node(node->children[i].get(), tbuff, &bp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if (  bWild
+            ? wild_match(tbuff, mbuff)
+            : strcmp(reinterpret_cast<char *>(tbuff),
+                     reinterpret_cast<char *>(mbuff)) == 0)
+        {
+            bMatched = true;
+            ast_eval_branch(node->children[i + 1].get(), buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs,
+                nullptr, nullptr, mbuff);
+        }
+    }
+    free_lbuf(tbuff);
+
+    // If nothing matched, evaluate the default.
+    //
+    if (!bMatched && i < nfargs)
+    {
+        ast_eval_branch(node->children[i].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs,
+            nullptr, nullptr, mbuff);
+    }
+    free_lbuf(mbuff);
+}
+
+// Native iter: list iteration.
+//
+static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    int nfargs = static_cast<int>(node->children.size());
+
+    // Handle optional delimiters (args 3 and 4) by serializing
+    // and evaluating them, then parsing into SEP structures.
+    // For the common case (no delimiters), use space defaults.
+    //
+    SEP sep;
+    sep.n = 1;
+    memcpy(sep.str, " ", 2);
+
+    SEP osep;
+    osep.n = 1;
+    memcpy(osep.str, " ", 2);
+
+    if (nfargs >= 3)
+    {
+        // Evaluate input delimiter.
+        //
+        UTF8 *dbuf = alloc_lbuf("ast_noeval_iter.sep");
+        UTF8 *dp = dbuf;
+        ast_eval_node(node->children[2].get(), dbuf, &dp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *dp = '\0';
+        size_t dlen = dp - dbuf;
+        if (dlen == 1)
+        {
+            sep.n = 1;
+            memcpy(sep.str, dbuf, 2);
+        }
+        else if (dlen > 1 && dlen <= MAX_SEP_LEN)
+        {
+            sep.n = dlen;
+            memcpy(sep.str, dbuf, dlen);
+            sep.str[dlen] = '\0';
+        }
+        free_lbuf(dbuf);
+    }
+
+    if (nfargs >= 4)
+    {
+        // Evaluate output delimiter.
+        //
+        UTF8 *dbuf = alloc_lbuf("ast_noeval_iter.osep");
+        UTF8 *dp = dbuf;
+        ast_eval_node(node->children[3].get(), dbuf, &dp,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *dp = '\0';
+        size_t dlen = dp - dbuf;
+        if (dlen == 0)
+        {
+            osep.n = 1;
+            memcpy(osep.str, " ", 2);
+        }
+        else if (dlen == 2 && memcmp(dbuf, "@@", 2) == 0)
+        {
+            osep.n = 0;
+            osep.str[0] = '\0';
+        }
+        else if (dlen == 2 && memcmp(dbuf, "\r\n", 2) == 0)
+        {
+            osep.n = 2;
+            memcpy(osep.str, "\r\n", 3);
+        }
+        else if (dlen == 1)
+        {
+            osep.n = 1;
+            memcpy(osep.str, dbuf, 2);
+        }
+        else if (dlen <= MAX_SEP_LEN)
+        {
+            osep.n = dlen;
+            memcpy(osep.str, dbuf, dlen);
+            osep.str[dlen] = '\0';
+        }
+        free_lbuf(dbuf);
+    }
+
+    // Evaluate the list (child[0]).
+    //
+    UTF8 *curr = alloc_lbuf("ast_noeval_iter");
+    UTF8 *dp = curr;
+    ast_eval_node(node->children[0].get(), curr, &dp,
+        executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *dp = '\0';
+
+    size_t ncp;
+    UTF8 *cp = trim_space_sep_LEN(curr, dp - curr, &sep, &ncp);
+    if (!*cp)
+    {
+        free_lbuf(curr);
+        return;
+    }
+
+    // Serialize the body subtree once (will be re-used each iteration).
+    //
+    std::string rawBody = ast_raw_text(node->children[1].get());
+
+    bool first = true;
+    int number = 0;
+    bool bLoopInBounds = (  0 <= mudstate.in_loop
+                         && mudstate.in_loop < MAX_ITEXT);
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = nullptr;
+        mudstate.inum[mudstate.in_loop] = number;
+    }
+    mudstate.in_loop++;
+
+    while (  cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !alarm_clock.alarmed)
+    {
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        number++;
+        UTF8 *objstring = split_token(&cp, sep);
+        if (bLoopInBounds)
+        {
+            mudstate.itext[mudstate.in_loop - 1] = objstring;
+            mudstate.inum[mudstate.in_loop - 1] = number;
+        }
+
+        UTF8 *tbuff = replace_tokens(
+            reinterpret_cast<const UTF8 *>(rawBody.c_str()),
+            mudconf.safer_iter ? nullptr : objstring,
+            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
+            nullptr);
+        mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        free_lbuf(tbuff);
+    }
+
+    mudstate.in_loop--;
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = nullptr;
+        mudstate.inum[mudstate.in_loop] = 0;
+    }
+    free_lbuf(curr);
+}
+
+// Dispatch table for native NOEVAL handling. Returns true if the
+// function was handled natively (caller should skip generic dispatch).
+//
+static bool ast_try_native_noeval(const ASTNode *node,
+    const UTF8 *funcName, size_t nameLen,
+    UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    if (nameLen == 2 && memcmp(funcName, "IF", 2) == 0)
+    {
+        ast_noeval_ifelse(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs);
+        return true;
+    }
+    if (nameLen == 3)
+    {
+        if (memcmp(funcName, "COR", 3) == 0)
+        {
+            ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, false);
+            return true;
+        }
+        return false;
+    }
+    if (nameLen == 4)
+    {
+        if (memcmp(funcName, "CAND", 4) == 0)
+        {
+            ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, false);
+            return true;
+        }
+        if (memcmp(funcName, "CASE", 4) == 0)
+        {
+            ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, false);
+            return true;
+        }
+        if (memcmp(funcName, "ITER", 4) == 0)
+        {
+            ast_noeval_iter(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs);
+            return true;
+        }
+        return false;
+    }
+    if (nameLen == 6)
+    {
+        if (memcmp(funcName, "IFELSE", 6) == 0)
+        {
+            ast_noeval_ifelse(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs);
+            return true;
+        }
+        if (memcmp(funcName, "SWITCH", 6) == 0)
+        {
+            ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, true);
+            return true;
+        }
+        return false;
+    }
+    if (nameLen == 7)
+    {
+        if (memcmp(funcName, "CASEALL", 7) == 0)
+        {
+            ast_noeval_switchall(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, false);
+            return true;
+        }
+        if (memcmp(funcName, "CORBOOL", 7) == 0)
+        {
+            ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, true);
+            return true;
+        }
+        return false;
+    }
+    if (nameLen == 8)
+    {
+        if (memcmp(funcName, "CANDBOOL", 8) == 0)
+        {
+            ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
+                eval, cargs, ncargs, true);
+            return true;
+        }
+        if (memcmp(funcName, "CASEALL", 7) == 0)
+        {
+            // CASEALL is 7 chars, handled above.
+        }
+        return false;
+    }
+    if (nameLen == 9 && memcmp(funcName, "SWITCHALL", 9) == 0)
+    {
+        ast_noeval_switchall(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, true);
+        return true;
+    }
+    return false;
+}
+
 // Evaluate a function call node (AST_FUNCCALL).
 //
 static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
@@ -1188,6 +1666,17 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
            && nfargs <= fp->maxArgs
            && !alarm_clock.alarmed)
         {
+            // Try native NOEVAL handlers first.
+            //
+            if (  (fp->flags & FN_NOEVAL)
+               && ast_try_native_noeval(node, TempFun, nUpper,
+                      buff, bufc, executor, caller, enactor,
+                      eval, cargs, ncargs))
+            {
+                mudstate.func_nest_lev--;
+                return;
+            }
+
             UTF8 *fargs[MAX_ARG];
             memset(fargs, 0, sizeof(fargs));
             int feval;

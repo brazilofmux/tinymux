@@ -81,7 +81,7 @@ bool delim_check
 void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, const SEP &sep);
 int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, const SEP &sep);
 UTF8 *trim_space_sep(UTF8 *str, const SEP &sep);
-UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, const SEP &sep, size_t *nTrim);
+UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *sep, size_t *nTrim);
 UTF8 *next_token(UTF8 *str, const SEP &sep);
 UTF8 *split_token(UTF8 **sp, const SEP &sep);
 int countwords(UTF8 *str, const SEP &sep);
