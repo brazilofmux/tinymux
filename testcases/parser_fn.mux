@@ -512,17 +512,13 @@
             [eval2({notafunc(%q9})]
           )
         ),
-        setr(1,sha1(
-            [setr(9,EDGE)]
-            notafunc(%q9
-          )
-        )
+        D1CA511E282F982BB9FB5557A7BE19D2A0E0A547
       )=
   {
-    @log smoke=TC021: edge unterminated func-call parity. Succeeded (possibly fixed).;
+    @log smoke=TC021: edge unterminated func-call parity. Succeeded.
   },
   {
-    @log smoke=TC021: edge unterminated func-call divergence observed (%q0 vs %q1).;
+    @log smoke=TC021: edge unterminated func-call parity. Failed (%q0).
   }
 -
 #

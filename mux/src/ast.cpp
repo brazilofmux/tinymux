@@ -232,7 +232,7 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
 class ASTParser {
 public:
     ASTParser(const std::vector<ASTToken> &tokens)
-        : m_tokens(tokens), m_pos(0), m_bracketDepth(0) {}
+        : m_tokens(tokens), m_pos(0), m_bracketDepth(0), m_braceDepth(0) {}
 
     std::unique_ptr<ASTNode> parse()
     {
@@ -243,6 +243,7 @@ private:
     const std::vector<ASTToken> &m_tokens;
     size_t m_pos;
     int m_bracketDepth;
+    int m_braceDepth;
 
     const ASTToken &peek() const { return m_tokens[m_pos]; }
     ASTToken advance() { return m_tokens[m_pos++]; }
@@ -381,13 +382,14 @@ private:
         // literal text in function arguments.
         //
         bool inBracket = (m_bracketDepth > 0);
-        auto arg = parseSequence(true, inBracket, false, true);
+        bool inBrace = (m_braceDepth > 0);
+        auto arg = parseSequence(true, inBracket, inBrace, true);
         call->addChild(std::move(arg));
 
         while (!atEnd() && peek().type == ASTTOK_COMMA)
         {
             advance();
-            arg = parseSequence(true, inBracket, false, true);
+            arg = parseSequence(true, inBracket, inBrace, true);
             call->addChild(std::move(arg));
         }
 
@@ -418,6 +420,7 @@ private:
     std::unique_ptr<ASTNode> parseBraceGroup()
     {
         advance(); // consume LBRACE
+        m_braceDepth++;
 
         auto group = std::make_unique<ASTNode>(AST_BRACEGROUP);
         auto contents = parseSequence(false, false, true, false);
@@ -427,6 +430,7 @@ private:
         {
             advance();
         }
+        m_braceDepth--;
         return group;
     }
 };
@@ -1591,8 +1595,9 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     // Missing closing ')' — mux_exec's parse_arglist_lite returns
     // nullptr in this case and the function is NOT dispatched.  Output
-    // the function name and '(' literally, then emit the raw argument
-    // text (without closing ')').
+    // the function name and '(' literally, then evaluate the argument
+    // children (%-substitutions must be resolved, matching the classic
+    // parser which evaluates as it scans).
     //
     if (!node->has_close_paren)
     {
@@ -1601,8 +1606,8 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         for (size_t i = 0; i < node->children.size(); i++)
         {
             if (i > 0) safe_chr(',', buff, bufc);
-            std::string raw = ast_raw_text(node->children[i].get());
-            safe_str(reinterpret_cast<const UTF8 *>(raw.c_str()), buff, bufc);
+            ast_eval_node(node->children[i].get(), buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs);
         }
         return;
     }
