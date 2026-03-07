@@ -11,13 +11,22 @@ PATH=/bin:/usr/bin:/usr/local/bin:.; export PATH
 . mux.config
 #
 DBDATE=$(date +%m%d-%H%M%S)
-SQLITE_DB=$DATA/$GAMENAME.sqlite
-BACKUP_DB=$DATA/$GAMENAME.$DBDATE.sqlite
-BACKUP_TMP=$BACKUP_DB.tmp.$$
 BACKUP_TAR=$GAMENAME.$DBDATE.tar.gz
+BACKUP_TAR_TMP=$BACKUP_TAR.tmp.$$
+
+cleanup_tmp()
+{
+    rm -f "$BACKUP_TMP" "$BACKUP_TAR_TMP"
+}
+trap cleanup_tmp EXIT HUP INT TERM
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
     echo "sqlite3 not found in PATH."
+    exit 1
+fi
+
+if ! command -v tar >/dev/null 2>&1; then
+    echo "tar not found in PATH."
     exit 1
 fi
 
@@ -26,10 +35,15 @@ if ! command -v gzip >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ ! -r "$SQLITE_DB" ]; then
-    echo "No database found at $SQLITE_DB"
+if [ -r "$DATA/$GAMENAME.sqlite" ]; then
+    SQLITE_DB=$DATA/$GAMENAME.sqlite
+else
+    echo "No SQLite database found at $DATA/$GAMENAME.sqlite"
     exit 1
 fi
+
+BACKUP_DB=$DATA/$GAMENAME.$DBDATE.sqlite
+BACKUP_TMP=$BACKUP_DB.tmp.$$
 
 if [ -e "$BACKUP_TAR" ]; then
     echo "Backup target already exists: $BACKUP_TAR"
@@ -58,20 +72,54 @@ fi
 
 # Phase 2: Bundle database snapshot with configuration and text files.
 #
-CONFIG_FILES="mux.config $GAMENAME.conf"
-TEXT_FILES=""
-for f in $TEXT/*.txt; do
+if [ ! -r "mux.config" ]; then
+    echo "Required config file missing: mux.config"
+    echo "Database snapshot preserved at: $BACKUP_DB"
+    exit 1
+fi
+
+if [ ! -r "$GAMENAME.conf" ]; then
+    echo "Required config file missing: $GAMENAME.conf"
+    echo "Database snapshot preserved at: $BACKUP_DB"
+    exit 1
+fi
+
+set -- "$BACKUP_DB" "mux.config" "$GAMENAME.conf"
+TEXT_COUNT=0
+for f in "$TEXT"/*.txt; do
     if [ -r "$f" ]; then
-        TEXT_FILES="$TEXT_FILES $f"
+        set -- "$@" "$f"
+        TEXT_COUNT=$((TEXT_COUNT + 1))
     fi
 done
 
-tar cf - $BACKUP_DB $CONFIG_FILES $TEXT_FILES 2>/dev/null | gzip -9 > "$BACKUP_TAR"
-rm -f "$BACKUP_DB"
+if [ "$TEXT_COUNT" -eq 0 ]; then
+    echo "Warning: no readable text files found under $TEXT"
+fi
 
-if [ -r "$BACKUP_TAR" ]; then
-    echo "Backup complete: $BACKUP_TAR"
-else
+if ! tar cf - "$@" | gzip -9 > "$BACKUP_TAR_TMP"; then
     echo "Backup failed during archive creation."
+    echo "Database snapshot preserved at: $BACKUP_DB"
     exit 1
 fi
+
+if [ ! -s "$BACKUP_TAR_TMP" ]; then
+    echo "Backup failed: archive is empty."
+    echo "Database snapshot preserved at: $BACKUP_DB"
+    exit 1
+fi
+
+if ! mv -f "$BACKUP_TAR_TMP" "$BACKUP_TAR"; then
+    echo "Backup failed while finalizing archive."
+    echo "Database snapshot preserved at: $BACKUP_DB"
+    exit 1
+fi
+
+if ! tar tzf "$BACKUP_TAR" >/dev/null 2>&1; then
+    echo "Backup failed: archive verification failed."
+    echo "Database snapshot preserved at: $BACKUP_DB"
+    exit 1
+fi
+
+rm -f "$BACKUP_DB"
+echo "Backup complete: $BACKUP_TAR"
