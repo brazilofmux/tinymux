@@ -2297,7 +2297,7 @@ static void dbconvert(void)
     bool do_redirect = false;
 
     bool do_write = true;
-    if (standalone_check)
+    if (standalone_check || standalone_load)
     {
         do_write = false;
     }

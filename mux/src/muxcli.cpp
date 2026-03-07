@@ -10,6 +10,7 @@
 #include "muxcli.h"
 
 #include <string>
+#include <deque>
 #include <vector>
 #include <algorithm>
 #include <cctype>
@@ -26,7 +27,10 @@ enum class ArgType {
 
 // Storage for argument values derived from argv strings (e.g., --opt=value, -ovalue)
 // Made static within the cpp file scope. Cleared on each CLI_Process call.
-static std::vector<std::string> persistentStrings;
+// Using std::deque because push_back never invalidates pointers to existing
+// elements, unlike std::vector which can reallocate and invalidate c_str()
+// pointers stored by earlier callbacks.
+static std::deque<std::string> persistentStrings;
 
 // Get the type of an argument
 static ArgType getArgType(const std::string& arg)
